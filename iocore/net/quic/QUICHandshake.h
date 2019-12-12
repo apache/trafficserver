@@ -58,12 +58,12 @@ public:
 
   // for client side
   QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_factory, bool vn_exercise_enabled);
-  QUICConnectionErrorUPtr negotiate_version(const QUICPacket &packet, QUICPacketFactory *packet_factory);
+  QUICConnectionErrorUPtr negotiate_version(const QUICVersionNegotiationPacketR &packet, QUICPacketFactory *packet_factory);
   void reset();
 
   // for server side
-  QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, const QUICPacket &initial_packet, QUICPacketFactory *packet_factory,
-                                const QUICPreferredAddress *pref_addr);
+  QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, const QUICInitialPacketR &initial_packet,
+                                QUICPacketFactory *packet_factory, const QUICPreferredAddress *pref_addr);
 
   QUICConnectionErrorUPtr do_handshake();
 

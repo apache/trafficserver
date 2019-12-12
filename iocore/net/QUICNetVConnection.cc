@@ -1046,23 +1046,23 @@ QUICNetVConnection::_state_handshake_process_packet(const QUICPacket &packet)
   QUICConnectionErrorUPtr error = nullptr;
   switch (packet.type()) {
   case QUICPacketType::VERSION_NEGOTIATION:
-    error = this->_state_handshake_process_version_negotiation_packet(packet);
+    error = this->_state_handshake_process_version_negotiation_packet(static_cast<const QUICVersionNegotiationPacketR &>(packet));
     break;
   case QUICPacketType::INITIAL:
-    error = this->_state_handshake_process_initial_packet(packet);
+    error = this->_state_handshake_process_initial_packet(static_cast<const QUICInitialPacketR &>(packet));
     break;
   case QUICPacketType::RETRY:
-    error = this->_state_handshake_process_retry_packet(packet);
+    error = this->_state_handshake_process_retry_packet(static_cast<const QUICRetryPacketR &>(packet));
     break;
   case QUICPacketType::HANDSHAKE:
-    error = this->_state_handshake_process_handshake_packet(packet);
+    error = this->_state_handshake_process_handshake_packet(static_cast<const QUICHandshakePacketR &>(packet));
     if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL) && this->netvc_context == NET_VCONNECTION_IN) {
       this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
       this->_minimum_encryption_level = QUICEncryptionLevel::HANDSHAKE;
     }
     break;
   case QUICPacketType::ZERO_RTT_PROTECTED:
-    error = this->_state_handshake_process_zero_rtt_protected_packet(packet);
+    error = this->_state_handshake_process_zero_rtt_protected_packet(static_cast<const QUICZeroRttPacketR &>(packet));
     break;
   case QUICPacketType::PROTECTED:
   default:
@@ -1075,7 +1075,7 @@ QUICNetVConnection::_state_handshake_process_packet(const QUICPacket &packet)
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_version_negotiation_packet(const QUICPacket &packet)
+QUICNetVConnection::_state_handshake_process_version_negotiation_packet(const QUICVersionNegotiationPacketR &packet)
 {
   QUICConnectionErrorUPtr error = nullptr;
 
@@ -1104,7 +1104,7 @@ QUICNetVConnection::_state_handshake_process_version_negotiation_packet(const QU
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &packet)
+QUICNetVConnection::_state_handshake_process_initial_packet(const QUICInitialPacketR &packet)
 {
   // QUIC packet could be smaller than MINIMUM_INITIAL_PACKET_SIZE when coalescing packets
   // if (packet->size() < MINIMUM_INITIAL_PACKET_SIZE) {
@@ -1163,7 +1163,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICPacket &pa
    This doesn't call this->_recv_and_ack(), because RETRY packet doesn't have any frames.
  */
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_retry_packet(const QUICPacket &packet)
+QUICNetVConnection::_state_handshake_process_retry_packet(const QUICRetryPacketR &packet)
 {
   ink_assert(this->netvc_context == NET_VCONNECTION_OUT);
 
@@ -1173,9 +1173,9 @@ QUICNetVConnection::_state_handshake_process_retry_packet(const QUICPacket &pack
   }
 
   // TODO: move packet->payload to _av_token
-  this->_av_token_len = packet.payload_length();
+  this->_av_token_len = packet.token().length();
   this->_av_token     = ats_unique_malloc(this->_av_token_len);
-  memcpy(this->_av_token.get(), packet.payload(), this->_av_token_len);
+  memcpy(this->_av_token.get(), packet.token().buf(), this->_av_token_len);
 
   this->_padder->set_av_token_len(this->_av_token_len);
 
@@ -1199,7 +1199,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(const QUICPacket &pack
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_handshake_packet(const QUICPacket &packet)
+QUICNetVConnection::_state_handshake_process_handshake_packet(const QUICHandshakePacketR &packet)
 {
   // Source address is verified by receiving any message from the client encrypted using the
   // Handshake keys.
@@ -1210,7 +1210,7 @@ QUICNetVConnection::_state_handshake_process_handshake_packet(const QUICPacket &
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(const QUICPacket &packet)
+QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(const QUICZeroRttPacketR &packet)
 {
   this->_stream_manager->init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                                   this->_handshake_handler->remote_transport_parameters());
@@ -1219,7 +1219,7 @@ QUICNetVConnection::_state_handshake_process_zero_rtt_protected_packet(const QUI
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_connection_established_process_protected_packet(const QUICPacket &packet)
+QUICNetVConnection::_state_connection_established_process_protected_packet(const QUICShortHeaderPacketR &packet)
 {
   QUICConnectionErrorUPtr error = nullptr;
   bool has_non_probing_frame    = false;
@@ -1276,13 +1276,13 @@ QUICNetVConnection::_state_connection_established_receive_packet()
     // Process the packet
     switch (packet->type()) {
     case QUICPacketType::PROTECTED:
-      error = this->_state_connection_established_process_protected_packet(*packet);
+      error = this->_state_connection_established_process_protected_packet(static_cast<QUICShortHeaderPacketR &>(*packet));
       break;
     case QUICPacketType::INITIAL:
     case QUICPacketType::HANDSHAKE:
     case QUICPacketType::ZERO_RTT_PROTECTED:
       // Pass packet to _recv_and_ack to send ack to the packet. Stream data will be discarded by offset mismatch.
-      error = this->_recv_and_ack(*packet);
+      error = this->_recv_and_ack(static_cast<QUICPacketR &>(*packet));
       break;
     default:
       QUICConDebug("Unknown packet type: %s(%" PRIu8 ")", QUICDebugNames::packet_type(packet->type()),
@@ -1309,7 +1309,7 @@ QUICNetVConnection::_state_closing_receive_packet()
         // Ignore VN packets on closing state
         break;
       default:
-        this->_recv_and_ack(*packet);
+        this->_recv_and_ack(static_cast<QUICPacketR &>(*packet));
         break;
       }
     }
@@ -1336,7 +1336,7 @@ QUICNetVConnection::_state_draining_receive_packet()
     uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet = this->_dequeue_recv_packet(packet_buf, result);
     if (result == QUICPacketCreationResult::SUCCESS) {
-      this->_recv_and_ack(*packet);
+      this->_recv_and_ack(static_cast<QUICPacketR &>(*packet));
       // Do NOT schedule WRITE_READY event from this point.
       // An endpoint in the draining state MUST NOT send any packets.
     }
@@ -1386,11 +1386,15 @@ QUICNetVConnection::_state_common_send_packet()
       QUICPacketUPtr packet          = this->_packetize_frames(packet_buf, level, max_packet_size, packet_info->frames);
 
       if (packet) {
-        packet_info->packet_number    = packet->packet_number();
-        packet_info->time_sent        = Thread::get_hrtime();
-        packet_info->ack_eliciting    = packet->is_ack_eliciting();
-        packet_info->is_crypto_packet = packet->is_crypto_packet();
-        packet_info->in_flight        = true;
+        packet_info->packet_number = packet->packet_number();
+        packet_info->time_sent     = Thread::get_hrtime();
+        packet_info->ack_eliciting = packet->is_ack_eliciting();
+        if (packet->type() == QUICPacketType::PROTECTED) {
+          packet_info->is_crypto_packet = false;
+        } else {
+          packet_info->is_crypto_packet = static_cast<QUICLongHeaderPacket &>(*packet).is_crypto_packet();
+        }
+        packet_info->in_flight = true;
         if (packet_info->ack_eliciting) {
           packet_info->sent_bytes = packet->size();
         } else {
@@ -1627,12 +1631,18 @@ QUICNetVConnection::_packetize_closing_frame()
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_recv_and_ack(const QUICPacket &packet, bool *has_non_probing_frame)
+QUICNetVConnection::_recv_and_ack(const QUICPacketR &packet, bool *has_non_probing_frame)
 {
   ink_assert(packet.type() != QUICPacketType::RETRY);
 
-  const uint8_t *payload      = packet.payload();
   uint16_t size               = packet.payload_length();
+  ats_unique_buf payload_ubuf = ats_unique_malloc(size);
+  uint8_t *payload            = payload_ubuf.get();
+  size_t copied_len           = 0;
+  for (auto b = packet.payload_block(); b; b = b->next) {
+    memcpy(payload + copied_len, b->start(), b->size());
+    copied_len += b->size();
+  }
   QUICPacketNumber packet_num = packet.packet_number();
   QUICEncryptionLevel level   = QUICTypeUtil::encryption_level(packet.type());
 
@@ -1644,8 +1654,8 @@ QUICNetVConnection::_recv_and_ack(const QUICPacket &packet, bool *has_non_probin
     *has_non_probing_frame = false;
   }
 
-  error =
-    this->_frame_dispatcher->receive_frames(level, payload, size, ack_only, is_flow_controlled, has_non_probing_frame, &packet);
+  error = this->_frame_dispatcher->receive_frames(level, payload, size, ack_only, is_flow_controlled, has_non_probing_frame,
+                                                  static_cast<const QUICPacketR *>(&packet));
   if (error != nullptr) {
     return error;
   }
@@ -1773,8 +1783,8 @@ QUICNetVConnection::_dequeue_recv_packet(uint8_t *packet_buf, QUICPacketCreation
     if (this->direction() == NET_VCONNECTION_OUT) {
       // Reset CID if a server sent back a new CID
       // FIXME This should happen only once - it should probably be controlled by PathManager
-      if (packet->type() != QUICPacketType::RETRY || !this->_av_token) {
-        QUICConnectionId src_cid = packet->source_cid();
+      if (packet->type() != QUICPacketType::PROTECTED && (packet->type() != QUICPacketType::RETRY || !this->_av_token)) {
+        QUICConnectionId src_cid = static_cast<QUICLongHeaderPacketR &>(*packet).source_cid();
         // FIXME src connection id could be zero ? if so, check packet header type.
         if (src_cid != QUICConnectionId::ZERO()) {
           if (this->_peer_quic_connection_id != src_cid) {
@@ -2171,7 +2181,7 @@ QUICNetVConnection::_setup_handshake_protocol(shared_SSL_CTX ctx)
 }
 
 QUICConnectionErrorUPtr
-QUICNetVConnection::_state_connection_established_migrate_connection(const QUICPacket &p)
+QUICNetVConnection::_state_connection_established_migrate_connection(const QUICPacketR &p)
 {
   ink_assert(this->_handshake_handler->is_completed());
 

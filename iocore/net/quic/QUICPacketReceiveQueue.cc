@@ -84,7 +84,7 @@ QUICPacketReceiveQueue::dequeue(uint8_t *packet_buf, QUICPacketCreationResult &r
 
     if (QUICInvariants::is_long_header(buf)) {
       QUICVersion version;
-      QUICPacketLongHeader::version(version, buf, remaining_len);
+      QUICLongHeaderPacketR::version(version, buf, remaining_len);
       if (is_vn(version)) {
         pkt_len = remaining_len;
         type    = QUICPacketType::VERSION_NEGOTIATION;
@@ -92,17 +92,17 @@ QUICPacketReceiveQueue::dequeue(uint8_t *packet_buf, QUICPacketCreationResult &r
         result  = QUICPacketCreationResult::UNSUPPORTED;
         pkt_len = remaining_len;
       } else {
-        QUICPacketLongHeader::type(type, this->_payload.get() + this->_offset, remaining_len);
+        QUICLongHeaderPacketR::type(type, this->_payload.get() + this->_offset, remaining_len);
         if (type == QUICPacketType::RETRY) {
           pkt_len = remaining_len;
         } else {
-          if (!QUICPacketLongHeader::packet_length(pkt_len, this->_payload.get() + this->_offset, remaining_len)) {
+          if (!QUICLongHeaderPacketR::packet_length(pkt_len, this->_payload.get() + this->_offset, remaining_len)) {
+            // This should not happen basically. Ignore rest of data on current packet.
             this->_payload.release();
             this->_payload     = nullptr;
             this->_payload_len = 0;
             this->_offset      = 0;
-
-            result = QUICPacketCreationResult::IGNORED;
+            result             = QUICPacketCreationResult::IGNORED;
 
             return quic_packet;
           }

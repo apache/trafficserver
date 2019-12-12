@@ -120,7 +120,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_fa
 }
 
 QUICConnectionErrorUPtr
-QUICHandshake::start(const QUICTPConfig &tp_config, const QUICPacket &initial_packet, QUICPacketFactory *packet_factory,
+QUICHandshake::start(const QUICTPConfig &tp_config, const QUICInitialPacketR &initial_packet, QUICPacketFactory *packet_factory,
                      const QUICPreferredAddress *pref_addr)
 {
   // Negotiate version
@@ -144,7 +144,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, const QUICPacket &initial_pa
 }
 
 QUICConnectionErrorUPtr
-QUICHandshake::negotiate_version(const QUICPacket &vn, QUICPacketFactory *packet_factory)
+QUICHandshake::negotiate_version(const QUICVersionNegotiationPacketR &vn, QUICPacketFactory *packet_factory)
 {
   // Client side only
   ink_assert(this->_qc->direction() == NET_VCONNECTION_OUT);

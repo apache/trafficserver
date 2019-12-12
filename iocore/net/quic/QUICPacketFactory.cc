@@ -65,53 +65,54 @@ QUICPacketUPtr
 QUICPacketFactory::create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoint from, IpEndpoint to, ats_unique_buf buf,
                           size_t len, QUICPacketNumber base_packet_number, QUICPacketCreationResult &result)
 {
-  size_t max_plain_txt_len = 2048;
-  ats_unique_buf plain_txt = ats_unique_malloc(max_plain_txt_len);
-  size_t plain_txt_len     = 0;
+  QUICPacket *packet = nullptr;
 
-  QUICPacketHeaderUPtr header = QUICPacketHeader::load(from, to, std::move(buf), len, base_packet_number);
+  // FIXME This is temporal. Receive IOBufferBlock from the caller.
+  Ptr<IOBufferBlock> whole_data = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  whole_data->alloc(iobuffer_size_to_index(len));
+  memcpy(whole_data->start(), buf.get(), len);
+  whole_data->fill(len);
 
-  QUICConnectionId dcid = header->destination_cid();
-  QUICConnectionId scid = header->source_cid();
-  QUICVDebug(scid, dcid, "Decrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(header->type()),
-             header->packet_number(), QUICDebugNames::key_phase(header->key_phase()));
+  QUICPacketType type;
+  QUICVersion version;
+  QUICConnectionId dcid;
+  QUICConnectionId scid;
+  QUICPacketNumber packet_number;
+  QUICKeyPhase key_phase;
 
-  if (header->has_version() && !QUICTypeUtil::is_supported_version(header->version())) {
-    if (header->type() == QUICPacketType::VERSION_NEGOTIATION) {
-      // version of VN packet is 0x00000000
-      // This packet is unprotected. Just copy the payload
+  QUICPacketR::read_essential_info(whole_data, type, version, dcid, scid, packet_number, base_packet_number, key_phase);
+
+  QUICVDebug(scid, dcid, "Decrypting %s packet #%" PRIu64 " using %s", QUICDebugNames::packet_type(type), packet_number,
+             QUICDebugNames::key_phase(key_phase));
+
+  if (type != QUICPacketType::PROTECTED && !QUICTypeUtil::is_supported_version(version)) {
+    if (type == QUICPacketType::VERSION_NEGOTIATION) {
+      packet = new QUICVersionNegotiationPacketR(udp_con, from, to, whole_data);
       result = QUICPacketCreationResult::SUCCESS;
-      memcpy(plain_txt.get(), header->payload(), header->payload_size());
-      plain_txt_len = header->payload_size();
     } else {
       // We can't decrypt packets that have unknown versions
       // What we can use is invariant field of Long Header - version, dcid, and scid
       result = QUICPacketCreationResult::UNSUPPORTED;
     }
   } else {
-    Ptr<IOBufferBlock> plain         = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    Ptr<IOBufferBlock> protected_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    protected_ibb->set_internal(reinterpret_cast<void *>(const_cast<uint8_t *>(header->payload())), header->payload_size(),
-                                BUFFER_SIZE_NOT_ALLOCATED);
-    Ptr<IOBufferBlock> header_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    header_ibb->set_internal(reinterpret_cast<void *>(const_cast<uint8_t *>(header->buf())), header->size(),
-                             BUFFER_SIZE_NOT_ALLOCATED);
-
-    switch (header->type()) {
+    Ptr<IOBufferBlock> plain;
+    switch (type) {
     case QUICPacketType::STATELESS_RESET:
+      packet = new (packet_buf) QUICStatelessResetPacketR(udp_con, from, to, whole_data);
+      result = QUICPacketCreationResult::SUCCESS;
+      break;
     case QUICPacketType::RETRY:
-      // These packets are unprotected. Just copy the payload
-      memcpy(plain_txt.get(), header->payload(), header->payload_size());
-      plain_txt_len = header->payload_size();
-      result        = QUICPacketCreationResult::SUCCESS;
+      packet = new (packet_buf) QUICRetryPacketR(udp_con, from, to, whole_data);
+      result = QUICPacketCreationResult::SUCCESS;
       break;
     case QUICPacketType::PROTECTED:
-      if (this->_pp_key_info.is_decryption_key_available(header->key_phase())) {
-        plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
+      packet = new (packet_buf) QUICShortHeaderPacketR(udp_con, from, to, whole_data, base_packet_number);
+      if (this->_pp_key_info.is_decryption_key_available(packet->key_phase())) {
+        plain = this->_pp_protector.unprotect(packet->header_block(), packet->payload_block(), packet->packet_number(),
+                                              packet->key_phase());
         if (plain != nullptr) {
-          memcpy(plain_txt.get(), plain->buf(), plain->size());
-          plain_txt_len = plain->size();
-          result        = QUICPacketCreationResult::SUCCESS;
+          static_cast<QUICShortHeaderPacketR *>(packet)->attach_payload(plain, true);
+          result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
         }
@@ -120,30 +121,28 @@ QUICPacketFactory::create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoin
       }
       break;
     case QUICPacketType::INITIAL:
+      packet = new (packet_buf) QUICInitialPacketR(udp_con, from, to, whole_data, base_packet_number);
       if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL)) {
-        if (QUICTypeUtil::is_supported_version(header->version())) {
-          plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
-          if (plain != nullptr) {
-            memcpy(plain_txt.get(), plain->buf(), plain->size());
-            plain_txt_len = plain->size();
-            result        = QUICPacketCreationResult::SUCCESS;
-          } else {
-            result = QUICPacketCreationResult::FAILED;
-          }
-        } else {
+        plain = this->_pp_protector.unprotect(packet->header_block(), packet->payload_block(), packet->packet_number(),
+                                              packet->key_phase());
+        if (plain != nullptr) {
+          static_cast<QUICInitialPacketR *>(packet)->attach_payload(plain, true);
           result = QUICPacketCreationResult::SUCCESS;
+        } else {
+          result = QUICPacketCreationResult::FAILED;
         }
       } else {
         result = QUICPacketCreationResult::IGNORED;
       }
       break;
     case QUICPacketType::HANDSHAKE:
+      packet = new (packet_buf) QUICHandshakePacketR(udp_con, from, to, whole_data, base_packet_number);
       if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::HANDSHAKE)) {
-        plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
+        plain = this->_pp_protector.unprotect(packet->header_block(), packet->payload_block(), packet->packet_number(),
+                                              packet->key_phase());
         if (plain != nullptr) {
-          memcpy(plain_txt.get(), plain->buf(), plain->size());
-          plain_txt_len = plain->size();
-          result        = QUICPacketCreationResult::SUCCESS;
+          static_cast<QUICHandshakePacketR *>(packet)->attach_payload(plain, true);
+          result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::FAILED;
         }
@@ -152,12 +151,13 @@ QUICPacketFactory::create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoin
       }
       break;
     case QUICPacketType::ZERO_RTT_PROTECTED:
+      packet = new (packet_buf) QUICZeroRttPacketR(udp_con, from, to, whole_data, base_packet_number);
       if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::ZERO_RTT)) {
-        plain = this->_pp_protector.unprotect(header_ibb, protected_ibb, header->packet_number(), header->key_phase());
+        plain = this->_pp_protector.unprotect(packet->header_block(), packet->payload_block(), packet->packet_number(),
+                                              packet->key_phase());
         if (plain != nullptr) {
-          memcpy(plain_txt.get(), plain->buf(), plain->size());
-          plain_txt_len = plain->size();
-          result        = QUICPacketCreationResult::SUCCESS;
+          static_cast<QUICZeroRttPacketR *>(packet)->attach_payload(plain, true);
+          result = QUICPacketCreationResult::SUCCESS;
         } else {
           result = QUICPacketCreationResult::IGNORED;
         }
@@ -171,9 +171,8 @@ QUICPacketFactory::create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoin
     }
   }
 
-  QUICPacket *packet = nullptr;
-  if (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::UNSUPPORTED) {
-    packet = new (packet_buf) QUICPacket(udp_con, std::move(header), std::move(plain_txt), plain_txt_len);
+  if (result != QUICPacketCreationResult::SUCCESS && result != QUICPacketCreationResult::UNSUPPORTED) {
+    packet = nullptr;
   }
 
   return QUICPacketUPtr(packet, &QUICPacketDeleter::delete_dont_free);

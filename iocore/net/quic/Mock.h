@@ -635,9 +635,29 @@ public:
   }
 };
 
-class MockQUICPacket : public QUICPacket
+class MockQUICPacketR : public QUICPacketR
 {
 public:
+  MockQUICPacketR() : QUICPacketR(nullptr, {}, {}) {}
+
+  QUICPacketType
+  type() const override
+  {
+    return QUICPacketType::PROTECTED;
+  }
+
+  QUICConnectionId
+  destination_cid() const override
+  {
+    return QUICConnectionId::ZERO();
+  }
+
+  QUICPacketNumber
+  packet_number() const override
+  {
+    return 0;
+  }
+
   const IpEndpoint &
   from() const override
   {

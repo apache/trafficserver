@@ -307,6 +307,8 @@ public:
     RETRY,
   };
 
+  // FIXME Check token length
+  QUICAddressValidationToken(const uint8_t *buf, uint8_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
   virtual ~QUICAddressValidationToken(){};
 
   static Type
@@ -316,15 +318,30 @@ public:
     return static_cast<Type>(buf[0]) == Type::RESUMPTION ? Type::RESUMPTION : Type::RETRY;
   }
 
-  virtual const uint8_t *buf() const = 0;
-  virtual uint8_t length() const     = 0;
+  virtual const uint8_t *
+  buf() const
+  {
+    return this->_token;
+  }
+
+  virtual uint8_t
+  length() const
+  {
+    return this->_token_len;
+  }
+
+protected:
+  QUICAddressValidationToken() {}
+
+  // The size have to be big enough for the longuest token ATS use
+  uint8_t _token[1 + EVP_MAX_MD_SIZE + QUICConnectionId::MAX_LENGTH + 4] = {};
+  unsigned int _token_len;
 };
 
 class QUICResumptionToken : public QUICAddressValidationToken
 {
 public:
-  QUICResumptionToken() {}
-  QUICResumptionToken(const uint8_t *buf, uint8_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
+  QUICResumptionToken(const uint8_t *buf, uint8_t len) : QUICAddressValidationToken(buf, len) {}
   QUICResumptionToken(const IpEndpoint &src, QUICConnectionId cid, ink_hrtime expire_time);
 
   bool
@@ -340,29 +357,12 @@ public:
 
   const QUICConnectionId cid() const;
   const ink_hrtime expire_time() const;
-
-  const uint8_t *
-  buf() const override
-  {
-    return this->_token;
-  }
-
-  uint8_t
-  length() const override
-  {
-    return this->_token_len;
-  }
-
-private:
-  uint8_t _token[1 + EVP_MAX_MD_SIZE + QUICConnectionId::MAX_LENGTH + 4];
-  unsigned int _token_len;
 };
 
 class QUICRetryToken : public QUICAddressValidationToken
 {
 public:
-  QUICRetryToken() {}
-  QUICRetryToken(const uint8_t *buf, uint8_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
+  QUICRetryToken(const uint8_t *buf, uint8_t len) : QUICAddressValidationToken(buf, len) {}
   QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid);
 
   bool
@@ -378,21 +378,7 @@ public:
 
   const QUICConnectionId original_dcid() const;
 
-  const uint8_t *
-  buf() const override
-  {
-    return this->_token;
-  }
-
-  uint8_t
-  length() const override
-  {
-    return this->_token_len;
-  }
-
 private:
-  uint8_t _token[1 + EVP_MAX_MD_SIZE + QUICConnectionId::MAX_LENGTH] = {};
-  unsigned int _token_len                                            = 0;
   QUICConnectionId _original_dcid;
 };
 

@@ -43,7 +43,7 @@ QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
 
 QUICConnectionErrorUPtr
 QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &ack_only,
-                                    bool &is_flow_controlled, bool *has_non_probing_frame, const QUICPacket *packet)
+                                    bool &is_flow_controlled, bool *has_non_probing_frame, const QUICPacketR *packet)
 {
   uint16_t cursor               = 0;
   ack_only                      = true;

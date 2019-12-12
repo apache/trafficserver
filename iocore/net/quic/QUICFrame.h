@@ -36,7 +36,7 @@
 class QUICFrame;
 class QUICStreamFrame;
 class QUICCryptoFrame;
-class QUICPacket;
+class QUICPacketR;
 class QUICFrameGenerator;
 
 using QUICFrameId = uint64_t;
@@ -57,16 +57,16 @@ public:
   virtual bool is_flow_controlled() const;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const = 0;
   virtual int debug_msg(char *msg, size_t msg_len) const;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet){};
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet){};
   virtual QUICFrameGenerator *generated_by();
   bool valid() const;
   bool ack_eliciting() const;
-  const QUICPacket *packet() const;
+  const QUICPacketR *packet() const;
   LINK(QUICFrame, link);
 
 protected:
   virtual void _reset(){};
-  QUICFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr, const QUICPacket *packet = nullptr)
+  QUICFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr, const QUICPacketR *packet = nullptr)
     : _id(id), _owner(owner), _packet(packet)
   {
   }
@@ -74,7 +74,7 @@ protected:
   bool _valid                = false;
   QUICFrameId _id            = 0;
   QUICFrameGenerator *_owner = nullptr;
-  const QUICPacket *_packet  = nullptr;
+  const QUICPacketR *_packet = nullptr;
 };
 
 //
@@ -85,7 +85,7 @@ class QUICStreamFrame : public QUICFrame
 {
 public:
   QUICStreamFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICStreamFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICStreamFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICStreamFrame(Ptr<IOBufferBlock> &block, QUICStreamId streamid, QUICOffset offset, bool last = false,
                   bool has_offset_field = true, bool has_length_field = true, QUICFrameId id = 0,
                   QUICFrameGenerator *owner = nullptr);
@@ -96,7 +96,7 @@ public:
   virtual bool is_flow_controlled() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
 
   QUICStreamId stream_id() const;
   QUICOffset offset() const;
@@ -131,7 +131,7 @@ class QUICCryptoFrame : public QUICFrame
 {
 public:
   QUICCryptoFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICCryptoFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICCryptoFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICCryptoFrame(Ptr<IOBufferBlock> &block, QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   QUICCryptoFrame(const QUICCryptoFrame &o);
 
@@ -139,7 +139,7 @@ public:
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
 
   QUICOffset offset() const;
   uint64_t data_length() const;
@@ -257,7 +257,7 @@ public:
   };
 
   QUICAckFrame(QUICFrameId id = 0) : QUICFrame(id) {}
-  QUICAckFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICAckFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block, QUICFrameId id = 0,
                QUICFrameGenerator *owner = nullptr);
 
@@ -268,7 +268,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
   QUICPacketNumber largest_acknowledged() const;
@@ -296,7 +296,7 @@ class QUICRstStreamFrame : public QUICFrame
 {
 public:
   QUICRstStreamFrame(QUICFrameId id = 0) : QUICFrame(id) {}
-  QUICRstStreamFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICRstStreamFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICRstStreamFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICOffset final_offset, QUICFrameId id = 0,
                      QUICFrameGenerator *owner = nullptr);
 
@@ -304,7 +304,7 @@ public:
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
 
   QUICStreamId stream_id() const;
   QUICAppErrorCode error_code() const;
@@ -326,11 +326,11 @@ class QUICPingFrame : public QUICFrame
 {
 public:
   QUICPingFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICPingFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICPingFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
 
 private:
 };
@@ -343,12 +343,12 @@ class QUICPaddingFrame : public QUICFrame
 {
 public:
   QUICPaddingFrame(size_t size) : _size(size) {}
-  QUICPaddingFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICPaddingFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual bool is_probing_frame() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
 
 private:
   // padding frame is a resident of padding frames
@@ -364,7 +364,7 @@ class QUICConnectionCloseFrame : public QUICFrame
 {
 public:
   QUICConnectionCloseFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICConnectionCloseFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICConnectionCloseFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   // Constructor for transport error codes
   QUICConnectionCloseFrame(uint64_t error_code, QUICFrameType frame_type, uint64_t reason_phrase_length, const char *reason_phrase,
                            QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
@@ -375,7 +375,7 @@ public:
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
 
   uint16_t error_code() const;
   QUICFrameType frame_type() const;
@@ -400,13 +400,13 @@ class QUICMaxDataFrame : public QUICFrame
 {
 public:
   QUICMaxDataFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICMaxDataFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICMaxDataFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICMaxDataFrame(uint64_t maximum_data, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
 
   uint64_t maximum_data() const;
 
@@ -424,12 +424,12 @@ class QUICMaxStreamDataFrame : public QUICFrame
 {
 public:
   QUICMaxStreamDataFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICMaxStreamDataFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICMaxStreamDataFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICMaxStreamDataFrame(QUICStreamId stream_id, uint64_t maximum_stream_data, QUICFrameId id = 0,
                          QUICFrameGenerator *owner = nullptr);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
@@ -451,12 +451,12 @@ class QUICMaxStreamsFrame : public QUICFrame
 {
 public:
   QUICMaxStreamsFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICMaxStreamsFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICMaxStreamsFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICMaxStreamsFrame(QUICStreamId maximum_streams, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   uint64_t maximum_streams() const;
 
 private:
@@ -472,13 +472,13 @@ class QUICDataBlockedFrame : public QUICFrame
 {
 public:
   QUICDataBlockedFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICDataBlockedFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICDataBlockedFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICDataBlockedFrame(QUICOffset offset, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _offset(offset){};
 
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
 
@@ -498,14 +498,14 @@ class QUICStreamDataBlockedFrame : public QUICFrame
 {
 public:
   QUICStreamDataBlockedFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICStreamDataBlockedFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICStreamDataBlockedFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICStreamDataBlockedFrame(QUICStreamId s, QUICOffset o, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _stream_id(s), _offset(o){};
 
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
   QUICStreamId stream_id() const;
@@ -525,7 +525,7 @@ class QUICStreamIdBlockedFrame : public QUICFrame
 {
 public:
   QUICStreamIdBlockedFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICStreamIdBlockedFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICStreamIdBlockedFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICStreamIdBlockedFrame(QUICStreamId s, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _stream_id(s)
   {
@@ -533,7 +533,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
 
   QUICStreamId stream_id() const;
 
@@ -551,7 +551,7 @@ class QUICNewConnectionIdFrame : public QUICFrame
 {
 public:
   QUICNewConnectionIdFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICNewConnectionIdFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICNewConnectionIdFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICNewConnectionIdFrame(uint64_t seq, uint64_t ret, const QUICConnectionId &cid, QUICStatelessResetToken token,
                            QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _sequence(seq), _retire_prior_to(ret), _connection_id(cid), _stateless_reset_token(token){};
@@ -559,7 +559,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
   uint64_t sequence() const;
@@ -584,13 +584,13 @@ class QUICStopSendingFrame : public QUICFrame
 {
 public:
   QUICStopSendingFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICStopSendingFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICStopSendingFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICStopSendingFrame(QUICStreamId stream_id, QUICAppErrorCode error_code, QUICFrameId id = 0,
                        QUICFrameGenerator *owner = nullptr);
 
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
 
   QUICStreamId stream_id() const;
@@ -612,7 +612,7 @@ class QUICPathChallengeFrame : public QUICFrame
 public:
   static constexpr uint8_t DATA_LEN = 8;
   QUICPathChallengeFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICPathChallengeFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICPathChallengeFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICPathChallengeFrame(ats_unique_buf data, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _data(std::move(data))
   {
@@ -620,7 +620,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual bool is_probing_frame() const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
@@ -641,7 +641,7 @@ class QUICPathResponseFrame : public QUICFrame
 public:
   static constexpr uint8_t DATA_LEN = 8;
   QUICPathResponseFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICPathResponseFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICPathResponseFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICPathResponseFrame(ats_unique_buf data, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _data(std::move(data))
   {
@@ -649,7 +649,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual bool is_probing_frame() const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
@@ -669,7 +669,7 @@ class QUICNewTokenFrame : public QUICFrame
 {
 public:
   QUICNewTokenFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICNewTokenFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICNewTokenFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICNewTokenFrame(ats_unique_buf token, size_t token_length, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _token_length(token_length), _token(std::move(token))
   {
@@ -677,7 +677,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
 
   uint64_t token_length() const;
   const uint8_t *token() const;
@@ -697,7 +697,7 @@ class QUICRetireConnectionIdFrame : public QUICFrame
 {
 public:
   QUICRetireConnectionIdFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
-  QUICRetireConnectionIdFrame(const uint8_t *buf, size_t len, const QUICPacket *packet = nullptr);
+  QUICRetireConnectionIdFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICRetireConnectionIdFrame(uint64_t seq_num, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr)
     : QUICFrame(id, owner), _seq_num(seq_num)
   {
@@ -705,7 +705,7 @@ public:
   virtual QUICFrameType type() const override;
   virtual size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  virtual void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   virtual int debug_msg(char *msg, size_t msg_len) const override;
 
   uint64_t seq_num() const;
@@ -725,7 +725,7 @@ class QUICUnknownFrame : public QUICFrame
   QUICFrameType type() const override;
   size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
-  void parse(const uint8_t *buf, size_t len, const QUICPacket *packet) override;
+  void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
   int debug_msg(char *msg, size_t msg_len) const override;
 };
 
@@ -738,13 +738,13 @@ public:
   /*
    * This is used for creating a QUICFrame object based on received data.
    */
-  static QUICFrame *create(uint8_t *buf, const uint8_t *src, size_t len, const QUICPacket *packet);
+  static QUICFrame *create(uint8_t *buf, const uint8_t *src, size_t len, const QUICPacketR *packet);
 
   /*
    * This works almost the same as create() but it reuses created objects for performance.
    * If you create a frame object which has the same frame type that you created before, the object will be reset by new data.
    */
-  const QUICFrame &fast_create(const uint8_t *buf, size_t len, const QUICPacket *packet);
+  const QUICFrame &fast_create(const uint8_t *buf, size_t len, const QUICPacketR *packet);
 
   /*
    * Creates a STREAM frame.

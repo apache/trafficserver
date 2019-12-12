@@ -254,7 +254,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     QUICPacketType type = QUICPacketType::UNINITIALIZED;
-    QUICPacketLongHeader::type(type, buf, buf_len);
+    QUICLongHeaderPacketR::type(type, buf, buf_len);
     if (type == QUICPacketType::INITIAL) {
       // [draft-18] 7.2.
       // When an Initial packet is sent by a client which has not previously received a Retry packet from the server, it populates
@@ -373,7 +373,7 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
                                       QUICConnectionId dcid, QUICConnectionId scid, QUICConnectionId *original_cid)
 {
   QUICPacketType type = QUICPacketType::UNINITIALIZED;
-  QUICPacketLongHeader::type(type, buf, buf_len);
+  QUICPacketR::type(type, buf, buf_len);
 
   if (type != QUICPacketType::INITIAL) {
     return 1;
@@ -383,7 +383,7 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
   size_t token_length              = 0;
   uint8_t token_length_field_len   = 0;
   size_t token_length_field_offset = 0;
-  if (!QUICPacketLongHeader::token_length(token_length, token_length_field_len, token_length_field_offset, buf, buf_len)) {
+  if (!QUICInitialPacketR::token_length(token_length, token_length_field_len, token_length_field_offset, buf, buf_len)) {
     return -1;
   }
 
