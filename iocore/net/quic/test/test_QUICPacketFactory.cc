@@ -36,15 +36,16 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   QUICConnectionId dcid(raw_dcid, 8);
   QUICConnectionId scid(raw_scid, 8);
 
-  QUICPacketUPtr vn_packet = factory.create_version_negotiation_packet(scid, dcid);
+  QUICPacketUPtr packet = factory.create_version_negotiation_packet(scid, dcid);
+  REQUIRE(packet != nullptr);
 
-  REQUIRE(vn_packet != nullptr);
-  CHECK(vn_packet->type() == QUICPacketType::VERSION_NEGOTIATION);
-  CHECK(vn_packet->destination_cid() == scid);
-  CHECK(vn_packet->source_cid() == dcid);
-  CHECK(vn_packet->version() == 0x00);
+  QUICVersionNegotiationPacket &vn_packet = static_cast<QUICVersionNegotiationPacket &>(*packet);
+  CHECK(vn_packet.type() == QUICPacketType::VERSION_NEGOTIATION);
+  CHECK(vn_packet.destination_cid() == scid);
+  CHECK(vn_packet.source_cid() == dcid);
+  CHECK(vn_packet.version() == 0x00);
 
-  QUICVersion supported_version = QUICTypeUtil::read_QUICVersion(reinterpret_cast<uint8_t *>(vn_packet->payload_block()->start()));
+  QUICVersion supported_version = QUICTypeUtil::read_QUICVersion(reinterpret_cast<uint8_t *>(vn_packet.payload_block()->start()));
   CHECK(supported_version == QUIC_SUPPORTED_VERSIONS[0]);
 
   uint8_t expected[] = {
@@ -59,7 +60,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   };
   uint8_t buf[1024] = {0};
   size_t buf_len;
-  vn_packet->store(buf, &buf_len);
+  vn_packet.store(buf, &buf_len);
   CHECK((buf[0] & 0x80) == 0x80); // Lower 7 bits of the first byte is random
   CHECK(memcmp(buf + 1, expected + 1, buf_len - 1) == 0);
 }
@@ -79,13 +80,13 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
                                 QUICConnectionId(reinterpret_cast<const uint8_t *>("\x04\x03\x02\x01"), 4), token);
 
   REQUIRE(packet != nullptr);
-  CHECK(packet->type() == QUICPacketType::RETRY);
-  CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
-  CHECK(packet->version() == QUIC_SUPPORTED_VERSIONS[0]);
 
-  QUICRetryPacket *retry_packet = dynamic_cast<QUICRetryPacket *>(packet.get());
-  CHECK(retry_packet->original_dcid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x04\x03\x02\x01"), 4));
-  CHECK(retry_packet->token() == token);
+  QUICRetryPacket &retry_packet = static_cast<QUICRetryPacket &>(*packet);
+  CHECK(retry_packet.type() == QUICPacketType::RETRY);
+  CHECK(retry_packet.destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4));
+  CHECK(retry_packet.version() == QUIC_SUPPORTED_VERSIONS[0]);
+  CHECK(retry_packet.original_dcid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x04\x03\x02\x01"), 4));
+  CHECK(retry_packet.token() == token);
 }
 
 TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
@@ -106,11 +107,13 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
     packet_buf, QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
     QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4), 0, payload, sizeof(raw), true, false, true);
   REQUIRE(packet != nullptr);
-  CHECK(packet->type() == QUICPacketType::HANDSHAKE);
-  CHECK((packet->destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4)));
-  CHECK(memcmp(packet->payload_block()->start(), raw, sizeof(raw)) != 0);
-  CHECK(packet->packet_number() <= 0xFFFFFBFF);
-  CHECK(packet->version() == 0x11223344);
+
+  QUICHandshakePacket &handshake_packet = reinterpret_cast<QUICHandshakePacket &>(*packet);
+  CHECK(handshake_packet.type() == QUICPacketType::HANDSHAKE);
+  CHECK(handshake_packet.destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4));
+  CHECK(memcmp(handshake_packet.payload_block()->start(), raw, sizeof(raw)) != 0);
+  CHECK(handshake_packet.packet_number() <= 0xFFFFFBFF);
+  CHECK(handshake_packet.version() == 0x11223344);
 }
 
 TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
