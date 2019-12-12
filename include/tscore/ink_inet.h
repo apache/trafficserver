@@ -1179,6 +1179,7 @@ struct IpAddr {
 
   /// Construct from @c sockaddr.
   explicit IpAddr(sockaddr const *addr) { this->assign(addr); }
+  explicit IpAddr(sockaddr const &addr) { this->assign(&addr); }
   /// Construct from @c sockaddr_in6.
   explicit IpAddr(sockaddr_in6 const &addr) { this->assign(ats_ip_sa_cast(&addr)); }
   /// Construct from @c sockaddr_in6.

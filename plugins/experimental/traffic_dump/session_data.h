@@ -29,6 +29,7 @@
 #include <string_view>
 
 #include "ts/ts.h"
+#include "tscore/ink_inet.h"
 #include "tscore/ts_file.h"
 
 namespace traffic_dump
@@ -100,6 +101,9 @@ private:
   /// The running counter of all sessions dumped by traffic_dump.
   static uint64_t session_counter;
 
+  /// Only addresses with this IP will be dumped (if set).
+  static std::optional<IpAddr> client_ip_filter;
+
 public:
   SessionData();
   ~SessionData();
@@ -111,8 +115,9 @@ public:
    *
    * @return True if initialization is successful, false otherwise.
    */
-  static bool init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size);
-  static bool init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size, std::string_view sni_filter);
+  static bool init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size, std::string_view ip_filter);
+  static bool init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size, std::string_view ip_filter,
+                   std::string_view sni_filter);
 
   /** Set the sample_pool_size to a new value.
    *
@@ -172,6 +177,22 @@ private:
    * system, TS_ERROR otherwise.
    */
   int write_to_disk_no_lock(std::string_view content);
+
+  /** Determine whether the user configured IP filter indicates this transaction
+   * should not be dumped.
+   *
+   * @note This also does some validity verification on the IP, making sure it is
+   * v4 or v6, and returns true (i.e., it should be filtered out) if it does not
+   * match these checks. These checks are required in order to perform the IP
+   * filtering logic. This function will only return true if the client has
+   * enabled client filtering.
+   *
+   * @param[in] session_client_ip The session's client address.
+   *
+   * @return True if the provided address should not be dumped per the user's
+   * configuration, false otherwise.
+   */
+  static bool is_filtered_out(const sockaddr *session_client_ip);
 
   /** Get the JSON string that describes the client session stack.
    *

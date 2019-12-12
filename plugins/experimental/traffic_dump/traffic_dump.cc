@@ -81,22 +81,33 @@ TSPluginInit(int argc, char const *argv[])
     return;
   }
 
+  bool dump_body                       = false;
   bool sensitive_fields_were_specified = false;
   traffic_dump::sensitive_fields_t user_specified_fields;
   ts::file::path log_dir{traffic_dump::SessionData::default_log_directory};
   int64_t sample_pool_size = traffic_dump::SessionData::default_sample_pool_size;
   int64_t max_disk_usage   = traffic_dump::SessionData::default_max_disk_usage;
   std::string sni_filter;
+  std::string client_ip_filter;
 
   /// Commandline options
-  static const struct option longopts[] = {
-    {"logdir", required_argument, nullptr, 'l'},     {"sample", required_argument, nullptr, 's'},
-    {"limit", required_argument, nullptr, 'm'},      {"sensitive-fields", required_argument, nullptr, 'f'},
-    {"sni-filter", required_argument, nullptr, 'n'}, {nullptr, no_argument, nullptr, 0}};
-  int opt = 0;
+  static const struct option longopts[] = {{"dump_body", no_argument, nullptr, 'b'},
+                                           {"logdir", required_argument, nullptr, 'l'},
+                                           {"sample", required_argument, nullptr, 's'},
+                                           {"limit", required_argument, nullptr, 'm'},
+                                           {"sensitive-fields", required_argument, nullptr, 'f'},
+                                           {"sni-filter", required_argument, nullptr, 'n'},
+                                           {"client_ipv4", required_argument, nullptr, '4'},
+                                           {"client_ipv6", required_argument, nullptr, '6'},
+                                           {nullptr, no_argument, nullptr, 0}};
+  int opt                               = 0;
   while (opt >= 0) {
-    opt = getopt_long(argc, const_cast<char *const *>(argv), "l:", longopts, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "bf:l:s:m:n:4:6", longopts, nullptr);
     switch (opt) {
+    case 'b': {
+      dump_body = true;
+      break;
+    }
     case 'f': {
       // --sensitive-fields takes a comma-separated list of HTTP fields that
       // are sensitive.  The field values for these fields will be replaced
@@ -133,6 +144,12 @@ TSPluginInit(int argc, char const *argv[])
     }
     case 'm': {
       max_disk_usage = static_cast<int64_t>(std::strtol(optarg, nullptr, 0));
+      break;
+    }
+    case '4':
+    case '6': {
+      client_ip_filter = std::string(optarg);
+      break;
     }
     case -1:
     case '?':
@@ -148,26 +165,26 @@ TSPluginInit(int argc, char const *argv[])
     log_dir = ts::file::path(TSInstallDirGet()) / log_dir;
   }
   if (sni_filter.empty()) {
-    if (!traffic_dump::SessionData::init(log_dir.view(), max_disk_usage, sample_pool_size)) {
+    if (!traffic_dump::SessionData::init(log_dir.view(), max_disk_usage, sample_pool_size, client_ip_filter)) {
       TSError("[%s] Failed to initialize session state.", traffic_dump::debug_tag);
       return;
     }
   } else {
-    if (!traffic_dump::SessionData::init(log_dir.view(), max_disk_usage, sample_pool_size, sni_filter)) {
+    if (!traffic_dump::SessionData::init(log_dir.view(), max_disk_usage, sample_pool_size, client_ip_filter, sni_filter)) {
       TSError("[%s] Failed to initialize session state with an SNI filter.", traffic_dump::debug_tag);
       return;
     }
   }
 
   if (sensitive_fields_were_specified) {
-    if (!traffic_dump::TransactionData::init(std::move(user_specified_fields))) {
+    if (!traffic_dump::TransactionData::init(dump_body, std::move(user_specified_fields))) {
       TSError("[%s] Failed to initialize transaction state with user-specified fields.", traffic_dump::debug_tag);
       return;
     }
   } else {
     // The user did not provide their own list of sensitive fields. Use the
     // default.
-    if (!traffic_dump::TransactionData::init()) {
+    if (!traffic_dump::TransactionData::init(dump_body)) {
       TSError("[%s] Failed to initialize transaction state.", traffic_dump::debug_tag);
       return;
     }

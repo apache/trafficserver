@@ -18,6 +18,7 @@ Verify traffic_dump functionality.
 #  limitations under the License.
 
 import os
+
 Test.Summary = '''
 Verify traffic_dump functionality.
 '''
@@ -159,6 +160,9 @@ ts.Streams.stderr += Testers.ContainsExpression(
 ts.Streams.stderr += Testers.ContainsExpression(
     "Finish a session with log file of.*bytes",
     "Verify traffic_dump sees the end of sessions and accounts for it.")
+ts.Streams.stderr += Testers.ContainsExpression(
+    "Dumping body bytes: false",
+    "Verify that dumping body bytes is enabled.")
 
 # Set up the json replay file expectations.
 replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")
@@ -196,7 +200,7 @@ tr.Processes.Default.Command = \
      '-H"Host: www.notls.com" -H"X-Request-1: ultra_sensitive" --verbose'.format(
          ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/200.gold"
+tr.Processes.Default.Streams.stderr = "gold/200_get_sensitive_field.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 http_protocols = "tcp,ip"
@@ -208,7 +212,7 @@ tr.Processes.Default.Command = \
      '-H"X-Request-2: also_very_sensitive" --verbose'.format(
          ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/200.gold"
+tr.Processes.Default.Streams.stderr = "gold/200_get_sensitive_field.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 

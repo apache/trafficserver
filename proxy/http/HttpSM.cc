@@ -1616,7 +1616,7 @@ plugins required to work with sni_routing.
 // void HttpSM::handle_api_return()
 //
 //   Figures out what to do after calling api callouts
-//    have finished.  This messy and I would like
+//    have finished.  This is messy and I would like
 //    to come up with a cleaner way to handle the api
 //    return.  The way we are doing things also makes a
 //    mess of set_next_state()
@@ -3619,7 +3619,14 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post_server, event);
 
-  server_request_body_bytes = c->bytes_written;
+  // If is_using_post_buffer has been used, then this handler gets called
+  // twice, once with the buffered request body bytes and a second time with
+  // the (now) zero length user agent buffer. See wait_for_full_body where
+  // these bytes are read. Don't clobber the server_request_body_bytes with
+  // zero on that second read.
+  if (server_request_body_bytes == 0) {
+    server_request_body_bytes = c->bytes_written;
+  }
 
   switch (event) {
   case VC_EVENT_EOS:
@@ -5830,9 +5837,16 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
 
     // Next order of business if copy the remaining data from the
     //  header buffer into new buffer
-    client_request_body_bytes = post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
+    int64_t body_bytes = post_buffer->write(ua_buffer_reader, chunked ? ua_buffer_reader->read_avail() : post_bytes);
 
-    ua_buffer_reader->consume(client_request_body_bytes);
+    // If is_using_post_buffer has been used, then client_request_body_bytes
+    // will have already been set in wait_for_full_body and there will be
+    // zero bytes in this user agent buffer. We don't want to clobber
+    // client_request_body_bytes with a zero value here in those cases.
+    if (client_request_body_bytes == 0) {
+      client_request_body_bytes = body_bytes;
+    }
+    ua_buffer_reader->consume(body_bytes);
     p = tunnel.add_producer(ua_entry->vc, post_bytes - transfered_bytes, buf_start, &HttpSM::tunnel_handler_post_ua, HT_HTTP_CLIENT,
                             "user agent post");
   }

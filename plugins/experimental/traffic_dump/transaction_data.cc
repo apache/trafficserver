@@ -21,15 +21,18 @@
   limitations under the License.
  */
 
-#include "transaction_data.h"
+#include <sstream>
+
 #include "global_variables.h"
 #include "json_utils.h"
 #include "session_data.h"
+#include "transaction_data.h"
 
 namespace traffic_dump
 {
 int TransactionData::transaction_arg_index = 0;
 sensitive_fields_t TransactionData::sensitive_fields;
+bool TransactionData::dump_body = false;
 
 std::string default_sensitive_field_value;
 
@@ -43,6 +46,47 @@ sensitive_fields_t default_sensitive_fields = {
   "Set-Cookie",
   "Cookie",
 };
+
+std::string
+TransactionData::request_body_get(TSHttpTxn txnp)
+{
+  TSDebug(debug_tag, "Getting the HTTP body");
+  TSIOBufferReader post_buffer_reader = TSHttpTxnPostBufferReaderGet(txnp);
+  int64_t read_avail                  = TSIOBufferReaderAvail(post_buffer_reader);
+  if (read_avail == 0) {
+    TSIOBufferReaderFree(post_buffer_reader);
+    return {};
+  }
+
+  // std::string has no reserving allocator. So create an explicitly empty
+  // string then reserve the bytes for later population.
+  std::string body_string;
+  body_string.resize(read_avail);
+  TSIOBufferReaderCopy(post_buffer_reader, body_string.data(), read_avail);
+  TSIOBufferReaderFree(post_buffer_reader);
+
+  TSDebug(debug_tag, "Returning %ld body bytes", body_string.size());
+  return body_string;
+}
+
+int
+TransactionData::request_buffer_handler(TSCont contp, TSEvent event, void *edata)
+{
+  TSHttpTxn txnp = (TSHttpTxn)(edata);
+
+  if (event == TS_EVENT_HTTP_REQUEST_BUFFER_READ_COMPLETE) {
+    const std::string body = request_body_get(txnp);
+    TSDebug(debug_tag, "Got a request body of size %zu bytes", body.size());
+
+    auto *txnData         = static_cast<TransactionData *>(TSUserArgGet(txnp, transaction_arg_index));
+    txnData->request_body = body;
+    TSContDestroy(contp);
+  } else {
+    TSDebug(debug_tag, "Request buffer handler received an unrecognized event: %d", event);
+  }
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
 
 void
 TransactionData::initialize_default_sensitive_field()
@@ -79,17 +123,17 @@ TransactionData::get_sensitive_field_description()
 }
 
 bool
-TransactionData::init(sensitive_fields_t &&new_fields)
+TransactionData::init(bool dump_body, sensitive_fields_t &&new_fields)
 {
   sensitive_fields = std::move(new_fields);
-  return init_helper();
+  return init_helper(dump_body);
 }
 
 bool
-TransactionData::init()
+TransactionData::init(bool dump_body)
 {
   sensitive_fields = default_sensitive_fields;
-  return init_helper();
+  return init_helper(dump_body);
 }
 
 std::string_view
@@ -113,6 +157,18 @@ std::string
 TransactionData::write_content_node(int64_t num_body_bytes)
 {
   return std::string(R"(,"content":{"encoding":"plain","size":)" + std::to_string(num_body_bytes) + '}');
+}
+
+std::string
+TransactionData::write_content_node(std::string_view body)
+{
+  std::ostringstream content_node;
+  content_node << R"(,"content":{"encoding":"plain","size":)" + std::to_string(body.length());
+  if (!body.empty()) {
+    content_node << R"(,"data":")" + escape_json(std::string(body)) + R"(")";
+  }
+  content_node << '}';
+  return content_node.str();
 }
 
 std::string
@@ -216,8 +272,10 @@ TransactionData::remove_scheme_prefix(std::string_view url)
 }
 
 bool
-TransactionData::init_helper()
+TransactionData::init_helper(bool _dump_body)
 {
+  dump_body = _dump_body;
+  TSDebug(debug_tag, "Dumping body bytes: %s", dump_body ? "true" : "false");
   initialize_default_sensitive_field();
   const std::string sensitive_fields_string = get_sensitive_field_description();
   TSDebug(debug_tag, "Sensitive fields for which generic values will be dumped: %s", sensitive_fields_string.c_str());
@@ -307,6 +365,10 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
       txnData->txn_json += R"(,"client-request":{)" + txnData->write_message_node_no_content(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
+      if (dump_body) {
+        TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED, 1);
+        TSHttpTxnHookAdd(txnp, TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK, TSContCreate(request_buffer_handler, TSMutexCreate()));
+      }
     }
     break;
   }
@@ -331,7 +393,11 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     TSMBuffer buffer;
     TSMLoc hdr_loc;
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &buffer, &hdr_loc)) {
-      txnData->txn_json += txnData->write_content_node(TSHttpTxnClientReqBodyBytesGet(txnp)) + "}";
+      if (dump_body) {
+        txnData->txn_json += txnData->write_content_node(txnData->request_body) + "}";
+      } else {
+        txnData->txn_json += txnData->write_content_node(TSHttpTxnClientReqBodyBytesGet(txnp)) + "}";
+      }
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }

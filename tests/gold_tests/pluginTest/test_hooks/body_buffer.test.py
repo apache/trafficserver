@@ -17,7 +17,9 @@ Verify HTTP body buffering.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
+Test.SkipUnless(
+    Condition.PluginExists('request_buffer.so'),
+)
 
 
 def int_to_hex_string(int_value):
@@ -35,7 +37,7 @@ def int_to_hex_string(int_value):
     >>> int_to_hex_string(17)
     'f1'
     '''
-    if type(int_value) != int:
+    if not isinstance(int_value, int):
         raise ValueError("Input should be an int type.")
     return hex(int_value).split('x')[1]
 
@@ -61,14 +63,14 @@ class BodyBufferTest:
                            "Server: microserver\r\n"
                            "Content-Length: {}\r\n\r\n"
                            "Connection: close\r\n\r\n".format(
-                                len(content_length_response_body)),
+                               len(content_length_response_body)),
                            "timestamp": "1469733493.993",
                            "body": content_length_response_body}
         self._server.addResponse("sessionlog.json", request_header, response_header)
 
         self.chunked_request_body = "chunked request"
         self.encoded_chunked_request = "{0}\r\n{1}\r\n0\r\n\r\n".format(
-                int_to_hex_string(len(self.chunked_request_body)), self.chunked_request_body)
+            int_to_hex_string(len(self.chunked_request_body)), self.chunked_request_body)
         request_header2 = {"headers": "POST /chunked HTTP/1.1\r\n"
                            "Transfer-Encoding: chunked\r\n"
                            "Host: www.example.com\r\n"
@@ -77,7 +79,7 @@ class BodyBufferTest:
                            "body": self.encoded_chunked_request}
         self.chunked_response_body = "chunked response"
         self.encoded_chunked_response = "{0}\r\n{1}\r\n0\r\n\r\n".format(
-                int_to_hex_string(len(self.chunked_response_body)), self.chunked_response_body)
+            int_to_hex_string(len(self.chunked_response_body)), self.chunked_response_body)
         response_header2 = {"headers": "HTTP/1.1 200 OK\r\n"
                             "Transfer-Encoding: chunked\r\n"
                             "Server: microserver\r\n"
@@ -91,7 +93,7 @@ class BodyBufferTest:
         self._ts.Disk.remap_config.AddLine(
             'map / http://127.0.0.1:{0}'.format(self._server.Variables.Port)
         )
-        Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'request_buffer.c'), self._ts)
+        Test.PrepareInstalledPlugin('request_buffer.so', self._ts)
         self._ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'request_buffer',
@@ -101,24 +103,21 @@ class BodyBufferTest:
         })
 
         self._ts.Streams.stderr = Testers.ContainsExpression(
-            "request_buffer_plugin gets the request body with length\[{0}\]: \[{1}\]".format(
-                len(self.content_length_request_body), self.content_length_request_body),
+            r"request_buffer_plugin gets the request body with length\[{0}\]".format(
+                len(self.content_length_request_body)),
             "Verify that the plugin parsed the content-length request body data.")
         self._ts.Streams.stderr += Testers.ContainsExpression(
-            "request_buffer_plugin gets the request body with length\[{0}\]: \[".format(
+            r"request_buffer_plugin gets the request body with length\[{0}\]".format(
                 len(self.encoded_chunked_request)),
             "Verify that the plugin parsed the chunked request body.")
-        self._ts.Streams.stderr += Testers.ContainsExpression(
-            "^{}".format(self.chunked_request_body),
-            "Verify that the plugin parsed the chunked request body data.")
 
     def run(self):
         tr = Test.AddTestRun()
         # Send both a Content-Length request and a chunked-encoded request.
         tr.Processes.Default.Command = (
-                'curl -v http://127.0.0.1:{0}/contentlength -d "{1}" ; '
-                'curl -v http://127.0.0.1:{0}/chunked -H "Transfer-Encoding: chunked" -d "{2}"'.format(
-                    self._ts.Variables.port, self.content_length_request_body, self.chunked_request_body))
+            'curl -v http://127.0.0.1:{0}/contentlength -d "{1}" --next '
+            '-v http://127.0.0.1:{0}/chunked -H "Transfer-Encoding: chunked" -d "{2}"'.format(
+                self._ts.Variables.port, self.content_length_request_body, self.chunked_request_body))
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(Test.Processes.ts)

@@ -254,11 +254,42 @@ def verify_server_tls_features(replay_json, expected_tls_features):
     return True
 
 
+def verify_client_request_body_bytes(replay_json, expected_body_bytes):
+    """
+    Verify that the replay file has the specified body bytes in it.
+    """
+    try:
+        received_body_bytes = replay_json['sessions'][0]['transactions'][0]['client-request']['content']['data']
+    except KeyError:
+        print("The replay file did not have a body element in the first transaction.")
+        return False
+
+    if received_body_bytes != expected_body_bytes:
+        print("Expected body bytes of '{0}' but got '{1}'".format(expected_body_bytes, received_body_bytes))
+        return False
+
+    # If the client request had that many bytes, verify that the proxy-request
+    # does too. This is not guaranteed to always be true, but for our autest it
+    # currently holds and this check is worthwhile.
+    try:
+        proxy_request_body_size = replay_json['sessions'][0]['transactions'][0]['proxy-request']['content']['size']
+    except KeyError:
+        print("The replay file did not have a proxgy-rerquest content size element in the first transaction.")
+        return False
+
+    if int(proxy_request_body_size) != len(expected_body_bytes):
+        print("Expected the proxy-request content size to be '{0}' but got '{1}'".format(
+            len(expected_body_bytes), proxy_request_body_size))
+        return False
+
+    return True
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("schema_file",
                         type=argparse.FileType('r'),
-                        help="The schema in which to interpret validate the replay file.")
+                        help="The schema in which to validate the replay file.")
     parser.add_argument("replay_file",
                         type=argparse.FileType('r'),
                         help="The replay file to validate.")
@@ -278,6 +309,9 @@ def parse_args():
                         help="The TLS values to expect for the client connection.")
     parser.add_argument("--server-tls-features",
                         help="The TLS values to expect for the server connection.")
+    parser.add_argument("--request_body",
+                        type=str,
+                        help="Verify that the client request has the specified body bytes.")
     return parser.parse_args()
 
 
@@ -321,6 +355,9 @@ def main():
         return 1
 
     if args.server_tls_features and not verify_server_tls_features(replay_json, args.server_tls_features):
+        return 1
+
+    if args.request_body and not verify_client_request_body_bytes(replay_json, args.request_body):
         return 1
 
     return 0

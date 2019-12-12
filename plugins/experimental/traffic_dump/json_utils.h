@@ -60,4 +60,18 @@ std::string json_entry(std::string_view name, char const *value, int64_t size);
  */
 std::string json_entry_array(std::string_view name, std::string_view value);
 
+/** Escape characters in a string as needed and return the resultant escaped string.
+ *
+ * @param[in] s The characters that need to be escaped.
+ */
+std::string escape_json(std::string_view s);
+
+/** An escape_json overload for a char buffer.
+ *
+ * @param[in] buf The char buffer pointer with characters that need to be escaped.
+ *
+ * @param[in] size The size of the buf char array.
+ */
+std::string escape_json(char const *buf, int64_t size);
+
 } // namespace traffic_dump
