@@ -1,0 +1,10 @@
+extraction:
+  cpp:
+    prepare:
+      packages:
+      - "libssl-dev"
+    after_prepare: "autoreconf -fiv"
+    configure:
+      command: "./configure"
+    index:
+      build_command: "make -j12"
