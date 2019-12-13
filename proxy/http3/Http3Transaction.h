@@ -52,8 +52,8 @@ public:
   void destroy() override;
   void release(IOBufferReader *r) override;
   int get_transaction_id() const override;
-  void increment_client_transactions_stat() override;
-  void decrement_client_transactions_stat() override;
+  void increment_txn_stat() override;
+  void decrement_txn_stat() override;
 
   // VConnection interface
   virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
