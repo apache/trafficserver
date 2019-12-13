@@ -312,7 +312,7 @@ extern inkcoreapi Diags *diags;
 #define AlertV(fmt, ap) DiagsErrorV(DL_Alert, fmt, ap)
 #define EmergencyV(fmt, ap) DiagsErrorV(DL_Emergency, fmt, ap)
 
-#ifdef TS_USE_DIAGS
+#if TS_USE_DIAGS
 
 #define Diag(tag, ...)                                 \
   do {                                                 \
