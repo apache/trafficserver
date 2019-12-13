@@ -27,6 +27,6 @@ extraction:
       - "zlib1g-dev"
     after_prepare: "autoreconf -fiv"
     configure:
-      command: "./configure"
+      command: "./configure --enable-experimental-plugins"
     index:
       build_command: "make -j"
