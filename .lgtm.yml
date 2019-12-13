@@ -19,9 +19,14 @@ extraction:
   cpp:
     prepare:
       packages:
-      - "libssl-dev"
+      - "libcjose-dev"
+      - "libcjose0"
+      - "libjansson-dev"
+      - "libluajit-5.1-dev"
+      - "libpcre3-dev"
+      - "zlib1g-dev"
     after_prepare: "autoreconf -fiv"
     configure:
       command: "./configure"
     index:
-      build_command: "make -j12"
+      build_command: "make -j"
