@@ -37,7 +37,7 @@ AM_CPPFLAGS += \
 
 TESTS = $(check_PROGRAMS)
 
-check_PROGRAMS = test_certlookup test_UDPNet
+check_PROGRAMS = test_certlookup test_UDPNet test_UDPEcho test_UDPAcceptEcho
 noinst_LIBRARIES = libinknet.a
 
 test_certlookup_LDFLAGS = \
@@ -163,7 +163,72 @@ libinknet_a_SOURCES = \
 	UnixNetVConnection.cc \
 	UnixUDPConnection.cc \
 	UnixUDPNet.cc \
-	SSLDynlock.cc
+	SSLDynlock.cc \
+	UDPProcessor.cc \
+	UDPConnection.cc
+
+test_UDPEcho_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	@OPENSSL_INCLUDES@
+
+test_UDPEcho_LDFLAGS = \
+	@AM_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@ \
+	@YAMLCPP_LDFLAGS@
+
+test_UDPEcho_LDADD = \
+	libinknet.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/proxy/ParentSelectionStrategy.o \
+	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
+
+test_UDPEcho_SOURCES = \
+	libinknet_stub.cc \
+	UnixUDPConnection.cc \
+	UnixUDPNet.cc \
+	test_UDPEcho.cc
+
+test_UDPAcceptEcho_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/proxy \
+	-I$(abs_top_srcdir)/proxy/hdrs \
+	-I$(abs_top_srcdir)/proxy/http \
+	-I$(abs_top_srcdir)/proxy/logging \
+	-I$(abs_top_srcdir)/mgmt \
+	-I$(abs_top_srcdir)/mgmt/utils \
+	@OPENSSL_INCLUDES@
+
+test_UDPAcceptEcho_LDFLAGS = \
+	@AM_LDFLAGS@ \
+	@OPENSSL_LDFLAGS@ \
+	@YAMLCPP_LDFLAGS@
+
+test_UDPAcceptEcho_LDADD = \
+	libinknet.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/src/tscore/libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/proxy/ParentSelectionStrategy.o \
+	@HWLOC_LIBS@ @OPENSSL_LIBS@ @LIBPCRE@ @YAMLCPP_LIBS@
+
+test_UDPAcceptEcho_SOURCES = \
+	libinknet_stub.cc \
+	UnixUDPConnection.cc \
+	UnixUDPNet.cc \
+	test_UDPAcceptEcho.cc
+
 
 if ENABLE_QUIC
 libinknet_a_SOURCES += \
@@ -192,3 +257,4 @@ include $(top_srcdir)/build/tidy.mk
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
+

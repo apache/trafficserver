@@ -47,7 +47,7 @@ DNSConnection::trigger()
 void
 StatPagesManager::register_http(char const *, Action *(*)(Continuation *, HTTPHdr *))
 {
-  ink_assert(false);
+  // ink_assert(false);
 }
 
 #include "ParentSelection.h"
