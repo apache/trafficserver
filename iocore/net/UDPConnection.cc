@@ -240,7 +240,7 @@ int
 UDP2ConnectionImpl::mainEvent(int event, void *data)
 {
   ink_assert(this->mutex->thread_holding == this->_thread);
-  Debug("udp_conn", "mainEvent refcount: %d", this->refcount());
+  Debug("udp_conn", "mainEvent refcount: %d %s", this->refcount(), udp_event_name(static_cast<UDPEvents>(event)));
   ink_assert(this->refcount_dec() > 0);
   switch (static_cast<UDPEvents>(event)) {
   case UDPEvents::UDP_CONNECT_EVENT:
