@@ -3257,6 +3257,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     c->write_success          = true;
     t_state.client_info.abort = HttpTransact::DIDNOT_ABORT;
     if (t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
+      ink_assert(ua_txn);
       if (t_state.www_auth_content != HttpTransact::CACHE_AUTH_SERVE || ua_txn->get_server_session()) {
         // successful keep-alive
         close_connection = false;
