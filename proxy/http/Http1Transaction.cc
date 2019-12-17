@@ -49,7 +49,8 @@ Http1Transaction::release(IOBufferReader *r)
 void
 Http1Transaction::destroy() // todo make ~Http1Transaction()
 {
-  _sm = nullptr;
+  this->super_type::destroy();
+  delete this; // TODO: refactor into ~Http1Transaction()
 }
 
 void
