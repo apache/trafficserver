@@ -64,7 +64,7 @@ public:
   NetState read{};
   NetState write{};
 
-  bool closed    = false;
+  int closed     = 0;
   NetHandler *nh = nullptr;
 
   unsigned int id = 0;
