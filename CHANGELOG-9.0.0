@@ -826,6 +826,7 @@ Changes with Apache Traffic Server 9.0.0
   #6190 - Fix ssl_session_reuse to compile on macOS and FreeBSD
   #6191 - Limit this check to Linux, where ldd always works
   #6198 - Move logging before session could be freed
+  #6199 - Set END_STREAM flag when write_vio ntodo is 0
   #6201 - ssl_session_reuse optimization to check if diags is on
   #6204 - Lua plugin fix: Account for null in output from TSUrlPercentDecode.
   #6207 - Add autopep8 & pyflakes in dev-packages for AuTest
@@ -833,4 +834,8 @@ Changes with Apache Traffic Server 9.0.0
   #6212 - Cleanup trailing whitespaces, and YAML formatting
   #6218 - Fix stringstream crash during shutdown
   #6224 - Fixed build issue with clang5 and Extendible
+  #6226 - Fix sni.yaml fqdn to match complete name string
   #6231 - Adjust the refcounts to avoid Mutex leak
+  #6247 - Add some stats collections to cache_promote.
+  #6251 - Some tweaks to reloading-plugins.en.rst
+  #6263 - TCL: cleanup in HostLookup.cc, make sure keys are stable.
