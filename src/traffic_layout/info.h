@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#pragma once
+
 // the original traffic_layout
 
 void produce_features(bool json);
