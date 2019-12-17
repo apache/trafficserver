@@ -301,7 +301,7 @@ CharIndex::Insert(string_view match_data, HostBranch *toInsert)
       illegalKey.reset(new Table);
     }
     toInsert->key = match_data;
-    illegalKey->emplace(match_data, toInsert);
+    illegalKey->emplace(toInsert->key, toInsert);
   } else {
     while (true) {
       index = asciiToTable[static_cast<unsigned char>(match_data.front())];
@@ -675,10 +675,10 @@ HostLookup::InsertBranch(HostBranch *insert_in, string_view level_data)
     ink_release_assert(0);
     break;
   case HostBranch::HOST_HASH:
-    insert_in->next_level._table->emplace(level_data, new_branch);
+    insert_in->next_level._table->emplace(new_branch->key, new_branch);
     break;
   case HostBranch::HOST_INDEX:
-    insert_in->next_level._index->Insert(level_data, new_branch);
+    insert_in->next_level._index->Insert(new_branch->key, new_branch);
     break;
   case HostBranch::HOST_ARRAY: {
     auto array = insert_in->next_level._array;
@@ -686,9 +686,9 @@ HostLookup::InsertBranch(HostBranch *insert_in, string_view level_data)
       // The array is out of space, time to move to a hash table
       auto ha = insert_in->next_level._array;
       auto ht = new HostTable;
-      ht->emplace(level_data, new_branch);
+      ht->emplace(new_branch->key, new_branch);
       for (auto &item : *array) {
-        ht->emplace(item.match_data, item.branch);
+        ht->emplace(item.branch->key, item.branch);
       }
       // Ring out the old, ring in the new
       delete ha;
