@@ -70,6 +70,10 @@ public:
   int
   closeEvent(int event, void *data)
   {
+    if (event == NET_EVENT_DATAGRAM_READ_READY) {
+      return 0;
+    }
+
     ink_assert(event == NET_EVENT_DATAGRAM_WRITE_READY);
     ink_assert(this->_sub_conn = static_cast<UDP2ConnectionImpl *>(data));
     if (this->_sub_conn != nullptr) {
