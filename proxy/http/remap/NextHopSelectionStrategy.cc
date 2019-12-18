@@ -267,7 +267,6 @@ NextHopSelectionStrategy::markNextHopDown(const uint64_t sm_id, ParentResult &re
 void
 NextHopSelectionStrategy::markNextHopUp(const uint64_t sm_id, ParentResult &result)
 {
-  uint32_t old_count = 0;
   //  Make sure that we are being called back with with a
   //   result structure with a parent that is being retried
   ink_assert(result.retry == true);
@@ -286,8 +285,6 @@ NextHopSelectionStrategy::markNextHopUp(const uint64_t sm_id, ParentResult &resu
 
   if (!h->available) {
     h->set_available();
-  }
-  if (h->available && old_count > 0) {
     NH_Note("[%" PRIu64 "] http parent proxy %s:%d restored", sm_id, h->hostname.c_str(), h->getPort(scheme));
   }
 }
