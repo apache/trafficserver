@@ -147,6 +147,8 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
   fs::path effectivePath = getEffectivePath(configPath);
   if (effectivePath.empty()) {
     error.assign("failed to find plugin '").append(configPath.string()).append("'");
+    // The error will be reported by the caller but add debug log entry with this tag for convenience.
+    PluginDebug(_tag, "%s", error.c_str());
     return nullptr;
   }
 
@@ -175,9 +177,12 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
           PluginDso::loadedPlugins()->add(plugin);
           inst = RemapPluginInst::init(plugin, argc, argv, error);
           if (nullptr != inst) {
+            /* Plugin loading and instance init went fine. */
             _instList.append(inst);
           }
         } else {
+          /* Plugin DSO load succeeded but instance init failed. */
+          PluginDebug(_tag, "plugin '%s' instance init failed", configPath.c_str());
           plugin->unload(error);
           delete plugin;
         }
@@ -186,7 +191,9 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
           clean(error);
         }
       } else {
-        return nullptr;
+        /* Plugin DSO load failed. */
+        PluginDebug(_tag, "plugin '%s' DSO load failed", configPath.c_str());
+        delete plugin;
       }
     }
   } else {
