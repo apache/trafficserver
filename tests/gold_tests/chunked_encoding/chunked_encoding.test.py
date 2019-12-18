@@ -17,7 +17,7 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test a basic remap of a http connection
+Test chunked encoding processing
 '''
 # need Curl with HTTP/2
 Test.SkipUnless(
