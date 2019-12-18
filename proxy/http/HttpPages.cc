@@ -134,16 +134,16 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
       // Col 3 - ndone
       resp_begin_column();
       if (producer.alive && producer.read_vio) {
-        resp_add("%d", producer.read_vio->ndone);
+        resp_add("%" PRId64, producer.read_vio->ndone);
       } else {
-        resp_add("%d", producer.bytes_read);
+        resp_add("%" PRId64, producer.bytes_read);
       }
       resp_end_column();
 
       // Col 4 - nbytes
       resp_begin_column();
       if (producer.alive && producer.read_vio) {
-        resp_add("%d", producer.read_vio->nbytes);
+        resp_add("%" PRId64, producer.read_vio->nbytes);
       } else {
         resp_add("-");
       }
@@ -173,16 +173,16 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
       // Col 3 - ndone
       resp_begin_column();
       if (consumer.alive && consumer.write_vio) {
-        resp_add("%d", consumer.write_vio->ndone);
+        resp_add("%" PRId64, consumer.write_vio->ndone);
       } else {
-        resp_add("%d", consumer.bytes_written);
+        resp_add("%" PRId64, consumer.bytes_written);
       }
       resp_end_column();
 
       // Col 4 - nbytes
       resp_begin_column();
       if (consumer.alive && consumer.write_vio) {
-        resp_add("%d", consumer.write_vio->nbytes);
+        resp_add("%" PRId64, consumer.write_vio->nbytes);
       } else {
         resp_add("-");
       }
@@ -191,7 +191,7 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
       // Col 5 - read avail
       resp_begin_column();
       if (consumer.alive && consumer.buffer_reader) {
-        resp_add("%d", consumer.buffer_reader->read_avail());
+        resp_add("%" PRId64, consumer.buffer_reader->read_avail());
       } else {
         resp_add("-");
       }
