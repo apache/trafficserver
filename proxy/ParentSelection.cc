@@ -345,10 +345,10 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
   token = strtok_r(_val, PARENT_DELIMITERS, &savePtr);
   while (token != nullptr) {
     if ((nm = strchr(token, ':')) != nullptr) {
-      size_t len = (nm - token);
-      ink_assert(len < sizeof(fqdn));
+      size_t length = (nm - token);
+      ink_assert(length < sizeof(fqdn));
       memset(fqdn, 0, sizeof(fqdn));
-      strncpy(fqdn, token, len);
+      strncpy(fqdn, token, length);
       if (self_detect && machine->is_self(fqdn)) {
         if (self_detect == 1) {
           Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", fqdn, line_num);
