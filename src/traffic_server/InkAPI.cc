@@ -1454,6 +1454,7 @@ HttpHookState::Scope::operator++()
 void
 HttpHookState::Scope::clear()
 {
+  _hooks = nullptr;
   _p = _c = nullptr;
 }
 
