@@ -389,13 +389,8 @@ UDP2ConnectionImpl::create_socket(sockaddr const *addr, int recv_buf, int send_b
   }
 
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
-  if (ats_is_ip_multicast(addr)) {
-    int enable_reuseaddr = 1;
-
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr),
-                               sizeof(enable_reuseaddr)) < 0)) {
-      goto Lerror;
-    }
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(SOCKOPT_ON), sizeof(int)) < 0)) {
+    goto Lerror;
   }
 
   if (ats_is_ip6(addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
