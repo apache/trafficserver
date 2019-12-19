@@ -480,6 +480,13 @@ mapping rules. (It is activated before any mappings and is never
 deactivated.) The filter `local_only` will only be applied to the
 second mapping.
 
+NextHop Selection Strategies
+============================
+
+You may configure Nexthop or Parent hierarchical caching rules by remap using the
+**@strategy** tag.  See :doc:`../configuration/hierarchical-caching.en` and :doc:`strategies.yaml.en`
+for configuration details and examples.
+
 Including Additional Remap Files
 ================================
 
