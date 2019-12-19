@@ -72,7 +72,7 @@ public:
     switch (event) {
     case NET_EVENT_DATAGRAM_READ_READY: {
       UDP2Connection *con = static_cast<UDP2Connection *>(data);
-      ink_assert(this->_conn.get() == con);
+      ink_assert(this->_conn == con);
       auto packet = this->_conn->recv();
       this->_data = packet->chain;
       std::string str(packet->chain->start(), packet->chain->read_avail());
@@ -94,7 +94,6 @@ public:
         this_ethread()->schedule_in(&close_cont, 1 * HRTIME_SECOND);
       } else {
         this->_conn->close();
-        this->_conn.release();
         this->_conn = nullptr;
       }
       break;
@@ -111,7 +110,7 @@ public:
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     addr.sin_port        = 0;
 
-    this->_conn = std::make_unique<UDP2ConnectionImpl>(this);
+    this->_conn = new UDP2ConnectionImpl(this);
     int res     = this->_conn->create_socket(reinterpret_cast<sockaddr *const>(&addr));
     if (res < 0) {
       std::cout << "create socket error [" << strerror(errno) << "]" << std::endl;
@@ -127,7 +126,7 @@ public:
   ~EchoServer() { this->_data = nullptr; }
 
 private:
-  std::unique_ptr<UDP2ConnectionImpl> _conn;
+  UDP2ConnectionImpl *_conn;
   Ptr<IOBufferBlock> _data;
   IpEndpoint _peer{};
 };

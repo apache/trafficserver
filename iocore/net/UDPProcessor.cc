@@ -25,28 +25,6 @@
 UDP2NetProcessor udp2Net;
 EventType ET_UDP2;
 
-// void
-// initialize_thread_for_udp_net(EThread *thread)
-// {
-//   NetHandler *nh = get_NetHandler(thread);
-//
-//   new (reinterpret_cast<ink_dummy_for_new *>(nh)) NetHandler();
-//   new (reinterpret_cast<ink_dummy_for_new *>(get_PollCont(thread))) PollCont(thread->mutex, nh);
-//
-//   PollCont *pc       = get_PollCont(thread);
-//   PollDescriptor *pd = pc->pollDescriptor;
-//
-//   nh->configure_per_thread_values();
-//   thread->set_tail_handler(nh);
-//   thread->ep = new EventIO();
-//   thread->ep->type = EVENTIO_ASYNC_SIGNAL;
-// #if HAVE_EVENTFD
-//   thread->ep->start(pd, thread->evfd, nullptr, EVENTIO_READ);
-// #else
-//   thread->ep->start(pd, thread->evpipe[0], nullptr, EVENTIO_READ);
-// #endif
-// }
-
 void
 initialize_thread_for_udp2_net(EThread *thread)
 {

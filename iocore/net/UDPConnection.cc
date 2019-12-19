@@ -705,7 +705,7 @@ UDP2ConnectionImpl::net_write_io(NetHandler *nh, EThread *thread)
       continue;
     }
 
-    if (errno != EAGAIN) {
+    if (errno == EAGAIN) {
       this->write.triggered = 0;
       write_reschedule(nh, this);
       break;
