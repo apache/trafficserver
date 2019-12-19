@@ -53,8 +53,8 @@ public:
   void cancel_inactivity_timeout() override;
   void transaction_done() override;
   int get_transaction_id() const override;
-  void increment_client_transactions_stat() override;
-  void decrement_client_transactions_stat() override;
+  void increment_txn_stat() override;
+  void decrement_txn_stat() override;
 
   void set_reader(IOBufferReader *reader);
 

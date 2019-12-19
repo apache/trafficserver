@@ -78,15 +78,25 @@ Http1Transaction::allow_half_open() const
 }
 
 void
-Http1Transaction::increment_client_transactions_stat()
+Http1Transaction::increment_txn_stat()
 {
-  HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
+  ink_assert(_proxy_ssn);
+  if (_proxy_ssn->get_netvc()->get_context() == NET_VCONNECTION_IN) {
+    HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
+  } else {
+    HTTP_INCREMENT_DYN_STAT(http_current_server_transactions_stat);
+  }
 }
 
 void
-Http1Transaction::decrement_client_transactions_stat()
+Http1Transaction::decrement_txn_stat()
 {
-  HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
+  ink_assert(_proxy_ssn);
+  if (_proxy_ssn->get_netvc()->get_context() == NET_VCONNECTION_IN) {
+    HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
+  } else {
+    HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
+  }
 }
 
 // Implement VConnection interface.

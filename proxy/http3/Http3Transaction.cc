@@ -234,13 +234,13 @@ HQTransaction::get_transaction_id() const
 }
 
 void
-HQTransaction::increment_client_transactions_stat()
+HQTransaction::increment_txn_stat()
 {
   // TODO
 }
 
 void
-HQTransaction::decrement_client_transactions_stat()
+HQTransaction::decrement_txn_stat()
 {
   // TODO
 }
