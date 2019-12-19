@@ -62,6 +62,7 @@
 
 #define PARTITION_HEADROOM_MB 10
 #define DIAGS_LOG_FILENAME "diags.log"
+#define MANAGER_LOG_FILENAME "manager.log"
 
 void
 LogConfig::setup_default_values()
@@ -103,6 +104,19 @@ void LogConfig::reconfigure_mgmt_variables(ts::MemSpan<void>)
 {
   Note("received log reconfiguration event, rolling now");
   Log::config->roll_log_files_now = true;
+}
+
+void
+LogConfig::register_rolled_log_auto_delete(std::string_view logname, int rolling_min_count)
+{
+  if (!auto_delete_rolled_files) {
+    // Nothing to do if auto-deletion is not configured.
+    return;
+  }
+
+  Debug("logspace", "Registering rotated log deletion for %s with min roll count %d", std::string(logname).c_str(),
+        rolling_min_count);
+  rolledLogDeleter.register_log_type_for_deletion(logname, rolling_min_count);
 }
 
 void
@@ -184,20 +198,20 @@ LogConfig::read_configuration_variables()
 
   // Read in min_count control values for auto deletion
   if (auto_delete_rolled_files) {
+    // The majority of register_rolled_log_auto_delete() updates come in
+    // through LogObject. However, not all ATS logs are managed by LogObject.
+    // The following register these other core logs for log rotation deletion.
+
     // For diagnostic logs
     val = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_min_count"));
-    val = ((val == 0) ? INT_MAX : val);
-    deleting_info.insert(new LogDeletingInfo(DIAGS_LOG_FILENAME, val));
+    register_rolled_log_auto_delete(DIAGS_LOG_FILENAME, val);
+    register_rolled_log_auto_delete(MANAGER_LOG_FILENAME, val);
 
     // For traffic.out
-    ats_scoped_str name(REC_ConfigReadString("proxy.config.output.logfile"));
-    val = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_min_count"));
-    val = ((val == 0) ? INT_MAX : val);
-    if (name) {
-      deleting_info.insert(new LogDeletingInfo(name.get(), val));
-    } else {
-      deleting_info.insert(new LogDeletingInfo("traffic.out", val));
-    }
+    const char *configured_name(REC_ConfigReadString("proxy.config.output.logfile"));
+    const char *traffic_logname = configured_name ? configured_name : "traffic.out";
+    val                         = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_min_count"));
+    register_rolled_log_auto_delete(traffic_logname, val);
 
     rolling_max_count = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_max_count"));
   }
@@ -285,7 +299,8 @@ LogConfig::init(LogConfig *prev_config)
     Debug("log", "creating predefined error log object");
 
     errlog = new LogObject(fmt.get(), logfile_dir, "error.log", LOG_FILE_ASCII, nullptr, rolling_enabled, preproc_threads,
-                           rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
+                           rolling_interval_sec, rolling_offset_hr, rolling_size_mb, /* auto_created */ false, rolling_max_count,
+                           rolling_min_count);
 
     log_object_manager.manage_object(errlog);
     errlog->set_fmt_timestamps();
@@ -561,7 +576,6 @@ LogConfig::update_space_used()
     return;
   }
 
-  int candidate_count;
   int64_t total_space_used, partition_space_left;
   char path[MAXPATHLEN];
   int sret;
@@ -603,7 +617,6 @@ LogConfig::update_space_used()
   }
 
   total_space_used = 0LL;
-  candidate_count  = 0;
 
   while ((entry = readdir(ld))) {
     snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, entry->d_name);
@@ -613,26 +626,7 @@ LogConfig::update_space_used()
       total_space_used += static_cast<int64_t>(sbuf.st_size);
 
       if (auto_delete_rolled_files && LogFile::rolled_logfile(entry->d_name)) {
-        //
-        // then check if the candidate belongs to any given log type
-        //
-        ts::TextView type_name(entry->d_name, strlen(entry->d_name));
-        // A rolled log will look something like:
-        // squid.log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old
-        //
-        // The following logic cuts things back to original unrolled file which
-        // is the key into the deleting_info map (squid.log in the above example).
-        auto suffix = type_name;
-        type_name.remove_suffix(suffix.remove_prefix(suffix.find('.') + 1).remove_prefix(suffix.find('_')).size());
-        auto iter = deleting_info.find(type_name);
-        if (iter == deleting_info.end()) {
-          // We won't delete the log if its name doesn't match any give type.
-          continue;
-        }
-
-        auto &candidates = iter->candidates;
-        candidates.push_back(LogDeleteCandidate(path, static_cast<int64_t>(sbuf.st_size), sbuf.st_mtime));
-        candidate_count++;
+        rolledLogDeleter.consider_for_candidacy(path, sbuf.st_size, sbuf.st_mtime);
       }
     }
   }
@@ -675,62 +669,50 @@ LogConfig::update_space_used()
   int64_t max_space = static_cast<int64_t>(get_max_space_mb()) * LOG_MEGABYTE;
   int64_t headroom  = static_cast<int64_t>(max_space_mb_headroom) * LOG_MEGABYTE;
 
-  if (candidate_count > 0 && !space_to_write(headroom)) {
+  if (!space_to_write(headroom)) {
     Debug("logspace", "headroom reached, trying to clear space ...");
-    Debug("logspace", "sorting %d delete candidates ...", candidate_count);
+    if (!rolledLogDeleter.has_candidates()) {
+      Note("Cannot clear space because there are no recognized Traffic Server rolled logs for auto deletion.");
+    } else {
+      Debug("logspace", "Considering %zu delete candidates ...", rolledLogDeleter.get_candidate_count());
+    }
 
-    deleting_info.apply([](LogDeletingInfo &info) {
-      std::sort(info.candidates.begin(), info.candidates.end(),
-                [](LogDeleteCandidate const &a, LogDeleteCandidate const &b) { return a.mtime > b.mtime; });
-    });
-
-    while (candidate_count > 0) {
+    while (rolledLogDeleter.has_candidates()) {
       if (space_to_write(headroom + log_buffer_size)) {
         Debug("logspace", "low water mark reached; stop deleting");
         break;
       }
 
-      // Select the group with biggest ratio
-      auto target =
-        std::max_element(deleting_info.begin(), deleting_info.end(), [](LogDeletingInfo const &A, LogDeletingInfo const &B) {
-          return static_cast<double>(A.candidates.size()) / A.min_count < static_cast<double>(B.candidates.size()) / B.min_count;
-        });
-
-      auto &candidates = target->candidates;
-
+      auto victim = rolledLogDeleter.take_next_candidate_to_delete();
       // Check if any candidate exists
-      if (candidates.empty()) {
+      if (!victim) {
         // This shouldn't be triggered unless min_count are configured wrong or extra non-log files occupy the directory
-        Debug("logspace", "No more victims for log type %s. Check your rolling_min_count settings and logging directory.",
-              target->name.c_str());
+        Debug("logspace", "No more victims. Check your rolling_min_count settings and logging directory.");
       } else {
-        auto &victim = candidates.back();
-        Debug("logspace", "auto-deleting %s", victim.name.c_str());
+        Debug("logspace", "auto-deleting %s", victim->rolled_log_path.c_str());
 
-        if (unlink(victim.name.c_str()) < 0) {
-          Note("Traffic Server was Unable to auto-delete rolled "
+        if (unlink(victim->rolled_log_path.c_str()) < 0) {
+          Note("Traffic Server was unable to auto-delete rolled "
                "logfile %s: %s.",
-               victim.name.c_str(), strerror(errno));
+               victim->rolled_log_path.c_str(), strerror(errno));
         } else {
           Debug("logspace",
                 "The rolled logfile, %s, was auto-deleted; "
                 "%" PRId64 " bytes were reclaimed.",
-                victim.name.c_str(), victim.size);
+                victim->rolled_log_path.c_str(), victim->size);
 
           // Update after successful unlink;
-          m_space_used -= victim.size;
-          m_partition_space_left += victim.size;
+          m_space_used -= victim->size;
+          m_partition_space_left += victim->size;
         }
-        // Update total candidates and remove victim
-        --candidate_count;
-        candidates.pop_back();
       }
     }
   }
-  //
-  // Clean up the candidate array
-  //
-  deleting_info.apply([](LogDeletingInfo &info) { info.clear(); });
+
+  // The set of files in the logs dir may change between iterations to check
+  // for logs to delete. To deal with this, we simply clear our internal
+  // candidates metadata and regenerate it on each iteration.
+  rolledLogDeleter.clear_candidates();
 
   //
   // Now that we've updated the m_space_used value, see if we need to

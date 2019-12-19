@@ -919,7 +919,7 @@ HttpTransactHeaders::remove_host_name_from_url(HTTPHdr *outgoing_request)
 }
 
 void
-HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
+HttpTransactHeaders::add_global_user_agent_header_to_request(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (http_txn_conf->global_user_agent_header) {
     MIMEField *ua_field;
@@ -1118,7 +1118,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 } // end HttpTransact::add_forwarded_field_to_outgoing_request()
 
 void
-HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
+HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (http_txn_conf->proxy_response_server_enabled && http_txn_conf->proxy_response_server_string) {
     MIMEField *ua_field;
@@ -1144,7 +1144,7 @@ HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *
 
 void
 HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
-                                                         OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
+                                                         const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (!header) {
     return;

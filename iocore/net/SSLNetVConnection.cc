@@ -44,6 +44,7 @@
 
 #include <climits>
 #include <string>
+#include <cstring>
 
 using namespace std::literals;
 
@@ -889,6 +890,8 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::clear()
 {
+  _serverName.reset();
+
   if (ssl != nullptr) {
     SSL_free(ssl);
     ssl = nullptr;
@@ -1876,4 +1879,15 @@ SSLNetVConnection::protocol_contains(std::string_view prefix) const
     retval = super::protocol_contains(prefix);
   }
   return retval;
+}
+
+void
+SSLNetVConnection::set_server_name(std::string_view name)
+{
+  if (name.size()) {
+    char *n = new char[name.size() + 1];
+    std::memcpy(n, name.data(), name.size());
+    n[name.size()] = '\0';
+    _serverName.reset(n);
+  }
 }

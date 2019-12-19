@@ -18,11 +18,17 @@
 
 # Show which platform we're actually building on
 set +x
-echo -n "Build platform: "
 
+# Deduct if this build is on a docker instance
+IS_DOCKER="no"
+df / | fgrep -q overlay && IS_DOCKER="yes"
+export IS_DOCKER
+
+echo -n "Build platform: "
 [ -f /etc/lsb-release ] && grep DISTRIB_RELEASE /etc/lsb-release
 [ -f /etc/debian_version ] && cat /etc/debian_version
 [ -f /etc/redhat-release ] && cat /etc/redhat-release
+echo "Build on Docker: " $IS_DOCKER
 
 # Shouldn't have to tweak this
 export ATS_SRC_HOME="/home/jenkins/src"
@@ -40,15 +46,9 @@ export TODAY=$(/bin/date +'%m%d%Y')
 
 # Extract the current branch (default to master). ToDo: Can we do this better ?
 ATS_BRANCH=master
-ATS_IS_7="yes"
 
-test "${JOB_NAME#*-5.3.x}" != "${JOB_NAME}" && ATS_BRANCH=5.3.x && ATS_IS_7="no"
-test "${JOB_NAME#*-6.2.x}" != "${JOB_NAME}" && ATS_BRANCH=6.2.x && ATS_IS_7="no"
 test "${JOB_NAME#*-7.1.x}" != "${JOB_NAME}" && ATS_BRANCH=7.1.x
 test "${JOB_NAME#*-8.0.x}" != "${JOB_NAME}" && ATS_BRANCH=8.0.x
-test "${JOB_NAME#*-8.1.x}" != "${JOB_NAME}" && ATS_BRANCH=8.1.x
-test "${JOB_NAME#*-8.2.x}" != "${JOB_NAME}" && ATS_BRANCH=8.2.x
-test "${JOB_NAME#*-8.3.x}" != "${JOB_NAME}" && ATS_BRANCH=8.3.x
 test "${JOB_NAME#*-9.0.x}" != "${JOB_NAME}" && ATS_BRANCH=9.0.x
 test "${JOB_NAME#*-9.1.x}" != "${JOB_NAME}" && ATS_BRANCH=9.1.x
 test "${JOB_NAME#*-9.2.x}" != "${JOB_NAME}" && ATS_BRANCH=9.2.x
@@ -89,17 +89,14 @@ else
     # Default is gcc / g++
     export CC=gcc
     export CXX=g++
-    # Only test for non standard compilers on ATS v7.x and later. ToDo: Remove this when 6.x is EOLifed.
-    if test "$ATS_IS_7" == "yes"; then
-        if test -f "/opt/rh/devtoolset-7/enable"; then
-            # This changes the path such that gcc / g++ is the right version. This is for CentOS 6 / 7.
-            source /opt/rh/devtoolset-7/enable
-            echo "Enabling devtoolset-7"
-        elif test -x "/usr/bin/g++-7"; then
-            # This is for Debian platforms
-            export CC=/usr/bin/gcc-7
-            export CXX=/usr/bin/g++-7
-        fi
+    if test -f "/opt/rh/devtoolset-7/enable"; then
+        # This changes the path such that gcc / g++ is the right version. This is for CentOS 6 / 7.
+        source /opt/rh/devtoolset-7/enable
+        echo "Enabling devtoolset-7"
+    elif test -x "/usr/bin/g++-7"; then
+        # This is for Debian platforms
+        export CC=/usr/bin/gcc-7
+        export CXX=/usr/bin/g++-7
     fi
 fi
 
@@ -111,7 +108,12 @@ echo "CXX: $CXX"
 $CXX -v
 
 # Figure out parallelism for regular builds / bots
-ATS_MAKE_FLAGS="-j6"
+export ATS_MAKE_FLAGS="-j6"
+if [ "yes" == "$IS_DOCKER" ]; then
+    export ATS_BUILD_BASEDIR="${WORKSPACE}"
+else
+    export ATS_BUILD_BASEDIR="${WORKSPACE}/${BUILD_NUMBER}"
+fi
 
 # Restore verbose shell output
 set -x

@@ -160,6 +160,11 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   stream->decrement_server_rwnd(payload_length);
 
   const uint32_t unpadded_length = payload_length - pad_length;
+  MIOBuffer *writer              = stream->read_vio_writer();
+  if (writer == nullptr) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
+  }
+
   // If we call write() multiple times, we must keep the same reader, so we can
   // update its offset via consume.  Otherwise, we will read the same data on the
   // second time through
@@ -168,17 +173,23 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   if (frame.header().flags & HTTP2_FLAGS_DATA_PADDED) {
     myreader->consume(HTTP2_DATA_PADLEN_LEN);
   }
-  while (nbytes < payload_length - pad_length) {
+
+  while (nbytes < unpadded_length) {
     size_t read_len = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
     if (nbytes + read_len > unpadded_length) {
       read_len -= nbytes + read_len - unpadded_length;
     }
-    nbytes += stream->request_buffer.write(myreader, read_len);
+    nbytes += writer->write(myreader, read_len);
     myreader->consume(nbytes);
-    // If there is an outstanding read, update the buffer
-    stream->update_read_request(INT64_MAX, true);
   }
   myreader->writer()->dealloc_reader(myreader);
+
+  if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
+    // TODO: set total written size to read_vio.nbytes
+    stream->signal_read_event(VC_EVENT_READ_COMPLETE);
+  } else {
+    stream->signal_read_event(VC_EVENT_READ_READY);
+  }
 
   uint32_t initial_rwnd = cstate.server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
   uint32_t min_rwnd     = std::min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));

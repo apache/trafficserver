@@ -109,10 +109,19 @@ TsEnumDescriptor ROLLING_MODE_TEXT = {{{"none", 0}, {"time", 1}, {"size", 2}, {"
 TsEnumDescriptor ROLLING_MODE_LUA  = {
   {{"log.roll.none", 0}, {"log.roll.time", 1}, {"log.roll.size", 2}, {"log.roll.both", 3}, {"log.roll.any", 4}}};
 
-std::set<std::string> valid_log_object_keys = {
-  "filename",          "format",          "mode",    "header",    "rolling_enabled",   "rolling_interval_sec",
-  "rolling_offset_hr", "rolling_size_mb", "filters", "min_count", "rolling_max_count", "rolling_allow_empty",
-  "pipe_buffer_size"};
+std::set<std::string> valid_log_object_keys = {"filename",
+                                               "format",
+                                               "mode",
+                                               "header",
+                                               "rolling_enabled",
+                                               "rolling_interval_sec",
+                                               "rolling_offset_hr",
+                                               "rolling_size_mb",
+                                               "filters",
+                                               "rolling_min_count",
+                                               "rolling_max_count",
+                                               "rolling_allow_empty",
+                                               "pipe_buffer_size"};
 
 LogObject *
 YamlLogConfig::decodeLogObject(const YAML::Node &node)
@@ -158,7 +167,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   int obj_rolling_interval_sec = cfg->rolling_interval_sec;
   int obj_rolling_offset_hr    = cfg->rolling_offset_hr;
   int obj_rolling_size_mb      = cfg->rolling_size_mb;
-  int obj_min_count            = cfg->rolling_min_count;
+  int obj_rolling_min_count    = cfg->rolling_min_count;
   int obj_rolling_max_count    = cfg->rolling_max_count;
   int obj_rolling_allow_empty  = cfg->rolling_allow_empty;
 
@@ -184,8 +193,8 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   if (node["rolling_size_mb"]) {
     obj_rolling_size_mb = node["rolling_size_mb"].as<int>();
   }
-  if (node["min_count"]) {
-    obj_min_count = node["min_count"].as<int>();
+  if (node["rolling_min_count"]) {
+    obj_rolling_min_count = node["rolling_min_count"].as<int>();
   }
   if (node["rolling_max_count"]) {
     obj_rolling_max_count = node["rolling_max_count"].as<int>();
@@ -210,7 +219,7 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   auto logObject = new LogObject(fmt, Log::config->logfile_dir, filename.c_str(), file_type, header.c_str(),
                                  static_cast<Log::RollingEnabledValues>(obj_rolling_enabled), Log::config->preproc_threads,
                                  obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb, /* auto_created */ false,
-                                 /* rolling_max_count */ obj_rolling_max_count,
+                                 /* rolling_max_count */ obj_rolling_max_count, /* rolling_min_count */ obj_rolling_min_count,
                                  /* reopen_after_rolling */ obj_rolling_allow_empty > 0, pipe_buffer_size);
 
   // Generate LogDeletingInfo entry for later use
@@ -228,7 +237,6 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   default:
     break;
   }
-  cfg->deleting_info.insert(new LogDeletingInfo(filename + ext, ((obj_min_count == 0) ? INT_MAX : obj_min_count)));
 
   // filters
   auto filters = node["filters"];

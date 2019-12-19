@@ -22,26 +22,26 @@
 Reloading Plugins
 *****************
 
-Reloading plugin allows new versions of a plugin code to be loaded and executed and old versions to be unloaded without
+The reload plugin mechanism allows new versions of plugin code to be loaded and executed and old versions to be unloaded without
 restarting the |TS| process.
 
-Plugins are Dynamic Shared Objects (DSO), new versions of the plugins are currently loaded by using a |TS|
+Plugins are Dynamic Shared Objects (DSO). New versions of the plugins are currently loaded by using a |TS|
 configuration reload, i.e.::
 
   traffic_ctl config reload
 
-Although this feature should be transparent to there plugin developers, the following are some design considerations
-and implementation details.
+Although plugin reloading should be transparent to plugin developers, the following are some design considerations
+and implementation details for this feature.
 
 
 Design Considerations
 =====================
 
-1. The mechanism of the plugin reload should be transparent to the plugin developers, plugin developers should be
+1. The mechanism of the plugin reload should be transparent to the plugin developers. Plugin developers should be
    concerned only with properly initializing and cleaning up after the plugin and its instances.
 
-2. With the current |TS| implementation new version plugin (re)load is only triggered by a configuration
-   (re)load hence naturally the configuration should be always coupled with the set of plugins it loaded.
+2. With the current |TS| implementation, new version plugin (re)load is only triggered by a configuration
+   (re)load. Hence the configuration should always be coupled with the set of plugins it loaded.
 
 3. Due to its asynchronous nature, |TS| should allow running different newer and older versions of the same plugin at the same time.
 
@@ -50,7 +50,7 @@ Design Considerations
 5. Running different versions of the configuration and plugin versions at the same time requires maintaining
    a "current active set" to be used by new transactions, new continuations, etc. and also multiple "previous inactive" sets as well.
 
-6. The result of the plugin reloading should be consistent across operating systems, file systems, dynamic loader
+6. The result of the plugin reloading should be consistent across operating systems, file systems, and dynamic loader
    implementations.
 
 
@@ -61,10 +61,10 @@ Currently only loading of "remap" plugins (`remap.config`) is supported but (re)
 Consistent (re)loading behavior
 -------------------------------
 
-The following are some of the problems noticed during the initial experimentation:
+The following are some of the problems noticed during initial experimentation:
 
   a. There is an internal reference counting of the DSOs implemented inside the dynamic loader.
-     If an older version of the plugin DSO is still loaded then loading of a newer version of the DSO by using
+     If an older version of the plugin DSO is still loaded, then loading of a newer version of the DSO by using
      the same filename does not load the new version.
 
   b. If the filename used by the dynamic loader reference counting contains symbolic links the results are not
@@ -79,22 +79,22 @@ The following possible solutions were considered:
      good results but it was not available on all supported platforms
 
 
-A less efficient but more reliable solution was chosen - DSO files are temporarily copied to and consequently
-loaded from a runtime location and the copies is kept until plugin is unloaded.
+A less efficient but more reliable solution was chosen: DSO files are temporarily copied to and consequently
+loaded from a runtime location and each copy is kept until the corresponding plugin is unloaded.
 
-Each configuration / plugin reload would use a different runtime location, ``ATSUuid`` is used to create unique
+Each configuration / plugin reload would use a different runtime location with ``ATSUuid`` being used to create unique
 runtime directories.
 
 
 Reference counting against DSOs
 -------------------------------
 
-During the initial analysis a common sense solution was considered - to add instrumentation around handling
+During the initial analysis a common sense solution was considered: add instrumentation around handling
 of registered hooks in order to unload plugins safely. This would be more involved and not sufficient since hooks
 are not the only mechanism that relies on the plugin DSO being loaded. This design / implementation proposes
 a different approach.
 
-Plugin code can be called from HTTP state machine (1) while handling HTTP transactions or (2) while calling
+Plugin code can be called from the HTTP state machine (1) while handling HTTP transactions or (2) while calling
 event handling functions of continuations created by the plugin code.
 The plugin reload mechanism should guarantee that all necessary plugin DSOs are still loaded when those calls
 are performed.
@@ -102,7 +102,6 @@ are performed.
 Those continuations are created by :c:func:`TSContCreate` and :c:func:`TSVConnCreate` and
 could be used for registering hooks (i.e. registered by :c:func:`TSHttpHookAdd`) or for
 scheduling events in the future (i.e. :c:func:`TSContScheduleOnPool`).
-
 
 Registering hooks always requires creating continuations from inside the plugin code and a separate
 instrumentation around handling of hooks is not necessary.
@@ -117,14 +116,14 @@ Plugin context
 --------------
 
 Reference counting and managing different configuration and plugin sets require the continuation creation and
-destruction to know in which plugin context they are running.
+destruction logic to know in which plugin context they are running.
 
-Traffic server API change was considered for ``TSCreateCont``, ``TSVConnCreate`` and ``TSDestroyCont`` but
+A |TS| API change was considered for ``TSCreateCont``, ``TSVConnCreate``, and ``TSDestroyCont``, but
 it was decided to keep things hidden from the plugin developer by using thread local plugin context which
 would be set/switched accordingly before executing the plugin code.
 
-The continuations created by the plugin will have a context member added to them which will be used by
-the reference counting and when continuations are destroyed or handle events.
+The continuations created by the plugin will have a context member added to them which will be used for
+reference counting, when continuations are destroyed, and to handle events.
 
 
 TSHttpArgs
@@ -134,7 +133,7 @@ TSHttpArgs
 to store information. To avoid collisions between plugins a plugin should first *reserve* an index in the array.
 
 Since :c:func:`TSHttpTxnArgIndexReserve` and :c:func:`TSHttpSsnArgIndexReserve` are meant to be called during plugin
-initialization we could end up "leaking" indices during plugins reload.
+initialization we could end up "leaking" indices during plugin reload.
 Hence it is necessary to make sure only one index is allocated per "plugin identifying name", current
 :c:func:`TSHttpTxnArgIndexNameLookup` and :c:func:`TSHttpTxnArgIndexNameLookup` implementation assumes 1-1
 index-to-name relationship as well.
@@ -143,12 +142,12 @@ index-to-name relationship as well.
 PluginFactory
 -------------
 
-`PluginFactory` - creates and holds all plugin instances corresponding to a single configuration (re)load.
+`PluginFactory` creates and holds all plugin instances corresponding to a single configuration (re)load.
 
-#. Instantiates and initializes 'remap' plugins, eventually signals plugin unload/destruction, makes sure each plugin
+#. Instantiates and initializes 'remap' plugins, eventually signals plugin unload/destruction, and makes sure each plugin
    version is loaded only once per configuration (re)load by maintaining a list of DSOs already loaded.
 
-#. Initializes, keeps track of all resulting plugin instances and eventually signals each instance destruction.
+#. Initializes and keeps track of all resulting plugin instances and eventually signals each instance destruction.
 
 #. Handles multiple plugin search paths.
 
@@ -160,7 +159,7 @@ PluginFactory
 RemapPluginInfo
 ---------------
 
-`RemapPluginInfo` - a class representing a 'remap' plugin, derived from `PluginDso`, and handling 'remap' plugin specific
+`RemapPluginInfo` is a class representing a 'remap' plugin. It is derived from `PluginDso`. It is responsible for handling 'remap' plugin specific
 initialization and destruction and also sets up the right plugin context when its methods are called.
 
 
@@ -168,7 +167,7 @@ initialization and destruction and also sets up the right plugin context when it
 PluginDso
 ---------
 
-`PluginDso` - a class performing the actual DSO loading and unloading and all related initialization and
+`PluginDso` is a class performing the actual DSO loading and unloading and all related initialization and
 cleanup plus related error handling. Its functionality is modularized into a separate class in hopes to
 be reused by 'global' plugins in the future.
 

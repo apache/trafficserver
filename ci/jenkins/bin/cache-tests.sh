@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-PREFIX="${WORKSPACE}/${BUILD_NUMBER}/install"
+PREFIX="${ATS_BUILD_BASEDIR}/install"
 REMAP="${PREFIX}/etc/trafficserver/remap.config"
 RECORDS="${PREFIX}/etc/trafficserver/records.config"
 
@@ -25,7 +25,7 @@ TWEAK=""
 
 # Change to the build area (this is previously setup in extract.sh)
 set +x
-cd "${WORKSPACE}/${BUILD_NUMBER}/build"
+cd "${ATS_BUILD_BASEDIR}/build"
 
 ./configure \
     --prefix=${PREFIX} \

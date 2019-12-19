@@ -18,16 +18,16 @@
 
 set +x
 # Setup the build and install area for this build
-mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/build"
-mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/install"
+mkdir -p "${ATS_BUILD_BASEDIR}/build"
+mkdir -p "${ATS_BUILD_BASEDIR}/install"
 
-cd "${WORKSPACE}/${BUILD_NUMBER}/build"
+cd "${ATS_BUILD_BASEDIR}/build"
 echo "Artifact: ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2"
 tar xf ${ATS_SRC_HOME}/trafficserver-${ATS_BRANCH}.tar.bz2
 mv trafficserver-*/* .
 
-echo "build: ${WORKSPACE}/${BUILD_NUMBER}/build"
-echo "install: ${WORKSPACE}/${BUILD_NUMBER}/install"
+echo "build: ${ATS_BUILD_BASEDIR}/build"
+echo "install: ${ATS_BUILD_BASEDIR}/install"
 
 # Restore verbose shell output
 set -x

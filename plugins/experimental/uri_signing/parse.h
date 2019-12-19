@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#pragma once
+
 #include <stdlib.h>
 
 struct _cjose_jws_int;

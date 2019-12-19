@@ -71,7 +71,49 @@ the available tests.
 
 .. option:: -M, --remote_management
 
-.. option:: -C CMD, --command CMD
+.. option:: -C 'CMD [ARGS]', --command 'CMD [ARGS]'
+
+Run a |TS| maintenance command. These commands perform various administrative
+actions or queries against |TS|. Note that some commands (such as ``help`` and
+``verify_global_plugin``) take an argument. To invoke the command and its
+argument, surround the ``CMD`` and its argument in quotes. For instance, to
+request help for the ``verify_global_plugin`` command, format your command like
+so::
+    traffic_server -C "help verify_global_plugin"
+
+The following commands are supported:
+
+list
+   List the sizes of the host database and cache index as well as the storage
+   available to the cache.
+check
+   Check the cache for inconsistencies or corruption. ``check`` does not make
+   any changes to the data stored in the cache. ``check`` requires a scan of
+   the contents of the cache and may take a long time for large caches.
+clear
+   Clear the entire cache, both the document and the host database caches.  All
+   data in the cache is lost and the cache is reconfigured based on the current
+   description of database sizes and available storage.
+clear_cache
+   Clear the document cache.  All documents in the cache are lost and the cache
+   is reconfigured based on the current description of database sizes and
+   available storage.
+clear_hostdb
+   Clear the entire host database cache.  All host name resolution information
+   is lost.
+verify_config
+   Load the config and verify |TS| comes up correctly.
+verify_global_plugin PLUGIN_SO_FILE
+   Load a global plugin's shared object file and verify it meets minimal global
+   plugin API requirements.
+verify_remap_plugin PLUGIN_SO_FILE
+   Load a remap plugin's shared object file and verify it meets minimal remap
+   plugin API requirements.
+help [CMD]
+    Obtain a short description of a command. For example, ``'help clear'``
+    prints a description of the ``clear`` maintenance command. If no argument
+    is passed to ``help`` then a list of the supported maintenance commands are
+    printed along with a brief description of each.
 
 .. option:: -k, --clear_hostdb
 

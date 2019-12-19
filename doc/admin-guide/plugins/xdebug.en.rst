@@ -109,3 +109,9 @@ X-Transaction-ID
 X-Remap
     If the URL was remapped for a request, this header gives the *to* and *from* field from the line in remap.config that caused
     the URL to be remapped.
+
+X-ParentSelection-Key
+    The ``X-ParentSelection-Key`` header contains the URL that is used to
+    determine parent selection for an object in the Traffic Server. This
+    header is particularly useful if a custom parent selection key is
+    being used.

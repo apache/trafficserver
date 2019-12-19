@@ -70,11 +70,7 @@ mgmt_readline(int soc, char *buf, int maxlen)
         break;
       }
     } else if (rc == 0) {
-      if (n == 1) { /* EOF */
-        return 0;
-      } else {
-        break;
-      }
+      return n;
     } else { /* Error */
       if (errno == ECONNRESET || errno == EPIPE) {
         return n ? n : 0;
@@ -105,24 +101,39 @@ mgmt_readline(int soc, char *buf, int maxlen)
 int
 mgmt_writeline(int soc, const char *data, int nbytes)
 {
-  int nleft, n;
+  int nleft, n = 0;
   const char *tmp = data;
 
   nleft = nbytes;
   while (nleft > 0) {
     int nwritten = write_socket(soc, tmp, nleft);
-    if (nwritten <= 0) { /* Error or nothing written */
+    if (nwritten == 0) { // Nothing written
+      mgmt_sleep_msec(1);
+      continue;
+    } else if (nwritten < 0) { // Error
+      if (mgmt_transient_error()) {
+        mgmt_sleep_msec(1);
+        continue;
+      }
+
       return nwritten;
     }
     nleft -= nwritten;
     tmp += nwritten;
   }
 
-  if ((n = write_socket(soc, "\n", 1)) <= 0) { /* Terminating newline */
-    if (n < 0) {
+  while (n != 1) {
+    n = write_socket(soc, "\n", 1); /* Terminating newline */
+    if (n == 0) {
+      mgmt_sleep_msec(1);
+      continue;
+    } else if (n < 0) { // Error
+      if (mgmt_transient_error()) {
+        mgmt_sleep_msec(1);
+        continue;
+      }
+
       return n;
-    } else {
-      return (nbytes - nleft);
     }
   }
 
@@ -147,6 +158,7 @@ mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
   while (bytes_to_read > 0) {
     int err = read_socket(fd, p, bytes_to_read);
     if (err == 0) {
+      // return 0 if partial read.
       return err;
     } else if (err < 0) {
       // Turn ECONNRESET into EOF.
@@ -188,7 +200,10 @@ mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
   while (bytes_to_write > 0) {
     int err = write_socket(fd, p, bytes_to_write);
     if (err == 0) {
-      return err;
+      // Where this volume of IEEE Std 1003.1-2001 requires -1 to be returned and errno set to [EAGAIN],
+      // most historical implementations return zero for write(2)
+      mgmt_sleep_msec(1);
+      continue;
     } else if (err < 0) {
       if (mgmt_transient_error()) {
         mgmt_sleep_msec(1);
