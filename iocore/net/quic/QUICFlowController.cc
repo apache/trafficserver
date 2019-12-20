@@ -120,8 +120,17 @@ QUICFlowController::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint
 
   if (this->_should_create_frame) {
     frame = this->_create_frame(buf);
-    if (frame && frame->size() <= maximum_frame_size) {
-      this->_should_create_frame = false;
+    if (frame) {
+      if (frame->size() <= maximum_frame_size) {
+        this->_should_create_frame                    = false;
+        QUICFrameInformationUPtr info                 = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
+        info->type                                    = frame->type();
+        info->level                                   = QUICEncryptionLevel::NONE;
+        *(reinterpret_cast<QUICOffset *>(info->data)) = this->_limit;
+        this->_records_frame(frame->id(), std::move(info));
+      } else {
+        frame = nullptr;
+      }
     }
   }
 
@@ -223,48 +232,23 @@ QUICLocalFlowController::_need_to_forward_limit()
 QUICFrame *
 QUICRemoteConnectionFlowController::_create_frame(uint8_t *buf)
 {
-  auto frame                    = QUICFrameFactory::create_data_blocked_frame(buf, this->_offset, this->_issue_frame_id(), this);
-  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                    = frame->type();
-  info->level                   = QUICEncryptionLevel::NONE;
-  *(reinterpret_cast<QUICOffset *>(info->data)) = this->_offset;
-  this->_records_frame(frame->id(), std::move(info));
-  return frame;
+  return QUICFrameFactory::create_data_blocked_frame(buf, this->_offset, this->_issue_frame_id(), this);
 }
 
 QUICFrame *
 QUICLocalConnectionFlowController::_create_frame(uint8_t *buf)
 {
-  auto frame                    = QUICFrameFactory::create_max_data_frame(buf, this->_limit, this->_issue_frame_id(), this);
-  QUICFrameInformationUPtr info = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                    = frame->type();
-  info->level                   = QUICEncryptionLevel::NONE;
-  *(reinterpret_cast<QUICOffset *>(info->data)) = this->_limit;
-  this->_records_frame(frame->id(), std::move(info));
-  return frame;
+  return QUICFrameFactory::create_max_data_frame(buf, this->_limit, this->_issue_frame_id(), this);
 }
 
 QUICFrame *
 QUICRemoteStreamFlowController::_create_frame(uint8_t *buf)
 {
-  auto frame =
-    QUICFrameFactory::create_stream_data_blocked_frame(buf, this->_stream_id, this->_offset, this->_issue_frame_id(), this);
-  QUICFrameInformationUPtr info                 = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                                    = frame->type();
-  info->level                                   = QUICEncryptionLevel::NONE;
-  *(reinterpret_cast<QUICOffset *>(info->data)) = this->_offset;
-  this->_records_frame(frame->id(), std::move(info));
-  return frame;
+  return QUICFrameFactory::create_stream_data_blocked_frame(buf, this->_stream_id, this->_offset, this->_issue_frame_id(), this);
 }
 
 QUICFrame *
 QUICLocalStreamFlowController::_create_frame(uint8_t *buf)
 {
-  auto frame = QUICFrameFactory::create_max_stream_data_frame(buf, this->_stream_id, this->_limit, this->_issue_frame_id(), this);
-  QUICFrameInformationUPtr info                 = QUICFrameInformationUPtr(quicFrameInformationAllocator.alloc());
-  info->type                                    = frame->type();
-  info->level                                   = QUICEncryptionLevel::NONE;
-  *(reinterpret_cast<QUICOffset *>(info->data)) = this->_limit;
-  this->_records_frame(frame->id(), std::move(info));
-  return frame;
+  return QUICFrameFactory::create_max_stream_data_frame(buf, this->_stream_id, this->_limit, this->_issue_frame_id(), this);
 }
