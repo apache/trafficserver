@@ -18,7 +18,6 @@
 #
 import re
 import sys
-import string
 
 try:
     src_dir = sys.argv[1]
