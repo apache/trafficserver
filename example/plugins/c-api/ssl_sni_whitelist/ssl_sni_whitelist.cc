@@ -58,7 +58,7 @@ CB_servername_whitelist(TSCont /* contp */, TSEvent /* event */, void *edata)
     }
   }
   if (do_blind_tunnel) {
-    TSDebug("skh", "SNI callback: do blind tunnel for %s", servername);
+    TSDebug(PLUGIN_NAME, "SNI callback: do blind tunnel for %s", servername);
     TSVConnTunnel(ssl_vc);
     return TS_SUCCESS; // Don't re-enable so we interrupt processing
   }
