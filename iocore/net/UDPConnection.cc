@@ -102,30 +102,14 @@ UDP2ConnectionImpl::UDP2ConnectionImpl(AcceptUDP2ConnectionImpl *accept, Continu
 
 UDP2ConnectionImpl::~UDP2ConnectionImpl()
 {
-  ink_assert(this->mutex->thread_holding == this_thread());
   Debug("udp_con", "connection close");
   this->mutex = nullptr;
 
   int fd = this->_fd;
 
-  if (this->nh != nullptr) {
-    this->nh->stopIO(this);
-  }
-
   this->_fd = -1;
   if (fd != -1) {
     ::close(fd);
-  }
-
-  SList(UDP2Packet, out_link) aq(this->_send_queue.popall());
-  UDP2Packet *p;
-  while ((p = aq.pop())) {
-    delete p;
-  }
-
-  SList(UDP2Packet, in_link) aq2(this->_recv_queue.popall());
-  while ((p = aq2.pop())) {
-    delete p;
   }
 }
 
@@ -307,8 +291,20 @@ UDP2ConnectionImpl::endEvent(int event, void *data)
     return 0;
   }
 
+  SList(UDP2Packet, out_link) aq(this->_send_queue.popall());
+  UDP2Packet *p;
+  while ((p = aq.pop())) {
+    delete p;
+  }
+
+  SList(UDP2Packet, in_link) aq2(this->_recv_queue.popall());
+  while ((p = aq2.pop())) {
+    delete p;
+  }
+
   // kick out netevent from NetHandler
   this->nh->stopIO(this);
+  this->nh = nullptr;
   if (this->_accept_con != nullptr) {
     this->_accept_con->close_connection(this);
   } else {
@@ -389,9 +385,9 @@ UDP2ConnectionImpl::create_socket(sockaddr const *addr, int recv_buf, int send_b
   }
 
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(SOCKOPT_ON), sizeof(int)) < 0)) {
-    goto Lerror;
-  }
+  // if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(SOCKOPT_ON), sizeof(int)) < 0)) {
+  //   goto Lerror;
+  // }
 
   if (ats_is_ip6(addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
@@ -952,6 +948,7 @@ AcceptUDP2ConnectionImpl::create_connection(const IpEndpoint &local, const IpEnd
   ink_assert(this->mutex->thread_holding == this->_thread);
   ink_assert(peer.isValid());
 
+  char tmp[128] = {};
   uint64_t hash = hash_code(peer);
   auto con      = this->find_connection(peer);
   if (con != nullptr) {
@@ -959,9 +956,14 @@ AcceptUDP2ConnectionImpl::create_connection(const IpEndpoint &local, const IpEnd
   }
 
   con = new UDP2ConnectionImpl(this, c, thread);
-  ink_release_assert(con->create_socket(local, 1048576, 1048576) >= 0);
+  if (con->create_socket(local, 1048576, 1048576) < 0) {
+    Error("Can not create socket %s", ats_ip_ntop(&peer.sa, tmp, 128));
+    // ink_assert(0);
+    delete con;
+    return nullptr;
+  }
+
   if (con->connect(&peer.sa) < 0) {
-    char tmp[128] = {};
     Debug("udp_con", "Accept conn connect to peer failed: %s", ats_ip_ntop(&peer.sa, tmp, 128));
     delete con;
     return nullptr;
