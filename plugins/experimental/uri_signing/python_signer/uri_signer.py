@@ -20,10 +20,9 @@ import json
 import argparse
 import random
 import time
-import os
 
 # https://github.com/mpdavis/python-jose
-from jose import jwk, jwt
+from jose import jwt
 
 def main():
     parser = argparse.ArgumentParser()
