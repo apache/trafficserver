@@ -41,8 +41,7 @@
 #include <brotli/encode.h>
 #endif
 
-// Produce output about compile time features, useful for checking how things were built, as well
-// as for our TSQA test harness.
+// Produce output about compile time features, useful for checking how things were built
 static void
 print_feature(std::string_view name, int value, bool json, bool last = false)
 {
