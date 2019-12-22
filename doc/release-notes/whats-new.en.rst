@@ -22,20 +22,15 @@
 What's New in ATS v10.x
 =======================
 
-This version of |ATS| includes over <x> commits, from <y> pull requests. A total of <z> contributors
-have participated in this development cycle.
+This version of |ATS| includes over <x> commits, from <y> pull requests. A
+total of <z> contributors have participated in this development cycle.
 
 .. toctree::
    :maxdepth: 1
 
 New Features
 ------------
-- Add support for dtrace style markers (SDT) and include a few markers at locations of interest to users of SystemTap, dtrace, and gdb. See :ref:`developer-debug-builds`.
 
-``verify_global_plugin`` and ``verify_remap_plugin`` Maintenance Commands
-    ``verify_global_plugin`` and ``verify_remap_plugin` are new maintenance
-    commands added to |TS|. These load a plugin's shared object file and
-    verify it meets minimal global or remap plugin API requirements.
 
 New or modified Configurations
 ------------------------------
