@@ -108,7 +108,7 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 // Helper function to abstract calling ATSConsistentHash lookup_by_hashval() vs lookup().
 static pRecord *
 chash_lookup(ATSConsistentHash *fhash, uint64_t path_hash, ATSConsistentHashIter *chashIter, bool *wrap_around,
-             ATSHash64Sip24 *hash, bool *chash_init)
+             ATSHash64Sip24 *hash, bool *chash_init, bool *mapWrapped)
 {
   pRecord *prtmp;
 
@@ -118,6 +118,11 @@ chash_lookup(ATSConsistentHash *fhash, uint64_t path_hash, ATSConsistentHashIter
   } else {
     prtmp = (pRecord *)fhash->lookup(nullptr, chashIter, wrap_around, hash);
   }
+  // Do not set wrap_around to true until we try all the parents atleast once.
+  bool wrapped = *wrap_around;
+  *wrap_around = (*mapWrapped && *wrap_around) ? true : false;
+  if (!*mapWrapped && wrapped)
+    *mapWrapped = true;
   return prtmp;
 }
 
@@ -188,7 +193,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   fhash     = chash[last_lookup];
   do { // search until we've selected a different parent if !firstCall
     prtmp = (pRecord *)chash_lookup(fhash, path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup], &hash,
-                                    &result->chash_init[last_lookup]);
+                                    &result->chash_init[last_lookup], &result->mapWrapped[last_lookup]);
     lookups++;
     if (prtmp) {
       pRec = (parents[last_lookup] + prtmp->idx);
@@ -210,10 +215,6 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   // didn't find a parent or the parent is marked unavailable or the parent is marked down
   host_stat = (pRec) ? pStatus.getHostStatus(pRec->hostname) : HostStatus_t::HOST_STATUS_INIT;
   if (!pRec || (pRec && !pRec->available) || host_stat == HOST_STATUS_DOWN) {
-    if (firstCall) {
-      result->chash_init[PRIMARY]   = false;
-      result->chash_init[SECONDARY] = false;
-    }
     do {
       // check if the host is retryable.  It's retryable if the retry window has elapsed
       // and the global host status is HOST_STATUS_UP
@@ -267,7 +268,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
         }
         fhash = chash[last_lookup];
         prtmp = (pRecord *)chash_lookup(fhash, path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup], &hash,
-                                        &result->chash_init[last_lookup]);
+                                        &result->chash_init[last_lookup], &result->mapWrapped[last_lookup]);
         lookups++;
         if (prtmp) {
           pRec = (parents[last_lookup] + prtmp->idx);
