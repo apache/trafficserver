@@ -29,8 +29,6 @@ of <z> contributors have participated in this development cycle.
 
 New Features
 ------------
-- Add support for dtrace style markers (SDT) and include a few markers at locations of interest to users of SystemTap, dtrace, and gdb. See :ref:`developer-debug-builds`.
-
 This version of ATS has a number of new features (details below), but we're
 particularly excited about the following features:
 
@@ -43,6 +41,19 @@ ATS now supports the `PROXY
 <https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt>`_ protocol, on
 the inbound side. The incoming PROXY data gets transformed into the
 ``Forwarded`` header.
+
+Developer features
+~~~~~~~~~~~~~~~~~~
+* Add support for dtrace style markers (SDT) and include a few markers at
+  locations of interest to users of SystemTap, dtrace, and gdb.
+  See :ref:`developer-debug-builds`.
+
+Command line tools
+~~~~~~~~~~~~~~~~~~
+*  The :program:`traffic_ctl` tool now has two new sub-commands:
+  ``verify_global_plugin`` and ``verify_remap_plugin``. These commands load a
+  plugin's shared object file and verify it meets minimal global or remap
+  plugin API requirements.
 
 Incompatible records.config settings
 ------------------------------------
