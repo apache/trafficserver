@@ -61,10 +61,11 @@ struct ShowNet : public ShowCont {
     }
 
     ink_hrtime now = Thread::get_hrtime();
-    forl_LL(UnixNetVConnection, vc, nh->open_list)
+    forl_LL(NetEvent, ne, nh->open_list)
     {
+      auto vc = dynamic_cast<UnixNetVConnection *>(ne);
       //      uint16_t port = ats_ip_port_host_order(&addr.sa);
-      if (ats_is_ip(&addr) && !ats_ip_addr_port_eq(&addr.sa, vc->get_remote_addr())) {
+      if (vc == nullptr || (ats_is_ip(&addr) && !ats_ip_addr_port_eq(&addr.sa, vc->get_remote_addr()))) {
         continue;
       }
       //      if (port && port != ats_ip_port_host_order(&vc->server_addr.sa) && port != vc->accept_port)
@@ -158,7 +159,12 @@ struct ShowNet : public ShowCont {
     CHECK_SHOW(show("<H3>Thread: %d</H3>\n", ithread));
     CHECK_SHOW(show("<table border=1>\n"));
     int connections = 0;
-    forl_LL(UnixNetVConnection, vc, nh->open_list) connections++;
+    forl_LL(NetEvent, ne, nh->open_list)
+    {
+      if (dynamic_cast<UnixNetVConnection *>(ne) != nullptr) {
+        ++connections;
+      }
+    }
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Connections", connections));
     // CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Size", pollDescriptor->nfds));
     CHECK_SHOW(show("<tr><td>%s</td><td>%d</td></tr>\n", "Last Poll Ready", pollDescriptor->result));

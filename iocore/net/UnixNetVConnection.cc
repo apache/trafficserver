@@ -99,7 +99,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_assert(vc->thread == this_ethread());
-    vc->nh->free_netvc(vc);
+    vc->nh->free_netevent(vc);
     return EVENT_DONE;
   } else {
     return EVENT_CONT;
@@ -130,7 +130,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_assert(vc->thread == this_ethread());
-    vc->nh->free_netvc(vc);
+    vc->nh->free_netevent(vc);
     return EVENT_DONE;
   } else {
     return EVENT_CONT;
@@ -197,7 +197,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // global session pool case.  If so, the closed flag should be stable once we get the
   // s->vio.mutex (the global session pool mutex).
   if (vc->closed) {
-    vc->nh->free_netvc(vc);
+    vc->nh->free_netevent(vc);
     return;
   }
   // if it is not enabled.
@@ -657,7 +657,7 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 
   if (close_inline) {
     if (nh) {
-      nh->free_netvc(this);
+      nh->free_netevent(this);
     } else {
       free(t);
     }
@@ -866,8 +866,7 @@ UnixNetVConnection::reenable_re(VIO *vio)
   }
 }
 
-UnixNetVConnection::UnixNetVConnection() : flags(0)
-
+UnixNetVConnection::UnixNetVConnection()
 {
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
 }
@@ -889,6 +888,12 @@ void
 UnixNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 {
   read_from_net(nh, this, lthread);
+}
+
+void
+UnixNetVConnection::net_write_io(NetHandler *nh, EThread *lthread)
+{
+  write_to_net(nh, this, lthread);
 }
 
 // This code was pulled out of write_to_net so
@@ -1139,7 +1144,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   writer_cont        = write.vio.cont;
 
   if (closed) {
-    nh->free_netvc(this);
+    nh->free_netevent(this);
     return EVENT_DONE;
   }
 

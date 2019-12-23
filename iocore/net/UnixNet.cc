@@ -41,7 +41,7 @@ extern "C" void fd_reify(struct ev_loop *);
 
 // INKqa10496
 // One Inactivity cop runs on each thread once every second and
-// loops through the list of NetVCs and calls the timeouts
+// loops through the list of NetEvents and calls the timeouts
 class InactivityCop : public Continuation
 {
 public:
@@ -54,49 +54,49 @@ public:
     NetHandler &nh = *get_NetHandler(this_ethread());
 
     Debug("inactivity_cop_check", "Checking inactivity on Thread-ID #%d", this_ethread()->id);
-    // The rest NetVCs in cop_list which are not triggered between InactivityCop runs.
+    // The rest NetEvents in cop_list which are not triggered between InactivityCop runs.
     // Use pop() to catch any closes caused by callbacks.
-    while (UnixNetVConnection *vc = nh.cop_list.pop()) {
+    while (NetEvent *ne = nh.cop_list.pop()) {
       // If we cannot get the lock don't stop just keep cleaning
-      MUTEX_TRY_LOCK(lock, vc->mutex, this_ethread());
+      MUTEX_TRY_LOCK(lock, ne->get_mutex(), this_ethread());
       if (!lock.is_locked()) {
         NET_INCREMENT_DYN_STAT(inactivity_cop_lock_acquire_failure_stat);
         continue;
       }
 
-      if (vc->closed) {
-        nh.free_netvc(vc);
+      if (ne->closed) {
+        nh.free_netevent(ne);
         continue;
       }
 
-      if (vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now) {
-        if (nh.keep_alive_queue.in(vc)) {
+      if (ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) {
+        if (nh.keep_alive_queue.in(ne)) {
           // only stat if the connection is in keep-alive, there can be other inactivity timeouts
-          ink_hrtime diff = (now - (vc->next_inactivity_timeout_at - vc->inactivity_timeout_in)) / HRTIME_SECOND;
+          ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECOND;
           NET_SUM_DYN_STAT(keep_alive_queue_timeout_total_stat, diff);
           NET_INCREMENT_DYN_STAT(keep_alive_queue_timeout_count_stat);
         }
-        Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
-              ink_hrtime_to_sec(now), vc->next_inactivity_timeout_at, vc->inactivity_timeout_in);
-        vc->handleEvent(VC_EVENT_INACTIVITY_TIMEOUT, e);
-      } else if (vc->next_activity_timeout_at && vc->next_activity_timeout_at < now) {
-        Debug("inactivity_cop_verbose", "active vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
-              ink_hrtime_to_sec(now), vc->next_activity_timeout_at, vc->active_timeout_in);
-        vc->handleEvent(VC_EVENT_ACTIVE_TIMEOUT, e);
+        Debug("inactivity_cop_verbose", "ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
+              ink_hrtime_to_sec(now), ne->next_inactivity_timeout_at, ne->inactivity_timeout_in);
+        ne->callback(VC_EVENT_INACTIVITY_TIMEOUT, e);
+      } else if (ne->next_activity_timeout_at && ne->next_activity_timeout_at < now) {
+        Debug("inactivity_cop_verbose", "active ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
+              ink_hrtime_to_sec(now), ne->next_activity_timeout_at, ne->active_timeout_in);
+        ne->callback(VC_EVENT_ACTIVE_TIMEOUT, e);
       }
     }
     // The cop_list is empty now.
     // Let's reload the cop_list from open_list again.
-    forl_LL(UnixNetVConnection, vc, nh.open_list)
+    forl_LL(NetEvent, ne, nh.open_list)
     {
-      if (vc->thread == this_ethread()) {
-        nh.cop_list.push(vc);
+      if (ne->get_thread() == this_ethread()) {
+        nh.cop_list.push(ne);
       }
     }
-    // NetHandler will remove NetVC from cop_list if it is triggered.
-    // As the NetHandler runs, the number of NetVCs in the cop_list is decreasing.
+    // NetHandler will remove NetEvent from cop_list if it is triggered.
+    // As the NetHandler runs, the number of NetEvents in the cop_list is decreasing.
     // NetHandler runs 100 times maximum between InactivityCop runs.
-    // Therefore we don't have to check all the NetVCs as much as open_list.
+    // Therefore we don't have to check all the NetEvents as much as open_list.
 
     // Cleanup the active and keep-alive queues periodically
     nh.manage_active_queue(true); // close any connections over the active timeout
@@ -333,23 +333,23 @@ NetHandler::init_for_process()
 }
 
 //
-// Function used to release a UnixNetVConnection and free it.
+// Function used to release a NetEvent and free it.
 //
 void
-NetHandler::free_netvc(UnixNetVConnection *netvc)
+NetHandler::free_netevent(NetEvent *ne)
 {
   EThread *t = this->thread;
 
   ink_assert(t == this_ethread());
-  ink_release_assert(netvc->thread == t);
-  ink_release_assert(netvc->nh == this);
+  ink_release_assert(ne->get_thread() == t);
+  ink_release_assert(ne->nh == this);
 
-  // Release netvc from InactivityCop
-  stopCop(netvc);
-  // Release netvc from NetHandler
-  stopIO(netvc);
-  // Clear and deallocate netvc
-  netvc->free(t);
+  // Release ne from InactivityCop
+  stopCop(ne);
+  // Release ne from NetHandler
+  stopIO(ne);
+  // Clear and deallocate ne
+  ne->free(t);
 }
 
 //
@@ -358,25 +358,25 @@ NetHandler::free_netvc(UnixNetVConnection *netvc)
 void
 NetHandler::process_enabled_list()
 {
-  UnixNetVConnection *vc = nullptr;
+  NetEvent *ne = nullptr;
 
-  SListM(UnixNetVConnection, NetState, read, enable_link) rq(read_enable_list.popall());
-  while ((vc = rq.pop())) {
-    vc->ep.modify(EVENTIO_READ);
-    vc->ep.refresh(EVENTIO_READ);
-    vc->read.in_enabled_list = 0;
-    if ((vc->read.enabled && vc->read.triggered) || vc->closed) {
-      read_ready_list.in_or_enqueue(vc);
+  SListM(NetEvent, NetState, read, enable_link) rq(read_enable_list.popall());
+  while ((ne = rq.pop())) {
+    ne->ep.modify(EVENTIO_READ);
+    ne->ep.refresh(EVENTIO_READ);
+    ne->read.in_enabled_list = 0;
+    if ((ne->read.enabled && ne->read.triggered) || ne->closed) {
+      read_ready_list.in_or_enqueue(ne);
     }
   }
 
-  SListM(UnixNetVConnection, NetState, write, enable_link) wq(write_enable_list.popall());
-  while ((vc = wq.pop())) {
-    vc->ep.modify(EVENTIO_WRITE);
-    vc->ep.refresh(EVENTIO_WRITE);
-    vc->write.in_enabled_list = 0;
-    if ((vc->write.enabled && vc->write.triggered) || vc->closed) {
-      write_ready_list.in_or_enqueue(vc);
+  SListM(NetEvent, NetState, write, enable_link) wq(write_enable_list.popall());
+  while ((ne = wq.pop())) {
+    ne->ep.modify(EVENTIO_WRITE);
+    ne->ep.refresh(EVENTIO_WRITE);
+    ne->write.in_enabled_list = 0;
+    if ((ne->write.enabled && ne->write.triggered) || ne->closed) {
+      write_ready_list.in_or_enqueue(ne);
     }
   }
 }
@@ -387,63 +387,63 @@ NetHandler::process_enabled_list()
 void
 NetHandler::process_ready_list()
 {
-  UnixNetVConnection *vc = nullptr;
+  NetEvent *ne = nullptr;
 
 #if defined(USE_EDGE_TRIGGER)
-  // UnixNetVConnection *
-  while ((vc = read_ready_list.dequeue())) {
+  // NetEvent *
+  while ((ne = read_ready_list.dequeue())) {
     // Initialize the thread-local continuation flags
-    set_cont_flags(vc->control_flags);
-    if (vc->closed) {
-      free_netvc(vc);
-    } else if (vc->read.enabled && vc->read.triggered) {
-      vc->net_read_io(this, this->thread);
-    } else if (!vc->read.enabled) {
-      read_ready_list.remove(vc);
+    set_cont_flags(ne->get_control_flags());
+    if (ne->closed) {
+      free_netevent(ne);
+    } else if (ne->read.enabled && ne->read.triggered) {
+      ne->net_read_io(this, this->thread);
+    } else if (!ne->read.enabled) {
+      read_ready_list.remove(ne);
 #if defined(solaris)
-      if (vc->read.triggered && vc->write.enabled) {
-        vc->ep.modify(-EVENTIO_READ);
-        vc->ep.refresh(EVENTIO_WRITE);
-        vc->writeReschedule(this);
+      if (ne->read.triggered && ne->write.enabled) {
+        ne->ep.modify(-EVENTIO_READ);
+        ne->ep.refresh(EVENTIO_WRITE);
+        ne->writeReschedule(this);
       }
 #endif
     }
   }
-  while ((vc = write_ready_list.dequeue())) {
-    set_cont_flags(vc->control_flags);
-    if (vc->closed) {
-      free_netvc(vc);
-    } else if (vc->write.enabled && vc->write.triggered) {
-      write_to_net(this, vc, this->thread);
-    } else if (!vc->write.enabled) {
-      write_ready_list.remove(vc);
+  while ((ne = write_ready_list.dequeue())) {
+    set_cont_flags(ne->get_control_flags());
+    if (ne->closed) {
+      free_netevent(ne);
+    } else if (ne->write.enabled && ne->write.triggered) {
+      ne->net_write_io(this, this->thread);
+    } else if (!ne->write.enabled) {
+      write_ready_list.remove(ne);
 #if defined(solaris)
-      if (vc->write.triggered && vc->read.enabled) {
-        vc->ep.modify(-EVENTIO_WRITE);
-        vc->ep.refresh(EVENTIO_READ);
-        vc->readReschedule(this);
+      if (ne->write.triggered && ne->read.enabled) {
+        ne->ep.modify(-EVENTIO_WRITE);
+        ne->ep.refresh(EVENTIO_READ);
+        ne->readReschedule(this);
       }
 #endif
     }
   }
 #else  /* !USE_EDGE_TRIGGER */
-  while ((vc = read_ready_list.dequeue())) {
-    set_cont_flags(vc->control_flags);
-    if (vc->closed)
-      free_netvc(vc);
-    else if (vc->read.enabled && vc->read.triggered)
-      vc->net_read_io(this, this->thread);
-    else if (!vc->read.enabled)
-      vc->ep.modify(-EVENTIO_READ);
+  while ((ne = read_ready_list.dequeue())) {
+    set_cont_flags(ne->get_control_flags());
+    if (ne->closed)
+      free_netevent(ne);
+    else if (ne->read.enabled && ne->read.triggered)
+      ne->net_read_io(this, this->thread);
+    else if (!ne->read.enabled)
+      ne->ep.modify(-EVENTIO_READ);
   }
-  while ((vc = write_ready_list.dequeue())) {
-    set_cont_flags(vc->control_flags);
-    if (vc->closed)
-      free_netvc(vc);
-    else if (vc->write.enabled && vc->write.triggered)
-      write_to_net(this, vc, this->thread);
-    else if (!vc->write.enabled)
-      vc->ep.modify(-EVENTIO_WRITE);
+  while ((ne = write_ready_list.dequeue())) {
+    set_cont_flags(ne->get_control_flags());
+    if (ne->closed)
+      free_netevent(ne);
+    else if (ne->write.enabled && ne->write.triggered)
+      write_to_net(this, ne, this->thread);
+    else if (!ne->write.enabled)
+      ne->ep.modify(-EVENTIO_WRITE);
   }
 #endif /* !USE_EDGE_TRIGGER */
 }
@@ -482,35 +482,35 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   p->do_poll(timeout);
 
   // Get & Process polling result
-  PollDescriptor *pd     = get_PollDescriptor(this->thread);
-  UnixNetVConnection *vc = nullptr;
+  PollDescriptor *pd = get_PollDescriptor(this->thread);
+  NetEvent *ne       = nullptr;
   for (int x = 0; x < pd->result; x++) {
     epd = static_cast<EventIO *> get_ev_data(pd, x);
     if (epd->type == EVENTIO_READWRITE_VC) {
-      vc = epd->data.vc;
-      // Remove triggered NetVC from cop_list because it won't be timeout before next InactivityCop runs.
-      if (cop_list.in(vc)) {
-        cop_list.remove(vc);
+      ne = epd->data.ne;
+      // Remove triggered NetEvent from cop_list because it won't be timeout before next InactivityCop runs.
+      if (cop_list.in(ne)) {
+        cop_list.remove(ne);
       }
       if (get_ev_events(pd, x) & (EVENTIO_READ | EVENTIO_ERROR)) {
-        vc->read.triggered = 1;
-        if (!read_ready_list.in(vc)) {
-          read_ready_list.enqueue(vc);
+        ne->read.triggered = 1;
+        if (!read_ready_list.in(ne)) {
+          read_ready_list.enqueue(ne);
         } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
           // check for unhandled epoll events that should be handled
           Debug("iocore_net_main", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%d",
-                get_ev_events(pd, x), vc->read.enabled, vc->closed, read_ready_list.in(vc));
+                get_ev_events(pd, x), ne->read.enabled, ne->closed, read_ready_list.in(ne));
         }
       }
-      vc = epd->data.vc;
+      ne = epd->data.ne;
       if (get_ev_events(pd, x) & (EVENTIO_WRITE | EVENTIO_ERROR)) {
-        vc->write.triggered = 1;
-        if (!write_ready_list.in(vc)) {
-          write_ready_list.enqueue(vc);
+        ne->write.triggered = 1;
+        if (!write_ready_list.in(ne)) {
+          write_ready_list.enqueue(ne);
         } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
           // check for unhandled epoll events that should be handled
           Debug("iocore_net_main", "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%d",
-                get_ev_events(pd, x), vc->write.enabled, vc->closed, write_ready_list.in(vc));
+                get_ev_events(pd, x), ne->write.enabled, ne->closed, write_ready_list.in(ne));
         }
       } else if (!(get_ev_events(pd, x) & EVENTIO_READ)) {
         Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd, x));
@@ -569,17 +569,17 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
   ink_hrtime now = Thread::get_hrtime();
 
   // loop over the non-active connections and try to close them
-  UnixNetVConnection *vc      = active_queue.head;
-  UnixNetVConnection *vc_next = nullptr;
-  int closed                  = 0;
-  int handle_event            = 0;
-  int total_idle_time         = 0;
-  int total_idle_count        = 0;
-  for (; vc != nullptr; vc = vc_next) {
-    vc_next = vc->active_queue_link.next;
-    if ((vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) ||
-        (vc->active_timeout_in && vc->next_activity_timeout_at <= now)) {
-      _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);
+  NetEvent *ne         = active_queue.head;
+  NetEvent *ne_next    = nullptr;
+  int closed           = 0;
+  int handle_event     = 0;
+  int total_idle_time  = 0;
+  int total_idle_count = 0;
+  for (; ne != nullptr; ne = ne_next) {
+    ne_next = ne->active_queue_link.next;
+    if ((ne->inactivity_timeout_in && ne->next_inactivity_timeout_at <= now) ||
+        (ne->active_timeout_in && ne->next_activity_timeout_at <= now)) {
+      _close_ne(ne, now, handle_event, closed, total_idle_time, total_idle_count);
     }
     if (ignore_queue_size == false && max_connections_active_per_thread_in > active_queue_size) {
       return true;
@@ -619,14 +619,14 @@ NetHandler::manage_keep_alive_queue()
   }
 
   // loop over the non-active connections and try to close them
-  UnixNetVConnection *vc_next = nullptr;
-  int closed                  = 0;
-  int handle_event            = 0;
-  int total_idle_time         = 0;
-  int total_idle_count        = 0;
-  for (UnixNetVConnection *vc = keep_alive_queue.head; vc != nullptr; vc = vc_next) {
-    vc_next = vc->keep_alive_queue_link.next;
-    _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);
+  NetEvent *ne_next    = nullptr;
+  int closed           = 0;
+  int handle_event     = 0;
+  int total_idle_time  = 0;
+  int total_idle_count = 0;
+  for (NetEvent *ne = keep_alive_queue.head; ne != nullptr; ne = ne_next) {
+    ne_next = ne->keep_alive_queue_link.next;
+    _close_ne(ne, now, handle_event, closed, total_idle_time, total_idle_count);
 
     total_connections_in = active_queue_size + keep_alive_queue_size;
     if (total_connections_in <= max_connections_per_thread_in) {
@@ -642,40 +642,39 @@ NetHandler::manage_keep_alive_queue()
 }
 
 void
-NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time,
-                      int &total_idle_count)
+NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count)
 {
-  if (vc->thread != this_ethread()) {
+  if (ne->get_thread() != this_ethread()) {
     return;
   }
-  MUTEX_TRY_LOCK(lock, vc->mutex, this_ethread());
+  MUTEX_TRY_LOCK(lock, ne->get_mutex(), this_ethread());
   if (!lock.is_locked()) {
     return;
   }
-  ink_hrtime diff = (now - (vc->next_inactivity_timeout_at - vc->inactivity_timeout_in)) / HRTIME_SECOND;
+  ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECOND;
   if (diff > 0) {
     total_idle_time += diff;
     ++total_idle_count;
     NET_SUM_DYN_STAT(keep_alive_queue_timeout_total_stat, diff);
     NET_INCREMENT_DYN_STAT(keep_alive_queue_timeout_count_stat);
   }
-  Debug("net_queue", "closing connection NetVC=%p idle: %u now: %" PRId64 " at: %" PRId64 " in: %" PRId64 " diff: %" PRId64, vc,
-        keep_alive_queue_size, ink_hrtime_to_sec(now), ink_hrtime_to_sec(vc->next_inactivity_timeout_at),
-        ink_hrtime_to_sec(vc->inactivity_timeout_in), diff);
-  if (vc->closed) {
-    free_netvc(vc);
+  Debug("net_queue", "closing connection NetEvent=%p idle: %u now: %" PRId64 " at: %" PRId64 " in: %" PRId64 " diff: %" PRId64, ne,
+        keep_alive_queue_size, ink_hrtime_to_sec(now), ink_hrtime_to_sec(ne->next_inactivity_timeout_at),
+        ink_hrtime_to_sec(ne->inactivity_timeout_in), diff);
+  if (ne->closed) {
+    free_netevent(ne);
     ++closed;
   } else {
-    vc->next_inactivity_timeout_at = now;
+    ne->next_inactivity_timeout_at = now;
     // create a dummy event
     Event event;
     event.ethread = this_ethread();
-    if (vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) {
-      if (vc->handleEvent(VC_EVENT_INACTIVITY_TIMEOUT, &event) == EVENT_DONE) {
+    if (ne->inactivity_timeout_in && ne->next_inactivity_timeout_at <= now) {
+      if (ne->callback(VC_EVENT_INACTIVITY_TIMEOUT, &event) == EVENT_DONE) {
         ++handle_event;
       }
-    } else if (vc->active_timeout_in && vc->next_activity_timeout_at <= now) {
-      if (vc->handleEvent(VC_EVENT_ACTIVE_TIMEOUT, &event) == EVENT_DONE) {
+    } else if (ne->active_timeout_in && ne->next_activity_timeout_at <= now) {
+      if (ne->callback(VC_EVENT_ACTIVE_TIMEOUT, &event) == EVENT_DONE) {
         ++handle_event;
       }
     }
@@ -683,41 +682,41 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
 }
 
 void
-NetHandler::add_to_keep_alive_queue(UnixNetVConnection *vc)
+NetHandler::add_to_keep_alive_queue(NetEvent *ne)
 {
-  Debug("net_queue", "NetVC: %p", vc);
+  Debug("net_queue", "NetEvent: %p", ne);
   ink_assert(mutex->thread_holding == this_ethread());
 
-  if (keep_alive_queue.in(vc)) {
+  if (keep_alive_queue.in(ne)) {
     // already in the keep-alive queue, move the head
-    keep_alive_queue.remove(vc);
+    keep_alive_queue.remove(ne);
   } else {
     // in the active queue or no queue, new to this queue
-    remove_from_active_queue(vc);
+    remove_from_active_queue(ne);
     ++keep_alive_queue_size;
   }
-  keep_alive_queue.enqueue(vc);
+  keep_alive_queue.enqueue(ne);
 
   // if keep-alive queue is over size then close connections
   manage_keep_alive_queue();
 }
 
 void
-NetHandler::remove_from_keep_alive_queue(UnixNetVConnection *vc)
+NetHandler::remove_from_keep_alive_queue(NetEvent *ne)
 {
-  Debug("net_queue", "NetVC: %p", vc);
+  Debug("net_queue", "NetEvent: %p", ne);
   ink_assert(mutex->thread_holding == this_ethread());
 
-  if (keep_alive_queue.in(vc)) {
-    keep_alive_queue.remove(vc);
+  if (keep_alive_queue.in(ne)) {
+    keep_alive_queue.remove(ne);
     --keep_alive_queue_size;
   }
 }
 
 bool
-NetHandler::add_to_active_queue(UnixNetVConnection *vc)
+NetHandler::add_to_active_queue(NetEvent *ne)
 {
-  Debug("net_queue", "NetVC: %p", vc);
+  Debug("net_queue", "NetEvent: %p", ne);
   Debug("net_queue", "max_connections_per_thread_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, active_queue_size, keep_alive_queue_size);
   ink_assert(mutex->thread_holding == this_ethread());
@@ -728,27 +727,27 @@ NetHandler::add_to_active_queue(UnixNetVConnection *vc)
     return false;
   }
 
-  if (active_queue.in(vc)) {
+  if (active_queue.in(ne)) {
     // already in the active queue, move the head
-    active_queue.remove(vc);
+    active_queue.remove(ne);
   } else {
     // in the keep-alive queue or no queue, new to this queue
-    remove_from_keep_alive_queue(vc);
+    remove_from_keep_alive_queue(ne);
     ++active_queue_size;
   }
-  active_queue.enqueue(vc);
+  active_queue.enqueue(ne);
 
   return true;
 }
 
 void
-NetHandler::remove_from_active_queue(UnixNetVConnection *vc)
+NetHandler::remove_from_active_queue(NetEvent *ne)
 {
-  Debug("net_queue", "NetVC: %p", vc);
+  Debug("net_queue", "NetEvent: %p", ne);
   ink_assert(mutex->thread_holding == this_ethread());
 
-  if (active_queue.in(vc)) {
-    active_queue.remove(vc);
+  if (active_queue.in(ne)) {
+    active_queue.remove(ne);
     --active_queue_size;
   }
 }
