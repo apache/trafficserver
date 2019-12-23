@@ -258,21 +258,19 @@ UDP2ConnectionImpl::mainEvent(int event, void *data)
 int
 UDP2ConnectionImpl::startEvent(int event, void *data)
 {
-  // ink_assert(this->mutex->thread_holding == this->_thread);
   ink_assert(this->refcount_dec() > 0);
   NetHandler *nh = get_NetHandler(this->_thread);
-  MUTEX_TRY_LOCK(lock, nh->mutex, this_ethread());
-  if (!lock.is_locked()) {
-    this->refcount_inc();
-    SET_HANDLER(&UDP2ConnectionImpl::startEvent);
-    this->_thread->schedule_in(this, net_retry_delay);
-    return 1;
+  if (this->_thread == this_ethread()) {
+    Debug("udp_conn", "startEvent complete refcount: %d", this->refcount());
+    SET_HANDLER(&UDP2ConnectionImpl::mainEvent);
+    ink_assert(nh->startIO(this) >= 0);
+    return 0;
   }
 
-  Debug("udp_conn", "startEvent complete refcount: %d", this->refcount());
-  SET_HANDLER(&UDP2ConnectionImpl::mainEvent);
-  ink_assert(nh->startIO(this) >= 0);
-  return 0;
+  this->refcount_inc();
+  SET_HANDLER(&UDP2ConnectionImpl::startEvent);
+  this->_thread->schedule_in(this, net_retry_delay);
+  return 1;
 }
 
 int
