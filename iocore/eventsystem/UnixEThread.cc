@@ -51,6 +51,35 @@ int const EThread::SAMPLE_COUNT[N_EVENT_TIMESCALES] = {10, 100, 1000};
 
 int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
 
+// To define a class inherits from Thread:
+//   1) Define an independent ink_thread_key
+//   2) Override Thread::set_specific()
+//   3) Define this_Xthread() which get thread specific data by the independent key
+//   4) Clear thread specific data at destructor funtion.
+//
+// The below comments are copied from I_Thread.h
+//
+// Additionally, the EThread class (derived from Thread) maintains its
+// own independent key. All (and only) the threads created in the Event
+// Subsystem are registered with this key.
+ink_thread_key ethread_key;
+
+namespace
+{
+static bool ethread_initialized ATS_UNUSED = ([]() -> bool {
+  // File scope initialization goes here.
+  ink_thread_key_create(&ethread_key, nullptr);
+  return true;
+})();
+}
+
+void
+EThread::set_specific()
+{
+  ink_thread_setspecific(ethread_key, this);
+  Thread::set_specific();
+}
+
 EThread::EThread()
 {
   memset(thread_private, 0, PER_THREAD_DATA);
@@ -92,7 +121,15 @@ EThread::EThread(ThreadType att, Event *e) : tt(att), start_event(e)
 
 // Provide a destructor so that SDK functions which create and destroy
 // threads won't have to deal with EThread memory deallocation.
-EThread::~EThread() {}
+EThread::~EThread()
+{
+  ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
+
+  if (ink_thread_getspecific(ethread_key) == this) {
+    // Clear pointer to this object stored in thread-specific data by set_specific.
+    ink_thread_setspecific(ethread_key, nullptr);
+  }
+}
 
 bool
 EThread::is_event_type(EventType et)

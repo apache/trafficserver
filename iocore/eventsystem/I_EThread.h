@@ -282,6 +282,8 @@ public:
   // Set the tail handler.
   void set_tail_handler(LoopTailHandler *handler);
 
+  void set_specific() override;
+
   /* private */
 
   Event *schedule_local(Event *e);

@@ -110,7 +110,7 @@ public:
   */
   Ptr<ProxyMutex> mutex;
 
-  void set_specific();
+  virtual void set_specific();
 
   inkcoreapi static ink_thread_key thread_data_key;
 
