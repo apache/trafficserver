@@ -79,6 +79,7 @@ actions or queries against |TS|. Note that some commands (such as ``help`` and
 argument, surround the ``CMD`` and its argument in quotes. For instance, to
 request help for the ``verify_global_plugin`` command, format your command like
 so::
+
     traffic_server -C "help verify_global_plugin"
 
 The following commands are supported:
