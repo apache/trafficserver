@@ -50,10 +50,10 @@ Developer features
 
 Command line tools
 ~~~~~~~~~~~~~~~~~~
-*  The :program:`traffic_ctl` tool now has two new sub-commands:
-  ``verify_global_plugin`` and ``verify_remap_plugin``. These commands load a
-  plugin's shared object file and verify it meets minimal global or remap
-  plugin API requirements.
+* The :program:`traffic_server` program now has two new maintenance
+  commands: ``verify_global_plugin`` and ``verify_remap_plugin``.
+  These commands load a  plugin's shared object file and verify it meets
+  minimal global or remap plugin API requirements.
 
 Incompatible records.config settings
 ------------------------------------
