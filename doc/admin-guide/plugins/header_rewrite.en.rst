@@ -562,7 +562,7 @@ be specified multiple times, such as ``Set-Cookie``, but for headers which may
 only be specified once you may prefer to use `set-header`_ instead.
 
 The header's ``<value>`` may be specified as a literal string, or it may take
-advantage of :ref:`header-rewrite-concatenations` to calculate a dynamic value
+advantage of `String concatenations`_ to calculate a dynamic value
 for the header.
 
 counter
@@ -675,9 +675,8 @@ set-header
 Replaces the value of header ``<name>`` with ``<value>``, creating the header
 if necessary.
 
-The header's ``<value>`` may be specified according to `Header Values`_ or take
-advantage of :ref:`header-rewrite-concatenations` to calculate a dynamic value
-for the header.
+The header's ``<value>`` may be a literal string, or take advantage of
+`String concatenations`_ to calculate a dynamic value for the header.
 
 set-redirect
 ~~~~~~~~~~~~
@@ -689,7 +688,7 @@ When invoked, sends a redirect response to the client, with HTTP status
 ``<code>``, and a new location of ``<destination>``. If the ``QSA`` flag is
 enabled, the original query string will be preserved and added to the new
 location automatically. This operator supports
-:ref:`header-rewrite-concatenations` for ``<destination>``.
+`String concatenations`_ for ``<destination>``.
 
 set-status
 ~~~~~~~~~~
@@ -760,8 +759,6 @@ L      Last rule, do not continue.
 QSA    Append the results of the rule to the query string.
 ====== ========================================================================
 
-.. _header-rewrite-concatenations:
-
 String concatenations
 ---------------------
 
@@ -769,7 +766,8 @@ You can concatenate values using strings, condition values and variable expansio
 
     add-header CustomHeader "Hello from %{IP:SERVER}:%{INBOUND:LOCAL-PORT}"
 
-String concatenation is not yet supported in condition testing.
+This is the new, generic form of setting header values. Unfortunately, string
+concatenation is not yet supported in conditionals.
 
 Note: In versions prior to ATS v9.0.0, an alternative string expansion was available. those
 expansions are no longer available, but the following table can help migrations:
