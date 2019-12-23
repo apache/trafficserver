@@ -36,6 +36,7 @@
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
 #include "P_NetAccept.h"
+#include "NetEvent.h"
 
 class UnixNetVConnection;
 class NetHandler;
@@ -104,7 +105,7 @@ struct OOB_callback : public Continuation {
 
 enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
 
-class UnixNetVConnection : public NetVConnection
+class UnixNetVConnection : public NetVConnection, public NetEvent
 {
 public:
   int64_t outstanding() override;
@@ -216,7 +217,45 @@ public:
     return false;
   }
 
-  virtual void net_read_io(NetHandler *nh, EThread *lthread);
+  // NetEvent
+  virtual void net_read_io(NetHandler *nh, EThread *lthread) override;
+  virtual void net_write_io(NetHandler *nh, EThread *lthread) override;
+  virtual void free(EThread *t) override;
+  virtual int
+  close() override
+  {
+    return this->con.close();
+  }
+  virtual int
+  get_fd() override
+  {
+    return this->con.fd;
+  }
+
+  virtual EThread *
+  get_thread() override
+  {
+    return this->thread;
+  }
+
+  virtual int
+  callback(int event = CONTINUATION_EVENT_NONE, void *data = nullptr) override
+  {
+    return this->handleEvent(event, data);
+  }
+
+  virtual Ptr<ProxyMutex> &
+  get_mutex() override
+  {
+    return this->mutex;
+  }
+
+  virtual ContFlags &
+  get_control_flags() override
+  {
+    return this->control_flags;
+  }
+
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
   void readDisable(NetHandler *nh);
   void readSignalError(NetHandler *nh, int err);
@@ -233,40 +272,11 @@ public:
   UnixNetVConnection *migrateToCurrentThread(Continuation *c, EThread *t);
 
   Action action_;
-  int closed = 0;
-  NetState read;
-  NetState write;
 
-  LINK(UnixNetVConnection, cop_link);
-  LINKM(UnixNetVConnection, read, ready_link)
-  SLINKM(UnixNetVConnection, read, enable_link)
-  LINKM(UnixNetVConnection, write, ready_link)
-  SLINKM(UnixNetVConnection, write, enable_link)
-  LINK(UnixNetVConnection, keep_alive_queue_link);
-  LINK(UnixNetVConnection, active_queue_link);
-
-  ink_hrtime inactivity_timeout_in      = 0;
-  ink_hrtime active_timeout_in          = 0;
-  ink_hrtime next_inactivity_timeout_at = 0;
-  ink_hrtime next_activity_timeout_at   = 0;
-
-  EventIO ep;
-  NetHandler *nh  = nullptr;
   unsigned int id = 0;
-
-  union {
-    unsigned int flags;
-#define NET_VC_SHUTDOWN_READ 1
-#define NET_VC_SHUTDOWN_WRITE 2
-    struct {
-      unsigned int got_local_addr : 1;
-      unsigned int shutdown : 2;
-    } f;
-  };
 
   Connection con;
   int recursion            = 0;
-  ink_hrtime submit_time   = 0;
   OOB_callback *oob_ptr    = nullptr;
   bool from_accept_thread  = false;
   NetAccept *accept_object = nullptr;
@@ -287,7 +297,6 @@ public:
    */
   virtual int populate(Connection &con, Continuation *c, void *arg);
   virtual void clear();
-  virtual void free(EThread *t);
 
   ink_hrtime get_inactivity_timeout() override;
   ink_hrtime get_active_timeout() override;
