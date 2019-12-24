@@ -73,7 +73,7 @@ they go into master and the incompatible release branch. Other than that,
 it's pretty much business as usual, but easier for everyone involved.
 This git branch diagram shows an example how the git tree will be managed:
 
-.. figure:: images/git-versions.png
+.. figure:: images/git-versions.svg
    :align: center
 
 Burning release numbers, or how our release process works
