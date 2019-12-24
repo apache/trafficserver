@@ -1,3 +1,6 @@
+'''
+Extend Autest with IP-related utilities.
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,6 +17,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-nc -l ${2} -o outserver1 -c "sh ./delay-server.sh" &
-sleep 1
-nghttp -vv https://127.0.0.1:${1}/delay-chunked-response
+
+from ports import get_port
+
+# this forms is for the global process define
+
+# New member function for Test object, that reserves TCP port(s) from the list of available TCP ports, for
+# use in the test.  Each argument is a string, containing the name of a variable to add to Test.Variables .
+# For each argument, a port will be reserved, and its number will be assigned to the new variable for the
+# argument.
+#
+def get_tcp_port(obj, *newVariables):
+    for v in newVariables:
+        if not isinstance(v, str):
+            raise TypeError("all function arguments must be strings")
+        get_port(obj, v)
+
+#AddTestEntityMember(get_tcp_port, name="GetTcpPort")
+ExtendTest(get_tcp_port, name="GetTcpPort")

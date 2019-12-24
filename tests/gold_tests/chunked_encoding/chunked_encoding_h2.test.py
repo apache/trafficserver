@@ -29,6 +29,8 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 
+Test.GetTcpPort("upstream_port")
+
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
@@ -46,10 +48,10 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.remap_config.AddLine(
-    'map /delay-chunked-response http://127.0.0.1:8888'
+    'map /delay-chunked-response http://127.0.0.1:{0}'.format(Test.Variables.upstream_port)
 )
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:8888'
+    'map / http://127.0.0.1:{0}'.format(Test.Variables.upstream_port)
 )
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -67,7 +69,7 @@ server1_out = Test.Disk.File("outserver1")
 tr = Test.AddTestRun()
 tr.Setup.Copy('delay-server.sh')
 tr.Setup.Copy('case1.sh')
-tr.Processes.Default.Command = 'sh ./case1.sh {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'sh ./case1.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("RST_STREAM", "Delayed chunk close should not cause reset")
@@ -82,7 +84,7 @@ server2_out = Test.Disk.File("outserver2")
 tr = Test.AddTestRun()
 tr.Setup.Copy('server2.sh')
 tr.Setup.Copy('case2.sh')
-tr.Processes.Default.Command = 'sh ./case2.sh {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'sh ./case2.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("content-length:", "Response should include content length")
@@ -96,7 +98,7 @@ server3_out = Test.Disk.File("outserver3")
 tr = Test.AddTestRun()
 tr.Setup.Copy('server3.sh')
 tr.Setup.Copy('case3.sh')
-tr.Processes.Default.Command = 'sh ./case3.sh {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'sh ./case3.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("content-length:", "Response should not include content length")
