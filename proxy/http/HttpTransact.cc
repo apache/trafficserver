@@ -3083,7 +3083,7 @@ HttpTransact::handle_cache_write_lock(State *s)
       //  Write failed and read retry triggered
       //  Clean up server_request and re-initiate
       //  Cache Lookup
-      ink_assert(s->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY);
+      ink_assert(s->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY);
       s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
       StateMachineAction_t next;
       next           = SM_ACTION_CACHE_LOOKUP;
