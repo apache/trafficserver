@@ -887,7 +887,10 @@ UDP2ConnectionImpl::receive(UDP2Packet *packet)
     return 0;
   }
 
+  // FIXME: we might send too many UDP_USER_READ_READY but only first one
+  // works.
   this->_reschedule(UDPEvents::UDP_USER_READ_READY, nullptr);
+  this->nh->signalActivity();
   return 0;
 }
 
@@ -902,6 +905,7 @@ UDP2ConnectionImpl::send(UDP2Packet *p)
     this->_reenable(&this->write.vio);
   } else {
     // cross thread
+    // FIXME the same as receive.
     this->_reschedule(UDPEvents::UDP_SEND_EVENT, nullptr);
   }
   this->nh->signalActivity();
