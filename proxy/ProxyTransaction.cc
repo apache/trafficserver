@@ -64,6 +64,7 @@ ProxyTransaction::release(IOBufferReader *r)
     this->decrement_txn_stat();
     _proxy_ssn->release(this);
   }
+  this->destroy();
 }
 
 void

@@ -430,7 +430,7 @@ Http2Stream::terminate_if_possible()
     Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
     SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
     h2_proxy_ssn->connection_state.delete_stream(this);
-    destroy();
+    this->destroy();
   }
 }
 
@@ -491,8 +491,7 @@ Http2Stream::initiating_close()
       _sm->handleEvent(VC_EVENT_ERROR);
     } else if (!sent_write_complete) {
       // Transaction is already gone or not started. Kill yourself
-      do_io_close();
-      destroy();
+      this->do_io_close();
     }
   }
 }

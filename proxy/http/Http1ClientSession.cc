@@ -88,7 +88,7 @@ Http1ClientSession::release_transaction()
 {
   released_transactions++;
   if (transact_count == released_transactions) {
-    destroy();
+    this->destroy();
   }
 }
 

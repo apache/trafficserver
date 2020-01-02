@@ -42,7 +42,7 @@ Http1Transaction::release(IOBufferReader *r)
   if (r != _reader) {
     this->do_io_close();
   } else {
-    super_type::release(r);
+    super_type::release(r); // calls destroy() on this
   }
 }
 
@@ -116,7 +116,7 @@ void
 Http1Transaction::do_io_close(int lerrno)
 {
   _proxy_ssn->do_io_close(lerrno);
-  // this->destroy(); Parent owns this data structure.  No need for separate destroy.
+  this->destroy();
 }
 
 void

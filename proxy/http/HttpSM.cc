@@ -914,6 +914,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       ua_entry->eos = true;
     } else {
       ua_txn->do_io_close();
+      ua_txn           = nullptr;
       ua_buffer_reader = nullptr;
       vc_table.cleanup_entry(ua_entry);
       ua_entry = nullptr;
@@ -3315,11 +3316,12 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
 
     vc_table.remove_entry(this->ua_entry);
     ua_txn->do_io_close();
+    ua_txn = nullptr;
   } else {
     ink_assert(ua_buffer_reader != nullptr);
     ua_txn->release(ua_buffer_reader);
     ua_buffer_reader = nullptr;
-    // ua_txn       = NULL;
+    ua_txn           = nullptr;
   }
 
   return 0;
@@ -6885,6 +6887,7 @@ HttpSM::kill_this()
 
     if (ua_txn) {
       ua_txn->transaction_done();
+      ua_txn = nullptr;
     }
 
     // In the async state, the plugin could have been
@@ -6914,7 +6917,7 @@ HttpSM::kill_this()
 #endif
 
     SMDebug("http", "[%" PRId64 "] deallocating sm", sm_id);
-    destroy();
+    this->destroy();
   }
 }
 

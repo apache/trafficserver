@@ -156,7 +156,7 @@ Http1ServerSession::do_io_close(int alerrno)
   if (to_parent_proxy) {
     HTTP_DECREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);
   }
-  destroy();
+  this->destroy();
 }
 
 void
