@@ -104,14 +104,6 @@ HQTransaction::cancel_inactivity_timeout()
   }
 }
 
-void
-HQTransaction::release(IOBufferReader *r)
-{
-  super::release(r);
-  this->do_io_close();
-  this->_sm = nullptr;
-}
-
 bool
 HQTransaction::allow_half_open() const
 {
@@ -215,12 +207,6 @@ HQTransaction::reenable(VIO *vio)
 }
 
 void
-HQTransaction::destroy()
-{
-  _sm = nullptr;
-}
-
-void
 HQTransaction::transaction_done()
 {
   // TODO: start closing transaction
@@ -235,12 +221,6 @@ HQTransaction::get_transaction_id() const
 
 void
 HQTransaction::increment_txn_stat()
-{
-  // TODO
-}
-
-void
-HQTransaction::decrement_txn_stat()
 {
   // TODO
 }

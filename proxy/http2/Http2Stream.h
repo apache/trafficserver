@@ -52,13 +52,12 @@ public:
   using super = ProxyTransaction; ///< Parent type.
 
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size);
+  ~Http2Stream() override;
 
   void init(Http2StreamId sid, ssize_t initial_rwnd);
 
   int main_event_handler(int event, void *edata);
 
-  void destroy() override;
-  void release(IOBufferReader *r) override;
   void reenable(VIO *vio) override;
   void transaction_done() override;
 
@@ -97,7 +96,6 @@ public:
   bool allow_half_open() const override;
   bool is_first_transaction() const override;
   void increment_txn_stat() override;
-  void decrement_txn_stat() override;
   int get_transaction_id() const override;
   int get_transaction_priority_weight() const override;
   int get_transaction_priority_dependence() const override;

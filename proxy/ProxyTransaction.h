@@ -34,15 +34,14 @@ class ProxyTransaction : public VConnection
 {
 public:
   ProxyTransaction();
+  virtual ~ProxyTransaction();
 
   /// Virtual Methods
   //
   virtual void new_transaction();
   virtual void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true);
   Action *adjust_thread(Continuation *cont, int event, void *data);
-  virtual void release(IOBufferReader *r);
   virtual void transaction_done() = 0;
-  virtual void destroy();
 
   /// Virtual Accessors
   //
@@ -54,7 +53,6 @@ public:
   virtual int get_transaction_priority_dependence() const;
   virtual bool allow_half_open() const = 0;
   virtual void increment_txn_stat()    = 0;
-  virtual void decrement_txn_stat()    = 0;
 
   virtual NetVConnection *get_netvc() const;
   virtual bool is_first_transaction() const;

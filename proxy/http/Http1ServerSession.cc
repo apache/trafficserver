@@ -62,7 +62,8 @@ void
 Http1ServerSession::new_connection(NetVConnection *new_vc)
 {
   ink_assert(new_vc != nullptr);
-  server_vc = new_vc;
+  server_vc    = new_vc;
+  _is_outbound = true;
 
   // Used to do e.g. mutex = new_vc->thread->mutex; when per-thread pools enabled
   mutex = new_vc->mutex;

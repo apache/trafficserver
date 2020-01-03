@@ -67,6 +67,7 @@ Http1ClientSession::Http1ClientSession() {}
 void
 Http1ClientSession::destroy()
 {
+  Note("Http1ClientSession::destroy()");
   if (read_state != HCS_CLOSED) {
     return;
   }
@@ -84,17 +85,9 @@ Http1ClientSession::destroy()
 }
 
 void
-Http1ClientSession::release_transaction()
-{
-  released_transactions++;
-  if (transact_count == released_transactions) {
-    this->destroy();
-  }
-}
-
-void
 Http1ClientSession::free()
 {
+  Note("Http1ClientSession::free()");
   magic = HTTP_CS_MAGIC_DEAD;
   if (read_buffer) {
     free_MIOBuffer(read_buffer);
@@ -220,6 +213,7 @@ Http1ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http1ClientSession::do_io_close(int alerrno)
 {
+  Note("Http1ClientSession::do_io_close()");
   if (read_state == HCS_CLOSED) {
     return; // Don't double call session close
   }
@@ -278,9 +272,6 @@ Http1ClientSession::do_io_close(int alerrno)
       client_vc->do_io_close();
       client_vc = nullptr;
     }
-  }
-  if (transact_count == released_transactions) {
-    this->destroy();
   }
 }
 
@@ -407,32 +398,18 @@ Http1ClientSession::reenable(VIO *vio)
 void
 Http1ClientSession::release(ProxyTransaction *txn)
 {
-  ink_assert(read_state == HCS_ACTIVE_READER || read_state == HCS_INIT);
+  Note("Http1ClientSession::release(txn) %i", int(read_state));
   ink_assert(_txn == txn);
   _txn = nullptr;
 
-  // Clean up the write VIO in case of inactivity timeout
-  this->do_io_write(nullptr, 0, nullptr);
+  released_transactions++;
+  ink_assert(transact_count == released_transactions); // H1 can only do serial transactions
 
-  // Check to see there is remaining data in the
-  //  buffer.  If there is, spin up a new state
-  //  machine to process it.  Otherwise, issue an
-  //  IO to wait for new data
-  bool more_to_read = this->_reader->is_read_avail_more_than(0);
-  if (more_to_read) {
-    HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", get_id());
-    new_transaction();
+  ink_assert(read_state != HCS_HALF_CLOSED);
+  if (read_state == HCS_CLOSED) {
+    this->destroy();
   } else {
-    HttpSsnDebug("[%" PRId64 "] initiating io for next header", get_id());
-    read_state = HCS_KEEP_ALIVE;
-    SET_HANDLER(&Http1ClientSession::state_keep_alive);
-    ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
-    ink_assert(slave_ka_vio != ka_vio);
-
-    if (client_vc) {
-      client_vc->cancel_active_timeout();
-      client_vc->add_to_keep_alive_queue();
-    }
+    start();
   }
 }
 
@@ -518,8 +495,33 @@ Http1ClientSession::decrement_current_active_client_connections_stat()
 void
 Http1ClientSession::start()
 {
+  Note("Http1ClientSession::start()");
   // Troll for data to get a new transaction
-  this->release(_txn);
+
+  // Clean up the write VIO in case of inactivity timeout
+  this->do_io_write(nullptr, 0, nullptr);
+
+  // Check to see there is remaining data in the
+  //  buffer.  If there is, spin up a new state
+  //  machine to process it.  Otherwise, issue an
+  //  IO to wait for new data
+  bool more_to_read = this->_reader->is_read_avail_more_than(0);
+  if (more_to_read) {
+    HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", get_id());
+    new_transaction();
+  } else {
+    // no data, put in keep alive queue
+    HttpSsnDebug("[%" PRId64 "] initiating io for next header", get_id());
+    read_state = HCS_KEEP_ALIVE;
+    SET_HANDLER(&Http1ClientSession::state_keep_alive);
+    ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
+    ink_assert(slave_ka_vio != ka_vio);
+
+    if (client_vc) {
+      client_vc->cancel_active_timeout();
+      client_vc->add_to_keep_alive_queue();
+    }
+  }
 }
 
 bool

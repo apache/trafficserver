@@ -54,29 +54,22 @@ ProxyTransaction::new_transaction()
 }
 
 void
-ProxyTransaction::release(IOBufferReader *r)
-{
-  HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", _proxy_ssn ? _proxy_ssn->get_id() : 0, _sm ? _sm->sm_id : 0);
-
-  // Pass along the release to the session
-  if (_proxy_ssn) {
-    // TODO: why would we not have a session here?
-    this->decrement_txn_stat();
-    _proxy_ssn->release(this);
-  }
-  this->destroy();
-}
-
-void
 ProxyTransaction::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
   _proxy_ssn->attach_server_session(ssession, transaction_done);
 }
 
-void
-ProxyTransaction::destroy()
+ProxyTransaction::~ProxyTransaction()
 {
+  Note("~ProxyTransaction()");
+  // Pass along the release to the session
+  if (_proxy_ssn) {
+    HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", _proxy_ssn ? _proxy_ssn->get_id() : 0, _sm ? _sm->sm_id : 0);
+    // TODO: why would we not have a session here?
+    _proxy_ssn->release(this);
+  }
   _sm = nullptr;
+  Note("sm = nullptr;");
   this->mutex.clear();
 }
 

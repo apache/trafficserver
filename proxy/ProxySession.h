@@ -141,6 +141,7 @@ public:
   bool is_active() const;
   bool is_draining() const;
   bool is_client_closed() const;
+  bool is_client() const;
 
   int64_t get_id() const;
   TSHttpHookID get_hookid() const;
@@ -166,8 +167,9 @@ protected:
   // that we can make the best use of internal alignment padding.
 
   // Session specific debug flag.
-  bool debug_on   = false;
-  bool in_destroy = false;
+  bool debug_on     = false;
+  bool in_destroy   = false;
+  bool _is_outbound = false;
 
   int64_t _id           = 0;
   Event *schedule_event = nullptr;
@@ -241,6 +243,12 @@ inline bool
 ProxySession::is_client_closed() const
 {
   return get_netvc() == nullptr;
+}
+
+inline bool
+ProxySession::is_client() const
+{
+  return !_is_outbound;
 }
 
 inline TSHttpHookID

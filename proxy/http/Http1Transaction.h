@@ -33,12 +33,10 @@ public:
   using super_type = ProxyTransaction;
 
   Http1Transaction() {}
+  ~Http1Transaction() override;
 
   ////////////////////
   // Methods
-  void release(IOBufferReader *r) override;
-  void destroy() override; // todo make ~Http1Transaction()
-
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
   VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
@@ -54,7 +52,6 @@ public:
   void transaction_done() override;
   int get_transaction_id() const override;
   void increment_txn_stat() override;
-  void decrement_txn_stat() override;
 
   void set_reader(IOBufferReader *reader);
 

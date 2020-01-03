@@ -56,7 +56,6 @@ public:
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
   void start() override;
   void release(ProxyTransaction *trans) override; // Indicate we are done with a transaction
-  void release_transaction();
   void destroy() override;
   void free() override;
 

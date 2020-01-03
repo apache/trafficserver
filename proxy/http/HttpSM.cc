@@ -3316,12 +3316,10 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
 
     vc_table.remove_entry(this->ua_entry);
     ua_txn->do_io_close();
-    ua_txn = nullptr;
   } else {
     ink_assert(ua_buffer_reader != nullptr);
-    ua_txn->release(ua_buffer_reader);
+    ua_txn->do_io_close();
     ua_buffer_reader = nullptr;
-    ua_txn           = nullptr;
   }
 
   return 0;
