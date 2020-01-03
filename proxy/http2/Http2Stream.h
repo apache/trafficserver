@@ -220,8 +220,6 @@ private:
   Event *_write_vio_event = nullptr;
 };
 
-extern ClassAllocator<Http2Stream> http2StreamAllocator;
-
 ////////////////////////////////////////////////////
 // INLINE
 
