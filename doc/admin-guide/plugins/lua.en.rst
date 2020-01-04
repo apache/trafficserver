@@ -213,6 +213,38 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.fatal
+--------
+**syntax:** *ts.fatal(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log and shutdown Traffic Server
+
+Here is an example:
+
+::
+
+       ts.fatal('This is an fatal message')
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.emergency
+------------
+**syntax:** *ts.emergency(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log and shutdown Traffic Server
+
+Here is an example:
+
+::
+
+       ts.emergency('This is an emergency message')
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 TS Basic Internal Information
 -----------------------------
 **syntax:** *ts.get_install_dir()*
@@ -1090,6 +1122,16 @@ ts.http.set_cache_lookup_url
 **context:** do_global_cache_lookup_complete
 
 **description:** This function can be used to set the cache lookup url for the client request.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.redo_cache_lookup
+-------------------------
+**syntax:** *ts.http.redo_cache_lookup()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to redo cache lookup with a different url.
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
@@ -2431,6 +2473,9 @@ Here is an example:
         ts.http.resp_cache_untransformed(1)
         return 0
     end
+
+The above example also shows the use of eos passed as a parameter to transform function. It indicates the end of the
+data stream to the transform function. 
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
@@ -3808,7 +3853,7 @@ of seconds since the beginning of the transaction.
 :ref:`TOP <admin-plugins-ts-lua>`
 
 Milestone constants
-------------------------------
+-------------------
 **context:** do_remap/do_os_response or do_global_* or later
 
 ::
@@ -3837,6 +3882,36 @@ Milestone constants
     TS_LUA_MILESTONE_PLUGIN_TOTAL
     TS_LUA_MILESTONE_TLS_HANDSHAKE_START
     TS_LUA_MILESTONE_TLS_HANDSHAKE_END
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.txn_info_get
+--------------------
+**syntax:** *val = ts.http.txn_info_get(TXN_INFO_TYPE)*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to retrieve the various cache related info about a transaction.
+
+::
+
+    val = ts.http.txn_info_get(TS_LUA_TXN_INFO_CACHE_HIT_RAM)
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+Txn Info constants
+------------------
+**context:** do_global_cache_lookup_complete
+
+::
+
+    TS_LUA_TXN_INFO_CACHE_HIT_RAM
+    TS_LUA_TXN_INFO_CACHE_COMPRESSED_IN_RAM
+    TS_LUA_TXN_INFO_CACHE_HIT_RWW
+    TS_LUA_TXN_INFO_CACHE_OPEN_READ_TRIES
+    TS_LUA_TXN_INFO_CACHE_OPEN_WRITE_TRIES
+    TS_LUA_TXN_INFo_CACHE_VOLUME
 
 
 :ref:`TOP <admin-plugins-ts-lua>`
