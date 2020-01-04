@@ -344,7 +344,7 @@ ts_lua_server_response_set_version(lua_State *L)
 {
   const char *version;
   size_t len;
-  int major, minor;
+  unsigned int major, minor;
 
   ts_lua_http_ctx *http_ctx;
 
