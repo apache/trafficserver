@@ -137,9 +137,10 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
       eos = 0;
     }
   } else {
-    input_avail = 0;
-    toread      = 0;
-    eos         = 1;
+    input_avail   = 0;
+    upstream_done = 0;
+    toread        = 0;
+    eos           = 1;
   }
 
   if (input_avail > 0) {
@@ -224,7 +225,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
       break;
 
     default: // coroutine failed
-      TSError("[ts_lua] lua_resume failed: %s", lua_tostring(L, -1));
+      TSError("[ts_lua][%s] lua_resume failed: %s", __FUNCTION__, lua_tostring(L, -1));
       ret     = 1;
       res     = NULL;
       res_len = 0;

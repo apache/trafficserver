@@ -506,7 +506,7 @@ ts_lua_http_timeout_set(lua_State *L)
     break;
 
   default:
-    TSError("[ts_lua] Unsupported timeout config option for lua plugin");
+    TSError("[ts_lua][%s] Unsupported timeout config option for lua plugin", __FUNCTION__);
     break;
   }
 

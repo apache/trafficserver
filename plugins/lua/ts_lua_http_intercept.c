@@ -73,13 +73,13 @@ ts_lua_http_intercept(lua_State *L)
   n = lua_gettop(L);
 
   if (n < 1) {
-    TSError("[ts_lua] ts.http.intercept need at least one param");
+    TSError("[ts_lua][%s] ts.http.intercept need at least one param", __FUNCTION__);
     return 0;
   }
 
   type = lua_type(L, 1);
   if (type != LUA_TFUNCTION) {
-    TSError("[ts_lua] ts.http.intercept should use function as param, but there is %s", lua_typename(L, type));
+    TSError("[ts_lua][%s] ts.http.intercept should use function as param, but there is %s", __FUNCTION__, lua_typename(L, type));
     return 0;
   }
 
@@ -106,13 +106,14 @@ ts_lua_http_server_intercept(lua_State *L)
   n = lua_gettop(L);
 
   if (n < 1) {
-    TSError("[ts_lua] ts.http.server_intercept need at least one param");
+    TSError("[ts_lua][%s] ts.http.server_intercept need at least one param", __FUNCTION__);
     return 0;
   }
 
   type = lua_type(L, 1);
   if (type != LUA_TFUNCTION) {
-    TSError("[ts_lua] ts.http.server_intercept should use function as param, but there is %s", lua_typename(L, type));
+    TSError("[ts_lua][%s] ts.http.server_intercept should use function as param, but there is %s", __FUNCTION__,
+            lua_typename(L, type));
     return 0;
   }
 
@@ -274,7 +275,7 @@ ts_lua_http_intercept_run_coroutine(ts_lua_http_intercept_ctx *ictx, int n)
     break;
 
   default: // error
-    TSError("[ts_lua] lua_resume failed: %s", lua_tostring(L, -1));
+    TSError("[ts_lua][%s] lua_resume failed: %s", __FUNCTION__, lua_tostring(L, -1));
     lua_pop(L, 1);
     return -1;
   }
@@ -357,7 +358,7 @@ ts_lua_say(lua_State *L)
 
   ictx = ts_lua_get_http_intercept_ctx(L);
   if (ictx == NULL) {
-    TSError("[ts_lua] missing ictx");
+    TSError("[ts_lua][%s] missing ictx", __FUNCTION__);
     return 0;
   }
 
@@ -379,7 +380,7 @@ ts_lua_flush(lua_State *L)
 
   ictx = ts_lua_get_http_intercept_ctx(L);
   if (ictx == NULL) {
-    TSError("[ts_lua] missing ictx");
+    TSError("[ts_lua][%s] missing ictx", __FUNCTION__);
     return 0;
   }
 

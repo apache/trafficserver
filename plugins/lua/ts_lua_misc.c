@@ -24,6 +24,8 @@ static int ts_lua_get_process_id(lua_State *L);
 static int ts_lua_get_now_time(lua_State *L);
 static int ts_lua_debug(lua_State *L);
 static int ts_lua_error(lua_State *L);
+static int ts_lua_emergency(lua_State *L);
+static int ts_lua_fatal(lua_State *L);
 static int ts_lua_sleep(lua_State *L);
 static int ts_lua_host_lookup(lua_State *L);
 static int ts_lua_schedule(lua_State *L);
@@ -63,6 +65,14 @@ ts_lua_inject_misc_api(lua_State *L)
   /* ts.error(...) */
   lua_pushcfunction(L, ts_lua_error);
   lua_setfield(L, -2, "error");
+
+  /* ts.emergency(...) */
+  lua_pushcfunction(L, ts_lua_emergency);
+  lua_setfield(L, -2, "emergency");
+
+  /* ts.fatal(...) */
+  lua_pushcfunction(L, ts_lua_fatal);
+  lua_setfield(L, -2, "fatal");
 
   /* ts.sleep(...) */
   lua_pushcfunction(L, ts_lua_sleep);
@@ -164,6 +174,28 @@ ts_lua_error(lua_State *L)
 }
 
 static int
+ts_lua_emergency(lua_State *L)
+{
+  const char *msg;
+  size_t len = 0;
+
+  msg = luaL_checklstring(L, 1, &len);
+  TSEmergency("%.*s", (int)len, msg);
+  return 0;
+}
+
+static int
+ts_lua_fatal(lua_State *L)
+{
+  const char *msg;
+  size_t len = 0;
+
+  msg = luaL_checklstring(L, 1, &len);
+  TSFatal("%.*s", (int)len, msg);
+  return 0;
+}
+
+static int
 ts_lua_schedule(lua_State *L)
 {
   int sec;
@@ -197,7 +229,7 @@ ts_lua_schedule(lua_State *L)
   n = lua_gettop(L);
 
   if (n < 3) {
-    TSError("[ts_lua] ts.schedule need at least three parameters");
+    TSError("[ts_lua][%s] ts.schedule need at least three parameters", __FUNCTION__);
     return 0;
   }
 
@@ -256,7 +288,7 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
   }
 
   if (ret != 0) {
-    TSError("[ts_lua] lua_resume failed: %s", lua_tostring(L, -1));
+    TSError("[ts_lua][%s] lua_resume failed: %s", __FUNCTION__, lua_tostring(L, -1));
   }
 
   lua_pop(L, lua_gettop(L));
@@ -342,7 +374,7 @@ ts_lua_host_lookup(lua_State *L)
   }
 
   if (lua_gettop(L) != 1) {
-    TSError("[ts_lua] ts.host_lookup need at least one parameter");
+    TSError("[ts_lua][%s] ts.host_lookup need at least one parameter", __FUNCTION__);
     return 0;
   }
 
@@ -376,7 +408,7 @@ ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
   ts_lua_host_lookup_cleanup(ai);
 
   if (event != TS_EVENT_HOST_LOOKUP) {
-    TSError("[ts_lua] ts.host_lookup receives unknown event");
+    TSError("[ts_lua][%s] ts.host_lookup receives unknown event", __FUNCTION__);
     lua_pushnil(L);
   } else if (!edata) {
     lua_pushnil(L);
