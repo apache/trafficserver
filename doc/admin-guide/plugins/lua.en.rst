@@ -2475,7 +2475,7 @@ Here is an example:
     end
 
 The above example also shows the use of eos passed as a parameter to transform function. It indicates the end of the
-data stream to the transform function. 
+data stream to the transform function.
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
