@@ -35,4 +35,7 @@ public:
 protected:
   uint16_t _count[2]      = {0};
   ink_hrtime _last_update = 0;
+
+private:
+  virtual ink_hrtime _get_hrtime();
 };
