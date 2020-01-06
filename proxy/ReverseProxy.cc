@@ -141,7 +141,7 @@ reloadUrlRewrite()
   Debug("url_rewrite", "%s updated, reloading...", ts::filename::REMAP);
   newTable = new UrlRewrite();
   if (newTable->load()) {
-    static const char *msg = "%s finished loading";
+    static const char *msg_format = "%s finished loading";
 
     // Hold at least one lease, until we reload the configuration
     newTable->acquire();
@@ -152,18 +152,17 @@ reloadUrlRewrite()
     ink_assert(oldTable != nullptr);
 
     // Release the old one
-    oldTable->pluginFactory.deactivate();
     oldTable->release();
 
-    Debug("url_rewrite", msg, ts::filename::REMAP);
-    Note("%s", msg);
+    Debug("url_rewrite", msg_format, ts::filename::REMAP);
+    Note(msg_format, ts::filename::REMAP);
     return true;
   } else {
-    static const char *msg = "%s failed to load";
+    static const char *msg_format = "%s failed to load";
 
     delete newTable;
-    Debug("url_rewrite", msg, ts::filename::REMAP);
-    Error(msg, ts::filename::REMAP);
+    Debug("url_rewrite", msg_format, ts::filename::REMAP);
+    Error(msg_format, ts::filename::REMAP);
     return false;
   }
 }

@@ -106,6 +106,9 @@ UrlRewrite::~UrlRewrite()
   DestroyStore(temporary_redirects);
   DestroyStore(forward_mappings_with_recv_port);
   _valid = false;
+
+  /* Deactivate the factory when all SM are gone for sure. */
+  pluginFactory.deactivate();
 }
 
 /** Sets the reverse proxy flag. */
