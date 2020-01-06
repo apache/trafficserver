@@ -36,7 +36,7 @@ constexpr std::string_view hash_key_cache         = "cache_key";
 
 static HostRecord *
 chash_lookup(std::shared_ptr<ATSConsistentHash> ring, uint64_t hash_key, ATSConsistentHashIter *iter, bool *wrapped,
-             ATSHash64Sip24 *hash, bool *hash_init, uint64_t sm_id)
+             ATSHash64Sip24 *hash, bool *hash_init, bool *mapWrapped, uint64_t sm_id)
 {
   HostRecord *host_rec = nullptr;
 
@@ -45,6 +45,11 @@ chash_lookup(std::shared_ptr<ATSConsistentHash> ring, uint64_t hash_key, ATSCons
     *hash_init = true;
   } else {
     host_rec = static_cast<HostRecord *>(ring->lookup(nullptr, iter, wrapped, hash));
+  }
+  bool wrap_around = *wrapped;
+  *wrapped         = (*mapWrapped && *wrapped) ? true : false;
+  if (!*mapWrapped && wrap_around) {
+    *mapWrapped = true;
   }
 
   return host_rec;
@@ -261,7 +266,8 @@ NextHopConsistentHash::findNextHop(const uint64_t sm_id, ParentResult &result, R
 
   do { // search until we've selected a different parent if !firstcall
     std::shared_ptr<ATSConsistentHash> r = rings[cur_ring];
-    hostRec = chash_lookup(r, hash_key, &result.chashIter[cur_ring], &wrapped, &hash, &result.chash_init[cur_ring], sm_id);
+    hostRec               = chash_lookup(r, hash_key, &result.chashIter[cur_ring], &wrapped, &hash, &result.chash_init[cur_ring],
+                           &result.mapWrapped[cur_ring], sm_id);
     wrap_around[cur_ring] = wrapped;
     lookups++;
     // the 'available' flag is maintained in 'host_groups' and not the hash ring.
@@ -322,7 +328,8 @@ NextHopConsistentHash::findNextHop(const uint64_t sm_id, ParentResult &result, R
         break;
       }
       std::shared_ptr<ATSConsistentHash> r = rings[cur_ring];
-      hostRec = chash_lookup(r, hash_key, &result.chashIter[cur_ring], &wrapped, &hash, &result.chash_init[cur_ring], sm_id);
+      hostRec               = chash_lookup(r, hash_key, &result.chashIter[cur_ring], &wrapped, &hash, &result.chash_init[cur_ring],
+                             &result.mapWrapped[cur_ring], sm_id);
       wrap_around[cur_ring] = wrapped;
       lookups++;
       if (hostRec) {
