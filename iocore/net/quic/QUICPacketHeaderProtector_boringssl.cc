@@ -24,8 +24,26 @@
 #include "QUICPacketHeaderProtector.h"
 
 bool
-QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *cipher) const
+QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key,
+                                          const QUIC_EVP_CIPHER *cipher) const
 {
-  ink_assert(!"not implemented");
-  return false;
+  static constexpr unsigned char FIVE_ZEROS[] = {0x00, 0x00, 0x00, 0x00, 0x00};
+  EVP_AEAD_CTX ctx;
+
+  if (!EVP_AEAD_CTX_init(&ctx, cipher, key, EVP_AEAD_key_length(cipher), 16, nullptr)) {
+    return false;
+  }
+
+  size_t len = 0;
+  if (cipher == EVP_aead_chacha20_poly1305()) {
+    if (!EVP_AEAD_CTX_seal(&ctx, mask, &len, EVP_MAX_BLOCK_LENGTH, sample + 4, 12, FIVE_ZEROS, sizeof(FIVE_ZEROS), sample, 4)) {
+      return false;
+    }
+  } else {
+    if (!EVP_AEAD_CTX_seal(&ctx, mask, &len, EVP_MAX_BLOCK_LENGTH, nullptr, 0, sample, 16, nullptr, 0)) {
+      return false;
+    }
+  }
+
+  return true;
 }
