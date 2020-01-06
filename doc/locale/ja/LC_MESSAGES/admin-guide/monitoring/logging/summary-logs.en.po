@@ -59,7 +59,7 @@ msgid "``SUM``"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/summary-logs.en.rst:38
-msgid "``AVERAGE``"
+msgid "``AVG``"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/summary-logs.en.rst:39
@@ -82,7 +82,7 @@ msgstr ""
 #: ../../../admin-guide/monitoring/logging/summary-logs.en.rst:52
 msgid ""
 "Where ``operator`` is one of the five aggregate operators (``COUNT``, "
-"``SUM``, ``AVERAGE``, ``FIRST``, ``LAST``); ``field`` is the logging field "
+"``SUM``, ``AVG``, ``FIRST``, ``LAST``); ``field`` is the logging field "
 "you want to aggregate; and ``n`` is the interval (in seconds) between "
 "summary log entries."
 msgstr ""
