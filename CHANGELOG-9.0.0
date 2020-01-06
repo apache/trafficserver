@@ -717,6 +717,7 @@ Changes with Apache Traffic Server 9.0.0
   #5869 - ProxyTxn: removed restart_immediate
   #5870 - Fix bad limit in poll loop.  jtest -c1 now works again.
   #5872 - cachekey: added --key-type to allow parent selection URL to be modified
+  #5878 - Add protection against use after free due to Http2ConnectionState::destroy() being called more than once per session.
   #5879 - Weak mutex locking macros
   #5880 - ProxyTxn Refactor move code to cc
   #5883 - Add unit tests for MIOBuffer:write()
