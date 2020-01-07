@@ -582,7 +582,7 @@ Cacheurl plugin to cachekey plugin migration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The plugin `cachekey` was not meant to replace the cacheurl plugin in terms of having exactly the same cache key strings generated. It just allows the operator to exctract elements from the HTTP URI in the same way the `cacheurl` does (through a regular expression, please see `<capture_definition>` above).
 
-The following examples demonstrate different ways to achieve `cacheurl` compatibility on a cache key string level in order to avoid invalidation of the cache. 
+The following examples demonstrate different ways to achieve `cacheurl` compatibility on a cache key string level in order to avoid invalidation of the cache.
 
 The operator could use `--capture-path-uri`, `--capture-path`, `--capture-prefix-uri`, `--capture-prefix` to capture elements from the URI, path and authority elements.
 

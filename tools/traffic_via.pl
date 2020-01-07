@@ -25,9 +25,9 @@
 # 1. Pass Via Header with -s option \n";
 #    traffic_via [-s viaheader]";
 #           or
-# 2. Pipe curl output 
+# 2. Pipe curl output
 #    curl -v -H "X-Debug: Via" http://ats_server:port 2>&1| ./traffic_via.pl
-# 
+#
 
 use strict;
 use warnings;
@@ -41,7 +41,7 @@ my $help;
 my @proxy_header_array = (
     {
         "Request headers received from client:",
-        { 
+        {
             'I' => "If Modified Since (IMS)",
             'C' => "cookie",
             'E' => "error in request",
@@ -81,7 +81,7 @@ my @proxy_header_array = (
     },
     {
         "Proxy operation result:",
-        { 
+        {
                     'R' => "origin server revalidated",
                     ' ' => "unknown?",
                     'S' => "served",
@@ -148,7 +148,7 @@ my @proxy_header_array = (
                     'S' => "connection opened successfully",
                     'F' => "connection open failed",
         },
-    
+
    },
    {
         "Origin server connection status:",
@@ -181,7 +181,7 @@ if (@ARGV == 0) {
         #Pattern matching for Via
         if ($element =~ /Via:(.*)\[(.*)\]/) {
             #Search and grep via header
-            $via_string = $2;    
+            $via_string = $2;
             chomp($via_string);
             print "Via Header is [$via_string]";
             decode_via_header($via_string);
@@ -191,7 +191,7 @@ if (@ARGV == 0) {
     usage() if (!GetOptions('s=s' => \$via_header,
                 'help|?' => \$help) or
                 defined $help);
-    
+
     if (defined $via_header) {
         #if passed through commandline dashed argument
         print "Via Header is [$via_header]";
@@ -207,10 +207,10 @@ sub decode_via_header {
     my $newHeader;
 
     #Check via header syntax
-    if ($header =~ /([a-zA-Z: ]+)/) {   
+    if ($header =~ /([a-zA-Z: ]+)/) {
         #Get via header length
         $hdrLength = length($header);
-        
+
         # Valid Via header length is 24 or 6.
         # When Via header length is 24, it will have both proxy request header result and operational results.
         if ($hdrLength == 24) {
@@ -228,8 +228,8 @@ sub decode_via_header {
         }
         convert_header_to_array($newHeader);
     }
-    
-    
+
+
 }
 
 sub convert_header_to_array {
@@ -239,7 +239,7 @@ sub convert_header_to_array {
     while ($viaHeader =~ /(.)/g) {
             #Only capital letters indicate flags
             if ($1 !~ m/[a-z]+/) {
-                push(@ResultArray, $1); 
+                push(@ResultArray, $1);
             }
     }
     print "\nVia Header details: \n";
@@ -256,18 +256,18 @@ sub get_via_header_flags {
     my @flagKeys;
     my %flags;
     my @keys;
-    
+
     my @array = @$arrayName;
-            
+
     %flagValues = %{$array[$inputIndex]};
     @flagKeys = keys (%flagValues);
-    
+
     foreach my $keyEntry ( @flagKeys )  {
         printf ("%-55s", $keyEntry);
         %flags = %{$flagValues{$keyEntry}};
         @keys = keys (%flags);
         foreach my $key ( @keys )  {
-            if ($key =~ /$flag/) { 
+            if ($key =~ /$flag/) {
                  #print $flags{$key};
                  printf("%s",$flags{$key});
                  print "\n";

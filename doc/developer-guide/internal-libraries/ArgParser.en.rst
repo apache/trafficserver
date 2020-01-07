@@ -58,7 +58,7 @@ The parser can be created simply by calling:
 
    ts::ArgParser parser;
 
-or initialize with the following arguments: 
+or initialize with the following arguments:
 *name, help description, environment variable, argument number expected, function*
 
 .. code-block:: cpp
@@ -343,7 +343,7 @@ This program will have such functionality:
         init_command.add_command("subinit", "sub initialize");
 
         parser.add_command("remove", "remove things").add_option("--path", "-p", "specify the path", "HOME", 1);
-        
+
         ts::Arguments parsed_data = parser.parse(argv);
         parsed_data.invoke();
         ...

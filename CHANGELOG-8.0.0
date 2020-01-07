@@ -369,7 +369,7 @@ Changes with Apache Traffic Server 8.0.0
   #2190 - The content-type of TRACE response should be message/http.
   #2194 - Better initialization in Thread.cc.
   #2195 - Fix race condition in thread startup.
-  #2196 - Adding DNS over TCP support 
+  #2196 - Adding DNS over TCP support
   #2201 - Add experimental plugin to initiate H2 Server push for preload links.
   #2202 - H2 test with traffic -replay
   #2209 - Rework SSL Handshake Hooks and add tls_hooks tests.
@@ -451,7 +451,7 @@ Changes with Apache Traffic Server 8.0.0
   #2432 - Format python code with autopep8
   #2434 - Coverity 1379933:  Control flow issues  (DEADCODE)
   #2435 - Resign server.pem for autests to 10 years
-  #2437 - null transform test 
+  #2437 - null transform test
   #2439 - Coverity CID 1380022: FORWARD_NULL
   #2440 - Optimize: Add startIO & stopIO for NetHandler
   #2441 - Bug fix for event thread names
@@ -537,7 +537,7 @@ Changes with Apache Traffic Server 8.0.0
   #2638 - Turn off exception warning for gcc 7
   #2639 - Fixed issue with clean/distclean
   #2643 - fix the missing lock in TSVConnFdCreate api
-  #2644 - remove dup setting with NO_FD 
+  #2644 - remove dup setting with NO_FD
   #2647 - Added arguments for port number and ip in microdns, microserver extension.
   #2648 - This removes the FILE_WRITE mechanism from the core
   #2649 - Move http 408 response logic into transaction
@@ -558,7 +558,7 @@ Changes with Apache Traffic Server 8.0.0
   #2690 - Fixed chunked_encoding gold file
   #2691 - Kill unused .c file which contains code in a language invented by a Danish guy.
   #2694 - Implement zero-copy within UDPNetProcessorInternal::udp_read_from_net
-  #2696 - Script load speedup for ts_lua remap plugin 
+  #2696 - Script load speedup for ts_lua remap plugin
   #2697 - List packages for building in Ubuntu
   #2698 - CID 1226158: Uninitialized members
   #2714 - Restructured traffic_layout and modified runroot command line
@@ -906,7 +906,7 @@ Changes with Apache Traffic Server 8.0.0
   #3526 - Ran clang-tidy with readability-braces-around-statements
   #3527 - Cleans up some pylint issues in the python code
   #3529 - Correct parameter for certificate verification
-  #3530 - Add time option to traffic_ctl host down.  
+  #3530 - Add time option to traffic_ctl host down.
   #3531 - Doc: Unify ":unit:" to ":units".
   #3532 - Updated to new version of clang-format
   #3533 - Doc: various fixes

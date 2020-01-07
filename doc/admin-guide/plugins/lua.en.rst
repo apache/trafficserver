@@ -2253,7 +2253,7 @@ ts.http.resp_transform.set_upstream_watermark_bytes
 
 **context:** transform handler
 
-**description**: This function can be used to set the watermark bytes of the upstream transform buffer. 
+**description**: This function can be used to set the watermark bytes of the upstream transform buffer.
 
 Setting the watermark bytes above 32kb may improve the performance of the transform handler.
 
@@ -3766,4 +3766,3 @@ More docs
 * https://github.com/portl4t/ts-lua
 
 `TOP <#ts-lua-plugin>`_
-
