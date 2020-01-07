@@ -37,8 +37,6 @@ using std::endl;
 using std::string;
 using namespace EsiLib;
 
-pthread_key_t threadKey;
-
 void
 addToHeaderList(const char *strings[], HttpHeaderList &headers)
 {
@@ -70,7 +68,6 @@ fakeDebug(const char *tag, const char *fmt, ...)
 int
 main()
 {
-  pthread_key_create(&threadKey, nullptr);
   Utils::init(&Debug, &Error);
 
   {

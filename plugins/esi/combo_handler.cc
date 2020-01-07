@@ -29,7 +29,6 @@
 #include <algorithm>
 #include <ctime>
 #include <fstream>
-#include <pthread.h>
 #include <arpa/inet.h>
 #include <limits>
 #include <getopt.h>
@@ -340,9 +339,6 @@ static bool writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_writ
 static void prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &resp_header_fields);
 static bool getDefaultBucket(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &creq);
 
-// libesi TLS key.
-pthread_key_t threadKey = 0;
-
 void
 TSPluginInit(int argc, const char *argv[])
 {
@@ -433,8 +429,6 @@ TSPluginInit(int argc, const char *argv[])
     ContentTypeHandler::loadWhiteList(content_type_whitelist_filespec);
   }
   ++optind;
-
-  TSReleaseAssert(pthread_key_create(&threadKey, nullptr) == 0);
 
   TSCont rrh_contp = TSContCreate(handleReadRequestHeader, nullptr);
   if (!rrh_contp) {
