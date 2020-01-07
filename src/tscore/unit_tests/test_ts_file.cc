@@ -222,6 +222,22 @@ TEST_CASE("ts_file::path::canonical", "[libts][fs_file]")
   CHECK_FALSE(ts::file::exists(testdir1));
 }
 
+TEST_CASE("ts_file::path::filename", "[libts][fs_file]")
+{
+  CHECK(ts::file::filename(path("/foo/bar.txt")) == path("bar.txt"));
+  CHECK(ts::file::filename(path("/foo/.bar")) == path(".bar"));
+  CHECK(ts::file::filename(path("/foo/bar")) == path("bar"));
+  CHECK(ts::file::filename(path("/foo/bar/")) == path(""));
+  CHECK(ts::file::filename(path("/foo/.")) == path("."));
+  CHECK(ts::file::filename(path("/foo/..")) == path(".."));
+  CHECK(ts::file::filename(path("/foo/../bar")) == path("bar"));
+  CHECK(ts::file::filename(path("/foo/../bar/")) == path(""));
+  CHECK(ts::file::filename(path(".")) == path("."));
+  CHECK(ts::file::filename(path("..")) == path(".."));
+  CHECK(ts::file::filename(path("/")) == path(""));
+  CHECK(ts::file::filename(path("//host")) == path("host"));
+}
+
 TEST_CASE("ts_file::path::copy", "[libts][fs_file]")
 {
   std::error_code ec;

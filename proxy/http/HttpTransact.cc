@@ -353,7 +353,7 @@ update_cache_control_information_from_config(HttpTransact::State *s)
 
   // Less than 0 means it wasn't overridden, so leave it alone.
   if (s->cache_control.cache_responses_to_cookies >= 0) {
-    s->txn_conf->cache_responses_to_cookies = s->cache_control.cache_responses_to_cookies;
+    s->my_txn_conf().cache_responses_to_cookies = s->cache_control.cache_responses_to_cookies;
   }
 }
 
@@ -1409,7 +1409,7 @@ HttpTransact::HandleRequest(State *s)
   if (s->txn_conf->srv_enabled) {
     IpEndpoint addr;
     ats_ip_pton(s->server_info.name, &addr);
-    s->txn_conf->srv_enabled = !ats_is_ip(&addr);
+    s->my_txn_conf().srv_enabled = !ats_is_ip(&addr);
   }
 
   // if the request is a trace or options request, decrement the
@@ -3083,7 +3083,7 @@ HttpTransact::handle_cache_write_lock(State *s)
       //  Write failed and read retry triggered
       //  Clean up server_request and re-initiate
       //  Cache Lookup
-      ink_assert(s->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY);
+      ink_assert(s->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY);
       s->cache_info.write_status = CACHE_WRITE_LOCK_MISS;
       StateMachineAction_t next;
       next           = SM_ACTION_CACHE_LOOKUP;

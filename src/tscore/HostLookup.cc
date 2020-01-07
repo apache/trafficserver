@@ -277,8 +277,8 @@ CharIndex::~CharIndex()
 {
   // clean up the illegal key table.
   if (illegalKey) {
-    for (auto spot = illegalKey->begin(), limit = illegalKey->end(); spot != limit; delete &*(spot++)) {
-      ; // empty
+    for (auto &item : *illegalKey) {
+      delete item.second;
     }
   }
 }
@@ -301,7 +301,7 @@ CharIndex::Insert(string_view match_data, HostBranch *toInsert)
       illegalKey.reset(new Table);
     }
     toInsert->key = match_data;
-    illegalKey->emplace(match_data, toInsert);
+    illegalKey->emplace(toInsert->key, toInsert);
   } else {
     while (true) {
       index = asciiToTable[static_cast<unsigned char>(match_data.front())];
@@ -428,9 +428,14 @@ CharIndex::iterator::advance() -> self_type &
       break;
     } else if (state.block->array[state.index].block != nullptr) {
       // There is a lower level block to iterate over, store our current state and descend
-      q[cur_level++] = state;
-      state.block    = state.block->array[state.index].block.get();
-      state.index    = 0;
+      if (static_cast<int>(q.size()) <= cur_level) {
+        q.push_back(state);
+      } else {
+        q[cur_level] = state;
+      }
+      cur_level++;
+      state.block = state.block->array[state.index].block.get();
+      state.index = 0;
     } else {
       ++state.index;
     }
@@ -556,8 +561,9 @@ HostBranch::~HostBranch()
     break;
   case HOST_HASH: {
     HostTable *ht = next_level._table;
-    for (auto spot = ht->begin(), limit = ht->end(); spot != limit; delete &*(spot++)) {
-    } // empty
+    for (auto &item : *ht) {
+      delete item.second;
+    }
     delete ht;
   } break;
   case HOST_INDEX: {
@@ -675,10 +681,10 @@ HostLookup::InsertBranch(HostBranch *insert_in, string_view level_data)
     ink_release_assert(0);
     break;
   case HostBranch::HOST_HASH:
-    insert_in->next_level._table->emplace(level_data, new_branch);
+    insert_in->next_level._table->emplace(new_branch->key, new_branch);
     break;
   case HostBranch::HOST_INDEX:
-    insert_in->next_level._index->Insert(level_data, new_branch);
+    insert_in->next_level._index->Insert(new_branch->key, new_branch);
     break;
   case HostBranch::HOST_ARRAY: {
     auto array = insert_in->next_level._array;
@@ -686,9 +692,9 @@ HostLookup::InsertBranch(HostBranch *insert_in, string_view level_data)
       // The array is out of space, time to move to a hash table
       auto ha = insert_in->next_level._array;
       auto ht = new HostTable;
-      ht->emplace(level_data, new_branch);
+      ht->emplace(new_branch->key, new_branch);
       for (auto &item : *array) {
-        ht->emplace(item.match_data, item.branch);
+        ht->emplace(item.branch->key, item.branch);
       }
       // Ring out the old, ring in the new
       delete ha;

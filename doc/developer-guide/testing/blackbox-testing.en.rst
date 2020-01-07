@@ -26,7 +26,7 @@ for functional testing. The current layout is:
 
 ::
 
-    gold_tests/ - contains all the TSQA v4 based tests that run on the Reusable Gold Testing System (AuTest)
+    gold_tests/ - contains all the tests that run on the Reusable Gold Testing System (AuTest)
     tools/ - contains programs used to help with testing.
 
 Scripts

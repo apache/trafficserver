@@ -108,10 +108,13 @@ SNIConfigParams::SNIConfigParams() {}
 const actionVector *
 SNIConfigParams::get(const std::string &servername) const
 {
+  int ovector[2];
   for (const auto &retval : sni_action_list) {
-    if (retval.match == nullptr && servername.length() == 0) {
+    int length = servername.length();
+    if (retval.match == nullptr && length == 0) {
       return &retval.actions;
-    } else if (pcre_exec(retval.match, nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
+    } else if (pcre_exec(retval.match, nullptr, servername.c_str(), length, 0, 0, ovector, 2) == 1 && ovector[0] == 0 &&
+               ovector[1] == length) {
       return &retval.actions;
     }
   }

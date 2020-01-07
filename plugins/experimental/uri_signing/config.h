@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#pragma once
+
 #include <stdbool.h>
 #include <stdlib.h>
 

@@ -1,6 +1,6 @@
 /** @file
 
-  an example hello world plugin
+  an example intercept plugin
 
   @section license License
 
@@ -40,8 +40,7 @@
 // This plugin intercepts all cache misses and proxies them to a separate server
 // that is assumed to be running on localhost:60000. The plugin does no HTTP
 // processing at all, it simply shuffles data until the client closes the
-// request. The TSQA test test-server-intercept exercises this plugin. You can
-// enable extensive logging with the "intercept" diagnostic tag.
+// request. You can enable extensive logging with the "intercept" diagnostic tag.
 
 #define PLUGIN_NAME "intercept"
 #define PORT 60000
@@ -552,6 +551,6 @@ TSPluginInit(int /* argc */, const char * /* argv */[])
   InterceptHook = InterceptContCreate(InterceptInterceptionHook, nullptr, nullptr);
 
   // Wait until after the cache lookup to decide whether to
-  // intercept a request. For cache hits we will never intercept.
+  // intercept a request. For cache hits, we will never intercept.
   TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, TxnHook);
 }

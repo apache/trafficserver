@@ -2329,11 +2329,11 @@ Dynamic Content & Content Negotiation
          origin server.
    ``4`` Return a ``502`` error on either a cache miss or on a revalidation.
    ``5`` Retry Cache Read on a Cache Write Lock failure. This option together
-         with `proxy.config.cache.enable_read_while_writer` configuration
+         with :ts:cv:`proxy.config.cache.enable_read_while_writer` configuration
          allows to collapse concurrent requests without a need for any plugin.
-         Make sure to configure Read While Writer feature correctly following
-         the docs in Cache Basics section. Note that this option may result in
-         CACHE_LOOKUP_COMPLETE HOOK being called back more than once.
+         Make sure to configure the :ref:`admin-config-read-while-writer` feature
+         correctly. Note that this option may result in CACHE_LOOKUP_COMPLETE HOOK
+         being called back more than once.
    ===== ======================================================================
 
 Customizable User Response Pages
@@ -3969,15 +3969,6 @@ Plug-in Configuration
 .. ts:cv:: CONFIG proxy.config.plugin.plugin_dir STRING config/plugins
 
    Specifies the location of |TS| plugins.
-
-.. ts:cv:: CONFIG proxy.config.remap.num_remap_threads INT 0
-
-   When this variable is set to ``0``, plugin remap callbacks are
-   executed in line on network threads. If remap processing takes
-   significant time, this can be cause additional request latency.
-   Setting this variable to causes remap processing to take place
-   on a dedicated thread pool, freeing the network threads to service
-   additional requests.
 
 SOCKS Processor
 ===============

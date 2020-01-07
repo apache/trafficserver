@@ -177,7 +177,7 @@ EThread::schedule_spawn(Continuation *c, int ev, void *cookie)
 TS_INLINE EThread *
 this_ethread()
 {
-  return dynamic_cast<EThread *>(this_thread());
+  return static_cast<EThread *>(this_thread());
 }
 
 TS_INLINE EThread *

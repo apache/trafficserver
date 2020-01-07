@@ -22,15 +22,15 @@
 What's New in ATS v10.x
 =======================
 
-This version of ATS includes over <x> commits, from <y> pull requests. A total of <z> contributors
-have participated in this development cycle.
+This version of |ATS| includes over <x> commits, from <y> pull requests. A
+total of <z> contributors have participated in this development cycle.
 
 .. toctree::
    :maxdepth: 1
 
 New Features
 ------------
-- Add support for dtrace style markers (SDT) and include a few markers at locations of interest to users of SystemTap, dtrace, and gdb. See :ref:`developer-debug-builds`.
+
 
 New or modified Configurations
 ------------------------------

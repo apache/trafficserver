@@ -257,17 +257,17 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
         result.reset();
         strategy->findNextHop(20004, result, request, fail_threshold, retry_time);
         CHECK(result.result == ParentResultType::PARENT_SPECIFIED);
-        CHECK(strcmp(result.hostname, "q1.bar.com") == 0);
+        CHECK(strcmp(result.hostname, "s1.bar.com") == 0);
 
-        // mark down q1.bar.com
+        // mark down s1.bar.com
         strategy->markNextHopDown(20004, result, 1, fail_threshold);
 
         // fifth request
         br(&request, "rabbit.net/asset1");
         result.reset();
         strategy->findNextHop(20005, result, request, fail_threshold, retry_time);
-        CHECK(result.result == ParentResultType::PARENT_DIRECT);
-        CHECK(result.hostname == nullptr);
+        CHECK(result.result == ParentResultType::PARENT_SPECIFIED);
+        CHECK(strcmp(result.hostname, "q1.bar.com") == 0);
 
         // sixth request - wait and p1 should now become available
         time_t now = time(nullptr) + 5;

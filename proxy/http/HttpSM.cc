@@ -627,7 +627,7 @@ HttpSM::setup_blind_tunnel_port()
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
       } else {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
+        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
         t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
       }
     }
@@ -1439,7 +1439,7 @@ plugins required to work with sni_routing.
           t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
         }
       } else if (ssl_vc) {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->serverName, strlen(ssl_vc->serverName));
+        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
         t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
       }
     }
@@ -2121,7 +2121,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
   if (!r || !r->is_srv || !r->round_robin) {
     t_state.dns_info.srv_hostname[0]    = '\0';
     t_state.dns_info.srv_lookup_success = false;
-    t_state.txn_conf->srv_enabled       = false;
+    t_state.my_txn_conf().srv_enabled   = false;
     SMDebug("dns_srv", "No SRV records were available, continuing to lookup %s", t_state.dns_info.lookup_name);
   } else {
     HostDBRoundRobin *rr = r->rr();
@@ -2133,7 +2133,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
     if (!srv) {
       t_state.dns_info.srv_lookup_success = false;
       t_state.dns_info.srv_hostname[0]    = '\0';
-      t_state.txn_conf->srv_enabled       = false;
+      t_state.my_txn_conf().srv_enabled   = false;
       SMDebug("dns_srv", "SRV records empty for %s", t_state.dns_info.lookup_name);
     } else {
       t_state.dns_info.srv_lookup_success = true;
@@ -2438,17 +2438,17 @@ HttpSM::state_cache_open_write(int event, void *data)
     //  for reading
     if (t_state.redirect_info.redirect_in_process) {
       SMDebug("http_redirect", "[%" PRId64 "] CACHE_EVENT_OPEN_WRITE_FAILED during redirect follow", sm_id);
-      t_state.cache_open_write_fail_action = HttpTransact::CACHE_WL_FAIL_ACTION_DEFAULT;
+      t_state.cache_open_write_fail_action = CACHE_WL_FAIL_ACTION_DEFAULT;
       t_state.cache_info.write_lock_state  = HttpTransact::CACHE_WL_FAIL;
       break;
     }
-    if (t_state.txn_conf->cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_DEFAULT) {
+    if (t_state.txn_conf->cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_DEFAULT) {
       t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_FAIL;
       break;
     } else {
       t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
       if (!t_state.cache_info.object_read ||
-          (t_state.cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE)) {
+          (t_state.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE)) {
         // cache miss, set wl_state to fail
         SMDebug("http", "[%" PRId64 "] cache object read %p, cache_wl_fail_action %d", sm_id, t_state.cache_info.object_read,
                 t_state.cache_open_write_fail_action);
@@ -2463,7 +2463,7 @@ HttpSM::state_cache_open_write(int event, void *data)
       t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
       // Note that CACHE_LOOKUP_COMPLETE may be invoked more than once
       // if CACHE_WL_FAIL_ACTION_READ_RETRY is configured
-      ink_assert(t_state.cache_open_write_fail_action == HttpTransact::CACHE_WL_FAIL_ACTION_READ_RETRY);
+      ink_assert(t_state.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY);
       t_state.cache_lookup_result         = HttpTransact::CACHE_LOOKUP_NONE;
       t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_READ_RETRY;
       break;
@@ -4674,7 +4674,7 @@ HttpSM::send_origin_throttled_response()
 }
 
 static void
-set_tls_options(NetVCOptions &opt, OverridableHttpConfigParams *txn_conf)
+set_tls_options(NetVCOptions &opt, const OverridableHttpConfigParams *txn_conf)
 {
   char *verify_server = nullptr;
   if (txn_conf->ssl_client_verify_server_policy == nullptr) {
@@ -7207,21 +7207,16 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_REMAP_REQUEST: {
-    if (!remapProcessor.using_separate_thread()) {
-      do_remap_request(true); /* run inline */
-      SMDebug("url_rewrite", "completed inline remapping request for [%" PRId64 "]", sm_id);
-      t_state.url_remap_success = remapProcessor.finish_remap(&t_state, m_remap);
-      if (t_state.next_action == HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP && t_state.transact_return_point == nullptr) {
-        // It appears that we can now set the next_action to error and transact_return_point to nullptr when
-        // going through do_remap_request presumably due to a plugin setting an error.  In that case, it seems
-        // that the error message has already been setup, so we can just return and avoid the further
-        // call_transact_and_set_next_state
-      } else {
-        call_transact_and_set_next_state(nullptr);
-      }
+    do_remap_request(true); /* run inline */
+    SMDebug("url_rewrite", "completed inline remapping request for [%" PRId64 "]", sm_id);
+    t_state.url_remap_success = remapProcessor.finish_remap(&t_state, m_remap);
+    if (t_state.next_action == HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP && t_state.transact_return_point == nullptr) {
+      // It appears that we can now set the next_action to error and transact_return_point to nullptr when
+      // going through do_remap_request presumably due to a plugin setting an error.  In that case, it seems
+      // that the error message has already been setup, so we can just return and avoid the further
+      // call_transact_and_set_next_state
     } else {
-      HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_remap_request);
-      do_remap_request(false); /* dont run inline (iow on another thread) */
+      call_transact_and_set_next_state(nullptr);
     }
     break;
   }

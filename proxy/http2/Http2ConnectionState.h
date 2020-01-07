@@ -140,8 +140,14 @@ public:
   void
   destroy()
   {
+    if (in_destroy) {
+      schedule_zombie_event();
+      return;
+    }
+    in_destroy = true;
     if (shutdown_cont_event) {
       shutdown_cont_event->cancel();
+      shutdown_cont_event = nullptr;
     }
     cleanup_streams();
 
@@ -374,6 +380,7 @@ private:
   Http2StreamId continued_stream_id = 0;
   bool _scheduled                   = false;
   bool fini_received                = false;
+  bool in_destroy                   = false;
   int recursion                     = 0;
   Http2ShutdownState shutdown_state = HTTP2_SHUTDOWN_NONE;
   Http2ErrorCode shutdown_reason    = Http2ErrorCode::HTTP2_ERROR_MAX;

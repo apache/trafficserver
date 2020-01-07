@@ -165,15 +165,15 @@ bindings in memory, DNS traffic is reduced.
 |TS| Processes
 --------------
 
-|TS| contains three processes that work together to serve
+|TS| contains two processes that work together to serve
 requests and manage, control, and monitor the health of the system.
 
--  The :program:`traffic_server` process is the transaction processing engine
+#. The :program:`traffic_server` process is the transaction processing engine
    of |TS|. It is responsible for accepting connections,
    processing protocol requests, and serving documents from the cache or
    origin server.
 
--  The :program:`traffic_manager` process is the command and control facility
+#. The :program:`traffic_manager` process is the command and control facility
    of the |TS|, responsible for launching, monitoring, and
    reconfiguring the :program:`traffic_server` process. The :program:`traffic_manager`
    process is also responsible for the proxy autoconfiguration port, the
@@ -186,14 +186,6 @@ requests and manage, control, and monitor the health of the system.
    saved in the connection queue and processed in first-come,
    first-served order. This connection queueing shields users from any
    server restart downtime.
-
-The figure below illustrates the |TS| processes.
-
-.. figure:: ../static/images/admin/process.jpg
-   :align: center
-   :alt: Illustration of the |TS| Processes
-
-   Illustration of the |TS| Processes
 
 Administration Tools
 --------------------

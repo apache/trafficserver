@@ -184,7 +184,7 @@ public:
      * @param count Current connection count for display in message.
      * @param addr IP address of the upstream.
      */
-    void Note_Unblocked(TxnConfig *config, int count, const sockaddr *addr);
+    void Note_Unblocked(const TxnConfig *config, int count, const sockaddr *addr);
 
     /** Generate a Warning that a connection was blocked.
      *
@@ -194,7 +194,7 @@ public:
      * @param addr IP address of the upstream.
      * @param debug_tag Tag to use for the debug message. If no debug message should be generated set this to @c nullptr.
      */
-    void Warn_Blocked(TxnConfig *config, int64_t sm_id, int count, const sockaddr *addr, const char *debug_tag = nullptr);
+    void Warn_Blocked(const TxnConfig *config, int64_t sm_id, int count, const sockaddr *addr, const char *debug_tag = nullptr);
   };
 
   /** Get or create the @c Group for the specified session properties.
