@@ -26,6 +26,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <netinet/in.h>
 
 #include "ts/ts.h"
 #include "lib/StringHash.h"
