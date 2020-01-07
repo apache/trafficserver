@@ -25,7 +25,6 @@
 
 #include <string>
 #include <map>
-#include <pthread.h>
 #include "lib/ComponentBase.h"
 #include "lib/StringHash.h"
 #include "lib/DocNode.h"
@@ -36,7 +35,6 @@
 #include "SpecialIncludeHandler.h"
 #include "HandlerManager.h"
 
-extern pthread_key_t key;
 class EsiProcessor : private EsiLib::ComponentBase
 {
 public:
