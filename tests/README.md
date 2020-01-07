@@ -6,8 +6,8 @@ This directory contains different tests for Apache Trafficserver. It is recommen
 ## Layout
 The current layout is:
 
-**gold_tests/** - contains all the TSQA v4 based tests that run on the Reusable Gold Testing System (AuTest)  
-**tools/** - contains programs used to help with testing.  
+**gold_tests/** - contains all the TSQA v4 based tests that run on the Reusable Gold Testing System (AuTest)
+**tools/** - contains programs used to help with testing.
 **include/** - contains headers used for unit testing.
 
 ## Scripts

@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# default 'mixed' for connection type since it doesn't hurt 
+# default 'mixed' for connection type since it doesn't hurt
 def Replay(obj, name, replay_dir, key=None, cert=None, conn_type='mixed', options={}):
     # ATS setup - one line because we leave records and remap config to user
     ts = obj.MakeATSProcess("ts", select_ports=False) # select ports can be disabled once we add ssl port selection in extension
@@ -61,7 +61,7 @@ def Replay(obj, name, replay_dir, key=None, cert=None, conn_type='mixed', option
 
     if not cert:
         cert = os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.crt")
-    
+
     command = 'traffic-replay --log_dir {0} --type {1} --verify --host {2} --port {3} --s_port {4} '.format(data_dir, conn_type, hostIP, ts.Variables.port, ts.Variables.ssl_port)
 
     if key:

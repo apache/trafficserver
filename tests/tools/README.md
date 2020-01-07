@@ -7,21 +7,21 @@ Note these Tools require python 3.4 or better.
 
 Replay client to replay session logs.
 
-Usage: 
+Usage:
 python3.5 traffic-replay/ -type <nossl|ssl|h2|random> -log_dir /path/to/log -v
 
-Session Log format (in JSON): 
+Session Log format (in JSON):
 
- {"version": "0.1", 
+ {"version": "0.1",
   "txns": [
-        {"request": {"headers": "POST ……\r\n\r\n", "timestamp": "..", "body": ".."}, 
+        {"request": {"headers": "POST ……\r\n\r\n", "timestamp": "..", "body": ".."},
         "response": {"headers": "HTTP/1.1..\r\n\r\n", "timestamp": "..", "body": ".."},
-         "uuid": "1"}, 
-        {"request": {"headers": "POST ..….\r\n\r\n", "timestamp": "..", "body": ".."}, 
-        "response": {"headers": "HTTP/1.1..\r\nr\n", "timestamp": "..", "body": ".."}, 
+        "uuid": "1"},
+        {"request": {"headers": "POST ..….\r\n\r\n", "timestamp": "..", "body": ".."},
+        "response": {"headers": "HTTP/1.1..\r\nr\n", "timestamp": "..", "body": ".."},
         "uuid": "2"}
-  ], 
-  "timestamp": "....", 
+  ],
+  "timestamp": "....",
   "encoding": "...."}
   Configuration: The configuration required to run traffic-replay can be specified in traffic-replay/Config.py
 

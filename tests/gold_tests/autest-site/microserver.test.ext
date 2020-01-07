@@ -177,7 +177,7 @@ def MakeOriginServer(obj, name, port=None, s_port=None, ip='INADDR_LOOPBACK', de
         command += " --cert {0}".format(cert)
         command += " --s_port {0}".format(s_port)
 
-    # this might break if user specifies both both and ssl 
+    # this might break if user specifies both both and ssl
     if not ssl: # in both or HTTP only mode
         if not port:
             port = get_port(p, "Port")

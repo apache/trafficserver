@@ -50,7 +50,7 @@ First we need to create a runroot. It can be created simply by calling command `
 
     traffic_layout init --path /path/to/runroot
 
-A runroot will be created in ``/path/to/runroot``, available for other programs to use. 
+A runroot will be created in ``/path/to/runroot``, available for other programs to use.
 If the path is not specified, the current working directory will be used.
 
 To run traffic_manager, for example, using the runroot, there are several ways:
@@ -70,10 +70,10 @@ Subcommands
 
 init
 ----
-Use the current working directory or the specific path to create runroot. 
+Use the current working directory or the specific path to create runroot.
 The path can be absolute or relative.
 
-workflow: 
+workflow:
     #. Create a sandbox directory for programs to run under.
     #. Copy and symlink build time directories and files to the sandbox, allowing users to modify freely.
     #. Emit a YAML file that defines layout structure for other programs to use (relative path).
