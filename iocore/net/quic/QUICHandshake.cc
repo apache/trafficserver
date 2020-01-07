@@ -506,7 +506,7 @@ QUICHandshake::_abort_handshake(QUICTransErrorCode code)
 
   this->_hs_protocol->abort_handshake();
 
-  this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
+  this->_qc->close_quic_connection(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
 }
 
 /*

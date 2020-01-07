@@ -53,8 +53,8 @@ public:
 class QUICConnection : public QUICFrameHandler, public QUICConnectionInfoProvider
 {
 public:
-  virtual QUICStreamManager *stream_manager()             = 0;
-  virtual void close(QUICConnectionErrorUPtr error)       = 0;
-  virtual void handle_received_packet(UDPPacket *packeet) = 0;
-  virtual void ping()                                     = 0;
+  virtual QUICStreamManager *stream_manager()                       = 0;
+  virtual void close_quic_connection(QUICConnectionErrorUPtr error) = 0;
+  virtual void handle_received_packet(UDPPacket *packeet)           = 0;
+  virtual void ping()                                               = 0;
 };

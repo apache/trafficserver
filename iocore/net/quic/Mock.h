@@ -378,7 +378,7 @@ public:
   }
 
   void
-  close(QUICConnectionErrorUPtr error) override
+  close_quic_connection(QUICConnectionErrorUPtr error) override
   {
   }
 

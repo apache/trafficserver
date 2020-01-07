@@ -666,7 +666,7 @@ QUICNetVConnection::ping()
 }
 
 void
-QUICNetVConnection::close(QUICConnectionErrorUPtr error)
+QUICNetVConnection::close_quic_connection(QUICConnectionErrorUPtr error)
 {
   if (this->handler == reinterpret_cast<ContinuationHandler>(&QUICNetVConnection::state_connection_closed) ||
       this->handler == reinterpret_cast<ContinuationHandler>(&QUICNetVConnection::state_connection_closing)) {
@@ -1771,7 +1771,7 @@ QUICNetVConnection::_handle_error(QUICConnectionErrorUPtr error)
             static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->code), error->code);
 
   // Connection Error
-  this->close(std::move(error));
+  this->close_quic_connection(std::move(error));
 }
 
 QUICPacketUPtr

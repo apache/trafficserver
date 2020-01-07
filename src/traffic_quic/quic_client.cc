@@ -224,7 +224,8 @@ Http09ClientApp::main_event_handler(int event, Event *data)
 
     if (stream_io->is_read_done() && this->_config->close) {
       // Connection Close Exercise
-      this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
+      this->_qc->close_quic_connection(
+        QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
     }
 
     break;
@@ -275,7 +276,8 @@ Http3ClientApp::start()
   this->_resp_handler = new RespHandler(this->_config, resp_buf_reader, [&](void) {
     if (this->_config->close) {
       // Connection Close Exercise
-      this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
+      this->_qc->close_quic_connection(
+        QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
     }
   });
 
