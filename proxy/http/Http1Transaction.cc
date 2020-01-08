@@ -27,37 +27,32 @@
 
 Http1Transaction::~Http1Transaction()
 {
-  Note("~Http1Transaction()");
-  if (_proxy_ssn) {
-    // Must set this inactivity count here rather than in the session because the state machine
-    // is not available then
-    Note("1");
-    ink_assert(_sm);
-    ink_assert(_sm->t_state.txn_conf);
-    MgmtInt ka_in = _sm->t_state.txn_conf->keep_alive_no_activity_timeout_in;
-    set_inactivity_timeout(HRTIME_SECONDS(ka_in));
-    Note("2");
-    _proxy_ssn->clear_session_active();
-    _proxy_ssn->ssn_last_txn_time = Thread::get_hrtime();
-    Note("3");
-    if (_proxy_ssn->is_client()) {
-      HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
-    } else {
-      HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
-    }
-  }
-  Note("5");
+  TxnTrace("");
 }
 
 void
 Http1Transaction::transaction_done()
 {
-  Note("transaction_done()");
-  if (_proxy_ssn->get_netvc()) {
-    this->do_io_close();
+  TxnTrace("");
+  if (_proxy_ssn) {
+    // Must set this inactivity count here rather than in the session because the state machine
+    // is not available then
+    ink_assert(_sm);
+    ink_assert(_sm->t_state.txn_conf);
+    MgmtInt ka_in = _sm->t_state.txn_conf->keep_alive_no_activity_timeout_in;
+    set_inactivity_timeout(HRTIME_SECONDS(ka_in));
+    if (_proxy_ssn->is_client()) {
+      HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
+    } else {
+      HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
+    }
+    _proxy_ssn->release(this);
+    TxnTrace("_proxy_ssn = nullptr;");
+    _proxy_ssn = nullptr;
   }
-
+  TxnTrace("delete H1Transaction");
   delete this;
+  TxnTrace("delete H1Transaction <end>");
 }
 
 void

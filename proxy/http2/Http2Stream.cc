@@ -741,7 +741,7 @@ Http2Stream::reenable(VIO *vio)
 
 Http2Stream::~Http2Stream()
 {
-  Note("~Http2Stream()");
+  TxnTrace("");
   REMEMBER(NO_EVENT, this->reentrancy_count);
   Http2StreamDebug("Destroy stream, sent %" PRIu64 " bytes", this->bytes_sent);
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
@@ -750,7 +750,6 @@ Http2Stream::~Http2Stream()
   ink_release_assert(reentrancy_count == 0);
 
   uint64_t ssn_id = 0;
-  Note("11");
   // Safe to initiate SSN_CLOSE if this is the last stream
   if (_proxy_ssn) {
     Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(_proxy_ssn);
@@ -768,8 +767,6 @@ Http2Stream::~Http2Stream()
       HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
     }
   }
-
-  Note("12");
 
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(nullptr, 0, nullptr);
@@ -799,12 +796,8 @@ Http2Stream::~Http2Stream()
           this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE));
   }
 
-  Note("13");
-
   _req_header.destroy();
   response_header.destroy();
-
-  Note("14");
 
   // Drop references to all buffer data
   this->_request_buffer.clear();
@@ -817,12 +810,11 @@ Http2Stream::~Http2Stream()
     ats_free(header_blocks);
   }
 
-  Note("15");
   clear_timers();
   clear_io_events();
   http_parser_clear(&http_parser);
 
-  Note("16");
+  TxnTrace("<end>");
 }
 
 IOBufferReader *

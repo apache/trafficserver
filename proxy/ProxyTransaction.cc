@@ -32,6 +32,7 @@ ProxyTransaction::ProxyTransaction() : VConnection(nullptr) {}
 void
 ProxyTransaction::new_transaction()
 {
+  TxnTrace("");
   ink_assert(_sm == nullptr);
 
   // Defensive programming, make sure nothing persists across
@@ -51,26 +52,31 @@ ProxyTransaction::new_transaction()
 
   this->increment_txn_stat();
   _sm->attach_client_session(this, _reader);
+  TxnTrace("<end>");
 }
 
 void
 ProxyTransaction::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
+  TxnTrace("");
   _proxy_ssn->attach_server_session(ssession, transaction_done);
 }
 
 ProxyTransaction::~ProxyTransaction()
 {
-  Note("~ProxyTransaction()");
+  TxnTrace("");
   // Pass along the release to the session
   if (_proxy_ssn) {
     HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", _proxy_ssn ? _proxy_ssn->get_id() : 0, _sm ? _sm->sm_id : 0);
     // TODO: why would we not have a session here?
     _proxy_ssn->release(this);
+    _proxy_ssn = nullptr;
+    TxnTrace("_proxy_ssn = nullptr;");
   }
   _sm = nullptr;
-  Note("sm = nullptr;");
+  TxnTrace("_sm = nullptr;");
   this->mutex.clear();
+  TxnTrace("<end>");
 }
 
 // See if we need to schedule on the primary thread for the transaction or change the thread that is associated with the VC.

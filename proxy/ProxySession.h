@@ -37,6 +37,8 @@
 // member function.
 #define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
 
+#define SsnTrace(fmt, ...) Debug("SsnTrace", "[id#%li] " fmt, _id, ##__VA_ARGS__)
+
 class ProxyTransaction;
 class Http1ServerSession; // TODO: refactor
 

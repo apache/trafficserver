@@ -72,6 +72,7 @@ static const TSEvent eventmap[TS_HTTP_LAST_HOOK + 1] = {
 void
 ProxySession::free()
 {
+  SsnTrace("");
   if (schedule_event) {
     schedule_event->cancel();
     schedule_event = nullptr;
@@ -79,6 +80,7 @@ ProxySession::free()
   this->api_hooks.clear();
   this->mutex.clear();
   this->acl.clear();
+  SsnTrace("<end>");
 }
 
 int
@@ -135,6 +137,7 @@ ProxySession::state_api_callout(int event, void *data)
 void
 ProxySession::do_api_callout(TSHttpHookID id)
 {
+  SsnTrace("%s", HttpDebugNames::get_api_hook_name(id));
   ink_assert(id == TS_HTTP_SSN_START_HOOK || id == TS_HTTP_SSN_CLOSE_HOOK);
   hook_state.init(id, http_global_hooks, &api_hooks);
   /// Verify if there is any hook to invoke
@@ -165,7 +168,8 @@ ProxySession::handle_api_return(int event)
     }
     break;
   case TS_HTTP_SSN_CLOSE_HOOK: {
-    free(); // You can now clean things up
+    SsnTrace("TS_HTTP_SSN_CLOSE_HOOK <return>");
+    this->free(); // You can now clean things up
     break;
   }
   default:

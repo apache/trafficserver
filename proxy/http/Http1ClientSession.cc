@@ -67,7 +67,7 @@ Http1ClientSession::Http1ClientSession() {}
 void
 Http1ClientSession::destroy()
 {
-  Note("Http1ClientSession::destroy()");
+  SsnTrace("");
   if (read_state != HCS_CLOSED) {
     return;
   }
@@ -82,12 +82,14 @@ Http1ClientSession::destroy()
   } else {
     Warning("http1: Attempt to double ssn close");
   }
+
+  SsnTrace("<end>");
 }
 
 void
 Http1ClientSession::free()
 {
-  Note("Http1ClientSession::free()");
+  SsnTrace("");
   magic = HTTP_CS_MAGIC_DEAD;
   if (read_buffer) {
     free_MIOBuffer(read_buffer);
@@ -115,6 +117,7 @@ Http1ClientSession::free()
 
   super::free();
   THREAD_FREE(this, http1ClientSessionAllocator, this_thread());
+  SsnTrace("<end>");
 }
 
 void
@@ -128,11 +131,12 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ssn_start_time = Thread::get_hrtime();
   in_destroy     = false;
 
-  MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-  ink_assert(lock.is_locked());
-
   // Unique client session identifier.
   _id = ProxySession::next_id();
+  SsnTrace();
+
+  MUTEX_TRY_LOCK(lock, mutex, this_ethread());
+  ink_assert(lock.is_locked());
 
   schedule_event = nullptr;
 
@@ -213,7 +217,7 @@ Http1ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http1ClientSession::do_io_close(int alerrno)
 {
-  Note("Http1ClientSession::do_io_close()");
+  SsnTrace("");
   if (read_state == HCS_CLOSED) {
     return; // Don't double call session close
   }
@@ -398,12 +402,15 @@ Http1ClientSession::reenable(VIO *vio)
 void
 Http1ClientSession::release(ProxyTransaction *txn)
 {
-  Note("Http1ClientSession::release(txn) %i", int(read_state));
+  SsnTrace("read_state=%i", int(read_state));
   ink_assert(_txn == txn);
   _txn = nullptr;
 
   released_transactions++;
   ink_assert(transact_count == released_transactions); // H1 can only do serial transactions
+
+  this->clear_session_active();
+  this->ssn_last_txn_time = Thread::get_hrtime();
 
   ink_assert(read_state != HCS_HALF_CLOSED);
   if (read_state == HCS_CLOSED) {
@@ -411,6 +418,7 @@ Http1ClientSession::release(ProxyTransaction *txn)
   } else {
     start();
   }
+  SsnTrace("<end>");
 }
 
 void
@@ -435,7 +443,7 @@ Http1ClientSession::new_transaction()
   _txn->set_reader(_reader);
   _txn->upstream_outbound_options = *accept_options;
   transact_count++;
-
+  _txn->_id = transact_count;
   client_vc->add_to_active_queue();
   _txn->new_transaction();
 }
@@ -495,7 +503,7 @@ Http1ClientSession::decrement_current_active_client_connections_stat()
 void
 Http1ClientSession::start()
 {
-  Note("Http1ClientSession::start()");
+  SsnTrace("");
   // Troll for data to get a new transaction
 
   // Clean up the write VIO in case of inactivity timeout

@@ -34,7 +34,8 @@ ts.addSSLfile("../remap/ssl/server.pem")
 ts.addSSLfile("../remap/ssl/server.key")
 
 ts.Disk.records_config.update({
-    # 'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'http|TxnTrace|SsnTrace',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
 })

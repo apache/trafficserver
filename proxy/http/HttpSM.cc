@@ -913,6 +913,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
       }
       ua_entry->eos = true;
     } else {
+      Debug("TxnTrace", "HttpSM::state_watch_for_client_abort:VC_EVENT_EOS {sm#%li}", this->sm_id);
       ua_txn->do_io_close();
       ua_txn           = nullptr;
       ua_buffer_reader = nullptr;
@@ -3200,6 +3201,7 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
 int
 HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
 {
+  Debug("TxnTrace", "HttpSM::tunnel_handler_ua {sm#%li}", this->sm_id);
   bool close_connection     = true;
   HttpTunnelProducer *p     = nullptr;
   HttpTunnelConsumer *selfc = nullptr;
@@ -3318,7 +3320,6 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     ua_txn->do_io_close();
   } else {
     ink_assert(ua_buffer_reader != nullptr);
-    ua_txn->do_io_close();
     ua_buffer_reader = nullptr;
   }
 
