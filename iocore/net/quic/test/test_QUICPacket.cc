@@ -139,6 +139,14 @@ TEST_CASE("Receiving Packet", "[quic]")
     CHECK(packet.destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8));
     CHECK(packet.source_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8));
     CHECK(packet.token().length() == 0);
+
+    size_t token_length;
+    uint8_t token_length_field_len;
+    size_t token_length_field_offset;
+    CHECK(QUICInitialPacketR::token_length(token_length, token_length_field_len, token_length_field_offset, input, sizeof(input)));
+    CHECK(token_length == 0);
+    CHECK(token_length_field_len == 1);
+    CHECK(token_length_field_offset == 23);
   }
 
   SECTION("Short Header Packet")

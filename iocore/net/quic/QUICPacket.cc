@@ -1248,7 +1248,7 @@ QUICInitialPacketR::token_length(size_t &token_length, uint8_t &field_len, size_
   QUICPacketType type = QUICPacketType::UNINITIALIZED;
   QUICPacketR::type(type, packet, packet_len);
 
-  ink_assert(type != QUICPacketType::INITIAL);
+  ink_assert(type == QUICPacketType::INITIAL);
 
   uint8_t dcil, scil;
   QUICInvariants::dcil(dcil, packet, packet_len);
