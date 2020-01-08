@@ -29,7 +29,41 @@
 #include <openssl/hkdf.h>
 #include <openssl/aead.h>
 
-// static constexpr char tag[] = "quic_tls";
+#include "QUICGlobals.h"
+
+static constexpr char tag[] = "quic_tls";
+
+static int
+set_encryption_secrets(SSL *ssl, enum ssl_encryption_level_t level, const uint8_t *read_secret, const uint8_t *write_secret,
+                       size_t secret_len)
+{
+  return 1;
+}
+
+static int
+add_handshake_data(SSL *ssl, enum ssl_encryption_level_t level, const uint8_t *data, size_t len)
+{
+  return 1;
+}
+
+static int
+flush_flight(SSL *ssl)
+{
+  return 1;
+}
+
+static int
+send_alert(SSL *ssl, enum ssl_encryption_level_t level, uint8_t alert)
+{
+  return 1;
+}
+
+static const SSL_QUIC_METHOD quic_method = {set_encryption_secrets, add_handshake_data, flush_flight, send_alert};
+
+void
+QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
+{
+}
 
 QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,
                  const NetVCOptions &netvc_options, const char *session_file, const char *keylog_file)
@@ -40,141 +74,61 @@ QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, Net
     _netvc_context(nvc_ctx)
 {
   ink_assert(this->_netvc_context != NET_VCONNECTION_UNSET);
-}
 
-int
-QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
-{
-  ink_assert(false);
-  return 0;
+  if (this->_netvc_context == NET_VCONNECTION_OUT) {
+    SSL_set_connect_state(this->_ssl);
+
+    SSL_set_alpn_protos(this->_ssl, reinterpret_cast<const unsigned char *>(netvc_options.alpn_protos.data()),
+                        netvc_options.alpn_protos.size());
+    const ats_scoped_str &tlsext_host_name = netvc_options.sni_hostname ? netvc_options.sni_hostname : netvc_options.sni_servername;
+    SSL_set_tlsext_host_name(this->_ssl, tlsext_host_name.get());
+  } else {
+    SSL_set_accept_state(this->_ssl);
+  }
+
+  SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_tls_index, this);
+  SSL_set_quic_method(this->_ssl, &quic_method);
+
+  if (session_file && this->_netvc_context == NET_VCONNECTION_OUT) {
+    auto file = BIO_new_file(session_file, "r");
+    if (file == nullptr) {
+      Debug(tag, "Could not read tls session file %s", session_file);
+      return;
+    }
+
+    auto session = PEM_read_bio_SSL_SESSION(file, nullptr, nullptr, nullptr);
+    if (session == nullptr) {
+      Debug(tag, "Could not read tls session file %s", session_file);
+    } else {
+      if (!SSL_set_session(this->_ssl, session)) {
+        Debug(tag, "Session resumption failed : %s", session_file);
+      } else {
+        Debug(tag, "Session resumption success : %s", session_file);
+        this->_is_session_reused = true;
+      }
+      SSL_SESSION_free(session);
+    }
+
+    BIO_free(file);
+  }
 }
 
 int
 QUICTLS::_process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 {
-  ink_assert(false);
-  return 0;
+  return SSL_process_quic_post_handshake(this->_ssl);
 }
 
 int
 QUICTLS::_read_early_data()
 {
-  uint8_t early_data[8];
-  size_t early_data_len = 0;
-  do {
-    ERR_clear_error();
-    early_data_len = SSL_read(this->_ssl, early_data, sizeof(early_data));
-  } while (SSL_in_early_data(this->_ssl));
-
+  // This is for Hacked OpenSSL. Do nothing here.
   return 1;
 }
 
-/*
-const EVP_AEAD *
-QUICTLS::_get_evp_aead(QUICKeyPhase phase) const
+int
+QUICTLS::_write_early_data()
 {
-  if (phase == QUICKeyPhase::INITIAL) {
-    return EVP_aead_aes_128_gcm();
-  } else {
-    const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
-    if (cipher) {
-      switch (SSL_CIPHER_get_id(cipher)) {
-      case TLS1_CK_AES_128_GCM_SHA256:
-        return EVP_aead_aes_128_gcm();
-      case TLS1_CK_AES_256_GCM_SHA384:
-        return EVP_aead_aes_256_gcm();
-      case TLS1_CK_CHACHA20_POLY1305_SHA256:
-        return EVP_aead_chacha20_poly1305();
-      default:
-        ink_assert(false);
-        return nullptr;
-      }
-    } else {
-      ink_assert(false);
-      return nullptr;
-    }
-  }
+  // This is for Hacked OpenSSL. Do nothing here.
+  return 1;
 }
-
-size_t
-QUICTLS::_get_aead_tag_len(QUICKeyPhase phase) const
-{
-  if (phase == QUICKeyPhase::INITIAL) {
-    return EVP_GCM_TLS_TAG_LEN;
-  } else {
-    const SSL_CIPHER *cipher = SSL_get_current_cipher(this->_ssl);
-    if (cipher) {
-      switch (SSL_CIPHER_get_id(cipher)) {
-      case TLS1_CK_AES_128_GCM_SHA256:
-      case TLS1_CK_AES_256_GCM_SHA384:
-        return EVP_GCM_TLS_TAG_LEN;
-      case TLS1_CK_CHACHA20_POLY1305_SHA256:
-        return 16;
-      default:
-        ink_assert(false);
-        return -1;
-      }
-    } else {
-      ink_assert(false);
-      return -1;
-    }
-  }
-}
-
-const EVP_MD *
-QUICKeyGenerator::_get_handshake_digest()
-{
-  // TODO not implemented
-  return nullptr;
-}
-
-bool
-QUICTLS::_encrypt(uint8_t *cipher, size_t &cipher_len, size_t max_cipher_len, const uint8_t *plain, size_t plain_len,
-                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_AEAD *aead,
-                  size_t tag_len) const
-{
-  uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
-  size_t nonce_len                 = 0;
-  _gen_nonce(nonce, nonce_len, pkt_num, km.iv, km.iv_len);
-
-  EVP_AEAD_CTX *aead_ctx = EVP_AEAD_CTX_new(aead, km.key, km.key_len, tag_len);
-  if (!aead_ctx) {
-    Debug(tag, "Failed to create EVP_AEAD_CTX");
-    return false;
-  }
-
-  if (!EVP_AEAD_CTX_seal(aead_ctx, cipher, &cipher_len, max_cipher_len, nonce, nonce_len, plain, plain_len, ad, ad_len)) {
-    Debug(tag, "Failed to encrypt");
-    return false;
-  }
-
-  EVP_AEAD_CTX_free(aead_ctx);
-
-  return true;
-}
-
-bool
-QUICTLS::_decrypt(uint8_t *plain, size_t &plain_len, size_t max_plain_len, const uint8_t *cipher, size_t cipher_len,
-                  uint64_t pkt_num, const uint8_t *ad, size_t ad_len, const KeyMaterial &km, const EVP_AEAD *aead,
-                  size_t tag_len) const
-{
-  uint8_t nonce[EVP_MAX_IV_LENGTH] = {0};
-  size_t nonce_len                 = 0;
-  _gen_nonce(nonce, nonce_len, pkt_num, km.iv, km.iv_len);
-
-  EVP_AEAD_CTX *aead_ctx = EVP_AEAD_CTX_new(aead, km.key, km.key_len, tag_len);
-  if (!aead_ctx) {
-    Debug(tag, "Failed to create EVP_AEAD_CTX");
-    return false;
-  }
-
-  if (!EVP_AEAD_CTX_open(aead_ctx, plain, &plain_len, max_plain_len, nonce, nonce_len, cipher, cipher_len, ad, ad_len)) {
-    Debug(tag, "Failed to decrypt");
-    return false;
-  }
-
-  EVP_AEAD_CTX_free(aead_ctx);
-
-  return true;
-}
-*/

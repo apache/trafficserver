@@ -79,6 +79,20 @@ QUICTLS::~QUICTLS()
   SSL_free(this->_ssl);
 }
 
+int
+QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
+{
+  if (this->is_handshake_finished()) {
+    if (in != nullptr && in->offsets[4] != 0) {
+      return this->_process_post_handshake_messages(out, in);
+    }
+
+    return 0;
+  }
+
+  return this->_handshake(out, in);
+}
+
 void
 QUICTLS::reset()
 {
@@ -200,6 +214,71 @@ QUICTLS::abort_handshake()
   this->_state = HandshakeState::ABORTED;
 
   return;
+}
+
+int
+QUICTLS::_handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
+{
+  ink_assert(this->_ssl != nullptr);
+  if (this->_state == HandshakeState::ABORTED) {
+    return 0;
+  }
+
+  int err = SSL_ERROR_NONE;
+  ERR_clear_error();
+  int ret = 0;
+
+  SSL_set_msg_callback(this->_ssl, QUICTLS::_msg_cb);
+  SSL_set_msg_callback_arg(this->_ssl, out);
+
+  // TODO: set BIO_METHOD which read from QUICHandshakeMsgs directly
+  BIO *rbio = BIO_new(BIO_s_mem());
+  // TODO: set dummy BIO_METHOD which do nothing
+  BIO *wbio = BIO_new(BIO_s_mem());
+  if (in != nullptr && in->offsets[4] != 0) {
+    BIO_write(rbio, in->buf, in->offsets[4]);
+  }
+  SSL_set_bio(this->_ssl, rbio, wbio);
+
+  if (this->_netvc_context == NET_VCONNECTION_IN) {
+    if (!this->_early_data_processed) {
+      if (auto ret = this->_read_early_data(); ret == 0) {
+        this->_early_data_processed = true;
+      } else if (ret < 0) {
+        out->error_code = static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION);
+        return 0;
+      } else {
+        // Early data is not arrived yet -- can be multiple initial packets
+      }
+    }
+
+    ret = SSL_accept(this->_ssl);
+  } else {
+    if (!this->_early_data_processed) {
+      if (this->_write_early_data()) {
+        this->_early_data_processed = true;
+      }
+    }
+
+    ret = SSL_connect(this->_ssl);
+  }
+
+  if (ret <= 0) {
+    err = SSL_get_error(this->_ssl, ret);
+
+    switch (err) {
+    case SSL_ERROR_WANT_READ:
+    case SSL_ERROR_WANT_WRITE:
+      break;
+    default:
+      char err_buf[256] = {0};
+      ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+      Debug(tag, "Handshake: %s", err_buf);
+      return ret;
+    }
+  }
+
+  return 1;
 }
 
 void
