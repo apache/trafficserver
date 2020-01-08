@@ -24,8 +24,7 @@
 #include "QUICPacketHeaderProtector.h"
 
 bool
-QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key,
-                                          const QUIC_EVP_CIPHER *cipher) const
+QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *cipher) const
 {
   static constexpr unsigned char FIVE_ZEROS[] = {0x00, 0x00, 0x00, 0x00, 0x00};
   EVP_CIPHER_CTX *ctx                         = EVP_CIPHER_CTX_new();

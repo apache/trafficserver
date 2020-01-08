@@ -49,11 +49,11 @@ public:
   virtual const size_t *decryption_iv_len(QUICKeyPhase phase) const  = 0;
 
   // Header Protection
-  virtual const QUIC_EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const = 0;
-  virtual const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const     = 0;
-  virtual size_t encryption_key_for_hp_len(QUICKeyPhase phase) const         = 0;
-  virtual const uint8_t *decryption_key_for_hp(QUICKeyPhase phase) const     = 0;
-  virtual size_t decryption_key_for_hp_len(QUICKeyPhase phase) const         = 0;
+  virtual const EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const  = 0;
+  virtual const uint8_t *encryption_key_for_hp(QUICKeyPhase phase) const = 0;
+  virtual size_t encryption_key_for_hp_len(QUICKeyPhase phase) const     = 0;
+  virtual const uint8_t *decryption_key_for_hp(QUICKeyPhase phase) const = 0;
+  virtual size_t decryption_key_for_hp_len(QUICKeyPhase phase) const     = 0;
 };
 
 class QUICPacketProtectionKeyInfo : public QUICPacketProtectionKeyInfoProvider
@@ -109,7 +109,7 @@ public:
 
   // Header Protection
 
-  virtual const QUIC_EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const override;
+  virtual const EVP_CIPHER *get_cipher_for_hp(QUICKeyPhase phase) const override;
   virtual void set_cipher_for_hp_initial(const EVP_CIPHER *cipher);
   virtual void set_cipher_for_hp(const EVP_CIPHER *cipher);
 

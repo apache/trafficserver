@@ -93,6 +93,7 @@ private:
   void _print_km(const char *header, const uint8_t *key_for_hp, size_t key_for_hp_len, const uint8_t *key, size_t key_len,
                  const uint8_t *iv, size_t iv_len, const uint8_t *secret = nullptr, size_t secret_len = 0);
 
+  static void _msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg);
   const char *_session_file              = nullptr;
   const char *_keylog_file               = nullptr;
   SSL *_ssl                              = nullptr;

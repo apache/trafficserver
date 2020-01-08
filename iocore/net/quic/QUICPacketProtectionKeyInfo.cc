@@ -266,7 +266,7 @@ QUICPacketProtectionKeyInfo::set_cipher(const EVP_CIPHER *cipher, size_t tag_len
   this->_tag_len = tag_len;
 }
 
-const QUIC_EVP_CIPHER *
+const EVP_CIPHER *
 QUICPacketProtectionKeyInfo::get_cipher_for_hp(QUICKeyPhase phase) const
 {
   switch (phase) {

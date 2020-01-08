@@ -23,26 +23,29 @@
 
 #include "QUICPacketHeaderProtector.h"
 
+#include "openssl/chacha.h"
+
 bool
-QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key,
-                                          const QUIC_EVP_CIPHER *cipher) const
+QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *cipher) const
 {
   static constexpr unsigned char FIVE_ZEROS[] = {0x00, 0x00, 0x00, 0x00, 0x00};
-  EVP_AEAD_CTX ctx;
 
-  if (!EVP_AEAD_CTX_init(&ctx, cipher, key, EVP_AEAD_key_length(cipher), 16, nullptr)) {
-    return false;
-  }
-
-  size_t len = 0;
-  if (cipher == EVP_aead_chacha20_poly1305()) {
-    if (!EVP_AEAD_CTX_seal(&ctx, mask, &len, EVP_MAX_BLOCK_LENGTH, sample + 4, 12, FIVE_ZEROS, sizeof(FIVE_ZEROS), sample, 4)) {
-      return false;
-    }
+  if (cipher == nullptr) {
+    uint32_t counter = htole32(*reinterpret_cast<const uint32_t *>(&sample[0]));
+    CRYPTO_chacha_20(mask, FIVE_ZEROS, sizeof(FIVE_ZEROS), key, &sample[4], counter);
   } else {
-    if (!EVP_AEAD_CTX_seal(&ctx, mask, &len, EVP_MAX_BLOCK_LENGTH, nullptr, 0, sample, 16, nullptr, 0)) {
+    int len             = 0;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx || !EVP_EncryptInit_ex(ctx, cipher, nullptr, key, sample)) {
       return false;
     }
+    if (!EVP_EncryptUpdate(ctx, mask, &len, sample, 16)) {
+      return false;
+    }
+    if (!EVP_EncryptFinal_ex(ctx, mask + len, &len)) {
+      return false;
+    }
+    EVP_CIPHER_CTX_free(ctx);
   }
 
   return true;
