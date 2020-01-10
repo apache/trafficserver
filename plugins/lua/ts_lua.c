@@ -28,33 +28,65 @@
 static uint64_t ts_lua_http_next_id   = 0;
 static uint64_t ts_lua_g_http_next_id = 0;
 
-static ts_lua_main_ctx *ts_lua_main_ctx_array;
-static ts_lua_main_ctx *ts_lua_g_main_ctx_array;
+static ts_lua_main_ctx *ts_lua_main_ctx_array   = NULL;
+static ts_lua_main_ctx *ts_lua_g_main_ctx_array = NULL;
+
+static char const *const ts_lua_mgmt_state_str = "proxy.config.plugin.lua.max_states";
+
+/* this is set the first time global configuration is probed. */
+static int ts_lua_max_state_count = 0;
+
+ts_lua_main_ctx *
+create_lua_vms()
+{
+  ts_lua_main_ctx *ctx_array = NULL;
+
+  if (0 == ts_lua_max_state_count) {
+    TSMgmtInt mgmt_state = 0;
+
+    if (TS_SUCCESS != TSMgmtIntGet(ts_lua_mgmt_state_str, &mgmt_state)) {
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] setting max state to default: %d", __FUNCTION__, TS_LUA_MAX_STATE_COUNT);
+      ts_lua_max_state_count = TS_LUA_MAX_STATE_COUNT;
+    } else {
+      ts_lua_max_state_count = (int)mgmt_state;
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] found %s: [%d]", __FUNCTION__, ts_lua_mgmt_state_str, (int)ts_lua_max_state_count);
+
+      if (ts_lua_max_state_count < 1) {
+        TSError("[ts_lua][%s] invalid %s: %d", __FUNCTION__, ts_lua_mgmt_state_str, ts_lua_max_state_count);
+        ts_lua_max_state_count = 0;
+        return NULL;
+      }
+    }
+  }
+
+  ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * ts_lua_max_state_count);
+  memset(ctx_array, 0, sizeof(ts_lua_main_ctx) * ts_lua_max_state_count);
+
+  int const ret = ts_lua_create_vm(ctx_array, ts_lua_max_state_count);
+
+  if (ret) {
+    ts_lua_destroy_vm(ctx_array, ts_lua_max_state_count);
+    TSfree(ctx_array);
+    ctx_array = NULL;
+  }
+
+  return ctx_array;
+}
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  int ret;
-
   if (!api_info || api_info->size < sizeof(TSRemapInterface)) {
     strncpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
     errbuf[errbuf_size - 1] = '\0';
     return TS_ERROR;
   }
 
-  if (ts_lua_main_ctx_array != NULL) {
-    return TS_SUCCESS;
-  }
-
-  ts_lua_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
-  memset(ts_lua_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
-
-  ret = ts_lua_create_vm(ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
-
-  if (ret) {
-    ts_lua_destroy_vm(ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
-    TSfree(ts_lua_main_ctx_array);
-    return TS_ERROR;
+  if (NULL == ts_lua_main_ctx_array) {
+    ts_lua_main_ctx_array = create_lua_vms();
+    if (NULL == ts_lua_main_ctx_array) {
+      return TS_ERROR;
+    }
   }
 
   return TS_SUCCESS;
@@ -67,7 +99,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   char script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
   char *inline_script                  = "";
   int fn                               = 0;
-  int states                           = TS_LUA_MAX_STATE_COUNT;
+  int states                           = ts_lua_max_state_count;
   static const struct option longopt[] = {
     {"states", required_argument, 0, 's'},
     {"inline", required_argument, 0, 'i'},
@@ -84,7 +116,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     switch (opt) {
     case 's':
       states = atoi(optarg);
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] setting number of lua VM [%d]", __FUNCTION__, states);
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] setting number of lua VMs [%d]", __FUNCTION__, states);
       // set state
       break;
     case 'i':
@@ -96,9 +128,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     }
   }
 
-  if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
+  if (states < 1 || ts_lua_max_state_count < states) {
     snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - invalid state in option input. Must be between 1 and %d",
-             TS_LUA_MAX_STATE_COUNT);
+             ts_lua_max_state_count);
     return TS_ERROR;
   }
 
@@ -455,19 +487,15 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[ts_lua] Plugin registration failed");
   }
 
-  int ret                 = 0;
-  ts_lua_g_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
-  memset(ts_lua_g_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
-
-  ret = ts_lua_create_vm(ts_lua_g_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
-
-  if (ret) {
-    ts_lua_destroy_vm(ts_lua_g_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
-    TSfree(ts_lua_g_main_ctx_array);
-    return;
+  if (NULL == ts_lua_g_main_ctx_array) {
+    ts_lua_g_main_ctx_array = create_lua_vms();
+    if (NULL == ts_lua_g_main_ctx_array) {
+      return;
+    }
   }
 
-  int states                           = TS_LUA_MAX_STATE_COUNT;
+  int states = ts_lua_max_state_count;
+
   int reload                           = 0;
   static const struct option longopt[] = {
     {"states", required_argument, 0, 's'},
@@ -495,8 +523,8 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
-    TSError("[ts_lua][%s] invalid # of states from option input. Must be between 1 and %d", __FUNCTION__, TS_LUA_MAX_STATE_COUNT);
+  if (states < 1 || ts_lua_max_state_count < states) {
+    TSError("[ts_lua][%s] invalid # of states from option input. Must be between 1 and %d", __FUNCTION__, ts_lua_max_state_count);
     return;
   }
 
@@ -528,8 +556,9 @@ TSPluginInit(int argc, const char *argv[])
   ts_lua_init_instance(conf);
 
   char errbuf[TS_LUA_MAX_STR_LENGTH];
-  int errbuf_len = sizeof(errbuf);
-  ret = ts_lua_add_module(conf, ts_lua_g_main_ctx_array, conf->states, argc - optind, (char **)&argv[optind], errbuf, errbuf_len);
+  int const errbuf_len = sizeof(errbuf);
+  int const ret =
+    ts_lua_add_module(conf, ts_lua_g_main_ctx_array, conf->states, argc - optind, (char **)&argv[optind], errbuf, errbuf_len);
 
   if (ret != 0) {
     TSError(errbuf, NULL);

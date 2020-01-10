@@ -3970,6 +3970,12 @@ Plug-in Configuration
 
    Specifies the location of |TS| plugins.
 
+.. ts:cv:: CONFIG proxy.config.plugin.lua.max_states INT 256
+
+   Maximum number of lua states at startup.  Applies to both remap and global plugins (each type is allocated this number of states).  The lua plugin --states overrides this but MUST be less than or equal to this value.
+
+	 This setting is not reloadable since it is must be applied when all the lua states are first initialized.
+
 SOCKS Processor
 ===============
 

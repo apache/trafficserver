@@ -128,6 +128,17 @@ If it is used as remap plugin, we can write the following in remap.config to def
 
     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--states=64 @pparam=/XXX/test_hdr.lua
 
+The maximum number of allowed states is set to 256 which is also the
+default states value.  The default value can be globally changed by
+adding a configuration option to records.config.
+
+::
+
+    CONFIG proxy.config.plugin.lua.max_states INT 64
+
+Any per plugin --states value overrides this default value but must be less than or equal to this value.  This setting is not reloadable since it is must be applied when all the lua states are first initialized.
+
+
 TS API for Lua
 ==============
 
