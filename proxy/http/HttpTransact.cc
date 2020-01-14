@@ -745,6 +745,16 @@ HttpTransact::Forbidden(State *s)
 }
 
 void
+HttpTransact::TooEarly(State *s)
+{
+  TxnDebug("http_trans", "[TooEarly]"
+                         "Early Data method is not safe");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_TOO_EARLY, "Too Early", "too#early");
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+}
+
+void
 HttpTransact::HandleBlindTunnel(State *s)
 {
   URL u;
@@ -7731,6 +7741,10 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   if (s->http_config_param->send_100_continue_response) {
     HttpTransactHeaders::remove_100_continue_headers(s, outgoing_request);
     TxnDebug("http_trans", "[build_request] request expect 100-continue headers removed");
+  }
+
+  if (base_request->is_early_data()) {
+    outgoing_request->value_set_int(MIME_FIELD_EARLY_DATA, MIME_LEN_EARLY_DATA, 1);
   }
 
   s->request_sent_time = ink_local_time();
