@@ -515,6 +515,7 @@ Changes with Apache Traffic Server 9.0.0
   #5446 - Fixes use-after-free in PVCTestDriver::start_tests
   #5447 - Fixed nullptr check in cookie remap
   #5448 - Fixed syntax issue with clang
+  #5450 - TLSv1.3 0-RTT support
   #5451 - Fix FREELIST macros for AArch64
   #5452 - Clang Analyzer: Fix IpMap.cc false positives. #2
   #5455 - Convert ssl_preaccept plugin to use command-line arguments
@@ -773,9 +774,11 @@ Changes with Apache Traffic Server 9.0.0
   #6016 - Fix host type in host matcher.
   #6024 - Make proxy.config.http.request_buffer_enabled configurable and bug fix
   #6031 - listen on all the net threads
+  #6037 - Promote 'Enable_Config_Var' from HttpConnectionCount to HttpConfig.
   #6049 - set host name in TLS extension for SNI Host check in service side with sni policy verify_with_name_source.
   #6053 - Enhance Connection Collapse in ATS core
   #6054 - Ignore MgmtMessageHdr if ProcessManager is not running
+  #6061 - Add Example URI Signer Python Script
   #6062 - Adding connection close headers to regex_remap test.
   #6066 - Fixing session sharing with IP matching.
   #6070 - Updated API header and ssl_session_reuse for new TSSslSessionInsert changes
@@ -844,16 +847,24 @@ Changes with Apache Traffic Server 9.0.0
   #6227 - Remove never implemented regex descriptions
   #6231 - Adjust the refcounts to avoid Mutex leak
   #6233 - auto delete rolled log file fixes
+  #6234 - Don't sleep if ProtectedQueue.localQueue is not empty. (#6234)
+  #6244 - Copy the Client SNI Server Name out of the openssl SSL object.
   #6247 - Add some stats collections to cache_promote.
   #6251 - Some tweaks to reloading-plugins.en.rst
+  #6252 - Add simple uri_signing autest and subsequent fixes
   #6260 - Fix TS_USE_DIAGS usage for --disable-diags option
   #6263 - TCL: cleanup in HostLookup.cc, make sure keys are stable.
   #6264 - Change HTTP/2 error rate log to warning
   #6265 - LGTM: Add header guards
   #6266 - LGTM: Fix wrong type of arguments to formatting function
+  #6268 - Add tests to exercise H2 and chunked encoding
+  #6275 - Clear all pointers in API Hooks clear function.
   #6280 - Assure no SM survives plugin factory deactivation.
   #6281 - Perf: replace dynamic_cast with static_cast in this_thread()
   #6283 - Adjust debug tag for ssl_sni_whitelist plugin to match plugin
   #6284 - Removes the remaining references to TSQA
   #6285 - Set wrap around after checking all the parents
   #6293 - Add invalid config warning when cache open write fail and read retry are inconsistent
+  #6297 - Add links to RWW sections
+  #6307 - Reduce process duration of test_Http2FrequencyCounter
+  #6324 - Fixes clang-format issues
