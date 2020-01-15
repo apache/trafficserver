@@ -81,7 +81,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
     p.Env['PROXY_CONFIG_BIN_PATH'] = bin_dir
     bin_path = os.path.join(ts_dir, bin_dir)
     p.Env['PATH'] = bin_path + os.pathsep + p.ComposeEnv()['PATH']
-    p.Setup.Copy(p.Variables.BINDIR, bin_path, CopyLogic.SoftFiles)
+    p.Setup.Copy(p.ComposeVariables().BINDIR, bin_path, CopyLogic.SoftFiles)
 
     # setup config directory
 
@@ -99,27 +99,27 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
     #########################################################
     # setup config directory
     p.Env['PROXY_CONFIG_CONFIG_DIR'] = config_dir
-    p.Variables.CONFIGDIR = config_dir
+    p.ComposeVariables().CONFIGDIR = config_dir
     #########################################################
     # setup read-only data directory in config. Needed for response body
     # responses
 
     p.Env['PROXY_CONFIG_BODY_FACTORY_TEMPLATE_SETS_DIR'] = template_dir
-    p.Variables.BODY_FACTORY_TEMPLATE_DIR = template_dir
+    p.ComposeVariables().BODY_FACTORY_TEMPLATE_DIR = template_dir
     p.Setup.Copy(
-        os.path.join(p.Variables.SYSCONFDIR, 'body_factory'), template_dir)
+        os.path.join(p.ComposeVariables().SYSCONFDIR, 'body_factory'), template_dir)
 
     #########################################################
     # setup cache directory
     p.Setup.MakeDir(cache_dir)
     p.Env['PROXY_CONFIG_CACHE_DIR'] = cache_dir
-    p.Variables.CACHEDIR = cache_dir
+    p.ComposeVariables().CACHEDIR = cache_dir
 
     #########################################################
     # setup read-only data directory for plugins
 
     p.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'] = plugin_dir
-    p.Setup.Copy(p.Variables.PLUGINDIR, plugin_dir, CopyLogic.SoftFiles)
+    p.Setup.Copy(p.ComposeVariables().PLUGINDIR, plugin_dir, CopyLogic.SoftFiles)
 
     #########################################################
     # create subdirectories that need to exist (but are empty)
@@ -131,15 +131,15 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
 
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_LOG_LOGFILE_DIR'] = log_dir
-    p.Variables.LOGDIR = log_dir
+    p.ComposeVariables().LOGDIR = log_dir
 
     # this is needed for cache and communication sockets
     # Below was to make shorter paths but the code in
     # set runtime directory(local state dir)
     p.Env['PROXY_CONFIG_LOCAL_STATE_DIR'] = runtime_dir
     p.Env['PROXY_CONFIG_HOSTDB_STORAGE_PATH'] = runtime_dir
-    p.Variables.RUNTIMEDIR = runtime_dir
-    p.Variables.LOCALSTATEDIR = runtime_dir
+    p.ComposeVariables().RUNTIMEDIR = runtime_dir
+    p.ComposeVariables().LOCALSTATEDIR = runtime_dir
 
     p.Setup.MakeDir(runtime_dir)
     p.Setup.Chown(runtime_dir, "nobody", "nobody", ignore=True)
@@ -159,7 +159,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
 
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_SSL_DIR'] = ssl_dir
-    p.Variables.SSLDir = ssl_dir
+    p.ComposeVariables().SSLDir = ssl_dir
     AddMethodToInstance(p, addSSLfile)
     ########################################################
     # cache.db directory
@@ -170,7 +170,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
 
     # set env so traffic server uses correct locations
     p.Env['PROXY_CONFIG_STORAGE_DIR'] = storage_dir
-    p.Variables.STORAGEDIR = storage_dir
+    p.ComposeVariables().STORAGEDIR = storage_dir
     #########################################################
     # define the basic file for a given test run
     # traffic.out ?? # cannot find it at the moment...
@@ -268,34 +268,34 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
 
         if enable_tls:
             get_port(p, "ssl_port")
-        # p.Ready = When.PortOpen(p.Variables.port)
+        # p.Ready = When.PortOpen(p.ComposeVariables().port)
     else:
-        p.Variables.port = 8080
-        p.Variables.portv6 = 8080
-        p.Variables.ssl_port = 4443
+        p.ComposeVariables().port = 8080
+        p.ComposeVariables().portv6 = 8080
+        p.ComposeVariables().ssl_port = 4443
 
     get_port(p, "manager_port")
     get_port(p, "admin_port")
 
     if enable_tls:
-        p.Ready = When.PortsOpen([p.Variables.port, p.Variables.ssl_port])
+        p.Ready = When.PortsOpen([p.ComposeVariables().port, p.ComposeVariables().ssl_port])
     else:
-        p.Ready = When.PortOpen(p.Variables.port)
+        p.Ready = When.PortOpen(p.ComposeVariables().port)
 
     # set the ports
     if select_ports:
-        port_str = "{port} {v6_port}:ipv6 ".format(port=p.Variables.port, v6_port=p.Variables.portv6)
+        port_str = "{port} {v6_port}:ipv6 ".format(port=p.ComposeVariables().port, v6_port=p.ComposeVariables().portv6)
 
         if enable_tls:
-            port_str += "{ssl_port}:ssl".format(ssl_port=p.Variables.ssl_port)
+            port_str += "{ssl_port}:ssl".format(ssl_port=p.ComposeVariables().ssl_port)
 
         p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
 
     p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT'] = str(
-        p.Variables.manager_port)
-    p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.Variables.admin_port)
+        p.ComposeVariables().manager_port)
+    p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.ComposeVariables().admin_port)
     p.Env['PROXY_CONFIG_ADMIN_AUTOCONF_PORT'] = str(
-        p.Variables.admin_port)  # support pre ATS 6.x
+        p.ComposeVariables().admin_port)  # support pre ATS 6.x
 
     if command == "traffic_manager":
         p.ReturnCode = 2
@@ -417,9 +417,10 @@ class RecordsConfig(Config, dict):
 
 
 def addSSLfile(self, filename):
-    self.Setup.CopyAs(filename, self.Variables.SSLDir)
+    self.Setup.CopyAs(filename, self.ComposeVariables().SSLDir)
 
 
 RegisterFileType(Config, "ats:config")
 RegisterFileType(RecordsConfig, "ats:config:records")
 ExtendTest(MakeATSProcess, name="MakeATSProcess")
+ExtendTestRun(MakeATSProcess, name="MakeATSProcess")
