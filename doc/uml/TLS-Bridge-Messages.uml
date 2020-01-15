@@ -48,7 +48,7 @@ ingress -[#blue]-> peervc : <font color="blue">""200 OK""</font>
 peervc -[#blue]-> plugin : <font color="blue">""200 OK""</font>
 note left
 This signals a raw TLS connection
-nto the Peer ATS. The response is
+to the Peer ATS. The response is
 parsed and consumed by Plugin.
 end note
 
