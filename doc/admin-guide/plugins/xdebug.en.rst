@@ -66,7 +66,7 @@ X-Cache-Key
     key is being used.
 
 X-Cache
-    The ``X-Cache`` header contains the results of any cache lookup.
+    The ``X-Cache`` header contains the results of any cache lookups.
 
     ==========  ===========
     Value       Description
@@ -77,6 +77,10 @@ X-Cache
     hit-fresh   The object was fresh in the cache.
     skipped     The cache lookup was skipped.
     ==========  ===========
+
+    If a request goes through multiple proxies, each one prepends its X-Cache header content
+    at the beginning of the existing X-Cache header. As a result, the order is reversed from
+    the Via: header.
 
 X-Cache-Generation
   The cache generation ID for this transaction, as specified by the
