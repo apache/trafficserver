@@ -142,7 +142,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
   if (ssl_vc != nullptr) {
     read_from_early_data = ssl_vc->read_from_early_data;
-    Debug("ssl_early_data", "read_from_early_data = %ld", read_from_early_data);
+    Debug("ssl_early_data", "read_from_early_data = %" PRId64, read_from_early_data);
   }
 
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
