@@ -160,7 +160,7 @@ InjectCacheKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   }
 
   // Now copy the cache lookup URL into the response header.
-  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
+  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
 
 done:
   if (dst != TS_NULL_MLOC) {
@@ -197,11 +197,11 @@ InjectCacheHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 
   if (TSHttpTxnCacheLookupStatusGet(txn, &status) == TS_ERROR) {
     // If the cache lookup hasn't happened yes, TSHttpTxnCacheLookupStatusGet will fail.
-    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, "none", 4) == TS_SUCCESS);
+    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, "none", 4) == TS_SUCCESS);
   } else {
     const char *msg = (status < 0 || status >= static_cast<int>(countof(names))) ? "unknown" : names[status];
 
-    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, msg, -1) == TS_SUCCESS);
+    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, msg, -1) == TS_SUCCESS);
   }
 
 done:
@@ -272,7 +272,7 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
       double elapsed = static_cast<double>(time - epoch) / 1000000000.0;
       int len        = snprintf(hdrval, sizeof(hdrval), "%s=%1.9lf", milestones[i].msname, elapsed);
 
-      TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, hdrval, len) == TS_SUCCESS);
+      TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, hdrval, len) == TS_SUCCESS);
     }
   }
 
@@ -334,7 +334,7 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
       TSfree(const_cast<char *>(toUrlStr));
     }
 
-    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, buf, len) == TS_SUCCESS);
+    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
     TSHandleMLocRelease(buffer, hdr, dst);
   }
 }
@@ -349,7 +349,7 @@ InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     TSUuid uuid = TSProcessUuidGet();
     int len     = snprintf(buf, sizeof(buf), "%s-%" PRIu64 "", TSUuidStringGet(uuid), TSHttpTxnIdGet(txn));
 
-    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, buf, len) == TS_SUCCESS);
+    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
     TSHandleMLocRelease(buffer, hdr, dst);
   }
 }
@@ -387,7 +387,7 @@ InjectParentSelectionKeyHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   }
 
   // Now copy the parent selection lookup URL into the response header.
-  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
+  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
 
 done:
   if (dst != TS_NULL_MLOC) {
