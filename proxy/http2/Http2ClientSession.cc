@@ -202,7 +202,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
   if (ssl_vc != nullptr) {
     this->read_from_early_data = ssl_vc->read_from_early_data;
-    Debug("ssl_early_data", "read_from_early_data = %ld", this->read_from_early_data);
+    Debug("ssl_early_data", "read_from_early_data = %" PRId64, this->read_from_early_data);
   }
 
   Http2SsnDebug("session born, netvc %p", this->client_vc);
