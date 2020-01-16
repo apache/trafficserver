@@ -140,6 +140,9 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     return;
   }
 
+  // Initialize the result structure
+  result->reset();
+
   tablePtr->Match(rdata, result);
   rec = result->rec;
 
@@ -240,17 +243,38 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 bool
 ParentConfigParams::parentExists(HttpRequestData *rdata)
 {
-  unsigned int fail_threshold = policy.FailThreshold;
-  unsigned int retry_time     = policy.ParentRetryTime;
+  P_table *tablePtr = parent_table;
+  ParentRecord *rec = nullptr;
   ParentResult result;
 
-  findParent(rdata, &result, fail_threshold, retry_time);
+  // Initialize the result structure;
+  result.reset();
 
-  if (result.result == PARENT_SPECIFIED) {
-    return true;
-  } else {
+  tablePtr->Match(rdata, &result);
+  rec = result.rec;
+
+  if (rec == nullptr) {
+    Debug("parent_select", "No matching parent record was found for the request.");
     return false;
   }
+
+  if (rec->num_parents > 0) {
+    for (int ii = 0; ii < rec->num_parents; ii++) {
+      if (rec->parents[ii].available) {
+        Debug("parent_select", "found available parent: %s", rec->parents[ii].hostname);
+        return true;
+      }
+    }
+  }
+  if (rec->secondary_parents && rec->num_secondary_parents > 0) {
+    for (int ii = 0; ii < rec->num_secondary_parents; ii++) {
+      if (rec->secondary_parents[ii].available) {
+        Debug("parent_select", "found available parent: %s", rec->secondary_parents[ii].hostname);
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 int ParentConfig::m_id = 0;
