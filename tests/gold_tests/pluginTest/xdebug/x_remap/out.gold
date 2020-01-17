@@ -1,6 +1,6 @@
 HTTP/1.1 502 Cannot find server.
 Date: ``
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 Cache-Control: no-store
 Content-Type: text/html
@@ -30,10 +30,42 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://one/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Connection' : 'close',
+	}},{'type':'request', 'side':'server', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Client-ip' : '127.0.0.1',
+	'X-Forwarded-For' : '127.0.0.1',
+	'Via' : 'http/1.1 traffic_server[``
+	}}
+   ]
+}
+--- ATS xDebug Probe Injection Boundary ---
+
+
+--- ATS xDebug Probe Injection Boundary ---
+
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Connection' : 'close',
+	'Date' : '``
+	}},{'type':'response', 'side':'client', 'headers': {
+	'Date' : '``
+	'Age' : '0',
+	'Transfer-Encoding' : 'chunked',
+	'Connection' : 'close',
+	'Server' : 'ATS/``
+	'X-Remap' : 'from=http://one/, to=http://127.0.0.1:SERVER_PORT/',
+	}}
+   ]
+}
 0
 
 ======
@@ -41,10 +73,42 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Connection' : 'close',
+	}},{'type':'request', 'side':'server', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Client-ip' : '127.0.0.1',
+	'X-Forwarded-For' : '127.0.0.1',
+	'Via' : 'http/1.1 traffic_server[``
+	}}
+   ]
+}
+--- ATS xDebug Probe Injection Boundary ---
+
+
+--- ATS xDebug Probe Injection Boundary ---
+
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Connection' : 'close',
+	'Date' : '``
+	}},{'type':'response', 'side':'client', 'headers': {
+	'Date' : '``
+	'Age' : '0',
+	'Transfer-Encoding' : 'chunked',
+	'Connection' : 'close',
+	'Server' : 'ATS/``
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	}}
+   ]
+}
 0
 
 ======
@@ -52,10 +116,42 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Connection' : 'close',
+	}},{'type':'request', 'side':'server', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Client-ip' : '127.0.0.1',
+	'X-Forwarded-For' : '127.0.0.1',
+	'Via' : 'http/1.1 traffic_server[``
+	}}
+   ]
+}
+--- ATS xDebug Probe Injection Boundary ---
+
+
+--- ATS xDebug Probe Injection Boundary ---
+
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Connection' : 'close',
+	'Date' : '``
+	}},{'type':'response', 'side':'client', 'headers': {
+	'Date' : '``
+	'Age' : '0',
+	'Transfer-Encoding' : 'chunked',
+	'Connection' : 'close',
+	'Server' : 'ATS/``
+	'X-Remap' : 'from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/',
+	}}
+   ]
+}
 0
 
 ======
@@ -64,9 +160,42 @@ Server: ATS/``
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Connection' : 'close',
+	}},{'type':'request', 'side':'server', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Client-ip' : '127.0.0.1',
+	'X-Forwarded-For' : '127.0.0.1',
+	'Via' : 'http/1.1 traffic_server[``
+	}}
+   ]
+}
+--- ATS xDebug Probe Injection Boundary ---
+
+
+--- ATS xDebug Probe Injection Boundary ---
+
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Server' : 'MicroServer',
+	'Connection' : 'close',
+	'Date' : '``
+	}},{'type':'response', 'side':'client', 'headers': {
+	'Server' : 'ATS/``
+	'Date' : '``
+	'Age' : '0',
+	'Transfer-Encoding' : 'chunked',
+	'Connection' : 'close',
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	}}
+   ]
+}
 0
 
 ======
@@ -74,10 +203,44 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'X-Debug' : 'X-Remap, fwd, Probe',
+	'Connection' : 'close',
+	}},{'type':'request', 'side':'server', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'X-Debug' : 'X-Remap, fwd, Probe',
+	'Client-ip' : '127.0.0.1',
+	'X-Forwarded-For' : '127.0.0.1',
+	'Via' : 'http/1.1 traffic_server[``
+	}}
+   ]
+}
+--- ATS xDebug Probe Injection Boundary ---
+
+
+--- ATS xDebug Probe Injection Boundary ---
+
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Connection' : 'close',
+	'Date' : '``
+	}},{'type':'response', 'side':'client', 'headers': {
+	'Date' : '``
+	'Age' : '0',
+	'Transfer-Encoding' : 'chunked',
+	'Connection' : 'close',
+	'Server' : 'ATS/``
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	}}
+   ]
+}
 0
 
 ======
@@ -85,10 +248,42 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Connection' : 'close',
+	}},{'type':'request', 'side':'server', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Client-ip' : '127.0.0.1',
+	'X-Forwarded-For' : '127.0.0.1',
+	'Via' : 'http/1.1 traffic_server[``
+	}}
+   ]
+}
+--- ATS xDebug Probe Injection Boundary ---
+
+
+--- ATS xDebug Probe Injection Boundary ---
+
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Connection' : 'close',
+	'Date' : '``
+	}},{'type':'response', 'side':'client', 'headers': {
+	'Date' : '``
+	'Age' : '0',
+	'Transfer-Encoding' : 'chunked',
+	'Connection' : 'close',
+	'Server' : 'ATS/``
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	}}
+   ]
+}
 0
 
 ======
@@ -96,10 +291,44 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'X-Debug' : 'X-Remap, fwd=0, Probe',
+	'Connection' : 'close',
+	}},{'type':'request', 'side':'server', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'X-Debug' : 'X-Remap, fwd=0, Probe',
+	'Client-ip' : '127.0.0.1',
+	'X-Forwarded-For' : '127.0.0.1',
+	'Via' : 'http/1.1 traffic_server[``
+	}}
+   ]
+}
+--- ATS xDebug Probe Injection Boundary ---
+
+
+--- ATS xDebug Probe Injection Boundary ---
+
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Connection' : 'close',
+	'Date' : '``
+	}},{'type':'response', 'side':'client', 'headers': {
+	'Date' : '``
+	'Age' : '0',
+	'Transfer-Encoding' : 'chunked',
+	'Connection' : 'close',
+	'Server' : 'ATS/``
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	}}
+   ]
+}
 0
 
 ======
@@ -107,10 +336,44 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'X-Debug' : 'PROBE, X-Remap, fwd=999998',
+	'Connection' : 'close',
+	}},{'type':'request', 'side':'server', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'X-Debug' : 'PROBE, X-Remap, fwd=999998',
+	'Client-ip' : '127.0.0.1',
+	'X-Forwarded-For' : '127.0.0.1',
+	'Via' : 'http/1.1 traffic_server[``
+	}}
+   ]
+}
+--- ATS xDebug Probe Injection Boundary ---
+
+
+--- ATS xDebug Probe Injection Boundary ---
+
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Connection' : 'close',
+	'Date' : '``
+	}},{'type':'response', 'side':'client', 'headers': {
+	'Date' : '``
+	'Age' : '0',
+	'Transfer-Encoding' : 'chunked',
+	'Connection' : 'close',
+	'Server' : 'ATS/``
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	}}
+   ]
+}
 0
 
 ======
@@ -118,10 +381,42 @@ HTTP/1.1 200 OK
 Date: ``
 Age: ``
 Transfer-Encoding: chunked
-Connection: keep-alive
+Connection: close
 Server: ATS/``
 X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
+``
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Connection' : 'close',
+	}},{'type':'request', 'side':'server', 'headers': {
+	'Host' : '127.0.0.1:SERVER_PORT',
+	'Client-ip' : '127.0.0.1',
+	'X-Forwarded-For' : '127.0.0.1',
+	'Via' : 'http/1.1 traffic_server[``
+	}}
+   ]
+}
+--- ATS xDebug Probe Injection Boundary ---
+
+
+--- ATS xDebug Probe Injection Boundary ---
+
+{'xDebugProbeAt' : '``
+   'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Connection' : 'close',
+	'Date' : '``
+	}},{'type':'response', 'side':'client', 'headers': {
+	'Date' : '``
+	'Age' : '0',
+	'Transfer-Encoding' : 'chunked',
+	'Connection' : 'close',
+	'Server' : 'ATS/``
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	}}
+   ]
+}
 0
 
 ======

@@ -21,24 +21,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <functional>
-#include <atomic>
 
 #include "ts/ts.h"
 
 static const std::string_view MultipartBoundary{"\r\n--- ATS xDebug Probe Injection Boundary ---\r\n\r\n"};
-
-struct BodyBuilder {
-  TSVIO output_vio               = nullptr;
-  TSIOBuffer output_buffer       = nullptr;
-  TSIOBufferReader output_reader = nullptr;
-  bool wrote_prebody             = false;
-  bool wrote_body                = false;
-  bool hdr_ready                 = false;
-  std::atomic_flag wrote_postbody;
-
-  int64_t nbytes = 0;
-  TSHttpTxn txn  = nullptr;
-};
 
 static char Hostname[1024];
 
@@ -65,12 +51,12 @@ getPostBody(TSHttpTxn txn)
 }
 
 static void
-writePostBody(BodyBuilder *data)
+writePostBody(TSHttpTxn txn, BodyBuilder *data)
 {
   if (data->wrote_body && data->hdr_ready && !data->wrote_postbody.test_and_set()) {
     TSDebug("xdebug_transform", "body_transform(): Writing postbody headers...");
-    std::string postbody = getPostBody(data->txn);
-    TSIOBufferWrite(data->output_buffer, postbody.data(), postbody.length());
+    std::string postbody = getPostBody(txn);
+    TSIOBufferWrite(data->output_buffer.get(), postbody.data(), postbody.length());
     data->nbytes += postbody.length();
     TSVIONBytesSet(data->output_vio, data->nbytes);
     TSVIOReenable(data->output_vio);
@@ -80,15 +66,13 @@ writePostBody(BodyBuilder *data)
 static int
 body_transform(TSCont contp, TSEvent event, void *edata)
 {
-  BodyBuilder *data = static_cast<BodyBuilder *>(TSContDataGet(contp));
+  TSHttpTxn txn     = static_cast<TSHttpTxn>(TSContDataGet(contp));
+  BodyBuilder *data = AuxDataMgr::data(txn).body_builder.get();
   if (!data) {
-    TSContDestroy(contp);
     return TS_ERROR;
   }
   if (TSVConnClosedGet(contp)) {
-    // write connection destroyed. cleanup.
-    delete data;
-    TSContDestroy(contp);
+    // write connection destroyed.
     return 0;
   }
 
@@ -108,16 +92,16 @@ body_transform(TSCont contp, TSEvent event, void *edata)
     TSDebug("xdebug_transform", "body_transform(): Event is TS_EVENT_VCONN_WRITE_READY");
   // fall through
   default:
-    if (!data->output_buffer) {
-      data->output_buffer = TSIOBufferCreate();
-      data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
-      data->output_vio    = TSVConnWrite(TSTransformOutputVConnGet(contp), contp, data->output_reader, INT64_MAX);
+    if (!data->output_buffer.get()) {
+      data->output_buffer.reset(TSIOBufferCreate());
+      data->output_reader.reset(TSIOBufferReaderAlloc(data->output_buffer.get()));
+      data->output_vio = TSVConnWrite(TSTransformOutputVConnGet(contp), contp, data->output_reader.get(), INT64_MAX);
     }
 
     if (data->wrote_prebody == false) {
       TSDebug("xdebug_transform", "body_transform(): Writing prebody headers...");
-      std::string prebody = getPreBody(data->txn);
-      TSIOBufferWrite(data->output_buffer, prebody.data(), prebody.length()); // write prebody
+      std::string prebody = getPreBody(txn);
+      TSIOBufferWrite(data->output_buffer.get(), prebody.data(), prebody.length()); // write prebody
       data->wrote_prebody = true;
       data->nbytes += prebody.length();
     }
@@ -127,7 +111,7 @@ body_transform(TSCont contp, TSEvent event, void *edata)
     if (!src_buf) {
       // upstream continuation shuts down write operation.
       data->wrote_body = true;
-      writePostBody(data);
+      writePostBody(txn, data);
       return 0;
     }
 
@@ -150,7 +134,7 @@ body_transform(TSCont contp, TSEvent event, void *edata)
       // Write post body content and update output VIO
       data->wrote_body = true;
       data->nbytes += TSVIONDoneGet(src_vio);
-      writePostBody(data);
+      writePostBody(txn, data);
       TSContCall(TSVIOContGet(src_vio), TS_EVENT_VCONN_WRITE_COMPLETE, src_vio);
     }
   }

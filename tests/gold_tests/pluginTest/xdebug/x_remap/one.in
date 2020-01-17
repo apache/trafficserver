@@ -1,4 +1,5 @@
 GET /argh HTTP/1.1
 Host: one
-X-Debug: X-Remap
+X-Debug: X-Remap, probe
+Connection: close
 
