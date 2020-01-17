@@ -392,13 +392,14 @@ HttpSM::set_ua_half_close_flag()
   ua_txn->set_half_close_flag(true);
 }
 
-inline void
+inline int
 HttpSM::do_api_callout()
 {
   if (hooks_set) {
-    do_api_callout_internal();
+    return do_api_callout_internal();
   } else {
     handle_api_return();
+    return 0;
   }
 }
 
@@ -424,7 +425,16 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
   }
 
   t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_START;
-  do_api_callout();
+  if (do_api_callout() < 0) {
+    // Didn't get the hook continuation lock. Clear the read and wait for next event
+    if (ua_entry->read_vio) {
+      // Seems like ua_entry->read_vio->disable(); should work, but that was
+      // not sufficient to stop the state machine from processing IO events until the
+      // TXN_START hooks had completed
+      ua_entry->read_vio = ua_entry->vc->do_io_read(nullptr, 0, nullptr);
+    }
+    return EVENT_CONT;
+  }
   return EVENT_DONE;
 }
 
@@ -582,6 +592,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   ++reentrancy_count;
   // Add our state sm to the sm list
   state_add_to_list(EVENT_NONE, nullptr);
+
   // This is another external entry point and it is possible for the state machine to get terminated
   // while down the call chain from @c state_add_to_list. So we need to use the reentrancy_count to
   // prevent cleanup there and do it here as we return to the external caller.
@@ -1481,7 +1492,7 @@ plugins required to work with sni_routing.
         HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
         ink_assert(pending_action == nullptr);
         pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
-        return 0;
+        return -1;
       }
 
       SMDebug("http", "[%" PRId64 "] calling plugin on hook %s at hook %p", sm_id, HttpDebugNames::get_api_hook_name(cur_hook_id),
@@ -5117,7 +5128,7 @@ HttpSM::do_http_server_open(bool raw)
   return;
 }
 
-void
+int
 HttpSM::do_api_callout_internal()
 {
   switch (t_state.api_next_action) {
@@ -5158,7 +5169,7 @@ HttpSM::do_api_callout_internal()
   case HttpTransact::SM_ACTION_API_SM_SHUTDOWN:
     if (callout_state == HTTP_API_IN_CALLOUT || callout_state == HTTP_API_DEFERED_SERVER_ERROR) {
       callout_state = HTTP_API_DEFERED_CLOSE;
-      return;
+      return 0;
     } else {
       cur_hook_id = TS_HTTP_TXN_CLOSE_HOOK;
     }
@@ -5171,7 +5182,7 @@ HttpSM::do_api_callout_internal()
   hook_state.init(cur_hook_id, http_global_hooks, ua_txn ? ua_txn->feature_hooks() : nullptr, &api_hooks);
   cur_hook  = nullptr;
   cur_hooks = 0;
-  state_api_callout(0, nullptr);
+  return state_api_callout(0, nullptr);
 }
 
 VConnection *
@@ -6856,7 +6867,12 @@ HttpSM::kill_this()
     //  the terminate_flag
     terminate_sm            = false;
     t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_SHUTDOWN;
-    do_api_callout();
+    if (do_api_callout() < 0) { // Failed to get a continuation lock
+      // Need to hang out until we can complete the TXN_CLOSE hook
+      terminate_sm = false;
+      reentrancy_count--;
+      return;
+    }
   }
   // The reentrancy_count is still valid up to this point since
   //   the api shutdown hook is asynchronous and double frees can

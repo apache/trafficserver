@@ -41,7 +41,7 @@ Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir,
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'ssntxnorder_verify.*',
     'proxy.config.http.cache.http': 0,  # disable cache to simply the test.
     'proxy.config.cache.enable_read_while_writer': 0
@@ -52,8 +52,8 @@ ts.Disk.remap_config.AddLine(
         ts.Variables.port, server.Variables.Port)
 )
 
-cmd = 'curl -vs http://127.0.0.1:{0}'.format(ts.Variables.port)
-numberOfRequests = 25
+cmd = 'curl -vs -H "host:oc.test" http://127.0.0.1:{0}'.format(ts.Variables.port)
+numberOfRequests = 100
 
 tr = Test.AddTestRun()
 # Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
@@ -66,14 +66,14 @@ tr.Processes.Default.ReturnCode = Any(0,2)
 # Execution order is: ts/server, ps(curl cmds), Default Process.
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
-# Adds a delay once the ts port is ready. This is because we cannot test the ts state.
-tr.Processes.Default.StartBefore(ts, ready=10)
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts
 
 # Signal that all the curl processes have completed
 tr = Test.AddTestRun("Curl Done")
+tr.DelayStart = 2 # Delaying a couple seconds to make sure the global continuation's lock contention resolves.
 tr.Processes.Default.Command = "traffic_ctl plugin msg done done"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
