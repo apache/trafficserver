@@ -34,6 +34,8 @@
 #include <sys/eventfd.h>
 #endif
 
+#include <typeinfo>
+
 struct AIOCallback;
 
 #define NO_HEARTBEAT -1
@@ -108,7 +110,7 @@ void
 EThread::process_event(Event *e, int calling_code)
 {
   ink_assert((!e->in_the_prot_queue && !e->in_the_priority_queue));
-  MUTEX_TRY_LOCK(lock, e->mutex, this);
+  WEAK_MUTEX_TRY_LOCK(lock, e->mutex, this);
   if (!lock.is_locked()) {
     e->timeout_at = cur_time + DELAY_FOR_RETRY;
     EventQueueExternal.enqueue_local(e);
@@ -119,6 +121,11 @@ EThread::process_event(Event *e, int calling_code)
     }
     Continuation *c_temp = e->continuation;
     // Make sure that the continuation is locked before calling the handler
+
+    // Give a heads up if we are processing through a continuation without a mutex
+    if (!e->mutex) {
+      Warning("event processing for continuation %s without a mutex", typeid(*c_temp).name());
+    }
 
     // Restore the client IP debugging flags
     set_cont_flags(e->continuation->control_flags);
