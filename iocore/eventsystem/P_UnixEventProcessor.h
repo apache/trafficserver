@@ -115,8 +115,6 @@ EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
 
   if (e->continuation->mutex) {
     e->mutex = e->continuation->mutex;
-  } else {
-    e->mutex = e->continuation->mutex = e->ethread->mutex;
   }
   e->ethread->EventQueueExternal.enqueue(e, fast_signal);
   return e;
