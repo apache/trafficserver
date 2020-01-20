@@ -165,7 +165,7 @@ UDP2ConnectionImpl::close()
   this->mutex = this->_thread->mutex;
 
   this->_recv_list.clear();
-  if (this->_send_list.empty()) {
+  if (this->_is_send_complete()) {
     this->free(nullptr);
     return 0;
   }
@@ -230,7 +230,7 @@ UDP2ConnectionImpl::startEvent(int event, void *data)
     break;
   }
 
-  if (this->_is_closed() && this->_send_list.empty()) {
+  if (this->_is_closed() && this->_is_send_complete()) {
     this->free(nullptr);
   } else if (this->_is_closed()) {
     this->_reenable(&this->write.vio);
@@ -254,7 +254,7 @@ UDP2ConnectionImpl::mainEvent(int event, void *data)
     break;
   }
 
-  if (this->_is_closed() && this->_send_list.empty()) {
+  if (this->_is_closed() && this->_is_send_complete()) {
     this->free(nullptr);
   } else if (this->_is_closed()) {
     this->_reenable(&this->write.vio);
@@ -755,11 +755,17 @@ UDP2ConnectionImpl::net_write_io(NetHandler *nh, EThread *thread)
     this->callback(NET_EVENT_DATAGRAM_WRITE_READY, this);
   }
 
-  if (this->_is_closed() && this->_send_list.empty()) {
+  if (this->_is_closed() && this->_is_send_complete()) {
     this->free(nullptr);
   }
 
   return;
+}
+
+bool
+UDP2ConnectionImpl::_is_send_complete()
+{
+  return this->_send_list.empty() && this->_external_send_list.empty();
 }
 
 int

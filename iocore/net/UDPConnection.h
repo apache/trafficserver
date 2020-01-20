@@ -102,6 +102,7 @@ protected:
   virtual int _sendmsg(UDP2Packet *p);
   virtual int _read(struct iovec *iov, int len, IpEndpoint &from, IpEndpoint &to);
   virtual int _readmsg(struct iovec *iov, int len, IpEndpoint &from, IpEndpoint &to);
+  bool _is_send_complete();
 
   Continuation *_con = nullptr;
   EThread *_thread   = nullptr;
