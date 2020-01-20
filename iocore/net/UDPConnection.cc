@@ -906,7 +906,7 @@ UDP2ConnectionImpl::send(UDP2PacketUPtr p, bool flush)
   ink_assert(this->is_connected() || p->to.isValid());
   this->_send_list.push_back(std::move(p));
   if (flush) {
-    this->_reenable(&this->write.vio);
+    this->flush();
   }
   return 0;
 }
@@ -915,4 +915,5 @@ void
 UDP2ConnectionImpl::flush()
 {
   this->_reenable(&this->write.vio);
+  this->nh->signalActivity();
 }
