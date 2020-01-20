@@ -370,7 +370,9 @@ Http2Stream::do_io_close(int /* flags */)
     if (parent && this->is_client_state_writeable()) {
       // Make sure any trailing end of stream frames are sent
       // Wee will be removed at send_data_frames or closing connection phase
-      static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
+      Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(parent);
+      SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+      h2_proxy_ssn->connection_state.send_data_frames(this);
     }
 
     clear_timers();
