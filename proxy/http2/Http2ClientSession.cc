@@ -216,7 +216,8 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->h2_pushed_urls          = ink_hash_table_create(InkHashTableKeyType_String);
   this->h2_pushed_urls_size     = 0;
 
-  this->write_buffer = new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
+  // Set write buffer size to max size of TLS record (16KB)
+  this->write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_16K);
   this->sm_writer    = this->write_buffer->alloc_reader();
 
   do_api_callout(TS_HTTP_SSN_START_HOOK);
@@ -325,6 +326,19 @@ Http2ClientSession::set_half_close_local_flag(bool flag)
   half_close_local = flag;
 }
 
+int64_t
+Http2ClientSession::xmit(const Http2TxFrame &frame)
+{
+  int64_t len = frame.write_to(this->write_buffer);
+
+  if (len > 0) {
+    total_write_len += len;
+    write_reenable();
+  }
+
+  return len;
+}
+
 int
 Http2ClientSession::main_event_handler(int event, void *edata)
 {
@@ -346,16 +360,6 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     if (is_zombie && connection_state.get_zombie_event() != nullptr) {
       Warning("Processed read event for zombie session %" PRId64, connection_id());
     }
-    break;
-  }
-
-  case HTTP2_SESSION_EVENT_XMIT: {
-    Http2Frame *frame = (Http2Frame *)edata;
-    total_write_len += frame->size();
-    write_vio->nbytes = total_write_len;
-    frame->xmit(this->write_buffer);
-    write_reenable();
-    retval = 0;
     break;
   }
 
@@ -384,6 +388,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     retval = 0;
     break;
 
+  case HTTP2_SESSION_EVENT_XMIT:
   default:
     Http2SsnDebug("unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
