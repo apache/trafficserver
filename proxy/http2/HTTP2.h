@@ -33,6 +33,9 @@ class HTTPHdr;
 
 typedef unsigned Http2StreamId;
 
+constexpr Http2StreamId HTTP2_CONNECTION_CONTROL_STRTEAM = 0;
+constexpr uint8_t HTTP2_FRAME_NO_FLAG                    = 0;
+
 // [RFC 7540] 6.9.2. Initial Flow Control Window Size
 // the flow control window can be come negative so we need to track it with a signed type.
 typedef int32_t Http2WindowSize;
@@ -319,10 +322,6 @@ http2_is_server_streamid(Http2StreamId streamid)
 bool http2_parse_frame_header(IOVec, Http2FrameHeader &);
 
 bool http2_write_frame_header(const Http2FrameHeader &, IOVec);
-
-bool http2_write_data(const uint8_t *, size_t, const IOVec &);
-
-bool http2_write_headers(const uint8_t *, size_t, const IOVec &);
 
 bool http2_write_rst_stream(uint32_t, IOVec);
 

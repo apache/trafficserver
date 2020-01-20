@@ -25,6 +25,7 @@
 #include "Http2ConnectionState.h"
 #include "Http2ClientSession.h"
 #include "Http2Stream.h"
+#include "Http2Frame.h"
 #include "Http2DebugNames.h"
 #include "HttpDebugNames.h"
 #include <sstream>
@@ -49,12 +50,12 @@ static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_DATA
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_HEADERS
   -1,                    // HTTP2_FRAME_TYPE_PRIORITY
-  BUFFER_SIZE_INDEX_128, // HTTP2_FRAME_TYPE_RST_STREAM
-  BUFFER_SIZE_INDEX_128, // HTTP2_FRAME_TYPE_SETTINGS
+  -1,                    // HTTP2_FRAME_TYPE_RST_STREAM
+  -1,                    // HTTP2_FRAME_TYPE_SETTINGS
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_PUSH_PROMISE
-  BUFFER_SIZE_INDEX_128, // HTTP2_FRAME_TYPE_PING
-  BUFFER_SIZE_INDEX_128, // HTTP2_FRAME_TYPE_GOAWAY
-  BUFFER_SIZE_INDEX_128, // HTTP2_FRAME_TYPE_WINDOW_UPDATE
+  -1,                    // HTTP2_FRAME_TYPE_PING
+  -1,                    // HTTP2_FRAME_TYPE_GOAWAY
+  -1,                    // HTTP2_FRAME_TYPE_WINDOW_UPDATE
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_CONTINUATION
 };
 
@@ -639,8 +640,8 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   // [RFC 7540] 6.5. Once all values have been applied, the recipient MUST
   // immediately emit a SETTINGS frame with the ACK flag set.
-  Http2Frame ackFrame(HTTP2_FRAME_TYPE_SETTINGS, 0, HTTP2_FLAGS_SETTINGS_ACK);
-  cstate.ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &ackFrame);
+  Http2SettingsFrame ack_frame(0, HTTP2_FLAGS_SETTINGS_ACK);
+  cstate.ua_session->xmit(ack_frame);
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
 }
@@ -1481,27 +1482,29 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   const size_t write_available_size = std::min(buf_len, static_cast<size_t>(window_size));
   payload_length                    = 0;
 
-  uint8_t flags = 0x00;
-  uint8_t payload_buffer[buf_len];
-  IOBufferReader *_sm = stream->response_get_data_reader();
+  uint8_t flags               = 0x00;
+  IOBufferReader *resp_reader = stream->response_get_data_reader();
 
   SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
 
-  if (!_sm) {
+  if (!resp_reader) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "couldn't get data reader");
     return Http2SendDataFrameResult::ERROR;
   }
 
   // Select appropriate payload length
-  if (_sm->is_read_avail_more_than(0)) {
+  if (resp_reader->is_read_avail_more_than(0)) {
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
       Http2StreamDebug(this->ua_session, stream->get_id(), "No window");
       return Http2SendDataFrameResult::NO_WINDOW;
     }
-    // Copy into the payload buffer. Seems like we should be able to skip this copy step
-    payload_length = write_available_size;
-    payload_length = _sm->read(payload_buffer, static_cast<int64_t>(write_available_size));
+
+    if (resp_reader->is_read_avail_more_than(write_available_size)) {
+      payload_length = write_available_size;
+    } else {
+      payload_length = resp_reader->read_avail();
+    }
   } else {
     payload_length = 0;
   }
@@ -1514,7 +1517,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
-  if (stream->is_write_vio_done() && !_sm->is_read_avail_more_than(0)) {
+  if (stream->is_write_vio_done() && !resp_reader->is_read_avail_more_than(0)) {
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
 
@@ -1526,22 +1529,16 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   Http2StreamDebug(ua_session, stream->get_id(), "Send a DATA frame - client window con: %5zd stream: %5zd payload: %5zd",
                    _client_rwnd, stream->client_rwnd(), payload_length);
 
-  Http2Frame data(HTTP2_FRAME_TYPE_DATA, stream->get_id(), flags);
-  data.alloc(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
-  http2_write_data(payload_buffer, payload_length, data.write());
-  data.finalize(payload_length);
+  Http2DataFrame data(stream->get_id(), flags, resp_reader, payload_length);
+  this->ua_session->xmit(data);
 
   stream->update_sent_count(payload_length);
-
-  // xmit event
-  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &data);
 
   if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
     Http2StreamDebug(ua_session, stream->get_id(), "END_STREAM");
     stream->send_end_stream = true;
     // Setting to the same state shouldn't be erroneous
-    stream->change_state(data.header().type, data.header().flags);
+    stream->change_state(HTTP2_FRAME_TYPE_DATA, flags);
 
     return Http2SendDataFrameResult::DONE;
   }
@@ -1586,10 +1583,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   uint32_t buf_len            = 0;
   uint32_t header_blocks_size = 0;
   int payload_length          = 0;
-  uint64_t sent               = 0;
   uint8_t flags               = 0x00;
-
-  HTTPHdr *resp_header = &stream->response_header;
+  HTTPHdr *resp_header        = &stream->response_header;
 
   Http2StreamDebug(ua_session, stream->get_id(), "Send HEADERS frame");
 
@@ -1626,10 +1621,6 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   } else {
     payload_length = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
   }
-  Http2Frame headers(HTTP2_FRAME_TYPE_HEADERS, stream->get_id(), flags);
-  headers.alloc(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
-  http2_write_headers(buf, payload_length, headers.write());
-  headers.finalize(payload_length);
 
   // Change stream state
   if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, flags)) {
@@ -1644,10 +1635,9 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     return;
   }
 
-  // xmit event
-  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &headers);
-  sent += payload_length;
+  Http2HeadersFrame headers(stream->get_id(), flags, buf, payload_length);
+  this->ua_session->xmit(headers);
+  uint64_t sent = payload_length;
 
   // Send CONTINUATION frames
   flags = 0;
@@ -1658,14 +1648,10 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }
-    Http2Frame continuation_frame(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags);
-    continuation_frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
-    http2_write_headers(buf + sent, payload_length, continuation_frame.write());
-    continuation_frame.finalize(payload_length);
-    stream->change_state(continuation_frame.header().type, continuation_frame.header().flags);
-    // xmit event
-    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-    this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &continuation_frame);
+    stream->change_state(HTTP2_FRAME_TYPE_CONTINUATION, flags);
+
+    Http2ContinuationFrame continuation_frame(stream->get_id(), flags, buf + sent, payload_length);
+    this->ua_session->xmit(continuation_frame);
     sent += payload_length;
   }
 
@@ -1681,7 +1667,6 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   uint32_t buf_len            = 0;
   uint32_t header_blocks_size = 0;
   int payload_length          = 0;
-  uint64_t sent               = 0;
   uint8_t flags               = 0x00;
 
   if (client_settings.get(HTTP2_SETTINGS_ENABLE_PUSH) == 0) {
@@ -1735,16 +1720,13 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     payload_length =
       BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_PUSH_PROMISE]) - sizeof(push_promise.promised_streamid);
   }
-  Http2Frame push_promise_frame(HTTP2_FRAME_TYPE_PUSH_PROMISE, stream->get_id(), flags);
-  push_promise_frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_PUSH_PROMISE]);
+
   Http2StreamId id               = this->get_latest_stream_id_out() + 2;
   push_promise.promised_streamid = id;
-  http2_write_push_promise(push_promise, buf, payload_length, push_promise_frame.write());
-  push_promise_frame.finalize(sizeof(push_promise.promised_streamid) + payload_length);
-  // xmit event
-  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &push_promise_frame);
-  sent += payload_length;
+
+  Http2PushPromiseFrame push_promise_frame(stream->get_id(), flags, push_promise, buf, payload_length);
+  this->ua_session->xmit(push_promise_frame);
+  uint64_t sent = payload_length;
 
   // Send CONTINUATION frames
   flags = 0;
@@ -1755,13 +1737,9 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
     }
-    Http2Frame continuation_frame(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags);
-    continuation_frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
-    http2_write_headers(buf + sent, payload_length, continuation_frame.write());
-    continuation_frame.finalize(payload_length);
-    // xmit event
-    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-    this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &continuation_frame);
+
+    Http2ContinuationFrame continuation(stream->get_id(), flags, buf + sent, payload_length);
+    this->ua_session->xmit(continuation);
     sent += payload_length;
   }
   ats_free(buf);
@@ -1806,12 +1784,6 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
     ++stream_error_count;
   }
 
-  Http2Frame rst_stream(HTTP2_FRAME_TYPE_RST_STREAM, id, 0);
-
-  rst_stream.alloc(buffer_size_index[HTTP2_FRAME_TYPE_RST_STREAM]);
-  http2_write_rst_stream(static_cast<uint32_t>(ec), rst_stream.write());
-  rst_stream.finalize(HTTP2_RST_STREAM_LEN);
-
   // change state to closed
   Http2Stream *stream = find_stream(id);
   if (stream != nullptr) {
@@ -1827,9 +1799,8 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
     }
   }
 
-  // xmit event
-  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &rst_stream);
+  Http2RstStreamFrame rst_stream(id, static_cast<uint32_t>(ec));
+  this->ua_session->xmit(rst_stream);
 }
 
 void
@@ -1839,11 +1810,8 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
 
   Http2StreamDebug(ua_session, stream_id, "Send SETTINGS frame");
 
-  Http2Frame settings(HTTP2_FRAME_TYPE_SETTINGS, stream_id, 0);
-  settings.alloc(buffer_size_index[HTTP2_FRAME_TYPE_SETTINGS]);
-
-  IOVec iov                = settings.write();
-  uint32_t settings_length = 0;
+  Http2SettingsParameter params[HTTP2_SETTINGS_MAX];
+  size_t params_size = 0;
 
   for (int i = HTTP2_SETTINGS_HEADER_TABLE_SIZE; i < HTTP2_SETTINGS_MAX; ++i) {
     Http2SettingsIdentifier id = static_cast<Http2SettingsIdentifier>(i);
@@ -1851,32 +1819,17 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
 
     // Send only difference
     if (settings_value != server_settings.get(id)) {
-      const Http2SettingsParameter param = {static_cast<uint16_t>(id), settings_value};
+      Http2StreamDebug(ua_session, stream_id, "  %s : %u", Http2DebugNames::get_settings_param_name(id), settings_value);
 
-      // Write settings to send buffer
-      if (!http2_write_settings(param, iov)) {
-        this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
-        this->ua_session->set_half_close_local_flag(true);
-        if (fini_event == nullptr) {
-          fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
-        }
-
-        return;
-      }
-      iov.iov_base = reinterpret_cast<uint8_t *>(iov.iov_base) + HTTP2_SETTINGS_PARAMETER_LEN;
-      iov.iov_len -= HTTP2_SETTINGS_PARAMETER_LEN;
-      settings_length += HTTP2_SETTINGS_PARAMETER_LEN;
+      params[params_size++] = {static_cast<uint16_t>(id), settings_value};
 
       // Update current settings
       server_settings.set(id, new_settings.get(id));
-
-      Http2StreamDebug(ua_session, stream_id, "  %s : %u", Http2DebugNames::get_settings_param_name(param.id), param.value);
     }
   }
 
-  settings.finalize(settings_length);
-  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &settings);
+  Http2SettingsFrame settings(stream_id, HTTP2_FRAME_NO_FLAG, params, params_size);
+  this->ua_session->xmit(settings);
 }
 
 void
@@ -1884,15 +1837,8 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
 {
   Http2StreamDebug(ua_session, id, "Send PING frame");
 
-  Http2Frame ping(HTTP2_FRAME_TYPE_PING, id, flag);
-
-  ping.alloc(buffer_size_index[HTTP2_FRAME_TYPE_PING]);
-  http2_write_ping(opaque_data, ping.write());
-  ping.finalize(HTTP2_PING_LEN);
-
-  // xmit event
-  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &ping);
+  Http2PingFrame ping(id, flag, opaque_data);
+  this->ua_session->xmit(ping);
 }
 
 // As for gracefull shutdown, TS should process outstanding stream as long as possible.
@@ -1908,21 +1854,14 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, this_ethread());
   }
 
-  Http2Frame frame(HTTP2_FRAME_TYPE_GOAWAY, 0, 0);
-  Http2Goaway goaway;
+  this->tx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(ec)};
 
+  Http2Goaway goaway;
   goaway.last_streamid = id;
   goaway.error_code    = ec;
 
-  frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_GOAWAY]);
-  http2_write_goaway(goaway, frame.write());
-  frame.finalize(HTTP2_GOAWAY_LEN);
-
-  this->tx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(ec)};
-
-  // xmit event
-  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &frame);
+  Http2GoawayFrame frame(goaway);
+  this->ua_session->xmit(frame);
 }
 
 void
@@ -1931,14 +1870,8 @@ Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
   Http2StreamDebug(ua_session, id, "Send WINDOW_UPDATE frame");
 
   // Create WINDOW_UPDATE frame
-  Http2Frame window_update(HTTP2_FRAME_TYPE_WINDOW_UPDATE, id, 0x0);
-  window_update.alloc(buffer_size_index[HTTP2_FRAME_TYPE_WINDOW_UPDATE]);
-  http2_write_window_update(static_cast<uint32_t>(size), window_update.write());
-  window_update.finalize(sizeof(uint32_t));
-
-  // xmit event
-  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &window_update);
+  Http2WindowUpdateFrame window_update(id, size);
+  this->ua_session->xmit(window_update);
 }
 
 void

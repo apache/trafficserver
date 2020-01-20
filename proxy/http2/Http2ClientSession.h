@@ -27,6 +27,7 @@
 #include "Plugin.h"
 #include "ProxySession.h"
 #include "Http2ConnectionState.h"
+#include "Http2Frame.h"
 #include <string_view>
 #include "tscore/ink_inet.h"
 #include "tscore/History.h"
@@ -77,96 +78,6 @@ struct Http2UpgradeContext {
   Http2ConnectionSettings client_settings;
 };
 
-class Http2Frame
-{
-public:
-  Http2Frame(const Http2FrameHeader &h, IOBufferReader *r, bool e = false) : hdr(h), ioreader(r), from_early_data(e) {}
-  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags, bool e = false)
-    : hdr({0, (uint8_t)type, flags, streamid}), from_early_data(e)
-  {
-  }
-
-  IOBufferReader *
-  reader() const
-  {
-    return ioreader;
-  }
-
-  const Http2FrameHeader &
-  header() const
-  {
-    return this->hdr;
-  }
-
-  // Allocate an IOBufferBlock for payload of this frame.
-  void
-  alloc(int index)
-  {
-    this->ioblock = new_IOBufferBlock();
-    this->ioblock->alloc(index);
-  }
-
-  // Return the writeable buffer space for frame payload
-  IOVec
-  write()
-  {
-    return make_iovec(this->ioblock->end(), this->ioblock->write_avail());
-  }
-
-  // Once the frame has been serialized, update the payload length of frame header.
-  void
-  finalize(size_t nbytes)
-  {
-    if (this->ioblock) {
-      ink_assert((int64_t)nbytes <= this->ioblock->write_avail());
-      this->ioblock->fill(nbytes);
-
-      this->hdr.length = this->ioblock->size();
-    }
-  }
-
-  void
-  xmit(MIOBuffer *iobuffer)
-  {
-    // Write frame header
-    uint8_t buf[HTTP2_FRAME_HEADER_LEN];
-    http2_write_frame_header(hdr, make_iovec(buf));
-    iobuffer->write(buf, sizeof(buf));
-
-    // Write frame payload
-    // It could be empty (e.g. SETTINGS frame with ACK flag)
-    if (ioblock && ioblock->read_avail() > 0) {
-      iobuffer->append_block(this->ioblock.get());
-    }
-  }
-
-  int64_t
-  size()
-  {
-    if (ioblock) {
-      return HTTP2_FRAME_HEADER_LEN + ioblock->size();
-    } else {
-      return HTTP2_FRAME_HEADER_LEN;
-    }
-  }
-
-  bool
-  is_from_early_data() const
-  {
-    return this->from_early_data;
-  }
-
-  // noncopyable
-  Http2Frame(Http2Frame &) = delete;
-  Http2Frame &operator=(const Http2Frame &) = delete;
-
-private:
-  Http2FrameHeader hdr;       // frame header
-  Ptr<IOBufferBlock> ioblock; // frame payload
-  IOBufferReader *ioreader = nullptr;
-  bool from_early_data     = false;
-};
-
 class Http2ClientSession : public ProxySession
 {
 public:
@@ -194,6 +105,7 @@ public:
 
   // more methods
   void write_reenable();
+  int64_t xmit(const Http2TxFrame &frame);
 
   ////////////////////
   // Accessors
