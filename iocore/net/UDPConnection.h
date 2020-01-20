@@ -106,6 +106,8 @@ protected:
   Continuation *_con = nullptr;
   EThread *_thread   = nullptr;
 
+  ASLL(UDP2Packet, link) _external_send_list;
+
 private:
   // internal schedule.
   void _close_event(UDPEvents e);

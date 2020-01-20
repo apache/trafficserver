@@ -718,6 +718,17 @@ UDP2ConnectionImpl::net_write_io(NetHandler *nh, EThread *thread)
     return;
   }
 
+  SList(UDP2Packet, link) aq(this->_external_send_list.popall());
+  UDP2Packet *tp;
+  Queue<UDP2Packet> tmp;
+  while ((tp = aq.pop())) {
+    tmp.push(tp);
+  }
+
+  while ((tp = tmp.pop())) {
+    this->_send_list.push_back(UDP2PacketUPtr(tp));
+  }
+
   int count = 0;
   while (!this->_send_list.empty()) {
     auto p = this->_send_list.front().get();
@@ -904,7 +915,8 @@ UDP2ConnectionImpl::send(UDP2PacketUPtr p, bool flush)
 {
   ink_assert(!this->_is_closed());
   ink_assert(this->is_connected() || p->to.isValid());
-  this->_send_list.push_back(std::move(p));
+  this->_external_send_list.push(p.get());
+  p.release();
   if (flush) {
     this->flush();
   }
