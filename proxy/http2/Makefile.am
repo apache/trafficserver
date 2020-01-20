@@ -38,6 +38,8 @@ libhttp2_a_SOURCES = \
 	HPACK.h \
 	HTTP2.cc \
 	HTTP2.h \
+	Http2Frame.cc \
+	Http2Frame.h \
 	Http2ClientSession.cc \
 	Http2ClientSession.h \
 	Http2ConnectionState.cc \

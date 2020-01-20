@@ -244,24 +244,6 @@ http2_write_frame_header(const Http2FrameHeader &hdr, IOVec iov)
 }
 
 bool
-http2_write_data(const uint8_t *src, size_t length, const IOVec &iov)
-{
-  byte_pointer ptr(iov.iov_base);
-  write_and_advance(ptr, src, length);
-
-  return true;
-}
-
-bool
-http2_write_headers(const uint8_t *src, size_t length, const IOVec &iov)
-{
-  byte_pointer ptr(iov.iov_base);
-  write_and_advance(ptr, src, length);
-
-  return true;
-}
-
-bool
 http2_write_rst_stream(uint32_t error_code, IOVec iov)
 {
   byte_pointer ptr(iov.iov_base);
