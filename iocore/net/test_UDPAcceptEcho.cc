@@ -34,11 +34,13 @@
 #include "UDPProcessor.h"
 #include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
-#include "UDPConnectionManager.h"
 
 #include "diags.i"
 
 static pid_t pid;
+const char payload[]  = "helloword";
+const char payload1[] = "helloword1";
+const char payload2[] = "helloword2";
 
 void
 signal_handler(int signum)
@@ -46,117 +48,45 @@ signal_handler(int signum)
   std::exit(EXIT_SUCCESS);
 }
 
-// StatPagesManager statPagesManager;
-class CloseCont : public Continuation
-{
-public:
-  int
-  mainEvent(int event, void *data)
-  {
-    signal_handler(0);
-    return 0;
-  }
-
-  CloseCont() { SET_HANDLER(&CloseCont::mainEvent); }
-};
-
-static CloseCont close_cont;
-
 in_port_t port = 0;
 int pfd[2]; // Pipe used to signal client with transient port.
-
-class EchoServer : public Continuation
-{
-public:
-  int
-  mainEvent(int event, void *data)
-  {
-    switch (event) {
-    case NET_EVENT_DATAGRAM_CONNECT_SUCCESS:
-      this->_con = static_cast<UDP2ConnectionImpl *>(data);
-      ink_release_assert(this->_con->is_connected());
-      std::cout << "connect success" << std::endl;
-      break;
-
-    case NET_EVENT_DATAGRAM_READ_READY: {
-      std::cout << "read ready event" << std::endl;
-      while (true) {
-        auto p = this->_con->recv();
-        if (p == nullptr) {
-          return 0;
-        }
-        ink_release_assert(p != nullptr);
-        this->_con->send(p);
-        this->count++;
-        std::cout << "receive msg from echo: " << std::string(p->chain->start(), p->chain->read_avail());
-        std::cout << " then send" << this->count << std::endl;
-        if (this->count == 2) {
-          this->_con->close();
-          this->_con = nullptr;
-          this_ethread()->schedule_in(&close_cont, 100 * HRTIME_MSECOND);
-          return 0;
-        }
-      }
-    }
-    default:
-      break;
-    }
-    return 0;
-  }
-  EchoServer() { SET_HANDLER(&EchoServer::mainEvent); }
-
-private:
-  int count                = 0;
-  UDP2ConnectionImpl *_con = nullptr;
-};
 
 class AcceptServer : public Continuation
 {
 public:
   int
-  createEvent(int event, void *data)
-  {
-    switch (event) {
-    case NET_EVENT_DATAGRAM_WRITE_READY:
-      return 0;
-    case EVENT_INTERVAL:
-      break;
-    default:
-      ink_assert(0);
-      return 0;
-    }
-    std::cout << "Accept woke up" << std::endl;
-    UDP2Packet *p = this->_packet;
-    auto t        = eventProcessor.assign_thread(ET_NET);
-    ink_assert(this->_sub_con == nullptr);
-    this->_sub_con = this->_conn->create_sub_connection(this->_conn->from(), p->to, new EchoServer(), t);
-    // this->_sub_con->dispatch(this->_packet);
-    return 0;
-  }
-
-  int
   mainEvent(int event, void *data)
   {
     switch (event) {
     case NET_EVENT_DATAGRAM_READ_READY: {
-      ink_assert(this->_conn == static_cast<AcceptUDP2ConnectionImpl *>(data));
-      auto p        = this->_conn->recv();
-      auto tmp      = p->from;
-      p->from       = p->to;
-      p->to         = tmp;
-      this->_packet = p;
-      auto new_p    = new UDP2Packet;
-      *new_p        = *p;
-      this->_conn->send(new_p);
+      ink_assert(this->_con == static_cast<UDP2ConnectionImpl *>(data));
+      while (true) {
+        auto p = this->_con->recv();
+        if (p == nullptr) {
+          return 0;
+        }
 
-      std::cout << "receive msg from accept: " << std::string(p->chain->start(), p->chain->read_avail()) << std::endl;
-      // waiting for client send all packet to accept socket's buffer
-      std::cout << "accept sleep" << std::endl;
-      SET_HANDLER(&AcceptServer::createEvent);
-      this_ethread()->schedule_in(this, HRTIME_MSECONDS(1));
+        if (!this->_first) {
+          this->_first = true;
+          ink_release_assert(this->_con->connect(&p->from.sa) >= 0);
+        }
+
+        this->_closed = std::string(p->chain->start(), p->chain->read_avail()) == payload2;
+        std::cout << "receive msg from accept: " << std::string(p->chain->start(), p->chain->read_avail()) << std::endl;
+        auto tmp = p->from;
+        p->from  = p->to;
+        p->to    = tmp;
+        this->_con->send(std::move(p));
+      }
       break;
     }
     case NET_EVENT_DATAGRAM_WRITE_READY:
+      if (this->_closed) {
+        std::cout << "accept exit" << std::endl;
+        signal_handler(0);
+      }
+      break;
+    case NET_EVENT_DATAGRAM_CONNECT_SUCCESS:
       break;
     default:
       ink_release_assert(0);
@@ -173,20 +103,20 @@ public:
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     addr.sin_port        = 0;
 
-    auto udp_manager = get_UDP2ConnectionManager(eventProcessor.assign_thread(ET_UDP2));
-    this->_conn      = udp_manager->create_accept_udp_connection(this, eventProcessor.assign_thread(ET_UDP2),
-                                                            reinterpret_cast<sockaddr *const>(&addr));
-    ink_release_assert(this->_conn != nullptr);
-    std::cout << "bind to port: " << ats_ip_port_host_order(this->_conn->from()) << std::endl;
-    int port = ats_ip_port_host_order(this->_conn->from());
+    this->_con = new UDP2ConnectionImpl(this, eventProcessor.assign_thread(ET_UDP2));
+    ink_release_assert(this->_con->create_socket(reinterpret_cast<sockaddr *const>(&addr)) >= 0);
+    ink_release_assert(this->_con->start_io() >= 0);
+    ink_release_assert(this->_con != nullptr);
+    std::cout << "bind to port: " << ats_ip_port_host_order(this->_con->from()) << std::endl;
+    int port = ats_ip_port_host_order(this->_con->from());
     ink_release_assert(write(pfd[1], &port, sizeof(port)) == sizeof(port));
-    this->mutex = this->_conn->mutex;
+    this->mutex = this->_con->mutex;
   }
 
 private:
-  AcceptUDP2ConnectionImpl *_conn = nullptr;
-  UDP2ConnectionImpl *_sub_con    = nullptr;
-  UDP2Packet *_packet             = nullptr;
+  UDP2ConnectionImpl *_con = nullptr;
+  bool _first              = false;
+  bool _closed             = false;
 };
 
 void
@@ -197,10 +127,6 @@ udp_client(TestBox &box)
     std::cout << "Couldn't create socket" << std::endl;
     std::exit(EXIT_FAILURE);
   }
-
-  const char payload[]  = "helloword";
-  const char payload1[] = "helloword1";
-  const char payload2[] = "helloword2";
 
   struct timeval tv;
   tv.tv_sec  = 20;
@@ -264,6 +190,7 @@ udp_client(TestBox &box)
   CHECK_RECV(brecv(payload1));
   CHECK_RECV(brecv(payload2));
 
+  std::cout << "client exit" << std::endl;
   close(sock);
   return;
 }

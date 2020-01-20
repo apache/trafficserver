@@ -165,8 +165,7 @@ libinknet_a_SOURCES = \
 	UnixUDPNet.cc \
 	SSLDynlock.cc \
 	UDPProcessor.cc \
-	UDPConnection.cc \
-	UDPConnectionManager.cc
+	UDPConnection.cc 
 
 test_UDPAcceptEcho_CPPFLAGS = \
 	$(AM_CPPFLAGS) \

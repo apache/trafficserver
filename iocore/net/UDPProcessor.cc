@@ -20,23 +20,18 @@
  */
 
 #include "UDPProcessor.h"
-#include "UDPConnectionManager.h"
 #include "P_Net.h"
 
 UDP2NetProcessor udp2Net;
 EventType ET_UDP2;
 
-constexpr static int64_t UDP_MANAGER_PERIODIC = 200 * HRTIME_SECOND;
-
 void
 initialize_thread_for_udp2_net(EThread *thread)
 {
-  NetHandler *nh                      = get_NetHandler(thread);
-  UDP2ConnectionManager *udp2_manager = get_UDP2ConnectionManager(thread);
+  NetHandler *nh = get_NetHandler(thread);
 
   new (reinterpret_cast<ink_dummy_for_new *>(nh)) NetHandler();
   new (reinterpret_cast<ink_dummy_for_new *>(get_PollCont(thread))) PollCont(thread->mutex, nh);
-  new (reinterpret_cast<ink_dummy_for_new *>(udp2_manager)) UDP2ConnectionManager(thread->mutex);
   nh->mutex  = new_ProxyMutex();
   nh->thread = thread;
 
@@ -45,8 +40,6 @@ initialize_thread_for_udp2_net(EThread *thread)
 
   memcpy(&nh->config, &NetHandler::global_config, sizeof(NetHandler::global_config));
   nh->configure_per_thread_values();
-
-  thread->schedule_every(udp2_manager, UDP_MANAGER_PERIODIC);
 
   thread->set_tail_handler(nh);
   thread->ep = static_cast<EventIO *>(ats_malloc(sizeof(EventIO)));
@@ -72,10 +65,6 @@ UDP2NetProcessor::start(int n_upd_threads, size_t stacksize)
 
   if (unix_netProcessor.netHandler_offset < 0) {
     unix_netProcessor.netHandler_offset = eventProcessor.allocate(sizeof(NetHandler));
-  }
-
-  if (this->udp_connection_manager_offset < 0) {
-    this->udp_connection_manager_offset = eventProcessor.allocate(sizeof(UDP2ConnectionManager));
   }
 
   ET_UDP2 = eventProcessor.register_event_type("ET_UDP2");

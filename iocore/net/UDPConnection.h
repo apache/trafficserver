@@ -33,23 +33,18 @@
 #define NET_EVENT_DATAGRAM_CONNECT_ERROR (NET_EVENT_DATAGRAM_CONNECT_SUCCESS + 1)
 #define NET_EVENT_DATAGRAM_WRITE_READY (NET_EVENT_DATAGRAM_CONNECT_SUCCESS + 1)
 
-class AcceptUDP2ConnectionImpl;
-class UDP2ConnectionManager;
-
 class UDP2Connection : public NetEvent
 {
 public:
   virtual ~UDP2Connection() {}
-  virtual int send(UDP2Packet *, bool flush = true) = 0;
-  virtual UDP2Packet *recv()                        = 0;
-  virtual void flush()                              = 0;
+  virtual int send(UDP2PacketUPtr p, bool flush = true) = 0;
+  virtual UDP2PacketUPtr recv()                         = 0;
+  virtual void flush()                                  = 0;
 
   virtual int close()                              = 0;
   virtual void set_continuation(Continuation *con) = 0;
   virtual IpEndpoint from()                        = 0;
   virtual IpEndpoint to()                          = 0;
-
-  SLINK(UDP2Connection, closed_link);
 };
 
 class UDP2ConnectionImpl : public UDP2Connection, public Continuation
@@ -57,14 +52,13 @@ class UDP2ConnectionImpl : public UDP2Connection, public Continuation
 public:
   UDP2ConnectionImpl() = delete;
   // independent allocate.
-  UDP2ConnectionImpl(UDP2ConnectionManager &manager, Continuation *con, EThread *ethread = nullptr);
+  UDP2ConnectionImpl(Continuation *con, EThread *ethread = nullptr);
   ~UDP2ConnectionImpl();
 
   enum class UDPEvents : uint8_t {
     UDP_START_EVENT,
     UDP_CONNECT_EVENT,
     UDP_USER_READ_READY,
-    UDP_SEND_READY,
   };
 
   // NetEventHandler
@@ -81,9 +75,9 @@ public:
   int start_io();
 
   // UDP2Connection
-  int send(UDP2Packet *packet, bool flush = true) override;
+  int send(UDP2PacketUPtr packet, bool flush = true) override;
   void flush() override;
-  UDP2Packet *recv() override;
+  UDP2PacketUPtr recv() override;
   IpEndpoint from() override;
   IpEndpoint to() override;
   void set_continuation(Continuation *con) override;
@@ -92,9 +86,6 @@ public:
   int connect(sockaddr const *addr);
   bool is_connected() const;
   void bind_thread(EThread *thread);
-  int dispatch(UDP2Packet *packet);
-  void reschedule_read();
-  void reschedule_write();
 
   int startEvent(int event, void *data);
   int mainEvent(int event, void *data);
@@ -108,19 +99,14 @@ protected:
   void _reenable(VIO *vio);
   void _read_from_net(NetHandler *nh, EThread *t, bool callback = true);
   virtual int _send(UDP2Packet *p);
+  virtual int _sendmsg(UDP2Packet *p);
   virtual int _read(struct iovec *iov, int len, IpEndpoint &from, IpEndpoint &to);
-
-  ASLL(UDP2Packet, in_link) _recv_queue;
-  std::deque<UDP2PacketUPtr> _recv_list;
+  virtual int _readmsg(struct iovec *iov, int len, IpEndpoint &from, IpEndpoint &to);
 
   Continuation *_con = nullptr;
   EThread *_thread   = nullptr;
 
-  UDP2ConnectionManager &_manager;
-
 private:
-  ASLL(UDP2Packet, out_link) _send_queue;
-
   // internal schedule.
   void _close_event(UDPEvents e);
   void _close_event(int e);
@@ -129,39 +115,16 @@ private:
   IpEndpoint _from{};
   IpEndpoint _to{};
 
-  int _fd               = -1;
-  bool _connected       = false;
-  Event *_start_event   = nullptr;
-  Event *_connect_event = nullptr;
-  AtomicEvent _send_ready_event;
-  AtomicEvent _user_read_ready_event;
+  int _fd                       = -1;
+  bool _connected               = false;
+  Event *_start_event           = nullptr;
+  Event *_connect_event         = nullptr;
+  Event *_user_read_ready_event = nullptr;
 
   // TODO removed
   NetVCOptions _options{};
   ContFlags _cont_flags{};
 
+  std::deque<UDP2PacketUPtr> _recv_list;
   std::deque<UDP2PacketUPtr> _send_list;
-};
-
-// Accept UDP2Connection is ranning in ET_UDP, and dispatch UDPPacket to different sub connections in _connection_map
-// So PacketHandler should manager all AcceptUDP2Connection to find the correct connection across diffierent listen
-// Addrs.
-// FIXME: In current implementable, every AcceptUDP2ConnectionImpl are independent. That means the client should always
-// send to the same local addr.
-class AcceptUDP2ConnectionImpl : public UDP2ConnectionImpl
-{
-public:
-  AcceptUDP2ConnectionImpl(UDP2ConnectionManager &manager, Continuation *c, EThread *thread)
-    : UDP2ConnectionImpl(manager, c, thread)
-  {
-  }
-
-  AcceptUDP2ConnectionImpl() = delete;
-  UDP2ConnectionImpl *create_sub_connection(const IpEndpoint &from, const IpEndpoint &to, Continuation *c, EThread *thread);
-
-  void net_read_io(NetHandler *nh, EThread *lthread) override;
-
-private:
-  int _send(UDP2Packet *p) override;
-  int _read(struct iovec *iov, int len, IpEndpoint &from, IpEndpoint &to) override;
 };

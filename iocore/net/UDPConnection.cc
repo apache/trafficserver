@@ -22,7 +22,6 @@
 #include <set>
 
 #include "UDPConnection.h"
-#include "UDPConnectionManager.h"
 
 #include "tscore/ink_atomic.h"
 
@@ -36,8 +35,6 @@ udp_event_name(UDP2ConnectionImpl::UDPEvents e)
     return "UDP_CONNECT_EVENT";
   case UDP2ConnectionImpl::UDPEvents::UDP_USER_READ_READY:
     return "UDP_USER_READ_READY";
-  case UDP2ConnectionImpl::UDPEvents::UDP_SEND_READY:
-    return "UDP_SEND_READY";
   default:
     return "UNKNOWN EVENT";
   };
@@ -80,8 +77,7 @@ write_reschedule(NetHandler *nh, NetEvent *vc)
 //
 // UDP2ConnectionImpl
 //
-UDP2ConnectionImpl::UDP2ConnectionImpl(UDP2ConnectionManager &manager, Continuation *con, EThread *thread)
-  : _con(con), _thread(thread), _manager(manager)
+UDP2ConnectionImpl::UDP2ConnectionImpl(Continuation *con, EThread *thread) : _con(con), _thread(thread)
 {
   this->mutex        = con->mutex;
   this->read.enabled = 1; // read enabled is always true because we expected all data;
@@ -112,8 +108,7 @@ UDP2ConnectionImpl::free(EThread *t)
   Debug("udp_con", "free connection");
   this->mutex = nullptr;
 
-  this->_user_read_ready_event.close();
-  this->_send_ready_event.close();
+  this->_close_event(UDPEvents::UDP_USER_READ_READY);
   this->_close_event(UDPEvents::UDP_START_EVENT);
   this->_close_event(UDPEvents::UDP_CONNECT_EVENT);
 
@@ -131,7 +126,7 @@ UDP2ConnectionImpl::free(EThread *t)
     ::close(fd);
   }
 
-  this->_manager.close_connection(this, "");
+  delete this;
 }
 
 int
@@ -169,13 +164,8 @@ UDP2ConnectionImpl::close()
   this->_con  = nullptr;
   this->mutex = this->_thread->mutex;
 
-  SList(UDP2Packet, in_link) aq(this->_recv_queue.popall());
-  UDP2Packet *p;
-  while ((p = aq.pop())) {
-    delete p;
-  }
-
-  if (this->_send_list.empty() && this->_send_queue.empty()) {
+  this->_recv_list.clear();
+  if (this->_send_list.empty()) {
     this->free(nullptr);
     return 0;
   }
@@ -226,7 +216,7 @@ UDP2ConnectionImpl::startEvent(int event, void *data)
         SET_HANDLER(&UDP2ConnectionImpl::mainEvent);
         ink_assert(nh->startIO(this) >= 0);
         // reenable read since there might be some packets in socket's buffer.
-        if (!this->_recv_list.empty() || !this->_recv_queue.empty()) {
+        if (!this->_recv_list.empty()) {
           this->callback(NET_EVENT_DATAGRAM_READ_READY, this);
         }
         break;
@@ -240,7 +230,7 @@ UDP2ConnectionImpl::startEvent(int event, void *data)
     break;
   }
 
-  if (this->_is_closed() && (this->_send_queue.empty() && this->_send_list.empty())) {
+  if (this->_is_closed() && this->_send_list.empty()) {
     this->free(nullptr);
   } else if (this->_is_closed()) {
     this->_reenable(&this->write.vio);
@@ -258,16 +248,13 @@ UDP2ConnectionImpl::mainEvent(int event, void *data)
   case UDPEvents::UDP_CONNECT_EVENT:
     this->connect(&this->_to.sa);
     break;
-  case UDPEvents::UDP_USER_READ_READY:
-    this->callback(NET_EVENT_DATAGRAM_READ_READY, this);
-    break;
   default:
     Debug("udp_con", "unknown events: %d", event);
     ink_release_assert(0);
     break;
   }
 
-  if (this->_is_closed() && (this->_send_queue.empty() && this->_send_list.empty())) {
+  if (this->_is_closed() && this->_send_list.empty()) {
     this->free(nullptr);
   } else if (this->_is_closed()) {
     this->_reenable(&this->write.vio);
@@ -463,11 +450,8 @@ UDP2ConnectionImpl::_reschedule(UDPEvents e, void *data, int64_t delay)
     event = &this->_connect_event;
     break;
   case UDPEvents::UDP_USER_READ_READY:
-    this->_user_read_ready_event.schedule(this, this->_thread, static_cast<int>(e), data, delay);
-    return;
-  case UDPEvents::UDP_SEND_READY:
-    this->_send_ready_event.schedule(this, this->_thread, static_cast<int>(e), data, delay);
-    return;
+    event = &this->_user_read_ready_event;
+    break;
   default:
     ink_release_assert(!"unknown events");
     break;
@@ -483,18 +467,6 @@ UDP2ConnectionImpl::_reschedule(UDPEvents e, void *data, int64_t delay)
   } else {
     *event = this->_thread->schedule_imm(this, static_cast<int>(e), data);
   }
-}
-
-void
-UDP2ConnectionImpl::reschedule_read()
-{
-  this->_reschedule(UDPEvents::UDP_USER_READ_READY, nullptr, 0);
-}
-
-void
-UDP2ConnectionImpl::reschedule_write()
-{
-  this->_reschedule(UDPEvents::UDP_SEND_READY, nullptr, 0);
 }
 
 void
@@ -515,13 +487,8 @@ UDP2ConnectionImpl::_close_event(UDPEvents e)
     ptr = &this->_connect_event;
     break;
   case UDPEvents::UDP_USER_READ_READY:
-    ink_assert(this->_thread == this_ethread());
-    this->_user_read_ready_event.cancel();
-    return;
-  case UDPEvents::UDP_SEND_READY:
-    ink_assert(this->_thread == this_ethread());
-    this->_send_ready_event.cancel();
-    return;
+    ptr = &this->_user_read_ready_event;
+    break;
   default:
     ink_release_assert(!"unknown ptrs");
     break;
@@ -598,7 +565,7 @@ UDP2ConnectionImpl::_read_from_net(NetHandler *nh, EThread *thread, bool callbac
     }
 
     UDP2PacketUPtr p = std::make_unique<UDP2Packet>();
-    r                = this->_read(tiovec, niov, p->from, p->to);
+    r = this->is_connected() ? this->_read(tiovec, niov, p->from, p->to) : this->_readmsg(tiovec, niov, p->from, p->to);
     if (r <= 0) {
       if (r == -EAGAIN || r == -ENOTCONN) {
         this->read.triggered = 0;
@@ -635,8 +602,7 @@ UDP2ConnectionImpl::_read_from_net(NetHandler *nh, EThread *thread, bool callbac
     std::cout << "fuck read: " << std::string(p->chain->start(), p->chain->read_avail()) << std::endl;
 
     // queue onto the UDPConnection
-    this->_recv_queue.push(p.get());
-    p.release();
+    this->_recv_list.push_back(std::move(p));
 
     // reload the unused block
     chain      = next_chain;
@@ -646,10 +612,73 @@ UDP2ConnectionImpl::_read_from_net(NetHandler *nh, EThread *thread, bool callbac
 
   Debug("udp_con", "read %d packets from net", count);
 
-  if (callback && (!this->_recv_queue.empty() || !this->_recv_list.empty())) {
+  if (callback && !this->_recv_list.empty()) {
     this->callback(NET_EVENT_DATAGRAM_READ_READY, this);
   }
   return;
+}
+
+int
+UDP2ConnectionImpl::_readmsg(struct iovec *iov, int len, IpEndpoint &fromaddr, IpEndpoint &toaddr)
+{
+  struct msghdr msg;
+  int toaddr_len = sizeof(toaddr);
+  char *cbuf[1024];
+  msg.msg_name       = &fromaddr.sin6;
+  msg.msg_namelen    = sizeof(fromaddr);
+  msg.msg_iov        = iov;
+  msg.msg_iovlen     = len;
+  msg.msg_control    = cbuf;
+  msg.msg_controllen = sizeof(cbuf);
+
+  int rc = socketManager.recvmsg(this->get_fd(), &msg, 0);
+  if (rc <= 0) {
+    return rc;
+  }
+
+  // truncated check
+  if (msg.msg_flags & MSG_TRUNC) {
+    Debug("udp-read", "The UDP packet is truncated");
+    ink_assert(!"truncate should not happen, if so please increase MAX_NIOV");
+    rc = -0x12345;
+    return rc;
+  }
+
+  safe_getsockname(this->get_fd(), &toaddr.sa, &toaddr_len);
+  for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+    switch (cmsg->cmsg_type) {
+#ifdef IP_PKTINFO
+    case IP_PKTINFO:
+      if (cmsg->cmsg_level == IPPROTO_IP) {
+        struct in_pktinfo *pktinfo                                = reinterpret_cast<struct in_pktinfo *>(CMSG_DATA(cmsg));
+        reinterpret_cast<sockaddr_in *>(&toaddr)->sin_addr.s_addr = pktinfo->ipi_addr.s_addr;
+      }
+      break;
+#endif
+#ifdef IP_RECVDSTADDR
+    case IP_RECVDSTADDR:
+      if (cmsg->cmsg_level == IPPROTO_IP) {
+        struct in_addr *addr                                      = reinterpret_cast<struct in_addr *>(CMSG_DATA(cmsg));
+        reinterpret_cast<sockaddr_in *>(&toaddr)->sin_addr.s_addr = addr->s_addr;
+      }
+      break;
+#endif
+#if defined(IPV6_PKTINFO) || defined(IPV6_RECVPKTINFO)
+    case IPV6_PKTINFO: // IPV6_RECVPKTINFO uses IPV6_PKTINFO too
+      if (cmsg->cmsg_level == IPPROTO_IPV6) {
+        struct in6_pktinfo *pktinfo = reinterpret_cast<struct in6_pktinfo *>(CMSG_DATA(cmsg));
+        memcpy(toaddr.sin6.sin6_addr.s6_addr, &pktinfo->ipi6_addr, 16);
+      }
+      break;
+#endif
+    }
+  }
+
+  char buff[INET6_ADDRPORTSTRLEN * 2] = {0};
+  Debug("udp_accept", "read packet %s ----> %s", ats_ip_nptop(&fromaddr.sa, buff, sizeof(buff) - INET6_ADDRPORTSTRLEN),
+        ats_ip_nptop(&toaddr.sa, buff + INET6_ADDRPORTSTRLEN, sizeof(buff) - INET6_ADDRPORTSTRLEN));
+  ink_release_assert(!ats_ip_addr_port_eq(&fromaddr.sa, &toaddr.sa));
+  return rc;
 }
 
 int
@@ -689,22 +718,11 @@ UDP2ConnectionImpl::net_write_io(NetHandler *nh, EThread *thread)
     return;
   }
 
-  SList(UDP2Packet, out_link) aq(this->_send_queue.popall());
-  UDP2Packet *p;
-  Queue<UDP2Packet> st;
-  while ((p = aq.pop())) {
-    st.push(p);
-  }
-
-  while ((p = st.pop())) {
-    this->_send_list.push_back(UDP2PacketUPtr(p));
-  }
-
   int count = 0;
   while (!this->_send_list.empty()) {
     auto p = this->_send_list.front().get();
 
-    int rc = this->_send(p);
+    int rc = this->is_connected() ? this->_send(p) : this->_sendmsg(p);
     if (rc >= 0) {
       count++;
       std::cout << "fuck send: " << std::string(p->chain->start(), p->chain->read_avail()) << std::endl;
@@ -726,7 +744,7 @@ UDP2ConnectionImpl::net_write_io(NetHandler *nh, EThread *thread)
     this->callback(NET_EVENT_DATAGRAM_WRITE_READY, this);
   }
 
-  if (this->_is_closed() && (this->_send_queue.empty() && this->_send_list.empty())) {
+  if (this->_is_closed() && this->_send_list.empty()) {
     this->free(nullptr);
   }
 
@@ -755,34 +773,59 @@ UDP2ConnectionImpl::_send(UDP2Packet *p)
   return -errno;
 }
 
-UDP2Packet *
+int
+UDP2ConnectionImpl::_sendmsg(UDP2Packet *p)
+{
+  ink_assert(p->to.isValid());
+  ink_assert(this->is_connected() == false);
+  struct msghdr msg;
+  struct iovec iov[MAX_NIOV];
+  int real_len = 0;
+  int n, iov_len = 0;
+
+#if !defined(solaris)
+  msg.msg_control    = nullptr;
+  msg.msg_controllen = 0;
+  msg.msg_flags      = 0;
+#endif
+  msg.msg_name    = reinterpret_cast<caddr_t>(&p->to.sa);
+  msg.msg_namelen = ats_ip_size(p->to);
+  iov_len         = 0;
+
+  for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
+    iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
+    iov[iov_len].iov_len  = b->size();
+    real_len += iov[iov_len].iov_len;
+    iov_len++;
+  }
+
+  msg.msg_iov    = iov;
+  msg.msg_iovlen = iov_len;
+
+  n = socketManager.sendmsg(this->get_fd(), &msg, 0);
+  if (n >= 0) {
+    char buff[INET6_ADDRPORTSTRLEN * 2] = {0};
+    Debug("udp_accept", "send packet %s ----> %s", ats_ip_nptop(&p->from.sa, buff, sizeof(buff) - INET6_ADDRPORTSTRLEN),
+          ats_ip_nptop(&p->to.sa, buff + INET6_ADDRPORTSTRLEN, sizeof(buff) - INET6_ADDRPORTSTRLEN));
+    return n;
+  }
+
+  Debug("udp_conn", "send from external thread failed: %d-%s", errno, strerror(errno));
+  return -errno;
+}
+
+UDP2PacketUPtr
 UDP2ConnectionImpl::recv()
 {
-  // user should call recv immediatly when UDP2Connection callback to
-  // contiuation. Since the mutex is already grabed from eventsystem or
-  // NetHandler, we don't need explicit take lock here.
   ink_assert(!this->_is_closed());
   ink_assert(this->mutex->thread_holding == this->_thread);
-  SList(UDP2Packet, in_link) aq(this->_recv_queue.popall());
-  UDP2Packet *t;
-  Queue<UDP2Packet> st;
-  while ((t = aq.pop())) {
-    st.push(t);
-  }
-
-  while ((t = st.pop())) {
-    this->_recv_list.push_back(UDP2PacketUPtr(t));
-  }
-
   if (this->_recv_list.empty()) {
     return nullptr;
   }
 
   auto p = std::move(this->_recv_list.front());
   this->_recv_list.pop_front();
-  auto ret = p.get();
-  p.release();
-  return ret;
+  return p;
 }
 
 void
@@ -857,27 +900,11 @@ UDP2ConnectionImpl::_reenable(VIO *vio)
 }
 
 int
-UDP2ConnectionImpl::dispatch(UDP2Packet *packet)
-{
-  if (this->_is_closed()) {
-    return 0;
-  }
-
-  this->_recv_queue.push(packet);
-  if (this->_thread == this_ethread()) {
-    this->callback(NET_EVENT_DATAGRAM_READ_READY, nullptr);
-    return 0;
-  }
-
-  return 0;
-}
-
-int
-UDP2ConnectionImpl::send(UDP2Packet *p, bool flush)
+UDP2ConnectionImpl::send(UDP2PacketUPtr p, bool flush)
 {
   ink_assert(!this->_is_closed());
   ink_assert(this->is_connected() || p->to.isValid());
-  this->_send_queue.push(p);
+  this->_send_list.push_back(std::move(p));
   if (flush) {
     this->_reenable(&this->write.vio);
   }
@@ -888,202 +915,4 @@ void
 UDP2ConnectionImpl::flush()
 {
   this->_reenable(&this->write.vio);
-}
-
-//
-// AcceptUDP2ConnectionImpl
-//
-UDP2ConnectionImpl *
-AcceptUDP2ConnectionImpl::create_sub_connection(const IpEndpoint &local, const IpEndpoint &peer, Continuation *c, EThread *thread)
-{
-  ink_assert(this->mutex->thread_holding == this->_thread);
-  ink_assert(peer.isValid());
-  char buff[INET6_ADDRPORTSTRLEN * 2] = {0};
-
-  auto con = this->_manager.create_udp_connection(c, thread, local, peer);
-  ink_release_assert(con->is_connected());
-
-  // since new socket is established, we should drain all udp packet which is already in accept udp
-  // socket buffer. So read from socket until the EAGIN.
-  this->_read_from_net(nh, this->_thread, false);
-
-  // in this time every packets read from accept will dispatch to new conn
-  // So we need to take old packet which already in list.
-  SList(UDP2Packet, in_link) aq(this->_recv_queue.popall());
-  Queue<UDP2Packet> st;
-  UDP2Packet *p;
-  while ((p = aq.pop())) {
-    st.push(p);
-  }
-
-  while ((p = st.pop())) {
-    this->_recv_list.push_back(UDP2PacketUPtr(p));
-  }
-
-  // unique set list.
-  // std::set<UDP2ConnectionImpl *> awakenup_list;
-  int count               = 0;
-  UDP2ConnectionImpl *tmp = nullptr;
-  for (auto it = this->_recv_list.begin(); it != this->_recv_list.end();) {
-    if ((tmp = this->_manager.find_connection(&(*it)->to.sa, &(*it)->from.sa))) {
-      tmp->dispatch((*it).get());
-      (*it).release();
-      it = this->_recv_list.erase(it);
-      count++;
-      // awakenup_list.emplace(tmp);
-    } else {
-      it++;
-    }
-  }
-
-  // for (auto it : awakenup_list) {
-  //   it->reschedule_read();
-  //   if (it->nh) {
-  //     it->nh->signalActivity();
-  //   }
-  // }
-  ink_assert(con->start_io() >= 0);
-
-  Debug("udp_accept", "create udp connection %s ----> %s dispatch %d keep packets: %lu",
-        ats_ip_nptop(&local.sa, buff, sizeof(buff) - INET6_ADDRPORTSTRLEN),
-        ats_ip_nptop(&peer.sa, buff + INET6_ADDRPORTSTRLEN, sizeof(buff) - INET6_ADDRPORTSTRLEN), count, this->_recv_list.size());
-  return con;
-}
-
-void
-AcceptUDP2ConnectionImpl::net_read_io(NetHandler *nh, EThread *t)
-{
-  this->_read_from_net(nh, this->_thread, false);
-
-  SList(UDP2Packet, in_link) aq(this->_recv_queue.popall());
-  Queue<UDP2Packet> st;
-  UDP2Packet *p;
-  while ((p = aq.pop())) {
-    st.push(p);
-  }
-
-  std::set<UDP2ConnectionImpl *> awakenup_list;
-  UDP2ConnectionImpl *con = nullptr;
-  while ((p = st.pop())) {
-    if ((con = this->_manager.find_connection(&p->to.sa, &p->from.sa))) {
-      con->dispatch(p);
-      awakenup_list.emplace(con);
-      continue;
-    }
-
-    this->_recv_list.push_back(UDP2PacketUPtr(p));
-  }
-
-  for (auto it : awakenup_list) {
-    it->reschedule_read();
-  }
-
-  Debug("udp_accept", "dispatch %lu packets to other connection, manager size: %d", awakenup_list.size(), this->_manager.size());
-  if (!this->_recv_queue.empty() || !this->_recv_list.empty()) {
-    this->callback(NET_EVENT_DATAGRAM_READ_READY, this);
-  }
-}
-
-int
-AcceptUDP2ConnectionImpl::_send(UDP2Packet *p)
-{
-  ink_assert(p->to.isValid());
-  ink_assert(this->is_connected() == false);
-  struct msghdr msg;
-  struct iovec iov[MAX_NIOV];
-  int real_len = 0;
-  int n, iov_len = 0;
-
-#if !defined(solaris)
-  msg.msg_control    = nullptr;
-  msg.msg_controllen = 0;
-  msg.msg_flags      = 0;
-#endif
-  msg.msg_name    = reinterpret_cast<caddr_t>(&p->to.sa);
-  msg.msg_namelen = ats_ip_size(p->to);
-  iov_len         = 0;
-
-  for (IOBufferBlock *b = p->chain.get(); b != nullptr; b = b->next.get()) {
-    iov[iov_len].iov_base = static_cast<caddr_t>(b->start());
-    iov[iov_len].iov_len  = b->size();
-    real_len += iov[iov_len].iov_len;
-    iov_len++;
-  }
-
-  msg.msg_iov    = iov;
-  msg.msg_iovlen = iov_len;
-
-  n = socketManager.sendmsg(this->get_fd(), &msg, 0);
-  if (n >= 0) {
-    char buff[INET6_ADDRPORTSTRLEN * 2] = {0};
-    Debug("udp_accept", "send packet %s ----> %s", ats_ip_nptop(&p->from.sa, buff, sizeof(buff) - INET6_ADDRPORTSTRLEN),
-          ats_ip_nptop(&p->to.sa, buff + INET6_ADDRPORTSTRLEN, sizeof(buff) - INET6_ADDRPORTSTRLEN));
-    return n;
-  }
-
-  Debug("udp_conn", "send from external thread failed: %d-%s", errno, strerror(errno));
-  return -errno;
-}
-
-int
-AcceptUDP2ConnectionImpl::_read(struct iovec *iov, int len, IpEndpoint &fromaddr, IpEndpoint &toaddr)
-{
-  struct msghdr msg;
-  int toaddr_len = sizeof(toaddr);
-  char *cbuf[1024];
-  msg.msg_name       = &fromaddr.sin6;
-  msg.msg_namelen    = sizeof(fromaddr);
-  msg.msg_iov        = iov;
-  msg.msg_iovlen     = len;
-  msg.msg_control    = cbuf;
-  msg.msg_controllen = sizeof(cbuf);
-
-  int rc = socketManager.recvmsg(this->get_fd(), &msg, 0);
-  if (rc <= 0) {
-    return rc;
-  }
-
-  // truncated check
-  if (msg.msg_flags & MSG_TRUNC) {
-    Debug("udp-read", "The UDP packet is truncated");
-    ink_assert(!"truncate should not happen, if so please increase MAX_NIOV");
-    rc = -0x12345;
-    return rc;
-  }
-
-  safe_getsockname(this->get_fd(), &toaddr.sa, &toaddr_len);
-  for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-    switch (cmsg->cmsg_type) {
-#ifdef IP_PKTINFO
-    case IP_PKTINFO:
-      if (cmsg->cmsg_level == IPPROTO_IP) {
-        struct in_pktinfo *pktinfo                                = reinterpret_cast<struct in_pktinfo *>(CMSG_DATA(cmsg));
-        reinterpret_cast<sockaddr_in *>(&toaddr)->sin_addr.s_addr = pktinfo->ipi_addr.s_addr;
-      }
-      break;
-#endif
-#ifdef IP_RECVDSTADDR
-    case IP_RECVDSTADDR:
-      if (cmsg->cmsg_level == IPPROTO_IP) {
-        struct in_addr *addr                                      = reinterpret_cast<struct in_addr *>(CMSG_DATA(cmsg));
-        reinterpret_cast<sockaddr_in *>(&toaddr)->sin_addr.s_addr = addr->s_addr;
-      }
-      break;
-#endif
-#if defined(IPV6_PKTINFO) || defined(IPV6_RECVPKTINFO)
-    case IPV6_PKTINFO: // IPV6_RECVPKTINFO uses IPV6_PKTINFO too
-      if (cmsg->cmsg_level == IPPROTO_IPV6) {
-        struct in6_pktinfo *pktinfo = reinterpret_cast<struct in6_pktinfo *>(CMSG_DATA(cmsg));
-        memcpy(toaddr.sin6.sin6_addr.s6_addr, &pktinfo->ipi6_addr, 16);
-      }
-      break;
-#endif
-    }
-  }
-
-  char buff[INET6_ADDRPORTSTRLEN * 2] = {0};
-  Debug("udp_accept", "read packet %s ----> %s", ats_ip_nptop(&fromaddr.sa, buff, sizeof(buff) - INET6_ADDRPORTSTRLEN),
-        ats_ip_nptop(&toaddr.sa, buff + INET6_ADDRPORTSTRLEN, sizeof(buff) - INET6_ADDRPORTSTRLEN));
-  ink_release_assert(!ats_ip_addr_port_eq(&fromaddr.sa, &toaddr.sa));
-  return rc;
 }
