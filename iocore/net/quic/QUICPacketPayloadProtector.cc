@@ -155,14 +155,12 @@ QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t
     return false;
   }
 
-  cipher_len           = 0;
-  Ptr<IOBufferBlock> b = plain;
-  while (b) {
-    if (!EVP_EncryptUpdate(aead_ctx, cipher + cipher_len, &len, reinterpret_cast<unsigned char *>(b->buf()), b->size())) {
+  cipher_len = 0;
+  for (Ptr<IOBufferBlock> b = plain; b; b = b->next) {
+    if (!EVP_EncryptUpdate(aead_ctx, cipher + cipher_len, &len, reinterpret_cast<unsigned char *>(b->start()), b->size())) {
       return false;
     }
     cipher_len += len;
-    b = b->next;
   }
 
   if (!EVP_EncryptFinal_ex(aead_ctx, cipher + cipher_len, &len)) {
