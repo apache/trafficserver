@@ -30,6 +30,7 @@
 
 #include "QUICConfig.h"
 #include "QUICGlobals.h"
+#include "QUICDebugNames.h"
 #include "QUICPacketProtectionKeyInfo.h"
 
 static constexpr char tag[] = "quic_tls";
@@ -140,7 +141,7 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, void 
   case SSL_KEY_CLIENT_EARLY_TRAFFIC:
     Debug("vv_quic_crypto", "%s", QUIC_CLIENT_EARLY_TRAFFIC_SECRET_LABEL.data());
     level = QUICEncryptionLevel::ZERO_RTT;
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
+    if (SSL_is_server(ssl)) {
       qtls->update_key_materials_for_read(level, secret, secret_len);
     } else {
       qtls->update_key_materials_for_write(level, secret, secret_len);
@@ -149,7 +150,7 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, void 
   case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
     Debug("vv_quic_crypto", "%s", QUIC_CLIENT_HANDSHAKE_TRAFFIC_SECRET_LABEL.data());
     level = QUICEncryptionLevel::HANDSHAKE;
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
+    if (SSL_is_server(ssl)) {
       qtls->update_key_materials_for_read(level, secret, secret_len);
     } else {
       qtls->update_key_materials_for_write(level, secret, secret_len);
@@ -158,7 +159,7 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, void 
   case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
     Debug("vv_quic_crypto", "%s", QUIC_SERVER_HANDSHAKE_TRAFFIC_SECRET_LABEL.data());
     level = QUICEncryptionLevel::HANDSHAKE;
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
+    if (SSL_is_server(ssl)) {
       qtls->update_key_materials_for_write(level, secret, secret_len);
     } else {
       qtls->update_key_materials_for_read(level, secret, secret_len);
@@ -167,7 +168,7 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, void 
   case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
     Debug("vv_quic_crypto", "%s", QUIC_CLIENT_TRAFFIC_SECRET_LABEL.data());
     level = QUICEncryptionLevel::ONE_RTT;
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
+    if (SSL_is_server(ssl)) {
       qtls->update_key_materials_for_read(level, secret, secret_len);
     } else {
       qtls->update_key_materials_for_write(level, secret, secret_len);
@@ -176,7 +177,7 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, void 
   case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
     Debug("vv_quic_crypto", "%s", QUIC_SERVER_TRAFFIC_SECRET_LABEL.data());
     level = QUICEncryptionLevel::ONE_RTT;
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
+    if (SSL_is_server(ssl)) {
       qtls->update_key_materials_for_write(level, secret, secret_len);
     } else {
       qtls->update_key_materials_for_read(level, secret, secret_len);
