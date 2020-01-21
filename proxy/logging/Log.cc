@@ -140,6 +140,12 @@ Log::change_configuration()
   Debug("log-config", "... new configuration in place");
 }
 
+void
+Log::reopen_moved_log_files()
+{
+  Log::config->log_object_manager.reopen_moved_log_files();
+}
+
 /*-------------------------------------------------------------------------
   PERIODIC EVENTS
 
