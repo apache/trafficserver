@@ -17,8 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS += \
-	-I$(abs_top_srcdir)/lib/yamlcpp/include
+AM_CPPFLAGS += -I$(abs_top_srcdir)/lib/yamlcpp/include
 
 noinst_LTLIBRARIES = libyamlcpp.la
 
@@ -50,3 +49,17 @@ src/simplekey.cpp \
 src/singledocparser.cpp \
 src/stream.cpp \
 src/tag.cpp
+
+
+yamlcpp_includedir=$(includedir)/yaml-cpp
+yamlcpp_include_HEADERS = \
+        $(srcdir)/include/yaml-cpp/*.h
+
+yamlcpp_node_includedir=$(includedir)/yaml-cpp/node
+yamlcpp_node_include_HEADERS = \
+	$(srcdir)/include/yaml-cpp/node/*.h
+
+yamlcpp_node_detail_includedir=$(includedir)/yaml-cpp/node/detail
+yamlcpp_node_detail_include_HEADERS = \
+	$(srcdir)/include/yaml-cpp/node/detail/*.h
+	

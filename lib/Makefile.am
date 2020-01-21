@@ -34,3 +34,6 @@ all-local:	$(LOCAL)
 
 clean-local:
 	$(MAKE) -C yamlcpp clean
+
+install-data-local:
+	$(MAKE) -C yamlcpp install
