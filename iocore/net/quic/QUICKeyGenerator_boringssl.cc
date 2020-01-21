@@ -25,33 +25,34 @@
 
 #include <openssl/ssl.h>
 size_t
-QUICKeyGenerator::_get_key_len(const QUIC_EVP_CIPHER *cipher) const
+QUICKeyGenerator::_get_key_len(const EVP_CIPHER *cipher) const
 {
-  return EVP_AEAD_key_length(cipher);
+  return EVP_CIPHER_key_length(cipher);
 }
 
 size_t
-QUICKeyGenerator::_get_iv_len(const QUIC_EVP_CIPHER *cipher) const
+QUICKeyGenerator::_get_iv_len(const EVP_CIPHER *cipher) const
 {
-  return EVP_AEAD_nonce_length(cipher);
+  return EVP_CIPHER_iv_length(cipher);
 }
 
-const QUIC_EVP_CIPHER *
+const EVP_CIPHER *
 QUICKeyGenerator::_get_cipher_for_initial() const
 {
-  return EVP_aead_aes_128_gcm();
+  return EVP_aes_128_gcm();
 }
 
-const QUIC_EVP_CIPHER *
+const EVP_CIPHER *
 QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
 {
   switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
   case TLS1_CK_AES_128_GCM_SHA256:
-    return EVP_aead_aes_128_gcm();
+    return EVP_aes_128_gcm();
   case TLS1_CK_AES_256_GCM_SHA384:
-    return EVP_aead_aes_256_gcm();
+    return EVP_aes_256_gcm();
   case TLS1_CK_CHACHA20_POLY1305_SHA256:
-    return EVP_aead_chacha20_poly1305();
+    return nullptr;
+    // return EVP_aead_chacha20_poly1305();
   default:
     ink_assert(false);
     return nullptr;

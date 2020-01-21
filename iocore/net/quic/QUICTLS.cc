@@ -239,6 +239,127 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
   return 1;
 }
 
+void
+QUICTLS::update_negotiated_cipher()
+{
+  this->_store_negotiated_cipher();
+  this->_store_negotiated_cipher_for_hp();
+}
+
+void
+QUICTLS::update_key_materials_for_read(QUICEncryptionLevel level, const uint8_t *secret, size_t secret_len)
+{
+  if (this->_state == HandshakeState::ABORTED) {
+    return;
+  }
+
+  QUICKeyPhase phase;
+  const EVP_CIPHER *cipher;
+
+  switch (level) {
+  case QUICEncryptionLevel::ZERO_RTT:
+    phase  = QUICKeyPhase::ZERO_RTT;
+    cipher = this->_pp_key_info.get_cipher(phase);
+    break;
+  case QUICEncryptionLevel::HANDSHAKE:
+    this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
+    phase = QUICKeyPhase::HANDSHAKE;
+    break;
+  case QUICEncryptionLevel::ONE_RTT:
+    this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
+    // TODO Support Key Update
+    phase = QUICKeyPhase::PHASE_0;
+    break;
+  default:
+    phase = QUICKeyPhase::INITIAL;
+    break;
+  }
+
+  QUICHKDF hkdf(this->_get_handshake_digest());
+
+  uint8_t *key_for_hp;
+  uint8_t *key;
+  uint8_t *iv;
+  size_t key_for_hp_len;
+  size_t key_len;
+  size_t *iv_len;
+
+  cipher         = this->_pp_key_info.get_cipher(phase);
+  key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
+  key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
+  key            = this->_pp_key_info.decryption_key(phase);
+  key_len        = this->_pp_key_info.decryption_key_len(phase);
+  iv             = this->_pp_key_info.decryption_iv(phase);
+  iv_len         = this->_pp_key_info.decryption_iv_len(phase);
+
+  if (this->_netvc_context == NET_VCONNECTION_IN) {
+    this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
+    this->_print_km("update - client", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len, phase);
+  } else {
+    this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
+    this->_print_km("update - server", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len, phase);
+  }
+
+  this->_pp_key_info.set_decryption_key_available(phase);
+}
+
+void
+QUICTLS::update_key_materials_for_write(QUICEncryptionLevel level, const uint8_t *secret, size_t secret_len)
+{
+  if (this->_state == HandshakeState::ABORTED) {
+    return;
+  }
+
+  QUICKeyPhase phase;
+  const EVP_CIPHER *cipher;
+
+  switch (level) {
+  case QUICEncryptionLevel::ZERO_RTT:
+    phase  = QUICKeyPhase::ZERO_RTT;
+    cipher = this->_pp_key_info.get_cipher(phase);
+    break;
+  case QUICEncryptionLevel::HANDSHAKE:
+    this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
+    phase  = QUICKeyPhase::HANDSHAKE;
+    cipher = this->_pp_key_info.get_cipher(phase);
+    break;
+  case QUICEncryptionLevel::ONE_RTT:
+    this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
+    phase  = QUICKeyPhase::PHASE_0;
+    cipher = this->_pp_key_info.get_cipher(phase);
+    break;
+  default:
+    phase = QUICKeyPhase::INITIAL;
+    break;
+  }
+
+  QUICHKDF hkdf(this->_get_handshake_digest());
+
+  uint8_t *key_for_hp;
+  uint8_t *key;
+  uint8_t *iv;
+  size_t key_for_hp_len;
+  size_t key_len;
+  size_t *iv_len;
+
+  key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
+  key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
+  key            = this->_pp_key_info.encryption_key(phase);
+  key_len        = this->_pp_key_info.encryption_key_len(phase);
+  iv             = this->_pp_key_info.encryption_iv(phase);
+  iv_len         = this->_pp_key_info.encryption_iv_len(phase);
+
+  if (this->_netvc_context == NET_VCONNECTION_IN) {
+    this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
+    this->_print_km("update - server", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len, phase);
+  } else {
+    this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
+    this->_print_km("update - client", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len, phase);
+  }
+
+  this->_pp_key_info.set_encryption_key_available(phase);
+}
+
 const char *
 QUICTLS::negotiated_cipher_suite() const
 {
@@ -371,10 +492,10 @@ QUICTLS::_update_encryption_level(QUICEncryptionLevel level)
 
 void
 QUICTLS::_print_km(const char *header, const uint8_t *key_for_hp, size_t key_for_hp_len, const uint8_t *key, size_t key_len,
-                   const uint8_t *iv, size_t iv_len, const uint8_t *secret, size_t secret_len)
+                   const uint8_t *iv, size_t iv_len, const uint8_t *secret, size_t secret_len, QUICKeyPhase phase)
 {
   if (is_debug_tag_set("vv_quic_crypto")) {
-    Debug("vv_quic_crypto", "%s", header);
+    Debug("vv_quic_crypto", "%s - %s", header, QUICDebugNames::key_phase(phase));
     uint8_t print_buf[128];
     if (secret) {
       QUICDebug::to_hex(print_buf, static_cast<const uint8_t *>(secret), secret_len);

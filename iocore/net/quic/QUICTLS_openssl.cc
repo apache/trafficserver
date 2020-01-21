@@ -30,7 +30,6 @@
 
 #include "QUICConfig.h"
 #include "QUICGlobals.h"
-#include "QUICDebugNames.h"
 #include "QUICPacketProtectionKeyInfo.h"
 
 static constexpr char tag[] = "quic_tls";
@@ -133,187 +132,64 @@ key_cb(SSL *ssl, int name, const unsigned char *secret, size_t secret_len, void 
   }
 
   QUICTLS *qtls = reinterpret_cast<QUICTLS *>(arg);
-  qtls->update_key_materials_on_key_cb(name, secret, secret_len);
+
+  qtls->update_negotiated_cipher();
+
+  QUICEncryptionLevel level;
+  switch (name) {
+  case SSL_KEY_CLIENT_EARLY_TRAFFIC:
+    Debug("vv_quic_crypto", "%s", QUIC_CLIENT_EARLY_TRAFFIC_SECRET_LABEL.data());
+    level = QUICEncryptionLevel::ZERO_RTT;
+    if (this->_netvc_context == NET_VCONNECTION_IN) {
+      qtls->update_key_materials_for_read(level, secret, secret_len);
+    } else {
+      qtls->update_key_materials_for_write(level, secret, secret_len);
+    }
+    break;
+  case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
+    Debug("vv_quic_crypto", "%s", QUIC_CLIENT_HANDSHAKE_TRAFFIC_SECRET_LABEL.data());
+    level = QUICEncryptionLevel::HANDSHAKE;
+    if (this->_netvc_context == NET_VCONNECTION_IN) {
+      qtls->update_key_materials_for_read(level, secret, secret_len);
+    } else {
+      qtls->update_key_materials_for_write(level, secret, secret_len);
+    }
+    break;
+  case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
+    Debug("vv_quic_crypto", "%s", QUIC_SERVER_HANDSHAKE_TRAFFIC_SECRET_LABEL.data());
+    level = QUICEncryptionLevel::HANDSHAKE;
+    if (this->_netvc_context == NET_VCONNECTION_IN) {
+      qtls->update_key_materials_for_write(level, secret, secret_len);
+    } else {
+      qtls->update_key_materials_for_read(level, secret, secret_len);
+    }
+    break;
+  case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
+    Debug("vv_quic_crypto", "%s", QUIC_CLIENT_TRAFFIC_SECRET_LABEL.data());
+    level = QUICEncryptionLevel::ONE_RTT;
+    if (this->_netvc_context == NET_VCONNECTION_IN) {
+      qtls->update_key_materials_for_read(level, secret, secret_len);
+    } else {
+      qtls->update_key_materials_for_write(level, secret, secret_len);
+    }
+    break;
+  case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
+    Debug("vv_quic_crypto", "%s", QUIC_SERVER_TRAFFIC_SECRET_LABEL.data());
+    level = QUICEncryptionLevel::ONE_RTT;
+    if (this->_netvc_context == NET_VCONNECTION_IN) {
+      qtls->update_key_materials_for_write(level, secret, secret_len);
+    } else {
+      qtls->update_key_materials_for_read(level, secret, secret_len);
+    }
+    break;
+  default:
+    level = QUICEncryptionLevel::NONE;
+    break;
+  }
 
   log_secret(ssl, name, secret, secret_len);
 
   return 1;
-}
-
-void
-QUICTLS::update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t secret_len)
-{
-  if (is_debug_tag_set("vv_quic_crypto")) {
-    switch (name) {
-    case SSL_KEY_CLIENT_EARLY_TRAFFIC:
-      Debug("vv_quic_crypto", "%s", QUIC_CLIENT_EARLY_TRAFFIC_SECRET_LABEL.data());
-      break;
-    case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
-      Debug("vv_quic_crypto", "%s", QUIC_CLIENT_HANDSHAKE_TRAFFIC_SECRET_LABEL.data());
-      break;
-    case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
-      Debug("vv_quic_crypto", "%s", QUIC_SERVER_HANDSHAKE_TRAFFIC_SECRET_LABEL.data());
-      break;
-    case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
-      Debug("vv_quic_crypto", "%s", QUIC_CLIENT_TRAFFIC_SECRET_LABEL.data());
-      break;
-    case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
-      Debug("vv_quic_crypto", "%s", QUIC_SERVER_TRAFFIC_SECRET_LABEL.data());
-      break;
-    default:
-      break;
-    }
-  }
-
-  if (this->_state == HandshakeState::ABORTED) {
-    return;
-  }
-
-  QUICKeyPhase phase;
-  const QUIC_EVP_CIPHER *cipher;
-  QUICHKDF hkdf(this->_get_handshake_digest());
-
-  this->_store_negotiated_cipher();
-  this->_store_negotiated_cipher_for_hp();
-
-  uint8_t *key_for_hp;
-  uint8_t *key;
-  uint8_t *iv;
-  size_t key_for_hp_len;
-  size_t key_len;
-  size_t *iv_len;
-
-  switch (name) {
-  case SSL_KEY_CLIENT_EARLY_TRAFFIC:
-    // this->_update_encryption_level(QUICEncryptionLevel::ZERO_RTT);
-    phase  = QUICKeyPhase::ZERO_RTT;
-    cipher = this->_pp_key_info.get_cipher(phase);
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
-      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.decryption_key(phase);
-      key_len        = this->_pp_key_info.decryption_key_len(phase);
-      iv             = this->_pp_key_info.decryption_iv(phase);
-      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
-      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_decryption_key_available(phase);
-    } else {
-      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.encryption_key(phase);
-      key_len        = this->_pp_key_info.encryption_key_len(phase);
-      iv             = this->_pp_key_info.encryption_iv(phase);
-      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
-      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_encryption_key_available(phase);
-    }
-    this->_print_km("update - client - 0rtt", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
-    break;
-  case SSL_KEY_CLIENT_HANDSHAKE_TRAFFIC:
-    this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
-    phase  = QUICKeyPhase::HANDSHAKE;
-    cipher = this->_pp_key_info.get_cipher(phase);
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
-      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.decryption_key(phase);
-      key_len        = this->_pp_key_info.decryption_key_len(phase);
-      iv             = this->_pp_key_info.decryption_iv(phase);
-      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
-      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_decryption_key_available(phase);
-    } else {
-      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.encryption_key(phase);
-      key_len        = this->_pp_key_info.encryption_key_len(phase);
-      iv             = this->_pp_key_info.encryption_iv(phase);
-      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
-      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_encryption_key_available(phase);
-    }
-    this->_print_km("update - client - handshake", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
-    break;
-  case SSL_KEY_CLIENT_APPLICATION_TRAFFIC:
-    this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
-    phase  = QUICKeyPhase::PHASE_0;
-    cipher = this->_pp_key_info.get_cipher(phase);
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
-      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.decryption_key(phase);
-      key_len        = this->_pp_key_info.decryption_key_len(phase);
-      iv             = this->_pp_key_info.decryption_iv(phase);
-      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
-      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_decryption_key_available(phase);
-    } else {
-      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.encryption_key(phase);
-      key_len        = this->_pp_key_info.encryption_key_len(phase);
-      iv             = this->_pp_key_info.encryption_iv(phase);
-      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
-      this->_keygen_for_client.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_encryption_key_available(phase);
-    }
-    this->_print_km("update - client - 1rtt", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
-    break;
-  case SSL_KEY_SERVER_HANDSHAKE_TRAFFIC:
-    this->_update_encryption_level(QUICEncryptionLevel::HANDSHAKE);
-    phase  = QUICKeyPhase::HANDSHAKE;
-    cipher = this->_pp_key_info.get_cipher(phase);
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
-      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.encryption_key(phase);
-      key_len        = this->_pp_key_info.encryption_key_len(phase);
-      iv             = this->_pp_key_info.encryption_iv(phase);
-      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
-      this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_encryption_key_available(phase);
-    } else {
-      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.decryption_key(phase);
-      key_len        = this->_pp_key_info.decryption_key_len(phase);
-      iv             = this->_pp_key_info.decryption_iv(phase);
-      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
-      this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_decryption_key_available(phase);
-    }
-    this->_print_km("update - server - handshake", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
-    break;
-  case SSL_KEY_SERVER_APPLICATION_TRAFFIC:
-    this->_update_encryption_level(QUICEncryptionLevel::ONE_RTT);
-    phase  = QUICKeyPhase::PHASE_0;
-    cipher = this->_pp_key_info.get_cipher(phase);
-    if (this->_netvc_context == NET_VCONNECTION_IN) {
-      key_for_hp     = this->_pp_key_info.encryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.encryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.encryption_key(phase);
-      key_len        = this->_pp_key_info.encryption_key_len(phase);
-      iv             = this->_pp_key_info.encryption_iv(phase);
-      iv_len         = this->_pp_key_info.encryption_iv_len(phase);
-      this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_encryption_key_available(phase);
-    } else {
-      key_for_hp     = this->_pp_key_info.decryption_key_for_hp(phase);
-      key_for_hp_len = this->_pp_key_info.decryption_key_for_hp_len(phase);
-      key            = this->_pp_key_info.decryption_key(phase);
-      key_len        = this->_pp_key_info.decryption_key_len(phase);
-      iv             = this->_pp_key_info.decryption_iv(phase);
-      iv_len         = this->_pp_key_info.decryption_iv_len(phase);
-      this->_keygen_for_server.regenerate(key_for_hp, key, iv, iv_len, secret, secret_len, cipher, hkdf);
-      this->_pp_key_info.set_decryption_key_available(phase);
-    }
-    this->_print_km("update - server - 1rtt", key_for_hp, key_for_hp_len, key, key_len, iv, *iv_len, secret, secret_len);
-    break;
-  default:
-    break;
-  }
-
-  return;
 }
 
 QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,

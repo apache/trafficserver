@@ -26,24 +26,24 @@
 #include <openssl/ssl.h>
 
 size_t
-QUICKeyGenerator::_get_key_len(const QUIC_EVP_CIPHER *cipher) const
+QUICKeyGenerator::_get_key_len(const EVP_CIPHER *cipher) const
 {
   return EVP_CIPHER_key_length(cipher);
 }
 
 size_t
-QUICKeyGenerator::_get_iv_len(const QUIC_EVP_CIPHER *cipher) const
+QUICKeyGenerator::_get_iv_len(const EVP_CIPHER *cipher) const
 {
   return EVP_CIPHER_iv_length(cipher);
 }
 
-const QUIC_EVP_CIPHER *
+const EVP_CIPHER *
 QUICKeyGenerator::_get_cipher_for_initial() const
 {
   return EVP_aes_128_gcm();
 }
 
-const QUIC_EVP_CIPHER *
+const EVP_CIPHER *
 QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
 {
   switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
