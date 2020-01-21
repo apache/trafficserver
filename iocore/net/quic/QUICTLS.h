@@ -72,7 +72,9 @@ public:
   bool is_handshake_finished() const override;
   bool is_ready_to_derive() const override;
   int initialize_key_materials(QUICConnectionId cid) override;
-  void update_key_materials_on_key_cb(int name, const uint8_t *secret, size_t secret_len);
+  void update_negotiated_cipher();
+  void update_key_materials_for_read(QUICEncryptionLevel level, const uint8_t *secret, size_t secret_len);
+  void update_key_materials_for_write(QUICEncryptionLevel level, const uint8_t *secret, size_t secret_len);
   const char *negotiated_cipher_suite() const override;
   void negotiated_application_name(const uint8_t **name, unsigned int *len) const override;
   QUICEncryptionLevel current_encryption_level() const override;
@@ -99,7 +101,8 @@ private:
   void _store_negotiated_cipher_for_hp();
 
   void _print_km(const char *header, const uint8_t *key_for_hp, size_t key_for_hp_len, const uint8_t *key, size_t key_len,
-                 const uint8_t *iv, size_t iv_len, const uint8_t *secret = nullptr, size_t secret_len = 0);
+                 const uint8_t *iv, size_t iv_len, const uint8_t *secret = nullptr, size_t secret_len = 0,
+                 QUICKeyPhase phase = QUICKeyPhase::INITIAL);
   static void _print_hs_message(int content_type, const void *buf, size_t len);
 
   static void _msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg);

@@ -30,36 +30,46 @@
 #include <openssl/aead.h>
 
 #include "QUICGlobals.h"
+#include "QUICPacketProtectionKeyInfo.h"
 
 static constexpr char tag[] = "quic_tls";
+
+static QUICEncryptionLevel
+convert_level_ats2ssl(enum ssl_encryption_level_t level)
+{
+  switch (level) {
+  case ssl_encryption_initial:
+    return QUICEncryptionLevel::INITIAL;
+  case ssl_encryption_early_data:
+    return QUICEncryptionLevel::ZERO_RTT;
+  case ssl_encryption_handshake:
+    return QUICEncryptionLevel::HANDSHAKE;
+  case ssl_encryption_application:
+    return QUICEncryptionLevel::ONE_RTT;
+  default:
+    return QUICEncryptionLevel::NONE;
+  }
+}
 
 static int
 set_encryption_secrets(SSL *ssl, enum ssl_encryption_level_t level, const uint8_t *read_secret, const uint8_t *write_secret,
                        size_t secret_len)
 {
-  // QUICTLS *qtls = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
-  Debug(tag, "%d, read_secret=%p, write_secret=%p secret_len=%zu", level, read_secret, write_secret, secret_len);
+  QUICTLS *qtls = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
+
+  qtls->update_negotiated_cipher();
+
+  QUICEncryptionLevel ats_level = convert_level_ats2ssl(level);
+  qtls->update_key_materials_for_read(ats_level, read_secret, secret_len);
+  qtls->update_key_materials_for_write(ats_level, write_secret, secret_len);
+
   return 1;
 }
 
 static int
 add_handshake_data(SSL *ssl, enum ssl_encryption_level_t level, const uint8_t *data, size_t len)
 {
-  QUICEncryptionLevel ats_level;
-  switch (level) {
-  case ssl_encryption_initial:
-    ats_level = QUICEncryptionLevel::INITIAL;
-    break;
-  case ssl_encryption_early_data:
-    ats_level = QUICEncryptionLevel::ZERO_RTT;
-    break;
-  case ssl_encryption_handshake:
-    ats_level = QUICEncryptionLevel::HANDSHAKE;
-    break;
-  case ssl_encryption_application:
-    ats_level = QUICEncryptionLevel::ONE_RTT;
-    break;
-  }
+  QUICEncryptionLevel ats_level = convert_level_ats2ssl(level);
 
   QUICTLS *qtls = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
   qtls->on_handshake_data_generated(ats_level, data, len);
@@ -90,10 +100,7 @@ QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, si
   // Debug for reading
   if (write_p == 0) {
     QUICTLS::_print_hs_message(content_type, buf, len);
-    return;
   }
-
-  return;
 }
 
 QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, NetVConnectionContext_t nvc_ctx,
@@ -150,6 +157,71 @@ QUICTLS::_process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHand
   return SSL_process_quic_post_handshake(this->_ssl);
 }
 
+void
+QUICTLS::_store_negotiated_cipher()
+{
+  ink_assert(this->_ssl);
+
+  const EVP_CIPHER *cipher     = nullptr;
+  size_t tag_len               = 0;
+  const SSL_CIPHER *ssl_cipher = SSL_get_current_cipher(this->_ssl);
+
+  if (ssl_cipher) {
+    switch (SSL_CIPHER_get_id(ssl_cipher)) {
+    case TLS1_CK_AES_128_GCM_SHA256:
+      cipher  = EVP_aes_128_gcm();
+      tag_len = EVP_GCM_TLS_TAG_LEN;
+      break;
+    case TLS1_CK_AES_256_GCM_SHA384:
+      cipher  = EVP_aes_256_gcm();
+      tag_len = EVP_GCM_TLS_TAG_LEN;
+      break;
+    case TLS1_CK_CHACHA20_POLY1305_SHA256:
+      // cipher  = EVP_chacha20_poly1305();
+      cipher  = nullptr;
+      tag_len = 16;
+      break;
+    default:
+      ink_assert(false);
+    }
+  } else {
+    ink_assert(false);
+  }
+
+  this->_pp_key_info.set_cipher(cipher, tag_len);
+}
+
+void
+QUICTLS::_store_negotiated_cipher_for_hp()
+{
+  ink_assert(this->_ssl);
+
+  const EVP_CIPHER *cipher_for_hp = nullptr;
+  const SSL_CIPHER *ssl_cipher    = SSL_get_current_cipher(this->_ssl);
+
+  if (ssl_cipher) {
+    switch (SSL_CIPHER_get_id(ssl_cipher)) {
+    case TLS1_CK_AES_128_GCM_SHA256:
+      cipher_for_hp = EVP_aes_128_ecb();
+      break;
+    case TLS1_CK_AES_256_GCM_SHA384:
+      cipher_for_hp = EVP_aes_256_ecb();
+      break;
+    case TLS1_CK_CHACHA20_POLY1305_SHA256:
+      // cipher_for_hp = EVP_chacha20();
+      cipher_for_hp = nullptr;
+      break;
+    default:
+      ink_assert(false);
+      break;
+    }
+  } else {
+    ink_assert(false);
+  }
+
+  this->_pp_key_info.set_cipher_for_hp(cipher_for_hp);
+}
+
 int
 QUICTLS::_read_early_data()
 {
@@ -188,12 +260,27 @@ QUICTLS::_pass_quic_data_to_ssl_impl(const QUICHandshakeMsgs &in)
       ossl_level = ssl_encryption_application;
       break;
     }
-    if (in.offsets[index]) {
+    if (in.offsets[index + 1] - in.offsets[index]) {
       int start = 0;
-      for (int i = 0; i < index; --i) {
+      for (int i = 0; i < index; ++i) {
         start += in.offsets[index];
       }
-      SSL_provide_quic_data(this->_ssl, ossl_level, in.buf + start, in.offsets[index]);
+      SSL_provide_quic_data(this->_ssl, ossl_level, in.buf + start, in.offsets[index + 1] - in.offsets[index]);
     }
+  }
+}
+
+const EVP_MD *
+QUICTLS::_get_handshake_digest() const
+{
+  switch (SSL_CIPHER_get_id(SSL_get_current_cipher(this->_ssl))) {
+  case TLS1_CK_AES_128_GCM_SHA256:
+  case TLS1_CK_CHACHA20_POLY1305_SHA256:
+    return EVP_sha256();
+  case TLS1_CK_AES_256_GCM_SHA384:
+    return EVP_sha384();
+  default:
+    ink_assert(false);
+    return nullptr;
   }
 }

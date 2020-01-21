@@ -495,9 +495,8 @@ QUICHandshake::do_handshake()
       // TODO: check size
       if (bytes_avail > 0) {
         stream->read(in.buf + in.offsets[index], bytes_avail);
-        in.offsets[index] = bytes_avail;
-        in.offsets[4] += bytes_avail;
       }
+      in.offsets[index + 1] = in.offsets[index] + bytes_avail;
     }
   }
 

@@ -45,8 +45,8 @@ constexpr static std::string_view LABEL_FOR_HP("quic hp"sv);
 void
 QUICKeyGenerator::generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICConnectionId cid)
 {
-  const QUIC_EVP_CIPHER *cipher = this->_get_cipher_for_initial();
-  const EVP_MD *md              = EVP_sha256();
+  const EVP_CIPHER *cipher = this->_get_cipher_for_initial();
+  const EVP_MD *md         = EVP_sha256();
   uint8_t secret[512];
   size_t secret_len = sizeof(secret);
   QUICHKDF hkdf(md);
@@ -79,14 +79,14 @@ QUICKeyGenerator::generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t
 
 void
 QUICKeyGenerator::regenerate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, const uint8_t *secret,
-                             size_t secret_len, const QUIC_EVP_CIPHER *cipher, QUICHKDF &hkdf)
+                             size_t secret_len, const EVP_CIPHER *cipher, QUICHKDF &hkdf)
 {
   this->_generate(hp_key, pp_key, iv, iv_len, hkdf, secret, secret_len, cipher);
 }
 
 int
 QUICKeyGenerator::_generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICHKDF &hkdf, const uint8_t *secret,
-                            size_t secret_len, const QUIC_EVP_CIPHER *cipher)
+                            size_t secret_len, const EVP_CIPHER *cipher)
 {
   // Generate key, iv, and hp_key
   //   key    = HKDF-Expand-Label(S, "quic key", "", key_length)
