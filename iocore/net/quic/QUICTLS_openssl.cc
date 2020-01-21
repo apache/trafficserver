@@ -114,10 +114,7 @@ QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, si
     return;
   }
 
-  QUICHandshakeMsgs *msg = reinterpret_cast<QUICHandshakeMsgs *>(arg);
-  if (msg == nullptr) {
-    return;
-  }
+  QUICHandshakeMsgs *msg = &this->_out;
 
   const uint8_t *msg_buf = reinterpret_cast<const uint8_t *>(buf);
 
@@ -140,6 +137,7 @@ QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, si
     for (int i = next_index; i < 5; ++i) {
       msg->offsets[i] = next_level_offset;
     }
+    this->set_ready_for_write();
   } else if (content_type == SSL3_RT_ALERT && msg_buf[0] == SSL3_AL_FATAL && len == 2) {
     msg->error_code = QUICTLS::convert_to_quic_trans_error_code(msg_buf[1]);
   }

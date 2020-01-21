@@ -36,6 +36,9 @@
 #include "I_NetVConnection.h"
 #include "QUICHandshakeProtocol.h"
 
+// TODO: fix size
+static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
+
 class QUICTLS : public QUICHandshakeProtocol
 {
 public:
@@ -64,7 +67,7 @@ public:
   SSL *ssl_handle();
 
   // QUICHandshakeProtocol
-  int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override;
+  int handshake(QUICHandshakeMsgs **out, const QUICHandshakeMsgs *in) override;
   void reset() override;
   bool is_handshake_finished() const override;
   bool is_ready_to_derive() const override;
@@ -75,6 +78,10 @@ public:
   QUICEncryptionLevel current_encryption_level() const override;
   void abort_handshake() override;
 
+  void set_ready_for_write();
+
+  void on_handshake_data_generated(QUICEncryptionLevel level, const uint8_t *data, size_t len);
+
 private:
   QUICKeyGenerator _keygen_for_client = QUICKeyGenerator(QUICKeyGenerator::Context::CLIENT);
   QUICKeyGenerator _keygen_for_server = QUICKeyGenerator(QUICKeyGenerator::Context::SERVER);
@@ -82,7 +89,7 @@ private:
 
   int _read_early_data();
   int _write_early_data();
-  int _handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in);
+  int _handshake(QUICHandshakeMsgs **out, const QUICHandshakeMsgs *in);
   int _process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in);
   void _generate_0rtt_key();
   void _update_encryption_level(QUICEncryptionLevel level);
@@ -106,4 +113,8 @@ private:
 
   std::shared_ptr<const QUICTransportParameters> _local_transport_parameters  = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_transport_parameters = nullptr;
+
+  uint8_t _out_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
+  QUICHandshakeMsgs _out                  = {_out_buf, MAX_HANDSHAKE_MSG_LEN, {0}, 0};
+  bool _should_flush                      = false;
 };

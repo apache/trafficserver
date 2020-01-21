@@ -43,7 +43,7 @@ public:
   QUICHandshakeProtocol(QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info) {}
   virtual ~QUICHandshakeProtocol(){};
 
-  virtual int handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)              = 0;
+  virtual int handshake(QUICHandshakeMsgs **out, const QUICHandshakeMsgs *in)             = 0;
   virtual void reset()                                                                    = 0;
   virtual bool is_handshake_finished() const                                              = 0;
   virtual bool is_ready_to_derive() const                                                 = 0;
