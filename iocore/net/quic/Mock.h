@@ -693,7 +693,7 @@ public:
   MockQUICHandshakeProtocol(QUICPacketProtectionKeyInfo &pp_key_info) : QUICHandshakeProtocol(pp_key_info) {}
 
   int
-  handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in) override
+  handshake(QUICHandshakeMsgs **out, const QUICHandshakeMsgs *in) override
   {
     return true;
   }

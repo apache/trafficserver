@@ -30,6 +30,7 @@
 #include "tscore/Diags.h"
 
 #include "RecordsConfig.h"
+#include "QUICGlobals.h"
 #include "QUICConfig.h"
 
 struct EventProcessorListener : Catch::TestEventListenerBase {
@@ -49,6 +50,7 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     LibRecordsConfigInit();
 
     QUICConfig::startup();
+    QUIC::init();
 
     EThread *thread = new EThread();
     thread->set_specific();
