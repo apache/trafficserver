@@ -89,6 +89,7 @@ private:
 
   int _read_early_data();
   int _write_early_data();
+  void _pass_quic_data_to_ssl_impl(const QUICHandshakeMsgs &in);
   int _handshake(QUICHandshakeMsgs **out, const QUICHandshakeMsgs *in);
   int _process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in);
   void _generate_0rtt_key();
@@ -99,6 +100,7 @@ private:
 
   void _print_km(const char *header, const uint8_t *key_for_hp, size_t key_for_hp_len, const uint8_t *key, size_t key_len,
                  const uint8_t *iv, size_t iv_len, const uint8_t *secret = nullptr, size_t secret_len = 0);
+  static void _print_hs_message(int content_type, const void *buf, size_t len);
 
   static void _msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg);
   const char *_session_file              = nullptr;

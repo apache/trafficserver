@@ -44,102 +44,30 @@ static constexpr std::string_view QUIC_SERVER_HANDSHAKE_TRAFFIC_SECRET_LABEL("QU
 static constexpr std::string_view QUIC_CLIENT_TRAFFIC_SECRET_LABEL("QUIC_CLIENT_TRAFFIC_SECRET_0"sv);
 static constexpr std::string_view QUIC_SERVER_TRAFFIC_SECRET_LABEL("QUIC_SERVER_TRAFFIC_SECRET_0"sv);
 
-static const char *
-content_type_str(int type)
-{
-  switch (type) {
-  case SSL3_RT_CHANGE_CIPHER_SPEC:
-    return "CHANGE_CIPHER_SPEC";
-  case SSL3_RT_ALERT:
-    return "ALERT";
-  case SSL3_RT_HANDSHAKE:
-    return "HANDSHAKE";
-  case SSL3_RT_APPLICATION_DATA:
-    return "APPLICATION_DATA";
-  case SSL3_RT_HEADER:
-    // The buf contains the record header bytes only
-    return "HEADER";
-  case SSL3_RT_INNER_CONTENT_TYPE:
-    // Used when an encrypted TLSv1.3 record is sent or received. In encrypted TLSv1.3 records the content type in the record header
-    // is always SSL3_RT_APPLICATION_DATA. The real content type for the record is contained in an "inner" content type. buf
-    // contains the encoded "inner" content type byte.
-    return "INNER_CONTENT_TYPE";
-  default:
-    return "UNKNOWN";
-  }
-}
-
-static const char *
-hs_type_str(int type)
-{
-  switch (type) {
-  case SSL3_MT_CLIENT_HELLO:
-    return "CLIENT_HELLO";
-  case SSL3_MT_SERVER_HELLO:
-    return "SERVER_HELLO";
-  case SSL3_MT_NEWSESSION_TICKET:
-    return "NEWSESSION_TICKET";
-  case SSL3_MT_END_OF_EARLY_DATA:
-    return "END_OF_EARLY_DATA";
-  case SSL3_MT_ENCRYPTED_EXTENSIONS:
-    return "ENCRYPTED_EXTENSIONS";
-  case SSL3_MT_CERTIFICATE:
-    return "CERTIFICATE";
-  case SSL3_MT_CERTIFICATE_VERIFY:
-    return "CERTIFICATE_VERIFY";
-  case SSL3_MT_FINISHED:
-    return "FINISHED";
-  case SSL3_MT_KEY_UPDATE:
-    return "KEY_UPDATE";
-  case SSL3_MT_MESSAGE_HASH:
-    return "MESSAGE_HASH";
-  default:
-    return "UNKNOWN";
-  }
-}
-
 void
 QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
 {
   // Debug for reading
-  if (write_p == 0 && (content_type == SSL3_RT_HANDSHAKE || content_type == SSL3_RT_ALERT)) {
-    const uint8_t *tmp = reinterpret_cast<const uint8_t *>(buf);
-    int msg_type       = tmp[0];
-
-    Debug(tag, "%s (%d), %s (%d) len=%zu", content_type_str(content_type), content_type, hs_type_str(msg_type), msg_type, len);
+  if (write_p == 0) {
+    QUICTLS::_print_hs_message(content_type, buf, len);
     return;
   }
 
-  if (!write_p || !arg || (content_type != SSL3_RT_HANDSHAKE && content_type != SSL3_RT_ALERT)) {
+  if (!write_p || (content_type != SSL3_RT_HANDSHAKE && content_type != SSL3_RT_ALERT)) {
     return;
   }
-
-  QUICHandshakeMsgs *msg = &this->_out;
-
-  const uint8_t *msg_buf = reinterpret_cast<const uint8_t *>(buf);
 
   if (content_type == SSL3_RT_HANDSHAKE) {
     if (version != TLS1_3_VERSION) {
       return;
     }
 
-    int msg_type = msg_buf[0];
+    const uint8_t *data = reinterpret_cast<const uint8_t *>(buf);
 
-    QUICEncryptionLevel level = QUICTLS::get_encryption_level(msg_type);
-    int index                 = static_cast<int>(level);
-    int next_index            = index + 1;
-
-    size_t offset            = msg->offsets[next_index];
-    size_t next_level_offset = offset + len;
-
-    memcpy(msg->buf + offset, buf, len);
-
-    for (int i = next_index; i < 5; ++i) {
-      msg->offsets[i] = next_level_offset;
-    }
-    this->set_ready_for_write();
-  } else if (content_type == SSL3_RT_ALERT && msg_buf[0] == SSL3_AL_FATAL && len == 2) {
-    msg->error_code = QUICTLS::convert_to_quic_trans_error_code(msg_buf[1]);
+    QUICEncryptionLevel level = QUICTLS::get_encryption_level(data[0]);
+    QUICTLS *qtls             = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
+    qtls->on_handshake_data_generated(level, data, len);
+    qtls->set_ready_for_write();
   }
 
   return;
@@ -607,6 +535,19 @@ QUICTLS::_write_early_data()
   SSL_write_early_data(this->_ssl, "", 0, &early_data_len);
   // always return 1
   return 1;
+}
+
+void
+QUICTLS::_pass_quic_data_to_ssl_impl(const QUICHandshakeMsgs &in)
+{
+  // TODO: set BIO_METHOD which read from QUICHandshakeMsgs directly
+  BIO *rbio = BIO_new(BIO_s_mem());
+  // TODO: set dummy BIO_METHOD which do nothing
+  BIO *wbio = BIO_new(BIO_s_mem());
+  if (in.offsets[4] != 0) {
+    BIO_write(rbio, in.buf, in.offsets[4]);
+  }
+  SSL_set_bio(this->_ssl, rbio, wbio);
 }
 
 const EVP_MD *
