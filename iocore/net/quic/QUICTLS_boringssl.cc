@@ -33,55 +33,6 @@
 
 static constexpr char tag[] = "quic_tls";
 
-static const char *
-content_type_str(int type)
-{
-  switch (type) {
-  case SSL3_RT_CHANGE_CIPHER_SPEC:
-    return "CHANGE_CIPHER_SPEC";
-  case SSL3_RT_ALERT:
-    return "ALERT";
-  case SSL3_RT_HANDSHAKE:
-    return "HANDSHAKE";
-  case SSL3_RT_APPLICATION_DATA:
-    return "APPLICATION_DATA";
-  case SSL3_RT_HEADER:
-    // The buf contains the record header bytes only
-    return "HEADER";
-  default:
-    return "UNKNOWN";
-  }
-}
-
-static const char *
-hs_type_str(int type)
-{
-  switch (type) {
-  case SSL3_MT_CLIENT_HELLO:
-    return "CLIENT_HELLO";
-  case SSL3_MT_SERVER_HELLO:
-    return "SERVER_HELLO";
-  case SSL3_MT_NEWSESSION_TICKET:
-    return "NEWSESSION_TICKET";
-  case SSL3_MT_END_OF_EARLY_DATA:
-    return "END_OF_EARLY_DATA";
-  case SSL3_MT_ENCRYPTED_EXTENSIONS:
-    return "ENCRYPTED_EXTENSIONS";
-  case SSL3_MT_CERTIFICATE:
-    return "CERTIFICATE";
-  case SSL3_MT_CERTIFICATE_VERIFY:
-    return "CERTIFICATE_VERIFY";
-  case SSL3_MT_FINISHED:
-    return "FINISHED";
-  case SSL3_MT_KEY_UPDATE:
-    return "KEY_UPDATE";
-  case SSL3_MT_MESSAGE_HASH:
-    return "MESSAGE_HASH";
-  default:
-    return "UNKNOWN";
-  }
-}
-
 static int
 set_encryption_secrets(SSL *ssl, enum ssl_encryption_level_t level, const uint8_t *read_secret, const uint8_t *write_secret,
                        size_t secret_len)
@@ -137,13 +88,11 @@ void
 QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
 {
   // Debug for reading
-  if (write_p == 0 && (content_type == SSL3_RT_HANDSHAKE || content_type == SSL3_RT_ALERT)) {
-    const uint8_t *tmp = reinterpret_cast<const uint8_t *>(buf);
-    int msg_type       = tmp[0];
-
-    Debug(tag, "%s (%d), %s (%d) len=%zu", content_type_str(content_type), content_type, hs_type_str(msg_type), msg_type, len);
+  if (write_p == 0) {
+    QUICTLS::_print_hs_message(content_type, buf, len);
     return;
   }
+
   return;
 }
 
@@ -213,4 +162,38 @@ QUICTLS::_write_early_data()
 {
   // This is for Hacked OpenSSL. Do nothing here.
   return 1;
+}
+
+void
+QUICTLS::_pass_quic_data_to_ssl_impl(const QUICHandshakeMsgs &in)
+{
+  for (auto level : QUIC_ENCRYPTION_LEVELS) {
+    int index = static_cast<int>(level);
+    ssl_encryption_level_t ossl_level;
+    switch (level) {
+    case QUICEncryptionLevel::INITIAL:
+      ossl_level = ssl_encryption_initial;
+      break;
+    case QUICEncryptionLevel::ZERO_RTT:
+      ossl_level = ssl_encryption_early_data;
+      break;
+    case QUICEncryptionLevel::HANDSHAKE:
+      ossl_level = ssl_encryption_handshake;
+      break;
+    case QUICEncryptionLevel::ONE_RTT:
+      ossl_level = ssl_encryption_application;
+      break;
+    default:
+      // Should not be happend
+      ossl_level = ssl_encryption_application;
+      break;
+    }
+    if (in.offsets[index]) {
+      int start = 0;
+      for (int i = 0; i < index; --i) {
+        start += in.offsets[index];
+      }
+      SSL_provide_quic_data(this->_ssl, ossl_level, in.buf + start, in.offsets[index]);
+    }
+  }
 }
