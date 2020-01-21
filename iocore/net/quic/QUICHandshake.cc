@@ -81,8 +81,6 @@
   }
 
 static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
-// TODO: fix size
-static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 
 QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp) : QUICHandshake(qc, hsp, {}, false) {}
 
@@ -503,12 +501,8 @@ QUICHandshake::do_handshake()
     }
   }
 
-  QUICHandshakeMsgs out;
-  uint8_t out_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
-  out.buf                                = out_buf;
-  out.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
-
-  int result = this->_hs_protocol->handshake(&out, &in);
+  QUICHandshakeMsgs *out = nullptr;
+  int result             = this->_hs_protocol->handshake(&out, &in);
   if (this->_remote_transport_parameters == nullptr) {
     if (!this->check_remote_transport_parameters()) {
       result = 0;
@@ -516,18 +510,20 @@ QUICHandshake::do_handshake()
   }
 
   if (result == 1) {
-    for (auto level : QUIC_ENCRYPTION_LEVELS) {
-      int index                = static_cast<int>(level);
-      QUICCryptoStream *stream = &this->_crypto_streams[index];
-      size_t len               = out.offsets[index + 1] - out.offsets[index];
-      // TODO: check size
-      if (len > 0) {
-        stream->write(out.buf + out.offsets[index], len);
+    if (out) {
+      for (auto level : QUIC_ENCRYPTION_LEVELS) {
+        int index                = static_cast<int>(level);
+        QUICCryptoStream *stream = &this->_crypto_streams[index];
+        size_t len               = out->offsets[index + 1] - out->offsets[index];
+        // TODO: check size
+        if (len > 0) {
+          stream->write(out->buf + out->offsets[index], len);
+        }
       }
     }
-  } else if (out.error_code != 0) {
+  } else if (out && out->error_code != 0) {
     this->_hs_protocol->abort_handshake();
-    error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT, out.error_code);
+    error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT, out->error_code);
   }
 
   return error;

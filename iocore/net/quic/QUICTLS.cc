@@ -80,11 +80,11 @@ QUICTLS::~QUICTLS()
 }
 
 int
-QUICTLS::handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
+QUICTLS::handshake(QUICHandshakeMsgs **out, const QUICHandshakeMsgs *in)
 {
   if (this->is_handshake_finished()) {
     if (in != nullptr && in->offsets[4] != 0) {
-      return this->_process_post_handshake_messages(out, in);
+      return this->_process_post_handshake_messages(*out, in);
     }
 
     return 0;
@@ -216,8 +216,30 @@ QUICTLS::abort_handshake()
   return;
 }
 
+void
+QUICTLS::set_ready_for_write()
+{
+  this->_should_flush = true;
+}
+
+void
+QUICTLS::on_handshake_data_generated(QUICEncryptionLevel level, const uint8_t *data, size_t len)
+{
+  int index      = static_cast<int>(level);
+  int next_index = index + 1;
+
+  size_t offset            = this->_out.offsets[next_index];
+  size_t next_level_offset = offset + len;
+
+  memcpy(this->_out.buf + offset, data, len);
+
+  for (int i = next_index; i < 5; ++i) {
+    this->_out.offsets[i] = next_level_offset;
+  }
+}
+
 int
-QUICTLS::_handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
+QUICTLS::_handshake(QUICHandshakeMsgs **out, const QUICHandshakeMsgs *in)
 {
   ink_assert(this->_ssl != nullptr);
   if (this->_state == HandshakeState::ABORTED) {
@@ -229,8 +251,8 @@ QUICTLS::_handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
   int ret = 0;
 
   SSL_set_msg_callback(this->_ssl, QUICTLS::_msg_cb);
-  SSL_set_msg_callback_arg(this->_ssl, out);
 
+#ifndef OPENSSL_IS_BORINGSSL
   // TODO: set BIO_METHOD which read from QUICHandshakeMsgs directly
   BIO *rbio = BIO_new(BIO_s_mem());
   // TODO: set dummy BIO_METHOD which do nothing
@@ -239,13 +261,44 @@ QUICTLS::_handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
     BIO_write(rbio, in->buf, in->offsets[4]);
   }
   SSL_set_bio(this->_ssl, rbio, wbio);
+#else
+  for (auto level : QUIC_ENCRYPTION_LEVELS) {
+    int index = static_cast<int>(level);
+    ssl_encryption_level_t ossl_level;
+    switch (level) {
+    case QUICEncryptionLevel::INITIAL:
+      ossl_level = ssl_encryption_initial;
+      break;
+    case QUICEncryptionLevel::ZERO_RTT:
+      ossl_level = ssl_encryption_early_data;
+      break;
+    case QUICEncryptionLevel::HANDSHAKE:
+      ossl_level = ssl_encryption_handshake;
+      break;
+    case QUICEncryptionLevel::ONE_RTT:
+      ossl_level = ssl_encryption_application;
+      break;
+    default:
+      // Should not be happend
+      ossl_level = ssl_encryption_application;
+      break;
+    }
+    if (in->offsets[index]) {
+      int start = 0;
+      for (int i = 0; i < index; --i) {
+        start += in->offsets[index];
+      }
+      SSL_provide_quic_data(this->_ssl, ossl_level, in->buf + start, in->offsets[index]);
+    }
+  }
+#endif
 
   if (this->_netvc_context == NET_VCONNECTION_IN) {
     if (!this->_early_data_processed) {
       if (auto ret = this->_read_early_data(); ret == 0) {
         this->_early_data_processed = true;
       } else if (ret < 0) {
-        out->error_code = static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION);
+        (*out)->error_code = static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION);
         return 0;
       } else {
         // Early data is not arrived yet -- can be multiple initial packets
@@ -276,6 +329,13 @@ QUICTLS::_handshake(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
       Debug(tag, "Handshake: %s", err_buf);
       return ret;
     }
+  }
+
+  if (this->_should_flush) {
+    this->_should_flush = false;
+    *out                = &this->_out;
+  } else {
+    *out = nullptr;
   }
 
   return 1;
