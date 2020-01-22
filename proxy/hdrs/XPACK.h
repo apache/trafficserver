@@ -32,6 +32,10 @@ const static int XPACK_ERROR_SIZE_EXCEEDED_ERROR = -2;
 // These primitives are shared with HPACK and QPACK.
 int64_t xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value, uint8_t n);
 int64_t xpack_decode_integer(uint64_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n);
+
+// TODO: replace all xpack_encode_string() (without Arena) calls in QPACK
 int64_t xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, uint64_t value_len, uint8_t n = 7);
+int64_t xpack_encode_string(Arena &arena, uint8_t *buf_start, const uint8_t *buf_end, const char *value, uint64_t value_len,
+                            uint8_t n = 7);
 int64_t xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end,
                             uint8_t n = 7);

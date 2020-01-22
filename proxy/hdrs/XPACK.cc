@@ -200,3 +200,56 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
 
   return p - buf_start;
 }
+
+int64_t
+xpack_encode_string(Arena &arena, uint8_t *buf_start, const uint8_t *buf_end, const char *value, uint64_t value_len, uint8_t n)
+{
+  uint8_t *p       = buf_start;
+  bool use_huffman = true;
+  char *data       = nullptr;
+  int64_t data_len = 0;
+
+  // TODO Choose whether to use Huffman encoding wisely
+  // cppcheck-suppress knownConditionTrueFalse; leaving "use_huffman" for wise huffman usage in the future
+  if (use_huffman && value_len) {
+    data     = arena.str_alloc(value_len * 4);
+    data_len = huffman_encode(reinterpret_cast<uint8_t *>(data), reinterpret_cast<const uint8_t *>(value), value_len);
+  }
+
+  // Length
+  const int64_t len = xpack_encode_integer(p, buf_end, data_len, n);
+  if (len == -1) {
+    if (use_huffman && value_len) {
+      arena.str_free(data);
+    }
+
+    return -1;
+  }
+
+  if (use_huffman) {
+    *p |= 0x01 << n;
+  } else {
+    *p &= ~(0x01 << n);
+  }
+  p += len;
+
+  if (buf_end < p || buf_end - p < data_len) {
+    if (use_huffman && value_len) {
+      arena.str_free(data);
+    }
+
+    return -1;
+  }
+
+  // Value
+  if (data_len) {
+    memcpy(p, data, data_len);
+    p += data_len;
+  }
+
+  if (use_huffman && value_len) {
+    arena.str_free(data);
+  }
+
+  return p - buf_start;
+}

@@ -333,6 +333,12 @@ HpackIndexingTable::update_maximum_size(uint32_t new_size)
   return _dynamic_table->update_maximum_size(new_size);
 }
 
+Arena &
+HpackIndexingTable::arena()
+{
+  return this->_arena;
+}
+
 //
 // HpackDynamicTable
 //
@@ -538,9 +544,10 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   p += len;
 
   // Value String
+  Arena &arena = indexing_table.arena();
   int value_len;
   const char *value = header.value_get(&value_len);
-  len               = xpack_encode_string(p, buf_end, value, value_len);
+  len               = xpack_encode_string(arena, p, buf_end, value, value_len);
   if (len == -1) {
     return -1;
   }
@@ -581,16 +588,17 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 
   // Convert field name to lower case to follow HTTP2 spec.
   // This conversion is needed because WKSs in MIMEFields is old fashioned
-  Arena arena;
+  Arena &arena = indexing_table.arena();
   int name_len;
   const char *name = header.name_get(&name_len);
-  char *lower_name = arena.str_store(name, name_len);
+  char *lower_name = arena.str_alloc(name_len);
   for (int i = 0; i < name_len; i++) {
-    lower_name[i] = ParseRules::ink_tolower(lower_name[i]);
+    lower_name[i] = ParseRules::ink_tolower(name[i]);
   }
 
   // Name String
-  len = xpack_encode_string(p, buf_end, lower_name, name_len);
+  len = xpack_encode_string(arena, p, buf_end, lower_name, name_len);
+  arena.str_free(lower_name);
   if (len == -1) {
     return -1;
   }
@@ -599,7 +607,7 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   // Value String
   int value_len;
   const char *value = header.value_get(&value_len);
-  len               = xpack_encode_string(p, buf_end, value, value_len);
+  len               = xpack_encode_string(arena, p, buf_end, value, value_len);
   if (len == -1) {
     return -1;
   }
@@ -647,9 +655,7 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     int decoded_value_len;
     const char *decoded_value = header.value_get(&decoded_value_len);
 
-    Arena arena;
-    Debug("hpack_decode", "Decoded field: %s: %s", arena.str_store(decoded_name, decoded_name_len),
-          arena.str_store(decoded_value, decoded_value_len));
+    Debug("hpack_decode", "Decoded field: %.*s: %.*s", decoded_name_len, decoded_name, decoded_value_len, decoded_value);
   }
 
   return len;
@@ -669,6 +675,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   int64_t len              = 0;
   HpackField ftype         = hpack_parse_field_type(*p);
   bool has_http2_violation = false;
+  Arena &arena             = indexing_table.arena();
 
   if (ftype == HpackField::INDEXED_LITERAL) {
     len           = xpack_decode_integer(index, p, buf_end, 6);
@@ -686,8 +693,6 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
   p += len;
 
-  Arena arena;
-
   // Decode header field name
   if (index) {
     indexing_table.get_header_field(index, header);
@@ -697,6 +702,9 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
     len = xpack_decode_string(arena, &name_str, name_str_len, p, buf_end);
     if (len == XPACK_ERROR_COMPRESSION_ERROR) {
+      if (name_str) {
+        arena.str_free(name_str);
+      }
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
 
@@ -711,6 +719,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
     p += len;
     header.name_set(name_str, name_str_len);
+    arena.str_free(name_str);
   }
 
   // Decode header field value
@@ -719,11 +728,15 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
   len = xpack_decode_string(arena, &value_str, value_str_len, p, buf_end);
   if (len == XPACK_ERROR_COMPRESSION_ERROR) {
+    if (value_str) {
+      arena.str_free(value_str);
+    }
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
   p += len;
   header.value_set(value_str, value_str_len);
+  arena.str_free(value_str);
 
   // Incremental Indexing adds header to header table as new entry
   if (isIncremental) {
@@ -737,8 +750,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     int decoded_value_len;
     const char *decoded_value = header.value_get(&decoded_value_len);
 
-    Debug("hpack_decode", "Decoded field: %s: %s", arena.str_store(decoded_name, decoded_name_len),
-          arena.str_store(decoded_value, decoded_value_len));
+    Debug("hpack_decode", "Decoded field: %.*s: %.*s", decoded_name_len, decoded_name, decoded_value_len, decoded_value);
   }
 
   if (has_http2_violation) {

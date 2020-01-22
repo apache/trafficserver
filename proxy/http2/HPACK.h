@@ -159,7 +159,10 @@ public:
   uint32_t size() const;
   bool update_maximum_size(uint32_t new_size);
 
+  Arena &arena();
+
 private:
+  Arena _arena;
   HpackDynamicTable *_dynamic_table;
 };
 
