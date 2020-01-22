@@ -100,12 +100,6 @@ QUICTLS::remote_transport_parameters()
 }
 
 void
-QUICTLS::set_local_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp)
-{
-  this->_local_transport_parameters = tp;
-}
-
-void
 QUICTLS::set_remote_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp)
 {
   this->_remote_transport_parameters = tp;
