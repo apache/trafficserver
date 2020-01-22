@@ -122,6 +122,9 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
         strategy->findNextHop(10012, result, rdata, fail_threshold, retry_time);
         CHECK(result.result == ParentResultType::PARENT_DIRECT);
 
+        // check that nextHopExists() returns false when all parents are down.
+        CHECK(strategy->nextHopExists(10012) == false);
+
         // change the request time to trigger a retry.
         time_t now = (time(nullptr) + 5);
 
@@ -224,7 +227,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
       }
     }
 
-    WHEN("using the 'rr-stric' strategy.")
+    WHEN("using the 'rr-strict' strategy.")
     {
       uint64_t fail_threshold = 1;
       uint64_t retry_time     = 1;
@@ -235,11 +238,19 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
         REQUIRE(nhf.strategies_loaded == true);
         REQUIRE(strategy != nullptr);
 
+        // call and test parentExists(), this call should not affect
+        // findNextHop() round robin strict results
+        CHECK(strategy->nextHopExists(29000) == true);
+
         // first request.
         memcpy(&rdata.client_ip, &sa1, sizeof(sa1));
         ParentResult result;
         strategy->findNextHop(30000, result, rdata, fail_threshold, retry_time);
         CHECK(strcmp(result.hostname, "p4.foo.com") == 0);
+
+        // call and test parentExists(), this call should not affect
+        // findNextHop round robin strict results.
+        CHECK(strategy->nextHopExists(29000) == true);
 
         // second request.
         memcpy(&rdata.client_ip, &sa2, sizeof(sa2));
@@ -247,10 +258,18 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-ip'", "[NextHopRound
         strategy->findNextHop(30001, result, rdata, fail_threshold, retry_time);
         CHECK(strcmp(result.hostname, "p3.foo.com") == 0);
 
+        // call and test parentExists(), this call should not affect
+        // findNextHop() round robin strict results
+        CHECK(strategy->nextHopExists(29000) == true);
+
         // third  request with same client ip, result should still be p3
         result.reset();
         strategy->findNextHop(30002, result, rdata, fail_threshold, retry_time);
         CHECK(strcmp(result.hostname, "p3.foo.com") == 0);
+
+        // call and test parentExists(), this call should not affect
+        // findNextHop() round robin strict results.
+        CHECK(strategy->nextHopExists(29000) == true);
 
         // fourth  request with same client ip and same result indicating a failure should result in p4
         // being selected.

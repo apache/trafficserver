@@ -245,6 +245,20 @@ markParentUp(HttpTransact::State *s)
 
 // wrapper to choose between a remap next hop strategy or use parent.config
 // remap next hop strategy is preferred
+inline static bool
+parentExists(HttpTransact::State *s)
+{
+  url_mapping *mp = s->url_map.getMapping();
+  if (mp && mp->strategy) {
+    return mp->strategy->nextHopExists(s->state_machine->sm_id);
+  } else if (s->parent_params) {
+    return s->parent_params->parentExists(&s->request_data);
+  }
+  return false;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
 inline static void
 nextParent(HttpTransact::State *s)
 {
@@ -1444,7 +1458,7 @@ HttpTransact::HandleRequest(State *s)
       ats_ip_copy(&s->request_data.dest_ip, &addr);
     }
 
-    if (s->parent_params->parentExists(&s->request_data)) {
+    if (parentExists(s)) {
       // If the proxy is behind and firewall and there is no
       //  DNS service available, we just want to forward the request
       //  the parent proxy.  In this case, we never find out the
