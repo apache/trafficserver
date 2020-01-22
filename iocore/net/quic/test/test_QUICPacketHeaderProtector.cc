@@ -132,8 +132,15 @@ TEST_CASE("QUICPacketHeaderProtector")
 
     // Handshake
     // CH
+    QUICHandshakeMsgs msg0;
+    msg0.offsets[0] = 0;
+    msg0.offsets[1] = 0;
+    msg0.offsets[2] = 0;
+    msg0.offsets[3] = 0;
+    msg0.offsets[4] = 0;
+
     QUICHandshakeMsgs *msg1 = nullptr;
-    REQUIRE(client->handshake(&msg1, nullptr) == 1);
+    REQUIRE(client->handshake(&msg1, &msg0) == 1);
     REQUIRE(msg1);
 
     // SH, EE, CERT, CV, FIN

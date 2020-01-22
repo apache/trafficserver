@@ -116,8 +116,15 @@ TEST_CASE("QUICHandshakeProtocol")
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
     // CH
+    QUICHandshakeMsgs msg0;
+    msg0.offsets[0] = 0;
+    msg0.offsets[1] = 0;
+    msg0.offsets[2] = 0;
+    msg0.offsets[3] = 0;
+    msg0.offsets[4] = 0;
+
     QUICHandshakeMsgs *msg1 = nullptr;
-    REQUIRE(client->handshake(&msg1, nullptr) == 1);
+    REQUIRE(client->handshake(&msg1, &msg0) == 1);
     REQUIRE(msg1);
     std::cout << "### Messages from client" << std::endl;
     print_hex(msg1->buf, msg1->offsets[4]);
@@ -230,8 +237,15 @@ TEST_CASE("QUICHandshakeProtocol")
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
     // CH
+    QUICHandshakeMsgs msg0;
+    msg0.offsets[0] = 0;
+    msg0.offsets[1] = 0;
+    msg0.offsets[2] = 0;
+    msg0.offsets[3] = 0;
+    msg0.offsets[4] = 0;
+
     QUICHandshakeMsgs *msg1 = nullptr;
-    REQUIRE(client->handshake(&msg1, nullptr) == 1);
+    REQUIRE(client->handshake(&msg1, &msg0) == 1);
     REQUIRE(msg1);
     std::cout << "### Messages from client" << std::endl;
     print_hex(msg1->buf, msg1->offsets[4]);
@@ -385,9 +399,16 @@ TEST_CASE("QUICHandshakeProtocol")
 
     // # Start Handshake
 
+    QUICHandshakeMsgs msg0;
+    msg0.offsets[0] = 0;
+    msg0.offsets[1] = 0;
+    msg0.offsets[2] = 0;
+    msg0.offsets[3] = 0;
+    msg0.offsets[4] = 0;
+
     // CH
     QUICHandshakeMsgs *msg1 = nullptr;
-    REQUIRE(client->handshake(&msg1, nullptr) == 1);
+    REQUIRE(client->handshake(&msg1, &msg0) == 1);
     REQUIRE(msg1);
 
     // SH, EE, CERT, CV, FIN
