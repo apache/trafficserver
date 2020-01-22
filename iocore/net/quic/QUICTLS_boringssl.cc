@@ -63,6 +63,18 @@ set_encryption_secrets(SSL *ssl, enum ssl_encryption_level_t level, const uint8_
   qtls->update_key_materials_for_read(ats_level, read_secret, secret_len);
   qtls->update_key_materials_for_write(ats_level, write_secret, secret_len);
 
+  if (ats_level == QUICEncryptionLevel::ONE_RTT) {
+    // FIXME Where should this be placed?
+    const uint8_t *tp_buf;
+    size_t tp_buf_len;
+    SSL_get_peer_quic_transport_params(ssl, &tp_buf, &tp_buf_len);
+    if (SSL_is_server(ssl)) {
+      qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(tp_buf, tp_buf_len));
+    } else {
+      qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(tp_buf, tp_buf_len));
+    }
+  }
+
   return 1;
 }
 
@@ -151,9 +163,21 @@ QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, Net
   }
 }
 
+void
+QUICTLS::set_local_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp)
+{
+  this->_local_transport_parameters = tp;
+
+  uint8_t buf[UINT16_MAX];
+  uint16_t len;
+  this->_local_transport_parameters->store(buf, &len);
+  SSL_set_quic_transport_params(this->_ssl, buf, len);
+}
+
 int
 QUICTLS::_process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 {
+  this->_pass_quic_data_to_ssl_impl(*in);
   return SSL_process_quic_post_handshake(this->_ssl);
 }
 

@@ -264,6 +264,12 @@ QUICTLS::get_encryption_level(int msg_type)
   }
 }
 
+void
+QUICTLS::set_local_transport_parameters(std::shared_ptr<const QUICTransportParameters> tp)
+{
+  this->_local_transport_parameters = tp;
+}
+
 int
 QUICTLS::_process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHandshakeMsgs *in)
 {
@@ -276,14 +282,7 @@ QUICTLS::_process_post_handshake_messages(QUICHandshakeMsgs *out, const QUICHand
   SSL_set_msg_callback(this->_ssl, QUICTLS::_msg_cb);
   SSL_set_msg_callback_arg(this->_ssl, out);
 
-  // TODO: set BIO_METHOD which read from QUICHandshakeMsgs directly
-  BIO *rbio = BIO_new(BIO_s_mem());
-  // TODO: set dummy BIO_METHOD which do nothing
-  BIO *wbio = BIO_new(BIO_s_mem());
-  if (in != nullptr && in->offsets[4] != 0) {
-    BIO_write(rbio, in->buf, in->offsets[4]);
-  }
-  SSL_set_bio(this->_ssl, rbio, wbio);
+  this->_pass_quic_data_to_ssl_impl(*in);
 
   uint8_t data[2048];
   size_t l = 0;
