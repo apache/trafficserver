@@ -116,7 +116,8 @@ enum class QUICFrameType : uint8_t {
   PATH_CHALLENGE,
   PATH_RESPONSE,
   CONNECTION_CLOSE, // 0x1c - 0x1d
-  UNKNOWN = 0x1e,
+  HANDSHAKE_DONE = 0x1e,
+  UNKNOWN        = 0x1f,
 };
 
 enum class QUICVersionNegotiationStatus {

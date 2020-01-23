@@ -717,6 +717,21 @@ private:
 };
 
 //
+// HANDSHAKE_DONE
+//
+
+class QUICHandshakeDoneFrame : public QUICFrame
+{
+public:
+  QUICHandshakeDoneFrame(QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr) : QUICFrame(id, owner) {}
+  QUICHandshakeDoneFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
+  virtual QUICFrameType type() const override;
+  virtual size_t size() const override;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
+  virtual void parse(const uint8_t *buf, size_t len, const QUICPacketR *packet) override;
+};
+
+//
 // UNKNOWN
 //
 
@@ -870,6 +885,11 @@ public:
    * Creates a PADDING frame
    */
   static QUICPaddingFrame *create_padding_frame(uint8_t *buf, size_t size, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
+
+  /*
+   * Creates a HANDSHAKE_DONE frame
+   */
+  static QUICHandshakeDoneFrame *create_handshake_done_frame(uint8_t *buf, QUICFrameId id = 0, QUICFrameGenerator *owner = nullptr);
 
 private:
   // FIXME Actual number of frame types is several but some of the values are not sequential.

@@ -112,7 +112,7 @@ QUICFrame::type(const uint8_t *buf)
              buf[0] < static_cast<uint8_t>(QUICFrameType::NEW_CONNECTION_ID)) {
     return QUICFrameType::STREAMS_BLOCKED;
   } else if (static_cast<uint8_t>(QUICFrameType::CONNECTION_CLOSE) <= buf[0] &&
-             buf[0] < static_cast<uint8_t>(QUICFrameType::UNKNOWN)) {
+             buf[0] < static_cast<uint8_t>(QUICFrameType::HANDSHAKE_DONE)) {
     return QUICFrameType::CONNECTION_CLOSE;
   } else {
     return static_cast<QUICFrameType>(buf[0]);
@@ -2724,6 +2724,59 @@ QUICRetireConnectionIdFrame::seq_num() const
 }
 
 //
+// HANDSHAKE_DONE frame
+//
+
+QUICHandshakeDoneFrame::QUICHandshakeDoneFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet)
+  : QUICFrame(0, nullptr, packet)
+{
+  this->parse(buf, len, packet);
+}
+
+void
+QUICHandshakeDoneFrame::parse(const uint8_t *buf, size_t len, const QUICPacketR *packet)
+{
+  this->_reset();
+  this->_packet = packet;
+  this->_valid  = true;
+  this->_size   = 1;
+}
+
+QUICFrameType
+QUICHandshakeDoneFrame::type() const
+{
+  return QUICFrameType::HANDSHAKE_DONE;
+}
+
+size_t
+QUICHandshakeDoneFrame::size() const
+{
+  return 1;
+}
+
+Ptr<IOBufferBlock>
+QUICHandshakeDoneFrame::to_io_buffer_block(size_t limit) const
+{
+  Ptr<IOBufferBlock> block;
+  size_t n = 0;
+
+  if (limit < this->size()) {
+    return block;
+  }
+
+  block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  block->alloc(iobuffer_size_to_index(this->size()));
+  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
+
+  // Type
+  block_start[0] = static_cast<uint8_t>(QUICFrameType::HANDSHAKE_DONE);
+  n += 1;
+
+  block->fill(n);
+  return block;
+}
+
+//
 // UNKNOWN
 //
 QUICFrameType
@@ -2822,6 +2875,9 @@ QUICFrameFactory::create(uint8_t *buf, const uint8_t *src, size_t len, const QUI
     return reinterpret_cast<QUICFrame *>(buf);
   case QUICFrameType::RETIRE_CONNECTION_ID:
     new (buf) QUICRetireConnectionIdFrame(src, len, packet);
+    return reinterpret_cast<QUICFrame *>(buf);
+  case QUICFrameType::HANDSHAKE_DONE:
+    new (buf) QUICHandshakeDoneFrame(src, len, packet);
     return reinterpret_cast<QUICFrame *>(buf);
   default:
     // Unknown frame
@@ -3023,6 +3079,13 @@ QUICFrameFactory::create_retire_connection_id_frame(uint8_t *buf, uint64_t seq_n
 {
   new (buf) QUICRetireConnectionIdFrame(seq_num, id, owner);
   return reinterpret_cast<QUICRetireConnectionIdFrame *>(buf);
+}
+
+QUICHandshakeDoneFrame *
+QUICFrameFactory::create_handshake_done_frame(uint8_t *buf, QUICFrameId id, QUICFrameGenerator *owner)
+{
+  new (buf) QUICHandshakeDoneFrame(id, owner);
+  return reinterpret_cast<QUICHandshakeDoneFrame *>(buf);
 }
 
 QUICFrameId

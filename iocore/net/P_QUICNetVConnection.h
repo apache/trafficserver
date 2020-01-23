@@ -48,7 +48,6 @@
 #include "quic/QUICPacketFactory.h"
 #include "quic/QUICFrame.h"
 #include "quic/QUICFrameDispatcher.h"
-#include "quic/QUICHandshake.h"
 #include "quic/QUICApplication.h"
 #include "quic/QUICStream.h"
 #include "quic/QUICHandshakeProtocol.h"
@@ -81,6 +80,7 @@ static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
 
 class QUICPacketHandler;
 class QUICLossDetector;
+class QUICHandshake;
 
 class SSLNextProtocolSet;
 

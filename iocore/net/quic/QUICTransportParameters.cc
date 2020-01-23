@@ -27,7 +27,6 @@
 #include "QUICIntUtil.h"
 #include "QUICTransportParameters.h"
 #include "QUICConnection.h"
-#include "QUICHandshake.h"
 #include "QUICDebugNames.h"
 #include "QUICTLS.h"
 #include "QUICTypes.h"

@@ -90,6 +90,8 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "RETIRE_CONNECTION_ID";
   case QUICFrameType::NEW_TOKEN:
     return "NEW_TOKEN";
+  case QUICFrameType::HANDSHAKE_DONE:
+    return "HANDSHAKE_DONE";
   case QUICFrameType::UNKNOWN:
   default:
     return "UNKNOWN";

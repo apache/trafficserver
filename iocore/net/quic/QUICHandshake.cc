@@ -187,6 +187,16 @@ QUICHandshake::is_completed() const
 }
 
 bool
+QUICHandshake::is_confirmed() const
+{
+  if (this->_qc->direction() == NET_VCONNECTION_IN) {
+    return this->is_completed();
+  } else {
+    return this->_is_handshake_done_received;
+  }
+}
+
+bool
 QUICHandshake::is_stateless_retry_enabled() const
 {
   return this->_stateless_retry;
@@ -299,6 +309,7 @@ QUICHandshake::interests()
 {
   return {
     QUICFrameType::CRYPTO,
+    QUICFrameType::HANDSHAKE_DONE,
   };
 }
 
@@ -309,8 +320,15 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
   switch (frame.type()) {
   case QUICFrameType::CRYPTO:
     error = this->_crypto_streams[static_cast<int>(level)].recv(static_cast<const QUICCryptoFrame &>(frame));
-    if (error != nullptr) {
-      return error;
+    if (error == nullptr) {
+      error = this->do_handshake();
+    }
+    break;
+  case QUICFrameType::HANDSHAKE_DONE:
+    if (this->_qc->direction() == NET_VCONNECTION_IN) {
+      error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
+    } else {
+      this->_is_handshake_done_received = true;
     }
     break;
   default:
@@ -319,7 +337,7 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
     break;
   }
 
-  return this->do_handshake();
+  return error;
 }
 
 bool
@@ -329,7 +347,8 @@ QUICHandshake::will_generate_frame(QUICEncryptionLevel level, size_t current_pac
     return false;
   }
 
-  return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level, current_packet_size, ack_eliciting, seq_num);
+  return (this->_qc->direction() == NET_VCONNECTION_IN && !this->_is_handshake_done_sent) ||
+         this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level, current_packet_size, ack_eliciting, seq_num);
 }
 
 QUICFrame *
@@ -339,8 +358,23 @@ QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t 
   QUICFrame *frame = nullptr;
 
   if (this->_is_level_matched(level)) {
+    // CRYPTO
     frame = this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size,
                                                                           current_packet_size, seq_num);
+    if (frame) {
+      return frame;
+    }
+  }
+
+  if (level == QUICEncryptionLevel::ONE_RTT) {
+    // HANDSHAKE_DONE
+    if (!this->_is_handshake_done_sent && this->is_completed()) {
+      frame = QUICFrameFactory::create_handshake_done_frame(buf, this->_issue_frame_id(), this);
+    }
+    if (frame) {
+      this->_is_handshake_done_sent = true;
+      return frame;
+    }
   }
 
   return frame;
@@ -524,4 +558,11 @@ bool
 QUICHandshake::_is_level_matched(QUICEncryptionLevel level)
 {
   return true;
+}
+
+void
+QUICHandshake::_on_frame_lost(QUICFrameInformationUPtr &info)
+{
+  ink_assert(info->type == QUICFrameType::HANDSHAKE_DONE);
+  this->_is_handshake_done_sent = false;
 }

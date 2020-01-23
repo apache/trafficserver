@@ -39,6 +39,7 @@
 #include "QUICGlobals.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
+#include "QUICHandshake.h"
 #include "QUICConfig.h"
 #include "QUICIntUtil.h"
 
