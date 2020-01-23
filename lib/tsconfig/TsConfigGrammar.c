@@ -892,6 +892,7 @@ yytnamerr (char *yyres, const char *yystr)
             if (*++yyp != '\\')
               goto do_not_strip_quotes;
             /* Fall through.  */
+            __attribute__ ((fallthrough));
           default:
             if (yyres)
               yyres[yyn] = *yyp;
