@@ -538,6 +538,13 @@ find_server_and_update_current_info(HttpTransact::State *s)
     return HttpTransact::HOST_NONE;
 
   case PARENT_DIRECT:
+    // if the configuration does not allow the origin to be dns'd
+    // we're unable to go direct to the origin.
+    if (s->http_config_param->no_dns_forward_to_parent) {
+      Warning("no available parents and the config proxy.config.http.no_dns_just_forward_to_parent, prevents origin lookups.");
+      s->parent_result.result = PARENT_FAIL;
+      return HttpTransact::HOST_NONE;
+    }
   /* fall through */
   default:
     update_current_info(&s->current, &s->server_info, HttpTransact::ORIGIN_SERVER, (s->current.attempts)++);
