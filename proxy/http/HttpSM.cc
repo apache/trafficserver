@@ -425,6 +425,17 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
 
   t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_START;
   do_api_callout();
+  if (api_timer < 0) {
+    // Didn't get the hook continuation lock. Clear the read and wait for next event
+    if (ua_entry->read_vio) {
+      ua_entry->read_vio = ua_entry->vc->do_io_read(nullptr, 0, nullptr);
+    }
+    return EVENT_CONT;
+  } else {
+    if (ua_entry->read_vio) {
+      ua_entry->read_vio = ua_entry->vc->do_io_read(this, 0, ua_buffer_reader->mbuf);
+    }
+  }
   return EVENT_DONE;
 }
 
@@ -1478,7 +1489,7 @@ plugins required to work with sni_routing.
       // Have a mutex but didn't get the lock, reschedule
       if (!lock.is_locked()) {
         api_timer = -Thread::get_hrtime_updated();
-        HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
+        HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callback);
         ink_assert(pending_action == nullptr);
         pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
         return 0;
@@ -6857,6 +6868,12 @@ HttpSM::kill_this()
     terminate_sm            = false;
     t_state.api_next_action = HttpTransact::SM_ACTION_API_SM_SHUTDOWN;
     do_api_callout();
+    if (api_timer < 0) {
+      // Need to hang out until we can complete the TXN_CLOSE hook
+      terminate_sm = false;
+      reentrancy_count--;
+      return;
+    }
   }
   // The reentrancy_count is still valid up to this point since
   //   the api shutdown hook is asynchronous and double frees can

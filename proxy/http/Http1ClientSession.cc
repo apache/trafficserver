@@ -74,7 +74,6 @@ Http1ClientSession::destroy()
     in_destroy = true;
 
     HttpSsnDebug("[%" PRId64 "] session destroy", con_id);
-    ink_release_assert(!client_vc);
     ink_assert(read_buffer);
     ink_release_assert(transact_count == released_transactions);
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
@@ -287,10 +286,7 @@ Http1ClientSession::do_io_close(int alerrno)
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
-    if (client_vc) {
-      client_vc->do_io_close();
-      client_vc = nullptr;
-    }
+    // the netvc will be closed in the session free
   }
   if (transact_count == released_transactions) {
     this->destroy();
