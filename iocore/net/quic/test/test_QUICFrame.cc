@@ -68,8 +68,10 @@ TEST_CASE("QUICFrame Type", "[quic]")
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1c")) == QUICFrameType::CONNECTION_CLOSE);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1d")) == QUICFrameType::CONNECTION_CLOSE);
 
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1e")) == QUICFrameType::HANDSHAKE_DONE);
+
   // Undefined ragne
-  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1e")) == QUICFrameType::UNKNOWN);
+  CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1f")) == QUICFrameType::UNKNOWN);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::UNKNOWN);
 }
 
@@ -823,6 +825,41 @@ TEST_CASE("Store Padding Frame", "[quic]")
     len += b->size();
   }
   CHECK(len == 3);
+  CHECK(memcmp(buf, expected, len) == 0);
+}
+
+TEST_CASE("Load HandshakeDone Frame", "[quic]")
+{
+  uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  uint8_t buf[] = {
+    0x1e, // Type
+  };
+  const QUICFrame *frame = QUICFrameFactory::create(frame_buf, buf, sizeof(buf), nullptr);
+  CHECK(frame->type() == QUICFrameType::HANDSHAKE_DONE);
+  CHECK(frame->size() == 1);
+
+  const QUICHandshakeDoneFrame *handshake_done_frame = static_cast<const QUICHandshakeDoneFrame *>(frame);
+  CHECK(handshake_done_frame != nullptr);
+}
+
+TEST_CASE("Store HandshakeDone Frame", "[quic]")
+{
+  uint8_t buf[16];
+  size_t len = 0;
+
+  uint8_t expected[] = {
+    0x1e, // Type
+  };
+
+  QUICHandshakeDoneFrame frame;
+  CHECK(frame.size() == 1);
+
+  Ptr<IOBufferBlock> ibb = frame.to_io_buffer_block(sizeof(buf));
+  for (auto b = ibb; b; b = b->next) {
+    memcpy(buf + len, b->start(), b->size());
+    len += b->size();
+  }
+  CHECK(len == 1);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
