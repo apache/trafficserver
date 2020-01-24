@@ -781,6 +781,7 @@ Changes with Apache Traffic Server 9.0.0
   #6061 - Add Example URI Signer Python Script
   #6062 - Adding connection close headers to regex_remap test.
   #6066 - Fixing session sharing with IP matching.
+  #6069 - Fix some long lines and reduntant plugin_config SO additions.
   #6070 - Updated API header and ssl_session_reuse for new TSSslSessionInsert changes
   #6071 - Premature DSO unload with "suicidal" continuations
   #6074 - Allow txn handler to be set from ssn on same hook
@@ -833,21 +834,30 @@ Changes with Apache Traffic Server 9.0.0
   #6190 - Fix ssl_session_reuse to compile on macOS and FreeBSD
   #6191 - Limit this check to Linux, where ldd always works
   #6193 - Fixes various crashers loading/reloading parent.config
+  #6197 - Fix problems with "Probe" option for X-Debug MIME header field.
   #6198 - Move logging before session could be freed
   #6199 - Set END_STREAM flag when write_vio ntodo is 0
   #6201 - ssl_session_reuse optimization to check if diags is on
   #6204 - Lua plugin fix: Account for null in output from TSUrlPercentDecode.
+  #6206 - Fix the strategies.yaml documentation.
   #6207 - Add autopep8 & pyflakes in dev-packages for AuTest
+  #6208 - Fixes spelling in strategies.yaml docs
   #6209 - Add 100-continue expectation support on H2 connection
+  #6210 - Cleanup trailing whitespaces, and YAML formatting
   #6212 - Cleanup trailing whitespaces, and YAML formatting
   #6214 - Run dos2unix on all files in tree
+  #6216 - This fixes next hop unit tests that segfault due to missing unit test yaml files.
   #6218 - Fix stringstream crash during shutdown
+  #6219 - Fixed next hop tests for out of tree builds
   #6224 - Fixed build issue with clang5 and Extendible
   #6226 - Fix sni.yaml fqdn to match complete name string
   #6227 - Remove never implemented regex descriptions
   #6231 - Adjust the refcounts to avoid Mutex leak
   #6233 - auto delete rolled log file fixes
   #6234 - Don't sleep if ProtectedQueue.localQueue is not empty. (#6234)
+  #6236 - remap_stats: restore handling of remap/hostname to remove memory leak
+  #6240 - Adds strategies.yaml to install target
+  #6242 - Fixes sphinx build warning with the strategies.yaml document in the admin-guide
   #6244 - Copy the Client SNI Server Name out of the openssl SSL object.
   #6247 - Add some stats collections to cache_promote.
   #6251 - Some tweaks to reloading-plugins.en.rst
@@ -858,7 +868,10 @@ Changes with Apache Traffic Server 9.0.0
   #6265 - LGTM: Add header guards
   #6266 - LGTM: Fix wrong type of arguments to formatting function
   #6268 - Add tests to exercise H2 and chunked encoding
+  #6270 - LGTM: fix a comparison that is always false.
   #6275 - Clear all pointers in API Hooks clear function.
+  #6278 - Add new log field to output server name sent by client in TLS handshake.
+  #6279 - Update the admin-guide hierachical caching and remap.config documentation.
   #6280 - Assure no SM survives plugin factory deactivation.
   #6281 - Perf: replace dynamic_cast with static_cast in this_thread()
   #6283 - Adjust debug tag for ssl_sni_whitelist plugin to match plugin
@@ -866,5 +879,12 @@ Changes with Apache Traffic Server 9.0.0
   #6285 - Set wrap around after checking all the parents
   #6293 - Add invalid config warning when cache open write fail and read retry are inconsistent
   #6297 - Add links to RWW sections
+  #6303 - Fixes a  case where the NextHop consistent hash ring may not be completely searched.
   #6307 - Reduce process duration of test_Http2FrequencyCounter
+  #6323 - Fix strict round robin cur_index increment
   #6324 - Fixes clang-format issues
+  #6325 - Fixes typo in TLS Bridge illustration
+  #6329 - Fixed build issues on macOS after 0-RTT merge
+  #6332 - Fixes Issue #6321 caused when proxy.config.http.no_dns_just_forward_to_parent
+  #6339 - Fixes an issue where NextHopSelectionStrategy did not implement a parent check.
+  #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
