@@ -192,8 +192,8 @@
     docdir:        ${prefix}/share/doc+
     installbuilddir: ${prefix}/share/trafficserver/build
     includedir:    ${prefix}/include
-    localstatedir: /var/run
-    runtimedir:    /var/run+
+    localstatedir: /run
+    runtimedir:    /run+
     logdir:        /var/log+
     cachedir: /var/cache+
 </Layout>
