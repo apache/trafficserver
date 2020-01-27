@@ -743,15 +743,18 @@ Http2Stream::destroy()
 
   // Safe to initiate SSN_CLOSE if this is the last stream
   if (parent) {
-    Http2ClientSession *h2_parent = static_cast<Http2ClientSession *>(parent);
-    SCOPED_MUTEX_LOCK(lock, h2_parent->connection_state.mutex, this_ethread());
+    cid = _proxy_ssn->connection_id();
+
+    Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(parent);
+    SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
     // Make sure the stream is removed from the stream list and priority tree
     // In many cases, this has been called earlier, so this call is a no-op
-    h2_parent->connection_state.delete_stream(this);
+    h2_proxy_ssn->connection_state.delete_stream(this);
 
     // Update session's stream counts, so it accurately goes into keep-alive state
-    h2_parent->connection_state.release_stream(this);
-    cid = parent->connection_id();
+    h2_proxy_ssn->connection_state.release_stream(this);
+
+    // Do not access `_proxy_ssn` in below. It might be freed by `release_stream`.
   }
 
   // Clean up the write VIO in case of inactivity timeout
