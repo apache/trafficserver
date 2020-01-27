@@ -133,8 +133,12 @@ QUICDebugNames::error_code(uint16_t code)
     return "FRAME_ENCODING_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR):
     return "TRANSPORT_PARAMETER_ERROR";
+  case static_cast<uint16_t>(QUICTransErrorCode::CONNECTION_ID_LIMIT_ERROR):
+    return "CONNECTION_ID_LIMIT_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION):
     return "PROTOCOL_VIOLATION";
+  case static_cast<uint16_t>(QUICTransErrorCode::INVALID_TOKEN):
+    return "INVALID_TOKEN";
   case static_cast<uint16_t>(QUICTransErrorCode::CRYPTO_BUFFER_EXCEEDED):
     return "CRYPTO_BUFFER_EXCEEDED";
   default:
