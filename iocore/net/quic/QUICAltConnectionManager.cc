@@ -176,7 +176,7 @@ QUICAltConnectionManager::_register_remote_connection_id(const QUICNewConnection
       }
     }
     if (unused > this->_local_active_cid_limit) {
-      error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received too many alt CIDs",
+      error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::CONNECTION_ID_LIMIT_ERROR, "received too many alt CIDs",
                                                     QUICFrameType::NEW_CONNECTION_ID);
     } else {
       this->_alt_quic_connection_ids_remote.push_back(
