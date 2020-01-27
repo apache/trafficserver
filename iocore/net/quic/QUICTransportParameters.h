@@ -35,7 +35,7 @@ class QUICTransportParameterId
 public:
   enum {
     ORIGINAL_CONNECTION_ID,
-    IDLE_TIMEOUT,
+    MAX_IDLE_TIMEOUT,
     STATELESS_RESET_TOKEN,
     MAX_PACKET_SIZE,
     INITIAL_MAX_DATA,

@@ -181,8 +181,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_MAX_DATA";
   case QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI:
     return "INITIAL_MAX_STREAMS_BIDI";
-  case QUICTransportParameterId::IDLE_TIMEOUT:
-    return "IDLE_TIMEOUT";
+  case QUICTransportParameterId::MAX_IDLE_TIMEOUT:
+    return "MAX_IDLE_TIMEOUT";
   case QUICTransportParameterId::PREFERRED_ADDRESS:
     return "PREFERRED_ADDRESS";
   case QUICTransportParameterId::MAX_PACKET_SIZE:

@@ -386,7 +386,7 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
   QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
 
   // MUSTs
-  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
+  tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
   if (this->_stateless_retry) {
     tp->set(QUICTransportParameterId::ORIGINAL_CONNECTION_ID, this->_qc->first_connection_id(),
             this->_qc->first_connection_id().length());
@@ -442,7 +442,7 @@ QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_co
   QUICTransportParametersInClientHello *tp = new QUICTransportParametersInClientHello();
 
   // MUSTs
-  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
+  tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
 
   // MAYs
   if (tp_config.initial_max_data() != 0) {

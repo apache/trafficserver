@@ -1998,11 +1998,15 @@ QUICNetVConnection::_switch_to_established_state()
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
     std::shared_ptr<const QUICTransportParameters> remote_tp = this->_handshake_handler->remote_transport_parameters();
+    std::shared_ptr<const QUICTransportParameters> local_tp  = this->_handshake_handler->local_transport_parameters();
 
     uint64_t active_cid_limit = remote_tp->getAsUInt(QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT);
     if (active_cid_limit) {
       this->_alt_con_manager->set_remote_active_cid_limit(active_cid_limit);
     }
+
+    this->set_inactivity_timeout(HRTIME_MSECONDS(std::min(remote_tp->getAsUInt(QUICTransportParameterId::MAX_IDLE_TIMEOUT),
+                                                          local_tp->getAsUInt(QUICTransportParameterId::MAX_IDLE_TIMEOUT))));
 
     if (this->direction() == NET_VCONNECTION_OUT) {
       uint16_t len;

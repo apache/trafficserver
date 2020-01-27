@@ -157,7 +157,7 @@ QUICTransportParameters::_validate_parameters() const
   if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_MAX_STREAMS_UNI)) != this->_parameters.end()) {
   }
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::IDLE_TIMEOUT)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_IDLE_TIMEOUT)) != this->_parameters.end()) {
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_PACKET_SIZE)) != this->_parameters.end()) {

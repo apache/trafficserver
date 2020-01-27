@@ -55,7 +55,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
     CHECK(len == 4);
     CHECK(memcmp(data, "\x11\x22\x33\x44", 4) == 0);
 
-    data = params_in_ch.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::MAX_IDLE_TIMEOUT, len);
     CHECK(len == 4);
     CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
 
@@ -159,7 +159,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
     CHECK(len == 4);
     CHECK(memcmp(data, "\x92\x34\x56\x78", 4) == 0);
 
-    data = params_in_ee.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::MAX_IDLE_TIMEOUT, len);
     CHECK(len == 2);
     CHECK(memcmp(data, "\x51\x23", 2) == 0);
 
@@ -201,7 +201,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
     CHECK(len == 4);
     CHECK(memcmp(data, "\xa2\x34\x56\x78", 4) == 0);
 
-    data = params_in_ee.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::MAX_IDLE_TIMEOUT, len);
     CHECK(len == 2);
     CHECK(memcmp(data, "\x51\x23", 2) == 0);
 
