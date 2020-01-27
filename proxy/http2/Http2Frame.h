@@ -53,6 +53,7 @@ class Http2TxFrame
 {
 public:
   Http2TxFrame(const Http2FrameHeader &h) : _hdr(h) {}
+  virtual ~Http2TxFrame() {}
 
   // Don't allocate on heap
   void *operator new(std::size_t)   = delete;
