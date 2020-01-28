@@ -116,7 +116,7 @@ MIOBuffer::write(IOBufferBlock const *b, int64_t alen, int64_t offset)
       continue;
     }
     int64_t bytes;
-    if (len < 0 || len >= max_bytes) {
+    if (len >= max_bytes) {
       bytes = max_bytes;
     } else {
       bytes = len;

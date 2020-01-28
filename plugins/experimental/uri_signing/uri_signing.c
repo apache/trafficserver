@@ -188,9 +188,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, ul);
 
   PluginDebug("Processing request for %.*s.", url_ct, url);
-  if (cpi < max_cpi) {
-    checkpoints[cpi++] = mark_timer(&t);
-  }
+  checkpoints[cpi++] = mark_timer(&t);
 
   int strip_size = url_ct + 1;
   strip_uri      = (char *)TSmalloc(strip_size);
@@ -199,9 +197,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   size_t strip_ct;
   cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, strip_uri, strip_size, &strip_ct);
 
-  if (cpi < max_cpi) {
-    checkpoints[cpi++] = mark_timer(&t);
-  }
+  checkpoints[cpi++] = mark_timer(&t);
+
   int checked_cookies = 0;
   if (!jws) {
   check_cookies:
