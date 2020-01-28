@@ -4321,7 +4321,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
         ;
       }
 
-      if (s < e || start < 0) {
+      if (s < e) {
         t_state.range_setup = HttpTransact::RANGE_NONE;
         goto Lfaild;
       }
@@ -4361,7 +4361,7 @@ HttpSM::parse_range_and_compare(MIMEField *field, int64_t content_length)
         ;
       }
 
-      if (s < e || end < 0) {
+      if (s < e) {
         t_state.range_setup = HttpTransact::RANGE_NONE;
         goto Lfaild;
       }
