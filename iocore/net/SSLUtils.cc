@@ -409,7 +409,7 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
        * The list in practice only has a single element, so we only consider
        * the first one.
        */
-      if (remaining != 0 && *p++ == TLSEXT_NAMETYPE_host_name) {
+      if (*p++ == TLSEXT_NAMETYPE_host_name) {
         remaining--;
         /* Now we can finally pull out the byte array with the actual hostname. */
         if (remaining > 2) {

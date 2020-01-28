@@ -1628,7 +1628,7 @@ TSPluginInit(int argc, const char *argv[])
   if (argc < 2) {
     TSError("[tsmemcache] Usage: tsmemcache.so [accept_port]\n");
     goto error;
-  } else if (argc > 1) {
+  } else {
     int port = atoi(argv[1]);
     if (!port) {
       TSError("[tsmemcache] bad accept_port '%s'\n", argv[1]);
