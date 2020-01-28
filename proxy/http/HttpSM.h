@@ -210,9 +210,7 @@ public:
   virtual void destroy();
 
   static HttpSM *allocate();
-  HttpCacheSM &get_cache_sm();          // Added to get the object of CacheSM YTS Team, yamsat
-  HttpVCTableEntry *get_ua_entry();     // Added to get the ua_entry pointer  - YTS-TEAM
-  HttpVCTableEntry *get_server_entry(); // Added to get the server_entry pointer
+  HttpCacheSM &get_cache_sm(); // Added to get the object of CacheSM YTS Team, yamsat
 
   void init(bool from_early_data = false);
 
@@ -347,7 +345,6 @@ protected:
   HttpVCTable vc_table;
 
   HttpVCTableEntry *ua_entry = nullptr;
-  void remove_ua_entry();
 
 public:
   ProxyTransaction *ua_txn         = nullptr;
@@ -372,7 +369,6 @@ protected:
   bool will_be_private_ss              = false;
   int shared_session_retries           = 0;
   IOBufferReader *server_buffer_reader = nullptr;
-  void remove_server_entry();
 
   HttpTransformInfo transform_info;
   HttpTransformInfo post_transform_info;
@@ -644,40 +640,11 @@ HttpSM::get_cache_sm()
   return cache_sm;
 }
 
-// Function to get the ua_entry pointer - YTS Team, yamsat
-inline HttpVCTableEntry *
-HttpSM::get_ua_entry()
-{
-  return ua_entry;
-}
-
-inline HttpVCTableEntry *
-HttpSM::get_server_entry()
-{
-  return server_entry;
-}
-
 inline HttpSM *
 HttpSM::allocate()
 {
   extern ClassAllocator<HttpSM> httpSMAllocator;
   return httpSMAllocator.alloc();
-}
-
-inline void
-HttpSM::remove_ua_entry()
-{
-  vc_table.remove_entry(ua_entry);
-  ua_entry = nullptr;
-}
-
-inline void
-HttpSM::remove_server_entry()
-{
-  if (server_entry) {
-    vc_table.remove_entry(server_entry);
-    server_entry = nullptr;
-  }
 }
 
 inline int
