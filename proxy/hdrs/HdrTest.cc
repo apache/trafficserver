@@ -541,8 +541,6 @@ HdrTest::test_http_aux(const char *request, const char *response)
   const char *start;
   const char *end;
 
-  int status = 1;
-
   printf("   <<< MUST BE HAND-VERIFIED FOR FULL BENEFIT >>>\n\n");
 
   /*** (1) parse the request string into req_hdr ***/
@@ -1520,8 +1518,6 @@ HdrTest::test_http()
 int
 HdrTest::test_http_mutation()
 {
-  int status = 1;
-
   bri_box("test_http_mutation");
 
   printf("   <<< MUST BE HAND-VERIFIED FOR FULL BENEFIT>>>\n\n");
