@@ -30,6 +30,9 @@
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
 
+#include "QUICMultiCertConfigLoader.h"
+#include "QUICTLS.h"
+
 static constexpr char debug_tag[] = "quic_sec";
 
 #define QUICDebug(fmt, ...) Debug(debug_tag, fmt, ##__VA_ARGS__)
@@ -410,6 +413,7 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
       } else {
         QUICDebug("Retry token is invalid: ODCID=%" PRIx64 "token_length=%u", static_cast<uint64_t>(token.original_dcid()),
                   token.length());
+        this->_send_invalid_token_error(buf, buf_len, connection, from);
         return -3;
       }
     } else {
@@ -419,6 +423,44 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
   }
 
   return 0;
+}
+
+void
+QUICPacketHandlerIn::_send_invalid_token_error(const uint8_t *initial_packet, uint64_t initial_packet_len,
+                                               UDPConnection *connection, IpEndpoint from)
+{
+  QUICConnectionId scid_in_initial;
+  QUICConnectionId dcid_in_initial;
+  QUICInvariants::scid(scid_in_initial, initial_packet, initial_packet_len);
+  QUICInvariants::dcid(dcid_in_initial, initial_packet, initial_packet_len);
+
+  // Create CONNECTION_CLOSE frame
+  auto error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::INVALID_TOKEN);
+  uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  QUICFrame *frame         = QUICFrameFactory::create_connection_close_frame(frame_buf, *error);
+  Ptr<IOBufferBlock> block = frame->to_io_buffer_block(1200);
+  size_t block_len         = 0;
+  for (Ptr<IOBufferBlock> tmp = block; tmp; tmp = tmp->next) {
+    block_len += tmp->size();
+  }
+  frame->~QUICFrame();
+
+  // Prepare for packet protection
+  QUICPacketProtectionKeyInfo ppki;
+  ppki.set_context(QUICPacketProtectionKeyInfo::Context::SERVER);
+  QUICPacketFactory pf(ppki);
+  QUICPacketHeaderProtector php(ppki);
+  QUICCertConfig::scoped_config server_cert;
+  QUICTLS tls(ppki, server_cert->ssl_default.get(), NET_VCONNECTION_IN, {}, "", "");
+  tls.initialize_key_materials(dcid_in_initial);
+
+  // Create INITIAL packet
+  QUICConnectionId scid;
+  scid.randomize();
+  uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
+  QUICPacketUPtr cc_packet = pf.create_initial_packet(packet_buf, scid_in_initial, scid, 0, block, block_len, 0, 0, 1);
+
+  this->_send_packet(*cc_packet, connection, from, 0, &php, scid_in_initial);
 }
 
 //
