@@ -565,7 +565,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   if (err == PARSE_RESULT_ERROR) {
     req_hdr.destroy();
     rsp_hdr.destroy();
-    return (failures_to_status("test_http_aux", (status == 0)));
+    return (failures_to_status("test_http_aux", false));
   }
 
   /*** useless copy to exercise copy function ***/
@@ -606,7 +606,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   if (err == PARSE_RESULT_ERROR) {
     req_hdr.destroy();
     rsp_hdr.destroy();
-    return (failures_to_status("test_http_aux", (status == 0)));
+    return (failures_to_status("test_http_aux", false));
   }
 
   http_parser_clear(&parser);
@@ -655,7 +655,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   req_hdr.destroy();
   rsp_hdr.destroy();
 
-  return (failures_to_status("test_http_aux", (status == 0)));
+  return (failures_to_status("test_http_aux", false));
 }
 
 int
@@ -1599,7 +1599,7 @@ HdrTest::test_http_mutation()
 
   resp_hdr.destroy();
 
-  return (failures_to_status("test_http_mutation", (status == 0)));
+  return (failures_to_status("test_http_mutation", false));
 }
 
 /*-------------------------------------------------------------------------
