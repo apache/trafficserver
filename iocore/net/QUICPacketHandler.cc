@@ -394,10 +394,11 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
     QUICRetryToken token(from, dcid);
     QUICConnectionId local_cid;
     local_cid.randomize();
-    QUICPacketUPtr retry_packet = QUICPacketFactory::create_retry_packet(scid, local_cid, dcid, token);
+    QUICPacketUPtr retry_packet = QUICPacketFactory::create_retry_packet(scid, local_cid, token);
 
-    QUICDebug("[TX] %s packet ODCID=%" PRIx64 " token_length=%u", QUICDebugNames::packet_type(retry_packet->type()),
-              static_cast<uint64_t>(static_cast<const QUICRetryPacket &>(*retry_packet).original_dcid()), token.length());
+    QUICDebug("[TX] %s packet ODCID=%" PRIx64 " token_length=%u token=%02x%02x%02x%02x...",
+              QUICDebugNames::packet_type(retry_packet->type()), static_cast<uint64_t>(token.original_dcid()), token.length(),
+              token.buf()[0], token.buf()[1], token.buf()[2], token.buf()[3]);
     this->_send_packet(*retry_packet, connection, from, 1200, nullptr, 0);
 
     return -2;
@@ -411,8 +412,9 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
         QUICDebug("Retry Token is valid. ODCID=%" PRIx64, static_cast<uint64_t>(*original_cid));
         return 0;
       } else {
-        QUICDebug("Retry token is invalid: ODCID=%" PRIx64 "token_length=%u", static_cast<uint64_t>(token.original_dcid()),
-                  token.length());
+        QUICDebug("Retry token is invalid: ODCID=%" PRIx64 "token_length=%u token=%02x%02x%02x%02x...",
+                  static_cast<uint64_t>(token.original_dcid()), token.length(), token.buf()[0], token.buf()[1], token.buf()[2],
+                  token.buf()[3]);
         this->_send_invalid_token_error(buf, buf_len, connection, from);
         return -3;
       }

@@ -1173,6 +1173,15 @@ QUICNetVConnection::_state_handshake_process_retry_packet(const QUICRetryPacketR
     return nullptr;
   }
 
+  // Check Integrity Tag
+  if (!packet.has_valid_tag(this->_original_quic_connection_id)) {
+    // Discard the packet
+    QUICConDebug("Ignore RETRY packet - integrity tag is not valid");
+    return nullptr;
+  } else {
+    QUICConDebug("Integrity tag is valid");
+  }
+
   // TODO: move packet->payload to _av_token
   this->_av_token_len = packet.token().length();
   this->_av_token     = ats_unique_malloc(this->_av_token_len);

@@ -30,6 +30,7 @@
 #include "I_IOBuffer.h"
 
 #include "QUICTypes.h"
+#include "QUICRetryIntegrityTag.h"
 
 #define QUIC_FIELD_OFFSET_CONNECTION_ID 1
 #define QUIC_FIELD_OFFSET_PACKET_NUMBER 4
@@ -505,7 +506,7 @@ public:
   /**
    * For sending packet
    */
-  QUICRetryPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, QUICConnectionId ocid, QUICRetryToken &token);
+  QUICRetryPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, QUICRetryToken &token);
 
   QUICPacketType type() const override;
   QUICPacketNumber packet_number() const override;
@@ -514,12 +515,13 @@ public:
   Ptr<IOBufferBlock> header_block() const override;
   Ptr<IOBufferBlock> payload_block() const override;
 
-  QUICConnectionId original_dcid() const;
   const QUICRetryToken &token() const;
 
 private:
-  QUICConnectionId _ocid;
   QUICRetryToken _token;
+
+  bool _compute_retry_integrity_tag(uint8_t *out, QUICConnectionId odcid, Ptr<IOBufferBlock> header,
+                                    Ptr<IOBufferBlock> payload) const;
 };
 
 class QUICRetryPacketR : public QUICLongHeaderPacketR
@@ -537,11 +539,12 @@ public:
   QUICPacketType type() const override;
   QUICPacketNumber packet_number() const override;
 
-  QUICConnectionId original_dcid() const;
   const QUICAddressValidationToken &token() const;
+  bool has_valid_tag(QUICConnectionId &odcid) const;
 
 private:
   QUICPacketNumber _packet_number;
-  QUICConnectionId _odcid;
   QUICAddressValidationToken *_token = nullptr;
+  uint8_t _integrity_tag[QUICRetryIntegrityTag::LEN];
+  Ptr<IOBufferBlock> _payload_block_without_tag;
 };

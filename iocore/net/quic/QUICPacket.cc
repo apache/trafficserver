@@ -30,6 +30,7 @@
 
 #include "QUICIntUtil.h"
 #include "QUICDebugNames.h"
+#include "QUICRetryIntegrityTag.h"
 
 using namespace std::literals;
 static constexpr uint64_t aead_tag_len             = 16;
@@ -1626,9 +1627,8 @@ QUICHandshakePacketR::attach_payload(Ptr<IOBufferBlock> payload, bool unprotecte
 //
 // QUICRetryPacket
 //
-QUICRetryPacket::QUICRetryPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, QUICConnectionId ocid,
-                                 QUICRetryToken &token)
-  : QUICLongHeaderPacket(version, dcid, scid, false, false, false), _ocid(ocid), _token(token)
+QUICRetryPacket::QUICRetryPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, QUICRetryToken &token)
+  : QUICLongHeaderPacket(version, dcid, scid, false, false, false), _token(token)
 {
 }
 
@@ -1681,39 +1681,22 @@ QUICRetryPacket::payload_block() const
   Ptr<IOBufferBlock> block;
   uint8_t *buf;
   size_t written_len = 0;
-  size_t n;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(QUICConnectionId::MAX_LENGTH + this->_token.length()));
+  block->alloc(iobuffer_size_to_index(QUICConnectionId::MAX_LENGTH + this->_token.length() + QUICRetryIntegrityTag::LEN));
   buf = reinterpret_cast<uint8_t *>(block->start());
-
-  // Original Destination Connection ID
-  if (this->_ocid != QUICConnectionId::ZERO()) {
-    // Len
-    buf[written_len] = this->_ocid.length();
-    written_len += 1;
-
-    // ID
-    QUICTypeUtil::write_QUICConnectionId(this->_ocid, buf + written_len, &n);
-    written_len += n;
-  } else {
-    buf[written_len] = 0;
-    written_len += 1;
-  }
 
   // Retry Token
   memcpy(buf + written_len, this->_token.buf(), this->_token.length());
   written_len += this->_token.length();
-
   block->fill(written_len);
 
-  return block;
-}
+  // Retry Integrity Tag
+  QUICRetryIntegrityTag::compute(buf + written_len, this->_token.original_dcid(), this->header_block(), block);
+  written_len += QUICRetryIntegrityTag::LEN;
+  block->fill(QUICRetryIntegrityTag::LEN);
 
-QUICConnectionId
-QUICRetryPacket::original_dcid() const
-{
-  return this->_ocid;
+  return block;
 }
 
 const QUICRetryToken &
@@ -1756,20 +1739,20 @@ QUICRetryPacketR::QUICRetryPacketR(UDPConnection *udp_con, IpEndpoint from, IpEn
   this->_scid = {raw_buf + offset, scil};
   offset += scil;
 
-  // Original Destination Connection ID
-  uint8_t odcil = raw_buf[offset];
-  offset += 1;
-  this->_odcid = {raw_buf + offset, odcil};
-  offset += odcil;
-
   // Retry Token field
-  this->_token = new QUICRetryToken(raw_buf + offset, len - offset);
+  this->_token = new QUICRetryToken(raw_buf + offset, len - offset - QUICRetryIntegrityTag::LEN);
+  offset += this->_token->length();
 
-  this->_header_block          = concatinated_block->clone();
-  this->_header_block->_end    = this->_header_block->_start + offset;
-  this->_header_block->next    = nullptr;
-  this->_payload_block         = concatinated_block->clone();
-  this->_payload_block->_start = this->_payload_block->_start + offset;
+  // Retry Integrity Tag
+  memcpy(this->_integrity_tag, raw_buf + offset, QUICRetryIntegrityTag::LEN);
+
+  this->_header_block                    = concatinated_block->clone();
+  this->_header_block->_end              = this->_header_block->_start + offset;
+  this->_header_block->next              = nullptr;
+  this->_payload_block                   = concatinated_block->clone();
+  this->_payload_block->_start           = this->_payload_block->_start + offset;
+  this->_payload_block_without_tag       = this->_payload_block->clone();
+  this->_payload_block_without_tag->_end = this->_payload_block_without_tag->_end - QUICRetryIntegrityTag::LEN;
 }
 
 QUICRetryPacketR::~QUICRetryPacketR()
@@ -1801,14 +1784,17 @@ QUICRetryPacketR::packet_number() const
   return this->_packet_number;
 }
 
-QUICConnectionId
-QUICRetryPacketR::original_dcid() const
-{
-  return this->_odcid;
-}
-
 const QUICAddressValidationToken &
 QUICRetryPacketR::token() const
 {
   return *(this->_token);
+}
+
+bool
+QUICRetryPacketR::has_valid_tag(QUICConnectionId &odcid) const
+{
+  uint8_t tag_computed[QUICRetryIntegrityTag::LEN];
+  QUICRetryIntegrityTag::compute(tag_computed, odcid, this->_header_block, this->_payload_block_without_tag);
+
+  return memcmp(this->_integrity_tag, tag_computed, QUICRetryIntegrityTag::LEN) == 0;
 }

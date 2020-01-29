@@ -76,8 +76,7 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
 
   QUICPacketUPtr packet =
     factory.create_retry_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
-                                QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4),
-                                QUICConnectionId(reinterpret_cast<const uint8_t *>("\x04\x03\x02\x01"), 4), token);
+                                QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4), token);
 
   REQUIRE(packet != nullptr);
 
@@ -85,7 +84,6 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
   CHECK(retry_packet.type() == QUICPacketType::RETRY);
   CHECK(retry_packet.destination_cid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4));
   CHECK(retry_packet.version() == QUIC_SUPPORTED_VERSIONS[0]);
-  CHECK(retry_packet.original_dcid() == QUICConnectionId(reinterpret_cast<const uint8_t *>("\x04\x03\x02\x01"), 4));
   CHECK(retry_packet.token() == token);
 }
 
