@@ -95,42 +95,17 @@ Http2Stream::main_event_handler(int event, void *edata)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     if (_sm && read_vio.ntodo() > 0) {
-      MUTEX_TRY_LOCK(lock, read_vio.mutex, this_ethread());
-      if (lock.is_locked()) {
-        read_vio.cont->handleEvent(event, &read_vio);
-      } else {
-        if (this->_read_vio_event) {
-          this->_read_vio_event->cancel();
-        }
-        this->_read_vio_event = this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
-      }
+      this->_signal_event(this->read_vio, event);
     } else if (_sm && write_vio.ntodo() > 0) {
-      MUTEX_TRY_LOCK(lock, write_vio.mutex, this_ethread());
-      if (lock.is_locked()) {
-        write_vio.cont->handleEvent(event, &write_vio);
-      } else {
-        if (this->_write_vio_event) {
-          this->_write_vio_event->cancel();
-        }
-        this->_write_vio_event = this_ethread()->schedule_imm(write_vio.cont, event, &write_vio);
-      }
+      this->_signal_event(this->write_vio, event);
     }
+
     break;
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
-    if (e->cookie == &write_vio) {
-      if (write_vio.mutex && write_vio.cont && this->_sm) {
-        MUTEX_TRY_LOCK(lock, write_vio.mutex, this_ethread());
-        if (lock.is_locked()) {
-          write_vio.cont->handleEvent(event, &write_vio);
-        } else {
-          if (this->_write_vio_event) {
-            this->_write_vio_event->cancel();
-          }
-          this->_write_vio_event = this_ethread()->schedule_imm(write_vio.cont, event, &write_vio);
-        }
-      }
+    if (this->_sm && e->cookie == &write_vio) {
+      this->_signal_event(this->write_vio, event);
     } else {
       update_write_request(write_vio.get_reader(), INT64_MAX, true);
     }
@@ -139,17 +114,7 @@ Http2Stream::main_event_handler(int event, void *edata)
   case VC_EVENT_READ_READY:
     inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
     if (e->cookie == &read_vio) {
-      if (read_vio.mutex && read_vio.cont && this->_sm) {
-        MUTEX_TRY_LOCK(lock, read_vio.mutex, this_ethread());
-        if (lock.is_locked()) {
-          read_vio.cont->handleEvent(event, &read_vio);
-        } else {
-          if (this->_read_vio_event) {
-            this->_read_vio_event->cancel();
-          }
-          this->_read_vio_event = this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
-        }
-      }
+      this->_signal_event(this->read_vio, event);
     } else {
       this->update_read_request(INT64_MAX, true);
     }
@@ -664,19 +629,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
 void
 Http2Stream::signal_read_event(int event)
 {
-  if (this->read_vio.cont == nullptr || this->read_vio.cont->mutex == nullptr || this->read_vio.op == VIO::NONE) {
-    return;
-  }
-
-  MUTEX_TRY_LOCK(lock, read_vio.cont->mutex, this_ethread());
-  if (lock.is_locked()) {
-    this->read_vio.cont->handleEvent(event, &this->read_vio);
-  } else {
-    if (this->_read_vio_event) {
-      this->_read_vio_event->cancel();
-    }
-    this->_read_vio_event = this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
-  }
+  this->_signal_event(this->read_vio, event);
 }
 
 void
@@ -899,16 +852,6 @@ Http2Stream::clear_io_events()
     buffer_full_write_event->cancel();
     buffer_full_write_event = nullptr;
   }
-
-  if (this->_read_vio_event) {
-    this->_read_vio_event->cancel();
-    this->_read_vio_event = nullptr;
-  }
-
-  if (this->_write_vio_event) {
-    this->_write_vio_event->cancel();
-    this->_write_vio_event = nullptr;
-  }
 }
 
 void
@@ -987,6 +930,20 @@ Http2Stream::decrement_server_rwnd(size_t amount)
   } else {
     return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
   }
+}
+
+/**
+   Signal @event to @vio.cont
+ */
+void
+Http2Stream::_signal_event(VIO &vio, int event)
+{
+  if (vio.cont == nullptr || vio.cont->mutex == nullptr || vio.op == VIO::NONE) {
+    return;
+  }
+
+  SCOPED_MUTEX_LOCK(lock, vio.cont->mutex, this_ethread());
+  vio.cont->handleEvent(event, &vio);
 }
 
 bool

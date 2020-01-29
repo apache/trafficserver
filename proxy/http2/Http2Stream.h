@@ -148,7 +148,7 @@ private:
   bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   void send_response_body(bool call_update);
-
+  void _signal_event(VIO &vio, int event);
   /**
    * Check if this thread is the right thread to process events for this
    * continuation.
@@ -216,10 +216,8 @@ private:
   ink_hrtime inactive_timeout_at = 0;
   Event *inactive_event          = nullptr;
 
-  Event *read_event       = nullptr;
-  Event *write_event      = nullptr;
-  Event *_read_vio_event  = nullptr;
-  Event *_write_vio_event = nullptr;
+  Event *read_event  = nullptr;
+  Event *write_event = nullptr;
 };
 
 extern ClassAllocator<Http2Stream> http2StreamAllocator;
