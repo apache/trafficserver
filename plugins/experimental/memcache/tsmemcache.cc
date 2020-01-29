@@ -962,13 +962,13 @@ MC::ascii_incr_decr_event(int event, void *data)
     }
     header.cas = ink_atomic_increment(&next_cas, 1);
     {
-      char *data = nullptr;
-      int len    = 0;
+      char *localdata = nullptr;
+      int len         = 0;
       // must be huge, why convert to a counter ??
-      if (cwvc->get_single_data((void **)&data, &len) < 0) {
+      if (cwvc->get_single_data((void **)&localdata, &len) < 0) {
         goto Lfail;
       }
-      uint64_t new_value = xatoull(data, data + len);
+      uint64_t new_value = xatoull(localdata, localdata + len);
       if (f.set_incr) {
         new_value += delta;
       } else {
