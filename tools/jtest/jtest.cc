@@ -569,11 +569,11 @@ max_limit_fd()
 }
 
 static int
-read_ready(int fd)
+read_ready(int fd_in)
 {
   struct pollfd p;
   p.events = POLLIN;
-  p.fd     = fd;
+  p.fd     = fd_in;
   int r    = poll(&p, 1, 0);
   if (r <= 0) {
     return r;
@@ -646,8 +646,8 @@ fast(int sock, int speed, int d)
 static ink_hrtime
 elapsed_from_start(int sock)
 {
-  ink_hrtime now = ink_get_hrtime_internal();
-  return ink_hrtime_diff_msec(now, fd[sock].start);
+  ink_hrtime timenow = ink_get_hrtime_internal();
+  return ink_hrtime_diff_msec(timenow, fd[sock].start);
 }
 
 static int
