@@ -356,11 +356,11 @@ NetAccept::do_blocking_accept(EThread *t)
 #endif
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
 
-    EThread *t    = eventProcessor.assign_thread(opt.etype);
-    NetHandler *h = get_NetHandler(t);
+    EThread *localt = eventProcessor.assign_thread(opt.etype);
+    NetHandler *h   = get_NetHandler(localt);
     // Assign NetHandler->mutex to NetVC
     vc->mutex = h->mutex;
-    t->schedule_imm(vc);
+    localt->schedule_imm(vc);
   } while (loop);
 
   return 1;

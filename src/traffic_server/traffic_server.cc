@@ -1641,27 +1641,27 @@ change_uid_gid(const char *user)
  * This must work without the ability to elevate privilege if the files are accessible without.
  */
 void
-bind_outputs(const char *bind_stdout, const char *bind_stderr)
+bind_outputs(const char *bind_stdout_p, const char *bind_stderr_p)
 {
   int log_fd;
   unsigned int flags = O_WRONLY | O_APPEND | O_CREAT | O_SYNC;
 
-  if (*bind_stdout != 0) {
-    Debug("log", "binding stdout to %s", bind_stdout);
-    log_fd = elevating_open(bind_stdout, flags, 0644);
+  if (*bind_stdout_p != 0) {
+    Debug("log", "binding stdout to %s", bind_stdout_p);
+    log_fd = elevating_open(bind_stdout_p, flags, 0644);
     if (log_fd < 0) {
-      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stdout, errno, strerror(errno));
+      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stdout_p, errno, strerror(errno));
     } else {
       Debug("log", "duping stdout");
       dup2(log_fd, STDOUT_FILENO);
       close(log_fd);
     }
   }
-  if (*bind_stderr != 0) {
-    Debug("log", "binding stderr to %s", bind_stderr);
-    log_fd = elevating_open(bind_stderr, O_WRONLY | O_APPEND | O_CREAT | O_SYNC, 0644);
+  if (*bind_stderr_p != 0) {
+    Debug("log", "binding stderr to %s", bind_stderr_p);
+    log_fd = elevating_open(bind_stderr_p, O_WRONLY | O_APPEND | O_CREAT | O_SYNC, 0644);
     if (log_fd < 0) {
-      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stderr, errno, strerror(errno));
+      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stderr_p, errno, strerror(errno));
     } else {
       Debug("log", "duping stderr");
       dup2(log_fd, STDERR_FILENO);

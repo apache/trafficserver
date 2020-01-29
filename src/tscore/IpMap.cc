@@ -339,22 +339,22 @@ namespace detail
     N *n = this->lowerBound(rmin);
     N *x = nullptr; // New node (if any).
     // Need copies because we will modify these.
-    Metric min = N::deref(rmin);
-    Metric max = N::deref(rmax);
+    Metric localmin = N::deref(rmin);
+    Metric localmax = N::deref(rmax);
 
     // Handle cases involving a node of interest to the left of the
     // range.
     if (n) {
-      if (n->_min < min) {
-        Metric min_1 = min;
+      if (n->_min < localmin) {
+        Metric min_1 = localmin;
         N::dec(min_1);         // dec is OK because min isn't zero.
         if (n->_max < min_1) { // no overlap or adj.
           n = next(n);
-        } else if (n->_max >= max) { // incoming range is covered, just discard.
+        } else if (n->_max >= localmax) { // incoming range is covered, just discard.
           return *this;
         } else if (n->_data != payload) { // different payload, clip range on left.
-          min = n->_max;
-          N::inc(min);
+          localmin = n->_max;
+          N::inc(localmin);
           n = next(n);
         } else { // skew overlap with same payload, use node and continue.
           x = n;
@@ -371,7 +371,7 @@ namespace detail
     // Careful here -- because max_plus1 might wrap we need to use it only if we can be certain it
     // didn't. This is done by ordering the range tests so that when max_plus1 is used when we know
     // there exists a larger value than max.
-    Metric max_plus1 = max;
+    Metric max_plus1 = localmax;
     N::inc(max_plus1);
 
     /* Notes:
@@ -381,7 +381,7 @@ namespace detail
     while (n) {
       if (n->_data == payload) {
         if (x) {
-          if (n->_max <= max) { // next range is covered, so we can remove and continue.
+          if (n->_max <= localmax) { // next range is covered, so we can remove and continue.
 #if defined(__clang_analyzer__)
             x->_next = n->_next; // done in @c remove, but CA doesn't realize that.
                                  // It's insufficient to assert(x->_next != n) after the remove.
@@ -395,52 +395,52 @@ namespace detail
             return *this;
           } else {
             // have the space to finish off the range.
-            x->setMax(max);
+            x->setMax(localmax);
             return *this;
           }
-        } else {                // not carrying a span.
-          if (n->_max <= max) { // next range is covered - use it.
+        } else {                     // not carrying a span.
+          if (n->_max <= localmax) { // next range is covered - use it.
             x = n;
-            x->setMin(min);
+            x->setMin(localmin);
             n = next(n);
           } else if (n->_min <= max_plus1) {
-            n->setMin(min);
+            n->setMin(localmin);
             return *this;
           } else { // no overlap, space to complete range.
-            this->insert_before(n, new N(min, max, payload));
+            this->insert_before(n, new N(localmin, localmax, payload));
             return *this;
           }
         }
       } else { // different payload
         if (x) {
-          if (max < n->_min) { // range ends before n starts, done.
-            x->setMax(max);
+          if (localmax < n->_min) { // range ends before n starts, done.
+            x->setMax(localmax);
             return *this;
-          } else if (max <= n->_max) { // range ends before n, done.
+          } else if (localmax <= n->_max) { // range ends before n, done.
             x->setMaxMinusOne(n->_min);
             return *this;
           } else { // n is contained in range, skip over it.
             x->setMaxMinusOne(n->_min);
-            x   = nullptr;
-            min = n->_max;
-            N::inc(min); // OK because n->_max maximal => next is null.
+            x        = nullptr;
+            localmin = n->_max;
+            N::inc(localmin); // OK because n->_max maximal => next is null.
             n = next(n);
           }
-        } else {               // no carry node.
-          if (max < n->_min) { // entirely before next span.
-            this->insert_before(n, new N(min, max, payload));
+        } else {                    // no carry node.
+          if (localmax < n->_min) { // entirely before next span.
+            this->insert_before(n, new N(localmin, localmax, payload));
             return *this;
           } else {
-            if (min < n->_min) { // leading section, need node.
-              N *y = new N(min, n->_min, payload);
+            if (localmin < n->_min) { // leading section, need node.
+              N *y = new N(localmin, n->_min, payload);
               y->decrementMax();
               this->insert_before(n, y);
             }
-            if (max <= n->_max) { // nothing past node
+            if (localmax <= n->_max) { // nothing past node
               return *this;
             }
-            min = n->_max;
-            N::inc(min);
+            localmin = n->_max;
+            N::inc(localmin);
             n = next(n);
           }
         }
@@ -448,9 +448,9 @@ namespace detail
     }
     // Invariant: min is larger than any existing range maximum.
     if (x) {
-      x->setMax(max);
+      x->setMax(localmax);
     } else {
-      this->append(new N(min, max, payload));
+      this->append(new N(localmin, localmax, payload));
     }
     return *this;
   }

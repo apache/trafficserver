@@ -6783,19 +6783,19 @@ TSHttpConnectTransparent(sockaddr const *client_addr, sockaddr const *server_add
 void
 TSActionCancel(TSAction actionp)
 {
-  Action *a;
+  Action *thisaction;
   INKContInternal *i;
 
   /* This is a hack. Should be handled in ink_types */
   if ((uintptr_t)actionp & 0x1) {
-    a = (Action *)((uintptr_t)actionp - 1);
-    i = (INKContInternal *)a->continuation;
+    thisaction = (Action *)((uintptr_t)actionp - 1);
+    i          = (INKContInternal *)thisaction->continuation;
     i->handle_event_count(EVENT_IMMEDIATE);
   } else {
-    a = (Action *)actionp;
+    thisaction = (Action *)actionp;
   }
 
-  a->cancel();
+  thisaction->cancel();
 }
 
 // Currently no error handling necessary, actionp can be anything.
