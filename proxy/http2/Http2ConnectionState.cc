@@ -997,6 +997,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     ink_assert(this->fini_received == false);
     this->fini_received = true;
     cleanup_streams();
+    release_stream();
     SET_HANDLER(&Http2ConnectionState::state_closed);
   } break;
 
