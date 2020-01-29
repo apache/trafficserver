@@ -406,7 +406,7 @@ LocalManager::pollMgmtProcessServer()
 
         // read the message
         if ((res = mgmt_read_pipe(watched_process_fd, reinterpret_cast<char *>(&mh_hdr), sizeof(MgmtMessageHdr))) > 0) {
-          MgmtMessageHdr *mh_full = static_cast<MgmtMessageHdr *>(alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len));
+          MgmtMessageHdr *mh_full = static_cast<MgmtMessageHdr *>(malloc(sizeof(MgmtMessageHdr) + mh_hdr.data_len));
           memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
           char *data_raw = reinterpret_cast<char *>(mh_full) + sizeof(MgmtMessageHdr);
           if ((res = mgmt_read_pipe(watched_process_fd, data_raw, mh_hdr.data_len)) > 0) {
@@ -414,6 +414,7 @@ LocalManager::pollMgmtProcessServer()
           } else if (res < 0) {
             mgmt_fatal(0, "[LocalManager::pollMgmtProcessServer] Error in read (errno: %d)\n", -res);
           }
+          free(mh_full);
         } else if (res < 0) {
           mgmt_fatal(0, "[LocalManager::pollMgmtProcessServer] Error in read (errno: %d)\n", -res);
         }
