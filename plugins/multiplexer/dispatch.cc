@@ -168,9 +168,9 @@ public:
     if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
       const TSIOBuffer buffer = TSIOBufferCreate();
       TSHttpHdrPrint(b, l, buffer);
-      std::string b;
-      read(buffer, b);
-      TSDebug(PLUGIN_TAG, "Response header for \"%s\" was:\n%s", url.c_str(), b.c_str());
+      std::string buf;
+      read(buffer, buf);
+      TSDebug(PLUGIN_TAG, "Response header for \"%s\" was:\n%s", url.c_str(), buf.c_str());
       TSIOBufferDestroy(buffer);
     }
   }

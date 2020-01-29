@@ -1734,10 +1734,10 @@ SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten)
   }
   int ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.write")) {
-    char buf[512];
+    char tempbuf[512];
     unsigned long e = ERR_peek_last_error();
-    ERR_error_string_n(e, buf, sizeof(buf));
-    Debug("ssl.error.write", "SSL write returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, buf);
+    ERR_error_string_n(e, tempbuf, sizeof(tempbuf));
+    Debug("ssl.error.write", "SSL write returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, tempbuf);
   }
   return ssl_error;
 }
@@ -1815,10 +1815,10 @@ SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
   }
   int ssl_error = SSL_get_error(ssl, ret);
   if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.read")) {
-    char buf[512];
+    char tempbuf[512];
     unsigned long e = ERR_peek_last_error();
-    ERR_error_string_n(e, buf, sizeof(buf));
-    Debug("ssl.error.read", "SSL read returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, buf);
+    ERR_error_string_n(e, tempbuf, sizeof(tempbuf));
+    Debug("ssl.error.read", "SSL read returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, tempbuf);
   }
 
   return ssl_error;

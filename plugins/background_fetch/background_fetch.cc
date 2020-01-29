@@ -531,9 +531,9 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
           TSDebug(PLUGIN_NAME, "Testing: response status code: %d?", status);
           if (TS_HTTP_STATUS_PARTIAL_CONTENT == status || (config->allow304() && TS_HTTP_STATUS_NOT_MODIFIED == status)) {
             // Everything looks good so far, add a TXN hook for SEND_RESPONSE_HDR
-            TSCont contp = TSContCreate(cont_check_cacheable, nullptr);
+            TSCont localcontp = TSContCreate(cont_check_cacheable, nullptr);
 
-            TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+            TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, localcontp);
           }
           // Release the response MLoc
           TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
