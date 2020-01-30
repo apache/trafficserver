@@ -16,8 +16,8 @@
   limitations under the License.
 */
 
-#include "tscore/ink_platform.h"
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include "ts_lua_util.h"
 
 #define TS_LUA_CHECK_SERVER_REQUEST_HDR(http_ctx)                                                                                \

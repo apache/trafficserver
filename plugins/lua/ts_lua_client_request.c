@@ -16,8 +16,8 @@
   limitations under the License.
 */
 
-#include "tscore/ink_platform.h"
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include "ts_lua_util.h"
 
 static void ts_lua_inject_client_request_client_addr_api(lua_State *L);
