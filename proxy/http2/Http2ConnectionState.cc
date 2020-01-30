@@ -527,7 +527,7 @@ rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     Http2StreamDebug(cstate.ua_session, stream_id, "RST_STREAM: Error Code: %u", rst_stream.error_code);
 
     stream->set_rx_error_code({ProxyErrorClass::TXN, static_cast<uint32_t>(rst_stream.error_code)});
-    cstate.delete_stream(stream);
+    stream->initiating_close();
   }
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -998,8 +998,8 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     ink_assert(this->fini_received == false);
     this->fini_received = true;
     cleanup_streams();
+    release_stream();
     SET_HANDLER(&Http2ConnectionState::state_closed);
-    this->release_stream(nullptr);
   } break;
 
   case HTTP2_SESSION_EVENT_XMIT: {
@@ -1287,12 +1287,10 @@ Http2ConnectionState::cleanup_streams()
     if (this->tx_error_code.cls != ProxyErrorClass::NONE) {
       s->set_tx_error_code(this->tx_error_code);
     }
-    this->delete_stream(s);
+    s->initiating_close();
     ink_assert(s != next);
     s = next;
   }
-
-  ink_assert(stream_list.empty());
 
   if (!is_state_closed()) {
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
@@ -1356,15 +1354,9 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 }
 
 void
-Http2ConnectionState::release_stream(Http2Stream *stream)
+Http2ConnectionState::release_stream()
 {
   REMEMBER(NO_EVENT, this->recursion)
-
-  if (stream) {
-    // Decrement total_client_streams_count here, because it's a counter include streams in the process of shutting down.
-    // Other counters (client_streams_in_count/client_streams_out_count) are already decremented in delete_stream().
-    --total_client_streams_count;
-  }
 
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   if (this->ua_session) {
@@ -1461,7 +1453,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
   }
   case Http2SendDataFrameResult::DONE: {
     dependency_tree->deactivate(node, len);
-    delete_stream(stream);
+    stream->initiating_close();
     break;
   }
   default:
@@ -1554,7 +1546,7 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
   if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL ||
       stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "Shutdown half closed local stream");
-    this->delete_stream(stream);
+    stream->initiating_close();
     return;
   }
 
@@ -1569,7 +1561,7 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
       // RST_STREAM and WINDOW_UPDATE.
       // See 'closed' state written at [RFC 7540] 5.1.
       Http2StreamDebug(this->ua_session, stream->get_id(), "Shutdown stream");
-      this->delete_stream(stream);
+      stream->initiating_close();
     }
   }
 
