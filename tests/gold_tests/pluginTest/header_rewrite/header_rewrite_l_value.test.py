@@ -17,7 +17,9 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test a basic remap of a http connection
+Test for a regression of the issue fixed in 
+https://github.com/apache/trafficserver/pull/5423 
+Insertion of header rewrite directives in to the output
 '''
 
 Test.ContinueOnFail = True
