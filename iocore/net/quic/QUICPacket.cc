@@ -772,6 +772,7 @@ QUICStatelessResetPacket::header_block() const
   for (int i = 0; i < MIN_UNPREDICTABLE_FIELD_LEN; ++i) {
     buf[i] = static_cast<uint8_t>(rnd() & 0xFF);
   }
+  buf[0] = (buf[0] | 0x40) & 0x7f;
   written_len += MIN_UNPREDICTABLE_FIELD_LEN;
 
   block->fill(written_len);
