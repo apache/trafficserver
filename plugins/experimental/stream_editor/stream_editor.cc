@@ -98,6 +98,7 @@
 #include <cstring>
 #include <string>
 #include <cstdio>
+#include <stdexcept>
 #include "ts/ts.h"
 
 struct edit_t;
