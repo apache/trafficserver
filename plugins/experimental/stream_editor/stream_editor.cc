@@ -223,6 +223,7 @@ public:
     if (error) {
       TSError("stream-editor: can't compile regexp [%s]", str);
       TSfree(str);
+      throw std::runtime_error("stream editor: Error compiling regex, regcomp in rxscope");
     }
     TSfree(str);
   }
@@ -356,6 +357,7 @@ public:
     if (error) {
       TSError("stream-editor: can't compile regexp [%s]", str);
       TSfree(str);
+      throw std::runtime_error("stream editor: Error compiling regex, regcomp in rxmatch");
     }
     TSfree(str);
   }
