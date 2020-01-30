@@ -223,7 +223,6 @@ public:
     if (error) {
       TSError("stream-editor: can't compile regexp [%s]", str);
       TSfree(str);
-      throw;
     }
     TSfree(str);
   }
@@ -357,7 +356,6 @@ public:
     if (error) {
       TSError("stream-editor: can't compile regexp [%s]", str);
       TSfree(str);
-      throw;
     }
     TSfree(str);
   }
