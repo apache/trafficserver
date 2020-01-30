@@ -59,7 +59,7 @@ typedef struct async_item {
   void *data;   // private data
 
   async_clean cleanup; // cleanup function
-  int deleted : 1;
+  unsigned int deleted : 1;
 } ts_lua_async_item;
 
 ts_lua_async_item *ts_lua_async_create_item(TSCont cont, async_clean func, void *d, ts_lua_cont_info *ci);
