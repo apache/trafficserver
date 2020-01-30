@@ -39,12 +39,14 @@ QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConne
 {
   // Sequence number of the initial CID is 0
   this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
+  this->_alt_quic_connection_ids_local[0].seq_num    = 0;
+  this->_alt_quic_connection_ids_local[0].advertised = true;
 
   if ((preferred_endpoint_ipv4 && !ats_ip_addr_port_eq(*preferred_endpoint_ipv4, qc->five_tuple().source())) ||
       (preferred_endpoint_ipv6 && !ats_ip_addr_port_eq(*preferred_endpoint_ipv6, qc->five_tuple().source()))) {
-    this->_alt_quic_connection_ids_local[0] = this->_generate_next_alt_con_info();
+    this->_alt_quic_connection_ids_local[1] = this->_generate_next_alt_con_info();
     // This alt cid will be advertised via Transport Parameter, so no need to advertise it via NCID frame
-    this->_alt_quic_connection_ids_local[0].advertised = true;
+    this->_alt_quic_connection_ids_local[1].advertised = true;
 
     IpEndpoint empty_endpoint_ipv4;
     IpEndpoint empty_endpoint_ipv6;
@@ -127,7 +129,7 @@ QUICAltConnectionManager::_generate_next_alt_con_info()
 void
 QUICAltConnectionManager::_init_alt_connection_ids()
 {
-  for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
+  for (int i = this->_alt_quic_connection_id_seq_num + 1; i < this->_remote_active_cid_limit; ++i) {
     this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
   }
   this->_need_advertise = true;
@@ -136,16 +138,6 @@ QUICAltConnectionManager::_init_alt_connection_ids()
 bool
 QUICAltConnectionManager::_update_alt_connection_id(uint64_t chosen_seq_num)
 {
-  // Seq 0 is special so it's not in the array
-  if (chosen_seq_num == 0) {
-    return true;
-  }
-
-  // Seq 1 is for Preferred Address
-  if (chosen_seq_num == 1) {
-    return true;
-  }
-
   for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
     if (this->_alt_quic_connection_ids_local[i].seq_num == chosen_seq_num) {
       this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
