@@ -139,6 +139,12 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ssn_start_time = Thread::get_hrtime();
   in_destroy     = false;
 
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
+  if (ssl_vc != nullptr) {
+    read_from_early_data = ssl_vc->read_from_early_data;
+    Debug("ssl_early_data", "read_from_early_data = %" PRId64, read_from_early_data);
+  }
+
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   ink_assert(lock.is_locked());
 
@@ -188,6 +194,8 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   _reader     = reader ? reader : read_buffer->alloc_reader();
   trans.set_reader(_reader);
+
+  _handle_if_ssl(new_vc);
 
   // INKqa11186: Use a local pointer to the mutex as
   // when we return from do_api_callout, the ClientSession may
@@ -460,7 +468,7 @@ Http1ClientSession::new_transaction()
   transact_count++;
 
   client_vc->add_to_active_queue();
-  trans.new_transaction();
+  trans.new_transaction(read_from_early_data > 0 ? true : false);
 }
 
 void

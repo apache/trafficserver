@@ -541,8 +541,6 @@ HdrTest::test_http_aux(const char *request, const char *response)
   const char *start;
   const char *end;
 
-  int status = 1;
-
   printf("   <<< MUST BE HAND-VERIFIED FOR FULL BENEFIT >>>\n\n");
 
   /*** (1) parse the request string into req_hdr ***/
@@ -565,7 +563,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   if (err == PARSE_RESULT_ERROR) {
     req_hdr.destroy();
     rsp_hdr.destroy();
-    return (failures_to_status("test_http_aux", (status == 0)));
+    return (failures_to_status("test_http_aux", false));
   }
 
   /*** useless copy to exercise copy function ***/
@@ -606,7 +604,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   if (err == PARSE_RESULT_ERROR) {
     req_hdr.destroy();
     rsp_hdr.destroy();
-    return (failures_to_status("test_http_aux", (status == 0)));
+    return (failures_to_status("test_http_aux", false));
   }
 
   http_parser_clear(&parser);
@@ -655,7 +653,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   req_hdr.destroy();
   rsp_hdr.destroy();
 
-  return (failures_to_status("test_http_aux", (status == 0)));
+  return (failures_to_status("test_http_aux", false));
 }
 
 int
@@ -1520,8 +1518,6 @@ HdrTest::test_http()
 int
 HdrTest::test_http_mutation()
 {
-  int status = 1;
-
   bri_box("test_http_mutation");
 
   printf("   <<< MUST BE HAND-VERIFIED FOR FULL BENEFIT>>>\n\n");
@@ -1599,7 +1595,7 @@ HdrTest::test_http_mutation()
 
   resp_hdr.destroy();
 
-  return (failures_to_status("test_http_mutation", (status == 0)));
+  return (failures_to_status("test_http_mutation", false));
 }
 
 /*-------------------------------------------------------------------------

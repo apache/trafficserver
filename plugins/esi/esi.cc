@@ -30,7 +30,6 @@
 #include <string>
 #include <list>
 #include <arpa/inet.h>
-#include <pthread.h>
 #include <getopt.h>
 
 #include "ts/ts.h"
@@ -47,7 +46,6 @@
 #include "serverIntercept.h"
 #include "Stats.h"
 #include "HttpDataFetcherImpl.h"
-#include "FailureInfo.h"
 using std::string;
 using std::list;
 using namespace EsiLib;
@@ -1493,7 +1491,6 @@ lFail:
   return false;
 }
 
-pthread_key_t threadKey = 0;
 static int
 globalHookHandler(TSCont contp, TSEvent event, void *edata)
 {
@@ -1629,28 +1626,14 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
     }
   }
 
-  int result = 0;
-  bool bKeySet;
-  if (threadKey == 0) {
-    bKeySet = true;
-    if ((result = pthread_key_create(&threadKey, nullptr)) != 0) {
-      TSError("[esi][%s] Could not create key", __FUNCTION__);
-      TSDebug(DEBUG_TAG, "[%s] Could not create key", __FUNCTION__);
-    }
-  } else {
-    bKeySet = false;
-  }
+  TSDebug(DEBUG_TAG,
+          "[%s] Plugin started, "
+          "packed-node-support: %d, private-response: %d, "
+          "disable-gzip-output: %d, first-byte-flush: %d ",
+          __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
+          pOptionInfo->first_byte_flush);
 
-  if (result == 0) {
-    TSDebug(DEBUG_TAG,
-            "[%s] Plugin started%s, "
-            "packed-node-support: %d, private-response: %d, "
-            "disable-gzip-output: %d, first-byte-flush: %d ",
-            __FUNCTION__, bKeySet ? " and key is set" : "", pOptionInfo->packed_node_support, pOptionInfo->private_response,
-            pOptionInfo->disable_gzip_output, pOptionInfo->first_byte_flush);
-  }
-
-  return result;
+  return 0;
 }
 
 void

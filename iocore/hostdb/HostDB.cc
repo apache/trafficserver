@@ -2209,7 +2209,7 @@ ParseHostLine(Ptr<RefCountedHostsFileMap> &map, char *l)
 }
 
 void
-ParseHostFile(const char *path, unsigned int hostdb_hostfile_check_interval)
+ParseHostFile(const char *path, unsigned int hostdb_hostfile_check_interval_parse)
 {
   Ptr<RefCountedHostsFileMap> parsed_hosts_file_ptr;
 
@@ -2229,7 +2229,7 @@ ParseHostFile(const char *path, unsigned int hostdb_hostfile_check_interval)
         int64_t size = info.st_size + 1;
 
         parsed_hosts_file_ptr                 = new RefCountedHostsFileMap;
-        parsed_hosts_file_ptr->next_sync_time = ink_time() + hostdb_hostfile_check_interval;
+        parsed_hosts_file_ptr->next_sync_time = ink_time() + hostdb_hostfile_check_interval_parse;
         parsed_hosts_file_ptr->HostFileText   = static_cast<char *>(ats_malloc(size));
         if (parsed_hosts_file_ptr->HostFileText) {
           char *base = parsed_hosts_file_ptr->HostFileText;

@@ -251,15 +251,15 @@ NextHopSelectionStrategy::markNextHopDown(const uint64_t sm_id, ParentResult &re
       }
       new_fail_count = old_count + 1;
     } // end of lock_guard
-    NH_Debug("parent_select", "[%" PRIu64 "] Parent fail count increased to %d for %s:%d", sm_id, new_fail_count,
-             h->hostname.c_str(), h->getPort(scheme));
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Parent fail count increased to %d for %s:%d", sm_id, new_fail_count, h->hostname.c_str(),
+             h->getPort(scheme));
   }
 
   if (new_fail_count >= fail_threshold) {
     h->set_unavailable();
     NH_Note("[%" PRIu64 "] Failure threshold met failcount:%d >= threshold:%" PRIu64 ", http parent proxy %s:%d marked down", sm_id,
             new_fail_count, fail_threshold, h->hostname.c_str(), h->getPort(scheme));
-    NH_Debug("parent_select", "[%" PRIu64 "] NextHop %s:%d marked unavailable, h->available=%s", sm_id, h->hostname.c_str(),
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] NextHop %s:%d marked unavailable, h->available=%s", sm_id, h->hostname.c_str(),
              h->getPort(scheme), (h->available) ? "true" : "false");
   }
 }
@@ -287,6 +287,21 @@ NextHopSelectionStrategy::markNextHopUp(const uint64_t sm_id, ParentResult &resu
     h->set_available();
     NH_Note("[%" PRIu64 "] http parent proxy %s:%d restored", sm_id, h->hostname.c_str(), h->getPort(scheme));
   }
+}
+
+bool
+NextHopSelectionStrategy::nextHopExists(const uint64_t sm_id)
+{
+  for (uint32_t gg = 0; gg < groups; gg++) {
+    for (uint32_t hh = 0; hh < host_groups[gg].size(); hh++) {
+      HostRecord *p = host_groups[gg][hh].get();
+      if (p->available) {
+        NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] found available next hop %s", sm_id, p->hostname.c_str());
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 namespace YAML

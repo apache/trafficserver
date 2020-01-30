@@ -228,10 +228,11 @@ help(const string &host, const string &version)
 
   while (true) {
     clear();
-    time_t now       = time(nullptr);
-    struct tm *nowtm = localtime(&now);
+    time_t now = time(nullptr);
+    struct tm nowtm;
     char timeBuf[32];
-    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);
+    localtime_r(&now, &nowtm);
+    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &nowtm);
 
     // clear();
     attron(A_BOLD);
@@ -467,10 +468,11 @@ main(int argc, const char **argv)
     attron(A_BOLD);
 
     string version;
-    time_t now       = time(nullptr);
-    struct tm *nowtm = localtime(&now);
+    time_t now = time(nullptr);
+    struct tm nowtm;
     char timeBuf[32];
-    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);
+    localtime_r(&now, &nowtm);
+    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &nowtm);
     stats.getStat("version", version);
 
     mvprintw(23, 0, "%-20.20s   %30s (q)uit (h)elp (%c)bsolute  ", host.c_str(), page_alt.c_str(), absolute ? 'A' : 'a');

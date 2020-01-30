@@ -62,7 +62,7 @@ public:
   NetState read{};
   NetState write{};
 
-  bool closed    = false;
+  int closed     = 0;
   NetHandler *nh = nullptr;
 
   ink_hrtime inactivity_timeout_in      = 0;

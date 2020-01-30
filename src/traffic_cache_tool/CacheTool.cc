@@ -520,8 +520,8 @@ Cache::loadSpanConfig(ts::file::path const &path)
       if (line.empty() || '#' == *line) {
         continue;
       }
-      ts::TextView path = line.take_prefix_if(&isspace);
-      if (path) {
+      ts::TextView localpath = line.take_prefix_if(&isspace);
+      if (localpath) {
         // After this the line is [size] [id=string] [volume=#]
         while (line) {
           ts::TextView value(line.take_prefix_if(&isspace));
@@ -539,7 +539,7 @@ Cache::loadSpanConfig(ts::file::path const &path)
             }
           }
         }
-        zret = this->loadSpan(ts::file::path(path));
+        zret = this->loadSpan(ts::file::path(localpath));
       }
     }
   } else {
@@ -552,7 +552,7 @@ Errata
 Cache::loadURLs(ts::file::path const &path)
 {
   static const ts::TextView TAG_VOL("url");
-  ts::URLparser parser;
+  ts::URLparser loadURLparser;
   Errata zret;
 
   std::error_code ec;
@@ -568,7 +568,7 @@ Cache::loadURLs(ts::file::path const &path)
         std::string url;
         url.assign(blob.data(), blob.size());
         int port_ptr = -1, port_len = -1;
-        int port = parser.getPort(url, port_ptr, port_len);
+        int port = loadURLparser.getPort(url, port_ptr, port_len);
         if (port_ptr >= 0 && port_len > 0) {
           url.erase(port_ptr, port_len + 1); // get rid of :PORT
         }

@@ -37,6 +37,7 @@ lua_tslua_la_SOURCES = \
   lua/ts_lua_remap.c \
   lua/ts_lua_http_cntl.c \
   lua/ts_lua_http_milestone.c \
+  lua/ts_lua_http_txn_info.c \
   lua/ts_lua_http_config.c \
   lua/ts_lua_mgmt.c \
   lua/ts_lua_package.c \

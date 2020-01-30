@@ -199,6 +199,12 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   this->connection_state.mutex = this->mutex;
 
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
+  if (ssl_vc != nullptr) {
+    this->read_from_early_data = ssl_vc->read_from_early_data;
+    Debug("ssl_early_data", "read_from_early_data = %" PRId64, this->read_from_early_data);
+  }
+
   Http2SsnDebug("session born, netvc %p", this->client_vc);
 
   this->client_vc->set_tcp_congestion_control(CLIENT_SIDE);
@@ -207,8 +213,11 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->read_buffer->water_mark = connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE);
   this->_reader                 = reader ? reader : this->read_buffer->alloc_reader();
 
-  this->write_buffer = new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
+  // Set write buffer size to max size of TLS record (16KB)
+  this->write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_16K);
   this->sm_writer    = this->write_buffer->alloc_reader();
+
+  this->_handle_if_ssl(new_vc);
 
   do_api_callout(TS_HTTP_SSN_START_HOOK);
 }
@@ -324,6 +333,19 @@ Http2ClientSession::set_half_close_local_flag(bool flag)
   half_close_local = flag;
 }
 
+int64_t
+Http2ClientSession::xmit(const Http2TxFrame &frame)
+{
+  int64_t len = frame.write_to(this->write_buffer);
+
+  if (len > 0) {
+    total_write_len += len;
+    write_reenable();
+  }
+
+  return len;
+}
+
 int
 Http2ClientSession::main_event_handler(int event, void *edata)
 {
@@ -345,16 +367,6 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     if (is_zombie && connection_state.get_zombie_event() != nullptr) {
       Warning("Processed read event for zombie session %" PRId64, connection_id());
     }
-    break;
-  }
-
-  case HTTP2_SESSION_EVENT_XMIT: {
-    Http2Frame *frame = static_cast<Http2Frame *>(edata);
-    total_write_len += frame->size();
-    write_vio->nbytes = total_write_len;
-    frame->xmit(this->write_buffer);
-    write_reenable();
-    retval = 0;
     break;
   }
 
@@ -383,6 +395,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     retval = 0;
     break;
 
+  case HTTP2_SESSION_EVENT_XMIT:
   default:
     Http2SsnDebug("unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
@@ -443,6 +456,11 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
       return 0;
     }
 
+    // Check whether data is read from early data
+    if (this->read_from_early_data > 0) {
+      this->read_from_early_data -= this->read_from_early_data > nbytes ? nbytes : this->read_from_early_data;
+    }
+
     Http2SsnDebug("received connection preface");
     this->_reader->consume(nbytes);
     HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
@@ -489,10 +507,17 @@ Http2ClientSession::do_start_frame_read(Http2ErrorCode &ret_error)
   Http2SsnDebug("receiving frame header");
   nbytes = copy_from_buffer_reader(buf, this->_reader, sizeof(buf));
 
+  this->cur_frame_from_early_data = false;
   if (!http2_parse_frame_header(make_iovec(buf), this->current_hdr)) {
     Http2SsnDebug("frame header parse failure");
     this->do_io_close();
     return -1;
+  }
+
+  // Check whether data is read from early data
+  if (this->read_from_early_data > 0) {
+    this->read_from_early_data -= this->read_from_early_data > nbytes ? nbytes : this->read_from_early_data;
+    this->cur_frame_from_early_data = true;
   }
 
   Http2SsnDebug("frame header length=%u, type=%u, flags=0x%x, streamid=%u", (unsigned)this->current_hdr.length,
@@ -552,8 +577,13 @@ Http2ClientSession::do_complete_frame_read()
   // XXX parse the frame and handle it ...
   ink_release_assert(this->_reader->read_avail() >= this->current_hdr.length);
 
-  Http2Frame frame(this->current_hdr, this->_reader);
+  Http2Frame frame(this->current_hdr, this->_reader, this->cur_frame_from_early_data);
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_RECV, &frame);
+  // Check whether data is read from early data
+  if (this->read_from_early_data > 0) {
+    this->read_from_early_data -=
+      this->read_from_early_data > this->current_hdr.length ? this->current_hdr.length : this->read_from_early_data;
+  }
   this->_reader->consume(this->current_hdr.length);
   ++(this->_n_frame_read);
 

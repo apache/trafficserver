@@ -245,6 +245,20 @@ markParentUp(HttpTransact::State *s)
 
 // wrapper to choose between a remap next hop strategy or use parent.config
 // remap next hop strategy is preferred
+inline static bool
+parentExists(HttpTransact::State *s)
+{
+  url_mapping *mp = s->url_map.getMapping();
+  if (mp && mp->strategy) {
+    return mp->strategy->nextHopExists(s->state_machine->sm_id);
+  } else if (s->parent_params) {
+    return s->parent_params->parentExists(&s->request_data);
+  }
+  return false;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
 inline static void
 nextParent(HttpTransact::State *s)
 {
@@ -524,6 +538,13 @@ find_server_and_update_current_info(HttpTransact::State *s)
     return HttpTransact::HOST_NONE;
 
   case PARENT_DIRECT:
+    // if the configuration does not allow the origin to be dns'd
+    // we're unable to go direct to the origin.
+    if (s->http_config_param->no_dns_forward_to_parent) {
+      Warning("no available parents and the config proxy.config.http.no_dns_just_forward_to_parent, prevents origin lookups.");
+      s->parent_result.result = PARENT_FAIL;
+      return HttpTransact::HOST_NONE;
+    }
   /* fall through */
   default:
     update_current_info(&s->current, &s->server_info, HttpTransact::ORIGIN_SERVER, (s->current.attempts)++);
@@ -741,6 +762,16 @@ HttpTransact::Forbidden(State *s)
                          "IpAllow marked request forbidden");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
   build_error_response(s, HTTP_STATUS_FORBIDDEN, "Access Denied", "access#denied");
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+}
+
+void
+HttpTransact::TooEarly(State *s)
+{
+  TxnDebug("http_trans", "[TooEarly]"
+                         "Early Data method is not safe");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_TOO_EARLY, "Too Early", "too#early");
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -1434,7 +1465,7 @@ HttpTransact::HandleRequest(State *s)
       ats_ip_copy(&s->request_data.dest_ip, &addr);
     }
 
-    if (s->parent_params->parentExists(&s->request_data)) {
+    if (parentExists(s)) {
       // If the proxy is behind and firewall and there is no
       //  DNS service available, we just want to forward the request
       //  the parent proxy.  In this case, we never find out the
@@ -7731,6 +7762,10 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   if (s->http_config_param->send_100_continue_response) {
     HttpTransactHeaders::remove_100_continue_headers(s, outgoing_request);
     TxnDebug("http_trans", "[build_request] request expect 100-continue headers removed");
+  }
+
+  if (base_request->is_early_data()) {
+    outgoing_request->value_set_int(MIME_FIELD_EARLY_DATA, MIME_LEN_EARLY_DATA, 1);
   }
 
   s->request_sent_time = ink_local_time();

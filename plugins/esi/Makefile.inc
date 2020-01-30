@@ -57,8 +57,6 @@ esi_libesicore_la_SOURCES = \
 	esi/lib/EsiProcessor.h \
 	esi/lib/Expression.cc \
 	esi/lib/Expression.h \
-	esi/lib/FailureInfo.cc \
-	esi/lib/FailureInfo.h \
 	esi/lib/HandlerManager.h \
 	esi/lib/HttpHeader.h \
 	esi/lib/IncludeHandlerFactory.h \

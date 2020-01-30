@@ -31,8 +31,8 @@ cjose_jws_t *
 get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName, char *strip_uri, size_t buff_ct, size_t *strip_ct)
 {
   /* Reserved characters as defined by the URI Generic Syntax RFC: https://tools.ietf.org/html/rfc3986#section-2.2 */
-  static const char *reserved_string  = ":/?#[]@!$&\'()*+,;=";
-  static const char *sub_delim_string = "!$&\'()*+,;=";
+  static char const *const reserved_string  = ":/?#[]@!$&\'()*+,;=";
+  static char const *const sub_delim_string = "!$&\'()*+,;=";
 
   /* If param name ends in reserved character this will be treated as the termination symbol when parsing for package. Default is
    * '='. */

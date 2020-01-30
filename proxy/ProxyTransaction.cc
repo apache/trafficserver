@@ -30,7 +30,7 @@
 ProxyTransaction::ProxyTransaction() : VConnection(nullptr) {}
 
 void
-ProxyTransaction::new_transaction()
+ProxyTransaction::new_transaction(bool from_early_data)
 {
   ink_assert(_sm == nullptr);
 
@@ -39,7 +39,7 @@ ProxyTransaction::new_transaction()
 
   ink_release_assert(_proxy_ssn != nullptr);
   _sm = HttpSM::allocate();
-  _sm->init();
+  _sm->init(from_early_data);
   HttpTxnDebug("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", _proxy_ssn->connection_id(),
                _proxy_ssn->get_transact_count(), _sm->sm_id);
 

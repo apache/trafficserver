@@ -22,6 +22,8 @@
 #include <strings.h>
 #include <sstream>
 #include <cstring>
+#include <atomic>
+#include <memory>
 #include <getopt.h>
 #include <cstdint>
 #include <cinttypes>
@@ -32,6 +34,34 @@
 #include "tscore/ink_defs.h"
 #include "tscpp/util/PostScript.h"
 #include "tscpp/util/TextView.h"
+#include "Cleanup.h"
+
+namespace
+{
+struct BodyBuilder {
+  atscppapi::TSContUniqPtr transform_connp;
+  atscppapi::TSIOBufferUniqPtr output_buffer;
+  // It's important that output_reader comes after output_buffer so it will be deleted first.
+  atscppapi::TSIOBufferReaderUniqPtr output_reader;
+  TSVIO output_vio   = nullptr;
+  bool wrote_prebody = false;
+  bool wrote_body    = false;
+  bool hdr_ready     = false;
+  std::atomic_flag wrote_postbody;
+
+  int64_t nbytes = 0;
+};
+
+struct XDebugTxnAuxData {
+  std::unique_ptr<BodyBuilder> body_builder;
+  unsigned xheaders = 0;
+};
+
+atscppapi::TxnAuxMgrData mgrData;
+
+using AuxDataMgr = atscppapi::TxnAuxDataMgr<XDebugTxnAuxData, mgrData>;
+
+} // end anonymous namespace
 
 #include "xdebug_headers.cc"
 #include "xdebug_transforms.cc"
@@ -53,8 +83,6 @@ enum {
   XHEADER_X_PSELECT_KEY    = 1u << 10,
 };
 
-static int XArgIndex              = 0;
-static int BodyBuilderArgIndex    = 0;
 static TSCont XInjectHeadersCont  = nullptr;
 static TSCont XDeleteDebugHdrCont = nullptr;
 
@@ -382,7 +410,7 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 
   TSReleaseAssert(event == TS_EVENT_HTTP_SEND_RESPONSE_HDR);
 
-  uintptr_t xheaders = reinterpret_cast<uintptr_t>(TSHttpTxnArgGet(txn, XArgIndex));
+  unsigned xheaders = AuxDataMgr::data(txn).xheaders;
   if (xheaders == 0) {
     goto done;
   }
@@ -422,14 +450,14 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
   }
 
   if (xheaders & XHEADER_X_PROBE_HEADERS) {
-    BodyBuilder *data = static_cast<BodyBuilder *>(TSHttpTxnArgGet(txn, BodyBuilderArgIndex));
+    BodyBuilder *data = AuxDataMgr::data(txn).body_builder.get();
     TSDebug("xdebug_transform", "XInjectResponseHeaders(): client resp header ready");
     if (data == nullptr) {
       TSHttpTxnReenable(txn, TS_EVENT_HTTP_ERROR);
       return TS_ERROR;
     }
     data->hdr_ready = true;
-    writePostBody(data);
+    writePostBody(txn, data);
   }
 
   if (xheaders & XHEADER_X_PSELECT_KEY) {
@@ -493,9 +521,9 @@ isFwdFieldValue(std::string_view value, intmax_t &fwdCnt)
 static int
 XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
-  TSHttpTxn txn      = static_cast<TSHttpTxn>(edata);
-  uintptr_t xheaders = 0;
-  intmax_t fwdCnt    = 0;
+  TSHttpTxn txn     = static_cast<TSHttpTxn>(edata);
+  unsigned xheaders = 0;
+  intmax_t fwdCnt   = 0;
   TSMLoc field, next;
   TSMBuffer buffer;
   TSMLoc hdr;
@@ -550,25 +578,16 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
       } else if (header_field_eq("probe", value, vsize)) {
         xheaders |= XHEADER_X_PROBE_HEADERS;
 
+        auto &auxData = AuxDataMgr::data(txn);
+
         // prefix request headers and postfix response headers
         BodyBuilder *data = new BodyBuilder();
-        data->txn         = txn;
+        auxData.body_builder.reset(data);
 
         TSVConn connp = TSTransformCreate(body_transform, txn);
-        TSContDataSet(connp, data);
+        data->transform_connp.reset(connp);
+        TSContDataSet(connp, txn);
         TSHttpTxnHookAdd(txn, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
-
-        // store data pointer in txnarg to use in global cont XInjectResponseHeaders
-        TSHttpTxnArgSet(txn, BodyBuilderArgIndex, data);
-
-        // create a self-cleanup on close
-        auto cleanupBodyBuilder = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
-          TSHttpTxn txn     = static_cast<TSHttpTxn>(edata);
-          BodyBuilder *data = static_cast<BodyBuilder *>(TSHttpTxnArgGet(txn, BodyBuilderArgIndex));
-          delete data;
-          return TS_EVENT_NONE;
-        };
-        TSHttpTxnHookAdd(txn, TS_HTTP_TXN_CLOSE_HOOK, TSContCreate(cleanupBodyBuilder, nullptr));
 
         // disable writing to cache because we are injecting data into the body.
         TSHttpTxnReqCacheableSet(txn, 0);
@@ -608,7 +627,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
     TSDebug("xdebug", "adding response hook for header mask %p and forward count %" PRIiMAX, reinterpret_cast<void *>(xheaders),
             fwdCnt);
     TSHttpTxnHookAdd(txn, TS_HTTP_SEND_RESPONSE_HDR_HOOK, XInjectHeadersCont);
-    TSHttpTxnArgSet(txn, XArgIndex, reinterpret_cast<void *>(xheaders));
+    AuxDataMgr::data(txn).xheaders = xheaders;
 
     if (fwdCnt == 0) {
       // X-Debug header has to be deleted, but not too soon for other plugins to see it.
@@ -688,9 +707,9 @@ TSPluginInit(int argc, const char *argv[])
   }
   xDebugHeader.len = strlen(xDebugHeader.str);
 
+  AuxDataMgr::init("xdebug");
+
   // Setup the global hook
-  TSReleaseAssert(TSHttpTxnArgIndexReserve("xdebug", "xdebug header requests", &XArgIndex) == TS_SUCCESS);
-  TSReleaseAssert(TSHttpTxnArgIndexReserve("bodyTransform", "BodyBuilder*", &XArgIndex) == TS_SUCCESS);
   TSReleaseAssert(XInjectHeadersCont = TSContCreate(XInjectResponseHeaders, nullptr));
   TSReleaseAssert(XDeleteDebugHdrCont = TSContCreate(XDeleteDebugHdr, nullptr));
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(XScanRequestHeaders, nullptr));

@@ -2760,9 +2760,9 @@ idle_connection(ClientData client_data, struct timeval *nowP __attribute__((unus
   int cnum;
   struct timeval tv;
   char strTime[32];
-
+  struct tm localtv;
   gettimeofday(&tv, NULL);
-  strftime(strTime, 32, "%T", localtime(&tv.tv_sec));
+  strftime(strTime, 32, "%T", localtime_r(&tv.tv_sec, &localtv));
 
   cnum                         = client_data.i;
   connections[cnum].idle_timer = (Timer *)0;

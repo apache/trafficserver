@@ -58,7 +58,7 @@ ts_lua_log_object_creat(lua_State *L)
   log_name = luaL_checklstring(L, -2, &name_len);
 
   if (lua_isnil(L, 3)) {
-    TSError("[ts_lua] No log name!!");
+    TSError("[ts_lua][%s] No log name!!", __FUNCTION__);
     return -1;
   } else {
     log_mode = luaL_checknumber(L, 3);
@@ -67,7 +67,7 @@ ts_lua_log_object_creat(lua_State *L)
   error = TSTextLogObjectCreate(log_name, log_mode, &log);
 
   if (!log || error == TS_ERROR) {
-    TSError("[ts_lua] Unable to create log <%s>", log_name);
+    TSError("[ts_lua][%s] Unable to create log <%s>", __FUNCTION__, log_name);
     return -1;
   }
   return 0;

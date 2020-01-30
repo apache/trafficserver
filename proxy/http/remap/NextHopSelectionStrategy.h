@@ -195,6 +195,7 @@ public:
   void markNextHopDown(const uint64_t sm_id, ParentResult &result, const uint64_t fail_threshold, const uint64_t retry_time,
                        time_t now = 0);
   void markNextHopUp(const uint64_t sm_id, ParentResult &result);
+  bool nextHopExists(const uint64_t sm_id);
 
   std::string strategy_name;
   bool go_direct           = true;

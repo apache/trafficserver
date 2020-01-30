@@ -99,8 +99,8 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         }
         break;
       case P_STRICT_ROUND_ROBIN:
-        cur_index = ink_atomic_increment(reinterpret_cast<int32_t *>(&result->rec->rr_next), 1);
-        cur_index = result->start_parent = cur_index % num_parents;
+        cur_index = result->start_parent =
+          ink_atomic_increment(reinterpret_cast<uint32_t *>(&result->rec->rr_next), 1) % num_parents;
         break;
       case P_NO_ROUND_ROBIN:
         cur_index = result->start_parent = 0;
