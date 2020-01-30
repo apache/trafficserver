@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <getopt.h>
+#include <inttypes.h>
 
 #include "ts_lua_util.h"
 

@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "lua.h"
 #include "lualib.h"
@@ -29,7 +30,6 @@
 #include <ts/ts.h>
 #include <ts/experimental.h>
 #include <ts/remap.h>
-#include "tscore/ink_defs.h"
 #include "ts_lua_coroutine.h"
 
 #define TS_LUA_FUNCTION_REMAP "do_remap"
@@ -177,3 +177,7 @@ typedef struct {
       ih->buffer = NULL;                \
     }                                   \
   } while (0)
+
+#ifndef ATS_UNUSED
+#define ATS_UNUSED __attribute__((unused))
+#endif
