@@ -37,7 +37,8 @@
 static const char DEBUG_TAG_INIT[] = "ssntxnorder_verify.init";
 
 // debug messages on every request serviced
-static const char DEBUG_TAG_HOOK[] = "ssntxnorder_verify.hook";
+static const char DEBUG_TAG_HOOK[]  = "ssntxnorder_verify.hook";
+static const char DEBUG_TAG_CLOSE[] = "ssntxnorder_verify.close";
 
 // plugin registration info
 static char plugin_name[]   = "ssntxnorder_verify";
@@ -45,8 +46,8 @@ static char vendor_name[]   = "Apache";
 static char support_email[] = "shinrich@apache.org";
 
 // List of started sessions, SSN_START seen, SSN_CLOSE not seen yet.
-static std::set<TSHttpSsn> started_ssns;
-static int ssn_balance = 0; // +1 on SSN_START, -1 on SSN_CLOSE
+thread_local std::set<TSHttpSsn> started_ssns;
+thread_local int ssn_balance = 0; // +1 on SSN_START, -1 on SSN_CLOSE
 
 // Metadata for active transactions. Stored upon start to persist improper
 // closing behavior.
@@ -67,8 +68,9 @@ struct txn_compare {
   }
 };
 // List of started transactions, TXN_START seen, TXN_CLOSE not seen yet.
-static std::set<started_txn, txn_compare> started_txns;
-static int txn_balance = 0; // +1 on TXN_START -1 on TXN_CLOSE
+thread_local std::set<started_txn, txn_compare> started_txns;
+thread_local std::set<started_txn, txn_compare> closed_txns;
+thread_local int txn_balance = 0; // +1 on TXN_START -1 on TXN_CLOSE
 
 // Statistics provided by the plugin
 static int stat_ssn_close = 0; // number of TS_HTTP_SSN_CLOSE hooks caught
@@ -138,17 +140,19 @@ handle_order(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_SSN_CLOSE: // End of session
   {
     ssnp = reinterpret_cast<TSHttpSsn>(edata);
-    TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_HTTP_SSN_CLOSE [ SSNID = %p ]", ssnp);
+    TSDebug(DEBUG_TAG_CLOSE, "event TS_EVENT_HTTP_SSN_CLOSE [ SSNID = %p ]", ssnp);
     TSStatIntIncrement(stat_ssn_close, 1);
     if (started_ssns.erase(ssnp) == 0) {
       // No record existsted for this session
-      TSError("Session [ SSNID = %p ] closing was not previously started", ssnp);
+      TSDebug(DEBUG_TAG_HOOK, "Session [ SSNID = %p ] closing was not previously started", ssnp);
       TSStatIntIncrement(stat_err, 1);
+      abort();
     }
 
     if (--ssn_balance < 0) {
-      TSError("More sessions have been closed than started.");
+      TSDebug(DEBUG_TAG_HOOK, "More sessions have been closed than started.");
       TSStatIntIncrement(stat_err, 1);
+      abort();
     }
 
     TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
@@ -163,8 +167,9 @@ handle_order(TSCont contp, TSEvent event, void *edata)
 
     if (!started_ssns.insert(ssnp).second) {
       // Insert failed. Session already existed in the record.
-      TSError("Session [ SSNID = %p ] has previously started.", ssnp);
+      TSDebug(DEBUG_TAG_HOOK, "Session [ SSNID = %p ] has previously started.", ssnp);
       TSStatIntIncrement(stat_err, 1);
+      abort();
     }
     ++ssn_balance;
 
@@ -178,32 +183,45 @@ handle_order(TSCont contp, TSEvent event, void *edata)
     TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_HTTP_TXN_CLOSE [ TXNID = %" PRIu64 " ]", TSHttpTxnIdGet(txnp));
     TSStatIntIncrement(stat_txn_close, 1);
 
+    std::set<started_txn>::iterator closed_txn = closed_txns.find(started_txn(TSHttpTxnIdGet(txnp)));
+    if (closed_txn != closed_txns.end()) {
+      // Double close?
+      TSStatIntIncrement(stat_err, 1);
+      abort();
+    }
+
+    closed_txns.insert(started_txn(TSHttpTxnIdGet(txnp)));
     std::set<started_txn>::iterator current_txn = started_txns.find(started_txn(TSHttpTxnIdGet(txnp)));
 
-    if (current_txn != started_txns.end()) {
+    if (current_txn != started_txns.end() && current_txn->id == TSHttpTxnIdGet(txnp)) {
       // Transaction exists.
 
       ssnp = current_txn->ssnp;
       if (started_ssns.find(ssnp) == started_ssns.end()) {
         // The session of the transaction was either not started, or was
         // already closed.
-        TSError("Transaction [ TXNID = %" PRIu64 " ] closing not in an "
+        TSDebug(DEBUG_TAG_HOOK,
+                "Transaction [ TXNID = %" PRIu64 " ] closing not in an "
                 "active session [ SSNID = %p ].",
                 current_txn->id, ssnp);
         TSStatIntIncrement(stat_err, 1);
+        abort();
       }
       started_txns.erase(current_txn); // Stop monitoring the transaction
     } else {
       // Transaction does not exists.
-      TSError("Transaction [ TXNID = %" PRIu64 " ] closing not "
+      TSDebug(DEBUG_TAG_HOOK,
+              "Transaction [ TXNID = %" PRIu64 " ] closing not "
               "previously started.",
-              current_txn->id);
+              TSHttpTxnIdGet(txnp));
       TSStatIntIncrement(stat_err, 1);
+      abort();
     }
 
     if (--txn_balance < 0) {
-      TSError("More transactions have been closed than started.");
+      TSDebug(DEBUG_TAG_HOOK, "More transactions have been closed than started.");
       TSStatIntIncrement(stat_err, 1);
+      abort();
     }
 
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -221,16 +239,19 @@ handle_order(TSCont contp, TSEvent event, void *edata)
 
     if (started_ssns.find(ssnp) == started_ssns.end()) {
       // Session of the transaction has not started.
-      TSError("Transaction [ TXNID = %" PRIu64 " ] starting not in an "
+      TSDebug(DEBUG_TAG_HOOK,
+              "Transaction [ TXNID = %" PRIu64 " ] starting not in an "
               "active session [ SSNID = %p ].",
               new_txn.id, ssnp);
       TSStatIntIncrement(stat_err, 1);
+      abort();
     }
 
     if (!started_txns.insert(new_txn).second) {
       // Insertion failed. Transaction has previously started.
-      TSError("Transaction [ TXNID = %" PRIu64 " ] has previously started.", new_txn.id);
+      TSDebug(DEBUG_TAG_HOOK, "Transaction [ TXNID = %" PRIu64 " ] has previously started.", new_txn.id);
       TSStatIntIncrement(stat_err, 1);
+      abort();
     }
 
     ++txn_balance;
@@ -262,6 +283,7 @@ handle_order(TSCont contp, TSEvent event, void *edata)
 
   // Just release the lock for all other states and do nothing
   default:
+    abort();
     break;
   }
 
@@ -293,13 +315,13 @@ TSPluginInit(int argc, const char *argv[])
 #else
   if (TSPluginRegister(&info) != TS_SUCCESS) {
 #endif
-    TSError("[%s] Plugin registration failed. \n", plugin_name);
+    TSDebug(DEBUG_TAG_HOOK, "[%s] Plugin registration failed. \n", plugin_name);
   }
 
   TSCont contp = TSContCreate(handle_order, TSMutexCreate());
   if (contp == nullptr) {
     // Continuation initialization failed. Unrecoverable, report and exit.
-    TSError("[%s] could not create continuation", plugin_name);
+    TSDebug(DEBUG_TAG_HOOK, "[%s] could not create continuation", plugin_name);
     abort();
   } else {
     // Continuation initialization succeeded.

@@ -124,7 +124,7 @@ public:
   virtual const char *protocol_contains(std::string_view tag_prefix) const;
 
   // Non-Virtual Methods
-  void do_api_callout(TSHttpHookID id);
+  int do_api_callout(TSHttpHookID id);
 
   // Non-Virtual Accessors
   void *get_user_arg(unsigned ix) const;
