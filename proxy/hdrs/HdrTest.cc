@@ -343,44 +343,100 @@ HdrTest::test_url()
     // Start with an easy one...
     "http://trafficserver.apache.org/index.html",
 
-    // "cheese://bogosity",         This fails, but it's not clear it should work...
+    "cheese://bogosity",
 
-    "some.place", "some.place/", "http://some.place", "http://some.place/", "http://some.place/path",
-    "http://some.place/path;params", "http://some.place/path;params?query", "http://some.place/path;params?query#fragment",
-    "http://some.place/path?query#fragment", "http://some.place/path#fragment",
+    "some.place",
+    "some.place/",
+    "http://some.place",
+    "http://some.place/",
+    "http://some.place/path",
+    "http://some.place/path;params",
+    "http://some.place/path;params?query",
+    "http://some.place/path;params?query#fragment",
+    "http://some.place/path?query#fragment",
+    "http://some.place/path#fragment",
 
-    "some.place:80", "some.place:80/", "http://some.place:80", "http://some.place:80/",
+    "some.place:80",
+    "some.place:80/",
+    "http://some.place:80",
+    "http://some.place:80/",
 
-    "foo@some.place:80", "foo@some.place:80/", "http://foo@some.place:80", "http://foo@some.place:80/",
+    "foo@some.place:80",
+    "foo@some.place:80/",
+    "http://foo@some.place:80",
+    "http://foo@some.place:80/",
 
-    "foo:bar@some.place:80", "foo:bar@some.place:80/", "http://foo:bar@some.place:80", "http://foo:bar@some.place:80/",
+    "foo:bar@some.place:80",
+    "foo:bar@some.place:80/",
+    "http://foo:bar@some.place:80",
+    "http://foo:bar@some.place:80/",
 
     // Some address stuff
-    "http://172.16.28.101", "http://172.16.28.101:8080", "http://[::]", "http://[::1]", "http://[fc01:172:16:28::101]",
-    "http://[fc01:172:16:28::101]:80", "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]",
-    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080", "http://172.16.28.101/some/path", "http://172.16.28.101:8080/some/path",
-    "http://[::1]/some/path", "http://[fc01:172:16:28::101]/some/path", "http://[fc01:172:16:28::101]:80/some/path",
-    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]/some/path", "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/some/path",
-    "http://172.16.28.101/", "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/",
+    "http://172.16.28.101",
+    "http://172.16.28.101:8080",
+    "http://[::]",
+    "http://[::1]",
+    "http://[fc01:172:16:28::101]",
+    "http://[fc01:172:16:28::101]:80",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080",
+    "http://172.16.28.101/some/path",
+    "http://172.16.28.101:8080/some/path",
+    "http://[::1]/some/path",
+    "http://[fc01:172:16:28::101]/some/path",
+    "http://[fc01:172:16:28::101]:80/some/path",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]/some/path",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/some/path",
+    "http://172.16.28.101/",
+    "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/",
 
-    "foo:bar@some.place", "foo:bar@some.place/", "http://foo:bar@some.place", "http://foo:bar@some.place/",
-    "http://foo:bar@[::1]:8080/", "http://foo@[::1]",
+    // "foo:@some.place", TODO - foo:@some.place is change to foo@some.place in the test
+    "foo:bar@some.place",
+    "foo:bar@some.place/",
+    "http://foo:bar@some.place",
+    "http://foo:bar@some.place/",
+    "http://foo:bar@[::1]:8080/",
+    "http://foo@[::1]",
 
-    "mms://sm02.tsqa.example.com/0102rally.asf", "pnm://foo:bar@some.place:80/path;params?query#fragment",
-    "rtsp://foo:bar@some.place:80/path;params?query#fragment", "rtspu://foo:bar@some.place:80/path;params?query#fragment",
+    "mms://sm02.tsqa.example.com/0102rally.asf",
+    "pnm://foo:bar@some.place:80/path;params?query#fragment",
+    "rtsp://foo:bar@some.place:80/path;params?query#fragment",
+    "rtspu://foo:bar@some.place:80/path;params?query#fragment",
     "/finance/external/cbsm/*http://cbs.marketwatch.com/archive/19990713/news/current/net.htx?source=blq/yhoo&dist=yhoo",
-    "http://a.b.com/xx.jpg?newpath=http://bob.dave.com"};
+    "http://a.b.com/xx.jpg?newpath=http://bob.dave.com",
+
+    "ht-tp://a.b.com",
+    "ht+tp://a.b.com",
+    "ht.tp://a.b.com",
+
+    "h1ttp://a.b.com",
+    "http1://a.b.com",
+  };
 
   static const char *bad[] = {
     "http://[1:2:3:4:5:6:7:8:9]",
     "http://1:2:3:4:5:6:7:8:A:B",
     "http://bob.com[::1]",
     "http://[::1].com",
+
     "http://foo:bar:baz@bob.com/",
     "http://foo:bar:baz@[::1]:8080/",
+
     "http://]",
     "http://:",
+
     "http:/",
+    "http:/foo.bar.com/",
+    "~http://invalid.char.in.scheme/foo",
+    "http~://invalid.char.in.scheme/foo",
+    "ht~tp://invalid.char.in.scheme/foo",
+    "1http://first.char.not.alpha",
+    "some.domain.com/http://invalid.domain/foo",
+    ":",
+    "://",
+
+    // maybe this should be a valid URL
+    "a.b.com/xx.jpg?newpath=http://bob.dave.com",
   };
 
   int err, failed;
@@ -400,6 +456,7 @@ HdrTest::test_url()
     url.create(nullptr);
     err = url.parse(&start, end);
     if (err < 0) {
+      printf("Failed to parse url '%s'\n", start);
       failed = 1;
       break;
     }
@@ -448,6 +505,8 @@ HdrTest::test_url()
       failed = 1;
       printf("Successfully parsed invalid url '%s'", x);
       break;
+    } else {
+      printf("   bad URL - PARSE FAILED: '%s'\n", bad[i]);
     }
   }
 
