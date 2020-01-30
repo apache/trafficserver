@@ -1120,34 +1120,41 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
   const char *scheme_end   = nullptr;
   int scheme_wks_idx;
 
+  // Skip over spaces
   while (' ' == *cur && ++cur < end) {
-    ;
   }
+
   if (cur < end) {
     scheme_start = scheme_end = cur;
-    // special case 'http:' for performance
-    if ((end - cur >= 5) && (((cur[0] ^ 'h') | (cur[1] ^ 't') | (cur[2] ^ 't') | (cur[3] ^ 'p') | (cur[4] ^ ':')) == 0)) {
-      scheme_end = cur + 4; // point to colon
-      url_scheme_set(heap, url, scheme_start, URL_WKSIDX_HTTP, 4, copy_strings_p);
-    } else if ('/' != *cur) {
-      // For forward transparent mode, the URL for the method can just be a path,
-      // so don't scan that for a scheme, as we could find a false positive if there
-      // is a URL in the parameters (which is legal).
-      while (':' != *cur && ++cur < end) {
-        ;
-      }
-      if (cur < end) { // found a colon
-        scheme_wks_idx = hdrtoken_tokenize(scheme_start, cur - scheme_start, &scheme_wks);
 
-        /*  Distinguish between a scheme only and a username by looking past the colon. If it is missing
-            or it's a slash, presume scheme. Otherwise it's a username with a password.
-        */
-        if ((scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME) || // known scheme
-            (cur >= end - 1 || cur[1] == '/')) // no more data or slash past colon
-        {
-          scheme_end = cur;
-          url_scheme_set(heap, url, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings_p);
+    // If the URL is more complex then a path, parse to see if there is a scheme
+    if ('/' != *cur) {
+      // Search for a : it could be part of a scheme or a username:password
+      while (':' != *cur && ++cur < end) {
+      }
+
+      // If there is a :// then there is a scheme
+      if (cur + 2 < end && cur[1] == '/' && cur[2] == '/') { // found "://"
+        scheme_end     = cur;
+        scheme_wks_idx = hdrtoken_tokenize(scheme_start, scheme_end - scheme_start, &scheme_wks);
+
+        if (!(scheme_wks_idx > 0 && hdrtoken_wks_to_token_type(scheme_wks) == HDRTOKEN_TYPE_SCHEME)) {
+          // Unknown scheme, validate the scheme
+
+          // RFC 3986 Section 3.1
+          // These are the valid characters in a scheme:
+          //   scheme      = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+          // return an error if there is another character in the scheme
+          if (!ParseRules::is_alpha(*scheme_start)) {
+            return PARSE_RESULT_ERROR;
+          }
+          for (cur = scheme_start + 1; cur < scheme_end; ++cur) {
+            if (!(ParseRules::is_alnum(*cur) != 0 || *cur == '+' || *cur == '-' || *cur == '.')) {
+              return PARSE_RESULT_ERROR;
+            }
+          }
         }
+        url_scheme_set(heap, url, scheme_start, scheme_wks_idx, scheme_end - scheme_start, copy_strings_p);
       }
     }
     *start = scheme_end;
