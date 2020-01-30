@@ -669,6 +669,7 @@ Http2Stream::signal_read_event(int event)
 
   MUTEX_TRY_LOCK(lock, read_vio.cont->mutex, this_ethread());
   if (lock.is_locked()) {
+    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
     this->read_vio.cont->handleEvent(event, &this->read_vio);
   } else {
     if (this->_read_vio_event) {
