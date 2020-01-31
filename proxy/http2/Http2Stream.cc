@@ -460,7 +460,6 @@ Http2Stream::initiating_close()
 
     // This should result in do_io_close or release being called.  That will schedule the final
     // kill yourself signal
-    // Send the SM the EOS signal if there are no active VIO's to signal
     // We are sending signals rather than calling the handlers directly to avoid the case where
     // the HttpTunnel handler causes the HttpSM to be deleted on the stack.
     bool sent_write_complete = false;
@@ -487,9 +486,6 @@ Http2Stream::initiating_close()
         Http2StreamDebug("send EOS to read cont");
         read_event = send_tracked_event(read_event, VC_EVENT_EOS, &read_vio);
       }
-    } else if (_sm) {
-      SCOPED_MUTEX_LOCK(lock, _sm->mutex, this_ethread());
-      _sm->handleEvent(VC_EVENT_ERROR);
     } else if (!sent_write_complete) {
       // Transaction is already gone or not started. Kill yourself
       do_io_close();
