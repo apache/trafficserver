@@ -247,10 +247,10 @@ QUICPacketR::read_essential_info(Ptr<IOBufferBlock> block, QUICPacketType &type,
                                  QUICConnectionId &scid, QUICPacketNumber &packet_number, QUICPacketNumber base_packet_number,
                                  QUICKeyPhase &key_phase)
 {
-  uint8_t tmp[47];
+  uint8_t tmp[47 + 64];
   IOBufferReader reader;
   reader.block = block;
-  int64_t len  = std::min(static_cast<int64_t>(47), reader.read_avail());
+  int64_t len  = std::min(static_cast<int64_t>(sizeof(tmp)), reader.read_avail());
 
   if (len < 1) {
     return false;
@@ -268,6 +268,7 @@ QUICPacketR::read_essential_info(Ptr<IOBufferBlock> block, QUICPacketType &type,
       size_t length_offset  = 7 + dcid.length() + scid.length();
       uint64_t value;
       size_t field_len;
+      ink_assert(length_offset < sizeof(tmp));
       QUICVariableInt::decode(value, field_len, tmp + length_offset);
       switch (type) {
       case QUICPacketType::INITIAL:
