@@ -577,7 +577,7 @@ QUICConnectionId
 QUICConnectionId::ZERO()
 {
   uint8_t zero[MAX_LENGTH] = {0};
-  return QUICConnectionId(zero, sizeof(zero));
+  return QUICConnectionId(zero, 0);
 }
 
 QUICConnectionId::QUICConnectionId()

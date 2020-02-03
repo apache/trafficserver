@@ -353,6 +353,33 @@ TEST_CASE("read_essential_info", "[quic]")
     CHECK(packet_number == 0x01234567);
   }
 
+  SECTION("Long header packet - INITIAL - 0 length CID")
+  {
+    uint8_t input[] = {
+      0xc2,                                           // Long header, Type: INITIAL
+      0xff, 0x00, 0x00, 0x19,                         // Version
+      0x08,                                           // DCID Len
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x00,                                           // SCID Len
+      0x00,                                           // Token Length (i), Token (*)
+      0x42, 0x17,                                     // Length
+      0x00, 0x00, 0x00                                // Packet number
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(result);
+  }
+
   SECTION("Long header packet - RETRY")
   {
     uint8_t input[] = {
