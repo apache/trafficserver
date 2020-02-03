@@ -46,7 +46,7 @@ read_varint(uint8_t *&pos, size_t len, uint64_t &field, size_t &field_len)
     return false;
   }
 
-  field = QUICIntUtil::read_QUICVariableInt(pos);
+  field = QUICIntUtil::read_QUICVariableInt(pos, len);
   pos += field_len;
   return true;
 }

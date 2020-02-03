@@ -252,7 +252,7 @@ QUICPacketR::read_essential_info(Ptr<IOBufferBlock> block, QUICPacketType &type,
   reader.block = block;
   int64_t len  = std::min(static_cast<int64_t>(sizeof(tmp)), reader.read_avail());
 
-  if (len < 1) {
+  if (len < 10) {
     return false;
   }
 
@@ -261,23 +261,38 @@ QUICPacketR::read_essential_info(Ptr<IOBufferBlock> block, QUICPacketType &type,
     reader.memcpy(tmp, len, 0);
     type = static_cast<QUICPacketType>((0x30 & tmp[0]) >> 4);
     QUICInvariants::version(version, tmp, len);
-    QUICInvariants::dcid(dcid, tmp, len);
-    QUICInvariants::scid(scid, tmp, len);
+    if (!QUICInvariants::dcid(dcid, tmp, len) || !QUICInvariants::scid(scid, tmp, len)) {
+      return false;
+    }
     if (type != QUICPacketType::RETRY) {
       int packet_number_len = QUICTypeUtil::read_QUICPacketNumberLen(tmp);
       size_t length_offset  = 7 + dcid.length() + scid.length();
+      if (length_offset >= static_cast<uint64_t>(len)) {
+        return false;
+      }
       uint64_t value;
       size_t field_len;
-      ink_assert(length_offset < sizeof(tmp));
       QUICVariableInt::decode(value, field_len, tmp + length_offset);
       switch (type) {
       case QUICPacketType::INITIAL:
         length_offset += field_len + value;
+        if (length_offset >= static_cast<uint64_t>(len)) {
+          return false;
+        }
         QUICVariableInt::decode(value, field_len, tmp + length_offset);
+        if (length_offset + field_len >= static_cast<uint64_t>(len)) {
+          return false;
+        }
+        if (length_offset + field_len + packet_number_len >= static_cast<uint64_t>(len)) {
+          return false;
+        }
         packet_number = QUICTypeUtil::read_QUICPacketNumber(tmp + length_offset + field_len, packet_number_len);
         break;
       case QUICPacketType::ZERO_RTT_PROTECTED:
       case QUICPacketType::HANDSHAKE:
+        if (length_offset + field_len + packet_number_len >= static_cast<uint64_t>(len)) {
+          return false;
+        }
         packet_number = QUICTypeUtil::read_QUICPacketNumber(tmp + length_offset + field_len, packet_number_len);
         break;
       default:
@@ -493,7 +508,7 @@ QUICLongHeaderPacketR::length(size_t &length, uint8_t &length_field_len, size_t 
   }
 
   length_field_len = QUICVariableInt::size(packet + length_field_offset);
-  length           = QUICIntUtil::read_QUICVariableInt(packet + length_field_offset);
+  length           = QUICIntUtil::read_QUICVariableInt(packet + length_field_offset, packet_len - length_field_offset);
 
   return true;
 }
@@ -1170,7 +1185,7 @@ QUICInitialPacketR::QUICInitialPacketR(UDPConnection *udp_con, IpEndpoint from, 
   offset += scil;
 
   // Token Length Field
-  uint64_t token_len = QUICIntUtil::read_QUICVariableInt(raw_buf + offset);
+  uint64_t token_len = QUICIntUtil::read_QUICVariableInt(raw_buf + offset, len - offset);
   offset += QUICVariableInt::size(raw_buf + offset);
 
   // Token Field
@@ -1262,7 +1277,7 @@ QUICInitialPacketR::token_length(size_t &token_length, uint8_t &field_len, size_
     return false;
   }
 
-  token_length = QUICIntUtil::read_QUICVariableInt(packet + token_length_filed_offset);
+  token_length = QUICIntUtil::read_QUICVariableInt(packet + token_length_filed_offset, packet_len - token_length_filed_offset);
   field_len    = QUICVariableInt::size(packet + token_length_filed_offset);
 
   return true;

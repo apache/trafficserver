@@ -190,15 +190,15 @@ QUICTypeUtil::read_QUICVersion(const uint8_t *buf)
 }
 
 QUICStreamId
-QUICTypeUtil::read_QUICStreamId(const uint8_t *buf)
+QUICTypeUtil::read_QUICStreamId(const uint8_t *buf, size_t buf_len)
 {
-  return static_cast<QUICStreamId>(QUICIntUtil::read_QUICVariableInt(buf));
+  return static_cast<QUICStreamId>(QUICIntUtil::read_QUICVariableInt(buf, buf_len));
 }
 
 QUICOffset
-QUICTypeUtil::read_QUICOffset(const uint8_t *buf)
+QUICTypeUtil::read_QUICOffset(const uint8_t *buf, size_t buf_len)
 {
-  return static_cast<QUICOffset>(QUICIntUtil::read_QUICVariableInt(buf));
+  return static_cast<QUICOffset>(QUICIntUtil::read_QUICVariableInt(buf, buf_len));
 }
 
 uint16_t
@@ -214,9 +214,9 @@ QUICTypeUtil::read_QUICAppErrorCode(const uint8_t *buf)
 }
 
 uint64_t
-QUICTypeUtil::read_QUICMaxData(const uint8_t *buf)
+QUICTypeUtil::read_QUICMaxData(const uint8_t *buf, size_t buf_len)
 {
-  return QUICIntUtil::read_QUICVariableInt(buf);
+  return QUICIntUtil::read_QUICVariableInt(buf, buf_len);
 }
 
 void
@@ -693,8 +693,11 @@ QUICInvariants::scil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len)
   if (!QUICInvariants::dcil(dcil, buf, buf_len)) {
     return false;
   }
-
-  dst = buf[QUICInvariants::LH_CIL_OFFSET + 1 + dcil];
+  uint64_t scil_offset = QUICInvariants::LH_CIL_OFFSET + 1 + dcil;
+  if (scil_offset >= buf_len) {
+    return false;
+  }
+  dst = buf[scil_offset];
 
   return true;
 }

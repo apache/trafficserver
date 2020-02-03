@@ -419,4 +419,212 @@ TEST_CASE("read_essential_info", "[quic]")
     CHECK(dcid == expected_dcid);
     CHECK(packet_number == 0x01234567);
   }
+
+  SECTION("Long header packet - Malformed INITIAL 1")
+  {
+    uint8_t input[] = {
+      0xc3, // Long header, Type: INITIAL
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(!result);
+  }
+
+  SECTION("Long header packet - Malformed INITIAL 2")
+  {
+    uint8_t input[] = {
+      0xc3,       // Long header, Type: INITIAL
+      0x11, 0x22, // Version
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(!result);
+  }
+
+  SECTION("Long header packet - Malformed INITIAL 3")
+  {
+    uint8_t input[] = {
+      0xc3,                   // Long header, Type: INITIAL
+      0x11, 0x22, 0x33, 0x44, // Version
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(!result);
+  }
+
+  SECTION("Long header packet - Malformed INITIAL 4")
+  {
+    uint8_t input[] = {
+      0xc3,                   // Long header, Type: INITIAL
+      0x11, 0x22, 0x33, 0x44, // Version
+      0x08,                   // DCID Len
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(!result);
+  }
+
+  SECTION("Long header packet - Malformed INITIAL 5")
+  {
+    uint8_t input[] = {
+      0xc3,                         // Long header, Type: INITIAL
+      0x11, 0x22, 0x33, 0x44,       // Version
+      0x08,                         // DCID Len
+      0x01, 0x02, 0x03, 0x04, 0x05, // Destination Connection ID
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(!result);
+  }
+
+  SECTION("Long header packet - Malformed INITIAL 6")
+  {
+    uint8_t input[] = {
+      0xc3,                                           // Long header, Type: INITIAL
+      0x11, 0x22, 0x33, 0x44,                         // Version
+      0x08,                                           // DCID Len
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(!result);
+  }
+
+  SECTION("Long header packet - Malformed INITIAL 7")
+  {
+    uint8_t input[] = {
+      0xc3,                                           // Long header, Type: INITIAL
+      0x11, 0x22, 0x33, 0x44,                         // Version
+      0x08,                                           // DCID Len
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
+      0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(!result);
+  }
+  SECTION("Long header packet - Malformed INITIAL 8")
+  {
+    uint8_t input[] = {
+      0xc3,                                           // Long header, Type: INITIAL
+      0x11, 0x22, 0x33, 0x44,                         // Version
+      0x08,                                           // DCID Len
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
+      0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x80,                                           // Token Length (i), Token (*)
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(!result);
+  }
+
+  SECTION("Long header packet - Malformed INITIAL 9")
+  {
+    uint8_t input[] = {
+      0xc3,                                           // Long header, Type: INITIAL
+      0x11, 0x22, 0x33, 0x44,                         // Version
+      0x08,                                           // DCID Len
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
+      0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0x00,                                           // Token Length (i), Token (*)
+      0x06,                                           // Length
+      0x01, 0x23,                                     // Packet number
+    };
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(!result);
+  }
 }

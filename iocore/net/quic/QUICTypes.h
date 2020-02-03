@@ -557,11 +557,11 @@ public:
   static int read_QUICPacketNumberLen(const uint8_t *buf);
   static QUICPacketNumber read_QUICPacketNumber(const uint8_t *buf, int len);
   static QUICVersion read_QUICVersion(const uint8_t *buf);
-  static QUICStreamId read_QUICStreamId(const uint8_t *buf);
-  static QUICOffset read_QUICOffset(const uint8_t *buf);
+  static QUICStreamId read_QUICStreamId(const uint8_t *buf, size_t buf_len);
+  static QUICOffset read_QUICOffset(const uint8_t *buf, size_t buf_len);
   static uint16_t read_QUICTransErrorCode(const uint8_t *buf);
   static QUICAppErrorCode read_QUICAppErrorCode(const uint8_t *buf);
-  static uint64_t read_QUICMaxData(const uint8_t *buf);
+  static uint64_t read_QUICMaxData(const uint8_t *buf, size_t buf_len);
 
   static void write_QUICConnectionId(QUICConnectionId connection_id, uint8_t *buf, size_t *len);
   static void write_QUICPacketNumberLen(int len, uint8_t *buf);
