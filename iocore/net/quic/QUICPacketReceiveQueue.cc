@@ -176,7 +176,8 @@ QUICPacketReceiveQueue::dequeue(uint8_t *packet_buf, QUICPacketCreationResult &r
     // do nothing - if the packet is unsupported version, we don't know packet number
     break;
   default:
-    if (quic_packet && quic_packet->packet_number() > this->_largest_received_packet_number) {
+    if (quic_packet && quic_packet->type() != QUICPacketType::VERSION_NEGOTIATION &&
+        quic_packet->packet_number() > this->_largest_received_packet_number) {
       this->_largest_received_packet_number = quic_packet->packet_number();
     }
   }

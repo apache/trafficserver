@@ -261,6 +261,9 @@ QUICPacketR::read_essential_info(Ptr<IOBufferBlock> block, QUICPacketType &type,
     reader.memcpy(tmp, len, 0);
     type = static_cast<QUICPacketType>((0x30 & tmp[0]) >> 4);
     QUICInvariants::version(version, tmp, len);
+    if (version == 0x00) {
+      type = QUICPacketType::VERSION_NEGOTIATION;
+    }
     if (!QUICInvariants::dcid(dcid, tmp, len) || !QUICInvariants::scid(scid, tmp, len)) {
       return false;
     }
@@ -294,6 +297,8 @@ QUICPacketR::read_essential_info(Ptr<IOBufferBlock> block, QUICPacketType &type,
           return false;
         }
         packet_number = QUICTypeUtil::read_QUICPacketNumber(tmp + length_offset + field_len, packet_number_len);
+        break;
+      case QUICPacketType::VERSION_NEGOTIATION:
         break;
       default:
         break;

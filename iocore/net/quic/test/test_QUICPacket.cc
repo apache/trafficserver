@@ -390,6 +390,40 @@ TEST_CASE("read_essential_info", "[quic]")
     CHECK(scid == expected_scid);
   }
 
+  SECTION("Long header packet - Version Negotiation")
+  {
+    uint8_t input[] = {
+      0xd9,                                           // Long header, Type: RETRY
+      0x00, 0x00, 0x00, 0x00,                         // Version
+      0x08,                                           // DCID Len
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Destination Connection ID
+      0x08,                                           // SCID Len
+      0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
+      0xff, 0x00, 0x00, 0x19,                         // Supported Version 1
+      0xa1, 0xa2, 0xa3, 0xa4,                         // Supported Version 2
+    };
+
+    QUICConnectionId expected_dcid(input + 6, 8);
+    QUICConnectionId expected_scid(input + 15, 8);
+
+    Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
+
+    QUICPacketType type;
+    QUICVersion version;
+    QUICConnectionId dcid;
+    QUICConnectionId scid;
+    QUICPacketNumber packet_number;
+    QUICKeyPhase key_phase;
+    bool result = QUICPacketR::read_essential_info(input_ibb, type, version, dcid, scid, packet_number, 0, key_phase);
+
+    REQUIRE(result);
+    CHECK(type == QUICPacketType::VERSION_NEGOTIATION);
+    CHECK(version == 0x00);
+    CHECK(dcid == expected_dcid);
+    CHECK(scid == expected_scid);
+  }
+
   SECTION("Short header packet")
   {
     uint8_t input[] = {
