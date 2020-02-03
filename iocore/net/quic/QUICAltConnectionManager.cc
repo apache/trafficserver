@@ -61,8 +61,8 @@ QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConne
 
     // FIXME Check nullptr dereference
     this->_local_preferred_address =
-      new QUICPreferredAddress(*preferred_endpoint_ipv4, *preferred_endpoint_ipv6, this->_alt_quic_connection_ids_local[0].id,
-                               this->_alt_quic_connection_ids_local[0].token);
+      new QUICPreferredAddress(*preferred_endpoint_ipv4, *preferred_endpoint_ipv6, this->_alt_quic_connection_ids_local[1].id,
+                               this->_alt_quic_connection_ids_local[1].token);
   }
 }
 
