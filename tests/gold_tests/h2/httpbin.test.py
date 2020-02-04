@@ -80,7 +80,7 @@ Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'access.log'), exists=True, con
 
 # TODO: when httpbin 0.8.0 or later is released, remove below json pretty print hack
 json_printer = '''
-python -c "import sys,json; print(json.dumps(json.load(sys.stdin), indent=2, separators=(',', ': ')))"
+python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin), indent=2, separators=(',', ': ')))"
 '''
 
 # ----

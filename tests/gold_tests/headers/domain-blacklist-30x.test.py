@@ -59,7 +59,7 @@ Test.Setup.Copy('data')
 redirect301tr = Test.AddTestRun("Test domain {0}".format(REDIRECT_301_HOST))
 redirect301tr.Processes.Default.StartBefore(Test.Processes.ts)
 redirect301tr.StillRunningAfter = ts
-redirect301tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+redirect301tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_get.txt'.format(REDIRECT_301_HOST))
 redirect301tr.Processes.Default.TimeOut = 5  # seconds
 redirect301tr.Processes.Default.ReturnCode = 0
@@ -68,7 +68,7 @@ redirect301tr.Processes.Default.Streams.stdout = "redirect301_get.gold"
 redirect302tr = Test.AddTestRun("Test domain {0}".format(REDIRECT_302_HOST))
 redirect302tr.StillRunningBefore = ts
 redirect302tr.StillRunningAfter = ts
-redirect302tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+redirect302tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_get.txt'.format(REDIRECT_302_HOST))
 redirect302tr.Processes.Default.TimeOut = 5  # seconds
 redirect302tr.Processes.Default.ReturnCode = 0
@@ -78,7 +78,7 @@ redirect302tr.Processes.Default.Streams.stdout = "redirect302_get.gold"
 redirect307tr = Test.AddTestRun("Test domain {0}".format(REDIRECT_307_HOST))
 redirect302tr.StillRunningBefore = ts
 redirect307tr.StillRunningAfter = ts
-redirect307tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+redirect307tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_get.txt'.format(REDIRECT_307_HOST))
 redirect307tr.Processes.Default.TimeOut = 5  # seconds
 redirect307tr.Processes.Default.ReturnCode = 0
@@ -87,7 +87,7 @@ redirect307tr.Processes.Default.Streams.stdout = "redirect307_get.gold"
 redirect308tr = Test.AddTestRun("Test domain {0}".format(REDIRECT_308_HOST))
 redirect308tr.StillRunningBefore = ts
 redirect308tr.StillRunningAfter = ts
-redirect308tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+redirect308tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_get.txt'.format(REDIRECT_308_HOST))
 redirect308tr.Processes.Default.TimeOut = 5  # seconds
 redirect308tr.Processes.Default.ReturnCode = 0
@@ -96,7 +96,7 @@ redirect308tr.Processes.Default.Streams.stdout = "redirect308_get.gold"
 redirect0tr = Test.AddTestRun("Test domain {0}".format(REDIRECT_0_HOST))
 redirect0tr.StillRunningBefore = ts
 redirect0tr.StillRunningAfter = ts
-redirect0tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+redirect0tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_get.txt'.format(REDIRECT_0_HOST))
 redirect0tr.Processes.Default.TimeOut = 5  # seconds
 redirect0tr.Processes.Default.ReturnCode = 0
@@ -105,7 +105,7 @@ redirect0tr.Processes.Default.Streams.stdout = "redirect0_get.gold"
 passthroughtr = Test.AddTestRun("Test domain {0}".format(PASSTHRU_HOST))
 passthroughtr.StillRunningBefore = ts
 passthroughtr.StillRunningAfter = ts
-passthroughtr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+passthroughtr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_get.txt'.format(PASSTHRU_HOST))
 passthroughtr.Processes.Default.TimeOut = 5  # seconds
 passthroughtr.Processes.Default.ReturnCode = 0

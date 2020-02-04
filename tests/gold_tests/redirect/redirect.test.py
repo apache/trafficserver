@@ -62,7 +62,7 @@ tr = Test.AddTestRun("FollowsRedirectWithAbsoluteLocationURI")
 # Here and below: because autest's Copy does not behave like standard cp, it's easiest to write all of our files out and copy last.
 with open(os.path.join(data_path, tr.Name), 'w') as f:
     f.write('GET /redirect HTTP/1.1\r\nHost: iwillredirect.test:{port}\r\n\r\n'.format(port=redirect_serv.Variables.Port))
-tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
+tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(redirect_serv)
 tr.Processes.Default.StartBefore(dest_serv)
@@ -83,7 +83,7 @@ redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_r
 tr = Test.AddTestRun("FollowsRedirectWithRelativeLocationURI")
 with open(os.path.join(data_path, tr.Name), 'w') as f:
     f.write('GET /redirect-relative-path HTTP/1.1\r\nHost: iwillredirect.test:{port}\r\n\r\n'.format(port=redirect_serv.Variables.Port))
-tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
+tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = redirect_serv
 tr.StillRunningAfter = dest_serv
@@ -100,7 +100,7 @@ redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_r
 tr = Test.AddTestRun("FollowsRedirectWithRelativeLocationURIMissingLeadingSlash")
 with open(os.path.join(data_path, tr.Name), 'w') as f:
     f.write('GET /redirect-relative-path-no-leading-slash HTTP/1.1\r\nHost: iwillredirect.test:{port}\r\n\r\n'.format(port=redirect_serv.Variables.Port))
-tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
+tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = redirect_serv
 tr.StillRunningAfter = dest_serv
@@ -138,7 +138,7 @@ for status,phrase in sorted({
         f.write(('GET /redirect{0} HTTP/1.1\r\n'
                 'Host: iwillredirect.test:{1}\r\n\r\n').\
                         format(status, redirect_serv.Variables.Port))
-    tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".\
+    tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | egrep -v '^(Date: |Server: ATS/)'".\
             format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
     tr.StillRunningAfter = ts
     tr.StillRunningAfter = redirect_serv
