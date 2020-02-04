@@ -103,7 +103,7 @@ tr.Processes.Default.ReturnCode = 0
 #
 tr = Test.AddTestRun()
 tr.DelayStart = 10
-tr.Processes.Default.Command = 'python {0} < {1}'.format(
+tr.Processes.Default.Command = 'python3 {0} < {1}'.format(
     os.path.join(Test.TestDirectory, 'new_log_flds_observer.py'),
     os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log'))
 tr.Processes.Default.ReturnCode = 0

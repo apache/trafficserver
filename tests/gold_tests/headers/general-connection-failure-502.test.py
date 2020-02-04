@@ -39,7 +39,7 @@ data_file.WriteOn("GET / HTTP/1.1\r\nHost: {host}\r\n\r\n".format(host=HOST))
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 # Do not start the origin server: We wish to simulate connection refused while hopefully no one else uses this port.
-tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | sed -e '/^Date: /d' -e '/^Server: ATS\//d'"\
+tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | sed -e '/^Date: /d' -e '/^Server: ATS\//d'"\
         .format(ts.Variables.port, "www.connectfail502.test-get.txt")
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'general-connection-failure-502.gold'

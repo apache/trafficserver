@@ -41,7 +41,7 @@ def data_file(data):
 # Function to return command (string) to run tcp_client.py tool.  'host' 'port', and 'file_path' are the parameters to tcp_client.
 #
 def tcp_client_cmd(host, port, file_path):
-    return "python {}/tcp_client.py {} {} {}".format(Test.Variables.AtsTestToolsDir, host, port, file_path)
+    return "python3 {}/tcp_client.py {} {} {}".format(Test.Variables.AtsTestToolsDir, host, port, file_path)
 
 # Function to return command (string) to run tcp_client.py tool.  'host' and 'port' are the first two parameters to tcp_client.
 # 'data' is the data to put in the data file input to tcp_client.
