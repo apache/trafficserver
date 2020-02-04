@@ -311,7 +311,7 @@ public:
   };
 
   // FIXME Check token length
-  QUICAddressValidationToken(const uint8_t *buf, uint8_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
+  QUICAddressValidationToken(const uint8_t *buf, size_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
   virtual ~QUICAddressValidationToken(){};
 
   static Type
@@ -336,8 +336,8 @@ public:
 protected:
   QUICAddressValidationToken() {}
 
-  // The size have to be big enough for the longuest token ATS use
-  uint8_t _token[1 + EVP_MAX_MD_SIZE + QUICConnectionId::MAX_LENGTH + 4] = {};
+  // The size should be smaller than maximum size of Retry packet
+  uint8_t _token[1200] = {0};
   unsigned int _token_len;
 };
 
@@ -365,7 +365,7 @@ public:
 class QUICRetryToken : public QUICAddressValidationToken
 {
 public:
-  QUICRetryToken(const uint8_t *buf, uint8_t len) : QUICAddressValidationToken(buf, len) {}
+  QUICRetryToken(const uint8_t *buf, size_t len) : QUICAddressValidationToken(buf, len) {}
   QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid);
 
   bool
