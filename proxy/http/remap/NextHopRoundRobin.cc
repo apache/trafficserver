@@ -24,6 +24,7 @@
 #include <mutex>
 #include <yaml-cpp/yaml.h>
 
+#include "HttpSM.h"
 #include "NextHopRoundRobin.h"
 
 NextHopRoundRobin::~NextHopRoundRobin()
@@ -32,14 +33,19 @@ NextHopRoundRobin::~NextHopRoundRobin()
 }
 
 void
-NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, RequestData &rdata, const uint64_t fail_threshold,
-                               const uint64_t retry_time, time_t now)
+NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
 {
-  time_t _now      = now;
-  bool firstcall   = true;
-  bool parentUp    = false;
-  bool parentRetry = false;
-  bool wrapped     = result.wrap_around;
+  HttpSM *sm                   = reinterpret_cast<HttpSM *>(txnp);
+  ParentResult *result         = &sm->t_state.parent_result;
+  HttpRequestData request_info = sm->t_state.request_data;
+  int64_t sm_id                = sm->sm_id;
+  int64_t fail_threshold       = sm->t_state.txn_conf->parent_fail_threshold;
+  int64_t retry_time           = sm->t_state.txn_conf->parent_retry_time;
+  time_t _now                  = now;
+  bool firstcall               = true;
+  bool parentUp                = false;
+  bool parentRetry             = false;
+  bool wrapped                 = result->wrap_around;
   std::vector<bool> wrap_around(groups, false);
   uint32_t cur_hst_index = 0;
   uint32_t cur_grp_index = 0;
@@ -47,41 +53,40 @@ NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, Reque
   uint32_t start_group   = 0;
   uint32_t start_host    = 0;
   std::shared_ptr<HostRecord> cur_host;
-  HostStatus &pStatus           = HostStatus::instance();
-  HttpRequestData *request_info = static_cast<HttpRequestData *>(&rdata);
-  HostStatus_t host_stat        = HostStatus_t::HOST_STATUS_UP;
+  HostStatus &pStatus    = HostStatus::instance();
+  HostStatus_t host_stat = HostStatus_t::HOST_STATUS_UP;
 
-  if (result.line_number != -1 && result.result != PARENT_UNDEFINED) {
+  if (result->line_number != -1 && result->result != PARENT_UNDEFINED) {
     firstcall = false;
   }
 
   if (firstcall) {
     // distance is the index into the strategies map, this is the equivalent to the old line_number in parent.config.
-    result.line_number = distance;
+    result->line_number = distance;
     NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] first call , cur_grp_index: %d, cur_hst_index: %d, distance: %d", sm_id, cur_grp_index,
              cur_hst_index, distance);
     switch (policy_type) {
     case NH_FIRST_LIVE:
-      result.start_parent = cur_hst_index = 0;
-      cur_grp_index                       = 0;
+      result->start_parent = cur_hst_index = 0;
+      cur_grp_index                        = 0;
       break;
     case NH_RR_STRICT: {
       std::lock_guard<std::mutex> lock(_mutex);
-      cur_hst_index = result.start_parent = this->hst_index;
-      cur_grp_index                       = 0;
-      this->hst_index                     = (this->hst_index + 1) % hst_size;
+      cur_hst_index = result->start_parent = this->hst_index;
+      cur_grp_index                        = 0;
+      this->hst_index                      = (this->hst_index + 1) % hst_size;
     } break;
     case NH_RR_IP:
       cur_grp_index = 0;
-      if (rdata.get_client_ip() != nullptr) {
-        cur_hst_index = result.start_parent = ntohl(ats_ip_hash(rdata.get_client_ip())) % hst_size;
+      if (request_info.get_client_ip() != nullptr) {
+        cur_hst_index = result->start_parent = ntohl(ats_ip_hash(request_info.get_client_ip())) % hst_size;
       } else {
         cur_hst_index = this->hst_index;
       }
       break;
     case NH_RR_LATCHED:
       cur_grp_index = 0;
-      cur_hst_index = result.start_parent = latched_index;
+      cur_hst_index = result->start_parent = latched_index;
       break;
     default:
       ink_assert(0);
@@ -93,20 +98,20 @@ NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, Reque
     NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next call, cur_grp_index: %d, cur_hst_index: %d, distance: %d", sm_id, cur_grp_index,
              cur_hst_index, distance);
     // Move to next parent due to failure
-    latched_index = cur_hst_index = (result.last_parent + 1) % hst_size;
+    latched_index = cur_hst_index = (result->last_parent + 1) % hst_size;
     cur_host                      = host_groups[cur_grp_index][cur_hst_index];
 
     // Check to see if we have wrapped around
-    if (static_cast<unsigned int>(cur_hst_index) == result.start_parent) {
+    if (static_cast<unsigned int>(cur_hst_index) == result->start_parent) {
       // We've wrapped around so bypass if we can
       if (go_direct == true) {
-        result.result = PARENT_DIRECT;
+        result->result = PARENT_DIRECT;
       } else {
-        result.result = PARENT_FAIL;
+        result->result = PARENT_FAIL;
       }
-      result.hostname    = nullptr;
-      result.port        = 0;
-      result.wrap_around = true;
+      result->hostname    = nullptr;
+      result->port        = 0;
+      result->wrap_around = true;
       return;
     }
   }
@@ -130,7 +135,7 @@ NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, Reque
              "[%" PRIu64 "] Selected a parent, %s,  failCount (faileAt: %d failCount: %d), FailThreshold: %" PRIu64
              ", request_info->xact_start: %ld",
              sm_id, cur_host->hostname.c_str(), (unsigned)cur_host->failedAt, cur_host->failCount, fail_threshold,
-             request_info->xact_start);
+             request_info.xact_start);
     // check if 'cur_host' is available, mark it up if it is.
     if ((cur_host->failedAt == 0) || (cur_host->failCount < fail_threshold)) {
       if (host_stat == HOST_STATUS_UP) {
@@ -143,7 +148,7 @@ NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, Reque
     } else { // if not available, check to see if it can be retried.  If so, set the retry flag and temporairly mark it as
              // available.
       _now == 0 ? _now = time(nullptr) : _now = now;
-      if (((result.wrap_around) || (cur_host->failedAt + retry_time) < static_cast<unsigned>(_now)) &&
+      if (((result->wrap_around) || (cur_host->failedAt + retry_time) < static_cast<unsigned>(_now)) &&
           host_stat == HOST_STATUS_UP) {
         // Reuse the parent
         parentUp    = true;
@@ -160,15 +165,15 @@ NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, Reque
     // The selected host is available or retryable, return the search result.
     if (parentUp == true && host_stat != HOST_STATUS_DOWN) {
       NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] status for %s: %s", sm_id, cur_host->hostname.c_str(), HostStatusNames[host_stat]);
-      result.result      = PARENT_SPECIFIED;
-      result.hostname    = cur_host->hostname.c_str();
-      result.port        = cur_host->getPort(scheme);
-      result.last_parent = cur_hst_index;
-      result.last_group  = cur_grp_index;
-      result.retry       = parentRetry;
-      ink_assert(result.hostname != nullptr);
-      ink_assert(result.port != 0);
-      NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Chosen parent = %s.%d", sm_id, result.hostname, result.port);
+      result->result      = PARENT_SPECIFIED;
+      result->hostname    = cur_host->hostname.c_str();
+      result->port        = cur_host->getPort(scheme);
+      result->last_parent = cur_hst_index;
+      result->last_group  = cur_grp_index;
+      result->retry       = parentRetry;
+      ink_assert(result->hostname != nullptr);
+      ink_assert(result->port != 0);
+      NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Chosen parent = %s.%d", sm_id, result->hostname, result->port);
       return;
     }
 
@@ -176,7 +181,7 @@ NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, Reque
     if (groups == 1) {
       latched_index = cur_hst_index = (cur_hst_index + 1) % hst_size;
       if (start_host == cur_hst_index) {
-        wrap_around[cur_grp_index] = wrapped = result.wrap_around = true;
+        wrap_around[cur_grp_index] = wrapped = result->wrap_around = true;
       }
     } else {                                // search the fail over groups.
       if (ring_mode == NH_ALTERNATE_RING) { // use alternating ring mode.
@@ -185,7 +190,7 @@ NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, Reque
         if (cur_grp_index == start_group) {
           latched_index = cur_hst_index = (cur_hst_index + 1) % hst_size;
           if (cur_hst_index == start_host) {
-            wrapped = wrap_around[cur_grp_index] = result.wrap_around = true;
+            wrapped = wrap_around[cur_grp_index] = result->wrap_around = true;
           }
         }
       } else { // use the exhaust ring mode.
@@ -194,7 +199,7 @@ NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, Reque
           wrap_around[cur_grp_index] = true;
           cur_grp_index              = (cur_grp_index + 1) % groups;
           if (cur_grp_index == start_group) {
-            wrapped = wrap_around[cur_grp_index] = result.wrap_around = true;
+            wrapped = wrap_around[cur_grp_index] = result->wrap_around = true;
           } else {
             start_host = cur_hst_index = 0;
           }
@@ -209,11 +214,11 @@ NextHopRoundRobin::findNextHop(const uint64_t sm_id, ParentResult &result, Reque
   } while (!wrapped);
 
   if (go_direct == true) {
-    result.result = PARENT_DIRECT;
+    result->result = PARENT_DIRECT;
   } else {
-    result.result = PARENT_FAIL;
+    result->result = PARENT_FAIL;
   }
 
-  result.hostname = nullptr;
-  result.port     = 0;
+  result->hostname = nullptr;
+  result->port     = 0;
 }

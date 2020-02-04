@@ -169,3 +169,198 @@ strategies:
       health_check:
         - passive
         - active
+  - strategy: "ignore-self-detect-false"
+    policy: consistent_hash
+    ignore_self_detect: false
+    hash_key: path
+    groups:
+      - &g1
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8000
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8001
+          weight: 1.0
+      - &g2
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8002
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8003
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "ignore-self-detect-true"
+    policy: consistent_hash
+    ignore_self_detect: true
+    hash_key: path
+    groups:
+      - &g1
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8000
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8001
+          weight: 1.0
+      - &g2
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8002
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8003
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "ignore-self-detect-true"
+    policy: consistent_hash
+    ignore_self_detect: true
+    hash_key: path
+    groups:
+      - &g1
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8000
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8001
+          weight: 1.0
+      - &g2
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8002
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8003
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "same-host-different-port"
+    policy: consistent_hash
+    ignore_self_detect: true
+    hash_key: path
+    groups:
+      - &g1
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8000
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8001
+          weight: 1.0
+      - &g2
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8002
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8003
+          weight: 1.0
+      - &g3
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8004
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8005
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "hash-string-override"
+    policy: consistent_hash
+    ignore_self_detect: true
+    hash_key: path
+    groups:
+      - &hso0
+        - host: foo.test
+          hash_string: one
+          protocol:
+            - scheme: http
+              port: 80
+          weight: 1.0
+        - host: bar.test
+          hash_string: two
+          protocol:
+            - scheme: http
+              port: 80
+          weight: 1.0
+      - &hso1
+        - host: baz.test
+          hash_string: three
+          protocol:
+            - scheme: http
+              port: 80
+          weight: 1.0
+        - host: bat.test
+          hash_string: four
+          protocol:
+            - scheme: http
+              port: 80
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active
