@@ -1811,7 +1811,7 @@ QUICRetryPacketR::type() const
 QUICPacketNumber
 QUICRetryPacketR::packet_number() const
 {
-  return this->_packet_number;
+  return 0;
 }
 
 const QUICAddressValidationToken &

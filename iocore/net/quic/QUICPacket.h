@@ -543,7 +543,6 @@ public:
   bool has_valid_tag(QUICConnectionId &odcid) const;
 
 private:
-  QUICPacketNumber _packet_number;
   QUICAddressValidationToken *_token = nullptr;
   uint8_t _integrity_tag[QUICRetryIntegrityTag::LEN];
   Ptr<IOBufferBlock> _payload_block_without_tag;
