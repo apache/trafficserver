@@ -290,13 +290,21 @@ QUICPacketR::read_essential_info(Ptr<IOBufferBlock> block, QUICPacketType &type,
           return false;
         }
         packet_number = QUICTypeUtil::read_QUICPacketNumber(tmp + length_offset + field_len, packet_number_len);
+        key_phase     = QUICKeyPhase::INITIAL;
         break;
       case QUICPacketType::ZERO_RTT_PROTECTED:
+        if (length_offset + field_len + packet_number_len >= static_cast<uint64_t>(len)) {
+          return false;
+        }
+        packet_number = QUICTypeUtil::read_QUICPacketNumber(tmp + length_offset + field_len, packet_number_len);
+        key_phase     = QUICKeyPhase::ZERO_RTT;
+        break;
       case QUICPacketType::HANDSHAKE:
         if (length_offset + field_len + packet_number_len >= static_cast<uint64_t>(len)) {
           return false;
         }
         packet_number = QUICTypeUtil::read_QUICPacketNumber(tmp + length_offset + field_len, packet_number_len);
+        key_phase     = QUICKeyPhase::INITIAL;
         break;
       case QUICPacketType::VERSION_NEGOTIATION:
         break;

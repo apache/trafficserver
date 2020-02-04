@@ -1823,11 +1823,15 @@ QUICNetVConnection::_dequeue_recv_packet(uint8_t *packet_buf, QUICPacketCreation
     QUICConDebug("Unsupported version");
     break;
   case QUICPacketCreationResult::SUCCESS:
-    if (packet->type() == QUICPacketType::VERSION_NEGOTIATION) {
+    switch (packet->type()) {
+    case QUICPacketType::VERSION_NEGOTIATION:
+    case QUICPacketType::RETRY:
       QUICConDebug("[RX] %s packet size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
-    } else {
+      break;
+    default:
       QUICConDebug("[RX] %s packet #%" PRIu64 " size=%u header_len=%u payload_len=%u", QUICDebugNames::packet_type(packet->type()),
                    packet->packet_number(), packet->size(), packet->header_size(), packet->payload_length());
+      break;
     }
     break;
   default:
