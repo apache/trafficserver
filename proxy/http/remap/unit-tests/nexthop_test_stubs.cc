@@ -27,23 +27,90 @@
 
  */
 
+#include "HttpSM.h"
 #include "nexthop_test_stubs.h"
 
-#include "HttpTransact.h"
+HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
+void
+HttpSM::cleanup()
+{
+}
+void
+HttpSM::destroy()
+{
+}
+void
+HttpSM::handle_api_return()
+{
+}
+void
+HttpSM::set_next_state()
+{
+}
+int
+HttpSM::kill_this_async_hook(int event, void *data)
+{
+  return 0;
+}
+
+HttpVCTable::HttpVCTable(HttpSM *smp)
+{
+  sm = smp;
+}
+HttpCacheAction::HttpCacheAction() {}
+void
+HttpCacheAction::cancel(Continuation *c)
+{
+}
+PostDataBuffers::~PostDataBuffers() {}
+void
+APIHooks::clear()
+{
+}
+
+HttpTunnel::HttpTunnel() {}
+HttpCacheSM::HttpCacheSM() {}
+HttpHookState::HttpHookState() {}
+HttpTunnelConsumer::HttpTunnelConsumer() {}
+HttpTunnelProducer::HttpTunnelProducer() {}
+ChunkedHandler::ChunkedHandler() {}
+
+alignas(OverridableHttpConfigParams) char _my_txn_conf[sizeof(OverridableHttpConfigParams)];
 
 void
-br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
+build_request(int64_t sm_id, HttpSM *sm, sockaddr_in *ip, const char *os_hostname, sockaddr const *dest_ip)
 {
   HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
-  h->hdr        = new HTTPHdr();
-  h->hdr->create(HTTP_TYPE_REQUEST, heap);
-  h->hostname_str = ats_strdup(os_hostname);
-  h->xact_start   = time(nullptr);
-  ink_zero(h->src_ip);
-  ink_zero(h->dest_ip);
-  ats_ip_copy(&h->dest_ip.sa, dest_ip);
-  h->incoming_port = 80;
-  h->api_info      = new HttpApiInfo();
+  sm->sm_id     = sm_id;
+
+  if (sm->t_state.request_data.hdr != nullptr) {
+    delete sm->t_state.request_data.hdr;
+  }
+  sm->t_state.request_data.hdr = new HTTPHdr();
+  sm->t_state.request_data.hdr->create(HTTP_TYPE_REQUEST, heap);
+  if (sm->t_state.request_data.hostname_str != nullptr) {
+    ats_free(sm->t_state.request_data.hostname_str);
+  }
+  sm->t_state.request_data.hostname_str = ats_strdup(os_hostname);
+  sm->t_state.request_data.xact_start   = time(nullptr);
+  ink_zero(sm->t_state.request_data.src_ip);
+  ink_zero(sm->t_state.request_data.dest_ip);
+  ats_ip_copy(&sm->t_state.request_data.dest_ip.sa, dest_ip);
+  sm->t_state.request_data.incoming_port = 80;
+  if (sm->t_state.request_data.api_info != nullptr) {
+    delete sm->t_state.request_data.api_info;
+  }
+  sm->t_state.request_data.api_info = new HttpApiInfo();
+  if (ip != nullptr) {
+    memcpy(&sm->t_state.request_data.src_ip.sa, ip, sizeof(sm->t_state.request_data.src_ip.sa));
+  }
+  sm->t_state.request_data.xact_start = time(0);
+
+  memset(_my_txn_conf, 0, sizeof(_my_txn_conf));
+  OverridableHttpConfigParams *oride = reinterpret_cast<OverridableHttpConfigParams *>(_my_txn_conf);
+  oride->parent_retry_time           = 1;
+  oride->parent_fail_threshold       = 1;
+  sm->t_state.txn_conf               = reinterpret_cast<OverridableHttpConfigParams *>(_my_txn_conf);
 }
 
 void
@@ -89,7 +156,7 @@ HttpRequestData::get_ip()
 sockaddr const *
 HttpRequestData::get_client_ip()
 {
-  return nullptr;
+  return &src_ip.sa;
 }
 
 #include "InkAPIInternal.h"

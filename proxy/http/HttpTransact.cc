@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ts/nexthop.h"
 #include "tscore/ink_platform.h"
 
 #include <strings.h>
@@ -207,8 +208,7 @@ findParent(HttpTransact::State *s)
   url_mapping *mp = s->url_map.getMapping();
 
   if (mp && mp->strategy) {
-    return mp->strategy->findNextHop(s->state_machine->sm_id, s->parent_result, s->request_data, s->txn_conf->parent_fail_threshold,
-                                     s->txn_conf->parent_retry_time);
+    return mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
     return s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
                                         s->txn_conf->parent_retry_time);
@@ -223,8 +223,7 @@ markParentDown(HttpTransact::State *s)
   url_mapping *mp = s->url_map.getMapping();
 
   if (mp && mp->strategy) {
-    return mp->strategy->markNextHopDown(s->state_machine->sm_id, s->parent_result, s->txn_conf->parent_fail_threshold,
-                                         s->txn_conf->parent_retry_time);
+    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, NH_MARK_DOWN);
   } else if (s->parent_params) {
     return s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
   }
@@ -237,7 +236,7 @@ markParentUp(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
-    return mp->strategy->markNextHopUp(s->state_machine->sm_id, s->parent_result);
+    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, NH_MARK_UP);
   } else if (s->parent_params) {
     return s->parent_params->markParentUp(&s->parent_result);
   }
@@ -250,7 +249,7 @@ parentExists(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
-    return mp->strategy->nextHopExists(s->state_machine->sm_id);
+    return mp->strategy->nextHopExists(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
     return s->parent_params->parentExists(&s->request_data);
   }
@@ -265,8 +264,7 @@ nextParent(HttpTransact::State *s)
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
     // NextHop only has a findNextHop() function.
-    return mp->strategy->findNextHop(s->state_machine->sm_id, s->parent_result, s->request_data, s->txn_conf->parent_fail_threshold,
-                                     s->txn_conf->parent_retry_time);
+    return mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
     return s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
                                         s->txn_conf->parent_retry_time);

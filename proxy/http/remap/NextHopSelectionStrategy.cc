@@ -23,6 +23,7 @@
 
 #include <yaml-cpp/yaml.h>
 #include "I_Machine.h"
+#include "HttpSM.h"
 #include "NextHopSelectionStrategy.h"
 
 // ring mode strings
@@ -179,6 +180,7 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
               hosts_inner.push_back(std::move(host_rec));
               num_parents++;
             }
+            passive_health.insert(hosts_inner);
             host_groups.push_back(std::move(hosts_inner));
           }
         }
@@ -193,105 +195,17 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
 }
 
 void
-NextHopSelectionStrategy::markNextHopDown(const uint64_t sm_id, ParentResult &result, const uint64_t fail_threshold,
-                                          const uint64_t retry_time, time_t now)
+NextHopSelectionStrategy::markNextHop(TSHttpTxn txnp, const char *hostname, const NHCmd status, void *ih, const time_t now)
 {
-  time_t _now;
-  now == 0 ? _now = time(nullptr) : _now = now;
-  uint32_t new_fail_count                = 0;
-
-  //  Make sure that we are being called back with with a
-  //  result structure with a selected parent.
-  if (result.result != PARENT_SPECIFIED) {
-    return;
-  }
-  // If we were set through the API we currently have not failover
-  //   so just return fail
-  if (result.is_api_result()) {
-    ink_assert(0);
-    return;
-  }
-  uint32_t hst_size = host_groups[result.last_group].size();
-  ink_assert(result.last_parent < hst_size);
-  std::shared_ptr<HostRecord> h = host_groups[result.last_group][result.last_parent];
-
-  // If the parent has already been marked down, just increment
-  //   the failure count.  If this is the first mark down on a
-  //   parent we need to both set the failure time and set
-  //   count to one. If this was the result of a retry, we
-  //   must update move the failedAt timestamp to now so that we
-  //   continue negative cache the parent
-  if (h->failedAt == 0 || result.retry == true) {
-    { // start of lock_guard scope.
-      std::lock_guard<std::mutex> lock(h->_mutex);
-      if (h->failedAt == 0) {
-        // Mark the parent failure time.
-        h->failedAt = _now;
-        if (result.retry == false) {
-          new_fail_count = h->failCount = 1;
-        }
-      } else if (result.retry == true) {
-        h->failedAt = _now;
-      }
-    } // end of lock_guard scope
-    NH_Note("[%" PRIu64 "] NextHop %s marked as down %s:%d", sm_id, (result.retry) ? "retry" : "initially", h->hostname.c_str(),
-            h->getPort(scheme));
-
-  } else {
-    int old_count = 0;
-
-    // if the last failure was outside the retry window, set the failcount to 1 and failedAt to now.
-    { // start of lock_guard_scope
-      std::lock_guard<std::mutex> lock(h->_mutex);
-      if ((h->failedAt + retry_time) < static_cast<unsigned>(_now)) {
-        h->failCount = 1;
-        h->failedAt  = _now;
-      } else {
-        old_count = h->failCount = 1;
-      }
-      new_fail_count = old_count + 1;
-    } // end of lock_guard
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Parent fail count increased to %d for %s:%d", sm_id, new_fail_count, h->hostname.c_str(),
-             h->getPort(scheme));
-  }
-
-  if (new_fail_count >= fail_threshold) {
-    h->set_unavailable();
-    NH_Note("[%" PRIu64 "] Failure threshold met failcount:%d >= threshold:%" PRIu64 ", http parent proxy %s:%d marked down", sm_id,
-            new_fail_count, fail_threshold, h->hostname.c_str(), h->getPort(scheme));
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] NextHop %s:%d marked unavailable, h->available=%s", sm_id, h->hostname.c_str(),
-             h->getPort(scheme), (h->available) ? "true" : "false");
-  }
-}
-
-void
-NextHopSelectionStrategy::markNextHopUp(const uint64_t sm_id, ParentResult &result)
-{
-  //  Make sure that we are being called back with with a
-  //   result structure with a parent that is being retried
-  ink_assert(result.retry == true);
-  if (result.result != PARENT_SPECIFIED) {
-    return;
-  }
-  // If we were set through the API we currently have not failover
-  //   so just return fail
-  if (result.is_api_result()) {
-    ink_assert(0);
-    return;
-  }
-  uint32_t hst_size = host_groups[result.last_group].size();
-  ink_assert(result.last_parent < hst_size);
-  std::shared_ptr<HostRecord> h = host_groups[result.last_group][result.last_parent];
-
-  if (!h->available) {
-    h->set_available();
-    NH_Note("[%" PRIu64 "] http parent proxy %s:%d restored", sm_id, h->hostname.c_str(), h->getPort(scheme));
-  }
+  return passive_health.markNextHop(txnp, hostname, status, ih, now);
 }
 
 bool
-NextHopSelectionStrategy::nextHopExists(const uint64_t sm_id)
+NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp, void *ih)
 {
+  HttpSM *sm    = reinterpret_cast<HttpSM *>(txnp);
+  int64_t sm_id = sm->sm_id;
+
   for (uint32_t gg = 0; gg < groups; gg++) {
     for (uint32_t hh = 0; hh < host_groups[gg].size(); hh++) {
       HostRecord *p = host_groups[gg][hh].get();

@@ -1,6 +1,6 @@
 /** @file
 
-  Implementation of various round robin nexthop selections strategies.
+  Traffic Server SDK API header file
 
   @section license License
 
@@ -19,26 +19,30 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+  @section developers Developers
+
+  NextHop plugin interface.
+
  */
 
 #pragma once
 
-#include <mutex>
-#include "NextHopSelectionStrategy.h"
+#include <ts/apidefs.h>
 
-class NextHopRoundRobin : public NextHopSelectionStrategy
-{
-  std::mutex _mutex;
-  uint32_t latched_index = 0;
+// plugin callback commands.
+enum NHCmd { NH_MARK_UP, NH_MARK_DOWN };
 
-public:
-  NextHopRoundRobin() = delete;
-  NextHopRoundRobin(const std::string_view &name, const NHPolicyType &policy) : NextHopSelectionStrategy(name, policy) {}
-  ~NextHopRoundRobin();
-  bool
-  Init(const YAML::Node &n)
-  {
-    return NextHopSelectionStrategy::Init(n);
-  }
-  void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
+struct NHHealthStatus {
+  virtual bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, void *ih = nullptr)                                    = 0;
+  virtual void markNextHop(TSHttpTxn txn, const char *hostname, const NHCmd status, void *ih = nullptr, const time_t now = 0) = 0;
+  virtual ~NHHealthStatus() {}
+};
+
+struct NHPluginStrategy {
+  virtual void findNextHop(TSHttpTxn txnp, void *ih = nullptr)   = 0;
+  virtual bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr) = 0;
+  virtual ~NHPluginStrategy() {}
+
+  NHHealthStatus *healthStatus;
 };

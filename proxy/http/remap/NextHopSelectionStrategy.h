@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "ts/nexthop.h"
 #include "ParentSelection.h"
 
 #ifndef _NH_UNIT_TESTS_
@@ -183,6 +184,18 @@ struct HostRecord : ATSConsistentHashNode {
   }
 };
 
+class NextHopHealthStatus : public NHHealthStatus
+{
+public:
+  void insert(std::vector<std::shared_ptr<HostRecord>> &hosts);
+  bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, void *ih = nullptr) override;
+  void markNextHop(TSHttpTxn txn, const char *hostname, const NHCmd status, void *ih = nullptr, const time_t now = 0) override;
+  NextHopHealthStatus(){};
+
+private:
+  std::unordered_map<std::string, std::shared_ptr<HostRecord>> host_map;
+};
+
 class NextHopSelectionStrategy
 {
 public:
@@ -190,12 +203,9 @@ public:
   NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &type);
   virtual ~NextHopSelectionStrategy(){};
   bool Init(const YAML::Node &n);
-  virtual void findNextHop(const uint64_t sm_id, ParentResult &result, RequestData &rdata, const uint64_t fail_threshold,
-                           const uint64_t retry_time, time_t now = 0) = 0;
-  void markNextHopDown(const uint64_t sm_id, ParentResult &result, const uint64_t fail_threshold, const uint64_t retry_time,
-                       time_t now = 0);
-  void markNextHopUp(const uint64_t sm_id, ParentResult &result);
-  bool nextHopExists(const uint64_t sm_id);
+  virtual void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) = 0;
+  void markNextHop(TSHttpTxn txnp, const char *hostname, const NHCmd status, void *ih = nullptr, const time_t now = 0);
+  bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr);
 
   std::string strategy_name;
   bool go_direct           = true;
@@ -206,6 +216,7 @@ public:
   NHRingMode ring_mode     = NH_ALTERNATE_RING;
   ResponseCodes resp_codes;
   HealthChecks health_checks;
+  NextHopHealthStatus passive_health;
   std::vector<std::vector<std::shared_ptr<HostRecord>>> host_groups;
   uint32_t max_simple_retries = 1;
   uint32_t groups             = 0;
