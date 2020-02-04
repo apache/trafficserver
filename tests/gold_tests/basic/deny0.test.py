@@ -63,7 +63,7 @@ def buildMetaTest(testName, requestString):
     tr.Processes.Default.StartBefore(dns)
   with open(os.path.join(data_path, tr.Name), 'w') as f:
       f.write(requestString)
-  tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | head -1".format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
+  tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | head -1".format(ts.Variables.port, os.path.join(data_dirname, tr.Name))
   tr.ReturnCode = 0
   tr.Processes.Default.Streams.stdout = gold_filepath
   tr.StillRunningAfter = ts

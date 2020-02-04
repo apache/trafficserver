@@ -76,7 +76,7 @@ defaultTr = Test.AddTestRun("Test domain {0}".format(DEFAULT_204_HOST))
 defaultTr.Processes.Default.StartBefore(Test.Processes.ts)
 defaultTr.StillRunningAfter = ts
 
-defaultTr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+defaultTr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_get.txt'.format(DEFAULT_204_HOST))
 defaultTr.Processes.Default.TimeOut = 5  # seconds
 defaultTr.Processes.Default.ReturnCode = 0
@@ -86,7 +86,7 @@ defaultTr.Processes.Default.Streams.stdout = "gold/http-204.gold"
 customTemplateTr = Test.AddTestRun("Test domain {0}".format(CUSTOM_TEMPLATE_204_HOST))
 customTemplateTr.StillRunningBefore = ts
 customTemplateTr.StillRunningAfter = ts
-customTemplateTr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+customTemplateTr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_get.txt'.format(CUSTOM_TEMPLATE_204_HOST))
 customTemplateTr.Processes.Default.TimeOut = 5  # seconds
 customTemplateTr.Processes.Default.ReturnCode = 0
