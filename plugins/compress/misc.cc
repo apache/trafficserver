@@ -142,6 +142,7 @@ init_hidden_header_name()
     hidden_header_name                         = (char *)TSmalloc(hidden_header_name_len + 1);
     hidden_header_name[hidden_header_name_len] = 0;
     sprintf(hidden_header_name, "x-accept-encoding-%s", result);
+    TSfree(result);
   }
   return hidden_header_name;
 }
