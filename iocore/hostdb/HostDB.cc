@@ -1288,9 +1288,11 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     // If the DNS lookup failed (errors such as SERVFAIL, etc.) but we have an old record
     // which is okay with being served stale-- lets continue to serve the stale record as long as
     // the record is willing to be served.
+    bool serve_stale = false;
     if (failed && old_r && old_r->serve_stale_but_revalidate()) {
       r->free();
-      r = old_r.get();
+      r           = old_r.get();
+      serve_stale = true;
     } else if (is_byname()) {
       if (first_record) {
         ip_addr_set(tip, af, first_record);
@@ -1400,7 +1402,11 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     ink_assert(!r || !r->round_robin || !r->reverse_dns);
     ink_assert(failed || !r->round_robin || r->app.rr.offset);
 
-    hostDB.refcountcache->put(hash.hash.fold(), r, allocSize, r->expiry_time());
+    if (!serve_stale) {
+      hostDB.refcountcache->put(hash.hash.fold(), r, allocSize, r->expiry_time());
+    } else {
+      Warning("Fallback to serving stale record, skip re-update of hostdb for %s", aname);
+    }
 
     // try to callback the user
     //
