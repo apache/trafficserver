@@ -1125,19 +1125,17 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 
     end                    = real_end;
     parser->m_parsing_http = false;
-
-    ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
-    // If we're done with the main parse do some validation
-    if (ret == PARSE_RESULT_DONE) {
-      ret = validate_hdr_host(hh); // check HOST header
-    }
-    if (ret == PARSE_RESULT_DONE) {
-      ret = validate_hdr_content_length(heap, hh);
-    }
-    return ret;
   }
 
-  return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+  ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+  // If we're done with the main parse do some validation
+  if (ret == PARSE_RESULT_DONE) {
+    ret = validate_hdr_host(hh); // check HOST header
+  }
+  if (ret == PARSE_RESULT_DONE) {
+    ret = validate_hdr_content_length(heap, hh);
+  }
+  return ret;
 }
 
 ParseResult
@@ -1189,7 +1187,7 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     if (mime_hdr_field_find(hh->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING) != nullptr) {
       // Delete all Content-Length headers
       Debug("http", "Transfer-Encoding header and Content-Length headers the request, removing all Content-Length headers");
-      mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field);
+      mime_hdr_field_delete(heap, hh->m_fields_impl, content_length_field, true);
       return PARSE_RESULT_DONE;
     }
 
