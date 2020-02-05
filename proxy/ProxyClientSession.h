@@ -65,6 +65,12 @@ public:
 
   virtual NetVConnection *get_netvc() const = 0;
 
+  virtual bool
+  is_chunked_encoding_supported() const
+  {
+    return false;
+  }
+
   virtual int get_transact_count() const = 0;
 
   virtual const char *get_protocol_string() const = 0;

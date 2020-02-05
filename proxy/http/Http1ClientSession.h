@@ -168,6 +168,12 @@ public:
     return "http";
   }
 
+  bool
+  is_chunked_encoding_supported() const override
+  {
+    return true;
+  }
+
 private:
   Http1ClientSession(Http1ClientSession &);
 

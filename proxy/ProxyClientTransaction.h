@@ -244,6 +244,12 @@ public:
     return parent ? parent->populate_protocol(result, size) : 0;
   }
 
+  virtual bool
+  is_chunked_encoding_supported() const
+  {
+    return parent ? parent->is_chunked_encoding_supported() : false;
+  }
+
   virtual const char *
   protocol_contains(ts::StringView tag_prefix) const
   {
