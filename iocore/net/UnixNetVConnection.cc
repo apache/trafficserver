@@ -933,7 +933,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
     try_to_write  = 0;
 
     while (niov < NET_MAX_IOV) {
-      int64_t wavail = towrite - total_written;
+      int64_t wavail = towrite - total_written - try_to_write;
       int64_t len    = tmp_reader->block_read_avail();
 
       // Check if we have done this block.

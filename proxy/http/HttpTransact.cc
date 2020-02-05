@@ -6806,9 +6806,8 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
 
     // check that the client is HTTP 1.1 and the conf allows chunking or the client
     // protocol unchunks before returning to the user agent (i.e. is http/2)
-    if (s->client_info.http_version == HTTPVersion(1, 1) &&
-        (s->txn_conf->chunking_enabled == 1 ||
-         (s->state_machine->plugin_tag && (!strncmp(s->state_machine->plugin_tag, "http/2", 6)))) &&
+    if (s->client_info.http_version == HTTPVersion(1, 1) && s->txn_conf->chunking_enabled == 1 &&
+        s->state_machine->ua_txn->is_chunked_encoding_supported() &&
         // if we're not sending a body, don't set a chunked header regardless of server response
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
         // we do not need chunked encoding for internal error messages
