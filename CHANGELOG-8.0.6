@@ -1,6 +1,7 @@
 Changes with Apache Traffic Server 8.0.6
   #4042 - Fixed url_sig error when storing base64ed params in penultimate segment.
   #4117 - Add transform TSIOBuffer watermark APIs.
+  #4215 - HostStatus debug logging segfault fix.
   #4590 - Print thread name instead of thread id
   #4840 - resolve stack-use-after-scope in YamlLogConfig.cc
   #5078 - Fix directives for checking TS_USE_TLS_OCSP
@@ -18,6 +19,7 @@ Changes with Apache Traffic Server 8.0.6
   #5489 - gcc9: set default value for printing debug message
   #5497 - gcc9: sprintf and strncat fixes in plugins
   #5516 - Make code compilable with BoringSSL
+  #5636 - HTTP/2: ignore unknown settings
   #5823 - Avoid AWS auth v4 path/query param double encoding
   #5833 - Fix H2 internal counters
   #5887 - Fixed const issue with magick plugin
@@ -32,3 +34,7 @@ Changes with Apache Traffic Server 8.0.6
   #6113 - Patch to fix autest issues
   #6145 - Remove including sys/sysctl.h for Linux
   #6158 - Fixed build issues with hwloc 2.x API changes
+  #6248 - Add support for the old lua formatted ease of use conventions and the numeric log rolling values
+  #6308 - Fix clang-format-github CI job for 8.0.x branch
+  #6312 - Set wrap after checking all the parents
+  #6390 - Change header validation
