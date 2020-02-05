@@ -884,7 +884,12 @@ Changes with Apache Traffic Server 9.0.0
   #6323 - Fix strict round robin cur_index increment
   #6324 - Fixes clang-format issues
   #6325 - Fixes typo in TLS Bridge illustration
+  #6328 - Document the order of the X-Cache header
   #6329 - Fixed build issues on macOS after 0-RTT merge
   #6332 - Fixes Issue #6321 caused when proxy.config.http.no_dns_just_forward_to_parent
   #6339 - Fixes an issue where NextHopSelectionStrategy did not implement a parent check.
   #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
+  #6346 - Fix heap-use-after-free on Http2Stream::destroy()
+  #6372 - Change alloca usage to malloc/free
+  #6378 - Remove trailing white space from json formatter
+  #6392 - Free TSMgmtString after using it.
