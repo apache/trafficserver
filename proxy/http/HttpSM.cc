@@ -2713,7 +2713,9 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
     // When the ua completed sending it's data we must have
     //  removed it from the tunnel
     ink_release_assert(ua_entry->in_tunnel == false);
-    server_entry->in_tunnel = false;
+    if (server_entry) {
+      server_entry->in_tunnel = false;
+    }
 
     break;
   default:
@@ -2739,6 +2741,10 @@ HttpSM::tunnel_handler_post(int event, void *data)
   switch (event) {
   case HTTP_TUNNEL_EVENT_DONE: // Tunnel done.
     if (p->handler_state == HTTP_SM_POST_UA_FAIL) {
+      if (server_entry) {
+        vc_table.remove_entry(server_entry);
+        server_entry = nullptr;
+      }
       // post failed
       switch (t_state.client_info.state) {
       case HttpTransact::ACTIVE_TIMEOUT:
@@ -2792,6 +2798,8 @@ HttpSM::tunnel_handler_post(int event, void *data)
     handle_post_failure();
     break;
   case HTTP_SM_POST_UA_FAIL:
+    // Client side failed.  Shutdown and go home no need to communicate back to UA
+    terminate_sm = true;
     break;
   case HTTP_SM_POST_SUCCESS:
     // It's time to start reading the response
@@ -3108,7 +3116,9 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   vc_table.remove_entry(server_entry);
 
   if (close_connection) {
-    p->vc->do_io_close();
+    if (p->vc) {
+      p->vc->do_io_close();
+    }
     p->read_vio = nullptr;
     /* TS-1424: if we're outbound transparent and using the client
        source port for the outbound connection we must effectively
@@ -3501,15 +3511,8 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       SMDebug("http_tunnel", "send 408 response to client to vc %p, tunnel vc %p", ua_txn->get_netvc(), p->vc);
 
       tunnel.chain_abort_all(p);
-      server_session = nullptr;
-      // Reset the inactivity timeout, otherwise the InactivityCop will callback again in the next second.
-      ua_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
-      // if it is active timeout case, we need to give another chance to send 408 response;
-      ua_txn->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
 
-      p->vc->do_io_write(nullptr, 0, nullptr);
-      p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
-
+      // The meta tunnel handler should just kill the SM in this case
       return 0;
     }
   // fall through
@@ -3574,6 +3577,9 @@ HttpSM::tunnel_handler_for_partial_post(int event, void * /* data ATS_UNUSED */)
   STATE_ENTER(&HttpSM::tunnel_handler_for_partial_post, event);
   tunnel.deallocate_buffers();
   tunnel.reset();
+  if (server_entry) {
+    server_entry->in_tunnel = false;
+  }
 
   t_state.redirect_info.redirect_in_process = false;
   is_using_post_buffer                      = false;
@@ -3930,7 +3936,9 @@ HttpSM::tunnel_handler_transform_read(int event, HttpTunnelProducer *p)
   //  transform hasn't detached yet.  If it is still alive,
   //  don't close the transform vc
   if (p->self_consumer->alive == false) {
-    p->vc->do_io_close();
+    if (p->vc) {
+      p->vc->do_io_close();
+    }
   }
   p->handler_state = HTTP_SM_TRANSFORM_CLOSED;
 
@@ -5395,7 +5403,7 @@ HttpSM::handle_post_failure()
   STATE_ENTER(&HttpSM::handle_post_failure, VC_EVENT_NONE);
 
   ink_assert(ua_entry->vc == ua_txn);
-  ink_assert(is_waiting_for_full_body || server_entry->eos == true);
+  ink_assert(is_waiting_for_full_body || server_entry == nullptr || server_entry->eos == true);
 
   if (is_waiting_for_full_body) {
     call_transact_and_set_next_state(HttpTransact::Forbidden);
@@ -5423,11 +5431,17 @@ HttpSM::handle_post_failure()
   if (server_buffer_reader->read_avail() > 0) {
     tunnel.deallocate_buffers();
     tunnel.reset();
+    if (server_entry) {
+      server_entry->in_tunnel = false;
+    }
     // There's data from the server so try to read the header
     setup_server_read_response_header();
   } else {
     tunnel.deallocate_buffers();
     tunnel.reset();
+    if (server_entry) {
+      server_entry->in_tunnel = false;
+    }
     // Server died
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
     call_transact_and_set_next_state(HttpTransact::HandleResponse);
@@ -5537,6 +5551,9 @@ HttpSM::handle_server_setup_error(int event, void *data)
         post_transform_info.entry = nullptr;
         tunnel.deallocate_buffers();
         tunnel.reset();
+        if (server_entry) {
+          server_entry->in_tunnel = false;
+        }
       }
     }
   }
@@ -6223,6 +6240,9 @@ HttpSM::setup_100_continue_transfer()
   // Clear the decks before we set up new producers.  As things stand, we cannot have two static operators
   // at once
   tunnel.reset();
+  if (server_entry) {
+    server_entry->in_tunnel = false;
+  }
 
   // Setup the tunnel to the client
   HttpTunnelProducer *p = tunnel.add_producer(HTTP_TUNNEL_STATIC_PRODUCER, client_response_hdr_bytes, buf_start,
@@ -6355,6 +6375,9 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
   // As things stand, we cannot have two static producers operating at
   // once
   tunnel.reset();
+  if (server_entry) {
+    server_entry->in_tunnel = false;
+  }
 
   // Setup the tunnel to the client
   HttpTunnelProducer *p =
@@ -6860,8 +6883,10 @@ HttpSM::kill_this()
       plugin_tunnel = nullptr;
     }
 
-    server_session = nullptr;
-
+    if (server_session && server_entry && !server_entry->in_tunnel && server_entry->vc == server_session) {
+      release_server_session();
+      server_session = nullptr;
+    }
     // So we don't try to nuke the state machine
     //  if the plugin receives event we must reset
     //  the terminate_flag

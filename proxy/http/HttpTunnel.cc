@@ -1385,10 +1385,10 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
     if (c->alive) {
       c->alive     = false;
       c->write_vio = nullptr;
-      c->vc->do_io_close(EHTTP_ERROR);
       update_stats_after_abort(c->vc_type);
+      c->vc->do_io_close(EHTTP_ERROR);
+      c->vc = nullptr;
     }
-
     if (c->self_producer) {
       // Must snip the link before recursively
       // freeing to avoid looks introduced by
@@ -1410,8 +1410,9 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
       p->self_consumer->alive = false;
     }
     p->read_vio = nullptr;
-    p->vc->do_io_close(EHTTP_ERROR);
     update_stats_after_abort(p->vc_type);
+    p->vc->do_io_close(EHTTP_ERROR);
+    p->vc = nullptr;
   }
 }
 
@@ -1480,6 +1481,7 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
       }
     }
   }
+  // p->vc = nullptr;
 
   while (c) {
     if (c->alive) {
