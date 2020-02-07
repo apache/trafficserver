@@ -41,7 +41,7 @@ class SlowPostAttack:
         self._server.addResponse("sessionlog.json", request_header2, response_header2)
 
     def setupTS(self):
-        self._ts = Test.MakeATSProcess("ts", select_ports=False)
+        self._ts = Test.MakeATSProcess("ts", select_ports=True)
         self._ts.Disk.remap_config.AddLine(
             'map / http://127.0.0.1:{0}'.format(self._server.Variables.Port)
         )
