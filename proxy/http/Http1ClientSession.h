@@ -169,7 +169,7 @@ public:
   }
 
   bool
-  is_chunked_encoding_supported() const override
+  is_chunked_encoding_supported() const
   {
     return true;
   }
