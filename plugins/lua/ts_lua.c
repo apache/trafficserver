@@ -131,7 +131,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     TSDebug(TS_LUA_DEBUG_TAG, "[%s] checking if script has been registered", __FUNCTION__);
 
     // we only need to check the first lua VM for script registration
+    TSMutexLock(ts_lua_main_ctx_array[0].mutexp);
     conf = ts_lua_script_registered(ts_lua_main_ctx_array[0].lua, script);
+    TSMutexUnlock(ts_lua_main_ctx_array[0].mutexp);
   }
 
   if (!conf) {
@@ -166,7 +168,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     // register the script only if it is from a file and has no __init__ function
     if (fn && !conf->init_func) {
       // we only need to register the script for the first lua VM
+      TSMutexLock(ts_lua_main_ctx_array[0].mutexp);
       ts_lua_script_register(ts_lua_main_ctx_array[0].lua, conf->script, conf);
+      TSMutexUnlock(ts_lua_main_ctx_array[0].mutexp);
     }
   }
 
