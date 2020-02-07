@@ -124,6 +124,8 @@ public:
   bool has_trailing_header() const;
   void set_request_headers(HTTPHdr &h2_headers);
   MIOBuffer *read_vio_writer() const;
+  bool read_vio_done() const;
+  void update_read(int num_written);
 
   //////////////////
   // Variables
@@ -325,4 +327,16 @@ inline MIOBuffer *
 Http2Stream::read_vio_writer() const
 {
   return this->read_vio.get_writer();
+}
+
+inline void
+Http2Stream::update_read(int num_written)
+{
+  read_vio.ndone += num_written;
+}
+
+inline bool
+Http2Stream::read_vio_done() const
+{
+  return read_vio.ntodo() == 0;
 }

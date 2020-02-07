@@ -180,12 +180,14 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     if (nbytes + read_len > unpadded_length) {
       read_len -= nbytes + read_len - unpadded_length;
     }
-    nbytes += writer->write(myreader, read_len);
-    myreader->consume(nbytes);
+    int num_written = writer->write(myreader, read_len);
+    nbytes += num_written;
+    myreader->consume(num_written);
+    stream->update_read(num_written);
   }
   myreader->writer()->dealloc_reader(myreader);
 
-  if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
+  if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM || stream->read_vio_done()) {
     // TODO: set total written size to read_vio.nbytes
     stream->signal_read_event(VC_EVENT_READ_COMPLETE);
   } else {
