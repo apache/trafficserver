@@ -139,11 +139,17 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
     }
-  }
 
-  // If Data length is 0, do nothing.
-  if (payload_length == 0) {
-    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+    // Pure END_STREAM
+    if (payload_length == 0) {
+      stream->signal_read_event(VC_EVENT_READ_COMPLETE);
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+    }
+  } else {
+    // If payload length is 0 without END_STREAM flag, do nothing
+    if (payload_length == 0) {
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+    }
   }
 
   // Check whether Window Size is acceptable
@@ -373,6 +379,9 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       stream->new_transaction(frame.is_from_early_data());
       // Send request header to SM
       stream->send_request(cstate);
+    } else {
+      // Signal VC_EVENT_READ_COMPLETE becasue received trailing header fields with END_STREAM flag
+      stream->signal_read_event(VC_EVENT_READ_COMPLETE);
     }
   } else {
     // NOTE: Expect CONTINUATION Frame. Do NOT change state of stream or decode
