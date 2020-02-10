@@ -49,7 +49,8 @@ enum class Http2StreamMilestone {
 class Http2Stream : public ProxyClientTransaction
 {
 public:
-  using super = ProxyClientTransaction; ///< Parent type.
+  const int retry_delay = HRTIME_MSECONDS(10);
+  using super           = ProxyClientTransaction; ///< Parent type.
 
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size);
 
@@ -75,6 +76,7 @@ public:
   void update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
 
   void signal_read_event(int event);
+  void signal_write_event(int event);
   void signal_write_event(bool call_update);
 
   void restart_sending();

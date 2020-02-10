@@ -76,7 +76,13 @@ Http2Stream::main_event_handler(int event, void *edata)
 
   Event *e = static_cast<Event *>(edata);
   reentrancy_count++;
-  if (e == cross_thread_event) {
+  if (e == _read_vio_event) {
+    this->signal_read_event(e->callback_event);
+    return 0;
+  } else if (e == _write_vio_event) {
+    this->signal_write_event(e->callback_event);
+    return 0;
+  } else if (e == cross_thread_event) {
     cross_thread_event = nullptr;
   } else if (e == active_event) {
     event        = VC_EVENT_ACTIVE_TIMEOUT;
@@ -98,41 +104,17 @@ Http2Stream::main_event_handler(int event, void *edata)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     if (current_reader && read_vio.ntodo() > 0) {
-      MUTEX_TRY_LOCK(lock, read_vio.mutex, this_ethread());
-      if (lock.is_locked()) {
-        read_vio.cont->handleEvent(event, &read_vio);
-      } else {
-        if (this->_read_vio_event) {
-          this->_read_vio_event->cancel();
-        }
-        this->_read_vio_event = this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
-      }
+      this->signal_read_event(event);
     } else if (current_reader && write_vio.ntodo() > 0) {
-      MUTEX_TRY_LOCK(lock, write_vio.mutex, this_ethread());
-      if (lock.is_locked()) {
-        write_vio.cont->handleEvent(event, &write_vio);
-      } else {
-        if (this->_write_vio_event) {
-          this->_write_vio_event->cancel();
-        }
-        this->_write_vio_event = this_ethread()->schedule_imm(write_vio.cont, event, &write_vio);
-      }
+      this->signal_write_event(event);
     }
     break;
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
     if (e->cookie == &write_vio) {
-      if (write_vio.mutex) {
-        MUTEX_TRY_LOCK(lock, write_vio.mutex, this_ethread());
-        if (lock.is_locked() && write_vio.cont && this->current_reader) {
-          write_vio.cont->handleEvent(event, &write_vio);
-        } else {
-          if (this->_write_vio_event) {
-            this->_write_vio_event->cancel();
-          }
-          this->_write_vio_event = this_ethread()->schedule_imm(write_vio.cont, event, &write_vio);
-        }
+      if (write_vio.mutex && write_vio.cont && this->current_reader) {
+        this->signal_write_event(event);
       }
     } else {
       update_write_request(write_vio.get_reader(), INT64_MAX, true);
@@ -142,16 +124,8 @@ Http2Stream::main_event_handler(int event, void *edata)
   case VC_EVENT_READ_READY:
     inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
     if (e->cookie == &read_vio) {
-      if (read_vio.mutex) {
-        MUTEX_TRY_LOCK(lock, read_vio.mutex, this_ethread());
-        if (lock.is_locked() && read_vio.cont && this->current_reader) {
-          read_vio.cont->handleEvent(event, &read_vio);
-        } else {
-          if (this->_read_vio_event) {
-            this->_read_vio_event->cancel();
-          }
-          this->_read_vio_event = this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
-        }
+      if (read_vio.mutex && read_vio.cont && this->current_reader) {
+        signal_read_event(event);
       }
     } else {
       this->update_read_request(INT64_MAX, true);
@@ -673,7 +647,26 @@ Http2Stream::signal_read_event(int event)
     if (this->_read_vio_event) {
       this->_read_vio_event->cancel();
     }
-    this->_read_vio_event = this_ethread()->schedule_imm(read_vio.cont, event, &read_vio);
+    this->_read_vio_event = this_ethread()->schedule_in(this, retry_delay, event, &read_vio);
+  }
+}
+
+void
+Http2Stream::signal_write_event(int event)
+{
+  if (this->write_vio.cont == nullptr || this->write_vio.cont->mutex == nullptr || this->write_vio.op == VIO::NONE) {
+    return;
+  }
+
+  MUTEX_TRY_LOCK(lock, write_vio.cont->mutex, this_ethread());
+  if (lock.is_locked()) {
+    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
+    this->write_vio.cont->handleEvent(event, &this->write_vio);
+  } else {
+    if (this->_write_vio_event) {
+      this->_write_vio_event->cancel();
+    }
+    this->_write_vio_event = this_ethread()->schedule_in(this, retry_delay, event, &write_vio);
   }
 }
 
