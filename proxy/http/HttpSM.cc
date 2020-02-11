@@ -2792,6 +2792,8 @@ HttpSM::tunnel_handler_post(int event, void *data)
     handle_post_failure();
     break;
   case HTTP_SM_POST_UA_FAIL:
+    // Client side failed.  Shutdown and go home.  No need to communicate back to UA
+    terminate_sm = true;
     break;
   case HTTP_SM_POST_SUCCESS:
     // It's time to start reading the response
@@ -3532,9 +3534,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     hsm_release_assert(ua_entry->in_tunnel == true);
     if (p->consumer_list.head && p->consumer_list.head->vc_type == HT_TRANSFORM) {
       hsm_release_assert(post_transform_info.entry->in_tunnel == true);
-    } else if (server_entry != nullptr) {
-      hsm_release_assert(server_entry->in_tunnel == true);
-    }
+    } // server side may have completed before the user agent side, so it may no longer be in tunnel
     break;
 
   case VC_EVENT_READ_COMPLETE:
@@ -3669,7 +3669,8 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
 
   case VC_EVENT_WRITE_COMPLETE:
     // Completed successfully
-    c->write_success = true;
+    c->write_success        = true;
+    server_entry->in_tunnel = false;
     break;
   default:
     ink_release_assert(0);
