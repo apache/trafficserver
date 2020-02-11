@@ -9250,6 +9250,7 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
   return ret;
 }
 
+#if 0
 /**
  * This function retrieves an array of lookup keys for client contexts loaded in
  * traffic server. Given a 2-level mapping for client contexts, every 2 lookup keys
@@ -9324,6 +9325,7 @@ TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)
   SSLConfig::release(params);
   return retval;
 }
+#endif
 
 tsapi TSSslContext
 TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file)
@@ -9359,19 +9361,18 @@ TSSslClientCertUpdate(const char *cert_path, const char *key_path)
     return TS_ERROR;
   }
 
-  std::string key;
+  // Generate second level key for client context lookup
+  SSLUtilsTwoCStrKey key(cert_path, key_path);
   shared_SSL_CTX client_ctx = nullptr;
   SSLConfigParams *params   = SSLConfig::acquire();
 
-  // Generate second level key for client context lookup
-  ts::bwprint(key, "{}:{}", cert_path, key_path);
-  Debug("ssl.cert_update", "TSSslClientCertUpdate(): Use %.*s as key for lookup", static_cast<int>(key.size()), key.data());
+  Debug("ssl.cert_update", "TSSslClientCertUpdate(): Use %s,%s as key for lookup", cert_path, key_path);
 
   if (nullptr != params) {
     // Try to update client contexts maps
     auto &ca_paths_map = params->top_level_ctx_map;
     auto &map_lock     = params->ctxMapLock;
-    std::string ca_paths_key;
+    SSLUtilsTwoCStrKey ca_paths_key;
     // First try to locate the client context and its CA path (by top level)
     ink_mutex_acquire(&map_lock);
     for (auto &ca_paths_pair : ca_paths_map) {
@@ -9385,14 +9386,13 @@ TSSslClientCertUpdate(const char *cert_path, const char *key_path)
     ink_mutex_release(&map_lock);
 
     // Only update on existing
-    if (ca_paths_key.empty()) {
+    if (!(ca_paths_key.major().size() + ca_paths_key.minor().size())) {
       return TS_ERROR;
     }
 
     // Extract CA related paths
-    size_t sep                 = ca_paths_key.find(':');
-    std::string ca_bundle_file = ca_paths_key.substr(0, sep);
-    std::string ca_bundle_path = ca_paths_key.substr(sep + 1);
+    std::string ca_bundle_file = std::string(ca_paths_key.major());
+    std::string ca_bundle_path = std::string(ca_paths_key.minor());
 
     // Build new client context
     client_ctx =

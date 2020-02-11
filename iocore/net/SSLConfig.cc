@@ -688,9 +688,8 @@ shared_SSL_CTX
 SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const
 {
   shared_SSL_CTX client_ctx = nullptr;
-  std::string top_level_key, ctx_key;
-  ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
-  ts::bwprint(ctx_key, "{}:{}", client_cert, key_file);
+  SSLUtilsImpl::TwoCStrKey top_level_key(ca_bundle_file, ca_bundle_path);
+  SSLUtilsImpl::TwoCStrKey ctx_key(client_cert, key_file);
 
   auto ctx_map_iter = top_level_ctx_map.find(top_level_key);
   if (ctx_map_iter != top_level_ctx_map.end()) {
