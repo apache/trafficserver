@@ -1,16 +1,3 @@
 ``
-> GET `` HTTP/1.1
-> User-Agent: curl/``
-> Host: somehost``
-> Accept: */*
-> Proxy-Connection: ``
-``
 < HTTP/1.1 403 Forbidden
-< Date: ``
-< Proxy-Connection: ``
-< Server: ATS/``
-< Cache-Control: no-store
-< Content-Type: text/html
-< Content-Language: en
-< Content-Length: ``
 ``
