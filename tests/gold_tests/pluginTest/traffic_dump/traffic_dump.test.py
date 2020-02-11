@@ -29,9 +29,18 @@ Test.SkipUnless(
 # Configure the origin server.
 server = Test.MakeOriginServer("server")
 
-request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n",
+request_header = {"headers": "GET / HTTP/1.1\r\n"
+                  "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
+response_header = {"headers": "HTTP/1.1 200 OK"
+                   "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionfile.log", request_header, response_header)
+request_header = {"headers": "GET /one HTTP/1.1\r\n"
+                  "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
+                  "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK"
+                   "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_header)
 
@@ -66,6 +75,12 @@ replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")
 ts.Disk.File(replay_file_session_1, exists=True)
 replay_file_session_2 = os.path.join(replay_dir, "127", "0000000000000001")
 ts.Disk.File(replay_file_session_2, exists=True)
+replay_file_session_3 = os.path.join(replay_dir, "127", "0000000000000002")
+ts.Disk.File(replay_file_session_3, exists=True)
+
+#
+# Test 1: Verify the correct behavior of two transactions across two sessions.
+#
 
 # Execute the first transaction.
 tr = Test.AddTestRun("First transaction")
@@ -81,7 +96,7 @@ tr.StillRunningAfter = ts
 
 # Execute the second transaction.
 tr = Test.AddTestRun("Second transaction")
-tr.Processes.Default.Command = 'curl http://127.0.0.1:{0} -H\'Host: www.example.com\' --verbose'.format(
+tr.Processes.Default.Command = 'curl http://127.0.0.1:{0}/one -H\'Host: www.example.com\' --verbose'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200.gold"
@@ -103,10 +118,38 @@ tr.StillRunningAfter = ts
 # Verify the properties of the replay file for the second transaction.
 tr = Test.AddTestRun("Verify the json content of the second session")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = "python3 {0} {1} {2}".format(
+tr.Processes.Default.Command = "python3 {0} {1} {2} --request-target '/one'".format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
         replay_file_session_2)
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+#
+# Test 2: Verify the correct behavior of an explicit path in the request line.
+#
+
+# Verify that an explicit path in the request line is recorded.
+tr = Test.AddTestRun("Make a request with an explicit target.")
+request_target = "http://localhost:{0}/candy".format(ts.Variables.port)
+tr.Processes.Default.Command = (
+        'curl --request-target "{0}" '
+        'http://127.0.0.1:{1} -H\'Host: www.example.com\' --verbose'.format(
+            request_target, ts.Variables.port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/explicit_target.gold"
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Verify the replay file has the explicit target.")
+tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
+
+tr.Processes.Default.Command = "python3 {0} {1} {2} --request-target '{3}'".format(
+        verify_replay,
+        os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
+        replay_file_session_3,
+        request_target)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
