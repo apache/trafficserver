@@ -57,6 +57,19 @@ def verify_there_was_a_transaction(replay_json):
     return True
 
 
+def verify_request_target(replay_json, request_target):
+    """
+    Verify that the 'url' element of the first transaction contains the request target.
+    """
+    try:
+        url = replay_json['sessions'][0]['transactions'][0]['client-request']['url']
+    except KeyError:
+        print("The replay file did not have a first transaction with a url element.")
+        return False
+
+    return url == request_target
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("schema_file",
@@ -65,6 +78,8 @@ def parse_args():
     parser.add_argument("replay_file",
                         type=argparse.FileType('r'),
                         help="The replay file to validate.")
+    parser.add_argument("--request-target",
+                        help="The request target ('url' element) to expect in the replay file.")
     return parser.parse_args()
 
 
@@ -87,6 +102,9 @@ def main():
     # Thus we do the following sanity check to make sure that the replay file
     # appears to have some transaction in it.
     if not verify_there_was_a_transaction(replay_json):
+        return 1
+
+    if args.request_target and not verify_request_target(replay_json, args.request_target):
         return 1
 
     return 0
