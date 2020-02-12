@@ -81,6 +81,11 @@ QUICTransportParameters::_load(const uint8_t *buf, size_t len)
   bool has_error   = false;
   const uint8_t *p = buf;
 
+  if (len < 2) {
+    this->_valid = false;
+    return;
+  }
+
   // Read size of parameters field
   uint16_t nbytes = (p[0] << 8) + p[1];
   p += 2;
