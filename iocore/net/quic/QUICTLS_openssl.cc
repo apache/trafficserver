@@ -57,17 +57,18 @@ QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, si
     return;
   }
 
+  QUICTLS *qtls       = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
+  const uint8_t *data = reinterpret_cast<const uint8_t *>(buf);
   if (content_type == SSL3_RT_HANDSHAKE) {
     if (version != TLS1_3_VERSION) {
       return;
     }
 
-    const uint8_t *data = reinterpret_cast<const uint8_t *>(buf);
-
     QUICEncryptionLevel level = QUICTLS::get_encryption_level(data[0]);
-    QUICTLS *qtls             = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
     qtls->on_handshake_data_generated(level, data, len);
     qtls->set_ready_for_write();
+  } else if (content_type == SSL3_RT_ALERT && data[0] == SSL3_AL_FATAL && len == 2) {
+    qtls->on_tls_alert(data[1]);
   }
 
   return;

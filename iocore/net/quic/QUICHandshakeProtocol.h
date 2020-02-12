@@ -58,6 +58,8 @@ public:
 
   virtual QUICEncryptionLevel current_encryption_level() const = 0;
   virtual void abort_handshake()                               = 0;
+  virtual bool has_crypto_error() const                        = 0;
+  virtual uint64_t crypto_error() const                        = 0;
 
 protected:
   QUICPacketProtectionKeyInfo &_pp_key_info;

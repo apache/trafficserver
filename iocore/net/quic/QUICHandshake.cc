@@ -522,7 +522,9 @@ QUICHandshake::do_handshake()
     }
   } else if (out && out->error_code != 0) {
     this->_hs_protocol->abort_handshake();
-    error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT, out->error_code);
+    if (this->_hs_protocol->has_crypto_error()) {
+      error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT, this->_hs_protocol->crypto_error());
+    }
   }
 
   return error;

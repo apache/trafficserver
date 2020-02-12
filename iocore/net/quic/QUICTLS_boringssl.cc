@@ -101,6 +101,8 @@ flush_flight(SSL *ssl)
 static int
 send_alert(SSL *ssl, enum ssl_encryption_level_t level, uint8_t alert)
 {
+  QUICTLS *qtls = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
+  qtls->on_tls_alert(alert);
   return 1;
 }
 
