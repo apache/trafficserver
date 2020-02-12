@@ -23,30 +23,31 @@
 
 #include "QUICPacketHeaderProtector.h"
 
-#include "openssl/chacha.h"
-
 bool
 QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *cipher) const
 {
   static constexpr unsigned char FIVE_ZEROS[] = {0x00, 0x00, 0x00, 0x00, 0x00};
+  EVP_CIPHER_CTX *ctx                         = EVP_CIPHER_CTX_new();
 
-  if (cipher == nullptr) {
-    uint32_t counter = htole32(*reinterpret_cast<const uint32_t *>(&sample[0]));
-    CRYPTO_chacha_20(mask, FIVE_ZEROS, sizeof(FIVE_ZEROS), key, &sample[4], counter);
-  } else {
-    int len             = 0;
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    if (!ctx || !EVP_EncryptInit_ex(ctx, cipher, nullptr, key, sample)) {
+  if (!ctx || !EVP_EncryptInit_ex(ctx, cipher, nullptr, key, sample)) {
+    return false;
+  }
+
+  int len = 0;
+  if (cipher == EVP_chacha20()) {
+    if (!EVP_EncryptUpdate(ctx, mask, &len, FIVE_ZEROS, sizeof(FIVE_ZEROS))) {
       return false;
     }
+  } else {
     if (!EVP_EncryptUpdate(ctx, mask, &len, sample, 16)) {
       return false;
     }
-    if (!EVP_EncryptFinal_ex(ctx, mask + len, &len)) {
-      return false;
-    }
-    EVP_CIPHER_CTX_free(ctx);
   }
+  if (!EVP_EncryptFinal_ex(ctx, mask + len, &len)) {
+    return false;
+  }
+
+  EVP_CIPHER_CTX_free(ctx);
 
   return true;
 }
