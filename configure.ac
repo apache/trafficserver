@@ -1271,18 +1271,24 @@ enable_quic=no
 AC_MSG_CHECKING([whether APIs for QUIC are available])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
                                    [[
-                                     #ifdef OPENSSL_IS_BORINGSSL
                                      SSL_QUIC_METHOD var;
-                                     #else
-                                     #ifndef SSL_MODE_QUIC_HACK
-                                     # error no hack for quic
-                                     #endif
-                                     #endif
                                    ]])
                   ],
                   [AC_MSG_RESULT([yes]); enable_quic=yes],
+                  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
+                                   [[
+                                     #ifdef SSL_MODE_QUIC_HACK
+                                     #else
+                                     # error no hack for quic
+                                     #endif
+                                   ]])
+                  ],
+                  [AC_MSG_RESULT([yes]); enable_quic=yes; enable_quic_old_api=yes],
                   [AC_MSG_RESULT([no])])
+                  ])
+
 AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
+AM_CONDITIONAL([ENABLE_QUIC_OLD_API], [test "x$enable_quic_old_api" = "xyes"])
 TS_ARG_ENABLE_VAR([use], [quic])
 AC_SUBST(use_quic)
 
