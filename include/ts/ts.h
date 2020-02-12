@@ -1145,6 +1145,7 @@ tsapi const char *TSHttpHdrReasonLookup(TSHttpStatus status);
 /* --------------------------------------------------------------------------
    Threads */
 tsapi TSThread TSThreadCreate(TSThreadFunc func, void *data);
+tsapi TSThread TSThreadCreateWithSignalling(TSThreadFunc func, void *data, bool term_by_signal);
 tsapi TSThread TSThreadInit(void);
 tsapi void TSThreadDestroy(TSThread thread);
 tsapi void TSThreadWait(TSThread thread);

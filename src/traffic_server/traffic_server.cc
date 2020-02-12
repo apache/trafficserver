@@ -179,6 +179,9 @@ static bool signal_received[NSIG];
 // -1: cache is already initialized, don't delay.
 static int delay_listen_for_cache = 0;
 
+extern std::mutex term_by_signal_mutex;
+extern std::unordered_map<pthread_t, bool> term_by_signal_threads;
+
 AppVersionInfo appVersionInfo; // Build info for this application
 
 static ArgumentDescription argument_descriptions[] = {
@@ -294,6 +297,15 @@ public:
     }
 
     if (signal_received[SIGTERM] || signal_received[SIGINT]) {
+      {
+        std::lock_guard<std::mutex> lock(term_by_signal_mutex);
+        for (auto const &kv : term_by_signal_threads) {
+          if (kv.second) {
+            pthread_kill(static_cast<pthread_t>(kv.first), signal_received[SIGTERM] ? SIGTERM : SIGINT);
+          }
+        }
+      }
+
       signal_received[SIGTERM] = false;
       signal_received[SIGINT]  = false;
 
@@ -546,32 +558,37 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
 static void
 proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
 {
-  if ((unsigned)signo < countof(signal_received)) {
-    signal_received[signo] = true;
-  }
+  if (term_by_signal_threads.find(pthread_self()) != term_by_signal_threads.end()) {
+    Debug("proxy_signal_handler", "stopping thread with signal %lx", reinterpret_cast<unsigned long>(pthread_self()));
+    pthread_exit(nullptr);
+  } else {
+    if ((unsigned)signo < countof(signal_received)) {
+      signal_received[signo] = true;
+    }
 
-  // These signals are all handled by SignalContinuation.
-  switch (signo) {
-  case SIGHUP:
-  case SIGINT:
-  case SIGTERM:
-  case SIGUSR1:
-  case SIGUSR2:
-    return;
-  }
+    // These signals are all handled by SignalContinuation.
+    switch (signo) {
+    case SIGHUP:
+    case SIGINT:
+    case SIGTERM:
+    case SIGUSR1:
+    case SIGUSR2:
+      return;
+    }
 
-  signal_format_siginfo(signo, info, appVersionInfo.AppStr);
+    signal_format_siginfo(signo, info, appVersionInfo.AppStr);
 
 #if TS_HAS_PROFILER
-  HeapProfilerDump("/tmp/ts_end.hprof");
-  HeapProfilerStop();
-  ProfilerStop();
+    HeapProfilerDump("/tmp/ts_end.hprof");
+    HeapProfilerStop();
+    ProfilerStop();
 #endif
 
-  // We don't expect any crashing signals here because, but
-  // forward to the default handler just to be robust.
-  if (signal_is_crash(signo)) {
-    signal_crash_handler(signo, info, ctx);
+    // We don't expect any crashing signals here because, but
+    // forward to the default handler just to be robust.
+    if (signal_is_crash(signo)) {
+      signal_crash_handler(signo, info, ctx);
+    }
   }
 }
 

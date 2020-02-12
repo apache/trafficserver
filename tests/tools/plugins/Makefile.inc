@@ -59,6 +59,9 @@ tools_plugins_ssl_verify_test_la_SOURCES = tools/plugins/ssl_verify_test.cc
 noinst_LTLIBRARIES += tools/plugins/ssntxnorder_verify.la
 tools_plugins_ssntxnorder_verify_la_SOURCES = tools/plugins/ssntxnorder_verify.cc
 
+noinst_LTLIBRARIES += tools/plugins/term_by_signal.la
+tools_plugins_term_by_signal_la_SOURCES = tools/plugins/term_by_signal.cc
+
 noinst_LTLIBRARIES += tools/plugins/test_cppapi.la
 tools_plugins_test_cppapi_la_SOURCES = tools/plugins/test_cppapi.cc
 tools_plugins_test_cppapi_la_LDFLAGS = \

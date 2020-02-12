@@ -47,6 +47,9 @@
 #define sdk_assert(EX) ((void)((EX) ? (void)0 : _TSReleaseAssert(#EX, __FILE__, __LINE__)))
 #endif
 
+std::mutex term_by_signal_mutex;
+std::unordered_map<pthread_t, bool> term_by_signal_threads;
+
 TSReturnCode
 sdk_sanity_check_mutex(TSMutex mutex)
 {
@@ -142,6 +145,12 @@ ink_thread_trampoline(void *data)
 TSThread
 TSThreadCreate(TSThreadFunc func, void *data)
 {
+  return TSThreadCreateWithSignalling(func, data, false);
+}
+
+TSThread
+TSThreadCreateWithSignalling(TSThreadFunc func, void *data, bool term_by_signal)
+{
   INKThreadInternal *thread;
   ink_thread tid = 0;
 
@@ -156,6 +165,11 @@ TSThreadCreate(TSThreadFunc func, void *data)
   ink_thread_create(&tid, ink_thread_trampoline, (void *)thread, 1, 0, nullptr);
   if (!tid) {
     return (TSThread) nullptr;
+  }
+
+  if (term_by_signal) {
+    std::lock_guard<std::mutex> lock(term_by_signal_mutex);
+    term_by_signal_threads[static_cast<pthread_t>(tid)] = true;
   }
 
   return reinterpret_cast<TSThread>(thread);
