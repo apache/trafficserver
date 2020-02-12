@@ -22,12 +22,11 @@
  */
 #include "QUICTLS.h"
 
-#include <openssl/base.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
-#include <openssl/hkdf.h>
-#include <openssl/aead.h>
+#include <openssl/kdf.h>
+#include <openssl/evp.h>
 
 #include "QUICGlobals.h"
 #include "QUICPacketProtectionKeyInfo.h"
@@ -194,18 +193,25 @@ QUICTLS::_store_negotiated_cipher()
 
   if (ssl_cipher) {
     switch (SSL_CIPHER_get_id(ssl_cipher)) {
-    case TLS1_CK_AES_128_GCM_SHA256:
+    case TLS1_3_CK_AES_128_GCM_SHA256:
       cipher  = EVP_aes_128_gcm();
       tag_len = EVP_GCM_TLS_TAG_LEN;
       break;
-    case TLS1_CK_AES_256_GCM_SHA384:
+    case TLS1_3_CK_AES_256_GCM_SHA384:
       cipher  = EVP_aes_256_gcm();
       tag_len = EVP_GCM_TLS_TAG_LEN;
       break;
-    case TLS1_CK_CHACHA20_POLY1305_SHA256:
-      // cipher  = EVP_chacha20_poly1305();
-      cipher  = nullptr;
-      tag_len = 16;
+    case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
+      cipher  = EVP_chacha20_poly1305();
+      tag_len = EVP_CHACHAPOLY_TLS_TAG_LEN;
+      break;
+    case TLS1_3_CK_AES_128_CCM_SHA256:
+      cipher  = EVP_aes_128_ccm();
+      tag_len = EVP_GCM_TLS_TAG_LEN;
+      break;
+    case TLS1_3_CK_AES_128_CCM_8_SHA256:
+      cipher  = EVP_aes_128_ccm();
+      tag_len = EVP_CCM8_TLS_TAG_LEN;
       break;
     default:
       ink_assert(false);
@@ -227,15 +233,18 @@ QUICTLS::_store_negotiated_cipher_for_hp()
 
   if (ssl_cipher) {
     switch (SSL_CIPHER_get_id(ssl_cipher)) {
-    case TLS1_CK_AES_128_GCM_SHA256:
+    case TLS1_3_CK_AES_128_GCM_SHA256:
       cipher_for_hp = EVP_aes_128_ecb();
       break;
-    case TLS1_CK_AES_256_GCM_SHA384:
+    case TLS1_3_CK_AES_256_GCM_SHA384:
       cipher_for_hp = EVP_aes_256_ecb();
       break;
-    case TLS1_CK_CHACHA20_POLY1305_SHA256:
-      // cipher_for_hp = EVP_chacha20();
-      cipher_for_hp = nullptr;
+    case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
+      cipher_for_hp = EVP_chacha20();
+      break;
+    case TLS1_3_CK_AES_128_CCM_SHA256:
+    case TLS1_3_CK_AES_128_CCM_8_SHA256:
+      cipher_for_hp = EVP_aes_128_ecb();
       break;
     default:
       ink_assert(false);
@@ -300,10 +309,12 @@ const EVP_MD *
 QUICTLS::_get_handshake_digest() const
 {
   switch (SSL_CIPHER_get_id(SSL_get_current_cipher(this->_ssl))) {
-  case TLS1_CK_AES_128_GCM_SHA256:
-  case TLS1_CK_CHACHA20_POLY1305_SHA256:
+  case TLS1_3_CK_AES_128_GCM_SHA256:
+  case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
+  case TLS1_3_CK_AES_128_CCM_SHA256:
+  case TLS1_3_CK_AES_128_CCM_8_SHA256:
     return EVP_sha256();
-  case TLS1_CK_AES_256_GCM_SHA384:
+  case TLS1_3_CK_AES_256_GCM_SHA384:
     return EVP_sha384();
   default:
     ink_assert(false);

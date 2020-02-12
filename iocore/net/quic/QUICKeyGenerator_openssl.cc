@@ -46,13 +46,15 @@ const EVP_CIPHER *
 QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
 {
   switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
-  case TLS1_CK_AES_128_GCM_SHA256:
+  case TLS1_3_CK_AES_128_GCM_SHA256:
     return EVP_aes_128_gcm();
-  case TLS1_CK_AES_256_GCM_SHA384:
+  case TLS1_3_CK_AES_256_GCM_SHA384:
     return EVP_aes_256_gcm();
-  case TLS1_CK_CHACHA20_POLY1305_SHA256:
-    return nullptr;
-    // return EVP_aead_chacha20_poly1305();
+  case TLS1_3_CK_CHACHA20_POLY1305_SHA256:
+    return EVP_chacha20_poly1305();
+  case TLS1_3_CK_AES_128_CCM_SHA256:
+  case TLS1_3_CK_AES_128_CCM_8_SHA256:
+    return EVP_aes_128_ccm();
   default:
     ink_assert(false);
     return nullptr;
