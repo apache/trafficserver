@@ -180,10 +180,7 @@ TEST_CASE("QUICHandshakeProtocol")
 
     QUICHandshakeMsgs *msg5 = nullptr;
     REQUIRE(client->handshake(&msg5, msg4) == 1);
-    // This doesn't work with BoringSSL (what's expected?)
-    // REQUIRE(msg5);
-    // std::cout << "### Messages from server" << std::endl;
-    // print_hex(msg5->buf, msg5->offsets[4]);
+    REQUIRE(msg5 == nullptr);
 
     // encrypt - decrypt
     // client (encrypt) - server (decrypt)
@@ -378,9 +375,8 @@ TEST_CASE("QUICHandshakeProtocol")
 
     QUICHandshakeMsgs *msg2 = nullptr;
     CHECK(server->handshake(&msg2, &msg1) != 1);
-    // This doesn't pass with BoringSSL (feature removed)
-    // REQUIRE(msg2);
-    // CHECK(msg2->error_code == 0x10a); //< 0x100 + unexpected_message(10)
+    CHECK(server->has_crypto_error());
+    CHECK(server->crypto_error() == 0x10a); //< 0x100 + unexpected_message(10)
 
     // Teardown
     delete server;
@@ -454,10 +450,9 @@ TEST_CASE("QUICHandshakeProtocol")
     REQUIRE(server->handshake(&msg4, msg3) == 1);
     REQUIRE(msg4);
 
-    // This doesn't work with BoringSSL (what's expected?)
-    // QUICHandshakeMsgs *msg5 = nullptr;
-    // REQUIRE(client->handshake(&msg5, msg4) == 1);
-    // REQUIRE(msg5);
+    QUICHandshakeMsgs *msg5 = nullptr;
+    REQUIRE(client->handshake(&msg5, msg4) == 1);
+    REQUIRE(msg5 == nullptr);
 
     // # End Handshake
 

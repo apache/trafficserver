@@ -53,7 +53,7 @@ public:
   };
 
   static QUICEncryptionLevel get_encryption_level(int msg_type);
-  static uint16_t convert_to_quic_trans_error_code(uint8_t alert);
+  static uint64_t convert_to_quic_trans_error_code(uint8_t alert);
 
   std::shared_ptr<const QUICTransportParameters> local_transport_parameters() override;
   std::shared_ptr<const QUICTransportParameters> remote_transport_parameters() override;
@@ -79,10 +79,13 @@ public:
   void negotiated_application_name(const uint8_t **name, unsigned int *len) const override;
   QUICEncryptionLevel current_encryption_level() const override;
   void abort_handshake() override;
+  bool has_crypto_error() const override;
+  uint64_t crypto_error() const override;
 
   void set_ready_for_write();
 
   void on_handshake_data_generated(QUICEncryptionLevel level, const uint8_t *data, size_t len);
+  void on_tls_alert(uint8_t alert);
 
 private:
   QUICKeyGenerator _keygen_for_client = QUICKeyGenerator(QUICKeyGenerator::Context::CLIENT);
@@ -122,4 +125,6 @@ private:
   uint8_t _out_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
   QUICHandshakeMsgs _out                  = {_out_buf, MAX_HANDSHAKE_MSG_LEN, {0}, 0};
   bool _should_flush                      = false;
+  bool _has_crypto_error                  = false;
+  uint64_t _crypto_error                  = 0;
 };

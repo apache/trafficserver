@@ -142,10 +142,10 @@ QUICTLS::reset()
   SSL_clear(this->_ssl);
 }
 
-uint16_t
+uint64_t
 QUICTLS::convert_to_quic_trans_error_code(uint8_t alert)
 {
-  return 0x100 | alert;
+  return static_cast<uint64_t>(QUICTransErrorCode::CRYPTO_ERROR) + alert;
 }
 
 bool
@@ -400,6 +400,25 @@ QUICTLS::on_handshake_data_generated(QUICEncryptionLevel level, const uint8_t *d
   for (int i = next_index; i < 5; ++i) {
     this->_out.offsets[i] = next_level_offset;
   }
+}
+
+void
+QUICTLS::on_tls_alert(uint8_t alert)
+{
+  this->_has_crypto_error = true;
+  this->_crypto_error     = QUICTLS::convert_to_quic_trans_error_code(alert);
+}
+
+bool
+QUICTLS::has_crypto_error() const
+{
+  return this->_has_crypto_error;
+}
+
+uint64_t
+QUICTLS::crypto_error() const
+{
+  return this->_crypto_error;
 }
 
 int
