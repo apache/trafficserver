@@ -39,10 +39,17 @@ QUICPPProtector_impl = QUICPacketPayloadProtector_boringssl.cc
 QUICTLS_impl = QUICTLS_boringssl.cc
 QUICKeyGenerator_impl = QUICKeyGenerator_boringssl.cc
 else
+if ENABLE_QUIC_OLD_API
+QUICPHProtector_impl = QUICPacketHeaderProtector_legacy.cc
+QUICPPProtector_impl = QUICPacketPayloadProtector_legacy.cc
+QUICTLS_impl = QUICTLS_legacy.cc
+QUICKeyGenerator_impl = QUICKeyGenerator_legacy.cc
+else
 QUICPHProtector_impl = QUICPacketHeaderProtector_openssl.cc
 QUICPPProtector_impl = QUICPacketPayloadProtector_openssl.cc
 QUICTLS_impl = QUICTLS_openssl.cc
 QUICKeyGenerator_impl = QUICKeyGenerator_openssl.cc
+endif
 endif
 
 libquic_a_SOURCES = \
