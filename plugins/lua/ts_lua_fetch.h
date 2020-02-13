@@ -30,8 +30,8 @@ typedef struct {
   TSIOBufferReader reader;
   TSFetchSM fch;
 
-  int over : 1;
-  int failed : 1;
+  unsigned int over : 1;
+  unsigned int failed : 1;
 } ts_lua_fetch_info;
 
 typedef struct fetch_multi_info {

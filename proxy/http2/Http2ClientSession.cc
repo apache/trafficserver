@@ -300,19 +300,11 @@ Http2ClientSession::do_io_close(int alerrno)
   ink_assert(this->mutex->thread_holding == this_ethread());
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
 
-  // Don't send the SSN_CLOSE_HOOK until we got rid of all the streams
-  // And handled all the TXN_CLOSE_HOOK's
-  if (client_vc) {
-    // Copy aside the client address before releasing the vc
-    cached_client_addr.assign(client_vc->get_remote_addr());
-    cached_local_addr.assign(client_vc->get_local_addr());
-    client_vc->do_io_close();
-    client_vc = nullptr;
-  }
+  // client_vc will be closed in Http2ClientSession::free
 
   {
     SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-    this->connection_state.release_stream(nullptr);
+    this->connection_state.release_stream();
   }
 
   this->clear_session_active();

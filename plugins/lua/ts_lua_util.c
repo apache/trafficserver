@@ -264,8 +264,6 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY */
 
-    lua_gc(L, LUA_GCCOLLECT, 0);
-
     TSMutexUnlock(arr[i].mutexp);
   }
 
@@ -305,8 +303,6 @@ ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
 
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY  */
-
-    lua_gc(L, LUA_GCCOLLECT, 0);
 
     TSMutexUnlock(arr[i].mutexp);
   }
@@ -368,8 +364,6 @@ ts_lua_reload_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
 
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY */
-
-    lua_gc(L, LUA_GCCOLLECT, 0);
 
     TSMutexUnlock(arr[i].mutexp);
   }

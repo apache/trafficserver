@@ -178,7 +178,7 @@ public:
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
   bool delete_stream(Http2Stream *stream);
-  void release_stream(Http2Stream *stream);
+  void release_stream();
   void cleanup_streams();
 
   void update_initial_rwnd(Http2WindowSize new_size);
@@ -228,6 +228,12 @@ public:
   get_client_stream_count() const
   {
     return client_streams_in_count;
+  }
+
+  void
+  decrement_stream_count()
+  {
+    --total_client_streams_count;
   }
 
   double

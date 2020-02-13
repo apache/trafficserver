@@ -431,7 +431,6 @@ Http2Stream::terminate_if_possible()
 
     Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
     SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
-    h2_proxy_ssn->connection_state.delete_stream(this);
     destroy();
   }
 }
@@ -461,7 +460,6 @@ Http2Stream::initiating_close()
 
     // This should result in do_io_close or release being called.  That will schedule the final
     // kill yourself signal
-    // Send the SM the EOS signal if there are no active VIO's to signal
     // We are sending signals rather than calling the handlers directly to avoid the case where
     // the HttpTunnel handler causes the HttpSM to be deleted on the stack.
     bool sent_write_complete = false;
@@ -488,9 +486,6 @@ Http2Stream::initiating_close()
         Http2StreamDebug("send EOS to read cont");
         read_event = send_tracked_event(read_event, VC_EVENT_EOS, &read_vio);
       }
-    } else if (_sm) {
-      SCOPED_MUTEX_LOCK(lock, _sm->mutex, this_ethread());
-      _sm->handleEvent(VC_EVENT_ERROR);
     } else if (!sent_write_complete) {
       // Transaction is already gone or not started. Kill yourself
       do_io_close();
@@ -670,6 +665,7 @@ Http2Stream::signal_read_event(int event)
 
   MUTEX_TRY_LOCK(lock, read_vio.cont->mutex, this_ethread());
   if (lock.is_locked()) {
+    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
     this->read_vio.cont->handleEvent(event, &this->read_vio);
   } else {
     if (this->_read_vio_event) {
@@ -767,8 +763,10 @@ Http2Stream::destroy()
     // In many cases, this has been called earlier, so this call is a no-op
     h2_proxy_ssn->connection_state.delete_stream(this);
 
+    h2_proxy_ssn->connection_state.decrement_stream_count();
+
     // Update session's stream counts, so it accurately goes into keep-alive state
-    h2_proxy_ssn->connection_state.release_stream(this);
+    h2_proxy_ssn->connection_state.release_stream();
 
     // Do not access `_proxy_ssn` in below. It might be freed by `release_stream`.
   }
@@ -915,7 +913,6 @@ void
 Http2Stream::release(IOBufferReader *r)
 {
   super::release(r);
-  _sm = nullptr; // State machine is on its own way down.
   this->do_io_close();
 }
 

@@ -64,7 +64,7 @@ ts.addSSLfile("ssl/server.key")
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'lm|ssl',
+    'proxy.config.diags.debug.tags': 'http',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.verify.server':  0,
@@ -80,14 +80,22 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port)
 )
-
+ts.Disk.remap_config.AddLine(
+    'map / http://127.0.0.1:8888'
+)
 
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
+# build test code
+tr=Test.Build(target='smuggle-client',sources=['smuggle-client.c'])
+tr.TimeOut = 5
+tr.Setup.Copy('smuggle-client.c')
+
 # HTTP1.1 GET: www.example.com
 tr = Test.AddTestRun()
+tr.TimeOut = 5
 tr.Processes.Default.Command = 'curl --http1.1 --proxy 127.0.0.1:{0} http://www.example.com  --verbose'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
@@ -103,6 +111,7 @@ tr.StillRunningAfter = ts
 
 # HTTP2 POST: www.example.com Host, chunked body
 tr = Test.AddTestRun()
+tr.TimeOut = 5
 tr.Processes.Default.Command = 'curl --http2 -k https://127.0.0.1:{0} --verbose -H "Host: www.anotherexample.com" -d "Knock knock"'.format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
@@ -110,6 +119,7 @@ tr.Processes.Default.Streams.stderr = "gold/h2_chunked_POST_200.gold"
 
 # HTTP1.1 POST: www.yetanotherexample.com Host, explicit size
 tr = Test.AddTestRun()
+tr.TimeOut = 5
 tr.Processes.Default.Command = 'curl http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -d "knock knock"'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
@@ -118,8 +128,24 @@ tr.StillRunningAfter = server
 
 # HTTP1.1 POST: www.example.com Host, chunked body
 tr = Test.AddTestRun()
+tr.TimeOut = 5
 tr.Processes.Default.Command = 'curl http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -H "Transfer-Encoding: chunked" -d "Knock knock"'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/chunked_POST_200.gold"
 tr.StillRunningAfter = server
+
+server4_out = Test.Disk.File("outserver4")
+server4_out.Content = Testers.ExcludesExpression("sneaky", "Extra body bytes should not be delivered")
+server4_out.Content += Testers.ContainsExpression("Transfer-Encoding: chunked", "Request should be chunked encoded")
+
+# HTTP/1.1 Try to smuggle another request to the origin
+tr = Test.AddTestRun()
+tr.TimeOut = 5
+tr.Setup.Copy('server4.sh')
+tr.Setup.Copy('case4.sh')
+tr.Processes.Default.Command = 'sh ./case4.sh {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression("content-length:", "Response should not include content length")
+# Transfer encoding to origin, but no content-length
+# No extra bytes in body seen by origin

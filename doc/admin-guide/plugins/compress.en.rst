@@ -76,6 +76,8 @@ With no further options, this will enable the following default behavior:
 
 *  Disable flush (flush compressed content to client).
 
+* Only objects greater than 1Kb will be compressed
+
 Alternatively, a configuration may be specified (shown here using the sample
 configuration provided with the plugin's source)::
 
@@ -215,6 +217,25 @@ might create a configuration with the following options::
    # This origin does it all
    [bar.example.com]
    enabled false
+
+   # A reasonable list of content-types that are compressible
+   compressible-content-type text/*
+   compressible-content-type *font*
+   compressible-content-type *javascript
+   compressible-content-type *json
+   compressible-content-type *ml;*
+   compressible-content-type *mpegURL
+   compressible-content-type *mpegurl
+   compressible-content-type *otf
+   compressible-content-type *ttf
+   compressible-content-type *type
+   compressible-content-type *xml
+   compressible-content-type application/eot
+   compressible-content-type application/pkix-crl
+   compressible-content-type application/x-httpd-cgi
+   compressible-content-type application/x-perl
+   compressible-content-type image/vnd.microsoft.icon
+   compressible-content-type image/x-icon
 
 Assuming the above options are in a file at ``/etc/trafficserver/compress.config``
 the plugin would be enabled for |TS| in :file:`plugin.config` as::
