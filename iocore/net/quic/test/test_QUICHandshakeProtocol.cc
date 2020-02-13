@@ -376,7 +376,7 @@ TEST_CASE("QUICHandshakeProtocol")
     QUICHandshakeMsgs *msg2 = nullptr;
     CHECK(server->handshake(&msg2, &msg1) != 1);
     CHECK(server->has_crypto_error());
-    CHECK(server->crypto_error() == 0x10a); //< 0x100 + unexpected_message(10)
+    CHECK((server->crypto_error() == 0x10a || server->crypto_error() == 0x150)); //< 0x100 + unexpected_message(10)
 
     // Teardown
     delete server;
