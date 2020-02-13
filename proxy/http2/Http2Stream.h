@@ -67,18 +67,7 @@ public:
   bool
   is_body_done() const
   {
-    return body_done;
-  }
-
-  void
-  mark_body_done()
-  {
-    body_done = true;
-    if (response_is_chunked()) {
-      ink_assert(chunked_handler.state == ChunkedHandler::CHUNK_READ_DONE ||
-                 chunked_handler.state == ChunkedHandler::CHUNK_READ_ERROR);
-      this->write_vio.nbytes = response_header.length_get() + chunked_handler.dechunked_size;
-    }
+    return this->write_vio.ntodo() == 0;
   }
 
   void
@@ -258,7 +247,6 @@ private:
   VIO write_vio;
 
   bool trailing_header = false;
-  bool body_done       = false;
   bool chunked         = false;
 
   // A brief disucssion of similar flags and state variables:  _state, closed, terminate_stream
