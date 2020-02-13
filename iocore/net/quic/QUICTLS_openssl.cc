@@ -1,6 +1,6 @@
 /** @file
  *
- *  QUIC Crypto (TLS to Secure QUIC) using BoringSSL
+ *  QUIC Crypto (TLS to Secure QUIC) using OpenSSL
  *
  *  @section license License
  *

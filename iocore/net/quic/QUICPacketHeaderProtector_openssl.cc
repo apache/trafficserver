@@ -1,6 +1,6 @@
 /** @file
  *
- *  QUIC Packet Header Protector (BoringSSL specific code)
+ *  QUIC Packet Header Protector (OpenSSL specific code)
  *
  *  @section license License
  *
