@@ -218,7 +218,7 @@ normalize_uri(const char *uri, int uri_ct, char *normal_uri, int normal_ct)
   const char *uri_end  = uri + uri_ct;
   const char *buff_end = normal_uri + normal_ct;
 
-  if ((normal_uri == null) || (normal_uri && normal_ct < uri_ct + 1)) {
+  if ((normal_uri == NULL) || (normal_uri && normal_ct < uri_ct + 1)) {
     PluginDebug("Buffer to Normalize URI not large enough.");
     return -1;
   }
