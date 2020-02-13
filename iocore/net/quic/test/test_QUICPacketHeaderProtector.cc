@@ -189,8 +189,7 @@ TEST_CASE("QUICPacketHeaderProtector")
 
     QUICHandshakeMsgs *msg5 = nullptr;
     REQUIRE(client->handshake(&msg5, msg4) == 1);
-    // Doesn't pass with BoringSSL (what's expected?)
-    // REQUIRE(msg5);
+    REQUIRE(msg5 == nullptr);
 
     // ## Client -> Server
     REQUIRE(client_ph_protector.protect(tmp, sizeof(tmp), 18));
