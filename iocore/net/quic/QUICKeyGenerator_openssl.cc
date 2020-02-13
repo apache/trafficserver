@@ -1,6 +1,6 @@
 /** @file
  *
- *  A key generator for QUIC connection (BoringSSL specific parts)
+ *  A key generator for QUIC connection (OpenSSL specific parts)
  *
  *  @section license License
  *

@@ -1,6 +1,6 @@
 /** @file
  *
- *  QUIC Packet Payload Protector (BoringSSL specific code)
+ *  QUIC Packet Payload Protector (OpenSSL specific code)
  *
  *  @section license License
  *
