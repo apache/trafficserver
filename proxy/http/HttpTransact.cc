@@ -6839,12 +6839,12 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     }
 
     // Close the connection if client_info is not keep-alive.
-    // Otherwise, if we cannot trust the content length, we will close the connection
+    // Otherwise, if we cannot trust the content length and the client process chunked encoding, we will close the connection
     // unless we are going to use chunked encoding or the client issued
     // a PUSH request
     if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
       ka_action = KA_DISABLED;
-    } else if (s->hdr_info.trust_response_cl == false &&
+    } else if (s->hdr_info.trust_response_cl == false && s->state_machine->ua_txn->is_chunked_encoding_supported() &&
                !(s->client_info.receive_chunked_response == true ||
                  (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
       ka_action = KA_CLOSE;

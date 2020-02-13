@@ -95,7 +95,7 @@ public:
     @return The number of bytes to be processed by the operation.
 
   */
-  int64_t ntodo();
+  int64_t ntodo() const;
 
   /////////////////////
   // buffer settings //
