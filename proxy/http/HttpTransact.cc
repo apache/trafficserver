@@ -7140,7 +7140,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // a PUSH request
     if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
       ka_action = KA_DISABLED;
-    } else if (s->hdr_info.trust_response_cl == false &&
+    } else if (s->hdr_info.trust_response_cl == false && s->state_machine->ua_session->is_chunked_encoding_supported() &&
                !(s->client_info.receive_chunked_response == true ||
                  (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
       ka_action = KA_CLOSE;
