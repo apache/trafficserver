@@ -23,9 +23,6 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 
-# test_tsapi.so will output test logging to this file.
-Test.Env["OUTPUT_FILE"] = Test.RunDirectory + "/log.txt"
-
 server = Test.MakeOriginServer("server")
 
 request_header = {
@@ -44,8 +41,9 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.url_remap.remap_required': 0,
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|test_tsapi',
+    'proxy.config.diags.debug.enabled': 1,
+    #'proxy.config.diags.debug.tags': 'http|iocore_net|test_tsapi',
+    'proxy.config.diags.debug.tags': 'test_tsapi',
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -59,7 +57,23 @@ ts.Disk.remap_config.AddLine(
     "map https://myhost.test:{0}  http://127.0.0.1:{0}".format(server.Variables.Port)
 )
 
-Test.PreparePlugin(Test.Variables.AtsTestToolsDir + '/plugins/test_tsapi.cc', ts)
+Test.GetTcpPort("tcp_port")
+
+# File to be deleted when "Ports Ready" hook tests are fully completed.
+#
+DoneFilePathspec = Test.RunDirectory + "/done"
+
+Test.PreparePlugin(
+    Test.TestDirectory + "/test_tsapi.cc", ts,
+    plugin_args=Test.RunDirectory + "/log.txt " + "{} ".format(ts.Variables.tcp_port) + DoneFilePathspec,
+    extra_build_args="-I " + Test.TestDirectory
+)
+
+# Create file to be deleted when "Ports Ready" hook tests are fully completed.
+#
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = "touch " + DoneFilePathspec
+tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 # Probe server port to check if ready.
@@ -79,7 +93,18 @@ tr.Processes.Default.Command = (
 )
 tr.Processes.Default.ReturnCode = 0
 
+# Give "Ports Ready" hook tests up to 5 seconds to complete.
+#
 tr = Test.AddTestRun()
+tr.Processes.Default.Command = (
+    "N=5 ; while ((N > 0 )) ; do " +
+    "if [[ ! -f " + DoneFilePathspec + " ]] ; then exit 0 ; fi ; sleep 1 ; let N=N-1 ; " +
+    "done ; exit 1"
+)
+tr.Processes.Default.ReturnCode = 0
+
+tr = Test.AddTestRun()
+tr.StillRunningAfter = ts
 # Change server port number (which can vary) to a fixed string for compare to gold file.
 tr.Processes.Default.Command = "sed 's/:{0}/:SERVER_PORT/' < {1}/log.txt > {1}/log2.txt".format(
     server.Variables.Port, Test.RunDirectory)

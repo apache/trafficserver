@@ -237,16 +237,18 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
     vc->action_ = cont;
   }
 
-  MUTEX_TRY_LOCK(lock, cont->mutex, t);
-  if (lock.is_locked()) {
-    MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
-    if (lock2.is_locked()) {
-      int ret;
-      ret = vc->connectUp(t, NO_FD);
-      if ((using_socks) && (ret == CONNECT_SUCCESS)) {
-        return &socksEntry->action_;
-      } else {
-        return ACTION_RESULT_DONE;
+  if (reinterpret_cast<EThread *>(this_thread()) == t) {
+    MUTEX_TRY_LOCK(lock, cont->mutex, t);
+    if (lock.is_locked()) {
+      MUTEX_TRY_LOCK(lock2, get_NetHandler(t)->mutex, t);
+      if (lock2.is_locked()) {
+        int ret;
+        ret = vc->connectUp(t, NO_FD);
+        if ((using_socks) && (ret == CONNECT_SUCCESS)) {
+          return &socksEntry->action_;
+        } else {
+          return ACTION_RESULT_DONE;
+        }
       }
     }
   }

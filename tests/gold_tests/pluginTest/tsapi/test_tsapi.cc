@@ -21,22 +21,16 @@ Regression testing code for TS API.  Not comprehensive, hopefully will be built 
 */
 
 #include <fstream>
-#include <cstdlib>
+#include <sstream>
 #include <string_view>
 #include <string>
+
+#include <unistd.h>
 
 #include <ts/ts.h>
 #include <tscpp/util/PostScript.h>
 
-// TSReleaseAssert() doesn't seem to produce any logging output for a debug build, so do both kinds of assert.
-//
-#define ALWAYS_ASSERT(EXPR) \
-  {                         \
-    TSAssert(EXPR);         \
-    TSReleaseAssert(EXPR);  \
-  }
-
-namespace
+namespace test_tsapi
 {
 #define PINAME "test_tsapi"
 char PIName[] = PINAME;
@@ -46,6 +40,16 @@ char PIName[] = PINAME;
 //
 std::fstream logFile;
 
+unsigned test_tcp_port;
+
+} // end namespace test_tsapi
+
+using namespace test_tsapi;
+
+#include <ports_ready.h>
+
+namespace
+{
 TSCont tCont, gCont;
 
 void
@@ -126,7 +130,7 @@ transactionContFunc(TSCont, TSEvent event, void *eventData)
   } break;
 
   default: {
-    ALWAYS_ASSERT(false)
+    TSReleaseAssert(false);
   } break;
 
   } // end switch
@@ -159,7 +163,7 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
   } break;
 
   default: {
-    ALWAYS_ASSERT(false)
+    TSReleaseAssert(false);
   } break;
 
   } // end switch
@@ -169,10 +173,16 @@ globalContFunc(TSCont, TSEvent event, void *eventData)
 
 } // end anonymous namespace
 
+// argv[1] - Pathspec of logfile.
+// argv[2] - TCP port for testing.
+// argv[3] - Pathspec of file to delete when all activity triggered by ports ready lifecycle hook.
+//
 void
 TSPluginInit(int argc, const char *argv[])
 {
   TSDebug(PIName, "TSPluginInit()");
+
+  TSReleaseAssert(4 == argc);
 
   TSPluginRegistrationInfo info;
 
@@ -186,13 +196,9 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  const char *fileSpec = std::getenv("OUTPUT_FILE");
+  const char *fileSpec = argv[1];
 
-  if (nullptr == fileSpec) {
-    TSError(PINAME ": Environment variable OUTPUT_FILE not found.");
-
-    return;
-  }
+  std::istringstream(argv[2]) >> test_tcp_port;
 
   // Disable output buffering for logFile, so that explicit flushing is not necessary.
   logFile.rdbuf()->pubsetbuf(nullptr, 0);
@@ -208,12 +214,16 @@ TSPluginInit(int argc, const char *argv[])
   //
   TSMutex mtx = TSMutexCreate();
 
+  TSReleaseAssert(mtx != nullptr);
+
   gCont = TSContCreate(globalContFunc, mtx);
 
   TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, gCont);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, gCont);
 
   tCont = TSContCreate(transactionContFunc, mtx);
+
+  PortsReadyHook::init(argv[3]);
 }
 
 namespace

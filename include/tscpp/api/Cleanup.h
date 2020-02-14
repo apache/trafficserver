@@ -66,13 +66,16 @@ namespace atscppapi
 Y(MBuffer)       // Defines TSMBufferDeleter and TSMBufferUniqPtr.
 X(MimeParser)    // Defines TSMimeParserDeleter and TSMimeParserUniqPtr.
 X(Thread)        // Defines TSThreadDeleter and TSThreadUniqPtr.
-X(Mutex)         // Defines TSMutexDeleter and TSMutexUniqPtr.
 Y(CacheKey)      // Defines TSCacheKeyDeleter and TSCacheKeyUniqPtr.
 X(Cont)          // Defines TSContDeleter and TSContUniqPtr.
 X(SslContext)    // Defines TSSslContextDeleter and TSSslContextUniqPtr.
 X(IOBuffer)      // Defines TSIOBufferDeleter and TSIOBufferUniqPtr.
 Y(TextLogObject) // Defines TSTextLogObjectDeleter and TSTextLogObjectUniqPtr.
 X(Uuid)          // Defines TSUuidDeleter and TSUuidUniqPtr.
+
+X(Mutex) // Defines TSMutexDeleter and TSMutexUniqPtr.  NOTE:  It seems that, due to a bug, it's necessary
+         // to not destroy (leak) TSMutex instances that are used a continuation mutexes, regardless of
+         // whether the associated continuations are destroyed.
 
 #undef X
 #undef Y
