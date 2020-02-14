@@ -395,8 +395,10 @@ HttpProxyPort::processOptions(const char *opts)
       af_set_p = true;
     } else if (0 == strcasecmp(OPT_SSL, item)) {
       m_type = TRANSPORT_SSL;
+#if TS_USE_QUIC == 1
     } else if (0 == strcasecmp(OPT_QUIC, item)) {
       m_type = TRANSPORT_QUIC;
+#endif
     } else if (0 == strcasecmp(OPT_PLUGIN, item)) {
       m_type = TRANSPORT_PLUGIN;
     } else if (0 == strcasecmp(OPT_PROXY_PROTO, item)) {
