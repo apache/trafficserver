@@ -193,7 +193,7 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.proxy_binary_opts STRING -M
 
-   The command-line options for starting |TS|.
+   The :ref:`command-line options <traffic_server>` for starting |TS|.
 
 .. ts:cv:: CONFIG proxy.config.manager_binary STRING traffic_manager
 
