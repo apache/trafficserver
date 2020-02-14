@@ -114,6 +114,78 @@ clean()
   fs::remove(sandboxDir, ec);
 }
 
+static int
+getPluginVersion(const PluginDso &plugin)
+{
+  std::string error;
+  void *s = nullptr;
+  CHECK(plugin.getSymbol("pluginDsoVersionTest", s, error));
+  int (*version)() = reinterpret_cast<int (*)()>(s);
+  return version ? version() : -1;
+}
+
+// this is a simple class to simulate loading of Plugin Dso as done during loading of global plugins
+class GlobalPluginInfo
+{
+public:
+  GlobalPluginInfo() : _dlh(nullptr){};
+  ~GlobalPluginInfo(){};
+
+  bool
+  loadDso(const fs::path &configPath)
+  {
+    CHECK(fs::exists(configPath));
+
+    void *handle = dlopen(configPath.c_str(), RTLD_NOW);
+    if (!handle) {
+      return false;
+    }
+
+    _dlh = handle;
+    return true;
+  }
+
+  bool
+  getSymbol(const char *symbol, void *&address, std::string &error) const
+  {
+    /* Clear the errors */
+    dlerror();
+    error.clear();
+
+    address   = dlsym(_dlh, symbol);
+    char *err = dlerror();
+
+    if (nullptr == address && nullptr != err) {
+      /* symbol really cannot be found */
+      error.assign(err);
+      return false;
+    }
+
+    return true;
+  }
+
+  void *
+  dlOpenHandle()
+  {
+    return _dlh;
+  }
+
+  int
+  getPluginVersion()
+  {
+    std::string error;
+    void *s = nullptr;
+    CHECK(getSymbol("pluginDsoVersionTest", s, error));
+    auto version = reinterpret_cast<int (*)()>(s);
+    return version ? version() : -1;
+  }
+
+private:
+  void *_dlh;
+};
+
+// copies the .so file (pluginBuildPath) in the target directory (effectivePath)
+// as the desired .so filename (configPath) with the desired timestamp (mtime)
 static void
 setupConfigPathTest(const fs::path &configPath, const fs::path &pluginBuildPath, const fs::path &uuid, fs::path &effectivePath,
                     fs::path &runtimePath, time_t mtime = 0, bool append = false)
@@ -124,7 +196,11 @@ setupConfigPathTest(const fs::path &configPath, const fs::path &pluginBuildPath,
   }
 
   effectivePath = configPath.is_absolute() ? configPath : searchDir / configPath;
-  runtimePath   = runtimeRootDir / uuid / effectivePath.relative_path();
+  if (isPluginDynamicReloadEnabled()) {
+    runtimePath = runtimeRootDir / uuid / effectivePath.relative_path();
+  } else {
+    runtimePath = effectivePath;
+  }
 
   /* Create the directory structure and install plugins */
   fs::create_directories(effectivePath.parent_path(), ec);
@@ -175,6 +251,7 @@ SCENARIO("loading plugins", "[plugin][core]")
   fs::path effectivePath;
   fs::path runtimePath;
   std::string error;
+  enablePluginDynamicReload();
 
   GIVEN("an existing plugin")
   {
@@ -188,12 +265,12 @@ SCENARIO("loading plugins", "[plugin][core]")
 
       setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
-      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
+      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("expect it to successfully load")
       {
         validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath);
-        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
+        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath, isPluginDynamicReloadEnabled()));
       }
 
       teardownConfigPathTest(factory);
@@ -206,33 +283,61 @@ SCENARIO("loading plugins", "[plugin][core]")
 
       setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
-      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
+      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("expect it to successfully load")
       {
         validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath);
-        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
+        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath, isPluginDynamicReloadEnabled()));
       }
 
       teardownConfigPathTest(factory);
     }
 
-    WHEN("config is using plugin absolute path")
+    WHEN("config is using plugin absolute path - dynamic reload is ENABLED")
     {
       fs::path configPath = searchDir / "subdir" / pluginName;
       CHECK(configPath.is_absolute()); /* make sure this is absolute path - this is what we are testing */
 
       setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
-      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
+      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("expect it to successfully load")
       {
         validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath);
-        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
+        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath, isPluginDynamicReloadEnabled()));
+
+        // check Dso at effective path still exists while copy at runtime path doesn't
+        CHECK(fs::exists(plugin->_plugin.effectivePath()));
+        CHECK(!fs::exists(plugin->_plugin.runtimePath()));
       }
 
       teardownConfigPathTest(factory);
+    }
+
+    WHEN("config is using plugin absolute path - dynamic reload is DISABLED")
+    {
+      disablePluginDynamicReload();
+      fs::path configPath = searchDir / "subdir" / pluginName;
+      CHECK(configPath.is_absolute()); /* make sure this is absolute path - this is what we are testing */
+
+      setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
+      PluginFactoryUnitTest *factory = getFactory(tempComponent);
+      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
+
+      THEN("expect it to successfully load")
+      {
+        validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath);
+        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath, isPluginDynamicReloadEnabled()));
+
+        // check Dso still exists
+        CHECK(plugin->_plugin.effectivePath() == plugin->_plugin.runtimePath());
+        CHECK(fs::exists(plugin->_plugin.effectivePath()));
+      }
+
+      teardownConfigPathTest(factory);
+      enablePluginDynamicReload();
     }
 
     WHEN("config using nonexisting relative plugin file name")
@@ -245,7 +350,7 @@ SCENARIO("loading plugins", "[plugin][core]")
 
       setupConfigPathTest(relativeExistingPath, buildPath, tempComponent, effectivePath, runtimePath);
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
-      RemapPluginInst *plugin        = factory->getRemapPlugin(relativeNonexistingPath, 0, nullptr, error);
+      RemapPluginInst *plugin = factory->getRemapPlugin(relativeNonexistingPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("expect it to fail with appropriate error message")
       {
@@ -267,7 +372,7 @@ SCENARIO("loading plugins", "[plugin][core]")
 
       setupConfigPathTest(relativeExistingPath, buildPath, tempComponent, effectivePath, runtimePath);
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
-      RemapPluginInst *plugin        = factory->getRemapPlugin(absoluteNonexistingPath, 0, nullptr, error);
+      RemapPluginInst *plugin = factory->getRemapPlugin(absoluteNonexistingPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("expect it to fail with appropriate error message")
       {
@@ -286,12 +391,12 @@ SCENARIO("loading plugins", "[plugin][core]")
       fs::path buildPath  = pluginBuildDir / configPath;
       setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
-      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
+      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("expect it to unload the plugin dso")
       {
         CHECK(nullptr == plugin);
-        CHECK(nullptr == PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
+        CHECK(nullptr == PluginDso::loadedPlugins()->findByEffectivePath(effectivePath, isPluginDynamicReloadEnabled()));
       }
 
       teardownConfigPathTest(factory);
@@ -303,12 +408,12 @@ SCENARIO("loading plugins", "[plugin][core]")
       fs::path buildPath  = pluginBuildDir / configPath;
       setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
-      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error);
+      RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("expect it to unload the plugin dso")
       {
         CHECK(nullptr == plugin);
-        CHECK(nullptr == PluginDso::loadedPlugins()->findByEffectivePath(effectivePath));
+        CHECK(nullptr == PluginDso::loadedPlugins()->findByEffectivePath(effectivePath, isPluginDynamicReloadEnabled()));
       }
 
       teardownConfigPathTest(factory);
@@ -319,6 +424,7 @@ SCENARIO("loading plugins", "[plugin][core]")
 SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][core]")
 {
   REQUIRE_FALSE(sandboxDir.empty());
+  enablePluginDynamicReload();
 
   GIVEN("multiple search dirs specified for the plugin search")
   {
@@ -368,7 +474,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
       CHECK(fs::exists(abEffectivePath));
 
       /* Now use an absolute path containing the unregistered search directory */
-      RemapPluginInst *pluginInst = factory.getRemapPlugin(abEffectivePath, 0, nullptr, error);
+      RemapPluginInst *pluginInst = factory.getRemapPlugin(abEffectivePath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("Expect it to successfully load")
       {
@@ -382,7 +488,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
 
     WHEN("a valid plugin is found in the first search path")
     {
-      RemapPluginInst *pluginInst = factory.getRemapPlugin(configPath, 0, nullptr, error);
+      RemapPluginInst *pluginInst = factory.getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("Expect it to successfully load the one found in the first search dir and copy it in the runtime dir")
       {
@@ -397,7 +503,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
     WHEN("the first search dir is missing the plugin but the second search has it")
     {
       CHECK(fs::remove(effectivePath1, ec));
-      RemapPluginInst *pluginInst = factory.getRemapPlugin(configPath, 0, nullptr, error);
+      RemapPluginInst *pluginInst = factory.getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("Expect it to successfully load the one found in the second search dir")
       {
@@ -413,7 +519,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
     {
       CHECK(fs::remove(effectivePath1, ec));
       CHECK(fs::remove(effectivePath2, ec));
-      RemapPluginInst *pluginInst = factory.getRemapPlugin(configPath, 0, nullptr, error);
+      RemapPluginInst *pluginInst = factory.getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       THEN("Expect it to successfully load the one found in the third search dir")
       {
@@ -433,7 +539,7 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
 
       THEN("expect the plugin load to fail.")
       {
-        RemapPluginInst *pluginInst = factory.getRemapPlugin(configPath, 0, nullptr, error);
+        RemapPluginInst *pluginInst = factory.getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
         CHECK(nullptr == pluginInst);
         CHECK(std::string("failed to find plugin '").append(configPath.string()).append("'") == error);
         CHECK_FALSE(fs::exists(runtimePath1));
@@ -445,19 +551,307 @@ SCENARIO("multiple search dirs + multiple or no plugins installed", "[plugin][co
   }
 }
 
-static int
-getPluginVersion(const PluginDso &plugin)
+void
+checkTwoLoadedVersionsDifferent(const RemapPluginInst *plugin_v1, const RemapPluginInst *plugin_v2)
+{
+  void *tsRemapInitSym_v1_t2 = nullptr; /* callback address from DSO v1 at moment t2 */
+  void *tsRemapInitSym_v2_t2 = nullptr; /* callback address from DSO v2 at moment t2 */
+  std::string error;
+
+  /* Make sure we ended up with different DSO objects and runtime paths are different - new plugin was indeed loaded */
+  CHECK(&(plugin_v1->_plugin) != &(plugin_v2->_plugin));
+  CHECK(plugin_v1->_plugin.runtimePath() != plugin_v2->_plugin.runtimePath());
+  CHECK(plugin_v1->_plugin.dlOpenHandle() != plugin_v2->_plugin.dlOpenHandle());
+
+  /* Make sure what we installed and loaded first was v1 and after the plugin reload we run v2 */
+  CHECK(1 == getPluginVersion(plugin_v1->_plugin));
+  CHECK(2 == getPluginVersion(plugin_v2->_plugin));
+
+  /* Make sure the symbols we get from the 2 loaded plugins don't yield the same callback function pointer */
+  plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+  plugin_v2->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v2_t2, error);
+  CHECK(nullptr != tsRemapInitSym_v1_t2);
+  CHECK(nullptr != tsRemapInitSym_v2_t2);
+  CHECK(tsRemapInitSym_v1_t2 != tsRemapInitSym_v2_t2);
+
+  // 2 versions can be different only when dynamic reload enabled
+  CHECK(isPluginDynamicReloadEnabled());
+
+  // check Dso at effective path still exists while the copy at runtime path doesn't
+  CHECK(plugin_v1->_plugin.effectivePath() != plugin_v1->_plugin.runtimePath());
+  CHECK(fs::exists(plugin_v1->_plugin.effectivePath()));
+  CHECK(!fs::exists(plugin_v1->_plugin.runtimePath()));
+  CHECK(plugin_v2->_plugin.effectivePath() != plugin_v2->_plugin.runtimePath());
+  CHECK(fs::exists(plugin_v2->_plugin.effectivePath()));
+  CHECK(!fs::exists(plugin_v2->_plugin.runtimePath()));
+}
+
+void
+checkTwoLoadedVersionsSame(RemapPluginInst *plugin_v1, RemapPluginInst *plugin_v2)
+{
+  void *tsRemapInitSym_v1_t2 = nullptr; /* callback address from DSO v1 at moment t2 */
+  void *tsRemapInitSym_v2_t2 = nullptr; /* callback address from DSO v2 at moment t2 */
+  std::string error;
+
+  /* Make sure we ended up with the same DSO object and runtime paths should be same - no new plugin was loaded */
+  CHECK(&(plugin_v1->_plugin) == &(plugin_v2->_plugin));
+  CHECK(plugin_v1->_plugin.runtimePath() == plugin_v2->_plugin.runtimePath());
+  CHECK(plugin_v1->_plugin.dlOpenHandle() == plugin_v2->_plugin.dlOpenHandle());
+
+  /* Make sure v2 DSO was NOT really loaded - both instances should return same v1 version */
+  CHECK(1 == getPluginVersion(plugin_v1->_plugin));
+  CHECK(1 == getPluginVersion(plugin_v2->_plugin));
+
+  /* Make sure the symbols we get from the 2 loaded plugins yield the same callback function pointer */
+  plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+  plugin_v2->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v2_t2, error);
+  CHECK(nullptr != tsRemapInitSym_v1_t2);
+  CHECK(nullptr != tsRemapInitSym_v2_t2);
+  CHECK(tsRemapInitSym_v1_t2 == tsRemapInitSym_v2_t2);
+
+  // 2 versions can be same even when dynamic reload is enabled
+  // 2 versions must be same when dynamic reload is disabled
+  // check presence/absence of Dso files
+  if (!isPluginDynamicReloadEnabled()) {
+    CHECK(plugin_v1->_plugin.effectivePath() == plugin_v1->_plugin.runtimePath());
+    CHECK(fs::exists(plugin_v1->_plugin.effectivePath()));
+  } else {
+    CHECK(plugin_v1->_plugin.effectivePath() != plugin_v1->_plugin.runtimePath());
+    CHECK(fs::exists(plugin_v1->_plugin.effectivePath()));
+    CHECK(!fs::exists(plugin_v1->_plugin.runtimePath()));
+  }
+}
+
+std::tuple<RemapPluginInst *, PluginFactoryUnitTest *>
+testSetupLoadPlugin(const fs::path &configName, const fs::path &buildPath, const fs::path &uuid, const time_t mtime,
+                    fs::path &effectivePath, fs::path &runtimePath)
 {
   std::string error;
-  void *s = nullptr;
-  CHECK(plugin.getSymbol("pluginDsoVersionTest", s, error));
-  int (*version)() = reinterpret_cast<int (*)()>(s);
-  return version ? version() : -1;
+  setupConfigPathTest(configName, buildPath, uuid, effectivePath, runtimePath, mtime);
+  auto factory    = getFactory(uuid);
+  auto pluginInst = factory->getRemapPlugin(configName, 0, nullptr, error, isPluginDynamicReloadEnabled());
+
+  return {pluginInst, factory};
 }
 
 SCENARIO("loading multiple version of the same plugin at the same time", "[plugin][core]")
 {
   REQUIRE_FALSE(sandboxDir.empty());
+  enablePluginDynamicReload();
+
+  static fs::path uuid_t1    = fs::path("c71e2bab-90dc-4770-9535-c9304c3de381"); /* UUID at moment t1 */
+  static fs::path uuid_t2    = fs::path("c71e2bab-90dc-4770-9535-e7304c3ee732"); /* UUID at moment t2 */
+  void *tsRemapInitSym_v1_t1 = nullptr;                                          /* callback address from DSO v1 at moment t1 */
+  void *tsRemapInitSym_v1_t2 = nullptr;                                          /* callback address from DSO v1 at moment t2 */
+
+  fs::path effectivePath_v1; /* expected effective path for DSO v1 */
+  fs::path effectivePath_v2; /* expected effective path for DSO v2 */
+  fs::path runtimePath_v1;   /* expected runtime path for DSO v1 */
+  fs::path runtimePath_v2;   /* expected runtime path for DSO v2 */
+
+  std::string error;
+  std::string error1;
+  std::string error2;
+
+  fs::path configName   = fs::path("plugin.so");                     /* use same config name for all following tests */
+  fs::path buildPath_v1 = pluginBuildDir / fs::path("plugin_v1.so"); /* DSO v1 */
+  fs::path buildPath_v2 = pluginBuildDir / fs::path("plugin_v2.so"); /* DSO v1 */
+
+  GIVEN("two different versions v1 and v2 of same plugin with different time stamps - dynamic plugin reload ENABLED")
+  {
+    WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
+         "(*) v1 and v2 DSOs modification time are different (changed)")
+    {
+      enablePluginDynamicReload();
+
+      /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
+      auto [plugin_v1, factory1] =
+        testSetupLoadPlugin(configName, buildPath_v1, uuid_t1, 1556825556, effectivePath_v1, runtimePath_v1);
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
+
+      /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
+      /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so which was v1 */
+      auto [plugin_v2, factory2] =
+        testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825557, effectivePath_v2, runtimePath_v2);
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+
+      /* Make sure plugin.so was overriden */
+      CHECK(effectivePath_v1 == effectivePath_v2);
+      /* Although effective path is the same runtime paths should be different */
+      CHECK(runtimePath_v1 != runtimePath_v2);
+
+      THEN("expect both to be successfully loaded and used simultaneously")
+      {
+        /* Both loadings should succeed */
+        validateSuccessfulConfigPathTest(plugin_v1, error1, effectivePath_v1, runtimePath_v1);
+        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v2);
+
+        checkTwoLoadedVersionsDifferent(plugin_v1, plugin_v2);
+
+        /* Make sure v1 callback functions addresses did not change for v1 after v2 was loaded */
+        CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
+      }
+
+      teardownConfigPathTest(factory1);
+      teardownConfigPathTest(factory2);
+    }
+  }
+
+  GIVEN("two different versions v1 and v2 of same plugin with same time stamps - dynamic plugin reload ENABLED")
+  {
+    WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
+         "(*) v1 and v2 DSOs modification time are same (did NOT change)")
+    {
+      enablePluginDynamicReload();
+
+      /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
+      auto [plugin_v1, factory1] =
+        testSetupLoadPlugin(configName, buildPath_v1, uuid_t1, 1556825556, effectivePath_v1, runtimePath_v1);
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
+
+      /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
+      /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so
+         which was v1, since the modification time is exactly the same the new v2 plugin would not be loaded and
+         we should get the same PluginDso address and same effective and runtime paths */
+      auto [plugin_v2, factory2] =
+        testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825556, effectivePath_v2, runtimePath_v2);
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+
+      /* Make sure plugin.so was overriden */
+      CHECK(effectivePath_v1 == effectivePath_v2);
+
+      THEN("expect only v1 plugin to be loaded since the timestamp has not changed")
+      {
+        /* Both getRemapPlugin() calls should succeed but only v1 plugin DSO should be used */
+        validateSuccessfulConfigPathTest(plugin_v1, error1, effectivePath_v1, runtimePath_v1);
+        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v1);
+
+        checkTwoLoadedVersionsSame(plugin_v1, plugin_v2);
+
+        /* Make sure v1 callback functions addresses did not change for v1 after v2 was loaded */
+        CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
+      }
+
+      teardownConfigPathTest(factory1);
+      teardownConfigPathTest(factory2);
+    }
+  }
+
+  GIVEN("two different versions v1 and v2 of same plugin with different time stamps - dynamic plugin reload DISABLED")
+  {
+    WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
+         "(*) v1 and v2 DSOs modification time are different (changed)")
+    {
+      disablePluginDynamicReload();
+
+      /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
+      auto [plugin_v1, factory1] =
+        testSetupLoadPlugin(configName, buildPath_v1, uuid_t1, 1556825556, effectivePath_v1, runtimePath_v1);
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
+
+      /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
+      /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so which was v1 */
+      auto [plugin_v2, factory2] =
+        testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825557, effectivePath_v2, runtimePath_v2);
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+
+      /* Make sure plugin.so was overriden */
+      CHECK(effectivePath_v1 == effectivePath_v2);
+      /* since dynamic reload is disabled, runtimepaths should be same */
+      CHECK(runtimePath_v1 == runtimePath_v2);
+
+      THEN("expect v1 plugin to remain loaded since dynamic reload is disabled, even though the timestamp has changed")
+      {
+        /* Both getRemapPlugin() calls should succeed but only v1 plugin DSO should be used */
+        validateSuccessfulConfigPathTest(plugin_v1, error1, effectivePath_v1, runtimePath_v1);
+        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v1);
+
+        checkTwoLoadedVersionsSame(plugin_v1, plugin_v2);
+
+        /* Make sure v1 callback functions addresses did not change for v1 after v2 was loaded */
+        CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
+      }
+
+      teardownConfigPathTest(factory1);
+      teardownConfigPathTest(factory2);
+      enablePluginDynamicReload();
+    }
+  }
+
+  GIVEN("two different versions v1 and v2 of same plugin with same time stamp - dynamic plugin reload DISABLED")
+  {
+    WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
+         "(*) v1 and v2 DSOs modification time are same (did NOT change)")
+    {
+      disablePluginDynamicReload();
+
+      /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
+      auto [plugin_v1, factory1] =
+        testSetupLoadPlugin(configName, buildPath_v1, uuid_t1, 1556825556, effectivePath_v1, runtimePath_v1);
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
+
+      /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
+      /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so
+         which was v1, since dynamic reload is disabled the new v2 plugin would not be loaded and
+         we should get the same PluginDso address and same effective and runtime paths */
+      auto [plugin_v2, factory2] =
+        testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825556, effectivePath_v2, runtimePath_v2);
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+
+      /* Make sure plugin.so was overriden */
+      CHECK(effectivePath_v1 == effectivePath_v2);
+      /* since dynamic reload is disabled, runtimepaths should be same */
+      CHECK(runtimePath_v1 == runtimePath_v2);
+
+      THEN("expect v1 plugin to be loaded since dynamic reload is disabled")
+      {
+        /* Both getRemapPlugin() calls should succeed but only v1 plugin DSO should be used */
+        validateSuccessfulConfigPathTest(plugin_v1, error1, effectivePath_v1, runtimePath_v1);
+        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v1);
+
+        checkTwoLoadedVersionsSame(plugin_v1, plugin_v2);
+
+        /* Make sure v1 callback functions addresses did not change for v1 after v2 was loaded */
+        CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
+      }
+
+      teardownConfigPathTest(factory1);
+      teardownConfigPathTest(factory2);
+      enablePluginDynamicReload();
+    }
+  }
+
+  /* Since factories share the list of loaded plugins to avoid unnecessary loading of unchanged plugins
+   * lets check if destroying a factory impacts plugins loaded from another factory */
+  GIVEN("configurations with and without plugins")
+  {
+    WHEN("loading a configuration without plugins and then reloading configuration with a plugin")
+    {
+      /* Simulate configuration without plugins - an unused factory */
+      PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
+
+      /* Now provision and load a plugin using a second factory */
+      auto [plugin_v2, factory2] =
+        testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825556, effectivePath_v2, runtimePath_v2);
+
+      THEN("the plugin from the second factory to work")
+      {
+        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v2);
+
+        /* Now delete the first factory and call a plugin from the second factory */
+        delete factory1;
+        CHECK(TSREMAP_NO_REMAP == plugin_v2->_plugin.doRemap(INSTANCE_HANDLER, nullptr, nullptr));
+      }
+
+      teardownConfigPathTest(factory2);
+    }
+  }
+}
+
+SCENARIO("loading multiple version of the same plugin in mixed mode - global as well as remap plugin", "[plugin][core]")
+{
+  REQUIRE_FALSE(sandboxDir.empty());
+  enablePluginDynamicReload();
 
   static fs::path uuid_t1 = fs::path("c71e2bab-90dc-4770-9535-c9304c3de381"); /* UUID at moment t1 */
   static fs::path uuid_t2 = fs::path("c71e2bab-90dc-4770-9535-e7304c3ee732"); /* UUID at moment t2 */
@@ -478,41 +872,140 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
   fs::path buildPath_v1 = pluginBuildDir / fs::path("plugin_v1.so"); /* DSO v1 */
   fs::path buildPath_v2 = pluginBuildDir / fs::path("plugin_v2.so"); /* DSO v1 */
 
-  GIVEN("two different versions v1 and v2 of same plugin")
+  GIVEN("two different versions v1 and v2 of same plugin in mixed mode - dynamic plugin reload DISABLED")
   {
     WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
          "(*) v1 and v2 DSOs modification time are different (changed)")
     {
+      disablePluginDynamicReload();
       /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
       setupConfigPathTest(configName, buildPath_v1, uuid_t1, effectivePath_v1, runtimePath_v1, 1556825556);
-      PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
-      RemapPluginInst *plugin_v1      = factory1->getRemapPlugin(configName, 0, nullptr, error1);
-      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
+      GlobalPluginInfo global_plugin_v1;
+      CHECK(global_plugin_v1.loadDso(effectivePath_v1) == true);
+      global_plugin_v1.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
 
       /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
       /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so which was v1 */
       setupConfigPathTest(configName, buildPath_v2, uuid_t2, effectivePath_v2, runtimePath_v2, 1556825557);
       PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
-      RemapPluginInst *plugin_v2      = factory2->getRemapPlugin(configName, 0, nullptr, error2);
+      RemapPluginInst *plugin_v2      = factory2->getRemapPlugin(configName, 0, nullptr, error2, isPluginDynamicReloadEnabled());
 
       /* Make sure plugin.so was overriden */
       CHECK(effectivePath_v1 == effectivePath_v2);
 
-      /* Although effective path is the same runtime paths should be different */
+      /* since dynamic reload is disabled, runtimepaths should be same */
+      CHECK(runtimePath_v1 == runtimePath_v2);
+
+      THEN("expect v1 plugin to remain loaded since dynamic reload is disabled, even though the timestamp has changed")
+      {
+        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v2);
+
+        /* Make sure we ended up with the same DSO object and runtime paths should be same - no new plugin was loaded */
+        CHECK(global_plugin_v1.dlOpenHandle() == plugin_v2->_plugin.dlOpenHandle());
+
+        /* Make sure v2 DSO was NOT really loaded - both instances should return same v1 version */
+        CHECK(1 == global_plugin_v1.getPluginVersion());
+        CHECK(1 == getPluginVersion(plugin_v2->_plugin));
+
+        /* Make sure the symbols we get from the 2 loaded plugins yield the same callback function pointer */
+        global_plugin_v1.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+        plugin_v2->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v2_t2, error);
+        CHECK(nullptr != tsRemapInitSym_v1_t2);
+        CHECK(nullptr != tsRemapInitSym_v2_t2);
+        CHECK(tsRemapInitSym_v1_t2 == tsRemapInitSym_v2_t2);
+
+        /* check that the symbol we got originally is still valid */
+        CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
+      }
+
+      teardownConfigPathTest(factory2);
+      enablePluginDynamicReload();
+    }
+  }
+
+  GIVEN("two different versions v1 and v2 of same plugin in mixed mode - dynamic plugin reload DISABLED")
+  {
+    WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
+         "(*) v1 and v2 DSOs modification times are unchanged")
+    {
+      disablePluginDynamicReload();
+      /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
+      setupConfigPathTest(configName, buildPath_v1, uuid_t1, effectivePath_v1, runtimePath_v1, 1556825556);
+      GlobalPluginInfo global_plugin_v1;
+      CHECK(global_plugin_v1.loadDso(effectivePath_v1) == true);
+      global_plugin_v1.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
+
+      /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
+      /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so which was v1 */
+      setupConfigPathTest(configName, buildPath_v2, uuid_t2, effectivePath_v2, runtimePath_v2, 1556825556);
+      PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
+      RemapPluginInst *plugin_v2      = factory2->getRemapPlugin(configName, 0, nullptr, error2, isPluginDynamicReloadEnabled());
+
+      /* Make sure plugin.so was overriden */
+      CHECK(effectivePath_v1 == effectivePath_v2);
+
+      /* since dynamic reload is disabled, runtimepaths should be same */
+      CHECK(runtimePath_v1 == runtimePath_v2);
+
+      THEN("expect v1 plugin to remain loaded since dynamic reload is disabled, even though the timestamp has changed")
+      {
+        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v2);
+
+        /* Make sure we ended up with the same DSO object and runtime paths should be same - no new plugin was loaded */
+        CHECK(global_plugin_v1.dlOpenHandle() == plugin_v2->_plugin.dlOpenHandle());
+
+        /* Make sure v2 DSO was NOT really loaded - both instances should return same v1 version */
+        CHECK(1 == global_plugin_v1.getPluginVersion());
+        CHECK(1 == getPluginVersion(plugin_v2->_plugin));
+
+        /* Make sure the symbols we get from the 2 loaded plugins yield the same callback function pointer */
+        global_plugin_v1.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+        plugin_v2->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v2_t2, error);
+        CHECK(nullptr != tsRemapInitSym_v1_t2);
+        CHECK(nullptr != tsRemapInitSym_v2_t2);
+        CHECK(tsRemapInitSym_v1_t2 == tsRemapInitSym_v2_t2);
+
+        /* check that the symbol we got originally is still valid */
+        CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
+      }
+
+      teardownConfigPathTest(factory2);
+      enablePluginDynamicReload();
+    }
+  }
+
+  GIVEN("two different versions v1 and v2 of same plugin in mixed mode - dynamic plugin reload ENABLED (negative test)")
+  {
+    WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
+         "(*) v1 and v2 DSOs modification time are different (changed)")
+    {
+      enablePluginDynamicReload();
+      /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
+      setupConfigPathTest(configName, buildPath_v1, uuid_t1, effectivePath_v1, runtimePath_v1, 1556825556);
+      GlobalPluginInfo global_plugin_v1;
+      CHECK(global_plugin_v1.loadDso(effectivePath_v1) == true);
+      global_plugin_v1.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
+
+      /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
+      /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so which was v1 */
+      auto [plugin_v2, factory2] =
+        testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825557, effectivePath_v2, runtimePath_v2);
+
+      CHECK(effectivePath_v1 == effectivePath_v2);
+      /* since dynamic reload is enabled runtime paths would be different */
       CHECK(runtimePath_v1 != runtimePath_v2);
 
       THEN("expect both to be successfully loaded and used simultaneously")
       {
-        /* Both loadings should succeed */
-        validateSuccessfulConfigPathTest(plugin_v1, error1, effectivePath_v1, runtimePath_v1);
         validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v2);
 
         /* Make sure what we installed and loaded first was v1 and after the plugin reload we run v2 */
-        CHECK(1 == getPluginVersion(plugin_v1->_plugin));
+        CHECK(1 == global_plugin_v1.getPluginVersion());
         CHECK(2 == getPluginVersion(plugin_v2->_plugin));
+        CHECK(global_plugin_v1.dlOpenHandle() != plugin_v2->_plugin.dlOpenHandle());
 
         /* Make sure the symbols we get from the 2 loaded plugins don't yield the same callback function pointer */
-        plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+        global_plugin_v1.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
         plugin_v2->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v2_t2, error);
         CHECK(nullptr != tsRemapInitSym_v1_t2);
         CHECK(nullptr != tsRemapInitSym_v2_t2);
@@ -522,83 +1015,8 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
         CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
       }
 
-      teardownConfigPathTest(factory1);
       teardownConfigPathTest(factory2);
-    }
-  }
-
-  GIVEN("two different versions v1 and v2 of same plugin")
-  {
-    WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
-         "(*) v1 and v2 DSOs modification time are same (did NOT change)")
-    {
-      /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
-      setupConfigPathTest(configName, buildPath_v1, uuid_t1, effectivePath_v1, runtimePath_v1, 1556825556);
-      PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
-      RemapPluginInst *plugin_v1      = factory1->getRemapPlugin(configName, 0, nullptr, error1);
-
-      /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
-      /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so
-         which was v1, since the modification time is exactly the same the new v2 plugin would not be loaded and
-         we should get the same PluginDso address and same effective and runtime paths */
-      setupConfigPathTest(configName, buildPath_v2, uuid_t2, effectivePath_v2, runtimePath_v2, 1556825556);
-      PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
-      RemapPluginInst *plugin_v2      = factory2->getRemapPlugin(configName, 0, nullptr, error2);
-
-      /* Make sure plugin.so was overriden */
-      CHECK(effectivePath_v1 == effectivePath_v2);
-
-      THEN("expect only v1 plugin to be loaded since the timestamp has not changed")
-      {
-        /* Both getRemapPlugin() calls should succeed but only v1 plugin DSO should be used */
-        validateSuccessfulConfigPathTest(plugin_v1, error1, effectivePath_v1, runtimePath_v1);
-        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v1);
-
-        /* Make sure we ended up with the same DSO object and runtime paths should be same - no new plugin was loaded */
-        CHECK(&(plugin_v1->_plugin) == &(plugin_v2->_plugin));
-        CHECK(plugin_v1->_plugin.runtimePath() == plugin_v2->_plugin.runtimePath());
-
-        /* Make sure v2 DSO was NOT loaded both instances should return same v1 version */
-        CHECK(1 == getPluginVersion(plugin_v1->_plugin));
-        CHECK(1 == getPluginVersion(plugin_v2->_plugin));
-
-        /* Make sure the symbols we get from the 2 loaded plugins yield the same callback function pointer */
-        plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
-        plugin_v2->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v2_t2, error);
-        CHECK(nullptr != tsRemapInitSym_v1_t2);
-        CHECK(nullptr != tsRemapInitSym_v2_t2);
-        CHECK(tsRemapInitSym_v1_t2 == tsRemapInitSym_v2_t2);
-      }
-
-      teardownConfigPathTest(factory1);
-      teardownConfigPathTest(factory2);
-    }
-  }
-
-  /* Since factories share the list of loaded plugins to avoid unnecessary loading of unchanged plugins
-   * lets check if destroying a factory impacts plugins loaded from another factory */
-  GIVEN("configurations with and without plugins")
-  {
-    WHEN("loading a configuration without plugins and then reloading configuration with a plugin")
-    {
-      /* Simulate configuration without plugins - an unused factory */
-      PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
-
-      /* Now provision and load a plugin using a second factory */
-      setupConfigPathTest(configName, buildPath_v2, uuid_t2, effectivePath_v2, runtimePath_v2, 1556825556);
-      PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
-      RemapPluginInst *plugin_v2      = factory2->getRemapPlugin(configName, 0, nullptr, error2);
-
-      THEN("the plugin from the second factory to work")
-      {
-        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v2);
-
-        /* Now delete the first factory and call a plugin from the second factory */
-        delete factory1;
-        CHECK(TSREMAP_NO_REMAP == plugin_v2->_plugin.doRemap(INSTANCE_HANDLER, nullptr, nullptr));
-      }
-
-      teardownConfigPathTest(factory2);
+      enablePluginDynamicReload();
     }
   }
 }
@@ -606,6 +1024,7 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
 SCENARIO("notifying plugins of config reload", "[plugin][core]")
 {
   REQUIRE_FALSE(sandboxDir.empty());
+  enablePluginDynamicReload();
 
   /* use 2 copies of the same plugin to test */
   fs::path configName1 = fs::path("plugin_testing_calls_1.so");
@@ -629,7 +1048,7 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
       /* Simulate configuration with 1 factory and 1 plugin */
       setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556);
       PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
-      RemapPluginInst *plugin1        = factory1->getRemapPlugin(configName1, 0, nullptr, error);
+      RemapPluginInst *plugin1        = factory1->getRemapPlugin(configName1, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       /* check if loaded successfully */
       validateSuccessfulConfigPathTest(plugin1, error, effectivePath1, runtimePath1);
@@ -687,8 +1106,8 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
       setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556);
       setupConfigPathTest(configName2, buildPath, uuid_t1, effectivePath2, runtimePath2, 1556825556, /* append */ true);
       PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
-      RemapPluginInst *plugin1        = factory1->getRemapPlugin(configName1, 0, nullptr, error);
-      RemapPluginInst *plugin2        = factory1->getRemapPlugin(configName2, 0, nullptr, error);
+      RemapPluginInst *plugin1        = factory1->getRemapPlugin(configName1, 0, nullptr, error, isPluginDynamicReloadEnabled());
+      RemapPluginInst *plugin2        = factory1->getRemapPlugin(configName2, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       /* check if loaded successfully */
       validateSuccessfulConfigPathTest(plugin1, error, effectivePath1, runtimePath1);
@@ -765,8 +1184,8 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
       setupConfigPathTest(configName1, buildPath, uuid_t1, effectivePath1, runtimePath1, 1556825556);
       PluginFactoryUnitTest *factory1 = getFactory(uuid_t1);
       PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
-      RemapPluginInst *plugin1        = factory1->getRemapPlugin(configName1, 0, nullptr, error);
-      RemapPluginInst *plugin2        = factory2->getRemapPlugin(configName1, 0, nullptr, error);
+      RemapPluginInst *plugin1        = factory1->getRemapPlugin(configName1, 0, nullptr, error, isPluginDynamicReloadEnabled());
+      RemapPluginInst *plugin2        = factory2->getRemapPlugin(configName1, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       /* Prepare the debug objects */
       PluginDebugObject *debugObject1 = getDebugObject(plugin1->_plugin);
@@ -806,11 +1225,11 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
       PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
 
       /* 2 plugins loaded by the 1st factory */
-      RemapPluginInst *pluginInst1 = factory1->getRemapPlugin(configName1, 0, nullptr, error);
-      RemapPluginInst *pluginInst2 = factory1->getRemapPlugin(configName2, 0, nullptr, error);
+      RemapPluginInst *pluginInst1 = factory1->getRemapPlugin(configName1, 0, nullptr, error, isPluginDynamicReloadEnabled());
+      RemapPluginInst *pluginInst2 = factory1->getRemapPlugin(configName2, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       /* only 1 plugin loaded by the 2st factory */
-      RemapPluginInst *pluginInst3 = factory2->getRemapPlugin(configName1, 0, nullptr, error);
+      RemapPluginInst *pluginInst3 = factory2->getRemapPlugin(configName1, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       /* pluginInst1 and pluginInst3 should be using the same plugin DSO named configName1
        * pluginInst2 should be using plugin DSO named configName 2*/
