@@ -50,3 +50,24 @@ getTemporaryDir()
 
   return fs::path(mkdtemp(dirNameTemplate));
 }
+
+// implement functions to support unit-testing of option to enable/disable dynamic reload of plugins
+static PluginDynamicReloadMode plugin_dynamic_reload_mode = REMAP_PLUGIN_DYNAMIC_RELOAD_ON;
+
+bool
+isPluginDynamicReloadEnabled()
+{
+  return plugin_dynamic_reload_mode == REMAP_PLUGIN_DYNAMIC_RELOAD_ON;
+}
+
+void
+enablePluginDynamicReload()
+{
+  plugin_dynamic_reload_mode = REMAP_PLUGIN_DYNAMIC_RELOAD_ON;
+}
+
+void
+disablePluginDynamicReload()
+{
+  plugin_dynamic_reload_mode = PLUGIN_DYNAMIC_RELOAD_OFF;
+}
