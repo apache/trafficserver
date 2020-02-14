@@ -2042,6 +2042,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // initialize logging (after event and net processor)
     Log::init(remote_management_flag ? 0 : Log::NO_REMOTE_MANAGEMENT);
 
+    (void)parsePluginConfig();
+
     // Init plugins as soon as logging is ready.
     (void)plugin_init(); // plugin.config
 

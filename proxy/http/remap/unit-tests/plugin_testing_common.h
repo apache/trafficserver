@@ -101,3 +101,7 @@ void PrintToStdErr(const char *fmt, ...);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+// functions to support unit-testing of option to enable/disable dynamic reload of plugins
+void enablePluginDynamicReload();
+void disablePluginDynamicReload();

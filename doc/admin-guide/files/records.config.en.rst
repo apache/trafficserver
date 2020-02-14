@@ -4050,6 +4050,11 @@ Plug-in Configuration
 
    Specifies the location of |TS| plugins.
 
+.. ts:cv:: CONFIG proxy.config.plugin.dynamic_reload_mode INT 1
+
+   Enables (``1``) or disables (``0``) the dynamic reload feature for remap
+   plugins (`remap.config`). Global plugins (`plugin.config`) do not have dynamic reload feature yet.
+
 SOCKS Processor
 ===============
 

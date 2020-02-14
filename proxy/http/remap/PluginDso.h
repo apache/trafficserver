@@ -43,6 +43,8 @@ namespace fs = ts::file;
 #include "I_EventSystem.h"
 #include "tscpp/util/IntrusiveDList.h"
 
+#include "Plugin.h"
+
 class PluginThreadContext : public RefCountObj
 {
 public:
@@ -69,6 +71,7 @@ public:
   const fs::path &effectivePath() const;
   const fs::path &runtimePath() const;
   time_t modTime() const;
+  void *dlOpenHandle() const;
 
   /* List used by the plugin factory */
   using self_type  = PluginDso; ///< Self reference type.
@@ -89,6 +92,7 @@ public:
   void incInstanceCount();
   void decInstanceCount();
   int instanceCount();
+  bool isDynamicReloadEnabled() const;
 
   class LoadedPlugins : public RefCountObj
   {
@@ -96,7 +100,7 @@ public:
     LoadedPlugins() : _mutex(new_ProxyMutex()) {}
     void add(PluginDso *plugin);
     void remove(PluginDso *plugin);
-    PluginDso *findByEffectivePath(const fs::path &path);
+    PluginDso *findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled);
     void indicatePreReload(const char *factoryId);
     void indicatePostReload(bool reloadSuccessful, const std::unordered_map<PluginDso *, int> &pluginUsed, const char *factoryId);
 

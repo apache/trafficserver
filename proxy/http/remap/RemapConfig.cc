@@ -817,7 +817,8 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-    pi = rewrite->pluginFactory.getRemapPlugin(ts::file::path(const_cast<const char *>(c)), parc, pargv, error);
+    pi = rewrite->pluginFactory.getRemapPlugin(ts::file::path(const_cast<const char *>(c)), parc, pargv, error,
+                                               isPluginDynamicReloadEnabled());
   } // done elevating access
 
   bool result = true;
