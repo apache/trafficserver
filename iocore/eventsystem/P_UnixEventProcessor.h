@@ -55,12 +55,25 @@ EventProcessor::assign_thread(EventType etype)
   ThreadGroupDescriptor *tg = &thread_group[etype];
 
   ink_assert(etype < MAX_EVENT_TYPES);
+  ink_assert(tg->_count > 0);
+
   if (tg->_count > 1) {
-    next = ++tg->_next_round_robin % tg->_count;
+    for (;;) {
+      int curr = tg->_next_round_robin;
+      next     = curr + 1;
+      if (next >= tg->_count) {
+        next = 0;
+      }
+      if (tg->_next_round_robin.compare_exchange_weak(curr, next)) {
+        break;
+      }
+    }
   } else {
     next = 0;
   }
-  return tg->_thread[next];
+  EThread *result = tg->_thread[next];
+  ink_assert(result != nullptr);
+  return result;
 }
 
 // If thread_holding is the correct type, return it.

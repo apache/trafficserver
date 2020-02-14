@@ -22,6 +22,9 @@ noinst_PROGRAMS =
 
 SUBDIRS =
 
+AM_CPPFLAGS += \
+  -I$(abs_top_srcdir)/lib/yamlcpp/include
+
 AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
 
 # Automake is pretty draconian about not creating shared object (.so) files for
@@ -32,9 +35,10 @@ AM_LDFLAGS += -rpath $(abs_builddir)
 
 include gold_tests/continuations/plugins/Makefile.inc
 include gold_tests/chunked_encoding/Makefile.inc
-include gold_tests/pluginTest/tsapi/Makefile.inc
 include gold_tests/timeout/Makefile.inc
 include gold_tests/tls/Makefile.inc
+include gold_tests/pluginTest/tsapi/Makefile.inc
+include gold_tests/pluginTest/tsapi2/Makefile.inc
 include tools/plugins/Makefile.inc
 
 TESTS = $(check_PROGRAMS)

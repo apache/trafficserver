@@ -323,7 +323,6 @@ private:
 
 struct ParentSelectionPolicy {
   int32_t ParentRetryTime;
-  int32_t ParentEnable;
   int32_t FailThreshold;
   ParentSelectionPolicy();
 };

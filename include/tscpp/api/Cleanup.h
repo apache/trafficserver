@@ -66,13 +66,16 @@ namespace atscppapi
 Y(MBuffer)       // Defines TSMBufferDeleter and TSMBufferUniqPtr.
 X(MimeParser)    // Defines TSMimeParserDeleter and TSMimeParserUniqPtr.
 X(Thread)        // Defines TSThreadDeleter and TSThreadUniqPtr.
-X(Mutex)         // Defines TSMutexDeleter and TSMutexUniqPtr.
 Y(CacheKey)      // Defines TSCacheKeyDeleter and TSCacheKeyUniqPtr.
 X(Cont)          // Defines TSContDeleter and TSContUniqPtr.
 X(SslContext)    // Defines TSSslContextDeleter and TSSslContextUniqPtr.
 X(IOBuffer)      // Defines TSIOBufferDeleter and TSIOBufferUniqPtr.
 Y(TextLogObject) // Defines TSTextLogObjectDeleter and TSTextLogObjectUniqPtr.
 X(Uuid)          // Defines TSUuidDeleter and TSUuidUniqPtr.
+
+X(Mutex) // Defines TSMutexDeleter and TSMutexUniqPtr.  NOTE:  It seems that, due to a bug, it's necessary
+         // to not destroy (leak) TSMutex instances that are used a continuation mutexes, regardless of
+         // whether the associated continuations are destroyed.
 
 #undef X
 #undef Y
@@ -124,8 +127,8 @@ protected:
 
 using TxnAuxMgrData = TxnAuxDataMgrBase::MgrData;
 
-// Class to manage auxilliary data for a transaction.  If an instance is created for the transaction, the instance
-// will be deleted on the TXN_CLOSE transaction hook (which is always triggered for all transactions).
+// Class to manage auxilliary data for a transaction.  If auxilliary data is created for the transaction, it
+// will be destroyed on the TXN_CLOSE transaction hook (which is always triggered for all transactions).
 // The TxnAuxData class must have a public default constructor.
 //
 template <class TxnAuxData, TxnAuxMgrData &MDRef> class TxnAuxDataMgr : private TxnAuxDataMgrBase
@@ -149,7 +152,8 @@ public:
     TSReleaseAssert(md.txnCloseContp = TSContCreate(_deleteAuxData, nullptr));
   }
 
-  // Get a reference to the auxiliary data for a transaction.
+  // Get a reference to the auxiliary data for a transaction.  (An instance of the auxiliary data class is created
+  // if it doesn't alreaday exist).
   //
   static TxnAuxData &
   data(TSHttpTxn txn)

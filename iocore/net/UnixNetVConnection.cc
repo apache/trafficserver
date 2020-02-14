@@ -213,7 +213,13 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   }
 
   MIOBufferAccessor &buf = s->vio.buffer;
-  ink_assert(buf.writer());
+
+  // The use of the writer variable here is a hack.  There is a race condition where buf.writer() can become null even though
+  // the VIO's mutex is locked in this critical section.  Presumably because UnixNetVConnection::do_io_close() is called, but
+  // it's not clear how.
+  //
+  auto writer = buf.writer();
+  ink_assert(writer != nullptr);
 
   // if there is nothing to do, disable connection
   int64_t ntodo = s->vio.ntodo();
@@ -221,7 +227,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     read_disable(nh, vc);
     return;
   }
-  int64_t toread = buf.writer()->write_avail();
+  int64_t toread = writer->write_avail();
   if (toread > ntodo) {
     toread = ntodo;
   }
@@ -231,7 +237,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   unsigned niov = 0;
   IOVec tiovec[NET_MAX_IOV];
   if (toread) {
-    IOBufferBlock *b = buf.writer()->first_write_block();
+    IOBufferBlock *b = writer->first_write_block();
     do {
       niov       = 0;
       rattempted = 0;
@@ -292,9 +298,9 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     NET_SUM_DYN_STAT(net_read_bytes_stat, r);
 
     // Add data to buffer and signal continuation.
-    buf.writer()->fill(r);
+    writer->fill(r);
 #ifdef DEBUG
-    if (buf.writer()->write_avail() <= 0) {
+    if (writer->write_avail() <= 0) {
       Debug("iocore_net", "read_from_net, read buffer full");
     }
 #endif
@@ -325,7 +331,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
   }
   // If here are is no more room, or nothing to do, disable the connection
-  if (s->vio.ntodo() <= 0 || !s->enabled || !buf.writer()->write_avail()) {
+  if (s->vio.ntodo() <= 0 || !s->enabled || !writer->write_avail()) {
     read_disable(nh, vc);
     return;
   }

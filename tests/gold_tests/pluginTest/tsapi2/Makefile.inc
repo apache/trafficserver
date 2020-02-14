@@ -16,8 +16,12 @@
 
 # This file is included in test/Makefile.am under repo root directory.
 
-noinst_LTLIBRARIES += gold_tests/pluginTest/tsapi/test_tsapi.la
-gold_tests_pluginTest_tsapi_test_tsapi_la_SOURCES = \
-  gold_tests/pluginTest/tsapi/test_tsapi.cc \
-  gold_tests/pluginTest/tsapi/core_ready.h \
-  gold_tests/pluginTest/tsapi/ts_tcp.h
+noinst_LTLIBRARIES += gold_tests/pluginTest/tsapi2/test_tsapi2.la
+gold_tests_pluginTest_tsapi2_test_tsapi2_la_SOURCES = \
+  gold_tests/pluginTest/tsapi2/test_tsapi2.cc \
+  gold_tests/pluginTest/tsapi2/alt_info.h \
+  gold_tests/pluginTest/tsapi2/cache.h \
+  gold_tests/pluginTest/tsapi2/hooks.h \
+  gold_tests/pluginTest/tsapi2/parent_proxy.h \
+  gold_tests/pluginTest/tsapi2/ssn.h \
+  gold_tests/pluginTest/tsapi2/transform.h

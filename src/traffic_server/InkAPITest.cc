@@ -51,6 +51,10 @@
 #include "http/HttpSM.h"
 #include "tscore/TestBox.h"
 
+// Include code for tests that have been rewritten as Au tests.
+//
+#define INCLUDE_CONVERTED_TO_AU_TEST 1
+
 // This used to be in InkAPITestTool.cc, which we'd just #include here... But that seemed silly.
 #define SDBG_TAG "SockServer"
 #define CDBG_TAG "SockClient"
@@ -80,8 +84,12 @@
 #define X_REQUEST_ID "X-Request-ID"
 #define X_RESPONSE_ID "X-Response-ID"
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
+
 #define ERROR_BODY "TESTING ERROR PAGE"
 #define TRANSFORM_APPEND_STRING "This is a transformed response"
+
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 
 //////////////////////////////////////////////////////////////////////////////
 // STRUCTURES
@@ -164,7 +172,9 @@ static int get_request_id(TSHttpTxn txnp);
 static ClientTxn *synclient_txn_create();
 static int synclient_txn_delete(ClientTxn *txn);
 static void synclient_txn_close(ClientTxn *txn);
+#if INCLUDE_CONVERTED_TO_AU_TEST
 static int synclient_txn_send_request(ClientTxn *txn, char *request);
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 static int synclient_txn_send_request_to_vc(ClientTxn *txn, char *request, TSVConn vc);
 static int synclient_txn_read_response(TSCont contp);
 static int synclient_txn_read_response_handler(TSCont contp, TSEvent event, void *data);
@@ -175,11 +185,15 @@ static int synclient_txn_main_handler(TSCont contp, TSEvent event, void *data);
 
 /* Server side */
 SocketServer *synserver_create(int port);
+#if INCLUDE_CONVERTED_TO_AU_TEST
 static int synserver_start(SocketServer *s);
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 static int synserver_stop(SocketServer *s);
 static int synserver_delete(SocketServer *s);
 static int synserver_vc_accept(TSCont contp, TSEvent event, void *data);
+#if INCLUDE_CONVERTED_TO_AU_TEST
 static int synserver_vc_refuse(TSCont contp, TSEvent event, void *data);
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 static int synserver_txn_close(TSCont contp);
 static int synserver_txn_write_response(TSCont contp);
 static int synserver_txn_write_response_handler(TSCont contp, TSEvent event, void *data);
@@ -204,6 +218,7 @@ generate_request(int test_case)
 {
 // We define request formats.
 // Each format has an X-Request-ID field that contains the id of the testcase
+#if INCLUDE_CONVERTED_TO_AU_TEST
 #define HTTP_REQUEST_DEFAULT_FORMAT                   \
   "GET http://127.0.0.1:%d/default.html HTTP/1.0\r\n" \
   "X-Request-ID: %d\r\n"                              \
@@ -249,6 +264,7 @@ generate_request(int test_case)
   "X-Request-ID: %d\r\n"                             \
   "Accept-Language: English,French\r\n"              \
   "\r\n"
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 #define HTTP_REQUEST_FORMAT9                                      \
   "GET http://trafficserver.apache.org/format9.html HTTP/1.0\r\n" \
   "X-Request-ID: %d\r\n"                                          \
@@ -257,13 +273,17 @@ generate_request(int test_case)
   "GET http://trafficserver.apache.org/format10.html HTTP/1.0\r\n" \
   "X-Request-ID: %d\r\n"                                           \
   "\r\n"
+#if INCLUDE_CONVERTED_TO_AU_TEST
 #define HTTP_REQUEST_FORMAT11                                      \
   "GET http://trafficserver.apache.org/format11.html HTTP/1.0\r\n" \
   "X-Request-ID: %d\r\n"                                           \
   "\r\n"
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
+
   char *request = static_cast<char *>(TSmalloc(REQUEST_MAX_SIZE + 1));
 
   switch (test_case) {
+#if INCLUDE_CONVERTED_TO_AU_TEST
   case 1:
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_FORMAT1, SYNSERVER_LISTEN_PORT, test_case);
     break;
@@ -288,18 +308,25 @@ generate_request(int test_case)
   case 8:
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_FORMAT8, SYNSERVER_LISTEN_PORT, test_case - 2);
     break;
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
   case 9:
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_FORMAT9, test_case);
     break;
   case 10:
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_FORMAT10, test_case);
     break;
+#if INCLUDE_CONVERTED_TO_AU_TEST
   case 11:
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_FORMAT11, test_case);
     break;
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
   default:
+#if INCLUDE_CONVERTED_TO_AU_TEST
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_DEFAULT_FORMAT, SYNSERVER_LISTEN_PORT, test_case);
     break;
+#else
+    ink_release_assert(false);
+#endif // ! INCLUDE_CONVERTED_TO_AU_TEST
   }
 
   return request;
@@ -323,6 +350,7 @@ generate_response(const char *request)
   "\r\n"                             \
   "Default body"
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
 #define HTTP_RESPONSE_FORMAT1   \
   "HTTP/1.0 200 OK\r\n"         \
   "X-Response-ID: %d\r\n"       \
@@ -374,6 +402,8 @@ generate_response(const char *request)
   "\r\n"                                  \
   "Body for response 8"
 
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
+
 #define HTTP_RESPONSE_FORMAT9        \
   "HTTP/1.0 200 OK\r\n"              \
   "Cache-Control: max-age=86400\r\n" \
@@ -388,12 +418,14 @@ generate_response(const char *request)
   "\r\n"                             \
   "Body for response 10"
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
 #define HTTP_RESPONSE_FORMAT11          \
   "HTTP/1.0 200 OK\r\n"                 \
   "Cache-Control: private,no-store\r\n" \
   "X-Response-ID: %d\r\n"               \
   "\r\n"                                \
   "Body for response 11"
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 
   int test_case, match, http_version;
 
@@ -404,6 +436,7 @@ generate_response(const char *request)
   match = sscanf(request, HTTP_REQUEST_TESTCASE_FORMAT, url, &http_version, &test_case);
   if (match == 3) {
     switch (test_case) {
+#if INCLUDE_CONVERTED_TO_AU_TEST
     case 1:
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_FORMAT1, test_case);
       break;
@@ -425,18 +458,25 @@ generate_response(const char *request)
     case 8:
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_FORMAT8, test_case);
       break;
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
     case 9:
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_FORMAT9, test_case);
       break;
     case 10:
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_FORMAT10, test_case);
       break;
+#if INCLUDE_CONVERTED_TO_AU_TEST
     case 11:
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_FORMAT11, test_case);
       break;
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
     default:
+#if INCLUDE_CONVERTED_TO_AU_TEST
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_DEFAULT_FORMAT, test_case);
       break;
+#else
+      ink_release_assert(false);
+#endif // ! INCLUDE_CONVERTED_TO_AU_TEST
     }
   } else {
     /* Didn't recognize a testcase request. send the default response */
@@ -480,6 +520,7 @@ get_request_id(TSHttpTxn txnp)
   return id;
 }
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
 // This routine can be called by tests, from the READ_RESPONSE_HDR_HOOK
 // to figure out the id of a test message
 // Returns id/-1 in case of error
@@ -498,6 +539,8 @@ get_response_id(TSHttpTxn txnp)
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   return id;
 }
+
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 
 //////////////////////////////////////////////////////////////////////////////
 // SOCKET CLIENT
@@ -564,6 +607,7 @@ synclient_txn_close(ClientTxn *txn)
   }
 }
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
 static int
 synclient_txn_send_request(ClientTxn *txn, char *request)
 {
@@ -581,6 +625,8 @@ synclient_txn_send_request(ClientTxn *txn, char *request)
   TSNetConnect(cont, ats_ip_sa_cast(&addr));
   return 1;
 }
+
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 
 /* This can be used to send a request to a specific VC */
 static int
@@ -826,6 +872,7 @@ synserver_create(int port)
   return synserver_create(port, TSContCreate(synserver_vc_accept, TSMutexCreate()));
 }
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
 static int
 synserver_start(SocketServer *s)
 {
@@ -841,6 +888,7 @@ synserver_start(SocketServer *s)
 
   return 1;
 }
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 
 static int
 synserver_stop(SocketServer *s)
@@ -876,6 +924,7 @@ synserver_delete(SocketServer *s)
   return 1;
 }
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
 static int
 synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
 {
@@ -896,6 +945,7 @@ synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
   TSVConnClose(static_cast<TSVConn>(data));
   return TS_EVENT_IMMEDIATE;
 }
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 
 static int
 synserver_vc_accept(TSCont contp, TSEvent event, void *data)
@@ -1356,6 +1406,7 @@ REGRESSION_TEST(SDK_API_TSConfig)(RegressionTest *test, int /* atype ATS_UNUSED 
   return;
 }
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
 /* TSNetVConn */
 //////////////////////////////////////////////
 //       SDK_API_TSNetVConn
@@ -1549,6 +1600,7 @@ REGRESSION_TEST(SDK_API_TSPortDescriptor)(RegressionTest *test, int /* atype ATS
   ats_ip4_set(&addr, htonl(INADDR_LOOPBACK), htons(params->port));
   TSNetConnect(client_cont, &addr.sa);
 }
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 
 /* TSCache, TSVConn, TSVIO */
 //////////////////////////////////////////////
@@ -3018,6 +3070,7 @@ REGRESSION_TEST(SDK_API_TSContSchedule)(RegressionTest *test, int /* atype ATS_U
   TSContScheduleOnPool(contp2, 10, TS_THREAD_POOL_NET);
 }
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
 //////////////////////////////////////////////////////////////////////////////
 //     SDK_API_HttpHookAdd
 //
@@ -3599,6 +3652,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd)(RegressionTest *test, int /* atyp
 
   return;
 }
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 
 //////////////////////////////////////////////
 //       SDK_API_TSUrl
@@ -6890,6 +6944,7 @@ REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSE
   }
 }
 
+#if INCLUDE_CONVERTED_TO_AU_TEST
 //////////////////////////////////////////////
 //       SDK_API_TSHttpSsn
 //
@@ -7135,13 +7190,7 @@ struct ParentTest {
   bool
   parent_routing_enabled() const
   {
-    RecBool enabled = false;
-
-    ParentConfigParams *params = ParentConfig::acquire();
-    enabled                    = params->policy.ParentEnable;
-    ParentConfig::release(params);
-
-    return enabled;
+    return false;
   }
 
   RegressionTest *regtest;
@@ -8342,6 +8391,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo)(RegressionTest *test, int /* atyp
 
   return;
 }
+#endif // INCLUDE_CONVERTED_TO_AU_TEST
 
 //////////////////////////////////////////////
 //       SDK_API_TSHttpConnect

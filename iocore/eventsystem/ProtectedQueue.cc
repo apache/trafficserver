@@ -47,6 +47,7 @@ void
 ProtectedQueue::enqueue(Event *e)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
+  ink_assert(e->continuation->handler != nullptr);
   EThread *e_ethread   = e->ethread;
   e->in_the_prot_queue = 1;
   bool was_empty       = (ink_atomiclist_push(&al, e) == nullptr);

@@ -161,6 +161,8 @@ EThread::process_event(Event *e, int calling_code)
     // Restore the client IP debugging flags
     set_cont_flags(e->continuation->control_flags);
 
+    ink_assert(e->continuation->handler != nullptr);
+
     e->continuation->handleEvent(calling_code, e);
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);

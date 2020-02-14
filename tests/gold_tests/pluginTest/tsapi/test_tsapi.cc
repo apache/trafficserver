@@ -16,6 +16,10 @@
  * limitations under the License.
  */
 
+/*
+Regression testing code for TS API.  Not comprehensive, hopefully will be built up over time.
+*/
+
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -25,18 +29,16 @@
 #include <string>
 #include <bitset>
 
+#include <unistd.h>
+
 #include <tscpp/util/PostScript.h>
 
 #include <ts/ts.h>
 #include <ts/remap.h>
 
-/*
-Regression testing code for TS API.  Not comprehensive, hopefully will be built up over time.
-*/
-
 #define PINAME "test_tsapi"
 
-namespace
+namespace test_tsapi
 {
 char PIName[] = PINAME;
 
@@ -45,6 +47,17 @@ char PIName[] = PINAME;
 //
 std::fstream logFile;
 
+unsigned test_tcp_port;
+unsigned test_tcp_port2;
+
+} // end namespace test_tsapi
+
+using namespace test_tsapi;
+
+#include "core_ready.h"
+
+namespace
+{
 TSCont tCont, gCont;
 
 std::uintptr_t remap_count;
@@ -257,41 +270,54 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  const char *fileSpec = std::getenv("OUTPUT_FILE");
-
-  if (nullptr == fileSpec) {
-    TSError(PINAME ": Environment variable OUTPUT_FILE not found.");
-
-    return TS_ERROR;
-  }
-
-  // Disable output buffering for logFile, so that explicit flushing is not necessary.
-  logFile.rdbuf()->pubsetbuf(nullptr, 0);
-
-  logFile.open(fileSpec, std::ios::out);
-  if (!logFile.is_open()) {
-    TSError(PINAME ": could not open log file \"%s\"", fileSpec);
-
-    return TS_ERROR;
-  }
-
-  // Mutex to protext the logFile object.
-  //
-  TSMutex mtx = TSMutexCreate();
-
-  gCont = TSContCreate(globalContFunc, mtx);
-
-  TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, gCont);
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, gCont);
-  TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, gCont);
-
-  tCont = TSContCreate(transactionContFunc, mtx);
   return TS_SUCCESS;
 }
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
 {
+  if (argc != 6) {
+    TSReleaseAssert(2 == argc);
+
+  } else {
+    static bool inited;
+
+    TSReleaseAssert(!inited);
+    inited = true;
+
+    CoreReadyHook::init(argv[5]);
+
+    const char *fileSpec = argv[2];
+
+    std::istringstream(argv[3]) >> test_tcp_port;
+    std::istringstream(argv[4]) >> test_tcp_port2;
+
+    // Disable output buffering for logFile, so that explicit flushing is not necessary.
+    //
+    logFile.rdbuf()->pubsetbuf(nullptr, 0);
+
+    logFile.open(fileSpec, std::ios::out);
+    if (!logFile.is_open()) {
+      TSError(PINAME ": could not open log file \"%s\"", fileSpec);
+
+      return TS_ERROR;
+    }
+
+    // Mutex to protext the logFile object.
+    //
+    TSMutex mtx = TSMutexCreate();
+
+    TSReleaseAssert(mtx != nullptr);
+
+    gCont = TSContCreate(globalContFunc, mtx);
+
+    TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, gCont);
+    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, gCont);
+    TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, gCont);
+
+    tCont = TSContCreate(transactionContFunc, mtx);
+  }
+
   TSReleaseAssert(errbuf && errbuf_size);
   TSReleaseAssert(remap_count < remap_mask.size());
 
@@ -299,9 +325,8 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
   *instance                 = reinterpret_cast<void *>(remap_count);
 
   logFile << "TSRemapNewInstance():" << std::endl;
-  for (int i = 0; i < argc; ++i) {
-    logFile << "argv[" << i << "]=" << argv[i] << std::endl;
-  }
+  logFile << "argv[0]=" << argv[0] << std::endl;
+  logFile << "argv[1]=" << argv[1] << std::endl;
 
   return TS_SUCCESS;
 }

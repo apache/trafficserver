@@ -7350,9 +7350,9 @@ TSNetAccept(TSCont contp, int port, int domain, int accept_threads)
   sdk_assert(port > 0);
   sdk_assert(accept_threads >= -1);
 
-  // TODO: Does this imply that only one "accept thread" could be
-  // doing an accept at any time?
-  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+  // Can't require a mutex here, beause two different connections can get accepted on different
+  // threads, which will cause an assert if the continuation has a mutex.
+  // FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   opt = make_net_accept_options(nullptr, accept_threads);
 

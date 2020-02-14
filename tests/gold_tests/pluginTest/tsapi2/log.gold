@@ -1,0 +1,60 @@
+=== AltInfoTest.tlog ===
+Continuation added to TS_HTTP_SELECT_ALT_HOOK
+request id number = 7
+alt info cached request ok
+alt info cached response ok
+TSHttpAltInfoQualitySet(TSHttpAltInfo, 0.5)
+request id number = 8
+alt info cached request ok
+alt info cached response ok
+Alt Info test ok
+
+=== CacheTest.tlog ===
+TSHttpTxnCacheLookupStatusGet() ok (miss)
+cached request ok
+cached response ok
+TSHttpTxnCacheLookupStatusGet() ok (hit)
+cache test ok
+
+=== HooksTest.tlog ===
+client request ok
+TSHttpTxnClientAddrGet : address ok
+TSHttpTxnClientAddrGet : port ok
+TSHttpTxnIncomingAddrGet : address ok
+TSHttpTxnIncomingAddrGet : port ok
+TSHttpTxnServerAddrGet : address ok
+TSHttpTxnServerAddrGet : port ok
+TSHttpTxnOutgoingAddrGet : address ok
+request to server ok
+TSHttpTxnNextHopAddrGet : address ok
+TSHttpTxnNextHopAddrGet : port ok
+TSHttpTxnClientProtocolStackContains : ok tcp
+TSHttpTxnClientProtocolStackContains : ok no udp
+TSHttpTxnClientProtocolStackGet : ok stack_size=3
+server response ok
+response to client ok
+TSHttpHookAdd : ok
+
+=== ParentProxyTest.tlog ===
+client request ok
+response to client ok
+parent proxy test ok
+client request ok
+parent proxy test ok
+
+=== SsnTest.tlog ===
+SSN_START hook trigger -- ok
+TXN_START hook trigger -- ok
+OS_DNS hook trigger -- ok
+SEND_RESPONSE_HDR hook trigger -- ok
+TXN_CLOSE hook trigger -- ok
+
+=== TransformTest.tlog ===
+TSTransformCreate -- function ran -- ok
+transform response ok
+Transform created -- ok
+Transform test -- ok
+transform response ok
+Transform created -- ok
+Transform test -- ok
+

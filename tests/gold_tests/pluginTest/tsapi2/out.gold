@@ -1,0 +1,144 @@
+HTTP/1.0 200 OK
+X-Response-ID: 1
+Content-Type: text/html
+Cache-Control: no-cache
+Content-Length: 19
+
+Body for response 1
+
+=====
+
+HTTP/1.0 200 OK
+X-Response-ID: 2
+Cache-Control: max-age=86400
+Content-Type: text/html
+Content-Length: 19
+
+Body for response 2
+
+=====
+
+HTTP/1.0 500 Internal Server Error
+Content-Length: 18
+Content-Type: text/html
+
+TESTING ERROR PAGE
+
+=====
+
+HTTP/1.0 200 OK
+X-Response-ID: 4
+Cache-Control: max-age=86400
+Content-Type: text/html
+Content-Length: 50
+
+Body for response 4
+This is a transformed response
+
+=====
+
+HTTP/1.0 200 OK
+X-Response-ID: 6
+Cache-Control: max-age=86400
+Content-Language: English
+Content-Length: 19
+
+Body for response 6
+
+=====
+
+HTTP/1.0 200 OK
+Cache-Control: private,no-store
+X-Response-ID: 11
+Content-Length: 20
+
+Body for response 11
+
+=====
+
+HTTP/1.0 502 Next Hop Connection Failed
+Cache-Control: no-store
+Content-Type: text/html
+Content-Language: en
+Content-Length: 207
+
+<HTML>
+<HEAD>
+<TITLE>Error</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="white" FGCOLOR="black">
+<H1>Error</H1>
+<HR>
+
+<FONT FACE="Helvetica,Arial"><B>
+Description: Could not process this request.
+</B></FONT>
+<HR>
+</BODY>
+
+
+=====
+
+HTTP/1.0 200 OK
+X-Response-ID: 5
+Cache-Control: max-age=86400
+Content-Type: text/html
+Content-Length: 50
+
+Body for response 5
+This is a transformed response
+
+=====
+
+HTTP/1.0 200 OK
+X-Response-ID: 6
+Cache-Control: max-age=86400
+Content-Language: English
+Content-Length: 19
+
+Body for response 6
+
+=====
+
+HTTP/1.0 200 OK
+X-Response-ID: 2
+Cache-Control: max-age=86400
+Content-Type: text/html
+Content-Length: 19
+
+Body for response 2
+
+=====
+
+HTTP/1.0 200 OK
+X-Response-ID: 4
+Cache-Control: max-age=86400
+Content-Type: text/html
+Content-Length: 19
+
+Body for response 4
+
+=====
+
+HTTP/1.0 200 OK
+X-Response-ID: 6
+Cache-Control: max-age=86400
+Content-Language: English
+Content-Length: 19
+
+Body for response 6
+
+=====
+
+HTTP/1.0 200 OK
+X-Response-ID: 5
+Cache-Control: max-age=86400
+Content-Type: text/html
+Content-Length: 50
+
+Body for response 5
+This is a transformed response
+
+=====
+

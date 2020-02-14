@@ -1419,6 +1419,8 @@ tsapi void TSHttpTxnClientIncomingPortSet(TSHttpTxn txnp, int port);
     specified in the ss_family field of the structure whether
     that be for IPv4, IPv6, or any other address family.
 
+    Note: will return nullptr in the TXN_CLOSE hook.
+
     @return Client address for connection to client in transaction @a txnp.
 
  */
@@ -1428,6 +1430,8 @@ tsapi struct sockaddr const *TSHttpTxnClientAddrGet(TSHttpTxn txnp);
     @note The pointer is valid only for the current callback. Clients
     that need to keep the value across callbacks must maintain their
     own storage.
+
+    @note will return nullptr in the TXN_CLOSE hook.
 
     @return Local address of the client connection for transaction @a txnp.
 */
@@ -1485,7 +1489,9 @@ tsapi TSReturnCode TSHttpTxnOutgoingAddrSet(TSHttpTxn txnp, struct sockaddr cons
 tsapi TSReturnCode TSHttpTxnOutgoingTransparencySet(TSHttpTxn txnp, int flag);
 tsapi TSReturnCode TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp);
 
-/* TS-1008: the above TXN calls for the Client conn should work with SSN */
+/* TS-1008: the above TXN calls for the Client conn should work with SSN
+   Note: The AddrGet functions will return nullptr in the TXN_CLOSE hook.
+*/
 tsapi struct sockaddr const *TSHttpSsnClientAddrGet(TSHttpSsn ssnp);
 tsapi struct sockaddr const *TSHttpSsnIncomingAddrGet(TSHttpSsn ssnp);
 tsapi TSReturnCode TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp);
@@ -1876,6 +1882,15 @@ tsapi TSCont TSNetInvokingContGet(TSVConn conn);
  */
 tsapi TSHttpTxn TSNetInvokingTxnGet(TSVConn conn);
 
+/**
+  WARNING: If you cannot guarantee that two connections on the port will not
+  happen at about the same time, then contp should not have a mutex, and the
+  continuation function must be reentrant.
+
+  'domain' should be AF_NET or AF_NET6.  It's unlikely that any living person
+  can tell you what will happen if you use a value other than 0 for
+  accept_threads.
+*/
 tsapi TSAction TSNetAccept(TSCont contp, int port, int domain, int accept_threads);
 
 /**
