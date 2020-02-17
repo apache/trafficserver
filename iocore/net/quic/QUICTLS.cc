@@ -450,7 +450,6 @@ QUICTLS::_handshake(QUICHandshakeMsgs **out, const QUICHandshakeMsgs *in)
       if (auto ret = this->_read_early_data(); ret == 0) {
         this->_early_data_processed = true;
       } else if (ret < 0) {
-        (*out)->error_code = static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION);
         return 0;
       } else {
         // Early data is not arrived yet -- can be multiple initial packets
