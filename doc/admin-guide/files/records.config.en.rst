@@ -3421,6 +3421,21 @@ SSL Termination
 
   Set to 1 to enable Traffic Server to process TLS tickets for TLS session resumption.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.number INT 2
+
+  This configuration control the number of TLSv1.3 session tickets that are issued.
+  Take into account that setting the value to 0 will disable session caching for TLSv1.3
+  connections.
+
+  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache`` is enabled because
+  otherwise for every new TLSv1.3 connection two session IDs will be inserted in the session cache.
+  On the other hand, if ``proxy.config.ssl.session_cache``  is disabled, using the default value is recommended.
+  In those scenarios, increasing the number of tickets could be potentially benefitial for clients performing
+  multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
+
+  For more information see https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_num_tickets.html
+  [Requires OpenSSL v1.1.1 and higher]
+
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
    :overridable:
 
