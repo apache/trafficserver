@@ -520,10 +520,13 @@ QUICHandshake::do_handshake()
         }
       }
     }
-  } else if (out && out->error_code != 0) {
+  } else {
     this->_hs_protocol->abort_handshake();
     if (this->_hs_protocol->has_crypto_error()) {
       error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT, this->_hs_protocol->crypto_error());
+    } else {
+      error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT,
+                                                    static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION));
     }
   }
 
