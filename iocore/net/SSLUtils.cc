@@ -77,6 +77,7 @@ static constexpr std::string_view SSL_CA_TAG("ssl_ca_name"sv);
 static constexpr std::string_view SSL_ACTION_TAG("action"sv);
 static constexpr std::string_view SSL_ACTION_TUNNEL_TAG("tunnel"sv);
 static constexpr std::string_view SSL_SESSION_TICKET_ENABLED("ssl_ticket_enabled"sv);
+static constexpr std::string_view SSL_SESSION_TICKET_NUMBER("ssl_ticket_number"sv);
 static constexpr std::string_view SSL_KEY_DIALOG("ssl_key_dialog"sv);
 static constexpr std::string_view SSL_SERVERNAME("dest_fqdn"sv);
 static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
@@ -1273,6 +1274,12 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
       Debug("ssl", "ssl session ticket is disabled");
     }
 #endif
+#if defined(TLS1_3_VERSION) && !defined(LIBRESSL_VERSION_NUMBER) && !defined(OPENSSL_IS_BORINGSSL)
+    if (!(params->ssl_ctx_options & SSL_OP_NO_TLSv1_3)) {
+      SSL_CTX_set_num_tickets(ctx, sslMultCertSettings->session_ticket_number);
+      Debug("ssl", "ssl session ticket number set to %d", sslMultCertSettings->session_ticket_number);
+    }
+#endif
   }
 
   if (params->clientCertLevel != 0) {
@@ -1542,6 +1549,10 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
 
     if (strcasecmp(label, SSL_SESSION_TICKET_ENABLED) == 0) {
       sslMultCertSettings->session_ticket_enabled = atoi(value);
+    }
+
+    if (strcasecmp(label, SSL_SESSION_TICKET_NUMBER) == 0) {
+      sslMultCertSettings->session_ticket_number = atoi(value);
     }
 
     if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
