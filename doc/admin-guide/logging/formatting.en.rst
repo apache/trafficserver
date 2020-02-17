@@ -800,34 +800,13 @@ cquuh Client Request Unmapped URL host from the client request.
 Line Length
 ===========
 
-The maximum line size for a log entry can be configured via the following parameters:
+The maximum line size for a log entry can be configured via the following
+parameters, the details of which are documented in the linked
+:file:`records.config` descriptions:
 
-- :ts:cv:`proxy.config.log.max_line_size`: This controls the maximum line
-  length for ASCII formatted log entries. This applies to ``ASCII_PIPE`` and
-  ``ASCII`` file logs, *unless* :ts:cv:`proxy.config.log.ascii_buffer_size` is
-  also specified and the value of :ts:cv:`ascii_buffer_size` is larger than
-  :ts:cv:`max_line_size`: in that case, :ts:cv:`max_line_size` only applies to
-  ``ASCII_PIPE`` logs while :ts:cv:`ascii_buffer_size` will apply to ``ASCII``
-  (non-pipe) log files.
-
-- :ts:cv:`proxy.config.log.ascii_buffer_size`: This controls the maximum line
-  length for ASCII formatted log entries that are non-pipe log files. If this
-  value is smaller than :ts:cv:`proxy.config.log.max_line_size`, then the
-  latter will be used for both ``ASCII`` and ``ASCII_PIPE`` log files. If both
-  :ts:cv:`max_line_size` and :ts:cv:`ascii_buffer_size` are set, then
-  :ts:cv:`max_line_size` will be used for ``ASCII_PIPE`` logs while
-  :ts:cv:`ascii_buffer_size` will be used for ``ASCII`` (non-pipe) log files.
-  This all might seem complicated, but just keep in mind that the intention of
-  :ts:cv:`ascii_buffer_size` is to simply provide a way for the user to
-  configure different ``ASCII`` and ``ASCII_PIPE`` maximum line lengths.
-
-- :ts:cv:`proxy.config.log.log_buffer_size`: This is an orthogonal mechanism
-  for limiting line length size by constraining the log entry buffer to a
-  particular amount of memory. Unlike the above two configurations,
-  :ts:cv:`log_buffer_size` applies to both binary and ASCII log file entries.
-  For ASCII log files, if a maximum log size is set via the above mechanisms
-  and by :ts:cv:`log_buffer_size`, then the smaller of the two configurations
-  will be applied to the line length.
+- :ts:cv:`proxy.config.log.max_line_size`
+- :ts:cv:`proxy.config.log.ascii_buffer_size`
+- :ts:cv:`proxy.config.log.log_buffer_size`
 
 Log Field Slicing
 =================
