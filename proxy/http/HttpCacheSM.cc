@@ -266,6 +266,8 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   } else {
     ink_assert(open_read_cb == false);
   }
+  // reset captive_action since HttpSM cancelled it during open read retry
+  captive_action.cancelled = 0;
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
   Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, this->http_params, this->read_pin_in_cache);
