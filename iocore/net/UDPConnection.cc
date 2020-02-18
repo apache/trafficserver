@@ -334,9 +334,9 @@ UDP2ConnectionImpl::create_socket(sockaddr const *addr, int recv_buf, int send_b
   }
 
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
-  // if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(SOCKOPT_ON), sizeof(int)) < 0)) {
-  //   goto Lerror;
-  // }
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(SOCKOPT_ON), sizeof(int)) < 0)) {
+    goto Lerror;
+  }
 
   if (ats_is_ip6(addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
@@ -595,11 +595,6 @@ UDP2ConnectionImpl::_read_from_net(NetHandler *nh, EThread *thread, bool callbac
     }
 
     p->chain = chain;
-    std::string str(p->chain->start(), p->chain->read_avail());
-    if (str == "helloword1") {
-      std::cout << "mother fuck" << std::endl;
-    }
-    std::cout << "fuck read: " << std::string(p->chain->start(), p->chain->read_avail()) << std::endl;
 
     // queue onto the UDPConnection
     this->_recv_list.push_back(std::move(p));
@@ -736,7 +731,6 @@ UDP2ConnectionImpl::net_write_io(NetHandler *nh, EThread *thread)
     int rc = this->is_connected() ? this->_send(p) : this->_sendmsg(p);
     if (rc >= 0) {
       count++;
-      std::cout << "fuck send: " << std::string(p->chain->start(), p->chain->read_avail()) << std::endl;
       this->_send_list.pop_front();
       continue;
     }
