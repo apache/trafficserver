@@ -29,6 +29,7 @@
 #include "QUICPacket.h"
 #include "QUICDebugNames.h"
 #include "QUICEvents.h"
+#include "QUICResetTokenTable.h"
 
 #include "QUICMultiCertConfigLoader.h"
 #include "QUICTLS.h"
@@ -45,7 +46,7 @@ static constexpr char debug_tag[] = "quic_sec";
 //
 // QUICPacketHandler
 //
-QUICPacketHandler::QUICPacketHandler()
+QUICPacketHandler::QUICPacketHandler(QUICResetTokenTable &rtable) : _rtable(rtable)
 {
   this->_closed_con_collector        = new QUICClosedConCollector;
   this->_closed_con_collector->mutex = new_ProxyMutex();
@@ -121,11 +122,18 @@ QUICPacketHandler::_send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IO
   get_UDPNetHandler(static_cast<UnixUDPConnection *>(udp_con)->ethread)->signalActivity();
 }
 
+QUICConnection *
+QUICPacketHandler::_check_stateless_reset(const uint8_t *buf, size_t buf_len)
+{
+  return this->_rtable.lookup({buf + (buf_len - 16)});
+}
+
 //
 // QUICPacketHandlerIn
 //
-QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, QUICConnectionTable &ctable)
-  : NetAccept(opt), QUICPacketHandler(), _ctable(ctable)
+QUICPacketHandlerIn::QUICPacketHandlerIn(const NetProcessor::AcceptOptions &opt, QUICConnectionTable &ctable,
+                                         QUICResetTokenTable &rtable)
+  : NetAccept(opt), QUICPacketHandler(rtable), _ctable(ctable)
 {
   this->mutex = new_ProxyMutex();
   // create Connection Table
@@ -144,7 +152,7 @@ NetAccept *
 QUICPacketHandlerIn::clone() const
 {
   NetAccept *na;
-  na  = new QUICPacketHandlerIn(opt, this->_ctable);
+  na  = new QUICPacketHandlerIn(opt, this->_ctable, this->_rtable);
   *na = *this;
   return na;
 }
@@ -296,22 +304,37 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   // [draft-12] 6.1.2.  Server Packet Handling
   // Servers MUST drop incoming packets under all other circumstances. They SHOULD send a Stateless Reset (Section 6.10.4) if a
   // connection ID is present in the header.
-  if ((!vc && !QUICInvariants::is_long_header(buf)) || (vc && vc->in_closed_queue)) {
-    if (is_debug_tag_set(debug_tag)) {
-      char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-      dcid.hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-
-      if (!vc && !QUICInvariants::is_long_header(buf)) {
-        QUICDebugDS(scid, dcid, "sent Stateless Reset : connection not found, dcid=%s", dcid_str);
-      } else if (vc && vc->in_closed_queue) {
-        QUICDebugDS(scid, dcid, "sent Stateless Reset : connection is already closed, dcid=%s", dcid_str);
-      }
+  if (!vc && !QUICInvariants::is_long_header(buf)) {
+    auto connection = static_cast<QUICNetVConnection *>(this->_check_stateless_reset(buf, buf_len));
+    if (connection) {
+      QUICDebug("Stateless Reset has been received");
+      connection->thread->schedule_imm(connection, QUIC_EVENT_STATELESS_RESET);
+      return;
     }
 
-    QUICStatelessResetToken token(dcid, params->instance_id());
-    auto packet = QUICPacketFactory::create_stateless_reset_packet(token);
-    this->_send_packet(*packet, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
+    bool sent =
+      this->_send_stateless_reset(dcid, params->instance_id(), udp_packet->getConnection(), udp_packet->from, buf_len - 1);
     udp_packet->free();
+
+    if (is_debug_tag_set(debug_tag) && sent) {
+      char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+      dcid.hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+      QUICDebugDS(scid, dcid, "sent Stateless Reset : connection not found, dcid=%s", dcid_str);
+    }
+
+    return;
+
+  } else if (vc && vc->in_closed_queue) {
+    bool sent =
+      this->_send_stateless_reset(dcid, params->instance_id(), udp_packet->getConnection(), udp_packet->from, buf_len - 1);
+    udp_packet->free();
+
+    if (is_debug_tag_set(debug_tag) && sent) {
+      char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
+      dcid.hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
+      QUICDebugDS(scid, dcid, "sent Stateless Reset : connection is already closed, dcid=%s", dcid_str);
+    }
+
     return;
   }
 
@@ -332,7 +355,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
-    vc->init(peer_cid, original_cid, cid_in_retry_token, udp_packet->getConnection(), this, &this->_ctable);
+    vc->init(peer_cid, original_cid, cid_in_retry_token, udp_packet->getConnection(), this, &this->_rtable, &this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
@@ -427,6 +450,19 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
   return 0;
 }
 
+bool
+QUICPacketHandlerIn::_send_stateless_reset(QUICConnectionId dcid, uint32_t instance_id, UDPConnection *udp_con, IpEndpoint &addr,
+                                           size_t maximum_size)
+{
+  QUICStatelessResetToken token(dcid, instance_id);
+  auto packet = QUICPacketFactory::create_stateless_reset_packet(token, maximum_size);
+  if (packet) {
+    this->_send_packet(*packet, udp_con, addr, 1200, nullptr, 0);
+    return true;
+  }
+  return false;
+}
+
 void
 QUICPacketHandlerIn::_send_invalid_token_error(const uint8_t *initial_packet, uint64_t initial_packet_len,
                                                UDPConnection *connection, IpEndpoint from)
@@ -468,7 +504,7 @@ QUICPacketHandlerIn::_send_invalid_token_error(const uint8_t *initial_packet, ui
 //
 // QUICPacketHandlerOut
 //
-QUICPacketHandlerOut::QUICPacketHandlerOut() : Continuation(new_ProxyMutex()), QUICPacketHandler()
+QUICPacketHandlerOut::QUICPacketHandlerOut(QUICResetTokenTable &rtable) : Continuation(new_ProxyMutex()), QUICPacketHandler(rtable)
 {
   SET_HANDLER(&QUICPacketHandlerOut::event_handler);
 }
@@ -513,15 +549,34 @@ QUICPacketHandlerOut::_get_continuation()
 void
 QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
 {
-  if (is_debug_tag_set(debug_tag)) {
-    IOBufferBlock *block = udp_packet->getIOBlockChain();
-    const uint8_t *buf   = reinterpret_cast<uint8_t *>(block->buf());
+  IOBufferBlock *block = udp_packet->getIOBlockChain();
+  const uint8_t *buf   = reinterpret_cast<uint8_t *>(block->buf());
+  uint64_t buf_len     = block->size();
 
+  if (is_debug_tag_set(debug_tag)) {
     ip_port_text_buffer ipb_from;
     ip_port_text_buffer ipb_to;
     QUICDebugQC(this->_vc, "recv %s packet from %s to %s size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
                 ats_ip_nptop(&udp_packet->from.sa, ipb_from, sizeof(ipb_from)),
                 ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
+  }
+
+  QUICConnectionId dcid;
+  if (!QUICInvariants::dcid(dcid, buf, buf_len)) {
+    QUICDebug("Ignore packet - payload is too small");
+    udp_packet->free();
+    return;
+  }
+
+  if (!QUICInvariants::is_long_header(buf) && dcid != this->_vc->connection_id()) {
+    auto connection = static_cast<QUICNetVConnection *>(this->_check_stateless_reset(buf, buf_len));
+    if (connection) {
+      if (connection->connection_id() == this->_vc->connection_id()) {
+        QUICDebug("Stateless Reset has been received");
+        this->_vc->thread->schedule_imm(this->_vc, QUIC_EVENT_STATELESS_RESET);
+      }
+      return;
+    }
   }
 
   this->_vc->handle_received_packet(udp_packet);

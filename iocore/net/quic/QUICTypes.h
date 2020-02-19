@@ -284,10 +284,21 @@ public:
   QUICStatelessResetToken(const QUICConnectionId &conn_id, uint32_t instance_id);
   QUICStatelessResetToken(const uint8_t *buf) { memcpy(this->_token, buf, QUICStatelessResetToken::LEN); }
 
+  /**
+   * Note that this returns a kind of hash code so we can use a StatelessResetToken as a key for a hashtable.
+   */
+  operator uint64_t() const { return this->_hashcode(); }
+
   bool
   operator==(const QUICStatelessResetToken &x) const
   {
     return memcmp(this->_token, x._token, QUICStatelessResetToken::LEN) == 0;
+  }
+
+  bool
+  operator!=(const QUICStatelessResetToken &x) const
+  {
+    return memcmp(this->_token, x._token, QUICStatelessResetToken::LEN) != 0;
   }
 
   const uint8_t *
@@ -300,6 +311,7 @@ private:
   uint8_t _token[LEN] = {0};
 
   void _generate(uint64_t data);
+  uint64_t _hashcode() const;
 };
 
 class QUICAddressValidationToken

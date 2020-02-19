@@ -43,6 +43,7 @@
 #include "quic/QUICConfig.h"
 #include "quic/QUICConnection.h"
 #include "quic/QUICConnectionTable.h"
+#include "quic/QUICResetTokenTable.h"
 #include "quic/QUICVersionNegotiator.h"
 #include "quic/QUICPacket.h"
 #include "quic/QUICPacketFactory.h"
@@ -139,9 +140,10 @@ class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, pub
 public:
   QUICNetVConnection();
   ~QUICNetVConnection();
-  void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *);
+  void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *,
+            QUICResetTokenTable *rtable);
   void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid, UDPConnection *,
-            QUICPacketHandler *, QUICConnectionTable *ctable);
+            QUICPacketHandler *, QUICResetTokenTable *rtable, QUICConnectionTable *ctable);
 
   // accept new conn_id
   int acceptEvent(int event, Event *e);
@@ -248,6 +250,7 @@ private:
   QUICCongestionController *_congestion_controller  = nullptr;
   QUICRemoteFlowController *_remote_flow_controller = nullptr;
   QUICLocalFlowController *_local_flow_controller   = nullptr;
+  QUICResetTokenTable *_rtable                      = nullptr;
   QUICConnectionTable *_ctable                      = nullptr;
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
   QUICPathValidator *_path_validator                = nullptr;

@@ -42,6 +42,7 @@
 #include "quic/QUICConnectionTable.h"
 
 class UnixNetVConnection;
+class QUICResetTokenTable;
 struct NetAccept;
 
 //////////////////////////////////////////////////////////////////
@@ -73,6 +74,7 @@ private:
   QUICNetProcessor &operator=(const QUICNetProcessor &);
 
   QUICConnectionTable *_ctable = nullptr;
+  QUICResetTokenTable *_rtable = nullptr;
 };
 
 extern QUICNetProcessor quic_NetProcessor;

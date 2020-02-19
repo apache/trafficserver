@@ -284,6 +284,15 @@ QUICStatelessResetToken::QUICStatelessResetToken(const QUICConnectionId &conn_id
   QUICIntUtil::write_uint_as_nbytes(_hash.u64[1], 8, _token + 8, &dummy);
 }
 
+uint64_t
+QUICStatelessResetToken::_hashcode() const
+{
+  return (static_cast<uint64_t>(this->_token[0]) << 56) + (static_cast<uint64_t>(this->_token[1]) << 48) +
+         (static_cast<uint64_t>(this->_token[2]) << 40) + (static_cast<uint64_t>(this->_token[3]) << 32) +
+         (static_cast<uint64_t>(this->_token[4]) << 24) + (static_cast<uint64_t>(this->_token[5]) << 16) +
+         (static_cast<uint64_t>(this->_token[6]) << 8) + (static_cast<uint64_t>(this->_token[7]));
+}
+
 QUICResumptionToken::QUICResumptionToken(const IpEndpoint &src, QUICConnectionId cid, ink_hrtime expire_time)
 {
   // TODO: read cookie secret from file like SSLTicketKeyConfig

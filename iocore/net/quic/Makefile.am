@@ -93,6 +93,7 @@ libquic_a_SOURCES = \
   QUICPathValidator.cc \
   QUICPinger.cc \
   QUICRetryIntegrityTag.cc \
+  QUICResetTokenTable.cc \
   QUICFrameGenerator.cc \
   QUICFrameRetransmitter.cc \
   QUICAddrVerifyState.cc \

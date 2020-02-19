@@ -2193,8 +2193,10 @@ QUICNewConnectionIdFrame::debug_msg(char *msg, size_t msg_len) const
   char cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
   this->connection_id().hex(cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
 
-  return snprintf(msg, msg_len, "NEW_CONNECTION_ID size=%zu seq=%" PRIu64 " rpt=%" PRIu64 " cid=0x%s", this->size(),
-                  this->sequence(), this->retire_prior_to(), cid_str);
+  return snprintf(msg, msg_len, "NEW_CONNECTION_ID size=%zu seq=%" PRIu64 " rpt=%" PRIu64 " cid=0x%s srt=%02x%02x%02x%02x",
+                  this->size(), this->sequence(), this->retire_prior_to(), cid_str, this->stateless_reset_token().buf()[0],
+                  this->stateless_reset_token().buf()[1], this->stateless_reset_token().buf()[2],
+                  this->stateless_reset_token().buf()[3]);
 }
 
 uint64_t

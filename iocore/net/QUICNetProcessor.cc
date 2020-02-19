@@ -28,6 +28,7 @@
 #include "QUICGlobals.h"
 #include "QUICConfig.h"
 #include "QUICMultiCertConfigLoader.h"
+#include "QUICResetTokenTable.h"
 
 //
 // Global Data
@@ -76,8 +77,9 @@ QUICNetProcessor::createNetAccept(const NetProcessor::AcceptOptions &opt)
   if (this->_ctable == nullptr) {
     QUICConfig::scoped_config params;
     this->_ctable = new QUICConnectionTable(params->connection_table_size());
+    this->_rtable = new QUICResetTokenTable();
   }
-  return (NetAccept *)new QUICPacketHandlerIn(opt, *this->_ctable);
+  return (NetAccept *)new QUICPacketHandlerIn(opt, *this->_ctable, *this->_rtable);
 }
 
 NetVConnection *
@@ -125,7 +127,8 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   UnixUDPConnection *con = new UnixUDPConnection(fd);
   Debug("quic_ps", "con=%p fd=%d", con, fd);
 
-  QUICPacketHandlerOut *packet_handler = new QUICPacketHandlerOut();
+  this->_rtable                        = new QUICResetTokenTable();
+  QUICPacketHandlerOut *packet_handler = new QUICPacketHandlerOut(*this->_rtable);
   if (opt->local_ip.isValid()) {
     con->setBinding(opt->local_ip, opt->local_port);
   }
@@ -144,7 +147,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   QUICConnectionId client_dst_cid;
   client_dst_cid.randomize();
   // vc->init set handler of vc `QUICNetVConnection::startEvent`
-  vc->init(client_dst_cid, client_dst_cid, con, packet_handler);
+  vc->init(client_dst_cid, client_dst_cid, con, packet_handler, this->_rtable);
   packet_handler->init(vc);
 
   // Connection ID will be changed

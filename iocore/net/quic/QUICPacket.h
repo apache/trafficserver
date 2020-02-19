@@ -284,7 +284,7 @@ public:
   /**
    * For sending packet
    */
-  QUICStatelessResetPacket(QUICStatelessResetToken token);
+  QUICStatelessResetPacket(QUICStatelessResetToken token, size_t maximum_size);
 
   QUICPacketType type() const override;
   QUICPacketNumber packet_number() const override;
@@ -297,6 +297,7 @@ public:
 
 private:
   QUICStatelessResetToken _token;
+  size_t _maximum_size;
 };
 
 class QUICStatelessResetPacketR : public QUICPacketR

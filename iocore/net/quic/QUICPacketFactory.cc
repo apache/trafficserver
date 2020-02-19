@@ -308,9 +308,9 @@ QUICPacketFactory::create_short_header_packet(uint8_t *packet_buf, QUICConnectio
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_stateless_reset_packet(QUICStatelessResetToken stateless_reset_token)
+QUICPacketFactory::create_stateless_reset_packet(QUICStatelessResetToken stateless_reset_token, size_t maximum_size)
 {
-  return QUICPacketUPtr(new QUICStatelessResetPacket(stateless_reset_token), &QUICPacketDeleter::delete_packet_new);
+  return QUICPacketUPtr(new QUICStatelessResetPacket(stateless_reset_token, maximum_size), &QUICPacketDeleter::delete_packet_new);
 }
 
 void

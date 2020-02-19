@@ -769,7 +769,10 @@ QUICShortHeaderPacketR::packet_number_offset(size_t &pn_offset, const uint8_t *p
 //
 // QUICStatelessResetPacket
 //
-QUICStatelessResetPacket::QUICStatelessResetPacket(QUICStatelessResetToken token) : QUICPacket(), _token(token) {}
+QUICStatelessResetPacket::QUICStatelessResetPacket(QUICStatelessResetToken token, size_t maximum_size)
+  : QUICPacket(), _token(token), _maximum_size(maximum_size)
+{
+}
 
 QUICPacketType
 QUICStatelessResetPacket::type() const
@@ -787,14 +790,22 @@ QUICStatelessResetPacket::destination_cid() const
 Ptr<IOBufferBlock>
 QUICStatelessResetPacket::header_block() const
 {
-  constexpr uint8_t MIN_UNPREDICTABLE_FIELD_LEN = 5;
+  // Required shortest length is 38 bits however less than 41 bytes in total indicates this is stateless reset.
+  constexpr uint8_t MIN_UNPREDICTABLE_FIELD_LEN = 5 + 20;
+
   std::random_device rnd;
 
   Ptr<IOBufferBlock> block;
   size_t written_len = 0;
 
+  size_t random_extra_length = rnd() & 0x07; // Extra 0 to 7 bytes
+
+  if (MIN_UNPREDICTABLE_FIELD_LEN + random_extra_length > this->_maximum_size) {
+    return block;
+  }
+
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(MIN_UNPREDICTABLE_FIELD_LEN));
+  block->alloc(iobuffer_size_to_index(MIN_UNPREDICTABLE_FIELD_LEN + random_extra_length));
   uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
 
   // Generate random octets

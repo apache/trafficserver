@@ -26,16 +26,17 @@
 #include "tscore/ink_defs.h"
 #include "QUICAltConnectionManager.h"
 #include "QUICConnectionTable.h"
+#include "QUICResetTokenTable.h"
 
 static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 
 #define QUICACMVDebug(fmt, ...) Debug(V_DEBUG_TAG, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
-QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
+QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICResetTokenTable &rtable,
                                                    const QUICConnectionId &peer_initial_cid, uint32_t instance_id,
                                                    uint8_t local_active_cid_limit, const IpEndpoint *preferred_endpoint_ipv4,
                                                    const IpEndpoint *preferred_endpoint_ipv6)
-  : _qc(qc), _ctable(ctable), _instance_id(instance_id), _local_active_cid_limit(local_active_cid_limit)
+  : _qc(qc), _ctable(ctable), _rtable(rtable), _instance_id(instance_id), _local_active_cid_limit(local_active_cid_limit)
 {
   // Sequence number of the initial CID is 0
   this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
@@ -214,6 +215,7 @@ QUICAltConnectionManager::migrate_to_alt_cid()
       continue;
     }
     info.used = true;
+    this->_rtable.insert(info.token, this->_qc);
     return info.id;
   }
 
@@ -249,6 +251,7 @@ QUICAltConnectionManager::drop_cid(const QUICConnectionId &cid)
     if (it->id == cid) {
       QUICACMVDebug("Dropping advertized CID %" PRIx32 " seq# %" PRIu64, it->id.h32(), it->seq_num);
       this->_retired_seq_nums.push(it->seq_num);
+      this->_rtable.erase(it->token);
       this->_alt_quic_connection_ids_remote.erase(it);
       return;
     }

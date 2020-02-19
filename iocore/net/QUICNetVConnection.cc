@@ -225,13 +225,14 @@ QUICNetVConnection::~QUICNetVConnection()
 // Initialize QUICNetVC for out going connection (NET_VCONNECTION_OUT)
 void
 QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
-                         QUICPacketHandler *packet_handler)
+                         QUICPacketHandler *packet_handler, QUICResetTokenTable *rtable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
   this->_peer_quic_connection_id     = peer_cid;
   this->_original_quic_connection_id = original_cid;
+  this->_rtable                      = rtable;
   this->_quic_connection_id.randomize();
 
   this->_update_cids();
@@ -249,7 +250,8 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
 // Initialize QUICNetVC for in coming connection (NET_VCONNECTION_IN)
 void
 QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
-                         UDPConnection *udp_con, QUICPacketHandler *packet_handler, QUICConnectionTable *ctable)
+                         UDPConnection *udp_con, QUICPacketHandler *packet_handler, QUICResetTokenTable *rtable,
+                         QUICConnectionTable *ctable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
   this->_udp_con                     = udp_con;
@@ -264,6 +266,7 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
     this->_ctable->insert(this->_quic_connection_id, this);
     this->_ctable->insert(this->_original_quic_connection_id, this);
   }
+  this->_rtable = rtable;
 
   this->_update_cids();
 
@@ -790,6 +793,9 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     } while (error == nullptr && (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::IGNORED));
     break;
   }
+  case QUIC_EVENT_STATELESS_RESET:
+    this->_switch_to_draining_state(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Stateless Reset"));
+    break;
   case QUIC_EVENT_ACK_PERIODIC:
     this->_handle_periodic_ack_event();
     break;
@@ -833,6 +839,9 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     // Reschedule WRITE_READY
     this->_schedule_packet_write_ready(true);
     break;
+  case QUIC_EVENT_STATELESS_RESET:
+    this->_switch_to_draining_state(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Stateless Reset"));
+    break;
   case VC_EVENT_INACTIVITY_TIMEOUT:
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
@@ -867,6 +876,8 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
     break;
+  case QUIC_EVENT_STATELESS_RESET:
+    break;
   case QUIC_EVENT_ACK_PERIODIC:
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
@@ -894,6 +905,8 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
   case QUIC_EVENT_CLOSING_TIMEOUT:
     this->_close_closing_timeout(data);
     this->_switch_to_close_state();
+    break;
+  case QUIC_EVENT_STATELESS_RESET:
     break;
   case QUIC_EVENT_ACK_PERIODIC:
   default:
@@ -1124,9 +1137,9 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICInitialPac
 
     if (!this->_alt_con_manager) {
       this->_alt_con_manager =
-        new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, this->_quic_config->instance_id(),
-                                     this->_quic_config->active_cid_limit_in(), this->_quic_config->preferred_address_ipv4(),
-                                     this->_quic_config->preferred_address_ipv6());
+        new QUICAltConnectionManager(this, *this->_ctable, *this->_rtable, this->_peer_quic_connection_id,
+                                     this->_quic_config->instance_id(), this->_quic_config->active_cid_limit_in(),
+                                     this->_quic_config->preferred_address_ipv4(), this->_quic_config->preferred_address_ipv6());
       this->_frame_generators.add_generator(*this->_alt_con_manager, QUICFrameGeneratorWeight::EARLY);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
@@ -1147,8 +1160,8 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICInitialPac
   } else {
     if (!this->_alt_con_manager) {
       this->_alt_con_manager =
-        new QUICAltConnectionManager(this, *this->_ctable, this->_peer_quic_connection_id, this->_quic_config->instance_id(),
-                                     this->_quic_config->active_cid_limit_out());
+        new QUICAltConnectionManager(this, *this->_ctable, *this->_rtable, this->_peer_quic_connection_id,
+                                     this->_quic_config->instance_id(), this->_quic_config->active_cid_limit_out());
       this->_frame_generators.add_generator(*this->_alt_con_manager, QUICFrameGeneratorWeight::BEFORE_DATA);
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
@@ -1962,6 +1975,14 @@ QUICNetVConnection::_complete_handshake_if_possible()
   uint64_t ack_delay_exponent =
     this->_handshake_handler->remote_transport_parameters()->getAsUInt(QUICTransportParameterId::ACK_DELAY_EXPONENT);
   this->_loss_detector->update_ack_delay_exponent(ack_delay_exponent);
+
+  const uint8_t *reset_token;
+  uint16_t reset_token_len;
+  reset_token = this->_handshake_handler->remote_transport_parameters()->getAsBytes(QUICTransportParameterId::STATELESS_RESET_TOKEN,
+                                                                                    reset_token_len);
+  if (reset_token) {
+    this->_rtable->insert({reset_token}, this);
+  }
 
   this->_start_application();
 
