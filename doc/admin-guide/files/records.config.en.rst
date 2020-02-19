@@ -3159,6 +3159,13 @@ SSL Termination
    By default (``1``) |TS| will use the server's cipher suites preferences instead of the client preferences.
    By disabling it (``0``) |TS| will use client's cipher suites preferences.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.prioritize_chacha INT 0
+
+   By enabling it (``1``) |TS| will temporarily reprioritize ChaCha20-Poly1305 ciphers to the top of the
+   server cipher list if a ChaCha20-Poly1305 cipher is at the top of the client cipher list.
+
+   This configuration works with OpenSSL v1.1.1 and above.
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3.cipher_suites STRING <See notes under proxy.config.ssl.server.tls.cipher_suites>
 
    Configures the cipher_suites which |TS| will use for TLSv1.3
