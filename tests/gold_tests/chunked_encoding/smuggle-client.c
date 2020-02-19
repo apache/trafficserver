@@ -93,7 +93,7 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  SSL_CTX *client_ctx = SSL_CTX_new(TLS_method());
+  SSL_CTX *client_ctx = SSL_CTX_new(SSLv23_client_method());
   SSL *ssl            = SSL_new(client_ctx);
 
   SSL_set_fd(ssl, sfd);
