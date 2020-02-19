@@ -478,7 +478,7 @@ bool
 SSLNetVConnection::update_rbio(bool move_to_socket)
 {
   bool retval = false;
-  if (BIO_eof(SSL_get_rbio(this->ssl))) {
+  if (BIO_eof(SSL_get_rbio(this->ssl)) && this->handShakeReader != nullptr) {
     this->handShakeReader->consume(this->handShakeBioStored);
     this->handShakeBioStored = 0;
     // Load up the next block if present
@@ -601,7 +601,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       this->read.triggered = 0;
       readSignalError(nh, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
-      ink_assert(this->handShakeReader != nullptr);
       if (SSLConfigParams::ssl_handshake_timeout_in > 0) {
         double handshake_time = (static_cast<double>(Thread::get_hrtime() - sslHandshakeBeginTime) / 1000000000);
         Debug("ssl", "ssl handshake for vc %p, took %.3f seconds, configured handshake_timer: %d", this, handshake_time,
@@ -615,7 +614,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
         }
       }
       // move over to the socket if we haven't already
-      if (this->handShakeBuffer) {
+      if (this->handShakeBuffer != nullptr) {
         read.triggered = update_rbio(true);
       } else {
         read.triggered = 0;
