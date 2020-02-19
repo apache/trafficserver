@@ -253,6 +253,13 @@ SSLConfigParams::initialize()
   }
 #endif
 
+#ifdef SSL_OP_PRIORITIZE_CHACHA
+  REC_ReadConfigInteger(option, "proxy.config.ssl.server.prioritize_chacha");
+  if (option) {
+    ssl_ctx_options |= SSL_OP_PRIORITIZE_CHACHA;
+  }
+#endif
+
 #ifdef SSL_OP_NO_COMPRESSION
   ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
   ssl_client_ctx_options |= SSL_OP_NO_COMPRESSION;
