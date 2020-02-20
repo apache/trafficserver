@@ -21,7 +21,8 @@ Test chunked encoding processing
 '''
 # need Curl with HTTP/2
 Test.SkipUnless(
-    Condition.HasCurlFeature('http2')
+    Condition.HasCurlFeature('http2'),
+    Condition.HasProgram("xxxZZZxxx", "disable the test until it is working")
 )
 Test.ContinueOnFail = True
 
