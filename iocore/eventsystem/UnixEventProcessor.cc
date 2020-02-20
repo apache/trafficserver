@@ -104,17 +104,26 @@ alloc_numa_stack(hwloc_cpuset_t cpuset, size_t stacksize)
   }
 
   if (mem_policy != HWLOC_MEMBIND_DEFAULT) {
-    // Let's temporarily set the memory binding to our destination NUMA node
+// Let's temporarily set the memory binding to our destination NUMA node
+#if HWLOC_API_VERSION >= 0x20000
+    hwloc_set_membind(ink_get_topology(), nodeset, mem_policy, HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_BYNODESET);
+#else
     hwloc_set_membind_nodeset(ink_get_topology(), nodeset, mem_policy, HWLOC_MEMBIND_THREAD);
+#endif
   }
 
   // Alloc our stack
   stack = alloc_stack(stacksize);
 
   if (mem_policy != HWLOC_MEMBIND_DEFAULT) {
-    // Now let's set it back to default for this thread.
+// Now let's set it back to default for this thread.
+#if HWLOC_API_VERSION >= 0x20000
+    hwloc_set_membind(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_DEFAULT,
+                      HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_BYNODESET);
+#else
     hwloc_set_membind_nodeset(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_DEFAULT,
                               HWLOC_MEMBIND_THREAD);
+#endif
   }
 
   hwloc_bitmap_free(nodeset);

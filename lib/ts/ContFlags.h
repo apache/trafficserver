@@ -41,7 +41,8 @@ class ContFlags
 public:
   enum flags { DEBUG_OVERRIDE = 0, DISABLE_PLUGINS = 1, LAST_FLAG };
 
-  ContFlags() : raw_flags(0) {}
+  ContFlags() {}
+  ContFlags(ContFlags const &that) = default;
   ContFlags(uint32_t in_flags) : raw_flags(in_flags) {}
   void
   set_flags(uint32_t new_flags)

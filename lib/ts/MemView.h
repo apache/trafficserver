@@ -107,6 +107,7 @@ protected:
 public:
   /// Default constructor (empty buffer).
   constexpr MemView();
+  constexpr MemView(self const &that) = default;
 
   /** Construct explicitly with a pointer and size.
    */
@@ -322,6 +323,7 @@ protected:
 public:
   /// Default constructor (empty buffer).
   constexpr StringView();
+  constexpr StringView(self const &that) = default;
 
   /** Construct explicitly with a pointer and size.
    */

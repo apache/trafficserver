@@ -41,6 +41,7 @@ union CryptoHash {
     u64[0] = 0;
     u64[1] = 0;
   }
+  constexpr CryptoHash(CryptoHash const &that) = default;
 
   /// Assignment - bitwise copy.
   CryptoHash &

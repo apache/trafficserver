@@ -170,7 +170,7 @@ public:
   /// at every call site. We also need this because we have ats_scoped_str members.
   Span(Span const &that)
   {
-    memcpy(this, &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(0)->pathname)));
+    memcpy(static_cast<void *>(this), &that, reinterpret_cast<intptr_t>(&(static_cast<Span *>(0)->pathname)));
     if (that.pathname)
       pathname = ats_strdup(that.pathname);
     if (that.hash_base_string)
