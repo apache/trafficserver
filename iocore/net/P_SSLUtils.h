@@ -34,6 +34,9 @@
 #include "records/I_RecCore.h"
 #include "P_SSLCertLookup.h"
 
+#include <set>
+#include <map>
+
 struct SSLConfigParams;
 class SSLNetVConnection;
 
@@ -60,22 +63,34 @@ public:
   bool load(SSLCertLookup *lookup);
 
   virtual SSL_CTX *default_server_ssl_ctx();
-  virtual SSL_CTX *init_server_ssl_ctx(std::vector<X509 *> &certList, const SSLMultiCertConfigParams *sslMultCertSettings);
+  virtual SSL_CTX *init_server_ssl_ctx(std::vector<std::string> const &cert_names_list, std::vector<std::string> const &key_list,
+                                       std::vector<std::string> const &ca_list, std::vector<std::string> &ocsp_list,
+                                       const SSLMultiCertConfigParams *sslMultCertSettings, std::set<std::string> &names);
 
-  static bool load_certs(SSL_CTX *ctx, std::vector<X509 *> &certList, const SSLConfigParams *params,
-                         const SSLMultiCertConfigParams *ssl_multi_cert_params);
+  static bool load_certs(SSL_CTX *ctx, std::vector<std::string> const &cert_names, std::vector<std::string> const &key_names,
+                         std::vector<std::string> const &ca_names, std::vector<std::string> const &ocsp_names,
+                         const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultCertSettings);
+  static bool load_certs_and_cross_reference_names(std::vector<X509 *> &cert_list, std::vector<std::string> &cert_name_list,
+                                                   std::vector<std::string> &key_list, std::vector<std::string> &ca_list,
+                                                   std::vector<std::string> &ocsp_list, const SSLConfigParams *params,
+                                                   const SSLMultiCertConfigParams *sslMultCertSettings,
+                                                   std::set<std::string> &common_names,
+                                                   std::map<int, std::set<std::string>> &unique_names);
   static bool set_session_id_context(SSL_CTX *ctx, const SSLConfigParams *params,
                                      const SSLMultiCertConfigParams *sslMultCertSettings);
 
-  static bool index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname);
+  static bool index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const char *sni_name);
   static int check_server_cert_now(X509 *cert, const char *certname);
   static void clear_pw_references(SSL_CTX *ssl_ctx);
 
 protected:
   const SSLConfigParams *_params;
 
+  bool _store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams sslMultCertSettings, shared_SSL_CTX ctx,
+                             std::set<std::string> &names);
+
 private:
-  virtual SSL_CTX *_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams ssl_multi_cert_params);
+  virtual bool _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams ssl_multi_cert_params);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
 };
 
