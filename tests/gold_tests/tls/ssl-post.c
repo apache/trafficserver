@@ -214,9 +214,7 @@ main(int argc, char *argv[])
 {
   struct addrinfo hints;
   struct addrinfo *result, *rp;
-  int sfd, s, j;
-  size_t len;
-  ssize_t nread;
+  int sfd, s;
 
   if (argc < 4) {
     fprintf(stderr, "Usage: %s host thread-count header-count [port]\n", argv[0]);
@@ -224,7 +222,7 @@ main(int argc, char *argv[])
   }
   char *host       = argv[1];
   int header_count = atoi(argv[3]);
-  snprintf(req_buf, sizeof(req_buf), "POST /post HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nContent-length:%d\r\n", host,
+  snprintf(req_buf, sizeof(req_buf), "POST /post HTTP/1.1\r\nHost: %s\r\nConnection: close\r\nContent-length:%zu\r\n", host,
            sizeof(post_buf));
   int i;
   for (i = 0; i < header_count; i++) {
@@ -291,9 +289,7 @@ main(int argc, char *argv[])
 #endif
 
   SSL_set_fd(ssl, sfd);
-  int ret         = SSL_connect(ssl);
-  int read_count  = 0;
-  int write_count = 1;
+  int ret = SSL_connect(ssl);
 
   printf("Sent request\n");
   if ((ret = SSL_write(ssl, req_buf, strlen(req_buf))) <= 0) {
@@ -325,7 +321,7 @@ main(int argc, char *argv[])
     retval = NULL;
     pthread_join(threads[i], &retval);
     if (retval != NULL) {
-      printf("Thread %d failed 0x%x\n", i, retval);
+      printf("Thread %d failed %p\n", i, retval);
     }
   }
 
