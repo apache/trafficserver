@@ -32,6 +32,7 @@
 #include <openssl/ssl.h>
 #include <fcntl.h>
 #include <netinet/tcp.h>
+#include <assert.h>
 
 const char *req_and_post_buf =
   "GET / HTTP/1.1\r\nConnection: close\r\nHost: foo.com\r\nTransfer-Encoding: chunked\r\nContent-Length: 301\r\n\r\n0\r\n\r\nPOST "
@@ -47,9 +48,7 @@ main(int argc, char *argv[])
 {
   struct addrinfo hints;
   struct addrinfo *result, *rp;
-  int sfd, s, j;
-  size_t len;
-  ssize_t nread;
+  int sfd, s;
 
   if (argc < 3) {
     fprintf(stderr, "Usage: %s <target addr> <target_port>\n", argv[0]);
@@ -58,9 +57,15 @@ main(int argc, char *argv[])
 
   const char *target      = argv[1];
   const char *target_port = argv[2];
+  printf("using address: %s and port: %s\n", target, target_port);
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  SSL_library_init();
+#else
+  OPENSSL_init_ssl(0, NULL);
+#endif
 
   /* Obtain address(es) matching host/port */
-
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_family   = AF_UNSPEC;   /* Allow IPv4 or IPv6 */
   hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
@@ -94,12 +99,13 @@ main(int argc, char *argv[])
   }
 
   SSL_CTX *client_ctx = SSL_CTX_new(SSLv23_client_method());
-  SSL *ssl            = SSL_new(client_ctx);
+  assert(client_ctx != NULL);
+  SSL *ssl = SSL_new(client_ctx);
+  assert(ssl != NULL);
 
   SSL_set_fd(ssl, sfd);
-  int ret         = SSL_connect(ssl);
-  int read_count  = 0;
-  int write_count = 1;
+  int ret = SSL_connect(ssl);
+  assert(ret == 1);
 
   printf("Send request\n");
   if ((ret = SSL_write(ssl, req_and_post_buf, strlen(req_and_post_buf))) <= 0) {
