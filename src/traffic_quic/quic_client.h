@@ -40,6 +40,7 @@ struct QUICClientConfig {
   char path[1018]       = "/";
   char debug_tags[1024] = "quic|vv_quic_crypto|http3|qpack";
   int close             = false;
+  int reset             = false;
   int http0_9           = true;
   int http3             = false;
 };

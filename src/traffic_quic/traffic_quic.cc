@@ -63,6 +63,7 @@ main(int argc, const char **argv)
     {"path", 'P', "Path", "S1017", config.path, nullptr, nullptr},
     {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", config.debug_tags, nullptr, nullptr},
     {"close", 'c', "Enable connection close excercise", "F", &config.close, nullptr, nullptr},
+    {"reset", 'r', "Enable stateless reset excercise", "F", &config.reset, nullptr, nullptr},
     {"http0_9", '-', "Enable HTTP/0.9", "T", &config.http0_9, nullptr, nullptr},
     {"http3", '-', "Enable HTTP/3", "F", &config.http3, nullptr, nullptr},
 

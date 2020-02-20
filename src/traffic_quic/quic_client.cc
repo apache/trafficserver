@@ -278,6 +278,9 @@ Http3ClientApp::start()
       // Connection Close Exercise
       this->_qc->close_quic_connection(
         QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
+    } else if (this->_config->reset) {
+      // Stateless Reset Excercise
+      this->_qc->reset_quic_connection();
     }
   });
 
