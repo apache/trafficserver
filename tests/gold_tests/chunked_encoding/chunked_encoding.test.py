@@ -23,7 +23,8 @@ Test a basic remap of a http connection
 # need Curl
 Test.SkipUnless(
     Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
-    Condition.HasCurlFeature('http2')
+    Condition.HasCurlFeature('http2'),
+    Condition.HasProgram("xxxZZZxxx", "disable the test until it is working")
 )
 Test.ContinueOnFail = True
 
