@@ -680,6 +680,24 @@ QUICNetVConnection::close_quic_connection(QUICConnectionErrorUPtr error)
   }
 }
 
+void
+QUICNetVConnection::reset_quic_connection()
+{
+  this->_switch_to_close_state();
+
+  QUICStatelessResetToken token(this->connection_id(), this->_quic_config->instance_id());
+  auto packet = QUICPacketFactory::create_stateless_reset_packet(token, 128);
+  if (packet) {
+    Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
+    udp_payload->alloc(iobuffer_size_to_index(128));
+    uint8_t *buf = reinterpret_cast<uint8_t *>(udp_payload->end());
+    size_t len   = 0;
+    packet->store(buf, &len);
+    udp_payload->fill(len);
+    this->_packet_handler->send_packet(this, udp_payload);
+  }
+}
+
 std::vector<QUICFrameType>
 QUICNetVConnection::interests()
 {

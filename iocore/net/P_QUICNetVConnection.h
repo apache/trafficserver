@@ -184,6 +184,7 @@ public:
   // QUICConnection
   QUICStreamManager *stream_manager() override;
   void close_quic_connection(QUICConnectionErrorUPtr error) override;
+  void reset_quic_connection() override;
   void handle_received_packet(UDPPacket *packet) override;
   void ping() override;
 
