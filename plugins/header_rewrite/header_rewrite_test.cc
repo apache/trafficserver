@@ -69,10 +69,10 @@ public:
   bool res;
 };
 
-class SimpleTokenizerTest : public SimpleTokenizer
+class SimpleTokenizerTest : public HRWSimpleTokenizer
 {
 public:
-  SimpleTokenizerTest(const std::string &line) : SimpleTokenizer(line), res(true)
+  SimpleTokenizerTest(const std::string &line) : HRWSimpleTokenizer(line), res(true)
   {
     std::cout << "Finished tokenizer test: " << line << std::endl;
   }
