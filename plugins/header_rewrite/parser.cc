@@ -248,7 +248,7 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
   return false;
 }
 
-SimpleTokenizer::SimpleTokenizer(const std::string &original_line)
+HRWSimpleTokenizer::HRWSimpleTokenizer(const std::string &original_line)
 {
   std::string line        = original_line;
   ParserState state       = PARSER_DEFAULT;
