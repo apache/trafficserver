@@ -88,7 +88,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
 
 LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
-                     int rolling_offset_hr, int rolling_size_mb, bool auto_created)
+                     int rolling_offset_hr, int rolling_size_mb, bool auto_created, int pipe_buffer_size)
   : m_auto_created(auto_created),
     m_alt_filename(nullptr),
     m_flags(0),
@@ -98,7 +98,8 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
     m_rolling_offset_hr(rolling_offset_hr),
     m_rolling_size_mb(rolling_size_mb),
     m_last_roll_time(0),
-    m_buffer_manager_idx(0)
+    m_buffer_manager_idx(0),
+    m_pipe_buffer_size(pipe_buffer_size)
 {
   ink_release_assert(format);
   m_format         = new LogFormat(*format);
@@ -118,7 +119,8 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
   // by default, create a LogFile for this object, if a loghost is
   // later specified, then we will delete the LogFile object
   //
-  m_logFile = new LogFile(m_filename, header, file_format, m_signature, Log::config->ascii_buffer_size, Log::config->max_line_size);
+  m_logFile = new LogFile(m_filename, header, file_format, m_signature, Log::config->ascii_buffer_size, Log::config->max_line_size,
+                          m_pipe_buffer_size);
 
   LogBuffer *b = new LogBuffer(this, Log::config->log_buffer_size);
   ink_assert(b);
@@ -138,7 +140,8 @@ LogObject::LogObject(LogObject &rhs)
     m_signature(rhs.m_signature),
     m_flush_threads(rhs.m_flush_threads),
     m_rolling_interval_sec(rhs.m_rolling_interval_sec),
-    m_last_roll_time(rhs.m_last_roll_time)
+    m_last_roll_time(rhs.m_last_roll_time),
+    m_pipe_buffer_size(rhs.m_pipe_buffer_size)
 {
   m_format         = new LogFormat(*(rhs.m_format));
   m_buffer_manager = new LogBufferManager[m_flush_threads];

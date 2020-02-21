@@ -60,12 +60,13 @@
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size,
-                 size_t max_line_size)
+                 size_t max_line_size, int pipe_buffer_size)
   : m_file_format(format),
     m_name(ats_strdup(name)),
     m_header(ats_strdup(header)),
     m_signature(signature),
-    m_max_line_size(max_line_size)
+    m_max_line_size(max_line_size),
+    m_pipe_buffer_size(pipe_buffer_size)
 {
   if (m_file_format != LOG_FILE_PIPE) {
     m_log = new BaseLogFile(name, m_signature);
@@ -94,6 +95,7 @@ LogFile::LogFile(const LogFile &copy)
     m_signature(copy.m_signature),
     m_ascii_buffer_size(copy.m_ascii_buffer_size),
     m_max_line_size(copy.m_max_line_size),
+    m_pipe_buffer_size(copy.m_pipe_buffer_size),
     m_fd(copy.m_fd)
 {
   ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
@@ -179,9 +181,38 @@ LogFile::open_file()
     Debug("log-file", "attempting to open pipe %s", m_name);
     m_fd = ::open(m_name, O_WRONLY | O_NDELAY, 0);
     if (m_fd < 0) {
-      Debug("log-file", "no readers for pipe %s", m_name);
-      return LOG_FILE_NO_PIPE_READERS;
+      if (errno == ENXIO) {
+        Debug("log-file", "no readers for pipe %s (%s)", m_name, strerror(errno));
+        return LOG_FILE_NO_PIPE_READERS;
+      } else {
+        Error("Could not open named pipe %s for logging: %s", m_name, strerror(errno));
+        return LOG_FILE_COULD_NOT_OPEN_FILE;
+      }
     }
+
+#ifdef F_GETPIPE_SZ
+    // Adjust pipe size if so configured.
+    if (m_pipe_buffer_size) {
+      long pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
+      if (pipe_size == -1) {
+        Error("Get pipe size failed for pipe %s: %s", m_name, strerror(errno));
+      } else {
+        Debug("log-file", "Previous buffer size for pipe %s: %ld", m_name, pipe_size);
+      }
+
+      int ret = fcntl(m_fd, F_SETPIPE_SZ, m_pipe_buffer_size);
+      if (ret == -1) {
+        Error("Set pipe size failed for pipe %s to size %d: %s", m_name, m_pipe_buffer_size, strerror(errno));
+      }
+
+      pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
+      if (pipe_size == -1) {
+        Error("Get pipe size after setting it failed for pipe %s: %s", m_name, strerror(errno));
+      } else {
+        Debug("log-file", "New buffer size for pipe %s: %ld", m_name, pipe_size);
+      }
+    }
+#endif // F_GETPIPE_SZ
   } else {
     if (m_log) {
       int status = m_log->open_file(Log::config->logfile_perm);
@@ -556,7 +587,7 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 #if defined(solaris)
     wvec[0].iov_base = (caddr_t)data;
 #else
-    wvec[0].iov_base = (void *)data;
+    wvec[0].iov_base   = (void *)data;
 #endif
     wvec[0].iov_len = (size_t)len;
 

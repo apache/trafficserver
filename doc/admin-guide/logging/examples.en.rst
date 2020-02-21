@@ -283,7 +283,8 @@ Dual Output to Compact Binary Logs and ASCII Pipes
 This example demonstrates logging the same event data to multiple locations, in
 a hypothetical scenario where we may wish to keep a compact form of our logs
 available for archival purposes, while performing live log analysis on a stream
-of the event data.
+of the event data. By setting ``PipeBufferSize`` to 1048576 we request |TS| to
+set the buffer capacity for the pipe to 1 MB.
 
 .. code:: lua
 
@@ -298,6 +299,7 @@ of the event data.
    log.pipe {
      Format = ourformat,
      Filename = 'streaming_log'
+     PipeBufferSize = 1048576
    }
 
 Filtering Events to ASCII Pipe for Alerting

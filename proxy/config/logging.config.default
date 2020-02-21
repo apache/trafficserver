@@ -33,6 +33,7 @@
 --    RollingIntervalSec (number, optional):
 --    RollingOffsetHr (number, optional):
 --    RollingSizeMb (number, optional):
+--    PipeBufferSize (number, optional):
 --    Filters (array of filter objects, optional):
 --    CollationHosts (array of strings, optional):
 --      This parameter may be either a single string or an array of entries.

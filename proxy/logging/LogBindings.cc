@@ -29,6 +29,8 @@
 
 #include "ts/TestBox.h"
 
+constexpr int DEFAULT_PIPE_BUFFER_SIZE = 0;
+
 static int
 refcount_object_new(lua_State *L, const char *type_name, RefCountObj *obj)
 {
@@ -288,21 +290,23 @@ create_log_object(lua_State *L, const char *name, LogFileFormat which)
   Ptr<LogObject> log;
   Ptr<LogFormat> fmt;
 
-  const char *filename;
-  const char *header;
-  lua_Integer rolling;
-  lua_Integer interval;
-  lua_Integer offset;
-  lua_Integer size;
+  const char *filename         = nullptr;
+  const char *header           = nullptr;
+  lua_Integer rolling          = 0;
+  lua_Integer interval         = 0;
+  lua_Integer offset           = 0;
+  lua_Integer size             = 0;
+  lua_Integer pipe_buffer_size = 0;
 
   BindingInstance::typecheck(L, name, LUA_TTABLE, LUA_TNONE);
 
-  filename = lua_getfield<const char *>(L, -1, "Filename", nullptr);
-  header   = lua_getfield<const char *>(L, -1, "Header", nullptr);
-  rolling  = lua_getfield<lua_Integer>(L, -1, "RollingEnabled", conf->rolling_enabled);
-  interval = lua_getfield<lua_Integer>(L, -1, "RollingIntervalSec", conf->rolling_interval_sec);
-  offset   = lua_getfield<lua_Integer>(L, -1, "RollingOffsetHr", conf->rolling_offset_hr);
-  size     = lua_getfield<lua_Integer>(L, -1, "RollingSizeMb", conf->rolling_size_mb);
+  filename         = lua_getfield<const char *>(L, -1, "Filename", nullptr);
+  header           = lua_getfield<const char *>(L, -1, "Header", nullptr);
+  rolling          = lua_getfield<lua_Integer>(L, -1, "RollingEnabled", conf->rolling_enabled);
+  interval         = lua_getfield<lua_Integer>(L, -1, "RollingIntervalSec", conf->rolling_interval_sec);
+  offset           = lua_getfield<lua_Integer>(L, -1, "RollingOffsetHr", conf->rolling_offset_hr);
+  size             = lua_getfield<lua_Integer>(L, -1, "RollingSizeMb", conf->rolling_size_mb);
+  pipe_buffer_size = lua_getfield<lua_Integer>(L, -1, "PipeBufferSize", DEFAULT_PIPE_BUFFER_SIZE);
 
   lua_pushstring(L, "Format"); // Now key is at -1 and table is at -2.
   lua_gettable(L, -2);         // Now the result is at -1.
@@ -325,6 +329,10 @@ create_log_object(lua_State *L, const char *name, LogFileFormat which)
     luaL_error(L, "missing 'Filename' argument");
   }
 
+  if (pipe_buffer_size != DEFAULT_PIPE_BUFFER_SIZE && which != LOG_FILE_PIPE) {
+    luaL_error(L, "PipeBufferSize provided for a non 'log.pipe' object");
+  }
+
   switch (rolling) {
   case Log::NO_ROLLING:
   case Log::ROLL_ON_TIME_ONLY:
@@ -338,7 +346,7 @@ create_log_object(lua_State *L, const char *name, LogFileFormat which)
   }
 
   log = new LogObject(fmt.get(), conf->logfile_dir, filename, which, header, (Log::RollingEnabledValues)rolling,
-                      conf->collation_preproc_threads, interval, offset, size);
+                      conf->collation_preproc_threads, interval, offset, size, false /* auto_created */, pipe_buffer_size);
 
   lua_pushstring(L, "Filters"); // Now key is at -1 and table is at -2.
   lua_gettable(L, -2);          // Now the result is at -1.
