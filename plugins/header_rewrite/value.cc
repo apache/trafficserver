@@ -44,7 +44,7 @@ Value::set_value(const std::string &val)
   _value = val;
 
   if (_value.find("%{") != std::string::npos) {
-    SimpleTokenizer tokenizer(_value);
+    HRWSimpleTokenizer tokenizer(_value);
     auto tokens = tokenizer.get_tokens();
 
     for (auto token : tokens) {

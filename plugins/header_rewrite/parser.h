@@ -99,14 +99,14 @@ protected:
   std::vector<std::string> _tokens;
 };
 
-class SimpleTokenizer
+class HRWSimpleTokenizer
 {
 public:
-  explicit SimpleTokenizer(const std::string &line);
+  explicit HRWSimpleTokenizer(const std::string &line);
 
   // noncopyable
-  SimpleTokenizer(const SimpleTokenizer &) = delete;
-  void operator=(const SimpleTokenizer &) = delete;
+  HRWSimpleTokenizer(const HRWSimpleTokenizer &) = delete;
+  void operator=(const HRWSimpleTokenizer &) = delete;
 
   const std::vector<std::string> &
   get_tokens() const
