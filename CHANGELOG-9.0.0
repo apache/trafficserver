@@ -366,6 +366,7 @@ Changes with Apache Traffic Server 9.0.0
   #5141 - Need to pop messages from queue
   #5142 - UrlRewrite: separate constructor and configuration loading for testability
   #5144 - Fix AcidPtr test
+  #5149 - Add nullptr check on ConfigProcessor::release()
   #5150 - Augment wildcard_match to allow underscore in domain name
   #5151 - Updates to the STATUS file
   #5152 - Test acid ptr persistence
@@ -888,8 +889,27 @@ Changes with Apache Traffic Server 9.0.0
   #6329 - Fixed build issues on macOS after 0-RTT merge
   #6332 - Fixes Issue #6321 caused when proxy.config.http.no_dns_just_forward_to_parent
   #6339 - Fixes an issue where NextHopSelectionStrategy did not implement a parent check.
+  #6340 - Add header rewrite test to make sure we are not injecting end of rule char
   #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
   #6346 - Fix heap-use-after-free on Http2Stream::destroy()
+  #6347 - Fix localstatedir and runtimedir for Debian layout
+  #6358 - Add header guard - issue #6357
   #6372 - Change alloca usage to malloc/free
+  #6373 - Change bitfields to be unsigned explicitly
+  #6374 - Add exception to throw since there is no context and could cause a crash
+  #6376 - Update inactive_timeout_at in Http2Stream::signal_read_event()
   #6378 - Remove trailing white space from json formatter
+  #6380 - Remove unnecesary HttpSM handler call with VC_EVENT_ERROR
   #6392 - Free TSMgmtString after using it.
+  #6396 - Avoid cross-thread mutex conflicts
+  #6397 - Ensure that extra data beyond the chunked body is not tunneled
+  #6403 - Fix for lua plugin coredump problem during reload
+  #6406 - Auto port select slow_post test
+  #6409 - Another option to fix potential HTTP/2 vio stall
+  #6410 - Change gold files to be less restrictive 
+  #6419 - URI Sig Null Check for Clang Warning
+  #6420 - Syntax Error fixed in URI sig Plugin
+  #6431 - #6428 Clear stale captive_action during Cache read retry - WIP (in test)
+  #6435 - Fixed chunked_encoding test to work with OpenSSL 1.0.2
+  #6440 - Cleaned up smuggle-client
+  #6446 - Avoid a weird name collision between HRW and tscore
