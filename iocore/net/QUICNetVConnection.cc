@@ -238,12 +238,7 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
   this->_update_cids();
 
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
-    char dcid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    char scid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    this->_peer_quic_connection_id.hex(dcid_hex_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-    this->_quic_connection_id.hex(scid_hex_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-
-    QUICConDebug("dcid=%s scid=%s", dcid_hex_str, scid_hex_str);
+    QUICConDebug("dcid=%s scid=%s", this->_peer_quic_connection_id.hex().c_str(), this->_quic_connection_id.hex().c_str());
   }
 }
 
@@ -271,12 +266,7 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
   this->_update_cids();
 
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
-    char dcid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    char scid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    this->_peer_quic_connection_id.hex(dcid_hex_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-    this->_quic_connection_id.hex(scid_hex_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-
-    QUICConDebug("dcid=%s scid=%s", dcid_hex_str, scid_hex_str);
+    QUICConDebug("dcid=%s scid=%s", this->_peer_quic_connection_id.hex().c_str(), this->_quic_connection_id.hex().c_str());
   }
 }
 
@@ -2180,12 +2170,7 @@ void
 QUICNetVConnection::_update_peer_cid(const QUICConnectionId &new_cid)
 {
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
-    char old_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    this->_peer_quic_connection_id.hex(old_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-    new_cid.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-
-    QUICConDebug("dcid: %s -> %s", old_cid_str, new_cid_str);
+    QUICConDebug("update peer dcid: %s -> %s", this->_peer_quic_connection_id.hex().c_str(), new_cid.hex().c_str());
   }
 
   this->_peer_old_quic_connection_id = this->_peer_quic_connection_id;
@@ -2197,12 +2182,7 @@ void
 QUICNetVConnection::_update_local_cid(const QUICConnectionId &new_cid)
 {
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
-    char old_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    this->_quic_connection_id.hex(old_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-    new_cid.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-
-    QUICConDebug("scid: %s -> %s", old_cid_str, new_cid_str);
+    QUICConDebug("update local dcid: %s -> %s", this->_quic_connection_id.hex().c_str(), new_cid.hex().c_str());
   }
 
   this->_quic_connection_id = new_cid;
@@ -2216,12 +2196,7 @@ QUICNetVConnection::_rerandomize_original_cid()
   this->_original_quic_connection_id.randomize();
 
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
-    char old_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    tmp.hex(old_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-    this->_original_quic_connection_id.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-
-    QUICConDebug("original cid: %s -> %s", old_cid_str, new_cid_str);
+    QUICConDebug("original cid: %s -> %s", tmp.hex().c_str(), this->_original_quic_connection_id.hex().c_str());
   }
 }
 
@@ -2288,9 +2263,7 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
         this->_validate_new_path(new_path);
       }
     } else {
-      char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-      dcid.hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-      QUICConDebug("Connection migration failed cid=%s", dcid_str);
+      QUICConDebug("Connection migration failed cid=%s", dcid.hex().c_str());
     }
   }
 

@@ -22,6 +22,10 @@
  */
 
 #include <algorithm>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
+
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
 #include "tscore/CryptoHash.h"
@@ -646,10 +650,16 @@ QUICConnectionId::h32() const
   return static_cast<uint32_t>(QUICIntUtil::read_nbytes_as_uint(this->_id, 4));
 }
 
-int
-QUICConnectionId::hex(char *buf, size_t len) const
+std::string
+QUICConnectionId::hex() const
 {
-  return to_hex_str(buf, len, this->_id, this->_len);
+  std::stringstream stream;
+  stream << "0x";
+  for (auto i = 0; i < this->_len; i++) {
+    stream << std::setfill('0') << std::setw(2) << std::hex;
+    stream << std::hex << static_cast<int>(this->_id[i]);
+  }
+  return stream.str();
 }
 
 //

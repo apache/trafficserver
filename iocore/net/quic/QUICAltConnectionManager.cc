@@ -119,9 +119,7 @@ QUICAltConnectionManager::_generate_next_alt_con_info()
   }
 
   if (is_debug_tag_set(V_DEBUG_TAG)) {
-    char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    conn_id.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-    QUICACMVDebug("alt-cid=%s", new_cid_str);
+    QUICACMVDebug("alt-cid=%s", conn_id.hex().c_str());
   }
 
   return aci;
