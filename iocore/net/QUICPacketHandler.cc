@@ -317,9 +317,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     udp_packet->free();
 
     if (is_debug_tag_set(debug_tag) && sent) {
-      char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-      dcid.hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-      QUICDebugDS(scid, dcid, "sent Stateless Reset : connection not found, dcid=%s", dcid_str);
+      QUICDebugDS(scid, dcid, "sent Stateless Reset : connection not found, dcid=%s", dcid.hex().c_str());
     }
 
     return;
@@ -330,9 +328,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     udp_packet->free();
 
     if (is_debug_tag_set(debug_tag) && sent) {
-      char dcid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-      dcid.hex(dcid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-      QUICDebugDS(scid, dcid, "sent Stateless Reset : connection is already closed, dcid=%s", dcid_str);
+      QUICDebugDS(scid, dcid, "sent Stateless Reset : connection is already closed, dcid=%s", dcid.hex().c_str());
     }
 
     return;
@@ -349,9 +345,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     QUICConnectionId peer_cid     = scid;
 
     if (is_debug_tag_set("quic_sec")) {
-      char client_dcid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-      original_cid.hex(client_dcid_hex_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-      QUICDebugDS(peer_cid, original_cid, "client initial dcid=%s", client_dcid_hex_str);
+      QUICDebugDS(peer_cid, original_cid, "client initial dcid=%s", original_cid.hex().c_str());
     }
 
     vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));

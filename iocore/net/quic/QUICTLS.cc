@@ -172,9 +172,7 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
 
   // Generate keys
   if (is_debug_tag_set(tag)) {
-    char cid_hex_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    cid.hex(cid_hex_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-    Debug(tag, "Generating %s keys with cid %s", QUICDebugNames::key_phase(QUICKeyPhase::INITIAL), cid_hex_str);
+    Debug(tag, "Generating %s keys with cid %s", QUICDebugNames::key_phase(QUICKeyPhase::INITIAL), cid.hex().c_str());
   }
 
   uint8_t *client_key_for_hp;

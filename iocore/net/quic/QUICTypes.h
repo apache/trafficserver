@@ -35,6 +35,7 @@
 #include <memory>
 #include <random>
 #include <cstdint>
+#include <string>
 #include "tscore/ink_memory.h"
 #include "tscore/ink_inet.h"
 #include "openssl/evp.h"
@@ -263,7 +264,7 @@ public:
    * This is just for debugging.
    */
   uint32_t h32() const;
-  int hex(char *buf, size_t len) const;
+  std::string hex() const;
 
   uint8_t length() const;
   bool is_zero() const;
