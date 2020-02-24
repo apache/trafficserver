@@ -181,13 +181,18 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     myreader->consume(HTTP2_DATA_PADLEN_LEN);
   }
 
-  while (nbytes < unpadded_length) {
+  if (nbytes < unpadded_length) {
     size_t read_len = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
     if (nbytes + read_len > unpadded_length) {
       read_len -= nbytes + read_len - unpadded_length;
     }
-    nbytes += writer->write(myreader, read_len);
-    myreader->consume(nbytes);
+    unsigned int num_written = writer->write(myreader, read_len);
+    if (num_written != read_len) {
+      myreader->writer()->dealloc_reader(myreader);
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
+    }
+    nbytes += num_written;
+    myreader->consume(num_written);
   }
   myreader->writer()->dealloc_reader(myreader);
 
