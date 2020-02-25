@@ -43,15 +43,19 @@ QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t
     return false;
   }
   if (!EVP_EncryptInit_ex(aead_ctx, aead, nullptr, nullptr, nullptr)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_SET_IVLEN, nonce_len, nullptr)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   if (!EVP_EncryptInit_ex(aead_ctx, nullptr, nullptr, key, nonce)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   if (!EVP_EncryptUpdate(aead_ctx, nullptr, &len, ad, ad_len)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
 
@@ -59,6 +63,7 @@ QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t
   Ptr<IOBufferBlock> b = plain;
   while (b) {
     if (!EVP_EncryptUpdate(aead_ctx, cipher + cipher_len, &len, reinterpret_cast<unsigned char *>(b->buf()), b->size())) {
+      EVP_CIPHER_CTX_free(aead_ctx);
       return false;
     }
     cipher_len += len;
@@ -66,14 +71,17 @@ QUICPacketPayloadProtector::_protect(uint8_t *cipher, size_t &cipher_len, size_t
   }
 
   if (!EVP_EncryptFinal_ex(aead_ctx, cipher + cipher_len, &len)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   cipher_len += len;
 
   if (max_cipher_len < cipher_len + tag_len) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_GET_TAG, tag_len, cipher + cipher_len)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   cipher_len += tag_len;
@@ -99,28 +107,35 @@ QUICPacketPayloadProtector::_unprotect(uint8_t *plain, size_t &plain_len, size_t
     return false;
   }
   if (!EVP_DecryptInit_ex(aead_ctx, aead, nullptr, nullptr, nullptr)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_SET_IVLEN, nonce_len, nullptr)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   if (!EVP_DecryptInit_ex(aead_ctx, nullptr, nullptr, key, nonce)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   if (!EVP_DecryptUpdate(aead_ctx, nullptr, &len, ad, ad_len)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
 
   if (cipher_len < tag_len) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   cipher_len -= tag_len;
   if (!EVP_DecryptUpdate(aead_ctx, plain, &len, cipher, cipher_len)) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
   plain_len = len;
 
   if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_SET_TAG, tag_len, const_cast<uint8_t *>(cipher + cipher_len))) {
+    EVP_CIPHER_CTX_free(aead_ctx);
     return false;
   }
 
