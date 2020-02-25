@@ -26,7 +26,7 @@ ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2", ssl=True)
 
-#**testname is required**
+# **testname is required**
 testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
@@ -40,7 +40,6 @@ server2.addResponse("sessionlog.json", request_header, response_header)
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'lm|ssl',
@@ -59,7 +58,7 @@ ts.Disk.remap_config.AddLine(
     'map https://www.example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
 )
 ts.Disk.remap_config.AddLine(
-    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port,ts.Variables.ssl_port)
+    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port)
 )
 
 
@@ -99,7 +98,7 @@ tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 
 # www.example.com:8080 host
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:4443" --verbose'.format(
+tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:{0}" --verbose'.format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"

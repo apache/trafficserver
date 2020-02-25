@@ -18,6 +18,7 @@ Test the Forwarded header and related configuration..
 #  limitations under the License.
 
 import os
+import ports
 
 Test.Summary = '''
 Test FORWARDED header.
@@ -77,12 +78,12 @@ forwarded_log_id = Test.Disk.File("forwarded.log")
 forwarded_log_id.Content = "forwarded.gold"
 
 
-def baselineTsSetup(ts, sslPort):
+def baselineTsSetup(ts):
 
     ts.addSSLfile("../remap/ssl/server.pem")
     ts.addSSLfile("../remap/ssl/server.key")
 
-    ts.Variables.ssl_port = sslPort
+    ports.get_port(ts, 'ssl_port')
 
     ts.Disk.records_config.update({
         # 'proxy.config.diags.debug.enabled': 1,
@@ -107,7 +108,7 @@ def baselineTsSetup(ts, sslPort):
 
 ts = Test.MakeATSProcess("ts", select_ports=False)
 
-baselineTsSetup(ts, 4443)
+baselineTsSetup(ts)
 
 ts.Disk.remap_config.AddLine(
     'map http://www.forwarded-none.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
@@ -201,7 +202,7 @@ ts2 = Test.MakeATSProcess("ts2", command="traffic_manager", select_ports=False)
 
 ts2.Variables.port += 1
 
-baselineTsSetup(ts2, 4444)
+baselineTsSetup(ts2)
 
 ts2.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1,  # Retain Host header in original incoming client request.
