@@ -40,7 +40,6 @@ ts = Test.MakeATSProcess("ts", select_ports=False)
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(httpbin.Variables.Port)
 )

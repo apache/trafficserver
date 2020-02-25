@@ -45,7 +45,6 @@ server.addResponse("sessionlog.json", request_header, response_header)
 ts.addSSLfile("../remap/ssl/server.pem")
 ts.addSSLfile("../remap/ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
     'proxy.config.http.insert_request_via_str': 4,
     'proxy.config.http.insert_response_via_str': 4,
