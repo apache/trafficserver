@@ -38,6 +38,7 @@ struct QUICClientConfig {
   char output[1024]     = {0};
   char port[16]         = "4433";
   char path[1018]       = "/";
+  char server_name[128] = "";
   char debug_tags[1024] = "quic|vv_quic_crypto|http3|qpack";
   int close             = false;
   int reset             = false;

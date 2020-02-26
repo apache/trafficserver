@@ -80,7 +80,11 @@ QUICClient::start(int, void *)
     opt.socket_recv_bufsize = 1048576;
     opt.socket_send_bufsize = 1048576;
     opt.alpn_protos         = alpn_protos;
-    opt.set_sni_servername(this->_config->addr, strnlen(this->_config->addr, 1023));
+    if (strlen(this->_config->server_name) == 0) {
+      opt.set_sni_servername(this->_config->addr, strnlen(this->_config->addr, 1023));
+    } else {
+      opt.set_sni_servername(this->_config->server_name, strnlen(this->_config->server_name, 1023));
+    }
 
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
@@ -319,7 +323,13 @@ Http3ClientApp::_do_http_request()
     format = "GET https://%s/%s HTTP/1.1\r\n\r\n";
   }
 
-  int request_len = snprintf(request, sizeof(request), format.c_str(), this->_config->addr, this->_config->path);
+  const char *authority;
+  if (strlen(this->_config->server_name) == 0) {
+    authority = this->_config->addr;
+  } else {
+    authority = this->_config->server_name;
+  }
+  int request_len = snprintf(request, sizeof(request), format.c_str(), authority, this->_config->path);
 
   Http09ClientAppDebug("\n%s", request);
 
