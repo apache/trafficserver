@@ -122,6 +122,8 @@ struct SNIConfig {
 
   typedef ConfigProcessor::scoped_config<SNIConfig, SNIConfigParams> scoped_config;
 
+  static bool TestClientAction(const char *servername, const IpEndpoint &ep, int &enforcement_policy);
+
 private:
   static int configid;
 };

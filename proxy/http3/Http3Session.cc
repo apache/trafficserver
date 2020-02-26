@@ -133,7 +133,7 @@ HQSession::get_transact_count() const
 bool
 HQSession::support_sni() const
 {
-  return this->_client_vc;
+  return this->_client_vc ? this->_client_vc->support_sni() : false;
 }
 
 //
