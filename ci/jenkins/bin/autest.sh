@@ -18,6 +18,17 @@
 
 set +x
 
+# Set default encoding UTF-8 for AuTest
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
+echo "LC_ALL: $LC_ALL"
+echo "LANG: $LANG"
+
+# Check python version & encoding
+python3 --version
+echo "python default encoding: "
+python3 -c "import sys; print(sys.getdefaultencoding())"
+
 INSTALL="${ATS_BUILD_BASEDIR}/install"
 URL="https://ci.trafficserver.apache.org/autest"
 JOB_ID=${ghprbPullId:-${ATS_BRANCH:-master}}

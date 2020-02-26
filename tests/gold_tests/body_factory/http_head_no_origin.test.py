@@ -36,7 +36,7 @@ tr = Test.AddTestRun("Test domain {0}".format(HOST))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 
-tr.Processes.Default.Command = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
+tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
     format(ts.Variables.port, 'data/{0}_head.txt'.format(HOST))
 tr.Processes.Default.TimeOut = 5  # seconds
 tr.Processes.Default.ReturnCode = 0

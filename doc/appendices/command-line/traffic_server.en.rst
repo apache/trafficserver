@@ -30,46 +30,13 @@ Options
 
 .. program:: traffic_server
 
-.. option:: -n COUNT, --net_threads COUNT
-
-.. option:: -U COUNT, --udp_threads COUNT
-
 .. option:: -a, --accepts_thread
 
 .. option:: -b, --accept_till_done
 
-.. option:: -p PORT, --httpport PORT
-
-.. option:: -f, --disable_freelist
-
-In order to improve performance, :program:`traffic_server` caches
-commonly used data structures in a set of free object lists. This
-option disables these caches, causing :program:`traffic_server` to
-use :manpage:`malloc(3)` for every allocation. Though this option
-should not commonly be needed, it may be beneficial in memory-constrained
-environments or where the working set is highly variable.
-
-.. option:: -F, --disable_pfreelist
-
-Disable free list in ProxyAllocator which were left out by the -f
-option. This option includes the functionality of :option:`-f`.
-
-.. option:: -R LEVEL, --regression LEVEL
-
-.. option:: -r TEST, --regression_test TEST
-
-.. option:: -l, --regression_list
-
-If Traffic Server was built with tests enabled, this option lists
-the available tests.
-
-.. option:: -T TAGS, --debug_tags TAGS
-
 .. option:: -B TAGS, --action_tags TAGS
 
-.. option:: -i COUNT, --interval COUNT
-
-.. option:: -M, --remote_management
+.. option:: -c CORE, --read_core CORE
 
 .. option:: -C 'CMD [ARGS]', --command 'CMD [ARGS]'
 
@@ -116,21 +83,58 @@ help [CMD]
     is passed to ``help`` then a list of the supported maintenance commands are
     printed along with a brief description of each.
 
+.. option:: -f, --disable_freelist
+
+In order to improve performance, :program:`traffic_server` caches commonly used data structures in a
+set of free object lists. This option disables these caches, causing :program:`traffic_server` to
+use :manpage:`malloc(3)` for every allocation. Though this option should not commonly be needed, it
+may be beneficial in memory-constrained environments or where the working set is highly variable.
+
+.. option:: -F, --disable_pfreelist
+
+Disable free list in ProxyAllocator which were left out by the -f option. This option includes the
+functionality of :option:`-f`.
+
+.. option:: -R LEVEL, --regression LEVEL
+
+.. option:: -r TEST, --regression_test TEST
+
+.. option:: -l, --regression_list
+
+If Traffic Server was built with tests enabled, this option lists
+the available tests.
+
+.. option:: -T TAGS, --debug_tags TAGS
+
+.. option:: -i COUNT, --interval COUNT
+
+.. option:: -m COUNT, --maxRecords
+
+The maximum number of entries in metrics and configuration variables. The default is 1600, which is
+also the minimum. This may need to be increased if running plugins that create metrics.
+
+.. option:: -M, --remote_management
+
+Indicates the process should expect to be managed by :ref:`traffic_manager`. This option should not
+be used except by that process.
+
+.. option:: -n COUNT, --net_threads COUNT
+
 .. option:: -k, --clear_hostdb
 
 .. option:: -K, --clear_cache
-
-.. option:: -c CORE, --read_core CORE
 
 .. option:: --accept_mss MSS
 
 .. option:: -t MSECS, --poll_timeout MSECS
 
-.. option:: -m RECORDS, --maxRecords RECORDS
-
 .. option:: -h, --help
 
    Print usage information and exit.
+
+.. option:: -p PORT, --httpport PORT
+
+.. option:: -U COUNT, --udp_threads COUNT
 
 .. option:: -V, --version
 

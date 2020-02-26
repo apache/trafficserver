@@ -198,9 +198,9 @@ escape_json(const char *buf, int64_t size)
 }
 
 inline std::string
-json_entry(std::string const &name, const char *buf, int64_t size)
+json_entry(std::string const &name, const char *value, int64_t size)
 {
-  return "\"" + escape_json(name) + "\":\"" + escape_json(buf, size) + "\"";
+  return "\"" + escape_json(name) + "\":\"" + escape_json(value, size) + "\"";
 }
 
 /// json_entry_array(): Formats to array-style entry i.e. ["field","value"]
@@ -208,6 +208,21 @@ inline std::string
 json_entry_array(const char *name, int name_len, const char *value, int value_len)
 {
   return "[\"" + escape_json(name, name_len) + "\", \"" + escape_json(value, value_len) + "\"]";
+}
+
+/** Remove the scheme prefix from the url.
+ *
+ * @return The view without the scheme prefix.
+ */
+std::string_view
+remove_scheme_prefix(std::string_view url)
+{
+  const auto scheme_separator = url.find("://");
+  if (scheme_separator == std::string::npos) {
+    return url;
+  }
+  url.remove_prefix(scheme_separator + 3);
+  return url;
 }
 
 /// Helper functions to collect txn information from TSMBuffer
@@ -219,26 +234,42 @@ collect_headers(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t body_bytes)
   const char *cp     = nullptr;
   TSMLoc url_loc     = nullptr;
 
-  // Log scheme+method or status+reason based on header type
+  // Log scheme+method+request-target or status+reason based on header type
   if (TSHttpHdrTypeGet(buffer, hdr_loc) == TS_HTTP_TYPE_REQUEST) {
     // 1. "version"
     int version = TSHttpHdrVersionGet(buffer, hdr_loc);
     result += R"("version":")" + std::to_string(TS_HTTP_MAJOR(version)) + "." + std::to_string(TS_HTTP_MINOR(version)) + '"';
 
-    // 2. "scheme":
     TSAssert(TS_SUCCESS == TSHttpHdrUrlGet(buffer, hdr_loc, &url_loc));
+    // 2. "scheme":
     cp = TSUrlSchemeGet(buffer, url_loc, &len);
-    TSDebug(PLUGIN_NAME, "collect_headers(): found scheme %d ", len);
+    TSDebug(PLUGIN_NAME, "collect_headers(): found scheme %.*s ", len, cp);
     result += "," + json_entry("scheme", cp, len);
 
     // 3. "method":(string)
     cp = TSHttpHdrMethodGet(buffer, hdr_loc, &len);
+    TSDebug(PLUGIN_NAME, "collect_headers(): found method %.*s ", len, cp);
     result += "," + json_entry("method", cp, len);
 
     // 4. "url"
-    cp = TSUrlStringGet(buffer, url_loc, &len);
-    TSDebug(PLUGIN_NAME, "collect_headers(): found url %.*s", len, cp);
-    result += "," + json_entry("url", cp, len);
+    cp = TSUrlHostGet(buffer, url_loc, &len);
+    std::string_view host{cp, static_cast<size_t>(len)};
+
+    char *url = TSUrlStringGet(buffer, url_loc, &len);
+    std::string_view url_string{url, static_cast<size_t>(len)};
+
+    if (host.empty()) {
+      // TSUrlStringGet will add the scheme to the URL, even if the request
+      // target doesn't contain it. However, we cannot just always remove the
+      // scheme because the original request target may include it. We assume
+      // here that a URL with a scheme but not a host is artificial and thus
+      // we remove it.
+      url_string = remove_scheme_prefix(url_string);
+    }
+
+    TSDebug(PLUGIN_NAME, "collect_headers(): found host target %.*s", static_cast<int>(url_string.size()), url_string.data());
+    result += "," + json_entry("url", url_string.data(), url_string.size());
+    TSfree(url);
     TSHandleMLocRelease(buffer, hdr_loc, url_loc);
   } else {
     // 1. "status":(string)
@@ -338,28 +369,38 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
     return TS_SUCCESS;
   }
 
+  std::string txn_info;
   switch (event) {
-  case TS_EVENT_HTTP_TXN_CLOSE: {
+  case TS_EVENT_HTTP_TXN_START: {
     // Get UUID
     char uuid[TS_CRUUID_STRING_LEN + 1];
     TSAssert(TS_SUCCESS == TSClientRequestUuidGet(txnp, uuid));
 
     // Generate per transaction json records
-    std::string txn_info;
     if (!ssnData->first) {
       txn_info += ",";
     }
     ssnData->first = false;
 
     // "uuid":(string)
-    txn_info += "{" + json_entry("uuid", uuid, strlen(uuid));
-
-    // "connect-time":(number)
+    txn_info += "{";
+    // "connection-time":(number)
     TSHRTime start_time;
     TSHttpTxnMilestoneGet(txnp, TS_MILESTONE_UA_BEGIN, &start_time);
-    txn_info += ",\"start-time\":" + std::to_string(start_time);
+    txn_info += "\"connection-time\":" + std::to_string(start_time);
 
-    // client/proxy-request/response headers
+    // The uuid is a header field for each message in the transaction. Use the
+    // "all" node to apply to each message.
+    std::string_view name = "uuid";
+    txn_info += ",\"all\":{\"headers\":{\"fields\":[" + json_entry_array(name.data(), name.size(), uuid, strlen(uuid));
+    txn_info += "]}}";
+    ssnData->write_to_disk(txn_info);
+    break;
+  }
+
+  case TS_EVENT_HTTP_READ_REQUEST_HDR: {
+    // We must grab the client request information before remap happens because
+    // the remap process modifies the request buffer.
     TSMBuffer buffer;
     TSMLoc hdr_loc;
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &buffer, &hdr_loc)) {
@@ -368,6 +409,14 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
+    ssnData->write_to_disk(txn_info);
+    break;
+  }
+
+  case TS_EVENT_HTTP_TXN_CLOSE: {
+    // proxy-request/response headers
+    TSMBuffer buffer;
+    TSMLoc hdr_loc;
     if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(PLUGIN_NAME, "Found proxy request");
       txn_info += R"(,"proxy-request":)" + collect_headers(buffer, hdr_loc, TSHttpTxnServerReqBodyBytesGet(txnp));
@@ -514,6 +563,8 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     }
     TSMutexUnlock(ssnData->disk_io_mutex);
 
+    TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, ssnData->txn_cont);
+    TSHttpSsnHookAdd(ssnp, TS_HTTP_READ_REQUEST_HDR_HOOK, ssnData->txn_cont);
     TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_CLOSE_HOOK, ssnData->txn_cont);
     break;
   }

@@ -153,7 +153,7 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
                  'Host: iwillredirect.test:{2}\r\n\r\n').\
                          format(normConfig, normRedirectTarget, origin.Variables.Port))
     # Set the command with the appropriate URL.
-    tr.Processes.Default.Command = "bash -o pipefail -c 'python tcp_client.py 127.0.0.1 {0} {1} | head -n 1'".\
+    tr.Processes.Default.Command = "bash -o pipefail -c 'python3 tcp_client.py 127.0.0.1 {0} {1} | head -n 1'".\
             format(trafficservers[config].Variables.port, os.path.join(data_dirname, tr.Name))
     tr.Processes.Default.ReturnCode = 0
     # Generate and set the 'gold file' to check stdout

@@ -193,7 +193,7 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.proxy_binary_opts STRING -M
 
-   The command-line options for starting |TS|.
+   The :ref:`command-line options <traffic_server>` for starting |TS|.
 
 .. ts:cv:: CONFIG proxy.config.manager_binary STRING traffic_manager
 
@@ -2916,6 +2916,43 @@ Logging Configuration
    :file:`logging.yaml` configuration file. If this is a relative
    path, |TS| loads it relative to the ``SYSCONFDIR`` directory.
 
+.. ts:cv:: CONFIG proxy.config.log.max_line_size INT 9216
+   :units: bytes
+
+   This controls the maximum line length for ``ASCII`` formatted log entries.
+   This applies to ``ASCII_PIPE`` and ``ASCII`` file logs, *unless*
+   :ts:cv:`proxy.config.log.ascii_buffer_size` is also specified and the value
+   of ``ascii_buffer_size`` is larger than ``max_line_size``: in that case,
+   ``max_line_size`` only applies to ``ASCII_PIPE`` logs while
+   ``ascii_buffer_size`` will apply to ``ASCII`` (non-pipe) log files.
+
+.. ts:cv:: CONFIG proxy.config.log.ascii_buffer_size INT 36864
+   :units: bytes
+
+   This controls the maximum line length for ``ASCII`` formatted log entries
+   that are non-pipe log files. If this value is smaller than
+   :ts:cv:`proxy.config.log.max_line_size`, then the latter will be used for
+   both ``ASCII`` and ``ASCII_PIPE`` log files. If both ``max_line_size`` and
+   ``ascii_buffer_size`` are set, then ``max_line_size`` will be used for
+   ``ASCII_PIPE`` logs while ``ascii_buffer_size`` will be used for ``ASCII``
+   (non-pipe) log files.  This all might seem complicated, but just keep in
+   mind that the intention of ``ascii_buffer_size`` is to simply provide a way
+   for the user to configure different ``ASCII`` and ``ASCII_PIPE`` maximum
+   line lengths.
+
+.. ts:cv:: CONFIG proxy.config.log.log_buffer_size INT 9216
+   :reloadable:
+   :units: bytes
+
+   This is an orthogonal mechanism from :ts:cv:`proxy.config.log.max_line_size`
+   and :ts:cv:`proxy.config.log.ascii_buffer_size` for limiting line length
+   size by constraining the log entry buffer to a particular amount of memory.
+   Unlike the above two configurations, ``log_buffer_size`` applies to both
+   binary and ``ASCII`` log file entries.  For ``ASCII`` log files, if a maximum
+   log size is set via both the above mechanisms and by ``log_buffer_size``,
+   then the smaller of the two configurations will be applied to the line
+   length.
+
 Diagnostic Logging Configuration
 ================================
 
@@ -3121,6 +3158,13 @@ SSL Termination
 
    By default (``1``) |TS| will use the server's cipher suites preferences instead of the client preferences.
    By disabling it (``0``) |TS| will use client's cipher suites preferences.
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.prioritize_chacha INT 0
+
+   By enabling it (``1``) |TS| will temporarily reprioritize ChaCha20-Poly1305 ciphers to the top of the
+   server cipher list if a ChaCha20-Poly1305 cipher is at the top of the client cipher list.
+
+   This configuration works with OpenSSL v1.1.1 and above.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1_3.cipher_suites STRING <See notes under proxy.config.ssl.server.tls.cipher_suites>
 
