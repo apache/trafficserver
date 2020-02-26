@@ -642,7 +642,7 @@ public:
    * supports a client provided SNI value
    */
   virtual bool
-  support_sni()
+  support_sni() const
   {
     return false;
   }

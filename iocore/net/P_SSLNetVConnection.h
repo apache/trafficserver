@@ -409,7 +409,7 @@ public:
   void set_server_name(std::string_view name);
 
   bool
-  support_sni() override
+  support_sni() const override
   {
     return true;
   }
@@ -444,8 +444,6 @@ public:
   {
     verify_cert = ctx;
   }
-
-  static bool TestClientAction(const char *servername, const IpEndpoint &ep, int &enforcement_policy);
 
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;

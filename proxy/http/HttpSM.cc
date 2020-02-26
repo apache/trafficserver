@@ -40,6 +40,7 @@
 #include "RemapProcessor.h"
 #include "Transform.h"
 #include "P_SSLConfig.h"
+#include "P_SSLSNI.h"
 #include "HttpPages.h"
 #include "IPAllow.h"
 #include "tscore/I_Layout.h"
@@ -4012,8 +4013,7 @@ HttpSM::check_sni_host()
       NetVConnection *netvc = ua_txn->get_netvc();
       if (netvc) {
         IpEndpoint ip = netvc->get_remote_endpoint();
-        if (SSLNetVConnection::TestClientAction(std::string{host_name, static_cast<size_t>(host_len)}.c_str(), ip,
-                                                host_sni_policy) &&
+        if (SNIConfig::TestClientAction(std::string{host_name, static_cast<size_t>(host_len)}.c_str(), ip, host_sni_policy) &&
             host_sni_policy > 0) {
           // In a SNI/Host mismatch where the Host would have triggered SNI policy, mark the transaction
           // to be considered for rejection after the remap phase passes.  Gives the opportunity to conf_remap
