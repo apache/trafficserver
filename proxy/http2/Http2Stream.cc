@@ -578,6 +578,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     return;
   }
 
+  int send_event = (write_vio.ntodo() == bytes_avail || is_done) ? VC_EVENT_WRITE_COMPLETE : VC_EVENT_WRITE_READY;
   // Process the new data
   if (!this->response_header_done) {
     // Still parsing the response_header
@@ -602,7 +603,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
 
       // If there is additional data, send it along in a data frame.  Or if this was header only
       // make sure to send the end of stream
-      if (this->response_is_data_available()) {
+      if (this->response_is_data_available() || send_event == VC_EVENT_WRITE_COMPLETE) {
         this->send_response_body(call_update);
       }
       break;
