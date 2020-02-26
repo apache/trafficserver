@@ -1934,22 +1934,3 @@ SSLNetVConnection::set_server_name(std::string_view name)
     _serverName.reset(n);
   }
 }
-
-// See if any of the client-side actions would trigger for this combination of servername and
-// client IP
-// host_sni_policy is an in/out paramter.  It starts with the global policy from the records.config
-// setting proxy.config.http.host_sni_policy and is possibly overridden if the sni policy
-// contains a host_sni_policy entry
-bool
-SSLNetVConnection::TestClientAction(const char *servername, const IpEndpoint &ep, int &host_sni_policy)
-{
-  bool retval = false;
-  SNIConfig::scoped_config params;
-  const actionVector *actionvec = params->get(servername);
-  if (actionvec) {
-    for (auto &&item : *actionvec) {
-      retval |= item->TestClientSNIAction(servername, ep, host_sni_policy);
-    }
-  }
-  return retval;
-}
