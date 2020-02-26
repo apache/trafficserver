@@ -382,6 +382,11 @@ public:
   {
   }
 
+  void
+  reset_quic_connection() override
+  {
+  }
+
   int
   getTotalFrameCount()
   {

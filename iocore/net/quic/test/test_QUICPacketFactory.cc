@@ -120,7 +120,7 @@ TEST_CASE("QUICPacketFactory_Create_StatelessResetPacket", "[quic]")
   QUICPacketFactory factory(pp_key_info);
   QUICStatelessResetToken token({reinterpret_cast<const uint8_t *>("\x30\x39"), 2}, 67890);
 
-  QUICPacketUPtr packet = factory.create_stateless_reset_packet(token);
+  QUICPacketUPtr packet = factory.create_stateless_reset_packet(token, 1200);
 
   REQUIRE(packet != nullptr);
   CHECK(packet->type() == QUICPacketType::STATELESS_RESET);
