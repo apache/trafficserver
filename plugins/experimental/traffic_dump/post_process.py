@@ -109,11 +109,14 @@ def verify_response(response):
         raise VerifyResponseError("Response did not have a status.")
 
 
-def verify_transaction(transaction):
+def verify_transaction(transaction, fabricate_proxy_requests=False):
     """ Function to verify that a transaction looks complete.
 
     Args:
         transaction (json object)
+        fabricate_proxy_requests (bool) Whether the post-processor should
+          fabricate proxy requests if they don't exist because the proxy served
+          the response locally.
 
     Raises:
         VerifySessionError if there is no transaction.
@@ -128,12 +131,19 @@ def verify_transaction(transaction):
     else:
         verify_request(transaction["client-request"])
 
+    if "proxy-request" not in transaction and fabricate_proxy_requests:
+        if "proxy-response" not in transaction:
+            raise VerifyRequestError('proxy-response not found in transaction with a client-request')
+        transaction["proxy-request"] = transaction["client-request"]
+        if "server-response" not in transaction:
+            transaction["server-response"] = transaction["proxy-response"]
+
     # proxy-response nodes can be empty.
     if "proxy-response" not in transaction:
         raise VerifyResponseError('proxy-response not found in transaction')
 
     if "proxy-request" in transaction or "server-response" in transaction:
-        # proxy-request nodes can be empty.
+        # proxy-request nodes can be empty, so no need to verify_response.
         if "proxy-request" not in transaction:
             raise VerifyRequestError('proxy-request not found in transaction')
 
@@ -143,13 +153,16 @@ def verify_transaction(transaction):
             verify_response(transaction["server-response"])
 
 
-def verify_session(session):
+def verify_session(session, fabricate_proxy_requests=False):
     """ Function to verify that a session looks complete.
 
         A valid session contains a valid list of transactions.
 
     Args:
         transaction (json object)
+        fabricate_proxy_requests (bool) Whether the post-processor should
+          fabricate proxy requests if they don't exist because the proxy served
+          the response locally.
 
     Raises:
         VerifyError if there is a problem with the session.
@@ -159,7 +172,7 @@ def verify_session(session):
     if "transactions" not in session or not session["transactions"]:
         raise VerifySessionError('No transactions found in session.')
     for transaction in session["transactions"]:
-        verify_transaction(transaction)
+        verify_transaction(transaction, fabricate_proxy_requests)
 
 
 def write_sessions(sessions, filename, indent):
@@ -203,14 +216,14 @@ def parse_json(replay_file):
     try:
         parsed_json = json.load(fd)
     except Exception as e:
-        message = e.split(':')[0]
-        logging.exception("Failed to load %s as a JSON object.", replay_file)
+        message = e.msg.split(':')[0]
+        logging.error("Failed to load %s as a JSON object: %s", replay_file, e)
         raise ParseJSONError(message)
 
     return parsed_json
 
 
-def readAndCombine(replay_dir, num_sessions_per_file, indent, out_dir):
+def readAndCombine(replay_dir, num_sessions_per_file, indent, fabricate_proxy_requests, out_dir):
     """ Read raw dump files, filter out incomplete sessions, and merge
     them into output files.
 
@@ -218,6 +231,9 @@ def readAndCombine(replay_dir, num_sessions_per_file, indent, out_dir):
         replay_dir (string) Full path to dumps
         num_sessions_per_file (int) number of sessions in each output file
         indent (int) The number of spaces per line in the output replay files.
+        fabricate_proxy_requests (bool) Whether the post-processor should
+          fabricate proxy requests if they don't exist because the proxy served
+          the response locally.
         out_dir (string) Output directory for post-processed json files.
     """
     session_count = 0
@@ -236,12 +252,12 @@ def readAndCombine(replay_dir, num_sessions_per_file, indent, out_dir):
         try:
             parsed_json = parse_json(replay_file)
         except ParseJSONError as e:
-            error_count[e] += e
+            error_count[e.message] += 1
             continue
 
         for session in parsed_json["sessions"]:
             try:
-                verify_session(session)
+                verify_session(session, fabricate_proxy_requests)
             except VerifyError as e:
                 connection_time = session['connection-time']
                 if not connection_time:
@@ -266,7 +282,7 @@ def readAndCombine(replay_dir, num_sessions_per_file, indent, out_dir):
     return session_count, transaction_count, error_count
 
 
-def post_process(in_dir, subdir_q, out_dir, num_sessions_per_file, single_line, cnt_q):
+def post_process(in_dir, subdir_q, out_dir, num_sessions_per_file, single_line, fabricate_proxy_requests, cnt_q):
     """ Function used to set up individual threads.
 
     Each thread loops over the subdir_q, pulls a directory from there, and
@@ -284,6 +300,9 @@ def post_process(in_dir, subdir_q, out_dir, num_sessions_per_file, single_line, 
           into a single replay file.
         single_line (bool) Whether to emit replay files as a single line. If
           false, the file is spaced out in a human readable fashion.
+        fabricate_proxy_requests (bool) Whether the post-processor should
+          fabricate proxy requests if they don't exist because the proxy served
+          the response locally.
         cnt_q (Queue) Session, transaction, error count queue populated by each
           thread.
     """
@@ -293,7 +312,7 @@ def post_process(in_dir, subdir_q, out_dir, num_sessions_per_file, single_line, 
         indent = 2
         if single_line:
             indent = None
-        cnt = readAndCombine(subdir_path, num_sessions_per_file, indent, out_dir)
+        cnt = readAndCombine(subdir_path, num_sessions_per_file, indent, fabricate_proxy_requests, out_dir)
         cnt_q.put(cnt)
 
 
@@ -331,6 +350,19 @@ def parse_args():
                         files that are spaced out in a human readable format.
                         This turns off that behavior and leaves the files as
                         single-line entries.''')
+    parser.add_argument("--no-fabricate-proxy-requests", action="store_true",
+                        help='''By default, post processor will fabricate proxy
+                        requests and server responses for transactions served
+                        out of the proxy. Presumably in replay conditions,
+                        these fabricated requests and responses will not hurt
+                        anything because the Proxy Verifier server will not
+                        notice if the proxy replies locally in replay
+                        conditions. However, if it doesn't reply locally, then
+                        the server will not know how to reply to these
+                        requests. Using this option turns off this fabrication
+                        behavior.''')
+    parser.add_argument("-j", "--num_threads", type=int, default=32,
+                        help='''The maximum number of threads to use.''')
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Enable debug level logging.")
     return parser.parse_args()
@@ -352,13 +384,14 @@ def main():
             subdir_q.put(subdir)
 
     threads = []
-    nthreads = min(max(subdir_q.qsize(), 1), 32)
+    nthreads = min(max(subdir_q.qsize(), 1), args.num_threads)
 
     # Start up the threads.
     for i in range(nthreads):
         t = Thread(target=post_process,
                    args=(args.in_dir, subdir_q, args.out_dir,
-                         args.num_sessions, args.no_human_readable, cnt_q))
+                         args.num_sessions, args.no_human_readable,
+                         not args.no_fabricate_proxy_requests, cnt_q))
         t.start()
         threads.append(t)
 
