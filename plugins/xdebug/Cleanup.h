@@ -145,7 +145,7 @@ public:
       return;
     }
 
-    TSReleaseAssert(TSHttpTxnArgIndexReserve(arg_name, arg_desc, &md.txnArgIndex) == TS_SUCCESS);
+    TSReleaseAssert(TSUserArgIndexReserve(TSUserArgType::TXN, arg_name, arg_desc, &md.txnArgIndex) == TS_SUCCESS);
     TSReleaseAssert(md.txnCloseContp = TSContCreate(_deleteAuxData, nullptr));
   }
 

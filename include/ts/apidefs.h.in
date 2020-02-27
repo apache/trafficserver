@@ -878,6 +878,14 @@ typedef enum {
   TS_MGMT_SOURCE_ENV       ///< Process environment variable.
 } TSMgmtSource;
 
+/// The User Arg type, used for Txn/Ssn/VConn user argument slots
+typedef enum {
+  TXN,   ///< Transaction based.
+  SSN,   ///< Session based
+  VCONN, ///< VConnection based
+  COUNT  ///< Fake enum, # of valid entries.
+} TSUserArgType;
+
 typedef struct tsapi_file *TSFile;
 
 typedef struct tsapi_mloc *TSMLoc;

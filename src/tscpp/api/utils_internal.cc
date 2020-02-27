@@ -99,7 +99,7 @@ void
 setupTransactionManagement()
 {
   // Reserve a transaction slot
-  TSAssert(TS_SUCCESS == TSHttpTxnArgIndexReserve("atscppapi", "ATS CPP API", &TRANSACTION_STORAGE_INDEX));
+  TSAssert(TS_SUCCESS == TSUserArgIndexReserve(TSUserArgType::TXN, "atscppapi", "ATS CPP API", &TRANSACTION_STORAGE_INDEX));
   // We must always have a cleanup handler available
   TSMutex mutex = nullptr;
   TSCont cont   = TSContCreate(handleTransactionEvents, mutex);

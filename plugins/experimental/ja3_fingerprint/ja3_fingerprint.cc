@@ -444,7 +444,7 @@ TSPluginInit(int argc, const char *argv[])
     }
     // SNI handler
     TSCont ja3_cont = TSContCreate(client_hello_ja3_handler, nullptr);
-    TSVConnArgIndexReserve(PLUGIN_NAME, "used to pass ja3", &ja3_idx);
+    TSUserArgIndexReserve(TSUserArgType::VCONN, PLUGIN_NAME, "used to pass ja3", &ja3_idx);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, ja3_cont);
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L
@@ -473,7 +473,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
   // Set up SNI handler for all TLS connections
   TSCont ja3_cont = TSContCreate(client_hello_ja3_handler, nullptr);
-  TSVConnArgIndexReserve(PLUGIN_NAME, "Used to pass ja3", &ja3_idx);
+  TSUserArgIndexReserve(TSUserArgType::VCONN, PLUGIN_NAME, "Used to pass ja3", &ja3_idx);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, ja3_cont);
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L
