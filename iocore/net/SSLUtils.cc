@@ -1592,8 +1592,8 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 {
   const SSLConfigParams *params = this->_params;
 
-  char *tok_state = nullptr;
-  char *line      = nullptr;
+  char *tok_state   = nullptr;
+  char *line        = nullptr;
   unsigned line_num = 0;
   matcher_line line_info;
 
