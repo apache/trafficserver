@@ -92,20 +92,21 @@ FileManager::registerCallback(FileCallbackFunc func)
 //  Pointers to the new objects are stored in the bindings hashtable
 //
 void
-FileManager::addFile(const char *fileName, const char *configName, bool root_access_needed, ConfigManager *parentConfig)
+FileManager::addFile(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
+                     ConfigManager *parentConfig)
 {
   ink_mutex_acquire(&accessLock);
-  addFileHelper(fileName, configName, root_access_needed, parentConfig);
+  addFileHelper(fileName, configName, root_access_needed, isRequired, parentConfig);
   ink_mutex_release(&accessLock);
 }
 
 // caller must hold the lock
 void
-FileManager::addFileHelper(const char *fileName, const char *configName, bool root_access_needed, ConfigManager *parentConfig)
+FileManager::addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired, ConfigManager *parentConfig)
 {
   ink_assert(fileName != nullptr);
 
-  ConfigManager *rb = new ConfigManager(fileName, configName, root_access_needed, parentConfig);
+  ConfigManager *rb = new ConfigManager(fileName, configName, root_access_needed, isRequired, parentConfig);
   rb->configFiles   = this;
 
   bindings.emplace(rb->getFileName(), rb);
@@ -257,7 +258,7 @@ FileManager::configFileChild(const char *parent, const char *child)
   ink_mutex_acquire(&accessLock);
   if (auto it = bindings.find(parent); it != bindings.end()) {
     parentConfig = it->second;
-    addFileHelper(child, "", parentConfig->rootAccessNeeded(), parentConfig);
+    addFileHelper(child, "", parentConfig->rootAccessNeeded(), parentConfig->getIsRequired(), parentConfig);
   }
   ink_mutex_release(&accessLock);
 }

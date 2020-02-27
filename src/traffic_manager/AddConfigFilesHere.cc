@@ -29,6 +29,9 @@
 
 extern FileManager *configFiles;
 
+
+static constexpr bool REQUIRED { true };
+static constexpr bool NOT_REQUIRED { false };
 /****************************************************************************
  *
  *  AddConfigFilesHere.cc - Structs for config files and
@@ -43,14 +46,14 @@ testcall(char *foo, char * /*configName */)
 }
 
 void
-registerFile(const char *configName, const char *defaultName)
+registerFile(const char *configName, const char *defaultName, bool isRequired)
 {
   bool found        = false;
   const char *fname = REC_readString(configName, &found);
   if (!found) {
     fname = defaultName;
   }
-  configFiles->addFile(fname, configName, false);
+  configFiles->addFile(fname, configName, false, isRequired);
 }
 
 //
@@ -73,20 +76,20 @@ initializeRegistry()
     ink_assert(!"Configuration Object Registry Initialized More than Once");
   }
 
-  registerFile("proxy.config.log.config.filename", ts::filename::LOGGING);
-  registerFile("", ts::filename::STORAGE);
-  registerFile("proxy.config.socks.socks_config_file", ts::filename::SOCKS);
-  registerFile(ts::filename::RECORDS, ts::filename::RECORDS);
-  registerFile("proxy.config.cache.control.filename", ts::filename::CACHE);
-  registerFile("proxy.config.cache.ip_allow.filename", ts::filename::IP_ALLOW);
-  registerFile("proxy.config.http.parent_proxy.file", ts::filename::PARENT);
-  registerFile("proxy.config.url_remap.filename", ts::filename::REMAP);
-  registerFile("", ts::filename::VOLUME);
-  registerFile("proxy.config.cache.hosting_filename", ts::filename::HOSTING);
-  registerFile("", ts::filename::PLUGIN);
-  registerFile("proxy.config.dns.splitdns.filename", ts::filename::SPLITDNS);
-  registerFile("proxy.config.ssl.server.multicert.filename", ts::filename::SSL_MULTICERT);
-  registerFile("proxy.config.ssl.servername.filename", ts::filename::SNI);
+  registerFile("proxy.config.log.config.filename", ts::filename::LOGGING, NOT_REQUIRED);
+  registerFile("", ts::filename::STORAGE, REQUIRED);
+  registerFile("proxy.config.socks.socks_config_file", ts::filename::SOCKS, NOT_REQUIRED);
+  registerFile(ts::filename::RECORDS, ts::filename::RECORDS, NOT_REQUIRED);
+  registerFile("proxy.config.cache.control.filename", ts::filename::CACHE, NOT_REQUIRED);
+  registerFile("proxy.config.cache.ip_allow.filename", ts::filename::IP_ALLOW, NOT_REQUIRED);
+  registerFile("proxy.config.http.parent_proxy.file", ts::filename::PARENT, NOT_REQUIRED);
+  registerFile("proxy.config.url_remap.filename", ts::filename::REMAP, NOT_REQUIRED);
+  registerFile("", ts::filename::VOLUME, NOT_REQUIRED);
+  registerFile("proxy.config.cache.hosting_filename", ts::filename::HOSTING, NOT_REQUIRED);
+  registerFile("", ts::filename::PLUGIN, NOT_REQUIRED);
+  registerFile("proxy.config.dns.splitdns.filename", ts::filename::SPLITDNS, NOT_REQUIRED);
+  registerFile("proxy.config.ssl.server.multicert.filename", ts::filename::SSL_MULTICERT, NOT_REQUIRED);
+  registerFile("proxy.config.ssl.servername.filename", ts::filename::SNI, NOT_REQUIRED);
 
   configFiles->registerCallback(testcall);
 }

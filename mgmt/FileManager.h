@@ -48,7 +48,7 @@ enum lockAction_t {
 //
 //  public functions:
 //
-//  addFile(char*, char *, configFileInfo*) - adds a new config file to be
+//  addFile(char*, char *, bool, configFileInfo*) - adds a new config file to be
 //       managed.  A ConfigManager object is created for the file.
 //       if the file_info ptr is not NULL, a WebFileEdit object
 //       is also created
@@ -80,7 +80,8 @@ class FileManager
 public:
   FileManager();
   ~FileManager();
-  void addFile(const char *fileName, const char *configName, bool root_access_needed, ConfigManager *parentConfig = nullptr);
+  void addFile(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
+               ConfigManager *parentConfig = nullptr);
   bool getConfigObj(const char *fileName, ConfigManager **rbPtr);
   void registerCallback(FileCallbackFunc func);
   void fileChanged(const char *fileName, const char *configName);
@@ -93,7 +94,7 @@ private:
   ink_mutex cbListLock; // Protects the CallBack List
   DLL<callbackListable> cblist;
   std::unordered_map<std::string_view, ConfigManager *> bindings;
-  void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, ConfigManager *parentConfig);
+  void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired, ConfigManager *parentConfig);
 };
 
 void initializeRegistry(); // implemented in AddConfigFilesHere.cc
