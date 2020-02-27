@@ -54,7 +54,7 @@ class ConfigManager
 {
 public:
   // fileName_ should be rooted or a base file name.
-  ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed, ConfigManager *parentConfig_);
+  ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed, bool isRequired_, ConfigManager *parentConfig_);
   ~ConfigManager();
 
   // Manual take out of lock required
@@ -104,6 +104,12 @@ public:
     return root_access_needed;
   }
 
+  bool
+  getIsRequired() const
+  {
+    return isRequired;
+  }
+
   FileManager *configFiles = nullptr; // Manager to notify on an update.
 
   // noncopyable
@@ -117,6 +123,7 @@ private:
   char *fileName;
   char *configName;
   bool root_access_needed;
+  bool isRequired;
   ConfigManager *parentConfig;
   time_t fileLastModified = 0;
 };

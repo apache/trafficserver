@@ -42,8 +42,8 @@
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000)
 #endif
 
-ConfigManager::ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed_, ConfigManager *parentConfig_)
-  : root_access_needed(root_access_needed_), parentConfig(parentConfig_)
+ConfigManager::ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed_, bool isRequired_, ConfigManager *parentConfig_)
+  : root_access_needed(root_access_needed_),  isRequired(isRequired_), parentConfig(parentConfig_)
 {
   ExpandingArray existVer(25, true); // Existing versions
   struct stat fileInfo;
@@ -59,14 +59,15 @@ ConfigManager::ConfigManager(const char *fileName_, const char *configName_, boo
   configName = ats_strdup(configName_);
 
   ink_mutex_init(&fileAccessLock);
-
   // Check to make sure that our configuration file exists
   //
   if (statFile(&fileInfo) < 0) {
-    // If we can't find an active version because there is none we have a hard failure.
-    mgmt_fatal(0, "[ConfigManager::ConfigManager] Unable to find configuration file %s.\n\tStat failed : %s\n", fileName,
-               strerror(errno));
+    mgmt_log("[ConfigManager::ConfigManager] %s Unable to load: %s", fileName, strerror(errno));
 
+    if (isRequired) {
+      mgmt_fatal(0, "[ConfigManager::ConfigManager] Unable to open required configuration file %s.\n\tStat failed : %s\n", fileName,
+                 strerror(errno));
+    }
   } else {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
   }
