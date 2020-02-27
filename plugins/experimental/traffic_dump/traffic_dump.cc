@@ -225,9 +225,21 @@ remove_scheme_prefix(std::string_view url)
   return url;
 }
 
-/// Helper functions to collect txn information from TSMBuffer
+/// Write the content node.
+//
+/// "content"
+///    "encoding"
+///    "size"
 std::string
-collect_headers(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t body_bytes)
+write_content_node(int64_t num_body_bytes)
+{
+  return std::string(R"(,"content":{"encoding":"plain","size":)" + std::to_string(num_body_bytes) + '}');
+}
+
+/// Read the txn information from TSMBuffer and write the header information.
+/// This function does not write the content node.
+std::string
+write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_loc)
 {
   std::string result = "{";
   int len            = 0;
@@ -243,12 +255,12 @@ collect_headers(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t body_bytes)
     TSAssert(TS_SUCCESS == TSHttpHdrUrlGet(buffer, hdr_loc, &url_loc));
     // 2. "scheme":
     cp = TSUrlSchemeGet(buffer, url_loc, &len);
-    TSDebug(PLUGIN_NAME, "collect_headers(): found scheme %.*s ", len, cp);
+    TSDebug(PLUGIN_NAME, "write_message_node(): found scheme %.*s ", len, cp);
     result += "," + json_entry("scheme", cp, len);
 
     // 3. "method":(string)
     cp = TSHttpHdrMethodGet(buffer, hdr_loc, &len);
-    TSDebug(PLUGIN_NAME, "collect_headers(): found method %.*s ", len, cp);
+    TSDebug(PLUGIN_NAME, "write_message_node(): found method %.*s ", len, cp);
     result += "," + json_entry("method", cp, len);
 
     // 4. "url"
@@ -267,7 +279,7 @@ collect_headers(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t body_bytes)
       url_string = remove_scheme_prefix(url_string);
     }
 
-    TSDebug(PLUGIN_NAME, "collect_headers(): found host target %.*s", static_cast<int>(url_string.size()), url_string.data());
+    TSDebug(PLUGIN_NAME, "write_message_node(): found host target %.*s", static_cast<int>(url_string.size()), url_string.data());
     result += "," + json_entry("url", url_string.data(), url_string.size());
     TSfree(url);
     TSHandleMLocRelease(buffer, hdr_loc, url_loc);
@@ -279,11 +291,6 @@ collect_headers(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t body_bytes)
     result += "," + json_entry("reason", cp, len);
     // 3. "encoding"
   }
-
-  // "content"
-  //    "encoding"
-  //    "size"
-  result += R"(,"content":{"encoding":"plain","size":)" + std::to_string(body_bytes) + '}';
 
   // "headers": [[name(string), value(string)]]
   result += R"(,"headers":{"encoding":"esc_json", "fields": [)";
@@ -305,8 +312,17 @@ collect_headers(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t body_bytes)
       result += ",";
     }
   }
+  return result += "]}";
+}
 
-  return result + "]}}";
+/// Read the txn information from TSMBuffer and write the header information including
+/// the content node describing the body characteristics.
+std::string
+write_message_node(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t num_body_bytes)
+{
+  std::string result = write_message_node_no_content(buffer, hdr_loc);
+  result += write_content_node(num_body_bytes);
+  return result + "}";
 }
 
 // Per session AIO handler: update AIO counts and clean up
@@ -405,7 +421,9 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
     TSMLoc hdr_loc;
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(PLUGIN_NAME, "Found client request");
-      txn_info += R"(,"client-request":)" + collect_headers(buffer, hdr_loc, TSHttpTxnClientReqBodyBytesGet(txnp));
+      // We don't have an accurate view of the body size until TXN_CLOSE so we hold
+      // off on writing the content:size node until then.
+      txn_info += R"(,"client-request":)" + write_message_node_no_content(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
@@ -417,21 +435,24 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
     // proxy-request/response headers
     TSMBuffer buffer;
     TSMLoc hdr_loc;
+    if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &buffer, &hdr_loc)) {
+      txn_info += write_content_node(TSHttpTxnClientReqBodyBytesGet(txnp)) + "}";
+    }
     if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(PLUGIN_NAME, "Found proxy request");
-      txn_info += R"(,"proxy-request":)" + collect_headers(buffer, hdr_loc, TSHttpTxnServerReqBodyBytesGet(txnp));
+      txn_info += R"(,"proxy-request":)" + write_message_node(buffer, hdr_loc, TSHttpTxnServerReqBodyBytesGet(txnp));
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(PLUGIN_NAME, "Found server response");
-      txn_info += R"(,"server-response":)" + collect_headers(buffer, hdr_loc, TSHttpTxnServerRespBodyBytesGet(txnp));
+      txn_info += R"(,"server-response":)" + write_message_node(buffer, hdr_loc, TSHttpTxnServerRespBodyBytesGet(txnp));
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(PLUGIN_NAME, "Found proxy response");
-      txn_info += R"(,"proxy-response":)" + collect_headers(buffer, hdr_loc, TSHttpTxnClientRespBodyBytesGet(txnp));
+      txn_info += R"(,"proxy-response":)" + write_message_node(buffer, hdr_loc, TSHttpTxnClientRespBodyBytesGet(txnp));
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
