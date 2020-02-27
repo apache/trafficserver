@@ -104,7 +104,8 @@ public:
     addr.sin_port        = 0;
 
     this->_con = new UDP2ConnectionImpl(this, eventProcessor.assign_thread(ET_UDP2));
-    ink_release_assert(this->_con->create_socket(reinterpret_cast<sockaddr *const>(&addr)) >= 0);
+    ink_release_assert(this->_con->create_socket(AF_INET) >= 0);
+    ink_release_assert(this->_con->bind(reinterpret_cast<sockaddr *const>(&addr)) >= 0);
     ink_release_assert(this->_con->start_io() >= 0);
     ink_release_assert(this->_con != nullptr);
     std::cout << "bind to port: " << ats_ip_port_host_order(this->_con->from()) << std::endl;

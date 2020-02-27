@@ -82,7 +82,8 @@ public:
   IpEndpoint to() override;
   void set_continuation(Continuation *con) override;
 
-  int create_socket(sockaddr const *addr, int recv_buf = 0, int send_buf = 0);
+  int create_socket(int family, int recv_buf = 0, int send_buf = 0);
+  int bind(sockaddr const *addr);
   int connect(sockaddr const *addr);
   bool is_connected() const;
   void bind_thread(EThread *thread);

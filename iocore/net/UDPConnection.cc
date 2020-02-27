@@ -271,13 +271,11 @@ UDP2ConnectionImpl::start_io()
 }
 
 int
-UDP2ConnectionImpl::create_socket(sockaddr const *addr, int recv_buf, int send_buf)
+UDP2ConnectionImpl::create_socket(int family, int recv_buf, int send_buf)
 {
   int res = 0;
   int fd  = -1;
-  IpEndpoint local_addr{};
-  int local_addr_len = sizeof(local_addr);
-  if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
+  if ((res = socketManager.socket(family, SOCK_DGRAM, 0)) < 0) {
     goto Lerror;
   }
 
@@ -297,7 +295,7 @@ UDP2ConnectionImpl::create_socket(sockaddr const *addr, int recv_buf, int send_b
     }
   }
 
-  if (addr->sa_family == AF_INET) {
+  if (family == AF_INET) {
     bool succeeded = false;
     int enable     = 1;
 #ifdef IP_PKTINFO
@@ -314,7 +312,7 @@ UDP2ConnectionImpl::create_socket(sockaddr const *addr, int recv_buf, int send_b
       Debug("udp_con", "setsockeopt for pktinfo failed");
       goto Lerror;
     }
-  } else if (addr->sa_family == AF_INET6) {
+  } else if (family == AF_INET6) {
     bool succeeded = false;
     int enable     = 1;
 #ifdef IPV6_PKTINFO
@@ -327,6 +325,11 @@ UDP2ConnectionImpl::create_socket(sockaddr const *addr, int recv_buf, int send_b
       succeeded = true;
     }
 #endif
+    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
+      Debug("udp_con", "safe_setsockopt error IPPROTO_IPV6");
+      goto Lerror;
+    }
+
     if (!succeeded) {
       Debug("udp_con", "setsockeopt for pktinfo failed");
       goto Lerror;
@@ -338,35 +341,47 @@ UDP2ConnectionImpl::create_socket(sockaddr const *addr, int recv_buf, int send_b
     goto Lerror;
   }
 
-  if (ats_is_ip6(addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
-    goto Lerror;
-  }
-
   if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
   }
 
-  if (-1 == socketManager.ink_bind(fd, addr, ats_ip_size(addr))) {
+  this->_fd = fd;
+  Debug("udp_con", "creating a udp socket family = %d---success", family);
+  return 0;
+Lerror:
+  Debug("udp_con", "creating a udp socket family = %d---soft failure", family);
+  if (fd != -1) {
+    socketManager.close(fd);
+  }
+
+  return -errno;
+}
+
+int
+UDP2ConnectionImpl::bind(sockaddr const *addr)
+{
+  int res            = 0;
+  int local_addr_len = sizeof(this->_from);
+  if (-1 == socketManager.ink_bind(this->_fd, addr, ats_ip_size(addr))) {
     char buff[INET6_ADDRPORTSTRLEN];
     Debug("udp_con", "ink bind failed on %s %s", ats_ip_nptop(addr, buff, sizeof(buff)), strerror(errno));
     goto Lerror;
   }
 
-  if ((res = safe_getsockname(fd, &local_addr.sa, &local_addr_len)) < 0) {
+  if ((res = safe_getsockname(this->_fd, &this->_from.sa, &local_addr_len)) < 0) {
     Debug("udp_con", "CreateUdpsocket: getsockname didn't work");
     goto Lerror;
   }
 
-  ats_ip_copy(&this->_from, &local_addr.sa);
-  this->_fd = fd;
-  Debug("udp_con", "creating a udp socket port = %d---success", ats_ip_port_host_order(local_addr));
+  Debug("udp_con", "bind udp socket port = %d---success", ats_ip_port_host_order(addr));
   return 0;
 Lerror:
-  Debug("udp_con", "creating a udp socket port = %d---soft failure", ats_ip_port_host_order(local_addr));
-  if (fd != -1) {
-    socketManager.close(fd);
+  Debug("udp_con", "creating a udp socket port = %d---soft failure", ats_ip_port_host_order(addr));
+  if (this->_fd != -1) {
+    socketManager.close(this->_fd);
   }
 
+  this->_fd = -1;
   return -errno;
 }
 
