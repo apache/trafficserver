@@ -746,6 +746,7 @@ Changes with Apache Traffic Server 9.0.0
   #5945 - cachekey: allow multiple values for `--key-type`
   #5949 - Fix TSHttpTxnReenable to schedule back to original SM thread
   #5951 - Add Base64 encoding/decoding to encryption/decryption.
+  #5952 - Fix code to avoid HostDBContinuation use after free
   #5953 - Log H2 priority information
   #5955 - Fix debug output for global_user_agent_header.
   #5956 - Turn on certificate verification, in permissive mode for now
@@ -850,6 +851,7 @@ Changes with Apache Traffic Server 9.0.0
   #6216 - This fixes next hop unit tests that segfault due to missing unit test yaml files.
   #6218 - Fix stringstream crash during shutdown
   #6219 - Fixed next hop tests for out of tree builds
+  #6222 - For combo_handler plugin, add an optional whitelist of allowed values for Content-Type.
   #6224 - Fixed build issue with clang5 and Extendible
   #6226 - Fix sni.yaml fqdn to match complete name string
   #6227 - Remove never implemented regex descriptions
@@ -888,28 +890,34 @@ Changes with Apache Traffic Server 9.0.0
   #6328 - Document the order of the X-Cache header
   #6329 - Fixed build issues on macOS after 0-RTT merge
   #6332 - Fixes Issue #6321 caused when proxy.config.http.no_dns_just_forward_to_parent
+  #6337 - Perf: Optimize sending HTTP/2 frame
   #6339 - Fixes an issue where NextHopSelectionStrategy did not implement a parent check.
   #6340 - Add header rewrite test to make sure we are not injecting end of rule char
   #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
   #6346 - Fix heap-use-after-free on Http2Stream::destroy()
   #6347 - Fix localstatedir and runtimedir for Debian layout
   #6358 - Add header guard - issue #6357
+  #6364 - Fix rare SSN/TXN Start/Close Hook misorderings
   #6372 - Change alloca usage to malloc/free
   #6373 - Change bitfields to be unsigned explicitly
   #6374 - Add exception to throw since there is no context and could cause a crash
   #6376 - Update inactive_timeout_at in Http2Stream::signal_read_event()
   #6378 - Remove trailing white space from json formatter
   #6380 - Remove unnecesary HttpSM handler call with VC_EVENT_ERROR
+  #6388 - Replace python with python3 in AuTest
   #6392 - Free TSMgmtString after using it.
   #6396 - Avoid cross-thread mutex conflicts
   #6397 - Ensure that extra data beyond the chunked body is not tunneled
   #6403 - Fix for lua plugin coredump problem during reload
+  #6404 - Signal VC_EVENT_READ_COMPLETE when ATS received END_STREAM flag
   #6406 - Auto port select slow_post test
   #6409 - Another option to fix potential HTTP/2 vio stall
   #6410 - Change gold files to be less restrictive 
+  #6413 - Fix crash when H2 client does not set End-of-data bit
   #6419 - URI Sig Null Check for Clang Warning
   #6420 - Syntax Error fixed in URI sig Plugin
   #6431 - #6428 Clear stale captive_action during Cache read retry - WIP (in test)
   #6435 - Fixed chunked_encoding test to work with OpenSSL 1.0.2
+  #6436 - SSLNetVConnection, fixed/removed assert when running debug build
   #6440 - Cleaned up smuggle-client
   #6446 - Avoid a weird name collision between HRW and tscore
