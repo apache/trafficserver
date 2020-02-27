@@ -31,6 +31,7 @@
 #include "tscore/ink_cap.h"
 #include "tscore/ink_file.h"
 #include "tscore/Tokenizer.h"
+#include "tscore/ts_file.h"
 #include "IPAllow.h"
 #include "PluginFactory.h"
 
@@ -940,15 +941,22 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   bool is_cur_mapping_regex;
   const char *type_id_str;
 
-  ats_scoped_str file_buf(readIntoBuffer(path, modulePrefix, nullptr));
-  if (!file_buf) {
-    Warning("can't load remapping configuration file %s", path);
-    return false;
+  std::error_code ec;
+  std::string content{ts::file::load(ts::file::path{path}, ec)};
+  if (ec) {
+    switch (ec.value()) {
+    case ENOENT:
+      Warning("Can't open remapping configuration file %s - %s", path, strerror(ec.value()));
+      break;
+    default:
+      Error("Failed load remapping configuration file %s - %s", path, strerror(ec.value()));
+      return false;
+    }
   }
 
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");
 
-  for (cur_line = tokLine(file_buf, &tok_state, '\\'); cur_line != nullptr;) {
+  for (cur_line = tokLine(content.data(), &tok_state, '\\'); cur_line != nullptr;) {
     reg_map      = nullptr;
     new_mapping  = nullptr;
     errStrBuf[0] = 0;

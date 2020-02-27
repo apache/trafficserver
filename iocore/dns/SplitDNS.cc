@@ -139,8 +139,7 @@ SplitDNSConfig::reconfigure()
   params->m_DNSSrvrTable    = new DNS_table("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags);
 
   if (nullptr == params->m_DNSSrvrTable || (0 == params->m_DNSSrvrTable->getEntryCount())) {
-    Error("%s failed to load", ts::filename::SPLITDNS);
-    Warning("No NAMEDs provided! Disabling SplitDNS");
+    Warning("Failed to load %s - No NAMEDs provided! Disabling SplitDNS", ts::filename::SPLITDNS);
     gsplit_dns_enabled = 0;
     delete params;
     return;
