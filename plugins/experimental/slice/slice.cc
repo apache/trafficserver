@@ -43,6 +43,13 @@ read_request(TSHttpTxn txnp, Config *const config)
   if (TS_HTTP_METHOD_GET == header.method()) {
     static int const SLICER_MIME_LEN_INFO = strlen(SLICER_MIME_FIELD_INFO);
     if (!header.hasKey(SLICER_MIME_FIELD_INFO, SLICER_MIME_LEN_INFO)) {
+      // check if any previous plugin has monkeyed with the transaction status
+      TSHttpStatus const txnstat = TSHttpTxnStatusGet(txnp);
+      if (0 != (int)txnstat) {
+        DEBUG_LOG("slice: txn status change detected (%d), skipping plugin\n", (int)txnstat);
+        return false;
+      }
+
       // turn off any and all transaction caching (shouldn't matter)
       TSHttpTxnServerRespNoStoreSet(txnp, 1);
       TSHttpTxnRespCacheableSet(txnp, 0);
