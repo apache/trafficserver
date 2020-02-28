@@ -27,27 +27,14 @@
 #include "P_Net.h"
 #include "NetEvent.h"
 #include "UDPPacket.h"
-#include "AtomicEvent.h"
 
 #define NET_EVENT_DATAGRAM_CONNECT_SUCCESS (NET_EVENT_EVENTS_START + 170)
 #define NET_EVENT_DATAGRAM_CONNECT_ERROR (NET_EVENT_DATAGRAM_CONNECT_SUCCESS + 1)
 #define NET_EVENT_DATAGRAM_WRITE_READY (NET_EVENT_DATAGRAM_CONNECT_SUCCESS + 1)
 
-class UDP2Connection : public NetEvent
-{
-public:
-  virtual ~UDP2Connection() {}
-  virtual int send(UDP2PacketUPtr p, bool flush = true) = 0;
-  virtual UDP2PacketUPtr recv()                         = 0;
-  virtual void flush()                                  = 0;
+class Continuation;
 
-  virtual int close()                              = 0;
-  virtual void set_continuation(Continuation *con) = 0;
-  virtual IpEndpoint from()                        = 0;
-  virtual IpEndpoint to()                          = 0;
-};
-
-class UDP2ConnectionImpl : public UDP2Connection, public Continuation
+class UDP2ConnectionImpl : public Continuation, public NetEvent
 {
 public:
   UDP2ConnectionImpl() = delete;
@@ -74,13 +61,12 @@ public:
   ContFlags &get_control_flags() override;
   int start_io();
 
-  // UDP2Connection
-  int send(UDP2PacketUPtr packet, bool flush = true) override;
-  void flush() override;
-  UDP2PacketUPtr recv() override;
-  IpEndpoint from() override;
-  IpEndpoint to() override;
-  void set_continuation(Continuation *con) override;
+  int send(UDP2PacketUPtr packet, bool flush = true);
+  void flush();
+  UDP2PacketUPtr recv();
+  IpEndpoint from();
+  IpEndpoint to();
+  void set_continuation(Continuation *con);
 
   int create_socket(int family, int recv_buf = 0, int send_buf = 0);
   int bind(sockaddr const *addr);
@@ -90,6 +76,18 @@ public:
 
   int startEvent(int event, void *data);
   int mainEvent(int event, void *data);
+
+  void
+  set_data(void *data)
+  {
+    this->_data = data;
+  }
+
+  void *
+  get_data()
+  {
+    return this->_data;
+  }
 
 protected:
   // control max data size per read, This can be calculated as MAX_NIOV * 1024 / read
@@ -131,4 +129,6 @@ private:
 
   std::deque<UDP2PacketUPtr> _recv_list;
   std::deque<UDP2PacketUPtr> _send_list;
+
+  void *_data = nullptr;
 };
