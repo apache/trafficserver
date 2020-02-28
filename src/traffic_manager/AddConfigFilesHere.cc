@@ -29,9 +29,8 @@
 
 extern FileManager *configFiles;
 
-
-static constexpr bool REQUIRED { true };
-static constexpr bool NOT_REQUIRED { false };
+static constexpr bool REQUIRED{true};
+static constexpr bool NOT_REQUIRED{false};
 /****************************************************************************
  *
  *  AddConfigFilesHere.cc - Structs for config files and
