@@ -102,7 +102,8 @@ FileManager::addFile(const char *fileName, const char *configName, bool root_acc
 
 // caller must hold the lock
 void
-FileManager::addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired, ConfigManager *parentConfig)
+FileManager::addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
+                           ConfigManager *parentConfig)
 {
   ink_assert(fileName != nullptr);
 

@@ -94,7 +94,8 @@ private:
   ink_mutex cbListLock; // Protects the CallBack List
   DLL<callbackListable> cblist;
   std::unordered_map<std::string_view, ConfigManager *> bindings;
-  void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired, ConfigManager *parentConfig);
+  void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
+                     ConfigManager *parentConfig);
 };
 
 void initializeRegistry(); // implemented in AddConfigFilesHere.cc
