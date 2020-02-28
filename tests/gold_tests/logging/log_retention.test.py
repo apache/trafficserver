@@ -23,6 +23,12 @@ Test.Summary = '''
 Test the enforcment of proxy.config.log.max_space_mb_for_logs.
 '''
 
+# This test is sensitive to timing issues, especially in the OS CI for some
+# reason. We'll leave the test here because it is helpful for when doing
+# development on the log rotate code, but make it generally skipped when the
+# suite of AuTests are run so it doesn't generate annoying false negatives.
+Test.SkipIf(Condition.true("This test is sensitive to timing issues which makes it flaky."))
+
 
 class TestLogRetention:
     __base_records_config = {
