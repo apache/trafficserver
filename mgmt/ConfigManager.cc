@@ -42,8 +42,9 @@
 #define TS_ARCHIVE_STAT_MTIME(t) ((t).st_mtime * 1000000000)
 #endif
 
-ConfigManager::ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed_, bool isRequired_, ConfigManager *parentConfig_)
-  : root_access_needed(root_access_needed_),  isRequired(isRequired_), parentConfig(parentConfig_)
+ConfigManager::ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed_, bool isRequired_,
+                             ConfigManager *parentConfig_)
+  : root_access_needed(root_access_needed_), isRequired(isRequired_), parentConfig(parentConfig_)
 {
   ExpandingArray existVer(25, true); // Existing versions
   struct stat fileInfo;

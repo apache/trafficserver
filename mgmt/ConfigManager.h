@@ -54,7 +54,8 @@ class ConfigManager
 {
 public:
   // fileName_ should be rooted or a base file name.
-  ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed, bool isRequired_, ConfigManager *parentConfig_);
+  ConfigManager(const char *fileName_, const char *configName_, bool root_access_needed, bool isRequired_,
+                ConfigManager *parentConfig_);
   ~ConfigManager();
 
   // Manual take out of lock required
