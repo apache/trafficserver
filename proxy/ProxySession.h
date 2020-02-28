@@ -74,8 +74,10 @@ struct ProxyError {
 };
 
 /// Abstract class for HttpSM to interface with any session
-class ProxySession : public VConnection
+class ProxySession : public VConnection, public PluginUserArgs<MAX_USER_ARGS_SSN>
 {
+  using pua_type = PluginUserArgs<MAX_USER_ARGS_SSN>;
+
 public:
   ProxySession();
 
@@ -126,10 +128,6 @@ public:
   // Non-Virtual Methods
   int do_api_callout(TSHttpHookID id);
 
-  // Non-Virtual Accessors
-  void *get_user_arg(unsigned ix) const;
-  void set_user_arg(unsigned ix, void *arg);
-
   void set_debug(bool flag);
   bool debug() const;
 
@@ -161,6 +159,19 @@ public:
   ink_hrtime ssn_start_time    = 0;
   ink_hrtime ssn_last_txn_time = 0;
 
+  // Necessary, because, C++. Thanks Alan!
+  void *
+  get_user_arg(unsigned ix) const override
+  {
+    return this->pua_type::get_user_arg(ix);
+  }
+
+  void
+  set_user_arg(unsigned ix, void *arg) override
+  {
+    return this->pua_type::set_user_arg(ix, arg);
+  }
+
 protected:
   // Hook dispatching state
   HttpHookState hook_state;
@@ -185,7 +196,6 @@ private:
 
   APIHook const *cur_hook = nullptr;
   HttpAPIHooks api_hooks;
-  void *user_args[TS_HTTP_MAX_USER_ARG];
 
   // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to
@@ -205,20 +215,6 @@ inline int64_t
 ProxySession::next_connection_id()
 {
   return ink_atomic_increment(&next_cs_id, 1);
-}
-
-inline void *
-ProxySession::get_user_arg(unsigned ix) const
-{
-  ink_assert(ix < countof(user_args));
-  return this->user_args[ix];
-}
-
-inline void
-ProxySession::set_user_arg(unsigned ix, void *arg)
-{
-  ink_assert(ix < countof(user_args));
-  user_args[ix] = arg;
 }
 
 inline void

@@ -1554,15 +1554,17 @@ tsapi TSReturnCode TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, con
 tsapi TSReturnCode TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *description, int *arg_idx);
 tsapi TSReturnCode TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description);
 tsapi TSReturnCode TSUserArgIndexLookup(TSUserArgType type, int arg_idx, const char **name, const char **description);
-
-tsapi void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
-tsapi void *TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
-tsapi void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
-tsapi void *TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx);
-tsapi void TSVConnArgSet(TSVConn connp, int arg_idx, void *arg);
-tsapi void *TSVConnArgGet(TSVConn connp, int arg_idx);
+tsapi void TSUserArgSet(void *data, int arg_idx, void *arg);
+tsapi void *TSUserArgGet(void *data, int arg_idx);
 
 /* These are deprecated as of v9.0.0, and will be removed in v10.0.0 */
+tsapi TS_DEPRECATED void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
+tsapi TS_DEPRECATED void *TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
+tsapi TS_DEPRECATED void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
+tsapi TS_DEPRECATED void *TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx);
+tsapi TS_DEPRECATED void TSVConnArgSet(TSVConn connp, int arg_idx, void *arg);
+tsapi TS_DEPRECATED void *TSVConnArgGet(TSVConn connp, int arg_idx);
+
 tsapi TS_DEPRECATED TSReturnCode TSHttpTxnArgIndexReserve(const char *name, const char *description, int *arg_idx);
 tsapi TS_DEPRECATED TSReturnCode TSHttpTxnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
 tsapi TS_DEPRECATED TSReturnCode TSHttpTxnArgIndexLookup(int arg_idx, const char **name, const char **description);

@@ -469,7 +469,7 @@ handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
     return 0;
   }
 
-  if (1 != reinterpret_cast<intptr_t>(TSHttpTxnArgGet(txnp, arg_idx))) {
+  if (1 != reinterpret_cast<intptr_t>(TSUserArgGet(txnp, arg_idx))) {
     LOG_DEBUG("combo is disabled for this channel");
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
@@ -1228,8 +1228,8 @@ writeErrorResponse(InterceptData &int_data, int &n_bytes_written)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  TSHttpTxnArgSet(rh, arg_idx, (void *)1); /* Save for later hooks */
-  return TSREMAP_NO_REMAP;                 /* Continue with next remap plugin in chain */
+  TSUserArgSet(rh, arg_idx, (void *)1); /* Save for later hooks */
+  return TSREMAP_NO_REMAP;              /* Continue with next remap plugin in chain */
 }
 
 /*

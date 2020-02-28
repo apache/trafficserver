@@ -170,7 +170,7 @@ struct AuthRequestContext {
   {
     AuthOptions *opt;
 
-    opt = static_cast<AuthOptions *>(TSHttpTxnArgGet(this->txn, AuthTaggedRequestArg));
+    opt = static_cast<AuthOptions *>(TSUserArgGet(this->txn, AuthTaggedRequestArg));
     return opt ? opt : AuthGlobalOptions;
   }
 
@@ -621,7 +621,7 @@ StateAuthorized(AuthRequestContext *auth, void *)
 static bool
 AuthRequestIsTagged(TSHttpTxn txn)
 {
-  return AuthTaggedRequestArg != -1 && TSHttpTxnArgGet(txn, AuthTaggedRequestArg) != nullptr;
+  return AuthTaggedRequestArg != -1 && TSUserArgGet(txn, AuthTaggedRequestArg) != nullptr;
 }
 
 static int
@@ -787,7 +787,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_UN
 {
   AuthOptions *options = static_cast<AuthOptions *>(instance);
 
-  TSHttpTxnArgSet(txn, AuthTaggedRequestArg, options);
+  TSUserArgSet(txn, AuthTaggedRequestArg, options);
   TSHttpTxnHookAdd(txn, TS_HTTP_POST_REMAP_HOOK, AuthOsDnsContinuation);
 
   return TSREMAP_NO_REMAP;

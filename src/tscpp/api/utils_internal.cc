@@ -153,11 +153,11 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
 Transaction &
 utils::internal::getTransaction(TSHttpTxn ats_txn_handle)
 {
-  Transaction *transaction = static_cast<Transaction *>(TSHttpTxnArgGet(ats_txn_handle, TRANSACTION_STORAGE_INDEX));
+  Transaction *transaction = static_cast<Transaction *>(TSUserArgGet(ats_txn_handle, TRANSACTION_STORAGE_INDEX));
   if (!transaction) {
     transaction = new Transaction(static_cast<void *>(ats_txn_handle));
     LOG_DEBUG("Created new transaction object at %p for ats pointer %p", transaction, ats_txn_handle);
-    TSHttpTxnArgSet(ats_txn_handle, TRANSACTION_STORAGE_INDEX, transaction);
+    TSUserArgSet(ats_txn_handle, TRANSACTION_STORAGE_INDEX, transaction);
   }
   return *transaction;
 }

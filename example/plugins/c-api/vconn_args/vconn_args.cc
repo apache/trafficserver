@@ -40,7 +40,7 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
     while (TSUserArgIndexReserve(TSUserArgType::VCONN, PLUGIN_NAME, "test", &idx) == TS_SUCCESS) {
       char *buf = static_cast<char *>(TSmalloc(64));
       snprintf(buf, 64, "Test Arg Idx %d", idx);
-      TSVConnArgSet(ssl_vc, idx, (void *)buf);
+      TSUserArgSet(ssl_vc, idx, (void *)buf);
       TSDebug(PLUGIN_NAME, "Successfully reserve and set arg #%d", idx);
     }
     last_arg = idx;
@@ -65,7 +65,7 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
     // Testing argget and delete
     int idx = 0;
     while (idx <= last_arg) {
-      char *buf = static_cast<char *>(TSVConnArgGet(ssl_vc, idx));
+      char *buf = static_cast<char *>(TSUserArgGet(ssl_vc, idx));
       if (buf) {
         TSDebug(PLUGIN_NAME, "Successfully retrieve vconn arg #%d: %s", idx, buf);
         TSfree(buf);

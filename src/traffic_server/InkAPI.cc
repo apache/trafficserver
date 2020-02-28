@@ -30,6 +30,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
+#include "tscore/PluginUserArgs.h"
 #include "tscore/I_Layout.h"
 #include "tscore/I_Version.h"
 
@@ -108,7 +109,7 @@ struct UserArg {
 };
 
 /// Table of reservations, indexed by type and then index.
-UserArg UserArgTable[TSUserArgType::COUNT][std::max(TS_HTTP_MAX_USER_ARG, TS_VCONN_MAX_USER_ARG)];
+UserArg UserArgTable[TSUserArgType::COUNT][std::max(MAX_USER_ARGS_TXN, MAX_USER_ARGS_VCONN)];
 
 /// Table of next reserved index.
 std::atomic<int> UserArgIdx[TSUserArgType::COUNT];
@@ -6120,7 +6121,7 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
   }
 
   idx       = UserArgIdx[type]++;
-  int limit = (type == TSUserArgType::VCONN) ? TS_VCONN_MAX_USER_ARG : TS_HTTP_MAX_USER_ARG;
+  int limit = (type == TSUserArgType::VCONN) ? MAX_USER_ARGS_VCONN : MAX_USER_ARGS_TXN;
 
   if (idx < limit) {
     UserArg &arg(UserArgTable[type][idx]);
@@ -6171,6 +6172,32 @@ TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, con
     }
   }
   return TS_ERROR;
+}
+
+// -------------
+void
+TSUserArgSet(void *data, int arg_idx, void *arg)
+{
+  if (nullptr != data) {
+    PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(static_cast<Continuation *>(data));
+
+    user_args->set_user_arg(arg_idx, arg);
+  } else {
+    // This will be a special case later for the GLB
+  }
+}
+
+void *
+TSUserArgGet(void *data, int arg_idx)
+{
+  if (nullptr != data) {
+    PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(static_cast<Continuation *>(data));
+
+    return user_args->get_user_arg(arg_idx);
+  } else {
+    // This will be a special case later for the GLB
+    return nullptr;
+  }
 }
 
 // -------------
@@ -6232,27 +6259,28 @@ void
 TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_TXN);
 
-  HttpSM *sm                     = reinterpret_cast<HttpSM *>(txnp);
-  sm->t_state.user_args[arg_idx] = arg;
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+
+  sm->set_user_arg(arg_idx, arg);
 }
 
 void *
 TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_TXN);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return sm->t_state.user_args[arg_idx];
+  return sm->get_user_arg(arg_idx);
 }
 
 void
 TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_SSN);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
@@ -6263,7 +6291,7 @@ void *
 TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_SSN);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->get_user_arg(arg_idx);
@@ -6273,8 +6301,8 @@ void
 TSVConnArgSet(TSVConn connp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_VCONN_MAX_USER_ARG);
-  AnnotatedVConnection *avc = reinterpret_cast<AnnotatedVConnection *>(connp);
+  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_VCONN);
+  VConnection *avc = reinterpret_cast<VConnection *>(connp);
   avc->set_user_arg(arg_idx, arg);
 }
 
@@ -6282,9 +6310,9 @@ void *
 TSVConnArgGet(TSVConn connp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_VCONN_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_VCONN);
 
-  AnnotatedVConnection *avc = reinterpret_cast<AnnotatedVConnection *>(connp);
+  VConnection *avc = reinterpret_cast<VConnection *>(connp);
   return avc->get_user_arg(arg_idx);
 }
 

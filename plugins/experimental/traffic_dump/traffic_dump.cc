@@ -360,7 +360,7 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
 
   // Retrieve SsnData
   TSHttpSsn ssnp   = TSHttpTxnSsnGet(txnp);
-  SsnData *ssnData = static_cast<SsnData *>(TSHttpSsnArgGet(ssnp, s_arg_idx));
+  SsnData *ssnData = static_cast<SsnData *>(TSUserArgGet(ssnp, s_arg_idx));
 
   // If no valid ssnData, continue transaction as if nothing happened
   if (!ssnData) {
@@ -499,7 +499,7 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
 
     // Create new per session data
     SsnData *ssnData = new SsnData;
-    TSHttpSsnArgSet(ssnp, s_arg_idx, ssnData);
+    TSUserArgSet(ssnp, s_arg_idx, ssnData);
 
     TSContDataSet(ssnData->aio_cont, ssnData);
 
@@ -573,7 +573,7 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     int64_t id = TSHttpSsnIdGet(ssnp);
     TSDebug(PLUGIN_NAME, "global_ssn_handler(): Closing session %" PRId64 "...", id);
     // Retrieve SsnData
-    SsnData *ssnData = static_cast<SsnData *>(TSHttpSsnArgGet(ssnp, s_arg_idx));
+    SsnData *ssnData = static_cast<SsnData *>(TSUserArgGet(ssnp, s_arg_idx));
     // If no valid ssnData, continue transaction as if nothing happened
     if (!ssnData) {
       TSDebug(PLUGIN_NAME, "global_ssn_handler(): [TS_EVENT_HTTP_SSN_CLOSE] No ssnData found. Abort.");
