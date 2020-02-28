@@ -41,7 +41,9 @@ typedef enum parent_select_mode {
 } parent_select_mode_t;
 
 struct pluginconfig {
-  parent_select_mode_t ps_mode;
+  parent_select_mode_t ps_mode{PS_DEFAULT};
+  bool consider_ims_header{false};
+  bool modify_cache_key{true};
 };
 
 struct txndata {
@@ -79,18 +81,32 @@ create_pluginconfig(int argc, const char *argv[])
     return nullptr;
   }
 
-  // Plugin uses default ATS selection (hash of URL path)
-  pc->ps_mode = PS_DEFAULT;
-
+  static const struct option longopts[] = {
+    {const_cast<char *>("ps-cachekey"), no_argument, nullptr, 'p'},
+    {const_cast<char *>("consider-ims"), no_argument, nullptr, 'c'},
+    {const_cast<char *>("no-modify-cachekey"), no_argument, nullptr, 'n'},
+    {nullptr, 0, nullptr, 0},
+  };
+  //
   // Walk through param list.
   for (int c = 0; c < argc; c++) {
-    if (strcmp("ps_mode:cache_key_url", argv[c]) == 0) {
-      pc->ps_mode = PS_CACHEKEY_URL;
-      break;
-    }
+  case 'p': {
+    pc->ps_mode = PS_CACHEKEY_URL;
+  } break;
+  case 'c': {
+    DEBUG_LOG("Plugin considers the '%.*s' header", (int)X_IMS_HEADER.size(), X_IMS_HEADER.data());
+    pc->consider_ims_header = true;
+  } break;
+  case 'n': {
+    DEBUG_LOG("Plugin doesn't modify cache key");
+    pc->modify_cache_key = false;
+  } break;
+  default: {
+  } break;
   }
+}
 
-  return pc;
+return pc;
 }
 
 /**
@@ -165,23 +181,41 @@ range_header_check(TSHttpTxn txnp, struct pluginconfig *pc)
             TSfree(req_url);
           }
 
-          // set the cache key.
-          if (TS_SUCCESS != TSCacheUrlSet(txnp, cache_key_url, cache_key_url_length)) {
-            DEBUG_LOG("failed to change the cache url to %s.", cache_key_url);
-          }
+          if (nullptr != pc) {
+            // set the cache key if configured to.
+            if (pc->modify_cache_key && TS_SUCCESS != TSCacheUrlSet(txnp, cache_key_url, cache_key_url_length)) {
+              ERROR_LOG("failed to change the cache url to %s.", cache_key_url);
+              ERROR_LOG("Disabling cache for this transaction to avoid cache poisoning.");
+              TSHttpTxnServerRespNoStoreSet(txnp, 1);
+              TSHttpTxnRespCacheableSet(txnp, 0);
+              TSHttpTxnReqCacheableSet(txnp, 0);
+            }
 
-          // Optionally set the parent_selection_url to the cache_key url or path
-          if (nullptr != pc && PS_DEFAULT != pc->ps_mode) {
-            TSMLoc ps_loc = nullptr;
+            // Optionally set the parent_selection_url to the cache_key url or path
+            if (PS_DEFAULT != pc->ps_mode) {
+              TSMLoc ps_loc = nullptr;
 
-            if (PS_CACHEKEY_URL == pc->ps_mode) {
-              const char *start = cache_key_url;
-              const char *end   = cache_key_url + cache_key_url_length;
-              if (TS_SUCCESS == TSUrlCreate(hdr_bufp, &ps_loc) &&
-                  TS_PARSE_DONE == TSUrlParse(hdr_bufp, ps_loc, &start, end) && // This should always succeed.
-                  TS_SUCCESS == TSHttpTxnParentSelectionUrlSet(txnp, hdr_bufp, ps_loc)) {
-                DEBUG_LOG("Set Parent Selection URL to cache_key_url: %s", cache_key_url);
-                TSHandleMLocRelease(hdr_bufp, TS_NULL_MLOC, ps_loc);
+              if (PS_CACHEKEY_URL == pc->ps_mode) {
+                const char *start = cache_key_url;
+                const char *end   = cache_key_url + cache_key_url_length;
+                if (TS_SUCCESS == TSUrlCreate(hdr_buf, &ps_loc) &&
+                    TS_PARSE_DONE == TSUrlParse(hdr_buf, ps_loc, &start, end) && // This should always succeed.
+                    TS_SUCCESS == TSHttpTxnParentSelectionUrlSet(txnp, hdr_buf, ps_loc)) {
+                  DEBUG_LOG("Set Parent Selection URL to cache_key_url: %s", cache_key_url);
+                  TSHandleMLocRelease(hdr_buf, TS_NULL_MLOC, ps_loc);
+                }
+              }
+            }
+
+            // optionally consider an X-CRR-IMS header
+            if (pc->consider_ims_header) {
+              TSMLoc const imsloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, X_IMS_HEADER.data(), X_IMS_HEADER.size());
+              if (TS_NULL_MLOC != imsloc) {
+                time_t const itime = TSMimeHdrFieldValueDateGet(hdr_buf, hdr_loc, imsloc);
+                TSHandleMLocRelease(hdr_buf, hdr_loc, imsloc);
+                if (0 < itime) {
+                  txn_state->ims_time = itime;
+                }
               }
             }
           }

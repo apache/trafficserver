@@ -539,19 +539,20 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
           TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
           return TS_EVENT_NONE;
         };
+        TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, TSContCreate(send_req_dump, nullptr))
 
         // dump on server response
-				auto read_resp_dump = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
-				TSHttpTxn txn = (TSHttpTxn)edata;
-				TSMBuffer buffer;
-				TSMLoc hdr;
-				if (TSHttpTxnServerRespGet(txn, &buffer, &hdr) == TS_SUCCESS) {
-				log_headers(txn, buffer, hdr, "ServerResponse");
-				}
-				TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
-				return TS_EVENT_NONE;
-				};
-				TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_resp_dump, nullptr));
+        auto read_resp_dump = [](TSCont /* contp */, TSEvent event, void *edata) -> int {
+          TSHttpTxn txn = (TSHttpTxn)edata;
+          TSMBuffer buffer;
+          TSMLoc hdr;
+          if (TSHttpTxnServerRespGet(txn, &buffer, &hdr) == TS_SUCCESS) {
+            log_headers(txn, buffer, hdr, "ServerResponse");
+          }
+          TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
+          return TS_EVENT_NONE;
+        };
+        TSHttpTxnHookAdd(txn, TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(read_resp_dump, nullptr));
 
       } else if (header_field_eq("x-parentselection-key", value, vsize)) {
         xheaders |= XHEADER_X_PSELECT_KEY;
