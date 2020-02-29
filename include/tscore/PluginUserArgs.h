@@ -26,10 +26,10 @@
 #include <array>
 #include "tscore/ink_assert.h"
 
-static constexpr int MAX_USER_ARGS_TXN   = 16; /* max number of user arguments for Transactions */
-static constexpr int MAX_USER_ARGS_SSN   = 8;  /* max number of user arguments for Sessions (for now) */
-static constexpr int MAX_USER_ARGS_VCONN = 4;  /* max number of VConnection user arguments */
-// static constexpr int MAX_USER_ARGS_GLB   = 128; /* max number of user arguments, globally */
+static constexpr int MAX_USER_ARGS_TXN   = 16;  /* max number of user arguments for Transactions */
+static constexpr int MAX_USER_ARGS_SSN   = 8;   /* max number of user arguments for Sessions (for now) */
+static constexpr int MAX_USER_ARGS_VCONN = 4;   /* max number of VConnection user arguments */
+static constexpr int MAX_USER_ARGS_GLB   = 128; /* max number of user arguments, globally */
 
 /**
   This is a mixin class (sort of), implementing the appropriate APIs and data storage for

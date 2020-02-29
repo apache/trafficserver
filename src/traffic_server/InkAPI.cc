@@ -108,11 +108,10 @@ struct UserArg {
   std::string description; ///< Description of use for this arg.
 };
 
-/// Table of reservations, indexed by type and then index.
-UserArg UserArgTable[TSUserArgType::COUNT][std::max(MAX_USER_ARGS_TXN, MAX_USER_ARGS_VCONN)];
-
-/// Table of next reserved index.
-std::atomic<int> UserArgIdx[TSUserArgType::COUNT];
+// Managing the user args tables, and the global storage (which is assumed to be the biggest, by far).
+UserArg UserArgTable[TSUserArgType::COUNT][MAX_USER_ARGS_GLB];
+static PluginUserArgs<MAX_USER_ARGS_GLB> global_user_args;
+std::atomic<int> UserArgIdx[TSUserArgType::COUNT]; // Table of next reserved index.
 
 /* URL schemes */
 tsapi const char *TS_URL_SCHEME_FILE;
@@ -6183,7 +6182,7 @@ TSUserArgSet(void *data, int arg_idx, void *arg)
 
     user_args->set_user_arg(arg_idx, arg);
   } else {
-    // This will be a special case later for the GLB
+    global_user_args.set_user_arg(arg_idx, arg);
   }
 }
 
@@ -6195,8 +6194,7 @@ TSUserArgGet(void *data, int arg_idx)
 
     return user_args->get_user_arg(arg_idx);
   } else {
-    // This will be a special case later for the GLB
-    return nullptr;
+    return global_user_args.get_user_arg(arg_idx);
   }
 }
 

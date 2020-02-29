@@ -880,10 +880,11 @@ typedef enum {
 
 /// The User Arg type, used for Txn/Ssn/VConn user argument slots
 typedef enum {
-  TXN,   ///< Transaction based.
-  SSN,   ///< Session based
-  VCONN, ///< VConnection based
-  COUNT  ///< Fake enum, # of valid entries.
+  TXN,              ///< Transaction based.
+  SSN,              ///< Session based
+  VCONN,            ///< VConnection based
+  TS_USER_ARGS_GLB, ///< Global based
+  COUNT             ///< Fake enum, # of valid entries.
 } TSUserArgType;
 
 typedef struct tsapi_file *TSFile;
