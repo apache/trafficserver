@@ -22,7 +22,7 @@ Test a basic remap of a websocket connections
 
 Test.ContinueOnFail = True
 
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 testName = "Test WebSocket Remaps"
@@ -38,7 +38,6 @@ ts.addSSLfile("ssl/server.key")
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
 })
 
 ts.Disk.remap_config.AddLines([

@@ -22,7 +22,7 @@ Test a basic remap of a http connection
 
 Test.ContinueOnFail = True
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2", ssl=True)
 

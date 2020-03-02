@@ -63,7 +63,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
     p = obj.Processes.Process(name, command)
     #p_debug = obj.Processes.Process("port-debug", "ss --listen --tcp --process")
     #p_debug.Env['PATH'] = "/usr/sbin" + os.pathsep + p.ComposeEnv()['PATH']
-    #p.StartBefore(p_debug)
+    # p.StartBefore(p_debug)
     # we want to have a few directories more fixed
     # this helps with debugging as location are common
     # we do this by overiding locations from the "layout"
@@ -270,11 +270,13 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
         if enable_tls:
             get_port(p, "ssl_port")
             get_port(p, "ssl_portv6")
-        # p.Ready = When.PortOpen(p.Variables.port)
     else:
         p.Variables.port = 8080
         p.Variables.portv6 = 8080
-        p.Variables.ssl_port = 4443
+
+        if enable_tls:
+            p.Variables.ssl_port = 4443
+            p.Variables.ssl_portv6 = 4444
 
     get_port(p, "manager_port")
     get_port(p, "admin_port")
@@ -284,14 +286,16 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
     else:
         p.Ready = When.PortOpen(p.Variables.port)
 
-    # set the ports
     if select_ports:
+        # default config
         port_str = "{port} {v6_port}:ipv6 ".format(port=p.Variables.port, v6_port=p.Variables.portv6)
-
         if enable_tls:
-            port_str += "{ssl_port}:ssl {ssl_portv6}:ssl:ipv6".format(ssl_port=p.Variables.ssl_port,ssl_portv6=p.Variables.ssl_portv6)
-
-        p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
+            port_str += "{ssl_port}:ssl {ssl_portv6}:ssl:ipv6".format(
+                ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6)
+        #p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
+        p.Disk.records_config.update({
+            'proxy.config.http.server_ports': port_str,
+        })
 
     p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT'] = str(
         p.Variables.manager_port)

@@ -26,7 +26,7 @@ Test.SkipUnless(
 )
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 request_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -57,15 +57,16 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.sni_yaml.AddLines([
-  'sni:',
-  '- fqdn: bar.com',
-  '  http2: on',
-  '- fqdn: bob.*.com',
-  '  http2: on',
+    'sni:',
+    '- fqdn: bar.com',
+    '  http2: on',
+    '- fqdn: bob.*.com',
+    '  http2: on',
 ])
 
 tr = Test.AddTestRun("Do-not-Negotiate-h2")
-tr.Processes.Default.Command = "curl -v -k --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v -k --ipv4 --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
@@ -77,7 +78,8 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Using HTTP2", "C
 tr.TimeOut = 5
 
 tr2 = Test.AddTestRun("Do negotiate h2")
-tr2.Processes.Default.Command = "curl -v -k --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v -k --ipv4 --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(
+    ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 5
@@ -87,7 +89,8 @@ tr2.Processes.Default.Streams.All += Testers.ContainsExpression("Using HTTP2", "
 tr2.TimeOut = 5
 
 tr2 = Test.AddTestRun("Do negotiate h2")
-tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v -k --ipv4 --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(
+    ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 5

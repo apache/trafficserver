@@ -46,7 +46,7 @@ with open(os.path.join(Test.TestDirectory, 'replay/yts-2819.replay.json')) as sr
 replay_txns = replay["sessions"][0]["transactions"]
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_server")
+ts = Test.MakeATSProcess("ts")
 
 testName = "regex_remap"
 
@@ -69,7 +69,6 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|regex_remap',
     'proxy.config.http.cache.http': 0,
-    'proxy.config.http.server_ports': '{}'.format(ts.Variables.port),
 })
 
 # 0 Test - Load cache (miss) (path1)
