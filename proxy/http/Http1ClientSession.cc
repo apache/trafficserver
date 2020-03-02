@@ -253,6 +253,10 @@ Http1ClientSession::do_io_close(int alerrno)
   if (transact_count == released_transactions) {
     half_close = false;
   }
+
+  // Clean up the write VIO in case of inactivity timeout
+  this->do_io_write(nullptr, 0, nullptr);
+
   if (half_close && this->trans.get_sm()) {
     read_state = HCS_HALF_CLOSED;
     SET_HANDLER(&Http1ClientSession::state_wait_for_close);
@@ -286,7 +290,6 @@ Http1ClientSession::do_io_close(int alerrno)
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
-    // the netvc will be closed in the session free
   }
   if (transact_count == released_transactions) {
     this->destroy();
@@ -313,6 +316,10 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
   case VC_EVENT_INACTIVITY_TIMEOUT:
     half_close = false;
     this->do_io_close();
+    if (client_vc != nullptr) {
+      client_vc->do_io_close();
+      client_vc = nullptr;
+    }
     break;
   case VC_EVENT_READ_READY:
     // Drain any data read
@@ -389,6 +396,10 @@ Http1ClientSession::state_keep_alive(int event, void *data)
 
   case VC_EVENT_EOS:
     this->do_io_close();
+    if (client_vc != nullptr) {
+      client_vc->do_io_close();
+      client_vc = nullptr;
+    }
     break;
 
   case VC_EVENT_READ_COMPLETE:
