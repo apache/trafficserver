@@ -60,8 +60,12 @@ set_encryption_secrets(SSL *ssl, enum ssl_encryption_level_t level, const uint8_
   qtls->update_negotiated_cipher();
 
   QUICEncryptionLevel ats_level = convert_level_ats2ssl(level);
-  qtls->update_key_materials_for_read(ats_level, read_secret, secret_len);
-  qtls->update_key_materials_for_write(ats_level, write_secret, secret_len);
+  if (read_secret) {
+    qtls->update_key_materials_for_read(ats_level, read_secret, secret_len);
+  }
+  if (write_secret) {
+    qtls->update_key_materials_for_write(ats_level, write_secret, secret_len);
+  }
 
   if (ats_level == QUICEncryptionLevel::ONE_RTT) {
     // FIXME Where should this be placed?
@@ -140,6 +144,7 @@ QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, Net
 
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_tls_index, this);
   SSL_set_quic_method(this->_ssl, &quic_method);
+  SSL_set_early_data_enabled(this->_ssl, 1);
 
   if (session_file && this->_netvc_context == NET_VCONNECTION_OUT) {
     auto file = BIO_new_file(session_file, "r");

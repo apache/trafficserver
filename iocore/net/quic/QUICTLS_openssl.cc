@@ -59,8 +59,12 @@ set_encryption_secrets(SSL *ssl, enum ssl_encryption_level_t level, const uint8_
   qtls->update_negotiated_cipher();
 
   QUICEncryptionLevel ats_level = convert_level_ats2ssl(level);
-  qtls->update_key_materials_for_read(ats_level, read_secret, secret_len);
-  qtls->update_key_materials_for_write(ats_level, write_secret, secret_len);
+  if (read_secret) {
+    qtls->update_key_materials_for_read(ats_level, read_secret, secret_len);
+  }
+  if (write_secret) {
+    qtls->update_key_materials_for_write(ats_level, write_secret, secret_len);
+  }
 
   if (ats_level == QUICEncryptionLevel::ONE_RTT) {
     // FIXME Where should this be placed?
