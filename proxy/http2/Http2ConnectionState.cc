@@ -191,7 +191,6 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       myreader->writer()->dealloc_reader(myreader);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
     }
-    nbytes += num_written;
     myreader->consume(num_written);
   }
   myreader->writer()->dealloc_reader(myreader);
