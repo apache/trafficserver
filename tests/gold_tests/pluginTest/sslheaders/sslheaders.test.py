@@ -34,7 +34,7 @@ request_header = {
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
@@ -53,9 +53,9 @@ ts.Disk.records_config.update({
 #    'proxy.config.ssl.client.verify.server':  0,
 #    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
 #    'proxy.config.url_remap.pristine_host_hdr' : 1,
-#    'proxy.config.ssl.client.certification_level': 2,
-#    'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
-#    'proxy.config.ssl.TLSv1_3': 0
+    #    'proxy.config.ssl.client.certification_level': 2,
+    #    'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
+    #    'proxy.config.ssl.TLSv1_3': 0
 })
 
 ts.Disk.ssl_multicert_config.AddLine(

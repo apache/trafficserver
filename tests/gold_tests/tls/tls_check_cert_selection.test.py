@@ -21,7 +21,7 @@ Test ATS offering different certificates based on SNI
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server", ssl=True)
 dns = Test.MakeDNServer("dns")
 
@@ -54,7 +54,6 @@ ts.Disk.ssl_multicert_config.AddLines([
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.url_remap.pristine_host_hdr': 1,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
@@ -69,7 +68,8 @@ dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
 tr = Test.AddTestRun("bar.com cert")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Setup.Copy("ssl/signer2.pem")
-tr.Processes.Default.Command = "curl -v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
@@ -83,7 +83,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 
 # Should receive a foo.com cert
 tr2 = Test.AddTestRun("foo.com cert")
-tr2.Processes.Default.Command = "curl -v --cacert ./signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v --cacert ./signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(
+    ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -94,7 +95,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 
 # Should receive random.server.com
 tr2 = Test.AddTestRun("random.server.com cert")
-tr2.Processes.Default.Command = "curl -v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(
+    ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -107,7 +109,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 # No SNI match should match specific IP address, foo.com
 # SNI name and returned cert name will not match, so must use -k to avoid cert verification
 tr2 = Test.AddTestRun("Bad SNI")
-tr2.Processes.Default.Command = "curl -v -k --cacert ./signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v -k --cacert ./signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(
+    ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
