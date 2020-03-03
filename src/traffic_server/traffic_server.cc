@@ -92,7 +92,6 @@ extern "C" int plock(int);
 #include "HuffmanCodec.h"
 #include "Plugin.h"
 #include "DiagsConfig.h"
-#include "CoreUtils.h"
 #include "RemapConfig.h"
 #include "RemapPluginInfo.h"
 #include "RemapProcessor.h"
@@ -143,7 +142,6 @@ static int num_task_threads   = 0;
 
 static char *http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
-static char core_file[255]      = "";
 static bool enable_core_file_p  = false; // Enable core file dump?
 int command_flag                = DEFAULT_COMMAND_FLAG;
 int command_index               = -1;
@@ -216,10 +214,6 @@ static ArgumentDescription argument_descriptions[] = {
   {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", nullptr},
   {"bind_stdout", '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
   {"bind_stderr", '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", nullptr},
-#if defined(linux)
-  {"read_core", 'c', "Read Core file", "S255", &core_file, nullptr, nullptr},
-#endif
-
   {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, nullptr, nullptr},
   {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
@@ -1859,12 +1853,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     }
   }
 #endif
-
-  // Check for core file
-  if (core_file[0] != '\0') {
-    process_core(core_file);
-    ::exit(0);
-  }
 
   // setup callback for tracking remap included files
   load_remap_file_cb = load_remap_file_callback;
