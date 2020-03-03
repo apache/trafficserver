@@ -735,20 +735,24 @@ HardError:
 }
 
 Action *
-UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufsize, int recv_bufsize)
+UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int send_bufsize, int recv_bufsize)
 {
   int res              = 0;
-  int fd               = -1;
   UnixUDPConnection *n = nullptr;
   IpEndpoint myaddr;
   int myaddr_len     = sizeof(myaddr);
   PollCont *pc       = nullptr;
   PollDescriptor *pd = nullptr;
+  bool need_bind     = true;
 
-  if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
-    goto Lerror;
+  if (fd == -1) {
+    if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
+      goto Lerror;
+    }
+    fd = res;
+  } else {
+    need_bind = false;
   }
-  fd = res;
   if ((res = fcntl(fd, F_SETFL, O_NONBLOCK) < 0)) {
     goto Lerror;
   }
@@ -803,7 +807,8 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
     goto Lerror;
   }
 
-  if ((res = socketManager.ink_bind(fd, addr, ats_ip_size(addr))) < 0) {
+  if (need_bind && ((res = socketManager.ink_bind(fd, addr, ats_ip_size(addr))) < 0)) {
+    Debug("udpnet", "ink_bind failed");
     goto Lerror;
   }
 
