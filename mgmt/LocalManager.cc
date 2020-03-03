@@ -941,29 +941,91 @@ LocalManager::listenForProxy()
   // We are not already bound, bind the port
   for (auto &p : lmgmt->m_proxy_ports) {
     if (ts::NO_FD == p.m_fd) {
-      this->bindProxyPort(p);
+      // Check the protocol (TCP or UDP) and create an appropriate socket
+      if (p.isQUIC()) {
+        this->bindUdpProxyPort(p);
+      } else {
+        this->bindTcpProxyPort(p);
+      }
     }
 
-    // read backlog configuration value and overwrite the default value if found
-    bool found;
     std::string_view fam{ats_ip_family_name(p.m_family)};
-    RecInt backlog = REC_readInteger("proxy.config.net.listen_backlog", &found);
-    backlog        = (found && backlog >= 0) ? backlog : ats_tcp_somaxconn();
+    if (p.isQUIC()) {
+      // Can we do something like listen backlog for QUIC(UDP) ??
+      // Do nothing for now
+    } else {
+      // read backlog configuration value and overwrite the default value if found
+      bool found;
+      RecInt backlog = REC_readInteger("proxy.config.net.listen_backlog", &found);
+      backlog        = (found && backlog >= 0) ? backlog : ats_tcp_somaxconn();
 
-    if ((listen(p.m_fd, backlog)) < 0) {
-      mgmt_fatal(errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%.*s)\n", p.m_port, fam.size(), fam.data());
+      if ((listen(p.m_fd, backlog)) < 0) {
+        mgmt_fatal(errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%.*s)\n", p.m_port, fam.size(), fam.data());
+      }
     }
+
     mgmt_log("[LocalManager::listenForProxy] Listening on port: %d (%.*s)\n", p.m_port, fam.size(), fam.data());
   }
   return;
 }
 
 /*
- * bindProxyPort()
+ * bindUdpProxyPort()
  *  Function binds the accept port of the proxy
  */
 void
-LocalManager::bindProxyPort(HttpProxyPort &port)
+LocalManager::bindUdpProxyPort(HttpProxyPort &port)
+{
+  int one  = 1;
+  int priv = (port.m_port < 1024 && 0 != geteuid()) ? ElevateAccess::LOW_PORT_PRIVILEGE : 0;
+
+  ElevateAccess access(priv);
+
+  if ((port.m_fd = socket(port.m_family, SOCK_DGRAM, 0)) < 0) {
+    mgmt_fatal(0, "[bindProxyPort] Unable to create socket : %s\n", strerror(errno));
+  }
+
+  if (port.m_family == AF_INET6) {
+    if (setsockopt(port.m_fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
+      mgmt_log("[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
+    }
+  }
+  if (setsockopt(port.m_fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&one), sizeof(int)) < 0) {
+    mgmt_fatal(0, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
+  }
+
+  IpEndpoint ip;
+  if (port.m_inbound_ip.isValid()) {
+    ip.assign(port.m_inbound_ip);
+  } else if (AF_INET6 == port.m_family) {
+    if (m_inbound_ip6.isValid()) {
+      ip.assign(m_inbound_ip6);
+    } else {
+      ip.setToAnyAddr(AF_INET6);
+    }
+  } else if (AF_INET == port.m_family) {
+    if (m_inbound_ip4.isValid()) {
+      ip.assign(m_inbound_ip4);
+    } else {
+      ip.setToAnyAddr(AF_INET);
+    }
+  } else {
+    mgmt_fatal(0, "[bindProxyPort] Proxy port with invalid address type %d\n", port.m_family);
+  }
+  ip.port() = htons(port.m_port);
+  if (bind(port.m_fd, &ip.sa, ats_ip_size(&ip)) < 0) {
+    mgmt_fatal(0, "[bindProxyPort] Unable to bind socket: %d : %s\n", port.m_port, strerror(errno));
+  }
+
+  Debug("lm", "[bindProxyPort] Successfully bound proxy port %d", port.m_port);
+}
+
+/*
+ * bindTcpProxyPort()
+ *  Function binds the accept port of the proxy
+ */
+void
+LocalManager::bindTcpProxyPort(HttpProxyPort &port)
 {
   int one  = 1;
   int priv = (port.m_port < 1024 && 0 != geteuid()) ? ElevateAccess::LOW_PORT_PRIVILEGE : 0;
