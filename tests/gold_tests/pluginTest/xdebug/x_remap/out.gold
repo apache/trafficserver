@@ -58,7 +58,7 @@ X-Remap: from=http://one/, to=http://127.0.0.1:SERVER_PORT/
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
 	'Date' : '``
-	'Age' : '0',
+	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
@@ -101,7 +101,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
 	'Date' : '``
-	'Age' : '0',
+	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
@@ -144,7 +144,7 @@ X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
 	'Date' : '``
-	'Age' : '0',
+	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
@@ -189,7 +189,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	}},{'type':'response', 'side':'client', 'headers': {
 	'Server' : 'ATS/``
 	'Date' : '``
-	'Age' : '0',
+	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
@@ -233,7 +233,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
 	'Date' : '``
-	'Age' : '0',
+	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
@@ -276,7 +276,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
 	'Date' : '``
-	'Age' : '0',
+	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
@@ -321,7 +321,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
 	'Date' : '``
-	'Age' : '0',
+	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
@@ -366,7 +366,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
 	'Date' : '``
-	'Age' : '0',
+	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
@@ -409,7 +409,7 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
 	'Date' : '``
-	'Age' : '0',
+	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``

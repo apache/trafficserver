@@ -401,12 +401,18 @@ public:
   // The serverName is either a pointer to the (null-terminated) name fetched from the
   // SSL object or the empty string.
   const char *
-  get_server_name() const
+  get_server_name() const override
   {
     return _serverName.get() ? _serverName.get() : "";
   }
 
   void set_server_name(std::string_view name);
+
+  bool
+  support_sni() const override
+  {
+    return true;
+  }
 
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;

@@ -1178,8 +1178,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
   if (event == EVENT_INTERVAL) {
     if (!action.continuation) {
       // give up on insert, it has been too long
+      // remove_trigger_pending_dns will notify and clean up all requests
+      // including this one.
       remove_trigger_pending_dns();
-      hostdb_cont_free(this);
       return EVENT_DONE;
     }
     MUTEX_TRY_LOCK(lock, action.mutex, thread);
@@ -1440,18 +1441,18 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         }
       }
       if (need_to_reschedule) {
-        remove_trigger_pending_dns();
         SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
-        thread->schedule_in(this, HOST_DB_RETRY_PERIOD);
+        // remove_trigger_pending_dns should kick off the current hostDB too
+        // No need to explicitly reschedule
+        remove_trigger_pending_dns();
         return EVENT_CONT;
       }
     }
     // wake up everyone else who is waiting
     remove_trigger_pending_dns();
 
-    // all done
+    // all done, or at least scheduled to be all done
     //
-    hostdb_cont_free(this);
     return EVENT_DONE;
   }
 }

@@ -45,6 +45,7 @@ the user needs to enter the fqdn in the configuration with a ``*.`` followed by 
 .. _override-verify-origin-server:
 .. _override-verify-server-policy:
 .. _override-verify-server-properties:
+.. _override-host-sni-policy:
 
 ========================= ==============================================================================
 Key                       Meaning
@@ -72,6 +73,11 @@ verify_client             One of the values :code:`NONE`, :code:`MODERATE`, or :
                           the client must resent a certificate during the TLS handshake.
 
                           By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
+
+host_sni_policy           One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
+
+                          If not specified, the value of :ts:cv:`proxy.config.http.host_sni_policy` is used.  This controls
+                          how policy impacting mismatches between host header and SNI values are dealt with.
 
 valid_tls_versions_in     This specifies the list of TLS protocols that will be offered to user agents during
                           the TLS negotiation.  This replaces the global settings in :ts:cv:`proxy.config.ssl.TLSv1`,
@@ -175,13 +181,24 @@ Disable HTTP/2 for ``no-http2.example.com``.
    - fqdn: no-http2.example.com
      http2: off
 
-Require client certificate verification for ``example.com`` and any server name ending with ``.yahoo.com``. Therefore, client request for a server name ending with yahoo.com (e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify the client certificate. By contrast, |TS| will allow a client certificate to be provided for ``example.com`` and if it is, |TS| will require the certificate to be valid.
+Require client certificate verification for ``foo.com`` and any server name ending with ``.yahoo.com``. Therefore, client
+request for a server name ending with yahoo.com (e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify
+the client certificate.
+
+For ``foo.com``, if the user agent sets the host header to foo.com but the SNI to some other value, |TS| will warn about the
+mismatch but continue to process the request.  Mismatches for the other domains will cause |TS| to warn and return 403.
+
+|TS| will allow a client certificate to be provided for ``example.com`` and if it is, |TS| will require the
+certificate to be valid.
 
 .. code-block:: yaml
 
    sni:
    - fqdn: example.com
      verify_client: MODERATE
+   - fqdn: 'foo.com'
+     verify_client: STRICT
+     host_sni_policy: PERMISSIVE
    - fqdn: '*.yahoo.com'
      verify_client: STRICT
 

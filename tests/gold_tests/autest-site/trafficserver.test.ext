@@ -261,6 +261,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
     # set up default ports
     # get some ports  TODO make it so we can hold on to the socket
     if select_ports:
+
         # some system have a bug in which ipv4 and ipv6 share port space
         # Make two different ports to avoid this
         get_port(p, "port")
@@ -268,6 +269,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
 
         if enable_tls:
             get_port(p, "ssl_port")
+            get_port(p, "ssl_portv6")
         # p.Ready = When.PortOpen(p.Variables.port)
     else:
         p.Variables.port = 8080
@@ -287,7 +289,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
         port_str = "{port} {v6_port}:ipv6 ".format(port=p.Variables.port, v6_port=p.Variables.portv6)
 
         if enable_tls:
-            port_str += "{ssl_port}:ssl".format(ssl_port=p.Variables.ssl_port)
+            port_str += "{ssl_port}:ssl {ssl_portv6}:ssl:ipv6".format(ssl_port=p.Variables.ssl_port,ssl_portv6=p.Variables.ssl_portv6)
 
         p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
 

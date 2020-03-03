@@ -143,6 +143,8 @@ public:
   TSHttpHookID get_hookid() const;
   bool has_hooks() const;
 
+  virtual bool support_sni() const = 0;
+
   APIHook *hook_get(TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
 

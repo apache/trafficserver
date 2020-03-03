@@ -69,12 +69,6 @@ ts.Disk.remap_config.AddLine(
     'map https://bar.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: "*bar.com"',
-    '  verify_client: STRICT',
-])
-
 ts.Disk.plugin_config.AddLine(
     'sslheaders.so SSL-Client-ID=client.subject'
 )

@@ -337,6 +337,10 @@ public:
   bool get_postbuf_done();
   bool is_postbuf_valid();
 
+  // See if we should allow the transaction
+  // based on sni and host name header values
+  void check_sni_host();
+
 protected:
   int reentrancy_count = 0;
 
