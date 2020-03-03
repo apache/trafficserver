@@ -120,12 +120,6 @@ EThread::process_event(Event *e, int calling_code)
       return;
     }
     Continuation *c_temp = e->continuation;
-    // Make sure that the continuation is locked before calling the handler
-
-    // Give a heads up if we are processing through a continuation without a mutex
-    if (!e->mutex) {
-      Warning("event processing for continuation %s without a mutex", typeid(*c_temp).name());
-    }
 
     // Restore the client IP debugging flags
     set_cont_flags(e->continuation->control_flags);
