@@ -255,13 +255,13 @@ the maximum number of rolled log files, and forcing |TS| to roll even when there
 
 Let us say we wanted the oldest log entry to be kept on the box to be no older than 2-hour old.
 
-Set :ts:cv:`proxy.config.output.logfile.rolling_interval_sec` (yaml: `rolling_interval_sec`) to 3600 (1h)
+Set :ts:cv:`proxy.config.log.rolling_interval_sec` (yaml: `rolling_interval_sec`) to 3600 (1h)
 which will lead to rolling every 1h.
 
-Set :ts:cv:`proxy.config.output.logfile.rolling_max_count` (yaml: `rolling_max_count`) to 1
+Set :ts:cv:`proxy.config.log.rolling_max_count` (yaml: `rolling_max_count`) to 1
 which will lead to keeping only one rolled log file at any moment (rolled will be trimmed on every roll).
 
-Set :ts:cv:`proxy.config.output.logfile.rolling_allow_empty` (yaml: `rolling_allow_empty`) to 1 (default: 0)
+Set :ts:cv:`proxy.config.log.rolling_allow_empty` (yaml: `rolling_allow_empty`) to 1 (default: 0)
 which will allow logs to be open and rolled even if there was nothing to be logged during the previous period
 (i.e. no requests to |TS|).
 
