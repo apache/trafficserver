@@ -76,7 +76,8 @@ public:
   void processEventQueue();
   bool startProxy(const char *onetime_options);
   void listenForProxy();
-  void bindProxyPort(HttpProxyPort &);
+  void bindUdpProxyPort(HttpProxyPort &);
+  void bindTcpProxyPort(HttpProxyPort &);
   void closeProxyPorts();
 
   void mgmtCleanup();
