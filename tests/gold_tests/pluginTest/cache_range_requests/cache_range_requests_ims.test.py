@@ -33,7 +33,7 @@ Test.SkipUnless(
     Condition.PluginExists('xdebug.so'),
 )
 Test.ContinueOnFail = False
-Test.testName = "cache_range_requests"
+Test.testName = "cache_range_requests_ims"
 
 # Define and configure ATS
 ts = Test.MakeATSProcess("ts", command="traffic_server")

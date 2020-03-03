@@ -137,6 +137,29 @@ In order for this to properly work in a CDN each cache in the
 chain *SHOULD* also contain a remap rule with the
 :program:`cache_range_requests` plugin with this option set.
 
+Don't modify the Cache Key
+--------------------------
+
+.. option:: --no-modify-cachekey
+.. option:: -n
+
+With each transaction TSCacheUrlSet may only be called once.  When
+using the `cache_range_requests` plugin in conjunction with the
+`cachekey` plugin the option `--include-headers=Range` should be
+added as a `cachekey` parameter with this option.  Configuring this
+incorrectly *WILL* result in cache poisoning.
+
+.. code::
+
+       map http://ats/ http://parent/ \
+           @plugin=cachekey.so @pparam=--include-headers=Range \
+           @plugin=cache_range_requests.so @pparam=--no-modify-cachekey
+
+*Without this `cache_range_requests` plugin option*
+
+*IF* the TSCacheUrlSet call in cache_range_requests fails, an error is
+generated in the logs and the cache_range_requests plugin will disable
+transaction caching in order to avoid cache poisoning.
 
 Configuration examples
 ======================
@@ -146,23 +169,23 @@ Global plugin
 
 .. code::
 
-    cache_range_requests.so --ps-cachekey --consider-ims
+    cache_range_requests.so --ps-cachekey --consider-ims --no-modify-cachekey
 
 or
 
 .. code::
 
-    cache_range_requests.so -p -c
+    cache_range_requests.so -p -c -n
 
 Remap plugin
 ------------
 
 .. code::
 
-    map http://ats http://parent @plugin=cache_range_requests.so @pparam=--ps-cachekey @pparam=--consider-ims
+    map http://ats http://parent @plugin=cache_range_requests.so @pparam=--ps-cachekey @pparam=--consider-ims @pparam=--no-modify-cachekey
 
 or
 
 .. code::
 
-    map http://ats http://parent @plugin=cache_range_requests.so @pparam=-p @pparam=-c
+    map http://ats http://parent @plugin=cache_range_requests.so @pparam=-p @pparam=-c @pparam=-n
