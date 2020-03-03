@@ -610,7 +610,7 @@ ConfigVolumes::read_config_file()
       Warning("Cannot open the config file: %s - %s", (const char *)config_path, strerror(ec.value()));
       break;
     default:
-      Error("%s failed to load: %s", ts::filename::VOLUME, strerror(ec.value()));
+      Error("%s failed to load: %s", (const char *)config_path, strerror(ec.value()));
       return;
     }
   }
