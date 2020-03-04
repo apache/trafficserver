@@ -376,8 +376,9 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
   info            = (char *)ats_malloc(sizeof(char) * (read_avail + 1));
   client_response = info;
 
-  // To maintain backwards compatibility we don't allow chunking when it's not streaming.
-  if ((!(fetch_flags & TS_FETCH_FLAGS_STREAM) && !(fetch_flags & TS_FETCH_FLAGS_DECHUNK)) || !check_chunked()) {
+  // To maintain backwards compatibility we don't allow chunking when it's not streaming
+  if ((!(fetch_flags & TS_FETCH_FLAGS_STREAM) && (!(fetch_flags & TS_FETCH_FLAGS_DECHUNK) || (callback_options == NO_CALLBACK))) ||
+      !check_chunked()) {
     /* Read the data out of the reader */
     while (read_avail > 0) {
       if (reader->block) {
