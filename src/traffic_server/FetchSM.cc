@@ -191,7 +191,7 @@ FetchSM::check_chunked()
   static const char CHUNKED_TEXT[] = "chunked";
   static size_t const CHUNKED_LEN  = sizeof(CHUNKED_TEXT) - 1;
 
-  if (resp_is_chunked < 0) {
+  if ((resp_is_chunked < 0) && !(client_response_hdr.version_get() < HTTPVersion(1, 1))) {
     resp_is_chunked = static_cast<int>(
       this->check_for_field_value(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, CHUNKED_TEXT, CHUNKED_LEN));
 
@@ -377,8 +377,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
   client_response = info;
 
   // To maintain backwards compatibility we don't allow chunking when it's not streaming
-  if ((!(fetch_flags & TS_FETCH_FLAGS_STREAM) && (!(fetch_flags & TS_FETCH_FLAGS_DECHUNK) || (callback_options == NO_CALLBACK))) ||
-      !check_chunked()) {
+  if ((!(fetch_flags & TS_FETCH_FLAGS_STREAM) && (!(fetch_flags & TS_FETCH_FLAGS_DECHUNK))) || !check_chunked()) {
     /* Read the data out of the reader */
     while (read_avail > 0) {
       if (reader->block) {
