@@ -502,7 +502,7 @@ QUICLongHeaderPacketR::length(size_t &length, uint8_t &length_field_len, size_t 
 
   length_field_offset = LONG_HDR_OFFSET_CONNECTION_ID + dcil + 1 + scil;
 
-  QUICPacketType type;
+  QUICPacketType type = QUICPacketType::UNDEFINED;
   QUICLongHeaderPacketR::type(type, packet, packet_len);
   if (type == QUICPacketType::INITIAL) {
     // Token Length (i) + Token (*) (for INITIAL packet)

@@ -303,7 +303,7 @@ QUICTLS::update_key_materials_for_write(QUICEncryptionLevel level, const uint8_t
   }
 
   QUICKeyPhase phase;
-  const EVP_CIPHER *cipher;
+  const EVP_CIPHER *cipher = nullptr;
 
   switch (level) {
   case QUICEncryptionLevel::ZERO_RTT:
