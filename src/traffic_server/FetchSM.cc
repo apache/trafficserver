@@ -377,7 +377,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
   client_response = info;
 
   // To maintain backwards compatibility we don't allow chunking when it's not streaming.
-  if (!(fetch_flags & TS_FETCH_FLAGS_STREAM) || !check_chunked()) {
+  if ((!(fetch_flags & TS_FETCH_FLAGS_STREAM) && !(fetch_flags & TS_FETCH_FLAGS_DECHUNK)) || !check_chunked()) {
     /* Read the data out of the reader */
     while (read_avail > 0) {
       if (reader->block) {
@@ -467,12 +467,13 @@ FetchSM::process_fetch_read(int event)
       resp_reader->consume(total_bytes_copied);
     }
 
-    if (header_done == 0 && ((fetch_flags & TS_FETCH_FLAGS_STREAM) || callback_options == AFTER_HEADER)) {
+    if (header_done == 0 &&
+        ((fetch_flags & TS_FETCH_FLAGS_DECHUNK) || (fetch_flags & TS_FETCH_FLAGS_STREAM) || callback_options == AFTER_HEADER)) {
       if (client_response_hdr.parse_resp(&http_parser, resp_reader, &bytes_used, false) == PARSE_RESULT_DONE) {
         header_done = true;
         if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
           return InvokePluginExt();
-        } else {
+        } else if (callback_options == AFTER_HEADER) {
           InvokePlugin(callback_events.success_event_id, (void *)&client_response_hdr);
         }
       }
