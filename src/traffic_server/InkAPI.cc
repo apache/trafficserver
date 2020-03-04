@@ -109,8 +109,8 @@ struct UserArg {
 };
 
 // Managing the user args tables, and the global storage (which is assumed to be the biggest, by far).
-UserArg UserArgTable[TS_USER_ARGS_COUNT][MAX_USER_ARGS_GLB];
-static PluginUserArgs<MAX_USER_ARGS_GLB> global_user_args;
+UserArg UserArgTable[TS_USER_ARGS_COUNT][MAX_USER_ARGS[TS_USER_ARGS_GLB]];
+static PluginUserArgs<TS_USER_ARGS_GLB> global_user_args;
 std::atomic<int> UserArgIdx[TS_USER_ARGS_COUNT]; // Table of next reserved index.
 
 /* URL schemes */
@@ -6120,7 +6120,7 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
   }
 
   idx       = UserArgIdx[type]++;
-  int limit = (type == TS_USER_ARGS_VCONN) ? MAX_USER_ARGS_VCONN : MAX_USER_ARGS_TXN;
+  int limit = MAX_USER_ARGS[type];
 
   if (idx < limit) {
     UserArg &arg(UserArgTable[type][idx]);
@@ -6179,6 +6179,7 @@ TSUserArgSet(void *data, int arg_idx, void *arg)
 {
   if (nullptr != data) {
     PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(static_cast<Continuation *>(data));
+    sdk_assert(user_args);
 
     user_args->set_user_arg(arg_idx, arg);
   } else {
@@ -6191,6 +6192,7 @@ TSUserArgGet(void *data, int arg_idx)
 {
   if (nullptr != data) {
     PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(static_cast<Continuation *>(data));
+    sdk_assert(user_args);
 
     return user_args->get_user_arg(arg_idx);
   } else {
@@ -6257,7 +6259,7 @@ void
 TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_TXN);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_TXN]);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
@@ -6268,7 +6270,7 @@ void *
 TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_TXN);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_TXN]);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   return sm->get_user_arg(arg_idx);
@@ -6278,7 +6280,7 @@ void
 TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_SSN);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_SSN]);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
@@ -6289,7 +6291,7 @@ void *
 TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_SSN);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_SSN]);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->get_user_arg(arg_idx);
@@ -6299,19 +6301,22 @@ void
 TSVConnArgSet(TSVConn connp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_VCONN);
-  VConnection *avc = reinterpret_cast<VConnection *>(connp);
-  avc->set_user_arg(arg_idx, arg);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_VCONN]);
+  PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
+  sdk_assert(user_args);
+
+  user_args->set_user_arg(arg_idx, arg);
 }
 
 void *
 TSVConnArgGet(TSVConn connp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < MAX_USER_ARGS_VCONN);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_VCONN]);
+  PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
+  sdk_assert(user_args);
 
-  VConnection *avc = reinterpret_cast<VConnection *>(connp);
-  return avc->get_user_arg(arg_idx);
+  return user_args->get_user_arg(arg_idx);
 }
 
 void

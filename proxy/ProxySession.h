@@ -74,10 +74,8 @@ struct ProxyError {
 };
 
 /// Abstract class for HttpSM to interface with any session
-class ProxySession : public VConnection, public PluginUserArgs<MAX_USER_ARGS_SSN>
+class ProxySession : public VConnection, public PluginUserArgs<TS_USER_ARGS_SSN>
 {
-  using pua_type = PluginUserArgs<MAX_USER_ARGS_SSN>;
-
 public:
   ProxySession();
 
@@ -158,19 +156,6 @@ public:
 
   ink_hrtime ssn_start_time    = 0;
   ink_hrtime ssn_last_txn_time = 0;
-
-  // Necessary, because, C++. Thanks Alan!
-  void *
-  get_user_arg(unsigned ix) const override
-  {
-    return this->pua_type::get_user_arg(ix);
-  }
-
-  void
-  set_user_arg(unsigned ix, void *arg) override
-  {
-    return this->pua_type::set_user_arg(ix, arg);
-  }
 
 protected:
   // Hook dispatching state

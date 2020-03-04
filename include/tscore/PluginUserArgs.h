@@ -24,12 +24,16 @@
 #pragma once
 
 #include <array>
+#include "ts/apidefs.h"
 #include "tscore/ink_assert.h"
+#include "tscore/PluginUserArgs.h"
 
-static constexpr int MAX_USER_ARGS_TXN   = 16;  /* max number of user arguments for Transactions */
-static constexpr int MAX_USER_ARGS_SSN   = 8;   /* max number of user arguments for Sessions (for now) */
-static constexpr int MAX_USER_ARGS_VCONN = 4;   /* max number of VConnection user arguments */
-static constexpr int MAX_USER_ARGS_GLB   = 128; /* max number of user arguments, globally */
+static constexpr std::array<size_t, TS_USER_ARGS_COUNT> MAX_USER_ARGS = {
+  16, /* max number of user arguments for TXN */
+  8,  /* max number of user arguments for SSN */
+  4,  /* max number of user arguments for VCONN */
+  128 /* max number of user arguments for GLB */
+};
 
 /**
   This is a mixin class (sort of), implementing the appropriate APIs and data storage for
@@ -38,22 +42,22 @@ static constexpr int MAX_USER_ARGS_GLB   = 128; /* max number of user arguments,
 class PluginUserArgsMixin
 {
 public:
-  virtual void *get_user_arg(unsigned ix) const     = 0;
-  virtual void set_user_arg(unsigned ix, void *arg) = 0;
+  virtual void *get_user_arg(size_t ix) const     = 0;
+  virtual void set_user_arg(size_t ix, void *arg) = 0;
 };
 
-template <size_t N> class PluginUserArgs : public virtual PluginUserArgsMixin
+template <TSUserArgType I> class PluginUserArgs : public virtual PluginUserArgsMixin
 {
 public:
   void *
-  get_user_arg(unsigned ix) const
+  get_user_arg(size_t ix) const
   {
     ink_assert(ix < user_args.size());
     return this->user_args[ix];
   };
 
   void
-  set_user_arg(unsigned ix, void *arg)
+  set_user_arg(size_t ix, void *arg)
   {
     ink_assert(ix < user_args.size());
     user_args[ix] = arg;
@@ -66,5 +70,5 @@ public:
   }
 
 private:
-  std::array<void *, N> user_args{{nullptr}};
+  std::array<void *, MAX_USER_ARGS[I]> user_args{{nullptr}};
 };
