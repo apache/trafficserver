@@ -824,9 +824,7 @@ typedef enum {
   TS_THREAD_POOL_NET,
   TS_THREAD_POOL_TASK,
   /* unlikely you should use these */
-  TS_THREAD_POOL_SSL,
   TS_THREAD_POOL_DNS,
-  TS_THREAD_POOL_REMAP,
   TS_THREAD_POOL_UDP
 } TSThreadPool;
 

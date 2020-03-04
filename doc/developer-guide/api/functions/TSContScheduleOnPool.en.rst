@@ -44,11 +44,8 @@ Pool                        Properties
 =========================== =======================================================================================
 ``TS_THREAD_POOL_NET``      Transaction processing threads. Continuations on these threads must not block.
 ``TS_THREAD_POOL_TASK``     Background threads. Continuations can perform blocking operations.
-``TS_THREAD_POOL_SSL``      *DEPRECATED* - these are no longer used as of ATS 6.
 ``TS_THREAD_POOL_DNS``      DNS request processing. May not exist depending on configuration. Not recommended.
-``TS_THREAD_POOL_REMAP``    *DEPRECATED* - these are no longer used.
-``TS_THREAD_POOL_CLUSTER``  *DEPRECATED* - these are no longer used as of ATS 7.
-``TS_THREAD_POOL_UDP``      *DEPRECATED*
+``TS_THREAD_POOL_UDP``      UDP processing.
 =========================== =======================================================================================
 
 In practice, any choice except ``TS_THREAD_POOL_NET`` or ``TS_THREAD_POOL_TASK`` is strongly not
