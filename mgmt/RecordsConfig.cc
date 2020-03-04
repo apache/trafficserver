@@ -1257,6 +1257,11 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_NODE, "proxy.node.version.manager.build_person", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  //# manager: backoff configuration.
+  {RECT_CONFIG, "proxy.node.config.manager_exponential_sleep_ceiling", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.node.config.manager_retry_cap", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
 
   //#
   //# SSL parent proxying info
