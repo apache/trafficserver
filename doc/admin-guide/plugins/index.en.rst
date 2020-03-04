@@ -154,6 +154,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    FQ Pacing <fq_pacing.en>
    Header Frequency <header_freq.en>
    Hook Trace <hook-trace.en>
+   ICAP <icap.en>
    JA3 Fingerprint <ja3_fingerprint.en>
    Memcache <memcache.en>
    Metalink <metalink.en>
@@ -191,6 +192,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Header Frequency <header_freq.en>`
    Count the frequency of headers.
+
+:doc:`ICAP <icap.en>`
+   Pass response data to external server for further processing using the ICAP protocol.
 
 :doc:`JA3 Fingerprint <ja3_fingerprint.en>`
    Calculates JA3 Fingerprints for incoming SSL traffic.
