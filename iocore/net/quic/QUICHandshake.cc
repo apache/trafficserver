@@ -409,6 +409,9 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
   if (tp_config.initial_max_stream_data_uni() != 0) {
     tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, tp_config.initial_max_stream_data_uni());
   }
+  if (tp_config.disable_active_migration()) {
+    tp->set(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION, nullptr, 0);
+  }
   if (pref_addr != nullptr) {
     uint8_t pref_addr_buf[QUICPreferredAddress::MAX_LEN];
     uint16_t len;

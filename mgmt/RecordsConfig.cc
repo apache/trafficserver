@@ -1410,6 +1410,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.active_cid_limit_out", RECD_INT, "8", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.quic.disable_active_migration", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
+  ,
   // Constants of Loss Detection
   {RECT_CONFIG, "proxy.config.quic.loss_detection.packet_threshold", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,

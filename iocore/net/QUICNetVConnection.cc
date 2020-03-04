@@ -192,6 +192,16 @@ public:
     }
   }
 
+  bool
+  disable_active_migration() const override
+  {
+    if (this->_ctx == NET_VCONNECTION_IN) {
+      return this->_params->disable_active_migration();
+    } else {
+      return false;
+    }
+  }
+
   std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>>
   additional_tp() const override
   {

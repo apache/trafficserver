@@ -530,6 +530,7 @@ public:
   virtual uint8_t ack_delay_exponent() const                                                       = 0;
   virtual uint8_t max_ack_delay() const                                                            = 0;
   virtual uint8_t active_cid_limit() const                                                         = 0;
+  virtual bool disable_active_migration() const                                                    = 0;
   virtual std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>> additional_tp() const = 0;
 };
 

@@ -164,6 +164,7 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_max_ack_delay_out, "proxy.config.quic.max_ack_delay_out");
   REC_EstablishStaticConfigInt32U(this->_active_cid_limit_in, "proxy.config.quic.active_cid_limit_in");
   REC_EstablishStaticConfigInt32U(this->_active_cid_limit_out, "proxy.config.quic.active_cid_limit_out");
+  REC_EstablishStaticConfigInt32U(this->_disable_active_migration, "proxy.config.quic.disable_active_migration");
 
   // Loss Detection
   REC_EstablishStaticConfigInt32U(this->_ld_packet_threshold, "proxy.config.quic.loss_detection.packet_threshold");
@@ -367,6 +368,12 @@ uint8_t
 QUICConfigParams::active_cid_limit_out() const
 {
   return this->_active_cid_limit_out;
+}
+
+bool
+QUICConfigParams::disable_active_migration() const
+{
+  return this->_disable_active_migration;
 }
 
 const char *
