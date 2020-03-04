@@ -273,7 +273,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  TSUserArgIndexReserve(TSUserArgType::TXN, PLUGIN_NAME, "txn data", &(config->txn_slot));
+  TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "txn data", &(config->txn_slot));
 
   if (!config->post_remap_host) {
     pre_remap_cont = TSContCreate(handle_read_req_hdr, nullptr);

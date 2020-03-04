@@ -645,7 +645,7 @@ TSPluginInit(int argc, const char *argv[])
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to register plugin.", PLUGIN_NAME);
-  } else if (TS_SUCCESS != TSUserArgIndexReserve(TSUserArgType::SSN, PLUGIN_NAME, "Track log related data", &s_arg_idx)) {
+  } else if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_SSN, PLUGIN_NAME, "Track log related data", &s_arg_idx)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve ssn arg.", PLUGIN_NAME);
   } else {
     /// Add global hooks

@@ -145,7 +145,7 @@ public:
       return;
     }
 
-    TSReleaseAssert(TSUserArgIndexReserve(TSUserArgType::TXN, arg_name, arg_desc, &md.txnArgIndex) == TS_SUCCESS);
+    TSReleaseAssert(TSUserArgIndexReserve(TS_USER_ARGS_TXN, arg_name, arg_desc, &md.txnArgIndex) == TS_SUCCESS);
     TSReleaseAssert(md.txnCloseContp = TSContCreate(_deleteAuxData, nullptr));
   }
 

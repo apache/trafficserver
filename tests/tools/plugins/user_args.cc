@@ -115,16 +115,16 @@ TSPluginInit(int argc, const char *argv[])
   }
 
 #if NEW_APIS
-  if (TS_SUCCESS != TSUserArgIndexReserve(TSUserArgType::TXN, PLUGIN_NAME, "User args tests TXN", &gIX.TXN)) {
+  if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "User args tests TXN", &gIX.TXN)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve TXN arg.", PLUGIN_NAME);
     return;
-  } else if (TS_SUCCESS != TSUserArgIndexReserve(TSUserArgType::SSN, PLUGIN_NAME, "User args tests SSN", &gIX.SSN)) {
+  } else if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_SSN, PLUGIN_NAME, "User args tests SSN", &gIX.SSN)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve SSN arg.", PLUGIN_NAME);
     return;
-  } else if (TS_SUCCESS != TSUserArgIndexReserve(TSUserArgType::VCONN, PLUGIN_NAME, "User args tests VCONN", &gIX.VCONN)) {
+  } else if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "User args tests VCONN", &gIX.VCONN)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve VCONN arg.", PLUGIN_NAME);
     return;
-  } else if (TS_SUCCESS != TSUserArgIndexReserve(TSUserArgType::GLB, PLUGIN_NAME, "User args tests GLB", &gIX.GLB)) {
+  } else if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_GLB, PLUGIN_NAME, "User args tests GLB", &gIX.GLB)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve GLB arg.", PLUGIN_NAME);
     return;
   }
@@ -179,16 +179,16 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   TSContDataSet(ix->contp, static_cast<void *>(ix));
 
 #if NEW_APIS
-  if (TS_SUCCESS != TSUserArgIndexNameLookup(TSUserArgType::TXN, PLUGIN_NAME, &ix->TXN, nullptr)) {
+  if (TS_SUCCESS != TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, PLUGIN_NAME, &ix->TXN, nullptr)) {
     TSError("[%s] Failed to lookup TXN arg.", PLUGIN_NAME);
     return TS_ERROR;
-  } else if (TS_SUCCESS != TSUserArgIndexNameLookup(TSUserArgType::SSN, PLUGIN_NAME, &ix->SSN, nullptr)) {
+  } else if (TS_SUCCESS != TSUserArgIndexNameLookup(TS_USER_ARGS_SSN, PLUGIN_NAME, &ix->SSN, nullptr)) {
     TSError("[%s] Failed to lookup SSN arg.", PLUGIN_NAME);
     return TS_ERROR;
-  } else if (TS_SUCCESS != TSUserArgIndexNameLookup(TSUserArgType::VCONN, PLUGIN_NAME, &ix->VCONN, nullptr)) {
+  } else if (TS_SUCCESS != TSUserArgIndexNameLookup(TS_USER_ARGS_VCONN, PLUGIN_NAME, &ix->VCONN, nullptr)) {
     TSError("[%s] Failed to lookup VCONN arg.", PLUGIN_NAME);
     return TS_ERROR;
-  } else if (TS_SUCCESS != TSUserArgIndexNameLookup(TSUserArgType::GLB, PLUGIN_NAME, &ix->GLB, nullptr)) {
+  } else if (TS_SUCCESS != TSUserArgIndexNameLookup(TS_USER_ARGS_GLB, PLUGIN_NAME, &ix->GLB, nullptr)) {
     TSError("[%s] Failed to lookup GLB arg.", PLUGIN_NAME);
     return TS_ERROR;
   }

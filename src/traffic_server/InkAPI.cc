@@ -109,9 +109,9 @@ struct UserArg {
 };
 
 // Managing the user args tables, and the global storage (which is assumed to be the biggest, by far).
-UserArg UserArgTable[TSUserArgType::COUNT][MAX_USER_ARGS_GLB];
+UserArg UserArgTable[TS_USER_ARGS_COUNT][MAX_USER_ARGS_GLB];
 static PluginUserArgs<MAX_USER_ARGS_GLB> global_user_args;
-std::atomic<int> UserArgIdx[TSUserArgType::COUNT]; // Table of next reserved index.
+std::atomic<int> UserArgIdx[TS_USER_ARGS_COUNT]; // Table of next reserved index.
 
 /* URL schemes */
 tsapi const char *TS_URL_SCHEME_FILE;
@@ -6104,7 +6104,7 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
 {
   sdk_assert(sdk_sanity_check_null_ptr(ptr_idx) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(name) == TS_SUCCESS);
-  sdk_assert(0 <= type && type < TSUserArgType::COUNT);
+  sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
 
   int idx;
 
@@ -6120,7 +6120,7 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
   }
 
   idx       = UserArgIdx[type]++;
-  int limit = (type == TSUserArgType::VCONN) ? MAX_USER_ARGS_VCONN : MAX_USER_ARGS_TXN;
+  int limit = (type == TS_USER_ARGS_VCONN) ? MAX_USER_ARGS_VCONN : MAX_USER_ARGS_TXN;
 
   if (idx < limit) {
     UserArg &arg(UserArgTable[type][idx]);
@@ -6138,7 +6138,7 @@ TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *descript
 TSReturnCode
 TSUserArgIndexLookup(TSUserArgType type, int idx, const char **name, const char **description)
 {
-  sdk_assert(0 <= type && type < TSUserArgType::COUNT);
+  sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
   if (sdk_sanity_check_null_ptr(name) == TS_SUCCESS) {
     if (idx < UserArgIdx[type]) {
       UserArg &arg(UserArgTable[type][idx]);
@@ -6157,7 +6157,7 @@ TSReturnCode
 TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description)
 {
   sdk_assert(sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS);
-  sdk_assert(0 <= type && type < TSUserArgType::COUNT);
+  sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
 
   std::string_view n{name};
 
@@ -6202,55 +6202,55 @@ TSUserArgGet(void *data, int arg_idx)
 TSReturnCode
 TSHttpTxnArgIndexReserve(const char *name, const char *description, int *arg_idx)
 {
-  return TSUserArgIndexReserve(TSUserArgType::TXN, name, description, arg_idx);
+  return TSUserArgIndexReserve(TS_USER_ARGS_TXN, name, description, arg_idx);
 }
 
 TSReturnCode
 TSHttpTxnArgIndexLookup(int arg_idx, const char **name, const char **description)
 {
-  return TSUserArgIndexLookup(TSUserArgType::TXN, arg_idx, name, description);
+  return TSUserArgIndexLookup(TS_USER_ARGS_TXN, arg_idx, name, description);
 }
 
 TSReturnCode
 TSHttpTxnArgIndexNameLookup(const char *name, int *arg_idx, const char **description)
 {
-  return TSUserArgIndexNameLookup(TSUserArgType::TXN, name, arg_idx, description);
+  return TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, name, arg_idx, description);
 }
 
 TSReturnCode
 TSHttpSsnArgIndexReserve(const char *name, const char *description, int *arg_idx)
 {
-  return TSUserArgIndexReserve(TSUserArgType::SSN, name, description, arg_idx);
+  return TSUserArgIndexReserve(TS_USER_ARGS_SSN, name, description, arg_idx);
 }
 
 TSReturnCode
 TSHttpSsnArgIndexLookup(int arg_idx, const char **name, const char **description)
 {
-  return TSUserArgIndexLookup(TSUserArgType::SSN, arg_idx, name, description);
+  return TSUserArgIndexLookup(TS_USER_ARGS_SSN, arg_idx, name, description);
 }
 
 TSReturnCode
 TSHttpSsnArgIndexNameLookup(const char *name, int *arg_idx, const char **description)
 {
-  return TSUserArgIndexNameLookup(TSUserArgType::SSN, name, arg_idx, description);
+  return TSUserArgIndexNameLookup(TS_USER_ARGS_SSN, name, arg_idx, description);
 }
 
 TSReturnCode
 TSVConnArgIndexReserve(const char *name, const char *description, int *arg_idx)
 {
-  return TSUserArgIndexReserve(TSUserArgType::VCONN, name, description, arg_idx);
+  return TSUserArgIndexReserve(TS_USER_ARGS_VCONN, name, description, arg_idx);
 }
 
 TSReturnCode
 TSVConnArgIndexLookup(int arg_idx, const char **name, const char **description)
 {
-  return TSUserArgIndexLookup(TSUserArgType::VCONN, arg_idx, name, description);
+  return TSUserArgIndexLookup(TS_USER_ARGS_VCONN, arg_idx, name, description);
 }
 
 TSReturnCode
 TSVConnArgIndexNameLookup(const char *name, int *arg_idx, const char **description)
 {
-  return TSUserArgIndexNameLookup(TSUserArgType::VCONN, name, arg_idx, description);
+  return TSUserArgIndexNameLookup(TS_USER_ARGS_VCONN, name, arg_idx, description);
 }
 
 void

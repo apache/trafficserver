@@ -736,7 +736,7 @@ TSPluginInit(int argc, const char *argv[])
     AuthLogError("plugin registration failed");
   }
 
-  TSReleaseAssert(TSUserArgIndexReserve(TSUserArgType::TXN, "AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) ==
+  TSReleaseAssert(TSUserArgIndexReserve(TS_USER_ARGS_TXN, "AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) ==
                   TS_SUCCESS);
 
   AuthOsDnsContinuation = TSContCreate(AuthProxyGlobalHook, nullptr);
@@ -750,7 +750,7 @@ TSPluginInit(int argc, const char *argv[])
 TSReturnCode
 TSRemapInit(TSRemapInterface * /* api ATS_UNUSED */, char * /* err ATS_UNUSED */, int /* errsz ATS_UNUSED */)
 {
-  TSReleaseAssert(TSUserArgIndexReserve(TSUserArgType::TXN, "AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) ==
+  TSReleaseAssert(TSUserArgIndexReserve(TS_USER_ARGS_TXN, "AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) ==
                   TS_SUCCESS);
 
   AuthOsDnsContinuation = TSContCreate(AuthProxyGlobalHook, nullptr);
