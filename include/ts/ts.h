@@ -2354,21 +2354,7 @@ tsapi TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigK
 tsapi TSReturnCode TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
 /**
-   This API informs the core to try to follow redirections (e.g. 301 responses.
-   The new URL would be provided in the standard Location header.
-
-   This is deprecated as of v8.0.0. You should instead rely on using the overridable
-   proxy.config.http.number_of_redirections setting.
-
-   @param txnp the transaction pointer
-   @param on   turn this on or off (0 or 1)
-
-   @return @c TS_SUCCESS if it succeeded
-*/
-tsapi TS_DEPRECATED TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
-
-/**
-   This is a generalization of the TSHttpTxnFollowRedirect(), but gives finer
+   This is a generalization of the old TSHttpTxnFollowRedirect(), but gives finer
    control over the behavior. Instead of using the Location: header for the new
    destination, this API takes the new URL as a parameter. Calling this API
    transfers the ownership of the URL from the plugin to the core, so you must
