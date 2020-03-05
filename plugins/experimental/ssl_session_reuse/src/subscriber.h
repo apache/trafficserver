@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <string>
+#include <atomic>
 
 #include "message.h"
 #include "globals.h"
@@ -36,7 +37,7 @@ private:
   std::string redis_passwd;
 
   std::vector<RedisEndpoint> m_redisEndpoints;
-  int m_redisEndpointsIndex;
+  std::atomic<int> m_redisEndpointsIndex;
   std::string m_channel;
   std::string m_channel_prefix;
 

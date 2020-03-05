@@ -66,7 +66,7 @@ encrypt_session(const char *session_data, int32_t session_data_len, const unsign
   if (ret == 0) {
     encrypted_data.assign(encrypted, encrypted_len);
   } else {
-    TSDebug(PLUGIN, "Session data encryption failed.");
+    TSDebug(PLUGIN, "encrypt_session calling encrypt_encode64 failed, error: %d", ret);
   }
 
   delete[] data;
@@ -97,7 +97,11 @@ decrypt_session(const std::string &encrypted_data, const unsigned char *key, int
   size_t len_all              = 0;
 
   std::memset(decrypted, 0, decrypted_size);
-  decrypt_decode64(key, key_length, encrypted_data.c_str(), encrypted_data.length(), decrypted, decrypted_size, &decrypted_len);
+  if ((ret = decrypt_decode64(key, key_length, encrypted_data.c_str(), encrypted_data.length(), decrypted, decrypted_size,
+                              &decrypted_len)) != 0) {
+    TSDebug(PLUGIN, "decrypt_session calling decrypt_decode64 failed, error: %d", ret);
+    goto Cleanup;
+  }
 
   // Retrieve ssl_session
   ssl_sess_ptr = decrypted;
@@ -139,14 +143,15 @@ encode_id(const char *id, int idlen, std::string &encoded_data)
   memset(encoded, 0, ENCODED_LEN(idlen));
   size_t encoded_len = 0;
   if (TSBase64Encode(id, idlen, encoded, ENCODED_LEN(idlen), &encoded_len) != 0) {
-    TSError("Base 64 encoding failed.");
+    TSError("ID base 64 encoding failed.");
     if (encoded) {
       delete[] encoded;
     }
     return -1;
   }
 
-  encoded_data.assign(encoded);
+  encoded_data.assign(encoded, encoded_len);
+
   if (encoded) {
     delete[] encoded;
   }
@@ -161,7 +166,7 @@ decode_id(const std::string &encoded_id, char *decoded_data, int &decoded_data_l
   memset(decoded_data, 0, decoded_data_len);
   if (TSBase64Decode(static_cast<const char *>(encoded_id.c_str()), encoded_id.length(),
                      reinterpret_cast<unsigned char *>(decoded_data), decoded_data_len, &decode_len) != 0) {
-    TSError("Base 64 decoding failed.");
+    TSError("ID base 64 decoding failed.");
     return -1;
   }
   decoded_data_len = decode_len;
@@ -184,6 +189,7 @@ add_session(char *session_id, int session_id_len, const std::string &encrypted_s
   SSL_SESSION *sess        = d2i_SSL_SESSION(nullptr, &loc, session_data_len);
   if (nullptr == sess) {
     TSError("Failed to transform session buffer %.*s", session_id_len, hex_str(session).c_str());
+    return -1;
   }
   TSSslSessionID sid;
   memcpy(reinterpret_cast<char *>(sid.bytes), session_id, session_id_len);
