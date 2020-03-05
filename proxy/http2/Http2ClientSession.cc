@@ -300,14 +300,15 @@ Http2ClientSession::do_io_close(int alerrno)
   ink_assert(this->mutex->thread_holding == this_ethread());
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
 
-  // client_vc will be closed in Http2ClientSession::free
-
   {
     SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
     this->connection_state.release_stream();
   }
 
   this->clear_session_active();
+
+  // Clean up the write VIO in case of inactivity timeout
+  this->do_io_write(nullptr, 0, nullptr);
 }
 
 void
@@ -375,6 +376,10 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_EOS:
     this->set_dying_event(event);
     this->do_io_close();
+    if (client_vc != nullptr) {
+      client_vc->do_io_close();
+      client_vc = nullptr;
+    }
     retval = 0;
     break;
 

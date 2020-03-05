@@ -22,7 +22,7 @@ Test ATS TLSv1.3 0-RTT support
 
 Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
 
-ts = Test.MakeATSProcess('ts', select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess('ts', enable_tls=True)
 server = Test.MakeOriginServer('server')
 
 request_header1 = {
@@ -109,7 +109,6 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'http',
     'proxy.config.exec_thread.autoconfig': 0,
     'proxy.config.exec_thread.limit': 8,
-    'proxy.config.http.server_ports': '{0}:proto=http2;http:ssl'.format(ts.Variables.ssl_port),
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.session_cache': 2,

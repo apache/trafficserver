@@ -43,6 +43,13 @@ response_header = {"headers": "HTTP/1.1 200 OK"
                    "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_header)
+request_header = {"headers": "GET /post_with_body HTTP/1.1\r\n"
+                  "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
+                  "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK"
+                   "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionfile.log", request_header, response_header)
 
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts")
@@ -69,6 +76,9 @@ ts.Streams.stderr = Testers.ContainsExpression(
 ts.Streams.stderr += Testers.ContainsExpression(
         "Initialized with sample pool size 1 bytes and disk limit 1000000000 bytes",
         "Verify traffic_dump initialized with the configured disk limit.")
+ts.Streams.stderr += Testers.ContainsExpression(
+        "Finish a session with log file of.*bytes",
+        "Verify traffic_dump sees the end of sessions and accounts for it.")
 
 # Set up the json replay file expectations.
 replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")
@@ -77,6 +87,8 @@ replay_file_session_2 = os.path.join(replay_dir, "127", "0000000000000001")
 ts.Disk.File(replay_file_session_2, exists=True)
 replay_file_session_3 = os.path.join(replay_dir, "127", "0000000000000002")
 ts.Disk.File(replay_file_session_3, exists=True)
+replay_file_session_4 = os.path.join(replay_dir, "127", "0000000000000003")
+ts.Disk.File(replay_file_session_4, exists=True)
 
 #
 # Test 1: Verify the correct behavior of two transactions across two sessions.
@@ -150,6 +162,39 @@ tr.Processes.Default.Command = "python3 {0} {1} {2} --request-target '{3}'".form
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
         replay_file_session_3,
         request_target)
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+#
+# Test 3: Verify correct handling of a POST with body data.
+#
+
+# Verify that an explicit path in the request line is recorded.
+tr = Test.AddTestRun("Make a POST request with a body.")
+request_target = "http://localhost:{0}/post_with_body".format(ts.Variables.port)
+
+# Send the replay file as the request body because it is conveniently already
+# in the test run directory.
+tr.Processes.Default.Command = (
+        'curl --data-binary @{0} --request-target "{1}" '
+        'http://127.0.0.1:{2} -H\'Host: www.example.com\' --verbose'.format(
+            verify_replay, request_target, ts.Variables.port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/post_with_body.gold"
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Verify the client-request size node has the expected value.")
+tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
+
+size_of_verify_replay_file = os.path.getsize(os.path.join(Test.TestDirectory, verify_replay))
+tr.Processes.Default.Command = \
+        "python3 {0} {1} {2} --client-request-size {3}".format(
+            verify_replay,
+            os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
+            replay_file_session_4,
+            size_of_verify_replay_file)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

@@ -141,7 +141,7 @@ PluginFactory::getUuid()
  * @return pointer to a plugin instance, nullptr if failure
  */
 RemapPluginInst *
-PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv, std::string &error)
+PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv, std::string &error, bool dynamicReloadEnabled)
 {
   /* Discover the effective path by looking into the search dirs */
   fs::path effectivePath = getEffectivePath(configPath);
@@ -153,7 +153,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
   }
 
   /* Only one plugin with this effective path can be loaded by a plugin factory */
-  RemapPluginInfo *plugin = dynamic_cast<RemapPluginInfo *>(findByEffectivePath(effectivePath));
+  RemapPluginInfo *plugin = dynamic_cast<RemapPluginInfo *>(findByEffectivePath(effectivePath, dynamicReloadEnabled));
   RemapPluginInst *inst   = nullptr;
 
   if (nullptr == plugin) {
@@ -161,13 +161,23 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
     PluginDebug(_tag, "plugin '%s' has not been loaded yet, loading as remap plugin", configPath.c_str());
 
     fs::path runtimePath;
-    runtimePath /= _runtimeDir;
-    runtimePath /= effectivePath.relative_path();
 
-    fs::path parent = runtimePath.parent_path();
-    if (!fs::create_directories(parent, _ec)) {
-      error.assign("failed to create plugin runtime dir");
-      return nullptr;
+    // if dynamic reload enabled then create a temporary location to copy .so and load from there
+    // else load from original location
+    if (dynamicReloadEnabled) {
+      runtimePath /= _runtimeDir;
+      runtimePath /= effectivePath.relative_path();
+
+      fs::path parent = runtimePath.parent_path();
+      PluginDebug(_tag, "Using effectivePath: [%s] runtimePath: [%s] parent: [%s]", effectivePath.c_str(), runtimePath.c_str(),
+                  parent.c_str());
+      if (!fs::create_directories(parent, _ec)) {
+        error.assign("failed to create plugin runtime dir");
+        return nullptr;
+      }
+    } else {
+      runtimePath = effectivePath;
+      PluginDebug(_tag, "Using effectivePath: [%s] runtimePath: [%s]", effectivePath.c_str(), runtimePath.c_str());
     }
 
     plugin = new RemapPluginInfo(configPath, effectivePath, runtimePath);
@@ -187,7 +197,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
           delete plugin;
         }
 
-        if (_preventiveCleaning) {
+        if (dynamicReloadEnabled && _preventiveCleaning) {
           clean(error);
         }
       } else {
@@ -244,9 +254,9 @@ PluginFactory::getEffectivePath(const fs::path &configPath)
  * @return plugin found or nullptr if not found
  */
 PluginDso *
-PluginFactory::findByEffectivePath(const fs::path &path)
+PluginFactory::findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled)
 {
-  return PluginDso::loadedPlugins()->findByEffectivePath(path);
+  return PluginDso::loadedPlugins()->findByEffectivePath(path, dynamicReloadEnabled);
 }
 
 /**

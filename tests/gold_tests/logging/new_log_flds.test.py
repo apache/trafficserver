@@ -26,9 +26,7 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 
-# Define default ATS.  "select_ports=False" needed because SSL port used.
-#
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
 ts.addSSLfile("../remap/ssl/server.pem")
 ts.addSSLfile("../remap/ssl/server.key")

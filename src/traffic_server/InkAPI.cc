@@ -4569,14 +4569,8 @@ TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
   case TS_THREAD_POOL_TASK:
     etype = ET_TASK;
     break;
-  case TS_THREAD_POOL_SSL:
-    etype = ET_TASK; // Should be ET_SSL
-    break;
   case TS_THREAD_POOL_DNS:
     etype = ET_DNS;
-    break;
-  case TS_THREAD_POOL_REMAP:
-    etype = ET_TASK; // Should be ET_REMAP
     break;
   case TS_THREAD_POOL_UDP:
     etype = ET_UDP;
@@ -7787,34 +7781,6 @@ TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
 
   info->object_size_set(size);
-}
-
-// This API tells the core to follow normal (301/302) redirects using the
-// standard Location: URL. This does not need to be called if you set an
-// explicit URL using TSHttpTxnRedirectUrlSet().
-TSReturnCode
-TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *)txnp;
-
-  // This is necessary since we might not have setup these overridable configurations
-  sm->t_state.setup_per_txn_configs();
-
-  if (on) {
-    sm->redirection_tries  = 0;
-    sm->enable_redirection = true;
-    // Make sure we allow for at least one redirection.
-    if (sm->t_state.txn_conf->number_of_redirections <= 0) {
-      sm->t_state.my_txn_conf().number_of_redirections = 1;
-    }
-  } else {
-    sm->enable_redirection                           = false;
-    sm->t_state.my_txn_conf().number_of_redirections = 0;
-  }
-
-  return TS_SUCCESS;
 }
 
 // this function should be called at TS_EVENT_HTTP_READ_RESPONSE_HDR

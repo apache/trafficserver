@@ -36,8 +36,6 @@ Options
 
 .. option:: -B TAGS, --action_tags TAGS
 
-.. option:: -c CORE, --read_core CORE
-
 .. option:: -C 'CMD [ARGS]', --command 'CMD [ARGS]'
 
 Run a |TS| maintenance command. These commands perform various administrative

@@ -49,6 +49,7 @@ typedef enum parent_select_mode {
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
   bool consider_ims_header{false};
+  bool modify_cache_key{true};
 };
 
 struct txndata {
@@ -96,6 +97,7 @@ create_pluginconfig(int argc, char *const argv[])
   static const struct option longopts[] = {
     {const_cast<char *>("ps-cachekey"), no_argument, nullptr, 'p'},
     {const_cast<char *>("consider-ims"), no_argument, nullptr, 'c'},
+    {const_cast<char *>("no-modify-cachekey"), no_argument, nullptr, 'n'},
     {nullptr, 0, nullptr, 0},
   };
 
@@ -117,6 +119,10 @@ create_pluginconfig(int argc, char *const argv[])
     case 'c': {
       DEBUG_LOG("Plugin considers the '%.*s' header", (int)X_IMS_HEADER.size(), X_IMS_HEADER.data());
       pc->consider_ims_header = true;
+    } break;
+    case 'n': {
+      DEBUG_LOG("Plugin doesn't modify cache key");
+      pc->modify_cache_key = false;
     } break;
     default: {
     } break;
@@ -203,12 +209,16 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
             TSfree(req_url);
           }
 
-          // set the cache key.
-          if (TS_SUCCESS != TSCacheUrlSet(txnp, cache_key_url, cache_key_url_length)) {
-            DEBUG_LOG("failed to change the cache url to %s.", cache_key_url);
-          }
-
           if (nullptr != pc) {
+            // set the cache key if configured to.
+            if (pc->modify_cache_key && TS_SUCCESS != TSCacheUrlSet(txnp, cache_key_url, cache_key_url_length)) {
+              ERROR_LOG("failed to change the cache url to %s.", cache_key_url);
+              ERROR_LOG("Disabling cache for this transaction to avoid cache poisoning.");
+              TSHttpTxnServerRespNoStoreSet(txnp, 1);
+              TSHttpTxnRespCacheableSet(txnp, 0);
+              TSHttpTxnReqCacheableSet(txnp, 0);
+            }
+
             // Optionally set the parent_selection_url to the cache_key url or path
             if (PS_DEFAULT != pc->ps_mode) {
               TSMLoc ps_loc = nullptr;
