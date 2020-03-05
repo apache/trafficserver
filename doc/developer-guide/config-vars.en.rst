@@ -33,11 +33,15 @@
 
 .. |InkAPI.cc| replace:: ``InkAPI.cc``
 
-.. _InkAPI.cc: https://github.com/apache/trafficserver/blob/master/proxy/api/InkAPI.cc
+.. _InkAPI.cc: https://github.com/apache/trafficserver/blob/master/src/traffic_server/InkAPI.cc
 
 .. |InkAPITest.cc| replace:: ``InkAPITest.cc``
 
-.. _InkAPITest.cc: https://github.com/apache/trafficserver/blob/master/proxy/api/InkAPITest.cc
+.. _InkAPITest.cc: https://github.com/apache/trafficserver/blob/master/src/traffic_server/InkAPITest.cc
+
+.. |overridable_txn_vars.cc| replace:: ``overridable_txn_vars.cc``
+
+.. _overridable_txn_vars.cc: https://github.com/apache/trafficserver/blob/master/src/shared/overridable_txn_vars.cc
 
 .. |ts_lua_http_config.c| replace:: ``ts_lua_http_config.c``
 
@@ -308,13 +312,10 @@ required for generic access:
 
 #. Add a value to the ``TSOverridableConfigKey`` enumeration in |apidefs.h.in|_.
 
-#. Augment the ``TSHttpTxnConfigFind`` function to return this enumeration value
-   when given the name of the configuration variable. Be sure to count the
-   characters very carefully.
+#. Augment ``Overridable_Map`` in |overridable_txn_vars.cc|_ to include configuration variable.
 
-#. Augment the ``_conf_to_memberp`` function in |InkAPI.cc|_ to return a pointer
-   to the appropriate member of ``OverridableHttpConfigParams`` and set the type
-   if not a byte value.
+#. Update the function ``_conf_to_memberp`` in |InkAPI.cc|_ to have a case for the enumeration value
+   in ``TSOverridableConfigKey``.
 
 #. Update the testing logic in |InkAPITest.cc|_ by adding the string name of the
    configuration variable to the ``SDK_Overridable_Configs`` array.

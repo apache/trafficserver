@@ -25,6 +25,10 @@
 #include <ctime>
 #include "records/I_RecDefs.h"
 #include "records/P_RecUtils.h"
+#include "ts/apidefs.h"
+#include "HTTP.h"
+#include "HttpConnectionCount.h"
+#include "shared/overridable_txn_vars.h"
 #include <tscore/BufferWriter.h>
 
 struct RecordDescriptionPolicy {
@@ -169,6 +173,30 @@ rec_labelof(int rec_class)
   }
 }
 
+static const char *
+rec_datatypeof(TSRecordDataType dt)
+{
+  switch (dt) {
+  case TS_RECORDDATATYPE_INT:
+    return "int";
+  case TS_RECORDDATATYPE_NULL:
+    return "null";
+  case TS_RECORDDATATYPE_FLOAT:
+    return "float";
+  case TS_RECORDDATATYPE_STRING:
+    return "string";
+  case TS_RECORDDATATYPE_COUNTER:
+    return "counter";
+  case TS_RECORDDATATYPE_STAT_CONST:
+    return "constant stat";
+  case TS_RECORDDATATYPE_STAT_FX:
+    return "stat fx";
+  case TS_RECORDDATATYPE_MAX:
+    return "*";
+  }
+  return "?";
+}
+
 static std::string
 timestr(time_t tm)
 {
@@ -224,6 +252,9 @@ CtrlEngine::config_describe()
       return;
     }
 
+    auto ov_iter       = ts::Overridable_Txn_Vars.find(it);
+    bool overridable_p = (ov_iter != ts::Overridable_Txn_Vars.end());
+
     std::string text;
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Name", desc.rec_name);
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Current Value ", CtrlMgmtRecordValue(desc.rec_type, desc.rec_value).c_str());
@@ -234,6 +265,8 @@ CtrlEngine::config_describe()
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Update Type ", rec_updateof(desc.rec_updatetype));
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Update Status ", desc.rec_update);
     std::cout << ts::bwprint(text, "{:16s}: {}\n", "Source ", rec_sourceof(desc.rec_source));
+    std::cout << ts::bwprint(text, "{:16s}: {} {}\n", "Overridable", overridable_p ? "yes" : "no",
+                             overridable_p ? rec_datatypeof(std::get<1>(ov_iter->second)) : "");
 
     if (strlen(desc.rec_checkexpr)) {
       std::cout << ts::bwprint(text, "{:16s}: {}\n", "Syntax Check ", rec_checkof(desc.rec_checktype), desc.rec_checkexpr);
