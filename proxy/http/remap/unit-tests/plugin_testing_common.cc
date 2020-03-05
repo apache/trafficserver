@@ -52,22 +52,22 @@ getTemporaryDir()
 }
 
 // implement functions to support unit-testing of option to enable/disable dynamic reload of plugins
-static PluginDynamicReloadMode plugin_dynamic_reload_mode = REMAP_PLUGIN_DYNAMIC_RELOAD_ON;
+static PluginDynamicReloadMode plugin_dynamic_reload_mode = PluginDynamicReloadMode::RELOAD_ON;
 
 bool
 isPluginDynamicReloadEnabled()
 {
-  return plugin_dynamic_reload_mode == REMAP_PLUGIN_DYNAMIC_RELOAD_ON;
+  return PluginDynamicReloadMode::RELOAD_ON == plugin_dynamic_reload_mode;
 }
 
 void
 enablePluginDynamicReload()
 {
-  plugin_dynamic_reload_mode = REMAP_PLUGIN_DYNAMIC_RELOAD_ON;
+  plugin_dynamic_reload_mode = PluginDynamicReloadMode::RELOAD_ON;
 }
 
 void
 disablePluginDynamicReload()
 {
-  plugin_dynamic_reload_mode = PLUGIN_DYNAMIC_RELOAD_OFF;
+  plugin_dynamic_reload_mode = PluginDynamicReloadMode::RELOAD_OFF;
 }
