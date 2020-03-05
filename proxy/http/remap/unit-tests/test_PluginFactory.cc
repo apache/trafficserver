@@ -136,7 +136,7 @@ public:
   {
     CHECK(fs::exists(configPath));
 
-    void *handle = dlopen(configPath.c_str(), RTLD_NOW);
+    void *handle = dlopen(configPath.c_str(), RTLD_NOW | RTLD_LOCAL);
     if (!handle) {
       return false;
     }
