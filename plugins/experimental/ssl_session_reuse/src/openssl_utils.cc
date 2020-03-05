@@ -50,6 +50,7 @@ ssl_new_session(TSSslSessionID &sid)
     TSError("Encoded id failed.");
     return 0;
   }
+  std::string redis_channel = ssl_param.cluster_name + "." + encoded_id;
 
   int session_ret_len = SSL_SESSION_MAX_DER;
   char session_data[SSL_SESSION_MAX_DER];
@@ -65,7 +66,6 @@ ssl_new_session(TSSslSessionID &sid)
     return 0;
   }
 
-  std::string redis_channel = ssl_param.cluster_name + "." + encoded_id;
   ssl_param.pub->publish(redis_channel, encrypted_data);
 
   TSDebug(PLUGIN, "Create new session id: %s encoded: %s channel: %s", encoded_id.c_str(), encrypted_data.c_str(),

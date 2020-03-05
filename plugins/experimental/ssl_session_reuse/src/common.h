@@ -43,6 +43,8 @@
 class PluginThreads
 {
 public:
+  bool shutdown = false;
+
   void
   store(const pthread_t &th)
   {
@@ -53,10 +55,9 @@ public:
   void
   terminate()
   {
+    shutdown = true;
+
     std::lock_guard<std::mutex> lock(threads_mutex);
-    for (pthread_t th : threads_queue) {
-      ::pthread_cancel(th);
-    }
     while (!threads_queue.empty()) {
       pthread_t th = threads_queue.front();
       ::pthread_join(th, nullptr);
