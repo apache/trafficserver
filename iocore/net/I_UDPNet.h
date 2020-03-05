@@ -63,6 +63,7 @@ public:
      @param c Continuation that is called back with newly created
      socket.
      @param addr Address to bind (includes port)
+     @param fd File descriptor to use (if exists)
      @param send_bufsize (optional) Socket buffer size for sending.
      Limits how much outstanding data to OS before it is able to send
      to the NIC.
