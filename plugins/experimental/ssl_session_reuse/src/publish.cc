@@ -36,6 +36,11 @@
 #include "redis_auth.h"
 #include "ssl_utils.h"
 #include <inttypes.h>
+#include <condition_variable>
+
+std::mutex q_mutex;
+std::condition_variable q_checker;
+bool q_ready = false;
 
 void *
 RedisPublisher::start_worker_thread(void *arg)
@@ -103,7 +108,7 @@ RedisPublisher::RedisPublisher(const std::string &conf)
   }
 
   if (!err) {
-    for (int i = 0; i < static_cast<int>(m_numWorkers); i++) {
+    for (unsigned int i = 0; i < m_redisEndpoints.size(); i++) {
       TSThreadCreate(RedisPublisher::start_worker_thread, static_cast<void *>(this));
     }
   }
@@ -231,57 +236,68 @@ RedisPublisher::runWorker()
   RedisContextPtr my_context;
   ::redisReply *current_reply(nullptr);
 
-  while (true) {
-    ::sem_post(&m_workerSem);
-    int readyWorkers = 0;
-    ::sem_getvalue(&m_workerSem, &readyWorkers);
+  while (!plugin_threads.shutdown) {
+    try {
+      ::sem_post(&m_workerSem);
+      int readyWorkers = 0;
+      ::sem_getvalue(&m_workerSem, &readyWorkers);
 
-    // LOGDEBUG(PUB, "RedisPublisher::runWorker.Ready worker count: " << readyWorkers);
+      // LOGDEBUG(PUB, "RedisPublisher::runWorker.Ready worker count: " << readyWorkers);
 
-    m_messageQueueMutex.lock();
+      m_messageQueueMutex.lock();
 
-    if (m_messageQueue.empty()) {
-      ::sem_wait(&m_workerSem);
-      m_messageQueueMutex.unlock();
-      usleep(1000);
-      continue;
-    }
-
-    // Can't do reference here, since we pop it off the queue, the reference will be invalid.
-    Message current_message(m_messageQueue.front());
-    if (!current_message.cleanup) {
-      m_messageQueue.pop_front();
-    }
-
-    m_messageQueueMutex.unlock();
-    ::sem_wait(&m_workerSem);
-
-    if (current_message.cleanup) {
-      if (TSIsDebugTagSet(PLUGIN)) {
-        auto my_id = (uint64_t)pthread_self();
-        TSDebug(PLUGIN, "RedisPublisher::runWorker: threadId: %" PRIx64 " received the cleanup message. Exiting!", my_id);
+      if (m_messageQueue.empty()) {
+        ::sem_wait(&m_workerSem);
+        m_messageQueueMutex.unlock();
+        std::unique_lock<std::mutex> lock(q_mutex);
+        q_checker.wait(lock, [] { return q_ready; });
+        q_ready = false;
+        continue;
       }
+
+      // Can't do reference here, since we pop it off the queue, the reference will be invalid.
+      Message current_message(m_messageQueue.front());
+      if (!current_message.cleanup) {
+        m_messageQueue.pop_front();
+      }
+
+      m_messageQueueMutex.unlock();
+      ::sem_wait(&m_workerSem);
+
+      if (current_message.cleanup) {
+        if (TSIsDebugTagSet(PLUGIN)) {
+          auto my_id = (uint64_t)pthread_self();
+          TSDebug(PLUGIN, "RedisPublisher::runWorker: threadId: %" PRIx64 " received the cleanup message. Exiting!", my_id);
+        }
+        break;
+      }
+      current_reply = send_publish(my_context, my_endpoint, current_message);
+
+      if (!current_reply) {
+        current_message.hosts_tried.insert(my_endpoint);
+        if (current_message.hosts_tried.size() < m_redisEndpoints.size()) {
+          // all endpoints are not tried
+          // someone else might be able to transmit
+          m_messageQueueMutex.lock();
+          if (!m_messageQueue.front().cleanup) {
+            m_messageQueue.push_front(current_message);
+          }
+          m_messageQueueMutex.unlock();
+
+          {
+            std::lock_guard<std::mutex> lock(q_mutex);
+            q_ready = true;
+          }
+          q_checker.notify_one();
+        }
+      }
+
+      clear_reply(current_reply);
+      current_reply = nullptr;
+    } catch (...) {
+      TSDebug(PLUGIN, "RedisPublisher::runWorker exception");
       break;
     }
-    current_reply = send_publish(my_context, my_endpoint, current_message);
-
-    if (!current_reply) {
-      current_message.hosts_tried.insert(my_endpoint);
-      if (current_message.hosts_tried.size() < m_redisEndpoints.size()) {
-        // all endpoints are not tried
-        // someone else might be able to transmit
-        m_messageQueueMutex.lock();
-
-        if (!m_messageQueue.front().cleanup) {
-          m_messageQueue.push_front(current_message);
-        }
-
-        m_messageQueueMutex.unlock();
-      }
-    }
-
-    clear_reply(current_reply);
-    current_reply = nullptr;
   }
   my_context.reset(nullptr);
   clear_reply(current_reply);
@@ -299,10 +315,16 @@ RedisPublisher::publish(const std::string &channel, const std::string &data)
 
   m_messageQueue.emplace_back(channel, data);
 
-  if (m_maxQueuedMessages < m_messageQueue.size()) {
+  if (m_messageQueue.size() > m_maxQueuedMessages) {
     m_messageQueue.pop_front();
   }
   m_messageQueueMutex.unlock();
+
+  {
+    std::lock_guard<std::mutex> lock(q_mutex);
+    q_ready = true;
+  }
+  q_checker.notify_one();
 
   return SUCCESS;
 }
@@ -314,10 +336,14 @@ RedisPublisher::signal_cleanup()
   Message cleanup_message("", "", true);
 
   m_messageQueueMutex.lock();
-
   m_messageQueue.push_front(cleanup_message); // highest priority
-
   m_messageQueueMutex.unlock();
+
+  {
+    std::lock_guard<std::mutex> lock(q_mutex);
+    q_ready = true;
+  }
+  q_checker.notify_one();
 
   return SUCCESS;
 }
