@@ -59,6 +59,7 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 
 #if HAVE_OPENSSL_TS_H
 #include <openssl/ts.h>
