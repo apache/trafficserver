@@ -775,6 +775,8 @@ Changes with Apache Traffic Server 9.0.0
   #6013 - Add basic SystemTap markers support
   #6016 - Fix host type in host matcher.
   #6024 - Make proxy.config.http.request_buffer_enabled configurable and bug fix
+  #6025 - Remove remnants of obsolete remap thread.
+  #6026 - Remove obsolete 4-2-0-fixup
   #6031 - listen on all the net threads
   #6037 - Promote 'Enable_Config_Var' from HttpConnectionCount to HttpConfig.
   #6049 - set host name in TLS extension for SNI Host check in service side with sni policy verify_with_name_source.
@@ -853,6 +855,7 @@ Changes with Apache Traffic Server 9.0.0
   #6219 - Fixed next hop tests for out of tree builds
   #6222 - For combo_handler plugin, add an optional whitelist of allowed values for Content-Type.
   #6224 - Fixed build issue with clang5 and Extendible
+  #6225 - Add mechanism to enforce SNI policy
   #6226 - Fix sni.yaml fqdn to match complete name string
   #6227 - Remove never implemented regex descriptions
   #6231 - Adjust the refcounts to avoid Mutex leak
@@ -916,8 +919,17 @@ Changes with Apache Traffic Server 9.0.0
   #6413 - Fix crash when H2 client does not set End-of-data bit
   #6419 - URI Sig Null Check for Clang Warning
   #6420 - Syntax Error fixed in URI sig Plugin
+  #6421 - Add config option to enable/disable dynamic plugin reload feature 
   #6431 - #6428 Clear stale captive_action during Cache read retry - WIP (in test)
+  #6432 - SSL: Introduce proxy.config.ssl.server.prioritize_chacha
   #6435 - Fixed chunked_encoding test to work with OpenSSL 1.0.2
   #6436 - SSLNetVConnection, fixed/removed assert when running debug build
   #6440 - Cleaned up smuggle-client
   #6446 - Avoid a weird name collision between HRW and tscore
+  #6450 - Adjust consume logic in data frame read
+  #6469 - Delay cleanup when cache write continues after early client response
+  #6471 - Removes some things deprecated from older versions
+  #6474 - Remove --read_core option
+  #6475 - Remove noisy mutex warning
+  #6480 - Remove some outdated files.
+  #6488 - Bikeshedding some code structures for reloadable plugins config
