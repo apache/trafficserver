@@ -851,6 +851,7 @@ Changes with Apache Traffic Server 9.0.0
   #6212 - Cleanup trailing whitespaces, and YAML formatting
   #6214 - Run dos2unix on all files in tree
   #6216 - This fixes next hop unit tests that segfault due to missing unit test yaml files.
+  #6217 - cache_range_requests plugin optional support for special IMS header
   #6218 - Fix stringstream crash during shutdown
   #6219 - Fixed next hop tests for out of tree builds
   #6222 - For combo_handler plugin, add an optional whitelist of allowed values for Content-Type.
@@ -899,15 +900,23 @@ Changes with Apache Traffic Server 9.0.0
   #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
   #6346 - Fix heap-use-after-free on Http2Stream::destroy()
   #6347 - Fix localstatedir and runtimedir for Debian layout
+  #6348 - Add virtual destructors for Http2TxFrame, Http2FrequencyCounter
   #6358 - Add header guard - issue #6357
+  #6359 - Cleanup: Remove unused accessors of HttpVCTableEntry
+  #6363 - Removing always true/false comparisons
   #6364 - Fix rare SSN/TXN Start/Close Hook misorderings
+  #6369 - Improve config_describe logs to print a better output format.
+  #6370 - Change default matching for connection value from ip to both
   #6372 - Change alloca usage to malloc/free
   #6373 - Change bitfields to be unsigned explicitly
   #6374 - Add exception to throw since there is no context and could cause a crash
+  #6375 - Export YAML CPP library headers for plugin use.
   #6376 - Update inactive_timeout_at in Http2Stream::signal_read_event()
+  #6377 - Remove dependencies on include/tscore
   #6378 - Remove trailing white space from json formatter
   #6380 - Remove unnecesary HttpSM handler call with VC_EVENT_ERROR
   #6388 - Replace python with python3 in AuTest
+  #6391 - Skip unnecessary HostDB update on a fall back to serving stale record
   #6392 - Free TSMgmtString after using it.
   #6396 - Avoid cross-thread mutex conflicts
   #6397 - Ensure that extra data beyond the chunked body is not tunneled
@@ -916,7 +925,10 @@ Changes with Apache Traffic Server 9.0.0
   #6406 - Auto port select slow_post test
   #6409 - Another option to fix potential HTTP/2 vio stall
   #6410 - Change gold files to be less restrictive 
+  #6411 - Updating the autest version pin to 1.7.4.
   #6413 - Fix crash when H2 client does not set End-of-data bit
+  #6414 - Traffic Dump: fix client request target parsing
+  #6417 - slice plugin: add check to transaction status
   #6419 - URI Sig Null Check for Clang Warning
   #6420 - Syntax Error fixed in URI sig Plugin
   #6421 - Add config option to enable/disable dynamic plugin reload feature 
@@ -925,9 +937,16 @@ Changes with Apache Traffic Server 9.0.0
   #6435 - Fixed chunked_encoding test to work with OpenSSL 1.0.2
   #6436 - SSLNetVConnection, fixed/removed assert when running debug build
   #6440 - Cleaned up smuggle-client
+  #6441 - Cleaned up ssl-post
   #6446 - Avoid a weird name collision between HRW and tscore
   #6450 - Adjust consume logic in data frame read
+  #6457 - Fix port selection for ssl ipv6
+  #6462 - x-remap ignoring age in gold file
+  #6463 - [CPPAPI] Provide access to TSRemapRequestInfo in RemapPlugins.
+  #6464 - cache_range_requests plugin: detect and handle TSCacheUrlSet failures…
+  #6465 - Skipping log_retention.test.py because it is flaky in CI
   #6469 - Delay cleanup when cache write continues after early client response
+  #6470 - Remove update to unused variable
   #6471 - Removes some things deprecated from older versions
   #6474 - Remove --read_core option
   #6475 - Remove noisy mutex warning
