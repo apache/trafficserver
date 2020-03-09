@@ -1473,7 +1473,7 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
 
   if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
     // if the only chunked data was in the initial read, make sure we don't consume too much
-    if (p->bytes_read == 0) {
+    if (p->bytes_read == 0 && p->buffer_start != nullptr) {
       int num_read = p->buffer_start->read_avail() - p->chunked_handler.chunked_reader->read_avail();
       if (num_read < p->init_bytes_done) {
         p->init_bytes_done = num_read;
