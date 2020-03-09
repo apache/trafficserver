@@ -19,6 +19,8 @@ Sanitize the ATS-generated custom log file from the all_headers test.
 
 import sys
 import re
+from os import path
+import time
 
 rexl = []
 rexl.append((re.compile(r"\{\{Date\}\:\{[^}]*\}\}"), "({__DATE__}}"))
@@ -29,15 +31,27 @@ rexl.append((re.compile(r"\{\{Server\}\:\{ECS [^}]*\}\}"), "({__ECS_SERVER__}}")
 rexl.append((re.compile(r"\{\{Via\}\:\{[^}]*\}\}"), "({__VIA__}}"))
 rexl.append((re.compile(r"\{\{Server\}\:\{ApacheTrafficServer/[0-9.]*\}\}"), "({__ATS2_SERVER__}}"))
 rexl.append((re.compile(r"\{\{Age\}\:\{[0-9]*\}\}"), "({__AGE__}}"))
-rexl.append((re.compile(r"\:" + sys.argv[1]), "__TS_PORT__")) # 1st and only argument is TS client port
+rexl.append((re.compile(r"\:" + sys.argv[2]), "__TS_PORT__")) # 1st and only argument is TS client port
 
 # Handle inconsistencies which I think are caused by different revisions of the standard Python http.server.HTTPServer class.
 
 rexl.append((re.compile(r'\{"359670651[^"]*"\}'), '{"{359670651__WEIRD__}"}'))
 rexl.append((re.compile(r'\{\{Accept-Ranges\}:\{bytes\}\}'), ''))
 
-for line in sys.stdin:
-    for rex, subStr in rexl:
-        line = rex.sub(subStr, line)
-
-    print(line)
+# Loop until the file specified in argv[1] becomes availble
+filename = sys.argv[1]
+processed = False
+# Give up looking for file after 2 minutes
+limit_count = 0
+limit_max = 120
+while not processed and limit_count < limit_max:
+  limit_count += 1
+  if not path.exists(filename):
+    time.sleep(1);
+  else:
+    with open(filename, "r") as f:
+      processed = True
+      for line in f:
+        for rex, subStr in rexl:
+          line = rex.sub(subStr, line)
+        print(line)
