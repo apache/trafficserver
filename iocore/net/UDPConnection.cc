@@ -363,7 +363,7 @@ UDP2ConnectionImpl::bind(sockaddr const *addr)
   int res            = 0;
   int local_addr_len = sizeof(this->_from);
 
-  if (addr->sa_family == AF_INET6 && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
+  if (addr->sa_family == AF_INET6 && (res = safe_setsockopt(this->_fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
     Debug("udp_con", "safe_setsockopt error IPPROTO_IPV6");
     goto Lerror;
   }
