@@ -21,8 +21,9 @@
   limitations under the License.
  */
 
-#include "HTTP2.h"
 #include "Http2Stream.h"
+
+#include "HTTP2.h"
 #include "Http2ClientSession.h"
 #include "../http/HttpSM.h"
 
@@ -81,14 +82,6 @@ Http2Stream::main_event_handler(int event, void *edata)
     return 0;
   } else if (e == cross_thread_event) {
     cross_thread_event = nullptr;
-  } else if (e == active_event) {
-    event        = VC_EVENT_ACTIVE_TIMEOUT;
-    active_event = nullptr;
-  } else if (e == inactive_event) {
-    if (inactive_timeout_at && inactive_timeout_at < Thread::get_hrtime()) {
-      event = VC_EVENT_INACTIVITY_TIMEOUT;
-      clear_inactive_timer();
-    }
   } else if (e == read_event) {
     read_event = nullptr;
   } else if (e == write_event) {
@@ -108,7 +101,7 @@ Http2Stream::main_event_handler(int event, void *edata)
     break;
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
-    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
+    _timeout.update_inactivity();
     if (e->cookie == &write_vio) {
       if (write_vio.mutex && write_vio.cont && this->_sm) {
         this->signal_write_event(event);
@@ -119,7 +112,7 @@ Http2Stream::main_event_handler(int event, void *edata)
     break;
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_READ_READY:
-    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
+    _timeout.update_inactivity();
     if (e->cookie == &read_vio) {
       if (read_vio.mutex && read_vio.cont && this->_sm) {
         signal_read_event(event);
@@ -363,7 +356,6 @@ Http2Stream::do_io_close(int /* flags */)
       h2_proxy_ssn->connection_state.send_data_frames(this);
     }
 
-    clear_timers();
     clear_io_events();
 
     // Wait until transaction_done is called from HttpSM to signal that the TXN_CLOSE hook has been executed
@@ -429,7 +421,6 @@ Http2Stream::initiating_close()
     // TXN_CLOSE has been sent
     // _proxy_ssn = NULL;
 
-    clear_timers();
     clear_io_events();
 
     // This should result in do_io_close or release being called.  That will schedule the final
@@ -514,7 +505,7 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update, bool check_
   int64_t read_avail = this->read_vio.buffer.writer()->max_read_avail();
   if (read_avail > 0 || send_event == VC_EVENT_READ_COMPLETE) {
     if (call_update) { // Safe to call vio handler directly
-      inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
+      _timeout.update_inactivity();
       if (read_vio.cont && this->_sm) {
         read_vio.cont->handleEvent(send_event, &read_vio);
       }
@@ -639,7 +630,7 @@ Http2Stream::signal_read_event(int event)
 
   MUTEX_TRY_LOCK(lock, read_vio.cont->mutex, this_ethread());
   if (lock.is_locked()) {
-    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
+    _timeout.update_inactivity();
     this->read_vio.cont->handleEvent(event, &this->read_vio);
   } else {
     if (this->_read_vio_event) {
@@ -658,7 +649,7 @@ Http2Stream::signal_write_event(int event)
 
   MUTEX_TRY_LOCK(lock, write_vio.cont->mutex, this_ethread());
   if (lock.is_locked()) {
-    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
+    _timeout.update_inactivity();
     this->write_vio.cont->handleEvent(event, &this->write_vio);
   } else {
     if (this->_write_vio_event) {
@@ -704,7 +695,7 @@ void
 Http2Stream::send_response_body(bool call_update)
 {
   Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
-  inactive_timeout_at              = Thread::get_hrtime() + inactive_timeout;
+  _timeout.update_inactivity();
 
   if (Http2::stream_priority_enabled) {
     SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
@@ -805,7 +796,6 @@ Http2Stream::destroy()
   if (header_blocks) {
     ats_free(header_blocks);
   }
-  clear_timers();
   clear_io_events();
   http_parser_clear(&http_parser);
 
@@ -822,56 +812,37 @@ Http2Stream::response_get_data_reader() const
 void
 Http2Stream::set_active_timeout(ink_hrtime timeout_in)
 {
-  active_timeout = timeout_in;
-  clear_active_timer();
-  if (active_timeout > 0) {
-    active_event = this_ethread()->schedule_in(this, active_timeout);
-  }
+  _timeout.set_active_timeout(timeout_in);
 }
 
 void
 Http2Stream::set_inactivity_timeout(ink_hrtime timeout_in)
 {
-  inactive_timeout = timeout_in;
-  if (inactive_timeout > 0) {
-    inactive_timeout_at = Thread::get_hrtime() + inactive_timeout;
-    if (!inactive_event) {
-      inactive_event = this_ethread()->schedule_every(this, HRTIME_SECONDS(1));
-    }
-  } else {
-    clear_inactive_timer();
-  }
+  _timeout.set_inactive_timeout(timeout_in);
+}
+
+void
+Http2Stream::cancel_active_timeout()
+{
+  _timeout.cancel_active_timeout();
 }
 
 void
 Http2Stream::cancel_inactivity_timeout()
 {
-  set_inactivity_timeout(0);
-}
-void
-Http2Stream::clear_inactive_timer()
-{
-  inactive_timeout_at = 0;
-  if (inactive_event) {
-    inactive_event->cancel();
-    inactive_event = nullptr;
-  }
+  _timeout.cancel_inactive_timeout();
 }
 
-void
-Http2Stream::clear_active_timer()
+bool
+Http2Stream::is_active_timeout_expired(ink_hrtime now)
 {
-  if (active_event) {
-    active_event->cancel();
-    active_event = nullptr;
-  }
+  return _timeout.is_active_timeout_expired(now);
 }
 
-void
-Http2Stream::clear_timers()
+bool
+Http2Stream::is_inactive_timeout_expired(ink_hrtime now)
 {
-  clear_inactive_timer();
-  clear_active_timer();
+  return _timeout.is_inactive_timeout_expired(now);
 }
 
 void

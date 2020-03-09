@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "NetTimeout.h"
+
 #include "HTTP2.h"
 #include "ProxyTransaction.h"
 #include "Http2DebugNames.h"
@@ -94,7 +96,10 @@ public:
   // Accessors
   void set_active_timeout(ink_hrtime timeout_in) override;
   void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  void cancel_active_timeout();
   void cancel_inactivity_timeout() override;
+  bool is_active_timeout_expired(ink_hrtime now);
+  bool is_inactive_timeout_expired(ink_hrtime now);
 
   bool allow_half_open() const override;
   bool is_first_transaction() const override;
@@ -104,9 +109,6 @@ public:
   int get_transaction_priority_weight() const override;
   int get_transaction_priority_dependence() const override;
 
-  void clear_inactive_timer();
-  void clear_active_timer();
-  void clear_timers();
   void clear_io_events();
 
   bool is_client_state_writeable() const;
@@ -158,6 +160,7 @@ private:
    */
   bool _switch_thread_if_not_on_right_thread(int event, void *edata);
 
+  NetTimeout _timeout{};
   HTTPParser http_parser;
   EThread *_thread = nullptr;
   Http2StreamId _id;
@@ -209,14 +212,6 @@ private:
 
   Event *cross_thread_event      = nullptr;
   Event *buffer_full_write_event = nullptr;
-
-  // Support stream-specific timeouts
-  ink_hrtime active_timeout = 0;
-  Event *active_event       = nullptr;
-
-  ink_hrtime inactive_timeout    = 0;
-  ink_hrtime inactive_timeout_at = 0;
-  Event *inactive_event          = nullptr;
 
   Event *read_event       = nullptr;
   Event *write_event      = nullptr;
