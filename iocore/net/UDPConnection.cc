@@ -330,11 +330,6 @@ UDP2ConnectionImpl::create_socket(int family, int recv_buf, int send_buf)
       succeeded = true;
     }
 #endif
-    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
-      Debug("udp_con", "safe_setsockopt error IPPROTO_IPV6");
-      goto Lerror;
-    }
-
     if (!succeeded) {
       Debug("udp_con", "setsockeopt for pktinfo failed");
       goto Lerror;
@@ -367,6 +362,12 @@ UDP2ConnectionImpl::bind(sockaddr const *addr)
 {
   int res            = 0;
   int local_addr_len = sizeof(this->_from);
+
+  if (addr->sa_family == AF_INET6 && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
+    Debug("udp_con", "safe_setsockopt error IPPROTO_IPV6");
+    goto Lerror;
+  }
+
   if (-1 == socketManager.ink_bind(this->_fd, addr, ats_ip_size(addr))) {
     char buff[INET6_ADDRPORTSTRLEN];
     Debug("udp_con", "ink bind failed on %s %s", ats_ip_nptop(addr, buff, sizeof(buff)), strerror(errno));
