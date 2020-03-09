@@ -77,7 +77,7 @@ write_reschedule(NetHandler *nh, NetEvent *vc)
 //
 // UDP2ConnectionImpl
 //
-UDP2ConnectionImpl::UDP2ConnectionImpl(Continuation *con, EThread *thread) : _con(con), _thread(thread)
+UDP2ConnectionImpl::UDP2ConnectionImpl(Continuation *con, EThread *thread, int fd) : _con(con), _thread(thread), _fd(fd)
 {
   this->mutex        = con->mutex;
   this->read.enabled = 1; // read enabled is always true because we expected all data;
@@ -275,6 +275,11 @@ UDP2ConnectionImpl::create_socket(int family, int recv_buf, int send_buf)
 {
   int res = 0;
   int fd  = -1;
+
+  if (this->_fd != -1) {
+    return 0;
+  }
+
   if ((res = socketManager.socket(family, SOCK_DGRAM, 0)) < 0) {
     goto Lerror;
   }

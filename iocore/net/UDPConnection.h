@@ -39,7 +39,7 @@ class UDP2ConnectionImpl : public Continuation, public NetEvent
 public:
   UDP2ConnectionImpl() = delete;
   // independent allocate.
-  UDP2ConnectionImpl(Continuation *con, EThread *ethread = nullptr);
+  UDP2ConnectionImpl(Continuation *con, EThread *ethread = nullptr, int fd = -1);
   ~UDP2ConnectionImpl();
 
   enum class UDPEvents : uint8_t {
