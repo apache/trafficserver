@@ -67,8 +67,8 @@ public:
                                        std::vector<std::string> const &ca_list, std::vector<std::string> &ocsp_list,
                                        const SSLMultiCertConfigParams *sslMultCertSettings, std::set<std::string> &names);
 
-  static bool load_certs(SSL_CTX *ctx, std::vector<std::string> const &cert_names, std::vector<std::string> const &key_names,
-                         std::vector<std::string> const &ca_names, std::vector<std::string> const &ocsp_names,
+  static bool load_certs(SSL_CTX *ctx, std::vector<std::string> const &cert_names_list, std::vector<std::string> const &key_list,
+                         std::vector<std::string> const &ca_list, std::vector<std::string> const &ocsp_list,
                          const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultCertSettings);
   static bool load_certs_and_cross_reference_names(std::vector<X509 *> &cert_list, std::vector<std::string> &cert_name_list,
                                                    std::vector<std::string> &key_list, std::vector<std::string> &ca_list,

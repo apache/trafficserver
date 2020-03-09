@@ -1431,8 +1431,7 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
     retval           = false;
   }
 
-  auto iter = unique_names.begin();
-  for (; retval && iter != unique_names.end(); ++iter) {
+  for (auto iter = unique_names.begin(); retval && iter != unique_names.end(); ++iter) {
     size_t i = iter->first;
 
     std::vector<std::string> single_cert_name_list, single_key_list, single_ca_list, single_ocsp_list;
@@ -2021,22 +2020,11 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
       first_pass   = false;
       common_names = name_set;
     } else {
-      // Check that all elements in name_set are in common_names
-      for (auto name : name_set) {
-        if (common_names.find(name) == common_names.end()) {
-          auto iter = unique_names.find(cert_index);
-          if (iter == unique_names.end()) {
-            std::set<std::string> new_set;
-            new_set.insert(name);
-            unique_names.insert({cert_index, new_set});
-          } else {
-            iter->second.insert(name);
-          }
-        }
-      }
       // Check that all elements in common_names are in name_set
       for (auto name : common_names) {
-        if (name_set.find(name) == name_set.end()) {
+        auto iter = name_set.find(name);
+        if (iter == name_set.end()) {
+          // Common_name not in new set, move name to unique set
           auto iter = unique_names.find(cert_index - 1);
           if (iter == unique_names.end()) {
             std::set<std::string> new_set;
@@ -2047,6 +2035,20 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
           }
           auto erase_iter = common_names.find(name);
           common_names.erase(erase_iter);
+        } else {
+          // New name already in common set, go ahead and remove it from further consideration
+          name_set.erase(iter);
+        }
+      }
+      // Anything still in name_set was not in common_names
+      for (auto name : name_set) {
+        auto iter = unique_names.find(cert_index);
+        if (iter == unique_names.end()) {
+          std::set<std::string> new_set;
+          new_set.insert(name);
+          unique_names.insert({cert_index, new_set});
+        } else {
+          iter->second.insert(name);
         }
       }
     }
@@ -2078,9 +2080,8 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<std::string> cons
   }
 #endif /* TS_USE_TLS_OCSP */
 
-  int i = 0;
-  for (auto certname : cert_names) {
-    std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
+  for (size_t i = 0; i < cert_names.size(); i++) {
+    std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, cert_names[i]);
     scoped_BIO bio(BIO_new_file(completeServerCertPath.c_str(), "r"));
     X509 *cert = nullptr;
     if (bio) {
@@ -2143,20 +2144,17 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<std::string> cons
       if (sslMultCertSettings->ocsp_response) {
         const char *ocsp_response_name = ocsp_names[i].c_str();
         ats_scoped_str completeOCSPResponsePath(Layout::relative_to(params->ssl_ocsp_response_path_only, ocsp_response_name));
-        if (!ssl_stapling_init_cert(ctx, cert, certname.c_str(), (const char *)completeOCSPResponsePath)) {
-          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", certname.c_str());
+        if (!ssl_stapling_init_cert(ctx, cert, cert_names[i].c_str(), (const char *)completeOCSPResponsePath)) {
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", cert_names[i].c_str());
         }
       } else {
-        if (!ssl_stapling_init_cert(ctx, cert, certname.c_str(), nullptr)) {
-          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", certname.c_str());
+        if (!ssl_stapling_init_cert(ctx, cert, cert_names[i].c_str(), nullptr)) {
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", cert_names[i].c_str());
         }
       }
     }
 #endif /* TS_USE_TLS_OCSP */
-    i++;
-    if (cert) {
-      X509_free(cert);
-    }
+    X509_free(cert);
   }
 
   return true;
