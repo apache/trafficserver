@@ -123,6 +123,7 @@ proxy/http3/test_libhttp3
 proxy/http3/test_qpack
 proxy/logging/test_LogUtils
 proxy/logging/test_LogUtils2
+proxy/logging/test_RolledLogDeleter
 
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/cookie_remap/test_cookiejar

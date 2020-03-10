@@ -2151,21 +2151,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   delete main_thread;
 }
 
-#if TS_HAS_TESTS
-//////////////////////////////
-// Unit Regression Test Hook //
-//////////////////////////////
-
-#include "HdrTest.h"
-
-REGRESSION_TEST(Hdrs)(RegressionTest *t, int atype, int *pstatus)
-{
-  HdrTest ht;
-  *pstatus = ht.go(t, atype);
-  return;
-}
-#endif
-
 static void mgmt_restart_shutdown_callback(ts::MemSpan<void>)
 {
   sync_cache_dir_on_shutdown();
