@@ -65,9 +65,15 @@ cont_global(TSCont contp, TSEvent event, void *edata)
   TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
   TSVConn vconnp = TSHttpSsnClientVConnGet(ssnp);
 
+#if NEW_APIS
   TSUserArgSet(txnp, gIX.TXN, (void *)"Transaction Data");
   TSUserArgSet(ssnp, gIX.SSN, (void *)"Session Data");
   TSUserArgSet(vconnp, gIX.VCONN, (void *)"VConn Data");
+#else
+  TSHttpTxnArgSet(txnp, gIX.TXN, (void *)"Transaction Data");
+  TSHttpSsnArgSet(ssnp, gIX.SSN, (void *)"Session Data");
+  TSVConnArgSet(vconnp, gIX.VCONN, (void *)"VConn Data");
+#endif
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 
