@@ -49,12 +49,6 @@ libhdrs_a_SOURCES = \
 	XPACK.cc \
 	XPACK.h
 
-if BUILD_TESTS
-libhdrs_a_SOURCES += \
-	HdrTest.cc \
-	HdrTest.h
-endif
-
 load_http_hdr_SOURCES = \
 	HTTP.h \
 	HdrHeap.h \
