@@ -52,6 +52,20 @@ SIGHUP
 SIGINT, SIGTERM
   These signals cause :program:`traffic_manager` to exit after also shutting down :program:`traffic_server`.
 
+Exponential Back-off Delay
+==========================
+
+  If :program:`traffic_server` has issues communicating with  :program:`traffic_manager` after a crash,
+  :program:`traffic_manager` will retry to start  :program:`traffic_server` using an exponential back-off delay,
+  which will make :program:`traffic_manager` to retry starting :program:`traffic_server` from ``1s`` until it
+  reaches the max ceiling time. The ceiling time is configurable  as well as the number of times that
+  :program:`traffic_manager` will keep trying to start :program:`traffic_server`.
+
+.. note::
+  For more information about this configuration please check :file:`records.config`
+
+
+
 See also
 ========
 

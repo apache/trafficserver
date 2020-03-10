@@ -543,7 +543,23 @@ Local Manager
    root processes.
 
    This setting is not reloadable, since it is must be applied when
-   program:`traffic_manager` initializes.
+   :program:`traffic_manager` initializes.
+
+.. ts:cv:: CONFIG proxy.node.config.manager_exponential_sleep_ceiling INT 60
+
+   In case of :program:`traffic_manager` is unable to start :program:`traffic_server`,
+   this setting specifies the maximum amount of seconds that the :program:`traffic_manager`
+   process should wait until it tries again to restart :program:`traffic_server`.
+   In case of :program:`traffic_manager` failing to start :program:`traffic_server`, it will
+   retry exponentially until it reaches the ceiling time.
+
+.. ts:cv:: CONFIG proxy.node.config.manager_retry_cap INT 5
+
+   This setting specifies the number of times that :program:`traffic_manager` will retry
+   to restart :program:`traffic_server` once the  maximum ceiling time is reached.
+
+.. note::
+   If set to ``0``, no cap will take place.
 
 Alarm Configuration
 ===================
