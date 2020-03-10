@@ -57,22 +57,21 @@ ssl_curve_id SSLGetCurveNID(SSL *ssl);
 class SSLMultiCertConfigLoader
 {
 public:
+  struct CertLoadData {
+    std::vector<std::string> cert_names_list, key_list, ca_list, ocsp_list;
+  };
   SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
   virtual ~SSLMultiCertConfigLoader(){};
 
   bool load(SSLCertLookup *lookup);
 
   virtual SSL_CTX *default_server_ssl_ctx();
-  virtual SSL_CTX *init_server_ssl_ctx(std::vector<std::string> const &cert_names_list, std::vector<std::string> const &key_list,
-                                       std::vector<std::string> const &ca_list, std::vector<std::string> &ocsp_list,
-                                       const SSLMultiCertConfigParams *sslMultCertSettings, std::set<std::string> &names);
+  virtual SSL_CTX *init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings,
+                                       std::set<std::string> &names);
 
-  static bool load_certs(SSL_CTX *ctx, std::vector<std::string> const &cert_names_list, std::vector<std::string> const &key_list,
-                         std::vector<std::string> const &ca_list, std::vector<std::string> const &ocsp_list,
-                         const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultCertSettings);
-  bool load_certs_and_cross_reference_names(std::vector<X509 *> &cert_list, std::vector<std::string> &cert_name_list,
-                                            std::vector<std::string> &key_list, std::vector<std::string> &ca_list,
-                                            std::vector<std::string> &ocsp_list, const SSLConfigParams *params,
+  static bool load_certs(SSL_CTX *ctx, CertLoadData const &data, const SSLConfigParams *params,
+                         const SSLMultiCertConfigParams *sslMultCertSettings);
+  bool load_certs_and_cross_reference_names(std::vector<X509 *> &cert_list, CertLoadData &data, const SSLConfigParams *params,
                                             const SSLMultiCertConfigParams *sslMultCertSettings,
                                             std::set<std::string> &common_names,
                                             std::unordered_map<int, std::set<std::string>> &unique_names);
@@ -86,11 +85,11 @@ public:
 protected:
   const SSLConfigParams *_params;
 
-  bool _store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams sslMultCertSettings, shared_SSL_CTX ctx,
+  bool _store_single_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams sslMultCertSettings, shared_SSL_CTX ctx,
                              std::set<std::string> &names);
 
 private:
-  virtual bool _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams ssl_multi_cert_params);
+  virtual bool _store_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams ssl_multi_cert_params);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
 };
 

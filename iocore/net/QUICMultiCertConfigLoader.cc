@@ -80,11 +80,8 @@ QUICMultiCertConfigLoader::default_server_ssl_ctx()
 }
 
 SSL_CTX *
-QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<std::string> const &cert_names_list,
-                                               std::vector<std::string> const &key_list, std::vector<std::string> const &ca_list,
-                                               std::vector<std::string> &ocsp_list,
+QUICMultiCertConfigLoader::init_server_ssl_ctx(SSLMultiCertConfigLoader::CertLoadData const &data,
                                                const SSLMultiCertConfigParams *multi_cert_params, std::set<std::string> &names)
-
 {
   const SSLConfigParams *params = this->_params;
 
@@ -96,7 +93,7 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<std::string> const &c
     }
 
     if (multi_cert_params->cert) {
-      if (!SSLMultiCertConfigLoader::load_certs(ctx, cert_names_list, key_list, ca_list, ocsp_list, params, multi_cert_params)) {
+      if (!SSLMultiCertConfigLoader::load_certs(ctx, data, params, multi_cert_params)) {
         goto fail;
       }
     }
@@ -172,27 +169,23 @@ QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SS
 {
   bool retval = true;
   std::vector<X509 *> cert_list;
+  SSLMultiCertConfigLoader::CertLoadData data;
   std::set<std::string> common_names;
-  std::map<int, std::set<std::string>> unique_names;
-  std::vector<std::string> cert_name_list, key_list, ca_list, ocsp_list;
+  std::unordered_map<int, std::set<std::string>> unique_names;
   const SSLConfigParams *params = this->_params;
-  this->load_certs_and_cross_reference_names(cert_list, cert_name_list, key_list, ca_list, ocsp_list, params,
-                                             multi_cert_params.get(), common_names, unique_names);
+  this->load_certs_and_cross_reference_names(cert_list, data, params, multi_cert_params.get(), common_names, unique_names);
 
-  int i = 0;
-  for (auto cert : cert_list) {
-    const char *current_cert_name = cert_name_list[i].c_str();
-    if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert, current_cert_name)) {
+  for (size_t i = 0; i < cert_list.size(); i++) {
+    const char *current_cert_name = data.cert_names_list[i].c_str();
+    if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert_list[i], current_cert_name)) {
       /* At this point, we know cert is bad, and we've already printed a
          descriptive reason as to why cert is bad to the log file */
       QUICConfDebug("Marking certificate as NOT VALID: %s", current_cert_name);
       lookup->is_valid = false;
     }
-    i++;
   }
 
-  shared_SSL_CTX ctx(this->init_server_ssl_ctx(cert_name_list, key_list, ca_list, ocsp_list, multi_cert_params.get(), common_names),
-                     SSL_CTX_free);
+  shared_SSL_CTX ctx(this->init_server_ssl_ctx(data, multi_cert_params.get(), common_names), SSL_CTX_free);
 
   shared_ssl_ticket_key_block keyblock = nullptr;
 
@@ -201,19 +194,16 @@ QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SS
     retval           = false;
   }
 
-  auto iter = unique_names.begin();
-  for (; retval && iter != unique_names.end(); ++iter) {
+  for (auto iter = unique_names.begin(); retval && iter != unique_names.end(); ++iter) {
     size_t i = iter->first;
 
-    std::vector<std::string> single_cert_name_list, single_key_list, single_ca_list, single_ocsp_list;
-    single_cert_name_list.push_back(cert_name_list[i]);
-    single_key_list.push_back(i < key_list.size() ? key_list[i] : "");
-    single_ca_list.push_back(i < ca_list.size() ? ca_list[i] : "");
-    single_ocsp_list.push_back(i < ocsp_list.size() ? ocsp_list[i] : "");
+    SSLMultiCertConfigLoader::CertLoadData single_data;
+    single_data.cert_names_list.push_back(data.cert_names_list[i]);
+    single_data.key_list.push_back(i < data.key_list.size() ? data.key_list[i] : "");
+    single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
+    single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
 
-    shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_cert_name_list, single_key_list, single_ca_list, single_ocsp_list,
-                                                        multi_cert_params.get(), iter->second),
-                              SSL_CTX_free);
+    shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_data, multi_cert_params.get(), iter->second), SSL_CTX_free);
     if (!unique_ctx || !this->_store_single_ssl_ctx(lookup, multi_cert_params, unique_ctx, iter->second)) {
       lookup->is_valid = false;
       retval           = false;
