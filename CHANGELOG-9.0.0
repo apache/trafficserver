@@ -940,7 +940,11 @@ Changes with Apache Traffic Server 9.0.0
   #6441 - Cleaned up ssl-post
   #6446 - Avoid a weird name collision between HRW and tscore
   #6450 - Adjust consume logic in data frame read
+  #6454 - traffic_dump post_process.py
   #6457 - Fix port selection for ssl ipv6
+  #6459 - Add more flexible error handling when open a config file.
+  #6460 - Make traffic_manager be flexible when opening config files.
+  #6461 - Reduce minimum config files needed for golden_tests.
   #6462 - x-remap ignoring age in gold file
   #6463 - [CPPAPI] Provide access to TSRemapRequestInfo in RemapPlugins.
   #6464 - cache_range_requests plugin: detect and handle TSCacheUrlSet failures…
@@ -950,5 +954,7 @@ Changes with Apache Traffic Server 9.0.0
   #6471 - Removes some things deprecated from older versions
   #6474 - Remove --read_core option
   #6475 - Remove noisy mutex warning
+  #6477 - traffic_dump: Fixing content:size collection.
   #6480 - Remove some outdated files.
   #6488 - Bikeshedding some code structures for reloadable plugins config
+  #6492 - Add null check to fix error tunnel crash
