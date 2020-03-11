@@ -90,9 +90,9 @@ X-Cache
     skipped     The cache lookup was skipped.
     ==========  ===========
 
-    If a request goes through multiple proxies, each one prepends its X-Cache header content
-    at the beginning of the existing X-Cache header. As a result, the order is reversed from
-    the Via: header.
+    If a request goes through multiple proxies, each one appends its X-Cache header content
+    the end of the existing X-Cache header. This is the same order as for the
+    ``Via`` header.
 
 X-Cache-Generation
   The cache generation ID for this transaction, as specified by the
