@@ -958,3 +958,6 @@ Changes with Apache Traffic Server 9.0.0
   #6480 - Remove some outdated files.
   #6488 - Bikeshedding some code structures for reloadable plugins config
   #6492 - Add null check to fix error tunnel crash
+  #6493 - Make all_headers test more resilient to timing
+  #6500 - traffic_dump: Make the client-request node gathered in a global hook
+  #6501 - Remove method that does nothing.
