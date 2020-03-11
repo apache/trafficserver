@@ -326,6 +326,7 @@ struct CacheVC : public CacheVConnection {
   int openReadFromWriterMain(int event, Event *e);
   int openReadFromWriterFailure(int event, Event *);
   int openReadChooseWriter(int event, Event *e);
+  int openReadDirDelete(int event, Event *e);
 
   int openWriteCloseDir(int event, Event *e);
   int openWriteCloseHeadDone(int event, Event *e);
