@@ -1465,7 +1465,7 @@ Origin Server Connect Attempts
    Frequency of alerts
       See :ts:cv:`proxy.config.http.per_server.connection.alert_delay`.
 
-.. ts:cv:: CONFIG proxy.config.http.per_server.connection.match STRING ip
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.match STRING both
    :reloadable:
    :overridable:
 
