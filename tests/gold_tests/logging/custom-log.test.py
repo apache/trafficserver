@@ -96,7 +96,10 @@ tr.Processes.Default.Command = 'curl "http://127.123.32.243:{0}" --verbose'.form
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
-tr.DelayStart = 10
-tr.Processes.Default.Command = 'echo "Delay"'
-tr.Processes.Default.ReturnCode = 0
+# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
+test_run = Test.AddTestRun()
+test_run.Processes.Default.Command = (
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
+    os.path.join(ts.Variables.LOGDIR, 'test_log_field.log')
+)
+test_run.Processes.Default.ReturnCode = 0

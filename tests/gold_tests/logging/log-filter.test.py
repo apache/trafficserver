@@ -117,7 +117,10 @@ tr.Processes.Default.Command = 'curl --verbose --header "Host: test-5" "http://l
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
-tr.DelayStart = 10
-tr.Processes.Default.Command = 'echo "Delay for log flush"'
-tr.Processes.Default.ReturnCode = 0
+# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
+test_run = Test.AddTestRun()
+test_run.Processes.Default.Command = (
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
+    os.path.join(ts.Variables.LOGDIR, 'filter-test.log')
+)
+test_run.Processes.Default.ReturnCode = 0

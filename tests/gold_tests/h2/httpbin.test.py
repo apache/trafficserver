@@ -124,9 +124,10 @@ test_run.Processes.Default.Streams.stdout = "gold/httpbin_3_stdout.gold"
 test_run.Processes.Default.Streams.stderr = "gold/httpbin_3_stderr.gold"
 test_run.StillRunningAfter = httpbin
 
-
-# Check Logging
+# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
 test_run = Test.AddTestRun()
-test_run.DelayStart = 10
-test_run.Processes.Default.Command = 'echo "Delay for log flush"'
+test_run.Processes.Default.Command = (
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
+    os.path.join(ts.Variables.LOGDIR, 'access.log')
+)
 test_run.Processes.Default.ReturnCode = 0
