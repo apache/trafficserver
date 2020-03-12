@@ -28,44 +28,88 @@
 
 #define DEBUG_TAG_LOG_HEADERS "xdebug.headers"
 
-std::string_view
-escape_char_for_json(char const &c, bool &parsing_key)
+class EscapeCharForJson
 {
-  switch (c) {
-  case '\'':
-    return {"\\\'"};
-  case '"':
-    return {"\\\""};
-  case '\\':
-    return {"\\\\"};
-  case '\b':
-    return {"\\b"};
-  case '\f':
-    return {"\\f"};
-  case '\t':
-    return {"\\t"};
+public:
+  std::string_view
+  operator()(char const &c)
+  {
+    if ((_state != IN_VALUE) && ((' ' == c) || ('\t' == c))) {
+      return {""};
+    }
+    if ((IN_NAME == _state) && (':' == c)) {
+      _state = BEFORE_VALUE;
+      return {"' : '"};
+    }
+    if ('\r' == c) {
+      return {""};
+    }
+    if ('\n' == c) {
+      std::string_view result{_after_value()};
 
-  // Special header reformatting
-  case '\r':
-    return {""};
-  case '\n':
-    parsing_key = true;
-    return {"',\r\n\t'"}; // replace new line with pair delimiter
-  case ':':
-    if (parsing_key) {
-      return {"' : "}; // replace colon after key with quote + colon
+      if (BEFORE_NAME == _state) {
+        return {""};
+      } else if (BEFORE_VALUE == _state) {
+        // Failsafe -- missing value -- this should never happen.
+        result = _missing_value();
+      }
+      _state = BEFORE_NAME;
+      return result;
     }
-    return {":"};
-  case ' ':
-    if (parsing_key) {
-      parsing_key = false;
-      return {"'"}; // replace first space after the key to be a quote
+    if (BEFORE_NAME == _state) {
+      _state = IN_NAME;
+    } else if (BEFORE_VALUE == _state) {
+      _state = IN_VALUE;
     }
-    return {" "};
-  default:
-    return {&c, 1};
+    switch (c) {
+    case '\'':
+      return {"\\\'"};
+    case '"':
+      return {"\\\""};
+    case '\\':
+      return {"\\\\"};
+    case '\b':
+      return {"\\b"};
+    case '\f':
+      return {"\\f"};
+    case '\t':
+      return {"\\t"};
+    default:
+      return {&c, 1};
+    }
   }
-}
+
+  // After last header line, back up and throw away everything but the closing quote.
+  //
+  static std::size_t
+  backup()
+  {
+    return _after_value().size() - 1;
+  }
+
+private:
+  static std::string_view
+  _missing_value()
+  {
+    return {"' : '',\n\t'"};
+  }
+
+  static std::string_view
+  _after_name()
+  {
+    return {_missing_value().data(), 5};
+  }
+
+  static std::string_view
+  _after_value()
+  {
+    return {_missing_value().data() + 5, 5};
+  }
+
+  enum _State { BEFORE_NAME, IN_NAME, BEFORE_VALUE, IN_VALUE };
+
+  _State _state{BEFORE_VALUE};
+};
 
 ///////////////////////////////////////////////////////////////////////////
 // Dump a header on stderr, useful together with TSDebug().
@@ -77,37 +121,33 @@ print_headers(TSHttpTxn txn, TSMBuffer bufp, TSMLoc hdr_loc, std::stringstream &
   TSIOBufferBlock block;
   const char *block_start;
   int64_t block_avail;
-  bool parsing_key    = true;
-  size_t print_rewind = ss.str().length();
-  output_buffer       = TSIOBufferCreate();
-  reader              = TSIOBufferReaderAlloc(output_buffer);
+  EscapeCharForJson escape_char_for_json;
+  output_buffer = TSIOBufferCreate();
+  reader        = TSIOBufferReaderAlloc(output_buffer);
 
-  ss << "\t'";
-  /* This will print just MIMEFields and not the http request line */
-  TSMimeHdrPrint(bufp, hdr_loc, output_buffer);
+  ss << "\t'Start-Line' : '";
+
+  // Print all message header lines.
+  TSHttpHdrPrint(bufp, hdr_loc, output_buffer);
 
   /* We need to loop over all the buffer blocks, there can be more than 1 */
   block = TSIOBufferReaderStart(reader);
   do {
     block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
     for (const char *c = block_start; c < block_start + block_avail; ++c) {
-      bool was_parsing_key = parsing_key;
-      ss << escape_char_for_json(*c, parsing_key);
-      if (parsing_key && !was_parsing_key) {
-        print_rewind = ss.str().length() - 1;
-      }
+      ss << escape_char_for_json(*c);
     }
     TSIOBufferReaderConsume(reader, block_avail);
     block = TSIOBufferReaderStart(reader);
   } while (block && block_avail != 0);
 
-  ss.seekp(print_rewind);
+  ss.seekp(-escape_char_for_json.backup(), std::ios_base::end);
 
   /* Free up the TSIOBuffer that we used to print out the header */
   TSIOBufferReaderFree(reader);
   TSIOBufferDestroy(output_buffer);
 
-  TSDebug(DEBUG_TAG_LOG_HEADERS, "%s", ss.str().c_str());
+  TSDebug(DEBUG_TAG_LOG_HEADERS, "%.*s", static_cast<int>(ss.tellp()), ss.str().data());
 }
 
 void
@@ -128,13 +168,13 @@ print_request_headers(TSHttpTxn txn, std::stringstream &output)
   if (TSHttpTxnClientReqGet(txn, &buf_c, &hdr_loc) == TS_SUCCESS) {
     output << "{'type':'request', 'side':'client', 'headers': {\n";
     print_headers(txn, buf_c, hdr_loc, output);
-    output << "}}";
+    output << "\n\t}}";
     TSHandleMLocRelease(buf_c, TS_NULL_MLOC, hdr_loc);
   }
   if (TSHttpTxnServerReqGet(txn, &buf_s, &hdr_loc) == TS_SUCCESS) {
     output << ",{'type':'request', 'side':'server', 'headers': {\n";
     print_headers(txn, buf_s, hdr_loc, output);
-    output << "}}";
+    output << "\n\t}}";
     TSHandleMLocRelease(buf_s, TS_NULL_MLOC, hdr_loc);
   }
 }
@@ -147,13 +187,13 @@ print_response_headers(TSHttpTxn txn, std::stringstream &output)
   if (TSHttpTxnServerRespGet(txn, &buf_s, &hdr_loc) == TS_SUCCESS) {
     output << "{'type':'response', 'side':'server', 'headers': {\n";
     print_headers(txn, buf_s, hdr_loc, output);
-    output << "}},";
+    output << "\n\t}},";
     TSHandleMLocRelease(buf_s, TS_NULL_MLOC, hdr_loc);
   }
   if (TSHttpTxnClientRespGet(txn, &buf_c, &hdr_loc) == TS_SUCCESS) {
     output << "{'type':'response', 'side':'client', 'headers': {\n";
     print_headers(txn, buf_c, hdr_loc, output);
-    output << "}}";
+    output << "\n\t}}";
     TSHandleMLocRelease(buf_c, TS_NULL_MLOC, hdr_loc);
   }
 }
