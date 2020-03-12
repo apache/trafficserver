@@ -98,7 +98,7 @@ public:
   {
   }
   SSLCertContext(shared_SSL_CTX sc, shared_SSLMultiCertConfigParams u)
-    : ctx_mutex(), ctx(sc), opt(u->opt), userconfig(nullptr), keyblock(nullptr)
+    : ctx_mutex(), ctx(sc), opt(u->opt), userconfig(u), keyblock(nullptr)
   {
   }
   SSLCertContext(shared_SSL_CTX sc, shared_SSLMultiCertConfigParams u, shared_ssl_ticket_key_block kb)

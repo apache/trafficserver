@@ -60,6 +60,7 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 
 #if HAVE_OPENSSL_TS_H
 #include <openssl/ts.h>
@@ -1045,63 +1046,15 @@ asn1_strdup(ASN1_STRING *s)
    @static
 */
 bool
-SSLMultiCertConfigLoader::index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname)
+SSLMultiCertConfigLoader::index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const char *sni_name)
 {
-  X509_NAME *subject = nullptr;
-  bool inserted      = false;
+  bool inserted = false;
 
-  if (nullptr == cert) {
-    Error("Failed to load certificate %s", certname);
-    lookup->is_valid = false;
-    return false;
+  Debug("ssl", "mapping '%s'", sni_name);
+  if (lookup->insert(sni_name, cc) >= 0) {
+    inserted = true;
   }
 
-  // Insert a key for the subject CN.
-  subject = X509_get_subject_name(cert);
-  ats_scoped_str subj_name;
-  if (subject) {
-    int pos = -1;
-    for (;;) {
-      pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
-      if (pos == -1) {
-        break;
-      }
-
-      X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
-      ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
-      subj_name          = asn1_strdup(cn);
-
-      Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
-      if (lookup->insert(subj_name, cc) >= 0) {
-        inserted = true;
-      }
-    }
-  }
-
-#if HAVE_OPENSSL_TS_H
-  // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES *names = static_cast<GENERAL_NAMES *>(X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
-  if (names) {
-    unsigned count = sk_GENERAL_NAME_num(names);
-    for (unsigned i = 0; i < count; ++i) {
-      GENERAL_NAME *name;
-
-      name = sk_GENERAL_NAME_value(names, i);
-      if (name->type == GEN_DNS) {
-        ats_scoped_str dns(asn1_strdup(name->d.dNSName));
-        // only try to insert if the alternate name is not the main name
-        if (subj_name == nullptr || strcmp(dns, subj_name) != 0) {
-          Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
-          if (lookup->insert(dns, cc) >= 0) {
-            inserted = true;
-          }
-        }
-      }
-    }
-
-    GENERAL_NAMES_free(names);
-  }
-#endif // HAVE_OPENSSL_TS_H
   return inserted;
 }
 
@@ -1204,7 +1157,8 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
    This is public function because of used by SSLCreateServerContext.
  */
 SSL_CTX *
-SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, const SSLMultiCertConfigParams *sslMultCertSettings)
+SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings,
+                                              std::set<std::string> &names)
 {
   const SSLConfigParams *params = this->_params;
 
@@ -1288,7 +1242,7 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
     }
 
     if (sslMultCertSettings->cert) {
-      if (!SSLMultiCertConfigLoader::load_certs(ctx, cert_list, params, sslMultCertSettings)) {
+      if (!SSLMultiCertConfigLoader::load_certs(ctx, data, params, sslMultCertSettings)) {
         goto fail;
       }
     }
@@ -1400,10 +1354,6 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, co
 fail:
   SSLMultiCertConfigLoader::clear_pw_references(ctx);
   SSLReleaseContext(ctx);
-  for (auto cert : cert_list) {
-    X509_free(cert);
-  }
-
   return nullptr;
 }
 
@@ -1412,29 +1362,34 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
                        const char *key_path)
 {
   SSLMultiCertConfigLoader loader(params);
-  std::vector<X509 *> cert_list;
   std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ctx(nullptr, &SSL_CTX_free);
-  ctx.reset(loader.init_server_ssl_ctx(cert_list, sslMultiCertSettings));
-  ink_assert(cert_list.empty());
-
-  if (cert_path) {
+  std::vector<X509 *> cert_list;
+  std::set<std::string> common_names;
+  std::unordered_map<int, std::set<std::string>> unique_names;
+  SSLMultiCertConfigLoader::CertLoadData data;
+  if (loader.load_certs_and_cross_reference_names(cert_list, data, params, sslMultiCertSettings, common_names, unique_names)) {
+    ctx.reset(loader.init_server_ssl_ctx(data, sslMultiCertSettings, common_names));
+  }
+  for (auto &i : cert_list) {
+    X509_free(i);
+  }
+  if (ctx && cert_path) {
     if (!SSL_CTX_use_certificate_file(ctx.get(), cert_path, SSL_FILETYPE_PEM)) {
       SSLError("SSLCreateServerContext(): failed to load server certificate.");
-      return nullptr;
-    }
-    if (!key_path || key_path[0] == '\0') {
+      ctx = nullptr;
+    } else if (!key_path || key_path[0] == '\0') {
       key_path = cert_path;
     }
-    if (!SSL_CTX_use_PrivateKey_file(ctx.get(), key_path, SSL_FILETYPE_PEM)) {
-      SSLError("SSLCreateServerContext(): failed to load server private key.");
-      return nullptr;
-    }
-    if (!SSL_CTX_check_private_key(ctx.get())) {
-      SSLError("SSLCreateServerContext(): server private key does not match server certificate.");
-      return nullptr;
+    if (ctx) {
+      if (!SSL_CTX_use_PrivateKey_file(ctx.get(), key_path, SSL_FILETYPE_PEM)) {
+        SSLError("SSLCreateServerContext(): failed to load server private key.");
+        ctx = nullptr;
+      } else if (!SSL_CTX_check_private_key(ctx.get())) {
+        SSLError("SSLCreateServerContext(): server private key does not match server certificate.");
+        ctx = nullptr;
+      }
     }
   }
-
   return ctx.release();
 }
 
@@ -1442,29 +1397,65 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
    Insert SSLCertContext (SSL_CTX ans options) into SSLCertLookup with key.
    Do NOT call SSL_CTX_set_* functions from here. SSL_CTX should be set up by SSLMultiCertConfigLoader::init_server_ssl_ctx().
  */
-SSL_CTX *
+bool
 SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams sslMultCertSettings)
 {
+  bool retval = true;
   std::vector<X509 *> cert_list;
-  shared_ssl_ticket_key_block keyblock = nullptr;
-  bool inserted                        = false;
-  shared_SSL_CTX ctx(this->init_server_ssl_ctx(cert_list, sslMultCertSettings.get()), SSL_CTX_free);
+  std::set<std::string> common_names;
+  std::unordered_map<int, std::set<std::string>> unique_names;
+  SSLMultiCertConfigLoader::CertLoadData data;
+  const SSLConfigParams *params = this->_params;
+  this->load_certs_and_cross_reference_names(cert_list, data, params, sslMultCertSettings.get(), common_names, unique_names);
 
-  if (!ctx || !sslMultCertSettings) {
-    lookup->is_valid = false;
-    return nullptr;
-  }
-
-  const char *certname = sslMultCertSettings->cert.get();
+  int i = 0;
   for (auto cert : cert_list) {
-    if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert, certname)) {
+    const char *current_cert_name = data.cert_names_list[i].c_str();
+    if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert, current_cert_name)) {
       /* At this point, we know cert is bad, and we've already printed a
          descriptive reason as to why cert is bad to the log file */
-      Debug("ssl", "Marking certificate as NOT VALID: %s", certname);
+      Debug("ssl", "Marking certificate as NOT VALID: %s", current_cert_name);
       lookup->is_valid = false;
+    }
+    i++;
+  }
+
+  shared_SSL_CTX ctx(this->init_server_ssl_ctx(data, sslMultCertSettings.get(), common_names), SSL_CTX_free);
+
+  if (!ctx || !sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, common_names)) {
+    lookup->is_valid = false;
+    retval           = false;
+  }
+
+  for (auto iter = unique_names.begin(); retval && iter != unique_names.end(); ++iter) {
+    size_t i = iter->first;
+
+    SSLMultiCertConfigLoader::CertLoadData single_data;
+    single_data.cert_names_list.push_back(data.cert_names_list[i]);
+    single_data.key_list.push_back(i < data.key_list.size() ? data.key_list[i] : "");
+    single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
+    single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
+
+    shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_data, sslMultCertSettings.get(), iter->second), SSL_CTX_free);
+    if (!unique_ctx || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, unique_ctx, iter->second)) {
+      lookup->is_valid = false;
+      retval           = false;
     }
   }
 
+  for (auto &i : cert_list) {
+    X509_free(i);
+  }
+
+  return retval;
+}
+
+bool
+SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams sslMultCertSettings,
+                                                shared_SSL_CTX ctx, std::set<std::string> &names)
+{
+  bool inserted                        = false;
+  shared_ssl_ticket_key_block keyblock = nullptr;
   // Load the session ticket key if session tickets are not disabled
   if (sslMultCertSettings->session_ticket_enabled != 0) {
     keyblock = shared_ssl_ticket_key_block(ssl_context_enable_tickets(ctx.get(), nullptr), ticket_block_free);
@@ -1482,7 +1473,6 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
       IpEndpoint ep;
 
       if (ats_ip_pton(sslMultCertSettings->addr, &ep) == 0) {
-        Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings->addr, (const char *)certname);
         if (lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings, keyblock)) >= 0) {
           inserted = true;
         }
@@ -1496,9 +1486,8 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
-  Debug("ssl", "importing SNI names from %s", (const char *)certname);
-  for (auto cert : cert_list) {
-    if (SSLMultiCertConfigLoader::index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings), cert, certname)) {
+  for (auto sni_name : names) {
+    if (SSLMultiCertConfigLoader::index_certificate(lookup, SSLCertContext(ctx, sslMultCertSettings), sni_name.c_str())) {
       inserted = true;
     }
   }
@@ -1511,10 +1500,6 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 
   if (!inserted) {
     ctx = nullptr;
-  }
-
-  for (auto &i : cert_list) {
-    X509_free(i);
   }
 
   return ctx.get();
@@ -1659,7 +1644,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   if (lookup->ssl_default == nullptr) {
     shared_SSLMultiCertConfigParams sslMultiCertSettings(new SSLMultiCertConfigParams);
     sslMultiCertSettings->addr = ats_strdup("*");
-    if (this->_store_ssl_ctx(lookup, sslMultiCertSettings) == nullptr) {
+    if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
       Error("failed set default context");
       return false;
     }
@@ -1920,20 +1905,27 @@ SSLConnect(SSL *ssl)
 }
 
 /**
-   Load certificates to SSL_CTX
-   @static
+ * Process the config to pull out the list of file names, and process the certs to get the list
+ * of subject and sni names.  Thanks to dual cert configurations, there may be mulitple files of each type.
+ * If some names are not in all the listed certs they are listed in the uniqe_names map, keyed by the index
+ * of the including certificate
  */
 bool
-SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_list, const SSLConfigParams *params,
-                                     const SSLMultiCertConfigParams *sslMultCertSettings)
+SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 *> &cert_list,
+                                                               SSLMultiCertConfigLoader::CertLoadData &data,
+                                                               const SSLConfigParams *params,
+                                                               const SSLMultiCertConfigParams *sslMultCertSettings,
+                                                               std::set<std::string> &common_names,
+                                                               std::unordered_map<int, std::set<std::string>> &unique_names)
 {
-  SimpleTokenizer cert_tok((const char *)sslMultCertSettings->cert, SSL_CERT_SEPARATE_DELIM);
+  SimpleTokenizer cert_tok(sslMultCertSettings->cert ? (const char *)sslMultCertSettings->cert : "", SSL_CERT_SEPARATE_DELIM);
   SimpleTokenizer key_tok((sslMultCertSettings->key ? (const char *)sslMultCertSettings->key : ""), SSL_CERT_SEPARATE_DELIM);
 
   if (sslMultCertSettings->key && cert_tok.getNumTokensRemaining() != key_tok.getNumTokensRemaining()) {
     Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");
     return false;
   }
+
   SimpleTokenizer ca_tok("", SSL_CERT_SEPARATE_DELIM);
   if (sslMultCertSettings->ca) {
     ca_tok.setString(sslMultCertSettings->ca);
@@ -1943,13 +1935,6 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
     }
   }
 
-#if TS_USE_TLS_OCSP
-  if (SSLConfigParams::ssl_ocsp_enabled) {
-    Debug("ssl", "SSL OCSP Stapling is enabled");
-    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
-  } else {
-    Debug("ssl", "SSL OCSP Stapling is disabled");
-  }
   SimpleTokenizer ocsp_tok("", SSL_CERT_SEPARATE_DELIM);
   if (sslMultCertSettings->ocsp_response) {
     ocsp_tok.setString(sslMultCertSettings->ocsp_response);
@@ -1958,14 +1943,141 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
       return false;
     }
   }
+
+  for (const char *keyname = key_tok.getNext(); keyname; keyname = key_tok.getNext()) {
+    data.key_list.push_back(keyname);
+  }
+
+  for (const char *caname = ca_tok.getNext(); caname; caname = ca_tok.getNext()) {
+    data.ca_list.push_back(caname);
+  }
+
+  for (const char *ocspname = ocsp_tok.getNext(); ocspname; ocspname = ocsp_tok.getNext()) {
+    data.ocsp_list.push_back(ocspname);
+  }
+
+  bool first_pass = true;
+  int cert_index  = 0;
+  for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
+    data.cert_names_list.push_back(certname);
+    std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
+    scoped_BIO bio(BIO_new_file(completeServerCertPath.c_str(), "r"));
+    X509 *cert = nullptr;
+    if (bio) {
+      cert = PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr);
+    }
+    if (!bio || !cert) {
+      SSLError("failed to load certificate chain from %s", completeServerCertPath.c_str());
+      return false;
+    }
+
+    cert_list.push_back(cert);
+    if (SSLConfigParams::load_ssl_file_cb) {
+      SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str());
+    }
+
+    std::set<std::string> name_set;
+    // Grub through the names in the certs
+    X509_NAME *subject = nullptr;
+
+    // Insert a key for the subject CN.
+    subject = X509_get_subject_name(cert);
+    ats_scoped_str subj_name;
+    if (subject) {
+      int pos = -1;
+      for (;;) {
+        pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
+        if (pos == -1) {
+          break;
+        }
+
+        X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
+        ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
+        subj_name          = asn1_strdup(cn);
+
+        Debug("ssl", "subj '%s' in certificate %s %p", (const char *)subj_name, certname, cert);
+        name_set.insert(subj_name.get());
+      }
+    }
+
+    // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
+    GENERAL_NAMES *names = static_cast<GENERAL_NAMES *>(X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
+    if (names) {
+      unsigned count = sk_GENERAL_NAME_num(names);
+      for (unsigned i = 0; i < count; ++i) {
+        GENERAL_NAME *name;
+
+        name = sk_GENERAL_NAME_value(names, i);
+        if (name->type == GEN_DNS) {
+          ats_scoped_str dns(asn1_strdup(name->d.dNSName));
+          name_set.insert(dns.get());
+        }
+      }
+    }
+    if (first_pass) {
+      first_pass   = false;
+      common_names = name_set;
+    } else {
+      // Check that all elements in common_names are in name_set
+      for (auto name : common_names) {
+        auto iter = name_set.find(name);
+        if (iter == name_set.end()) {
+          // Common_name not in new set, move name to unique set
+          auto iter = unique_names.find(cert_index - 1);
+          if (iter == unique_names.end()) {
+            std::set<std::string> new_set;
+            new_set.insert(name);
+            unique_names.insert({cert_index - 1, new_set});
+          } else {
+            iter->second.insert(name);
+          }
+          auto erase_iter = common_names.find(name);
+          common_names.erase(erase_iter);
+        } else {
+          // New name already in common set, go ahead and remove it from further consideration
+          name_set.erase(iter);
+        }
+      }
+      // Anything still in name_set was not in common_names
+      for (auto name : name_set) {
+        auto iter = unique_names.find(cert_index);
+        if (iter == unique_names.end()) {
+          std::set<std::string> new_set;
+          new_set.insert(name);
+          unique_names.insert({cert_index, new_set});
+        } else {
+          iter->second.insert(name);
+        }
+      }
+    }
+    cert_index++;
+  }
+  return true;
+}
+
+/**
+   Load certificates to SSL_CTX
+   @static
+ */
+bool
+SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, SSLMultiCertConfigLoader::CertLoadData const &data,
+                                     const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultCertSettings)
+{
+#if TS_USE_TLS_OCSP
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Debug("ssl", "SSL OCSP Stapling is enabled");
+    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+  } else {
+    Debug("ssl", "SSL OCSP Stapling is disabled");
+  }
 #else
   if (SSLConfigParams::ssl_ocsp_enabled) {
     Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
   }
 #endif /* TS_USE_TLS_OCSP */
 
-  for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
-    std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
+  for (size_t i = 0; i < data.cert_names_list.size(); i++) {
+    std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, data.cert_names_list[i]);
     scoped_BIO bio(BIO_new_file(completeServerCertPath.c_str(), "r"));
     X509 *cert = nullptr;
     if (bio) {
@@ -1984,12 +2096,11 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
     // Load up any additional chain certificates
     SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 
-    const char *keyPath = key_tok.getNext();
+    const char *keyPath = data.key_list[i].c_str();
     if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, keyPath)) {
       return false;
     }
 
-    cert_list.push_back(cert);
     if (SSLConfigParams::load_ssl_file_cb) {
       SSLConfigParams::load_ssl_file_cb(completeServerCertPath.c_str());
     }
@@ -2012,7 +2123,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
 
     // Now, load any additional certificate chains specified in this entry.
     if (sslMultCertSettings->ca) {
-      const char *ca_name = ca_tok.getNext();
+      const char *ca_name = data.ca_list[i].c_str();
       if (ca_name != nullptr) {
         ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_name));
         if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
@@ -2027,18 +2138,19 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, std::vector<X509 *> &cert_lis
 #if TS_USE_TLS_OCSP
     if (SSLConfigParams::ssl_ocsp_enabled) {
       if (sslMultCertSettings->ocsp_response) {
-        const char *ocsp_response_name = ocsp_tok.getNext();
+        const char *ocsp_response_name = data.ocsp_list[i].c_str();
         ats_scoped_str completeOCSPResponsePath(Layout::relative_to(params->ssl_ocsp_response_path_only, ocsp_response_name));
-        if (!ssl_stapling_init_cert(ctx, cert, certname, (const char *)completeOCSPResponsePath)) {
-          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", certname);
+        if (!ssl_stapling_init_cert(ctx, cert, data.cert_names_list[i].c_str(), (const char *)completeOCSPResponsePath)) {
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", data.cert_names_list[i].c_str());
         }
       } else {
-        if (!ssl_stapling_init_cert(ctx, cert, certname, nullptr)) {
-          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", certname);
+        if (!ssl_stapling_init_cert(ctx, cert, data.cert_names_list[i].c_str(), nullptr)) {
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", data.cert_names_list[i].c_str());
         }
       }
     }
 #endif /* TS_USE_TLS_OCSP */
+    X509_free(cert);
   }
 
   return true;
