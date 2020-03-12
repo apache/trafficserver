@@ -37,9 +37,11 @@ X-Remap: from=http://one/, to=http://127.0.0.1:SERVER_PORT/
 ``
 {'xDebugProbeAt' : '``
    'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
-	'Connection' : 'close',
+	'Connection' : 'close'
 	}},{'type':'request', 'side':'server', 'headers': {
+	'Start-Line' : 'GET /argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'Client-ip' : '127.0.0.1',
 	'X-Forwarded-For' : '127.0.0.1',
@@ -54,15 +56,17 @@ X-Remap: from=http://one/, to=http://127.0.0.1:SERVER_PORT/
 
 {'xDebugProbeAt' : '``
    'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Date' : '``
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://one/, to=http://127.0.0.1:SERVER_PORT/',
+	'X-Remap' : 'from=http://one/, to=http://127.0.0.1:SERVER_PORT/'
 	}}
    ]
 }
@@ -80,9 +84,11 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 ``
 {'xDebugProbeAt' : '``
    'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
-	'Connection' : 'close',
+	'Connection' : 'close'
 	}},{'type':'request', 'side':'server', 'headers': {
+	'Start-Line' : 'GET /argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'Client-ip' : '127.0.0.1',
 	'X-Forwarded-For' : '127.0.0.1',
@@ -97,15 +103,17 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
 {'xDebugProbeAt' : '``
    'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Date' : '``
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
 	}}
    ]
 }
@@ -123,9 +131,11 @@ X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
 ``
 {'xDebugProbeAt' : '``
    'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
-	'Connection' : 'close',
+	'Connection' : 'close'
 	}},{'type':'request', 'side':'server', 'headers': {
+	'Start-Line' : 'GET /argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'Client-ip' : '127.0.0.1',
 	'X-Forwarded-For' : '127.0.0.1',
@@ -140,15 +150,17 @@ X-Remap: from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/
 
 {'xDebugProbeAt' : '``
    'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Date' : '``
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/',
+	'X-Remap' : 'from=http://three[0-9]+/, to=http://127.0.0.1:SERVER_PORT/'
 	}}
    ]
 }
@@ -166,9 +178,11 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 ``
 {'xDebugProbeAt' : '``
    'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/not_there HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
-	'Connection' : 'close',
+	'Connection' : 'close'
 	}},{'type':'request', 'side':'server', 'headers': {
+	'Start-Line' : 'GET /not_there HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'Client-ip' : '127.0.0.1',
 	'X-Forwarded-For' : '127.0.0.1',
@@ -183,16 +197,18 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
 {'xDebugProbeAt' : '``
    'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Start-Line' : 'HTTP/1.1 404 Not Found',
 	'Server' : 'MicroServer',
 	'Connection' : 'close',
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
+	'Start-Line' : 'HTTP/1.1 404 Not Found',
 	'Server' : 'ATS/``
 	'Date' : '``
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
 	}}
    ]
 }
@@ -210,10 +226,12 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 ``
 {'xDebugProbeAt' : '``
    'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'X-Debug' : 'X-Remap, fwd, Probe',
-	'Connection' : 'close',
+	'Connection' : 'close'
 	}},{'type':'request', 'side':'server', 'headers': {
+	'Start-Line' : 'GET /argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'X-Debug' : 'X-Remap, fwd, Probe',
 	'Client-ip' : '127.0.0.1',
@@ -229,15 +247,17 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
 {'xDebugProbeAt' : '``
    'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Date' : '``
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
 	}}
    ]
 }
@@ -255,9 +275,11 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 ``
 {'xDebugProbeAt' : '``
    'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
-	'Connection' : 'close',
+	'Connection' : 'close'
 	}},{'type':'request', 'side':'server', 'headers': {
+	'Start-Line' : 'GET /argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'Client-ip' : '127.0.0.1',
 	'X-Forwarded-For' : '127.0.0.1',
@@ -272,15 +294,17 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
 {'xDebugProbeAt' : '``
    'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Date' : '``
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
 	}}
    ]
 }
@@ -298,10 +322,12 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 ``
 {'xDebugProbeAt' : '``
    'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'X-Debug' : 'X-Remap, fwd=0, Probe',
-	'Connection' : 'close',
+	'Connection' : 'close'
 	}},{'type':'request', 'side':'server', 'headers': {
+	'Start-Line' : 'GET /argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'X-Debug' : 'X-Remap, fwd=0, Probe',
 	'Client-ip' : '127.0.0.1',
@@ -317,15 +343,17 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
 {'xDebugProbeAt' : '``
    'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Date' : '``
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
 	}}
    ]
 }
@@ -343,10 +371,12 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 ``
 {'xDebugProbeAt' : '``
    'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'X-Debug' : 'PROBE, X-Remap, fwd=999998',
-	'Connection' : 'close',
+	'Connection' : 'close'
 	}},{'type':'request', 'side':'server', 'headers': {
+	'Start-Line' : 'GET /argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'X-Debug' : 'PROBE, X-Remap, fwd=999998',
 	'Client-ip' : '127.0.0.1',
@@ -362,15 +392,17 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
 {'xDebugProbeAt' : '``
    'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Date' : '``
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
 	}}
    ]
 }
@@ -388,9 +420,11 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 ``
 {'xDebugProbeAt' : '``
    'captured':[{'type':'request', 'side':'client', 'headers': {
+	'Start-Line' : 'GET http://127.0.0.1:SERVER_PORT/argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
-	'Connection' : 'close',
+	'Connection' : 'close'
 	}},{'type':'request', 'side':'server', 'headers': {
+	'Start-Line' : 'GET /argh HTTP/1.1',
 	'Host' : '127.0.0.1:SERVER_PORT',
 	'Client-ip' : '127.0.0.1',
 	'X-Forwarded-For' : '127.0.0.1',
@@ -405,15 +439,17 @@ X-Remap: from=http://two/, to=http://127.0.0.1:SERVER_PORT/
 
 {'xDebugProbeAt' : '``
    'captured':[{'type':'response', 'side':'server', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Connection' : 'close',
 	'Date' : '``
 	}},{'type':'response', 'side':'client', 'headers': {
+	'Start-Line' : 'HTTP/1.1 200 OK',
 	'Date' : '``
 	'Age' : '``
 	'Transfer-Encoding' : 'chunked',
 	'Connection' : 'close',
 	'Server' : 'ATS/``
-	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/',
+	'X-Remap' : 'from=http://two/, to=http://127.0.0.1:SERVER_PORT/'
 	}}
    ]
 }
