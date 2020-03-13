@@ -217,6 +217,10 @@ more widely. Those are described on this page.
 
 .. type:: TSThreadFunc
 
+.. type:: TSUserArgType
+
+   An enum for the supported types of user arguments.
+
 .. type:: TSUuidVersion
 
    A version value for at :type:`TSUuid`.

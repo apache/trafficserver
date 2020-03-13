@@ -311,7 +311,7 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
     data->ja3_string.append(custom_get_ja3(ssl));
     getIP(TSNetVConnRemoteAddrGet(ssl_vc), data->ip_addr);
 
-    TSVConnArgSet(ssl_vc, ja3_idx, static_cast<void *>(data));
+    TSUserArgSet(ssl_vc, ja3_idx, static_cast<void *>(data));
     TSDebug(PLUGIN_NAME, "client_hello_ja3_handler(): JA3: %s", data->ja3_string.c_str());
 
     // MD5 hash
@@ -326,14 +326,14 @@ client_hello_ja3_handler(TSCont contp, TSEvent event, void *edata)
   }
   case TS_EVENT_VCONN_CLOSE: {
     // Clean up
-    ja3_data *data = static_cast<ja3_data *>(TSVConnArgGet(ssl_vc, ja3_idx));
+    ja3_data *data = static_cast<ja3_data *>(TSUserArgGet(ssl_vc, ja3_idx));
 
     if (data == nullptr) {
       TSDebug(PLUGIN_NAME, "client_hello_ja3_handler(): Failed to retrieve ja3 data at VCONN_CLOSE.");
       return TS_ERROR;
     }
 
-    TSVConnArgSet(ssl_vc, ja3_idx, nullptr);
+    TSUserArgSet(ssl_vc, ja3_idx, nullptr);
 
     delete data;
     break;
@@ -361,7 +361,7 @@ req_hdr_ja3_handler(TSCont contp, TSEvent event, void *edata)
   }
 
   // Retrieve ja3_data from vconn args
-  ja3_data *data = static_cast<ja3_data *>(TSVConnArgGet(vconn, ja3_idx));
+  ja3_data *data = static_cast<ja3_data *>(TSUserArgGet(vconn, ja3_idx));
   if (data) {
     // Decide global or remap
     ja3_remap_info *info = static_cast<ja3_remap_info *>(TSContDataGet(contp));
@@ -444,7 +444,7 @@ TSPluginInit(int argc, const char *argv[])
     }
     // SNI handler
     TSCont ja3_cont = TSContCreate(client_hello_ja3_handler, nullptr);
-    TSVConnArgIndexReserve(PLUGIN_NAME, "used to pass ja3", &ja3_idx);
+    TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "used to pass ja3", &ja3_idx);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, ja3_cont);
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L
@@ -473,7 +473,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
   // Set up SNI handler for all TLS connections
   TSCont ja3_cont = TSContCreate(client_hello_ja3_handler, nullptr);
-  TSVConnArgIndexReserve(PLUGIN_NAME, "Used to pass ja3", &ja3_idx);
+  TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "Used to pass ja3", &ja3_idx);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   TSHttpHookAdd(TS_SSL_SERVERNAME_HOOK, ja3_cont);
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L

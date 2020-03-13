@@ -128,17 +128,17 @@ The continuations created by the plugin will have a context member added to them
 reference counting, when continuations are destroyed, and to handle events.
 
 
-TSHttpArgs
+TSUserArgs
 ----------
 
-|TS| sessions and transactions provide a fixed array of void pointers that can be used by plugins
-to store information. To avoid collisions between plugins a plugin should first *reserve* an index in the array.
+|TS| sessions, transactions, virtual connections and globally provide a fixed array of void pointers that
+can be used by plugins to store information. To avoid collisions between plugins a plugin should first
+*reserve* an index in the array.
 
-Since :c:func:`TSHttpTxnArgIndexReserve` and :c:func:`TSHttpSsnArgIndexReserve` are meant to be called during plugin
-initialization we could end up "leaking" indices during plugin reload.
-Hence it is necessary to make sure only one index is allocated per "plugin identifying name", current
-:c:func:`TSHttpTxnArgIndexNameLookup` and :c:func:`TSHttpTxnArgIndexNameLookup` implementation assumes 1-1
-index-to-name relationship as well.
+Since :c:func:`TSUserArgIndexReserve` is meant to be called during plugin initialization we could end up
+"leaking" indices during plugin reload. Hence it is necessary to make sure only one index is allocated per
+"plugin identifying name", current :c:func:`TSUserArgIndexNameLookup` and
+:c:func:`TSUserArgIndexLookup` implementation assumes 1-1 index-to-name relationship as well.
 
 
 PluginFactory
