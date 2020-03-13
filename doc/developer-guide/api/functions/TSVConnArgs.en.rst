@@ -17,13 +17,17 @@
 .. include:: ../../../common.defs
 .. default-domain:: c
 
-.. _TSVConnArgs:
-
 TSVConnArgs
 ************
 
 Synopsis
 ========
+
+.. note::
+
+   This set of API is obsoleted as of ATS v9.0.0, and will be removed with ATS v10.0.0!
+   For details of the new APIs, see :ref:`tsuserargs`.
+
 
 .. code-block:: cpp
 

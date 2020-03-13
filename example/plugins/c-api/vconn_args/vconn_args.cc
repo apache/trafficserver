@@ -37,10 +37,10 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_VCONN_START: {
     // Testing set argument
     int idx = 0;
-    while (TSVConnArgIndexReserve(PLUGIN_NAME, "test", &idx) == TS_SUCCESS) {
+    while (TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "test", &idx) == TS_SUCCESS) {
       char *buf = static_cast<char *>(TSmalloc(64));
       snprintf(buf, 64, "Test Arg Idx %d", idx);
-      TSVConnArgSet(ssl_vc, idx, (void *)buf);
+      TSUserArgSet(ssl_vc, idx, (void *)buf);
       TSDebug(PLUGIN_NAME, "Successfully reserve and set arg #%d", idx);
     }
     last_arg = idx;
@@ -52,7 +52,7 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
     while (idx <= last_arg) {
       const char *name = nullptr;
       const char *desc = nullptr;
-      if (TSVConnArgIndexLookup(idx, &name, &desc) == TS_SUCCESS) {
+      if (TSUserArgIndexLookup(TS_USER_ARGS_VCONN, idx, &name, &desc) == TS_SUCCESS) {
         TSDebug(PLUGIN_NAME, "Successful lookup for arg #%d: [%s] [%s]", idx, name, desc);
       } else {
         TSDebug(PLUGIN_NAME, "Failed lookup for arg #%d", idx);
@@ -65,7 +65,7 @@ vconn_arg_handler(TSCont contp, TSEvent event, void *edata)
     // Testing argget and delete
     int idx = 0;
     while (idx <= last_arg) {
-      char *buf = static_cast<char *>(TSVConnArgGet(ssl_vc, idx));
+      char *buf = static_cast<char *>(TSUserArgGet(ssl_vc, idx));
       if (buf) {
         TSDebug(PLUGIN_NAME, "Successfully retrieve vconn arg #%d: %s", idx, buf);
         TSfree(buf);

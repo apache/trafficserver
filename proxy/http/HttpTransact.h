@@ -759,8 +759,6 @@ public:
     // for authenticated content caching
     CacheAuth_t www_auth_content = CACHE_AUTH_NONE;
 
-    // INK API/Remap API plugin interface
-    void *user_args[TS_HTTP_MAX_USER_ARG];
     RemapPluginInst *os_response_plugin_inst = nullptr;
     HTTPStatus http_return_code              = HTTP_STATUS_NONE;
 
@@ -855,7 +853,6 @@ public:
       via_string[VIA_DETAIL_SERVER_DESCRIPTOR] = VIA_DETAIL_SERVER_DESCRIPTOR_STRING;
       via_string[MAX_VIA_INDICES]              = '\0';
 
-      memset(user_args, 0, sizeof(user_args));
       memset((void *)&host_db_info, 0, sizeof(host_db_info));
     }
 

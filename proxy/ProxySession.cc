@@ -26,10 +26,7 @@
 #include "ProxySession.h"
 #include "P_SSLNetVConnection.h"
 
-ProxySession::ProxySession() : VConnection(nullptr)
-{
-  ink_zero(this->user_args);
-}
+ProxySession::ProxySession() : VConnection(nullptr) {}
 
 void
 ProxySession::set_session_active()

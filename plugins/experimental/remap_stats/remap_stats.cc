@@ -116,7 +116,7 @@ handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 
   config = static_cast<config_t *>(TSContDataGet(cont));
   txnd   = (void *)get_effective_host(txn); // low bit left 0 because we do not know that remap succeeded yet
-  TSHttpTxnArgSet(txn, config->txn_slot, txnd);
+  TSUserArgSet(txn, config->txn_slot, txnd);
 
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   TSDebug(DEBUG_TAG, "Read Req Handler Finished");
@@ -133,10 +133,10 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   config = static_cast<config_t *>(TSContDataGet(cont));
 
   if (config->post_remap_host) {
-    TSHttpTxnArgSet(txn, config->txn_slot, txnd);
+    TSUserArgSet(txn, config->txn_slot, txnd);
   } else {
-    txnd = (void *)((uintptr_t)txnd | (uintptr_t)TSHttpTxnArgGet(txn, config->txn_slot)); // We need the hostname pre-remap
-    TSHttpTxnArgSet(txn, config->txn_slot, txnd);
+    txnd = (void *)((uintptr_t)txnd | (uintptr_t)TSUserArgGet(txn, config->txn_slot)); // We need the hostname pre-remap
+    TSUserArgSet(txn, config->txn_slot, txnd);
   }
 
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
@@ -163,7 +163,7 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   static char const *const unknown = "unknown";
 
   config_t const *const config = static_cast<config_t *>(TSContDataGet(cont));
-  void const *const txnd       = TSHttpTxnArgGet(txn, config->txn_slot);
+  void const *const txnd       = TSUserArgGet(txn, config->txn_slot);
 
   hostname = reinterpret_cast<char *>(reinterpret_cast<uintptr_t>(txnd) & ~0x01); // Get hostname
 
@@ -273,7 +273,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  TSHttpTxnArgIndexReserve(PLUGIN_NAME, "txn data", &(config->txn_slot));
+  TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "txn data", &(config->txn_slot));
 
   if (!config->post_remap_host) {
     pre_remap_cont = TSContCreate(handle_read_req_hdr, nullptr);

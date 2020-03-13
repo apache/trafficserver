@@ -199,7 +199,7 @@ public:
   ~PostDataBuffers();
 };
 
-class HttpSM : public Continuation
+class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpPagesHandler;
   friend class CoreUtils;

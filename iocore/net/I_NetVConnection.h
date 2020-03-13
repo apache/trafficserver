@@ -332,7 +332,7 @@ struct NetVCOptions {
   stream IO to be done based on a single read or write call.
 
 */
-class NetVConnection : public AnnotatedVConnection
+class NetVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS_VCONN>
 {
 public:
   // How many bytes have been queued to the OS for sending by haven't been sent yet
@@ -888,7 +888,7 @@ protected:
   NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
 };
 
-inline NetVConnection::NetVConnection() : AnnotatedVConnection(nullptr)
+inline NetVConnection::NetVConnection() : VConnection(nullptr)
 
 {
   ink_zero(local_addr);
