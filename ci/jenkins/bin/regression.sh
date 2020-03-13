@@ -28,4 +28,6 @@ ${ATS_MAKE} install || exit 1
 echo
 echo -n "Regression tests started at " && date
 "${ATS_BUILD_BASEDIR}/install/bin/traffic_server" -k -K -R 1
+rval=$?
 echo -n "Regression tests finished at " && date
+exit $rval
