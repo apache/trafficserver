@@ -1918,16 +1918,18 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
                                                                std::set<std::string> &common_names,
                                                                std::unordered_map<int, std::set<std::string>> &unique_names)
 {
-  SimpleTokenizer cert_tok(sslMultCertSettings->cert ? (const char *)sslMultCertSettings->cert : "", SSL_CERT_SEPARATE_DELIM);
-  SimpleTokenizer key_tok((sslMultCertSettings->key ? (const char *)sslMultCertSettings->key : ""), SSL_CERT_SEPARATE_DELIM);
+  SimpleTokenizer cert_tok(sslMultCertSettings && sslMultCertSettings->cert ? (const char *)sslMultCertSettings->cert : "",
+                           SSL_CERT_SEPARATE_DELIM);
+  SimpleTokenizer key_tok((sslMultCertSettings && sslMultCertSettings->key ? (const char *)sslMultCertSettings->key : ""),
+                          SSL_CERT_SEPARATE_DELIM);
 
-  if (sslMultCertSettings->key && cert_tok.getNumTokensRemaining() != key_tok.getNumTokensRemaining()) {
+  if (sslMultCertSettings && sslMultCertSettings->key && cert_tok.getNumTokensRemaining() != key_tok.getNumTokensRemaining()) {
     Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");
     return false;
   }
 
   SimpleTokenizer ca_tok("", SSL_CERT_SEPARATE_DELIM);
-  if (sslMultCertSettings->ca) {
+  if (sslMultCertSettings && sslMultCertSettings->ca) {
     ca_tok.setString(sslMultCertSettings->ca);
     if (cert_tok.getNumTokensRemaining() != ca_tok.getNumTokensRemaining()) {
       Error("the number of certificates in ssl_cert_name and ssl_ca_name doesn't match");
@@ -1936,7 +1938,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
   }
 
   SimpleTokenizer ocsp_tok("", SSL_CERT_SEPARATE_DELIM);
-  if (sslMultCertSettings->ocsp_response) {
+  if (sslMultCertSettings && sslMultCertSettings->ocsp_response) {
     ocsp_tok.setString(sslMultCertSettings->ocsp_response);
     if (cert_tok.getNumTokensRemaining() != ocsp_tok.getNumTokensRemaining()) {
       Error("the number of certificates in ssl_cert_name and ssl_ocsp_name doesn't match");
