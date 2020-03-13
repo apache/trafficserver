@@ -375,9 +375,9 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     last    = current;
     current = current->next;
     ats_free(last);
-
-    Note("%s finished loading", ts::filename::HOSTING);
   }
+
+  Note("%s finished loading", ts::filename::HOSTING);
 
   if (!generic_rec_initd) {
     const char *cache_type = (type == CACHE_HTTP_TYPE) ? "http" : "mixt";
