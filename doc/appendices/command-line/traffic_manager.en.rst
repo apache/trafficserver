@@ -59,7 +59,8 @@ Exponential Back-off Delay
   :program:`traffic_manager` will retry to start  :program:`traffic_server` using an exponential back-off delay,
   which will make :program:`traffic_manager` to retry starting :program:`traffic_server` from ``1s`` until it
   reaches the max ceiling time. The ceiling time is configurable  as well as the number of times that
-  :program:`traffic_manager` will keep trying to start :program:`traffic_server`.
+  :program:`traffic_manager` will keep trying to start :program:`traffic_server`. *A random variance will be
+  added to the sleep time on every retry*
 
 .. note::
   For more information about this configuration please check :file:`records.config`
