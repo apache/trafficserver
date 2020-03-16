@@ -433,7 +433,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   if (numTok == 0) {
     return "No parents specified";
   }
-  HostStatus &hs = HostStatus::instance();
   // Allocate the parents array
   if (isPrimary) {
     this->parents = static_cast<pRecord *>(ats_malloc(sizeof(pRecord) * numTok));
@@ -517,10 +516,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
         memcpy(this->parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->parents[i].name = this->parents[i].hash_string;
       }
-      HostStatRec *hst = hs.getHostStatus(this->parents[i].hostname);
-      if (hst == nullptr) {
-        hs.setHostStatus(this->parents[i].hostname, HOST_STATUS_UP, 0, Reason::MANUAL);
-      }
     } else {
       memcpy(this->secondary_parents[i].hostname, current, tmp - current);
       this->secondary_parents[i].hostname[tmp - current] = '\0';
@@ -535,10 +530,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       if (tmp3) {
         memcpy(this->secondary_parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->secondary_parents[i].name = this->secondary_parents[i].hash_string;
-      }
-      HostStatRec *hst = hs.getHostStatus(this->secondary_parents[i].hostname);
-      if (hst == nullptr) {
-        hs.setHostStatus(this->secondary_parents[i].hostname, HOST_STATUS_UP, 0, Reason::MANUAL);
       }
     }
     tmp3 = nullptr;
