@@ -818,6 +818,7 @@ Changes with Apache Traffic Server 9.0.0
   #6154 - tslua: Exposes set/get method for server request objects
   #6156 - Fix building Catch on macOS
   #6159 - Detect bogus jemalloc version
+  #6159 - Detect bogus jemalloc version
   #6160 - Fixes misc. spelling and whitespace
   #6163 - Update yaml-cpp to 0.6.3
   #6167 - Fixed gcc7 issue with yaml-cpp 0.6.3
@@ -894,6 +895,7 @@ Changes with Apache Traffic Server 9.0.0
   #6328 - Document the order of the X-Cache header
   #6329 - Fixed build issues on macOS after 0-RTT merge
   #6332 - Fixes Issue #6321 caused when proxy.config.http.no_dns_just_forward_to_parent
+  #6333 - XDebug: Always append to the X- header, rather than prepend
   #6337 - Perf: Optimize sending HTTP/2 frame
   #6339 - Fixes an issue where NextHopSelectionStrategy did not implement a parent check.
   #6340 - Add header rewrite test to make sure we are not injecting end of rule char
@@ -949,6 +951,7 @@ Changes with Apache Traffic Server 9.0.0
   #6463 - [CPPAPI] Provide access to TSRemapRequestInfo in RemapPlugins.
   #6464 - cache_range_requests plugin: detect and handle TSCacheUrlSet failures…
   #6465 - Skipping log_retention.test.py because it is flaky in CI
+  #6468 - Refactor and generalize the User Arg concept, add global
   #6469 - Delay cleanup when cache write continues after early client response
   #6470 - Remove update to unused variable
   #6471 - Removes some things deprecated from older versions
@@ -961,3 +964,5 @@ Changes with Apache Traffic Server 9.0.0
   #6493 - Make all_headers test more resilient to timing
   #6500 - traffic_dump: Make the client-request node gathered in a global hook
   #6501 - Remove method that does nothing.
+  #6517 - Make traffic_ctl limp along for now with large records.snap
+  #6518 - Fixes a bug where HostStatus::getHostStatus() creates too many stats.
