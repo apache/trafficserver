@@ -250,7 +250,8 @@ public:
   get_stream_error_rate() const
   {
     int total = get_stream_requests();
-    if (total > 0) {
+
+    if (total >= (1 / Http2::stream_error_rate_threshold)) {
       return (double)stream_error_count / (double)total;
     } else {
       return 0;
