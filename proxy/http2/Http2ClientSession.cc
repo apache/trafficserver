@@ -611,8 +611,8 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
       ip_port_text_buffer ipb;
       const char *client_ip = ats_ip_ntop(get_client_addr(), ipb, sizeof(ipb));
       Warning("HTTP/2 session error client_ip=%s session_id=%" PRId64
-              " closing a connection, because its stream error rate (%f) is too high",
-              client_ip, connection_id(), this->connection_state.get_stream_error_rate());
+              " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
+              client_ip, connection_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
       err = Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }
 
