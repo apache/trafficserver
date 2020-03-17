@@ -659,7 +659,6 @@ XDeleteDebugHdr(TSCont /* contp */, TSEvent event, void *edata)
 
   field = TSMimeHdrFieldFind(buffer, hdr, xDebugHeader.str, xDebugHeader.len);
   if (field == TS_NULL_MLOC) {
-    TSError("Missing %s header", xDebugHeader.str);
     return TS_EVENT_NONE;
   }
 
