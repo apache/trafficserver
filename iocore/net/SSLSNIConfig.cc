@@ -199,7 +199,7 @@ SNIConfigParams::cleanup()
   keys.free_and_clear();
 
   wild_next_hop_table.get_keys(keys);
-  for (int i = 0; static_cast<int>(keys.length()); i++) {
+  for (int i = 0; i < static_cast<int>(keys.length()); i++) {
     auto *nps = wild_next_hop_table.get(keys.get(i));
     delete (nps);
   }
