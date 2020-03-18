@@ -380,6 +380,16 @@ tsapi TSFetchSM TSFetchCreate(TSCont contp, const char *method, const char *url,
                               struct sockaddr const *client_addr, int flags);
 
 /*
+ * Set fetch flags to FetchSM Context
+ *
+ * @param fetch_sm: returned value of TSFetchCreate().
+ * @param flags: can be bitwise OR of several TSFetchFlags.
+ *
+ * return void
+ */
+tsapi void TSFetchFlagSet(TSFetchSM fetch_sm, int flags);
+
+/*
  * Create FetchSM, this API will enable stream IO automatically.
  *
  * @param fetch_sm: returned value of TSFetchCreate().

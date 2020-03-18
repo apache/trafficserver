@@ -7916,6 +7916,13 @@ TSFetchUrl(const char *headers, int request_len, sockaddr const *ip, TSCont cont
   fetch_sm->httpConnect();
 }
 
+void
+TSFetchFlagSet(TSFetchSM fetch_sm, int flags)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+  (reinterpret_cast<FetchSM *>(fetch_sm))->set_fetch_flags(flags);
+}
+
 TSFetchSM
 TSFetchCreate(TSCont contp, const char *method, const char *url, const char *version, struct sockaddr const *client_addr, int flags)
 {
