@@ -1160,11 +1160,16 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
   return PARSE_RESULT_ERROR; // no non-whitespace found
 }
 
+// This implementation namespace is necessary because this function is tested by a Catch unit test
+// in another source file.
+//
+namespace UrlImpl
+{
 /**
  *  This method will return TRUE if the uri is strictly compliant with
  *  RFC 3986 and it will return FALSE if not.
  */
-static bool
+bool
 url_is_strictly_compliant(const char *start, const char *end)
 {
   for (const char *i = start; i < end; ++i) {
@@ -1175,6 +1180,9 @@ url_is_strictly_compliant(const char *start, const char *end)
   }
   return true;
 }
+
+} // namespace UrlImpl
+using namespace UrlImpl;
 
 ParseResult
 url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, bool strict_uri_parsing)
@@ -1801,78 +1809,3 @@ url_host_CryptoHash_get(URLImpl *url, CryptoHash *hash)
   ctx.update(&port, sizeof(port));
   ctx.finalize(*hash);
 }
-
-/*-------------------------------------------------------------------------
- * Regression tests
-  -------------------------------------------------------------------------*/
-#if TS_HAS_TESTS
-#include "tscore/TestBox.h"
-
-const static struct {
-  const char *const text;
-  bool valid;
-} http_validate_hdr_field_test_case[] = {{"yahoo", true},
-                                         {"yahoo.com", true},
-                                         {"yahoo.wow.com", true},
-                                         {"yahoo.wow.much.amaze.com", true},
-                                         {"209.131.52.50", true},
-                                         {"192.168.0.1", true},
-                                         {"localhost", true},
-                                         {"3ffe:1900:4545:3:200:f8ff:fe21:67cf", true},
-                                         {"fe80:0:0:0:200:f8ff:fe21:67cf", true},
-                                         {"fe80::200:f8ff:fe21:67cf", true},
-                                         {"<svg onload=alert(1)>", false}, // Sample host header XSS attack
-                                         {"jlads;f8-9349*(D&F*D(234jD*(FSD*(VKLJ#(*$@()#$)))))", false},
-                                         {"\"\t\n", false},
-                                         {"!@#$%^ &*(*&^%$#@#$%^&*(*&^%$#))", false},
-                                         {":):(:O!!!!!!", false}};
-
-REGRESSION_TEST(VALIDATE_HDR_FIELD)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
-{
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
-  for (auto i : http_validate_hdr_field_test_case) {
-    const char *const txt = i.text;
-    box.check(validate_host_name({txt}) == i.valid, "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
-              (i.valid ? "true" : "false"));
-  }
-}
-
-REGRESSION_TEST(ParseRules_strict_URI)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
-{
-  const struct {
-    const char *const uri;
-    bool valid;
-  } http_strict_uri_parsing_test_case[] = {{"/home", true},
-                                           {"/path/data?key=value#id", true},
-                                           {"/ABCDEFGHIJKLMNOPQRSTUVWXYZ", true},
-                                           {"/abcdefghijklmnopqrstuvwxyz", true},
-                                           {"/0123456789", true},
-                                           {":/?#[]@", true},
-                                           {"!$&'()*+,;=", true},
-                                           {"-._~", true},
-                                           {"%", true},
-                                           {"\n", false},
-                                           {"\"", false},
-                                           {"<", false},
-                                           {">", false},
-                                           {"\\", false},
-                                           {"^", false},
-                                           {"`", false},
-                                           {"{", false},
-                                           {"|", false},
-                                           {"}", false},
-                                           {"é", false}};
-
-  TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
-  for (auto i : http_strict_uri_parsing_test_case) {
-    const char *const uri = i.uri;
-    box.check(url_is_strictly_compliant(uri, uri + strlen(uri)) == i.valid, "Strictly parse URI: \"%s\", expected %s, but not", uri,
-              (i.valid ? "true" : "false"));
-  }
-}
-
-#endif // TS_HAS_TESTS
