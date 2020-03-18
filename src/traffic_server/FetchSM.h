@@ -61,7 +61,6 @@ public:
     callback_events  = events;
     callback_options = options;
     _addr.assign(addr);
-    fetch_flags = TS_FETCH_FLAGS_DECHUNK;
     writeRequest(headers, length);
     mutex = new_ProxyMutex();
 
@@ -74,6 +73,12 @@ public:
     // So we should set the water_mark of resp_buffer with a large value,
     // INT64_MAX would be reasonable.
     resp_buffer->water_mark = INT64_MAX;
+  }
+
+  void
+  set_fetch_flags(int flags)
+  {
+    fetch_flags = flags;
   }
 
   int fetch_handler(int event, void *data);
