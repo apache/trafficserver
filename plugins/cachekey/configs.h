@@ -51,7 +51,7 @@ typedef std::set<CacheKeyKeyType> CacheKeyKeyTypeSet;
 class ConfigElements
 {
 public:
-  ConfigElements() : _sort(false), _remove(false), _skip(false) {}
+  ConfigElements() {}
   virtual ~ConfigElements();
   void setExclude(const char *arg);
   void setInclude(const char *arg);
@@ -92,9 +92,9 @@ protected:
   MultiPattern _includePatterns;
   MultiPattern _excludePatterns;
 
-  bool _sort;
-  bool _remove;
-  bool _skip;
+  bool _sort   = false;
+  bool _remove = false;
+  bool _skip   = false;
 
   std::map<String, MultiPattern *> _captures;
 };
@@ -158,7 +158,7 @@ public:
   /**
    * @brief provides means for post-processing of the plugin parameters to finalize the configuration or to "cache" some of the
    * decisions for later use.
-   * @return true if succesful, false if failure.
+   * @return true if successful, false if failure.
    */
   bool finalize();
 
