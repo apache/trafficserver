@@ -464,9 +464,8 @@ struct OverridableHttpConfigParams {
   MgmtByte keep_alive_enabled_out = 1;
   MgmtByte keep_alive_post_out    = 1; // share server sessions for post
 
-  MgmtInt server_min_keep_alive_conns   = 0;
-  MgmtByte server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
-  //  MgmtByte share_server_sessions;
+  MgmtInt server_min_keep_alive_conns         = 0;
+  MgmtByte server_session_sharing_match       = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
   MgmtByte auth_server_session_private        = 1;
   MgmtByte fwd_proxy_auth_to_parent           = 0;
   MgmtByte uncacheable_requests_bypass_parent = 1;
@@ -562,9 +561,9 @@ struct OverridableHttpConfigParams {
   /////////////////////////////////////////////////
   MgmtByte allow_half_open = 1;
 
-  /////////////////////////////
-  // server verification mode//
-  /////////////////////////////
+  //////////////////////////////
+  // server verification mode //
+  //////////////////////////////
   MgmtByte ssl_client_verify_server         = 0;
   char *ssl_client_verify_server_policy     = nullptr;
   char *ssl_client_verify_server_properties = nullptr;
@@ -670,7 +669,7 @@ struct OverridableHttpConfigParams {
   size_t proxy_response_server_string_len = 0;       // Updated when server_string is set.
 
   ///////////////////////////////////////////////////////////////////
-  // Global User Agent header                                                 //
+  // Global User Agent header                                      //
   ///////////////////////////////////////////////////////////////////
   char *global_user_agent_header       = nullptr; // This does not get free'd by us!
   size_t global_user_agent_header_size = 0;       // Updated when user_agent is set.

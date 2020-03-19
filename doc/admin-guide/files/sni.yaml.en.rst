@@ -121,6 +121,13 @@ forward_route             Destination as an FQDN and port, separated by a colon 
                           This is similar to tunnel_route, but it terminates the TLS connection and forwards the
                           decrypted traffic. |TS| will not interpret the decrypted data, so the contents do not
                           need to be HTTP.
+
+partial_blind_route       Destination as an FQDN and port, separated by a colon ``:``.
+
+                          This is similar to forward_route in that |TS| terminates the incoming TLS connection. In
+                          addition partial_blind_route creates a new TLS connection to the specified origin. It does
+                          not interpret the decrypted data before passing it to the origin TLS connection, so
+                          the contents do not need to be HTTP.
 ========================= ==============================================================================
 
 Client verification, via ``verify_client``, corresponds to setting

@@ -213,6 +213,8 @@ struct NetVCOptions {
    */
   const char *ssl_client_ca_cert_path = nullptr;
 
+  bool tls_upstream = false;
+
   /// Reset all values to defaults.
 
   /**

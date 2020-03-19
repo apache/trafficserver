@@ -5438,7 +5438,8 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 HttpTransact::ResponseError_t
 HttpTransact::check_response_validity(State *s, HTTPHdr *incoming_hdr)
 {
-  ink_assert(s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS);
+  ink_assert(s->next_hop_scheme == URL_WKSIDX_HTTP || s->next_hop_scheme == URL_WKSIDX_HTTPS ||
+             s->next_hop_scheme == URL_WKSIDX_TUNNEL);
 
   if (incoming_hdr == nullptr) {
     return NON_EXISTANT_RESPONSE_HEADER;
