@@ -23,6 +23,7 @@
 
 #include <cstring> /* strlen() */
 #include <sstream> /* istringstream */
+#include <utility>
 #include "cachekey.h"
 
 static void

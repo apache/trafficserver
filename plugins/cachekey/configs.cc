@@ -183,8 +183,8 @@ ConfigElements::noIncludeExcludeRules() const
 
 ConfigElements::~ConfigElements()
 {
-  for (auto it = _captures.begin(); it != _captures.end(); it++) {
-    delete it->second;
+  for (auto &_capture : _captures) {
+    delete _capture.second;
   }
 }
 
@@ -414,7 +414,7 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
 
   for (;;) {
     int opt;
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
 
     if (opt == -1) {
       break;
