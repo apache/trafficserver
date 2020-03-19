@@ -92,7 +92,8 @@ private:
 class TunnelDestination : public ActionItem
 {
 public:
-  TunnelDestination(const std::string_view &dest, bool decrypt) : destination(dest), tunnel_decrypt(decrypt)
+  TunnelDestination(const std::string_view &dest, bool decrypt, bool tls_upstream)
+    : destination(dest), tunnel_decrypt(decrypt), tls_upstream(tls_upstream)
   {
     need_fix = (destination.find_first_of('$') != std::string::npos);
   }
@@ -107,16 +108,14 @@ public:
       // If needed, we will try to amend the tunnel destination.
       if (ctx._fqdn_wildcard_captured_groups && need_fix) {
         const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups);
-        ssl_netvc->set_tunnel_destination(fixed_dst, tunnel_decrypt);
+        ssl_netvc->set_tunnel_destination(fixed_dst, tunnel_decrypt, tls_upstream);
         Debug("TunnelDestination", "Destination now is [%s], configured [%s]", fixed_dst.c_str(), destination.c_str());
       } else {
-        ssl_netvc->set_tunnel_destination(destination, tunnel_decrypt);
+        ssl_netvc->set_tunnel_destination(destination, tunnel_decrypt, tls_upstream);
       }
     }
     return SSL_TLSEXT_ERR_OK;
   }
-  std::string destination;
-  bool tunnel_decrypt = false;
 
 private:
   bool
@@ -184,7 +183,11 @@ private:
     return real_dst;
   }
 
+  std::string destination;
+
+  bool tunnel_decrypt;
   bool need_fix;
+  bool tls_upstream;
 };
 
 class VerifyClient : public ActionItem

@@ -33,6 +33,7 @@ TSDECL(disable_h2);
 TSDECL(verify_client);
 TSDECL(tunnel_route);
 TSDECL(forward_route);
+TSDECL(partial_blind_route);
 TSDECL(verify_server_policy);
 TSDECL(verify_server_properties);
 TSDECL(verify_origin_server);
@@ -51,6 +52,7 @@ struct YamlSNIConfig {
     verify_client,
     tunnel_route,             // blind tunnel action
     forward_route,            // decrypt data and then blind tunnel action
+    partial_blind_route,      // decrypt data; partial blind routing
     verify_server_policy,     // this applies to server side vc only
     verify_server_properties, // this applies to server side vc only
     client_cert,
@@ -72,6 +74,7 @@ struct YamlSNIConfig {
     uint8_t host_sni_policy     = 255;
     std::string tunnel_destination;
     bool tunnel_decrypt               = false;
+    bool tls_upstream                 = false;
     Policy verify_server_policy       = Policy::UNSET;
     Property verify_server_properties = Property::UNSET;
     std::string client_cert;

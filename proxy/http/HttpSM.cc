@@ -324,8 +324,6 @@ HttpSM::cleanup()
   api_hooks.clear();
   http_parser_clear(&http_parser);
 
-  // t_state.content_control.cleanup();
-
   HttpConfig::release(t_state.http_config_param);
   m_remap->release();
 
@@ -536,6 +534,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
       milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = ssl_vc->sslHandshakeEndTime;
     }
   }
+
   const char *protocol_str = client_vc->get_protocol_string();
   client_protocol          = protocol_str ? protocol_str : "-";
 
@@ -632,6 +631,7 @@ HttpSM::setup_blind_tunnel_port()
       t_state.hdr_info.client_request.url_create(&u);
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
+
       if (ssl_vc->has_tunnel_destination()) {
         const char *tunnel_host = ssl_vc->get_tunnel_host();
         t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
@@ -4091,18 +4091,6 @@ HttpSM::do_remap_request(bool run_inline)
 void
 HttpSM::do_hostdb_lookup()
 {
-  /*
-      //////////////////////////////////////////
-      // if a connection to the origin server //
-      // is currently opened --- close it.    //
-      //////////////////////////////////////////
-      if (m_origin_server_vc != 0) {
-     origin_server_close(CLOSE_CONNECTION);
-     if (m_response_body_tunnel_buffer_.buf() != 0)
-         m_response_body_tunnel_buffer_.reset();
-      }
-      */
-
   ink_assert(t_state.dns_info.lookup_name != nullptr);
   ink_assert(pending_action == nullptr);
 
@@ -4932,7 +4920,7 @@ HttpSM::do_http_server_open(bool raw)
     set_server_session_private(true);
   }
 
-  if (raw == false && TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
+  if ((raw == false) && TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
       (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) && !is_private() &&
       ua_txn != nullptr) {
     HSMresult_t shared_result;
@@ -5083,7 +5071,13 @@ HttpSM::do_http_server_open(bool raw)
 
   opt.ip_family = ip_family;
 
+  int scheme_to_use = t_state.scheme; // get initial scheme
+  bool tls_upstream = scheme_to_use == URL_WKSIDX_HTTPS;
   if (ua_txn) {
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_txn->get_netvc());
+    if (ssl_vc && raw) {
+      tls_upstream = ssl_vc->upstream_tls();
+    }
     opt.local_port = ua_txn->get_outbound_port();
 
     const IpAddr &outbound_ip = AF_INET6 == opt.ip_family ? ua_txn->get_outbound_ip6() : ua_txn->get_outbound_ip4();
@@ -5106,8 +5100,6 @@ HttpSM::do_http_server_open(bool raw)
     }
   }
 
-  int scheme_to_use = t_state.scheme; // get initial scheme
-
   if (!t_state.is_websocket) { // if not websocket, then get scheme from server request
     int new_scheme_to_use = t_state.hdr_info.server_request.url_get()->scheme_get_wksidx();
     // if the server_request url scheme was never set, try the client_request
@@ -5117,19 +5109,23 @@ HttpSM::do_http_server_open(bool raw)
     if (new_scheme_to_use >= 0) { // found a new scheme, use it
       scheme_to_use = new_scheme_to_use;
     }
+    if (!tls_upstream) {
+      tls_upstream = scheme_to_use == URL_WKSIDX_HTTPS;
+    }
   }
 
   // draft-stenberg-httpbis-tcp recommends only enabling TFO on indempotent methods or
   // those with intervening protocol layers (eg. TLS).
 
-  if (scheme_to_use == URL_WKSIDX_HTTPS || HttpTransactHeaders::is_method_idempotent(t_state.method)) {
+  if (tls_upstream || HttpTransactHeaders::is_method_idempotent(t_state.method)) {
     opt.f_tcp_fastopen = (t_state.txn_conf->sock_option_flag_out & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN);
   }
+
   opt.ssl_client_cert_name        = t_state.txn_conf->ssl_client_cert_filename;
   opt.ssl_client_private_key_name = t_state.txn_conf->ssl_client_private_key_filename;
   opt.ssl_client_ca_cert_name     = t_state.txn_conf->ssl_client_ca_cert_filename;
 
-  if (scheme_to_use == URL_WKSIDX_HTTPS) {
+  if (tls_upstream) {
     SMDebug("http", "calling sslNetProcessor.connect_re");
 
     int len = 0;

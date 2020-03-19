@@ -357,7 +357,7 @@ public:
     return tunnel_port;
   }
 
-  /* Returns true if this vc was configured for forward_route
+  /* Returns true if this vc was configured for forward_route or partial_blind_route
    */
   bool
   decrypt_tunnel()
@@ -365,8 +365,16 @@ public:
     return has_tunnel_destination() && tunnel_decrypt;
   }
 
+  /* Returns true if this vc was configured partial_blind_route
+   */
+  bool
+  upstream_tls()
+  {
+    return has_tunnel_destination() && tls_upstream;
+  }
+
   void
-  set_tunnel_destination(const std::string_view &destination, bool decrypt)
+  set_tunnel_destination(const std::string_view &destination, bool decrypt, bool upstream_tls)
   {
     auto pos = destination.find(":");
     if (nullptr != tunnel_host) {
@@ -380,6 +388,7 @@ public:
       tunnel_host = ats_strndup(destination.data(), destination.length());
     }
     tunnel_decrypt = decrypt;
+    tls_upstream   = upstream_tls;
   }
 
   int populate_protocol(std::string_view *results, int n) const override;
@@ -486,6 +495,7 @@ private:
   char *tunnel_host           = nullptr;
   in_port_t tunnel_port       = 0;
   bool tunnel_decrypt         = false;
+  bool tls_upstream           = false;
   X509_STORE_CTX *verify_cert = nullptr;
 
   // Null-terminated string, or nullptr if there is no SNI server name.

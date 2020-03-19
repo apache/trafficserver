@@ -93,6 +93,7 @@ struct SSLConfigParams : public ConfigInfo {
   char *clientCACertPath;
   YamlSNIConfig::Policy verifyServerPolicy;
   YamlSNIConfig::Property verifyServerProperties;
+  bool tls_server_connection;
   int client_verify_depth;
   long ssl_ctx_options;
   long ssl_client_ctx_options;
