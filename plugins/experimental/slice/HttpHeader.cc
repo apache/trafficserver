@@ -311,7 +311,8 @@ HttpHeader::toString() const
 /////// HdrMgr
 
 TSParseResult
-HdrMgr::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc)
+HdrMgr::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc,
+                     int64_t *const bytes)
 {
   TSParseResult parse_res = TS_PARSE_CONT;
 
@@ -322,14 +323,14 @@ HdrMgr::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const read
     m_lochdr = TSHttpHdrCreate(m_buffer);
   }
 
-  int64_t read_avail = TSIOBufferReaderAvail(reader);
-  if (0 < read_avail) {
+  int64_t avail = TSIOBufferReaderAvail(reader);
+  if (0 < avail) {
     TSIOBufferBlock block = TSIOBufferReaderStart(reader);
     int64_t consumed      = 0;
 
     parse_res = TS_PARSE_CONT;
 
-    while (nullptr != block && 0 < read_avail) {
+    while (nullptr != block && 0 < avail) {
       int64_t blockbytes       = 0;
       char const *const bstart = TSIOBufferBlockReadStart(block, reader, &blockbytes);
 
@@ -341,7 +342,7 @@ HdrMgr::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const read
       int64_t const bytes_parsed(ptr - bstart);
 
       consumed += bytes_parsed;
-      read_avail -= bytes_parsed;
+      avail -= bytes_parsed;
 
       if (TS_PARSE_CONT == parse_res) {
         block = TSIOBufferBlockNext(block);
@@ -350,6 +351,12 @@ HdrMgr::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const read
       }
     }
     TSIOBufferReaderConsume(reader, consumed);
+
+    if (nullptr != bytes) {
+      *bytes = consumed;
+    }
+  } else if (nullptr != bytes) {
+    *bytes = 0;
   }
 
   return parse_res;
