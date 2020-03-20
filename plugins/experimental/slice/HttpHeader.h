@@ -53,6 +53,16 @@ struct HttpHeader {
     return nullptr != m_buffer && nullptr != m_lochdr;
   }
 
+  int
+  byteSize() const
+  {
+    if (isValid()) {
+      return TSHttpHdrLengthGet(m_buffer, m_lochdr);
+    } else {
+      return 0;
+    }
+  }
+
   // TS_HTTP_TYPE_UNKNOWN, TS_HTTP_TYPE_REQUEST, TS_HTTP_TYPE_RESPONSE
   TSHttpType type() const;
 
@@ -205,7 +215,8 @@ struct HdrMgr {
      TSHttpHdrParseResp
     Call this multiple times if necessary.
   */
-  TSParseResult populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc);
+  TSParseResult populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc,
+                             int64_t *const consumed);
 
   bool
   isValid() const

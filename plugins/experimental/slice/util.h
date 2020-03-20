@@ -18,20 +18,19 @@
 
 #pragma once
 
-#include "Data.h"
+#include "ts/ts.h"
+
+struct Data;
 
 /** Functions to deal with the connection to the client.
  * Body content transfers are handled by the client.
  * New block requests are also initiated by the client.
  */
 
-/* transfer bytes from the server to the client
- * Returns amount of bytes consumed from the reader (<= bytes written to client)
- */
-int64_t transfer_content_bytes(Data *const data); // , char const * const fstr);
+void shutdown(TSCont const contp, Data *const data);
 
-// transfer all bytes from the server (error condition)
-int64_t transfer_all_bytes(Data *const data);
+void abort(TSCont const contp, Data *const data);
 
-// Signal the input about write state
-void signal_input(TSVIO const input_vio, int64_t const consumed);
+bool request_block(TSCont contp, Data *const data);
+
+bool reader_avail_more_than(TSIOBufferReader const reader, int64_t bytes);
