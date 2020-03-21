@@ -1,6 +1,6 @@
 /** @file
 
-  Header file for shared declarations/definitions for test_LogUtils2.cc and LogUtils.h for unit testing.
+  Header file for shared declarations/definitions for test_LogUtils.cc and LogUtils.h for unit testing.
 
   @section license License
 

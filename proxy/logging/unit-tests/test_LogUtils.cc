@@ -21,17 +21,21 @@
   limitations under the License.
  */
 
+#include <string_view>
+#include <cstring>
+#include <cstdlib>
+#include <iostream>
+#include <cstdio>
+
 #include <tscore/ink_assert.h>
 #include <tscore/ink_align.h>
 
 #include <LogUtils.h>
 
-#include "test_LogUtils.h"
+#include "unit-tests/test_LogUtils.h"
 
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-
-#include <cstring>
 
 using namespace LogUtils;
 
@@ -115,9 +119,6 @@ TEST_CASE("LogUtilsHttp", "[LUHP]")
   test(nullptr, 0, "", 1);
 }
 
-#include <cstdlib>
-#include <iostream>
-
 void
 _ink_assert(const char *a, const char *f, int line)
 {
@@ -129,6 +130,7 @@ _ink_assert(const char *a, const char *f, int line)
 void
 RecSignalManager(int, char const *, std::size_t)
 {
+  ink_release_assert(false);
 }
 
 TEST_CASE("get_unrolled_filename parses possible log files as expected", "[get_unrolled_filename]")
@@ -152,4 +154,52 @@ TEST_CASE("get_unrolled_filename parses possible log files as expected", "[get_u
 
   constexpr ts::TextView no_dot = "logging_yaml";
   REQUIRE(get_unrolled_filename(no_dot) == no_dot);
+}
+
+TEST_CASE("LogUtils pure escapify url", "[pure_esc_url]")
+{
+  char input[][32] = {
+    " ",
+    "%",
+    "% ",
+    "%20",
+  };
+  const char *expected[] = {
+    "%20",
+    "%25",
+    "%25%20",
+    "%2520",
+  };
+  char output[128];
+  int output_len;
+
+  int n = sizeof(input) / sizeof(input[0]);
+  for (int i = 0; i < n; ++i) {
+    LogUtils::pure_escapify_url(NULL, input[i], std::strlen(input[i]), &output_len, output, 128);
+    CHECK(std::string_view(output) == expected[i]);
+  }
+}
+
+TEST_CASE("LogUtils escapify url", "[esc_url]")
+{
+  char input[][32] = {
+    " ",
+    "%",
+    "% ",
+    "%20",
+  };
+  const char *expected[] = {
+    "%20",
+    "%25",
+    "%25%20",
+    "%20",
+  };
+  char output[128];
+  int output_len;
+
+  int n = sizeof(input) / sizeof(input[0]);
+  for (int i = 0; i < n; ++i) {
+    LogUtils::escapify_url(NULL, input[i], std::strlen(input[i]), &output_len, output, 128);
+    CHECK(std::string_view(output) == expected[i]);
+  }
 }
