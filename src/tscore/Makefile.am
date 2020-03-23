@@ -134,12 +134,6 @@ endif
 
 BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
 
-#test_UNUSED_SOURCES = \
-#  load_http_hdr.cc \
-#  IntrusivePtrTest.cc \
-#  IpMapTest.cc \
-#  TestHttpHeader.cc
-
 # Special hacks to generate the parser rules
 $(srcdir)/ParseRules.cc: ParseRulesCType
 
