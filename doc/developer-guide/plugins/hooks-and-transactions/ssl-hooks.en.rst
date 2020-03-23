@@ -87,7 +87,7 @@ a certificate.
 TS_SSL_VERIFY_CLIENT_HOOK
 -------------------------
 
-This hook is called when a client connects to Traffic Server and presents a 
+This hook is called when a client connects to Traffic Server and presents a
 client certificate in the case of a mutual TLS handshake.  The callback can
 get the SSL object from the TSVConn argument and use that to access the client
 certificate and make any additional checks.
