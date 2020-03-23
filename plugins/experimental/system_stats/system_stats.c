@@ -160,7 +160,7 @@ netStatsInfo(TSMutex stat_creation_mutex)
   }
 
   while ((dent = readdir(srcdir)) != NULL) {
-    if (strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0 || strcmp(dent->d_name, "lo") == 0) {
+    if (strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0) {
       continue;
     }
 
