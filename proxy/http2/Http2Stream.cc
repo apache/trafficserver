@@ -54,9 +54,12 @@ Http2Stream::init(Http2StreamId sid, ssize_t initial_rwnd)
   this->_client_rwnd = initial_rwnd;
 
   this->_reader = this->_request_buffer.alloc_reader();
-  // FIXME: Are you sure? every "stream" needs request_header?
+
   _req_header.create(HTTP_TYPE_REQUEST);
   response_header.create(HTTP_TYPE_RESPONSE);
+  // TODO: init _req_header instead of response_header if this Http2Stream is outgoing
+  http2_init_pseudo_headers(response_header);
+
   http_parser_init(&http_parser);
 }
 
@@ -595,6 +598,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         this->response_header_done = false;
         response_header.destroy();
         response_header.create(HTTP_TYPE_RESPONSE);
+        http2_init_pseudo_headers(response_header);
         http_parser_clear(&http_parser);
         http_parser_init(&http_parser);
       }
