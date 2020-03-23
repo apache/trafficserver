@@ -77,6 +77,7 @@ test_libhttp2_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
 test_libhttp2_SOURCES = \
+	unit_tests/test_HTTP2.cc \
 	unit_tests/test_Http2Frame.cc \
 	unit_tests/test_HpackIndexingTable.cc \
 	unit_tests/main.cc
