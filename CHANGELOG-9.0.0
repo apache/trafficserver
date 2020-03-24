@@ -6,6 +6,7 @@ Changes with Apache Traffic Server 9.0.0
   #3777 - Bump version on master to v9.0.0
   #3819 - Upstream max conn upgrade
   #3851 - For atscppapi::AsyncTimer, pass the thread pool for execution to the constructor, …
+  #3899 - Add a --reason tag option to the host subcommand
   #3900 - ts/Extendible and AcidPtr classes
   #3901 - MemArena: Add make method to construct objects in the arena.
   #3907 - IntrusiveDList: Refreshed for C++ eleventy, added const_iterator.
@@ -29,7 +30,6 @@ Changes with Apache Traffic Server 9.0.0
   #4003 - Fix another crash on shutdown
   #4008 - Add support for 'fwd' value to X-Debug header, and move to later hook any deletion of X-Debug header from client request.
   #4020 - Add logic to clean up vios on HttpSM shutdown
-  #4028 - proxy.config.http.connect_attempts_timeout tracks TTBF instead of connect
   #4029 - Replace TSHashTable in server session management with IntrusiveHashMap
   #4033 - Removes remnants of dprintf support
   #4039 - Enable ECDH explicitly only if OpenSSL version is v1.0.2 or lower
@@ -62,6 +62,7 @@ Changes with Apache Traffic Server 9.0.0
   #4176 - TextView: Add support for use as "Source" in STL containers.
   #4177 - IntrusiveDList: Add ptr_ref_cast to make inheritance easier
   #4184 - Update to changelog generation tool to not require milestone to be closed
+  #4185 - Amend Layer 4 routing documentation
   #4186 - clang-format: Another one that slipped through.
   #4187 - Plugins: Cleanup up dependencies on core headers - sslheaders
   #4190 - Plugins: Cleanup up dependencies on core headers - authproxy
@@ -70,6 +71,7 @@ Changes with Apache Traffic Server 9.0.0
   #4194 - Remove ssl_cert_loader.  Certifier is more complete version.
   #4198 - Cleanup, and adds support for new luajit option
   #4206 - ts_file: Simple sketch of std::filesystem for internal use.
+  #4217 - Fix a regression in the traffic_ctl host status subcommand
   #4220 - IntrusiveHashMap: Inserts preserve order for equal keys, as with std::multimap
   #4221 - IntrusiveHashMap: Fix for find false positive in some cases.
   #4226 - HttpSessionManager: Fix potential infinite loop problem.
@@ -121,7 +123,6 @@ Changes with Apache Traffic Server 9.0.0
   #4431 - TCL: All ink_hash_table in proxy converted to use STL
   #4433 - YAML: LibSWOC upgrade for TextView.
   #4434 - YAML: move MemSpan to external C++ library.
-  #4437 - Adds the log tag cqint for internal requests
   #4448 - YAML: TextView upgrade revisited.
   #4449 - YAML: Inline BufferWriter formatting functions.
   #4450 - Improve BufferWriter logic in HttpTransactHeaders.cc
@@ -184,6 +185,7 @@ Changes with Apache Traffic Server 9.0.0
   #4657 - TLS Bridge: Fix error where connect failure lead to a silent timeout.
   #4662 - Adds a reasonable rip-grep config file
   #4663 - Add back in the option to conf_remap the verify_server settings.
+  #4664 - Use hash string when it is provided for hashing
   #4666 - Allow empty fqdn in ssl_server_name for unset SNI case.
   #4667 - Add forward_route in ssl_server_name
   #4668 - Compare servers script for comparing responses from new and old versions of ATS
@@ -259,9 +261,7 @@ Changes with Apache Traffic Server 9.0.0
   #4858 - Removes the echo from installing pre-commit
   #4862 - Updates uri_signing docs to reflect new RFC changes
   #4866 - Remove start_HttpProxyServerBackDoor.
-  #4869 - Cleanup: remove lib/cppapi from clang-format, it's been moved.
   #4870 - Cleanup: Remove "hooks_on" and associated machinery.
-  #4874 - Avoid ats_malloc in unmarshal
   #4878 - Fix a segfault on mac, because of new ScheduleOn APIs
   #4879 - Clean up StrHeapDesc constructor.
   #4880 - Remove class StrTest, which is not used.
@@ -271,6 +271,7 @@ Changes with Apache Traffic Server 9.0.0
   #4895 - URI Signing Strips token from upstream if configured and string buffers are dynamically allocated
   #4897 - Uri signing regex as POSIX ERE
   #4901 - Update overridable config conversion logic.
+  #4902 - Adjust follow redirect logic to address a crash and avoid arguments shadowing
   #4903 - Adjust connection timeout for TLS
   #4909 - Update plugin API type conversions to support enums automatically.
   #4914 - DFA: Update DFA to use string_view.
@@ -278,7 +279,6 @@ Changes with Apache Traffic Server 9.0.0
   #4917 - Update HdrUtils to be C++17.
   #4919 - Shutdown hook should grab the lock if there is one
   #4923 - Makes the master triggers works with the 9.x Jenkins Tab name
-  #4924 - lua plugin: add support for relative path scripts; moves inline script to switch
   #4926 - Make mutex lock routines deal with null mutex and general clean up.
   #4927 - Cleanup: Convert HTTPHdr::length_get to real method.
   #4928 - Pull Age out of the gold test
@@ -331,7 +331,6 @@ Changes with Apache Traffic Server 9.0.0
   #5051 - Restructured SSL client context mapping to 2-level
   #5053 - Fixed compiler error with std::string_view
   #5054 - Cleanup: Separate TLS SessionTicket from SSLUtils
-  #5058 - Fixed use after free when running regression under ASAN
   #5059 - Add Assertion when fragment_size is large than MAX_FRAG_SIZE
   #5060 - IP support: Make IpAddr constexpr constructible, define min/max addresses in IpMap
   #5065 - RemapPluginInfo Refresh.
@@ -352,12 +351,10 @@ Changes with Apache Traffic Server 9.0.0
   #5114 - Fix #5093: new/delete mismatch in test_IntrusivePtr.cc
   #5115 - Remove OS dependency in test_BufferWriterFormat.cc
   #5120 - Ensure queued HostDB requests get rescheduled back to the original thread
-  #5122 - fix crash in CacheVC::openReadFromWriter
   #5123 - Fix SessionProtocolNameRegistry lookup
   #5126 - -H "xdebug: probe" injects trace of headers into response body
   #5128 - Change url_mapping::toUrl to url_mapping::toURL
   #5129 - Fixed memory leaks in test_IntrusiveHashMap
-  #5131 - Do not run clang-format for @default_stack_size@
   #5132 - Fix for() loop, correctly calculate the value of seg_in_use within Vol::dir_check()
   #5136 - Fixes some places where refactoring was not complete
   #5138 - Run clang-format against the same files on both make clang-foramt and git pre-hook
@@ -365,14 +362,13 @@ Changes with Apache Traffic Server 9.0.0
   #5140 - cdniuc is not a manditory claim
   #5141 - Need to pop messages from queue
   #5142 - UrlRewrite: separate constructor and configuration loading for testability
+  #5143 - Fix a self detection issue where parents are not marked down during ATS startup.
   #5144 - Fix AcidPtr test
-  #5149 - Add nullptr check on ConfigProcessor::release()
   #5150 - Augment wildcard_match to allow underscore in domain name
   #5151 - Updates to the STATUS file
   #5152 - Test acid ptr persistence
   #5153 - Separate P_SSLUtil and P_SSLClientUtils includes
   #5157 - Set the block's m_water_level in Arena:free even if the block is not the last block
-  #5163 - Fix memleak in ProcessManager::stop()
   #5167 - Fix Makefile.am to run clang-tidy
   #5172 - Run clang-tidy one by one
   #5174 - Adds Cache test suits
@@ -447,7 +443,6 @@ Changes with Apache Traffic Server 9.0.0
   #5326 - cppcheck: fixes issue found in proxy/IPAllow.cc
   #5327 - cppcheck: Fixes issue found in DiagsConfig.cc
   #5328 - cppcheck: fixes issues found for plugins/authproxy
-  #5329 - Fixes clang-analyzer error dereferencing nullptr in parent
   #5330 - cppcheck: Fix various issues of Http2ConnectionState
   #5333 - cppcheck: Reduces variable scope for files in  mgmt/...
   #5334 - cppcheck: fixes issues in ink_uuid.h
@@ -461,11 +456,9 @@ Changes with Apache Traffic Server 9.0.0
   #5345 - cppcheck: minimize variable scopes
   #5346 - cppcheck: fixes issues found in example/protocol
   #5347 - cppcheck: fixes issues fround in example/remap
-  #5348 - Don't assign if this and other are the same object
   #5349 - cppcheck: Fix issues in P_UDPx.h
   #5351 - cppcheck: fixes issues in example/
   #5353 - Remove log collation
-  #5354 - Password can not be nullptr here, so don't check
   #5355 - Revert TS-374 to avoid deadlocks
   #5362 -  fix 3939 collision
   #5365 - cppcheck:  fix comparison issues found in plugins
@@ -629,9 +622,7 @@ Changes with Apache Traffic Server 9.0.0
   #5678 - More Autest ports cleanup
   #5680 - HTTP/2 - tweak for better field name handling.
   #5683 - Cleanup example directory
-  #5686 - Reverse internal order of HPACK Dynamic Table Entries
   #5690 - Fix race condition in test
-  #5695 - Add MIMEHdr Garbage Collection to HPACK Dynamic Table
   #5697 - Coalesce empty objects in HdrHeap
   #5698 - Remove unused LibBulkIO
   #5699 - Remove unused header file ink_inout.h
@@ -690,7 +681,6 @@ Changes with Apache Traffic Server 9.0.0
   #5803 - Make TS_NULL_MLOC a valid C compile-time constant.
   #5808 - Remove unused assignment to satisfy clang-analyzer
   #5809 - Address possible use after free issue in HttpVCTable::remove_entry
-  #5811 - Fix no_activity timeout for server session reuse.
   #5813 - Fixes broken links to documentation
   #5815 - Updates links to trafficserver.apache.org to https
   #5819 - make check race condition fix
@@ -781,7 +771,6 @@ Changes with Apache Traffic Server 9.0.0
   #6037 - Promote 'Enable_Config_Var' from HttpConnectionCount to HttpConfig.
   #6049 - set host name in TLS extension for SNI Host check in service side with sni policy verify_with_name_source.
   #6053 - Enhance Connection Collapse in ATS core
-  #6054 - Ignore MgmtMessageHdr if ProcessManager is not running
   #6061 - Add Example URI Signer Python Script
   #6062 - Adding connection close headers to regex_remap test.
   #6066 - Fixing session sharing with IP matching.
@@ -815,9 +804,6 @@ Changes with Apache Traffic Server 9.0.0
   #6144 - Cleans up some of the filenames mess
   #6147 - Reverse debug specific check.
   #6148 - Disable the most expensive "make check" tests by default
-  #6154 - tslua: Exposes set/get method for server request objects
-  #6156 - Fix building Catch on macOS
-  #6159 - Detect bogus jemalloc version
   #6159 - Detect bogus jemalloc version
   #6160 - Fixes misc. spelling and whitespace
   #6163 - Update yaml-cpp to 0.6.3
@@ -831,13 +817,9 @@ Changes with Apache Traffic Server 9.0.0
   #6176 - Fixing rolled log cleanup parsing for <something>.log.<something> files.
   #6180 - RBTree - fix potential nullptr dereference
   #6181 - remap_stats: Fix BufferWriter usage error.
-  #6182 - tslua: Exposes set/get version for server request objects
   #6185 - Upgrade Catch.hpp to v2.11
   #6186 - Fix compile warnings in Catch checks for TextView
-  #6187 - Replaces Python -> Python3 in a few utilities
-  #6189 - Fixed issue with macOS Catalina and pcre 8.43 enabling pcre-jit
   #6190 - Fix ssl_session_reuse to compile on macOS and FreeBSD
-  #6191 - Limit this check to Linux, where ldd always works
   #6193 - Fixes various crashers loading/reloading parent.config
   #6197 - Fix problems with "Probe" option for X-Debug MIME header field.
   #6198 - Move logging before session could be freed
@@ -864,6 +846,7 @@ Changes with Apache Traffic Server 9.0.0
   #6233 - auto delete rolled log file fixes
   #6234 - Don't sleep if ProtectedQueue.localQueue is not empty. (#6234)
   #6236 - remap_stats: restore handling of remap/hostname to remove memory leak
+  #6239 - slice plugin VIO cleanup
   #6240 - Adds strategies.yaml to install target
   #6242 - Fixes sphinx build warning with the strategies.yaml document in the admin-guide
   #6244 - Copy the Client SNI Server Name out of the openssl SSL object.
@@ -872,7 +855,6 @@ Changes with Apache Traffic Server 9.0.0
   #6252 - Add simple uri_signing autest and subsequent fixes
   #6260 - Fix TS_USE_DIAGS usage for --disable-diags option
   #6263 - TCL: cleanup in HostLookup.cc, make sure keys are stable.
-  #6264 - Change HTTP/2 error rate log to warning
   #6265 - LGTM: Add header guards
   #6266 - LGTM: Fix wrong type of arguments to formatting function
   #6268 - Add tests to exercise H2 and chunked encoding
@@ -884,7 +866,6 @@ Changes with Apache Traffic Server 9.0.0
   #6281 - Perf: replace dynamic_cast with static_cast in this_thread()
   #6283 - Adjust debug tag for ssl_sni_whitelist plugin to match plugin
   #6284 - Removes the remaining references to TSQA
-  #6285 - Set wrap around after checking all the parents
   #6293 - Add invalid config warning when cache open write fail and read retry are inconsistent
   #6297 - Add links to RWW sections
   #6303 - Fixes a  case where the NextHop consistent hash ring may not be completely searched.
@@ -892,14 +873,12 @@ Changes with Apache Traffic Server 9.0.0
   #6323 - Fix strict round robin cur_index increment
   #6324 - Fixes clang-format issues
   #6325 - Fixes typo in TLS Bridge illustration
-  #6328 - Document the order of the X-Cache header
   #6329 - Fixed build issues on macOS after 0-RTT merge
   #6332 - Fixes Issue #6321 caused when proxy.config.http.no_dns_just_forward_to_parent
   #6333 - XDebug: Always append to the X- header, rather than prepend
   #6337 - Perf: Optimize sending HTTP/2 frame
   #6339 - Fixes an issue where NextHopSelectionStrategy did not implement a parent check.
   #6340 - Add header rewrite test to make sure we are not injecting end of rule char
-  #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
   #6346 - Fix heap-use-after-free on Http2Stream::destroy()
   #6347 - Fix localstatedir and runtimedir for Debian layout
   #6348 - Add virtual destructors for Http2TxFrame, Http2FrequencyCounter
@@ -919,7 +898,6 @@ Changes with Apache Traffic Server 9.0.0
   #6380 - Remove unnecesary HttpSM handler call with VC_EVENT_ERROR
   #6388 - Replace python with python3 in AuTest
   #6391 - Skip unnecessary HostDB update on a fall back to serving stale record
-  #6392 - Free TSMgmtString after using it.
   #6396 - Avoid cross-thread mutex conflicts
   #6397 - Ensure that extra data beyond the chunked body is not tunneled
   #6403 - Fix for lua plugin coredump problem during reload
@@ -964,5 +942,11 @@ Changes with Apache Traffic Server 9.0.0
   #6493 - Make all_headers test more resilient to timing
   #6500 - traffic_dump: Make the client-request node gathered in a global hook
   #6501 - Remove method that does nothing.
+  #6513 - Moves hosting.config finished loading message outside of parsing loop
   #6517 - Make traffic_ctl limp along for now with large records.snap
   #6518 - Fixes a bug where HostStatus::getHostStatus() creates too many stats.
+  #6519 - Adds support for configure option --enable-yaml-headers
+  #6523 - Removes noisy log statement from xdebug
+  #6540 - Disables "virtual host not used with AWS auth v4" error in s3_auth
+  #6550 - Fixes some tls autests on macOS
+  #6556 - Removes copypasta curl text from tests and removes checks for curl
