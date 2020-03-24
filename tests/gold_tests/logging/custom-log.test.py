@@ -21,7 +21,8 @@ import os
 Test.Summary = '''
 Test custom log file format
 '''
-# need Curl
+
+# this test depends on Linux specific behavior regarding loopback addresses
 Test.SkipUnless(
     Condition.IsPlatform("linux")
 )
