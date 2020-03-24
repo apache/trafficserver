@@ -16,35 +16,72 @@
  * limitations under the License.
  */
 
-#include "tscore/ink_defs.h"
-#include "tscore/ink_thread.h"
-#include "tscore/ink_inet.h"
+#include <iostream>
+#include <string_view>
+#include <cstdint>
 
-#include "tscore/TestBox.h"
+#include <tscore/ink_defs.h>
+#include <tscore/ink_thread.h>
+#include <tscore/ink_inet.h>
+
 #include <MgmtMarshall.h>
 #include <MgmtSocket.h>
 
-#define CHECK_EQ(expr, len)                                                                                 \
-  do {                                                                                                      \
-    MgmtMarshallInt rcvd = static_cast<MgmtMarshallInt>(expr);                                              \
-    box.check(rcvd == static_cast<MgmtMarshallInt>(len), "%s returned length %d, expected %d", #expr, rcvd, \
-              static_cast<MgmtMarshallInt>(len));                                                           \
-  } while (0)
+#include <catch.hpp>
 
-#define CHECK_VALUE(value, expect, fmt)                                                                       \
-  do {                                                                                                        \
-    box.check((value) == (expect), "received marshalled value " fmt ", expected " fmt "", (value), (expect)); \
-  } while (0)
+namespace
+{
+bool
+check_eq(char const *expr_as_str, MgmtMarshallInt rcvd, MgmtMarshallInt len)
+{
+  if (rcvd == len) {
+    return true;
+  }
+  std::cout << expr_as_str << " returned length " << rcvd << ", expected " << len << '\n';
+  return false;
+}
 
-// The NULL string is marshalled the same as the empty string.
-#define CHECK_STRING(value, expect)                                                                                  \
-  do {                                                                                                               \
-    if (value) {                                                                                                     \
-      box.check(strcmp((value), (expect)) == 0, "received marshalled value '%s', expected '%s'", (value), (expect)); \
-    } else {                                                                                                         \
-      box.check(strcmp((expect), "") == 0, "received marshalled value '%s', expected ''", (expect));                 \
-    }                                                                                                                \
-  } while (0)
+#define CHECK_EQ(expr, len) CHECK(check_eq(#expr, static_cast<MgmtMarshallInt>(expr), static_cast<MgmtMarshallInt>(len)))
+
+template <typename V_t, typename E_t>
+bool
+check_value(V_t value, E_t expect)
+{
+  if (sizeof(V_t) > sizeof(E_t) ? (value == static_cast<V_t>(expect)) : (static_cast<E_t>(value) == expect)) {
+    return true;
+  }
+  std::cout << "received marshalled value " << value << ", expected " << expect << '\n';
+  return false;
+}
+
+bool
+check_value(void *value, void *expect)
+{
+  if (value == expect) {
+    return true;
+  }
+  std::cout << std::hex << "received marshalled value " << reinterpret_cast<std::uintptr_t>(value) << ", expected "
+            << reinterpret_cast<std::uintptr_t>(expect) << '\n'
+            << std::dec;
+  return false;
+}
+
+#define CHECK_VALUE(value, expect) CHECK(check_value((value), (expect)))
+
+bool
+check_str(char const *value, char const *expect)
+{
+  if (!value) {
+    value = "";
+  }
+  if (std::string_view(value) == expect) {
+    return true;
+  }
+  std::cout << "received marshalled value " << value << ", expected " << expect << '\n';
+  return false;
+}
+
+#define CHECK_STR(value, expect) CHECK(check_str((value), (expect)))
 
 const MgmtMarshallType inval[] = {static_cast<MgmtMarshallType>(1568)};
 
@@ -65,14 +102,14 @@ const MgmtMarshallType afields[] = {
 const char alpha[]       = "abcdefghijklmnopqrstuvwxyz0123456789";
 const char *stringvals[] = {nullptr, "", "randomstring"};
 
-static bool
+bool
 errno_is_continue()
 {
   return errno == EALREADY || errno == EWOULDBLOCK || errno == EINPROGRESS || errno == EAGAIN || mgmt_transient_error();
 }
 
-static int
-message_connect_channel(RegressionTest *t, int listenfd, int clientfd, int serverport)
+int
+message_connect_channel(int listenfd, int clientfd, int serverport)
 {
   //  bool need_connect = true;
   bool need_accept = true;
@@ -93,7 +130,7 @@ message_connect_channel(RegressionTest *t, int listenfd, int clientfd, int serve
   while (need_accept) {
     serverfd = accept(listenfd, nullptr, nullptr);
     if (serverfd == -1) {
-      rprintf(t, "accepting, %d %s\n", errno, strerror(errno));
+      std::cout << "accepting, " << errno << ' ' << strerror(errno) << '\n';
       if (!errno_is_continue()) {
         return -1;
       }
@@ -106,7 +143,7 @@ message_connect_channel(RegressionTest *t, int listenfd, int clientfd, int serve
   return serverfd;
 }
 
-static int
+int
 message_listen(int &port)
 {
   IpEndpoint sa;
@@ -114,34 +151,27 @@ message_listen(int &port)
   int fd;
 
   fd = mgmt_socket(AF_INET, SOCK_STREAM, 0);
-  if (fd == -1) {
-    goto fail;
+  if (fd >= 0) {
+    sa.setToAnyAddr(AF_INET);
+    if (bind(fd, &sa.sa, sizeof(sa.sin)) >= 0) {
+      slen = sizeof(sa);
+      if (getsockname(fd, &sa.sa, &slen) >= -1) {
+        port = ntohs(ats_ip_port_cast(&sa.sa));
+
+        listen(fd, 5);
+
+        return fd;
+      }
+    }
+    close(fd);
   }
-
-  sa.setToAnyAddr(AF_INET);
-  if (bind(fd, &sa.sa, sizeof(sa.sin)) == -1) {
-    goto fail;
-  }
-
-  slen = sizeof(sa);
-  if (getsockname(fd, &sa.sa, &slen) == -1) {
-    goto fail;
-  }
-
-  port = ntohs(ats_ip_port_cast(&sa.sa));
-
-  listen(fd, 5);
-  return fd;
-
-fail:
-  close(fd);
   return -1;
 }
 
-REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
-{
-  TestBox box(t, pstatus, REGRESSION_TEST_PASSED);
+} // end anonymous namespace
 
+TEST_CASE("MessageReadWriteA", "[mgmt_utils][msg_rd_wr_a]")
+{
   int listenfd   = -1;
   int serverfd   = -1;
   int clientfd   = -1;
@@ -154,14 +184,14 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
 
   clientfd = mgmt_socket(AF_INET, SOCK_STREAM, 0);
   listenfd = message_listen(serverport);
-  serverfd = message_connect_channel(t, listenfd, clientfd, serverport);
-  rprintf(t, "listenfd=%d clientfd=%d, serverfd=%d, port=%d\n", listenfd, clientfd, serverfd, serverport);
+  serverfd = message_connect_channel(listenfd, clientfd, serverport);
+  std::cout << "listenfd=" << listenfd << " clientfd=" << clientfd << " serverfd=" << serverfd << " port=" << serverport << '\n';
 
   fcntl(clientfd, F_SETFL, O_NDELAY);
   fcntl(serverfd, F_SETFL, O_NDELAY);
 
   mint  = 99;
-  mlong = (MgmtMarshallLong)(&listenfd);
+  mlong = reinterpret_cast<MgmtMarshallLong>(&listenfd);
 
   // Check invalid Fd write. ToDo: Commented out, see TS-3052.
   // CHECK_EQ(mgmt_message_write(FD_SETSIZE - 1, ifields, countof(ifields), &mint, &mlong), -1);
@@ -171,13 +201,13 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
   mint  = 0;
   mlong = 0;
   CHECK_EQ(mgmt_message_read(serverfd, ifields, countof(ifields), &mint, &mlong), 12);
-  CHECK_VALUE(mint, 99, "%" PRId32);
-  CHECK_VALUE(mlong, (MgmtMarshallLong)(&listenfd), "%" PRId64);
+  CHECK_VALUE(mint, 99);
+  CHECK_VALUE(mlong, reinterpret_cast<MgmtMarshallLong>(&listenfd));
 
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {
-    const char *s = stringvals[i];
-    size_t len    = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
+    const char *s   = stringvals[i];
+    std::size_t len = 4 /* length */ + (s ? std::strlen(s) : 0) /* bytes */ + 1 /* NULL */;
 
     mstring = s ? ats_strdup(s) : nullptr;
     CHECK_EQ(mgmt_message_write(clientfd, sfields, countof(sfields), &mstring), len);
@@ -185,21 +215,24 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
     mstring = nullptr;
 
     CHECK_EQ(mgmt_message_read(serverfd, sfields, countof(sfields), &mstring), len);
-    CHECK_STRING(s, mstring);
+    CHECK_STR(s, mstring);
     ats_free(mstring);
     mstring = nullptr;
   }
 
   // Marshall data.
   mdata.ptr = ats_strdup(alpha);
-  mdata.len = strlen(alpha);
-  CHECK_EQ(mgmt_message_write(clientfd, dfields, countof(dfields), &mdata), 4 + strlen(alpha));
+  mdata.len = std::strlen(alpha);
+  CHECK_EQ(mgmt_message_write(clientfd, dfields, countof(dfields), &mdata), 4 + std::strlen(alpha));
   ats_free(mdata.ptr);
   ink_zero(mdata);
 
-  CHECK_EQ(mgmt_message_read(serverfd, dfields, countof(dfields), &mdata), 4 + strlen(alpha));
-  CHECK_VALUE(mdata.len, strlen(alpha), "%zu");
-  box.check(memcmp(mdata.ptr, alpha, strlen(alpha)) == 0, "unexpected mdata contents");
+  CHECK_EQ(mgmt_message_read(serverfd, dfields, countof(dfields), &mdata), 4 + std::strlen(alpha));
+  CHECK_VALUE(mdata.len, std::strlen(alpha));
+  if (std::memcmp(mdata.ptr, alpha, std::strlen(alpha)) != 0) {
+    std::cout << "unexpected mdata contents\n";
+    CHECK(false);
+  }
   ats_free(mdata.ptr);
   ink_zero(mdata);
 
@@ -208,10 +241,8 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
   close(serverfd);
 }
 
-REGRESSION_TEST(MessageMarshall)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("MessageMarshall", "[mgmt_utils][msg_marshall]")
 {
-  TestBox box(t, pstatus, REGRESSION_TEST_PASSED);
-
   char msgbuf[4096];
 
   MgmtMarshallInt mint       = 0;
@@ -232,13 +263,13 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), ifields, countof(ifields), &mint, &mlong), 12);
   CHECK_EQ(mgmt_message_parse(msgbuf, 1, ifields, countof(ifields), &mint, &mlong), -1);
   CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), ifields, countof(ifields), &mint, &mlong), 12);
-  CHECK_VALUE(mint, -156, "%" PRId32);
-  CHECK_VALUE(mlong, static_cast<MgmtMarshallLong>(UINT32_MAX), "%" PRId64);
+  CHECK_VALUE(mint, -156);
+  CHECK_VALUE(mlong, static_cast<MgmtMarshallLong>(UINT32_MAX));
 
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {
     const char *s = stringvals[i];
-    size_t len    = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
+    size_t len    = 4 /* length */ + (s ? std::strlen(s) : 0) /* bytes */ + 1 /* NULL */;
 
     mstring = s ? ats_strdup(s) : nullptr;
     CHECK_EQ(mgmt_message_marshall(msgbuf, 1, sfields, countof(sfields), &mstring), -1);
@@ -248,40 +279,41 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
     CHECK_EQ(mgmt_message_parse(msgbuf, 1, sfields, countof(sfields), &mstring), -1);
     CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), sfields, countof(sfields), &mstring), len);
-    CHECK_STRING(s, mstring);
+    CHECK_STR(s, mstring);
     ats_free(mstring);
     mstring = nullptr;
   }
 
   // Marshall data.
   mdata.ptr = ats_strdup(alpha);
-  mdata.len = strlen(alpha);
+  mdata.len = std::strlen(alpha);
   CHECK_EQ(mgmt_message_marshall(msgbuf, 10, dfields, countof(dfields), &mdata), -1);
-  CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), dfields, countof(dfields), &mdata), 4 + strlen(alpha));
+  CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), dfields, countof(dfields), &mdata), 4 + std::strlen(alpha));
   ats_free(mdata.ptr);
   ink_zero(mdata);
 
-  CHECK_EQ(mgmt_message_parse(msgbuf, strlen(alpha), dfields, countof(dfields), &mdata), -1);
-  CHECK_EQ(mgmt_message_parse(msgbuf, strlen(alpha) + 4, dfields, countof(dfields), &mdata), 4 + strlen(alpha));
-  CHECK_VALUE(mdata.len, strlen(alpha), "%zu");
-  box.check(memcmp(mdata.ptr, alpha, strlen(alpha)) == 0, "unexpected mdata contents");
+  CHECK_EQ(mgmt_message_parse(msgbuf, std::strlen(alpha), dfields, countof(dfields), &mdata), -1);
+  CHECK_EQ(mgmt_message_parse(msgbuf, std::strlen(alpha) + 4, dfields, countof(dfields), &mdata), 4 + std::strlen(alpha));
+  CHECK_VALUE(mdata.len, std::strlen(alpha));
+  if (std::memcmp(mdata.ptr, alpha, std::strlen(alpha)) != 0) {
+    std::cout << "unexpected mdata contents\n";
+    CHECK(false);
+  }
   ats_free(mdata.ptr);
   ink_zero(mdata);
 
   // Marshall empty data.
   CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), dfields, countof(dfields), &mdata), 4);
 
-  mdata.ptr = (void *)99;
+  mdata.ptr = reinterpret_cast<void *>(99);
   mdata.len = 1000;
   CHECK_EQ(mgmt_message_parse(msgbuf, sizeof(msgbuf), dfields, countof(dfields), &mdata), 4);
-  CHECK_VALUE(mdata.ptr, (void *)nullptr, "%p");
-  CHECK_VALUE(mdata.len, (size_t)0, "%zu");
+  CHECK_VALUE(mdata.ptr, static_cast<void *>(nullptr));
+  CHECK_VALUE(mdata.len, 0);
 }
 
-REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+TEST_CASE("MessageLemgth", "[mgmt_utils][msg_len]")
 {
-  TestBox box(t, pstatus, REGRESSION_TEST_PASSED);
-
   MgmtMarshallInt mint       = 0;
   MgmtMarshallLong mlong     = 0;
   MgmtMarshallString mstring = nullptr;
@@ -296,13 +328,13 @@ REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, in
   CHECK_EQ(mgmt_message_length(ifields, countof(ifields), &mint, &mlong), 12);
 
   // string messages include a 4-byte length and the NULL
-  mstring = (char *)"foo";
+  mstring = const_cast<char *>("foo");
   CHECK_EQ(mgmt_message_length(sfields, countof(sfields), &mstring), sizeof("foo") + 4);
 
   // NULL strings are the same as empty strings ...
   mstring = nullptr;
   CHECK_EQ(mgmt_message_length(sfields, countof(sfields), &mstring), 4 + 1);
-  mstring = (char *)"";
+  mstring = const_cast<char *>("");
   CHECK_EQ(mgmt_message_length(sfields, countof(sfields), &mstring), 4 + 1);
 
   // data fields include a 4-byte length. We don't go looking at the data in this case.
@@ -318,10 +350,4 @@ REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, in
   mdata.ptr = nullptr;
   mdata.len = 0;
   CHECK_EQ(mgmt_message_length(dfields, countof(dfields), &mdata), 4);
-}
-
-int
-main(int argc, const char **argv)
-{
-  return RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
 }
