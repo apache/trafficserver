@@ -74,7 +74,7 @@ certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*i
     ink_mutex_destroy(&iter->second->stapling_mutex);
     OPENSSL_free(iter->second);
   }
-  free(map);
+  delete map;
 }
 
 static int ssl_stapling_index = -1;
