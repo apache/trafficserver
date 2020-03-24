@@ -20,7 +20,7 @@ import os
 Test.Summary = '''
 Test with nghttp
 '''
-# need Curl
+
 Test.SkipUnless(
     Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
 )
