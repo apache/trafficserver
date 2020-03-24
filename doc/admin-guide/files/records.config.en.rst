@@ -2395,7 +2395,7 @@ Customizable User Response Pages
    ===== ======================================================================
    ``0`` Never suppress generated response pages.
    ``1`` Always suppress generated response pages.
-   ``2`` Suppress response pages only for intercepted traffic.
+   ``2`` Suppress response pages only for internal traffic.
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.http_ui_enabled INT 0
