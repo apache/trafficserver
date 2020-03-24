@@ -149,7 +149,7 @@ mgmt/tools/traffic_time_config
 mgmt/tools/traffic_vip_config
 mgmt/api/api_cli_remote
 mgmt/tools/shmem_clean
-mgmt/utils/test_marshall
+mgmt/utils/test_mgmt_utils
 
 libtool
 m4/libtool.m4
