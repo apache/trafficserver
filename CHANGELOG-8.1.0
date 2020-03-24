@@ -1,0 +1,33 @@
+Changes with Apache Traffic Server 8.1.0
+  #4028 - proxy.config.http.connect_attempts_timeout tracks TTBF instead of connect
+  #4203 - Allow enabling MPTCP on a listening socket through the records.config
+  #4437 - Adds the log tag cqint for internal requests
+  #4762 - Fix OCSP stapling with dual cert
+  #4869 - Cleanup: remove lib/cppapi from clang-format, it's been moved.
+  #4874 - Avoid ats_malloc in unmarshal
+  #4924 - lua plugin: add support for relative path scripts; moves inline script to switch
+  #5058 - Fixed use after free when running regression under ASAN
+  #5122 - fix crash in CacheVC::openReadFromWriter
+  #5131 - Do not run clang-format for @default_stack_size@
+  #5149 - Add nullptr check on ConfigProcessor::release()
+  #5163 - Fix memleak in ProcessManager::stop()
+  #5209 - Allows logging of negative values
+  #5227 - Normalize on negative value for milestone metrics
+  #5234 - Correct interpretation of proxy.config.ssl.client.verify.server
+  #5235 - Fix lost pending_actions causing actions on stale objects.
+  #5236 - Update documentation for SSL VERIFY hooks.
+  #5242 - Adds a missing header field for the tcpinfo log
+  #5329 - Fixes clang-analyzer error dereferencing nullptr in parent
+  #5348 - Don't assign if this and other are the same object
+  #5354 - Password can not be nullptr here, so don't check
+  #5811 - Fix no_activity timeout for server session reuse.
+  #6154 - tslua: Exposes set/get method for server request objects
+  #6182 - tslua: Exposes set/get version for server request objects
+  #6191 - Limit this check to Linux, where ldd always works
+  #6264 - Change HTTP/2 error rate log to warning
+  #6294 - Enhance Connection Collapse in ATS core - back port to 8.x
+  #6328 - Document the order of the X-Cache header
+  #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
+  #6392 - Free TSMgmtString after using it.
+  #6534 - Ignore MgmtMessageHdr if ProcessManager is not running
+  #6535 - Add MIMEHdr Garbage Collection to HPACK Dynamic Table
