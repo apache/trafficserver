@@ -21,14 +21,8 @@ import os
 Test.Summary = '''
 Test log fields.
 '''
-# Only on Linux (why??)
-Test.SkipUnless(
-    Condition.IsPlatform("linux")
-)
 
-# Define default ATS
 ts = Test.MakeATSProcess("ts")
-# Microserver
 server = Test.MakeOriginServer("server")
 
 request_header = {'timestamp': 100, "headers": "GET /test-1 HTTP/1.1\r\nHost: test-1\r\n\r\n", "body": ""}

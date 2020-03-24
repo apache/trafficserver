@@ -21,7 +21,7 @@ import os
 Test.Summary = '''
 Test new log fields
 '''
-# need Curl
+
 Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
