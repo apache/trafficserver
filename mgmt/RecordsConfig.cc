@@ -674,7 +674,7 @@ static const RecordElement RecordsConfig[] =
   ,
   //# 0 - never suppress generated responses
   //# 1 - always suppress generated responses
-  //# 2 - suppress responses for intercepted traffic
+  //# 2 - suppress responses for internal traffic
   {RECT_CONFIG, "proxy.config.body_factory.response_suppression_mode", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.body_factory.template_base", RECD_STRING, "NONE", RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}

@@ -73,6 +73,16 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   bool found_requested_template = false;
   bool plain_flag               = false;
 
+  ///////////////////////////////////////////////
+  // if suppressing this response, return NULL //
+  ///////////////////////////////////////////////
+  if (is_response_suppressed(context)) {
+    if (enable_logging) {
+      Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
+    }
+    return nullptr;
+  }
+
   lock();
 
   *resulting_buffer_length = 0;
@@ -98,16 +108,6 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
         context->arena.str_free(s);
       }
     }
-  }
-  ///////////////////////////////////////////////
-  // if suppressing this response, return NULL //
-  ///////////////////////////////////////////////
-  if (is_response_suppressed(context)) {
-    if (enable_logging) {
-      Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
-    }
-    unlock();
-    return nullptr;
   }
   //////////////////////////////////////////////////////////////////////////////////
   // if language-targeting activated, get client Accept-Language & Accept-Charset //
@@ -673,11 +673,7 @@ HttpBodyFactory::is_response_suppressed(HttpTransact::State *context)
   } else if (response_suppression_mode == 1) {
     return true;
   } else if (response_suppression_mode == 2) {
-    if (context->req_flavor == HttpTransact::REQ_FLAVOR_INTERCEPTED) {
-      return true;
-    } else {
-      return false;
-    }
+    return context->request_data.internal_txn;
   } else {
     return false;
   }
