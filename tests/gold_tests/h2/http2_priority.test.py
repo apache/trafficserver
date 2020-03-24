@@ -20,7 +20,6 @@ Test.Summary = '''
 Test a basic remap of a http connection with Stream Priority Feature
 '''
 
-# need Curl
 Test.SkipUnless(
     Condition.HasCurlFeature('http2'),
     Condition.HasProgram("shasum", "shasum need to be installed on system for this test to work"),

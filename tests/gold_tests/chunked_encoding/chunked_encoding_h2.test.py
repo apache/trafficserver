@@ -20,11 +20,9 @@ import os
 Test.Summary = '''
 Test interaction of H2 and chunked encoding
 '''
-# need Curl
+
 Test.SkipUnless(
     Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
-    Condition.HasProgram("nc", "Nc needs to be installed on this system for this test to work"),
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2')
 )
 Test.ContinueOnFail = True

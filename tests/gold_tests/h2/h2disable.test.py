@@ -20,7 +20,6 @@ Test.Summary = '''
 Test disabling H2 on a per domain basis
 '''
 
-# need Curl
 Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )

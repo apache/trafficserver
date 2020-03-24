@@ -20,7 +20,7 @@ import os
 Test.Summary = '''
 Test a basic remap of a http/2 connection
 '''
-# need Curl
+
 Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )

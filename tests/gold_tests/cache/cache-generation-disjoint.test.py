@@ -21,7 +21,7 @@ import uuid
 Test.Summary = '''
 Test that the same URL path in different cache generations creates disjoint objects
 '''
-# need Curl
+
 Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
