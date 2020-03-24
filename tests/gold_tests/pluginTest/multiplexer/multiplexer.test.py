@@ -19,7 +19,7 @@
 Test.Summary = '''
 Test experimental/multiplexer.
 '''
-# need Curl
+
 Test.SkipUnless(
     Condition.PluginExists('multiplexer.so')
 )
