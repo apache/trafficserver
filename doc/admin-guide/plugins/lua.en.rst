@@ -164,7 +164,7 @@ Max values may be reset at any time by running:
     traffic_ctl plugin msg ts_lua stats_reset
 
 
-Summary statistics are aggregated every 5s and are available as metrics.
+Snapstho statistics are aggregated every 1s and are available as metrics.
 
 ::
 
@@ -175,12 +175,8 @@ Sample output:
 ::
 
     plugin.lua.global.states 8
-    plugin.lua.remap.gc_bytes_min 4804608
-    plugin.lua.remap.gc_bytes_mean 5552537
-    plugin.lua.remap.gc_bytes_max 5779456
-    plugin.lua.remap.threads_min 31
-    plugin.lua.remap.threads_mean 44
-    plugin.lua.remap.threads_max 146
+    plugin.lua.remap.gc_bytes 5552537
+    plugin.lua.remap.threads 44
 
 
 TS API for Lua

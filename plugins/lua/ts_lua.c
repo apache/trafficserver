@@ -25,16 +25,13 @@
 
 #define TS_LUA_MAX_STATE_COUNT 256
 
-#define TS_LUA_STATS_TIMEOUT 500    // 500ms
+#define TS_LUA_STATS_TIMEOUT 1000   // 1s
 #define TS_LUA_STATS_BUFFER_SIZE 10 // stats buffer
 
-#define TS_LUA_GC_BYTES_MIN 0
-#define TS_LUA_GC_BYTES_MEAN 1
-#define TS_LUA_GC_BYTES_MAX 2
-#define TS_LUA_THREADS_MIN 3
-#define TS_LUA_THREADS_MEAN 4
-#define TS_LUA_THREADS_MAX 5
-#define TS_LUA_STATS_SIZE 6
+#define TS_LUA_IND_STATE 0
+#define TS_LUA_IND_GC_BYTES 1
+#define TS_LUA_IND_THREADS 2
+#define TS_LUA_IND_SIZE 3
 
 // this is set the first time global configuration is probed.
 static int ts_lua_max_state_count = 0;
@@ -51,68 +48,60 @@ static char const *const ts_lua_mgmt_state_str = "proxy.config.plugin.lua.max_st
 /* static char const *const print_tag = "stats_print"; */
 static char const *const reset_tag = "stats_reset";
 
-// record strings for number of states
-static char const *const ts_lua_states_str   = "plugin.lua.remap.states";
-static char const *const ts_lua_g_states_str = "plugin.lua.global.states";
-
 // stat record strings
 static char const *const ts_lua_stat_strs[] = {
-  "plugin.lua.remap.gc_bytes_min", "plugin.lua.remap.gc_bytes_mean", "plugin.lua.remap.gc_bytes_max",
-  "plugin.lua.remap.threads_min",  "plugin.lua.remap.threads_mean",  "plugin.lua.remap.threads_max",
+  "plugin.lua.remap.states",
+  "plugin.lua.remap.gc_bytes",
+  "plugin.lua.remap.threads",
+  NULL,
 };
-
 static char const *const ts_lua_g_stat_strs[] = {
-  "plugin.lua.global.gc_bytes_min", "plugin.lua.global.gc_bytes_mean", "plugin.lua.global.gc_bytes_max",
-  "plugin.lua.global.threads_min",  "plugin.lua.global.threads_mean",  "plugin.lua.global.threads_max",
+  "plugin.lua.global.states",
+  "plugin.lua.global.gc_bytes",
+  "plugin.lua.global.threads",
+  NULL,
 };
 
 typedef struct {
   ts_lua_main_ctx *main_ctx_array;
 
-  int *gc_kb_array;   // ringer buffer gc_kb
-  int *threads_array; // ring buffer threads
+  int gc_kb;   // last collected gc in kb
+  int threads; // last collected number active threads
 
-  int stats_size;  // ring buffer size
-  int stats_index; // active index in buffer
-
-  int stat_inds[TS_LUA_STATS_SIZE]; // ATS TSStat indexes
+  int stat_inds[TS_LUA_IND_SIZE]; // stats indices
 
 } ts_lua_plugin_stats;
 
 ts_lua_plugin_stats *
 create_plugin_stats(ts_lua_main_ctx *const main_ctx_array)
 {
-  ts_lua_plugin_stats *stats = NULL;
-
-  stats = TSmalloc(sizeof(ts_lua_plugin_stats));
+  ts_lua_plugin_stats *const stats = TSmalloc(sizeof(ts_lua_plugin_stats));
   memset(stats, 0, sizeof(ts_lua_plugin_stats));
 
   stats->main_ctx_array = main_ctx_array;
 
   // sample buffers
-  stats->stats_size    = TS_LUA_STATS_BUFFER_SIZE;
-  stats->gc_kb_array   = TSmalloc(sizeof(int) * stats->stats_size);
-  stats->threads_array = TSmalloc(sizeof(int) * stats->stats_size);
+  stats->gc_kb   = 0;
+  stats->threads = 0;
 
-  // global vs remap
   char const *const *stat_strs = NULL;
-  if (main_ctx_array == ts_lua_main_ctx_array) {
-    stat_strs     = ts_lua_stat_strs;
-    int const sid = TSStatCreate(ts_lua_states_str, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-    if (0 <= sid) {
-      TSStatIntSet(sid, ts_lua_max_state_count);
-    }
-  } else {
-    stat_strs     = ts_lua_g_stat_strs;
-    int const sid = TSStatCreate(ts_lua_g_states_str, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-    if (0 <= sid) {
-      TSStatIntSet(sid, ts_lua_max_state_count);
-    }
+  int max_state_count          = 0;
+  if (main_ctx_array == ts_lua_main_ctx_array) { // remap
+    stat_strs       = ts_lua_stat_strs;
+    max_state_count = ts_lua_max_state_count;
+  } else { // global
+    stat_strs       = ts_lua_g_stat_strs;
+    max_state_count = ts_lua_max_state_count;
   }
 
-  // create the stats slots
-  for (int index = 0; index < TS_LUA_STATS_SIZE; ++index) {
-    stats->stat_inds[index] = TSStatCreate(stat_strs[index], TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+  for (int ind = 0; ind < TS_LUA_IND_SIZE; ++ind) {
+    stats->stat_inds[ind] = TSStatCreate(stat_strs[ind], TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+  }
+
+  // initialize the number of states stat
+  int const sid = stats->stat_inds[TS_LUA_IND_STATE];
+  if (TS_ERROR != sid) {
+    TSStatIntSet(sid, max_state_count);
   }
 
   return stats;
@@ -169,8 +158,6 @@ create_lua_vms()
 static void
 collectStats(ts_lua_plugin_stats *const plugin_stats)
 {
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s]", __FUNCTION__);
-
   TSMgmtInt gc_kb_total   = 0;
   TSMgmtInt threads_total = 0;
 
@@ -190,46 +177,16 @@ collectStats(ts_lua_plugin_stats *const plugin_stats)
   }
 
   // set the stats sample slot
-  plugin_stats->gc_kb_array[plugin_stats->stats_index]   = gc_kb_total;
-  plugin_stats->threads_array[plugin_stats->stats_index] = threads_total;
-
-  ++plugin_stats->stats_index;
-}
-
-static void
-minMaxSumFor(int const *const array, int const size, TSMgmtInt *const min, TSMgmtInt *const max, TSMgmtInt *const sum)
-{
-  if (0 < size) {
-    *min = *max = *sum = array[0];
-    for (int index = 1; index < size; ++index) {
-      int const val = array[index];
-      if (val < *min) {
-        *min = val;
-      } else if (*max < val) {
-        *max = val;
-      }
-      *sum += val;
-    }
-  }
+  plugin_stats->gc_kb   = gc_kb_total;
+  plugin_stats->threads = threads_total;
 }
 
 static void
 publishStats(ts_lua_plugin_stats *const plugin_stats)
 {
-  TSMgmtInt min = 0, max = 0, sum = 0;
-  minMaxSumFor(plugin_stats->gc_kb_array, plugin_stats->stats_size, &min, &max, &sum);
-  TSMgmtInt const gc_bytes_mean = (sum * 1024) / plugin_stats->stats_size;
-
-  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_GC_BYTES_MIN], min * 1024);
-  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_GC_BYTES_MEAN], gc_bytes_mean);
-  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_GC_BYTES_MAX], max * 1024);
-
-  minMaxSumFor(plugin_stats->threads_array, plugin_stats->stats_size, &min, &max, &sum);
-  TSMgmtInt const threads_mean = sum / plugin_stats->stats_size;
-
-  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_THREADS_MIN], min);
-  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_THREADS_MEAN], threads_mean);
-  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_THREADS_MAX], max);
+  TSMgmtInt const gc_bytes = plugin_stats->gc_kb * 1024;
+  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_IND_GC_BYTES], gc_bytes);
+  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_IND_THREADS], plugin_stats->threads);
 }
 
 // dump exhaustive per state summary stats
@@ -239,11 +196,7 @@ statsHandler(TSCont contp, TSEvent event, void *edata)
   ts_lua_plugin_stats *const plugin_stats = (ts_lua_plugin_stats *)TSContDataGet(contp);
 
   collectStats(plugin_stats);
-
-  if (plugin_stats->stats_size == plugin_stats->stats_index) {
-    publishStats(plugin_stats);
-    plugin_stats->stats_index = 0;
-  }
+  publishStats(plugin_stats);
 
   TSContScheduleOnPool(contp, TS_LUA_STATS_TIMEOUT, TS_THREAD_POOL_TASK);
 
@@ -352,6 +305,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
       // start the stats management
       if (NULL != plugin_stats) {
+        TSDebug(TS_LUA_DEBUG_TAG, "Starting up stats management continuation");
         TSCont const scontp = TSContCreate(statsHandler, TSMutexCreate());
         TSContDataSet(scontp, plugin_stats);
         TSContScheduleOnPool(scontp, TS_LUA_STATS_TIMEOUT, TS_THREAD_POOL_TASK);
