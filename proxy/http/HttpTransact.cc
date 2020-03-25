@@ -2091,7 +2091,7 @@ HttpTransact::DecideCacheLookup(State *s)
     if (s->redirect_info.redirect_in_process) {
       // without calling out the CACHE_LOOKUP_COMPLETE_HOOK
       if (s->txn_conf->cache_http) {
-        s->cache_info.action = CACHE_DO_WRITE;
+        s->cache_info.action = CACHE_PREPARE_TO_WRITE;
       }
       LookupSkipOpenServer(s);
     } else {
