@@ -97,10 +97,18 @@ tr.Processes.Default.Command = (
 ).format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
-# Delay to allow TS to flush report to disk, then validate generated log.
+# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
+#
+test_run = Test.AddTestRun()
+test_run.Processes.Default.Command = (
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
+    os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log')
+)
+test_run.Processes.Default.ReturnCode = 0
+
+# Validate generated log.
 #
 tr = Test.AddTestRun()
-tr.DelayStart = 10
 tr.Processes.Default.Command = 'python3 {0} < {1}'.format(
     os.path.join(Test.TestDirectory, 'new_log_flds_observer.py'),
     os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log'))
