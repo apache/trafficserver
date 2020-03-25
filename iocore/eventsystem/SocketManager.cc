@@ -29,7 +29,6 @@
 #include "P_EventSystem.h"
 
 #include "tscore/TextBuffer.h"
-#include "tscore/TestBox.h"
 
 SocketManager socketManager;
 
@@ -126,19 +125,4 @@ SocketManager::fastopen_supported()
   }
 
   return value & TFO_CLIENT_ENABLE;
-}
-
-REGRESSION_TEST(socket_fastopen)(RegressionTest *test, int level, int *pstatus)
-{
-  TestBox box(test, pstatus);
-
-  box = REGRESSION_TEST_PASSED;
-
-  if (SocketManager::fastopen_supported()) {
-    box.check(MSG_FASTOPEN != 0, "TCP Fast Open is supported, MSG_FASTOPEN must not be 0");
-  }
-
-  if (::access("/proc/sys/net/ipv4/tcp_fastopen", F_OK) == 0) {
-    box.check(MSG_FASTOPEN != 0, "TCP Fast Open is available, MSG_FASTOPEN must not be 0");
-  }
 }
