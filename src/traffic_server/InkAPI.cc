@@ -8758,6 +8758,11 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       }
     }
     break;
+  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
+    if (value && length > 0) {
+      HttpConfig::load_server_session_sharing_match(value, s->t_state.my_txn_conf().server_session_sharing_match);
+    }
+    break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
     if (value && length > 0) {
       s->t_state.my_txn_conf().ssl_client_verify_server_policy = const_cast<char *>(value);

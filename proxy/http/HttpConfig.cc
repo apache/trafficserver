@@ -76,11 +76,12 @@ template <typename T> struct ConfigEnumPair {
 /// If found @a value is set to the corresponding value in @a list.
 template <typename T, unsigned N>
 static bool
-http_config_enum_search(const char *key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
+http_config_enum_search(std::string_view key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
+  Debug("http_config", "enum element %.*s", static_cast<int>(key.size()), key.data());
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
-    if (0 == strcasecmp(list[i]._key, key)) {
+    if (key.compare(list[i]._key) == 0) {
       value = list[i]._value;
       return true;
     }
@@ -110,10 +111,56 @@ http_config_enum_read(const char *name, const ConfigEnumPair<T> (&list)[N], Mgmt
 ////////////////////////////////////////////////////////////////
 /// Session sharing match types.
 static const ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatchStrings[] = {
-  {TS_SERVER_SESSION_SHARING_MATCH_NONE, "none"},
-  {TS_SERVER_SESSION_SHARING_MATCH_IP, "ip"},
-  {TS_SERVER_SESSION_SHARING_MATCH_HOST, "host"},
-  {TS_SERVER_SESSION_SHARING_MATCH_BOTH, "both"}};
+  {TS_SERVER_SESSION_SHARING_MATCH_NONE, "none"}, {TS_SERVER_SESSION_SHARING_MATCH_IP, "ip"},
+  {TS_SERVER_SESSION_SHARING_MATCH_HOST, "host"}, {TS_SERVER_SESSION_SHARING_MATCH_HOST, "hostsni"},
+  {TS_SERVER_SESSION_SHARING_MATCH_BOTH, "both"}, {TS_SERVER_SESSION_SHARING_MATCH_HOSTONLY, "hostonly"},
+  {TS_SERVER_SESSION_SHARING_MATCH_SNI, "sni"},   {TS_SERVER_SESSION_SHARING_MATCH_CERT, "cert"}};
+
+bool
+HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
+{
+  MgmtByte value;
+  mask = 0;
+  // Parse through and build up mask
+  std::string_view key_list(key);
+  size_t start  = 0;
+  size_t offset = 0;
+  Debug("http_config", "enum mask value %s", key);
+  do {
+    offset = key_list.find(',', start);
+    if (offset == std::string_view::npos) {
+      std::string_view one_key = key_list.substr(start);
+      if (!http_config_enum_search(one_key, SessionSharingMatchStrings, value)) {
+        return false;
+      }
+    } else {
+      std::string_view one_key = key_list.substr(start, offset - start);
+      if (!http_config_enum_search(one_key, SessionSharingMatchStrings, value)) {
+        return false;
+      }
+      start = offset + 1;
+    }
+    if (value < TS_SERVER_SESSION_SHARING_MATCH_NONE) {
+      mask |= (1 << value);
+    } else if (value == TS_SERVER_SESSION_SHARING_MATCH_BOTH) {
+      mask |= TS_SERVER_SESSION_SHARING_MATCH_MASK_IP | TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY |
+              TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC;
+    } else if (value == TS_SERVER_SESSION_SHARING_MATCH_HOST) {
+      mask |= TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY | TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC;
+    }
+  } while (offset != std::string_view::npos);
+  return true;
+}
+
+static bool
+http_config_enum_mask_read(const char *name, MgmtByte &value)
+{
+  char key[512]; // it's just one key - painful UI if keys are longer than this
+  if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
+    return HttpConfig::load_server_session_sharing_match(key, value);
+  }
+  return false;
+}
 
 static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolStrings[] = {
   {TS_SERVER_SESSION_SHARING_POOL_GLOBAL, "global"},
@@ -200,7 +247,7 @@ http_server_session_sharing_cb(const char *name, RecDataT dtype, RecData data, v
     MgmtByte &match = c->oride.server_session_sharing_match;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingMatchType>(data.rec_int);
-    } else if (RECD_STRING == dtype && http_config_enum_search(data.rec_string, SessionSharingMatchStrings, match)) {
+    } else if (RECD_STRING == dtype && HttpConfig::load_server_session_sharing_match(data.rec_string, match)) {
       // empty
     } else {
       valid_p = false;
@@ -1059,8 +1106,7 @@ HttpConfig::startup()
 
   // [amc] This is a bit of a mess, need to figure out to make this cleaner.
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
-  http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
-                        c.oride.server_session_sharing_match);
+  http_config_enum_mask_read("proxy.config.http.server_session_sharing.match", c.oride.server_session_sharing_match);
   http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.server_session_sharing_pool);
 
   RecRegisterConfigUpdateCb("proxy.config.http.insert_forwarded", &http_insert_forwarded_cb, &c);

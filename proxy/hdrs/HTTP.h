@@ -586,7 +586,7 @@ public:
       @note The results are cached so this is fast after the first call.
       @return A pointer to the host name.
   */
-  const char *host_get(int *length = nullptr);
+  const char *host_get(int *length = nullptr) const;
 
   /** Get the target port.
       If the target port is not found then it is adjusted to the
@@ -857,7 +857,7 @@ HTTPHdr::_test_and_fill_target_cache() const
   -------------------------------------------------------------------------*/
 
 inline const char *
-HTTPHdr::host_get(int *length)
+HTTPHdr::host_get(int *length) const
 {
   this->_test_and_fill_target_cache();
   if (m_target_in_url) {

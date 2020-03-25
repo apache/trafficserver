@@ -929,32 +929,29 @@ mptcp
    :overridable:
 
    Enable and set the ability to re-use server connections across client
-   connections. The valid values are:
+   connections. Multiple values can be specified when separated by commas with no white spaces. Valid values are:
 
-   ======== ===================================================================
-   Value    Description
-   ======== ===================================================================
-   ``none`` Do not match and do not re-use server sessions. If using this in
-            :ref:`ts-overridable-config` (like the :ref:`admin-plugins-conf-remap`),
-            use the integer ``0`` instead.
-   ``both`` Re-use server sessions, if *both* the IP address and fully qualified
-            domain name match. If using this in :ref:`ts-overridable-config` (like
-            the :ref:`admin-plugins-conf-remap`), use the integer ``1`` instead.
-   ``ip``   Re-use server sessions, checking only that the IP address and port
-            of the origin server matches. If using this in
-            :ref:`ts-overridable-config` (like the :ref:`admin-plugins-conf-remap`),
-            use the integer ``2`` instead.
-   ``host`` Re-use server sessions, checking only that the fully qualified
-            domain name matches. If using this in :ref:`ts-overridable-config`
-            (like the :ref:`admin-plugins-conf-remap`), use the integer ``3`` instead.
-   ======== ===================================================================
+   ============= ===================================================================
+   Value         Description
+   ============= ===================================================================
+   ``none``      Do not match and do not re-use server sessions.
+   ``ip``        Re-use server sessions, checking only that the IP address and port
+                 of the origin server matches.
+   ``host``      Re-use server sessions, checking that the fully qualified
+                 domain name matches. In addition, if the session uses TLS, it also
+                 checks that the current transaction's host header value matchs the session's SNI.
+   ``both``      Equivalent to ``host,ip``.
+   ``hostonly``  Check that the fully qualified domain name matches.
+   ``sni``       Check that the SNI of the session matches the SNI that would be used to
+                 create a new session.  Only applicable for TLS sessions.
+   ``cert``      Check that the certificate file name used for the server session matches the
+                 certificate file name that would be used for the new server session.  Only
+                 applicable for TLS sessions.
+   ============= ===================================================================
 
-   It is strongly recommended to use either ``none`` or ``both`` for this value
-   unless you have a specific need for the other settings. The most common
-   reason is virtual hosts that share an IP address in which case performance
-   can be enhanced if those sessions can be re-used. However, not all web
-   servers support requests for different virtual hosts on the same connection
-   so use with caution.
+   The setting must contain at least one of ``ip``, ``host``, ``hostonly`` or ``both``
+   for session reuse to operate.  The other values may be used for greater control
+   with TLS sessoin reuse.
 
 .. note::
 

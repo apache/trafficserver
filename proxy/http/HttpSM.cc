@@ -1785,7 +1785,7 @@ HttpSM::state_http_server_open(int event, void *data)
         THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
         httpServerSessionAllocator.alloc();
     session->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
-    session->sharing_match = static_cast<TSServerSessionSharingMatchType>(t_state.txn_conf->server_session_sharing_match);
+    session->sharing_match = static_cast<TSServerSessionSharingMatchMask>(t_state.txn_conf->server_session_sharing_match);
 
     netvc = static_cast<NetVConnection *>(data);
     session->attach_hostname(t_state.current.server->name);
@@ -4779,6 +4779,27 @@ set_tls_options(NetVCOptions &opt, const OverridableHttpConfigParams *txn_conf)
   }
 }
 
+std::string_view
+HttpSM::get_outbound_cert() const
+{
+  const char *cert_name = t_state.txn_conf->ssl_client_cert_filename;
+  return std::string_view(cert_name);
+}
+
+std::string_view
+HttpSM::get_outbound_sni() const
+{
+  const char *sni_name = nullptr;
+  size_t len           = 0;
+  if (t_state.txn_conf->ssl_client_sni_policy != nullptr && !strcmp(t_state.txn_conf->ssl_client_sni_policy, "remap")) {
+    len      = strlen(t_state.server_info.name);
+    sni_name = t_state.server_info.name;
+  } else { // Do the default of host header for SNI
+    sni_name = t_state.hdr_info.server_request.host_get(reinterpret_cast<int *>(&len));
+  }
+  return std::string_view(sni_name, len);
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpSM::do_http_server_open()
@@ -5128,25 +5149,17 @@ HttpSM::do_http_server_open(bool raw)
   if (tls_upstream) {
     SMDebug("http", "calling sslNetProcessor.connect_re");
 
+    std::string_view sni_name = this->get_outbound_sni();
+    if (sni_name.length() > 0) {
+      opt.set_sni_servername(sni_name.data(), sni_name.length());
+    }
     int len = 0;
-    if (t_state.txn_conf->ssl_client_sni_policy != nullptr && !strcmp(t_state.txn_conf->ssl_client_sni_policy, "remap")) {
-      len = strlen(t_state.server_info.name);
-      opt.set_sni_servername(t_state.server_info.name, len);
-    } else if (t_state.txn_conf->ssl_client_sni_policy != nullptr &&
-               !strcmp(t_state.txn_conf->ssl_client_sni_policy, "verify_with_name_source")) {
-      // the same with "remap" policy to set sni_servername
-      len = strlen(t_state.server_info.name);
-      opt.set_sni_servername(t_state.server_info.name, len);
-
+    if (t_state.txn_conf->ssl_client_sni_policy != nullptr &&
+        !strcmp(t_state.txn_conf->ssl_client_sni_policy, "verify_with_name_source")) {
       // also set sni_hostname with host header from server request in this policy
       const char *host = t_state.hdr_info.server_request.host_get(&len);
       if (host && len > 0) {
         opt.set_sni_hostname(host, len);
-      }
-    } else { // Do the default of host header for SNI
-      const char *host = t_state.hdr_info.server_request.host_get(&len);
-      if (host && len > 0) {
-        opt.set_sni_servername(host, len);
       }
     }
     if (t_state.server_info.name) {

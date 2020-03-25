@@ -29,23 +29,36 @@
 
 #pragma once
 
-// This is use to signal apidefs.h to not define these again.
-#ifndef _HTTP_PROXY_API_ENUMS_H_
-#define _HTTP_PROXY_API_ENUMS_H_
-
 /// Server session sharing values - match
 typedef enum {
+  TS_SERVER_SESSION_SHARING_MATCH_IP,
+  TS_SERVER_SESSION_SHARING_MATCH_HOSTONLY,
+  TS_SERVER_SESSION_SHARING_MATCH_HOSTSNISYNC,
+  TS_SERVER_SESSION_SHARING_MATCH_SNI,
+  TS_SERVER_SESSION_SHARING_MATCH_CERT,
   TS_SERVER_SESSION_SHARING_MATCH_NONE,
   TS_SERVER_SESSION_SHARING_MATCH_BOTH,
-  TS_SERVER_SESSION_SHARING_MATCH_IP,
-  TS_SERVER_SESSION_SHARING_MATCH_HOST
+  TS_SERVER_SESSION_SHARING_MATCH_HOST,
 } TSServerSessionSharingMatchType;
+
+typedef enum {
+  TS_SERVER_SESSION_SHARING_MATCH_MASK_NONE        = 0,
+  TS_SERVER_SESSION_SHARING_MATCH_MASK_IP          = 0x1,
+  TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY    = 0x2,
+  TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC = 0x4,
+  TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI         = 0x8,
+  TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT        = 0x10
+} TSServerSessionSharingMatchMask;
 
 /// Server session sharing values - pool
 typedef enum {
   TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
   TS_SERVER_SESSION_SHARING_POOL_THREAD,
 } TSServerSessionSharingPoolType;
+
+// This is use to signal apidefs.h to not define these again.
+#ifndef _HTTP_PROXY_API_ENUMS_H_
+#define _HTTP_PROXY_API_ENUMS_H_
 
 /// Values for per server outbound connection tracking group definition.
 /// See proxy.config.http.per_server.match
@@ -55,4 +68,5 @@ typedef enum {
   TS_SERVER_OUTBOUND_MATCH_HOST,
   TS_SERVER_OUTBOUND_MATCH_BOTH
 } TSOutboundConnectionMatchType;
+
 #endif

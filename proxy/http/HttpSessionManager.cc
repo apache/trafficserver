@@ -64,41 +64,89 @@ ServerSessionPool::purge()
 
 bool
 ServerSessionPool::match(Http1ServerSession *ss, sockaddr const *addr, CryptoHash const &hostname_hash,
-                         TSServerSessionSharingMatchType match_style)
+                         TSServerSessionSharingMatchMask match_style)
 {
-  return TS_SERVER_SESSION_SHARING_MATCH_NONE !=
-           match_style && // if no matching allowed, fail immediately.
-                          // The hostname matches if we're not checking it or it (and the port!) is a match.
-         (TS_SERVER_SESSION_SHARING_MATCH_IP == match_style ||
-          (ats_ip_port_cast(addr) == ats_ip_port_cast(ss->get_server_ip()) && ss->hostname_hash == hostname_hash)) &&
-         // The IP address matches if we're not checking it or it is a match.
-         (TS_SERVER_SESSION_SHARING_MATCH_HOST == match_style || ats_ip_addr_port_eq(ss->get_server_ip(), addr));
+  bool retval = match_style != 0;
+  if (retval && (TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style)) {
+    retval = ats_ip_addr_port_eq(ss->get_server_ip(), addr);
+  }
+  if (retval && (TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY & match_style)) {
+    retval = (ats_ip_port_cast(addr) == ats_ip_port_cast(ss->get_server_ip()) && ss->hostname_hash == hostname_hash);
+  }
+  return retval;
+}
+
+bool
+ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
+{
+  bool retval = true;
+  if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
+    // The sni_servername of the connection was set on HttpSM::do_http_server_open
+    // by fetching the hostname from the server request.  So the connection should only
+    // be reused if the hostname in the new request is the same as the host name in the
+    // original request
+    const char *session_sni = netvc->options.sni_servername;
+    if (session_sni) {
+      // TS-4468: If the connection matches, make sure the SNI server
+      // name (if present) matches the request hostname
+      int len              = 0;
+      const char *req_host = sm->t_state.hdr_info.server_request.host_get(&len);
+      retval               = strncasecmp(session_sni, req_host, len) == 0;
+      Debug("http_ss", "validate_host_sni host=%*.s, sni=%s", len, req_host, session_sni);
+    }
+  }
+  return retval;
 }
 
 bool
 ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
 {
-  // TS-4468: If the connection matches, make sure the SNI server
-  // name (if present) matches the request hostname
-  int len              = 0;
-  const char *req_host = sm->t_state.hdr_info.server_request.host_get(&len);
-  // The sni_servername of the connection was set on HttpSM::do_http_server_open
-  // by fetching the hostname from the server request.  So the connection should only
-  // be reused if the hostname in the new request is the same as the host name in the
-  // original request
-  const char *session_sni = netvc->options.sni_servername;
+  bool retval = true;
+  // Verify that the sni name on this connection would match the sni we would have use to create
+  // a new connection.
+  //
+  if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
+    const char *session_sni       = netvc->options.sni_servername;
+    std::string_view proposed_sni = sm->get_outbound_sni();
+    Debug("http_ss", "validate_sni proposed_sni=%s, sni=%s", proposed_sni.data(), session_sni);
+    if (!session_sni || proposed_sni.length() == 0) {
+      retval = session_sni == nullptr && proposed_sni.length() == 0;
+    } else {
+      retval = proposed_sni.compare(session_sni) == 0;
+    }
+  }
+  return retval;
+}
 
-  return ((sm->t_state.scheme != URL_WKSIDX_HTTPS) || !session_sni || strncasecmp(session_sni, req_host, len) == 0);
+bool
+ServerSessionPool::validate_cert(HttpSM *sm, NetVConnection *netvc)
+{
+  bool retval = true;
+  // Verify that the cert file associated this connection would match the cert file we would have use to create
+  // a new connection.
+  //
+  if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
+    const char *session_cert       = netvc->options.ssl_client_cert_name;
+    std::string_view proposed_cert = sm->get_outbound_cert();
+    Debug("http_ss", "validate_cert proposed_cert=%.*s, cert=%s", static_cast<int>(proposed_cert.size()), proposed_cert.data(),
+          session_cert);
+    if (!session_cert || proposed_cert.length() == 0) {
+      retval = session_cert == nullptr && proposed_cert.length() == 0;
+    } else {
+      retval = proposed_cert.compare(session_cert) == 0;
+    }
+  }
+  return retval;
 }
 
 HSMresult_t
 ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostname_hash,
-                                  TSServerSessionSharingMatchType match_style, HttpSM *sm, Http1ServerSession *&to_return)
+                                  TSServerSessionSharingMatchMask match_style, HttpSM *sm, Http1ServerSession *&to_return)
 {
   HSMresult_t zret = HSM_NOT_FOUND;
   to_return        = nullptr;
 
-  if (TS_SERVER_SESSION_SHARING_MATCH_HOST == match_style) {
+  if ((TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY & match_style) && !(TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style)) {
     // This is broken out because only in this case do we check the host hash first. The range must be checked
     // to verify an upstream that matches port and SNI name is selected. Walk backwards to select oldest.
     in_port_t port = ats_ip_port_cast(addr);
@@ -108,7 +156,10 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     std::tie(first, last) = static_cast<const decltype(m_fqdn_pool)::range::super_type &>(m_fqdn_pool.equal_range(hostname_hash));
     while (last != first) {
       --last;
-      if (port == ats_ip_port_cast(last->get_server_ip()) && validate_sni(sm, last->get_netvc())) {
+      if (port == ats_ip_port_cast(last->get_server_ip()) &&
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, last->get_netvc())) &&
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, last->get_netvc())) &&
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, last->get_netvc()))) {
         zret = HSM_DONE;
         break;
       }
@@ -118,17 +169,21 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
       m_fqdn_pool.erase(last);
       m_ip_pool.erase(to_return);
     }
-  } else if (TS_SERVER_SESSION_SHARING_MATCH_NONE != match_style) { // matching is not disabled.
+  } else if (TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style) { // matching is not disabled.
     IPTable::iterator first, last;
     // FreeBSD/clang++ bug workaround: explicit cast to super type to make overload work. Not needed on Fedora27 nor gcc.
     // Not fixed on FreeBSD as of llvm 6.0.1.
     std::tie(first, last) = static_cast<const decltype(m_ip_pool)::range::super_type &>(m_ip_pool.equal_range(addr));
-    // The range is all that is needed in the match IP case, otherwise need to scan for matching fqdn.
+    // The range is all that is needed in the match IP case, otherwise need to scan for matching fqdn
+    // And matches the other constraints as well
     // Note the port is matched as part of the address key so it doesn't need to be checked again.
-    if (TS_SERVER_SESSION_SHARING_MATCH_IP != match_style) {
+    if (match_style & (~TS_SERVER_SESSION_SHARING_MATCH_MASK_IP)) {
       while (last != first) {
         --last;
-        if (last->hostname_hash == hostname_hash && validate_sni(sm, last->get_netvc())) {
+        if ((!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY) || last->hostname_hash == hostname_hash) &&
+            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, last->get_netvc())) &&
+            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, last->get_netvc())) &&
+            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, last->get_netvc()))) {
           zret = HSM_DONE;
           break;
         }
@@ -282,8 +337,8 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
                                     ProxyTransaction *ua_txn, HttpSM *sm)
 {
   Http1ServerSession *to_return = nullptr;
-  TSServerSessionSharingMatchType match_style =
-    static_cast<TSServerSessionSharingMatchType>(sm->t_state.txn_conf->server_session_sharing_match);
+  TSServerSessionSharingMatchMask match_style =
+    static_cast<TSServerSessionSharingMatchMask>(sm->t_state.txn_conf->server_session_sharing_match);
   CryptoHash hostname_hash;
   HSMresult_t retval = HSM_NOT_FOUND;
 
@@ -300,7 +355,12 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     // the IP/hostname here seems a bit redundant too
     //
     if (ServerSessionPool::match(to_return, ip, hostname_hash, match_style) &&
-        ServerSessionPool::validate_sni(sm, to_return->get_netvc())) {
+        (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) ||
+         ServerSessionPool::validate_sni(sm, to_return->get_netvc())) &&
+        (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) ||
+         ServerSessionPool::validate_host_sni(sm, to_return->get_netvc())) &&
+        (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) ||
+         ServerSessionPool::validate_cert(sm, to_return->get_netvc()))) {
       Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->con_id);
       to_return->state = HSS_ACTIVE;
       sm->attach_server_session(to_return);
