@@ -851,6 +851,7 @@ HttpTransact::StartRemapRequest(State *s)
     TxnDebug("http_trans", "Before Remapping:");
     obj_describe(s->hdr_info.client_request.m_http, true);
   }
+  DUMP_HEADER("http_hdrs", &s->hdr_info.client_request, s->state_machine_id, "Incoming Request");
 
   if (s->http_config_param->referer_filter_enabled) {
     s->filter_mask = URL_REMAP_FILTER_REFERER;
@@ -1425,11 +1426,6 @@ HttpTransact::HandleRequest(State *s)
   if (handle_internal_request(s, &s->hdr_info.client_request)) {
     TRANSACT_RETURN(SM_ACTION_INTERNAL_REQUEST, nullptr);
   }
-
-  // this needs to be called after initializing state variables from request
-  // it adds the client-ip to the incoming client request.
-
-  DUMP_HEADER("http_hdrs", &s->hdr_info.client_request, s->state_machine_id, "Incoming Request");
 
   if (s->state_machine->plugin_tunnel_type == HTTP_PLUGIN_AS_INTERCEPT) {
     setup_plugin_request_intercept(s);
