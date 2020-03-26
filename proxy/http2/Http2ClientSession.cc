@@ -153,6 +153,7 @@ Http2ClientSession::free()
 
   ink_release_assert(this->client_vc == nullptr);
 
+  delete _h2_pushed_urls;
   this->connection_state.destroy();
 
   super::free();
@@ -746,8 +747,14 @@ Http2ClientSession::protocol_contains(std::string_view prefix) const
 void
 Http2ClientSession::add_url_to_pushed_table(const char *url, int url_len)
 {
-  if (h2_pushed_urls.size() < Http2::push_diary_size) {
-    h2_pushed_urls.emplace(url);
+  // Delay std::unordered_set allocation until when it used
+  if (_h2_pushed_urls == nullptr) {
+    this->_h2_pushed_urls = new std::unordered_set<std::string>();
+    this->_h2_pushed_urls->reserve(Http2::push_diary_size);
+  }
+
+  if (_h2_pushed_urls->size() < Http2::push_diary_size) {
+    _h2_pushed_urls->emplace(url);
   }
 }
 
