@@ -4530,7 +4530,8 @@ TSContSchedule(TSCont contp, TSHRTime timeout)
 
   EThread *eth = i->getThreadAffinity();
   if (eth == nullptr) {
-    return nullptr;
+    eth = this_ethread();
+    i->setThreadAffinity(eth);
   }
 
   TSAction action;
@@ -4643,7 +4644,8 @@ TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */)
 
   EThread *eth = i->getThreadAffinity();
   if (eth == nullptr) {
-    return nullptr;
+    eth = this_ethread();
+    i->setThreadAffinity(eth);
   }
 
   TSAction action = reinterpret_cast<TSAction>(eth->schedule_every(i, HRTIME_MSECONDS(every)));
