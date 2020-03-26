@@ -305,9 +305,8 @@ struct Http2RstStream {
 
 // [RFC 7540] 6.6 PUSH_PROMISE Format
 struct Http2PushPromise {
-  Http2PushPromise() : pad_length(0), promised_streamid(0) {}
-  uint8_t pad_length;
-  Http2StreamId promised_streamid;
+  uint8_t pad_length              = 0;
+  Http2StreamId promised_streamid = 0;
 };
 
 static inline bool
