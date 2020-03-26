@@ -169,7 +169,10 @@ class Http2PushPromiseFrame : public Http2TxFrame
 {
 public:
   Http2PushPromiseFrame(Http2StreamId stream_id, uint8_t flags, Http2PushPromise p, uint8_t *h, uint32_t l)
-    : Http2TxFrame({l, HTTP2_FRAME_TYPE_PUSH_PROMISE, flags, stream_id}), _params(p), _hdr_block(h), _hdr_block_len(l)
+    : Http2TxFrame({l + static_cast<uint32_t>(sizeof(Http2StreamId)), HTTP2_FRAME_TYPE_PUSH_PROMISE, flags, stream_id}),
+      _params(p),
+      _hdr_block(h),
+      _hdr_block_len(l)
   {
   }
 

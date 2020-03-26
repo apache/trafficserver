@@ -115,6 +115,7 @@ proxy/http/remap/test_PluginFactory
 proxy/http/remap/test_RemapPluginInfo
 proxy/http/test_proxy_http
 proxy/http/remap/test_*
+proxy/http2/test_libhttp2
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_Http2FrequencyCounter
 proxy/http2/test_HPACK
