@@ -3,11 +3,14 @@ Changes with Apache Traffic Server 8.1.0
   #4028 - proxy.config.http.connect_attempts_timeout tracks TTBF instead of connect
   #4203 - Allow enabling MPTCP on a listening socket through the records.config
   #4217 - Fix a regression in the traffic_ctl host status subcommand
+  #4242 - header_rewrite: Adds basic string concatenation
   #4253 - Add the capability to mark origins down with traffic_ctl.
   #4300 - Expand the post chunked tests.
   #4422 - TCL: Rmove TCL dependency from HostStatus
   #4437 - Adds the log tag cqint for internal requests
   #4441 - Corrects the wording of the usage messages for traffic_ctl host subcommand
+  #4461 - Fixes memory leaks in header_rewrite
+  #4568 - Adjusts the format for header_rewrite string concatenation
   #4664 - Use hash string when it is provided for hashing
   #4762 - Fix OCSP stapling with dual cert
   #4869 - Cleanup: remove lib/cppapi from clang-format, it's been moved.
@@ -38,6 +41,7 @@ Changes with Apache Traffic Server 8.1.0
   #6154 - tslua: Exposes set/get method for server request objects
   #6182 - tslua: Exposes set/get version for server request objects
   #6191 - Limit this check to Linux, where ldd always works
+  #6234 - Don't sleep if ProtectedQueue.localQueue is not empty. (#6234)
   #6264 - Change HTTP/2 error rate log to warning
   #6294 - Enhance Connection Collapse in ATS core - back port to 8.x
   #6328 - Document the order of the X-Cache header
