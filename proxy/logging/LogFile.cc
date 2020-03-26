@@ -27,6 +27,10 @@
 
  ***************************************************************************/
 
+#include <vector>
+#include <string>
+#include <algorithm>
+
 #include "tscore/ink_platform.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/ink_file.h"
@@ -35,6 +39,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <libgen.h>
 
 #include "P_EventSystem.h"
 #include "I_Machine.h"
@@ -237,6 +242,82 @@ LogFile::close_file()
   RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
 }
 
+struct RolledFile {
+  RolledFile(const std::string &name, time_t mtime) : _name(name), _mtime(mtime) {}
+  std::string _name;
+  time_t _mtime;
+};
+
+/**
+ * @brief trim rolled files to max number of rolled files, older first
+ *
+ * @param rolling_max_count - limit to which rolled files will be trimmed
+ * @return true if success, false if failure
+ */
+bool
+LogFile::trim_rolled(size_t rolling_max_count)
+{
+  /* man: "dirname() may modify the contents of path, so it may be
+   * desirable to pass a copy when calling one of these functions." */
+  char *name = ats_strdup(m_name);
+  std::string logfile_dir(::dirname((name)));
+  ats_free(name);
+
+  /* Check logging directory access */
+  int err;
+  do {
+    err = access(logfile_dir.c_str(), R_OK | W_OK | X_OK);
+  } while ((err < 0) && (errno == EINTR));
+
+  if (err < 0) {
+    Error("Error accessing logging directory %s: %s.", logfile_dir.c_str(), strerror(errno));
+    return false;
+  }
+
+  /* Open logging directory */
+  DIR *ld = ::opendir(logfile_dir.c_str());
+  if (ld == nullptr) {
+    Error("Error opening logging directory %s to collect trim candidates: %s.", logfile_dir.c_str(), strerror(errno));
+    return false;
+  }
+
+  /* Collect the rolled file names from the logging directory that match the specified log file name */
+  std::vector<RolledFile> rolled;
+  char path[MAXPATHLEN];
+  struct dirent *entry;
+  while ((entry = readdir(ld))) {
+    struct stat sbuf;
+    snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir.c_str(), entry->d_name);
+    int sret = ::stat(path, &sbuf);
+    if (sret != -1 && S_ISREG(sbuf.st_mode)) {
+      int name_len = strlen(m_name);
+      int path_len = strlen(path);
+      if (path_len > name_len && 0 == ::strncmp(m_name, path, name_len) && LogFile::rolled_logfile(entry->d_name)) {
+        rolled.push_back(RolledFile(path, sbuf.st_mtime));
+      }
+    }
+  }
+
+  ::closedir(ld);
+
+  bool result = true;
+  std::sort(rolled.begin(), rolled.end(), [](const RolledFile a, const RolledFile b) { return a._mtime > b._mtime; });
+  if (rolling_max_count < rolled.size()) {
+    for (auto it = rolled.begin() + rolling_max_count; it != rolled.end(); it++) {
+      const RolledFile &file = *it;
+      if (unlink(file._name.c_str()) < 0) {
+        Error("unable to auto-delete rolled logfile %s: %s.", file._name.c_str(), strerror(errno));
+        result = false;
+      } else {
+        Debug("log-file", "rolled logfile, %s, was auto-deleted", file._name.c_str());
+      }
+    }
+  }
+
+  rolled.clear();
+  return result;
+}
+
 /*-------------------------------------------------------------------------
  * LogFile::roll
  * This function is called by a LogObject to roll its files.
@@ -244,7 +325,7 @@ LogFile::close_file()
  * Return 1 if file rolled, 0 otherwise
 -------------------------------------------------------------------------*/
 int
-LogFile::roll(long interval_start, long interval_end)
+LogFile::roll(long interval_start, long interval_end, bool reopen_after_rolling)
 {
   if (m_log) {
     // Due to commit 346b419 the BaseLogFile::close_file() is no longer called within BaseLogFile::roll().
@@ -259,6 +340,12 @@ LogFile::roll(long interval_start, long interval_end)
     // close file operation here within the containing LogFile object.
     if (m_log->roll(interval_start, interval_end)) {
       m_log->close_file();
+
+      if (reopen_after_rolling) {
+        /* If we re-open now log file will be created even if there is nothing being logged */
+        m_log->open_file();
+      }
+
       return 1;
     }
   }

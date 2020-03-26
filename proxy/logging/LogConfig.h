@@ -188,6 +188,8 @@ public:
   int rolling_interval_sec;
   int rolling_offset_hr;
   int rolling_size_mb;
+  int rolling_max_count;
+  bool rolling_allow_empty;
   bool auto_delete_rolled_files;
 
   int sampling_frequency;
