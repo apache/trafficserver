@@ -965,6 +965,11 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   for (c = p->consumer_list.head; c; c = c->link.next) {
     int64_t c_write = consumer_n;
 
+    // Don't bother to set up the consumer if it is dead
+    if (!c->alive) {
+      continue;
+    }
+
     if (!p->alive) {
       // Adjust the amount of chunked data to write if the only data was in the initial read
       // The amount to write in some cases is dependent on the type of the consumer, so this
