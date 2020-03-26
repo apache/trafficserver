@@ -35,6 +35,9 @@ Description
 
 Mostly the same as :func:`TSContSchedule`. Schedules :arg:`contp` on :arg:`ethread`.
 
+Note that the TSContSchedule() family of API shall only be called from an ATS EThread.
+Calling it from raw non-EThreads can result in unpredictable behavior.
+
 See Also
 ========
 

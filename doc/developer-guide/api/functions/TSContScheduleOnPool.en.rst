@@ -54,6 +54,9 @@ called and continuations that use them have the same restrictions. ``TS_THREAD_P
 are threads that exist to perform long or blocking actions, although sufficiently long operation can
 impact system performance by blocking other continuations on the threads.
 
+Note that the TSContSchedule() family of API shall only be called from an ATS EThread.
+Calling it from raw non-EThreads can result in unpredictable behavior.
+
 Example Scenarios
 =================
 

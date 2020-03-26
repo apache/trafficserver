@@ -44,6 +44,9 @@ another thread this can be problematic to be correctly timed. The return value c
 :func:`TSActionDone` to see if the continuation ran before the return, which is possible if
 :arg:`timeout` is `0`. Returns ``nullptr`` if thread affinity was cleared.
 
+Note that the TSContSchedule() family of API shall only be called from an ATS EThread.
+Calling it from raw non-EThreads can result in unpredictable behavior.
+
 See Also
 ========
 
