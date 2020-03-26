@@ -58,8 +58,15 @@ def getHeaderFieldVal(request_header, field):
 
 # addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
 def addResponse(self, filename, request_header, response_header):
-    client_request = Request.fromRequestLine(request_header["headers"], request_header["body"], None if "options" not in request_header else request_header["options"])
-    server_response = Response.fromRequestLine(response_header["headers"], response_header["body"], None if "options" not in response_header else response_header["options"])
+    client_request = Request.fromRequestLine(
+        request_header["headers"],
+        "" if "body" not in request_header else request_header["body"],
+        None if "options" not in request_header else request_header["options"])
+
+    server_response = Response.fromRequestLine(
+        response_header["headers"],
+        "" if "body" not in response_header else response_header["body"],
+        None if "options" not in response_header else response_header["options"])
 
     # timestamp field is left None because that needs to be revised for better implementation
     txn = Transaction(client_request, None, server_response, None, None, None)
