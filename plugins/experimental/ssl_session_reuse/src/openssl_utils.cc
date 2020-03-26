@@ -54,8 +54,12 @@ ssl_new_session(TSSslSessionID &sid)
 
   int session_ret_len = SSL_SESSION_MAX_DER;
   char session_data[SSL_SESSION_MAX_DER];
-  if (!TSSslSessionGetBuffer(&sid, session_data, &session_ret_len)) {
-    TSError("Session data is too large: %d", session_ret_len);
+  int true_len = TSSslSessionGetBuffer(&sid, session_data, &session_ret_len);
+  if (true_len == 0) {
+    TSError("Session data not found");
+    return 0;
+  } else if (true_len > session_ret_len) {
+    TSError("Session data is too large: %d > %d (max)", true_len, session_ret_len);
     return 0;
   }
 
