@@ -4517,6 +4517,9 @@ TSContSchedule(TSCont contp, TSHRTime timeout)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
+  /* ensure we are on a EThread */
+  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
+
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
@@ -4546,6 +4549,9 @@ TSAction
 TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  /* ensure we are on a EThread */
+  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
@@ -4624,6 +4630,9 @@ TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
+  /* ensure we are on a EThread */
+  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
+
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
@@ -4648,6 +4657,9 @@ TSAction
 TSContScheduleEveryOnPool(TSCont contp, TSHRTime every, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  /* ensure we are on a EThread */
+  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
