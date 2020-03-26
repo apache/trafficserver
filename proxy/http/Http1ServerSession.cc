@@ -185,9 +185,7 @@ Http1ServerSession::release()
     return;
   }
 
-  // Make sure the vios for the current SM are cleared
-  server_vc->do_io_read(nullptr, 0, nullptr);
-  server_vc->do_io_write(nullptr, 0, nullptr);
+  // release_session or do_io_close will clear the IO operations from the SM
 
   HSMresult_t r = httpSessionManager.release_session(this);
 

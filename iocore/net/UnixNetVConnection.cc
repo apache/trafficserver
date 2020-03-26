@@ -87,6 +87,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_ERROR:
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
+      Warning("Closing orphaned vc %p", vc);
       Debug("inactivity_cop", "event %d: null read.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
       break;

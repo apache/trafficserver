@@ -316,10 +316,6 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
   case VC_EVENT_INACTIVITY_TIMEOUT:
     half_close = false;
     this->do_io_close();
-    if (client_vc != nullptr) {
-      client_vc->do_io_close();
-      client_vc = nullptr;
-    }
     break;
   case VC_EVENT_READ_READY:
     // Drain any data read
@@ -396,10 +392,6 @@ Http1ClientSession::state_keep_alive(int event, void *data)
 
   case VC_EVENT_EOS:
     this->do_io_close();
-    if (client_vc != nullptr) {
-      client_vc->do_io_close();
-      client_vc = nullptr;
-    }
     break;
 
   case VC_EVENT_READ_COMPLETE:
