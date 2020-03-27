@@ -1,6 +1,5 @@
 Changes with Apache Traffic Server 8.1.0
   #3899 - Add a --reason tag option to the host subcommand
-  #4028 - proxy.config.http.connect_attempts_timeout tracks TTBF instead of connect
   #4203 - Allow enabling MPTCP on a listening socket through the records.config
   #4217 - Fix a regression in the traffic_ctl host status subcommand
   #4242 - header_rewrite: Adds basic string concatenation
@@ -11,6 +10,7 @@ Changes with Apache Traffic Server 8.1.0
   #4441 - Corrects the wording of the usage messages for traffic_ctl host subcommand
   #4461 - Fixes memory leaks in header_rewrite
   #4568 - Adjusts the format for header_rewrite string concatenation
+  #4586 - Turn this Debug back into an Error
   #4664 - Use hash string when it is provided for hashing
   #4762 - Fix OCSP stapling with dual cert
   #4869 - Cleanup: remove lib/cppapi from clang-format, it's been moved.
@@ -22,35 +22,47 @@ Changes with Apache Traffic Server 8.1.0
   #5143 - Fix a self detection issue where parents are not marked down during ATS startup.
   #5149 - Add nullptr check on ConfigProcessor::release()
   #5163 - Fix memleak in ProcessManager::stop()
+  #5176 - Adds a new log tag for the MPTCP state of a connection
   #5209 - Allows logging of negative values
+  #5219 - url_sig debug fix for when url is missing the signature query string
   #5227 - Normalize on negative value for milestone metrics
   #5234 - Correct interpretation of proxy.config.ssl.client.verify.server
   #5236 - Update documentation for SSL VERIFY hooks.
   #5242 - Adds a missing header field for the tcpinfo log
   #5252 - Make host status persistent across restarts
+  #5268 - fix If-None-Match and If-Modified-Since priority problem
   #5329 - Fixes clang-analyzer error dereferencing nullptr in parent
   #5348 - Don't assign if this and other are the same object
   #5354 - Password can not be nullptr here, so don't check
   #5417 - Change HostStatus to use only one stat per host.
+  #5571 - Removes the abort() from header_rewrite, and try to deal with errors
   #5585 - Do not change stream state from HALF_CLOSED_REMOTE with CONTINUATION frame
+  #5589 - Adds support for set-destination SCHEME/URL to take string expansions
+  #5697 - Coalesce empty objects in HdrHeap
+  #5701 - fix If-Match and If-Unmodified-Since priority problem
   #5811 - Fix no_activity timeout for server session reuse.
   #5865 - cachekey: added --canonical-prefix parameter
   #5872 - cachekey: added --key-type to allow parent selection URL to be modified
   #5921 - Cleanup AuTest for HTTP/2
   #5945 - cachekey: allow multiple values for `--key-type`
+  #5969 - Change the ready checks for ats to use the actual ats port
   #6154 - tslua: Exposes set/get method for server request objects
+  #6168 - Add cache_range_requests autest, add to x-parentselectiion-key to xdebug plugin.
   #6182 - tslua: Exposes set/get version for server request objects
   #6191 - Limit this check to Linux, where ldd always works
   #6234 - Don't sleep if ProtectedQueue.localQueue is not empty. (#6234)
+  #6247 - Add some stats collections to cache_promote.
   #6264 - Change HTTP/2 error rate log to warning
   #6294 - Enhance Connection Collapse in ATS core - back port to 8.x
   #6328 - Document the order of the X-Cache header
   #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
   #6392 - Free TSMgmtString after using it.
   #6442 - Disable the chunked_encoding test
+  #6464 - cache_range_requests plugin: detect and handle TSCacheUrlSet failures…
   #6518 - Fixes a bug where HostStatus::getHostStatus() creates too many stats.
   #6534 - Ignore MgmtMessageHdr if ProcessManager is not running
   #6535 - Add MIMEHdr Garbage Collection to HPACK Dynamic Table
+  #6540 - Disables "virtual host not used with AWS auth v4" error in s3_auth
   #6541 - Add cachekey latest features to 8.1.x
   #6553 - Options to roll empty logs and log trimming (8.1.x)
   #6557 - free(map); -> delete map;
