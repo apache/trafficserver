@@ -125,4 +125,5 @@ See Also
 ========
 
 :doc:`TSContSchedule.en`
+:doc:`TSContScheduleEvery.en`
 :doc:`TSContScheduleOnThread.en`
