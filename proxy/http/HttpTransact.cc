@@ -2091,7 +2091,11 @@ HttpTransact::DecideCacheLookup(State *s)
     if (s->redirect_info.redirect_in_process) {
       // without calling out the CACHE_LOOKUP_COMPLETE_HOOK
       if (s->txn_conf->cache_http) {
-        s->cache_info.action = CACHE_PREPARE_TO_WRITE;
+	  	if(s->cache_info.write_lock_state == CACHE_WL_FAIL){
+	        s->cache_info.action = CACHE_PREPARE_TO_WRITE;
+	  	}else if(s->cache_info.write_lock_state == CACHE_WL_SUCCESS){
+	  		s->cache_info.action =  CACHE_DO_WRITE;
+	  	}
       }
       LookupSkipOpenServer(s);
     } else {
