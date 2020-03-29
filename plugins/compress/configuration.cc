@@ -204,7 +204,10 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
 
   for (StringContainer::iterator it = compressible_content_types_.begin(); it != compressible_content_types_.end(); ++it) {
     const char *match_string = it->c_str();
-    bool exclude             = match_string[0] == '!';
+    if (match_string == nullptr) {
+      continue;
+    }
+    bool exclude = match_string[0] == '!';
 
     if (exclude) {
       ++match_string; // skip '!'
