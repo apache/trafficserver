@@ -279,9 +279,9 @@ Http2Stream::set_request_headers(HTTPHdr &h2_headers)
   _req_header.copy(&h2_headers);
 }
 
-inline // Check entire DATA payload length if content-length: header is exist
-  void
-  Http2Stream::increment_data_length(uint64_t length)
+// Check entire DATA payload length if content-length: header is exist
+inline void
+Http2Stream::increment_data_length(uint64_t length)
 {
   data_length += length;
 }
