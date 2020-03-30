@@ -38,6 +38,30 @@
 
 ClassAllocator<Http2Stream> http2StreamAllocator("http2StreamAllocator");
 
+Http2Stream::Http2Stream(Http2StreamId sid, ssize_t initial_rwnd) : _id(sid), _client_rwnd(initial_rwnd)
+{
+  SET_HANDLER(&Http2Stream::main_event_handler);
+}
+
+void
+Http2Stream::init(Http2StreamId sid, ssize_t initial_rwnd)
+{
+  this->mark_milestone(Http2StreamMilestone::OPEN);
+
+  _id                = sid;
+  _thread            = this_ethread();
+  this->_client_rwnd = initial_rwnd;
+
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
+  HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
+
+  sm_reader = request_reader = request_buffer.alloc_reader();
+  http_parser_init(&http_parser);
+  // FIXME: Are you sure? every "stream" needs request_header?
+  _req_header.create(HTTP_TYPE_REQUEST);
+  response_header.create(HTTP_TYPE_RESPONSE);
+}
+
 int
 Http2Stream::main_event_handler(int event, void *edata)
 {
@@ -976,12 +1000,6 @@ Http2Stream::decrement_server_rwnd(size_t amount)
   } else {
     return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
   }
-}
-
-void
-Http2Stream::mark_milestone(Http2StreamMilestone type)
-{
-  this->_milestones.mark(type);
 }
 
 bool

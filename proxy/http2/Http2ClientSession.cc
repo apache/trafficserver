@@ -650,3 +650,81 @@ Http2ClientSession::_should_do_something_else()
   // Do something else every 128 incoming frames
   return (this->_n_frame_read & 0x7F) == 0;
 }
+
+NetVConnection *
+Http2ClientSession::get_netvc() const
+{
+  return client_vc;
+}
+
+sockaddr const *
+Http2ClientSession::get_client_addr()
+{
+  return client_vc ? client_vc->get_remote_addr() : &cached_client_addr.sa;
+}
+
+sockaddr const *
+Http2ClientSession::get_local_addr()
+{
+  return client_vc ? client_vc->get_local_addr() : &cached_local_addr.sa;
+}
+
+void
+Http2ClientSession::write_reenable()
+{
+  write_vio->reenable();
+}
+
+int
+Http2ClientSession::get_transact_count() const
+{
+  return connection_state.get_stream_requests();
+}
+
+void
+Http2ClientSession::release(ProxyClientTransaction *trans)
+{
+}
+
+const char *
+Http2ClientSession::get_protocol_string() const
+{
+  return "http/2";
+}
+
+int
+Http2ClientSession::populate_protocol(std::string_view *result, int size) const
+{
+  int retval = 0;
+  if (size > retval) {
+    result[retval++] = IP_PROTO_TAG_HTTP_2_0;
+    if (size > retval) {
+      retval += super::populate_protocol(result + retval, size - retval);
+    }
+  }
+  return retval;
+}
+
+const char *
+Http2ClientSession::protocol_contains(std::string_view prefix) const
+{
+  const char *retval = nullptr;
+
+  if (prefix.size() <= IP_PROTO_TAG_HTTP_2_0.size() && strncmp(IP_PROTO_TAG_HTTP_2_0.data(), prefix.data(), prefix.size()) == 0) {
+    retval = IP_PROTO_TAG_HTTP_2_0.data();
+  } else {
+    retval = super::protocol_contains(prefix);
+  }
+  return retval;
+}
+
+void
+Http2ClientSession::add_url_to_pushed_table(const char *url, int url_len)
+{
+  if (h2_pushed_urls_size < Http2::push_diary_size) {
+    char *dup_url = ats_strndup(url, url_len);
+    ink_hash_table_insert(h2_pushed_urls, dup_url, nullptr);
+    h2_pushed_urls_size++;
+    ats_free(dup_url);
+  }
+}
