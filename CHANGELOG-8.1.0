@@ -16,6 +16,7 @@ Changes with Apache Traffic Server 8.1.0
   #4869 - Cleanup: remove lib/cppapi from clang-format, it's been moved.
   #4874 - Avoid ats_malloc in unmarshal
   #4924 - lua plugin: add support for relative path scripts; moves inline script to switch
+  #4944 - Add history to HTTP/2
   #5058 - Fixed use after free when running regression under ASAN
   #5122 - fix crash in CacheVC::openReadFromWriter
   #5131 - Do not run clang-format for @default_stack_size@
@@ -35,17 +36,31 @@ Changes with Apache Traffic Server 8.1.0
   #5348 - Don't assign if this and other are the same object
   #5354 - Password can not be nullptr here, so don't check
   #5417 - Change HostStatus to use only one stat per host.
+  #5465 - Separate out common header compression logic to hdrs directory
   #5571 - Removes the abort() from header_rewrite, and try to deal with errors
   #5585 - Do not change stream state from HALF_CLOSED_REMOTE with CONTINUATION frame
   #5589 - Adds support for set-destination SCHEME/URL to take string expansions
+  #5634 - HTTP/2: cancel reading buffer when ATS received GOAWAY
+  #5676 - Log H2 errors with the codes
   #5697 - Coalesce empty objects in HdrHeap
   #5701 - fix If-Match and If-Unmodified-Since priority problem
+  #5710 - Convert regression tests for XPACK into Catch based unit tests
+  #5747 - Add slow logs for HTTP/2 Connection & Stream
+  #5766 - Record HttpSM Id on new transaction
+  #5785 - Allocate DependencyTree only if HTTP/2 stream priority is enabled
   #5811 - Fix no_activity timeout for server session reuse.
+  #5825 - Cleanup: Remove unused function & old comments
+  #5826 - Cleanup: Signal READ_READY event only if the buffer is readable
   #5865 - cachekey: added --canonical-prefix parameter
   #5872 - cachekey: added --key-type to allow parent selection URL to be modified
+  #5878 - Add protection against use after free due to Http2ConnectionState::destroy() being called more than once per session.
+  #5888 - Allow disabling HTTP/2 priority frames limit
+  #5889 - Provide stats for the recently introduced HTTP/2 rate limits
   #5921 - Cleanup AuTest for HTTP/2
   #5945 - cachekey: allow multiple values for `--key-type`
   #5969 - Change the ready checks for ats to use the actual ats port
+  #6055 - Add a config for internal HPACK header table size limit
+  #6098 - Replace container of HPACK dynamic table from std::vector to std::deque
   #6154 - tslua: Exposes set/get method for server request objects
   #6168 - Add cache_range_requests autest, add to x-parentselectiion-key to xdebug plugin.
   #6182 - tslua: Exposes set/get version for server request objects
@@ -54,6 +69,7 @@ Changes with Apache Traffic Server 8.1.0
   #6247 - Add some stats collections to cache_promote.
   #6264 - Change HTTP/2 error rate log to warning
   #6294 - Enhance Connection Collapse in ATS core - back port to 8.x
+  #6307 - Reduce process duration of test_Http2FrequencyCounter
   #6328 - Document the order of the X-Cache header
   #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
   #6392 - Free TSMgmtString after using it.
@@ -66,3 +82,6 @@ Changes with Apache Traffic Server 8.1.0
   #6541 - Add cachekey latest features to 8.1.x
   #6553 - Options to roll empty logs and log trimming (8.1.x)
   #6557 - free(map); -> delete map;
+  #6582 - Fix strict round robin cur_index increment
+  #6585 - url_sig: fix memory leak with urlParse and pristine flag (8.1.x)
+  #6594 - Remove extra new line detection in 303 gold file
