@@ -62,6 +62,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
    Remap Purge <remap_purge.en>
+   Slice <slice.en>
    Stats over HTTP <stats_over_http.en>
    TCPInfo <tcpinfo.en>
    XDebug <xdebug.en>
@@ -116,6 +117,11 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Regex Revalidate <regex_revalidate.en>`
    Configurable rules for forcing cache object revalidations using regular expressions.
+
+:doc:`Slicer <slice.en>`
+   Slice full file or range based requests into deterministic chunks,
+   allowing large files to be spread across multiple cache stripes. Allows
+   range requests to be satisfied by stitching these chunks together.
 
 :doc:`Stats over HTTP <stats_over_http.en>`
     Provide an HTTP interface to all |TS| statistics.
