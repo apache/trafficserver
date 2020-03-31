@@ -29,23 +29,37 @@
 
 #pragma once
 
-#include "tscore/ink_mutex.h"
-#include "tscore/ink_thread.h"
+#include "tscore/ink_error.h"
+#include <pthread.h>
 
-#define RW_MAGIC 0x19283746
+typedef pthread_rwlock_t ink_rwlock;
 
-struct ink_rwlock {
-  ink_mutex rw_mutex;      /* basic lock on this struct */
-  ink_cond rw_condreaders; /* for reader threads waiting */
-  ink_cond rw_condwriters; /* for writer threads waiting */
-  int rw_magic;            /* for error checking */
-  int rw_nwaitreaders;     /* the number waiting */
-  int rw_nwaitwriters;     /* the number waiting */
-  int rw_refcount;
-};
+void ink_rwlock_init(ink_rwlock *rw);
+void ink_rwlock_destroy(ink_rwlock *rw);
 
-int ink_rwlock_init(ink_rwlock *rw);
-int ink_rwlock_destroy(ink_rwlock *rw);
-int ink_rwlock_rdlock(ink_rwlock *rw);
-int ink_rwlock_wrlock(ink_rwlock *rw);
-int ink_rwlock_unlock(ink_rwlock *rw);
+static inline void
+ink_rwlock_rdlock(ink_rwlock *rw)
+{
+  int error = pthread_rwlock_rdlock(rw);
+  if (unlikely(error != 0)) {
+    ink_abort("pthread_rwlock_rdlock(%p) failed: %s (%d)", rw, strerror(error), error);
+  }
+}
+
+static inline void
+ink_rwlock_wrlock(ink_rwlock *rw)
+{
+  int error = pthread_rwlock_wrlock(rw);
+  if (unlikely(error != 0)) {
+    ink_abort("pthread_rwlock_wrlock(%p) failed: %s (%d)", rw, strerror(error), error);
+  }
+}
+
+static inline void
+ink_rwlock_unlock(ink_rwlock *rw)
+{
+  int error = pthread_rwlock_unlock(rw);
+  if (unlikely(error != 0)) {
+    ink_abort("pthread_rwlock_unlock(%p) failed: %s (%d)", rw, strerror(error), error);
+  }
+}
