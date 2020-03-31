@@ -40,8 +40,10 @@ Changes with Apache Traffic Server 8.1.0
   #5571 - Removes the abort() from header_rewrite, and try to deal with errors
   #5585 - Do not change stream state from HALF_CLOSED_REMOTE with CONTINUATION frame
   #5589 - Adds support for set-destination SCHEME/URL to take string expansions
+  #5633 - HTTP/2: increment write_vio.ndone by consumed size
   #5634 - HTTP/2: cancel reading buffer when ATS received GOAWAY
   #5676 - Log H2 errors with the codes
+  #5680 - HTTP/2 - tweak for better field name handling.
   #5697 - Coalesce empty objects in HdrHeap
   #5701 - fix If-Match and If-Unmodified-Since priority problem
   #5710 - Convert regression tests for XPACK into Catch based unit tests
@@ -71,6 +73,7 @@ Changes with Apache Traffic Server 8.1.0
   #6294 - Enhance Connection Collapse in ATS core - back port to 8.x
   #6307 - Reduce process duration of test_Http2FrequencyCounter
   #6328 - Document the order of the X-Cache header
+  #6332 - Fixes Issue #6321 caused when proxy.config.http.no_dns_just_forward_to_parent
   #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
   #6392 - Free TSMgmtString after using it.
   #6442 - Disable the chunked_encoding test
@@ -85,3 +88,6 @@ Changes with Apache Traffic Server 8.1.0
   #6582 - Fix strict round robin cur_index increment
   #6585 - url_sig: fix memory leak with urlParse and pristine flag (8.1.x)
   #6594 - Remove extra new line detection in 303 gold file
+  #6595 - Fix httpbin autest for 8.1.x
+  #6597 - HTTP/2 backports for 8.1.x (part 2)
+  #6600 - Remove enable_tls option and set select ports to false.  This passed …
