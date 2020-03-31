@@ -697,9 +697,9 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContMute
 source_file = _build/locale/pot/developer-guide/api/functions/TSContMutexGet.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--api--functions--TSContSchedule_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContSchedule.en.po
-source_file = _build/locale/pot/developer-guide/api/functions/TSContSchedule.en.pot
+[apache-traffic-server-6x.developer-guide--api--functions--TSContScheduleOnPool_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContScheduleOnPool.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContScheduleOnPool.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.developer-guide--api--functions--TSDebug_en]

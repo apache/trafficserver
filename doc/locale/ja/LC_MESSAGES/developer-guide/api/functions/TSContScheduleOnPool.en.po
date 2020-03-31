@@ -29,18 +29,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../developer-guide/api/functions/TSContSchedule.en.rst:32
+#: ../../developer-guide/api/functions/TSContScheduleOnPool.en.rst:32
 msgid "Description"
 msgstr "解説"
 
-#: ../../developer-guide/api/functions/TSContSchedule.en.rst:25
+#: ../../developer-guide/api/functions/TSContScheduleOnPool.en.rst:25
 msgid "Synopsis"
 msgstr "概要"
 
-#: ../../developer-guide/api/functions/TSContSchedule.en.rst:22
-msgid "TSContSchedule"
+#: ../../developer-guide/api/functions/TSContScheduleOnPool.en.rst:22
+msgid "TSContScheduleOnPool"
 msgstr ""
 
-#: ../../developer-guide/api/functions/TSContSchedule.en.rst:27
+#: ../../developer-guide/api/functions/TSContScheduleOnPool.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"

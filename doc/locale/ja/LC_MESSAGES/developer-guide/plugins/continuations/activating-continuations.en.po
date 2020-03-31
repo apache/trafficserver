@@ -48,10 +48,10 @@ msgstr ""
 #: ../../developer-guide/plugins/continuations/activating-continuations.en.rst:25
 msgid ""
 "Continuations are activated when they receive an event or by "
-"``TSContSchedule`` (which schedules a continuation to receive an event). "
+"``TSContScheduleOnPool`` (which schedules a continuation to receive an event). "
 "Continuations might receive an event because:"
 msgstr ""
-"継続は、イベントを受け取った際か ``TSContSchedule`` （イベントを受け取るため"
+"継続は、イベントを受け取った際か ``TSContScheduleOnPool`` （イベントを受け取るため"
 "継続をスケジュールする関数）によってアクティベートされます。下記の理由により"
 "継続がイベントを受け取る可能性があります。 :"
 
