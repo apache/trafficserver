@@ -31,6 +31,7 @@
 #include <cerrno>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <openssl/ssl.h>
 
 #include <algorithm>
 #include <sstream>
@@ -49,6 +50,8 @@ namespace
 {
 const char *PLUGIN_NAME   = "traffic_dump";
 const std::string closing = "]}]}";
+uint64_t session_counter  = 0;
+
 std::string defaut_sensitive_field_value;
 
 // A case-insensitive comparitor used for comparing HTTP field names.
@@ -87,6 +90,7 @@ std::unordered_set<std::string, StringHashByLower, InsensitiveCompare> default_s
 std::unordered_set<std::string, StringHashByLower, InsensitiveCompare> sensitive_fields;
 
 ts::file::path log_path{"dump"};               // default log directory
+std::string sni_filter;                        // The SNI requested for filtering against.
 int s_arg_idx = 0;                             // Session Arg Index to pass on session data
 std::atomic<int64_t> sample_pool_size(1000);   // Sampling ratio
 std::atomic<int64_t> max_disk_usage(10000000); //< Max disk space for logs (approximate)
@@ -597,9 +601,29 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     return TS_SUCCESS;
   }
   case TS_EVENT_HTTP_SSN_START: {
-    // Grab session id to do sampling
+    // Grab session id for logging against a global value rather than the local
+    // session_counter.
     int64_t id = TSHttpSsnIdGet(ssnp);
-    if (id % sample_pool_size != 0) {
+
+    // If the user has asked for SNI filtering, filter on that first because
+    // any sampling will apply just to that subset of connections that match
+    // that SNI.
+    if (!sni_filter.empty()) {
+      TSVConn ssn_vc           = TSHttpSsnClientVConnGet(ssnp);
+      TSSslConnection ssl_conn = TSVConnSslConnectionGet(ssn_vc);
+      SSL *ssl_obj             = (SSL *)ssl_conn;
+      if (ssl_obj == nullptr) {
+        TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore non-HTTPS session %" PRId64 "...", id);
+        break;
+      }
+      const std::string sni = SSL_get_servername(ssl_obj, TLSEXT_NAMETYPE_host_name);
+      if (sni != sni_filter) {
+        TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore HTTPS session with non-filtered SNI: %s", sni.c_str());
+        break;
+      }
+    }
+    const auto this_session_count = session_counter++;
+    if (this_session_count % sample_pool_size != 0) {
       TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore session %" PRId64 "...", id);
       break;
     } else if (disk_usage >= max_disk_usage) {
@@ -632,10 +656,10 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     std::string beginning = R"({"meta":{"version":"1.0"},"sessions":[{"protocol":[)" + result + "]" + R"(,"connection-time":)" +
                             std::to_string(start.count()) + R"(,"transactions":[)";
 
-    // Grab session id and use its hex string as fname
+    // Use the session count's hex string as the filename.
     std::stringstream stream;
-    stream << std::setw(16) << std::setfill('0') << std::hex << id;
-    std::string session_id = stream.str();
+    stream << std::setw(16) << std::setfill('0') << std::hex << this_session_count;
+    std::string session_hex_name = stream.str();
 
     // Use client ip as sub directory name
     char client_str[INET6_ADDRSTRLEN];
@@ -653,7 +677,7 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     TSMutexLock(ssnData->disk_io_mutex);
     if (ssnData->log_fd < 0) {
       ts::file::path log_p = log_path / ts::file::path(std::string(client_str, 3));
-      ts::file::path log_f = log_p / ts::file::path(session_id);
+      ts::file::path log_f = log_p / ts::file::path(session_hex_name);
 
       // Create subdir if not existing
       std::error_code ec;
@@ -682,7 +706,7 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     break;
   }
   case TS_EVENT_HTTP_SSN_CLOSE: {
-    // Write session and log file closing
+    // Write session and close the log file.
     int64_t id = TSHttpSsnIdGet(ssnp);
     TSDebug(PLUGIN_NAME, "global_ssn_handler(): Closing session %" PRId64 "...", id);
     // Retrieve SsnData
@@ -721,12 +745,11 @@ TSPluginInit(int argc, const char *argv[])
 
   bool sensitive_fields_were_specified = false;
   /// Commandline options
-  static const struct option longopts[] = {{"logdir", required_argument, nullptr, 'l'},
-                                           {"sample", required_argument, nullptr, 's'},
-                                           {"limit", required_argument, nullptr, 'm'},
-                                           {"sensitive-fields", required_argument, nullptr, 'f'},
-                                           {nullptr, no_argument, nullptr, 0}};
-  int opt                               = 0;
+  static const struct option longopts[] = {
+    {"logdir", required_argument, nullptr, 'l'},     {"sample", required_argument, nullptr, 's'},
+    {"limit", required_argument, nullptr, 'm'},      {"sensitive-fields", required_argument, nullptr, 'f'},
+    {"sni-filter", required_argument, nullptr, 'n'}, {nullptr, no_argument, nullptr, 0}};
+  int opt = 0;
   while (opt >= 0) {
     opt = getopt_long(argc, const_cast<char *const *>(argv), "l:", longopts, nullptr);
     switch (opt) {
@@ -749,6 +772,12 @@ TSPluginInit(int argc, const char *argv[])
         }
         sensitive_fields.emplace(filter_field);
       }
+      break;
+    }
+    case 'n': {
+      // --sni-filter is used to filter sessions based upon an SNI.
+      sni_filter = std::string(optarg);
+      TSDebug(PLUGIN_NAME, "Filtering to only dump connections with SNI: %s", sni_filter.c_str());
       break;
     }
     case 'l': {
