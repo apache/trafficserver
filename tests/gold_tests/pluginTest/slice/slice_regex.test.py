@@ -34,7 +34,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server")
 
 # default root
 request_header_chk = {"headers":
@@ -124,12 +124,12 @@ ts.Disk.remap_config.AddLines([
 
 # minimal configuration
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'slice',
-    'proxy.config.http.cache.http': 0,
-    'proxy.config.http.wait_for_cache': 0,
-    'proxy.config.http.insert_age_in_response': 0,
-    'proxy.config.http.response_via_str': 0,
+#  'proxy.config.diags.debug.enabled': 1,
+#  'proxy.config.diags.debug.tags': 'slice',
+  'proxy.config.http.cache.http': 0,
+  'proxy.config.http.wait_for_cache': 0,
+  'proxy.config.http.insert_age_in_response': 0,
+  'proxy.config.http.response_via_str': 0,
 })
 
 # 0 Test - Exclude: ensure txt passes through

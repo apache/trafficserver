@@ -33,11 +33,16 @@
 #if defined(COLLECT_STATS)
 namespace stats
 {
-int DataCreate  = -1;
-int DataDestroy = -1;
-int Reader      = -1;
-int Server      = -1;
-int Client      = -1;
+int DataCreate      = -1;
+int DataDestroy     = -1;
+int Reader          = -1;
+int Server          = -1;
+int Client          = -1;
+int RequestTime     = -1;
+int FirstHeaderTime = -1;
+int NextHeaderTime  = -1;
+int ServerTime      = -1;
+int ClientTime      = -1;
 } // namespace stats
 #endif // COLLECT_STATS
 
@@ -48,6 +53,10 @@ Config globalConfig;
 bool
 read_request(TSHttpTxn txnp, Config *const config)
 {
+#if defined(COLLECT_STATS)
+  stats::StatsRAI const rai(stats::RequestTime);
+#endif
+
   DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
@@ -180,7 +189,7 @@ read_request(TSHttpTxn txnp, Config *const config)
 
       // we'll intercept this GET and do it ourselves
       TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
-      // TSMutex const mutex = TSMutexCreate();
+      //  TSMutex const mutex = TSMutexCreate();
       TSCont const icontp(TSContCreate(intercept_hook, mutex));
       TSContDataSet(icontp, (void *)data);
       TSHttpTxnIntercept(icontp, txnp);
@@ -291,6 +300,31 @@ TSRemapInit(TSRemapInterface *api_info, char *errbug, int errbuf_size)
     stats::Client = TSStatCreate(nameclient.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
 
     assert(0 <= stats::Client);
+
+    std::string const namerequest = std::string(PLUGIN_NAME) + ".RequestTime";
+    stats::RequestTime = TSStatCreate(namerequest.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+
+    assert(0 <= stats::RequestTime);
+
+    std::string const namefirst = std::string(PLUGIN_NAME) + ".FirstHeaderTime";
+    stats::FirstHeaderTime      = TSStatCreate(namefirst.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+
+    assert(0 <= stats::FirstHeaderTime);
+
+    std::string const namenext = std::string(PLUGIN_NAME) + ".NextHeaderTime";
+    stats::NextHeaderTime      = TSStatCreate(namenext.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+
+    assert(0 <= stats::NextHeaderTime);
+
+    std::string const nameservertime = std::string(PLUGIN_NAME) + ".ServerTime";
+    stats::ServerTime = TSStatCreate(nameservertime.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+
+    assert(0 <= stats::ServerTime);
+
+    std::string const nameclienttime = std::string(PLUGIN_NAME) + ".ClientTime";
+    stats::ClientTime = TSStatCreate(nameclienttime.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+
+    assert(0 <= stats::ClientTime);
   }
 #endif // COLLECT_STATS
 
