@@ -283,7 +283,7 @@ is_localhost(const char *name, int len)
 inline static bool
 is_response_simple_code(HTTPStatus response_code)
 {
-  if (response_code < 399 || response_code > 499) {
+  if (response_code < 400 || response_code > 499) {
     return false;
   }
 
@@ -293,7 +293,7 @@ is_response_simple_code(HTTPStatus response_code)
 inline static bool
 is_response_unavailable_code(HTTPStatus response_code)
 {
-  if (response_code < 499 || response_code > 599) {
+  if (response_code < 500 || response_code > 599) {
     return false;
   }
 
