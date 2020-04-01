@@ -194,7 +194,7 @@ private:
 ///////////////////
 // INLINE
 
-static inline int64_t next_cs_id = 0;
+inline int64_t next_cs_id = 0;
 
 inline int64_t
 ProxySession::next_connection_id()
