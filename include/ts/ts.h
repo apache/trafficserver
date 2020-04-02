@@ -1722,8 +1722,8 @@ tsapi TSVConn TSHttpConnect(struct sockaddr const *addr);
  */
 tsapi TSVConn TSHttpConnectTransparent(struct sockaddr const *client_addr, struct sockaddr const *server_addr);
 
-tsapi void TSFetchUrl(const char *request, int request_len, struct sockaddr const *addr, TSCont contp,
-                      TSFetchWakeUpOptions callback_options, TSFetchEvent event);
+tsapi TSFetchSM TSFetchUrl(const char *request, int request_len, struct sockaddr const *addr, TSCont contp,
+                           TSFetchWakeUpOptions callback_options, TSFetchEvent event);
 tsapi void TSFetchPages(TSFetchUrlParams_t *params);
 
 /* Check if HTTP State machine is internal or not */

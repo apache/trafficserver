@@ -32,9 +32,9 @@ Synopsis
     #include <ts/ts.h>
 
 .. function:: void TSFetchPages(TSFetchUrlParams_t *)
-.. function:: void TSFetchUrl(const char *, int, sockaddr const *, TSCont, TSFetchWakeUpOptions, TSFetchEvent)
+.. function:: TSFetchSM TSFetchUrl(const char *, int, sockaddr const *, TSCont, TSFetchWakeUpOptions, TSFetchEvent)
 .. function:: void TSFetchFlagSet(TSFetchSM, int)
-.. function:: TSFetch TSFetchCreate(TSCont, const char *, const char *, const char *, struct sockaddr const *, int)
+.. function:: TSFetchSM TSFetchCreate(TSCont, const char *, const char *, const char *, struct sockaddr const *, int)
 .. function:: void TSFetchHeaderAdd(TSFetchSM, const char *, int, const char *, int)
 .. function:: void TSFetchWriteData(TSFetchSM, const void *, size_t)
 .. function:: ssize_t TSFetchReadData(TSFetchSM, void *, size_t)

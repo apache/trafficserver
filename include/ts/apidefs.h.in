@@ -922,6 +922,8 @@ typedef struct tsapi_hostlookupresult *TSHostLookupResult;
 typedef struct tsapi_aiocallback *TSAIOCallback;
 typedef struct tsapi_net_accept *TSAcceptor;
 
+typedef struct tsapi_fetchsm *TSFetchSM;
+
 typedef void *(*TSThreadFunc)(void *data);
 typedef int (*TSEventFunc)(TSCont contp, TSEvent event, void *edata);
 typedef void (*TSConfigDestroyFunc)(void *data);
