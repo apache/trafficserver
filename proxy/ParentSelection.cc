@@ -350,6 +350,33 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
   std::sort(codes.begin(), codes.end());
 }
 
+SimpleRetryResponseCodes::SimpleRetryResponseCodes(char *val)
+{
+  Tokenizer pTok(", \t\r");
+  int numTok = 0, c;
+
+  if (val == nullptr) {
+    Warning("SimpleRetryResponseCodes - simple_server_retry_responses is null loading default 404 code.");
+    codes.push_back(HTTP_STATUS_NOT_FOUND);
+    return;
+  }
+  numTok = pTok.Initialize(val, SHARE_TOKS);
+  if (numTok == 0) {
+    c = atoi(val);
+    if (c > 399 && c < 500) {
+      codes.push_back(HTTP_STATUS_NOT_FOUND);
+    }
+  }
+  for (int i = 0; i < numTok; i++) {
+    c = atoi(pTok[i]);
+    if (c > 399 && c < 500) {
+      Debug("parent_select", "loading simple response code: %d", c);
+      codes.push_back(c);
+    }
+  }
+  std::sort(codes.begin(), codes.end());
+}
+
 void
 ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, size_t len)
 {
@@ -694,6 +721,9 @@ ParentRecord::Init(matcher_line *line_info)
     } else if (strcasecmp(label, "unavailable_server_retry_responses") == 0 && unavailable_server_retry_responses == nullptr) {
       unavailable_server_retry_responses = new UnavailableServerResponseCodes(val);
       used                               = true;
+    } else if (strcasecmp(label, "simple_server_retry_responses") == 0 && simple_server_retry_responses == nullptr) {
+      simple_server_retry_responses = new SimpleRetryResponseCodes(val);
+      used                          = true;
     } else if (strcasecmp(label, "max_simple_retries") == 0) {
       int v = atoi(val);
       if (v >= 1 && v < MAX_SIMPLE_RETRIES) {
@@ -748,6 +778,18 @@ ParentRecord::Init(matcher_line *line_info)
     // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
     Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
     unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
+  }
+
+  // delete simple_server_retry_responses if simple_retry is not enabled.
+  if (simple_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_SIMPLE)) {
+    Warning("%s ignore simple_server_Retry_responses directive on line %d, as simple_server_retry is not enabled.", modulePrefix,
+            line_num);
+    delete simple_server_retry_responses;
+    simple_server_retry_responses = nullptr;
+  } else if (simple_server_retry_responses == nullptr && (parent_retry & PARENT_RETRY_SIMPLE)) {
+    // initialize simple server respones codes to the default value if simple_retry is enabled.
+    Warning("%s initializing SimpleRetryResponseCodes on line %d to 404 default.", modulePrefix, line_num);
+    simple_server_retry_responses = new SimpleRetryResponseCodes(nullptr);
   }
 
   if (this->parents == nullptr && go_direct == false) {
