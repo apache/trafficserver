@@ -49,7 +49,7 @@
 // Load Average Strings
 #define LOAD_AVG_ONE_MIN "plugin." PLUGIN_NAME ".loadavg.one"
 #define LOAD_AVG_FIVE_MIN "plugin." PLUGIN_NAME ".loadavg.five"
-#define LOAD_AVG_TEN_MIN "plugin." PLUGIN_NAME ".loadavg.ten"
+#define LOAD_AVG_FIFTEEN_MIN "plugin." PLUGIN_NAME ".loadavg.fifteen"
 
 // Process Strings
 #define CURRENT_PROCESSES "plugin." PLUGIN_NAME ".current_processes"
@@ -206,7 +206,7 @@ getStats(TSMutex stat_creation_mutex)
 
   statSet(LOAD_AVG_ONE_MIN, info.loads[0], stat_creation_mutex);
   statSet(LOAD_AVG_FIVE_MIN, info.loads[1], stat_creation_mutex);
-  statSet(LOAD_AVG_TEN_MIN, info.loads[2], stat_creation_mutex);
+  statSet(LOAD_AVG_FIFTEEN_MIN, info.loads[2], stat_creation_mutex);
   statSet(CURRENT_PROCESSES, info.procs, stat_creation_mutex);
 #endif // #ifdef HAVE_SYS_SYSINFO_H
   netStatsInfo(stat_creation_mutex);
