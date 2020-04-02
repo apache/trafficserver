@@ -1135,7 +1135,7 @@ msgstr ""
 #: ../../../admin-guide/plugins/header_rewrite.en.rst:792
 msgid ""
 "Rulesets evaluated within this context will process only once the origin "
-"server response (or cached response) has been read, but prior to |TS| "
+"server response has been read, but prior to |TS| "
 "sending that response to the client."
 msgstr ""
 
