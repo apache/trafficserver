@@ -92,6 +92,19 @@ private:
   std::vector<int> codes;
 };
 
+struct SimpleRetryResponseCodes {
+  SimpleRetryResponseCodes(char *val);
+  ~SimpleRetryResponseCodes(){};
+
+  bool
+  contains(int code)
+  {
+    return binary_search(codes.begin(), codes.end(), code);
+  }
+
+private:
+  std::vector<int> codes;
+};
 // struct pRecord
 //
 //    A record for an individual parent
@@ -145,6 +158,7 @@ public:
   bool parent_is_proxy                                               = true;
   ParentSelectionStrategy *selection_strategy                        = nullptr;
   UnavailableServerResponseCodes *unavailable_server_retry_responses = nullptr;
+  SimpleRetryResponseCodes *simple_server_retry_responses            = nullptr;
   ParentRetry_t parent_retry                                         = PARENT_RETRY_NONE;
   int max_simple_retries                                             = 1;
   int max_unavailable_server_retries                                 = 1;
@@ -242,7 +256,20 @@ struct ParentResult {
   bool
   response_is_retryable(HTTPStatus response_code) const
   {
-    return (retry_type() & PARENT_RETRY_UNAVAILABLE_SERVER) && rec->unavailable_server_retry_responses->contains(response_code);
+    Debug("parent_select", "In response_is_retryable, code: %d", response_code);
+    if (retry_type() == PARENT_RETRY_BOTH) {
+      Debug("parent_select", "Saw retry both");
+      return (rec->unavailable_server_retry_responses->contains(response_code) ||
+              rec->simple_server_retry_responses->contains(response_code));
+    } else if (retry_type() == PARENT_RETRY_UNAVAILABLE_SERVER) {
+      Debug("parent_select", "Saw retry unavailable server");
+      return rec->unavailable_server_retry_responses->contains(response_code);
+    } else if (retry_type() == PARENT_RETRY_SIMPLE) {
+      Debug("parent_select", "Saw retry simple retry");
+      return rec->simple_server_retry_responses->contains(response_code);
+    } else {
+      return false;
+    }
   }
 
   bool
