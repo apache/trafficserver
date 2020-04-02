@@ -7915,7 +7915,7 @@ TSFetchPages(TSFetchUrlParams_t *params)
   }
 }
 
-void
+TSFetchSM
 TSFetchUrl(const char *headers, int request_len, sockaddr const *ip, TSCont contp, TSFetchWakeUpOptions callback_options,
            TSFetchEvent events)
 {
@@ -7927,6 +7927,8 @@ TSFetchUrl(const char *headers, int request_len, sockaddr const *ip, TSCont cont
 
   fetch_sm->init((Continuation *)contp, callback_options, events, headers, request_len, ip);
   fetch_sm->httpConnect();
+
+  return reinterpret_cast<TSFetchSM>(fetch_sm);
 }
 
 void

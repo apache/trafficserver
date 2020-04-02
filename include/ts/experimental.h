@@ -50,8 +50,6 @@ typedef enum {
   TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4  // Allow this fetch to be created as a non-internal request.
 } TSFetchFlags;
 
-typedef struct tsapi_fetchsm *TSFetchSM;
-
 /* Forward declaration of in_addr, any user of these APIs should probably
    include net/netinet.h or whatever is appropriate on the platform. */
 struct in_addr;
