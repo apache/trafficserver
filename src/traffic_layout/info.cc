@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include <fcntl.h>
 #include <openssl/crypto.h>
 #include "tscore/I_Layout.h"
 #include "tscore/Filenames.h"
@@ -88,6 +89,11 @@ produce_features(bool json)
 #else
   print_feature("TS_HAS_BROTLI", 0, json);
 #endif
+#ifdef F_GETPIPE_SZ
+  print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 1, json);
+#else
+  print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 0, json);
+#endif /* F_GETPIPE_SZ */
   print_feature("TS_HAS_JEMALLOC", TS_HAS_JEMALLOC, json);
   print_feature("TS_HAS_TCMALLOC", TS_HAS_TCMALLOC, json);
   print_feature("TS_HAS_IN6_IS_ADDR_UNSPECIFIED", TS_HAS_IN6_IS_ADDR_UNSPECIFIED, json);
