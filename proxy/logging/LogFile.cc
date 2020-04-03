@@ -199,21 +199,21 @@ LogFile::open_file()
     if (m_pipe_buffer_size) {
       long pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
       if (pipe_size == -1) {
-        Error("get pipe size failed for pipe %s", m_name);
+        Error("Get pipe size failed for pipe %s: %s", m_name, strerror(errno));
       } else {
-        Debug("log-file", "Default pipe size for pipe %s = %ld", m_name, pipe_size);
+        Debug("log-file", "Previous buffer size for pipe %s: %ld", m_name, pipe_size);
       }
 
       int ret = fcntl(m_fd, F_SETPIPE_SZ, m_pipe_buffer_size);
       if (ret == -1) {
-        Error("set pipe size failed for pipe %s", m_name);
+        Error("Set pipe size failed for pipe %s to size %d: %s", m_name, m_pipe_buffer_size, strerror(errno));
       }
 
       pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
       if (pipe_size == -1) {
-        Error("get pipe size failed for pipe %s", m_name);
+        Error("Get pipe size after setting it failed for pipe %s: %s", m_name, strerror(errno));
       } else {
-        Debug("log-file", "NEW pipe size for pipe %s = %ld", m_name, pipe_size);
+        Debug("log-file", "New buffer size for pipe %s: %ld", m_name, pipe_size);
       }
     }
 #endif // F_GETPIPE_SZ
