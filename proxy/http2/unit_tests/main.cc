@@ -31,13 +31,15 @@
 
 #include "diags.i"
 
+#include "HuffmanCodec.h"
+
 #define TEST_THREADS 1
 
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase;
 
   void
-  testRunStarting(Catch::TestRunInfo const &testRunInfo) override
+  testRunStarting(Catch::TestRunInfo const & /* testRunInfo */) override
   {
     Layout::create();
     init_diags("", nullptr);
@@ -49,6 +51,14 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
 
     EThread *main_thread = new EThread;
     main_thread->set_specific();
+
+    hpack_huffman_init();
+  }
+
+  void
+  testRunEnded(Catch::TestRunStats const & /* testRunStats */) override
+  {
+    hpack_huffman_fin();
   }
 };
 
