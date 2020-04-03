@@ -54,11 +54,6 @@ libhttp2_a_SOURCES = \
 	Http2SessionAccept.cc \
 	Http2SessionAccept.h
 
-if BUILD_TESTS
-libhttp2_a_SOURCES += \
-	RegressionHPACK.cc
-endif
-
 check_PROGRAMS = \
 	test_libhttp2 \
 	test_Http2DependencyTree \
@@ -83,6 +78,7 @@ test_libhttp2_CPPFLAGS = $(AM_CPPFLAGS)\
 
 test_libhttp2_SOURCES = \
 	unit_tests/test_Http2Frame.cc \
+	unit_tests/test_HpackIndexingTable.cc \
 	unit_tests/main.cc
 
 test_Http2DependencyTree_LDADD = \
