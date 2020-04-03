@@ -40,6 +40,7 @@
 #include <pcre.h>
 
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
+static constexpr int OVECSIZE{30};
 
 const NextHopProperty *
 SNIConfigParams::getPropertyConfig(const std::string &servername) const
@@ -108,20 +109,47 @@ int SNIConfig::configid = 0;
 /*definition of member functions of SNIConfigParams*/
 SNIConfigParams::SNIConfigParams() {}
 
-const actionVector *
+std::pair<const actionVector *, ActionItem::Context>
 SNIConfigParams::get(const std::string &servername) const
 {
-  int ovector[2];
+  int ovector[OVECSIZE];
+  ActionItem::Context context;
+
   for (const auto &retval : sni_action_list) {
     int length = servername.length();
     if (retval.match == nullptr && length == 0) {
-      return &retval.actions;
-    } else if (pcre_exec(retval.match, nullptr, servername.c_str(), length, 0, 0, ovector, 2) == 1 && ovector[0] == 0 &&
-               ovector[1] == length) {
-      return &retval.actions;
+      return {&retval.actions, context};
+    } else if (auto offset = pcre_exec(retval.match, nullptr, servername.c_str(), length, 0, 0, ovector, OVECSIZE); offset >= 0) {
+      if (offset == 1) {
+        // first pair identify the portion of the subject string matched by the entire pattern
+        if (ovector[0] == 0 && ovector[1] == length) {
+          // full match
+          return {&retval.actions, context};
+        } else {
+          continue;
+        }
+      }
+      // If contains groups
+      if (offset == 0) {
+        // reset to max if too many.
+        offset = OVECSIZE / 3;
+      }
+
+      const char *psubStrMatchStr = nullptr;
+      std::vector<std::string> groups;
+      for (int strnum = 1; strnum < offset; strnum++) {
+        pcre_get_substring(servername.c_str(), ovector, offset, strnum, &(psubStrMatchStr));
+        groups.emplace_back(psubStrMatchStr);
+      }
+      context._fqdn_wildcard_captured_groups = std::move(groups);
+      if (psubStrMatchStr) {
+        pcre_free_substring(psubStrMatchStr);
+      }
+
+      return {&retval.actions, context};
     }
   }
-  return nullptr;
+  return {nullptr, context};
 }
 
 int
@@ -197,9 +225,10 @@ SNIConfig::TestClientAction(const char *servername, const IpEndpoint &ep, int &h
 {
   bool retval = false;
   SNIConfig::scoped_config params;
-  const actionVector *actionvec = params->get(servername);
-  if (actionvec) {
-    for (auto &&item : *actionvec) {
+
+  const auto &actions = params->get(servername);
+  if (actions.first) {
+    for (auto &&item : *actions.first) {
       retval |= item->TestClientSNIAction(servername, ep, host_sni_policy);
     }
   }
