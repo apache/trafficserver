@@ -42,6 +42,7 @@ static constexpr std::array<size_t, TS_USER_ARGS_COUNT> MAX_USER_ARGS = {{
 class PluginUserArgsMixin
 {
 public:
+  virtual ~PluginUserArgsMixin()                  = default;
   virtual void *get_user_arg(size_t ix) const     = 0;
   virtual void set_user_arg(size_t ix, void *arg) = 0;
 };
