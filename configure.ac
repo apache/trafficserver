@@ -473,16 +473,6 @@ AC_ARG_ENABLE([tproxy],
 AC_MSG_RESULT([$enable_tproxy])
 
 #
-# Configure how many stats to allocate for plugins. Default is 512.
-#
-AC_ARG_WITH([max-api-stats],
-  [AS_HELP_STRING([--with-max-api-stats],[max number of plugin stats [default=512]])],
-  [max_api_stats=$withval],
-  [max_api_stats=512]
-)
-AC_SUBST(max_api_stats)
-
-#
 # Max host name length that we deal with in URLs.
 #
 AC_ARG_WITH([max-host-name-len],
