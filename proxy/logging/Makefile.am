@@ -80,7 +80,6 @@ test_LogUtils_CPPFLAGS = \
 
 test_LogUtils_SOURCES = \
 	LogUtils.cc \
-	unit-tests/BufferWriterFormat.cc \
 	unit-tests/test_LogUtils.cc
 
 test_LogUtils_LDADD = \
