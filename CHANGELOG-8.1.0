@@ -1,37 +1,59 @@
 Changes with Apache Traffic Server 8.1.0
   #3899 - Add a --reason tag option to the host subcommand
+  #4028 - proxy.config.http.connect_attempts_timeout tracks TTBF instead of connect
   #4203 - Allow enabling MPTCP on a listening socket through the records.config
   #4217 - Fix a regression in the traffic_ctl host status subcommand
   #4242 - header_rewrite: Adds basic string concatenation
   #4253 - Add the capability to mark origins down with traffic_ctl.
   #4300 - Expand the post chunked tests.
+  #4356 - slice plugin, intercept handler that uses cache_range_request
   #4422 - TCL: Rmove TCL dependency from HostStatus
   #4437 - Adds the log tag cqint for internal requests
   #4441 - Corrects the wording of the usage messages for traffic_ctl host subcommand
   #4461 - Fixes memory leaks in header_rewrite
+  #4513 - Adding cdnicrit claim support for uri signing service
+  #4540 - URI signing support for JWS to be passed as path parameter
   #4568 - Adjusts the format for header_rewrite string concatenation
   #4586 - Turn this Debug back into an Error
+  #4603 - Add cdniip and cdnistd claims to uri signing
+  #4604 - Repurpose sub claim and add cdniuc support for URI signing
   #4664 - Use hash string when it is provided for hashing
   #4762 - Fix OCSP stapling with dual cert
+  #4777 - Add unit tests for the URI signing plugin
+  #4802 - JWT validation uses a token-stripped URI
+  #4814 - Add normalization the URI before cdniuc validation in URI Signing
+  #4862 - Updates uri_signing docs to reflect new RFC changes
   #4869 - Cleanup: remove lib/cppapi from clang-format, it's been moved.
   #4874 - Avoid ats_malloc in unmarshal
+  #4897 - Uri signing regex as POSIX ERE
+  #4912 - Address performance issue by removing use of read_avail
   #4924 - lua plugin: add support for relative path scripts; moves inline script to switch
   #4944 - Add history to HTTP/2
+  #4988 - Implement nbf claim in Uri Signing Plugin
+  #5034 - Implement aud claim in Uri Signing Plugin
   #5058 - Fixed use after free when running regression under ASAN
+  #5075 - Fixed the compatibility with previous cache verison
+  #5112 - uri_signing build helpers
   #5122 - fix crash in CacheVC::openReadFromWriter
   #5131 - Do not run clang-format for @default_stack_size@
+  #5140 - cdniuc is not a manditory claim
   #5143 - Fix a self detection issue where parents are not marked down during ATS startup.
   #5149 - Add nullptr check on ConfigProcessor::release()
   #5163 - Fix memleak in ProcessManager::stop()
   #5176 - Adds a new log tag for the MPTCP state of a connection
+  #5199 - autest for slice plugin
   #5209 - Allows logging of negative values
   #5219 - url_sig debug fix for when url is missing the signature query string
   #5227 - Normalize on negative value for milestone metrics
   #5234 - Correct interpretation of proxy.config.ssl.client.verify.server
+  #5235 - Fix lost pending_actions causing actions on stale objects.
   #5236 - Update documentation for SSL VERIFY hooks.
   #5242 - Adds a missing header field for the tcpinfo log
   #5252 - Make host status persistent across restarts
+  #5267 - Slice errorlog
   #5268 - fix If-None-Match and If-Modified-Since priority problem
+  #5293 - Destroy MIMEFieldBlockImpl that doesn't have fields in use
+  #5301 - Slice Plugin: add options for disabling or pacing detailed block stitch error logging.
   #5329 - Fixes clang-analyzer error dereferencing nullptr in parent
   #5348 - Don't assign if this and other are the same object
   #5354 - Password can not be nullptr here, so don't check
@@ -40,6 +62,8 @@ Changes with Apache Traffic Server 8.1.0
   #5571 - Removes the abort() from header_rewrite, and try to deal with errors
   #5585 - Do not change stream state from HALF_CLOSED_REMOTE with CONTINUATION frame
   #5589 - Adds support for set-destination SCHEME/URL to take string expansions
+  #5605 - Fix crash in MIMEScanner::append with std::string.
+  #5607 - slice/HttpHeader memleak fix TSMLoc release call
   #5633 - HTTP/2: increment write_vio.ndone by consumed size
   #5634 - HTTP/2: cancel reading buffer when ATS received GOAWAY
   #5676 - Log H2 errors with the codes
@@ -47,10 +71,12 @@ Changes with Apache Traffic Server 8.1.0
   #5697 - Coalesce empty objects in HdrHeap
   #5701 - fix If-Match and If-Unmodified-Since priority problem
   #5710 - Convert regression tests for XPACK into Catch based unit tests
+  #5727 - Add effective url options to slice plugin.
   #5747 - Add slow logs for HTTP/2 Connection & Stream
   #5766 - Record HttpSM Id on new transaction
   #5785 - Allocate DependencyTree only if HTTP/2 stream priority is enabled
   #5811 - Fix no_activity timeout for server session reuse.
+  #5824 - Reactivate active timeout enforcement
   #5825 - Cleanup: Remove unused function & old comments
   #5826 - Cleanup: Signal READ_READY event only if the buffer is readable
   #5865 - cachekey: added --canonical-prefix parameter
@@ -58,36 +84,69 @@ Changes with Apache Traffic Server 8.1.0
   #5878 - Add protection against use after free due to Http2ConnectionState::destroy() being called more than once per session.
   #5888 - Allow disabling HTTP/2 priority frames limit
   #5889 - Provide stats for the recently introduced HTTP/2 rate limits
+  #5901 - Dechunk chunked contents on HttpTunnel if client protocol is HTTP/2 or HTTP/3
+  #5920 - Cleanup: VIO
   #5921 - Cleanup AuTest for HTTP/2
+  #5934 - Track scheduled events to (read|write)_vio.cont from Http2Stream
   #5945 - cachekey: allow multiple values for `--key-type`
+  #5953 - Log H2 priority information
   #5969 - Change the ready checks for ats to use the actual ats port
+  #5972 - Avoid unnecesarry copy on POST request over HTTP/2
+  #5973 - url_sig: fix memory leak with urlParse and pristine flag
+  #6003 - Cleanup: do not re-define _proxy_ssn variable in local
   #6055 - Add a config for internal HPACK header table size limit
+  #6061 - Add Example URI Signer Python Script
   #6098 - Replace container of HPACK dynamic table from std::vector to std::deque
   #6154 - tslua: Exposes set/get method for server request objects
   #6168 - Add cache_range_requests autest, add to x-parentselectiion-key to xdebug plugin.
   #6182 - tslua: Exposes set/get version for server request objects
   #6191 - Limit this check to Linux, where ldd always works
+  #6199 - Set END_STREAM flag when write_vio ntodo is 0
+  #6209 - Add 100-continue expectation support on H2 connection
   #6234 - Don't sleep if ProtectedQueue.localQueue is not empty. (#6234)
+  #6239 - slice plugin VIO cleanup
   #6247 - Add some stats collections to cache_promote.
+  #6252 - Add simple uri_signing autest and subsequent fixes
   #6264 - Change HTTP/2 error rate log to warning
   #6294 - Enhance Connection Collapse in ATS core - back port to 8.x
   #6307 - Reduce process duration of test_Http2FrequencyCounter
+  #6323 - Fix strict round robin cur_index increment
   #6328 - Document the order of the X-Cache header
   #6332 - Fixes Issue #6321 caused when proxy.config.http.no_dns_just_forward_to_parent
+  #6337 - Perf: Optimize sending HTTP/2 frame
   #6343 - Fixes an assertion failure when proxy.config.http.no_dns_just_forward_to_parent is enabled
+  #6346 - Fix heap-use-after-free on Http2Stream::destroy()
+  #6348 - Add virtual destructors for Http2TxFrame, Http2FrequencyCounter
+  #6376 - Update inactive_timeout_at in Http2Stream::signal_read_event()
+  #6378 - Remove trailing white space from json formatter
+  #6380 - Remove unnecesary HttpSM handler call with VC_EVENT_ERROR
   #6392 - Free TSMgmtString after using it.
+  #6403 - Fix for lua plugin coredump problem during reload
+  #6404 - Signal VC_EVENT_READ_COMPLETE when ATS received END_STREAM flag
+  #6409 - Another option to fix potential HTTP/2 vio stall
+  #6413 - Fix crash when H2 client does not set End-of-data bit
+  #6417 - slice plugin: add check to transaction status
+  #6419 - URI Sig Null Check for Clang Warning
+  #6420 - Syntax Error fixed in URI sig Plugin
   #6442 - Disable the chunked_encoding test
+  #6450 - Adjust consume logic in data frame read
   #6464 - cache_range_requests plugin: detect and handle TSCacheUrlSet failures…
+  #6470 - Remove update to unused variable
   #6518 - Fixes a bug where HostStatus::getHostStatus() creates too many stats.
+  #6525 - Don't be overly aggressive on stream failures and closing
   #6534 - Ignore MgmtMessageHdr if ProcessManager is not running
   #6535 - Add MIMEHdr Garbage Collection to HPACK Dynamic Table
   #6540 - Disables "virtual host not used with AWS auth v4" error in s3_auth
   #6541 - Add cachekey latest features to 8.1.x
   #6553 - Options to roll empty logs and log trimming (8.1.x)
   #6557 - free(map); -> delete map;
+  #6568 - Fix PUSH_PROMISE frame payload length
   #6582 - Fix strict round robin cur_index increment
+  #6584 - Backport of all uri signing commits from master to 8.1.x
   #6585 - url_sig: fix memory leak with urlParse and pristine flag (8.1.x)
+  #6593 - Back port of slice plugin to 8.1.x
   #6594 - Remove extra new line detection in 303 gold file
   #6595 - Fix httpbin autest for 8.1.x
   #6597 - HTTP/2 backports for 8.1.x (part 2)
   #6600 - Remove enable_tls option and set select ports to false.  This passed …
+  #6604 - fix sed matching
