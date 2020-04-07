@@ -385,7 +385,11 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
     const char *trimValue = trimWhiteSpaces(value, valueLen, trimValueLen);
 
     signedHeadersSet.insert(lowercaseName);
-    headersMap[lowercaseName] = String(trimValue, trimValueLen);
+    if (headersMap.find(lowercaseName) == headersMap.end()) {
+      headersMap[lowercaseName] = String(trimValue, trimValueLen);
+    } else {
+      headersMap[lowercaseName].append(",").append(String(trimValue, trimValueLen));
+    }
   }
 
   for (const auto &it : signedHeadersSet) {

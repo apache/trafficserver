@@ -405,10 +405,10 @@ TEST_CASE("AWSAuthSpecByExample: GET Object", "[AWS][auth][SpecByExample]")
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("test.txt");
   api._query.assign("");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["Range"]                = "bytes=0-9";
-  api._headers["x-amz-content-sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Range", "bytes=0-9"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
 
   const char *bench[] = {
     /* Authorization Header */
@@ -450,9 +450,9 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket Lifecycle", "[AWS][auth][SpecByExamp
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("lifecycle");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["x-amz-content-sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
 
   const char *bench[] = {
     /* Authorization Header */
@@ -494,9 +494,9 @@ TEST_CASE("AWSAuthSpecByExample: Get Bucket List Objects", "[AWS][auth][SpecByEx
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["x-amz-content-sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
 
   const char *bench[] = {
     /* Authorization Header */
@@ -539,9 +539,9 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, unsigned pay-load", "[
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
 
   const char *bench[] = {
     /* Authorization Header */
@@ -585,12 +585,13 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, unsigned pay-load, exc
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
-  api._headers["@internal"]            = "internal value";
-  api._headers["x-forwarded-for"]      = "192.168.7.1";
-  api._headers["via"] = "http/1.1 tcp ipv4 ats_dev[7e67ac60-c204-450d-90be-a426dd3b569f] (ApacheTrafficServer/7.2.0)";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
+  api._headers.insert(std::make_pair("@internal", "internal value"));
+  api._headers.insert(std::make_pair("x-forwarded-for", "192.168.7.1"));
+  api._headers.insert(
+    std::make_pair("via", "http/1.1 tcp ipv4 ats_dev[7e67ac60-c204-450d-90be-a426dd3b569f] (ApacheTrafficServer/7.2.0)"));
 
   const char *bench[] = {
     /* Authorization Header */
@@ -633,9 +634,9 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, query param value alre
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("PATH==");
   api._query.assign("key=TEST==");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
 
   const char *bench[] = {
     /* Authorization Header */
@@ -669,7 +670,54 @@ TEST_CASE("AWSAuthSpecByExample: GET Bucket List Objects, query param value alre
   ValidateBench(api, /*signePayload */ false, &now, bench, defaultIncludeHeaders, defaultExcludeHeaders);
 }
 
-/* Utility parameters related tests ******************************************************************************** */
+TEST_CASE("S3AuthV4UtilParams: signing multiple same name fields", "[AWS][auth][utility]")
+{
+  time_t now = 1369353600; /* 5/24/2013 00:00:00 GMT */
+
+  /* Define the HTTP request elements */
+  MockTsInterface api;
+  api._method.assign("GET");
+  api._host.assign("examplebucket.s3.amazonaws.com");
+  api._path.assign("");
+  api._query.assign("max-keys=2&prefix=J");
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Content-Type", "gzip"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
+  api._headers.insert(std::make_pair("HeaderA", "HeaderAValue"));
+  api._headers.insert(std::make_pair("HeaderB", "HeaderBValue1"));
+  api._headers.insert(std::make_pair("HeaderB", "HeaderBValue2"));
+  api._headers.insert(std::make_pair("HeaderC", " HeaderCValue1, HeaderCValue2 ")); // LWS between values
+  api._headers.insert(std::make_pair("HeaderC", "HeaderCValue3,HeaderCValue4"));    // No LWS between values
+
+  const char *bench[] = {
+    /* Authorization Header */
+    "AWS4-HMAC-SHA256 "
+    "Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request,"
+    "SignedHeaders=content-type;headera;headerb;headerc;host;x-amz-content-sha256;x-amz-date,"
+    "Signature=c9f57637044ddb0633430a8631f946a35d0ffff0cf7647aeaa2d0e985a69e674",
+
+    /* Canonical Request sha256 */
+    "e3429bb6a99fea0162c703ba6aaf771e16d2bb8f637c9300cd468fcbe1b66a0e",
+    /* Date and time*/
+    "20130524T000000Z",
+    /* String to sign */
+    "AWS4-HMAC-SHA256\n"
+    "20130524T000000Z\n"
+    "20130524/us-east-1/s3/aws4_request\n"
+    "e3429bb6a99fea0162c703ba6aaf771e16d2bb8f637c9300cd468fcbe1b66a0e",
+    /* Signature */
+    "c9f57637044ddb0633430a8631f946a35d0ffff0cf7647aeaa2d0e985a69e674",
+    /* Payload hash */
+    "UNSIGNED-PAYLOAD",
+    /* Signed Headers */
+    "content-type;headera;headerb;headerc;host;x-amz-content-sha256;x-amz-date",
+  };
+
+  ValidateBench(api, /*signePayload */ false, &now, bench, defaultIncludeHeaders, defaultExcludeHeaders);
+}
+
+///* Utility parameters related tests ******************************************************************************** */
 
 void
 ValidateBenchCanonicalRequest(TsInterface &api, bool signPayload, time_t *now, const char *bench[],
@@ -696,16 +744,16 @@ TEST_CASE("S3AuthV4UtilParams: include all headers by default", "[AWS][auth][uti
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["Content-Type"]         = "gzip";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
-  api._headers["HeaderA"]              = "HeaderAValue";
-  api._headers["HeaderB"]              = "HeaderBValue";
-  api._headers["HeaderC"]              = "HeaderCValue";
-  api._headers["HeaderD"]              = "HeaderDValue";
-  api._headers["HeaderE"]              = "HeaderEValue";
-  api._headers["HeaderF"]              = "HeaderFValue";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Content-Type", "gzip"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
+  api._headers.insert(std::make_pair("HeaderA", "HeaderAValue"));
+  api._headers.insert(std::make_pair("HeaderB", "HeaderBValue"));
+  api._headers.insert(std::make_pair("HeaderC", "HeaderCValue"));
+  api._headers.insert(std::make_pair("HeaderD", "HeaderDValue"));
+  api._headers.insert(std::make_pair("HeaderE", "HeaderEValue"));
+  api._headers.insert(std::make_pair("HeaderF", "HeaderFValue"));
 
   StringSet include = defaultIncludeHeaders;
   StringSet exclude = defaultExcludeHeaders;
@@ -730,16 +778,16 @@ TEST_CASE("S3AuthV4UtilParams: include all headers explicit", "[AWS][auth][SpecB
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["Content-Type"]         = "gzip";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
-  api._headers["HeaderA"]              = "HeaderAValue";
-  api._headers["HeaderB"]              = "HeaderBValue";
-  api._headers["HeaderC"]              = "HeaderCValue";
-  api._headers["HeaderD"]              = "HeaderDValue";
-  api._headers["HeaderE"]              = "HeaderEValue";
-  api._headers["HeaderF"]              = "HeaderFValue";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Content-Type", "gzip"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
+  api._headers.insert(std::make_pair("HeaderA", "HeaderAValue"));
+  api._headers.insert(std::make_pair("HeaderB", "HeaderBValue"));
+  api._headers.insert(std::make_pair("HeaderC", "HeaderCValue"));
+  api._headers.insert(std::make_pair("HeaderD", "HeaderDValue"));
+  api._headers.insert(std::make_pair("HeaderE", "HeaderEValue"));
+  api._headers.insert(std::make_pair("HeaderF", "HeaderFValue"));
 
   StringSet include;
   commaSeparateString<StringSet>(include, "HeaderA,HeaderB,HeaderC,HeaderD,HeaderE,HeaderF");
@@ -765,16 +813,16 @@ TEST_CASE("S3AuthV4UtilParams: exclude all headers explicit", "[AWS][auth][utili
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["Content-Type"]         = "gzip";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
-  api._headers["HeaderA"]              = "HeaderAValue";
-  api._headers["HeaderB"]              = "HeaderBValue";
-  api._headers["HeaderC"]              = "HeaderCValue";
-  api._headers["HeaderD"]              = "HeaderDValue";
-  api._headers["HeaderE"]              = "HeaderEValue";
-  api._headers["HeaderF"]              = "HeaderFValue";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Content-Type", "gzip"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
+  api._headers.insert(std::make_pair("HeaderA", "HeaderAValue"));
+  api._headers.insert(std::make_pair("HeaderB", "HeaderBValue"));
+  api._headers.insert(std::make_pair("HeaderC", "HeaderCValue"));
+  api._headers.insert(std::make_pair("HeaderD", "HeaderDValue"));
+  api._headers.insert(std::make_pair("HeaderE", "HeaderEValue"));
+  api._headers.insert(std::make_pair("HeaderF", "HeaderFValue"));
 
   StringSet include = defaultIncludeHeaders;
   StringSet exclude;
@@ -800,16 +848,15 @@ TEST_CASE("S3AuthV4UtilParams: include/exclude non overlapping headers", "[AWS][
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["Content-Type"]         = "gzip";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
-  api._headers["HeaderA"]              = "HeaderAValue";
-  api._headers["HeaderB"]              = "HeaderBValue";
-  api._headers["HeaderC"]              = "HeaderCValue";
-  api._headers["HeaderD"]              = "HeaderDValue";
-  api._headers["HeaderE"]              = "HeaderEValue";
-  api._headers["HeaderF"]              = "HeaderFValue";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Content-Type", "gzip"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
+  api._headers.insert(std::make_pair("HeaderA", "HeaderAValue"));
+  api._headers.insert(std::make_pair("HeaderB", "HeaderBValue"));
+  api._headers.insert(std::make_pair("HeaderC", "HeaderCValue"));
+  api._headers.insert(std::make_pair("HeaderD", "HeaderEValue"));
+  api._headers.insert(std::make_pair("HeaderF", "HeaderFValue"));
 
   StringSet include, exclude;
   commaSeparateString<StringSet>(include, "HeaderA,HeaderB,HeaderC");
@@ -835,16 +882,16 @@ TEST_CASE("S3AuthV4UtilParams: include/exclude overlapping headers", "[AWS][auth
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["Content-Type"]         = "gzip";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
-  api._headers["HeaderA"]              = "HeaderAValue";
-  api._headers["HeaderB"]              = "HeaderBValue";
-  api._headers["HeaderC"]              = "HeaderCValue";
-  api._headers["HeaderD"]              = "HeaderDValue";
-  api._headers["HeaderE"]              = "HeaderEValue";
-  api._headers["HeaderF"]              = "HeaderFValue";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Content-Type", "gzip"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
+  api._headers.insert(std::make_pair("HeaderA", "HeaderAValue"));
+  api._headers.insert(std::make_pair("HeaderB", "HeaderBValue"));
+  api._headers.insert(std::make_pair("HeaderC", "HeaderCValue"));
+  api._headers.insert(std::make_pair("HeaderD", "HeaderDValue"));
+  api._headers.insert(std::make_pair("HeaderE", "HeaderEValue"));
+  api._headers.insert(std::make_pair("HeaderF", "HeaderFValue"));
 
   StringSet include, exclude;
   commaSeparateString<StringSet>(include, "HeaderA,HeaderB,HeaderC");
@@ -870,16 +917,16 @@ TEST_CASE("S3AuthV4UtilParams: include/exclude overlapping headers missing inclu
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["Content-Type"]         = "gzip";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
-  api._headers["HeaderA"]              = "HeaderAValue";
-  api._headers["HeaderB"]              = "HeaderBValue";
-  api._headers["HeaderC"]              = "HeaderCValue";
-  api._headers["HeaderD"]              = "HeaderDValue";
-  api._headers["HeaderE"]              = "HeaderEValue";
-  api._headers["HeaderF"]              = "HeaderFValue";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Content-Type", "gzip"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
+  api._headers.insert(std::make_pair("HeaderA", "HeaderAValue"));
+  api._headers.insert(std::make_pair("HeaderB", "HeaderBValue"));
+  api._headers.insert(std::make_pair("HeaderC", "HeaderCValue"));
+  api._headers.insert(std::make_pair("HeaderD", "HeaderDValue"));
+  api._headers.insert(std::make_pair("HeaderE", "HeaderEValue"));
+  api._headers.insert(std::make_pair("HeaderF", "HeaderFValue"));
 
   StringSet include, exclude;
   commaSeparateString<StringSet>(include, "HeaderA,HeaderC");
@@ -905,16 +952,16 @@ TEST_CASE("S3AuthV4UtilParams: include/exclude overlapping headers missing exclu
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["Content-Type"]         = "gzip";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
-  api._headers["HeaderA"]              = "HeaderAValue";
-  api._headers["HeaderB"]              = "HeaderBValue";
-  api._headers["HeaderC"]              = "HeaderCValue";
-  api._headers["HeaderD"]              = "HeaderDValue";
-  api._headers["HeaderE"]              = "HeaderEValue";
-  api._headers["HeaderF"]              = "HeaderFValue";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Content-Type", "gzip"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
+  api._headers.insert(std::make_pair("HeaderA", "HeaderAValue"));
+  api._headers.insert(std::make_pair("HeaderB", "HeaderBValue"));
+  api._headers.insert(std::make_pair("HeaderC", "HeaderCValue"));
+  api._headers.insert(std::make_pair("HeaderD", "HeaderDValue"));
+  api._headers.insert(std::make_pair("HeaderE", "HeaderEValue"));
+  api._headers.insert(std::make_pair("HeaderF", "HeaderFValue"));
 
   StringSet include, exclude;
   commaSeparateString<StringSet>(include, "HeaderA,HeaderB,HeaderC");
@@ -943,10 +990,10 @@ TEST_CASE("S3AuthV4UtilParams: include content type", "[AWS][auth][utility]")
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["Content-Type"]         = "gzip";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("Content-Type", "gzip"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
 
   StringSet include = defaultIncludeHeaders;
   StringSet exclude;
@@ -976,9 +1023,9 @@ TEST_CASE("S3AuthV4UtilParams: include missing content type", "[AWS][auth][utili
   api._host.assign("examplebucket.s3.amazonaws.com");
   api._path.assign("");
   api._query.assign("max-keys=2&prefix=J");
-  api._headers["Host"]                 = "examplebucket.s3.amazonaws.com";
-  api._headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD";
-  api._headers["x-amz-date"]           = "20130524T000000Z";
+  api._headers.insert(std::make_pair("Host", "examplebucket.s3.amazonaws.com"));
+  api._headers.insert(std::make_pair("x-amz-content-sha256", "UNSIGNED-PAYLOAD"));
+  api._headers.insert(std::make_pair("x-amz-date", "20130524T000000Z"));
 
   StringSet include = defaultIncludeHeaders;
   StringSet exclude;
