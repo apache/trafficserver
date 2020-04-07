@@ -19,7 +19,7 @@
 Test.Summary = '''
 Test chunked encoding processing
 '''
-# need Curl with HTTP/2
+
 Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )

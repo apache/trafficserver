@@ -80,7 +80,8 @@ QUICMultiCertConfigLoader::default_server_ssl_ctx()
 }
 
 SSL_CTX *
-QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, const SSLMultiCertConfigParams *multi_cert_params)
+QUICMultiCertConfigLoader::init_server_ssl_ctx(SSLMultiCertConfigLoader::CertLoadData const &data,
+                                               const SSLMultiCertConfigParams *multi_cert_params, std::set<std::string> &names)
 {
   const SSLConfigParams *params = this->_params;
 
@@ -92,7 +93,7 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
     }
 
     if (multi_cert_params->cert) {
-      if (!SSLMultiCertConfigLoader::load_certs(ctx, cert_list, params, multi_cert_params)) {
+      if (!SSLMultiCertConfigLoader::load_certs(ctx, data, params, multi_cert_params)) {
         goto fail;
       }
     }
@@ -152,26 +153,6 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
 
   SSL_CTX_set_alpn_select_cb(ctx, QUICMultiCertConfigLoader::ssl_select_next_protocol, nullptr);
 
-#if TS_USE_TLS_OCSP
-  if (SSLConfigParams::ssl_ocsp_enabled) {
-    QUICConfDebug("SSL OCSP Stapling is enabled");
-    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
-    const char *cert_name = multi_cert_params ? multi_cert_params->cert.get() : nullptr;
-
-    for (auto cert : cert_list) {
-      if (!ssl_stapling_init_cert(ctx, cert, cert_name, nullptr)) {
-        Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", cert_name);
-      }
-    }
-  } else {
-    QUICConfDebug("SSL OCSP Stapling is disabled");
-  }
-#else
-  if (SSLConfigParams::ssl_ocsp_enabled) {
-    Warning("failed to enable SSL OCSP Stapling; this version of OpenSSL does not support it");
-  }
-#endif /* TS_USE_TLS_OCSP */
-
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(ctx, true);
   }
@@ -180,85 +161,60 @@ QUICMultiCertConfigLoader::init_server_ssl_ctx(std::vector<X509 *> &cert_list, c
 
 fail:
   SSLReleaseContext(ctx);
-  for (auto cert : cert_list) {
-    X509_free(cert);
-  }
-
   return nullptr;
 }
 
-SSL_CTX *
+bool
 QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams multi_cert_params)
 {
+  bool retval = true;
   std::vector<X509 *> cert_list;
-  shared_SSL_CTX ctx(this->init_server_ssl_ctx(cert_list, multi_cert_params.get()), SSL_CTX_free);
-  shared_ssl_ticket_key_block keyblock = nullptr;
-  bool inserted                        = false;
+  SSLMultiCertConfigLoader::CertLoadData data;
+  std::set<std::string> common_names;
+  std::unordered_map<int, std::set<std::string>> unique_names;
+  const SSLConfigParams *params = this->_params;
+  this->load_certs_and_cross_reference_names(cert_list, data, params, multi_cert_params.get(), common_names, unique_names);
 
-  if (!ctx || !multi_cert_params) {
-    lookup->is_valid = false;
-    return nullptr;
-  }
-
-  const char *certname = multi_cert_params->cert.get();
-  for (auto cert : cert_list) {
-    if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert, certname)) {
+  for (size_t i = 0; i < cert_list.size(); i++) {
+    const char *current_cert_name = data.cert_names_list[i].c_str();
+    if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert_list[i], current_cert_name)) {
       /* At this point, we know cert is bad, and we've already printed a
          descriptive reason as to why cert is bad to the log file */
-      QUICConfDebug("Marking certificate as NOT VALID: %s", certname);
+      QUICConfDebug("Marking certificate as NOT VALID: %s", current_cert_name);
       lookup->is_valid = false;
     }
   }
 
-  // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
-  if (multi_cert_params->addr) {
-    if (strcmp(multi_cert_params->addr, "*") == 0) {
-      if (lookup->insert(multi_cert_params->addr, SSLCertContext(ctx, multi_cert_params, keyblock)) >= 0) {
-        inserted            = true;
-        lookup->ssl_default = ctx;
-        this->_set_handshake_callbacks(ctx.get());
-      }
-    } else {
-      IpEndpoint ep;
+  shared_SSL_CTX ctx(this->init_server_ssl_ctx(data, multi_cert_params.get(), common_names), SSL_CTX_free);
 
-      if (ats_ip_pton(multi_cert_params->addr, &ep) == 0) {
-        QUICConfDebug("mapping '%s' to certificate %s", (const char *)multi_cert_params->addr, (const char *)certname);
-        if (lookup->insert(ep, SSLCertContext(ctx, multi_cert_params, keyblock)) >= 0) {
-          inserted = true;
-        }
-      } else {
-        Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)multi_cert_params->addr);
-        lookup->is_valid = false;
-      }
-    }
+  shared_ssl_ticket_key_block keyblock = nullptr;
+
+  if (!ctx || !multi_cert_params || !this->_store_single_ssl_ctx(lookup, multi_cert_params, ctx, common_names)) {
+    lookup->is_valid = false;
+    retval           = false;
   }
 
-  // Insert additional mappings. Note that this maps multiple keys to the same value, so when
-  // this code is updated to reconfigure the SSL certificates, it will need some sort of
-  // refcounting or alternate way of avoiding double frees.
-  QUICConfDebug("importing SNI names from %s", (const char *)certname);
-  for (auto cert : cert_list) {
-    if (SSLMultiCertConfigLoader::index_certificate(lookup, SSLCertContext(ctx, multi_cert_params), cert, certname)) {
-      inserted = true;
-    }
-  }
+  for (auto iter = unique_names.begin(); retval && iter != unique_names.end(); ++iter) {
+    size_t i = iter->first;
 
-  if (inserted) {
-    if (SSLConfigParams::init_ssl_ctx_cb) {
-      SSLConfigParams::init_ssl_ctx_cb(ctx.get(), true);
-    }
-  }
+    SSLMultiCertConfigLoader::CertLoadData single_data;
+    single_data.cert_names_list.push_back(data.cert_names_list[i]);
+    single_data.key_list.push_back(i < data.key_list.size() ? data.key_list[i] : "");
+    single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
+    single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
 
-  if (!inserted) {
-    SSLReleaseContext(ctx.get());
-    ctx = nullptr;
+    shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_data, multi_cert_params.get(), iter->second), SSL_CTX_free);
+    if (!unique_ctx || !this->_store_single_ssl_ctx(lookup, multi_cert_params, unique_ctx, iter->second)) {
+      lookup->is_valid = false;
+      retval           = false;
+    }
   }
 
   for (auto &i : cert_list) {
     X509_free(i);
   }
 
-  return ctx.get();
+  return retval;
 }
 
 void

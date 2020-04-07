@@ -14,6 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-nc -l 8888 -o outserver2 -c "sh ./server2.sh" &
+nc -l ${2} -o outserver2 -c "sh ./server2.sh" &
 sleep 1
 curl --http2 -k https://127.0.0.1:${1}/post --verbose -H "Transfer-encoding: chunked" -d "Knock knock"

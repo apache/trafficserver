@@ -69,37 +69,21 @@ liblogging_a_SOURCES = \
 
 check_PROGRAMS = \
 	test_LogUtils \
-	test_LogUtils2 \
 	test_RolledLogDeleter
 
-TESTS = \
-	test_LogUtils \
-	test_LogUtils2 \
-	test_RolledLogDeleter
+TESTS = $(check_PROGRAMS)
 
 test_LogUtils_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	-DTEST_LOG_UTILS
-
-test_LogUtils_SOURCES = \
-	test_LogUtils.cc
-
-test_LogUtils_LDADD = \
-	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a
-
-test_LogUtils2_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-DTEST_LOG_UTILS \
 	-I$(abs_top_srcdir)/tests/include
 
-test_LogUtils2_SOURCES = \
+test_LogUtils_SOURCES = \
 	LogUtils.cc \
 	unit-tests/BufferWriterFormat.cc \
-	unit-tests/test_LogUtils2.cc
+	unit-tests/test_LogUtils.cc
 
-test_LogUtils2_LDADD = \
+test_LogUtils_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a

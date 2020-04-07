@@ -674,7 +674,7 @@ static const RecordElement RecordsConfig[] =
   ,
   //# 0 - never suppress generated responses
   //# 1 - always suppress generated responses
-  //# 2 - suppress responses for intercepted traffic
+  //# 2 - suppress responses for internal traffic
   {RECT_CONFIG, "proxy.config.body_factory.response_suppression_mode", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.body_factory.template_base", RECD_STRING, "NONE", RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
@@ -1256,6 +1256,11 @@ static const RecordElement RecordsConfig[] =
   {RECT_NODE, "proxy.node.version.manager.build_machine", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.version.manager.build_person", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  //# manager: backoff configuration.
+  {RECT_CONFIG, "proxy.node.config.manager_exponential_sleep_ceiling", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.node.config.manager_retry_cap", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
   //#

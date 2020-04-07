@@ -748,8 +748,6 @@ public:
 
     int64_t state_machine_id = 0;
 
-    // HttpAuthParams auth_params;
-
     // new ACL filtering result (calculated immediately after remap)
     bool client_connection_enabled = true;
     bool acl_filtering_performed   = false;
@@ -759,8 +757,6 @@ public:
     // for authenticated content caching
     CacheAuth_t www_auth_content = CACHE_AUTH_NONE;
 
-    // INK API/Remap API plugin interface
-    void *user_args[TS_HTTP_MAX_USER_ARG];
     RemapPluginInst *os_response_plugin_inst = nullptr;
     HTTPStatus http_return_code              = HTTP_STATUS_NONE;
 
@@ -855,7 +851,6 @@ public:
       via_string[VIA_DETAIL_SERVER_DESCRIPTOR] = VIA_DETAIL_SERVER_DESCRIPTOR_STRING;
       via_string[MAX_VIA_INDICES]              = '\0';
 
-      memset(user_args, 0, sizeof(user_args));
       memset((void *)&host_db_info, 0, sizeof(host_db_info));
     }
 
@@ -929,7 +924,6 @@ public:
 
   static void HandleBlindTunnel(State *s);
   static void StartRemapRequest(State *s);
-  static void RemapRequest(State *s);
   static void EndRemapRequest(State *s);
   static void PerformRemap(State *s);
   static void ModifyRequest(State *s);
@@ -938,7 +932,6 @@ public:
   static bool handleIfRedirect(State *s);
 
   static void StartAccessControl(State *s);
-  static void StartAuth(State *s);
   static void HandleRequestAuthorized(State *s);
   static void BadRequest(State *s);
   static void Forbidden(State *s);
@@ -952,8 +945,6 @@ public:
   static void OSDNSLookup(State *s);
   static void ReDNSRoundRobin(State *s);
   static void PPDNSLookup(State *s);
-  static void HandleAuth(State *s);
-  static void HandleAuthFailed(State *s);
   static void OriginServerRawOpen(State *s);
   static void HandleCacheOpenRead(State *s);
   static void HandleCacheOpenReadHitFreshness(State *s);
@@ -1028,11 +1019,7 @@ public:
   static bool is_response_valid(State *s, HTTPHdr *incoming_response);
 
   static void process_quick_http_filter(State *s, int method);
-  static bool perform_accept_encoding_filtering(State *s);
-
   static HostNameExpansionError_t try_to_expand_host_name(State *s);
-
-  static bool setup_auth_lookup(State *s);
   static bool will_this_request_self_loop(State *s);
   static bool is_request_likely_cacheable(State *s, HTTPHdr *request);
   static bool is_cache_hit(CacheLookupResult_t r);
@@ -1051,7 +1038,6 @@ public:
   static void handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
   static void handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
   static int calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic);
-  static int calculate_freshness_fuzz(State *s, int fresh_limit);
   static Freshness_t what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response);
   static Authentication_t AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr *client_request,
                                                HTTPHdr *obj_response);

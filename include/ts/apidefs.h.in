@@ -878,6 +878,15 @@ typedef enum {
   TS_MGMT_SOURCE_ENV       ///< Process environment variable.
 } TSMgmtSource;
 
+/// The User Arg type, used for Txn/Ssn/VConn user argument slots
+typedef enum {
+  TS_USER_ARGS_TXN,   ///< Transaction based.
+  TS_USER_ARGS_SSN,   ///< Session based
+  TS_USER_ARGS_VCONN, ///< VConnection based
+  TS_USER_ARGS_GLB,   ///< Global based
+  TS_USER_ARGS_COUNT  ///< Fake enum, # of valid entries.
+} TSUserArgType;
+
 typedef struct tsapi_file *TSFile;
 
 typedef struct tsapi_mloc *TSMLoc;
@@ -912,6 +921,8 @@ typedef struct tsapi_bufferreader *TSIOBufferReader;
 typedef struct tsapi_hostlookupresult *TSHostLookupResult;
 typedef struct tsapi_aiocallback *TSAIOCallback;
 typedef struct tsapi_net_accept *TSAcceptor;
+
+typedef struct tsapi_fetchsm *TSFetchSM;
 
 typedef void *(*TSThreadFunc)(void *data);
 typedef int (*TSEventFunc)(TSCont contp, TSEvent event, void *edata);

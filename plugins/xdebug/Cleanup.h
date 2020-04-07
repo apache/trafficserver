@@ -145,7 +145,7 @@ public:
       return;
     }
 
-    TSReleaseAssert(TSHttpTxnArgIndexReserve(arg_name, arg_desc, &md.txnArgIndex) == TS_SUCCESS);
+    TSReleaseAssert(TSUserArgIndexReserve(TS_USER_ARGS_TXN, arg_name, arg_desc, &md.txnArgIndex) == TS_SUCCESS);
     TSReleaseAssert(md.txnCloseContp = TSContCreate(_deleteAuxData, nullptr));
   }
 
@@ -158,11 +158,11 @@ public:
 
     TSAssert(md.txnArgIndex >= 0);
 
-    auto d = static_cast<TxnAuxData *>(TSHttpTxnArgGet(txn, md.txnArgIndex));
+    auto d = static_cast<TxnAuxData *>(TSUserArgGet(txn, md.txnArgIndex));
     if (!d) {
       d = new TxnAuxData;
 
-      TSHttpTxnArgSet(txn, md.txnArgIndex, d);
+      TSUserArgSet(txn, md.txnArgIndex, d);
 
       TSHttpTxnHookAdd(txn, TS_HTTP_TXN_CLOSE_HOOK, md.txnCloseContp);
     }
@@ -176,7 +176,7 @@ private:
     MgrData_ &md = access(MDRef);
 
     auto txn  = static_cast<TSHttpTxn>(edata);
-    auto data = static_cast<TxnAuxData *>(TSHttpTxnArgGet(txn, md.txnArgIndex));
+    auto data = static_cast<TxnAuxData *>(TSUserArgGet(txn, md.txnArgIndex));
     delete data;
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return 0;

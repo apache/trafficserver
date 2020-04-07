@@ -406,88 +406,82 @@ http2_parse_window_update(IOVec iov, uint32_t &size)
 ParseResult
 http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 {
-  MIMEField *field;
-
   ink_assert(http_hdr_type_get(headers->m_http) != HTTP_TYPE_UNKNOWN);
 
+  // HTTP Version
+  headers->version_set(HTTPVersion(1, 1));
+
   if (http_hdr_type_get(headers->m_http) == HTTP_TYPE_REQUEST) {
-    const char *scheme, *authority, *path;
-    int scheme_len, authority_len, path_len;
+    // :scheme
+    if (MIMEField *field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME); field != nullptr && field->value_is_valid()) {
+      int scheme_len;
+      const char *scheme = field->value_get(&scheme_len);
 
-    // Get values of :scheme, :authority and :path to assemble requested URL
-    if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != nullptr && field->value_is_valid()) {
-      scheme = field->value_get(&scheme_len);
+      int scheme_wks_idx = hdrtoken_tokenize(scheme, scheme_len);
+      url_scheme_set(headers->m_heap, headers->m_http->u.req.m_url_impl, scheme, scheme_wks_idx, scheme_len, true);
+
+      headers->field_delete(field);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    if ((field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY)) != nullptr && field->value_is_valid()) {
-      authority = field->value_get(&authority_len);
+    // :authority
+    if (MIMEField *field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
+        field != nullptr && field->value_is_valid()) {
+      int authority_len;
+      const char *authority = field->value_get(&authority_len);
+
+      url_host_set(headers->m_heap, headers->m_http->u.req.m_url_impl, authority, authority_len, true);
+
+      headers->field_delete(field);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    if ((field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH)) != nullptr && field->value_is_valid()) {
-      path = field->value_get(&path_len);
+    // :path
+    if (MIMEField *field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH); field != nullptr && field->value_is_valid()) {
+      int path_len;
+      const char *path = field->value_get(&path_len);
+
+      // cut first '/' if there, because `url_print()` add '/' before printing path
+      if (path_len >= 1 && path[0] == '/') {
+        ++path;
+        --path_len;
+      }
+
+      url_path_set(headers->m_heap, headers->m_http->u.req.m_url_impl, path, path_len, true);
+
+      headers->field_delete(field);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    // Parse URL
-    Arena arena;
-    size_t url_length     = scheme_len + 3 + authority_len + path_len;
-    char *url             = arena.str_alloc(url_length);
-    const char *url_start = url;
-
-    memcpy(url, scheme, scheme_len);
-    memcpy(url + scheme_len, "://", 3);
-    memcpy(url + scheme_len + 3, authority, authority_len);
-    memcpy(url + scheme_len + 3 + authority_len, path, path_len);
-    url_parse(headers->m_heap, headers->m_http->u.req.m_url_impl, &url_start, url + url_length, true);
-    arena.str_free(url);
-
-    // Get value of :method
-    if ((field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD)) != nullptr && field->value_is_valid()) {
+    // :method
+    if (MIMEField *field = headers->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD); field != nullptr && field->value_is_valid()) {
       int method_len;
       const char *method = field->value_get(&method_len);
 
-      int method_wks_idx = hdrtoken_tokenize(method, method_len);
-      http_hdr_method_set(headers->m_heap, headers->m_http, method, method_wks_idx, method_len, false);
+      headers->method_set(method, method_len);
+      headers->field_delete(field);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
     // Combine Cookie headers ([RFC 7540] 8.1.2.5.)
-    field = headers->field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
-    if (field) {
+    if (MIMEField *field = headers->field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE); field != nullptr) {
       headers->field_combine_dups(field, true, ';');
     }
-
-    // Convert HTTP version to 1.1
-    int32_t version = HTTP_VERSION(1, 1);
-    http_hdr_version_set(headers->m_http, version);
-
-    // Remove HTTP/2 style headers
-    headers->field_delete(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME);
-    headers->field_delete(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD);
-    headers->field_delete(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
-    headers->field_delete(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
   } else {
-    // Set HTTP Version 1.1
-    int32_t version = HTTP_VERSION(1, 1);
-    http_hdr_version_set(headers->m_http, version);
-
     // Set status from :status
-    if ((field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS)) != nullptr) {
+    if (MIMEField *field = headers->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS); field != nullptr) {
       int status_len;
       const char *status = field->value_get(&status_len);
+
       headers->status_set(http_parse_status(status, status + status_len));
+      headers->field_delete(field);
     } else {
       return PARSE_RESULT_ERROR;
     }
-
-    // Remove HTTP/2 style headers
-    headers->field_delete(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS);
   }
 
   // Check validity of all names and values

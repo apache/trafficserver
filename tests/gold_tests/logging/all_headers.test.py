@@ -96,8 +96,7 @@ tr.Processes.Default.ReturnCode = 0
 # Delay to allow TS to flush report to disk, then "sanitize" generated log.
 #
 tr = Test.AddTestRun()
-tr.DelayStart = 10
-tr.Processes.Default.Command = 'python3 {0} {4} < {2} | sh {1} > {3}'.format(
+tr.Processes.Default.Command = 'python3 {0} {2} {4} | sh {1} > {3}'.format(
     os.path.join(Test.TestDirectory, 'all_headers_sanitizer.py'),
     os.path.join(Test.TestDirectory, 'all_headers_sanitizer.sh'),
     os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log'),

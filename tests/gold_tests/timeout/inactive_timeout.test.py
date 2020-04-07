@@ -18,7 +18,6 @@
 
 Test.Summary = 'Testing ATS inactivity timeout'
 
-# need Curl
 Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )

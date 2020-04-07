@@ -543,7 +543,23 @@ Local Manager
    root processes.
 
    This setting is not reloadable, since it is must be applied when
-   program:`traffic_manager` initializes.
+   :program:`traffic_manager` initializes.
+
+.. ts:cv:: CONFIG proxy.node.config.manager_exponential_sleep_ceiling INT 60
+
+   In case of :program:`traffic_manager` is unable to start :program:`traffic_server`,
+   this setting specifies the maximum amount of seconds that the :program:`traffic_manager`
+   process should wait until it tries again to restart :program:`traffic_server`.
+   In case of :program:`traffic_manager` failing to start :program:`traffic_server`, it will
+   retry exponentially until it reaches the ceiling time.
+
+.. ts:cv:: CONFIG proxy.node.config.manager_retry_cap INT 5
+
+   This setting specifies the number of times that :program:`traffic_manager` will retry
+   to restart :program:`traffic_server` once the  maximum ceiling time is reached.
+
+.. note::
+   If set to ``0``, no cap will take place.
 
 Alarm Configuration
 ===================
@@ -1449,7 +1465,7 @@ Origin Server Connect Attempts
    Frequency of alerts
       See :ts:cv:`proxy.config.http.per_server.connection.alert_delay`.
 
-.. ts:cv:: CONFIG proxy.config.http.per_server.connection.match STRING ip
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.match STRING both
    :reloadable:
    :overridable:
 
@@ -2379,7 +2395,7 @@ Customizable User Response Pages
    ===== ======================================================================
    ``0`` Never suppress generated response pages.
    ``1`` Always suppress generated response pages.
-   ``2`` Suppress response pages only for intercepted traffic.
+   ``2`` Suppress response pages only for internal traffic.
    ===== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.http_ui_enabled INT 0

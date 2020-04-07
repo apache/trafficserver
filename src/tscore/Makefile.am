@@ -134,12 +134,6 @@ endif
 
 BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
 
-#test_UNUSED_SOURCES = \
-#  load_http_hdr.cc \
-#  IntrusivePtrTest.cc \
-#  IpMapTest.cc \
-#  TestHttpHeader.cc
-
 # Special hacks to generate the parser rules
 $(srcdir)/ParseRules.cc: ParseRulesCType
 
@@ -189,7 +183,9 @@ test_tscore_SOURCES = \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
-	unit_tests/test_ts_file.cc
+	unit_tests/test_Tokenizer.cc \
+	unit_tests/test_ts_file.cc \
+	unit_tests/test_Version.cc
 
 if HAS_HKDF
 test_tscore_SOURCES += \

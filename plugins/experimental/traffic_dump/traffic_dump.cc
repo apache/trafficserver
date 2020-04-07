@@ -297,9 +297,9 @@ write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_loc)
   TSMLoc field_loc = TSMimeHdrFieldGet(buffer, hdr_loc, 0);
   while (field_loc) {
     TSMLoc next_field_loc;
-    const char *name;
-    const char *value;
-    int name_len, value_len;
+    const char *name  = nullptr;
+    const char *value = nullptr;
+    int name_len = 0, value_len = 0;
     // Append to "fields" list if valid value exists
     if ((name = TSMimeHdrFieldNameGet(buffer, hdr_loc, field_loc, &name_len)) && name_len) {
       value = TSMimeHdrFieldValueStringGet(buffer, hdr_loc, field_loc, -1, &value_len);
@@ -376,7 +376,7 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
 
   // Retrieve SsnData
   TSHttpSsn ssnp   = TSHttpTxnSsnGet(txnp);
-  SsnData *ssnData = static_cast<SsnData *>(TSHttpSsnArgGet(ssnp, s_arg_idx));
+  SsnData *ssnData = static_cast<SsnData *>(TSUserArgGet(ssnp, s_arg_idx));
 
   // If no valid ssnData, continue transaction as if nothing happened
   if (!ssnData) {
@@ -415,6 +415,11 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
   }
 
   case TS_EVENT_HTTP_READ_REQUEST_HDR: {
+    // This hook is registered globally, not at TS_EVENT_HTTP_SSN_START in
+    // global_ssn_handler(). As such, this handler will be called with every
+    // transaction. However, we know that we are dumping this transaction
+    // because there is a ssnData associated with it.
+
     // We must grab the client request information before remap happens because
     // the remap process modifies the request buffer.
     TSMBuffer buffer;
@@ -437,6 +442,8 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
     TSMLoc hdr_loc;
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &buffer, &hdr_loc)) {
       txn_info += write_content_node(TSHttpTxnClientReqBodyBytesGet(txnp)) + "}";
+      TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
+      buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(PLUGIN_NAME, "Found proxy request");
@@ -520,7 +527,7 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
 
     // Create new per session data
     SsnData *ssnData = new SsnData;
-    TSHttpSsnArgSet(ssnp, s_arg_idx, ssnData);
+    TSUserArgSet(ssnp, s_arg_idx, ssnData);
 
     TSContDataSet(ssnData->aio_cont, ssnData);
 
@@ -585,7 +592,6 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     TSMutexUnlock(ssnData->disk_io_mutex);
 
     TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, ssnData->txn_cont);
-    TSHttpSsnHookAdd(ssnp, TS_HTTP_READ_REQUEST_HDR_HOOK, ssnData->txn_cont);
     TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_CLOSE_HOOK, ssnData->txn_cont);
     break;
   }
@@ -594,7 +600,7 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     int64_t id = TSHttpSsnIdGet(ssnp);
     TSDebug(PLUGIN_NAME, "global_ssn_handler(): Closing session %" PRId64 "...", id);
     // Retrieve SsnData
-    SsnData *ssnData = static_cast<SsnData *>(TSHttpSsnArgGet(ssnp, s_arg_idx));
+    SsnData *ssnData = static_cast<SsnData *>(TSUserArgGet(ssnp, s_arg_idx));
     // If no valid ssnData, continue transaction as if nothing happened
     if (!ssnData) {
       TSDebug(PLUGIN_NAME, "global_ssn_handler(): [TS_EVENT_HTTP_SSN_CLOSE] No ssnData found. Abort.");
@@ -666,13 +672,20 @@ TSPluginInit(int argc, const char *argv[])
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to register plugin.", PLUGIN_NAME);
-  } else if (TS_SUCCESS != TSHttpSsnArgIndexReserve(PLUGIN_NAME, "Track log related data", &s_arg_idx)) {
+  } else if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_SSN, PLUGIN_NAME, "Track log related data", &s_arg_idx)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve ssn arg.", PLUGIN_NAME);
   } else {
     /// Add global hooks
     TSCont ssncont = TSContCreate(global_ssn_handler, nullptr);
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, ssncont);
     TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, ssncont);
+
+    // Register the collecting of client-request headers at the global level so
+    // we can process requests before other plugins. (Global hooks are
+    // processed before session and transaction ones.)
+    TSCont txn_cont = TSContCreate(session_txn_handler, nullptr);
+    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, txn_cont);
+
     TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, ssncont);
     TSDebug(PLUGIN_NAME, "Initialized with sample pool size %" PRId64 " bytes and disk limit %" PRId64 " bytes",
             sample_pool_size.load(), max_disk_usage.load());

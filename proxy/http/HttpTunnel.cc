@@ -906,6 +906,11 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   for (c = p->consumer_list.head; c; c = c->link.next) {
     int64_t c_write = consumer_n;
 
+    // Don't bother to set up the consumer if it is dead
+    if (!c->alive) {
+      continue;
+    }
+
     if (!p->alive) {
       // Adjust the amount of chunked data to write if the only data was in the initial read
       // The amount to write in some cases is dependent on the type of the consumer, so this
@@ -1473,7 +1478,7 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
 
   if (action == TCA_PASSTHRU_CHUNKED_CONTENT) {
     // if the only chunked data was in the initial read, make sure we don't consume too much
-    if (p->bytes_read == 0) {
+    if (p->bytes_read == 0 && p->buffer_start != nullptr) {
       int num_read = p->buffer_start->read_avail() - p->chunked_handler.chunked_reader->read_avail();
       if (num_read < p->init_bytes_done) {
         p->init_bytes_done = num_read;

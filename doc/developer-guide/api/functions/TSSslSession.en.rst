@@ -55,6 +55,10 @@ returns 0.
 :func:`TSSslSessionGetBuffer` returns the session information serialized in a buffer that can be shared between processes.
 When the function is called len_ptr should point to the amount of space
 available in the buffer parameter.  The function returns the amount of data really needed to encode the session.  len_ptr is updated with the amount of data actually stored in the buffer.
+:func:`TSSslSessionGetBuffer` will not overrun the provided buffer, but the caller should ensure that the data's size was not larger
+than the buffer by comparing the returned value with the value of len_ptr. If the returned value is larger than the buffer size,
+then the session data did not fit in the buffer and the session data stored in the buffer output variable should not be used.
+
 
 :func:`TSSslSessionInsert` inserts the session specified by the addSession parameter into the ATS session cache under the sessionid key.
 If there is already an entry in the cache for the session id key, it is first removed before the new entry is added.

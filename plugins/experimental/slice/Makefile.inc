@@ -23,7 +23,6 @@ experimental_slice_slice_la_SOURCES = \
   experimental/slice/Config.h \
   experimental/slice/ContentRange.cc \
   experimental/slice/ContentRange.h \
-  experimental/slice/Data.cc \
   experimental/slice/Data.h \
   experimental/slice/HttpHeader.cc \
   experimental/slice/HttpHeader.h \
@@ -39,7 +38,9 @@ experimental_slice_slice_la_SOURCES = \
   experimental/slice/slice.h \
   experimental/slice/Stage.h \
   experimental/slice/transfer.cc \
-  experimental/slice/transfer.h
+  experimental/slice/transfer.h \
+  experimental/slice/util.cc \
+  experimental/slice/util.h
 
 check_PROGRAMS += experimental/slice/test_content_range
 

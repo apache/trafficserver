@@ -267,9 +267,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   }
 
   // How to store plugin private arguments inside Traffic Server request processing block.
-  if (TSHttpTxnArgIndexReserve("remap_example", "Example remap plugin", &arg_index) == TS_SUCCESS) {
+  if (TSUserArgIndexReserve(TS_USER_ARGS_TXN, "remap_example", "Example remap plugin", &arg_index) == TS_SUCCESS) {
     TSDebug(PLUGIN_NAME, "Save processing counter %" PRIu64 " inside request processing block\n", _processing_counter);
-    TSHttpTxnArgSet(rh, arg_index, (void *)_processing_counter); // save counter
+    TSUserArgSet(rh, arg_index, (void *)_processing_counter); // save counter
   }
   // How to cancel request processing and return error message to the client
   // We will do it every other request
@@ -321,7 +321,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 void
 TSRemapOSResponse(void *ih ATS_UNUSED, TSHttpTxn rh, int os_response_type)
 {
-  void *data     = TSHttpTxnArgGet(rh, arg_index); // read counter (we store it in TSRemapDoRemap function call)
+  void *data     = TSUserArgGet(rh, arg_index); // read counter (we store it in TSRemapDoRemap function call)
   int request_id = data ? static_cast<int *>(data)[0] : -1;
 
   TSDebug(PLUGIN_NAME, "Read processing counter %d from request processing block\n", request_id);

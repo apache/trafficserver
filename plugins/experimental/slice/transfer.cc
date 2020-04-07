@@ -19,64 +19,80 @@
 #include "transfer.h"
 
 int64_t
-transfer_content_bytes(Data *const data) // , char const * const fstr)
+transfer_content_bytes(Data *const data)
 {
-  int64_t consumed(0);
+  // nothing to transfer if there's no source.
+  if (nullptr == data->m_upstream.m_read.m_reader) {
+    return 0;
+  }
 
-  // is the downstream is fulfilled or closed
-  if (!data->m_dnstream.m_write.isOpen()) {
-    // drain the upstream
-    if (data->m_upstream.m_read.isOpen()) {
-      int64_t const avail = TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader);
-      TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, avail);
-      consumed += avail;
-    }
-  } else // if (data->m_dnstream.m_write.isOpen())
-  {
-    if (data->m_upstream.m_read.isOpen()) {
-      int64_t avail = TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader);
-      if (0 < avail) {
-        int64_t const toskip = std::min(data->m_blockskip, avail);
+  TSIOBufferReader const reader = data->m_upstream.m_read.m_reader;
+  TSIOBuffer const output_buf   = data->m_dnstream.m_write.m_iobuf;
+  TSVIO const output_vio        = data->m_dnstream.m_write.m_vio;
 
-        // consume any up front (first block) padding
-        if (0 < toskip) {
-          TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, toskip);
+  int64_t consumed = 0; // input vio bytes visited
+  int64_t copied   = 0; // output bytes transferred
+
+  bool const canWrite = data->m_dnstream.m_write.isOpen();
+  bool done           = false;
+
+  TSIOBufferBlock block = TSIOBufferReaderStart(reader);
+
+  while (!done && nullptr != block) {
+    int64_t bavail = TSIOBufferBlockReadAvail(block, reader);
+
+    if (0 == bavail) {
+      block = TSIOBufferBlockNext(block);
+    } else {
+      int64_t toconsume = 0;
+
+      if (canWrite) {
+        int64_t const toskip = std::min(data->m_blockskip, bavail);
+        if (0 < toskip) { // before bytes
+          toconsume = toskip;
           data->m_blockskip -= toskip;
-          avail -= toskip;
-          consumed += toskip;
-        }
+        } else {
+          int64_t const bytesleft = data->m_bytestosend - data->m_bytessent;
+          if (0 < bytesleft) { // transfer bytes
+            int64_t const tocopy = std::min(bavail, bytesleft);
+            int64_t const nbytes = TSIOBufferCopy(output_buf, reader, tocopy, 0);
 
-        if (0 < avail) {
-          int64_t const bytesleft = (data->m_bytestosend - data->m_bytessent);
-          int64_t const tocopy    = std::min(avail, bytesleft);
+            done = (nbytes < tocopy); // output buffer stuffed
 
-          if (0 < tocopy) {
-            int64_t const copied(TSIOBufferCopy(data->m_dnstream.m_write.m_iobuf, data->m_upstream.m_read.m_reader, tocopy, 0));
+            copied += nbytes;
+            data->m_bytessent += nbytes;
 
-            data->m_bytessent += copied;
-
-            TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
-
-            avail -= copied;
-            consumed += copied;
+            toconsume = nbytes;
+          } else { // after bytes
+            toconsume = bavail;
           }
         }
-
-        // if hit fulfillment start bulk consuming
-        if (0 < avail && data->m_bytestosend <= data->m_bytessent) {
-          TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, avail);
-          consumed += avail;
-        }
+      } else { // drain
+        toconsume = bavail;
       }
 
-      if (0 < consumed) {
-        TSVIOReenable(data->m_dnstream.m_write.m_vio);
+      if (0 < toconsume) {
+        if (bavail == toconsume) {
+          block = TSIOBufferBlockNext(block);
+        }
+        TSIOBufferReaderConsume(reader, toconsume);
+        consumed += toconsume;
       }
     }
   }
 
+  // tell output more data is available
+  if (0 < copied) {
+    TSVIOReenable(output_vio);
+  }
+
   if (0 < consumed) {
     data->m_blockconsumed += consumed;
+
+    TSVIO const input_vio = data->m_upstream.m_read.m_vio;
+    if (nullptr != input_vio) {
+      TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + consumed);
+    }
   }
 
   return consumed;
@@ -86,19 +102,48 @@ transfer_content_bytes(Data *const data) // , char const * const fstr)
 int64_t
 transfer_all_bytes(Data *const data)
 {
-  DEBUG_LOG("transfer_all_bytes");
-  int64_t consumed = 0;
+  // nothing to transfer if there's no source.
+  if (nullptr == data->m_upstream.m_read.m_reader || !data->m_dnstream.m_write.isOpen()) {
+    return 0;
+  }
 
-  if (data->m_dnstream.m_write.isOpen()) {
-    int64_t const read_avail = TSIOBufferReaderAvail(data->m_upstream.m_read.m_reader);
+  int64_t consumed = 0; // input vio bytes visited
 
-    if (0 < read_avail) {
-      int64_t const copied(TSIOBufferCopy(data->m_dnstream.m_write.m_iobuf, data->m_upstream.m_read.m_reader, read_avail, 0));
+  TSIOBufferReader const reader = data->m_upstream.m_read.m_reader;
+  TSIOBuffer const output_buf   = data->m_dnstream.m_write.m_iobuf;
 
-      if (0 < copied) {
-        TSIOBufferReaderConsume(data->m_upstream.m_read.m_reader, copied);
-        consumed = copied;
+  bool done = false;
+
+  TSIOBufferBlock block = TSIOBufferReaderStart(reader);
+
+  while (!done && nullptr != block) {
+    int64_t bavail = TSIOBufferBlockReadAvail(block, reader);
+
+    if (0 == bavail) {
+      block = TSIOBufferBlockNext(block);
+    } else {
+      int64_t const nbytes = TSIOBufferCopy(output_buf, reader, bavail, 0);
+      done                 = nbytes < bavail; // output buffer is full
+
+      if (0 < nbytes) {
+        if (bavail == nbytes) {
+          block = TSIOBufferBlockNext(block);
+        }
+        TSIOBufferReaderConsume(reader, nbytes);
+        consumed += nbytes;
       }
+    }
+  }
+
+  if (0 < consumed) {
+    TSVIO const output_vio = data->m_dnstream.m_write.m_vio;
+    if (nullptr != output_vio) {
+      TSVIOReenable(output_vio);
+    }
+
+    TSVIO const input_vio = data->m_upstream.m_read.m_vio;
+    if (nullptr != input_vio) {
+      TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + consumed);
     }
   }
 

@@ -184,7 +184,7 @@ private:
   bool half_close_local          = false;
   int recursion                  = 0;
 
-  std::unordered_set<std::string> h2_pushed_urls;
+  std::unordered_set<std::string> *_h2_pushed_urls = nullptr;
 
   Event *_reenable_event = nullptr;
   int _n_frame_read      = 0;
@@ -237,7 +237,11 @@ Http2ClientSession::get_half_close_local_flag() const
 inline bool
 Http2ClientSession::is_url_pushed(const char *url, int url_len)
 {
-  return h2_pushed_urls.find(url) != h2_pushed_urls.end();
+  if (_h2_pushed_urls == nullptr) {
+    return false;
+  }
+
+  return _h2_pushed_urls->find(url) != _h2_pushed_urls->end();
 }
 
 inline int64_t

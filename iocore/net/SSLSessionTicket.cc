@@ -102,8 +102,8 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 
         netvc.setSSLSessionCacheHit(true);
 
-#if TS_HAS_TLS_EARLY_DATA
-        if (SSL_version(ssl) >= TLS1_3_VERSION && config->server_max_early_data > 0) {
+#ifdef TLS1_3_VERSION
+        if (SSL_version(ssl) >= TLS1_3_VERSION) {
           Debug("ssl_session_ticket", "make sure tickets are only used once.");
           return 2;
         }

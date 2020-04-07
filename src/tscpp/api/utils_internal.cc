@@ -61,7 +61,6 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
   utils::internal::setTransactionEvent(transaction, event);
   switch (event) {
   case TS_EVENT_HTTP_POST_REMAP:
-    transaction.getClientRequest().getUrl().reset();
     // This is here to force a refresh of the cached client request url
     TSMBuffer hdr_buf;
     TSMLoc hdr_loc;
@@ -99,7 +98,7 @@ void
 setupTransactionManagement()
 {
   // Reserve a transaction slot
-  TSAssert(TS_SUCCESS == TSHttpTxnArgIndexReserve("atscppapi", "ATS CPP API", &TRANSACTION_STORAGE_INDEX));
+  TSAssert(TS_SUCCESS == TSUserArgIndexReserve(TS_USER_ARGS_TXN, "atscppapi", "ATS CPP API", &TRANSACTION_STORAGE_INDEX));
   // We must always have a cleanup handler available
   TSMutex mutex = nullptr;
   TSCont cont   = TSContCreate(handleTransactionEvents, mutex);
@@ -153,11 +152,11 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
 Transaction &
 utils::internal::getTransaction(TSHttpTxn ats_txn_handle)
 {
-  Transaction *transaction = static_cast<Transaction *>(TSHttpTxnArgGet(ats_txn_handle, TRANSACTION_STORAGE_INDEX));
+  Transaction *transaction = static_cast<Transaction *>(TSUserArgGet(ats_txn_handle, TRANSACTION_STORAGE_INDEX));
   if (!transaction) {
     transaction = new Transaction(static_cast<void *>(ats_txn_handle));
     LOG_DEBUG("Created new transaction object at %p for ats pointer %p", transaction, ats_txn_handle);
-    TSHttpTxnArgSet(ats_txn_handle, TRANSACTION_STORAGE_INDEX, transaction);
+    TSUserArgSet(ats_txn_handle, TRANSACTION_STORAGE_INDEX, transaction);
   }
   return *transaction;
 }

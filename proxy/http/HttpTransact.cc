@@ -280,6 +280,26 @@ is_localhost(const char *name, int len)
   return (len == (sizeof(local) - 1)) && (memcmp(name, local, len) == 0);
 }
 
+inline static bool
+is_response_simple_code(HTTPStatus response_code)
+{
+  if (static_cast<unsigned int>(response_code) < 400 || static_cast<unsigned int>(response_code) > 499) {
+    return false;
+  }
+
+  return true;
+}
+
+inline static bool
+is_response_unavailable_code(HTTPStatus response_code)
+{
+  if (static_cast<unsigned int>(response_code) < 500 || static_cast<unsigned int>(response_code) > 599) {
+    return false;
+  }
+
+  return true;
+}
+
 inline static void
 simple_or_unavailable_server_retry(HttpTransact::State *s)
 {
@@ -288,11 +308,10 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
 
   TxnDebug("http_trans", "[simple_or_unavailabe_server_retry] server_response = %d, simple_retry_attempts: %d, numParents:%d ",
            server_response, s->current.simple_retry_attempts, numParents(s));
-
   // simple retry is enabled, 0x1
-  if ((retry_type(s) & PARENT_RETRY_SIMPLE) && s->current.simple_retry_attempts < max_retries(s, PARENT_RETRY_SIMPLE) &&
-      server_response == HTTP_STATUS_NOT_FOUND) {
-    TxnDebug("http_trans", "RECEIVED A SIMPLE RETRY RESPONSE");
+  if ((retry_type(s) & PARENT_RETRY_SIMPLE) && is_response_simple_code(server_response) &&
+      s->current.simple_retry_attempts < max_retries(s, PARENT_RETRY_SIMPLE) && response_is_retryable(s, server_response)) {
+    TxnDebug("parent_select", "RECEIVED A SIMPLE RETRY RESPONSE");
     if (s->current.simple_retry_attempts < numParents(s)) {
       s->current.state      = HttpTransact::PARENT_RETRY;
       s->current.retry_type = PARENT_RETRY_SIMPLE;
@@ -303,7 +322,7 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
     }
   }
   // unavailable server retry is enabled 0x2
-  else if ((retry_type(s) & PARENT_RETRY_UNAVAILABLE_SERVER) &&
+  else if ((retry_type(s) & PARENT_RETRY_UNAVAILABLE_SERVER) && is_response_unavailable_code(server_response) &&
            s->current.unavailable_server_retry_attempts < max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER) &&
            response_is_retryable(s, server_response)) {
     TxnDebug("parent_select", "RECEIVED A PARENT_RETRY_UNAVAILABLE_SERVER RESPONSE");
@@ -851,6 +870,7 @@ HttpTransact::StartRemapRequest(State *s)
     TxnDebug("http_trans", "Before Remapping:");
     obj_describe(s->hdr_info.client_request.m_http, true);
   }
+  DUMP_HEADER("http_hdrs", &s->hdr_info.client_request, s->state_machine_id, "Incoming Request");
 
   if (s->http_config_param->referer_filter_enabled) {
     s->filter_mask = URL_REMAP_FILTER_REFERER;
@@ -1425,11 +1445,6 @@ HttpTransact::HandleRequest(State *s)
   if (handle_internal_request(s, &s->hdr_info.client_request)) {
     TRANSACT_RETURN(SM_ACTION_INTERNAL_REQUEST, nullptr);
   }
-
-  // this needs to be called after initializing state variables from request
-  // it adds the client-ip to the incoming client request.
-
-  DUMP_HEADER("http_hdrs", &s->hdr_info.client_request, s->state_machine_id, "Incoming Request");
 
   if (s->state_machine->plugin_tunnel_type == HTTP_PLUGIN_AS_INTERCEPT) {
     setup_plugin_request_intercept(s);

@@ -20,16 +20,13 @@
 
 #include "ts/ts.h"
 
-#include "Config.h"
 #include "HttpHeader.h"
 #include "Range.h"
 #include "Stage.h"
 
 #include <netinet/in.h>
 
-void incrData();
-
-void decrData();
+struct Config;
 
 struct Data {
   Data(Data const &) = delete;
@@ -61,7 +58,9 @@ struct Data {
   int64_t m_blockexpected; // body bytes expected
   int64_t m_blockskip;     // number of bytes to skip in this block
   int64_t m_blockconsumed; // body bytes consumed
-  bool m_iseos;            // server in EOS state
+
+  enum BlockState { Pending, Active, Done, Fail };
+  BlockState m_blockstate; // is there an active slice block
 
   int64_t m_bytestosend; // header + content bytes to send
   int64_t m_bytessent;   // number of bytes written to the client
@@ -86,33 +85,32 @@ struct Data {
       m_etaglen(0),
       m_lastmodifiedlen(0),
       m_statustype(TS_HTTP_STATUS_NONE),
-      m_bail(false),
       m_req_range(-1, -1),
-      m_contentlen(-1)
-
-      ,
+      m_contentlen(-1),
       m_blocknum(-1),
       m_blockexpected(0),
       m_blockskip(0),
       m_blockconsumed(0),
-      m_iseos(false)
-
-      ,
+      m_blockstate(Pending),
       m_bytestosend(0),
       m_bytessent(0),
       m_server_block_header_parsed(false),
       m_server_first_header_parsed(false),
       m_http_parser(nullptr)
   {
-    // incrData();
     m_hostname[0]     = '\0';
     m_lastmodified[0] = '\0';
     m_etag[0]         = '\0';
+#if defined(COLLECT_STATS)
+    TSStatIntIncrement(stats::DataCreate, 1);
+#endif
   }
 
   ~Data()
   {
-    // decrData();
+#if defined(COLLECT_STATS)
+    TSStatIntIncrement(stats::DataDestroy, 1);
+#endif
     if (nullptr != m_urlbuf) {
       if (nullptr != m_urlloc) {
         TSHandleMLocRelease(m_urlbuf, TS_NULL_MLOC, m_urlloc);

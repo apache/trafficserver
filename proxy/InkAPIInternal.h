@@ -40,8 +40,6 @@
 
 /* Some defines that might be candidates for configurable settings later.
  */
-#define TS_HTTP_MAX_USER_ARG 16 /* max number of user arguments for Transactions and Sessions */
-
 typedef int8_t TSMgmtByte; // Not for external use
 
 /* ****** Cache Structure ********* */

@@ -913,7 +913,7 @@ READ_RESPONSE_HDR_HOOK
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Rulesets evaluated within this context will process only once the origin server
-response (or cached response) has been read, but prior to |TS| sending that
+response has been read, but prior to |TS| sending that
 response to the client.
 
 This is the default hook condition for all globally-configured rulesets.
