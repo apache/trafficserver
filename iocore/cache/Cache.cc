@@ -2141,7 +2141,7 @@ unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
 {
   using UnmarshalFunc           = int(char *buf, int len, RefCountObj *block_ref);
   UnmarshalFunc *unmarshal_func = &HTTPInfo::unmarshal;
-  ts::VersionNumber version(doc->v_major, doc->v_minor);
+  VersionNumber version(doc->v_major, doc->v_minor);
 
   // introduced by https://github.com/apache/trafficserver/pull/4874, this is used to distinguish the doc version
   // before and after #4847
