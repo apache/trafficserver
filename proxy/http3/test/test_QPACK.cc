@@ -395,7 +395,10 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
       delete header_sets[i];
     }
   }
-
+  fflush(fd_in);
+  fclose(fd_in);
+  fflush(fd_out);
+  fclose(fd_out);  
   return ret;
 }
 
