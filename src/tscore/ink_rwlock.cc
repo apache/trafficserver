@@ -24,8 +24,6 @@
 #include "tscore/ink_config.h"
 #include "tscore/ink_rwlock.h"
 
-static pthread_rwlockattr_t attr;
-
 //-------------------------------------------------------------------------
 // ink_rwlock_init
 //
@@ -34,7 +32,7 @@ static pthread_rwlockattr_t attr;
 void
 ink_rwlock_init(ink_rwlock *rw)
 {
-  int error = pthread_rwlock_init(rw, &attr);
+  int error = pthread_rwlock_init(rw, nullptr);
   if (unlikely(error != 0)) {
     ink_abort("pthread_rwlock_init(%p) failed: %s (%d)", rw, strerror(error), error);
   }
