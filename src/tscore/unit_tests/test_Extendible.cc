@@ -107,7 +107,8 @@ TEST_CASE("Extendible Memory Allocations", "")
   CHECK(ext::sizeOf<B>() == w * 4);
   CHECK(ext::sizeOf<C>() == w * 7);
 
-  C &x = *(ext::alloc<C>());
+  auto sptr = ext::create<C>();
+  C &x      = *sptr;
   //    0   1   2   3   4   5   6
   //[ EA*,  a,  b,EC*,  c, EA, EC]
   //
@@ -131,12 +132,12 @@ TEST_CASE("Extendible Memory Allocations", "")
   CHECK(ext::viewFormat(x) == format);
 
   printf("\n");
-  delete &x;
 }
 
 TEST_CASE("Extendible Pointer Math", "")
 {
-  C &x = *(ext::alloc<C>());
+  auto sptr = ext::create<C>();
+  C &x      = *sptr;
 
   CHECK(x.a == 1);
   CHECK(x.b == 2);
@@ -164,7 +165,6 @@ TEST_CASE("Extendible Pointer Math", "")
   ext::FieldId<A, int> a_int;
   static_assert(std::is_same<decltype(ext::get(x, a_bit)), bool>::value);
   static_assert(std::is_same<decltype(ext::get(x, a_int)), int const &>::value);
-  delete &x;
 }
 
 // Extendible is abstract and must be derived in a CRTP
@@ -190,15 +190,32 @@ struct Derived : Extendible<Derived> {
 ///////////////////////////////////////
 // C API for Derived
 //
+#include <list>
+std::list<std::shared_ptr<Derived>> derived_list;
 void *
-DerivedExtalloc()
+DerivedExtCreate()
 {
-  return ext::alloc<Derived>();
+  auto sptr = ext::create<Derived>();
+  // mutex lock
+  derived_list.push_back(sptr);
+  // mutex unlock
+  return sptr.get();
 }
 void
 DerivedExtFree(void *ptr)
 {
-  delete (Derived *)ptr;
+  // mutex lock
+  for (auto it = derived_list.begin(); it != derived_list.end();) {
+    auto derived = *it;
+    if (derived.get() == ptr) {
+      derived_list.erase(it);
+      // mutex unlock
+      return;
+    }
+  }
+  // mutex unlock
+  printf("Multiple free in DerivedExtFree");
+  abort();
 }
 
 ExtFieldContext
@@ -258,30 +275,37 @@ TEST_CASE("Extendible", "")
 
   ext::FieldId<Derived, bool> bit_a, bit_b, bit_c;
   ext::FieldId<Derived, std::atomic<int>> int_a, int_b, int_c;
-  Derived *ptr;
+  shared_ptr<Derived> ptr;
 
   // test cases:
   //[constructor] [operator] [type] [access] [capacity] [modifier] [operation] [compare] [find]
   // I don't use SECTIONS because this modifies static variables many times, is not thread safe.
   INFO("Extendible()")
   {
-    ptr = ext::alloc<Derived>();
+    REQUIRE(Derived::schema.no_instances() == true);
+    ptr = ext::create<Derived>();
     REQUIRE(ptr != nullptr);
   }
 
   INFO("~Extendible")
   {
     //
-    delete ptr;
+    ptr = nullptr;
+    REQUIRE(Derived::schema.no_instances() == true);
   }
 
   INFO("Schema Reset")
   {
-    ptr = ext::alloc<Derived>();
-    REQUIRE(Derived::schema.no_instances() == false);
-    REQUIRE(Derived::schema.reset() == false);
-    delete ptr;
     REQUIRE(Derived::schema.no_instances() == true);
+
+    ptr = ext::create<Derived>();
+    REQUIRE(Derived::schema.no_instances() == false);
+    // don't allow reset while live instances
+    REQUIRE(Derived::schema.reset() == false);
+
+    ptr = nullptr;
+    REQUIRE(Derived::schema.no_instances() == true);
+
     ext::details::areFieldsFinalized() = false;
     REQUIRE(Derived::schema.reset() == true);
     ext::details::areFieldsFinalized() = true;
@@ -289,7 +313,7 @@ TEST_CASE("Extendible", "")
 
   INFO("shared_ptr")
   {
-    shared_ptr<Derived> sptr(ext::alloc<Derived>());
+    shared_ptr<Derived> sptr = ext::create<Derived>();
     REQUIRE(Derived::schema.no_instances() == false);
     REQUIRE(sptr);
   }
@@ -306,11 +330,11 @@ TEST_CASE("Extendible", "")
   INFO("Extendible delete ptr");
   {
     for (int i = 0; i < 10; i++) {
-      ptr = ext::alloc<Derived>();
+      ptr = ext::create<Derived>();
       REQUIRE(ptr != nullptr);
       INFO(__LINE__);
       REQUIRE(Derived::schema.no_instances() == false);
-      delete ptr;
+
       INFO(__LINE__);
       ptr = nullptr;
       REQUIRE(Derived::schema.no_instances() == true);
@@ -319,7 +343,7 @@ TEST_CASE("Extendible", "")
 
   INFO("test bit field");
   {
-    shared_ptr<Derived> sptr{ext::alloc<Derived>()};
+    shared_ptr<Derived> sptr{ext::create<Derived>()};
     Derived &ref = *sptr;
 
     CHECK(ext::viewFormat(ref) == Derived::testFormat());
@@ -356,7 +380,7 @@ TEST_CASE("Extendible", "")
     CHECK(ext::sizeOf<Derived>() == expected_size);
     ext::details::areFieldsFinalized() = true;
 
-    shared_ptr<Derived> sptr(ext::alloc<Derived>());
+    shared_ptr<Derived> sptr(ext::create<Derived>());
     Derived &ref = *sptr;
     CHECK(ext::viewFormat(ref) == Derived::testFormat());
     using Catch::Matchers::Contains;
@@ -385,7 +409,7 @@ TEST_CASE("Extendible", "")
     size_t expected_size = sizeof(Derived) + 1 + sizeof(std::atomic_int) * 2;
     CHECK(ext::sizeOf<Derived>() == expected_size);
 
-    shared_ptr<Derived> sptr(ext::alloc<Derived>());
+    shared_ptr<Derived> sptr(ext::create<Derived>());
     Derived &ref = *sptr;
     CHECK(ext::get(ref, int_a) == 0);
     CHECK(ext::get(ref, int_b) == 0);
@@ -411,7 +435,7 @@ TEST_CASE("Extendible C API")
 
   INFO("C API alloc instance")
   {
-    void *d = DerivedExtalloc();
+    void *d = DerivedExtCreate();
 
     CHECK(d != nullptr);
     CHECK(Derived::schema.no_instances() == false);
@@ -431,7 +455,7 @@ TEST_CASE("Extendible C API")
   }
   INFO("C API test int field")
   {
-    void *d = DerivedExtalloc();
+    void *d = DerivedExtCreate();
     REQUIRE(d != nullptr);
 
     ExtFieldContext cf_a = DerivedExtfieldFind("cf_a");

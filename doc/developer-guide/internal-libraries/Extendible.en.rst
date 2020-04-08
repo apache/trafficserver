@@ -80,13 +80,13 @@ the type's constructor, destructor, and serializer. And to avoid corruption, the
    }
 
 
-When an derived class is instantiated, :func:`template<> alloc()` will allocate a block of memory for the derived class and all added
+When an derived class is instantiated, :func:`template<> create()` will allocate a block of memory for the derived class and all added
 fields. The only memory overhead per instance is an uint16 used as a offset to the start of the extendible block.
 
 .. code-block:: cpp
 
    ExtendibleExample* alloc_example() {
-     return ext::alloc<ExtendibleExample>();
+     return ext::create<ExtendibleExample>();
    }
 
 Memory Layout
@@ -129,8 +129,8 @@ which simplifies the code using it. Also this provides compile errors for common
    }
 
    PluginFunc() {
-      Food *banana = ext::alloc<Food>();
-      Car *camry = ext::alloc<Car>();
+      Food *banana = ext::create<Food>();
+      Car *camry = ext::create<Car>();
 
       // Common user errors
 
@@ -157,7 +157,7 @@ which simplifies the code using it. Also this provides compile errors for common
 
    Fruit.schema.addField(fld_has_seeds, "has_seeds");
 
-   Fruit mango = ext::alloc<Fruit>();
+   Fruit mango = ext::create<Fruit>();
 
    ext::set(mango, fld_has_seeds) = true;         // downcasts mango to Extendible<Fruit>
    ext::set(mango, fld_food_weight) = 2;          // downcasts mango to Extendible<Food>
@@ -170,7 +170,7 @@ Inheritance
 -----------
 
    Unfortunately it is non-trivial handle multiple |Extendible| super types in the same inheritance tree.
-   :func:`template<> alloc()` handles allocation and initialization of the entire `Derived` class, but it is dependent on each class defining :code:`using super_type = *some_super_class*;` so that it recurse through the classes.
+   :func:`template<> create()` handles allocation and initialization of the entire `Derived` class, but it is dependent on each class defining :code:`using super_type = *some_super_class*;` so that it recurse through the classes.
 
 .. code-block:: cpp
 
@@ -191,7 +191,7 @@ Inheritance
    ext::FieldId<A, atomic<uint16_t>> ext_a_1;
    ext::FieldId<C, uint16_t> ext_c_1;
 
-   C &x = *(ext::alloc<C>());
+   C &x = *(ext::create<C>());
    ext::viewFormat(x);
 
 :func:`viewFormat` prints a diagram of the position and size of bytes used within the allocated
@@ -235,7 +235,7 @@ Namespace `ext`
 
       one schema instance per |Extendible| to define contained |FieldDesc|
 
-.. function:: template<typename Derived_t> Extendible* alloc()
+.. function:: template<typename Derived_t> Extendible* create()
 
    Allocate a block of memory. Construct the base data.
    Recursively construct and initialize `Derived_t::super_type` and its |Extendible| classes.

@@ -199,7 +199,7 @@ public:
 
 protected:
   Extendible();
-  // use ext::alloc() exclusively for allocation and initialization
+  // use ext::create() exclusively for allocation and initialization
 
   /** destruct all fields */
   ~Extendible() { schema.callDestructor(uintptr_t(this) + ext_loc); }
@@ -214,7 +214,7 @@ private:
     return uintptr_t(this) + ext_loc;
   }
 
-  template <typename T> friend T *alloc();
+  template <typename T> friend T *create();
   template <typename T> friend uintptr_t details::initRecurseSuper(T &, uintptr_t);
   template <typename T> friend FieldPtr details::FieldPtrGet(Extendible<T> const &, details::FieldDesc const &);
   template <typename T> friend std::string viewFormat(T const &, uintptr_t, int);
@@ -608,26 +608,42 @@ namespace details
     }
     return tail_ptr;
   }
+
+  template <typename Derived_t> struct deleter {
+    void
+    operator()(Derived_t *p) const
+    {
+      p->~Derived_t();
+      ats_free(p);
+    }
+  };
 } // namespace details
 
 // allocate and initialize an extendible data structure
 template <typename Derived_t>
-Derived_t *
-alloc()
+std::shared_ptr<Derived_t>
+create()
 {
+  // check if Derived_t inherits from an Extendible type
   static_assert(std::is_base_of<Extendible<Derived_t>, Derived_t>::value);
+
+  // don't instantiate until all Fields are finalized.
   ink_assert(ext::details::areFieldsFinalized());
 
-  // calculate the memory needed
+  // calculate the memory needed for the class and all Extendible blocks
   const size_t type_size = ext::sizeOf<Derived_t>();
-  // alloc a block of memory
-  Derived_t *ptr = (Derived_t *)ats_memalign(alignof(Derived_t), type_size);
-  // Extendible_t *ptr = (Extendible_t *)::operator new(type_size); // alloc a block of memory
+
+  // alloc one block of memory
+  Derived_t *ptr = static_cast<Derived_t *>(ats_memalign(alignof(Derived_t), type_size));
+
   // construct (recursively super-to-sub class)
   new (ptr) Derived_t();
+
   // define extendible blocks start offsets (recursively super-to-sub class)
   details::initRecurseSuper(*ptr, uintptr_t(ptr) + sizeof(Derived_t));
-  return ptr;
+
+  return std::shared_ptr<Derived_t>(ptr, details::deleter<Derived_t>());
+  // todo: can you placement new a shared_ptr? make_shared? to prevent a second alloc here.
 }
 
 /////////////////////////
