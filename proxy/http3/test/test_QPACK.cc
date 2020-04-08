@@ -380,6 +380,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
   }
 
   if (!feof(fd_in)) {
+    REQUIRE(false)
     return -1;
   }
 
