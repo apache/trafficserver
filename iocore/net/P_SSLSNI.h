@@ -66,7 +66,7 @@ public:
     }
     pos = 0;
     while ((pos = name.find('*', pos)) != std::string::npos) {
-      name.replace(pos, 1, ".{0,}");
+      name.replace(pos, 1, "(.{0,})");
     }
     Debug("ssl_sni", "Regexed fqdn=%s", name.c_str());
     setRegexName(name);
@@ -111,7 +111,7 @@ struct SNIConfigParams : public ConfigInfo {
   void cleanup();
   int Initialize();
   void loadSNIConfig();
-  const actionVector *get(const std::string &servername) const;
+  std::pair<const actionVector *, ActionItem::Context> get(const std::string &servername) const;
 };
 
 struct SNIConfig {

@@ -376,12 +376,11 @@ static int
 PerformAction(Continuation *cont, const char *servername)
 {
   SNIConfig::scoped_config params;
-  const actionVector *actionvec = params->get(servername);
-  if (!actionvec) {
+  if (const auto &actions = params->get(servername); !actions.first) {
     Debug("ssl_sni", "%s not available in the map", servername);
   } else {
-    for (auto &&item : *actionvec) {
-      auto ret = item->SNIAction(cont);
+    for (auto &&item : *actions.first) {
+      auto ret = item->SNIAction(cont, actions.second);
       if (ret != SSL_TLSEXT_ERR_OK) {
         return ret;
       }
