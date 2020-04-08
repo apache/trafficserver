@@ -26,6 +26,8 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, ena
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 server2 = Test.MakeOriginServer("server2")
+#dns = Test.MakeDNServer("dns", default=['127.0.0.1'])
+dns = Test.MakeDNServer("dns")
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -44,6 +46,9 @@ ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 
+dns.addRecords(records={"localhost": ["127.0.0.1"]})
+dns.addRecords(records={"one.testmatch": ["127.0.0.1"]})
+dns.addRecords(records={"two.example.one": ["127.0.0.1"]})
 # Need no remap rules.  Everything should be proccessed by sni
 
 # Make sure the TS server certs are different from the origin certs
@@ -61,7 +66,9 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.url_remap.pristine_host_hdr': 1
+    'proxy.config.url_remap.pristine_host_hdr': 1,
+    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+    'proxy.config.dns.resolv_conf': 'NULL'
 })
 
 # foo.com should not terminate.  Just tunnel to server_foo
@@ -73,6 +80,10 @@ ts.Disk.sni_yaml.AddLines([
   "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
   "- fqdn: bob.*.com",
   "  tunnel_route: localhost:{0}".format(server_foo.Variables.SSL_Port),
+  "- fqdn: '*.match.com'",
+  "  tunnel_route: $1.testmatch:{0}".format(server_foo.Variables.SSL_Port),
+  "- fqdn: '*.ok.*.com'",
+  "  tunnel_route: $2.example.$1:{0}".format(server_foo.Variables.SSL_Port),
   "- fqdn: ''", # No SNI sent
   "  tunnel_route: localhost:{0}".format(server_bar.Variables.SSL_Port)
 ])
@@ -82,6 +93,7 @@ tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  ht
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
 tr.Processes.Default.StartBefore(server_bar)
+tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
@@ -119,6 +131,31 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Acc
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
+
+
+tr = Test.AddTestRun("one.match.com Tunnel-test")
+tr.Processes.Default.Command = "curl -vvv --resolve 'one.match.com:{0}:127.0.0.1' -k  https://one.match.com:{0}".format(ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
+
+
+tr = Test.AddTestRun("one.ok.two.com Tunnel-test")
+tr.Processes.Default.Command = "curl -vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https:/one.ok.two.com:{0}".format(ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
+
 
 # Update sni file and reload
 tr = Test.AddTestRun("Update config files")

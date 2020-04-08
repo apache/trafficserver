@@ -110,6 +110,8 @@ disable_h2                Deprecated for the more general h2 setting.  Setting d
                           to :code:`true` is the same as setting http2 to :code:`on`.
 
 tunnel_route              Destination as an FQDN and port, separated by a colon ``:``.
+                          Match group number can be specified by ``$N`` where N should refer to a specified group in
+                          the FQDN, ``tunnel_route: $1.domain``.
 
                           This will forward all traffic to the specified destination without first terminating
                           the incoming TLS connection.
@@ -211,6 +213,21 @@ client certificate.
    - fqdn: trusted.example.com
      verify_server_policy: DISABLED
      verify_client: STRICT
+
+Use FQDN captured group to match in ``tunnel_route``.
+
+.. code-block:: yaml
+
+   sni:
+   - fqdn: '*.foo.com'
+     tunnel_route: '$1.myfoo'
+   - fqdn: '*.bar.*.com'
+     tunnel_route: '$2.some.$1.yahoo'
+
+FQDN ``some.foo.com`` will match and the captured string will be replaced in the ``tunnel_route`` which will end up being
+``some.myfoo``.
+Second part is using multiple groups, having ``bob.bar.example.com`` as FQDN, ``tunnel_route`` will end up being
+``bar.some.example.yahoo``.
 
 See Also
 ========
