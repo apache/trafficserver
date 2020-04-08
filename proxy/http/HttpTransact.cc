@@ -3621,7 +3621,7 @@ HttpTransact::handle_response_from_parent(State *s)
         //  us to mark the parent down
         if (s->current.state == CONNECTION_ERROR) {
           HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-          s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
+          markParentDown(s);
         }
         // We are done so look for another parent if any
         next_lookup = find_server_and_update_current_info(s);
@@ -3633,7 +3633,7 @@ HttpTransact::handle_response_from_parent(State *s)
       TxnDebug("http_trans", "[handle_response_from_parent] Error. No more retries.");
       if (s->current.state == CONNECTION_ERROR) {
         HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-        s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
+        markParentDown(s);
       }
       s->parent_result.result = PARENT_FAIL;
       next_lookup             = HOST_NONE;
