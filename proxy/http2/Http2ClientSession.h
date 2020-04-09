@@ -316,6 +316,8 @@ public:
     return write_buffer->max_read_avail();
   }
 
+  int64_t write_avail();
+
   // noncopyable
   Http2ClientSession(Http2ClientSession &) = delete;
   Http2ClientSession &operator=(const Http2ClientSession &) = delete;
