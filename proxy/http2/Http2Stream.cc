@@ -519,6 +519,19 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update, bool check_
 void
 Http2Stream::restart_sending()
 {
+  if (!this->response_header_done) {
+    return;
+  }
+
+  IOBufferReader *reader = this->response_get_data_reader();
+  if (reader && !reader->is_read_avail_more_than(0)) {
+    return;
+  }
+
+  if (this->write_vio.mutex && this->write_vio.ntodo() == 0) {
+    return;
+  }
+
   this->send_response_body(true);
 }
 
@@ -690,6 +703,12 @@ Http2Stream::reenable(VIO *vio)
       SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
       update_write_request(vio->get_reader(), INT64_MAX, true);
     } else if (vio->op == VIO::READ) {
+      Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->get_parent());
+      {
+        SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+        h2_proxy_ssn->connection_state.restart_receiving(this);
+      }
+
       SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
       update_read_request(INT64_MAX, true);
     }
@@ -944,4 +963,15 @@ Http2Stream::_switch_thread_if_not_on_right_thread(int event, void *edata)
     return false;
   }
   return true;
+}
+
+int64_t
+Http2Stream::read_vio_read_avail()
+{
+  MIOBuffer *writer = this->read_vio.get_writer();
+  if (writer) {
+    return writer->max_read_avail();
+  }
+
+  return 0;
 }

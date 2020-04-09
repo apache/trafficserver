@@ -3450,7 +3450,7 @@ HTTP/2 Configuration
    :ts:cv:`proxy.config.http2.min_concurrent_streams_in`.
    To disable, set to zero (``0``).
 
-.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 1048576
+.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 65535
    :reloadable:
 
    The initial window size for inbound connections.
