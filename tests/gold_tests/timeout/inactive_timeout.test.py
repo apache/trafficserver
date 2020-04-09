@@ -23,7 +23,7 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 
-ts = Test.MakeATSProcess("ts", select_ports=True)
+ts = Test.MakeATSProcess("ts", select_ports=False)
 server = Test.MakeOriginServer("server", delay=8)
 
 request_header = {"headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "5678", "body": ""}
@@ -33,10 +33,12 @@ server.addResponse("sessionfile.log", request_header, response_header)
 
 ts.addSSLfile("../tls/ssl/server.pem")
 ts.addSSLfile("../tls/ssl/server.key")
+ts.Variables.ssl_port = 4443
 
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.url_remap.remap_required': 1,
     'proxy.config.http.transaction_no_activity_timeout_out': 2,
 })
