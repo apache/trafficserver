@@ -1389,29 +1389,31 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   // Go ahead and remove the fd from the original thread's epoll structure, so it is not
   // processed on two threads simultaneously
   this->ep.stop();
-  this->do_io_close();
 
   // Create new VC:
+  UnixNetVConnection *netvc = nullptr;
   if (save_ssl) {
     SSLNetVConnection *sslvc = static_cast<SSLNetVConnection *>(sslNetProcessor.allocate_vc(t));
     if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       sslvc->do_io_close();
       sslvc = nullptr;
     } else {
+      // Update the SSL fields
       sslvc->set_context(get_context());
     }
-    return sslvc;
-    // Update the SSL fields
+    netvc = sslvc;
   } else {
-    UnixNetVConnection *netvc = static_cast<UnixNetVConnection *>(netProcessor.allocate_vc(t));
+    netvc = static_cast<UnixNetVConnection *>(netProcessor.allocate_vc(t));
     if (netvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       netvc->do_io_close();
       netvc = nullptr;
     } else {
       netvc->set_context(get_context());
     }
-    return netvc;
   }
+  // Do not mark this closed until the end so it does not get freed by the other thread too soon
+  this->do_io_close();
+  return netvc;
 }
 
 void
