@@ -1,6 +1,7 @@
 Changes with Apache Traffic Server 8.1.0
   #3899 - Add a --reason tag option to the host subcommand
   #4028 - proxy.config.http.connect_attempts_timeout tracks TTBF instead of connect
+  #4164 - Reset the inactivity timeout when reusing connections
   #4203 - Allow enabling MPTCP on a listening socket through the records.config
   #4217 - Fix a regression in the traffic_ctl host status subcommand
   #4242 - header_rewrite: Adds basic string concatenation
@@ -22,12 +23,14 @@ Changes with Apache Traffic Server 8.1.0
   #4777 - Add unit tests for the URI signing plugin
   #4802 - JWT validation uses a token-stripped URI
   #4814 - Add normalization the URI before cdniuc validation in URI Signing
+  #4815 - Add valid_tls_protocols_in to allow for per-domain protocols.
   #4862 - Updates uri_signing docs to reflect new RFC changes
   #4869 - Cleanup: remove lib/cppapi from clang-format, it's been moved.
   #4874 - Avoid ats_malloc in unmarshal
   #4897 - Uri signing regex as POSIX ERE
   #4912 - Address performance issue by removing use of read_avail
   #4924 - lua plugin: add support for relative path scripts; moves inline script to switch
+  #4938 - Fix client_hello_cb to correctly check for sufficient server_name data
   #4944 - Add history to HTTP/2
   #4988 - Implement nbf claim in Uri Signing Plugin
   #5034 - Implement aud claim in Uri Signing Plugin
@@ -52,6 +55,7 @@ Changes with Apache Traffic Server 8.1.0
   #5252 - Make host status persistent across restarts
   #5267 - Slice errorlog
   #5268 - fix If-None-Match and If-Modified-Since priority problem
+  #5275 - Fix false collapsing of reverse DNS requests.
   #5293 - Destroy MIMEFieldBlockImpl that doesn't have fields in use
   #5301 - Slice Plugin: add options for disabling or pacing detailed block stitch error logging.
   #5329 - Fixes clang-analyzer error dereferencing nullptr in parent
@@ -75,6 +79,7 @@ Changes with Apache Traffic Server 8.1.0
   #5747 - Add slow logs for HTTP/2 Connection & Stream
   #5766 - Record HttpSM Id on new transaction
   #5785 - Allocate DependencyTree only if HTTP/2 stream priority is enabled
+  #5797 - Remove double call of the SNI action on TLS accept.
   #5811 - Fix no_activity timeout for server session reuse.
   #5824 - Reactivate active timeout enforcement
   #5825 - Cleanup: Remove unused function & old comments
@@ -150,3 +155,7 @@ Changes with Apache Traffic Server 8.1.0
   #6597 - HTTP/2 backports for 8.1.x (part 2)
   #6600 - Remove enable_tls option and set select ports to false.  This passed …
   #6604 - fix sed matching
+  #6622 - s3_auth_v4: multiple same name fields signing fix
+  #6625 - Add ready checks for the microserver and ATS test instances.
+  #6626 - Add a new log tag %<vbn> AppVersionInfo.BldNumStr
+  #6634 - Backport valid_tls_protocols_in to 8.1.x
