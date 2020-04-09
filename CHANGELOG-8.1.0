@@ -1,6 +1,7 @@
 Changes with Apache Traffic Server 8.1.0
   #3899 - Add a --reason tag option to the host subcommand
   #4028 - proxy.config.http.connect_attempts_timeout tracks TTBF instead of connect
+  #4055 - Remove ignore_keep_alive method entirely
   #4164 - Reset the inactivity timeout when reusing connections
   #4203 - Allow enabling MPTCP on a listening socket through the records.config
   #4217 - Fix a regression in the traffic_ctl host status subcommand
