@@ -77,6 +77,7 @@ public:
     _start_time        = Thread::get_hrtime();
     _thread            = this_ethread();
     this->_client_rwnd = initial_rwnd;
+    this->_server_rwnd = Http2::initial_window_size;
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
     sm_reader = request_reader = request_buffer.alloc_reader();
@@ -186,6 +187,7 @@ public:
   ssize_t server_rwnd() const;
   Http2ErrorCode increment_server_rwnd(size_t amount);
   Http2ErrorCode decrement_server_rwnd(size_t amount);
+  int64_t read_vio_read_avail();
 
   uint8_t *header_blocks;
   uint32_t header_blocks_length;  // total length of header blocks (not include
@@ -300,8 +302,8 @@ private:
   uint64_t data_length = 0;
   uint64_t bytes_sent  = 0;
 
-  ssize_t _client_rwnd;
-  ssize_t _server_rwnd = Http2::initial_window_size;
+  ssize_t _client_rwnd = 0;
+  ssize_t _server_rwnd = 0;
 
   std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index           = 0;
