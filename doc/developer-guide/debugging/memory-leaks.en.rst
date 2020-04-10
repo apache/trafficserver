@@ -33,3 +33,19 @@ related to memory - you can use memory dump information. Enable
 This causes Traffic Server to dump memory information to ``traffic.out``
 at ``<value>`` (intervals are in seconds). A zero value means that it is
 disabled.
+
+::
+
+      CONFIG proxy.config.res_track_memory INT <value>
+
+   When enabled makes Traffic Server track memory usage (allocations and releases). This
+   information is dumped  to ``traffic.out`` when the user sends a SIGUSR1 signal or
+   periodically when :ts:cv:`proxy.config.dump_mem_info_frequency` is enabled.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Memory tracking Disabled
+   ``1`` Tracks IO Buffer Memory allocations and releases
+   ``2`` Tracks IO Buffer Memory and OpenSSL Memory allocations and releases
+   ===== ======================================================================
