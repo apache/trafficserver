@@ -81,17 +81,18 @@ the type's constructor, destructor, and serializer. And to avoid corruption, the
 
 
 When an derived class is instantiated, :func:`template<> create()` will allocate a block of memory for the derived class and all added
-fields. The only memory overhead per instance is an uint16 used as a offset to the start of the extendible block.
+fields. The only memory overhead per instance is an uint16 used as a offset to the start of the extendible block. Then the constructor of the class
+is called, followed by the constructors of each extendible field.
 
 .. code-block:: cpp
 
-   ExtendibleExample* alloc_example() {
+   std::shared_ptr<ExtendibleExample> new_example() {
      return ext::create<ExtendibleExample>();
    }
 
 Memory Layout
 -------------
-One block of memory is allocated per |Extendible|, which included all member variables and extended fields.
+One block of memory is allocated per |Extendible|, which include all member variables and extended fields.
 Within the block, memory is arranged in the following order:
 
 #. Derived members (+padding align next field)
@@ -129,8 +130,8 @@ which simplifies the code using it. Also this provides compile errors for common
    }
 
    PluginFunc() {
-      Food *banana = ext::create<Food>();
-      Car *camry = ext::create<Car>();
+      std::shared_ptr<Food> *banana = ext::create<Food>();
+      std::shared_ptr<Car> camry = ext::create<Car>();
 
       // Common user errors
 
@@ -140,11 +141,11 @@ which simplifies the code using it. Also this provides compile errors for common
 
       float speed = ext::get(banana,fld_max_speed);
       //                            ^^^^^^^^^^^^^
-      // Compile error: Cannot downcast banana to type Extendible<Car>
+      // Compile error: Cannot convert banana to type Extendible<Car>
 
       float weight = ext::get(camry,fld_food_weight);
       //                            ^^^^^^^^^^^^^^^
-      // Compile error: Cannot downcast camry to type Extendible<Food>, even though Car and Food each have a 'weight' field, the FieldId is strongly typed.
+      // Compile error: Cannot convert camry to type Extendible<Food>, even though Car and Food each have a 'weight' field, the FieldId is strongly typed.
 
    }
 
@@ -157,13 +158,13 @@ which simplifies the code using it. Also this provides compile errors for common
 
    Fruit.schema.addField(fld_has_seeds, "has_seeds");
 
-   Fruit mango = ext::create<Fruit>();
+   std::shared_ptr<Fruit> mango = ext::create<Fruit>();
 
-   ext::set(mango, fld_has_seeds) = true;         // downcasts mango to Extendible<Fruit>
-   ext::set(mango, fld_food_weight) = 2;          // downcasts mango to Extendible<Food>
+   ext::set(mango, fld_has_seeds) = true;         // converts mango to Extendible<Fruit>
+   ext::set(mango, fld_food_weight) = 2;          // converts mango to Extendible<Food>
    ext::set(mango, fld_max_speed) = 9;
    //              ^^^^^^^^^^^^^
-   // Compile error: Cannot downcast mango to type Extendible<Car>
+   // Compile error: Cannot convert mango to type Extendible<Car>
 
 
 Inheritance
@@ -191,8 +192,8 @@ Inheritance
    ext::FieldId<A, atomic<uint16_t>> ext_a_1;
    ext::FieldId<C, uint16_t> ext_c_1;
 
-   C &x = *(ext::create<C>());
-   ext::viewFormat(x);
+   auto xc = *(ext::create<C>());
+   ext::viewFormat(*xc);
 
 :func:`viewFormat` prints a diagram of the position and size of bytes used within the allocated
 memory.
@@ -237,6 +238,7 @@ Namespace `ext`
 
 .. function:: template<typename Derived_t> Extendible* create()
 
+   To be used in place of `new Derived_t()`.
    Allocate a block of memory. Construct the base data.
    Recursively construct and initialize `Derived_t::super_type` and its |Extendible| classes.
 
