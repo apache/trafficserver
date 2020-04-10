@@ -4329,11 +4329,32 @@ Sockets
    For more information on the implications of enabling huge pages, see
    `Wikipedia <http://en.wikipedia.org/wiki/Page_%28computer_memory%29#Page_size_trade-off>_`.
 
+.. ts:cv:: CONFIG proxy.config.dump_mem_info_frequency INT 0
+   :reloadable:
+
+   Enable <value>. When enabled makes Traffic Server dump IO Buffer memory information
+   to ``traffic.out`` at ``<value>`` (intervals are in seconds). A zero value implies it is
+   disabled
+
+.. ts:cv:: CONFIG proxy.config.res_track_memory INT 0
+
+   When enabled makes Traffic Server track memory usage (allocations and releases). This
+   information is dumped  to ``traffic.out`` when the user sends a SIGUSR1 signal or
+   periodically when :ts:cv:`proxy.config.dump_mem_info_frequency` is enabled.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Memory tracking Disabled
+   ``1`` Tracks IO Buffer Memory allocations and releases
+   ``2`` Tracks IO Buffer Memory and OpenSSL Memory allocations and releases
+   ===== ======================================================================
+
 .. ts:cv:: CONFIG proxy.config.allocator.dontdump_iobuffers INT 1
 
-  Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
-  platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP
-  with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
+   Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
+   platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP
+   with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
 
