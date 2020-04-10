@@ -3233,11 +3233,18 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 0
 
-   Enables (``1``) or disables (``0``) TLSv1.0.
+   Enables (``1``) or disables (``0``) TLSv1.0. If not specified, disabled by default.
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 0
 
-   Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
+   Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, disabled by default.  [Requires OpenSSL v1.0.1 and higher]
+
+.. note::
+   In order to enable TLS v1 or v1.1, additional ciphers must be added to proxy.config.ssl.client.cipher_suite. For
+   example this list would restore the SHA1 (insecure!) cipher suites suitable for these deprecated TLS versions:
+
+   ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA:AES256-SHA:AES128-SHA
+
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_2 INT 1
 
