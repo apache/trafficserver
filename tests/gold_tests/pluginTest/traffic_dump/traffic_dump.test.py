@@ -33,14 +33,16 @@ request_header = {"headers": "GET / HTTP/1.1\r\n"
                   "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK"
-                   "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
+                   "\r\nConnection: close\r\nContent-Length: 0"
+                   "\r\nSet-Cookie: classified_not_for_logging\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_header)
 request_header = {"headers": "GET /one HTTP/1.1\r\n"
                   "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK"
-                   "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
+                   "\r\nConnection: close\r\nContent-Length: 0"
+                   "\r\nSet-Cookie: classified_not_for_logging\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_header)
 request_header = {"headers": "GET /post_with_body HTTP/1.1\r\n"
@@ -63,7 +65,8 @@ ts.Disk.remap_config.AddLine(
 )
 # Configure traffic_dump.
 ts.Disk.plugin_config.AddLine(
-    'traffic_dump.so --logdir {0} --sample 1 --limit 1000000000'.format(replay_dir)
+    'traffic_dump.so --logdir {0} --sample 1 --limit 1000000000 '
+    '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"'.format(replay_dir)
 )
 
 # Set up trafficserver expectations.
@@ -99,8 +102,10 @@ tr = Test.AddTestRun("First transaction")
 
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = 'curl http://127.0.0.1:{0} -H\'Host: www.example.com\' --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = \
+        ('curl http://127.0.0.1:{0} -H"Cookie: donotlogthis" '
+         '-H"Host: www.example.com" -H"X-Request-1: ultra_sensitive" --verbose'.format(
+             ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -108,8 +113,10 @@ tr.StillRunningAfter = ts
 
 # Execute the second transaction.
 tr = Test.AddTestRun("Second transaction")
-tr.Processes.Default.Command = 'curl http://127.0.0.1:{0}/one -H\'Host: www.example.com\' --verbose'.format(
-    ts.Variables.port)
+tr.Processes.Default.Command = \
+        ('curl http://127.0.0.1:{0}/one -H"Host: www.example.com" '
+         '-H"X-Request-2: also_very_sensitive" --verbose'.format(
+            ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
@@ -118,11 +125,17 @@ tr.StillRunningAfter = ts
 # Verify the properties of the replay file for the first transaction.
 tr = Test.AddTestRun("Verify the json content of the first session")
 verify_replay = "verify_replay.py"
+sensitive_fields_arg = (
+        "--sensitive-fields cookie "
+        "--sensitive-fields set-cookie "
+        "--sensitive-fields x-request-1 "
+        "--sensitive-fields x-request-2 ")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = "python3 {0} {1} {2}".format(
+tr.Processes.Default.Command = "python3 {0} {1} {2} {3}".format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
-        replay_file_session_1)
+        replay_file_session_1,
+        sensitive_fields_arg)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -130,10 +143,11 @@ tr.StillRunningAfter = ts
 # Verify the properties of the replay file for the second transaction.
 tr = Test.AddTestRun("Verify the json content of the second session")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = "python3 {0} {1} {2} --request-target '/one'".format(
+tr.Processes.Default.Command = "python3 {0} {1} {2} {3} --request-target '/one'".format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
-        replay_file_session_2)
+        replay_file_session_2,
+        sensitive_fields_arg)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -147,7 +161,7 @@ tr = Test.AddTestRun("Make a request with an explicit target.")
 request_target = "http://localhost:{0}/candy".format(ts.Variables.port)
 tr.Processes.Default.Command = (
         'curl --request-target "{0}" '
-        'http://127.0.0.1:{1} -H\'Host: www.example.com\' --verbose'.format(
+        'http://127.0.0.1:{1} -H"Host: www.example.com" --verbose'.format(
             request_target, ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/explicit_target.gold"
@@ -157,10 +171,11 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the replay file has the explicit target.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 
-tr.Processes.Default.Command = "python3 {0} {1} {2} --request-target '{3}'".format(
+tr.Processes.Default.Command = "python3 {0} {1} {2} {3} --request-target '{4}'".format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
         replay_file_session_3,
+        sensitive_fields_arg,
         request_target)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
@@ -178,7 +193,7 @@ request_target = "http://localhost:{0}/post_with_body".format(ts.Variables.port)
 # in the test run directory.
 tr.Processes.Default.Command = (
         'curl --data-binary @{0} --request-target "{1}" '
-        'http://127.0.0.1:{2} -H\'Host: www.example.com\' --verbose'.format(
+        'http://127.0.0.1:{2} -H"Host: www.example.com" --verbose'.format(
             verify_replay, request_target, ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/post_with_body.gold"
@@ -190,10 +205,11 @@ tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 
 size_of_verify_replay_file = os.path.getsize(os.path.join(Test.TestDirectory, verify_replay))
 tr.Processes.Default.Command = \
-        "python3 {0} {1} {2} --client-request-size {3}".format(
+        "python3 {0} {1} {2} {3} --client-request-size {4}".format(
             verify_replay,
             os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
             replay_file_session_4,
+            sensitive_fields_arg,
             size_of_verify_replay_file)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server

@@ -46,6 +46,10 @@ Plugin Configuration
 
    (`required`) - specifies the max disk usage N bytes (approximate). Traffic Dump will stop capturing new sessions once disk usage exceeds this limit.
 
+   .. option:: --sensitive-fields <field1,field2,...,fieldn>
+
+   (`optional`) - a comma seperatated list of HTTP case-insensitive field names whose values are considered sensitive information. Traffic Dump will not dump the incoming field values for any of these fields but will instead dump a generic value for them of the same length as the original. If this option is not used, a default list of "Cookie,Set-Cookie" is used. Providing this option overwrites that default list with whatever values the user provides. Pass a quoted empty string as the argument to specify that no fields are sensitive,
+
 ``traffic_ctl`` <command>
    * ``traffic_ctl plugin msg traffic_dump.sample N`` - changes the sampling ratio N as mentioned above.
    * ``traffic_ctl plugin msg traffic_dump.reset`` - resets the disk usage counter.
@@ -57,7 +61,7 @@ This format contains traffic data including:
 
 * Each session and transactions in the session.
 * Timestamps.
-* The four headers (ua request, proxy request, origin server response, proxy response).
+* The four sets of headers (user agent request, proxy request, origin server response, proxy response).
 * The protocol stack for the user agent.
 * The transaction count for the outbound session.
 * The content block sizes.
