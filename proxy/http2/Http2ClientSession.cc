@@ -385,11 +385,9 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     break;
 
   case VC_EVENT_WRITE_READY:
-    retval = 0;
-    break;
-
   case VC_EVENT_WRITE_COMPLETE:
-    // Seems as this is being closed already
+    this->connection_state.restart_streams();
+
     retval = 0;
     break;
 
@@ -676,6 +674,12 @@ Http2ClientSession::_should_do_something_else()
 {
   // Do something else every 128 incoming frames
   return (this->_n_frame_read & 0x7F) == 0;
+}
+
+int64_t
+Http2ClientSession::write_avail()
+{
+  return this->write_buffer->write_avail();
 }
 
 NetVConnection *
