@@ -64,7 +64,9 @@ public:
   ServerSessionPool();
   /// Handle events from server sessions.
   int eventHandler(int event, void *data);
+  static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
+  static bool validate_cert(HttpSM *sm, NetVConnection *netvc);
 
 protected:
   using IPTable   = IntrusiveHashMap<Http1ServerSession::IPLinkage>;
@@ -74,7 +76,7 @@ public:
   /** Check if a session matches address and host name.
    */
   static bool match(Http1ServerSession *ss, sockaddr const *addr, CryptoHash const &host_hash,
-                    TSServerSessionSharingMatchType match_style);
+                    TSServerSessionSharingMatchMask match_style);
 
   /** Get a session from the pool.
 
@@ -83,7 +85,7 @@ public:
 
       @return A pointer to the session or @c NULL if not matching session was found.
   */
-  HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &host_hash, TSServerSessionSharingMatchType match_style,
+  HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &host_hash, TSServerSessionSharingMatchMask match_style,
                              HttpSM *sm, Http1ServerSession *&server_session);
   /** Release a session to to pool.
    */

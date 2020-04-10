@@ -212,6 +212,8 @@ public:
   HttpCacheSM &get_cache_sm();          // Added to get the object of CacheSM YTS Team, yamsat
   HttpVCTableEntry *get_ua_entry();     // Added to get the ua_entry pointer  - YTS-TEAM
   HttpVCTableEntry *get_server_entry(); // Added to get the server_entry pointer
+  std::string_view get_outbound_sni() const;
+  std::string_view get_outbound_cert() const;
 
   void init(bool from_early_data = false);
 
