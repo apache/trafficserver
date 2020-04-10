@@ -52,6 +52,7 @@ Http2Stream::init(Http2StreamId sid, ssize_t initial_rwnd)
   this->_id          = sid;
   this->_thread      = this_ethread();
   this->_client_rwnd = initial_rwnd;
+  this->_server_rwnd = Http2::initial_window_size;
 
   this->_reader = this->_request_buffer.alloc_reader();
 
@@ -522,6 +523,19 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update, bool check_
 void
 Http2Stream::restart_sending()
 {
+  if (!this->response_header_done) {
+    return;
+  }
+
+  IOBufferReader *reader = this->response_get_data_reader();
+  if (reader && !reader->is_read_avail_more_than(0)) {
+    return;
+  }
+
+  if (this->write_vio.mutex && this->write_vio.ntodo() == 0) {
+    return;
+  }
+
   this->send_response_body(true);
 }
 
@@ -723,6 +737,12 @@ Http2Stream::reenable(VIO *vio)
       SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
       update_write_request(vio->get_reader(), INT64_MAX, true);
     } else if (vio->op == VIO::READ) {
+      Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
+      {
+        SCOPED_MUTEX_LOCK(ssn_lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+        h2_proxy_ssn->connection_state.restart_receiving(this);
+      }
+
       SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
       update_read_request(INT64_MAX, true);
     }
@@ -982,4 +1002,15 @@ Http2Stream::get_transaction_priority_dependence() const
   } else {
     return priority_node->parent ? priority_node->parent->id : 0;
   }
+}
+
+int64_t
+Http2Stream::read_vio_read_avail()
+{
+  MIOBuffer *writer = this->read_vio.get_writer();
+  if (writer) {
+    return writer->max_read_avail();
+  }
+
+  return 0;
 }

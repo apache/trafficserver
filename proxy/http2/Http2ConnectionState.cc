@@ -169,6 +169,12 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   cstate.decrement_server_rwnd(payload_length);
   stream->decrement_server_rwnd(payload_length);
 
+  if (is_debug_tag_set("http2_con")) {
+    uint32_t rwnd = cstate.server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+    Http2StreamDebug(cstate.ua_session, id, "Received DATA frame: rwnd con=%zd/%" PRId32 " stream=%zd/%" PRId32,
+                     cstate.server_rwnd(), rwnd, stream->server_rwnd(), rwnd);
+  }
+
   const uint32_t unpadded_length = payload_length - pad_length;
   MIOBuffer *writer              = stream->read_vio_writer();
   if (writer == nullptr) {
@@ -203,21 +209,6 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     stream->signal_read_event(VC_EVENT_READ_COMPLETE);
   } else {
     stream->signal_read_event(VC_EVENT_READ_READY);
-  }
-
-  uint32_t initial_rwnd = cstate.server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-  uint32_t min_rwnd     = std::min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
-  // Connection level WINDOW UPDATE
-  if (cstate.server_rwnd() <= min_rwnd) {
-    Http2WindowSize diff_size = initial_rwnd - cstate.server_rwnd();
-    cstate.increment_server_rwnd(diff_size);
-    cstate.send_window_update_frame(0, diff_size);
-  }
-  // Stream level WINDOW UPDATE
-  if (stream->server_rwnd() <= min_rwnd) {
-    Http2WindowSize diff_size = initial_rwnd - stream->server_rwnd();
-    stream->increment_server_rwnd(diff_size);
-    cstate.send_window_update_frame(stream->get_id(), diff_size);
   }
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -1292,6 +1283,35 @@ Http2ConnectionState::restart_streams()
 }
 
 void
+Http2ConnectionState::restart_receiving(Http2Stream *stream)
+{
+  uint32_t initial_rwnd = this->server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+  uint32_t min_rwnd     = std::min(initial_rwnd, this->server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
+
+  // Connection level WINDOW UPDATE
+  if (this->server_rwnd() < min_rwnd) {
+    Http2WindowSize diff_size = initial_rwnd - this->server_rwnd();
+    this->increment_server_rwnd(diff_size);
+    this->send_window_update_frame(0, diff_size);
+  }
+
+  // Stream level WINDOW UPDATE
+  if (stream == nullptr || stream->server_rwnd() >= min_rwnd) {
+    return;
+  }
+
+  // If read_vio is buffering data, do not fully update window
+  int64_t data_size = stream->read_vio_read_avail();
+  if (data_size >= initial_rwnd) {
+    return;
+  }
+
+  Http2WindowSize diff_size = initial_rwnd - std::max(static_cast<int64_t>(stream->server_rwnd()), data_size);
+  stream->increment_server_rwnd(diff_size);
+  this->send_window_update_frame(stream->get_id(), diff_size);
+}
+
+void
 Http2ConnectionState::cleanup_streams()
 {
   Http2Stream *s = stream_list.head;
@@ -1498,6 +1518,11 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   if (!resp_reader) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "couldn't get data reader");
     return Http2SendDataFrameResult::ERROR;
+  }
+
+  if (this->ua_session->write_avail() == 0) {
+    Http2StreamDebug(this->ua_session, stream->get_id(), "Not write avail");
+    return Http2SendDataFrameResult::NOT_WRITE_AVAIL;
   }
 
   // Select appropriate payload length
@@ -1865,7 +1890,7 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 void
 Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
 {
-  Http2StreamDebug(ua_session, id, "Send WINDOW_UPDATE frame");
+  Http2StreamDebug(ua_session, id, "Send WINDOW_UPDATE frame: size=%" PRIu32, size);
 
   // Create WINDOW_UPDATE frame
   Http2WindowUpdateFrame window_update(id, size);

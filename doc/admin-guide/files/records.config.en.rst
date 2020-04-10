@@ -3698,7 +3698,7 @@ HTTP/2 Configuration
    :ts:cv:`proxy.config.http2.min_concurrent_streams_in`.
    To disable, set to zero (``0``).
 
-.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 1048576
+.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 65535
    :reloadable:
 
    The initial window size for inbound connections.
@@ -3827,7 +3827,6 @@ HTTP/2 Configuration
    Specifies the minimum average window increment |TS| allows. The average will be calculated based on the last 5 WINDOW_UPDATE frames.
    Clients that send smaller window increments lower than this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
-
 
 HTTP/3 Configuration
 ====================
