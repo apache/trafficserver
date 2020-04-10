@@ -3241,7 +3241,7 @@ SSL Termination
 
 .. note::
    In order to enable TLS v1 or v1.1, additional ciphers must be added to proxy.config.ssl.client.cipher_suite. For
-   example this list would restore the SHA1 (insecure!) cipher suites suitable for these deprecates TLS versions:
+   example this list would restore the SHA1 (insecure!) cipher suites suitable for these deprecated TLS versions:
 
    ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA:AES256-SHA:AES128-SHA
 
