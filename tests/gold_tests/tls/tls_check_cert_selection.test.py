@@ -35,10 +35,9 @@ ts.addSSLfile("ssl/signed-foo.key")
 ts.addSSLfile("ssl/signed-bar.pem")
 ts.addSSLfile("ssl/signed2-bar.pem")
 ts.addSSLfile("ssl/signed-bar.key")
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
+ts.addSSLfile("ssl/combo.pem")
 
 ts.Disk.remap_config.AddLine(
     'map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
@@ -46,7 +45,7 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.ssl_multicert_config.AddLines([
     'dest_ip=127.0.0.1 ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key',
     'ssl_cert_name=signed2-bar.pem ssl_key_name=signed-bar.key',
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
+    'dest_ip=* ssl_cert_name=combo.pem'
 ])
 
 # Case 1, global config policy=permissive properties=signature
