@@ -124,7 +124,7 @@ The following list shows the possible actions and their allowed values.
 
 .. _parent-config-format-parent:
 
-``parent`` `(hostname or IP address):port[|weight][,another host]`
+``parent`` `(hostname or IP address):port[|weight][&hash name][,another host]`
     An ordered list of parent servers, separated by commas or
     semicolons. If the request cannot be handled by the last parent
     server in the list, then it will be routed to the origin server.
@@ -141,7 +141,7 @@ The following list shows the possible actions and their allowed values.
 
         parent="p1.x.com:8080|2.0, 192.168.0.3:80|3.0, 192.168.0.4:80|5.0"
 
-    If ``round_robin`` is set to ``consistent_hash``, you may add a ``unique hash string``
+    If ``round_robin`` is set to ``consistent_hash``, you may add a unique ``hash string``
     following the ``weight`` for each parent.  The ``hash string`` must start with ``&``
     and is used to build both the primary and secondary rings using the ``hash string``
     for each parent instead of the parents ``hostname`` or ``ip address``. This can be
