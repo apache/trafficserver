@@ -33,6 +33,7 @@ Changes with Apache Traffic Server 8.1.0
   #4924 - lua plugin: add support for relative path scripts; moves inline script to switch
   #4938 - Fix client_hello_cb to correctly check for sufficient server_name data
   #4944 - Add history to HTTP/2
+  #4973 - Adjust tls_client_versions to be more resilient for different curl versions
   #4988 - Implement nbf claim in Uri Signing Plugin
   #5034 - Implement aud claim in Uri Signing Plugin
   #5058 - Fixed use after free when running regression under ASAN
@@ -160,3 +161,4 @@ Changes with Apache Traffic Server 8.1.0
   #6625 - Add ready checks for the microserver and ATS test instances.
   #6626 - Add a new log tag %<vbn> AppVersionInfo.BldNumStr
   #6634 - Backport valid_tls_protocols_in to 8.1.x
+  #6640 - Fix timeout autests on 8.1.x
