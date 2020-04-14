@@ -22,7 +22,7 @@
 #include "ts/remap.h"
 
 #include "policy_manager.h"
-#include "config.h"
+#include "configs.h"
 
 const char *PLUGIN_NAME = "cache_promote";
 

@@ -17,7 +17,7 @@
 */
 #include <getopt.h>
 
-#include "config.h"
+#include "configs.h"
 #include "lru_policy.h"
 #include "chance_policy.h"
 
