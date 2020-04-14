@@ -631,7 +631,7 @@ OperatorCounter::initialize(Parser &p)
   }
 
   // Check if counter already created by another rule
-  if (TSStatFindName(_counter_name.c_str(), &_counter) == TS_ERROR) {
+  if (!_created || TSStatFindName(_counter_name.c_str(), &_counter) == TS_ERROR) {
     _counter = TSStatCreate(_counter_name.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
     if (_counter == TS_ERROR) {
       TSError("[%s] TSStatCreate() failed. Can't create counter: %s", PLUGIN_NAME, _counter_name.c_str());
@@ -641,6 +641,11 @@ OperatorCounter::initialize(Parser &p)
   } else {
     TSDebug(PLUGIN_NAME, "OperatorCounter::initialize(%s) reusing id: %d", _counter_name.c_str(), _counter);
   }
+  // Ensure TSStatCreate is called at least once per counter, as sometimes
+  // TSStatFindName() seems to return success, yet the counter was never created
+  // and api_rsb_index is not updated. This causes issues with this counter as well
+  // as subsequent counters that end up grabbing the previously allocated stat_id
+  _created = true;
 }
 
 void

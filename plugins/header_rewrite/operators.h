@@ -268,7 +268,8 @@ protected:
 
 private:
   std::string _counter_name;
-  int _counter = TS_ERROR;
+  int _counter  = TS_ERROR;
+  bool _created = false;
 };
 
 class OperatorRMCookie : public OperatorCookies
