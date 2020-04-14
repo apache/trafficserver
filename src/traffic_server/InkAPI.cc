@@ -7450,7 +7450,7 @@ TSStatFindName(const char *name, int *idp)
 
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
 
-  if (RecGetRecordOrderAndId(name, nullptr, &id) != REC_ERR_OKAY) {
+  if (RecGetRecordOrderAndId(name, nullptr, &id, true, true) != REC_ERR_OKAY) {
     return TS_ERROR;
   }
 
