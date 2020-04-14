@@ -649,6 +649,12 @@ public:
     return false;
   }
 
+  virtual const char *
+  get_sni_servername() const
+  {
+    return nullptr;
+  }
+
   /** Structure holding user options. */
   NetVCOptions options;
 
