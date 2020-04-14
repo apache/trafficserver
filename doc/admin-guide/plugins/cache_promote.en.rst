@@ -41,6 +41,13 @@ are available:
 
 If :option:`--policy` is set to ``lru`` the following options are also available:
 
+.. option:: --label
+
+   An optional label for this LRU, to allow sharing an LRU across multiple remap
+   rules. Note: In order for an LRU to be used by multiple remap rules, not only
+   must the label match, both the :option:`--hits` and  :option:`--buckets`
+   options must be identical.
+
 .. option:: --hits
 
    The minimum number of hits before promotion.
