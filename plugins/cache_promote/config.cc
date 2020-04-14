@@ -23,19 +23,26 @@
 #include "chance_policy.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-// Note that all options for all policies has to go here. Not particularly pretty...
-//
+// ToDo: It's ugly that this is a "global" options list, clearly each policy should be able
+// to add to this list, making them more modular.
 static const struct option longopt[] = {
   {const_cast<char *>("policy"), required_argument, nullptr, 'p'},
   // This is for both Chance and LRU (optional) policy
   {const_cast<char *>("sample"), required_argument, nullptr, 's'},
   // For the LRU policy
   {const_cast<char *>("buckets"), required_argument, nullptr, 'b'},
-  {const_cast<char *>("stats-enable-with-id"), required_argument, nullptr, 'e'},
   {const_cast<char *>("hits"), required_argument, nullptr, 'h'},
+  {const_cast<char *>("stats-enable-with-id"), required_argument, nullptr, 'e'},
+  {const_cast<char *>("label"), required_argument, nullptr, 'l'},
   // EOF
   {nullptr, no_argument, nullptr, '\0'},
 };
+
+// The destructor is responsible for returning the policy to the PolicyManager.
+PromotionConfig::~PromotionConfig()
+{
+  _manager->releasePolicy(_policy);
+}
 
 // Parse the command line arguments to the plugin, and instantiate the appropriate policy
 bool
@@ -87,6 +94,12 @@ PromotionConfig::factory(int argc, char *argv[])
       }
     }
   }
+
+  // Coalesce any LRU policies via the LRU manager. This is a little ugly, but it makes configuration
+  // easier, and order of options doesn't matter.
+
+  // This can return the same policy, or an existing one, in which case, this one is deleted by the Manager
+  _policy = _manager->coalescePolicy(_policy);
 
   return true;
 }

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <string>
 #include "tscore/BufferWriter.h"
 
 #include "ts/ts.h"
@@ -76,6 +77,12 @@ public:
     return false;
   }
 
+  virtual const std::string
+  id() const
+  {
+    return "";
+  }
+
   bool doSample() const;
   int create_stat(std::string_view name, std::string_view remap_identifier);
 
@@ -93,4 +100,7 @@ public:
 
 private:
   float _sample = 0.0;
+
+protected:
+  std::string _label = "";
 };
