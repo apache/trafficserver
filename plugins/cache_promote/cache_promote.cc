@@ -15,14 +15,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
 #include <cstdio>
 #include <cstring>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-// All policies are instantitated (and configured) via the configuration manager (which also uses the PolicyManager)
 #include "policy_manager.h"
 #include "config.h"
 
@@ -80,13 +78,13 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
         TSStatIntIncrement(config->getPolicy()->total_requests_id, 1);
       }
     } else {
-      TSDebug(PLUGIN_NAME, "Request is an internal (plugin) request, implicitly promoted");
+      TSDebug(PLUGIN_NAME, "request is an internal (plugin) request, implicitly promoted");
     }
     break;
 
   // Should not happen
   default:
-    TSDebug(PLUGIN_NAME, "Unhandled event %d", static_cast<int>(event));
+    TSDebug(PLUGIN_NAME, "unhandled event %d", static_cast<int>(event));
     break;
   }
 
@@ -119,7 +117,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 void
 TSRemapDone()
 {
-  TSDebug(PLUGIN_NAME, "calling TSRemapDone()");
+  TSDebug(PLUGIN_NAME, "called TSRemapDone()");
   gManager.clear();
 }
 
@@ -160,7 +158,7 @@ TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* ATS_UNUSED rri */)
 {
   if (nullptr == ih) {
-    TSDebug(PLUGIN_NAME, "No promotion rules configured, this is probably a plugin bug");
+    TSDebug(PLUGIN_NAME, "no promotion rules configured, this is probably a plugin bug");
   } else {
     TSCont contp = static_cast<TSCont>(ih);
 
