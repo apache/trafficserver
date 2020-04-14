@@ -15,10 +15,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
 #pragma once
 
 #include <openssl/sha.h>
+#include <cstring>
 #include <unordered_map>
 #include <list>
 
@@ -37,8 +37,9 @@ class LRUHash
   friend struct LRUHashHasher;
 
 public:
-  LRUHash() { TSDebug(PLUGIN_NAME, "In LRUHash()"); }
-  ~LRUHash() { TSDebug(PLUGIN_NAME, "In ~LRUHash()"); }
+  LRUHash() { TSDebug(PLUGIN_NAME, "LRUHash() CTOR"); }
+  ~LRUHash() { TSDebug(PLUGIN_NAME, "~LRUHash() DTOR"); }
+
   LRUHash &
   operator=(const LRUHash &h)
   {
