@@ -7463,6 +7463,25 @@ TSStatFindName(const char *name, int *idp)
   return TS_SUCCESS;
 }
 
+TSReturnCode
+TSSyncStatFindName(const char *name, int *idp)
+{
+  int id;
+
+  sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+
+  if (RecGetSyncRecordOrderAndId(name, nullptr, &id) != REC_ERR_OKAY) {
+    return TS_ERROR;
+  }
+
+  if (RecGetGlobalRawStatPtr(api_rsb, id) == nullptr) {
+    return TS_ERROR;
+  }
+
+  *idp = id;
+  return TS_SUCCESS;
+}
+
 /**************************    Stats API    ****************************/
 // THESE APIS ARE DEPRECATED, USE THE REC APIs INSTEAD
 // #define ink_sanity_check_stat_structure(_x) TS_SUCCESS

@@ -639,6 +639,38 @@ RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
 }
 
 RecErrT
+RecGetSyncRecordOrderAndId(const char *name, int *order, int *id, bool lock)
+{
+  RecErrT err = REC_ERR_FAIL;
+
+  if (lock) {
+    ink_rwlock_rdlock(&g_records_rwlock);
+  }
+
+  if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
+    RecRecord *r = it->second;
+
+    if (r->registered && r->stat_meta.sync_cb) {
+      rec_mutex_acquire(&(r->lock));
+      if (order) {
+        *order = r->order;
+      }
+      if (id) {
+        *id = r->rsb_id;
+      }
+      err = REC_ERR_OKAY;
+      rec_mutex_release(&(r->lock));
+    }
+  }
+
+  if (lock) {
+    ink_rwlock_unlock(&g_records_rwlock);
+  }
+
+  return err;
+}
+
+RecErrT
 RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock)
 {
   RecErrT err = REC_ERR_FAIL;

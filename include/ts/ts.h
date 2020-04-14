@@ -2064,6 +2064,7 @@ tsapi void TSStatIntSet(int the_stat, TSMgmtInt value);
 /* tsapi TSReturnCode TSStatFloatSet(int the_stat, float value); */
 
 tsapi TSReturnCode TSStatFindName(const char *name, int *idp);
+tsapi TSReturnCode TSSyncStatFindName(const char *name, int *idp);
 
 /* --------------------------------------------------------------------------
    tracing api */

@@ -34,6 +34,7 @@ Synopsis
 
 .. function:: int TSStatCreate(const char * name, TSRecordDataType type, TSStatPersistence persistence, TSStatSync sync_style)
 .. function:: TSReturnCode TSStatFindName(const char * name, int * idx_ptr)
+.. function:: TSReturnCode TSSyncStatFindName(const char * name, int * idx_ptr)
 
 .. function:: TSMgmtInt TSStatIntGet(int idx)
 .. function:: void TSStatIntSet(int idx, TSMgmtInt value)
@@ -57,6 +58,11 @@ as part of or based on configuration files and |TS| is reloaded.
 :func:`TSStatFindName` locates a statistic by :arg:`name`. If found the function returns
 :const:`TS_SUCCESS` and the value pointed at by :arg:`idx_ptr` is updated to be the index of the
 statistic. Otherwise it returns ``TS_ERROR``.
+
+:func:`TSSyncStatFindName` locates a statistic with a Sync Callback set by :arg:`name`.
+If found the function returns :const:`TS_SUCCESS` and the value pointed at by :arg:`idx_ptr`
+is updated to be the index of the statistic. Otherwise it returns ``TS_ERROR``. The Sync Callback
+is set via a call to :func:`TSStatCreate` based on :arg:`sync_style`
 
 The values in statistics are manipulated by :func:`TSStatIntSet` to set the statistic directly,
 :func:`TSStatIntIncrement` to increase it by :arg:`value`, and :func:`TSStatIntDecrement` to

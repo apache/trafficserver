@@ -631,7 +631,7 @@ OperatorCounter::initialize(Parser &p)
   }
 
   // Check if counter already created by another rule
-  if (TSStatFindName(_counter_name.c_str(), &_counter) == TS_ERROR) {
+  if (TSSyncStatFindName(_counter_name.c_str(), &_counter) == TS_ERROR) {
     _counter = TSStatCreate(_counter_name.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
     if (_counter == TS_ERROR) {
       TSError("[%s] TSStatCreate() failed. Can't create counter: %s", PLUGIN_NAME, _counter_name.c_str());
