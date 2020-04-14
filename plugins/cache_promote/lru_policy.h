@@ -104,9 +104,16 @@ public:
     return "LRU";
   }
 
+  const std::string
+  id() const override
+  {
+    return _label + ";LRU=b:" + std::to_string(_buckets) + ",h:" + std::to_string(_hits);
+  }
+
 private:
   unsigned _buckets = 1000;
   unsigned _hits    = 10;
+
   // For the LRU. Note that we keep track of the List sizes, because some versions fo STL have broken
   // implementations of size(), making them obsessively slow on calling ::size().
   TSMutex _lock;

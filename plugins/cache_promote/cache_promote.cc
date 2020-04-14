@@ -22,10 +22,17 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-// All policies are instantitated (and configured) via the configuration manager
+// All policies are instantitated (and configured) via the configuration manager (which also uses the PolicyManager)
+#include "policy_manager.h"
 #include "config.h"
 
 const char *PLUGIN_NAME = "cache_promote";
+
+// This has to be a global here. I tried doing a classic singleton (with a getInstance()) in the PolicyManager,
+// but then reloading the DSO does not work. What happens is that the old singleton is stil there, even though
+// the rest of the plugin is reloaded. Very scary, and not what we need / want; if the plugin reloads, the
+// PolicyManager has to reload (and start fresh) as well.
+static PolicyManager gManager;
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Main "plugin", a TXN hook in the TS_HTTP_READ_CACHE_HDR_HOOK. Unless the policy allows
@@ -109,10 +116,17 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   return TS_SUCCESS; /* success */
 }
 
+void
+TSRemapDone()
+{
+  TSDebug(PLUGIN_NAME, "calling TSRemapDone()");
+  gManager.clear();
+}
+
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
-  PromotionConfig *config = new PromotionConfig;
+  PromotionConfig *config = new PromotionConfig(&gManager);
 
   --argc;
   ++argv;
@@ -135,7 +149,7 @@ TSRemapDeleteInstance(void *ih)
   TSCont contp            = static_cast<TSCont>(ih);
   PromotionConfig *config = static_cast<PromotionConfig *>(TSContDataGet(contp));
 
-  delete config;
+  delete config; // This will return the PromotionPolicy to the PromotionManager as well
   TSContDestroy(contp);
 }
 
