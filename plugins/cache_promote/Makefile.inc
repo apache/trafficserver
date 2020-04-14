@@ -20,4 +20,5 @@ cache_promote_cache_promote_la_SOURCES = \
   cache_promote/cache_promote.cc \
   cache_promote/config.cc \
   cache_promote/policy.cc \
-  cache_promote/lru_policy.cc
+  cache_promote/lru_policy.cc \
+  cache_promote/policy_manager.cc

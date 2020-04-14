@@ -26,7 +26,7 @@ static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
 
 LRUPolicy::~LRUPolicy()
 {
-  TSDebug(PLUGIN_NAME, "deleting LRUPolicy object");
+  TSDebug(PLUGIN_NAME, "destructing LRUPolicy object");
   TSMutexLock(_lock);
 
   _map.clear();
@@ -53,6 +53,9 @@ LRUPolicy::parseOption(int opt, char *optarg)
     break;
   case 'h':
     _hits = static_cast<unsigned>(strtol(optarg, nullptr, 10));
+    break;
+  case 'l':
+    _label = optarg;
     break;
   default:
     // All other options are unsupported for this policy
