@@ -22,7 +22,8 @@
  */
 
 #include "HPACK.h"
-#include "HuffmanCodec.h"
+
+#include "tscpp/util/LocalBuffer.h"
 
 // [RFC 7541] 4.1. Calculating Table Size
 // The size of an entry is the sum of its name's length in octets (as defined in Section 5.2),
@@ -581,12 +582,14 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 
   // Convert field name to lower case to follow HTTP2 spec.
   // This conversion is needed because WKSs in MIMEFields is old fashioned
-  Arena arena;
   int name_len;
-  const char *name = header.name_get(&name_len);
-  char *lower_name = arena.str_store(name, name_len);
+  const char *original_name = header.name_get(&name_len);
+
+  ts::LocalBuffer<char> local_buffer(name_len);
+  char *lower_name = local_buffer.data();
+
   for (int i = 0; i < name_len; i++) {
-    lower_name[i] = ParseRules::ink_tolower(lower_name[i]);
+    lower_name[i] = ParseRules::ink_tolower(original_name[i]);
   }
 
   // Name String
@@ -606,7 +609,7 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 
   p += len;
 
-  Debug("hpack_encode", "Encoded field: %.*s: %.*s", name_len, name, value_len, value);
+  Debug("hpack_encode", "Encoded field: %.*s: %.*s", name_len, lower_name, value_len, value);
   return p - buf_start;
 }
 

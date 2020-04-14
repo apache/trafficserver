@@ -23,7 +23,10 @@
 
 #include "HTTP2.h"
 #include "HPACK.h"
+
 #include "tscore/ink_assert.h"
+#include "tscpp/util/LocalBuffer.h"
+
 #include "records/P_RecCore.h"
 #include "records/P_RecProcess.h"
 
@@ -584,12 +587,12 @@ http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
       const char *value = headers->host_get(&value_len);
 
       if (headers->is_port_in_header()) {
-        int port            = headers->port_get();
-        char *host_and_port = static_cast<char *>(ats_malloc(value_len + 8));
+        int port = headers->port_get();
+        ts::LocalBuffer<char> buf(value_len + 8);
+        char *host_and_port = buf.data();
         value_len           = snprintf(host_and_port, value_len + 8, "%.*s:%d", value_len, value, port);
 
         field->value_set(headers->m_heap, headers->m_mime, host_and_port, value_len);
-        ats_free(host_and_port);
       } else {
         field->value_set(headers->m_heap, headers->m_mime, value, value_len);
       }
@@ -602,12 +605,13 @@ http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
     if (MIMEField *field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH); field != nullptr) {
       int value_len;
       const char *value = headers->path_get(&value_len);
-      char *path        = static_cast<char *>(ats_malloc(value_len + 1));
-      path[0]           = '/';
+
+      ts::LocalBuffer<char> buf(value_len + 1);
+      char *path = buf.data();
+      path[0]    = '/';
       memcpy(path + 1, value, value_len);
 
       field->value_set(headers->m_heap, headers->m_mime, path, value_len + 1);
-      ats_free(path);
     } else {
       ink_abort("initialize HTTP/2 pseudo-headers");
       return PARSE_RESULT_ERROR;
