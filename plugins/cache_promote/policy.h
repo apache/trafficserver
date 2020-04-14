@@ -15,17 +15,14 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
 #pragma once
 
 #include <string>
-#include "tscore/BufferWriter.h"
 
 #include "ts/ts.h"
 #include "ts/remap.h"
 
 #define MAX_STAT_LENGTH (1 << 8)
-
 extern const char *PLUGIN_NAME;
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,8 +35,11 @@ public:
   {
     // This doesn't have to be perfect, since this is just chance sampling.
     // coverity[dont_call]
+    TSDebug(PLUGIN_NAME, "PromotionPolicy() CTOR");
     srand48(static_cast<long>(time(nullptr)));
   }
+
+  virtual ~PromotionPolicy() = default;
 
   void
   setSample(char *s)
@@ -68,8 +68,6 @@ public:
       TSStatIntIncrement(stat, amount);
     }
   }
-
-  virtual ~PromotionPolicy() = default;
 
   virtual bool
   parseOption(int opt, char *optarg)

@@ -15,18 +15,16 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
 #include <unistd.h>
 
 #include "lru_policy.h"
 
 #define MINIMUM_BUCKET_SIZE 10
-
 static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
 
 LRUPolicy::~LRUPolicy()
 {
-  TSDebug(PLUGIN_NAME, "destructing LRUPolicy object");
+  TSDebug(PLUGIN_NAME, "LRUPolicy DTOR");
   TSMutexLock(_lock);
 
   _map.clear();
@@ -47,7 +45,7 @@ LRUPolicy::parseOption(int opt, char *optarg)
     _buckets = static_cast<unsigned>(strtol(optarg, nullptr, 10));
     if (_buckets < MINIMUM_BUCKET_SIZE) {
       TSError("%s: Enforcing minimum LRU bucket size of %d", PLUGIN_NAME, MINIMUM_BUCKET_SIZE);
-      TSDebug(PLUGIN_NAME, "Enforcing minimum bucket size of %d", MINIMUM_BUCKET_SIZE);
+      TSDebug(PLUGIN_NAME, "enforcing minimum bucket size of %d", MINIMUM_BUCKET_SIZE);
       _buckets = MINIMUM_BUCKET_SIZE;
     }
     break;

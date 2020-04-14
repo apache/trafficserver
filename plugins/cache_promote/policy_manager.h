@@ -18,14 +18,15 @@
 #pragma once
 
 #include <atomic>
+#include <unordered_map>
 
 #include "policy.h"
 
 class PolicyManager
 {
 public:
-  PolicyManager() { TSDebug(PLUGIN_NAME, "in PolicyManager()"); }
-  virtual ~PolicyManager() { TSDebug(PLUGIN_NAME, "in ~PolicyManger()"); }
+  PolicyManager() { TSDebug(PLUGIN_NAME, "PolicyManager() CTOR"); }
+  virtual ~PolicyManager() { TSDebug(PLUGIN_NAME, "~PolicyManger() DTOR"); }
 
   // This is sort of a no-op right now, but it should be called regardless.
   void
@@ -39,7 +40,7 @@ public:
   PromotionPolicy *coalescePolicy(PromotionPolicy *policy);
   void releasePolicy(PromotionPolicy *policy);
 
-  // Don't allow copy-constructors
+  // Don't allow copy-constructors.
   PolicyManager(PolicyManager const &) = delete;
   void operator=(PolicyManager const &) = delete;
 

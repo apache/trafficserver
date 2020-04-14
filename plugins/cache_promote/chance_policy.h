@@ -15,7 +15,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-
 #pragma once
 
 #include "policy.h"
@@ -30,7 +29,6 @@ public:
   bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */) override
   {
     TSDebug(PLUGIN_NAME, "ChancePolicy::doPromote(%f)", getSample());
-
     incrementStat(promoted_id, 1);
 
     return true;
@@ -66,6 +64,7 @@ public:
     for (int ii = 0; ii < 3; ii++) {
       std::string_view name = std::get<0>(stats[ii]);
       int *id               = std::get<1>(stats[ii]);
+
       if ((*(id) = create_stat(name, remap_identifier)) == TS_ERROR) {
         return false;
       }
