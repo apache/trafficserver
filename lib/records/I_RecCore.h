@@ -166,7 +166,7 @@ RecErrT RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookup
 RecErrT RecGetRecordType(const char *name, RecT *rec_type, bool lock = true);
 RecErrT RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock = true);
 RecErrT RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lock = true);
-RecErrT RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock = true);
+RecErrT RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock = true, bool check_sync_cb = false);
 RecErrT RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock = true);
 RecErrT RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock = true);
 RecErrT RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock = true);

@@ -607,7 +607,7 @@ RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lo
 }
 
 RecErrT
-RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
+RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock, bool check_sync_cb)
 {
   RecErrT err = REC_ERR_FAIL;
 
@@ -619,15 +619,17 @@ RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
     RecRecord *r = it->second;
 
     if (r->registered) {
-      rec_mutex_acquire(&(r->lock));
-      if (order) {
-        *order = r->order;
+      if (!check_sync_cb || r->stat_meta.sync_cb) {
+        rec_mutex_acquire(&(r->lock));
+        if (order) {
+          *order = r->order;
+        }
+        if (id) {
+          *id = r->rsb_id;
+        }
+        err = REC_ERR_OKAY;
+        rec_mutex_release(&(r->lock));
       }
-      if (id) {
-        *id = r->rsb_id;
-      }
-      err = REC_ERR_OKAY;
-      rec_mutex_release(&(r->lock));
     }
   }
 
