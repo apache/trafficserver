@@ -208,12 +208,14 @@ LogConfig::read_configuration_variables()
     register_rolled_log_auto_delete(MANAGER_LOG_FILENAME, val);
 
     // For traffic.out
-    const char *configured_name(REC_ConfigReadString("proxy.config.output.logfile"));
+    char *configured_name(REC_ConfigReadString("proxy.config.output.logfile"));
     const char *traffic_logname = configured_name ? configured_name : "traffic.out";
     val                         = static_cast<int>(REC_ConfigReadInteger("proxy.config.output.logfile.rolling_min_count"));
     register_rolled_log_auto_delete(traffic_logname, val);
 
     rolling_max_count = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_max_count"));
+
+    ats_free(configured_name);
   }
   // PERFORMANCE
   val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.sampling_frequency"));
