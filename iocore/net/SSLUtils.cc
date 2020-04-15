@@ -407,6 +407,7 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   return SSL_TLSEXT_ERR_OK;
 }
 
+#if TS_USE_CERT_CB || TS_USE_HELLO_CB
 static int
 PerformAction(Continuation *cont, const char *servername)
 {
@@ -424,6 +425,7 @@ PerformAction(Continuation *cont, const char *servername)
   }
   return SSL_TLSEXT_ERR_OK;
 }
+#endif
 
 #if TS_USE_HELLO_CB
 // Pausable callback
