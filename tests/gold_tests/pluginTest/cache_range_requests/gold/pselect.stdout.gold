@@ -3,7 +3,6 @@ Accept-Ranges: bytes
 Cache-Control: max-age=500
 Content-Range: bytes 1-10/18
 Etag: "path"
-Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT
 Content-Length: 9
 Date: ``
 Server: ``

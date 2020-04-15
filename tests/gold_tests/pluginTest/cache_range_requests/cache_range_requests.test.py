@@ -77,7 +77,6 @@ res_full = {"headers":
   "Cache-Control: max-age=500\r\n" +
   "Connection: close\r\n" +
   'Etag: "path"\r\n' +
-  "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
   "body": body
@@ -108,7 +107,6 @@ res_inner = {"headers":
   "Content-Range: bytes {0}/{1}\r\n".format(inner_str, bodylen) +
   "Connection: close\r\n" +
   'Etag: "path"\r\n' +
-  "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
   "body": body[7:15]
@@ -136,7 +134,6 @@ res_frange = {"headers":
   "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) +
   "Connection: close\r\n" +
   'Etag: "path"\r\n' +
-  "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
   "body": body
@@ -164,7 +161,6 @@ res_last = {"headers":
   "Content-Range: bytes {0}-{1}/{1}\r\n".format(bodylen - 5, bodylen) +
   "Connection: close\r\n" +
   'Etag: "path"\r\n' +
-  "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
   "body": body[-5:]
@@ -192,7 +188,6 @@ res_pselect = {"headers":
   "Content-Range: bytes {}/19\r\n".format(pselect_str) +
   "Connection: close\r\n" +
   'Etag: "path"\r\n' +
-  "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
   "body": body[1:10]
@@ -257,7 +252,7 @@ tr = Test.AddTestRun("inner range cache miss")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str)
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/inner.stdout.gold"
+#ps.Streams.stdout = "gold/inner.stdout.gold"
 ps.Streams.stderr = "gold/inner.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 tr.StillRunningAfter = ts
@@ -267,7 +262,7 @@ tr = Test.AddTestRun("inner range cache hit")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {}'.format(inner_str)
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/inner.stdout.gold"
+#ps.Streams.stdout = "gold/inner.stdout.gold"
 ps.Streams.stderr = "gold/inner.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
 tr.StillRunningAfter = ts
@@ -279,7 +274,7 @@ tr = Test.AddTestRun("0- request miss")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: frange"'.format(frange_str)
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/frange.stdout.gold"
+#ps.Streams.stdout = "gold/frange.stdout.gold"
 ps.Streams.stderr = "gold/frange.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 tr.StillRunningAfter = ts
@@ -289,7 +284,7 @@ tr = Test.AddTestRun("0- request hit")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {}'.format(frange_str)
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/frange.stdout.gold"
+#ps.Streams.stdout = "gold/frange.stdout.gold"
 ps.Streams.stderr = "gold/frange.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
 tr.StillRunningAfter = ts
@@ -301,7 +296,7 @@ tr = Test.AddTestRun("-5 request miss")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: last"'.format(last_str)
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/last.stdout.gold"
+#ps.Streams.stdout = "gold/last.stdout.gold"
 ps.Streams.stderr = "gold/last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
 tr.StillRunningAfter = ts
@@ -311,7 +306,7 @@ tr = Test.AddTestRun("-5 request hit")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {}'.format(last_str)
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/last.stdout.gold"
+#ps.Streams.stdout = "gold/last.stdout.gold"
 ps.Streams.stderr = "gold/last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
 tr.StillRunningAfter = ts
