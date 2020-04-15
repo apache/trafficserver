@@ -108,4 +108,24 @@ TEST_CASE("LocalBuffer", "[libts][LocalBuffer]")
       CHECK(local_buffer.size() == 4096);
     }
   }
+
+  SECTION("Transparent access")
+  {
+    const size_t len = 1024;
+    ts::LocalBuffer local_buffer1(len);
+    ts::LocalBuffer local_buffer2(len);
+
+    memset(local_buffer1, 0xAA, len);
+    local_buffer1[len - 1] = 0xBB;
+
+    CHECK(local_buffer1[0] == 0xAA);
+    CHECK(local_buffer1[len - 1] == 0xBB);
+    CHECK(local_buffer1.size() == 1024);
+
+    memcpy(local_buffer2, local_buffer1, local_buffer2.size());
+
+    CHECK(local_buffer2[0] == 0xAA);
+    CHECK(local_buffer2[len - 1] == 0xBB);
+    CHECK(local_buffer2.size() == 1024);
+  }
 }

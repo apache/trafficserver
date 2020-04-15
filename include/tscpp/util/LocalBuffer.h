@@ -42,6 +42,11 @@ public:
   T *data() const;
   std::size_t size() const;
 
+  T &operator[](std::size_t index);
+  const T &operator[](std::size_t index) const;
+
+  operator T *();
+
 private:
   T _buf[EstSizeBound];
   T *const _ptr;
@@ -67,6 +72,21 @@ inline std::size_t
 LocalBuffer<T, S>::size() const
 {
   return _size;
+}
+
+template <class T, std::size_t S> inline T &LocalBuffer<T, S>::operator[](std::size_t index)
+{
+  return data()[index];
+}
+
+template <class T, std::size_t S> inline const T &LocalBuffer<T, S>::operator[](std::size_t index) const
+{
+  return data()[index];
+}
+
+template <class T, std::size_t S> inline LocalBuffer<T, S>::operator T *()
+{
+  return data();
 }
 
 } // namespace ts
