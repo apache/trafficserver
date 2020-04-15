@@ -5130,7 +5130,7 @@ HttpSM::do_http_server_open(bool raw)
     if (new_scheme_to_use >= 0) { // found a new scheme, use it
       scheme_to_use = new_scheme_to_use;
     }
-    if (!tls_upstream) {
+    if (!raw || !tls_upstream) {
       tls_upstream = scheme_to_use == URL_WKSIDX_HTTPS;
     }
   }
