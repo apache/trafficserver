@@ -1,7 +1,6 @@
 HTTP/1.1 200 OK
 Cache-Control: max-age=500
 Etag: "path"
-Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT
 Content-Length: 18
 Date: ``
 Server: ``

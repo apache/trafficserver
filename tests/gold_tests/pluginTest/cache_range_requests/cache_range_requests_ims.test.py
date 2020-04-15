@@ -81,7 +81,6 @@ res_full = {"headers":
   "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) +
   "Connection: close\r\n" +
   'Etag: "772102f4-56f4bc1e6d417"\r\n' +
-  "Last-Modified: Sat, 23 Jun 2018 09:27:29 GMT\r\n" +
   "\r\n",
   "timestamp": "1469733493.993",
   "body": body
