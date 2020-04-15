@@ -2023,7 +2023,9 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
           name_set.insert(dns.get());
         }
       }
+      sk_GENERAL_NAME_pop_free(names, GENERAL_NAME_free);
     }
+
     if (first_pass) {
       first_pass   = false;
       common_names = name_set;
