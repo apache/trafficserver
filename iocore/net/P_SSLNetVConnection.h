@@ -454,6 +454,12 @@ public:
     verify_cert = ctx;
   }
 
+  const char *
+  get_sni_servername() const override
+  {
+    return SSL_get_servername(this->ssl, TLSEXT_NAMETYPE_host_name);
+  }
+
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
