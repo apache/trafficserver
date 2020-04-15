@@ -85,7 +85,7 @@ ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
     // by fetching the hostname from the server request.  So the connection should only
     // be reused if the hostname in the new request is the same as the host name in the
     // original request
-    const char *session_sni = netvc->options.sni_servername;
+    const char *session_sni = netvc->get_sni_servername();
     if (session_sni) {
       // TS-4468: If the connection matches, make sure the SNI server
       // name (if present) matches the request hostname
@@ -106,7 +106,7 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
   // a new connection.
   //
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
-    const char *session_sni       = netvc->options.sni_servername;
+    const char *session_sni       = netvc->get_sni_servername();
     std::string_view proposed_sni = sm->get_outbound_sni();
     Debug("http_ss", "validate_sni proposed_sni=%s, sni=%s", proposed_sni.data(), session_sni);
     if (!session_sni || proposed_sni.length() == 0) {
