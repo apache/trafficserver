@@ -2052,6 +2052,20 @@ Cache Control
 
    The maximum age allowed for a stale response before it cannot be cached.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.guaranteed_min_lifetime INT 0
+   :reloadable:
+   :overridable:
+
+   Establishes a guaranteed minimum lifetime boundary for object freshness.
+   Setting this to ``0`` (default) disables the feature.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.guaranteed_max_lifetime INT 31536000
+   :reloadable:
+   :overridable:
+
+   Establishes a guaranteed maximum lifetime boundary for object freshness.
+   Setting this to ``0`` disables the feature.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.range.lookup INT 1
    :overridable:
 
@@ -2272,24 +2286,6 @@ Heuristic Expiration
 
    The aging factor for freshness computations. |TS| stores an object for this
    percentage of the time that elapsed since it last changed.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.guaranteed_min_lifetime INT 0
-   :reloadable:
-   :overridable:
-
-   Establishes a guaranteed minimum lifetime boundary for freshness heuristics.
-   When heuristics are used, and the :ts:cv:`proxy.config.http.cache.heuristic_lm_factor`
-   aging factor is applied, the final minimum age calculated will never be
-   lower than the value in this variable.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.guaranteed_max_lifetime INT 31536000
-   :reloadable:
-   :overridable:
-
-   Establishes a guaranteed maximum lifetime boundary for freshness heuristics.
-   When heuristics are used, and the :ts:cv:`proxy.config.http.cache.heuristic_lm_factor`
-   aging factor is applied, the final maximum age calculated will never be
-   higher than the value in this variable.
 
 Dynamic Content & Content Negotiation
 =====================================
