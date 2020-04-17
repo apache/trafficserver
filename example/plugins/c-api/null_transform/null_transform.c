@@ -92,9 +92,7 @@ handle_transform(TSCont contp)
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
     TSDebug(PLUGIN_NAME, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
-    // data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT32_MAX);
     data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
-    // data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, TSVIONBytesGet(input_vio));
     TSContDataSet(contp, data);
   }
 

@@ -421,7 +421,6 @@ transform_read_status_event(TSCont contp, TransformData *data, TSEvent event, vo
           buf_ptr = (char *)buf_ptr + read_ndone;
         }
       }
-      // data->content_length = ntohl(data->content_length);
       return transform_read(contp, data);
     }
     return transform_bypass(contp, data);

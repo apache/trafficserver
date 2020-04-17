@@ -84,9 +84,6 @@ const std::string DEFAULT_ERROR_FILE = "default"; // default.html will be search
 // Default error response TBD when the default response will be used
 const std::string DEFAULT_ERROR_RESPONSE = "<html><body><h1>This page will be back soon</h1></body></html>";
 
-// Default HTTP status code to use after booming
-// const int DEFAULT_BOOM_HTTP_STATUS_CODE = 200;
-
 // Default HTTP status string to use after booming
 const std::string DEFAULT_BOOM_HTTP_STATUS = "OK (BOOM)";
 
