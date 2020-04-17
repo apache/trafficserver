@@ -177,8 +177,7 @@ test -f /lib/lsb/init-functions && . /lib/lsb/init-functions
 # with native OS rc.subr(8) features.
 test -f /etc/rc.subr && . /etc/rc.subr
 
-if [ ! -d $TS_BASE@exp_runtimedir@ ]
-then
+if [ ! -d $TS_BASE@exp_runtimedir@ ]; then
 	mkdir -p $TS_BASE@exp_runtimedir@
 	chown @pkgsysuser@:@pkgsysgroup@ $TS_BASE@exp_runtimedir@
 fi
@@ -201,8 +200,7 @@ forkdaemon()
     while (( $i < $PIDFILE_CHECK_RETRIES ))
     do
         # check for regular file and size greater than 0
-        if [[ -f $TM_PIDFILE ]] && [[ -s $TM_PIDFILE ]]
-        then
+        if [[ -f $TM_PIDFILE ]] && [[ -s $TM_PIDFILE ]]; then
             success
             return 0
         fi
