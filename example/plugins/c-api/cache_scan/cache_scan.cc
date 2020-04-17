@@ -287,7 +287,6 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     cstate->write_pending = false;
     // the cache scan handler should call vio reenable when there is
     // available data
-    // TSVIOReenable(cstate->write_vio);
     return 0;
   } break;
   case TS_EVENT_VCONN_WRITE_COMPLETE: {
