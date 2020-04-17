@@ -35,19 +35,14 @@ status_get(unsigned argc, const char **argv)
   for (unsigned i = 0; i < n_file_arguments; ++i) {
     CtrlMgmtRecord record;
     TSMgmtError error;
-    std::string str = stat_prefix + file_arguments[i];
-
-    for (const char *_reason_tag : Reason::reasons) {
-      std::string _stat = str + "_" + _reason_tag;
-      error             = record.fetch(_stat.c_str());
-      if (error != TS_ERR_OKAY) {
-        CtrlMgmtError(error, "failed to fetch %s", file_arguments[i]);
-        return CTRL_EX_ERROR;
-      }
-
-      if (REC_TYPE_IS_STAT(record.rclass())) {
-        printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
-      }
+    std::string _stat = stat_prefix + file_arguments[i];
+    error             = record.fetch(_stat.c_str());
+    if (error != TS_ERR_OKAY) {
+      fprintf(stderr, "failed to fetch %s, no record found\n", file_arguments[i]);
+      return CTRL_EX_ERROR;
+    }
+    if (REC_TYPE_IS_STAT(record.rclass())) {
+      printf("%s %s\n", record.name(), CtrlMgmtRecordValue(record).c_str());
     }
   }
 

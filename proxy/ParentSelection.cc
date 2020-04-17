@@ -439,6 +439,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   char *tmp = nullptr, *tmp2 = nullptr, *tmp3 = nullptr;
   const char *errPtr = nullptr;
   float weight       = 1.0;
+  HostStatus &hs     = HostStatus::instance();
 
   if (parents != nullptr && isPrimary == true) {
     return "Can not specify more than one set of parents";
@@ -531,6 +532,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->parents[i].name                    = this->parents[i].hostname;
       this->parents[i].available               = true;
       this->parents[i].weight                  = weight;
+      hs.createHostStat(this->parents[i].hostname);
       if (tmp3) {
         memcpy(this->parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->parents[i].name = this->parents[i].hash_string;
@@ -546,6 +548,7 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->secondary_parents[i].name                    = this->secondary_parents[i].hostname;
       this->secondary_parents[i].available               = true;
       this->secondary_parents[i].weight                  = weight;
+      hs.createHostStat(this->secondary_parents[i].hostname);
       if (tmp3) {
         memcpy(this->secondary_parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->secondary_parents[i].name = this->secondary_parents[i].hash_string;
