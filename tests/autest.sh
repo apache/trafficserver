@@ -16,14 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-if [ ! -z "$ghprbActualCommit" ]; then
-    git diff ${ghprbActualCommit}^...${ghprbActualCommit} --name-only | egrep -E '^(build|iocore|proxy|tests|include|mgmt|plugins|proxy|src)/' > /dev/null
-    if [ $? = 1 ]; then
-        echo "No relevant files changed, skipping autest run"
-        exit 0
-    fi
-fi
-
 pushd $(dirname $0) > /dev/null
 export PYTHONPATH=$(pwd):$PYTHONPATH
 ./test-env-check.sh;
