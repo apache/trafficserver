@@ -80,6 +80,7 @@ Changes with Apache Traffic Server 8.1.0
   #5727 - Add effective url options to slice plugin.
   #5747 - Add slow logs for HTTP/2 Connection & Stream
   #5766 - Record HttpSM Id on new transaction
+  #5780 - Fixed std::array initialization for older compilers
   #5785 - Allocate DependencyTree only if HTTP/2 stream priority is enabled
   #5797 - Remove double call of the SNI action on TLS accept.
   #5811 - Fix no_activity timeout for server session reuse.
@@ -157,8 +158,11 @@ Changes with Apache Traffic Server 8.1.0
   #6597 - HTTP/2 backports for 8.1.x (part 2)
   #6600 - Remove enable_tls option and set select ports to false.  This passed …
   #6604 - fix sed matching
+  #6620 - traffic_top bug fixes for client connections
   #6622 - s3_auth_v4: multiple same name fields signing fix
   #6625 - Add ready checks for the microserver and ATS test instances.
   #6626 - Add a new log tag %<vbn> AppVersionInfo.BldNumStr
   #6634 - Backport valid_tls_protocols_in to 8.1.x
   #6640 - Fix timeout autests on 8.1.x
+  #6660 - Fix 8.1.x build with old openssl
+  #6676 - Fixes the 'traffic_ctl host status' for trafficserver 8.1.x
