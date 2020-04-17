@@ -22,7 +22,7 @@ set -e # exit on error
 
 
 for pr in $@; do
-    if [[ "$pr" =~ ^[0-9]+$ ]];  then
+    if [[ "$pr" =~ ^[0-9]+$ ]]; then
 	URI="https://patch-diff.githubusercontent.com/raw/apache/trafficserver/pull/${pr}.diff"
 	echo "Applying changes from $URI ..."
 	curl -s $URI | patch -p1
