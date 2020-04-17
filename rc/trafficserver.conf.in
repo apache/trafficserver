@@ -31,8 +31,7 @@ stop on runlevel [06]
 respawn
 
 pre-start script
-	if [ ! -d @exp_runtimedir@ ]
-	then
+	if [ ! -d @exp_runtimedir@ ]; then
 		mkdir -p @exp_runtimedir@
 		chown @pkgsysuser@:@pkgsysgroup@ @exp_runtimedir@
 	fi
