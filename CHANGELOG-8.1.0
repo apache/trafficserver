@@ -164,5 +164,8 @@ Changes with Apache Traffic Server 8.1.0
   #6626 - Add a new log tag %<vbn> AppVersionInfo.BldNumStr
   #6634 - Backport valid_tls_protocols_in to 8.1.x
   #6640 - Fix timeout autests on 8.1.x
+  #6654 - Supports sharing cache_promote LRUs across multiple remap rules
   #6660 - Fix 8.1.x build with old openssl
+  #6665 - Fix memory leak of HPACK
   #6676 - Fixes the 'traffic_ctl host status' for trafficserver 8.1.x
+  #6688 - Fixes minor memory leak in configure_net
