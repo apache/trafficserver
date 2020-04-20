@@ -262,11 +262,6 @@ public:
     }
     return SSL_TLSEXT_ERR_OK;
   }
-  bool
-  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const override
-  {
-    return !unset;
-  }
 };
 
 class SNI_IpAllow : public ActionItem
