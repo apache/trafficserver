@@ -21,18 +21,77 @@
 *                           @bryancall
 
 # The new order "src" tree
-src/tscore/*                @SolidWallOfCode
-src/wccp/*                  @SolidWallOfCode
-src/traffic_top/*           @bryancall
+src/shared/*                @SolidWallOfCode
+src/traffic_cache_tool/*    @SolidWallOfCode
+src/traffic_crashlog/*      @zwoop
+src/traffic_ctl/*           @zwoop
+src/traffic_layout/*        @zwoop
+src/traffic_logcat/*        @zwoop
 src/traffic_logstats/*      @zwoop
+src/traffic_manager/*       @zwoop
+src/traffic_quic/*          @maskit
+src/traffic_server/*        @zwoop
+src/traffic_top/*           @bryancall
+src/traffic_via/*           @zwoop
+src/traffic_wccp/*          @SolidWallOfCode
+src/tscore/*                @SolidWallOfCode @zwoop
+src/wccp/*                  @SolidWallOfCode
+
+# Include tree
+include/*                   @bryan_call
+include/tscpp/*             @SolidWallOfCode
+include/wccp/*              @SolidWallOfCode
+include/shared/*            @SolidWallOfCode @zwoop
+include/tscore/*            @SolidWallOfCode @zwoop
+include/ts/*                @zwoop
+
+# iocore src
+tscore/*                    @bryan_call
+tscore/aio/*                @bryan_call
+tscore/cache/*              @SolidWallOfCode
+tscore/dns/*                @SolidWallOfCode
+tscore/eventsystem/*        @bryan_call
+tscore/hostdb/*             @SolidWallOfCode
+tscore/net/*                @bryan_call
+tscore/utils/*              @bryan_call
+
+# Old lib tree
+lib/records/*               @zwoop
+lib/perl/*                  @zwoop
+lib/yamlcpp/*               @bryancall
 
 # The proxy tree, where all flavor of HTTP lives
+proxy/*                     @zwoop
+proxy/hdrs/*                @SolidWallOfCode
+proxy/http/*                @zwoop
 proxy/http2/*               @masaori335
 proxy/http3/*               @maskit @masaori335
+proxy/logging/*             @zwoop
+proxy/private/*             @zwoop
+proxy/shared/*              @zwoop
+
+# Test tree
+tests/*                     @SolidWallOfCode
+tests/include/*             @SolidWallOfCode
+tests/gold_tests/*          @SolidWallOfCode
+tests/tools/*               @SolidWallOfCode
+tests/unit_tests/*          @SolidWallOfCode
+
+# The manager source
+mgmt/*                      @zwoop @bryancall
 
 # Various plugins
 plugins/*                   @zwoop
 plugins/cachekey/*          @gtenev
+
+# Example plugins / code
+example/*                   @SolidWallOfCode
+
+# Tools tree
+tools/*                     @bryancall @zwoop
+
+# CI tools
+ci/*                        @zwoop
 
 # Documentation
 doc/*                       @SolidWallOfCode @mlibbey
