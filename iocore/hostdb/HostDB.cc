@@ -43,7 +43,6 @@ HostDBContinuation::Options const HostDBContinuation::DEFAULT_OPTIONS;
 int hostdb_enable                              = true;
 int hostdb_migrate_on_demand                   = true;
 int hostdb_lookup_timeout                      = 30;
-int hostdb_insert_timeout                      = 160;
 int hostdb_re_dns_on_reload                    = false;
 int hostdb_ttl_mode                            = TTL_OBEY;
 unsigned int hostdb_round_robin_max_count      = 16;
@@ -1175,12 +1174,13 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     timeout = nullptr;
   }
   EThread *thread = mutex->thread_holding;
-  if (event == EVENT_INTERVAL) {
+  if (event != DNS_EVENT_LOOKUP) {
+    // This was an event_interval or an event_immediate
+    // Either we timed out, or remove_trigger_pending gave up on us
     if (!action.continuation) {
       // give up on insert, it has been too long
-      // remove_trigger_pending_dns will notify and clean up all requests
-      // including this one.
-      remove_trigger_pending_dns();
+      hostDB.pending_dns_for_hash(hash.hash).remove(this);
+      hostdb_cont_free(this);
       return EVENT_DONE;
     }
     MUTEX_TRY_LOCK(lock, action.mutex, thread);
@@ -1196,8 +1196,6 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       action.continuation->handleEvent(EVENT_HOST_DB_LOOKUP, nullptr);
     }
     action = nullptr;
-    // do not exit yet, wait to see if we can insert into DB
-    timeout = thread->schedule_in(this, HRTIME_SECONDS(hostdb_insert_timeout));
     return EVENT_DONE;
   } else {
     bool failed = !e || !e->good;
@@ -1420,36 +1418,37 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         return EVENT_CONT;
       }
 
-      // We have seen cases were the action.mutex != action.continuation.mutex.
+      // We have seen cases were the action.mutex != action.continuation.mutex.  However, it seems that case
+      // is likely a memory corruption... Thus the introduction of the assert.
       // Since reply_to_cont will call the handler on the action.continuation, it is important that we hold
       // that mutex.
       bool need_to_reschedule = true;
       MUTEX_TRY_LOCK(lock, action.mutex, thread);
       if (lock.is_locked()) {
-        need_to_reschedule = !action.cancelled;
         if (!action.cancelled) {
           if (action.continuation->mutex) {
-            MUTEX_TRY_LOCK(lock2, action.continuation->mutex, thread);
-            if (lock2.is_locked()) {
-              reply_to_cont(action.continuation, r, is_srv());
-              need_to_reschedule = false;
-            }
-          } else {
-            reply_to_cont(action.continuation, r, is_srv());
-            need_to_reschedule = false;
+            ink_release_assert(action.continuation->mutex == action.mutex);
           }
+          reply_to_cont(action.continuation, r, is_srv());
         }
+        need_to_reschedule = false;
       }
+
       if (need_to_reschedule) {
         SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
-        // remove_trigger_pending_dns should kick off the current hostDB too
-        // No need to explicitly reschedule
-        remove_trigger_pending_dns();
+        // Will reschedule on affinity thread or current thread
+        timeout = eventProcessor.schedule_in(this, HOST_DB_RETRY_PERIOD);
         return EVENT_CONT;
       }
     }
+
+    // Clean ourselves up
+    hostDB.pending_dns_for_hash(hash.hash).remove(this);
+
     // wake up everyone else who is waiting
     remove_trigger_pending_dns();
+
+    hostdb_cont_free(this);
 
     // all done, or at least scheduled to be all done
     //
@@ -1523,12 +1522,17 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   ink_assert(!link.prev && !link.next);
   EThread *t = e ? e->ethread : this_ethread();
 
+  if (timeout) {
+    timeout->cancel(this);
+    timeout = nullptr;
+  }
+
   MUTEX_TRY_LOCK(lock, action.mutex, t);
 
   // Separating lock checks here to make sure things don't break
   // when we check if the action is cancelled.
   if (!lock.is_locked()) {
-    mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
+    timeout = mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
   }
 
@@ -1537,13 +1541,8 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
     return EVENT_DONE;
   }
 
-  // Go ahead and grab the continuation mutex or just grab the action mutex again of there is no continuation mutex
-  MUTEX_TRY_LOCK(lock2, (action.continuation && action.continuation->mutex) ? action.continuation->mutex : action.mutex, t);
-  // Don't continue unless we have both mutexes
-  if (!lock2.is_locked()) {
-    mutex->thread_holding->schedule_in(this, HOST_DB_RETRY_PERIOD);
-    return EVENT_CONT;
-  }
+  //  If the action.continuation->mutex != action.mutex, we have a use after free/realloc
+  ink_release_assert(!action.continuation || action.continuation->mutex == action.mutex);
 
   if (!hostdb_enable || (!*hash.host_name && !hash.ip.isValid())) {
     if (action.continuation) {
@@ -1619,7 +1618,10 @@ HostDBContinuation::remove_trigger_pending_dns()
     if (!affinity_thread || affinity_thread == thread) {
       c->handleEvent(EVENT_IMMEDIATE, nullptr);
     } else {
-      eventProcessor.schedule_imm(c);
+      if (c->timeout) {
+        c->timeout->cancel();
+      }
+      c->timeout = eventProcessor.schedule_imm(c);
     }
   }
 }
