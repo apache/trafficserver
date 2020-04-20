@@ -26,36 +26,311 @@
 
 #define TS_LUA_MAX_STATE_COUNT 256
 
+#define TS_LUA_STATS_TIMEOUT 5000   // 5s -- convert to configurable
+#define TS_LUA_STATS_BUFFER_SIZE 10 // stats buffer
+
+#define TS_LUA_IND_STATE 0
+#define TS_LUA_IND_GC_BYTES 1
+#define TS_LUA_IND_THREADS 2
+#define TS_LUA_IND_SIZE 3
+
 static uint64_t ts_lua_http_next_id   = 0;
 static uint64_t ts_lua_g_http_next_id = 0;
 
-static ts_lua_main_ctx *ts_lua_main_ctx_array;
-static ts_lua_main_ctx *ts_lua_g_main_ctx_array;
+static ts_lua_main_ctx *ts_lua_main_ctx_array   = NULL;
+static ts_lua_main_ctx *ts_lua_g_main_ctx_array = NULL;
+
+// records.config entry injected by plugin
+static char const *const ts_lua_mgmt_state_str   = "proxy.config.plugin.lua.max_states";
+static char const *const ts_lua_mgmt_state_regex = "^[1-9][0-9]*$";
+
+// this is set the first time global configuration is probed.
+static int ts_lua_max_state_count = 0;
+
+// lifecycle message tag
+static char const *const print_tag = "stats_print";
+static char const *const reset_tag = "stats_reset";
+
+// stat record strings
+static char const *const ts_lua_stat_strs[] = {
+  "plugin.lua.remap.states",
+  "plugin.lua.remap.gc_bytes",
+  "plugin.lua.remap.threads",
+  NULL,
+};
+static char const *const ts_lua_g_stat_strs[] = {
+  "plugin.lua.global.states",
+  "plugin.lua.global.gc_bytes",
+  "plugin.lua.global.threads",
+  NULL,
+};
+
+typedef struct {
+  ts_lua_main_ctx *main_ctx_array;
+
+  int gc_kb;   // last collected gc in kb
+  int threads; // last collected number active threads
+
+  int stat_inds[TS_LUA_IND_SIZE]; // stats indices
+
+} ts_lua_plugin_stats;
+
+ts_lua_plugin_stats *
+create_plugin_stats(ts_lua_main_ctx *const main_ctx_array)
+{
+  ts_lua_plugin_stats *const stats = TSmalloc(sizeof(ts_lua_plugin_stats));
+  memset(stats, 0, sizeof(ts_lua_plugin_stats));
+
+  stats->main_ctx_array = main_ctx_array;
+
+  // sample buffers
+  stats->gc_kb   = 0;
+  stats->threads = 0;
+
+  char const *const *stat_strs = NULL;
+  int max_state_count          = 0;
+  if (main_ctx_array == ts_lua_main_ctx_array) { // remap
+    stat_strs       = ts_lua_stat_strs;
+    max_state_count = ts_lua_max_state_count;
+  } else { // global
+    stat_strs       = ts_lua_g_stat_strs;
+    max_state_count = ts_lua_max_state_count;
+  }
+
+  for (int ind = 0; ind < TS_LUA_IND_SIZE; ++ind) {
+    stats->stat_inds[ind] = TSStatCreate(stat_strs[ind], TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+  }
+
+  // initialize the number of states stat
+  int const sid = stats->stat_inds[TS_LUA_IND_STATE];
+  if (TS_ERROR != sid) {
+    TSStatIntSet(sid, max_state_count);
+  }
+
+  return stats;
+}
+
+ts_lua_main_ctx *
+create_lua_vms()
+{
+  ts_lua_main_ctx *ctx_array = NULL;
+
+  // Inject the setting into records.config
+  static bool ts_mgt_int_inserted = false;
+  if (!ts_mgt_int_inserted) {
+    if (TS_SUCCESS == TSMgmtIntCreate(TS_RECORDTYPE_CONFIG, ts_lua_mgmt_state_str, TS_LUA_MAX_STATE_COUNT,
+                                      TS_RECORDUPDATE_RESTART_TS, TS_RECORDCHECK_INT, ts_lua_mgmt_state_regex,
+                                      TS_RECORDACCESS_READ_ONLY)) {
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] registered config string %s: with default [%d]", __FUNCTION__, ts_lua_mgmt_state_str,
+              TS_LUA_MAX_STATE_COUNT);
+    } else {
+      TSError("[%s][%s] failed to register %s", TS_LUA_DEBUG_TAG, __FUNCTION__, ts_lua_mgmt_state_str);
+    }
+    ts_mgt_int_inserted = true;
+  }
+
+  if (0 == ts_lua_max_state_count) {
+    TSMgmtInt mgmt_state = 0;
+
+    if (TS_SUCCESS != TSMgmtIntGet(ts_lua_mgmt_state_str, &mgmt_state)) {
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] setting max state to default: %d", __FUNCTION__, TS_LUA_MAX_STATE_COUNT);
+      ts_lua_max_state_count = TS_LUA_MAX_STATE_COUNT;
+    } else {
+      ts_lua_max_state_count = (int)mgmt_state;
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] found %s: [%d]", __FUNCTION__, ts_lua_mgmt_state_str, (int)ts_lua_max_state_count);
+    }
+
+    if (ts_lua_max_state_count < 1) {
+      TSError("[ts_lua][%s] invalid %s: %d", __FUNCTION__, ts_lua_mgmt_state_str, ts_lua_max_state_count);
+      ts_lua_max_state_count = 0;
+      return NULL;
+    }
+  }
+
+  ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * ts_lua_max_state_count);
+  memset(ctx_array, 0, sizeof(ts_lua_main_ctx) * ts_lua_max_state_count);
+
+  int const ret = ts_lua_create_vm(ctx_array, ts_lua_max_state_count);
+
+  if (ret) {
+    ts_lua_destroy_vm(ctx_array, ts_lua_max_state_count);
+    TSfree(ctx_array);
+    ctx_array = NULL;
+    return NULL;
+  }
+
+  // Initalize the GC numbers, no need to lock here
+  for (int index = 0; index < ts_lua_max_state_count; ++index) {
+    ts_lua_main_ctx *const main_ctx = (ctx_array + index);
+    lua_State *const lstate         = main_ctx->lua;
+    ts_lua_ctx_stats *const stats   = main_ctx->stats;
+
+    stats->gc_kb = stats->gc_kb_max = lua_getgccount(lstate);
+  }
+
+  return ctx_array;
+}
+
+// dump exhaustive per state summary stats
+static void
+collectStats(ts_lua_plugin_stats *const plugin_stats)
+{
+  TSMgmtInt gc_kb_total   = 0;
+  TSMgmtInt threads_total = 0;
+
+  ts_lua_main_ctx *const main_ctx_array = plugin_stats->main_ctx_array;
+
+  // aggregate stats on the states
+  for (int index = 0; index < ts_lua_max_state_count; ++index) {
+    ts_lua_main_ctx *const main_ctx = (main_ctx_array + index);
+    if (NULL != main_ctx) {
+      ts_lua_ctx_stats *const stats = main_ctx->stats;
+
+      TSMutexLock(stats->mutexp);
+      gc_kb_total += (TSMgmtInt)stats->gc_kb;
+      threads_total += (TSMgmtInt)stats->threads;
+      TSMutexUnlock(stats->mutexp);
+    }
+  }
+
+  // set the stats sample slot
+  plugin_stats->gc_kb   = gc_kb_total;
+  plugin_stats->threads = threads_total;
+}
+
+static void
+publishStats(ts_lua_plugin_stats *const plugin_stats)
+{
+  TSMgmtInt const gc_bytes = plugin_stats->gc_kb * 1024;
+  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_IND_GC_BYTES], gc_bytes);
+  TSStatIntSet(plugin_stats->stat_inds[TS_LUA_IND_THREADS], plugin_stats->threads);
+}
+
+// dump exhaustive per state summary stats
+static int
+statsHandler(TSCont contp, TSEvent event, void *edata)
+{
+  ts_lua_plugin_stats *const plugin_stats = (ts_lua_plugin_stats *)TSContDataGet(contp);
+
+  collectStats(plugin_stats);
+  publishStats(plugin_stats);
+
+  TSContScheduleOnPool(contp, TS_LUA_STATS_TIMEOUT, TS_THREAD_POOL_TASK);
+
+  return TS_EVENT_NONE;
+}
+
+static void
+get_time_now_str(char *const buf, size_t const buflen)
+{
+  TSHRTime const timenowusec = TShrtime();
+  int64_t const timemsec     = (int64_t)(timenowusec / 1000000);
+  time_t const timesec       = (time_t)(timemsec / 1000);
+  int const ms               = (int)(timemsec % 1000);
+
+  struct tm tm;
+  gmtime_r(&timesec, &tm);
+  size_t const dtlen = strftime(buf, buflen, "%b %e %H:%M:%S", &tm);
+
+  // tack on the ms
+  snprintf(buf + dtlen, buflen - dtlen, ".%03d", ms);
+}
+
+// dump exhaustive per state summary stats
+static int
+lifecycleHandler(TSCont contp, TSEvent event, void *edata)
+{
+  // ensure the message is for ts_lua
+  TSPluginMsg *const msgp = (TSPluginMsg *)edata;
+  if (0 != strncasecmp(msgp->tag, TS_LUA_DEBUG_TAG, strlen(msgp->tag))) {
+    return TS_EVENT_NONE;
+  }
+
+  ts_lua_main_ctx *const main_ctx_array = (ts_lua_main_ctx *)TSContDataGet(contp);
+
+  static char const *const remapstr  = "remap";
+  static char const *const globalstr = "global";
+
+  char const *labelstr = NULL;
+
+  if (main_ctx_array == ts_lua_main_ctx_array) {
+    labelstr = remapstr;
+  } else {
+    labelstr = globalstr;
+  }
+
+  char timebuf[128];
+  get_time_now_str(timebuf, 128);
+
+  char const *const msgstr = (char *)msgp->data;
+  enum State { Print, Reset } state;
+  state                      = Print;
+  size_t const reset_tag_len = strlen(reset_tag);
+
+  if (reset_tag_len <= msgp->data_size && 0 == strncasecmp(reset_tag, msgstr, reset_tag_len)) {
+    TSDebug(TS_LUA_DEBUG_TAG, "[%s] LIFECYCLE_MSG: %s", __FUNCTION__, reset_tag);
+    state = Reset;
+    fprintf(stderr, "[%s] %s (%s) resetting per state gc_kb_max and threads_max\n", timebuf, TS_LUA_DEBUG_TAG, labelstr);
+  } else {
+    TSDebug(TS_LUA_DEBUG_TAG, "[%s] LIFECYCLE_MSG: %s", __FUNCTION__, print_tag);
+  }
+
+  for (int index = 0; index < ts_lua_max_state_count; ++index) {
+    ts_lua_main_ctx *const main_ctx = (main_ctx_array + index);
+    if (NULL != main_ctx) {
+      ts_lua_ctx_stats *const stats = main_ctx->stats;
+      if (NULL != main_ctx) {
+        TSMutexLock(stats->mutexp);
+
+        switch (state) {
+        case Reset:
+          stats->threads_max = stats->threads;
+          stats->gc_kb_max   = stats->gc_kb;
+          break;
+
+        case Print:
+        default:
+          fprintf(stderr, "[%s] %s (%s) id: %3d gc_kb: %6d gc_kb_max: %6d threads: %4d threads_max: %4d\n", timebuf,
+                  TS_LUA_DEBUG_TAG, labelstr, index, stats->gc_kb, stats->gc_kb_max, stats->threads, stats->threads_max);
+          break;
+        }
+
+        TSMutexUnlock(stats->mutexp);
+      }
+    }
+  }
+
+  return TS_EVENT_NONE;
+}
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  int ret;
-
   if (!api_info || api_info->size < sizeof(TSRemapInterface)) {
     strncpy(errbuf, "[TSRemapInit] - Incorrect size of TSRemapInterface structure", errbuf_size - 1);
     errbuf[errbuf_size - 1] = '\0';
     return TS_ERROR;
   }
 
-  if (ts_lua_main_ctx_array != NULL) {
-    return TS_SUCCESS;
-  }
+  if (NULL == ts_lua_main_ctx_array) {
+    ts_lua_main_ctx_array = create_lua_vms();
+    if (NULL != ts_lua_main_ctx_array) {
+      TSCont const lcontp = TSContCreate(lifecycleHandler, TSMutexCreate());
+      TSContDataSet(lcontp, ts_lua_main_ctx_array);
+      TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, lcontp);
 
-  ts_lua_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
-  memset(ts_lua_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
+      ts_lua_plugin_stats *const plugin_stats = create_plugin_stats(ts_lua_main_ctx_array);
 
-  ret = ts_lua_create_vm(ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
-
-  if (ret) {
-    ts_lua_destroy_vm(ts_lua_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
-    TSfree(ts_lua_main_ctx_array);
-    return TS_ERROR;
+      // start the stats management
+      if (NULL != plugin_stats) {
+        TSDebug(TS_LUA_DEBUG_TAG, "Starting up stats management continuation");
+        TSCont const scontp = TSContCreate(statsHandler, TSMutexCreate());
+        TSContDataSet(scontp, plugin_stats);
+        TSContScheduleOnPool(scontp, TS_LUA_STATS_TIMEOUT, TS_THREAD_POOL_TASK);
+      }
+    } else {
+      return TS_ERROR;
+    }
   }
 
   return TS_SUCCESS;
@@ -68,7 +343,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   char script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
   char *inline_script                  = "";
   int fn                               = 0;
-  int states                           = TS_LUA_MAX_STATE_COUNT;
+  int states                           = ts_lua_max_state_count;
   static const struct option longopt[] = {
     {"states", required_argument, 0, 's'},
     {"inline", required_argument, 0, 'i'},
@@ -85,7 +360,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     switch (opt) {
     case 's':
       states = atoi(optarg);
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] setting number of lua VM [%d]", __FUNCTION__, states);
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] setting number of lua VMs [%d]", __FUNCTION__, states);
       // set state
       break;
     case 'i':
@@ -97,9 +372,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     }
   }
 
-  if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
+  if (states < 1 || ts_lua_max_state_count < states) {
     snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - invalid state in option input. Must be between 1 and %d",
-             TS_LUA_MAX_STATE_COUNT);
+             ts_lua_max_state_count);
     return TS_ERROR;
   }
 
@@ -470,19 +745,27 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[ts_lua][%s] Plugin registration failed", __FUNCTION__);
   }
 
-  int ret                 = 0;
-  ts_lua_g_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
-  memset(ts_lua_g_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
+  if (NULL == ts_lua_g_main_ctx_array) {
+    ts_lua_g_main_ctx_array = create_lua_vms();
+    if (NULL != ts_lua_g_main_ctx_array) {
+      TSCont const contp = TSContCreate(lifecycleHandler, TSMutexCreate());
+      TSContDataSet(contp, ts_lua_g_main_ctx_array);
+      TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, contp);
 
-  ret = ts_lua_create_vm(ts_lua_g_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
+      ts_lua_plugin_stats *const plugin_stats = create_plugin_stats(ts_lua_main_ctx_array);
 
-  if (ret) {
-    ts_lua_destroy_vm(ts_lua_g_main_ctx_array, TS_LUA_MAX_STATE_COUNT);
-    TSfree(ts_lua_g_main_ctx_array);
-    return;
+      if (NULL != plugin_stats) {
+        TSCont const scontp = TSContCreate(statsHandler, TSMutexCreate());
+        TSContDataSet(scontp, plugin_stats);
+        TSContScheduleOnPool(scontp, TS_LUA_STATS_TIMEOUT, TS_THREAD_POOL_TASK);
+      }
+    } else {
+      return;
+    }
   }
 
-  int states                           = TS_LUA_MAX_STATE_COUNT;
+  int states = ts_lua_max_state_count;
+
   int reload                           = 0;
   static const struct option longopt[] = {
     {"states", required_argument, 0, 's'},
@@ -510,8 +793,8 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  if (states > TS_LUA_MAX_STATE_COUNT || states < 1) {
-    TSError("[ts_lua][%s] invalid # of states from option input. Must be between 1 and %d", __FUNCTION__, TS_LUA_MAX_STATE_COUNT);
+  if (states < 1 || ts_lua_max_state_count < states) {
+    TSError("[ts_lua][%s] invalid # of states from option input. Must be between 1 and %d", __FUNCTION__, ts_lua_max_state_count);
     return;
   }
 
@@ -543,8 +826,9 @@ TSPluginInit(int argc, const char *argv[])
   ts_lua_init_instance(conf);
 
   char errbuf[TS_LUA_MAX_STR_LENGTH];
-  int errbuf_len = sizeof(errbuf);
-  ret = ts_lua_add_module(conf, ts_lua_g_main_ctx_array, conf->states, argc - optind, (char **)&argv[optind], errbuf, errbuf_len);
+  int const errbuf_len = sizeof(errbuf);
+  int const ret =
+    ts_lua_add_module(conf, ts_lua_g_main_ctx_array, conf->states, argc - optind, (char **)&argv[optind], errbuf, errbuf_len);
 
   if (ret != 0) {
     TSError(errbuf, NULL);
