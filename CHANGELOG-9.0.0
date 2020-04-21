@@ -639,7 +639,6 @@ Changes with Apache Traffic Server 9.0.0
   #5839 - Fix inactivity timeout on QUIC
   #5841 - Cleanup: unifdef WRITE_AND_TRANSFER
   #5847 - Cleanup: Remove unused empty files
-  #5848 - Convert check programs in iocore/eventsystem/ into Catch based unit tests
   #5852 - Replaced ProxyTxn::outbound vars with accept::options
   #5853 - correct the size of DNS buffers
   #5856 - Fixes 'traffic_ctl server restart' to restart
@@ -652,12 +651,9 @@ Changes with Apache Traffic Server 9.0.0
   #5870 - Fix bad limit in poll loop.  jtest -c1 now works again.
   #5879 - Weak mutex locking macros
   #5880 - ProxyTxn Refactor move code to cc
-  #5883 - Add unit tests for MIOBuffer:write()
   #5885 - Add the ability to static link ASAN, TSAN and LSAN
   #5892 - ProxySsn renaming member vars
-  #5893 - Cleanup: Remove unused AllocType and unused functions
   #5902 - Ran clang-format
-  #5903 - Reduce unnecesary IOBufferBlock allocation
   #5905 - Update Server IP in Transaction when attaching a session from the pool
   #5906 - Cleanup: unifdef TRACK_BUFFER_USER
   #5907 - Fix macOS build
@@ -716,7 +712,6 @@ Changes with Apache Traffic Server 9.0.0
   #6099 - doc + unittest TSRemap(Init|NewInstance) failures
   #6106 - Removes proxy.config.cache.storage_filename
   #6116 - Updated to clang-format v9.0.0
-  #6118 - Avoid IOBufferReader::read_avail() call from MIOBuffer::high_water()
   #6120 - Fix null pointer dereference reported by clang-analyzer
   #6125 - Add Metrics to track SSL Handshake attempts
   #6126 - Fix the thread ready check
@@ -868,6 +863,7 @@ Changes with Apache Traffic Server 9.0.0
   #6576 - Ensure TSContSchedule API family are called from an EThread.
   #6577 - When using TSContSchedule() and TSContScheduleAPI() set the calling thread as the thread affinity when not already set
   #6578 - Fix migrate use after free
+  #6586 - traffic_dump: don't dump cookies from the wire
   #6590 - Skip compressible content type check with null strings.
   #6591 - Cleanup: fix a inline function style
   #6606 - Making client session id unique across HTTP/1 and 2 sessions
@@ -878,10 +874,11 @@ Changes with Apache Traffic Server 9.0.0
   #6618 - Fix missing virtual destructor for PluginUserArgsMixin.
   #6628 - Use default rwlock attributes on initialize
   #6632 - Fixes a bug where the nexthop markNextHop method to mark a host down is not called.
-  #6643 - Bug fixes to h2 buffering
+  #6645 - Traffic Dump: Adding an SNI filtering option.
   #6655 - Fix origin scheme selection with partial-blind addition
   #6656 - Check sni against SSL object
   #6658 - Update TSStatFindName to check that sync callback is set on the stat
+  #6663 - Fixes memory leak during log configuration
   #6664 - cache_range_requests: remove unnecessary Last-Modified header from tests
   #6677 - Format to match perferred if/else formatting for sh scripts
   #6678 - Removes commented out code from example
