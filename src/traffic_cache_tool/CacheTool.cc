@@ -257,6 +257,8 @@ class VolumeAllocator
       : _config(config), _size(size), _deficit(deficit), _shares(shares)
     {
     }
+    V(const V &v) = default;
+
     V &
     operator=(V const &that)
     {
