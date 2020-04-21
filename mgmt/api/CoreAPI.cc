@@ -170,7 +170,8 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 
     // Start with the default options from records.config.
     if (RecGetRecordString_Xmalloc("proxy.config.proxy_binary_opts", &proxy_options) == REC_ERR_OKAY) {
-      if (max_records_entries == (REC_INTERNAL_RECORDS + REC_MIN_API_RECORDS)) { // Default size, don't need to pass down to _server
+      if (max_records_entries ==
+          (REC_INTERNAL_RECORDS + REC_DEFAULT_API_RECORDS)) { // Default size, don't need to pass down to _server
         snprintf(tsArgs, sizeof(tsArgs), "%s", proxy_options);
       } else {
         snprintf(tsArgs, sizeof(tsArgs), "%s --maxRecords %d", proxy_options, max_records_entries);

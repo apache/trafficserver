@@ -31,7 +31,7 @@
 // additional slots in librecords will be allocated to the plugin metrics. These should be
 // updated if we change the internal librecords size significantly.
 #define REC_INTERNAL_RECORDS 1100
-#define REC_MIN_API_RECORDS 500
+#define REC_DEFAULT_API_RECORDS 1400
 
 #define REC_CONFIG_UPDATE_INTERVAL_MS 3000
 #define REC_REMOTE_SYNC_INTERVAL_MS 5000
