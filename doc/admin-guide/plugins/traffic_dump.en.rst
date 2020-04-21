@@ -50,6 +50,10 @@ Plugin Configuration
 
    (`optional`) - a comma seperatated list of HTTP case-insensitive field names whose values are considered sensitive information. Traffic Dump will not dump the incoming field values for any of these fields but will instead dump a generic value for them of the same length as the original. If this option is not used, a default list of "Cookie,Set-Cookie" is used. Providing this option overwrites that default list with whatever values the user provides. Pass a quoted empty string as the argument to specify that no fields are sensitive,
 
+   .. option:: --sni-filter <SNI_Name>
+
+   (`optional`) - an SNI with which to filter sessions. Only HTTPS sessions with the provided SNI will be dumped. The sample option will apply a sampling rate to these filtered sessions. Thus, with a sample value of 2, 1/2 of all sessions with the specified SNI will be dumped.
+
 ``traffic_ctl`` <command>
    * ``traffic_ctl plugin msg traffic_dump.sample N`` - changes the sampling ratio N as mentioned above.
    * ``traffic_ctl plugin msg traffic_dump.reset`` - resets the disk usage counter.
