@@ -635,7 +635,7 @@ namespace details
 // allocate and initialize an extendible data structure
 template <typename Derived_t, typename... Args>
 Derived_t *
-create(Args... args)
+create(Args &&... args)
 {
   // don't instantiate until all Fields are finalized.
   ink_assert(ext::details::areFieldsFinalized());
@@ -647,7 +647,7 @@ create(Args... args)
   Derived_t *ptr = static_cast<Derived_t *>(ats_memalign(alignof(Derived_t), type_size));
 
   // construct (recursively super-to-sub class)
-  new (ptr) Derived_t(args...);
+  new (ptr) Derived_t(std::forward(args)...);
 
   // define extendible blocks start offsets (recursively super-to-sub class)
   details::initRecurseSuper(*ptr, uintptr_t(ptr) + sizeof(Derived_t));
