@@ -60,7 +60,7 @@
 static TSCont TxnHook;
 static TSCont InterceptHook;
 
-static int InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata);
+static int InterceptInterceptHook(TSCont contp, TSEvent event, void *edata);
 static int InterceptTxnHook(TSCont contp, TSEvent event, void *edata);
 
 // We are going to stream data between Traffic Server and an
@@ -266,7 +266,7 @@ InterceptTransferData(InterceptIO *from, InterceptIO *to)
 // starts with TS_EVENT_NET_ACCEPT, and then continues with
 // TSVConn events.
 static int
-InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
+InterceptInterceptHook(TSCont contp, TSEvent event, void *edata)
 {
   argument_type arg(edata);
 
@@ -514,7 +514,7 @@ InterceptTxnHook(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
     if (InterceptShouldInterceptRequest(arg.txn)) {
-      TSCont c = InterceptContCreate(InterceptInterceptionHook, TSMutexCreate(), arg.txn);
+      TSCont c = InterceptContCreate(InterceptInterceptHook, TSMutexCreate(), arg.txn);
 
       VDEBUG("intercepting origin server request for txn=%p, cont=%p", arg.txn, c);
       TSHttpTxnServerIntercept(c, arg.txn);
@@ -548,7 +548,7 @@ TSPluginInit(int /* argc */, const char * /* argv */[])
   // XXX accept hostname and port arguments
 
   TxnHook       = InterceptContCreate(InterceptTxnHook, nullptr, nullptr);
-  InterceptHook = InterceptContCreate(InterceptInterceptionHook, nullptr, nullptr);
+  InterceptHook = InterceptContCreate(InterceptInterceptHook, nullptr, nullptr);
 
   // Wait until after the cache lookup to decide whether to
   // intercept a request. For cache hits, we will never intercept.
