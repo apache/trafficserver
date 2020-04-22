@@ -161,10 +161,8 @@ public:
   int64_t read_vio_read_avail();
 
   uint8_t *header_blocks        = nullptr;
-  uint32_t header_blocks_length = 0;  // total length of header blocks (not include
-                                      // Padding or other fields)
-  uint32_t request_header_length = 0; // total length of payload (include Padding
-                                      // and other fields)
+  uint32_t header_blocks_length = 0; // total length of header blocks (not include Padding or other fields)
+
   bool recv_end_stream = false;
   bool send_end_stream = false;
 
