@@ -39,8 +39,15 @@ public:
     return _client_sni_server_name.get();
   }
 
+  bool
+  client_provided_certificate() const
+  {
+    return _client_provided_cert;
+  }
+
   void init(SSLNetVConnection const &new_vc);
 
 private:
   std::unique_ptr<char[]> _client_sni_server_name;
+  bool _client_provided_cert = false;
 };

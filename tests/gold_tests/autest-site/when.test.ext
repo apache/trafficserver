@@ -22,7 +22,6 @@ import hosts.output as host
 import os
 import re
 
-
 def FileContains(haystack, needle, desired_count=1):
     """
     Return whether the file haystack contains the string needle.
@@ -83,3 +82,13 @@ def FileContains(haystack, needle, desired_count=1):
 
 
 AddWhenFunction(FileContains)
+
+def SNIReloadDone(tsenv, diags_file):
+    cmd = "grep 'sni.yaml finished loading' {0} | wc -l  | sed -e 's/ //g'> ./test.out".format(diags_file)
+    retval = subprocess.run(cmd, shell=True, env=tsenv)
+    if retval.returncode == 0:
+        cmd ="if [ -f ./test.out -a \"`cat ./test.out`\" = \"2\" ] ; then true; else false; fi"
+        retval = subprocess.run(cmd, shell = True, env=tsenv)
+    return retval.returncode == 0
+
+AddWhenFunction(SNIReloadDone)

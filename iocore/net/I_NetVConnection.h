@@ -657,6 +657,18 @@ public:
     return nullptr;
   }
 
+  virtual bool
+  peer_provided_cert() const
+  {
+    return false;
+  }
+
+  virtual int
+  provided_cert() const
+  {
+    return 0;
+  }
+
   /** Structure holding user options. */
   NetVCOptions options;
 

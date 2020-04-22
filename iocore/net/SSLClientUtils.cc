@@ -138,6 +138,20 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   return true;
 }
 
+static int
+ssl_client_cert_callback(SSL *ssl, void * /*arg*/)
+{
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  SSL_CTX *ctx             = SSL_get_SSL_CTX(ssl);
+  if (ctx) {
+    // Do not need to free either the cert or the ssl_ctx
+    // both are internal pointers
+    X509 *cert = SSL_CTX_get0_certificate(ctx);
+    netvc->set_sent_cert(cert != nullptr ? 2 : 1);
+  }
+  return 1;
+}
+
 SSL_CTX *
 SSLInitClientContext(const SSLConfigParams *params)
 {
@@ -191,6 +205,8 @@ SSLInitClientContext(const SSLConfigParams *params)
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(client_ctx, false);
   }
+
+  SSL_CTX_set_cert_cb(client_ctx, ssl_client_cert_callback, nullptr);
 
   return client_ctx;
 

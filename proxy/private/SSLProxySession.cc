@@ -36,4 +36,5 @@ SSLProxySession::init(SSLNetVConnection const &new_vc)
     std::memcpy(n, name, length);
     _client_sni_server_name.reset(n);
   }
+  _client_provided_cert = new_vc.peer_provided_cert();
 }

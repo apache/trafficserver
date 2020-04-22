@@ -17,8 +17,6 @@ Test offering client cert to origin
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import subprocess
-
 Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
 '''
@@ -30,6 +28,7 @@ cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer("server", ssl=True, options = { "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-foo.pem".format(Test.RunDirectory), clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
 server2 = Test.MakeOriginServer("server2", ssl=True, options = { "--clientCA": cafile2, "--clientverify": ""}, clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory), clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
 server3 = Test.MakeOriginServer("server3")
+server4 = Test.MakeOriginServer("server4")
 server.Setup.Copy("ssl/signer.pem")
 server.Setup.Copy("ssl/signer2.pem")
 server.Setup.Copy("ssl/signed-foo.pem")
@@ -96,6 +95,18 @@ ts.Disk.sni_yaml.AddLine(
 ts.Disk.sni_yaml.AddLine(
     '  client_key: {0}/signed-bar.key'.format(ts.Variables.SSLDir))
 
+ts.Disk.logging_yaml.AddLines(
+'''
+logging:
+  formats:
+    - name: testformat
+      format: '%<pssc> %<cquc> %<pscert> %<cscert>'
+  logs:
+    - mode: ascii
+      format: testformat
+      filename: squid
+'''.split("\n")
+)
 
 # Should succeed
 tr = Test.AddTestRun("Connect with first client cert to first server")
@@ -170,20 +181,6 @@ tr2.Processes.Default.Command = 'echo Updated configs'
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
-# Parking this as a ready tester on a meaningless process
-# Stall the test runs until the sni reload has completed
-# At that point the new sni settings are ready to go
-def sni_reload_done(tsenv):
-  def done_reload(process, hasRunFor, **kw):
-    cmd = "grep 'sni.yaml finished loading' {0} | wc -l  | sed -e 's/ //g'> {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
-    retval = subprocess.run(cmd, shell=True, env=tsenv)
-    if retval.returncode == 0:
-      cmd ="if [ -f {0}/test.out -a \"`cat {0}/test.out`\" = \"2\" ] ; then true; else false; fi".format(Test.RunDirectory)
-      retval = subprocess.run(cmd, shell = True, env=tsenv)
-    return retval.returncode == 0
-
-  return done_reload
-
 tr2reload = Test.AddTestRun("Reload config")
 tr2reload.StillRunningAfter = ts
 tr2reload.StillRunningAfter = server
@@ -197,7 +194,7 @@ tr2reload.Processes.Default.ReturnCode = 0
 #Should succeed
 tr3bar = Test.AddTestRun("Make request with other bar cert to first server")
 # Wait for the reload to complete
-tr3bar.Processes.Default.StartBefore(server3, ready=sni_reload_done(ts.Env))
+tr3bar.Processes.Default.StartBefore(server3, ready=When.SNIReloadDone(ts.Env, ts.Disk.diags_log.Name))
 tr3bar.StillRunningAfter = ts
 tr3bar.StillRunningAfter = server
 tr3bar.StillRunningAfter = server2
@@ -293,3 +290,11 @@ tr4fail.StillRunningAfter = server2
 tr4fail.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/case2'.format(ts.Variables.port)
 tr4fail.Processes.Default.ReturnCode = 0
 tr4fail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
+
+tr = Test.AddTestRun("Wait for the access log to write out")
+tr.Processes.Default.StartBefore(server4, ready=When.FileExists(ts.Disk.squid_log))
+tr.StillRunningAfter = ts
+tr.Processes.Default.Command = 'echo "log file exists"'
+tr.Processes.Default.ReturnCode = 0
+
+ts.Disk.squid_log.Content = "gold/proxycert-accesslog.gold"
