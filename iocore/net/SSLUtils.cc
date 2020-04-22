@@ -376,12 +376,11 @@ static int
 PerformAction(Continuation *cont, const char *servername)
 {
   SNIConfig::scoped_config params;
-  const actionVector *actionvec = params->get(servername);
-  if (!actionvec) {
+  if (const auto &actions = params->get(servername); !actions.first) {
     Debug("ssl_sni", "%s not available in the map", servername);
   } else {
-    for (auto &&item : *actionvec) {
-      auto ret = item->SNIAction(cont);
+    for (auto &&item : *actions.first) {
+      auto ret = item->SNIAction(cont, actions.second);
       if (ret != SSL_TLSEXT_ERR_OK) {
         return ret;
       }
@@ -1405,7 +1404,9 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   std::set<std::string> common_names;
   std::unordered_map<int, std::set<std::string>> unique_names;
   SSLMultiCertConfigLoader::CertLoadData data;
+
   const SSLConfigParams *params = this->_params;
+
   this->load_certs_and_cross_reference_names(cert_list, data, params, sslMultCertSettings.get(), common_names, unique_names);
 
   int i = 0;
@@ -1920,8 +1921,15 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
 {
   SimpleTokenizer cert_tok(sslMultCertSettings && sslMultCertSettings->cert ? (const char *)sslMultCertSettings->cert : "",
                            SSL_CERT_SEPARATE_DELIM);
-  SimpleTokenizer key_tok((sslMultCertSettings && sslMultCertSettings->key ? (const char *)sslMultCertSettings->key : ""),
-                          SSL_CERT_SEPARATE_DELIM);
+
+  SimpleTokenizer key_tok(SSL_CERT_SEPARATE_DELIM);
+  if (sslMultCertSettings && sslMultCertSettings->key) {
+    key_tok.setString((const char *)sslMultCertSettings->key);
+  } else if (sslMultCertSettings && sslMultCertSettings->cert) {
+    key_tok.setString((const char *)sslMultCertSettings->cert);
+  } else {
+    key_tok.setString("");
+  }
 
   if (sslMultCertSettings && sslMultCertSettings->key && cert_tok.getNumTokensRemaining() != key_tok.getNumTokensRemaining()) {
     Error("the number of certificates in ssl_cert_name and ssl_key_name doesn't match");
@@ -2015,7 +2023,9 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
           name_set.insert(dns.get());
         }
       }
+      sk_GENERAL_NAME_pop_free(names, GENERAL_NAME_free);
     }
+
     if (first_pass) {
       first_pass   = false;
       common_names = name_set;

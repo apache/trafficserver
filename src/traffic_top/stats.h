@@ -131,14 +131,14 @@ public:
       make_pair("client_curr_conn_h1", LookupItem("Curr Conn HTTP/1.x", "proxy.process.http.current_client_connections", 1)));
     lookup_table.insert(
       make_pair("client_curr_conn_h2", LookupItem("Curr Conn HTTP/2", "proxy.process.http2.current_client_connections", 1)));
-    lookup_table.insert(make_pair("client_curr_conn", LookupItem("Curr Conn", "client_curr_conn_h1", "client_curr_conn_h2", 6)));
+    lookup_table.insert(make_pair("client_curr_conn", LookupItem("Curr Conn", "client_curr_conn_h1", "client_curr_conn_h2", 9)));
 
     // current_active_client_connections
     lookup_table.insert(make_pair("client_actv_conn_h1",
                                   LookupItem("Active Con HTTP/1.x", "proxy.process.http.current_active_client_connections", 1)));
     lookup_table.insert(make_pair("client_actv_conn_h2",
                                   LookupItem("Active Con HTTP/2", "proxy.process.http2.current_active_client_connections", 1)));
-    lookup_table.insert(make_pair("client_actv_conn", LookupItem("Active Con", "client_actv_conn_h1", "client_actv_conn_h2", 6)));
+    lookup_table.insert(make_pair("client_actv_conn", LookupItem("Active Con", "client_actv_conn_h1", "client_actv_conn_h2", 9)));
 
     lookup_table.insert(make_pair("server_req", LookupItem("Requests", "proxy.process.http.outgoing_requests", 2)));
     lookup_table.insert(make_pair("server_conn", LookupItem("New Conn", "proxy.process.http.total_server_connections", 2)));
@@ -396,6 +396,9 @@ public:
   void
   getStat(const string &key, double &value, string &prettyName, int &type, int overrideType = 0)
   {
+    // set default value
+    value = 0;
+
     map<string, LookupItem>::const_iterator lookup_it = lookup_table.find(key);
     assert(lookup_it != lookup_table.end());
     const LookupItem &item = lookup_it->second;
@@ -433,14 +436,22 @@ public:
         value *= 100;
       }
     } else if (type == 6 || type == 7) {
-      double numerator;
-      double denominator;
-      getStat(item.numerator, numerator, 2);
-      getStat(item.denominator, denominator, 2);
-      value = numerator + denominator;
+      // add rate
+      double first;
+      double second;
+      getStat(item.numerator, first, 2);
+      getStat(item.denominator, second, 2);
+      value = first + second;
       if (type == 7) {
         value *= 8;
       }
+    } else if (type == 9) {
+      // add
+      double first;
+      double second;
+      getStat(item.numerator, first);
+      getStat(item.denominator, second);
+      value = first + second;
     }
 
     if (type == 8) {

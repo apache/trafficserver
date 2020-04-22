@@ -7451,7 +7451,7 @@ TSStatFindName(const char *name, int *idp)
 
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
 
-  if (RecGetRecordOrderAndId(name, nullptr, &id) != REC_ERR_OKAY) {
+  if (RecGetRecordOrderAndId(name, nullptr, &id, true, true) != REC_ERR_OKAY) {
     return TS_ERROR;
   }
 
@@ -8756,6 +8756,11 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       } else {
         Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
       }
+    }
+    break;
+  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
+    if (value && length > 0) {
+      HttpConfig::load_server_session_sharing_match(value, s->t_state.my_txn_conf().server_session_sharing_match);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:

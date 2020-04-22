@@ -18,6 +18,16 @@
 
 set +x
 
+cd src
+
+if [ ! -z "$ghprbActualCommit" ]; then
+    git diff ${ghprbActualCommit}^...${ghprbActualCommit} --name-only | egrep -E '^(build|iocore|proxy|tests|include|mgmt|plugins|proxy|src)/' > /dev/null
+    if [ $? = 1 ]; then
+        echo "No relevant files changed, skipping run"
+        exit 0
+    fi
+fi
+
 # Set default encoding UTF-8 for AuTest
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
@@ -53,7 +63,6 @@ CURL=""
 [ "1" == "$disable_curl" ] && CURL="--disable-curl"
 
 mkdir -p ${INSTALL}
-cd src
 
 # The tests directory must exist (i.e. for older branches we don't run this)
 [ -d tests ] || exit 0

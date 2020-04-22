@@ -49,6 +49,7 @@ ATS_BRANCH=master
 
 test "${JOB_NAME#*-7.1.x}" != "${JOB_NAME}" && ATS_BRANCH=7.1.x
 test "${JOB_NAME#*-8.0.x}" != "${JOB_NAME}" && ATS_BRANCH=8.0.x
+test "${JOB_NAME#*-8.1.x}" != "${JOB_NAME}" && ATS_BRANCH=8.1.x
 test "${JOB_NAME#*-9.0.x}" != "${JOB_NAME}" && ATS_BRANCH=9.0.x
 test "${JOB_NAME#*-9.1.x}" != "${JOB_NAME}" && ATS_BRANCH=9.1.x
 test "${JOB_NAME#*-9.2.x}" != "${JOB_NAME}" && ATS_BRANCH=9.2.x
@@ -114,6 +115,10 @@ if [ "yes" == "$IS_DOCKER" ]; then
 else
     export ATS_BUILD_BASEDIR="${WORKSPACE}/${BUILD_NUMBER}"
 fi
+
+# ccache settings
+export CCACHE_BASEDIR=${ATS_BUILD_BASEDIR}
+#export CCACHE_COMPRESS=true
 
 # Restore verbose shell output
 set -x

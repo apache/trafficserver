@@ -111,7 +111,7 @@ public:
   bool private_session = false;
 
   // Copy of the owning SM's server session sharing settings
-  TSServerSessionSharingMatchType sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
+  TSServerSessionSharingMatchMask sharing_match = TS_SERVER_SESSION_SHARING_MATCH_MASK_NONE;
   TSServerSessionSharingPoolType sharing_pool   = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
 
   /// Hash map descriptor class for IP map.

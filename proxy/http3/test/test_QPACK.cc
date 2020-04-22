@@ -342,6 +342,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
   FILE *fd_out = fopen(out_file, "w");
   if (!fd_out) {
     std::cerr << "couldn't open file: " << out_file << std::endl;
+    fclose(fd_in);
     REQUIRE(false);
     return -1;
   }
@@ -380,6 +381,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
   }
 
   if (!feof(fd_in)) {
+    REQUIRE(false);
     return -1;
   }
 
@@ -395,7 +397,10 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
       delete header_sets[i];
     }
   }
-
+  fflush(fd_in);
+  fclose(fd_in);
+  fflush(fd_out);
+  fclose(fd_out);
   return ret;
 }
 

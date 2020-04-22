@@ -929,32 +929,29 @@ mptcp
    :overridable:
 
    Enable and set the ability to re-use server connections across client
-   connections. The valid values are:
+   connections. Multiple values can be specified when separated by commas with no white spaces. Valid values are:
 
-   ======== ===================================================================
-   Value    Description
-   ======== ===================================================================
-   ``none`` Do not match and do not re-use server sessions. If using this in
-            :ref:`ts-overridable-config` (like the :ref:`admin-plugins-conf-remap`),
-            use the integer ``0`` instead.
-   ``both`` Re-use server sessions, if *both* the IP address and fully qualified
-            domain name match. If using this in :ref:`ts-overridable-config` (like
-            the :ref:`admin-plugins-conf-remap`), use the integer ``1`` instead.
-   ``ip``   Re-use server sessions, checking only that the IP address and port
-            of the origin server matches. If using this in
-            :ref:`ts-overridable-config` (like the :ref:`admin-plugins-conf-remap`),
-            use the integer ``2`` instead.
-   ``host`` Re-use server sessions, checking only that the fully qualified
-            domain name matches. If using this in :ref:`ts-overridable-config`
-            (like the :ref:`admin-plugins-conf-remap`), use the integer ``3`` instead.
-   ======== ===================================================================
+   ============= ===================================================================
+   Value         Description
+   ============= ===================================================================
+   ``none``      Do not match and do not re-use server sessions.
+   ``ip``        Re-use server sessions, checking only that the IP address and port
+                 of the origin server matches.
+   ``host``      Re-use server sessions, checking that the fully qualified
+                 domain name matches. In addition, if the session uses TLS, it also
+                 checks that the current transaction's host header value matchs the session's SNI.
+   ``both``      Equivalent to ``host,ip``.
+   ``hostonly``  Check that the fully qualified domain name matches.
+   ``sni``       Check that the SNI of the session matches the SNI that would be used to
+                 create a new session.  Only applicable for TLS sessions.
+   ``cert``      Check that the certificate file name used for the server session matches the
+                 certificate file name that would be used for the new server session.  Only
+                 applicable for TLS sessions.
+   ============= ===================================================================
 
-   It is strongly recommended to use either ``none`` or ``both`` for this value
-   unless you have a specific need for the other settings. The most common
-   reason is virtual hosts that share an IP address in which case performance
-   can be enhanced if those sessions can be re-used. However, not all web
-   servers support requests for different virtual hosts on the same connection
-   so use with caution.
+   The setting must contain at least one of ``ip``, ``host``, ``hostonly`` or ``both``
+   for session reuse to operate.  The other values may be used for greater control
+   with TLS sessoin reuse.
 
 .. note::
 
@@ -3236,11 +3233,18 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 0
 
-   Enables (``1``) or disables (``0``) TLSv1.0.
+   Enables (``1``) or disables (``0``) TLSv1.0. If not specified, disabled by default.
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_1 INT 0
 
-   Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, enabled by default.  [Requires OpenSSL v1.0.1 and higher]
+   Enables (``1``) or disables (``0``) TLS v1.1.  If not specified, disabled by default.  [Requires OpenSSL v1.0.1 and higher]
+
+.. note::
+   In order to enable TLS v1 or v1.1, additional ciphers must be added to proxy.config.ssl.client.cipher_suite. For
+   example this list would restore the SHA1 (insecure!) cipher suites suitable for these deprecated TLS versions:
+
+   ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES128-SHA:AES256-SHA:AES128-SHA
+
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1_2 INT 1
 
@@ -3694,7 +3698,7 @@ HTTP/2 Configuration
    :ts:cv:`proxy.config.http2.min_concurrent_streams_in`.
    To disable, set to zero (``0``).
 
-.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 1048576
+.. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 65535
    :reloadable:
 
    The initial window size for inbound connections.
@@ -3823,7 +3827,6 @@ HTTP/2 Configuration
    Specifies the minimum average window increment |TS| allows. The average will be calculated based on the last 5 WINDOW_UPDATE frames.
    Clients that send smaller window increments lower than this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
-
 
 HTTP/3 Configuration
 ====================
@@ -4332,11 +4335,32 @@ Sockets
    For more information on the implications of enabling huge pages, see
    `Wikipedia <http://en.wikipedia.org/wiki/Page_%28computer_memory%29#Page_size_trade-off>_`.
 
+.. ts:cv:: CONFIG proxy.config.dump_mem_info_frequency INT 0
+   :reloadable:
+
+   Enable <value>. When enabled makes Traffic Server dump IO Buffer memory information
+   to ``traffic.out`` at ``<value>`` (intervals are in seconds). A zero value implies it is
+   disabled
+
+.. ts:cv:: CONFIG proxy.config.res_track_memory INT 0
+
+   When enabled makes Traffic Server track memory usage (allocations and releases). This
+   information is dumped  to ``traffic.out`` when the user sends a SIGUSR1 signal or
+   periodically when :ts:cv:`proxy.config.dump_mem_info_frequency` is enabled.
+
+   ===== ======================================================================
+   Value Description
+   ===== ======================================================================
+   ``0`` Memory tracking Disabled
+   ``1`` Tracks IO Buffer Memory allocations and releases
+   ``2`` Tracks IO Buffer Memory and OpenSSL Memory allocations and releases
+   ===== ======================================================================
+
 .. ts:cv:: CONFIG proxy.config.allocator.dontdump_iobuffers INT 1
 
-  Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
-  platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP
-  with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
+   Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
+   platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP
+   with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
 
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
 

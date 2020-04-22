@@ -213,6 +213,8 @@ struct NetVCOptions {
    */
   const char *ssl_client_ca_cert_path = nullptr;
 
+  bool tls_upstream = false;
+
   /// Reset all values to defaults.
 
   /**
@@ -645,6 +647,12 @@ public:
   support_sni() const
   {
     return false;
+  }
+
+  virtual const char *
+  get_sni_servername() const
+  {
+    return nullptr;
   }
 
   /** Structure holding user options. */

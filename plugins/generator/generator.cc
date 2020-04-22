@@ -80,7 +80,7 @@ static uint8_t GeneratorData[32 * 1024];
 static int StatCountBytes     = -1;
 static int StatCountResponses = -1;
 
-static int GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata);
+static int GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata);
 static int GeneratorTxnHook(TSCont contp, TSEvent event, void *edata);
 
 struct GeneratorRequest;
@@ -406,7 +406,7 @@ fail:
 // starts with TS_EVENT_NET_ACCEPT, and then continues with
 // TSVConn events.
 static int
-GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
+GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
 {
   argument_type arg(edata);
 
@@ -610,7 +610,7 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
     if (status != TS_CACHE_LOOKUP_HIT_FRESH) {
       // This transaction is going to be a cache miss, so intercept it.
       VDEBUG("intercepting origin server request for txn=%p", arg.txn);
-      TSHttpTxnServerIntercept(TSContCreate(GeneratorInterceptionHook, TSMutexCreate()), arg.txn);
+      TSHttpTxnServerIntercept(TSContCreate(GeneratorInterceptHook, TSMutexCreate()), arg.txn);
     }
 
     break;

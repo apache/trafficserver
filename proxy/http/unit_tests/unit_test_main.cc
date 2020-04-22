@@ -22,4 +22,9 @@
  */
 
 #define CATCH_CONFIG_MAIN
+
 #include "catch.hpp"
+
+#include "tscore/I_Version.h"
+
+AppVersionInfo appVersionInfo;

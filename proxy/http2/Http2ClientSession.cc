@@ -385,11 +385,9 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     break;
 
   case VC_EVENT_WRITE_READY:
-    retval = 0;
-    break;
-
   case VC_EVENT_WRITE_COMPLETE:
-    // Seems as this is being closed already
+    this->connection_state.restart_streams();
+
     retval = 0;
     break;
 
@@ -611,8 +609,8 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
       ip_port_text_buffer ipb;
       const char *client_ip = ats_ip_ntop(get_client_addr(), ipb, sizeof(ipb));
       Warning("HTTP/2 session error client_ip=%s session_id=%" PRId64
-              " closing a connection, because its stream error rate (%f) is too high",
-              client_ip, connection_id(), this->connection_state.get_stream_error_rate());
+              " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
+              client_ip, connection_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
       err = Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }
 
@@ -676,6 +674,12 @@ Http2ClientSession::_should_do_something_else()
 {
   // Do something else every 128 incoming frames
   return (this->_n_frame_read & 0x7F) == 0;
+}
+
+int64_t
+Http2ClientSession::write_avail()
+{
+  return this->write_buffer->write_avail();
 }
 
 NetVConnection *

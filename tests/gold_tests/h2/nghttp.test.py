@@ -78,7 +78,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = "nghttp -v --no-dep 'https://127.0.0.1:{0}/post' --trailer 'foo: bar' -d 'post_body'".format(
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(microserver)
-tr.Processes.Default.StartBefore(Test.Processes.ts)
+tr.Processes.Default.StartBefore(microserver, ready=When.PortOpen(microserver.Variables.Port))
+tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stdout = "gold/nghttp_0_stdout.gold"
 tr.StillRunningAfter = microserver

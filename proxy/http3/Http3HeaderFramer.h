@@ -55,6 +55,6 @@ private:
   HTTPParser _http_parser;
   HTTPHdr _header;
 
-  void _convert_header_from_1_1_to_3(HTTPHdr *h3_hdrs, HTTPHdr *h1_hdrs);
+  void _convert_header_from_1_1_to_3(HTTPHdr *hdrs);
   void _generate_header_block();
 };

@@ -39,6 +39,7 @@ enum class Http2SendDataFrameResult {
   NO_ERROR = 0,
   NO_WINDOW,
   NO_PAYLOAD,
+  NOT_WRITE_AVAIL,
   ERROR,
   DONE,
 };
@@ -134,6 +135,8 @@ public:
   void
   init()
   {
+    this->_server_rwnd = Http2::initial_window_size;
+
     local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
     remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
     if (Http2::stream_priority_enabled) {
@@ -190,7 +193,7 @@ public:
   bool delete_stream(Http2Stream *stream);
   void release_stream();
   void cleanup_streams();
-
+  void restart_receiving(Http2Stream *stream);
   void update_initial_rwnd(Http2WindowSize new_size);
 
   Http2StreamId
@@ -250,7 +253,8 @@ public:
   get_stream_error_rate() const
   {
     int total = get_stream_requests();
-    if (total > 0) {
+
+    if (total >= (1 / Http2::stream_error_rate_threshold)) {
       return (double)stream_error_count / (double)total;
     } else {
       return 0;
@@ -376,7 +380,7 @@ private:
 
   // Connection level window size
   ssize_t _client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
-  ssize_t _server_rwnd = Http2::initial_window_size;
+  ssize_t _server_rwnd = 0;
 
   std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index           = 0;

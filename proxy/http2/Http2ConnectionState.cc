@@ -28,6 +28,9 @@
 #include "Http2Frame.h"
 #include "Http2DebugNames.h"
 #include "HttpDebugNames.h"
+
+#include "tscpp/util/PostScript.h"
+
 #include <sstream>
 #include <numeric>
 
@@ -166,6 +169,12 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   cstate.decrement_server_rwnd(payload_length);
   stream->decrement_server_rwnd(payload_length);
 
+  if (is_debug_tag_set("http2_con")) {
+    uint32_t rwnd = cstate.server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+    Http2StreamDebug(cstate.ua_session, id, "Received DATA frame: rwnd con=%zd/%" PRId32 " stream=%zd/%" PRId32,
+                     cstate.server_rwnd(), rwnd, stream->server_rwnd(), rwnd);
+  }
+
   const uint32_t unpadded_length = payload_length - pad_length;
   MIOBuffer *writer              = stream->read_vio_writer();
   if (writer == nullptr) {
@@ -200,21 +209,6 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     stream->signal_read_event(VC_EVENT_READ_COMPLETE);
   } else {
     stream->signal_read_event(VC_EVENT_READ_READY);
-  }
-
-  uint32_t initial_rwnd = cstate.server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-  uint32_t min_rwnd     = std::min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
-  // Connection level WINDOW UPDATE
-  if (cstate.server_rwnd() <= min_rwnd) {
-    Http2WindowSize diff_size = initial_rwnd - cstate.server_rwnd();
-    cstate.increment_server_rwnd(diff_size);
-    cstate.send_window_update_frame(0, diff_size);
-  }
-  // Stream level WINDOW UPDATE
-  if (stream->server_rwnd() <= min_rwnd) {
-    Http2WindowSize diff_size = initial_rwnd - stream->server_rwnd();
-    stream->increment_server_rwnd(diff_size);
-    cstate.send_window_update_frame(stream->get_id(), diff_size);
   }
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -1289,6 +1283,35 @@ Http2ConnectionState::restart_streams()
 }
 
 void
+Http2ConnectionState::restart_receiving(Http2Stream *stream)
+{
+  uint32_t initial_rwnd = this->server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+  uint32_t min_rwnd     = std::min(initial_rwnd, this->server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
+
+  // Connection level WINDOW UPDATE
+  if (this->server_rwnd() < min_rwnd) {
+    Http2WindowSize diff_size = initial_rwnd - this->server_rwnd();
+    this->increment_server_rwnd(diff_size);
+    this->send_window_update_frame(0, diff_size);
+  }
+
+  // Stream level WINDOW UPDATE
+  if (stream == nullptr || stream->server_rwnd() >= min_rwnd) {
+    return;
+  }
+
+  // If read_vio is buffering data, do not fully update window
+  int64_t data_size = stream->read_vio_read_avail();
+  if (data_size >= initial_rwnd) {
+    return;
+  }
+
+  Http2WindowSize diff_size = initial_rwnd - std::max(static_cast<int64_t>(stream->server_rwnd()), data_size);
+  stream->increment_server_rwnd(diff_size);
+  this->send_window_update_frame(stream->get_id(), diff_size);
+}
+
+void
 Http2ConnectionState::cleanup_streams()
 {
   Http2Stream *s = stream_list.head;
@@ -1497,6 +1520,11 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return Http2SendDataFrameResult::ERROR;
   }
 
+  if (this->ua_session->write_avail() == 0) {
+    Http2StreamDebug(this->ua_session, stream->get_id(), "Not write avail");
+    return Http2SendDataFrameResult::NOT_WRITE_AVAIL;
+  }
+
   // Select appropriate payload length
   if (resp_reader->is_read_avail_more_than(0)) {
     // We only need to check for window size when there is a payload
@@ -1589,25 +1617,22 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   uint32_t header_blocks_size = 0;
   int payload_length          = 0;
   uint8_t flags               = 0x00;
-  HTTPHdr *resp_header        = &stream->response_header;
 
   Http2StreamDebug(ua_session, stream->get_id(), "Send HEADERS frame");
 
-  HTTPHdr h2_hdr;
-  http2_generate_h2_header_from_1_1(resp_header, &h2_hdr);
+  HTTPHdr *resp_hdr = &stream->response_header;
+  http2_convert_header_from_1_1_to_2(resp_hdr);
 
-  buf_len = resp_header->length_get() * 2; // Make it double just in case
+  buf_len = resp_hdr->length_get() * 2; // Make it double just in case
   buf     = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
-    h2_hdr.destroy();
     return;
   }
 
   stream->mark_milestone(Http2StreamMilestone::START_ENCODE_HEADERS);
-  Http2ErrorCode result = http2_encode_header_blocks(&h2_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
+  Http2ErrorCode result = http2_encode_header_blocks(resp_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
                                                      client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
-    h2_hdr.destroy();
     ats_free(buf);
     return;
   }
@@ -1616,8 +1641,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
     payload_length = header_blocks_size;
     flags |= HTTP2_FLAGS_HEADERS_END_HEADERS;
-    if ((h2_hdr.presence(MIME_PRESENCE_CONTENT_LENGTH) && h2_hdr.get_content_length() == 0) ||
-        (!resp_header->expect_final_response() && stream->is_write_vio_done())) {
+    if ((resp_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) && resp_hdr->get_content_length() == 0) ||
+        (!resp_hdr->expect_final_response() && stream->is_write_vio_done())) {
       Http2StreamDebug(ua_session, stream->get_id(), "END_STREAM");
       flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
       stream->send_end_stream = true;
@@ -1635,7 +1660,6 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
       fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
     }
 
-    h2_hdr.destroy();
     ats_free(buf);
     return;
   }
@@ -1660,14 +1684,12 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     sent += payload_length;
   }
 
-  h2_hdr.destroy();
   ats_free(buf);
 }
 
 bool
 Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding)
 {
-  HTTPHdr h1_hdr, h2_hdr;
   uint8_t *buf                = nullptr;
   uint32_t buf_len            = 0;
   uint32_t header_blocks_size = 0;
@@ -1680,37 +1702,35 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   Http2StreamDebug(ua_session, stream->get_id(), "Send PUSH_PROMISE frame");
 
-  h1_hdr.create(HTTP_TYPE_REQUEST);
-  h1_hdr.url_set(&url);
-  h1_hdr.method_set("GET", 3);
+  HTTPHdr hdr;
+  ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+  hdr.create(HTTP_TYPE_REQUEST);
+  http2_init_pseudo_headers(hdr);
+  hdr.url_set(&url);
+  hdr.method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+
   if (accept_encoding != nullptr) {
-    MIMEField *f;
-    const char *name;
     int name_len;
-    const char *value;
+    const char *name = accept_encoding->name_get(&name_len);
+    MIMEField *f     = hdr.field_create(name, name_len);
+
     int value_len;
+    const char *value = accept_encoding->value_get(&value_len);
+    f->value_set(hdr.m_heap, hdr.m_mime, value, value_len);
 
-    name  = accept_encoding->name_get(&name_len);
-    f     = h1_hdr.field_create(name, name_len);
-    value = accept_encoding->value_get(&value_len);
-    f->value_set(h1_hdr.m_heap, h1_hdr.m_mime, value, value_len);
-
-    h1_hdr.field_attach(f);
+    hdr.field_attach(f);
   }
 
-  http2_generate_h2_header_from_1_1(&h1_hdr, &h2_hdr);
+  http2_convert_header_from_1_1_to_2(&hdr);
 
-  buf_len = h1_hdr.length_get() * 2; // Make it double just in case
-  h1_hdr.destroy();
-  buf = static_cast<uint8_t *>(ats_malloc(buf_len));
+  buf_len = hdr.length_get() * 2; // Make it double just in case
+  buf     = static_cast<uint8_t *>(ats_malloc(buf_len));
   if (buf == nullptr) {
-    h2_hdr.destroy();
     return false;
   }
-  Http2ErrorCode result = http2_encode_header_blocks(&h2_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
+  Http2ErrorCode result = http2_encode_header_blocks(&hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
                                                      client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
-    h2_hdr.destroy();
     ats_free(buf);
     return false;
   }
@@ -1752,7 +1772,6 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   Http2Error error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   stream = this->create_stream(id, error);
   if (!stream) {
-    h2_hdr.destroy();
     return false;
   }
 
@@ -1771,11 +1790,10 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     }
   }
   stream->change_state(HTTP2_FRAME_TYPE_PUSH_PROMISE, HTTP2_FLAGS_PUSH_PROMISE_END_HEADERS);
-  stream->set_request_headers(h2_hdr);
+  stream->set_request_headers(hdr);
   stream->new_transaction();
   stream->send_request(*this);
 
-  h2_hdr.destroy();
   return true;
 }
 
@@ -1872,7 +1890,7 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 void
 Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
 {
-  Http2StreamDebug(ua_session, id, "Send WINDOW_UPDATE frame");
+  Http2StreamDebug(ua_session, id, "Send WINDOW_UPDATE frame: size=%" PRIu32, size);
 
   // Create WINDOW_UPDATE frame
   Http2WindowUpdateFrame window_update(id, size);

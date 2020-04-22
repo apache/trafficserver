@@ -31,23 +31,66 @@
 #include <cerrno>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <openssl/ssl.h>
 
+#include <algorithm>
 #include <sstream>
 #include <iomanip>
 #include <chrono>
 #include <atomic>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 #include "tscore/ts_file.h"
+#include "tscpp/util/TextView.h"
 #include "ts/ts.h"
 
 namespace
 {
 const char *PLUGIN_NAME   = "traffic_dump";
 const std::string closing = "]}]}";
+uint64_t session_counter  = 0;
+
+std::string defaut_sensitive_field_value;
+
+// A case-insensitive comparitor used for comparing HTTP field names.
+struct InsensitiveCompare {
+  bool
+  operator()(std::string_view a, std::string_view b) const
+  {
+    return strcasecmp(a, b) == 0;
+  }
+};
+
+struct StringHashByLower {
+public:
+  size_t
+  operator()(const std::string &str) const
+  {
+    std::string lower;
+    std::transform(str.begin(), str.end(), lower.begin(), [](unsigned char c) -> unsigned char { return std::tolower(c); });
+    return std::hash<std::string>()(lower);
+  }
+};
+
+/// Fields considered sensitive because they may contain user-private
+/// information. These fields are replaced with auto-generated generic content
+/// by default. To turn off this behavior, the user should add the
+/// --promiscuous-mode flag as a commandline argument.
+///
+/// While these are specified with case, they are matched case-insensitively.
+std::unordered_set<std::string, StringHashByLower, InsensitiveCompare> default_sensitive_fields = {
+  "Set-Cookie",
+  "Cookie",
+};
+
+/// The set of fields, default and user-specified, that are sensitive and whose
+/// values will be replaced with auto-generated generic content.
+std::unordered_set<std::string, StringHashByLower, InsensitiveCompare> sensitive_fields;
 
 ts::file::path log_path{"dump"};               // default log directory
+std::string sni_filter;                        // The SNI requested for filtering against.
 int s_arg_idx = 0;                             // Session Arg Index to pass on session data
 std::atomic<int64_t> sample_pool_size(1000);   // Sampling ratio
 std::atomic<int64_t> max_disk_usage(10000000); //< Max disk space for logs (approximate)
@@ -183,10 +226,10 @@ esc_json_out(const char *buf, int64_t len, std::ostream &jsonfile)
 
 /// escape_json(): escape chars in a string and returns json string
 std::string
-escape_json(std::string const &s)
+escape_json(std::string_view s)
 {
   std::ostringstream o;
-  esc_json_out(s.c_str(), s.length(), o);
+  esc_json_out(s.data(), s.length(), o);
   return o.str();
 }
 std::string
@@ -205,9 +248,9 @@ json_entry(std::string const &name, const char *value, int64_t size)
 
 /// json_entry_array(): Formats to array-style entry i.e. ["field","value"]
 inline std::string
-json_entry_array(const char *name, int name_len, const char *value, int value_len)
+json_entry_array(std::string_view name, std::string_view value)
 {
-  return "[\"" + escape_json(name, name_len) + "\", \"" + escape_json(value, value_len) + "\"]";
+  return "[\"" + escape_json(name) + "\", \"" + escape_json(value) + "\"]";
 }
 
 /** Remove the scheme prefix from the url.
@@ -234,6 +277,49 @@ std::string
 write_content_node(int64_t num_body_bytes)
 {
   return std::string(R"(,"content":{"encoding":"plain","size":)" + std::to_string(num_body_bytes) + '}');
+}
+
+/** Initialize the generic sensitive field to be dumped. This is used instead
+ * of the sensitive field values seen on the wire.
+ */
+void
+initialize_default_sensitive_field()
+{
+  // 128 KB is the maximum size supported for all headers, so this size should
+  // be plenty large for our needs.
+  constexpr size_t default_field_size = 128 * 1024;
+  defaut_sensitive_field_value.resize(default_field_size);
+
+  char *field_buffer = defaut_sensitive_field_value.data();
+  for (auto i = 0u; i < default_field_size; i += 8) {
+    sprintf(field_buffer, "%07x ", i / 8);
+    field_buffer += 8;
+  }
+}
+
+/** Inspect the field to see whether it is sensitive and return a generic value
+ * of equal size to the original if it is.
+ *
+ * @param[in] name The field name to inspect.
+ * @param[in] original_value The field value to inspect.
+ *
+ * @return The value traffic_dump should dump for the given field.
+ */
+std::string_view
+replace_sensitive_fields(std::string_view name, std::string_view original_value)
+{
+  auto search = sensitive_fields.find(std::string(name));
+  if (search == sensitive_fields.end()) {
+    return original_value;
+  }
+  auto new_value_size = original_value.size();
+  if (original_value.size() > defaut_sensitive_field_value.size()) {
+    new_value_size = defaut_sensitive_field_value.size();
+    TSError("[%s] Encountered a sensitive field value larger than our default "
+            "field size. Default size: %zu, incoming field size: %zu",
+            PLUGIN_NAME, defaut_sensitive_field_value.size(), original_value.size());
+  }
+  return std::string_view{defaut_sensitive_field_value.data(), new_value_size};
 }
 
 /// Read the txn information from TSMBuffer and write the header information.
@@ -302,8 +388,11 @@ write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_loc)
     int name_len = 0, value_len = 0;
     // Append to "fields" list if valid value exists
     if ((name = TSMimeHdrFieldNameGet(buffer, hdr_loc, field_loc, &name_len)) && name_len) {
+      std::string_view name_view{name, static_cast<size_t>(name_len)};
       value = TSMimeHdrFieldValueStringGet(buffer, hdr_loc, field_loc, -1, &value_len);
-      result += json_entry_array(name, name_len, value, value_len);
+      std::string_view value_view{value, static_cast<size_t>(value_len)};
+      std::string_view new_value = replace_sensitive_fields(name_view, value_view);
+      result += json_entry_array(name_view, new_value);
     }
 
     next_field_loc = TSMimeHdrFieldNext(buffer, hdr_loc, field_loc);
@@ -391,6 +480,7 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
     // Get UUID
     char uuid[TS_CRUUID_STRING_LEN + 1];
     TSAssert(TS_SUCCESS == TSClientRequestUuidGet(txnp, uuid));
+    std::string_view uuid_view{uuid, strnlen(uuid, TS_CRUUID_STRING_LEN)};
 
     // Generate per transaction json records
     if (!ssnData->first) {
@@ -408,7 +498,7 @@ session_txn_handler(TSCont contp, TSEvent event, void *edata)
     // The uuid is a header field for each message in the transaction. Use the
     // "all" node to apply to each message.
     std::string_view name = "uuid";
-    txn_info += ",\"all\":{\"headers\":{\"fields\":[" + json_entry_array(name.data(), name.size(), uuid, strlen(uuid));
+    txn_info += ",\"all\":{\"headers\":{\"fields\":[" + json_entry_array(name, uuid_view);
     txn_info += "]}}";
     ssnData->write_to_disk(txn_info);
     break;
@@ -511,9 +601,29 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     return TS_SUCCESS;
   }
   case TS_EVENT_HTTP_SSN_START: {
-    // Grab session id to do sampling
+    // Grab session id for logging against a global value rather than the local
+    // session_counter.
     int64_t id = TSHttpSsnIdGet(ssnp);
-    if (id % sample_pool_size != 0) {
+
+    // If the user has asked for SNI filtering, filter on that first because
+    // any sampling will apply just to that subset of connections that match
+    // that SNI.
+    if (!sni_filter.empty()) {
+      TSVConn ssn_vc           = TSHttpSsnClientVConnGet(ssnp);
+      TSSslConnection ssl_conn = TSVConnSslConnectionGet(ssn_vc);
+      SSL *ssl_obj             = (SSL *)ssl_conn;
+      if (ssl_obj == nullptr) {
+        TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore non-HTTPS session %" PRId64 "...", id);
+        break;
+      }
+      const std::string sni = SSL_get_servername(ssl_obj, TLSEXT_NAMETYPE_host_name);
+      if (sni != sni_filter) {
+        TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore HTTPS session with non-filtered SNI: %s", sni.c_str());
+        break;
+      }
+    }
+    const auto this_session_count = session_counter++;
+    if (this_session_count % sample_pool_size != 0) {
       TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore session %" PRId64 "...", id);
       break;
     } else if (disk_usage >= max_disk_usage) {
@@ -546,10 +656,10 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     std::string beginning = R"({"meta":{"version":"1.0"},"sessions":[{"protocol":[)" + result + "]" + R"(,"connection-time":)" +
                             std::to_string(start.count()) + R"(,"transactions":[)";
 
-    // Grab session id and use its hex string as fname
+    // Use the session count's hex string as the filename.
     std::stringstream stream;
-    stream << std::setw(16) << std::setfill('0') << std::hex << id;
-    std::string session_id = stream.str();
+    stream << std::setw(16) << std::setfill('0') << std::hex << this_session_count;
+    std::string session_hex_name = stream.str();
 
     // Use client ip as sub directory name
     char client_str[INET6_ADDRSTRLEN];
@@ -567,7 +677,7 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     TSMutexLock(ssnData->disk_io_mutex);
     if (ssnData->log_fd < 0) {
       ts::file::path log_p = log_path / ts::file::path(std::string(client_str, 3));
-      ts::file::path log_f = log_p / ts::file::path(session_id);
+      ts::file::path log_f = log_p / ts::file::path(session_hex_name);
 
       // Create subdir if not existing
       std::error_code ec;
@@ -596,7 +706,7 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
     break;
   }
   case TS_EVENT_HTTP_SSN_CLOSE: {
-    // Write session and log file closing
+    // Write session and close the log file.
     int64_t id = TSHttpSsnIdGet(ssnp);
     TSDebug(PLUGIN_NAME, "global_ssn_handler(): Closing session %" PRId64 "...", id);
     // Retrieve SsnData
@@ -633,15 +743,43 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
+  bool sensitive_fields_were_specified = false;
   /// Commandline options
-  static const struct option longopts[] = {{"logdir", required_argument, nullptr, 'l'},
-                                           {"sample", required_argument, nullptr, 's'},
-                                           {"limit", required_argument, nullptr, 'm'},
-                                           {nullptr, no_argument, nullptr, 0}};
-  int opt                               = 0;
+  static const struct option longopts[] = {
+    {"logdir", required_argument, nullptr, 'l'},     {"sample", required_argument, nullptr, 's'},
+    {"limit", required_argument, nullptr, 'm'},      {"sensitive-fields", required_argument, nullptr, 'f'},
+    {"sni-filter", required_argument, nullptr, 'n'}, {nullptr, no_argument, nullptr, 0}};
+  int opt = 0;
   while (opt >= 0) {
     opt = getopt_long(argc, const_cast<char *const *>(argv), "l:", longopts, nullptr);
     switch (opt) {
+    case 'f': {
+      // --sensitive-fields takes a comma-separated list of HTTP fields that
+      // are sensitive.  The field values for these fields will be replaced
+      // with generic traffic_dump generated data.
+      //
+      // If this option is not used, then the default values in
+      // default_sensitive_fields is used. If this option is used, then it
+      // replaced the default sensitive fields with the user-supplied list of
+      // sensitive fields.
+      sensitive_fields_were_specified = true;
+      ts::TextView input_filter_fields{std::string_view{optarg}};
+      ts::TextView filter_field;
+      while (!(filter_field = input_filter_fields.take_prefix_at(',')).empty()) {
+        filter_field.trim_if(&isspace);
+        if (filter_field.empty()) {
+          continue;
+        }
+        sensitive_fields.emplace(filter_field);
+      }
+      break;
+    }
+    case 'n': {
+      // --sni-filter is used to filter sessions based upon an SNI.
+      sni_filter = std::string(optarg);
+      TSDebug(PLUGIN_NAME, "Filtering to only dump connections with SNI: %s", sni_filter.c_str());
+      break;
+    }
     case 'l': {
       log_path = ts::file::path{optarg};
       break;
@@ -664,6 +802,23 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
+  if (!sensitive_fields_were_specified) {
+    // The user did not provide their own list of sensitive fields. Use the
+    // default.
+    sensitive_fields.merge(default_sensitive_fields);
+  }
+
+  std::string sensitive_fields_string;
+  bool is_first = true;
+  for (const auto &field : sensitive_fields) {
+    if (!is_first) {
+      sensitive_fields_string += ", ";
+    }
+    is_first = false;
+    sensitive_fields_string += field;
+  }
+  TSDebug(PLUGIN_NAME, "Sensitive fields for which generic values will be dumped: %s", sensitive_fields_string.c_str());
+
   // Make absolute path if not
   if (!log_path.is_absolute()) {
     log_path = ts::file::path(TSInstallDirGet()) / log_path;
@@ -675,6 +830,8 @@ TSPluginInit(int argc, const char *argv[])
   } else if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_SSN, PLUGIN_NAME, "Track log related data", &s_arg_idx)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve ssn arg.", PLUGIN_NAME);
   } else {
+    initialize_default_sensitive_field();
+
     /// Add global hooks
     TSCont ssncont = TSContCreate(global_ssn_handler, nullptr);
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, ssncont);

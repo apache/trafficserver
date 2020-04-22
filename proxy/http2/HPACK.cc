@@ -463,6 +463,7 @@ HpackDynamicTable::_mime_hdr_gc()
   } else {
     if (this->_mhdr_old->fields_count() == 0) {
       this->_mhdr_old->destroy();
+      delete this->_mhdr_old;
       this->_mhdr_old = nullptr;
     }
   }
