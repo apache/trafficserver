@@ -34,7 +34,7 @@
 
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
 // and used (read) from several binaries / modules.
-int max_records_entries = REC_INTERNAL_RECORDS + REC_MIN_API_RECORDS;
+int max_records_entries = REC_INTERNAL_RECORDS + REC_DEFAULT_API_RECORDS;
 
 static bool g_initialized = false;
 
