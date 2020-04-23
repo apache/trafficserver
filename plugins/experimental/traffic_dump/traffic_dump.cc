@@ -616,10 +616,16 @@ global_ssn_handler(TSCont contp, TSEvent event, void *edata)
         TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore non-HTTPS session %" PRId64 "...", id);
         break;
       }
-      const std::string sni = SSL_get_servername(ssl_obj, TLSEXT_NAMETYPE_host_name);
-      if (sni != sni_filter) {
-        TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore HTTPS session with non-filtered SNI: %s", sni.c_str());
+      const char *sni_ptr = SSL_get_servername(ssl_obj, TLSEXT_NAMETYPE_host_name);
+      if (sni_ptr == nullptr) {
+        TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore HTTPS session with non-existent SNI.");
         break;
+      } else {
+        const std::string sni{sni_ptr};
+        if (sni != sni_filter) {
+          TSDebug(PLUGIN_NAME, "global_ssn_handler(): Ignore HTTPS session with non-filtered SNI: %s", sni.c_str());
+          break;
+        }
       }
     }
     const auto this_session_count = session_counter++;
