@@ -66,21 +66,23 @@ ts.Disk.records_config.update({
 
 })
 ts.Disk.logging_yaml.AddLines(
-    '''
+'''
 formats:
-  # Extended Log Format.
   - name: access
-    format: |-
-[%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>
+    format: '[%<cqtn>] %<cqtx> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>'
 
 logs:
   - filename: access
     format: access
-}
 '''.split("\n")
 )
 
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'access.log'), exists=True, content='gold/httpbin_access.gold')
+
+# TODO: when httpbin 0.8.0 or later is released, remove below json pretty print hack
+json_printer = '''
+python -c "import sys,json; print(json.dumps(json.load(sys.stdin), indent=2, separators=(',', ': ')))"
+'''
 
 # ----
 # Test Cases
@@ -88,7 +90,7 @@ Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'access.log'), exists=True, con
 
 # Test Case 0: Basic request and resposne
 test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/get'.format(ts.Variables.ssl_port)
+test_run.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/get | {1}'.format(ts.Variables.ssl_port, json_printer)
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 test_run.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
