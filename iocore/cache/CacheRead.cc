@@ -722,6 +722,35 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       key.toHexStr(target_key_str);
       Debug("cache_seek", "Read # %d @ %" PRId64 "/%d for %" PRId64, fragment, doc_pos, doc->len, bytes);
     }
+
+    // This shouldn't happen for HTTP assets but it does
+    // occasionally in production. This is a temporary fix
+    // to clean up broken objects until the root cause can
+    // be found. It must be the case that either the fragment
+    // offsets are incorrect or a fragment table isn't being
+    // created when it should be.
+    if (frag_type == CACHE_FRAG_TYPE_HTTP && bytes < 0) {
+      char xt[CRYPTO_HEX_SIZE];
+      char yt[CRYPTO_HEX_SIZE];
+
+      int url_length       = 0;
+      char const *url_text = nullptr;
+      if (request.valid()) {
+        url_text = request.url_get()->string_get_ref(&url_length);
+      }
+
+      int64_t prev_frag_size = 0;
+      if (fragment && frags) {
+        prev_frag_size = static_cast<int64_t>(frags[fragment - 1]);
+      }
+
+      Warning("cache_seek range request bug: read %s targ %s - %s frag # %d (prev_frag %" PRId64 ") @ %" PRId64 "/%d for %" PRId64
+              " tot %" PRId64 " url '%.*s'",
+              doc->key.toHexStr(xt), key.toHexStr(yt), f.single_fragment ? "single" : "multi", fragment, prev_frag_size, doc_pos,
+              doc->len, bytes, doc->total_len, url_length, url_text);
+
+      goto Lerror;
+    }
   }
   if (ntodo <= 0) {
     return EVENT_CONT;
