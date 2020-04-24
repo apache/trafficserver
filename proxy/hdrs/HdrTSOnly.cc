@@ -59,6 +59,11 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
   ParseResult state = PARSE_RESULT_CONT;
   *bytes_used       = 0;
 
+  // FIXME: r maybe no has IObufferBlock object
+  if (r->get_current_block() == nullptr and eof) {
+    return PARSE_RESULT_ERROR;
+  }
+
   do {
     int64_t b_avail = r->block_read_avail();
 
@@ -99,6 +104,11 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
 
   ParseResult state = PARSE_RESULT_CONT;
   *bytes_used       = 0;
+
+  // FIXME: r maybe no has IOBufferBlock object
+  if (r->get_current_block() == nullptr and eof) {
+    return PARSE_RESULT_ERROR;
+  }
 
   do {
     int64_t b_avail = r->block_read_avail();

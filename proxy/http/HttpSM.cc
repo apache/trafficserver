@@ -1907,6 +1907,11 @@ HttpSM::state_read_server_response_header(int event, void *data)
   case VC_EVENT_EOS:
     server_entry->eos = true;
 
+    if (vio->ndone == 0) {
+      handle_server_setup_error(event, data);
+      return 0;
+    }
+
   // Fall through
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
