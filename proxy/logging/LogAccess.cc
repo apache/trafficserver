@@ -2640,8 +2640,7 @@ LogAccess::marshal_cache_read_retries(char *buf)
   if (buf) {
     int64_t id = 0;
     if (m_http_sm) {
-      HttpCacheSM csm = m_http_sm->get_cache_sm();
-      id              = csm.get_open_read_tries();
+      id = m_http_sm->get_cache_sm().get_open_read_tries();
     }
     marshal_int(buf, id);
   }
@@ -2657,8 +2656,7 @@ LogAccess::marshal_cache_write_retries(char *buf)
   if (buf) {
     int64_t id = 0;
     if (m_http_sm) {
-      HttpCacheSM csm = m_http_sm->get_cache_sm();
-      id              = csm.get_open_write_tries();
+      id = m_http_sm->get_cache_sm().get_open_write_tries();
     }
     marshal_int(buf, id);
   }
@@ -2671,9 +2669,8 @@ LogAccess::marshal_cache_collapsed_connection_success(char *buf)
   if (buf) {
     int64_t id = 0;
     if (m_http_sm) {
-      HttpCacheSM csm   = m_http_sm->get_cache_sm();
       SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
-      if ((csm.get_open_write_tries() == (m_http_sm->t_state.txn_conf->max_cache_open_write_retries + 1)) &&
+      if ((m_http_sm->get_cache_sm().get_open_write_tries() == (m_http_sm->t_state.txn_conf->max_cache_open_write_retries + 1)) &&
           ((code == SQUID_LOG_TCP_HIT) || (code == SQUID_LOG_TCP_MEM_HIT) || (code == SQUID_LOG_TCP_DISK_HIT))) {
         id = 1;
       }
