@@ -376,11 +376,11 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     this->set_dying_event(event);
-    this->do_io_close();
     if (client_vc != nullptr) {
       client_vc->do_io_close();
       client_vc = nullptr;
     }
+    this->do_io_close();
     retval = 0;
     break;
 
