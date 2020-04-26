@@ -232,6 +232,7 @@ tsapi const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
 tsapi const char *TS_MIME_FIELD_XREF;
 tsapi const char *TS_MIME_FIELD_X_FORWARDED_FOR;
 tsapi const char *TS_MIME_FIELD_FORWARDED;
+tsapi const char *TS_MIME_FIELD_ALT_SVC;
 
 /* MIME fields string lengths */
 tsapi int TS_MIME_LEN_ACCEPT;
@@ -307,6 +308,7 @@ tsapi int TS_MIME_LEN_WWW_AUTHENTICATE;
 tsapi int TS_MIME_LEN_XREF;
 tsapi int TS_MIME_LEN_X_FORWARDED_FOR;
 tsapi int TS_MIME_LEN_FORWARDED;
+tsapi int TS_MIME_LEN_ALT_SVC;
 
 /* HTTP miscellaneous values */
 tsapi const char *TS_HTTP_VALUE_BYTES;
@@ -1618,6 +1620,7 @@ api_init()
     TS_MIME_FIELD_XREF                      = MIME_FIELD_XREF;
     TS_MIME_FIELD_X_FORWARDED_FOR           = MIME_FIELD_X_FORWARDED_FOR;
     TS_MIME_FIELD_FORWARDED                 = MIME_FIELD_FORWARDED;
+    TS_MIME_FIELD_ALT_SVC                   = MIME_FIELD_ALT_SVC;
 
     TS_MIME_LEN_ACCEPT                    = MIME_LEN_ACCEPT;
     TS_MIME_LEN_ACCEPT_CHARSET            = MIME_LEN_ACCEPT_CHARSET;
@@ -1692,6 +1695,7 @@ api_init()
     TS_MIME_LEN_XREF                      = MIME_LEN_XREF;
     TS_MIME_LEN_X_FORWARDED_FOR           = MIME_LEN_X_FORWARDED_FOR;
     TS_MIME_LEN_FORWARDED                 = MIME_LEN_FORWARDED;
+    TS_MIME_LEN_ALT_SVC                   = MIME_LEN_ALT_SVC;
 
     /* HTTP methods */
     TS_HTTP_METHOD_CONNECT = HTTP_METHOD_CONNECT;

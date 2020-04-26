@@ -1073,6 +1073,7 @@ extern tsapi const char *TS_MIME_FIELD_WWW_AUTHENTICATE;
 extern tsapi const char *TS_MIME_FIELD_XREF;
 extern tsapi const char *TS_MIME_FIELD_X_FORWARDED_FOR;
 extern tsapi const char *TS_MIME_FIELD_FORWARDED;
+extern tsapi const char *TS_MIME_FIELD_ALT_SVC;
 
 /* --------------------------------------------------------------------------
    MIME fields string lengths */
@@ -1149,6 +1150,7 @@ extern tsapi int TS_MIME_LEN_WWW_AUTHENTICATE;
 extern tsapi int TS_MIME_LEN_XREF;
 extern tsapi int TS_MIME_LEN_X_FORWARDED_FOR;
 extern tsapi int TS_MIME_LEN_FORWARDED;
+extern tsapi int TS_MIME_LEN_ALT_SVC;
 
 /* --------------------------------------------------------------------------
    HTTP values */

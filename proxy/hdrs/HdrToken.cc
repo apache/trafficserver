@@ -113,7 +113,10 @@ static const char *_hdrtoken_strs[] = {
   "Forwarded",
 
   // RFC-8470
-  "Early-Data"};
+  "Early-Data",
+
+  // RFC-7838
+  "Alt-Svc"};
 
 static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file", HDRTOKEN_TYPE_SCHEME},
@@ -241,6 +244,7 @@ static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Forwarded", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Sec-WebSocket-Key", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {"Sec-WebSocket-Version", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
+  {"Alt-Svc", MIME_SLOTID_NONE, MIME_PRESENCE_NONE, HTIF_NONE},
   {nullptr, 0, 0, 0},
 };
 
@@ -365,7 +369,10 @@ static const char *_hdrtoken_commonly_tokenized_strs[] = {
   "Forwarded",
 
   // RFC-8470
-  "Early-Data"};
+  "Early-Data",
+
+  // RFC-7838
+  "Alt-Svc"};
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

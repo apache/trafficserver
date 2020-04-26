@@ -459,6 +459,7 @@ extern const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
 extern const char *MIME_FIELD_SEC_WEBSOCKET_VERSION;
 extern const char *MIME_FIELD_HTTP2_SETTINGS;
 extern const char *MIME_FIELD_EARLY_DATA;
+extern const char *MIME_FIELD_ALT_SVC;
 
 extern const char *MIME_VALUE_BYTES;
 extern const char *MIME_VALUE_CHUNKED;
@@ -586,6 +587,7 @@ extern int MIME_LEN_SEC_WEBSOCKET_KEY;
 extern int MIME_LEN_SEC_WEBSOCKET_VERSION;
 extern int MIME_LEN_HTTP2_SETTINGS;
 extern int MIME_LEN_EARLY_DATA;
+extern int MIME_LEN_ALT_SVC;
 
 extern int MIME_WKSIDX_ACCEPT;
 extern int MIME_WKSIDX_ACCEPT_CHARSET;
