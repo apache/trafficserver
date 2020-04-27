@@ -79,6 +79,8 @@ class NetEvent;
 class UnixUDPConnection;
 struct DNSConnection;
 struct NetAccept;
+
+/// Unified API for setting and clearing kernel and epoll events.
 struct EventIO {
   int fd = -1;
 #if TS_USE_KQUEUE || TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER) || TS_USE_PORT
@@ -98,14 +100,37 @@ struct EventIO {
   int start(EventLoop l, NetAccept *vc, int events);
   int start(EventLoop l, NetEvent *ne, int events);
   int start(EventLoop l, UnixUDPConnection *vc, int events);
+  /** Setup a continuation to be called when a file descriptor is available for read or write.
+     @param l: the event loop
+     @param fd: file descriptor (or port)
+     @param c: the continuation to call
+     @param events: a mask of flags (for details `man epoll_ctl`)
+     @return int: the number of events created, -1 is error
+   */
   int start(EventLoop l, int fd, Continuation *c, int events);
-  // Change the existing events by adding modify(EVENTIO_READ)
-  // or removing modify(-EVENTIO_READ), for level triggered I/O
+
+  /** Alter the events that will trigger the continuation, for level triggered I/O.
+     @param events: add with positive mask(+EVENTIO_READ), or remove with negative mask (-EVENTIO_READ)
+     @return int: the number of events created, -1 is error
+   */
   int modify(int events);
-  // Refresh the existing events (i.e. KQUEUE EV_CLEAR), for edge triggered I/O
+
+  /** Refresh the existing events (i.e. KQUEUE EV_CLEAR), for edge triggered I/O
+     @param events: mask of events
+     @return int: the number of events created, -1 is error
+   */
   int refresh(int events);
+
+  /** Remove the kernal or epoll event.
+     @return int: 0 on success, -1 on error
+   */
   int stop();
+
+  /** Remove the epoll event and close the connection.
+     @return int: 0 on success, -1 on error
+   */
   int close();
+
   EventIO() { data.c = nullptr; }
 };
 
@@ -506,9 +531,7 @@ check_transient_accept_error(int res)
   }
 }
 
-//
-// Disable a NetEvent
-//
+/// Disable the read epoll on a NetEvent
 static inline void
 read_disable(NetHandler *nh, NetEvent *ne)
 {
@@ -521,6 +544,7 @@ read_disable(NetHandler *nh, NetEvent *ne)
   ne->ep.modify(-EVENTIO_READ);
 }
 
+/// Disable the write epoll on a NetEvent
 static inline void
 write_disable(NetHandler *nh, NetEvent *ne)
 {
