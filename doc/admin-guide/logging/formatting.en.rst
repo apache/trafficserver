@@ -179,11 +179,10 @@ cwt   Proxy Cache    Cache Write Transform Result.
 crra  Proxy Cache    Cache read retry attempts to read the object from cache.
 cwra  Proxy Cache    Cache write retry attempts to write a fresh or updated
                      object to cache.
-cccs  Proxy Cache    Cache collapsed connection success; true or false if the
-                     cache lookup failed, a write was attempt but failed due to
-                     being blocked on the write by another request. Will be true
-                     if the subsequent lookup succeeded after the write failure or
-                     false if the request had to go upstream.
+cccs  Proxy Cache    Cache collapsed connection success;
+                     -1: collapsing was attempted but failed, request went upstream
+                     0: collapsing was unnecessary
+                     1: attempted to collapse and got a cache hit on subsequent read attempts
 ===== ============== ==========================================================
 
 .. _admin-logging-fields-txn:
