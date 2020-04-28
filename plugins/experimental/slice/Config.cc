@@ -26,6 +26,20 @@
 
 #include "ts/experimental.h"
 
+Config::~Config()
+{
+  if (nullptr != m_regex_extra) {
+#ifndef PCRE_STUDY_JIT_COMPILE
+    pcre_free(m_regex_extra);
+#else
+    pcre_free_study(m_regex_extra);
+#endif
+  }
+  if (nullptr != m_regex) {
+    pcre_free(m_regex);
+  }
+}
+
 int64_t
 Config::bytesFrom(char const *const valstr)
 {
@@ -94,18 +108,20 @@ Config::fromArgs(int const argc, char const *const argv[])
   // standard parsing
   constexpr struct option longopts[] = {
     {const_cast<char *>("blockbytes"), required_argument, nullptr, 'b'},
-    {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
-    {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
-    {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
     {const_cast<char *>("disable-errorlog"), no_argument, nullptr, 'd'},
+    {const_cast<char *>("exclude-regex"), required_argument, nullptr, 'e'},
+    {const_cast<char *>("include-regex"), required_argument, nullptr, 'i'},
     {const_cast<char *>("throttle"), no_argument, nullptr, 'o'},
+    {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
+    {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
+    {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
     {nullptr, 0, nullptr, 0},
   };
 
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:t:r:p:do", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:de:i:op:r:t:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -122,6 +138,61 @@ Config::fromArgs(int const argc, char const *const argv[])
         ERROR_LOG("Invalid blockbytes: %s", optarg);
       }
     } break;
+    case 'd': {
+      m_paceerrsecs = -1;
+    } break;
+    case 'e': {
+      if (None != m_regex_type) {
+        ERROR_LOG("Regex already specified!");
+        break;
+      }
+
+      const char *errptr;
+      int erroffset;
+      m_regexstr = optarg;
+      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, NULL);
+      if (nullptr == m_regex) {
+        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
+      } else {
+        m_regex_type  = Exclude;
+        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+        DEBUG_LOG("Using regex for url exclude: '%s'", m_regexstr.c_str());
+      }
+    } break;
+    case 'i': {
+      if (None != m_regex_type) {
+        ERROR_LOG("Regex already specified!");
+        break;
+      }
+
+      const char *errptr;
+      int erroffset;
+      m_regexstr = optarg;
+      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, NULL);
+      if (nullptr == m_regex) {
+        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
+      } else {
+        m_regex_type  = Include;
+        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+        DEBUG_LOG("Using regex for url include: '%s'", m_regexstr.c_str());
+      }
+    } break;
+    case 'o': {
+      m_throttle = true;
+      DEBUG_LOG("Enabling internal block throttling");
+    } break;
+    case 'p': {
+      int const secsread = atoi(optarg);
+      if (0 < secsread) {
+        m_paceerrsecs = std::min(secsread, 60);
+      } else {
+        ERROR_LOG("Ignoring pace-errlog argument");
+      }
+    } break;
+    case 'r': {
+      m_remaphost = optarg;
+      DEBUG_LOG("Using loopback remap host override: %s", m_remaphost.c_str());
+    } break;
     case 't': {
       if (0 == blockbytes) {
         int64_t const bytesread = bytesFrom(optarg);
@@ -135,25 +206,6 @@ Config::fromArgs(int const argc, char const *const argv[])
         DEBUG_LOG("Skipping blockbytes-test in favor of blockbytes");
       }
     } break;
-    case 'r':
-      m_remaphost = optarg;
-      DEBUG_LOG("Using loopback remap host override: %s", m_remaphost.c_str());
-      break;
-    case 'p': {
-      int const secsread = atoi(optarg);
-      if (0 < secsread) {
-        m_paceerrsecs = std::min(secsread, 60);
-      } else {
-        ERROR_LOG("Ignoring pace-errlog argument");
-      }
-    } break;
-    case 'd':
-      m_paceerrsecs = -1;
-      break;
-    case 'o':
-      m_throttle = true;
-      DEBUG_LOG("Enabling internal block throttling");
-      break;
     default:
       break;
     }
@@ -203,4 +255,27 @@ Config::canLogError()
 #endif
 
   return true;
+}
+
+bool
+Config::matchesRegex(char const *const url, int const urllen) const
+{
+  bool matches = true;
+
+  switch (m_regex_type) {
+  case Exclude: {
+    if (0 <= pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, NULL, 0)) {
+      matches = false;
+    }
+  } break;
+  case Include: {
+    if (pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, NULL, 0) < 0) {
+      matches = false;
+    }
+  } break;
+  default:
+    break;
+  }
+
+  return matches;
 }
