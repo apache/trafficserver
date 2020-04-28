@@ -122,14 +122,10 @@ struct EventIO {
    */
   int refresh(int events);
 
-  /** Remove the kernal or epoll event.
-     @return int 0 on success, -1 on error
-   */
+  /// Remove the kernal or epoll event. Returns 0 on success.
   int stop();
 
-  /** Remove the epoll event and close the connection.
-     @return int 0 on success, -1 on error
-   */
+  /// Remove the epoll event and close the connection. Returns 0 on success.
   int close();
 
   EventIO() { data.c = nullptr; }
@@ -532,12 +528,15 @@ check_transient_accept_error(int res)
   }
 }
 
-/** Disable the read epoll on a NetEvent.
- * - clear inactivity timeout if write is already disabled.
- * - clear read enabled flag.
- * - remove from nethandler read_ready_list.
- * - clear read epoll flag
- */
+/** Disable reading on the NetEvent @a ne.
+     @param nh Nethandler that owns @a ne.
+     @param ne The @c NetEvent to modify.
+
+     - If write is already disable, also disable the inactivity timeout.
+     - clear read enabled flag.
+     - Remove the @c epoll READ flag.
+     - Take @a ne out of the read ready list.
+*/
 static inline void
 read_disable(NetHandler *nh, NetEvent *ne)
 {
@@ -550,12 +549,15 @@ read_disable(NetHandler *nh, NetEvent *ne)
   ne->ep.modify(-EVENTIO_READ);
 }
 
-/** Disable the write epoll on a NetEvent.
- * - clear inactivity timeout if read is already disabled.
- * - clear write enabled flag.
- * - remove from nethandler write_ready_list.
- * - clear write epoll flag
- */
+/** Disable writing on the NetEvent @a ne.
+     @param nh Nethandler that owns @a ne.
+     @param ne The @c NetEvent to modify.
+
+     - If read is already disable, also disable the inactivity timeout.
+     - clear write enabled flag.
+     - Remove the @c epoll WRITE flag.
+     - Take @a ne out of the write ready list.
+*/
 static inline void
 write_disable(NetHandler *nh, NetEvent *ne)
 {
