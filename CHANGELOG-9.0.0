@@ -882,3 +882,7 @@ Changes with Apache Traffic Server 9.0.0
   #6664 - cache_range_requests: remove unnecessary Last-Modified header from tests
   #6677 - Format to match perferred if/else formatting for sh scripts
   #6678 - Removes commented out code from example
+  #6694 - Normalizes function names to match hook names in intercept plugins
+  #6697 - Increase the default max_record_entries to match the original value
+  #6700 - traffic_dump: add nullptr check for sni string
+  #6704 - Removes ATS version from gold files
