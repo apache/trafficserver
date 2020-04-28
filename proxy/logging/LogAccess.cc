@@ -1331,7 +1331,7 @@ LogAccess::marshal_proxy_protocol_version(char *buf)
       break;
     case NetVConnection::ProxyProtocolVersion::UNDEFINED:
     default:
-      version_str = "UNK";
+      version_str = "-";
       break;
     }
     len = LogAccess::strlen(version_str);
@@ -1349,7 +1349,7 @@ int
 LogAccess::marshal_proxy_protocol_src_ip(char *buf)
 {
   sockaddr const *ip = nullptr;
-  if (m_http_sm->t_state.pp_info.proxy_protocol_version != NetVConnection::ProxyProtocolVersion::UNDEFINED) {
+  if (m_http_sm && m_http_sm->t_state.pp_info.proxy_protocol_version != NetVConnection::ProxyProtocolVersion::UNDEFINED) {
     ip = &m_http_sm->t_state.pp_info.src_addr.sa;
   }
   return marshal_ip(buf, ip);
@@ -1361,7 +1361,7 @@ int
 LogAccess::marshal_proxy_protocol_dst_ip(char *buf)
 {
   sockaddr const *ip = nullptr;
-  if (m_http_sm->t_state.pp_info.proxy_protocol_version != NetVConnection::ProxyProtocolVersion::UNDEFINED) {
+  if (m_http_sm && m_http_sm->t_state.pp_info.proxy_protocol_version != NetVConnection::ProxyProtocolVersion::UNDEFINED) {
     ip = &m_http_sm->t_state.pp_info.dst_addr.sa;
   }
   return marshal_ip(buf, ip);
