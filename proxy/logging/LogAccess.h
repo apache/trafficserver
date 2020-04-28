@@ -252,6 +252,9 @@ public:
   inkcoreapi int marshal_cache_lookup_url_canon(char *);                      // STR
   inkcoreapi int marshal_client_sni_server_name(char *);                      // STR
   inkcoreapi int marshal_version_build_number(char *);                        // STR
+  inkcoreapi int marshal_cache_read_retries(char *);                          // INT
+  inkcoreapi int marshal_cache_write_retries(char *);                         // INT
+  inkcoreapi int marshal_cache_collapsed_connection_success(char *);          // INT
 
   // named fields from within a http header
   //
