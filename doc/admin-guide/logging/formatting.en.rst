@@ -151,6 +151,9 @@ Cache Details
 .. _chm:
 .. _cwr:
 .. _cwtr:
+.. _crra:
+.. _cwra:
+.. _cccs:
 
 These log fields reveal details of the |TS| proxy interaction with its own
 cache while attempting to service incoming client requests.
@@ -173,6 +176,13 @@ cwr   Proxy Cache    Cache Write Result. Specifies the result of attempting to
                      (``WL_MISS``), write interrupted (``INTR``), error while
                      writing (``ERR``), or cache write successful (``FIN``).
 cwt   Proxy Cache    Cache Write Transform Result.
+crra  Proxy Cache    Cache read retry attempts to read the object from cache.
+cwra  Proxy Cache    Cache write retry attempts to write a fresh or updated
+                     object to cache.
+cccs  Proxy Cache    Cache collapsed connection success;
+                     -1: collapsing was attempted but failed, request went upstream
+                     0: collapsing was unnecessary
+                     1: attempted to collapse and got a cache hit on subsequent read attempts
 ===== ============== ==========================================================
 
 .. _admin-logging-fields-txn:
