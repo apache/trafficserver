@@ -43,7 +43,6 @@ Makefile-pl
 config.cache
 config.status
 config.nice
-config.h
 
 configs/records.config.default
 configs/storage.config.default
