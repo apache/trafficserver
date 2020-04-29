@@ -99,6 +99,7 @@ Changes with Apache Traffic Server 8.1.0
   #5903 - Reduce unnecesary IOBufferBlock allocation
   #5920 - Cleanup: VIO
   #5921 - Cleanup AuTest for HTTP/2
+  #5929 - Fix lost fragments when update object
   #5934 - Track scheduled events to (read|write)_vio.cont from Http2Stream
   #5945 - cachekey: allow multiple values for `--key-type`
   #5953 - Log H2 priority information
@@ -145,6 +146,7 @@ Changes with Apache Traffic Server 8.1.0
   #6450 - Adjust consume logic in data frame read
   #6464 - cache_range_requests plugin: detect and handle TSCacheUrlSet failures…
   #6470 - Remove update to unused variable
+  #6507 - CacheRead: catch and invalidate an asset with invalid negative cache_seek bytes value.
   #6518 - Fixes a bug where HostStatus::getHostStatus() creates too many stats.
   #6525 - Don't be overly aggressive on stream failures and closing
   #6534 - Ignore MgmtMessageHdr if ProcessManager is not running
@@ -173,6 +175,8 @@ Changes with Apache Traffic Server 8.1.0
   #6654 - Supports sharing cache_promote LRUs across multiple remap rules
   #6660 - Fix 8.1.x build with old openssl
   #6665 - Fix memory leak of HPACK
+  #6666 - Fix link issue of test_libhttp2 on FreeBSD 12 with --enable-debug
   #6676 - Fixes the 'traffic_ctl host status' for trafficserver 8.1.x
   #6685 - 8.1.x backport cache_range_requests autests: remove last-modified
   #6688 - Fixes minor memory leak in configure_net
+  #6692 - Fix deprecated-copy warning in cache tool
