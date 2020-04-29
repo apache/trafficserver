@@ -41,8 +41,6 @@
 #include <ts/remap.h>
 #include "tscore/ink_config.h"
 
-// Special snowflake here, only available when building inside the ATS source tree.
-#include "tscore/ink_atomic.h"
 #include "aws_auth_v4.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -206,22 +204,6 @@ public:
       // NOTE: virtual host not used with AWS auth v4, parameter ignored
     }
     return true;
-  }
-
-  void
-  acquire()
-  {
-    ink_atomic_increment(&_ref_count, 1);
-  }
-
-  void
-  release()
-  {
-    TSDebug(PLUGIN_NAME, "ref_count is %d", _ref_count);
-    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
-      TSDebug(PLUGIN_NAME, "configuration deleted, due to ref-counting");
-      delete this;
-    }
   }
 
   // Used to copy relevant configurations that can be configured in a config file. Note: we intentionally
@@ -407,7 +389,6 @@ public:
   schedule(TSHttpTxn txnp) const
   {
     TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, _cont);
-    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, _cont); // To release the config lease
   }
 
 private:
@@ -422,7 +403,6 @@ private:
   bool _version_modified   = false;
   bool _virt_host_modified = false;
   TSCont _cont             = nullptr;
-  int _ref_count           = 1;
   StringSet _v4includeHeaders;
   bool _v4includeHeaders_modified = false;
   StringSet _v4excludeHeaders;
@@ -522,15 +502,11 @@ ConfigCache::get(const char *fname)
 
       TSDebug(PLUGIN_NAME, "Configuration from %s is stale, reloading", config_fname.c_str());
       it->second.second = tv.tv_sec;
-      if (nullptr != it->second.first) {
-        // The previous config update / reload attempt did not fail, safe to call release.
-        it->second.first->release();
-      }
       if (s3->parse_config(config_fname)) {
         it->second.first = s3;
       } else {
         // Failed the configuration parse... Set the cache response to nullptr
-        s3->release();
+        delete s3;
         it->second.first = nullptr;
       }
     } else {
@@ -545,7 +521,7 @@ ConfigCache::get(const char *fname)
       _cache[config_fname] = std::make_pair(s3, tv.tv_sec);
       TSDebug(PLUGIN_NAME, "Parsing and caching configuration from %s, version:%d", config_fname.c_str(), s3->version());
     } else {
-      s3->release();
+      delete s3;
       return nullptr;
     }
 
@@ -911,9 +887,6 @@ event_handler(TSCont cont, TSEvent event, void *edata)
       enable_event = TS_EVENT_HTTP_ERROR;
     }
     break;
-  case TS_EVENT_HTTP_TXN_CLOSE:
-    s3->release(); // Release the configuration lease when txn closes
-    break;
   default:
     TSError("[%s] Unknown event for this plugin", PLUGIN_NAME);
     TSDebug(PLUGIN_NAME, "unknown event for this plugin");
@@ -981,7 +954,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       if (!file_config) {
         TSError("[%s] invalid configuration file, %s", PLUGIN_NAME, optarg);
         *ih = nullptr;
-        s3->release();
         return TS_ERROR;
       }
       break;
@@ -1024,12 +996,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   // Make sure we got both the shared secret and the AWS secret
   if (!s3->valid()) {
     TSError("[%s] requires both shared and AWS secret configuration", PLUGIN_NAME);
-    s3->release();
     *ih = nullptr;
     return TS_ERROR;
   }
 
-  // Note that we don't acquire() the s3 config, it's implicit that we hold at least one ref
   *ih = static_cast<void *>(s3);
   TSDebug(PLUGIN_NAME, "New rule: access_key=%s, virtual_host=%s, version=%d", s3->keyid(), s3->virt_host() ? "yes" : "no",
           s3->version());
@@ -1041,8 +1011,7 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   S3Config *s3 = static_cast<S3Config *>(ih);
-
-  s3->release();
+  delete s3;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1055,7 +1024,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
 
   if (s3) {
     TSAssert(s3->valid());
-    s3->acquire(); // Increase ref-count
     // Now schedule the continuation to update the URL when going to origin.
     // Note that in most cases, this is a No-Op, assuming you have reasonable
     // cache hit ratio. However, the scheduling is next to free (very cheap).
