@@ -41,7 +41,6 @@ public:
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size)
     : header_blocks(NULL),
       header_blocks_length(0),
-      request_header_length(0),
       recv_end_stream(false),
       send_end_stream(false),
       sent_request_header(false),
@@ -190,10 +189,7 @@ public:
   int64_t read_vio_read_avail();
 
   uint8_t *header_blocks;
-  uint32_t header_blocks_length;  // total length of header blocks (not include
-                                  // Padding or other fields)
-  uint32_t request_header_length; // total length of payload (include Padding
-                                  // and other fields)
+  uint32_t header_blocks_length = 0; // total length of header blocks (not include Padding or other fields)
   bool recv_end_stream;
   bool send_end_stream;
 
