@@ -25,7 +25,6 @@
 #include <sys/types.h>
 
 #include "tscore/ink_defs.h"
-#include "tscore/ink_atomic.h"
 
 // Used for Debug etc.
 static const char *PLUGIN_NAME = "geoip_acl";

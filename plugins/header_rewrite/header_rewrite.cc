@@ -22,8 +22,6 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
-#include "tscore/ink_atomic.h"
-
 #include "parser.h"
 #include "ruleset.h"
 #include "resources.h"
