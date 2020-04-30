@@ -2138,6 +2138,16 @@ Current possible values are 1.0, 1.1, and 0.9.
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.server_response.is_cacheable
+-------------------------------
+**syntax:** *can_cache = ts.server_response.is_cacheable()*
+
+**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later.
+
+**description:** Return 1 if the server response can be cached, 0 otherwise.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.server_response.set_version
 ------------------------------
 **syntax:** *ts.server_response.set_version(VERSION_STR)*
