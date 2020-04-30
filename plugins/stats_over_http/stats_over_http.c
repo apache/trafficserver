@@ -705,7 +705,7 @@ load_config_file(config_holder_t *config_holder)
       TSDebug(PLUGIN_NAME, "scheduling free: %p (%p)", oldconfig, newconfig);
       free_cont = TSContCreate(free_handler, TSMutexCreate());
       TSContDataSet(free_cont, (void *)oldconfig);
-      TSContSchedule(free_cont, FREE_TMOUT);
+      TSContScheduleOnPool(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
     }
   }
   if (fh)
