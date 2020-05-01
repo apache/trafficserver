@@ -1409,6 +1409,7 @@ Http2ConnectionState::release_stream()
         // or we can use a local variable to do it.
         // ua_session = nullptr;
       } else if (shutdown_state == HTTP2_SHUTDOWN_IN_PROGRESS && fini_event == nullptr) {
+        ua_session->clear_session_active();
         fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
       } else if (ua_session->is_active()) {
         // If the number of clients is 0, HTTP2_SESSION_EVENT_FINI is not received or sent, and ua_session is active,
