@@ -88,6 +88,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Debug("inactivity_cop", "event %d: null read.vio cont, closing vc %p", event, vc);
+      Warning("read: Closing orphaned vc %p", vc);
       vc->closed = 1;
       break;
     default:
@@ -119,6 +120,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Debug("inactivity_cop", "event %d: null write.vio cont, closing vc %p", event, vc);
+      Warning("write: Closing orphaned vc %p", vc);
       vc->closed = 1;
       break;
     default:
