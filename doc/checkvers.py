@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import sys
-import os
 
 if __name__ == '__main__':
     # Use optparse instead of argparse because this needs to work on old Python versions.
