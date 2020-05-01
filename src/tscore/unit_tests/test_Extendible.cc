@@ -65,6 +65,8 @@ TEST_CASE("AtomicBit Atomic test")
 // Extendible Inheritance Tests
 
 struct A : public Extendible<A> {
+  using self_type = A;
+  DEF_EXT_NEW_DEL(self_type);
   uint16_t a = {1};
 };
 
@@ -74,14 +76,18 @@ class B : public A
 {
 public:
   using super_type = A;
-  uint16_t b       = {2};
+  using self_type  = B;
+  DEF_EXT_NEW_DEL(self_type);
+  uint16_t b = {2};
 };
 
 class C : public B, public Extendible<C>
 {
 public:
   using super_type = B;
-  uint16_t c       = {3};
+  using self_type  = C;
+  DEF_EXT_NEW_DEL(self_type);
+  uint16_t c = {3};
 
   // operator[]
   template <typename F>
@@ -105,6 +111,46 @@ memDelta(void *p, void *q)
 {
   return uintptr_t(q) - uintptr_t(p);
 }
+A *a_ptr = nullptr;
+TEST_CASE("Create A", "")
+{
+  ext::details::areFieldsFinalized() = true;
+  a_ptr                              = ext::create<A>();
+  CHECK(Extendible<A>::schema.no_instances() == false);
+}
+TEST_CASE("Delete A", "")
+{
+  delete a_ptr;
+  CHECK(Extendible<A>::schema.no_instances());
+}
+TEST_CASE("Create B", "")
+{
+  a_ptr = ext::create<B>();
+  CHECK(Extendible<A>::schema.no_instances() == false);
+}
+TEST_CASE("Delete B", "")
+{
+  delete a_ptr;
+  CHECK(Extendible<A>::schema.no_instances());
+}
+TEST_CASE("Create C", "")
+{
+  a_ptr = ext::create<C>();
+  CHECK(Extendible<A>::schema.no_instances() == false);
+  CHECK(Extendible<C>::schema.no_instances() == false);
+}
+TEST_CASE("Delete C", "")
+{
+  delete static_cast<C *>(a_ptr);
+  CHECK(Extendible<A>::schema.no_instances());
+  CHECK(Extendible<C>::schema.no_instances());
+  CHECK(Extendible<A>::schema.cnt_constructed == 3);
+  CHECK(Extendible<A>::schema.cnt_fld_constructed == 3);
+  CHECK(Extendible<A>::schema.cnt_destructed == 3);
+  CHECK(Extendible<C>::schema.cnt_constructed == 1);
+  CHECK(Extendible<C>::schema.cnt_fld_constructed == 1);
+  CHECK(Extendible<C>::schema.cnt_destructed == 1);
+}
 TEST_CASE("Extendible Memory Allocations", "")
 {
   ext::details::areFieldsFinalized() = false;
@@ -117,7 +163,7 @@ TEST_CASE("Extendible Memory Allocations", "")
   CHECK(ext::sizeOf<B>() == w * 4);
   CHECK(ext::sizeOf<C>() == w * 7);
 
-  C &x = *(ext::alloc<C>());
+  C &x = *(ext::create<C>());
   //    0   1   2   3   4   5   6
   //[ EA*,  a,  b,EC*,  c, EA, EC]
   //
@@ -146,7 +192,7 @@ TEST_CASE("Extendible Memory Allocations", "")
 
 TEST_CASE("Extendible Pointer Math", "")
 {
-  C &x = *(ext::alloc<C>());
+  C &x = *(ext::create<C>());
 
   CHECK(x.a == 1);
   CHECK(x.b == 2);
@@ -179,6 +225,8 @@ TEST_CASE("Extendible Pointer Math", "")
 
 // Extendible is abstract and must be derived in a CRTP
 struct Derived : Extendible<Derived> {
+  using self_type = Derived;
+  DEF_EXT_NEW_DEL(self_type);
   string m_str;
 
   // operator[] for shorthand
@@ -213,7 +261,7 @@ struct Derived : Extendible<Derived> {
 void *
 DerivedExtalloc()
 {
-  return ext::alloc<Derived>();
+  return ext::create<Derived>();
 }
 void
 DerivedExtFree(void *ptr)
@@ -285,7 +333,7 @@ TEST_CASE("Extendible", "")
   // I don't use SECTIONS because this modifies static variables many times, is not thread safe.
   INFO("Extendible()")
   {
-    ptr = ext::alloc<Derived>();
+    ptr = ext::create<Derived>();
     REQUIRE(ptr != nullptr);
   }
 
@@ -297,7 +345,7 @@ TEST_CASE("Extendible", "")
 
   INFO("Schema Reset")
   {
-    ptr = ext::alloc<Derived>();
+    ptr = ext::create<Derived>();
     REQUIRE(Derived::schema.no_instances() == false);
     REQUIRE(Derived::schema.reset() == false);
     delete ptr;
@@ -309,7 +357,7 @@ TEST_CASE("Extendible", "")
 
   INFO("shared_ptr")
   {
-    shared_ptr<Derived> sptr(ext::alloc<Derived>());
+    shared_ptr<Derived> sptr(ext::create<Derived>());
     REQUIRE(Derived::schema.no_instances() == false);
     REQUIRE(sptr);
   }
@@ -326,7 +374,7 @@ TEST_CASE("Extendible", "")
   INFO("Extendible delete ptr");
   {
     for (int i = 0; i < 10; i++) {
-      ptr = ext::alloc<Derived>();
+      ptr = ext::create<Derived>();
       REQUIRE(ptr != nullptr);
       INFO(__LINE__);
       REQUIRE(Derived::schema.no_instances() == false);
@@ -339,7 +387,7 @@ TEST_CASE("Extendible", "")
 
   INFO("test bit field");
   {
-    shared_ptr<Derived> sptr{ext::alloc<Derived>()};
+    shared_ptr<Derived> sptr{ext::create<Derived>()};
     Derived &ref = *sptr;
 
     CHECK(ext::viewFormat(ref) == Derived::testFormat());
@@ -376,7 +424,7 @@ TEST_CASE("Extendible", "")
     CHECK(ext::sizeOf<Derived>() == expected_size);
     ext::details::areFieldsFinalized() = true;
 
-    shared_ptr<Derived> sptr(ext::alloc<Derived>());
+    shared_ptr<Derived> sptr(ext::create<Derived>());
     Derived &ref = *sptr;
     CHECK(ext::viewFormat(ref) == Derived::testFormat());
     using Catch::Matchers::Contains;
@@ -405,7 +453,7 @@ TEST_CASE("Extendible", "")
     size_t expected_size = sizeof(Derived) + 1 + sizeof(std::atomic_int) * 2;
     CHECK(ext::sizeOf<Derived>() == expected_size);
 
-    shared_ptr<Derived> sptr(ext::alloc<Derived>());
+    shared_ptr<Derived> sptr(ext::create<Derived>());
     Derived &ref = *sptr;
     CHECK(ext::get(ref, int_a) == 0);
     CHECK(ext::get(ref, int_b) == 0);
