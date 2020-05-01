@@ -111,9 +111,6 @@ Http1ClientSession::free()
     conn_decrease = false;
   }
 
-  // Clean up the write VIO in case of inactivity timeout
-  this->do_io_write(nullptr, 0, nullptr);
-
   // Free the transaction resources
   this->trans.super_type::destroy();
 
@@ -250,12 +247,13 @@ Http1ClientSession::do_io_close(int alerrno)
     slave_ka_vio = nullptr;
   }
   // Completed the last transaction.  Just shutdown already
-  if (transact_count == released_transactions) {
+  // Or the do_io_close is due to a network error
+  if (transact_count == released_transactions || alerrno == HTTP_ERRNO) {
     half_close = false;
   }
 
   // Clean up the write VIO in case of inactivity timeout
-  this->do_io_write(nullptr, 0, nullptr);
+  this->do_io_write(this, 0, nullptr);
 
   if (half_close && this->trans.get_sm()) {
     read_state = HCS_HALF_CLOSED;
@@ -315,11 +313,7 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     half_close = false;
-    this->do_io_close();
-    if (client_vc != nullptr) {
-      client_vc->do_io_close();
-      client_vc = nullptr;
-    }
+    this->do_io_close(EHTTP_ERROR);
     break;
   case VC_EVENT_READ_READY:
     // Drain any data read
@@ -395,11 +389,7 @@ Http1ClientSession::state_keep_alive(int event, void *data)
     break;
 
   case VC_EVENT_EOS:
-    this->do_io_close();
-    if (client_vc != nullptr) {
-      client_vc->do_io_close();
-      client_vc = nullptr;
-    }
+    this->do_io_close(EHTTP_ERROR);
     break;
 
   case VC_EVENT_READ_COMPLETE:
@@ -411,7 +401,7 @@ Http1ClientSession::state_keep_alive(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     // Keep-alive timed out
-    this->do_io_close();
+    this->do_io_close(EHTTP_ERROR);
     break;
   }
 
@@ -430,7 +420,7 @@ Http1ClientSession::release(ProxyTransaction *trans)
   ink_assert(read_state == HCS_ACTIVE_READER || read_state == HCS_INIT);
 
   // Clean up the write VIO in case of inactivity timeout
-  this->do_io_write(nullptr, 0, nullptr);
+  this->do_io_write(this, 0, nullptr);
 
   // Check to see there is remaining data in the
   //  buffer.  If there is, spin up a new state
