@@ -479,8 +479,8 @@ HttpTunnel::reset()
 
   num_producers = 0;
   num_consumers = 0;
-  memset(consumers, 0, sizeof(consumers));
-  memset(producers, 0, sizeof(producers));
+  ink_zero(consumers);
+  ink_zero(producers);
 }
 
 void

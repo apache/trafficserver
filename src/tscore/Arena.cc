@@ -48,8 +48,8 @@ blk_alloc(int size)
   }
 
   blk->next          = nullptr;
-  blk->m_heap_end    = &blk->data[size];
-  blk->m_water_level = &blk->data[0];
+  blk->m_heap_end    = blk->data + size;
+  blk->m_water_level = blk->data;
 
   return blk;
 }
