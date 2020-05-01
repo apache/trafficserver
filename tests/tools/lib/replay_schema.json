@@ -41,7 +41,7 @@
             "items": {
               "description": "Transaction",
               "type": "object",
-              "required": [ "client-request", "server-response" ],
+              "required": [ "client-request", "proxy-response" ],
               "properties": {
                 "uuid": {
                   "description": "UUID to identify this specific transaction.",
