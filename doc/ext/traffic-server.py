@@ -389,7 +389,7 @@ git_branch = subprocess.check_output(['git', '--git-dir', REPO_GIT_DIR,
                                       'rev-parse', '--abbrev-ref', 'HEAD'])
 
 
-def make_github_link(name, rawtext, text, lineno, inliner, options={}, content=[]):
+def make_github_link(name, rawtext, text, lineno, inliner, options=None, content=None):
     """
     This docutils role lets us link to source code via the handy :ts:git: markup.
     Link references are rooted at the top level source directory. All links resolve
@@ -405,6 +405,10 @@ def make_github_link(name, rawtext, text, lineno, inliner, options={}, content=[
 
             If you want to contribute, take a look at :ts:git:`CONTRIBUTING.md`.
     """
+    if options is None:
+        options = {}
+    if content is None:
+        content = []
     url = 'https://github.com/apache/trafficserver/blob/{}/{}'
     ref = autoconf_version if autoconf_version == git_branch else 'master'
     node = nodes.reference(rawtext, text, refuri=url.format(ref, text), **options)
