@@ -18,7 +18,6 @@ Test the Forwarded header and related configuration..
 #  limitations under the License.
 
 import os
-import ports
 
 Test.Summary = '''
 Test FORWARDED header.
