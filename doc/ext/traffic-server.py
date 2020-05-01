@@ -117,7 +117,7 @@ class TSConfVar(std.Target):
             title.set_class(self.options.get('class'))
         # This has to be a distinct node before the title. if nested then
         # the browser will scroll forward to just past the title.
-        anchor = nodes.target('', '', names=[cv_name])
+        nodes.target('', '', names=[cv_name])
         # Second (optional) arg is 'msgNode' - no idea what I should pass for that
         # or if it even matters, although I now think it should not be used.
         self.state.document.note_explicit_target(title)
@@ -241,7 +241,7 @@ class TSStat(std.Target):
 
         # This has to be a distinct node before the title. if nested then
         # the browser will scroll forward to just past the title.
-        anchor = nodes.target('', '', names=[stat_name])
+        nodes.target('', '', names=[stat_name])
         # Second (optional) arg is 'msgNode' - no idea what I should pass for that
         # or if it even matters, although I now think it should not be used.
         self.state.document.note_explicit_target(title)

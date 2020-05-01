@@ -32,7 +32,7 @@ def makerequest(port):
     active_timeout = 3
     request_interval = 0.1
     loop_cnt = int((active_timeout + 2) / request_interval)
-    for i in range(loop_cnt):
+    for _ in range(loop_cnt):
         try:
             conn.request('GET', '/')
             time.sleep(request_interval)
