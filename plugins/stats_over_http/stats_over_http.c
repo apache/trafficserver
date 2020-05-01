@@ -33,17 +33,56 @@
 #include <string.h>
 #include <inttypes.h>
 #include <getopt.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "tscore/ink_defs.h"
 
 #define PLUGIN_NAME "stats_over_http"
+#define FREE_TMOUT 300000
+#define STR_BUFFER_SIZE 1024
+
+#define SYSTEM_RECORD_TYPE (0x100)
+#define DEFAULT_RECORD_TYPES (SYSTEM_RECORD_TYPE | TS_RECORDTYPE_PROCESS | TS_RECORDTYPE_PLUGIN)
+
+#define DEFAULT_IP "0.0.0.0"
+#define DEFAULT_IP6 "::"
 
 /* global holding the path used for access to this JSON data */
-static const char *url_path = "_stats";
-static int url_path_len;
+#define DEFAULT_URL_PATH "_stats"
 
 static bool integer_counters = false;
 static bool wrap_counters    = false;
+
+typedef struct {
+  unsigned int recordTypes;
+  char *stats_path;
+  int stats_path_len;
+  char *allowIps;
+  int ipCount;
+  char *allowIps6;
+  int ip6Count;
+} config_t;
+typedef struct {
+  char *config_path;
+  volatile time_t last_load;
+  config_t *config;
+} config_holder_t;
+
+int configReloadRequests = 0;
+int configReloads        = 0;
+time_t lastReloadRequest = 0;
+time_t lastReload        = 0;
+time_t astatsLoad        = 0;
+
+static int free_handler(TSCont cont, TSEvent event, void *edata);
+static int config_handler(TSCont cont, TSEvent event, void *edata);
+static config_t *get_config(TSCont cont);
+static config_holder_t *new_config_holder(const char *path);
+static bool is_ip_allowed(const config_t *config, const struct sockaddr *addr);
 
 typedef struct stats_state_t {
   TSVConn net_vc;
@@ -57,6 +96,14 @@ typedef struct stats_state_t {
   int output_bytes;
   int body_written;
 } stats_state;
+
+static char *
+nstr(const char *s)
+{
+  char *mys = (char *)TSmalloc(strlen(s) + 1);
+  strcpy(mys, s);
+  return mys;
+}
 
 static void
 stats_cleanup(TSCont contp, stats_state *my_state)
@@ -236,12 +283,14 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
 {
   TSCont icontp;
   stats_state *my_state;
+  config_t *config;
   TSHttpTxn txnp = (TSHttpTxn)edata;
   TSMBuffer reqp;
   TSMLoc hdr_loc = NULL, url_loc = NULL;
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
   TSDebug(PLUGIN_NAME, "in the read stuff");
+  config = get_config(contp);
 
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc) != TS_SUCCESS) {
     goto cleanup;
@@ -255,7 +304,13 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
   TSDebug(PLUGIN_NAME, "Path: %.*s", path_len, path);
 
-  if (!(path_len != 0 && path_len == url_path_len && !memcmp(path, url_path, url_path_len))) {
+  if (!(path_len != 0 && path_len == config->stats_path_len && !memcmp(path, config->stats_path, config->stats_path_len))) {
+    goto notforme;
+  }
+
+  const struct sockaddr *addr = TSHttpTxnClientAddrGet(txnp);
+  if (!is_ip_allowed(config, addr)) {
+    TSDebug(PLUGIN_NAME, "not right ip");
     goto notforme;
   }
 
@@ -294,6 +349,8 @@ TSPluginInit(int argc, const char *argv[])
   static const struct option longopts[] = {{(char *)("integer-counters"), no_argument, NULL, 'i'},
                                            {(char *)("wrap-counters"), no_argument, NULL, 'w'},
                                            {NULL, 0, NULL, 0}};
+  TSCont main_cont, config_cont;
+  config_holder_t *config_holder;
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";
@@ -301,6 +358,7 @@ TSPluginInit(int argc, const char *argv[])
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[%s] registration failed", PLUGIN_NAME);
+    goto done;
   }
 
   for (;;) {
@@ -322,13 +380,378 @@ init:
   argc -= optind;
   argv += optind;
 
-  if (argc > 0) {
-    url_path = TSstrdup(argv[0] + ('/' == argv[0][0] ? 1 : 0)); /* Skip leading / */
+  config_holder = new_config_holder(argc > 0 ? argv[0] : NULL);
+
+  /* Path was not set during load, so the param was not a config file, we also
+    have an argument so it must be the path, set it here.  Otherwise if no argument
+    then use the default _stats path */
+  if ((config_holder->config != NULL) && (config_holder->config->stats_path == 0) && (argc > 0) &&
+      (config_holder->config_path == NULL)) {
+    config_holder->config->stats_path     = TSstrdup(argv[0] + ('/' == argv[0][0] ? 1 : 0));
+    config_holder->config->stats_path_len = strlen(config_holder->config->stats_path);
+  } else if ((config_holder->config != NULL) && (config_holder->config->stats_path == 0)) {
+    config_holder->config->stats_path     = nstr(DEFAULT_URL_PATH);
+    config_holder->config->stats_path_len = strlen(config_holder->config->stats_path);
   }
-  url_path_len = strlen(url_path);
 
   /* Create a continuation with a mutex as there is a shared global structure
      containing the headers to add */
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(stats_origin, TSMutexCreate()));
-  TSDebug(PLUGIN_NAME, "stats module registered");
+  main_cont = TSContCreate(stats_origin, NULL);
+  TSContDataSet(main_cont, (void *)config_holder);
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, main_cont);
+
+  /* Create continuation for management updates to re-read config file */
+  config_cont = TSContCreate(config_handler, TSMutexCreate());
+  TSContDataSet(config_cont, (void *)config_holder);
+  TSMgmtUpdateRegister(config_cont, PLUGIN_NAME);
+  TSDebug(PLUGIN_NAME, "stats module registered with path %s", config_holder->config->stats_path);
+
+done:
+  return;
+}
+
+static bool
+is_ip_match(const char *ip, char *ipmask, char mask)
+{
+  unsigned int j, i, k;
+  char cm;
+  // to be able to set mask to 128
+  unsigned int umask = 0xff & mask;
+
+  for (j = 0, i = 0; ((i + 1) * 8) <= umask; i++) {
+    if (ip[i] != ipmask[i]) {
+      return false;
+    }
+    j += 8;
+  }
+  cm = 0;
+  for (k = 0; j < umask; j++, k++) {
+    cm |= 1 << (7 - k);
+  }
+
+  if ((ip[i] & cm) != (ipmask[i] & cm)) {
+    return false;
+  }
+  return true;
+}
+
+static bool
+is_ip_allowed(const config_t *config, const struct sockaddr *addr)
+{
+  char ip_port_text_buffer[INET6_ADDRSTRLEN];
+  int i;
+  char *ipmask;
+  if (!addr) {
+    return true;
+  }
+
+  if (addr->sa_family == AF_INET && config->allowIps) {
+    const struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
+    const char *ip                    = (char *)&addr_in->sin_addr;
+
+    for (i = 0; i < config->ipCount; i++) {
+      ipmask = config->allowIps + (i * (sizeof(struct in_addr) + 1));
+      if (is_ip_match(ip, ipmask, ipmask[4])) {
+        TSDebug(PLUGIN_NAME, "clientip is %s--> ALLOW", inet_ntop(AF_INET, ip, ip_port_text_buffer, INET6_ADDRSTRLEN));
+        return true;
+      }
+    }
+    TSDebug(PLUGIN_NAME, "clientip is %s--> DENY", inet_ntop(AF_INET, ip, ip_port_text_buffer, INET6_ADDRSTRLEN));
+    return false;
+
+  } else if (addr->sa_family == AF_INET6 && config->allowIps6) {
+    const struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)addr;
+    const char *ip                      = (char *)&addr_in6->sin6_addr;
+
+    for (i = 0; i < config->ip6Count; i++) {
+      ipmask = config->allowIps6 + (i * (sizeof(struct in6_addr) + 1));
+      if (is_ip_match(ip, ipmask, ipmask[sizeof(struct in6_addr)])) {
+        TSDebug(PLUGIN_NAME, "clientip6 is %s--> ALLOW", inet_ntop(AF_INET6, ip, ip_port_text_buffer, INET6_ADDRSTRLEN));
+        return true;
+      }
+    }
+    TSDebug(PLUGIN_NAME, "clientip6 is %s--> DENY", inet_ntop(AF_INET6, ip, ip_port_text_buffer, INET6_ADDRSTRLEN));
+    return false;
+  }
+  return true;
+}
+
+static void
+parseIps(config_t *config, char *ipStr)
+{
+  char buffer[STR_BUFFER_SIZE];
+  char *p, *tok1, *tok2, *ip;
+  int i, mask;
+  char ip_port_text_buffer[INET_ADDRSTRLEN];
+
+  if (!ipStr) {
+    config->ipCount = 1;
+    ip = config->allowIps = TSmalloc(sizeof(struct in_addr) + 1);
+    inet_pton(AF_INET, DEFAULT_IP, ip);
+    ip[4] = 0;
+    return;
+  }
+
+  strcpy(buffer, ipStr);
+  p = buffer;
+  while (strtok_r(p, ", \n", &p)) {
+    config->ipCount++;
+  }
+  if (!config->ipCount) {
+    return;
+  }
+  config->allowIps = TSmalloc(5 * config->ipCount); // 4 bytes for ip + 1 for bit mask
+  strcpy(buffer, ipStr);
+  p = buffer;
+  i = 0;
+  while ((tok1 = strtok_r(p, ", \n", &p))) {
+    TSDebug(PLUGIN_NAME, "%d) parsing: %s", i + 1, tok1);
+    tok2 = strtok_r(tok1, "/", &tok1);
+    ip   = config->allowIps + ((sizeof(struct in_addr) + 1) * i);
+    if (!inet_pton(AF_INET, tok2, ip)) {
+      TSDebug(PLUGIN_NAME, "%d) skipping: %s", i + 1, tok1);
+      continue;
+    }
+
+    if (tok1 != NULL) {
+      tok2 = strtok_r(tok1, "/", &tok1);
+    }
+    if (!tok2) {
+      mask = 32;
+    } else {
+      mask = atoi(tok2);
+    }
+    ip[4] = mask;
+    TSDebug(PLUGIN_NAME, "%d) adding netmask: %s/%d", i + 1, inet_ntop(AF_INET, ip, ip_port_text_buffer, INET_ADDRSTRLEN), ip[4]);
+    i++;
+  }
+}
+static void
+parseIps6(config_t *config, char *ipStr)
+{
+  char buffer[STR_BUFFER_SIZE];
+  char *p, *tok1, *tok2, *ip;
+  int i, mask;
+  char ip_port_text_buffer[INET6_ADDRSTRLEN];
+
+  if (!ipStr) {
+    config->ip6Count = 1;
+    ip = config->allowIps6 = TSmalloc(sizeof(struct in6_addr) + 1);
+    inet_pton(AF_INET6, DEFAULT_IP6, ip);
+    ip[sizeof(struct in6_addr)] = 0;
+    return;
+  }
+
+  strcpy(buffer, ipStr);
+  p = buffer;
+  while (strtok_r(p, ", \n", &p)) {
+    config->ip6Count++;
+  }
+  if (!config->ip6Count) {
+    return;
+  }
+
+  config->allowIps6 = TSmalloc((sizeof(struct in6_addr) + 1) * config->ip6Count); // 16 bytes for ip + 1 for bit mask
+  strcpy(buffer, ipStr);
+  p = buffer;
+  i = 0;
+  while ((tok1 = strtok_r(p, ", \n", &p))) {
+    TSDebug(PLUGIN_NAME, "%d) parsing: %s", i + 1, tok1);
+    tok2 = strtok_r(tok1, "/", &tok1);
+    ip   = config->allowIps6 + ((sizeof(struct in6_addr) + 1) * i);
+    if (!inet_pton(AF_INET6, tok2, ip)) {
+      TSDebug(PLUGIN_NAME, "%d) skipping: %s", i + 1, tok1);
+      continue;
+    }
+
+    if (tok1 != NULL) {
+      tok2 = strtok_r(tok1, "/", &tok1);
+    }
+
+    if (!tok2) {
+      mask = 128;
+    } else {
+      mask = atoi(tok2);
+    }
+    ip[sizeof(struct in6_addr)] = mask;
+    TSDebug(PLUGIN_NAME, "%d) adding netmask: %s/%d", i + 1, inet_ntop(AF_INET6, ip, ip_port_text_buffer, INET6_ADDRSTRLEN),
+            ip[sizeof(struct in6_addr)]);
+    i++;
+  }
+}
+
+static config_t *
+new_config(TSFile fh)
+{
+  char buffer[STR_BUFFER_SIZE];
+  config_t *config       = NULL;
+  config                 = (config_t *)TSmalloc(sizeof(config_t));
+  config->stats_path     = 0;
+  config->stats_path_len = 0;
+  config->allowIps       = 0;
+  config->ipCount        = 0;
+  config->allowIps6      = 0;
+  config->ip6Count       = 0;
+  config->recordTypes    = DEFAULT_RECORD_TYPES;
+
+  if (!fh) {
+    TSDebug(PLUGIN_NAME, "No config file, using defaults");
+    return config;
+  }
+
+  while (TSfgets(fh, buffer, STR_BUFFER_SIZE - 1)) {
+    if (*buffer == '#') {
+      continue; /* # Comments, only at line beginning */
+    }
+    char *p = 0;
+    if ((p = strstr(buffer, "path="))) {
+      p += strlen("path=");
+      if (p[0] == '/') {
+        p++;
+      }
+      config->stats_path     = nstr(strtok_r(p, " \n", &p));
+      config->stats_path_len = strlen(config->stats_path);
+    } else if ((p = strstr(buffer, "record_types="))) {
+      p += strlen("record_types=");
+      config->recordTypes = strtol(strtok_r(p, " \n", &p), NULL, 16);
+    } else if ((p = strstr(buffer, "allow_ip="))) {
+      p += strlen("allow_ip=");
+      parseIps(config, p);
+    } else if ((p = strstr(buffer, "allow_ip6="))) {
+      p += strlen("allow_ip6=");
+      parseIps6(config, p);
+    }
+  }
+  if (!config->ipCount) {
+    parseIps(config, NULL);
+  }
+  if (!config->ip6Count) {
+    parseIps6(config, NULL);
+  }
+  TSDebug(PLUGIN_NAME, "config path=%s", config->stats_path);
+
+  return config;
+}
+
+static void
+delete_config(config_t *config)
+{
+  TSDebug(PLUGIN_NAME, "Freeing config");
+  TSfree(config->allowIps);
+  TSfree(config->allowIps6);
+  TSfree(config->stats_path);
+  TSfree(config);
+}
+
+// standard api below...
+static config_t *
+get_config(TSCont cont)
+{
+  config_holder_t *configh = (config_holder_t *)TSContDataGet(cont);
+  if (!configh) {
+    return 0;
+  }
+  return configh->config;
+}
+
+static void
+load_config_file(config_holder_t *config_holder)
+{
+  TSFile fh = NULL;
+  struct stat s;
+
+  config_t *newconfig, *oldconfig;
+  TSCont free_cont;
+
+  configReloadRequests++;
+  lastReloadRequest = time(NULL);
+
+  // check date
+  if ((config_holder->config_path == NULL) || (stat(config_holder->config_path, &s) < 0)) {
+    TSDebug(PLUGIN_NAME, "Could not stat %s", config_holder->config_path);
+    config_holder->config_path = NULL;
+    if (config_holder->config) {
+      return;
+    }
+  } else {
+    TSDebug(PLUGIN_NAME, "s.st_mtime=%lu, last_load=%lu", s.st_mtime, config_holder->last_load);
+    if (s.st_mtime < config_holder->last_load) {
+      return;
+    }
+  }
+
+  if (config_holder->config_path != NULL) {
+    TSDebug(PLUGIN_NAME, "Opening config file: %s", config_holder->config_path);
+    fh = TSfopen(config_holder->config_path, "r");
+  }
+
+  if (!fh) {
+    TSError("[%s] Unable to open config: %s. Will use the param as the path, or %s if null\n", PLUGIN_NAME,
+            config_holder->config_path, DEFAULT_URL_PATH);
+    if (config_holder->config) {
+      return;
+    }
+  }
+
+  newconfig = 0;
+  newconfig = new_config(fh);
+  if (newconfig) {
+    configReloads++;
+    lastReload               = lastReloadRequest;
+    config_holder->last_load = lastReloadRequest;
+    config_t **confp         = &(config_holder->config);
+    oldconfig                = __sync_lock_test_and_set(confp, newconfig);
+    if (oldconfig) {
+      TSDebug(PLUGIN_NAME, "scheduling free: %p (%p)", oldconfig, newconfig);
+      free_cont = TSContCreate(free_handler, TSMutexCreate());
+      TSContDataSet(free_cont, (void *)oldconfig);
+      TSContScheduleOnPool(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
+    }
+  }
+  if (fh)
+    TSfclose(fh);
+  return;
+}
+
+static config_holder_t *
+new_config_holder(const char *path)
+{
+  config_holder_t *config_holder = TSmalloc(sizeof(config_holder_t));
+  config_holder->config_path     = 0;
+  config_holder->config          = 0;
+  config_holder->last_load       = 0;
+
+  if (path) {
+    config_holder->config_path = nstr(path);
+  } else {
+    config_holder->config_path = NULL;
+  }
+  load_config_file(config_holder);
+  return config_holder;
+}
+
+static int
+free_handler(TSCont cont, TSEvent event, void *edata)
+{
+  config_t *config;
+  config = (config_t *)TSContDataGet(cont);
+  delete_config(config);
+  TSContDestroy(cont);
+  return 0;
+}
+
+static int
+config_handler(TSCont cont, TSEvent event, void *edata)
+{
+  config_holder_t *config_holder;
+  config_holder = (config_holder_t *)TSContDataGet(cont);
+  load_config_file(config_holder);
+
+  /* We received a reload, check if the path value was removed since it was not set after load.
+     If unset, then we'll use the default */
+  if (config_holder->config->stats_path == 0) {
+    config_holder->config->stats_path     = nstr(DEFAULT_URL_PATH);
+    config_holder->config->stats_path_len = strlen(config_holder->config->stats_path);
+  }
+  return 0;
 }
