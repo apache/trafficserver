@@ -51,8 +51,8 @@ def validate_json(schema_json, replay_json):
     """
     try:
         jsonschema.validate(instance=replay_json, schema=schema_json)
-    except jsonschema.ValidationError:
-        print("The replay file does not validate against the schema.")
+    except jsonschema.ValidationError as e:
+        print("The replay file does not validate against the schema: {}".format(e))
         return False
     else:
         return True
@@ -72,7 +72,7 @@ def verify_there_was_a_transaction(replay_json):
         print("There are no transactions in the replay file.")
         return False
     transaction = transactions[0]
-    if not ('client-request' in transaction and 'server-response' in transaction):
+    if not ('client-request' in transaction and 'proxy-response' in transaction):
         print("There was not request and response in the transaction of the replay file.")
         return False
 
