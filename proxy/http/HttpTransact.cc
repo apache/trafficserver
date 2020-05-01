@@ -7143,25 +7143,36 @@ HttpTransact::does_client_request_permit_storing(CacheControlResult *c, HTTPHdr 
 }
 
 int
+HttpTransact::get_max_age(HTTPHdr *response)
+{
+  int max_age      = -1;
+  uint32_t cc_mask = response->get_cooked_cc_mask();
+
+  if (cc_mask & MIME_COOKED_MASK_CC_S_MAXAGE) {
+    // Precedence to s-maxage
+    max_age = static_cast<int>(response->get_cooked_cc_s_maxage());
+  } else if (cc_mask & MIME_COOKED_MASK_CC_MAX_AGE) {
+    // If s-maxage isn't set, try max-age
+    max_age = static_cast<int>(response->get_cooked_cc_max_age());
+  }
+
+  return max_age;
+}
+
+int
 HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic)
 {
   bool expires_set, date_set, last_modified_set;
   time_t date_value, expires_value, last_modified_value;
   MgmtInt min_freshness_bounds, max_freshness_bounds;
   int freshness_limit = 0;
-  uint32_t cc_mask    = response->get_cooked_cc_mask();
+  int max_age         = get_max_age(response);
 
   *heuristic = false;
 
-  if (cc_mask & (MIME_COOKED_MASK_CC_S_MAXAGE | MIME_COOKED_MASK_CC_MAX_AGE)) {
-    if (cc_mask & MIME_COOKED_MASK_CC_S_MAXAGE) {
-      freshness_limit = static_cast<int>(response->get_cooked_cc_s_maxage());
-      TxnDebug("http_match", "calculate_document_freshness_limit --- s_max_age set, freshness_limit = %d", freshness_limit);
-    } else if (cc_mask & MIME_COOKED_MASK_CC_MAX_AGE) {
-      freshness_limit = static_cast<int>(response->get_cooked_cc_max_age());
-      TxnDebug("http_match", "calculate_document_freshness_limit --- max_age set, freshness_limit = %d", freshness_limit);
-    }
-    freshness_limit = std::min(std::max(0, freshness_limit), static_cast<int>(s->txn_conf->cache_guaranteed_max_lifetime));
+  if (max_age >= 0) {
+    freshness_limit = std::min(std::max(0, max_age), static_cast<int>(s->txn_conf->cache_guaranteed_max_lifetime));
+    TxnDebug("http_match", "calculate_document_freshness_limit --- freshness_limit = %d", freshness_limit);
   } else {
     date_set = last_modified_set = false;
 

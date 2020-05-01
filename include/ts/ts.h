@@ -2453,6 +2453,18 @@ tsapi TSReturnCode TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milest
 tsapi int TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response);
 
 /**
+  Get the maximum age in seconds as indicated by the origin server.
+  This would typically be used in TS_HTTP_READ_RESPONSE_HDR_HOOK, when you have
+  the server response ready.
+
+  @param txnp the transaction pointer
+  @param response the server response header. If NULL, use the transactions origin response.
+
+  @return the age in seconds if specified by Cache-Control, -1 otherwise
+*/
+tsapi int TSHttpTxnGetMaxAge(TSHttpTxn txnp, TSMBuffer response);
+
+/**
    Return a string representation for a TSServerState value. This is useful for plugin debugging.
 
    @param state the value of this TSServerState

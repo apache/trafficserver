@@ -8950,6 +8950,30 @@ TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
   return (req->valid() && resp->valid() && HttpTransact::is_response_cacheable(&(sm->t_state), req, resp)) ? 1 : 0;
 }
 
+int
+TSHttpTxnGetMaxAge(TSHttpTxn txnp, TSMBuffer response)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *)txnp;
+  HTTPHdr *resp;
+
+  if (response) {
+    // Make sure the response we got as a parameter is valid
+    sdk_assert(sdk_sanity_check_mbuffer(response) == TS_SUCCESS);
+    resp = reinterpret_cast<HTTPHdr *>(response);
+  } else {
+    // Use the transactions origin response if the user passed NULL
+    resp = &(sm->t_state.hdr_info.server_response);
+  }
+
+  if (!resp || !resp->valid()) {
+    return -1;
+  }
+
+  // We have a valid response, return max_age
+  return HttpTransact::get_max_age(resp);
+}
+
 // Lookup various debug names for common HTTP types.
 const char *
 TSHttpServerStateNameLookup(TSServerState state)
