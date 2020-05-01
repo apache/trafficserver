@@ -103,13 +103,14 @@ tr = Test.AddTestRun("First transaction")
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = \
-        ('curl http://127.0.0.1:{0} -H"Cookie: donotlogthis" '
+        ('curl --http1.1 http://127.0.0.1:{0} -H"Cookie: donotlogthis" '
          '-H"Host: www.example.com" -H"X-Request-1: ultra_sensitive" --verbose'.format(
              ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
+session_1_protocols = "tcp,ipv4"
 
 # Execute the second transaction.
 tr = Test.AddTestRun("Second transaction")
@@ -131,11 +132,12 @@ sensitive_fields_arg = (
         "--sensitive-fields x-request-1 "
         "--sensitive-fields x-request-2 ")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = "python3 {0} {1} {2} {3}".format(
+tr.Processes.Default.Command = 'python3 {0} {1} {2} {3} --client-protocols "{4}"'.format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
         replay_file_session_1,
-        sensitive_fields_arg)
+        sensitive_fields_arg,
+        session_1_protocols)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
