@@ -34,7 +34,7 @@ def slow_post(port, slow_time):
 
 def makerequest(port, connection_limit):
     client_timeout = 3
-    for i in range(connection_limit):
+    for _ in range(connection_limit):
         t = threading.Thread(target=slow_post, args=(port, client_timeout + 10))
         t.daemon = True
         t.start()
