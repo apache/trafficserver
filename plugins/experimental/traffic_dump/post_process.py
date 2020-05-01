@@ -387,7 +387,7 @@ def main():
     nthreads = min(max(subdir_q.qsize(), 1), args.num_threads)
 
     # Start up the threads.
-    for i in range(nthreads):
+    for _ in range(nthreads):
         t = Thread(target=post_process,
                    args=(args.in_dir, subdir_q, args.out_dir,
                          args.num_sessions, args.no_human_readable,
