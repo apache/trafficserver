@@ -618,10 +618,10 @@ HttpSM::setup_client_read_request_header()
 void
 HttpSM::setup_blind_tunnel_port()
 {
-  NetVConnection *netvc     = ua_txn->get_netvc();
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+  NetVConnection *netvc = ua_txn->get_netvc();
+  ink_release_assert(netvc);
   int host_len;
-  if (ssl_vc) {
+  if (SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc)) {
     if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
       // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
       URL u;
