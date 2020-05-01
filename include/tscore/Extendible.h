@@ -148,11 +148,11 @@ namespace details // internal stuff
   {
   public:
     std::unordered_map<std::string, FieldDesc> fields; ///< defined elements of the blob by name
-    size_t alloc_size        = 0;                      ///< bytes to allocate for fields
-    uint8_t alloc_align      = 1;                      ///< alignment of block
-    uint cnt_constructed     = {0};                    ///< the number of Extendible<Derived> created.
-    uint cnt_fld_constructed = {0};                    ///< the number of Extendible<Derived> that constructed fields.
-    uint cnt_destructed      = {0};                    ///< the number of Extendible<Derived> destroyed.
+    size_t alloc_size                     = 0;         ///< bytes to allocate for fields
+    uint8_t alloc_align                   = 1;         ///< alignment of block
+    std::atomic<uint> cnt_constructed     = {0};       ///< the number of Extendible<Derived> created.
+    std::atomic<uint> cnt_fld_constructed = {0};       ///< the number of Extendible<Derived> that constructed fields.
+    std::atomic<uint> cnt_destructed      = {0};       ///< the number of Extendible<Derived> destroyed.
 
   public:
     Schema() {}
