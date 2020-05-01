@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # Check whether we have the required version of sphinx.
     if options.checkvers:
         min_sphinx_version_info = (1,7,5)
-        min_sphinx_version = '.'.join([str(x) for x in min_sphinx_version_info])
+        min_sphinx_version = '.'.join(str(x) for x in min_sphinx_version_info)
 
         print('checking for sphinx version >= {0}... '.format(min_sphinx_version), end="")
         # Need at least 1.5.1 to use svg
