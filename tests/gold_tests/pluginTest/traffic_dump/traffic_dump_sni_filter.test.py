@@ -102,26 +102,33 @@ ts.Disk.File(replay_file_session_1, exists=True)
 replay_file_session_2 = os.path.join(replay_dir, "127", "0000000000000001")
 ts.Disk.File(replay_file_session_2, exists=False)
 
+# The third session should also be filtered out because it doesn't have any
+# SNI (note exists is set to False).
+replay_file_session_2 = os.path.join(replay_dir, "127", "0000000000000002")
+ts.Disk.File(replay_file_session_2, exists=False)
+
 #
 # Test 1: Verify dumping a session with the desired SNI and not dumping
 #         the session with the other SNI.
 #
 
-# Execute the first transaction.
+# Execute the first transaction with an SNI of bob.
 tr = Test.AddTestRun("Verify dumping of a session with the filtered SNI")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-foo.key")
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = \
-        ('curl --tls-max 1.2 -k -H"Host: bob" --resolve "bob:{0}:127.0.0.1" '
+        ('curl --http2 --tls-max 1.2 -k -H"Host: bob" --resolve "bob:{0}:127.0.0.1" '
          '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://bob:{0}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200_sni_bob.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
+session_1_protocols = "h2,tls/1.2,tcp,ipv4"
+session_1_tls_features = 'sni:bob'
 
-# Execute the second transaction.
+# Execute the second transaction with an SNI of dave.
 tr = Test.AddTestRun("Verify that a session of a different SNI is not dumped.")
 tr.Processes.Default.Command = \
         ('curl --tls-max 1.2 -k -H"Host: dave" --resolve "dave:{0}:127.0.0.1" '
@@ -131,14 +138,26 @@ tr.Processes.Default.Streams.stderr = "gold/200_sni_dave.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
+# Execute the third transaction without any SNI.
+tr = Test.AddTestRun("Verify that a session of a non-existent SNI is not dumped.")
+tr.Processes.Default.Command = \
+        ('curl --tls-max 1.2 -k -H"Host: bob"'
+         '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://127.0.0.1:{0}'.format(ts.Variables.ssl_port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/200_bob_no_sni.gold"
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
 # Verify the properties of the replay file for the dumped transaction.
 tr = Test.AddTestRun("Verify the json content of the first session")
 verify_replay = "verify_replay.py"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = "python3 {0} {1} {2}".format(
+tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}" --client-tls-features "{4}"'.format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
-        replay_file_session_1)
+        replay_file_session_1,
+        session_1_protocols,
+        session_1_tls_features)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

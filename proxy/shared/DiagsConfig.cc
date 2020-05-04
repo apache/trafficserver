@@ -253,7 +253,7 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   ats_scoped_str logpath;
 
   ////////////////////////////////////////////////////////////////////
-  //  If we aren't using the manager records for configuation       //
+  //  If we aren't using the manager records for configuration      //
   //   just build the tables based on command line parameters and   //
   //   exit                                                         //
   ////////////////////////////////////////////////////////////////////

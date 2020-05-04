@@ -97,18 +97,18 @@ EventProcessor::schedule(Event *e, EventType etype)
     return nullptr;
   }
 
-  EThread *ethread = e->continuation->getThreadAffinity();
-  if (ethread != nullptr && ethread->is_event_type(etype)) {
-    e->ethread = ethread;
+  EThread *affinity_thread = e->continuation->getThreadAffinity();
+  EThread *curr_thread     = this_ethread();
+  if (affinity_thread != nullptr && affinity_thread->is_event_type(etype)) {
+    e->ethread = affinity_thread;
   } else {
-    ethread = this_ethread();
     // Is the current thread eligible?
-    if (ethread != nullptr && ethread->is_event_type(etype)) {
-      e->ethread = ethread;
+    if (curr_thread != nullptr && curr_thread->is_event_type(etype)) {
+      e->ethread = curr_thread;
     } else {
       e->ethread = assign_thread(etype);
     }
-    if (e->continuation->getThreadAffinity() == nullptr) {
+    if (affinity_thread == nullptr) {
       e->continuation->setThreadAffinity(e->ethread);
     }
   }
@@ -116,7 +116,13 @@ EventProcessor::schedule(Event *e, EventType etype)
   if (e->continuation->mutex) {
     e->mutex = e->continuation->mutex;
   }
-  e->ethread->EventQueueExternal.enqueue(e);
+
+  if (curr_thread != nullptr && e->ethread == curr_thread) {
+    e->ethread->EventQueueExternal.enqueue_local(e);
+  } else {
+    e->ethread->EventQueueExternal.enqueue(e);
+  }
+
   return e;
 }
 

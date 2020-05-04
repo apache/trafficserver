@@ -151,6 +151,9 @@ Cache Details
 .. _chm:
 .. _cwr:
 .. _cwtr:
+.. _crra:
+.. _cwra:
+.. _cccs:
 
 These log fields reveal details of the |TS| proxy interaction with its own
 cache while attempting to service incoming client requests.
@@ -173,6 +176,13 @@ cwr   Proxy Cache    Cache Write Result. Specifies the result of attempting to
                      (``WL_MISS``), write interrupted (``INTR``), error while
                      writing (``ERR``), or cache write successful (``FIN``).
 cwt   Proxy Cache    Cache Write Transform Result.
+crra  Proxy Cache    Cache read retry attempts to read the object from cache.
+cwra  Proxy Cache    Cache write retry attempts to write a fresh or updated
+                     object to cache.
+cccs  Proxy Cache    Cache collapsed connection success;
+                     -1: collapsing was attempted but failed, request went upstream
+                     0: collapsing was unnecessary
+                     1: attempted to collapse and got a cache hit on subsequent read attempts
 ===== ============== ==========================================================
 
 .. _admin-logging-fields-txn:
@@ -495,6 +505,13 @@ shi   Origin Server  IP address resolved via DNS by |TS| for the origin server.
 shn   Origin Server  Host name of the origin server.
 nhi   Origin Server  Destination IP address of next hop
 nhp   Origin Server  Destination port of next hop
+ppv   Proxy Protocol Proxy Protocol Version used (if any) between the Loadbalancer
+      Version        and |TS|
+pps   Proxy Protocol Source IP received via Proxy Protocol context from the LB to
+      Source IP      the |TS|
+ppd   Proxy Protocol Destination IP received via Proxy Protocol context from the LB
+      Dest IP        to the |TS|
+
 ===== ============== ==========================================================
 
 .. note::

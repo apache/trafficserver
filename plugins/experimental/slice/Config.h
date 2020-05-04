@@ -20,6 +20,12 @@
 
 #include "slice.h"
 
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
+
 #include <mutex>
 
 // Data Structures and Classes
@@ -30,17 +36,35 @@ struct Config {
 
   int64_t m_blockbytes{blockbytesdefault};
   std::string m_remaphost; // remap host to use for loopback slice GET
-  bool m_throttle{false};  // internal block throttling
-  int m_paceerrsecs{0};    // -1 disable logging, 0 no pacing, max 60s
+  std::string m_regexstr;  // regex string for things to slice (default all)
+  enum RegexType { None, Include, Exclude };
+  RegexType m_regex_type{None};
+  pcre *m_regex{nullptr};
+  pcre_extra *m_regex_extra{nullptr};
+  bool m_throttle{false}; // internal block throttling
+  int m_paceerrsecs{0};   // -1 disable logging, 0 no pacing, max 60s
 
   // Convert optarg to bytes
   static int64_t bytesFrom(char const *const valstr);
+
+  // clean up pcre if applicable
+  ~Config();
 
   // Parse from args, ast one wins
   bool fromArgs(int const argc, char const *const argv[]);
 
   // Check if the error should can be logged, if sucessful may update m_nexttime
   bool canLogError();
+
+  // Check if regex supplied
+  bool
+  hasRegex() const
+  {
+    return None != m_regex_type;
+  }
+
+  // If no null reg, true, otherwise check against regex
+  bool matchesRegex(char const *const url, int const urllen) const;
 
 private:
   TSHRTime m_nextlogtime{0}; // next time to log in ns

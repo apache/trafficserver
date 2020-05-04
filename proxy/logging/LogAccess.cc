@@ -1315,6 +1315,61 @@ LogAccess::marshal_version_build_number(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_proxy_protocol_version(char *buf)
+{
+  const char *version_str = nullptr;
+  int len                 = INK_MIN_ALIGN;
+
+  if (m_http_sm) {
+    NetVConnection::ProxyProtocolVersion ver = m_http_sm->t_state.pp_info.proxy_protocol_version;
+    switch (ver) {
+    case NetVConnection::ProxyProtocolVersion::V1:
+      version_str = "V1";
+      break;
+    case NetVConnection::ProxyProtocolVersion::V2:
+      version_str = "V2";
+      break;
+    case NetVConnection::ProxyProtocolVersion::UNDEFINED:
+    default:
+      version_str = "-";
+      break;
+    }
+    len = LogAccess::strlen(version_str);
+  }
+
+  if (buf) {
+    marshal_str(buf, version_str, len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_proxy_protocol_src_ip(char *buf)
+{
+  sockaddr const *ip = nullptr;
+  if (m_http_sm && m_http_sm->t_state.pp_info.proxy_protocol_version != NetVConnection::ProxyProtocolVersion::UNDEFINED) {
+    ip = &m_http_sm->t_state.pp_info.src_addr.sa;
+  }
+  return marshal_ip(buf, ip);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_proxy_protocol_dst_ip(char *buf)
+{
+  sockaddr const *ip = nullptr;
+  if (m_http_sm && m_http_sm->t_state.pp_info.proxy_protocol_version != NetVConnection::ProxyProtocolVersion::UNDEFINED) {
+    ip = &m_http_sm->t_state.pp_info.dst_addr.sa;
+  }
+  return marshal_ip(buf, ip);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
 LogAccess::marshal_client_host_port(char *buf)
 {
   if (buf) {
@@ -2631,6 +2686,61 @@ LogAccess::marshal_client_http_transaction_priority_dependence(char *buf)
   return INK_MIN_ALIGN;
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_cache_read_retries(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->get_cache_sm().get_open_read_tries();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_cache_write_retries(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->get_cache_sm().get_open_write_tries();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_cache_collapsed_connection_success(char *buf)
+{
+  if (buf) {
+    int64_t id = 0; // default - no collapse attempt
+    if (m_http_sm) {
+      SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
+
+      // We increment open_write_tries beyond the max when we want to jump back to the read state for collapsing
+      if ((m_http_sm->get_cache_sm().get_open_write_tries() > (m_http_sm->t_state.txn_conf->max_cache_open_write_retries)) &&
+          ((code == SQUID_LOG_TCP_HIT) || (code == SQUID_LOG_TCP_MEM_HIT) || (code == SQUID_LOG_TCP_DISK_HIT))) {
+        // Attempted collapsed connection and got a hit, success
+        id = 1;
+      } else if (m_http_sm->get_cache_sm().get_open_write_tries() > (m_http_sm->t_state.txn_conf->max_cache_open_write_retries)) {
+        // Attempted collapsed connection with no hit, failure, we can also get +2 retries in a failure state
+        id = -1;
+      }
+    }
+
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

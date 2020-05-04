@@ -892,6 +892,21 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ctid", field);
 
+  field = new LogField("cache_read_retry_attempts", "crra", LogField::dINT, &LogAccess::marshal_cache_read_retries,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("crra", field);
+
+  field = new LogField("cache_write_retry_attempts", "cwra", LogField::dINT, &LogAccess::marshal_cache_write_retries,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cwra", field);
+
+  field = new LogField("cache_collapsed_connection_success", "cccs", LogField::dINT,
+                       &LogAccess::marshal_cache_collapsed_connection_success, &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cccs", field);
+
   field = new LogField("client_transaction_priority_weight", "ctpw", LogField::sINT,
                        &LogAccess::marshal_client_http_transaction_priority_weight, &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
@@ -901,6 +916,21 @@ Log::init_fields()
                        &LogAccess::marshal_client_http_transaction_priority_dependence, &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ctpd", field);
+
+  field = new LogField("proxy_protocol_version", "ppv", LogField::dINT, &LogAccess::marshal_proxy_protocol_version,
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("ppv", field);
+
+  field = new LogField("proxy_protocol_src_ip", "pps", LogField::IP, &LogAccess::marshal_proxy_protocol_src_ip,
+                       &LogAccess::unmarshal_ip_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("ppsip", field);
+
+  field = new LogField("proxy_protocol_dst_ip", "ppd", LogField::IP, &LogAccess::marshal_proxy_protocol_dst_ip,
+                       &LogAccess::unmarshal_ip_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("ppdip", field);
 
   field = new LogField("version_build_number", "vbn", LogField::STRING, &LogAccess::marshal_version_build_number,
                        (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);

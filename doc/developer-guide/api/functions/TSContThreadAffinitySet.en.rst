@@ -34,10 +34,10 @@ Description
 ===========
 
 Set the thread affinity of continuation :arg:`contp` to :arg:`ethread`. Future calls to
-:func:`TSContSchedule`, and :func:`TSContScheduleOnPool` that has the same type as :arg:`ethread`
+:func:`TSContScheduleOnPool`, and :func:`TSContScheduleOnPool` that has the same type as :arg:`ethread`
 will schedule the continuation on :arg:`ethread`, rather than an arbitrary thread of that type.
 
-:func:`TSContSchedule` and :func:``TSContScheduleEvery` will default the affinity to calling thread
+:func:`TSContScheduleOnPool` and :func:`TSContScheduleEveryOnPool` will default the affinity to calling thread
 when invoked without explicitly setting the thread affinity.
 
 Return Values

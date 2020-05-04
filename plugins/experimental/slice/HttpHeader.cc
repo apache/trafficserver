@@ -54,18 +54,20 @@ HttpHeader::setStatus(TSHttpStatus const newstatus)
 }
 
 char *
-HttpHeader ::urlString(int *const urllen) const
+HttpHeader::urlString(int *const urllen) const
 {
   char *urlstr = nullptr;
   TSAssert(nullptr != urllen);
 
   TSMLoc locurl            = nullptr;
   TSReturnCode const rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurl);
-  if (TS_SUCCESS == rcode && nullptr != locurl) {
-    urlstr = TSUrlStringGet(m_buffer, locurl, urllen);
+  if (nullptr != locurl) {
+    if (TS_SUCCESS == rcode) {
+      urlstr = TSUrlStringGet(m_buffer, locurl, urllen);
+    } else {
+      *urllen = 0;
+    }
     TSHandleMLocRelease(m_buffer, m_lochdr, locurl);
-  } else {
-    *urllen = 0;
   }
 
   return urlstr;

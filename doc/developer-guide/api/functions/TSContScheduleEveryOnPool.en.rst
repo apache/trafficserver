@@ -18,8 +18,8 @@
 
 .. default-domain:: c
 
-TSContSchedule
-**************
+TSContScheduleEveryOnPool
+*************************
 
 Synopsis
 ========
@@ -28,24 +28,25 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSAction TSContSchedule(TSCont contp, TSHRTime timeout)
+.. function:: TSAction TSContScheduleEveryOnPool(TSCont contp, TSHRTime every)
 
 Description
 ===========
 
-Schedules :arg:`contp` to run :arg:`delay` milliseconds in the future. This is approximate. The delay
-will be at least :arg:`delay` but possibly more. Resolutions finer than roughly 5 milliseconds will
-not be effective. :arg:`contp` is required to have a mutex, which is provided to
+Schedules :arg:`contp` to run :arg:`every` milliseconds, on a random thread that belongs to
+:arg:`tp`. The :arg:`every` is an approximation, meaning it will be at least :arg:`every`
+milliseconds but possibly more. Resolutions finer than roughly 5 milliseconds will not be
+effective. Note that :arg:`contp` is required to have a mutex, which is provided to
 :func:`TSContCreate`.
 
-The return value can be used to cancel the scheduled event via :func:`TSActionCancel`. This is
-effective until the continuation :arg:`contp` is being dispatched. However, if it is scheduled on
-another thread this can be problematic to be correctly timed. The return value can be checked with
-:func:`TSActionDone` to see if the continuation ran before the return, which is possible if
-:arg:`timeout` is `0`. Returns ``nullptr`` if thread affinity was cleared.
+The return value can be used to cancel the scheduled event via :func:`TSActionCancel`. This
+is effective until the continuation :arg:`contp` is being dispatched. However, if it is
+scheduled on another thread this can be problematic to be correctly timed. The return value
+can be checked with :func:`TSActionDone` to see if the continuation ran before the return,
+which is possible if :arg:`timeout` is `0`.
 
-TSContSchedule() or TSContScheduleEvery() will default to set the thread affinity to the calling thread
-when no affinity is already set for example, using :func:`TSContThreadAffinitySet`
+If :arg:`contp` has no thread affinity set, the thread it is now scheduled on will be set
+as its thread affinity thread.
 
 Note that the TSContSchedule() family of API shall only be called from an ATS EThread.
 Calling it from raw non-EThreads can result in unpredictable behavior.
@@ -53,6 +54,5 @@ Calling it from raw non-EThreads can result in unpredictable behavior.
 See Also
 ========
 
-:doc:`TSContScheduleEvery.en`
 :doc:`TSContScheduleOnPool.en`
 :doc:`TSContScheduleOnThread.en`

@@ -7859,10 +7859,9 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   // will do that in handle_api_return under the
   // HttpTransact::SM_ACTION_REDIRECT_READ state
   t_state.parent_result.reset();
-  t_state.request_sent_time           = 0;
-  t_state.response_received_time      = 0;
-  t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
-  t_state.next_action                 = HttpTransact::SM_ACTION_REDIRECT_READ;
+  t_state.request_sent_time      = 0;
+  t_state.response_received_time = 0;
+  t_state.next_action            = HttpTransact::SM_ACTION_REDIRECT_READ;
   // we have a new OS and need to have DNS lookup the new OS
   t_state.dns_info.lookup_success = false;
   t_state.force_dns               = false;
