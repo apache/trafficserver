@@ -92,10 +92,6 @@ static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 
 SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
-static int ssl_session_ticket_index = -1;
-#endif
-
 static int ssl_vc_index = -1;
 
 static ink_mutex *mutex_buf      = nullptr;
@@ -911,13 +907,6 @@ SSLInitializeLibrary()
     CRYPTO_set_dynlock_lock_callback(ssl_dyn_lock_callback);
     CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_callback);
   }
-
-#ifdef TS_HAVE_OPENSSL_SESSION_TICKETS
-  ssl_session_ticket_index = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, ssl_session_ticket_free);
-  if (ssl_session_ticket_index == -1) {
-    SSLError("failed to create session ticket index");
-  }
-#endif
 
 #if TS_USE_TLS_OCSP
   ssl_stapling_ex_init();
