@@ -170,14 +170,6 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
   return SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 }
 
-static bool
-ssl_session_timed_out(SSL_SESSION *session)
-{
-  return SSL_SESSION_get_timeout(session) < (time(nullptr) - SSL_SESSION_get_time(session));
-}
-
-static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
-
 static SSL_SESSION *
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
@@ -185,46 +177,14 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
 ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
 #endif
 {
-  SSLSessionID sid(id, len);
+  TLSSessionResumptionSupport *srs = TLSSessionResumptionSupport::getInstance(ssl);
 
-  *copy = 0;
-  if (diags->tag_activated("ssl.session_cache")) {
-    char printable_buf[(len * 2) + 1];
-    sid.toString(printable_buf, sizeof(printable_buf));
-    Debug("ssl.session_cache.get", "ssl_get_cached_session cached session '%s' context %p", printable_buf, SSL_get_SSL_CTX(ssl));
+  ink_assert(srs);
+  if (srs) {
+    return srs->getSession(ssl, id, len, copy);
   }
 
-  APIHook *hook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
-  while (hook) {
-    hook->invoke(TS_EVENT_SSL_SESSION_GET, &sid);
-    hook = hook->m_link.next;
-  }
-
-  SSL_SESSION *session             = nullptr;
-  ssl_session_cache_exdata *exdata = nullptr;
-  if (session_cache->getSession(sid, &session, &exdata)) {
-    ink_assert(session);
-    ink_assert(exdata);
-
-    // Double check the timeout
-    if (ssl_session_timed_out(session)) {
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
-// Due to bug in openssl, the timeout is checked, but only removed
-// from the openssl built-in hash table.  The external remove cb is not called
-#if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
-      ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
-#endif
-      session = nullptr;
-    } else {
-      SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
-      netvc->setSSLSessionCacheHit(true);
-      netvc->setSSLCurveNID(exdata->curve);
-    }
-  } else {
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
-  }
-  return session;
+  return nullptr;
 }
 
 static int
@@ -915,6 +875,8 @@ SSLInitializeLibrary()
   // Reserve an application data index so that we can attach
   // the SSLNetVConnection to the SSL session.
   ssl_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
+
+  TLSSessionResumptionSupport::initialize();
 
   open_ssl_initialized = true;
 }
