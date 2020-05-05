@@ -1264,7 +1264,14 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
                                      SSL_QUIC_METHOD var;
                                    ]])
                   ],
-                  [AC_MSG_RESULT([yes]); enable_quic=yes],
+                  [
+                    AC_MSG_RESULT([yes])
+                    enable_quic=yes
+                    _quic_saved_LIBS=$LIBS
+                    TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+                    AC_CHECK_FUNCS(SSL_set_quic_early_data_enabled)
+                    LIBS=$_quic_saved_LIBS
+                  ],
                   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
                                    [[
                                      #ifdef SSL_MODE_QUIC_HACK

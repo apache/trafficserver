@@ -143,6 +143,9 @@ QUICTLS::QUICTLS(QUICPacketProtectionKeyInfo &pp_key_info, SSL_CTX *ssl_ctx, Net
 
   SSL_set_ex_data(this->_ssl, QUIC::ssl_quic_tls_index, this);
   SSL_set_quic_method(this->_ssl, &quic_method);
+#ifdef HAVE_SSL_SET_QUIC_EARLY_DATA_ENABLED
+  SSL_set_quic_early_data_enabled(this->_ssl, 1);
+#endif
 
   if (session_file && this->_netvc_context == NET_VCONNECTION_OUT) {
     auto file = BIO_new_file(session_file, "r");
