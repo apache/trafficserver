@@ -2218,6 +2218,7 @@ QUICNetVConnection::_setup_handshake_protocol(shared_SSL_CTX ctx)
   QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx.get(), this->direction(), this->options,
                              this->_quic_config->client_session_file(), this->_quic_config->client_keylog_file());
   SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
+  TLSSessionResumptionSupport::bind(tls->ssl_handle(), this);
 
   return tls;
 }
@@ -2327,4 +2328,10 @@ QUICNetVConnection::_handle_periodic_ack_event()
     // FIXME: should sent depend on socket event.
     this->_schedule_packet_write_ready();
   }
+}
+
+const IpEndpoint &
+QUICNetVConnection::_getLocalEndpoint()
+{
+  return local_addr;
 }

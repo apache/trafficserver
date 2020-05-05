@@ -37,6 +37,8 @@
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
 #include "P_UDPNet.h"
+#include "P_ALPNSupport.h"
+#include "TLSSessionResumptionSupport.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/List.h"
 
@@ -133,7 +135,11 @@ class SSLNextProtocolSet;
  *    WRITE:
  *      Do nothing
  **/
-class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, public RefCountObj, public ALPNSupport
+class QUICNetVConnection : public UnixNetVConnection,
+                           public QUICConnection,
+                           public RefCountObj,
+                           public ALPNSupport,
+                           public TLSSessionResumptionSupport
 {
   using super = UnixNetVConnection; ///< Parent type.
 
@@ -210,6 +216,9 @@ public:
 
   LINK(QUICNetVConnection, closed_link);
   SLINK(QUICNetVConnection, closed_alink);
+
+protected:
+  const IpEndpoint &_getLocalEndpoint() override;
 
 private:
   std::random_device _rnd;
