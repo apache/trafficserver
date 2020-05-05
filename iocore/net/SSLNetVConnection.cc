@@ -212,6 +212,7 @@ make_ssl_connection(SSL_CTX *ctx, SSLNetVConnection *netvc)
     }
 
     SSLNetVCAttach(ssl, netvc);
+    TLSSessionResumptionSupport::bind(ssl, netvc);
   }
 
   return ssl;
@@ -929,13 +930,13 @@ SSLNetVConnection::clear()
     ssl = nullptr;
   }
   ALPNSupport::clear();
+  TLSSessionResumptionSupport::clear();
 
   sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
   sslHandshakeBeginTime       = 0;
   sslLastWriteTime            = 0;
   sslTotalBytesSent           = 0;
   sslClientRenegotiationAbort = false;
-  sslSessionCacheHit          = false;
 
   curHook         = nullptr;
   hookOpRequested = SSL_HOOK_OP_DEFAULT;
@@ -1303,7 +1304,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       unsigned len               = 0;
 
       increment_ssl_version_metric(SSL_version(ssl));
-      fetch_ssl_curve();
 
       // If it's possible to negotiate both NPN and ALPN, then ALPN
       // is preferred since it is the server's preference.  The server
@@ -1826,6 +1826,7 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 
   sslHandshakeStatus = SSL_HANDSHAKE_DONE;
   SSLNetVCAttach(this->ssl, this);
+  TLSSessionResumptionSupport::bind(this->ssl, this);
   return EVENT_DONE;
 }
 
@@ -1853,14 +1854,6 @@ SSLNetVConnection::increment_ssl_version_metric(int version) const
   default:
     Debug("ssl", "Unrecognized SSL version %d", version);
     break;
-  }
-}
-
-void
-SSLNetVConnection::fetch_ssl_curve()
-{
-  if (!getSSLSessionCacheHit()) {
-    setSSLCurveNID(SSLGetCurveNID(ssl));
   }
 }
 
