@@ -47,6 +47,7 @@
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
 #include "P_ALPNSupport.h"
+#include "TLSSessionResumptionSupport.h"
 #include "P_SSLUtils.h"
 
 // These are included here because older OpenSSL libraries don't have them.
@@ -91,7 +92,7 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport
+class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport, public TLSSessionResumptionSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
@@ -127,18 +128,6 @@ public:
   setSSLHandShakeComplete(enum SSLHandshakeStatus state)
   {
     sslHandshakeStatus = state;
-  }
-
-  void
-  setSSLSessionCacheHit(bool state)
-  {
-    sslSessionCacheHit = state;
-  }
-
-  bool
-  getSSLSessionCacheHit() const
-  {
-    return sslSessionCacheHit;
   }
 
   int sslServerHandShakeEvent(int &err);
@@ -307,18 +296,6 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }
 
-  void
-  setSSLCurveNID(ssl_curve_id curve_nid)
-  {
-    sslCurveNID = curve_nid;
-  }
-
-  ssl_curve_id
-  getSSLCurveNID() const
-  {
-    return sslCurveNID;
-  }
-
   const char *
   getSSLCurve() const
   {
@@ -460,20 +437,24 @@ public:
     return SSL_get_servername(this->ssl, TLSEXT_NAMETYPE_host_name);
   }
 
+protected:
+  const IpEndpoint &
+  _getLocalEndpoint() override
+  {
+    return local_addr;
+  }
+
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
   void increment_ssl_version_metric(int version) const;
-  void fetch_ssl_curve();
 
   enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
   bool sslClientRenegotiationAbort           = false;
-  bool sslSessionCacheHit                    = false;
   MIOBuffer *handShakeBuffer                 = nullptr;
   IOBufferReader *handShakeHolder            = nullptr;
   IOBufferReader *handShakeReader            = nullptr;
   int handShakeBioStored                     = 0;
-  int sslCurveNID                            = NID_undef;
 
   bool transparentPassThrough = false;
 
