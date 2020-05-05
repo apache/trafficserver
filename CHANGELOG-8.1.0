@@ -176,7 +176,9 @@ Changes with Apache Traffic Server 8.1.0
   #6660 - Fix 8.1.x build with old openssl
   #6665 - Fix memory leak of HPACK
   #6666 - Fix link issue of test_libhttp2 on FreeBSD 12 with --enable-debug
+  #6667 - Updated docs for guaranteed_{min,max}_lifetime
   #6676 - Fixes the 'traffic_ctl host status' for trafficserver 8.1.x
   #6685 - 8.1.x backport cache_range_requests autests: remove last-modified
   #6688 - Fixes minor memory leak in configure_net
   #6692 - Fix deprecated-copy warning in cache tool
+  #6729 - Fix a bug that current_active_client_connections doesn't decrease
