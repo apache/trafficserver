@@ -341,7 +341,7 @@ cssh           ecssh
 ============== ===================
 
 It is also possible to log all of the headers in a transaction message with a
-single field.  For each original original field, there is a variant which ends in
+single field.  For each original field, there is a variant which ends in
 ``ah`` rather than ``h``, as shown here:
 
 ============== ===================

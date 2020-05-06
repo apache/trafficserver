@@ -207,7 +207,7 @@ block header and sends its bytes to the client until the client
 request is satisfied.
 
 Any extra bytes at the end of the last block are consumed by
-the the Slice plugin to allow cache_range_requests to finish
+the Slice plugin to allow cache_range_requests to finish
 the block fetch to ensure the block is cached.
 
 Important Notes

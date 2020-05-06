@@ -37,7 +37,7 @@ may need to twiddle the ``configure`` options.
     Enable TPROXY support, which is the Linux kernel feature used for
     transparency. This should be present in the base installation, there
     is no package associated with it. \* ``auto`` Do automatic checks
-    for the the TPROXY header file (``linux/in.h``) and enable TPROXY
+    for the TPROXY header file (``linux/in.h``) and enable TPROXY
     support if the ``IP_TRANSPARENT`` definition is present. This is the
     default if this option is not specified or ``value`` is omitted. \*
     ``no`` Do not check for TPROXY support, disable support for it. \*

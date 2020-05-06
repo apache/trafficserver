@@ -152,8 +152,8 @@ Useful Note
 
 1. You can provide proper cache control header and the ESI response and ESI include response can be cached separately.
    It is extremely useful for rendering page with multiple modules. The page layout can be a ESI response with multiple
-   ESI include include, each for different module. The page layout ESI response can be cached and each individual ESI
-   include can also be cached with different duration.
+   ESI includes, each for a different module. The page layout ESI response can be cached and each individual ESI
+   included can also be cached with a different duration.
 
 2. You should run the plugin without using "packed node support" because it is not fully tested.
 

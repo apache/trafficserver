@@ -990,7 +990,7 @@ evacuated.
 
 There are two types of evacuations: *reader based* and *forced*. The
 ``EvacuationBlock`` has a reader count to track this. If the reader count is
-zero, then it is a forced evacuation and the the target, if it exists, will be
+zero, then it is a forced evacuation and the target, if it exists, will be
 evacuated when the write cursor gets close. If the reader value is non-zero
 then it is a count of entities that are currently expecting to be able to read
 the object. Readers increment the count when they require read access to the

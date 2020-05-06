@@ -102,7 +102,7 @@ more widely. Those are described on this page.
 
 .. type:: TSMBuffer
 
-   Internally, data for a transaction is stored in one more more :term:`header heap`\s. These are
+   Internally, data for a transaction is stored in one or more :term:`header heap`\s. These are
    storage local to the transaction, and generally each HTTP header is stored in a separate one.
    This type is a handle to a header heap, and is provided or required by functions that locate HTTP
    header related data.
