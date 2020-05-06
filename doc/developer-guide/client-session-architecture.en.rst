@@ -93,7 +93,7 @@ HTTP/2 Objects
 
 This diagram shows the relationships between objects created as part of a HTTP/2 session.  It is very similar
 to the HTTP/1.x case.  The Http2ClientSession object interacts with the NetVC.  The Http2Stream object creates
-a HttpSM object object when :code:`ProxyClient::new_transaction()` is called.
+a HttpSM object when :code:`ProxyClient::new_transaction()` is called.
 
 One difference is that the Http/2 protocol allows for multiple simultaneous transactions, so the Http2ClientSession
 object must be able to manage multiple streams. From the HttpSM perspective it is interacting with a

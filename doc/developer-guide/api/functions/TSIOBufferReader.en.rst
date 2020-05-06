@@ -69,7 +69,7 @@ time. Reader allocation is fast and cheap until this maximum is reached at which
    This also effectively consumes (see :func:`TSIOBufferReaderConsume`) all data for :arg:`reader`.
 
 :func:`TSIOBufferReaderConsume` consume data from :arg:`reader`.
-   This advances the position of :arg:`reader` in its IO buffer by the the smaller of :arg:`nbytes`
+   This advances the position of :arg:`reader` in its IO buffer by the smaller of :arg:`nbytes`
    and the maximum available in the buffer. This is required to release the buffer memory - when
    data has been consumed by all readers, it is discarded.
 

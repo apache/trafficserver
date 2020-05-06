@@ -255,10 +255,10 @@ the library user. The increment / decrement and compound assignment operators we
 similar to pointer arithmetic to be unsurprising in this context. This was further influenced by the
 fact that, in general, these operators are useless in the value context. E.g. if a scalar has a
 scale greater than 1 (the common case) then increment and decrement of the value is always a null
-operation. Once those operators are used on the count is is least surprising that the compound
+operation. Once those operators are used on the count is least surprising that the compound
 operators act in the same way. The next step, to arithmetic operators, is not so clear and so those
 require explicit scale indicators, such as :code:`round_down` or explicit constructors. It was a
 design goal to avoid, as much as possible, the requirement that the library user keep track of the
 scale of specific variables. This has proved very useful in practice, but at the same time when
-doing arithmetic is is almost always the case that either the values are both scalars (making the
+doing arithmetic is almost always the case that either the values are both scalars (making the
 arithmetic unambiguous) or the scale of the literal is known (e.g., "add 6 kilobytes").

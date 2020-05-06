@@ -193,7 +193,7 @@ COOKIE
 
     cond %{COOKIE:<name>} <operand>
 
-Value of of the cookie ``<name>``. This does not expose or match against a
+Value of the cookie ``<name>``. This does not expose or match against a
 cookie's expiration, the domain(s) on which it is valid, whether it is protocol
 restricted, or any of the other metadata; simply the current value of the
 cookie as presented by the client.

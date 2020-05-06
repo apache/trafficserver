@@ -237,7 +237,7 @@ Query-Param-Style Named Claim format
    * ``iat`` for `issued at time`_, `optional`
    * ``tid`` for `token id`_, `optional`
    * ``ver`` for `version`_, `optional`, defaults to ``ver=1`` if not specified.
-   * ``scope`` for `scope`_, `optional`, ignored by by the current version of the plugin, still not finalized (more applications and their use cases need to be studied to finalize the format)
+   * ``scope`` for `scope`_, `optional`, ignored by the current version of the plugin, still not finalized (more applications and their use cases need to be studied to finalize the format)
    * ``kid`` for `key id`_, `required` (tokens to be always signed)
    * ``st`` for `signature type`_, `optional` (default would be ``SHA-256`` if not specified)
    * ``md`` for `message digest`_ - this claim is `required` and expected to be always the last claim.

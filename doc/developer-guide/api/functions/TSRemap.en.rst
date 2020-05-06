@@ -72,7 +72,7 @@ the HTTP transaction.
 to notify plugins of the coming configuration reload. It is called on all already loaded plugins,
 invoked by current and all previous still used configurations. This is an optional entry point.
 
-:func:`TSRemapPostConfigReload` is called to indicate the end of the the new remap configuration
+:func:`TSRemapPostConfigReload` is called to indicate the end of the new remap configuration
 load. It is called on the newly and previously loaded plugins, invoked by the new, current and
 previous still used configurations. It also indicates whether the configuration reload was successful
 by passing :macro:`TSREMAP_CONFIG_RELOAD_FAILURE` in case of failure and to notify the plugins if they
