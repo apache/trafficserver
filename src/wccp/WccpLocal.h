@@ -3486,7 +3486,7 @@ AssignInfoComp::bucket(int idx) const
 }
 inline RouterViewComp::RouterViewComp() : m_cache_count(0)
 {
-  memset(m_cache_ids, 0, sizeof(m_cache_ids));
+  ink_zero(m_cache_ids);
 }
 
 inline CapComp::CapComp() {}
