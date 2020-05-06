@@ -151,8 +151,8 @@ History
 The first attempt at this functionality was in the TSConfig library in the :code:`ts::Buffer` and
 :code:`ts::ConstBuffer` classes. Originally intended just as raw memory views,
 :code:`ts::ConstBuffer` in particular was repeated enhanced to provide better support for strings.
-The header was eventually moved from :literal:`lib/tsconfig` to :literal:`lib/ts` and was used in in
-various part of the |TS| core.
+The header was eventually moved from :literal:`lib/tsconfig` to :literal:`lib/ts` and was used in
+various parts of the |TS| core.
 
 There was then a proposal to make these classes available to plugin writers as they proved handy in
 the core. A suggested alternative was `Boost.StringRef

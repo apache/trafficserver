@@ -153,7 +153,7 @@ If the "incoming" URL is ::
   http://example.com/path/file-104.mov?a=a&b=b
 
 
-the the following URLs will be requested to be prefetched ::
+the following URLs will be requested to be prefetched ::
 
   http://example-seed.com/path/file-106.mov?a=a&b=b
   http://example-seed.com/path/file-108.mov?a=a&b=b
@@ -203,7 +203,7 @@ compromises:
   requests which would result in using the same **cache key** are not considered as
   separate requests (which could bloat/dilute the LRU cache
   if not normalized)
-* **Check if the the fetch request is unique**. A ``simple`` prefetching policy is
+* **Check if the fetch request is unique**. A ``simple`` prefetching policy is
   always used to make sure prefetches for the same object (same cache key) are
   never triggered simultaneously.
 * **Check if already cached**. Before triggering the prefetch request to the

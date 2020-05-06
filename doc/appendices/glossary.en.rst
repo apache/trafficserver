@@ -26,7 +26,7 @@ Glossary
    :sorted:
 
    continuation
-      A callable object that contains state. These are are mechanism used by
+      A callable object that contains state. This is a mechanism used by
       |TS| to implement callbacks and continued computations. Continued
       computations are critical to efficient processing of traffic because by
       avoiding any blocking operations that wait on external events. In any

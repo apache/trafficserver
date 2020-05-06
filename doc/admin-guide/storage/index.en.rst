@@ -307,7 +307,7 @@ Pushing an Object into the Cache
 ================================
 
 Traffic Server accepts the custom HTTP request method ``PUSH`` to put an object
-into the the cache. If the object is successfully written to the cache, then
+into the cache. If the object is successfully written to the cache, then
 Traffic Server responds with a ``200 OK`` HTTP message; otherwise a
 ``400 Malformed Pushed Response Header`` message is returned.
 
@@ -357,7 +357,7 @@ To access the Cache Inspector utility:
       map http://yourhost.com/myCI/ http://{cache} @action=allow @src_ip=172.28.56.1-172.28.56.254
 
 #. Reload the Traffic Server configuration by running :option:`traffic_ctl config reload`.
-#. Open your web browser and go to the the following URL::
+#. Open your web browser and go to the following URL::
 
       http://yourhost/myCI/
 

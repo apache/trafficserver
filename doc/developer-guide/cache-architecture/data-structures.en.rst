@@ -160,7 +160,7 @@ Data Structures
 
    .. member:: DLL<EvacuationBlock> evacuate
 
-      Array of of :class:`EvacuationBlock` buckets. This is sized so there
+      Array of :class:`EvacuationBlock` buckets. This is sized so there
       is one bucket for every evacuation span.
 
    .. member:: off_t len

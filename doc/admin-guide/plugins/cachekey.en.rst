@@ -482,7 +482,7 @@ and if the request URI is the following ::
 
   http://test_prefix_123.example.com/path/to/object?a=1&b=2&c=3
 
-the the `cache key` will be prefixed with ``/test_prefix_object`` instead of ``test_prefix_123.example.com:80`` when ``--capture-prefix-uri`` is not used.
+the `cache key` will be prefixed with ``/test_prefix_object`` instead of ``test_prefix_123.example.com:80`` when ``--capture-prefix-uri`` is not used.
 
 Combining prefix plugin parameters, i.e. --static-prefix and --capture-prefix
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -525,7 +525,7 @@ and the request URI is the following ::
 
   http://test_path_123.example.com/path/to/object?a=1&b=2&c=3
 
-the the `cache key` will have ``/test_path_object`` in the path section of the `cache key` instead of ``/path/to/object`` when either ``--capture-path`` nor ``--capture-path-uri`` are used.
+the `cache key` will have ``/test_path_object`` in the path section of the `cache key` instead of ``/path/to/object`` when either ``--capture-path`` nor ``--capture-path-uri`` are used.
 
 
 Combining path plugin parameters --capture-path and --capture-path-uri
@@ -541,7 +541,7 @@ and the request URI is the following ::
 
   http://test_path_123.example.com/path/to/object?a=1&b=2&c=3
 
-the the `cache key` will have ``/test_path_object/const_path_object`` in the path section of the `cache key` instead of ``/path/to/object`` when either ``--capture-path`` nor ``--capture-path-uri`` are used.
+the `cache key` will have ``/test_path_object/const_path_object`` in the path section of the `cache key` instead of ``/path/to/object`` when either ``--capture-path`` nor ``--capture-path-uri`` are used.
 
 User-Agent capturing, replacement and classification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

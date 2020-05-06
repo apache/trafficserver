@@ -990,7 +990,7 @@ Here is an example:
         ts.debug(url_port)
     end
 
-Then Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
+Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
 
 ``8080``
 

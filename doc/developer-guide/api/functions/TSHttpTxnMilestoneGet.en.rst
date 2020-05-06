@@ -84,7 +84,7 @@ is successful.
 
 	.. macro:: TS_MILESTONE_SERVER_FIRST_CONNECT
 
-		First time origin server connect attempted or shared shared session attached.
+		First time origin server connect attempted or shared session attached.
 
 	.. macro:: TS_MILESTONE_SERVER_CONNECT
 

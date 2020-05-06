@@ -336,7 +336,7 @@ Thread Variables
 
 .. ts:cv:: CONFIG proxy.config.system.file_max_pct FLOAT 0.9
 
-   Set the maximum number of file handles for the traffic_server process as a percentage of the the fs.file-max proc value in Linux. The default is 90%.
+   Set the maximum number of file handles for the traffic_server process as a percentage of the fs.file-max proc value in Linux. The default is 90%.
 
 .. ts:cv:: CONFIG proxy.config.crash_log_helper STRING traffic_crashlog
 
