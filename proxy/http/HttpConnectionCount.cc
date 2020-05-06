@@ -38,17 +38,27 @@ OutboundConnTrack::Imp OutboundConnTrack::_imp;
 OutboundConnTrack::GlobalConfig *OutboundConnTrack::_global_config{nullptr};
 
 const MgmtConverter OutboundConnTrack::MAX_CONV(
-  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::max) *>(data)); },
-  [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::max) *>(data) = static_cast<decltype(TxnConfig::max)>(i); });
+  [](const HttpSM *, const void *data) -> MgmtInt {
+    return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::max) *>(data));
+  },
+  [](const HttpSM *, void *data, MgmtInt i) -> void {
+    *static_cast<decltype(TxnConfig::max) *>(data) = static_cast<decltype(TxnConfig::max)>(i);
+  });
 
 const MgmtConverter OutboundConnTrack::MIN_CONV(
-  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::min) *>(data)); },
-  [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::min) *>(data) = static_cast<decltype(TxnConfig::min)>(i); });
+  [](const HttpSM *, const void *data) -> MgmtInt {
+    return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::min) *>(data));
+  },
+  [](const HttpSM *, void *data, MgmtInt i) -> void {
+    *static_cast<decltype(TxnConfig::min) *>(data) = static_cast<decltype(TxnConfig::min)>(i);
+  });
 
 // Do integer and string conversions.
 const MgmtConverter OutboundConnTrack::MATCH_CONV{
-  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::match) *>(data)); },
-  [](void *data, MgmtInt i) -> void {
+  [](const HttpSM *, const void *data) -> MgmtInt {
+    return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::match) *>(data));
+  },
+  [](const HttpSM *, void *data, MgmtInt i) -> void {
     // Problem - the InkAPITest requires being able to set an arbitrary value, so this can either
     // correctly clamp or pass the regression tests. Currently it passes the tests.
     //    *static_cast<decltype(TxnConfig::match) *>(data) = std::clamp(static_cast<decltype(TxnConfig::match)>(i), MATCH_IP,
@@ -57,11 +67,11 @@ const MgmtConverter OutboundConnTrack::MATCH_CONV{
   },
   nullptr,
   nullptr,
-  [](const void *data) -> std::string_view {
+  [](const HttpSM *, const void *data) -> std::string_view {
     auto t = *static_cast<const OutboundConnTrack::MatchType *>(data);
     return t < 0 || t > OutboundConnTrack::MATCH_BOTH ? "Invalid"sv : OutboundConnTrack::MATCH_TYPE_NAME[t];
   },
-  [](void *data, std::string_view src) -> void {
+  [](const HttpSM *, void *data, std::string_view src) -> void {
     OutboundConnTrack::MatchType t;
     if (OutboundConnTrack::lookup_match_type(src, t)) {
       *static_cast<OutboundConnTrack::MatchType *>(data) = t;

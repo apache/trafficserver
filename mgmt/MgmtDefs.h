@@ -33,6 +33,7 @@
 #include "tscpp/util/MemSpan.h"
 #include "tscpp/util/TextView.h"
 
+class HttpSM;
 typedef int64_t MgmtIntCounter;
 typedef int64_t MgmtInt;
 typedef int8_t MgmtByte;
@@ -72,71 +73,77 @@ struct MgmtConverter {
    * This is passed a @c void* which is a pointer to the member in the configuration instance.
    * This function must return a @c MgmtInt converted from that value.
    */
-  MgmtInt (*load_int)(const void *) = nullptr;
+  MgmtInt (*load_int)(const HttpSM *, const void *) = nullptr;
 
   /** Store a @c MgmtInt into a native type.
    *
    * This function is passed a @c void* which is a pointer to the member in the configuration
    * instance and a @c MgmtInt. The member should be updated to correspond to the @c MgmtInt value.
    */
-  void (*store_int)(void *, MgmtInt) = nullptr;
+  void (*store_int)(const HttpSM *, void *, MgmtInt) = nullptr;
 
   /** Load a @c MgmtFloat from a native type.
    *
    * This is passed a @c void* which is a pointer to the member in the configuration instance.
    * This function must return a @c MgmtFloat converted from that value.
    */
-  MgmtFloat (*load_float)(const void *) = nullptr;
+  MgmtFloat (*load_float)(const HttpSM *, const void *) = nullptr;
 
   /** Store a @c MgmtFloat into a native type.
    *
    * This function is passed a @c void* which is a pointer to the member in the configuration
    * instance and a @c MgmtFloat. The member should be updated to correspond to the @c MgmtFloat value.
    */
-  void (*store_float)(void *, MgmtFloat) = nullptr;
+  void (*store_float)(const HttpSM *, void *, MgmtFloat) = nullptr;
 
   /** Load a native type into view.
    *
    * This is passed a @c void* which is a pointer to the member in the configuration instance.
    * This function must return a @c string_view which contains the text for the member.
    */
-  std::string_view (*load_string)(const void *) = nullptr;
+  std::string_view (*load_string)(const HttpSM *, const void *) = nullptr;
 
   /** Store a view in a native type.
    *
    * This is passed a @c void* which is a pointer to the member in the configuration instance.
    * This function must return a @c string_view which contains the text for the member.
    */
-  void (*store_string)(void *, std::string_view) = nullptr;
+  void (*store_string)(const HttpSM *, void *, std::string_view) = nullptr;
 
   // Convenience constructors because generally only one pair is valid.
-  MgmtConverter(MgmtInt (*load)(const void *), void (*store)(void *, MgmtInt));
-  MgmtConverter(MgmtFloat (*load)(const void *), void (*store)(void *, MgmtFloat));
-  MgmtConverter(std::string_view (*load)(const void *), void (*store)(void *, std::string_view));
+  MgmtConverter(MgmtInt (*load)(const HttpSM *, const void *), void (*store)(const HttpSM *, void *, MgmtInt));
+  MgmtConverter(MgmtFloat (*load)(const HttpSM *, const void *), void (*store)(const HttpSM *, void *, MgmtFloat));
+  MgmtConverter(std::string_view (*load)(const HttpSM *, const void *), void (*store)(const HttpSM *, void *, std::string_view));
 
-  MgmtConverter(MgmtInt (*_load_int)(const void *), void (*_store_int)(void *, MgmtInt), MgmtFloat (*_load_float)(const void *),
-                void (*_store_float)(void *, MgmtFloat), std::string_view (*_load_string)(const void *),
-                void (*_store_string)(void *, std::string_view));
+  MgmtConverter(MgmtInt (*_load_int)(const HttpSM *, const void *), void (*_store_int)(const HttpSM *, void *, MgmtInt),
+                MgmtFloat (*_load_float)(const HttpSM *, const void *), void (*_store_float)(const HttpSM *, void *, MgmtFloat),
+                std::string_view (*_load_string)(const HttpSM *, const void *),
+                void (*_store_string)(const HttpSM *, void *, std::string_view));
 };
 
-inline MgmtConverter::MgmtConverter(MgmtInt (*load)(const void *), void (*store)(void *, MgmtInt))
+inline MgmtConverter::MgmtConverter(MgmtInt (*load)(const HttpSM *, const void *), void (*store)(const HttpSM *, void *, MgmtInt))
   : load_int(load), store_int(store)
 {
 }
 
-inline MgmtConverter::MgmtConverter(MgmtFloat (*load)(const void *), void (*store)(void *, MgmtFloat))
+inline MgmtConverter::MgmtConverter(MgmtFloat (*load)(const HttpSM *, const void *),
+                                    void (*store)(const HttpSM *, void *, MgmtFloat))
   : load_float(load), store_float(store)
 {
 }
 
-inline MgmtConverter::MgmtConverter(std::string_view (*load)(const void *), void (*store)(void *, std::string_view))
+inline MgmtConverter::MgmtConverter(std::string_view (*load)(const HttpSM *, const void *),
+                                    void (*store)(const HttpSM *, void *, std::string_view))
   : load_string(load), store_string(store)
 {
 }
 
-inline MgmtConverter::MgmtConverter(MgmtInt (*_load_int)(const void *), void (*_store_int)(void *, MgmtInt),
-                                    MgmtFloat (*_load_float)(const void *), void (*_store_float)(void *, MgmtFloat),
-                                    std::string_view (*_load_string)(const void *), void (*_store_string)(void *, std::string_view))
+inline MgmtConverter::MgmtConverter(MgmtInt (*_load_int)(const HttpSM *, const void *),
+                                    void (*_store_int)(const HttpSM *, void *, MgmtInt),
+                                    MgmtFloat (*_load_float)(const HttpSM *, const void *),
+                                    void (*_store_float)(const HttpSM *, void *, MgmtFloat),
+                                    std::string_view (*_load_string)(const HttpSM *, const void *),
+                                    void (*_store_string)(const HttpSM *, void *, std::string_view))
   : load_int(_load_int),
     store_int(_store_int),
     load_float(_load_float),

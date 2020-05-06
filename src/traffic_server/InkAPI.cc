@@ -8217,8 +8217,9 @@ _memberp_to_generic(T *ptr, MgmtConverter const *&conv)
 inline void *
 _memberp_to_generic(MgmtInt *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter converter([](const void *data) -> MgmtInt { return *static_cast<const MgmtInt *>(data); },
-                                       [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
+  static const MgmtConverter converter(
+    [](const HttpSM *, const void *data) -> MgmtInt { return *static_cast<const MgmtInt *>(data); },
+    [](const HttpSM *, void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
 
   conv = &converter;
   return ptr;
@@ -8228,8 +8229,9 @@ _memberp_to_generic(MgmtInt *ptr, MgmtConverter const *&conv)
 inline void *
 _memberp_to_generic(MgmtByte *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter converter{[](const void *data) -> MgmtInt { return *static_cast<const MgmtByte *>(data); },
-                                       [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
+  static const MgmtConverter converter{
+    [](const HttpSM *, const void *data) -> MgmtInt { return *static_cast<const MgmtByte *>(data); },
+    [](const HttpSM *, void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
 
   conv = &converter;
   return ptr;
@@ -8239,8 +8241,9 @@ _memberp_to_generic(MgmtByte *ptr, MgmtConverter const *&conv)
 inline void *
 _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter converter{[](const void *data) -> MgmtFloat { return *static_cast<const MgmtFloat *>(data); },
-                                       [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
+  static const MgmtConverter converter{
+    [](const HttpSM *, const void *data) -> MgmtFloat { return *static_cast<const MgmtFloat *>(data); },
+    [](const HttpSM *, void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
 
   conv = &converter;
   return ptr;
@@ -8253,8 +8256,8 @@ inline auto
 _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std::enable_if<std::is_enum<E>::value, void *>::type
 {
   static const MgmtConverter converter{
-    [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const E *>(data)); },
-    [](void *data, MgmtInt i) -> void { *static_cast<E *>(data) = static_cast<E>(i); }};
+    [](const HttpSM *, const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const E *>(data)); },
+    [](const HttpSM *, void *data, MgmtInt i) -> void { *static_cast<E *>(data) = static_cast<E>(i); }};
 
   conv = &converter;
   return ptr;
@@ -8644,7 +8647,7 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
     return TS_ERROR;
   }
 
-  conv->store_int(dest, value);
+  conv->store_int(s, dest, value);
 
   return TS_SUCCESS;
 }
@@ -8663,7 +8666,7 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
     return TS_ERROR;
   }
 
-  *value = conv->load_int(src);
+  *value = conv->load_int(s, src);
 
   return TS_SUCCESS;
 }
@@ -8684,7 +8687,7 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
     return TS_ERROR;
   }
 
-  conv->store_float(dest, value);
+  conv->store_float(s, dest, value);
 
   return TS_SUCCESS;
 }
@@ -8695,13 +8698,14 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(static_cast<void *>(value)) == TS_SUCCESS);
 
+  HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
   MgmtConverter const *conv;
   const void *src = _conf_to_memberp(conf, reinterpret_cast<HttpSM *>(txnp)->t_state.txn_conf, conv);
 
   if (!src || !conv->load_float) {
     return TS_ERROR;
   }
-  *value = conv->load_float(src);
+  *value = conv->load_float(s, src);
 
   return TS_SUCCESS;
 }
@@ -8800,7 +8804,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     MgmtConverter const *conv;
     void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
     if (dest != nullptr && conv != nullptr && conv->store_string) {
-      conv->store_string(dest, std::string_view(value, length));
+      conv->store_string(s, dest, std::string_view(value, length));
     } else {
       return TS_ERROR;
     }
@@ -8837,7 +8841,7 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     MgmtConverter const *conv;
     const void *src = _conf_to_memberp(conf, sm->t_state.txn_conf, conv);
     if (src != nullptr && conv != nullptr && conv->load_string) {
-      auto sv = conv->load_string(src);
+      auto sv = conv->load_string(sm, src);
       *value  = sv.data();
       *length = sv.size();
     } else {
