@@ -272,3 +272,7 @@ more widely. Those are described on this page.
    .. cpp:member:: short int ink_minor
 
       Minor version number.
+
+.. type:: TSFetchUrlParams_t
+.. type:: TSFetchSM
+.. type:: TSFetchEvent
