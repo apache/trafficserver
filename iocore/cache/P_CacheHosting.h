@@ -171,6 +171,7 @@ struct ConfigVol {
   CacheType scheme;
   off_t size;
   bool in_percent;
+  bool ramcache;
   int percent;
   CacheVol *cachep;
   LINK(ConfigVol, link);

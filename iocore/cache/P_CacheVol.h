@@ -283,6 +283,7 @@ struct CacheVol {
   int scheme          = 0;
   off_t size          = 0;
   int num_vols        = 0;
+  bool ramcache       = true;
   Vol **vols          = nullptr;
   DiskVol **disk_vols = nullptr;
   LINK(CacheVol, link);
