@@ -2482,6 +2482,18 @@ DNS
    be appended to the list of nameservers specified here. To prevent this, a bogus file
    can be listed there.
 
+.. topic:: Example
+
+   IPv4 DNS server, loopback and port 9999 ::
+
+      CONFIG proxy.config.dns.nameservers STRING 127.0.0.1:9999
+
+.. topic:: Example
+
+   IPv6 DNS server, loopback and port 9999 ::
+
+      CONFIG proxy.config.dns.nameservers STRING [::1]:9999
+
 .. ts:cv:: CONFIG proxy.config.srv_enabled INT 0
    :reloadable:
    :overridable:
