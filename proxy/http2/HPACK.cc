@@ -372,6 +372,14 @@ HpackDynamicTable::add_header_field(const MIMEField *field)
     // table causes the table to be emptied of all existing entries.
     this->_headers.clear();
     this->_mhdr->fields_clear();
+
+    if (this->_mhdr_old) {
+      this->_mhdr_old->fields_clear();
+      this->_mhdr_old->destroy();
+      delete this->_mhdr_old;
+      this->_mhdr_old = nullptr;
+    }
+
     this->_current_size = 0;
   } else {
     this->_current_size += header_size;
@@ -430,7 +438,13 @@ HpackDynamicTable::_evict_overflowed_entries()
     (*h)->value_get(&value_len);
 
     this->_current_size -= ADDITIONAL_OCTETS + name_len + value_len;
-    this->_mhdr->field_delete(*h, false);
+
+    if (this->_mhdr_old && this->_mhdr_old->fields_count() != 0) {
+      this->_mhdr_old->field_delete(*h, false);
+    } else {
+      this->_mhdr->field_delete(*h, false);
+    }
+
     this->_headers.pop_back();
 
     if (this->_current_size <= this->_maximum_size) {
