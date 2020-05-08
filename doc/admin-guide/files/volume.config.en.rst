@@ -64,8 +64,8 @@ Optional ramcache setting
 You can also add an option ``ramcache=true/false`` to the volume configuration
 line.  True is the default setting and so not needed unless you want to explicitly
 set it.  Setting ``ramcache=false`` will disable the ramcache that normally
-sits in front of a volume.  This may desirable if you are using something like
-ramdisks, to avoid wasting RAM and time on double caching objects.
+sits in front of a volume.  This may be desirable if you are using something like
+ramdisks, to avoid wasting RAM and cpu time on double caching objects.
 
 
 Examples
