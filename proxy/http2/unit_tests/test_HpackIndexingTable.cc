@@ -484,4 +484,63 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
       }
     }
   }
+
+  SECTION("dynamic table size update")
+  {
+    HpackIndexingTable indexing_table(4096);
+    REQUIRE(indexing_table.maximum_size() == 4096);
+    REQUIRE(indexing_table.size() == 0);
+
+    // add entries in dynamic table
+    {
+      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      headers->create(HTTP_TYPE_REQUEST);
+
+      // C.3.1.  First Request
+      uint8_t data[] = {0x82, 0x86, 0x84, 0x41, 0x0f, 0x77, 0x77, 0x77, 0x2e, 0x65,
+                        0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d};
+
+      int64_t len = hpack_decode_header_block(indexing_table, headers, data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      CHECK(len == sizeof(data));
+      CHECK(indexing_table.maximum_size() == 4096);
+      CHECK(indexing_table.size() == 57);
+    }
+
+    // clear all entries by setting a maximum size of 0
+    {
+      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      headers->create(HTTP_TYPE_REQUEST);
+
+      uint8_t data[] = {0x20};
+
+      int64_t len = hpack_decode_header_block(indexing_table, headers, data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      CHECK(len == sizeof(data));
+      CHECK(indexing_table.maximum_size() == 0);
+      CHECK(indexing_table.size() == 0);
+    }
+
+    // make the maximum size back to 4096
+    {
+      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      headers->create(HTTP_TYPE_REQUEST);
+
+      uint8_t data[] = {0x3f, 0xe1, 0x1f};
+
+      int64_t len = hpack_decode_header_block(indexing_table, headers, data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      CHECK(len == sizeof(data));
+      CHECK(indexing_table.maximum_size() == 4096);
+      CHECK(indexing_table.size() == 0);
+    }
+
+    // error with exceeding the limit (MAX_TABLE_SIZE)
+    {
+      ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
+      headers->create(HTTP_TYPE_REQUEST);
+
+      uint8_t data[] = {0x3f, 0xe2, 0x1f};
+
+      int64_t len = hpack_decode_header_block(indexing_table, headers, data, sizeof(data), MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+      CHECK(len == HPACK_ERROR_COMPRESSION_ERROR);
+    }
+  }
 }

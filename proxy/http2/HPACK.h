@@ -123,12 +123,12 @@ public:
 
   uint32_t maximum_size() const;
   uint32_t size() const;
-  bool update_maximum_size(uint32_t new_size);
+  void update_maximum_size(uint32_t new_size);
 
   uint32_t length() const;
 
 private:
-  bool _evict_overflowed_entries();
+  void _evict_overflowed_entries();
   void _mime_hdr_gc();
 
   uint32_t _current_size = 0;
@@ -157,7 +157,7 @@ public:
   void add_header_field(const MIMEField *field);
   uint32_t maximum_size() const;
   uint32_t size() const;
-  bool update_maximum_size(uint32_t new_size);
+  void update_maximum_size(uint32_t new_size);
 
 private:
   HpackDynamicTable *_dynamic_table;
