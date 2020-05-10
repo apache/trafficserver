@@ -327,10 +327,10 @@ HpackIndexingTable::size() const
   return _dynamic_table->size();
 }
 
-bool
+void
 HpackIndexingTable::update_maximum_size(uint32_t new_size)
 {
-  return _dynamic_table->update_maximum_size(new_size);
+  _dynamic_table->update_maximum_size(new_size);
 }
 
 //
@@ -403,11 +403,11 @@ HpackDynamicTable::size() const
 // are evicted from the end of the header table until the size of the
 // header table is less than or equal to the maximum size.
 //
-bool
+void
 HpackDynamicTable::update_maximum_size(uint32_t new_size)
 {
   this->_maximum_size = new_size;
-  return this->_evict_overflowed_entries();
+  this->_evict_overflowed_entries();
 }
 
 uint32_t
@@ -416,12 +416,12 @@ HpackDynamicTable::length() const
   return this->_headers.size();
 }
 
-bool
+void
 HpackDynamicTable::_evict_overflowed_entries()
 {
   if (this->_current_size <= this->_maximum_size) {
     // Do nothing
-    return true;
+    return;
   }
 
   for (auto h = this->_headers.rbegin(); h != this->_headers.rend(); ++h) {
@@ -438,13 +438,7 @@ HpackDynamicTable::_evict_overflowed_entries()
     }
   }
 
-  if (this->_headers.size() == 0) {
-    return false;
-  }
-
   this->_mime_hdr_gc();
-
-  return true;
 }
 
 /**
@@ -774,9 +768,7 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
-  if (indexing_table.update_maximum_size(size) == false) {
-    return HPACK_ERROR_COMPRESSION_ERROR;
-  }
+  indexing_table.update_maximum_size(size);
 
   return len;
 }
