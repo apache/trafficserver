@@ -90,11 +90,7 @@ public:
   // Methods
 
   // Implement VConnection interface
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
 
   // Implement ProxySession interface
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
@@ -109,7 +105,6 @@ public:
 
   ////////////////////
   // Accessors
-  NetVConnection *get_netvc() const override;
   sockaddr const *get_client_addr() override;
   sockaddr const *get_local_addr() override;
   int get_transact_count() const override;
@@ -144,8 +139,6 @@ public:
   // Variables
   Http2ConnectionState connection_state;
 
-  bool support_sni() const override;
-
 private:
   int main_event_handler(int, void *);
 
@@ -163,7 +156,6 @@ private:
 
   int64_t total_write_len        = 0;
   SessionHandler session_handler = nullptr;
-  NetVConnection *client_vc      = nullptr;
   MIOBuffer *read_buffer         = nullptr;
   IOBufferReader *_reader        = nullptr;
   MIOBuffer *write_buffer        = nullptr;

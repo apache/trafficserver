@@ -118,22 +118,10 @@ HQSession::release(ProxyTransaction *trans)
   return;
 }
 
-NetVConnection *
-HQSession::get_netvc() const
-{
-  return this->_client_vc;
-}
-
 int
 HQSession::get_transact_count() const
 {
   return 0;
-}
-
-bool
-HQSession::support_sni() const
-{
-  return this->_client_vc ? this->_client_vc->support_sni() : false;
 }
 
 //
@@ -149,7 +137,7 @@ Http3Session::Http3Session(NetVConnection *vc) : HQSession(vc)
 
 Http3Session::~Http3Session()
 {
-  this->_client_vc = nullptr;
+  this->_vc = nullptr;
   delete this->_local_qpack;
   delete this->_remote_qpack;
 }
@@ -202,7 +190,7 @@ Http3Session::remote_qpack()
 //
 Http09Session::~Http09Session()
 {
-  this->_client_vc = nullptr;
+  this->_vc = nullptr;
 }
 
 const char *
