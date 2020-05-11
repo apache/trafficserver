@@ -46,6 +46,16 @@
 #include "../IPAllow.h"
 #include "I_Machine.h"
 
+// Support ip_resolve override.
+const MgmtConverter HttpTransact::HOST_RES_CONV{[](const void *data) -> std::string_view {
+                                                  const HostResData *host_res_data = static_cast<const HostResData *>(data);
+                                                  return host_res_data->conf_value;
+                                                },
+                                                [](void *data, std::string_view src) -> void {
+                                                  HostResData *res_data = static_cast<HostResData *>(data);
+                                                  parse_host_res_preference(src.data(), res_data->order);
+                                                }};
+
 static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 #define RANGE_NUMBERS_LENGTH 60
 
@@ -3749,7 +3759,7 @@ HttpTransact::handle_response_from_server(State *s)
         // Force host resolution to have the same family as the client.
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
-        s->dns_info.host_res_style = ats_host_res_match(&s->current.server->dst_addr.sa);
+        ats_force_order_by_family(&s->current.server->dst_addr.sa, s->my_txn_conf().host_res_data.order);
         return CallOSDNSLookup(s);
       } else if ((s->dns_info.srv_lookup_success || s->host_db_info.is_rr_elt()) &&
                  (s->txn_conf->connect_attempts_rr_retries > 0) &&
