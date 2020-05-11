@@ -69,21 +69,7 @@ public:
         continue;
       }
 
-      // set a default inactivity timeout if one is not set
-      bool use_default_inactivity_timeout = false;
-      if (ne->next_inactivity_timeout_at == 0 && nh.config.default_inactivity_timeout > 0) {
-        Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", ne,
-              nh.config.default_inactivity_timeout);
-        use_default_inactivity_timeout = true;
-        ne->set_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
-        NET_INCREMENT_DYN_STAT(default_inactivity_timeout_applied_stat);
-      }
-
       if (ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) {
-        if (use_default_inactivity_timeout) {
-          // track the connections that timed out due to default inactivity
-          NET_INCREMENT_DYN_STAT(default_inactivity_timeout_count_stat);
-        }
         if (nh.keep_alive_queue.in(ne)) {
           // only stat if the connection is in keep-alive, there can be other inactivity timeouts
           ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECOND;
