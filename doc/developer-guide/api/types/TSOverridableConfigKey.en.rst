@@ -153,6 +153,7 @@ Enumeration Members
    .. c:macro:: TS_CONFIG_SSL_CLIENT_SNI_POLICY
    .. c:macro:: TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME
    .. c:macro:: TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME
+   .. c:macro:: TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE
 
 
 Description

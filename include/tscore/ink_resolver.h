@@ -185,14 +185,24 @@ extern const char *const HOST_RES_STYLE_STRING[];
 extern HostResStyle ats_host_res_from(int family,                    ///< Connection family
                                       HostResPreferenceOrder const & ///< Preference ordering.
 );
-/// Calculate the host resolution style to force a family match to @a addr.
-extern HostResStyle ats_host_res_match(sockaddr const *addr);
 
 /** Parse a host resolution configuration string.
  */
 extern void parse_host_res_preference(const char *value,           ///< [in] Configuration string.
                                       HostResPreferenceOrder order /// [out] Order to update.
 );
+
+/// Configure the preference order to hold only what's from the client address.
+/// @addr[in] client's address.
+/// @order[out] Order to update
+extern void ats_force_order_by_family(sockaddr const *addr, HostResPreferenceOrder order);
+
+// Domain resolution priority for origin.
+struct HostResData {
+  HostResPreferenceOrder order;
+  // keep the configuration value to satisfy the API(TSHttpTxnConfigStringSet)
+  char *conf_value{nullptr};
+};
 
 #ifndef NS_GET16
 #define NS_GET16(s, cp)                                                  \
