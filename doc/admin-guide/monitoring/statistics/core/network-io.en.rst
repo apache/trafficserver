@@ -61,6 +61,7 @@ Network I/O
    :type: counter
 
 .. ts:stat:: global proxy.process.net.default_inactivity_timeout_applied integer
+.. ts:stat:: global proxy.process.net.default_inactivity_timeout_count integer
 .. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_count integer
 .. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_total integer
 .. ts:stat:: global proxy.process.net.inactivity_cop_lock_acquire_failure integer

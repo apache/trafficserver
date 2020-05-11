@@ -71,6 +71,8 @@ public:
   ink_hrtime next_activity_timeout_at   = 0;
   ink_hrtime submit_time                = 0;
 
+  bool default_inactivity_timeout = false;
+
   LINK(NetEvent, open_link);
   LINK(NetEvent, cop_link);
   LINKM(NetEvent, read, ready_link)
