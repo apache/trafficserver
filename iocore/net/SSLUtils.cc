@@ -2031,23 +2031,26 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
       common_names = name_set;
     } else {
       // Check that all elements in common_names are in name_set
-      for (auto name : common_names) {
-        auto iter = name_set.find(name);
+      auto common_iter = common_names.begin();
+      while (common_iter != common_names.end()) {
+        auto iter = name_set.find(*common_iter);
         if (iter == name_set.end()) {
           // Common_name not in new set, move name to unique set
           auto iter = unique_names.find(cert_index - 1);
           if (iter == unique_names.end()) {
             std::set<std::string> new_set;
-            new_set.insert(name);
+            new_set.insert(*common_iter);
             unique_names.insert({cert_index - 1, new_set});
           } else {
-            iter->second.insert(name);
+            iter->second.insert(*common_iter);
           }
-          auto erase_iter = common_names.find(name);
+          auto erase_iter = common_iter;
+          ++common_iter;
           common_names.erase(erase_iter);
         } else {
           // New name already in common set, go ahead and remove it from further consideration
           name_set.erase(iter);
+          ++common_iter;
         }
       }
       // Anything still in name_set was not in common_names
