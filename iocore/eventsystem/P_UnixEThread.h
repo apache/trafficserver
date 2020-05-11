@@ -135,9 +135,9 @@ EThread::schedule_every_local(Continuation *cont, ink_hrtime t, int callback_eve
   e->callback_event = callback_event;
   e->cookie         = cookie;
   if (t < 0) {
-    return schedule(e->init(cont, t, t));
+    return schedule_local(e->init(cont, t, t));
   } else {
-    return schedule(e->init(cont, get_hrtime() + t, t));
+    return schedule_local(e->init(cont, get_hrtime() + t, t));
   }
 }
 
