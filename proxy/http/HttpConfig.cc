@@ -1591,6 +1591,9 @@ HttpConfig::reconfigure()
 
   params->negative_caching_list = m_master.negative_caching_list;
 
+  params->oride.host_res_data            = m_master.oride.host_res_data;
+  params->oride.host_res_data.conf_value = ats_strdup(m_master.oride.host_res_data.conf_value);
+
   m_id = configProcessor.set(m_id, params);
 }
 

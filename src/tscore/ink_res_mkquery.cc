@@ -545,14 +545,16 @@ ats_host_res_from(int family, HostResPreferenceOrder const &order)
   return HOST_RES_NONE;
 }
 
-HostResStyle
-ats_host_res_match(sockaddr const *addr)
+void
+ats_force_order_by_family(sockaddr const *addr, HostResPreferenceOrder order)
 {
-  HostResStyle zret = HOST_RES_NONE;
+  int pos{0};
   if (ats_is_ip6(addr)) {
-    zret = HOST_RES_IPV6_ONLY;
+    order[pos++] = HOST_RES_PREFER_IPV6;
   } else if (ats_is_ip4(addr)) {
-    zret = HOST_RES_IPV4_ONLY;
+    order[pos++] = HOST_RES_PREFER_IPV4;
   }
-  return zret;
+  for (; pos < N_HOST_RES_PREFERENCE_ORDER; pos++) {
+    order[pos] = HOST_RES_PREFER_NONE;
+  }
 }
