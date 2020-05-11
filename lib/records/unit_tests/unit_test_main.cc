@@ -27,12 +27,14 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
-Diags *diags = new CatchDiags;
 extern void ts_session_protocol_well_known_name_indices_init();
 
 int
 main(int argc, char *argv[])
 {
+  // Set the global diags variable
+  diags = new CatchDiags;
+
   // Global data initialization needed for the unit tests.
   ts_session_protocol_well_known_name_indices_init();
   // Cheat for ts_host_res_global_init as there's no records.config to check for non-default.
