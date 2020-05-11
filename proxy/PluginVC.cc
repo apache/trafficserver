@@ -926,7 +926,7 @@ bool
 PluginVC::add_to_active_queue()
 {
   // do nothing
-  return false;
+  return true;
 }
 
 SOCKET

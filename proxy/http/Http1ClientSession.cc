@@ -465,6 +465,12 @@ Http1ClientSession::new_transaction()
     return;
   }
 
+  if (!client_vc->add_to_active_queue()) {
+    // no room in the active queue close the connection
+    this->do_io_close();
+    return;
+  }
+
   // Defensive programming, make sure nothing persists across
   // connection re-use
   half_close = false;
@@ -474,7 +480,6 @@ Http1ClientSession::new_transaction()
   trans.set_proxy_ssn(this);
   transact_count++;
 
-  client_vc->add_to_active_queue();
   trans.new_transaction(read_from_early_data > 0 ? true : false);
 }
 
