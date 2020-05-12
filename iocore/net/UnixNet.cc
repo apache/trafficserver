@@ -562,6 +562,11 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
         max_connections_per_thread_in, max_connections_active_per_thread_in, total_connections_in, active_queue_size,
         keep_alive_queue_size);
 
+  if (!max_connections_active_per_thread_in) {
+    // active queue has no max
+    return true;
+  }
+
   if (ignore_queue_size == false && max_connections_active_per_thread_in > active_queue_size) {
     return true;
   }
@@ -721,16 +726,22 @@ NetHandler::add_to_active_queue(NetEvent *ne)
         max_connections_per_thread_in, active_queue_size, keep_alive_queue_size);
   ink_assert(mutex->thread_holding == this_ethread());
 
+  bool active_queue_full = false;
+
   // if active queue is over size then close inactive connections
   if (manage_active_queue() == false) {
-    // there is no room left in the queue
-    return false;
+    active_queue_full = true;
   }
 
   if (active_queue.in(ne)) {
     // already in the active queue, move the head
     active_queue.remove(ne);
   } else {
+    if (active_queue_full) {
+      // there is no room left in the queue
+      NET_SUM_DYN_STAT(net_connections_max_active_throttled_in_stat, 1);
+      return false;
+    }
     // in the keep-alive queue or no queue, new to this queue
     remove_from_keep_alive_queue(ne);
     ++active_queue_size;
