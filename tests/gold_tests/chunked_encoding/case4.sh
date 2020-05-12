@@ -17,3 +17,4 @@
 nc -l 8888 -o outserver4 -c "sh ./server4.sh" &
 sleep 1
 ./smuggle-client 127.0.0.1 ${1}
+kill %1
