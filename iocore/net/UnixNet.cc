@@ -562,6 +562,11 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
         max_connections_per_thread_in, max_connections_active_per_thread_in, total_connections_in, active_queue_size,
         keep_alive_queue_size);
 
+  if (!max_connections_active_per_thread_in) {
+    // active queue has no max
+    return true;
+  }
+
   if (ignore_queue_size == false && max_connections_active_per_thread_in > active_queue_size) {
     return true;
   }

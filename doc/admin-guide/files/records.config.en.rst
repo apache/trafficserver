@@ -419,9 +419,11 @@ Network
 
 .. ts:cv:: CONFIG proxy.config.net.max_active_connections_in INT 10000
 
-   The total number of active client connections that the :program:`traffic_server`
-   can handle simultaneously. This should be tuned according to your memory size,
-   and expected work load (network, cpu etc).
+   The total number of active client connections that the |TS| can handle
+   simultaneously. This should be tuned according to your memory size,
+   and expected work load (network, cpu etc). If this is set to 0, active
+   connection tracking is disabled and active connections have no separate
+   limit and the total connections follow `proxy.config.net.connections_throttle`
 
 .. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
    :reloadable:
