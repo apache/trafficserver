@@ -1362,7 +1362,7 @@ UnixNetVConnection::set_default_inactivity_timeout(ink_hrtime timeout_in)
   Debug("socket", "Set default inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   inactivity_timeout_in      = 0;
   default_inactivity_timeout = true;
-  next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
+  next_inactivity_timeout_at = Thread::get_hrtime() + timeout_in;
 }
 
 TS_INLINE bool
