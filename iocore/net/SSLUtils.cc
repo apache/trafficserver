@@ -1420,8 +1420,13 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   shared_SSL_CTX ctx(this->init_server_ssl_ctx(data, sslMultCertSettings.get(), common_names), SSL_CTX_free);
 
   if (!ctx || !sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, common_names)) {
-    lookup->is_valid = false;
-    retval           = false;
+    retval = false;
+    std::string names;
+    for (auto name : data.cert_names_list) {
+      names.append(name);
+      names.append(" ");
+    }
+    Warning("Failed to insert SSL_CTX for certificate %s entries for names already made", names.c_str());
   }
 
   for (auto iter = unique_names.begin(); retval && iter != unique_names.end(); ++iter) {
@@ -1435,8 +1440,7 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 
     shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_data, sslMultCertSettings.get(), iter->second), SSL_CTX_free);
     if (!unique_ctx || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, unique_ctx, iter->second)) {
-      lookup->is_valid = false;
-      retval           = false;
+      retval = false;
     }
   }
 
