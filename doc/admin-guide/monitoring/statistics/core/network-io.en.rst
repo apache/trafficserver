@@ -60,8 +60,17 @@ Network I/O
 .. ts:stat:: global proxy.process.net.connections_currently_open integer
    :type: counter
 
+.. ts:stat:: global proxy.process.net.connections_throttled_in integer
+   :type: counter
+
+.. ts:stat:: global proxy.process.net.connections_throttled_out integer
+   :type: counter
+
+.. ts:stat:: global proxy.process.net.max.active.connections_throttled_in integer
+   :type: counter
+
 .. ts:stat:: global proxy.process.net.default_inactivity_timeout_applied integer
-.. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_count integer
+.. ts:stat:: global proxy.process.net.default_inactivity_timeout_count integer
 .. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_total integer
 .. ts:stat:: global proxy.process.net.inactivity_cop_lock_acquire_failure integer
 .. ts:stat:: global proxy.process.net.net_handler_run integer
