@@ -89,6 +89,8 @@ public:
   // Timeouts
   void set_active_timeout(ink_hrtime timeout_in) override;
   void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  void set_default_inactivity_timeout(ink_hrtime timeout_in) override;
+  bool is_default_inactivity_timeout() override;
   void cancel_active_timeout() override;
   void cancel_inactivity_timeout() override;
   void add_to_keep_alive_queue() override;

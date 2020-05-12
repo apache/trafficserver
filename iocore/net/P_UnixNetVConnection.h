@@ -162,6 +162,8 @@ public:
   ////////////////////////////////////////////////////////////
   virtual void set_active_timeout(ink_hrtime timeout_in) override;
   virtual void set_inactivity_timeout(ink_hrtime timeout_in) override;
+  virtual void set_default_inactivity_timeout(ink_hrtime timeout_in) override;
+  virtual bool is_default_inactivity_timeout() override;
   virtual void cancel_active_timeout() override;
   virtual void cancel_inactivity_timeout() override;
   void set_action(Continuation *c) override;

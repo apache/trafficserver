@@ -539,7 +539,9 @@ public:
     is currently active. See section on timeout semantics above.
 
    */
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in)         = 0;
+  virtual void set_default_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual bool is_default_inactivity_timeout()                       = 0;
 
   /**
     Clears the active timeout. No active timeouts will be sent until
