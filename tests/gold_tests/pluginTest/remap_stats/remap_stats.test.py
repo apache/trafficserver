@@ -19,6 +19,7 @@ Test remap_stats plugin
 '''
 # Skip if plugins not present.
 Test.SkipUnless(Condition.PluginExists('remap_stats.so'))
+Test.SkipIf(Condition.true("Test cannot deterministically wait until the stats appear"))
 
 server = Test.MakeOriginServer("server")
 
