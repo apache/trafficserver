@@ -1155,7 +1155,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
 {
   // first check if we've hit the active connection limit
   if (!ua_session->get_netvc()->add_to_active_queue()) {
-    error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR,
+    error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE, Http2ErrorCode::HTTP2_ERROR_NO_ERROR,
                        "refused to create new stream, maxed out active connections");
     return nullptr;
   }
