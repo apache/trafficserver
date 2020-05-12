@@ -33,11 +33,16 @@ Synopsis
 Description
 ===========
 
-Mostly the same as :func:`TSContSchedule`. Schedules :arg:`contp` on a random thread that belongs to :arg:`tp`.
-If thread type of the thread specified by thread affinity is the same as :arg:`tp`, the :arg:`contp` will
-be scheduled on the thread specified by thread affinity.
+Schedules :arg:`contp` to run :arg:`timeout` milliseconds in the future, on a random thread that
+belongs to :arg:`tp`. The :arg:`timeout` is an approximation, meaning it will be at least
+:arg:`timeout` milliseconds but possibly more. Resolutions finer than roughly 5 milliseconds will
+not be effective. Note that :arg:`contp` is required to have a mutex, which is provided to
+:func:`TSContCreate`.
 
-The continuation is scheduled for a particular thread selected from a group of similar threads, as indicated by :arg:`tp`.
+The continuation is scheduled for a particular thread selected from a group of similar threads,
+as indicated by :arg:`tp`. If :arg:`contp` already has an thread affinity set, and the thread
+type of thread affinity is the same as :arg:`tp`, then :arg:`contp` will be scheduled on the
+thread specified by thread affinity.
 
 =========================== =======================================================================================
 Pool                        Properties
@@ -53,6 +58,15 @@ recommended. The ``TS_THREAD_POOL_NET`` threads are the same threads on which ca
 called and continuations that use them have the same restrictions. ``TS_THREAD_POOL_TASK`` threads
 are threads that exist to perform long or blocking actions, although sufficiently long operation can
 impact system performance by blocking other continuations on the threads.
+
+The return value can be used to cancel the scheduled event via :func:`TSActionCancel`. This is
+effective until the continuation :arg:`contp` is being dispatched. However, if it is scheduled on
+another thread this can be problematic to be correctly timed. The return value can be checked with
+:func:`TSActionDone` to see if the continuation ran before the return, which is possible if
+:arg:`timeout` is `0`.
+
+If :arg:`contp` has no thread affinity set, the thread it is now scheduled on will be set
+as its thread affinity thread.
 
 Note that the TSContSchedule() family of API shall only be called from an ATS EThread.
 Calling it from raw non-EThreads can result in unpredictable behavior.
@@ -124,6 +138,5 @@ the same continuation on two different threads of the same type.
 See Also
 ========
 
-:doc:`TSContSchedule.en`
-:doc:`TSContScheduleEvery.en`
+:doc:`TSContScheduleEveryOnPool.en`
 :doc:`TSContScheduleOnThread.en`

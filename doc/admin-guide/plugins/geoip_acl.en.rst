@@ -22,7 +22,7 @@ GeoIP ACLs Plugin
 
 This is a simple ATS plugin for denying (or allowing) requests based on
 the source IP geo-location. Currently only the Maxmind APIs are
-supported, but we'd be happy to other other (open) APIs if you let us
+supported, but we'd be happy to other (open) APIs if you let us
 know. This plugin comes with the standard distribution of Apache Traffic
 Server, and should be installed as part of the normal build process.
 

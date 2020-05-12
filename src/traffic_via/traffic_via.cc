@@ -24,11 +24,11 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
 #include "tscore/I_Version.h"
-#include "tscore/Tokenizer.h"
-#include "tscore/TextBuffer.h"
 #include "mgmtapi.h"
 #include <cstdio>
 #include <cstring>
+#include <iostream>
+#include <string_view>
 #include "tscore/Regex.h"
 
 /// XXX Use DFA or Regex wrappers?
@@ -43,11 +43,11 @@
 static AppVersionInfo appVersionInfo;
 
 struct VIA {
-  VIA(const char *t) : title(t), next(nullptr) { memset(viaData, 0, sizeof(viaData)); }
+  VIA(const char *t) : title(t) {}
   ~VIA() { delete next; }
   const char *title;
-  const char *viaData[128];
-  VIA *next;
+  const char *viaData[128] = {}; // zero initialize
+  VIA *next                = nullptr;
 };
 
 // Function to get via header table for every field/category in the via header
@@ -186,7 +186,7 @@ standardViaLookup(char flag)
 
 // Function to print via header
 static void
-printViaHeader(const char *header)
+printViaHeader(std::string_view header)
 {
   VIA *viaTable = nullptr;
   VIA *viaEntry = nullptr;
@@ -195,22 +195,22 @@ printViaHeader(const char *header)
   printf("Via Header Details:\n");
 
   // Loop through input via header flags
-  for (const char *c = header; *c; ++c) {
-    if ((*c == ':') || (*c == ';')) {
+  for (char c : header) {
+    if ((c == ':') || (c == ';')) {
       isDetail = true;
       continue;
     }
 
-    if (islower(*c)) {
+    if (islower(c)) {
       // Get the via header table
       delete viaTable;
-      viaEntry = viaTable = isDetail ? detailViaLookup(*c) : standardViaLookup(*c);
+      viaEntry = viaTable = isDetail ? detailViaLookup(c) : standardViaLookup(c);
     } else {
       // This is a one of the sequence of (uppercase) VIA codes.
       if (viaEntry) {
+        unsigned char idx = c;
         printf("%-55s:", viaEntry->title);
-        printf("%s\n", viaEntry->viaData[static_cast<unsigned char>(*c)] ? viaEntry->viaData[static_cast<unsigned char>(*c)] :
-                                                                           "Invalid sequence");
+        printf("%s\n", viaEntry->viaData[idx] ? viaEntry->viaData[idx] : "Invalid sequence");
         viaEntry = viaEntry->next;
       }
     }
@@ -220,32 +220,29 @@ printViaHeader(const char *header)
 
 // Check validity of via header and then decode it
 static TSMgmtError
-decodeViaHeader(const char *str)
+decodeViaHeader(std::string_view text)
 {
-  size_t viaHdrLength = strlen(str);
-  char tmp[viaHdrLength + 2];
-  char *Via = tmp;
-
-  memcpy(Via, str, viaHdrLength);
-  Via[viaHdrLength] = '\0'; // null terminate
-
   // Via header inside square brackets
-  if (Via[0] == '[' && Via[viaHdrLength - 1] == ']') {
-    viaHdrLength = viaHdrLength - 2;
-    Via++;
-    Via[viaHdrLength] = '\0'; // null terminate the string after trimming
+  if (!text.empty() && text.front() == '[' && text.back() == ']') {
+    text.remove_prefix(1);
+    text.remove_suffix(1);
+  }
+  if (text.empty()) {
+    return TS_ERR_FAIL;
   }
 
-  printf("Via header is [%s], Length is %zu\n", Via, viaHdrLength);
+  printf("Via header is [%.*s], Length is %zu\n", int(text.size()), text.data(), text.size());
 
-  if (viaHdrLength == 5) {
-    Via = strcat(Via, " "); // Add one space character before decoding via header
-    ++viaHdrLength;
+  char extender[6];
+  if (text.size() == 5) { // add a trailing space in this case.
+    memcpy(extender, text.data(), text.size());
+    extender[5] = ' ';
+    text        = std::string_view{extender, 6};
   }
 
-  if (viaHdrLength == 22 || viaHdrLength == 6) {
+  if (text.size() == 22 || text.size() == 6) {
     // Decode via header
-    printViaHeader(Via);
+    printViaHeader(text);
     return TS_ERR_OKAY;
   }
   // Invalid header size, come out.
@@ -269,8 +266,7 @@ filterViaHeader()
   int i;
   const char *viaPattern =
     R"(\[([ucsfpe]+[^\]]+)\])"; // Regex to match via header with in [] which can start with character class ucsfpe
-  char *viaHeaderString;
-  char viaHeader[1024];
+  std::string line;
 
   // Compile PCRE via header pattern
   compiledReg = pcre_compile(viaPattern, 0, &err, &errOffset, nullptr);
@@ -281,15 +277,9 @@ filterViaHeader()
   }
 
   // Read all lines from stdin
-  while (fgets(viaHeader, sizeof(viaHeader), stdin)) {
-    // Trim new line character and null terminate it
-    char *newLinePtr = strchr(viaHeader, '\n');
-    if (newLinePtr) {
-      *newLinePtr = '\0';
-    }
+  while (std::getline(std::cin, line)) {
     // Match for via header pattern
-    pcreExecCode = pcre_exec(compiledReg, extraReg, viaHeader, static_cast<int>(sizeof(viaHeader)), 0, 0, subStringVector,
-                             SUBSTRING_VECTOR_COUNT);
+    pcreExecCode = pcre_exec(compiledReg, extraReg, line.data(), line.size(), 0, 0, subStringVector, SUBSTRING_VECTOR_COUNT);
 
     // Match failed, don't worry. Continue to next line.
     if (pcreExecCode < 0) {
@@ -304,14 +294,9 @@ filterViaHeader()
 
     // Loop based on number of matches found
     for (i = 1; i < pcreExecCode; i++) {
-      // Point to beginning of matched substring
-      char *subStringBegin = viaHeader + subStringVector[2 * i];
-      // Get length of matched substring
-      int subStringLen = subStringVector[2 * i + 1] - subStringVector[2 * i];
-      viaHeaderString  = subStringBegin;
-      sprintf(viaHeaderString, "%.*s", subStringLen, subStringBegin);
+      std::string_view match{line.data() + subStringVector[2 * i], size_t(subStringVector[2 * i + 1] - subStringVector[2 * i])};
       // Decode matched substring
-      decodeViaHeader(viaHeaderString);
+      decodeViaHeader(match);
     }
   }
   return TS_ERR_OKAY;
@@ -338,7 +323,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       // Filter arguments provided from stdin
       status = filterViaHeader();
     } else {
-      status = decodeViaHeader(file_arguments[i]);
+      status = decodeViaHeader(std::string_view{file_arguments[i], strlen(file_arguments[i])});
     }
 
     if (status != TS_ERR_OKAY) {

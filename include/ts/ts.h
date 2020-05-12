@@ -1193,10 +1193,8 @@ tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
 tsapi void TSContDestroy(TSCont contp);
 tsapi void TSContDataSet(TSCont contp, void *data);
 tsapi void *TSContDataGet(TSCont contp);
-tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout);
 tsapi TSAction TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
 tsapi TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread);
-tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */);
 tsapi TSAction TSContScheduleEveryOnPool(TSCont contp, TSHRTime every /* millisecs */, TSThreadPool tp);
 tsapi TSAction TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEventThread ethread);
 tsapi TSReturnCode TSContThreadAffinitySet(TSCont contp, TSEventThread ethread);
@@ -2453,6 +2451,18 @@ tsapi TSReturnCode TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milest
   @return 1 if the request / response is cacheable, 0 otherwise
 */
 tsapi int TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response);
+
+/**
+  Get the maximum age in seconds as indicated by the origin server.
+  This would typically be used in TS_HTTP_READ_RESPONSE_HDR_HOOK, when you have
+  the server response ready.
+
+  @param txnp the transaction pointer
+  @param response the server response header. If NULL, use the transactions origin response.
+
+  @return the age in seconds if specified by Cache-Control, -1 otherwise
+*/
+tsapi int TSHttpTxnGetMaxAge(TSHttpTxn txnp, TSMBuffer response);
 
 /**
    Return a string representation for a TSServerState value. This is useful for plugin debugging.

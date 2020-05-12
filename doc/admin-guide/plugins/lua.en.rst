@@ -990,7 +990,7 @@ Here is an example:
         ts.debug(url_port)
     end
 
-Then Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
+Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
 
 ``8080``
 
@@ -1800,6 +1800,125 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.sha256
+---------
+**syntax:** *digest = ts.sha256(str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the SHA-256 digest of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        print(uri)
+        print(ts.sha256(uri))
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.sha256_bin
+-------------
+**syntax:** *digest = ts.sha256_bin(str)*
+
+**context:** global
+
+**description:** Returns the binary form of the SHA-256 digest of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        bin = ts.sha256_bin(uri)
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.hmac_md5
+-----------
+**syntax:** *digest = ts.hmac_md5(key, str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the HMAC of the ``str`` argument.
+
+The message digest function used is MD5.
+
+The key value used is contained in the ``key`` argument. This should be a hexadecimal representation of the key value.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        key = "012345"
+        uri = ts.client_request.get_uri()
+        print(uri)
+        print(ts.hmac_md5(key, uri))
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.hmac_sha1
+------------
+**syntax:** *digest = ts.hmac_sha1(key, str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the HMAC of the ``str`` argument.
+
+The message digest function used is SHA-1.
+
+The key value used is contained in the ``key`` argument. This should be a hexadecimal representation of the key value.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        key = "012345"
+        uri = ts.client_request.get_uri()
+        print(uri)
+        print(ts.hmac_sha1(key, uri))
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.hmac_sha256
+--------------
+**syntax:** *digest = ts.hmac_sha256(key, str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the HMAC of the ``str`` argument.
+
+The message digest function used is SHA-256.
+
+The key value used is contained in the ``key`` argument. This should be a hexadecimal representation of the key value.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        key = "012345"
+        uri = ts.client_request.get_uri()
+        print(uri)
+        print(ts.hmac_sha256(key, uri))
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.server_request.server_addr.get_ip
 ------------------------------------
 **syntax:** *ts.server_request.server_addr.get_ip()*
@@ -2135,6 +2254,16 @@ ts.server_response.get_version
 **description:** Return the http version string of the server response.
 
 Current possible values are 1.0, 1.1, and 0.9.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_response.is_cacheable
+-------------------------------
+**syntax:** *can_cache = ts.server_response.is_cacheable()*
+
+**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later.
+
+**description:** Return 1 if the server response can be cached, 0 otherwise.
 
 :ref:`TOP <admin-plugins-ts-lua>`
 

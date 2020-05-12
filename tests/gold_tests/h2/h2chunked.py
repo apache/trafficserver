@@ -41,7 +41,7 @@ def makerequest(port, _url):
 
     sites = {'/'}
     request_ids = []
-    for site in sites:
+    for _ in sites:
         request_id = conn.request('GET', url=_url)
         request_ids.append(request_id)
 

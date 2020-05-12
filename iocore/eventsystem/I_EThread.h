@@ -118,7 +118,7 @@ public:
 
     @param c Continuation to be called back as soon as possible.
     @param callback_event Event code to be passed back to the
-      continuation's handler. See the the EventProcessor class.
+      continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
     @return Reference to an Event object representing the scheduling

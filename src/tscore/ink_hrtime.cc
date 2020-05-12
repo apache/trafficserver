@@ -49,18 +49,19 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
   char local_buf[local_buf_size];
   bool using_local_buffer = false;
   bool negative           = false;
-  char *out_buf;
+  char *out_buf           = buf;
+  char *working_buf;
 
   if (buf_size < 22) {
     // int64_t may not fit in provided buffer, use the local one
-    out_buf            = &local_buf[local_buf_size - 1];
+    working_buf        = &local_buf[local_buf_size - 1];
     using_local_buffer = true;
   } else {
-    out_buf = &buf[buf_size - 1];
+    working_buf = &buf[buf_size - 1];
   }
 
   unsigned int num_chars = 1; // includes eos
-  *out_buf--             = 0;
+  *working_buf--         = 0;
 
   if (val < 0) {
     val      = -val;
@@ -68,11 +69,11 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
   }
 
   if (val < 10) {
-    *out_buf-- = '0' + static_cast<char>(val);
+    *working_buf-- = '0' + static_cast<char>(val);
     ++num_chars;
   } else {
     do {
-      *out_buf-- = static_cast<char>(val % 10) + '0';
+      *working_buf-- = static_cast<char>(val % 10) + '0';
       val /= 10;
       ++num_chars;
     } while (val);
@@ -83,10 +84,10 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
   if (req_width) {
     // add minus sign if padding character is not 0
     if (negative && pad_char != '0') {
-      *out_buf = '-';
+      *working_buf = '-';
       ++num_chars;
     } else {
-      out_buf++;
+      working_buf++;
     }
     if (req_width > buf_size) {
       req_width = buf_size;
@@ -96,19 +97,19 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
       num_padding = req_width - num_chars;
       switch (num_padding) {
       case 3:
-        *--out_buf = pad_char;
+        *--working_buf = pad_char;
         // fallthrough
 
       case 2:
-        *--out_buf = pad_char;
+        *--working_buf = pad_char;
         // fallthrough
 
       case 1:
-        *--out_buf = pad_char;
+        *--working_buf = pad_char;
         break;
 
       default:
-        for (unsigned int i = 0; i < num_padding; ++i, *--out_buf = pad_char) {
+        for (unsigned int i = 0; i < num_padding; ++i, *--working_buf = pad_char) {
           ;
         }
       }
@@ -117,23 +118,23 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
     // add minus sign if padding character is 0
     if (negative && pad_char == '0') {
       if (num_padding) {
-        *out_buf = '-'; // overwrite padding
+        *working_buf = '-'; // overwrite padding
       } else {
-        *--out_buf = '-';
+        *--working_buf = '-';
         ++num_chars;
       }
     }
   } else if (negative) {
-    *out_buf = '-';
+    *working_buf = '-';
     ++num_chars;
   } else {
-    out_buf++;
+    working_buf++;
   }
 
   if (using_local_buffer) {
     if (num_chars <= buf_size) {
-      memcpy(buf, out_buf, num_chars);
-      out_buf = buf;
+      memcpy(buf, working_buf, num_chars);
+      // out_buf is already pointing to buf
     } else {
       // data does not fit return nullptr
       out_buf = nullptr;
@@ -143,6 +144,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
   if (total_chars) {
     *total_chars = num_chars;
   }
+
   return out_buf;
 }
 

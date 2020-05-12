@@ -1,0 +1,7 @@
+``
+> GET /cache_test HTTP/1.1
+``
+< HTTP/1.1 200 OK
+< Cache-Control: max-age=300
+< Content-Length: 4
+``

@@ -44,7 +44,7 @@ struct PinnedDocTable : public Continuation {
   int remove(CacheKey *key);
   int cleanup(int event, Event *e);
 
-  PinnedDocTable() : Continuation(new_ProxyMutex()) { memset(bucket, 0, sizeof(Queue<PinnedDocEntry>) * PINNED_DOC_TABLE_SIZE); }
+  PinnedDocTable() : Continuation(new_ProxyMutex()) { ink_zero(bucket); }
 };
 
 struct CacheTestHost {

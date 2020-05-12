@@ -51,6 +51,13 @@
 #include "tscore/ink_defs.h"
 
 //////////////////////////////////////////
+/// SUPPORT MACRO
+#define DEF_EXT_NEW_DEL(cls)                                               \
+  void *operator new(size_t sz) { return ats_malloc(ext::sizeOf<cls>()); } \
+  void *operator new(size_t sz, void *ptr) { return ptr; }                 \
+  void operator delete(void *ptr) { free(ptr); }
+
+//////////////////////////////////////////
 /// HELPER CLASSES
 
 /////////////////////////
@@ -141,9 +148,11 @@ namespace details // internal stuff
   {
   public:
     std::unordered_map<std::string, FieldDesc> fields; ///< defined elements of the blob by name
-    size_t alloc_size               = 0;               ///< bytes to allocate for fields
-    uint8_t alloc_align             = 1;               ///< alignment of block
-    std::atomic_uint instance_count = {0};             ///< the number of Extendible<Derived> instances in use.
+    size_t alloc_size                     = 0;         ///< bytes to allocate for fields
+    uint8_t alloc_align                   = 1;         ///< alignment of block
+    std::atomic<uint> cnt_constructed     = {0};       ///< the number of Extendible<Derived> created.
+    std::atomic<uint> cnt_fld_constructed = {0};       ///< the number of Extendible<Derived> that constructed fields.
+    std::atomic<uint> cnt_destructed      = {0};       ///< the number of Extendible<Derived> destroyed.
 
   public:
     Schema() {}
@@ -163,7 +172,7 @@ namespace details // internal stuff
 
 /// ext::Extendible allows code (and Plugins) to declare member-like variables during system init.
 /*
- * This class uses a special allocator (ext::alloc) to extend the memory allocated to store run-time static
+ * This class uses a special allocator (ext::create) to extend the memory allocated to store run-time static
  * variables, which are registered by plugins during system init. The API is in a functional style to support
  * multiple inheritance of Extendible classes. This is templated so static variables are instanced per Derived
  * type, because we need to have different field schema per type.
@@ -199,10 +208,10 @@ public:
 
 protected:
   Extendible();
-  // use ext::alloc() exclusively for allocation and initialization
+  // use ext::create() exclusively for allocation and initialization
 
   /** destruct all fields */
-  ~Extendible() { schema.callDestructor(uintptr_t(this) + ext_loc); }
+  ~Extendible();
 
 private:
   /** construct all fields */
@@ -214,7 +223,7 @@ private:
     return uintptr_t(this) + ext_loc;
   }
 
-  template <typename T> friend T *alloc();
+  template <typename T> friend T *create();
   template <typename T> friend uintptr_t details::initRecurseSuper(T &, uintptr_t);
   template <typename T> friend FieldPtr details::FieldPtrGet(Extendible<T> const &, details::FieldDesc const &);
   template <typename T> friend std::string viewFormat(T const &, uintptr_t, int);
@@ -575,6 +584,17 @@ sizeOf(size_t size = sizeof(Derived_t))
 template <class Derived_t> Extendible<Derived_t>::Extendible()
 {
   ink_assert(ext::details::areFieldsFinalized());
+  // don't call callConstructor until the derived class is fully constructed.
+  ++schema.cnt_constructed;
+}
+
+template <class Derived_t> Extendible<Derived_t>::~Extendible()
+{
+  // assert callConstructors was called.
+  ink_assert(ext_loc);
+  schema.callDestructor(uintptr_t(this) + ext_loc);
+  ++schema.cnt_destructed;
+  ink_assert(schema.cnt_destructed <= schema.cnt_fld_constructed);
 }
 
 /// tell this extendible where it's memory offset start is. Added to support inheriting from extendible classes
@@ -584,8 +604,9 @@ Extendible<Derived_t>::initFields(uintptr_t start_ptr)
 {
   ink_assert(ext_loc == 0);
   start_ptr = ROUNDUP(start_ptr, schema.alloc_align); // pad the previous struct, so that our fields are memaligned correctly
-  ext_loc   = uint16_t(start_ptr - uintptr_t(this));  // store the offset to be used by ext::get and ext::set
-  ink_assert(ext_loc < 256);
+  ink_assert(start_ptr - uintptr_t(this) < UINT16_MAX);
+  ext_loc = uint16_t(start_ptr - uintptr_t(this)); // store the offset to be used by ext::get and ext::set
+  ink_assert(ext_loc > 0);
   schema.callConstructor(start_ptr);    // construct all fields
   return start_ptr + schema.alloc_size; // return the end of the extendible data
 }
@@ -608,23 +629,26 @@ namespace details
     }
     return tail_ptr;
   }
+
 } // namespace details
 
 // allocate and initialize an extendible data structure
-template <typename Derived_t>
+template <typename Derived_t, typename... Args>
 Derived_t *
-alloc()
+create(Args &&... args)
 {
-  static_assert(std::is_base_of<Extendible<Derived_t>, Derived_t>::value);
+  // don't instantiate until all Fields are finalized.
   ink_assert(ext::details::areFieldsFinalized());
 
-  // calculate the memory needed
+  // calculate the memory needed for the class and all Extendible blocks
   const size_t type_size = ext::sizeOf<Derived_t>();
-  // alloc a block of memory
-  Derived_t *ptr = (Derived_t *)ats_memalign(alignof(Derived_t), type_size);
-  // Extendible_t *ptr = (Extendible_t *)::operator new(type_size); // alloc a block of memory
+
+  // alloc one block of memory
+  Derived_t *ptr = static_cast<Derived_t *>(ats_memalign(alignof(Derived_t), type_size));
+
   // construct (recursively super-to-sub class)
-  new (ptr) Derived_t();
+  new (ptr) Derived_t(std::forward(args)...);
+
   // define extendible blocks start offsets (recursively super-to-sub class)
   details::initRecurseSuper(*ptr, uintptr_t(ptr) + sizeof(Derived_t));
   return ptr;

@@ -119,12 +119,14 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = \
-        ('curl --tls-max 1.2 -k -H"Host: bob" --resolve "bob:{0}:127.0.0.1" '
+        ('curl --http2 --tls-max 1.2 -k -H"Host: bob" --resolve "bob:{0}:127.0.0.1" '
          '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://bob:{0}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200_sni_bob.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
+session_1_protocols = "h2,tls/1.2,tcp,ipv4"
+session_1_tls_features = 'sni:bob'
 
 # Execute the second transaction with an SNI of dave.
 tr = Test.AddTestRun("Verify that a session of a different SNI is not dumped.")
@@ -150,10 +152,12 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the json content of the first session")
 verify_replay = "verify_replay.py"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = "python3 {0} {1} {2}".format(
+tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}" --client-tls-features "{4}"'.format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
-        replay_file_session_1)
+        replay_file_session_1,
+        session_1_protocols,
+        session_1_tls_features)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

@@ -91,7 +91,13 @@ EThread::schedule(Event *e)
   // The continuation that gets scheduled later is not always the
   // client VC, it can be HttpCacheSM etc. so save the flags
   e->continuation->control_flags.set_flags(get_cont_flags().get_flags());
-  EventQueueExternal.enqueue(e);
+
+  if (e->ethread == this_ethread()) {
+    EventQueueExternal.enqueue_local(e);
+  } else {
+    EventQueueExternal.enqueue(e);
+  }
+
   return e;
 }
 
@@ -129,9 +135,9 @@ EThread::schedule_every_local(Continuation *cont, ink_hrtime t, int callback_eve
   e->callback_event = callback_event;
   e->cookie         = cookie;
   if (t < 0) {
-    return schedule(e->init(cont, t, t));
+    return schedule_local(e->init(cont, t, t));
   } else {
-    return schedule(e->init(cont, get_hrtime() + t, t));
+    return schedule_local(e->init(cont, get_hrtime() + t, t));
   }
 }
 

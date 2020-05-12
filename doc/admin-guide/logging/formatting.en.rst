@@ -341,7 +341,7 @@ cssh           ecssh
 ============== ===================
 
 It is also possible to log all of the headers in a transaction message with a
-single field.  For each original original field, there is a variant which ends in
+single field.  For each original field, there is a variant which ends in
 ``ah`` rather than ``h``, as shown here:
 
 ============== ===================
@@ -505,6 +505,13 @@ shi   Origin Server  IP address resolved via DNS by |TS| for the origin server.
 shn   Origin Server  Host name of the origin server.
 nhi   Origin Server  Destination IP address of next hop
 nhp   Origin Server  Destination port of next hop
+ppv   Proxy Protocol Proxy Protocol Version used (if any) between the Loadbalancer
+      Version        and |TS|
+pps   Proxy Protocol Source IP received via Proxy Protocol context from the LB to
+      Source IP      the |TS|
+ppd   Proxy Protocol Destination IP received via Proxy Protocol context from the LB
+      Dest IP        to the |TS|
+
 ===== ============== ==========================================================
 
 .. note::

@@ -77,6 +77,7 @@ static constexpr std::string_view SSL_CA_TAG("ssl_ca_name"sv);
 static constexpr std::string_view SSL_ACTION_TAG("action"sv);
 static constexpr std::string_view SSL_ACTION_TUNNEL_TAG("tunnel"sv);
 static constexpr std::string_view SSL_SESSION_TICKET_ENABLED("ssl_ticket_enabled"sv);
+static constexpr std::string_view SSL_SESSION_TICKET_NUMBER("ssl_ticket_number"sv);
 static constexpr std::string_view SSL_KEY_DIALOG("ssl_key_dialog"sv);
 static constexpr std::string_view SSL_SERVERNAME("dest_fqdn"sv);
 static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
@@ -90,10 +91,6 @@ static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 #endif
 
 SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
-
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
-static int ssl_session_ticket_index = -1;
-#endif
 
 static int ssl_vc_index = -1;
 
@@ -911,13 +908,6 @@ SSLInitializeLibrary()
     CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_callback);
   }
 
-#ifdef TS_HAVE_OPENSSL_SESSION_TICKETS
-  ssl_session_ticket_index = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, ssl_session_ticket_free);
-  if (ssl_session_ticket_index == -1) {
-    SSLError("failed to create session ticket index");
-  }
-#endif
-
 #if TS_USE_TLS_OCSP
   ssl_stapling_ex_init();
 #endif /* TS_USE_TLS_OCSP */
@@ -1273,6 +1263,12 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
       Debug("ssl", "ssl session ticket is disabled");
     }
 #endif
+#if defined(TLS1_3_VERSION) && !defined(LIBRESSL_VERSION_NUMBER) && !defined(OPENSSL_IS_BORINGSSL)
+    if (!(params->ssl_ctx_options & SSL_OP_NO_TLSv1_3)) {
+      SSL_CTX_set_num_tickets(ctx, sslMultCertSettings->session_ticket_number);
+      Debug("ssl", "ssl session ticket number set to %d", sslMultCertSettings->session_ticket_number);
+    }
+#endif
   }
 
   if (params->clientCertLevel != 0) {
@@ -1542,6 +1538,10 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
 
     if (strcasecmp(label, SSL_SESSION_TICKET_ENABLED) == 0) {
       sslMultCertSettings->session_ticket_enabled = atoi(value);
+    }
+
+    if (strcasecmp(label, SSL_SESSION_TICKET_NUMBER) == 0) {
+      sslMultCertSettings->session_ticket_number = atoi(value);
     }
 
     if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
@@ -2031,23 +2031,26 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
       common_names = name_set;
     } else {
       // Check that all elements in common_names are in name_set
-      for (auto name : common_names) {
-        auto iter = name_set.find(name);
+      auto common_iter = common_names.begin();
+      while (common_iter != common_names.end()) {
+        auto iter = name_set.find(*common_iter);
         if (iter == name_set.end()) {
           // Common_name not in new set, move name to unique set
           auto iter = unique_names.find(cert_index - 1);
           if (iter == unique_names.end()) {
             std::set<std::string> new_set;
-            new_set.insert(name);
+            new_set.insert(*common_iter);
             unique_names.insert({cert_index - 1, new_set});
           } else {
-            iter->second.insert(name);
+            iter->second.insert(*common_iter);
           }
-          auto erase_iter = common_names.find(name);
+          auto erase_iter = common_iter;
+          ++common_iter;
           common_names.erase(erase_iter);
         } else {
           // New name already in common set, go ahead and remove it from further consideration
           name_set.erase(iter);
+          ++common_iter;
         }
       }
       // Anything still in name_set was not in common_names

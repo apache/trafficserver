@@ -51,8 +51,8 @@ def validate_json(schema_json, replay_json):
     """
     try:
         jsonschema.validate(instance=replay_json, schema=schema_json)
-    except jsonschema.ValidationError:
-        print("The replay file does not validate against the schema.")
+    except jsonschema.ValidationError as e:
+        print("The replay file does not validate against the schema: {}".format(e))
         return False
     else:
         return True
@@ -72,7 +72,7 @@ def verify_there_was_a_transaction(replay_json):
         print("There are no transactions in the replay file.")
         return False
     transaction = transactions[0]
-    if not ('client-request' in transaction and 'server-response' in transaction):
+    if not ('client-request' in transaction and 'proxy-response' in transaction):
         print("There was not request and response in the transaction of the replay file.")
         return False
 
@@ -139,6 +139,40 @@ def verify_sensitive_fields_not_dumped(replay_json, sensitive_fields):
     return True
 
 
+def verify_client_protocols(replay_json, expected_protocol_features):
+    expected_protocols_list = expected_protocol_features.split(',')
+    expected_protocols_list.sort()
+    try:
+        protocol_node = replay_json['sessions'][0]['protocol']
+        protocol_list = protocol_node.copy()
+        protocol_list.sort()
+        if protocol_list == expected_protocols_list:
+            return True
+        else:
+            print('Unexpected protocol stack. Expected: "{}", found: "{}".'.format(
+                ','.join(expected_protocols_list), ','.join(protocol_list)))
+            return False
+    except KeyError:
+        print("Could not find client protocol stack node in the replay file.")
+        return False
+
+
+def verify_client_tls_features(replay_json, expected_tls_features):
+    try:
+        session = replay_json['sessions'][0]
+        for expected_tls_feature in expected_tls_features.split(','):
+            expected_key, expected_value = expected_tls_feature.split(':')
+            tls_features = session['tls']
+            try:
+                return tls_features[expected_key] == expected_value
+            except KeyError:
+                print("Could not find client tls feature in the replay file: {}".format(expected_key))
+                return False
+    except KeyError:
+        print("Could not find client tls node in the replay file.")
+        return False
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("schema_file",
@@ -155,6 +189,10 @@ def parse_args():
     parser.add_argument("--sensitive-fields",
                         action="append",
                         help="The fields that are considered sensitive and replaced with insensitive values.")
+    parser.add_argument("--client-protocols",
+                        help="The comma-separated protocol features to expect for the client connection.")
+    parser.add_argument("--client-tls-features",
+                        help="The TLS values to expect for the client connection.")
     return parser.parse_args()
 
 
@@ -186,6 +224,12 @@ def main():
         return 1
 
     if args.sensitive_fields and not verify_sensitive_fields_not_dumped(replay_json, args.sensitive_fields):
+        return 1
+
+    if args.client_protocols and not verify_client_protocols(replay_json, args.client_protocols):
+        return 1
+
+    if args.client_tls_features and not verify_client_tls_features(replay_json, args.client_tls_features):
         return 1
 
     return 0
