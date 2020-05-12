@@ -73,13 +73,12 @@ public:
       if (ne->next_inactivity_timeout_at == 0 && nh.config.default_inactivity_timeout > 0) {
         Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", ne,
               nh.config.default_inactivity_timeout);
-        ne->set_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
-        ne->default_inactivity_timeout = true;
+        ne->set_default_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
         NET_INCREMENT_DYN_STAT(default_inactivity_timeout_applied_stat);
       }
 
       if (ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) {
-        if (ne->default_inactivity_timeout) {
+        if (ne->is_default_inactivity_timeout()) {
           // track the connections that timed out due to default inactivity
           NET_INCREMENT_DYN_STAT(default_inactivity_timeout_count_stat);
         }

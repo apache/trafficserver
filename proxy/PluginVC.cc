@@ -887,6 +887,18 @@ PluginVC::set_inactivity_timeout(ink_hrtime timeout_in)
 }
 
 void
+PluginVC::set_default_inactivity_timeout(ink_hrtime timeout_in)
+{
+  set_inactivity_timeout(timeout_in);
+}
+
+bool
+PluginVC::is_default_inactivity_timeout()
+{
+  return false;
+}
+
+void
 PluginVC::cancel_active_timeout()
 {
   set_active_timeout(0);
