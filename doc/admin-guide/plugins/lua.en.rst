@@ -2267,6 +2267,32 @@ ts.server_response.is_cacheable
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.server_response.get_maxage
+------------------------------
+**syntax:** *maxage = ts.server_response.get_maxage()*
+
+**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later.
+
+**description:** Return the maximum age of the server response in seconds if specified by Cache-Control, -1 otherwise.
+
+For example:
+
+::
+
+    function debug_long_maxage()
+        maxage = ts.server_response.get_maxage()
+        if ts.server_response.is_cacheable() and maxage > 86400 then
+            ts.debug('Cacheable response with maxage=' .. maxage)
+        end
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_READ_RESPONSE_HDR, debug_long_maxage)
+        return 0
+    end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.server_response.set_version
 ------------------------------
 **syntax:** *ts.server_response.set_version(VERSION_STR)*
