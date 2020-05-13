@@ -343,6 +343,8 @@ SSLConfigParams::initialize()
   set_paths_helper(ssl_ocsp_response_path, nullptr, &ssl_ocsp_response_path_only, nullptr);
   ats_free(ssl_ocsp_response_path);
 
+  REC_ReadConfigInt32(ssl_handshake_timeout_in, "proxy.config.ssl.handshake_timeout_in");
+
   REC_ReadConfigInt32(async_handshake_enabled, "proxy.config.ssl.async.handshake.enabled");
   REC_ReadConfigStringAlloc(engine_conf_file, "proxy.config.ssl.engine.conf_file");
 
