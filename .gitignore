@@ -169,3 +169,4 @@ RELEASE
 # autest
 tests/env-test/
 tests/_sandbox/
+tests/Pipfile

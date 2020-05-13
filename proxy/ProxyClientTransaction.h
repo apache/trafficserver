@@ -67,7 +67,7 @@ public:
 
   // Ask your session if this is allowed
   bool
-  is_transparent_passthrough_allowed()
+  is_transparent_passthrough_allowed() const
   {
     return parent ? parent->is_transparent_passthrough_allowed() : false;
   }
