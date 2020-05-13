@@ -243,7 +243,7 @@ event_callback_main(void *arg)
   Debug("event", "[event_callback_main] listen on socket = %d", con_socket_fd);
 
   // initialize queue for holding mgmt events
-  if ((ret = init_mgmt_events()) != TS_ERR_OKAY) {
+  if (init_mgmt_events() != TS_ERR_OKAY) {
     return nullptr;
   }
   // register callback with alarms processor
