@@ -1352,7 +1352,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
     timeout_in = HRTIME_SECONDS(nh->config.default_inactivity_timeout);
   }
   inactivity_timeout_in      = timeout_in;
-  next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
+  next_inactivity_timeout_at = (timeout_in > 0) ? Thread::get_hrtime() + inactivity_timeout_in : 0;
 }
 
 /*
