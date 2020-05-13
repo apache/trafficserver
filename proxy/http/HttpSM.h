@@ -592,7 +592,7 @@ protected:
   void kill_this();
   void update_stats();
   void transform_cleanup(TSHttpHookID hook, HttpTransformInfo *info);
-  bool is_transparent_passthrough_allowed();
+  bool is_transparent_passthrough_allowed() const;
   void plugin_agents_cleanup();
 
 public:
@@ -715,7 +715,7 @@ HttpSM::txn_hook_get(TSHttpHookID id)
 }
 
 inline bool
-HttpSM::is_transparent_passthrough_allowed()
+HttpSM::is_transparent_passthrough_allowed() const
 {
   return (t_state.client_info.is_transparent && ua_txn->is_transparent_passthrough_allowed() && ua_txn->is_first_transaction());
 }

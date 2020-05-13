@@ -83,7 +83,7 @@ public:
 
   /// Non-Virtual Accessors
   //
-  bool is_transparent_passthrough_allowed();
+  bool is_transparent_passthrough_allowed() const;
   void set_half_close_flag(bool flag);
 
   bool debug() const;
@@ -125,7 +125,7 @@ private:
 // INLINE
 
 inline bool
-ProxyTransaction::is_transparent_passthrough_allowed()
+ProxyTransaction::is_transparent_passthrough_allowed() const
 {
   return upstream_outbound_options.f_transparent_passthrough;
 }
