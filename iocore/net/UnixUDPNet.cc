@@ -605,7 +605,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   }
 
   fd = res;
-  if ((res = safe_fcntl(fd, F_SETFL, O_NONBLOCK)) < 0) {
+  if (safe_fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
     goto HardError;
   }
 
@@ -627,7 +627,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
       goto SoftError;
     }
 
-    if ((res = safe_getsockname(fd, &local_addr.sa, &local_addr_len)) < 0) {
+    if (safe_getsockname(fd, &local_addr.sa, &local_addr_len) < 0) {
       Debug("udpnet", "CreateUdpsocket: getsockname didnt' work");
       goto HardError;
     }
@@ -671,7 +671,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
     goto Lerror;
   }
   fd = res;
-  if ((res = fcntl(fd, F_SETFL, O_NONBLOCK) < 0)) {
+  if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
     goto Lerror;
   }
 
@@ -679,12 +679,12 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   if (ats_is_ip_multicast(addr)) {
     int enable_reuseaddr = 1;
 
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
+    if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr) < 0)) {
       goto Lerror;
     }
   }
 
-  if ((res = socketManager.ink_bind(fd, addr, ats_ip_size(addr))) < 0) {
+  if (socketManager.ink_bind(fd, addr, ats_ip_size(addr)) < 0) {
     goto Lerror;
   }
 
@@ -698,7 +698,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
       Debug("udpnet", "set_dnsbuf_size(%d) failed", send_bufsize);
     }
   }
-  if ((res = safe_getsockname(fd, &myaddr.sa, &myaddr_len)) < 0) {
+  if (safe_getsockname(fd, &myaddr.sa, &myaddr_len) < 0) {
     goto Lerror;
   }
   n = new UnixUDPConnection(fd);

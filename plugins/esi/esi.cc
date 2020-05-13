@@ -1211,7 +1211,7 @@ maskOsCacheHeaders(TSHttpTxn txnp)
   TSMLoc field_loc;
   const char *name, *value;
   int name_len, value_len, n_field_values;
-  bool os_response_cacheable, is_cache_header, mask_header;
+  bool os_response_cacheable, mask_header;
   string masked_name;
   os_response_cacheable = true;
   for (int i = 0; i < n_mime_headers; ++i) {
@@ -1222,14 +1222,14 @@ maskOsCacheHeaders(TSHttpTxn txnp)
     }
     name = TSMimeHdrFieldNameGet(bufp, hdr_loc, field_loc, &name_len);
     if (name) {
-      mask_header = is_cache_header = false;
-      n_field_values                = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+      mask_header    = false;
+      n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
       for (int j = 0; j < n_field_values; ++j) {
         value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
         if (nullptr == value || !value_len) {
           TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
         } else {
-          is_cache_header = checkForCacheHeader(name, name_len, value, value_len, os_response_cacheable);
+          bool is_cache_header = checkForCacheHeader(name, name_len, value, value_len, os_response_cacheable);
           if (!os_response_cacheable) {
             break;
           }

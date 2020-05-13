@@ -190,7 +190,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     }
   }
 
-  if ((res = safe_fcntl(fd, F_SETFD, FD_CLOEXEC)) < 0) {
+  if (safe_fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
     goto Lerror;
   }
 
@@ -199,33 +199,33 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     l.l_onoff  = 0;
     l.l_linger = 0;
     if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) &&
-        (res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
+        safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l)) < 0) {
       goto Lerror;
     }
   }
 
-  if (ats_is_ip6(&addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
+  if (ats_is_ip6(&addr) && safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int))) < 0) {
+  if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
 
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) &&
-      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
+      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
 
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) &&
-      (res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
+      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
 
 #ifdef TCP_FASTOPEN
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
-      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int)))) {
+      safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
     goto Lerror;
   }
 #endif
@@ -247,14 +247,14 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
 #if defined(TCP_MAXSEG)
   if (NetProcessor::accept_mss > 0) {
-    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *)&NetProcessor::accept_mss, sizeof(int))) < 0) {
+    if (safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *)&NetProcessor::accept_mss, sizeof(int)) < 0) {
       goto Lerror;
     }
   }
 #endif
 
   if (non_blocking) {
-    if ((res = safe_nonblocking(fd)) < 0) {
+    if (safe_nonblocking(fd) < 0) {
       goto Lerror;
     }
   }

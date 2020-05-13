@@ -1071,7 +1071,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       --cur_line_tmp;
     }
 
-    if ((cur_line_size = strlen((char *)cur_line)) <= 0 || *cur_line == '#' || *cur_line == '\0') {
+    if (strlen((char *)cur_line) <= 0 || *cur_line == '#' || *cur_line == '\0') {
       cur_line = tokLine(nullptr, &tok_state, '\\');
       ++cln;
       continue;
@@ -1145,7 +1145,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     new_mapping = new url_mapping();
 
     // apply filter rules if we have to
-    if ((errStr = process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf))) != nullptr) {
+    if (process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf)) != nullptr) {
       errStr = errStrBuf;
       goto MAP_ERROR;
     }

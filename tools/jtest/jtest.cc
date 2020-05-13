@@ -1710,7 +1710,6 @@ open_server(unsigned short int port, accept_fn_t accept_fn)
   struct linger lngr;
   int sock;
   int one = 1;
-  int err = 0;
 
   /* Create the socket. */
   sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -1728,7 +1727,7 @@ open_server(unsigned short int port, accept_fn_t accept_fn)
     perror((char *)"setsockopt");
     exit(EXIT_FAILURE);
   }
-  if ((err = bind(sock, (struct sockaddr *)&name, sizeof(name))) < 0) {
+  if (bind(sock, (struct sockaddr *)&name, sizeof(name)) < 0) {
     if (errno == EADDRINUSE) {
       close(sock);
       return -EADDRINUSE;
@@ -1738,13 +1737,13 @@ open_server(unsigned short int port, accept_fn_t accept_fn)
   }
 
   int addrlen = sizeof(name);
-  if ((err = getsockname(sock, (struct sockaddr *)&name,
+  if (getsockname(sock, (struct sockaddr *)&name,
 #if 0
                          &addrlen
 #else
-                         (socklen_t *)&addrlen
+                  (socklen_t *)&addrlen
 #endif
-                         )) < 0) {
+                  ) < 0) {
     perror("getsockname");
     exit(EXIT_FAILURE);
   }
@@ -3871,23 +3870,23 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   const char *end   = start + len;
   const char *ptr   = start;
   const char *ptr2, *temp, *temp2;
-  const char *sche1, *sche2;
-  const char *host1, *host2;
-  const char *port1, *port2;
-  const char *path1, *path2;
-  const char *frag1, *frag2;
-  const char *quer1, *quer2;
-  const char *para1, *para2;
+  const char *sche1 = nullptr, *sche2 = nullptr;
+  const char *host1 = nullptr, *host2 = nullptr;
+  const char *port1 = nullptr, *port2 = nullptr;
+  const char *path1 = nullptr, *path2 = nullptr;
+  const char *frag1 = nullptr, *frag2 = nullptr;
+  const char *quer1 = nullptr, *quer2 = nullptr;
+  const char *para1 = nullptr, *para2 = nullptr;
   bool fail = false;
   int num;
-  int sche_exists, host_exists, port_exists, path_exists, frag_exists, quer_exists, para_exists;
-  int leading_slash;
-
-  sche_exists = host_exists = port_exists = path_exists = 0;
-  frag_exists = quer_exists = para_exists = 0;
-  sche1 = sche2 = host1 = host2 = port1 = port2 = nullptr;
-  path1 = path2 = frag1 = frag2 = quer1 = quer2 = para1 = para2 = nullptr;
-  leading_slash                                                 = 0;
+  int sche_exists   = 0;
+  int host_exists   = 0;
+  int port_exists   = 0;
+  int path_exists   = 0;
+  int frag_exists   = 0;
+  int quer_exists   = 0;
+  int para_exists   = 0;
+  int leading_slash = 0;
 
   temp2 = ptr;
   /* strip fragments "#" off the end */
