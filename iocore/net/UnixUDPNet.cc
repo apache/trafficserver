@@ -647,7 +647,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
   }
 
   fd = res;
-  if ((res = safe_fcntl(fd, F_SETFL, O_NONBLOCK)) < 0) {
+  if (safe_fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
     goto HardError;
   }
 
@@ -666,12 +666,12 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
     bool succeeded = false;
     int enable     = 1;
 #ifdef IP_PKTINFO
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+    if (safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IP_RECVDSTADDR
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+    if (safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
       succeeded = true;
     }
 #endif
@@ -683,12 +683,12 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
     bool succeeded = false;
     int enable     = 1;
 #ifdef IPV6_PKTINFO
-    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IPV6_RECVPKTINFO
-    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
       succeeded = true;
     }
 #endif
@@ -705,7 +705,7 @@ UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action
       goto SoftError;
     }
 
-    if ((res = safe_getsockname(fd, &local_addr.sa, &local_addr_len)) < 0) {
+    if (safe_getsockname(fd, &local_addr.sa, &local_addr_len) < 0) {
       Debug("udpnet", "CreateUdpsocket: getsockname didn't work");
       goto HardError;
     }
@@ -749,7 +749,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
     goto Lerror;
   }
   fd = res;
-  if ((res = fcntl(fd, F_SETFL, O_NONBLOCK) < 0)) {
+  if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
     goto Lerror;
   }
 
@@ -757,12 +757,12 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
     bool succeeded = false;
     int enable     = 1;
 #ifdef IP_PKTINFO
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+    if (safe_setsockopt(fd, IPPROTO_IP, IP_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IP_RECVDSTADDR
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+    if (safe_setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
       succeeded = true;
     }
 #endif
@@ -774,12 +774,12 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
     bool succeeded = false;
     int enable     = 1;
 #ifdef IPV6_PKTINFO
-    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_PKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
       succeeded = true;
     }
 #endif
 #ifdef IPV6_RECVPKTINFO
-    if ((res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable))) == 0) {
+    if (safe_setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, reinterpret_cast<char *>(&enable), sizeof(enable)) == 0) {
       succeeded = true;
     }
 #endif
@@ -793,17 +793,16 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
   if (ats_is_ip_multicast(addr)) {
     int enable_reuseaddr = 1;
 
-    if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr),
-                               sizeof(enable_reuseaddr)) < 0)) {
+    if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr)) < 0) {
       goto Lerror;
     }
   }
 
-  if (ats_is_ip6(addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
+  if (ats_is_ip6(addr) && safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
 
-  if ((res = socketManager.ink_bind(fd, addr, ats_ip_size(addr))) < 0) {
+  if (socketManager.ink_bind(fd, addr, ats_ip_size(addr)) < 0) {
     goto Lerror;
   }
 
@@ -817,7 +816,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
       Debug("udpnet", "set_dnsbuf_size(%d) failed", send_bufsize);
     }
   }
-  if ((res = safe_getsockname(fd, &myaddr.sa, &myaddr_len)) < 0) {
+  if (safe_getsockname(fd, &myaddr.sa, &myaddr_len) < 0) {
     goto Lerror;
   }
   n = new UnixUDPConnection(fd);
