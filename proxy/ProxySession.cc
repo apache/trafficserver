@@ -28,6 +28,8 @@
 
 ProxySession::ProxySession() : VConnection(nullptr) {}
 
+ProxySession::ProxySession(NetVConnection *vc) : VConnection(nullptr), _vc(vc) {}
+
 void
 ProxySession::set_session_active()
 {
@@ -212,44 +214,49 @@ ProxySession::get_server_session() const
 void
 ProxySession::set_active_timeout(ink_hrtime timeout_in)
 {
+  if (_vc) {
+    _vc->set_active_timeout(timeout_in);
+  }
 }
 
 void
 ProxySession::set_inactivity_timeout(ink_hrtime timeout_in)
 {
+  if (_vc) {
+    _vc->set_inactivity_timeout(timeout_in);
+  }
 }
 
 void
 ProxySession::cancel_inactivity_timeout()
 {
+  if (_vc) {
+    _vc->cancel_inactivity_timeout();
+  }
 }
 
 int
 ProxySession::populate_protocol(std::string_view *result, int size) const
 {
-  auto vc = this->get_netvc();
-  return vc ? vc->populate_protocol(result, size) : 0;
+  return _vc ? _vc->populate_protocol(result, size) : 0;
 }
 
 const char *
 ProxySession::protocol_contains(std::string_view tag_prefix) const
 {
-  auto vc = this->get_netvc();
-  return vc ? vc->protocol_contains(tag_prefix) : nullptr;
+  return _vc ? _vc->protocol_contains(tag_prefix) : nullptr;
 }
 
 sockaddr const *
 ProxySession::get_client_addr()
 {
-  NetVConnection *netvc = get_netvc();
-  return netvc ? netvc->get_remote_addr() : nullptr;
+  return _vc ? _vc->get_remote_addr() : nullptr;
 }
 
 sockaddr const *
 ProxySession::get_local_addr()
 {
-  NetVConnection *netvc = get_netvc();
-  return netvc ? netvc->get_local_addr() : nullptr;
+  return _vc ? _vc->get_local_addr() : nullptr;
 }
 
 void
@@ -260,4 +267,34 @@ ProxySession::_handle_if_ssl(NetVConnection *new_vc)
     _ssl = std::make_unique<SSLProxySession>();
     _ssl.get()->init(*ssl_vc);
   }
+}
+
+VIO *
+ProxySession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+{
+  return _vc ? this->_vc->do_io_read(c, nbytes, buf) : nullptr;
+}
+
+VIO *
+ProxySession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+{
+  return _vc ? this->_vc->do_io_write(c, nbytes, buf, owner) : nullptr;
+}
+
+void
+ProxySession::do_io_shutdown(ShutdownHowTo_t howto)
+{
+  this->_vc->do_io_shutdown(howto);
+}
+
+void
+ProxySession::reenable(VIO *vio)
+{
+  this->_vc->reenable(vio);
+}
+
+bool
+ProxySession::support_sni() const
+{
+  return _vc ? _vc->support_sni() : false;
 }

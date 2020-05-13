@@ -117,9 +117,9 @@ Http1ClientSession::free()
   // Free the transaction resources
   this->trans.super_type::destroy();
 
-  if (client_vc) {
-    client_vc->do_io_close();
-    client_vc = nullptr;
+  if (_vc) {
+    _vc->do_io_close();
+    _vc = nullptr;
   }
 
   super::free();
@@ -130,8 +130,8 @@ void
 Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   ink_assert(new_vc != nullptr);
-  ink_assert(client_vc == nullptr);
-  client_vc      = new_vc;
+  ink_assert(_vc == nullptr);
+  _vc            = new_vc;
   magic          = HTTP_CS_MAGIC_ALIVE;
   mutex          = new_vc->mutex;
   trans.mutex    = mutex; // Share this mutex with the transaction
@@ -188,7 +188,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   HttpSsnDebug("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
-  client_vc->set_tcp_congestion_control(CLIENT_SIDE);
+  _vc->set_tcp_congestion_control(CLIENT_SIDE);
 
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   _reader     = reader ? reader : read_buffer->alloc_reader();
@@ -205,28 +205,6 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   do_api_callout(TS_HTTP_SSN_START_HOOK);
   MUTEX_UNTAKE_LOCK(lmutex, ethis);
   lmutex.clear();
-}
-
-VIO *
-Http1ClientSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
-{
-  return (client_vc) ? client_vc->do_io_read(c, nbytes, buf) : nullptr;
-}
-
-VIO *
-Http1ClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
-{
-  if (client_vc) {
-    return client_vc->do_io_write(c, nbytes, buf, owner);
-  } else {
-    return nullptr;
-  }
-}
-
-void
-Http1ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
-{
-  client_vc->do_io_shutdown(howto);
 }
 
 void
@@ -262,22 +240,22 @@ Http1ClientSession::do_io_close(int alerrno)
     SET_HANDLER(&Http1ClientSession::state_wait_for_close);
     HttpSsnDebug("[%" PRId64 "] session half close", con_id);
 
-    if (client_vc) {
+    if (_vc) {
       // We want the client to know that that we're finished
       //  writing.  The write shutdown accomplishes this.  Unfortunately,
       //  the IO Core semantics don't stop us from getting events
       //  on the write side of the connection like timeouts so we
       //  need to zero out the write of the continuation with
       //  the do_io_write() call (INKqa05309)
-      client_vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
+      _vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
 
-      ka_vio = client_vc->do_io_read(this, INT64_MAX, read_buffer);
+      ka_vio = _vc->do_io_read(this, INT64_MAX, read_buffer);
       ink_assert(slave_ka_vio != ka_vio);
 
       // Set the active timeout to the same as the inactive time so
       //   that this connection does not hang around forever if
       //   the ua hasn't closed
-      client_vc->set_active_timeout(HRTIME_SECONDS(trans.get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_in));
+      _vc->set_active_timeout(HRTIME_SECONDS(trans.get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_in));
     }
 
     // [bug 2610799] Drain any data read.
@@ -316,9 +294,9 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
   case VC_EVENT_INACTIVITY_TIMEOUT:
     half_close = false;
     this->do_io_close();
-    if (client_vc != nullptr) {
-      client_vc->do_io_close();
-      client_vc = nullptr;
+    if (_vc != nullptr) {
+      _vc->do_io_close();
+      _vc = nullptr;
     }
     break;
   case VC_EVENT_READ_READY:
@@ -376,7 +354,7 @@ Http1ClientSession::state_slave_keep_alive(int event, void *data)
 int
 Http1ClientSession::state_keep_alive(int event, void *data)
 {
-  // Route the event.  It is either for client vc or
+  // Route the event.  It is either for vc or
   //  the origin server slave vc
   if (data && data == slave_ka_vio) {
     return state_slave_keep_alive(event, data);
@@ -396,9 +374,9 @@ Http1ClientSession::state_keep_alive(int event, void *data)
 
   case VC_EVENT_EOS:
     this->do_io_close();
-    if (client_vc != nullptr) {
-      client_vc->do_io_close();
-      client_vc = nullptr;
+    if (_vc != nullptr) {
+      _vc->do_io_close();
+      _vc = nullptr;
     }
     break;
 
@@ -416,11 +394,6 @@ Http1ClientSession::state_keep_alive(int event, void *data)
   }
 
   return 0;
-}
-void
-Http1ClientSession::reenable(VIO *vio)
-{
-  client_vc->reenable(vio);
 }
 
 // Called from the Http1Transaction::release
@@ -448,9 +421,9 @@ Http1ClientSession::release(ProxyTransaction *trans)
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
 
-    if (client_vc) {
-      client_vc->cancel_active_timeout();
-      client_vc->add_to_keep_alive_queue();
+    if (_vc) {
+      _vc->cancel_active_timeout();
+      _vc->add_to_keep_alive_queue();
     }
     trans->destroy();
   }
@@ -460,12 +433,12 @@ void
 Http1ClientSession::new_transaction()
 {
   // If the client connection terminated during API callouts we're done.
-  if (nullptr == client_vc) {
+  if (nullptr == _vc) {
     this->do_io_close(); // calls the SSN_CLOSE hooks to match the SSN_START hooks.
     return;
   }
 
-  if (!client_vc->add_to_active_queue()) {
+  if (!_vc->add_to_active_queue()) {
     // no room in the active queue close the connection
     this->do_io_close();
     return;
@@ -546,7 +519,7 @@ bool
 Http1ClientSession::allow_half_open() const
 {
   // Only allow half open connections if the not over TLS
-  return (client_vc && dynamic_cast<SSLNetVConnection *>(client_vc) == nullptr);
+  return (_vc && dynamic_cast<SSLNetVConnection *>(_vc) == nullptr);
 }
 
 void
@@ -567,12 +540,6 @@ Http1ClientSession::is_chunked_encoding_supported() const
   return true;
 }
 
-NetVConnection *
-Http1ClientSession::get_netvc() const
-{
-  return client_vc;
-}
-
 int
 Http1ClientSession::get_transact_count() const
 {
@@ -591,35 +558,8 @@ Http1ClientSession::get_server_session() const
   return bound_ss;
 }
 
-void
-Http1ClientSession::set_active_timeout(ink_hrtime timeout_in)
-{
-  if (client_vc)
-    client_vc->set_active_timeout(timeout_in);
-}
-
-void
-Http1ClientSession::set_inactivity_timeout(ink_hrtime timeout_in)
-{
-  if (client_vc)
-    client_vc->set_inactivity_timeout(timeout_in);
-}
-
-void
-Http1ClientSession::cancel_inactivity_timeout()
-{
-  if (client_vc)
-    client_vc->cancel_inactivity_timeout();
-}
-
 const char *
 Http1ClientSession::get_protocol_string() const
 {
   return "http";
-}
-
-bool
-Http1ClientSession::support_sni() const
-{
-  return client_vc ? client_vc->support_sni() : false;
 }
