@@ -87,7 +87,7 @@ PluginDso::load(std::string &error)
       std::error_code ec;
       fs::file_status fs = fs::status(_effectivePath, ec);
       _mtime             = fs::modification_time(fs);
-      PluginDebug(_tag, "plugin '%s' mоdification time %ld", _configPath.c_str(), _mtime);
+      PluginDebug(_tag, "plugin '%s' modification time %ld", _configPath.c_str(), _mtime);
 
       /* Now attemt to load the plugin DSO */
       if ((_dlh = dlopen(_runtimePath.c_str(), RTLD_NOW | RTLD_LOCAL)) == nullptr) {
