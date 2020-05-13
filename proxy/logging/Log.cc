@@ -877,17 +877,17 @@ Log::init_fields()
   field = new LogField("cache_read_retry_attempts", "crra", LogField::dINT, &LogAccess::marshal_cache_read_retries,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
-  field_symbol_hash.emplace("crra", field);
+  ink_hash_table_insert(field_symbol_hash, "crra", field);
 
   field = new LogField("cache_write_retry_attempts", "cwra", LogField::dINT, &LogAccess::marshal_cache_write_retries,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
-  field_symbol_hash.emplace("cwra", field);
+  ink_hash_table_insert(field_symbol_hash, "cwra", field);
 
   field = new LogField("cache_collapsed_connection_success", "cccs", LogField::dINT,
                        &LogAccess::marshal_cache_collapsed_connection_success, &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
-  field_symbol_hash.emplace("cccs", field);
+  ink_hash_table_insert(field_symbol_hash, "cccs", field);
 
   field = new LogField("client_transaction_priority_weight", "ctpw", LogField::sINT,
                        &LogAccess::marshal_client_http_transaction_priority_weight, &LogAccess::unmarshal_int_to_str);
