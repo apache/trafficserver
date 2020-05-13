@@ -251,7 +251,7 @@ event_callback_main(void *arg)
     return nullptr;
   }
   // initialize queue for holding mgmt events
-  if ((ret = init_mgmt_events()) != TS_ERR_OKAY) {
+  if (init_mgmt_events() != TS_ERR_OKAY) {
     ink_hash_table_destroy(accepted_clients);
     return nullptr;
   }

@@ -164,7 +164,7 @@ AccessToken::validateTiming(time_t time)
   }
 
   /* "issued at" time-stamp is currently only for info, so check if the time-stamp is valid only */
-  if (!_issuedAt.empty() && 0 == (t = string2int(_issuedAt))) {
+  if (!_issuedAt.empty() && 0 == string2int(_issuedAt)) {
     return _state = INVALID_FIELD_VALUE;
   }
 
