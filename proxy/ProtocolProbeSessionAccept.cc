@@ -66,7 +66,8 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
   {
     VIO *vio;
     NetVConnection *netvc;
-    ProtoGroupKey key = N_PROTO_GROUPS; // use this as an invalid value.
+    SessionAccept *acceptor = nullptr;
+    ProtoGroupKey key       = N_PROTO_GROUPS; // use this as an invalid value.
 
     vio   = static_cast<VIO *>(edata);
     netvc = static_cast<NetVConnection *>(vio->vc_server);
@@ -136,15 +137,17 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       key = PROTO_HTTP;
     }
 
-    netvc->do_io_read(nullptr, 0, nullptr); // Disable the read IO that we started.
-
-    if (probeParent->endpoint[key] == nullptr) {
+    acceptor = probeParent->endpoint[key];
+    if (acceptor == nullptr) {
       Warning("Unregistered protocol type %d", key);
       goto done;
     }
 
+    // Disable the read IO that we started.
+    netvc->do_io_read(acceptor, 0, nullptr);
+
     // Directly invoke the session acceptor, letting it take ownership of the input buffer.
-    if (!probeParent->endpoint[key]->accept(netvc, this->iobuf, reader)) {
+    if (!acceptor->accept(netvc, this->iobuf, reader)) {
       // IPAllow check fails in XxxSessionAccept::accept() if false returned.
       goto done;
     }
@@ -181,7 +184,7 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
       vio->reenable();
     } else {
       Debug("http", "probe already has data, call ioComplete directly..");
-      vio = netvc->do_io_read(nullptr, 0, nullptr);
+      vio = netvc->do_io_read(this, 0, nullptr);
       probe->ioCompletionEvent(VC_EVENT_READ_COMPLETE, (void *)vio);
     }
     return EVENT_CONT;
