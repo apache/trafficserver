@@ -1353,7 +1353,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   inactivity_timeout_in      = timeout_in;
-  next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
+  next_inactivity_timeout_at = (timeout_in > 0) ? Thread::get_hrtime() + inactivity_timeout_in : 0;
 }
 
 TS_INLINE void
