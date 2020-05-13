@@ -63,33 +63,21 @@ public:
   void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true) override;
 
   // Implement VConnection interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
-                   bool owner = false) override;
-
   void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
 
   // Accessor Methods
   bool allow_half_open() const;
   void set_half_close_flag(bool flag) override;
   bool get_half_close_flag() const override;
   bool is_chunked_encoding_supported() const override;
-  NetVConnection *get_netvc() const override;
   int get_transact_count() const override;
   virtual bool is_outbound_transparent() const;
 
   Http1ServerSession *get_server_session() const override;
-  void set_active_timeout(ink_hrtime timeout_in) override;
-  void set_inactivity_timeout(ink_hrtime timeout_in) override;
-  void cancel_inactivity_timeout() override;
   const char *get_protocol_string() const override;
 
   void increment_current_active_client_connections_stat() override;
   void decrement_current_active_client_connections_stat() override;
-
-  bool support_sni() const override;
 
 private:
   Http1ClientSession(Http1ClientSession &);
