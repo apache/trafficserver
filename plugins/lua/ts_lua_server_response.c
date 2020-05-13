@@ -44,6 +44,7 @@ static int ts_lua_server_response_get_version(lua_State *L);
 static int ts_lua_server_response_set_version(lua_State *L);
 
 static int ts_lua_server_response_is_cacheable(lua_State *L);
+static int ts_lua_server_response_get_maxage(lua_State *L);
 
 void
 ts_lua_inject_server_response_api(lua_State *L)
@@ -155,6 +156,8 @@ ts_lua_inject_server_response_misc_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_server_response_is_cacheable);
   lua_setfield(L, -2, "is_cacheable");
+  lua_pushcfunction(L, ts_lua_server_response_get_maxage);
+  lua_setfield(L, -2, "get_maxage");
 }
 
 static int
@@ -378,6 +381,20 @@ ts_lua_server_response_is_cacheable(lua_State *L)
   TS_LUA_CHECK_SERVER_RESPONSE_HDR(http_ctx);
 
   lua_pushnumber(L, TSHttpTxnIsCacheable(http_ctx->txnp, NULL, http_ctx->server_response_bufp));
+
+  return 1;
+}
+
+static int
+ts_lua_server_response_get_maxage(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TS_LUA_CHECK_SERVER_RESPONSE_HDR(http_ctx);
+
+  lua_pushnumber(L, TSHttpTxnGetMaxAge(http_ctx->txnp, http_ctx->server_response_bufp));
 
   return 1;
 }
