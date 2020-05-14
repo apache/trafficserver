@@ -1246,8 +1246,8 @@ HTTP Connection Timeouts
    :overridable:
 
    Specifies how long |TS| keeps connections to clients open for a
-   subsequent request after a transaction ends. A value of ``0`` will disable
-   the no activity timeout.
+   subsequent request after a transaction ends. A value of ``0`` will set
+   `proxy.config.net.default_inactivity_timeout` as the timeout.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -1256,8 +1256,8 @@ HTTP Connection Timeouts
    :overridable:
 
    Specifies how long |TS| keeps connections to origin servers open
-   for a subsequent transfer of data after a transaction ends. A value of
-   ``0`` will disable the no activity timeout.
+   for a subsequent transfer of data after a transaction ends. A value of ``0`` will
+   set `proxy.config.net.default_inactivity_timeout` as the timeout.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
