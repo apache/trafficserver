@@ -812,10 +812,10 @@ Changes with Apache Traffic Server 9.0.0
   #6396 - Avoid cross-thread mutex conflicts
   #6397 - Ensure that extra data beyond the chunked body is not tunneled
   #6406 - Auto port select slow_post test
-  #6410 - Change gold files to be less restrictive 
+  #6410 - Change gold files to be less restrictive
   #6411 - Updating the autest version pin to 1.7.4.
   #6414 - Traffic Dump: fix client request target parsing
-  #6421 - Add config option to enable/disable dynamic plugin reload feature 
+  #6421 - Add config option to enable/disable dynamic plugin reload feature
   #6424 - SSL: Introduce proxy.config.ssl.server.session_ticket.number
   #6431 - #6428 Clear stale captive_action during Cache read retry - WIP (in test)
   #6432 - SSL: Introduce proxy.config.ssl.server.prioritize_chacha
