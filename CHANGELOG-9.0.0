@@ -13,7 +13,6 @@ Changes with Apache Traffic Server 9.0.0
   #3925 - Enforce sphinx>=1.7.5 when building docs
   #3930 - Remove proxy.config.config_dir from records.config
   #3941 - Fix RecConfigReadPluginDir and clean up RecCore
-  #3943 - Handle response parsing case where EOF happens before any data arrives.
   #3951 - Fixed broken sphinx version check on MacOS
   #3955 - IntrusiveHashMap: Refresh TSHashTable for C++ eleventy.
   #3957 - Add generic "guard" class (PostScript) for exception and early function return safety.
@@ -784,15 +783,16 @@ Changes with Apache Traffic Server 9.0.0
   #6281 - Perf: replace dynamic_cast with static_cast in this_thread()
   #6283 - Adjust debug tag for ssl_sni_whitelist plugin to match plugin
   #6284 - Removes the remaining references to TSQA
+  #6287 - Introduce NetEvent to split UnixNetVConnection and NetHandler
   #6293 - Add invalid config warning when cache open write fail and read retry are inconsistent
   #6297 - Add links to RWW sections
   #6303 - Fixes a  case where the NextHop consistent hash ring may not be completely searched.
+  #6315 - Fix closed flag from #6287
   #6324 - Fixes clang-format issues
   #6325 - Fixes typo in TLS Bridge illustration
   #6329 - Fixed build issues on macOS after 0-RTT merge
   #6333 - XDebug: Always append to the X- header, rather than prepend
   #6339 - Fixes an issue where NextHopSelectionStrategy did not implement a parent check.
-  #6340 - Add header rewrite test to make sure we are not injecting end of rule char
   #6347 - Fix localstatedir and runtimedir for Debian layout
   #6358 - Add header guard - issue #6357
   #6359 - Cleanup: Remove unused accessors of HttpVCTableEntry
@@ -816,6 +816,7 @@ Changes with Apache Traffic Server 9.0.0
   #6411 - Updating the autest version pin to 1.7.4.
   #6414 - Traffic Dump: fix client request target parsing
   #6421 - Add config option to enable/disable dynamic plugin reload feature 
+  #6424 - SSL: Introduce proxy.config.ssl.server.session_ticket.number
   #6431 - #6428 Clear stale captive_action during Cache read retry - WIP (in test)
   #6432 - SSL: Introduce proxy.config.ssl.server.prioritize_chacha
   #6435 - Fixed chunked_encoding test to work with OpenSSL 1.0.2
@@ -882,15 +883,25 @@ Changes with Apache Traffic Server 9.0.0
   #6664 - cache_range_requests: remove unnecessary Last-Modified header from tests
   #6677 - Format to match perferred if/else formatting for sh scripts
   #6678 - Removes commented out code from example
+  #6682 - Lua Plugin - Extend the crypto API with SHA-256 and HMAC functions.
   #6690 - Remove tls_versions from host sni policy check
   #6694 - Normalizes function names to match hook names in intercept plugins
   #6697 - Increase the default max_record_entries to match the original value
   #6700 - traffic_dump: add nullptr check for sni string
   #6704 - Removes ATS version from gold files
-  #6708 - Adding logging fields for collapsed forwarding metrics
   #6714 - Add Access log fields for ProxyProtocol Context
   #6717 - Fixup .gitignores to match repo reality
   #6718 - gcc10: fixed warning about returning local variable in int64_to_str()
   #6723 - Document ip_allow in sni.yaml
+  #6730 - Add HttpTransact::get_max_age and TSHttpTxnGetMaxAge
   #6731 - Fix g++ 10 compile errors.
   #6734 - Update expired test certificates for cert_update
+  #6740 - Cleans up doubled words in documentation
+  #6742 - gcc10: fixed clearing an object of non-trivial type for wccp
+  #6754 - Enforce Active Connection limits
+  #6755 - Add metrics to track default inactivity timed out connections
+  #6757 - ASAN: Fixed one definition rule violation
+  #6770 - Weird characters in debug message
+  #6772 - Ensure inactivity timeout is not set when passed in timeout value is 0
+  #6774 - Fixed `AddressSanitizer: odr-violation`
+  #6781 - 1. Set a non-zero default value for TLS Client Handshake Timeout
