@@ -133,7 +133,8 @@ header_field_value_iterator::~header_field_value_iterator()
   delete state_;
 }
 
-std::string header_field_value_iterator::operator*()
+std::string
+header_field_value_iterator::operator*()
 {
   if (state_->index_ >= 0) {
     int length      = 0;
@@ -363,7 +364,8 @@ HeaderField::operator=(const char *field_value)
   return append(field_value);
 }
 
-std::string HeaderField::operator[](const int index)
+std::string
+HeaderField::operator[](const int index)
 {
   return *header_field_value_iterator(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_,
                                       iter_.state_->mloc_container_->field_loc_, index);
@@ -464,7 +466,8 @@ header_field_iterator::operator!=(const header_field_iterator &rhs) const
   return !operator==(rhs);
 }
 
-HeaderField header_field_iterator::operator*()
+HeaderField
+header_field_iterator::operator*()
 {
   return HeaderField(*this);
 }
@@ -670,7 +673,8 @@ Headers::set(const std::string &key, const std::string &value)
   return append(key, value);
 }
 
-HeaderField Headers::operator[](const std::string &key)
+HeaderField
+Headers::operator[](const std::string &key)
 {
   // In STL fashion if the key doesn't exist it will be added with an empty value.
   header_field_iterator it = find(key);

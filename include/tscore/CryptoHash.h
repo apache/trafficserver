@@ -84,7 +84,11 @@ union CryptoHash {
   }
 
   /// Access 64 bit slice.
-  uint64_t operator[](int i) const { return u64[i]; }
+  uint64_t
+  operator[](int i) const
+  {
+    return u64[i];
+  }
   /// Access 64 bit slice.
   /// @note Identical to @ operator[] but included for symmetry.
   uint64_t

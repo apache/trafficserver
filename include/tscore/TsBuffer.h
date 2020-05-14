@@ -323,7 +323,8 @@ Buffer::operator==(ConstBuffer const &that) const
 {
   return _size == that._size && _ptr == that._ptr;
 }
-inline bool Buffer::operator!() const
+inline bool
+Buffer::operator!() const
 {
   return !(_ptr && _size);
 }
@@ -331,7 +332,8 @@ inline Buffer::operator pseudo_bool() const
 {
   return _ptr && _size ? &self::operator! : nullptr;
 }
-inline char Buffer::operator*() const
+inline char
+Buffer::operator*() const
 {
   return *_ptr;
 }
@@ -407,7 +409,8 @@ ConstBuffer::operator==(Buffer const &that) const
 {
   return _size == that._size && 0 == memcmp(_ptr, that._ptr, _size);
 }
-inline bool ConstBuffer::operator!() const
+inline bool
+ConstBuffer::operator!() const
 {
   return !(_ptr && _size);
 }
@@ -415,7 +418,8 @@ inline ConstBuffer::operator pseudo_bool() const
 {
   return _ptr && _size ? &self::operator! : nullptr;
 }
-inline char ConstBuffer::operator*() const
+inline char
+ConstBuffer::operator*() const
 {
   return *_ptr;
 }
@@ -438,7 +442,8 @@ ConstBuffer::data() const
 {
   return _ptr;
 }
-inline char ConstBuffer::operator[](int n) const
+inline char
+ConstBuffer::operator[](int n) const
 {
   return _ptr[n];
 }

@@ -482,12 +482,14 @@ IpMap::iterator::operator==(iterator const &that) const
   return _tree == that._tree && _node == that._node;
 }
 
-inline IpMap::iterator::reference IpMap::iterator::operator*() const
+inline IpMap::iterator::reference
+IpMap::iterator::operator*() const
 {
   return *_node;
 }
 
-inline IpMap::iterator::pointer IpMap::iterator::operator->() const
+inline IpMap::iterator::pointer
+IpMap::iterator::operator->() const
 {
   return _node;
 }

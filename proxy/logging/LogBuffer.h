@@ -133,7 +133,8 @@ public:
   LogBuffer(LogObject *owner, LogBufferHeader *header);
   ~LogBuffer();
 
-  char &operator[](int idx)
+  char &
+  operator[](int idx)
   {
     ink_assert(idx >= 0);
     ink_assert((size_t)idx < m_size);
