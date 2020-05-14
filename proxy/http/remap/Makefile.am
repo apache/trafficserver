@@ -93,7 +93,7 @@ test_PluginFactory_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -
 test_PluginFactory_LIBTOOLFLAGS = --preserve-dup-deps
 EXTRA_test_PluginFactory_DEPENDENCIES = \
 	unit-tests/plugin_v1.la \
-	unit-tests/plugin_init_fail.la
+	unit-tests/plugin_init_fail.la \
 	unit-tests/plugin_instinit_fail.la
 test_PluginFactory_LDADD = $(COMMON_PLUGINDSO_LDADDS)
 test_PluginFactory_LDFLAGS = $(AM_LDFLAGS)
@@ -117,7 +117,6 @@ test_RemapPluginInfo_LDADD = $(COMMON_PLUGINDSO_LDADDS)
 test_RemapPluginInfo_LDFLAGS = $(AM_LDFLAGS)
 test_RemapPluginInfo_SOURCES = \
 	unit-tests/plugin_testing_common.cc \
-	unit-tests/plugin_testing_calls.cc \
 	unit-tests/test_RemapPlugin.cc \
 	PluginDso.cc \
 	RemapPluginInfo.cc
