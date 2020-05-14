@@ -60,7 +60,7 @@ const char end[]       = "\",\n";
 //----------------------------------------------------------------------------
 class Stats
 {
-  using string                            = std::string;
+  using string = std::string;
   template <class Key, class T> using map = std::map<Key, T>;
 
 public:
@@ -495,11 +495,11 @@ public:
   }
 
 private:
- std::pair<std::string, LookupItem>
- make_pair(std::string s, LookupItem i)
- {
-   return std::make_pair(s, i);
- }
+  std::pair<std::string, LookupItem>
+  make_pair(std::string s, LookupItem i)
+  {
+    return std::make_pair(s, i);
+  }
 
   map<string, string> *_stats;
   map<string, string> *_old_stats;
