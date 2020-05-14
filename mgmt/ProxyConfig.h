@@ -68,7 +68,11 @@ public:
     ~scoped_config() { ClassType::release(ptr); }
     operator bool() const { return ptr != nullptr; }
     operator const ConfigType *() const { return ptr; }
-    const ConfigType *operator->() const { return ptr; }
+    const ConfigType *
+    operator->() const
+    {
+      return ptr;
+    }
 
   private:
     ConfigType *ptr;

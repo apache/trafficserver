@@ -603,7 +603,9 @@ MemSpan<T>::operator!=(self_type const &that) const
   return !(*this == that);
 }
 
-template <typename T> bool MemSpan<T>::operator!() const
+template <typename T>
+bool
+MemSpan<T>::operator!() const
 {
   return _count == 0;
 }
@@ -641,7 +643,9 @@ MemSpan<T>::end() const
   return _ptr + _count;
 }
 
-template <typename T> T &MemSpan<T>::operator[](size_t idx) const
+template <typename T>
+T &
+MemSpan<T>::operator[](size_t idx) const
 {
   return _ptr[idx];
 }
@@ -769,7 +773,8 @@ MemSpan<void>::operator!=(self_type const &that) const
   return !(*this == that);
 }
 
-inline bool MemSpan<void>::operator!() const
+inline bool
+MemSpan<void>::operator!() const
 {
   return _size == 0;
 }

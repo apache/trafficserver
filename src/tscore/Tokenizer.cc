@@ -275,7 +275,8 @@ Tokenizer::addToken(char *startAddr, int length)
   }
 }
 
-const char *Tokenizer::operator[](unsigned index) const
+const char *
+Tokenizer::operator[](unsigned index) const
 {
   const tok_node *cur_node = &start_node;
   unsigned cur_start       = 0;

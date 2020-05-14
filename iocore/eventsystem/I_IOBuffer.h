@@ -1509,12 +1509,14 @@ IOBufferChain::const_iterator::operator!=(self_type const &that) const
   return _b != that._b;
 }
 
-inline IOBufferChain::const_iterator::value_type &IOBufferChain::const_iterator::operator*() const
+inline IOBufferChain::const_iterator::value_type &
+IOBufferChain::const_iterator::operator*() const
 {
   return *_b;
 }
 
-inline IOBufferChain::const_iterator::value_type *IOBufferChain::const_iterator::operator->() const
+inline IOBufferChain::const_iterator::value_type *
+IOBufferChain::const_iterator::operator->() const
 {
   return _b;
 }
@@ -1534,12 +1536,14 @@ IOBufferChain::const_iterator::operator++(int)
   return pre;
 }
 
-inline IOBufferChain::iterator::value_type &IOBufferChain::iterator::operator*() const
+inline IOBufferChain::iterator::value_type &
+IOBufferChain::iterator::operator*() const
 {
   return *_b;
 }
 
-inline IOBufferChain::iterator::value_type *IOBufferChain::iterator::operator->() const
+inline IOBufferChain::iterator::value_type *
+IOBufferChain::iterator::operator->() const
 {
   return _b;
 }

@@ -875,7 +875,7 @@ create_config(RegressionTest *t, int num)
     }
 
     // make sure we have at least 1280 M bytes
-    if (total_space<(10 << 27)>> STORE_BLOCK_SHIFT) {
+    if (total_space < ((10 << 27) >> STORE_BLOCK_SHIFT)) {
       rprintf(t, "Not enough space for 10 volume\n");
       return 0;
     }
