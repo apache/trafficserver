@@ -388,13 +388,15 @@ CharIndex::end() -> iterator
   return {};
 }
 
-auto CharIndex::iterator::operator-> () -> value_type *
+auto
+CharIndex::iterator::operator->() -> value_type *
 {
   ink_assert(state.block != nullptr); // clang!
   return state.block->array[state.index].branch;
 }
 
-auto CharIndex::iterator::operator*() -> value_type &
+auto
+CharIndex::iterator::operator*() -> value_type &
 {
   ink_assert(state.block != nullptr); // clang!
   return *(state.block->array[state.index].branch);

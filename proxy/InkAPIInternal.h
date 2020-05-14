@@ -224,7 +224,9 @@ FeatureAPIHooks<ID, N>::get(ID id) const
   return likely(is_valid(id)) ? m_hooks[id].head() : nullptr;
 }
 
-template <typename ID, int N> APIHooks const *FeatureAPIHooks<ID, N>::operator[](ID id) const
+template <typename ID, int N>
+APIHooks const *
+FeatureAPIHooks<ID, N>::operator[](ID id) const
 {
   return likely(is_valid(id)) ? &(m_hooks[id]) : nullptr;
 }

@@ -3369,11 +3369,13 @@ HashAssignElt::getBucketBase()
   // coverity[ptr_arith]
   return reinterpret_cast<Bucket *>((&m_count + 1 + this->getCount()));
 }
-inline HashAssignElt::Bucket &HashAssignElt::operator[](size_t idx)
+inline HashAssignElt::Bucket &
+HashAssignElt::operator[](size_t idx)
 {
   return this->getBucketBase()[idx];
 }
-inline HashAssignElt::Bucket const &HashAssignElt::operator[](size_t idx) const
+inline HashAssignElt::Bucket const &
+HashAssignElt::operator[](size_t idx) const
 {
   return (*(const_cast<self *>(this)))[idx];
 }
@@ -3386,7 +3388,8 @@ MaskAssignElt::getCount() const
 {
   return ntohl(m_count);
 }
-inline MaskValueSetElt *MaskAssignElt::appender::operator->()
+inline MaskValueSetElt *
+MaskAssignElt::appender::operator->()
 {
   return m_set;
 }
