@@ -1257,7 +1257,7 @@ HTTP Connection Timeouts
 
    Specifies how long |TS| keeps connections to origin servers open
    for a subsequent transfer of data after a transaction ends. A value of ``0`` will
-   `proxy.config.net.default_inactivity_timeout` as the timeout.
+   set `proxy.config.net.default_inactivity_timeout` as the timeout.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
