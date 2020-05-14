@@ -691,7 +691,9 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 
   // Decode header field name
   if (index) {
-    indexing_table.get_header_field(index, header);
+    if (indexing_table.get_header_field(index, header) == HPACK_ERROR_COMPRESSION_ERROR) {
+      return HPACK_ERROR_COMPRESSION_ERROR;
+    }
   } else {
     char *name_str        = nullptr;
     uint64_t name_str_len = 0;
