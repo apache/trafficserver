@@ -6844,7 +6844,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
     case KA_CONNECTION:
       ink_assert(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
       if (ver == HTTPVersion(1, 0)) {
-        if (s->current.request_to == PARENT_PROXY) {
+        if (s->current.request_to == PARENT_PROXY && s->parent_result.parent_is_proxy()) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "keep-alive", 10);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "keep-alive", 10);
@@ -6858,7 +6858,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTPVersion(1, 1))) {
         /* Had keep-alive */
         s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-        if (s->current.request_to == PARENT_PROXY) {
+        if (s->current.request_to == PARENT_PROXY && s->parent_result.parent_is_proxy()) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
