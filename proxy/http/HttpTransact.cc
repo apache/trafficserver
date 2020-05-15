@@ -5714,8 +5714,6 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     HTTP_INCREMENT_DYN_STAT(http_push_requests_stat);
   } else if (s->method == HTTP_WKSIDX_OPTIONS) {
     HTTP_INCREMENT_DYN_STAT(http_options_requests_stat);
-  } else if (s->method == HTTP_WKSIDX_TRACE) {
-    HTTP_INCREMENT_DYN_STAT(http_trace_requests_stat);
   } else {
     HTTP_INCREMENT_DYN_STAT(http_extension_method_requests_stat);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_METHOD);
