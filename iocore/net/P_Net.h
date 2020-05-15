@@ -58,7 +58,7 @@ enum Net_Stats {
   net_tcp_accept_stat,
   net_connections_throttled_in_stat,
   net_connections_throttled_out_stat,
-  net_connections_max_active_throttled_in_stat,
+  net_requests_max_active_throttled_in_stat,
   Net_Stat_Count
 };
 
