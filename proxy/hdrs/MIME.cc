@@ -2512,7 +2512,7 @@ mime_parser_clear(MIMEParser *parser)
 
 ParseResult
 mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char **real_s, const char *real_e,
-                  bool must_copy_strings, bool eof, size_t max_hdr_field_size)
+                  bool must_copy_strings, bool eof, bool remove_ws_from_field_name, size_t max_hdr_field_size)
 {
   ParseResult err;
   bool line_is_real;
@@ -2572,8 +2572,13 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // server MUST reject any received request message that contains
     // whitespace between a header field-name and colon with a response code
     // of 400 (Bad Request).
+    // A proxy MUST remove any such whitespace from a response message before
+    // fowarding the message downstream.
     if (is_ws(field_name.back())) {
-      return PARSE_RESULT_ERROR;
+      if (!remove_ws_from_field_name) {
+        return PARSE_RESULT_ERROR;
+      }
+      field_name.rtrim_if(&ParseRules::is_ws);
     }
 
     // find value first

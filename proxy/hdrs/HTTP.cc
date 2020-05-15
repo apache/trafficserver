@@ -959,8 +959,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
         return PARSE_RESULT_ERROR;
       }
 
-      ParseResult ret =
-        mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, max_hdr_field_size);
+      ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof,
+                                          false, max_hdr_field_size);
       // If we're done with the main parse do some validation
       if (ret == PARSE_RESULT_DONE) {
         ret = validate_hdr_host(hh); // check HOST header
@@ -1116,8 +1116,8 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     parser->m_parsing_http = false;
   }
 
-  ParseResult ret =
-    mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, max_hdr_field_size);
+  ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, false,
+                                      max_hdr_field_size);
   // If we're done with the main parse do some validation
   if (ret == PARSE_RESULT_DONE) {
     ret = validate_hdr_host(hh); // check HOST header
@@ -1287,7 +1287,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
       end                    = real_end;
       parser->m_parsing_http = false;
-      return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+      return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
     }
 #endif
 
@@ -1403,7 +1403,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     parser->m_parsing_http = false;
   }
 
-  return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof);
+  return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
 }
 
 /*-------------------------------------------------------------------------
