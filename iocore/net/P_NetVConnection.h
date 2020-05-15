@@ -87,7 +87,7 @@ NetVConnection::get_local_port()
 }
 
 inline sockaddr const *
-NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst)
+NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst) const
 {
   const IpEndpoint &addr = (src_or_dst == ProxyProtocolData::SRC ? pp_info.src_addr : pp_info.dst_addr);
 
