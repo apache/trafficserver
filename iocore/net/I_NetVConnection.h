@@ -843,7 +843,7 @@ public:
     return pp_info.proxy_protocol_version;
   }
 
-  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData);
+  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData) const;
 
   sockaddr const *
   get_proxy_protocol_src_addr()
