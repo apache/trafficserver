@@ -16,9 +16,45 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Additional checkers
-# This has a lot of potential FPs:           -enable-checker alpha.unix.PthreadLock\
+# Make sure we override these options
+options="--keep-empty"
+
+# Removed these, because too much noise
+#	  -enable-checker alpha.core.CastToStruct \
 checkers="-enable-checker alpha.unix.cstring.BufferOverlap \
           -enable-checker alpha.core.BoolAssignment \
           -enable-checker alpha.core.CastSize \
-          -enable-checker alpha.core.SizeofPtr"
+          -enable-checker alpha.core.SizeofPtr \
+	  -enable-checker optin.cplusplus.VirtualCall \
+	  -enable-checker optin.performance.Padding \
+	  -enable-checker optin.portability.UnixAPI \
+	  -enable-checker security.FloatLoopCounter \
+	  -enable-checker security.insecureAPI.DeprecatedOrUnsafeBufferHandling \
+	  -enable-checker valist.CopyToSelf \
+	  -enable-checker valist.Uninitialized \
+	  -enable-checker valist.Unterminated \
+	  -enable-checker alpha.clone.CloneChecker \
+	  -enable-checker alpha.core.CallAndMessageUnInitRefArg \
+	  -enable-checker alpha.core.CallAndMessageUnInitRefArg \
+	  -enable-checker alpha.core.Conversion \
+	  -enable-checker alpha.core.FixedAddr \
+	  -enable-checker alpha.core.IdenticalExpr \
+	  -enable-checker alpha.core.PointerArithm \
+	  -enable-checker alpha.core.PointerSub \
+	  -enable-checker alpha.core.TestAfterDivZero \
+	  -enable-checker alpha.cplusplus.DeleteWithNonVirtualDtor \
+	  -enable-checker alpha.cplusplus.EnumCastOutOfRange \
+	  -enable-checker alpha.cplusplus.InvalidatedIterator \
+	  -enable-checker alpha.cplusplus.IteratorRange \
+	  -enable-checker alpha.cplusplus.MismatchedIterator \
+	  -enable-checker alpha.deadcode.UnreachableCode \
+	  -enable-checker alpha.security.ArrayBoundV2 \
+	  -enable-checker alpha.security.ReturnPtrRange \
+	  -enable-checker alpha.unix.BlockInCriticalSection \
+	  -enable-checker alpha.unix.PthreadLock \
+	  -enable-checker alpha.unix.SimpleStream \
+	  -enable-checker alpha.unix.Stream \
+	  -enable-checker alpha.unix.cstring.NotNullTerminated \
+	  -enable-checker alpha.unix.cstring.OutOfBounds \
+	  -enable-checker alpha.nondeterminism.PointerIteration \
+	  -enable-checker alpha.nondeterminism.PointerSorting"

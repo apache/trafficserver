@@ -1100,6 +1100,8 @@ TextView::rtrim(super_type const &delimiters)
 inline TextView &
 TextView::trim(super_type const &delimiters)
 {
+#ifndef __clang_analyzer__
+
   std::bitset<256> valid;
   this->init_delimiter_set(delimiters, valid);
   const char *spot;
@@ -1115,6 +1117,8 @@ TextView::trim(super_type const &delimiters)
   while (limit < spot-- && valid[static_cast<uint8_t>(*spot)])
     ;
   this->remove_suffix(this->data_end() - (spot + 1));
+
+#endif
 
   return *this;
 }
