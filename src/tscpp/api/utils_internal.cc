@@ -141,6 +141,13 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     plugin->handleReadCacheLookupComplete(transaction);
     break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    if (plugin) {
+      plugin->handleTxnClose(transaction);
+    } else {
+      LOG_ERROR("stray event TS_EVENT_HTTP_TXN_CLOSE, no transaction plugin to handle it!");
+    }
+    break;
   default:
     assert(false); /* we should never get here */
     break;
@@ -191,6 +198,8 @@ utils::internal::convertInternalHookToTsHook(Plugin::HookType hooktype)
     return TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
   case Plugin::HOOK_SELECT_ALT:
     return TS_HTTP_SELECT_ALT_HOOK;
+  case Plugin::HOOK_TXN_CLOSE:
+    return TS_HTTP_TXN_CLOSE_HOOK;
   default:
     assert(false); // shouldn't happen, let's catch it early
     break;
