@@ -58,8 +58,8 @@ public:
     HOOK_READ_REQUEST_HEADERS,  /**< This hook will be fired after the request is read. */
     HOOK_READ_CACHE_HEADERS,    /**< This hook will be fired after the CACHE hdrs. */
     HOOK_CACHE_LOOKUP_COMPLETE, /**< This hook will be fired after cache lookup complete. */
-    HOOK_TXN_CLOSE,             /**< This hook will be fired after send response headers. */
-    HOOK_SELECT_ALT             /**< This hook will be fired after select alt. */
+    HOOK_TXN_CLOSE, /**< This hook will be fired after send response headers, only for TransactionPlugins::registerHook()!. */
+    HOOK_SELECT_ALT /**< This hook will be fired after select alt. */
   };
 
   /**
