@@ -100,12 +100,20 @@ ConfigUpdateCbTable::invoke(char const *p)
 
 #include "I_Machine.h"
 
+static Machine *my_machine = nullptr;
+
 Machine::Machine(char const *hostname, sockaddr const *addr) {}
-Machine::~Machine() {}
+Machine::~Machine()
+{
+  delete my_machine;
+}
 Machine *
 Machine::instance()
 {
-  return new Machine(nullptr, nullptr);
+  if (my_machine == nullptr) {
+    my_machine = new Machine(nullptr, nullptr);
+  }
+  return my_machine;
 }
 bool
 Machine::is_self(const char *name)
