@@ -97,9 +97,11 @@ ChunkedHandler::clear()
   switch (action) {
   case ACTION_DOCHUNK:
     free_MIOBuffer(chunked_buffer);
+    chunked_buffer = nullptr;
     break;
   case ACTION_DECHUNK:
     free_MIOBuffer(dechunked_buffer);
+    dechunked_buffer = nullptr;
     break;
   case ACTION_PASSTHRU:
   default:
@@ -476,6 +478,10 @@ HttpTunnel::reset()
     ink_assert(consumer.alive == false);
   }
 #endif
+  for (auto &producer : producers) {
+    ink_release_assert(producer.chunked_handler.chunked_buffer == nullptr);
+    ink_release_assert(producer.chunked_handler.dechunked_buffer == nullptr);
+  }
 
   num_producers = 0;
   num_consumers = 0;
