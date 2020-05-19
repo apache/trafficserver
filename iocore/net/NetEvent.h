@@ -45,7 +45,9 @@ public:
 
   // Duplicate with `NetVConnection::set_inactivity_timeout`
   // TODO: more abstraction.
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in)         = 0;
+  virtual void set_default_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual bool is_default_inactivity_timeout()                       = 0;
 
   // get this vc's thread
   virtual EThread *get_thread() = 0;
@@ -70,6 +72,8 @@ public:
   ink_hrtime next_inactivity_timeout_at = 0;
   ink_hrtime next_activity_timeout_at   = 0;
   ink_hrtime submit_time                = 0;
+
+  bool default_inactivity_timeout = false;
 
   LINK(NetEvent, open_link);
   LINK(NetEvent, cop_link);

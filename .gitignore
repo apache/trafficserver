@@ -131,6 +131,7 @@ plugins/experimental/esi/*_test
 plugins/experimental/slice/test_*
 plugins/experimental/sslheaders/test_sslheaders
 plugins/s3_auth/test_s3auth
+plugins/experimental/traffic_dump/test_*
 
 plugins/esi/docnode_test
 plugins/esi/gzip_test

@@ -150,7 +150,7 @@ Implementation
 String Coalescence
 ------------------
 
-String heaps do do not maintain lists of internal free space. Strings that are released are left in
+String heaps do not maintain lists of internal free space. Strings that are released are left in
 place, creating dead space in the heap. For this reason it can become necessary to do a garbage
 collection operation on the writeable string heap in the header heap by calling
 :func:`HdrHeap::coalesce_str_heaps`. This is done when

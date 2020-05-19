@@ -193,7 +193,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
     if (ln) {
       // 'ln' will point to either the next token or a bunch of spaces
       // if the user didn't supply a value (e.g. 'STRING   ').  First
-      // scan past all of the spaces.  If we hit a '\0', then we we
+      // scan past all of the spaces.  If we hit a '\0', then we
       // know we didn't have a valid value.  If not, set 'data_str' to
       // the start of the token and scan until we find the end.  Once
       // the end is found, back-peddle to remove any trailing spaces.

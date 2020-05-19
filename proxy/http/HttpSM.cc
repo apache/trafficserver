@@ -618,10 +618,10 @@ HttpSM::setup_client_read_request_header()
 void
 HttpSM::setup_blind_tunnel_port()
 {
-  NetVConnection *netvc     = ua_txn->get_netvc();
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+  NetVConnection *netvc = ua_txn->get_netvc();
+  ink_release_assert(netvc);
   int host_len;
-  if (ssl_vc) {
+  if (SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc)) {
     if (!t_state.hdr_info.client_request.url_get()->host_get(&host_len)) {
       // the URL object has not been created in the start of the transaction. Hence, we need to create the URL here
       URL u;
@@ -638,19 +638,19 @@ HttpSM::setup_blind_tunnel_port()
         if (ssl_vc->get_tunnel_port() > 0) {
           t_state.hdr_info.client_request.url_get()->port_set(ssl_vc->get_tunnel_port());
         } else {
-          t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
+          t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       } else {
         t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
-        t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
+        t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
   } else {
     char new_host[INET6_ADDRSTRLEN];
-    ats_ip_ntop(t_state.state_machine->ua_txn->get_netvc()->get_local_addr(), new_host, sizeof(new_host));
+    ats_ip_ntop(netvc->get_local_addr(), new_host, sizeof(new_host));
 
     t_state.hdr_info.client_request.url_get()->host_set(new_host, strlen(new_host));
-    t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
+    t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
   }
   call_transact_and_set_next_state(HttpTransact::HandleBlindTunnel);
 }
@@ -1468,11 +1468,11 @@ plugins required to work with sni_routing.
         if (tunnel_port > 0) {
           t_state.hdr_info.client_request.url_get()->port_set(tunnel_port);
         } else {
-          t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
+          t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
       } else if (ssl_vc) {
         t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
-        t_state.hdr_info.client_request.url_get()->port_set(t_state.state_machine->ua_txn->get_netvc()->get_local_port());
+        t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
   // FALLTHROUGH
@@ -2189,7 +2189,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
   bool use_client_addr        = t_state.http_config_param->use_client_target_addr == 1 && t_state.client_info.is_transparent &&
                          t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_Addr::OS_ADDR_TRY_DEFAULT;
   if (use_client_addr) {
-    NetVConnection *vc = t_state.state_machine->ua_txn ? t_state.state_machine->ua_txn->get_netvc() : nullptr;
+    NetVConnection *vc = ua_txn ? ua_txn->get_netvc() : nullptr;
     if (vc) {
       client_addr = vc->get_local_addr();
       // Regardless of whether the client address matches the DNS record or not,
@@ -7339,7 +7339,7 @@ HttpSM::set_next_state()
     } else if (t_state.http_config_param->use_client_target_addr == 2 && !t_state.url_remap_success &&
                t_state.parent_result.result != PARENT_SPECIFIED && t_state.client_info.is_transparent &&
                t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_Addr::OS_ADDR_TRY_DEFAULT &&
-               ats_is_ip(addr = t_state.state_machine->ua_txn->get_netvc()->get_local_addr())) {
+               ats_is_ip(addr = ua_txn->get_netvc()->get_local_addr())) {
       /* If the connection is client side transparent and the URL
        * was not remapped/directed to parent proxy, we can use the
        * client destination IP address instead of doing a DNS

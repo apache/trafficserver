@@ -210,8 +210,16 @@ public:
     public:
       const_iterator(uint8_t index, const std::vector<QUICAckFrame::AckBlock> *ack_blocks);
 
-      const QUICAckFrame::AckBlock &operator*() const { return this->_current_block; };
-      const QUICAckFrame::AckBlock *operator->() const { return &this->_current_block; };
+      const QUICAckFrame::AckBlock &
+      operator*() const
+      {
+        return this->_current_block;
+      };
+      const QUICAckFrame::AckBlock *
+      operator->() const
+      {
+        return &this->_current_block;
+      };
       const QUICAckFrame::AckBlock &operator++();
       const bool operator!=(const const_iterator &ite) const;
       const bool operator==(const const_iterator &ite) const;

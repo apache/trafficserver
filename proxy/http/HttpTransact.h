@@ -1037,6 +1037,7 @@ public:
 
   static void handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
   static void handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
+  static int get_max_age(HTTPHdr *response);
   static int calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic);
   static Freshness_t what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response);
   static Authentication_t AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr *client_request,

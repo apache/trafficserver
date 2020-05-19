@@ -71,7 +71,7 @@ struct SSLNextProtocolTrampoline : public Continuation {
   ioCompletionEvent(int event, void *edata)
   {
     VIO *vio;
-    Continuation *plugin;
+
     SSLNetVConnection *netvc;
 
     vio   = static_cast<VIO *>(edata);
@@ -83,8 +83,6 @@ struct SSLNextProtocolTrampoline : public Continuation {
     case VC_EVENT_ERROR:
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
-      // Cancel the read before we have a chance to delete the continuation
-      netvc->do_io_read(nullptr, 0, nullptr);
       netvc->do_io_close();
       delete this;
       return EVENT_ERROR;
@@ -99,14 +97,17 @@ struct SSLNextProtocolTrampoline : public Continuation {
     // object does not care.
     netvc->set_action(nullptr);
 
-    // Cancel the read before we have a chance to delete the continuation
-    netvc->do_io_read(nullptr, 0, nullptr);
-    plugin = netvc->endpoint();
-    if (plugin) {
-      send_plugin_event(plugin, NET_EVENT_ACCEPT, netvc);
-    } else if (npnParent->endpoint) {
+    Continuation *endpoint_cont = netvc->endpoint();
+    if (!endpoint_cont) {
       // Route to the default endpoint
-      send_plugin_event(npnParent->endpoint, NET_EVENT_ACCEPT, netvc);
+      endpoint_cont = npnParent->endpoint;
+    }
+
+    if (endpoint_cont) {
+      // disable read io, send events to endpoint
+      netvc->do_io_read(endpoint_cont, 0, nullptr);
+
+      send_plugin_event(endpoint_cont, NET_EVENT_ACCEPT, netvc);
     } else {
       // No handler, what should we do? Best to just kill the VC while we can.
       netvc->do_io_close();

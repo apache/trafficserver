@@ -472,13 +472,17 @@ IntrusivePtr<T>::operator=(IntrusivePtr<U> &&that)
   return *this;
 }
 
-template <typename T> T *IntrusivePtr<T>::operator->() const
+template <typename T>
+T *
+IntrusivePtr<T>::operator->() const
 {
   IntrusivePtrPolicy<T>::dereferenceCheck(m_obj);
   return m_obj;
 }
 
-template <typename T> T &IntrusivePtr<T>::operator*() const
+template <typename T>
+T &
+IntrusivePtr<T>::operator*() const
 {
   IntrusivePtrPolicy<T>::dereferenceCheck(m_obj);
   return *m_obj;

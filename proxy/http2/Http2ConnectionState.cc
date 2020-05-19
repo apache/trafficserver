@@ -1153,6 +1153,13 @@ Http2ConnectionState::state_closed(int event, void *edata)
 Http2Stream *
 Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
 {
+  // first check if we've hit the active connection limit
+  if (!ua_session->get_netvc()->add_to_active_queue()) {
+    error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_NO_ERROR,
+                       "refused to create new stream, maxed out active connections");
+    return nullptr;
+  }
+
   // In half_close state, TS doesn't create new stream. Because GOAWAY frame is sent to client
   if (ua_session->get_half_close_local_flag()) {
     error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
@@ -1226,7 +1233,6 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   new_stream->mutex                     = new_ProxyMutex();
   new_stream->is_first_transaction_flag = get_stream_requests() == 0;
   increment_stream_requests();
-  ua_session->get_netvc()->add_to_active_queue();
 
   return new_stream;
 }

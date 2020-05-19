@@ -190,8 +190,13 @@ QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SS
   shared_ssl_ticket_key_block keyblock = nullptr;
 
   if (!ctx || !multi_cert_params || !this->_store_single_ssl_ctx(lookup, multi_cert_params, ctx, common_names)) {
-    lookup->is_valid = false;
-    retval           = false;
+    retval = false;
+    std::string names;
+    for (auto name : data.cert_names_list) {
+      names.append(name);
+      names.append(" ");
+    }
+    Warning("QUIC: Failed to insert SSL_CTX for certificate %s entries for names already made", names.c_str());
   }
 
   for (auto iter = unique_names.begin(); retval && iter != unique_names.end(); ++iter) {
@@ -205,8 +210,7 @@ QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SS
 
     shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_data, multi_cert_params.get(), iter->second), SSL_CTX_free);
     if (!unique_ctx || !this->_store_single_ssl_ctx(lookup, multi_cert_params, unique_ctx, iter->second)) {
-      lookup->is_valid = false;
-      retval           = false;
+      retval = false;
     }
   }
 

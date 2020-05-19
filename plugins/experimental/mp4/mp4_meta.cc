@@ -1012,7 +1012,7 @@ int
 Mp4Meta::mp4_update_stts_atom(Mp4Trak *trak)
 {
   uint32_t i, entries, count, duration, pass;
-  uint32_t start_sample, left, start_count;
+  uint32_t start_sample, left;
   uint32_t key_sample, old_sample;
   uint64_t start_time, sum;
   int64_t atom_size;
@@ -1022,7 +1022,7 @@ Mp4Meta::mp4_update_stts_atom(Mp4Trak *trak)
     return -1;
   }
 
-  sum = start_count = 0;
+  sum = 0;
 
   entries    = trak->time_to_sample_entries;
   start_time = this->start * trak->timescale / 1000;

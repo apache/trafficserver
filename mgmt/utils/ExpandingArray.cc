@@ -48,7 +48,8 @@ ExpandingArray::~ExpandingArray()
   ats_free(internalArray);
 }
 
-void *ExpandingArray::operator[](int index)
+void *
+ExpandingArray::operator[](int index)
 {
   if (index < numValidValues) {
     return internalArray[index];

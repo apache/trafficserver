@@ -87,20 +87,14 @@ NetVConnection::get_local_port()
 }
 
 inline sockaddr const *
-NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst)
+NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst) const
 {
-  if (src_or_dst == ProxyProtocolData::SRC) {
-    if ((pp_info.src_addr.isValid() && pp_info.src_addr.port() != 0) ||
-        (ats_is_ip4(&pp_info.src_addr) && INADDR_ANY != ats_ip4_addr_cast(&pp_info.src_addr)) // IPv4
-        || (ats_is_ip6(&pp_info.src_addr) && !IN6_IS_ADDR_UNSPECIFIED(&pp_info.src_addr.sin6.sin6_addr))) {
-      return &pp_info.src_addr.sa;
-    }
-  } else {
-    if ((pp_info.dst_addr.isValid() && pp_info.dst_addr.port() != 0) ||
-        (ats_is_ip4(&pp_info.dst_addr) && INADDR_ANY != ats_ip4_addr_cast(&pp_info.dst_addr)) // IPv4
-        || (ats_is_ip6(&pp_info.dst_addr) && !IN6_IS_ADDR_UNSPECIFIED(&pp_info.dst_addr.sin6.sin6_addr))) {
-      return &pp_info.dst_addr.sa;
-    }
+  const IpEndpoint &addr = (src_or_dst == ProxyProtocolData::SRC ? pp_info.src_addr : pp_info.dst_addr);
+
+  if ((addr.isValid() && addr.port() != 0) || (ats_is_ip4(&addr) && INADDR_ANY != ats_ip4_addr_cast(&addr)) // IPv4
+      || (ats_is_ip6(&addr) && !IN6_IS_ADDR_UNSPECIFIED(&addr.sin6.sin6_addr))) {
+    return &addr.sa;
   }
+
   return nullptr;
 }

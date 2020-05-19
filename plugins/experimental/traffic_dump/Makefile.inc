@@ -16,4 +16,30 @@
 
 pkglib_LTLIBRARIES += experimental/traffic_dump/traffic_dump.la
 
-experimental_traffic_dump_traffic_dump_la_SOURCES = experimental/traffic_dump/traffic_dump.cc
+experimental_traffic_dump_traffic_dump_la_SOURCES = \
+        experimental/traffic_dump/global_variables.h \
+        experimental/traffic_dump/json_utils.cc \
+        experimental/traffic_dump/json_utils.h \
+        experimental/traffic_dump/sensitive_fields.h \
+        experimental/traffic_dump/session_data.cc \
+        experimental/traffic_dump/session_data.h \
+        experimental/traffic_dump/traffic_dump.cc \
+        experimental/traffic_dump/transaction_data.cc \
+        experimental/traffic_dump/transaction_data.h
+
+check_PROGRAMS += \
+        experimental/traffic_dump/test_traffic_dump
+
+experimental_traffic_dump_test_traffic_dump_CPPFLAGS = \
+        $(AM_CPPFLAGS) \
+        -I$(abs_top_srcdir)/plugins/experimental/traffic_dump \
+        -I$(abs_top_srcdir)/tests/include
+
+experimental_traffic_dump_test_traffic_dump_SOURCES = \
+	experimental/traffic_dump/unit_tests/unit_test_main.cc \
+        experimental/traffic_dump/unit_tests/test_json_utils.cc \
+        experimental/traffic_dump/unit_tests/test_sensitive_fields.cc \
+        experimental/traffic_dump/json_utils.cc \
+        experimental/traffic_dump/sensitive_fields.h
+
+# vim: ft=make ts=8 sw=8 et:

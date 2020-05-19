@@ -33,8 +33,16 @@
 template <class T, size_t entries> class Milestones
 {
 public:
-  ink_hrtime &operator[](T ms) { return this->_milestones[static_cast<size_t>(ms)]; }
-  ink_hrtime operator[](T ms) const { return this->_milestones[static_cast<size_t>(ms)]; }
+  ink_hrtime &
+  operator[](T ms)
+  {
+    return this->_milestones[static_cast<size_t>(ms)];
+  }
+  ink_hrtime
+  operator[](T ms) const
+  {
+    return this->_milestones[static_cast<size_t>(ms)];
+  }
 
   /**
    * Mark given milestone with timestamp if it's not marked yet

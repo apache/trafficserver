@@ -539,7 +539,9 @@ public:
     is currently active. See section on timeout semantics above.
 
    */
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in)         = 0;
+  virtual void set_default_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual bool is_default_inactivity_timeout()                       = 0;
 
   /**
     Clears the active timeout. No active timeouts will be sent until
@@ -841,7 +843,7 @@ public:
     return pp_info.proxy_protocol_version;
   }
 
-  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData);
+  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData) const;
 
   sockaddr const *
   get_proxy_protocol_src_addr()

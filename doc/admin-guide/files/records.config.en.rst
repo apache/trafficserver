@@ -336,7 +336,7 @@ Thread Variables
 
 .. ts:cv:: CONFIG proxy.config.system.file_max_pct FLOAT 0.9
 
-   Set the maximum number of file handles for the traffic_server process as a percentage of the the fs.file-max proc value in Linux. The default is 90%.
+   Set the maximum number of file handles for the traffic_server process as a percentage of the fs.file-max proc value in Linux. The default is 90%.
 
 .. ts:cv:: CONFIG proxy.config.crash_log_helper STRING traffic_crashlog
 
@@ -408,6 +408,22 @@ Network
    connections, i.e. from the default, only ~27,000 client connections can be
    handled. This should be tuned according to your memory size, and expected
    work load.  If this is set to 0, the throttling logic is disabled.
+
+.. ts:cv:: CONFIG proxy.config.net.max_connections_in INT 30000
+
+   The total number of client connections that the :program:`traffic_server`
+   can handle simultaneously. This should be tuned according to your memory size,
+   and expected work load (network, cpu etc). This limit includes both keepalive
+   and active client connections that :program:`traffic_server` can handle at
+   any given instant.
+
+.. ts:cv:: CONFIG proxy.config.net.max_active_connections_in INT 10000
+
+   The total number of active client connections that the |TS| can handle
+   simultaneously. This should be tuned according to your memory size,
+   and expected work load (network, cpu etc). If this is set to 0, active
+   connection tracking is disabled and active connections have no separate
+   limit and the total connections follow `proxy.config.net.connections_throttle`
 
 .. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
    :reloadable:
@@ -1230,8 +1246,8 @@ HTTP Connection Timeouts
    :overridable:
 
    Specifies how long |TS| keeps connections to clients open for a
-   subsequent request after a transaction ends. A value of ``0`` will disable
-   the no activity timeout.
+   subsequent request after a transaction ends. A value of ``0`` will set
+   `proxy.config.net.default_inactivity_timeout` as the timeout.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -1240,8 +1256,8 @@ HTTP Connection Timeouts
    :overridable:
 
    Specifies how long |TS| keeps connections to origin servers open
-   for a subsequent transfer of data after a transaction ends. A value of
-   ``0`` will disable the no activity timeout.
+   for a subsequent transfer of data after a transaction ends. A value of ``0`` will
+   set `proxy.config.net.default_inactivity_timeout` as the timeout.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -2482,6 +2498,18 @@ DNS
    be appended to the list of nameservers specified here. To prevent this, a bogus file
    can be listed there.
 
+.. topic:: Example
+
+   IPv4 DNS server, loopback and port 9999 ::
+
+      CONFIG proxy.config.dns.nameservers STRING 127.0.0.1:9999
+
+.. topic:: Example
+
+   IPv6 DNS server, loopback and port 9999 ::
+
+      CONFIG proxy.config.dns.nameservers STRING [::1]:9999
+
 .. ts:cv:: CONFIG proxy.config.srv_enabled INT 0
    :reloadable:
    :overridable:
@@ -3420,6 +3448,21 @@ SSL Termination
 .. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.enable INT 1
 
   Set to 1 to enable Traffic Server to process TLS tickets for TLS session resumption.
+
+.. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.number INT 2
+
+  This configuration control the number of TLSv1.3 session tickets that are issued.
+  Take into account that setting the value to 0 will disable session caching for TLSv1.3
+  connections.
+
+  Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache`` is enabled because
+  otherwise for every new TLSv1.3 connection two session IDs will be inserted in the session cache.
+  On the other hand, if ``proxy.config.ssl.session_cache``  is disabled, using the default value is recommended.
+  In those scenarios, increasing the number of tickets could be potentially benefitial for clients performing
+  multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
+
+  For more information see https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_num_tickets.html
+  [Requires OpenSSL v1.1.1 and higher]
 
 .. ts:cv:: CONFIG proxy.config.ssl.hsts_max_age INT -1
    :overridable:

@@ -69,7 +69,19 @@ public:
         continue;
       }
 
+      // set a default inactivity timeout if one is not set
+      if (ne->next_inactivity_timeout_at == 0 && nh.config.default_inactivity_timeout > 0) {
+        Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", ne,
+              nh.config.default_inactivity_timeout);
+        ne->set_default_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
+        NET_INCREMENT_DYN_STAT(default_inactivity_timeout_applied_stat);
+      }
+
       if (ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) {
+        if (ne->is_default_inactivity_timeout()) {
+          // track the connections that timed out due to default inactivity
+          NET_INCREMENT_DYN_STAT(default_inactivity_timeout_count_stat);
+        }
         if (nh.keep_alive_queue.in(ne)) {
           // only stat if the connection is in keep-alive, there can be other inactivity timeouts
           ink_hrtime diff = (now - (ne->next_inactivity_timeout_at - ne->inactivity_timeout_in)) / HRTIME_SECOND;
@@ -562,6 +574,11 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
         max_connections_per_thread_in, max_connections_active_per_thread_in, total_connections_in, active_queue_size,
         keep_alive_queue_size);
 
+  if (!max_connections_active_per_thread_in) {
+    // active queue has no max
+    return true;
+  }
+
   if (ignore_queue_size == false && max_connections_active_per_thread_in > active_queue_size) {
     return true;
   }
@@ -721,16 +738,22 @@ NetHandler::add_to_active_queue(NetEvent *ne)
         max_connections_per_thread_in, active_queue_size, keep_alive_queue_size);
   ink_assert(mutex->thread_holding == this_ethread());
 
+  bool active_queue_full = false;
+
   // if active queue is over size then close inactive connections
   if (manage_active_queue() == false) {
-    // there is no room left in the queue
-    return false;
+    active_queue_full = true;
   }
 
   if (active_queue.in(ne)) {
     // already in the active queue, move the head
     active_queue.remove(ne);
   } else {
+    if (active_queue_full) {
+      // there is no room left in the queue
+      NET_SUM_DYN_STAT(net_connections_max_active_throttled_in_stat, 1);
+      return false;
+    }
     // in the keep-alive queue or no queue, new to this queue
     remove_from_keep_alive_queue(ne);
     ++active_queue_size;

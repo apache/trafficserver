@@ -285,7 +285,11 @@ public:
         Making it a method means the knowledge of which member is the first one
         is localized to this struct, not scattered about.
      */
-    uint32_t &operator[](int n) { return *(&max_connections_in + n); }
+    uint32_t &
+    operator[](int n)
+    {
+      return *(&max_connections_in + n);
+    }
   };
   /** Static global config, set and updated per process.
 

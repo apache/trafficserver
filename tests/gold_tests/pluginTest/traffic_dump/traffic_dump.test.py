@@ -29,7 +29,7 @@ Test.SkipUnless(
 # Configure the origin server.
 server = Test.MakeOriginServer("server")
 
-request_header = {"headers": "GET / HTTP/1.1\r\n"
+request_header = {"headers": "GET /one HTTP/1.1\r\n"
                   "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK"
@@ -37,7 +37,15 @@ response_header = {"headers": "HTTP/1.1 200 OK"
                    "\r\nSet-Cookie: classified_not_for_logging\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_header)
-request_header = {"headers": "GET /one HTTP/1.1\r\n"
+request_header = {"headers": "GET /two HTTP/1.1\r\n"
+                  "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
+                  "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK"
+                   "\r\nConnection: close\r\nContent-Length: 0"
+                   "\r\nSet-Cookie: classified_not_for_logging\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionfile.log", request_header, response_header)
+request_header = {"headers": "GET /three HTTP/1.1\r\n"
                   "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK"
@@ -52,13 +60,38 @@ response_header = {"headers": "HTTP/1.1 200 OK"
                    "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_header)
+request_header = {"headers": "GET /cache_test HTTP/1.1\r\n"
+                  "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
+                  "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK"
+                   "\r\nConnection: close\r\nCache-Control: max-age=300\r\n"
+                   "Content-Length: 4\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": "1234"}
+server.addResponse("sessionfile.log", request_header, response_header)
+request_header = {"headers": "GET /first HTTP/1.1\r\n"
+                  "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
+                  "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK"
+                   "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionfile.log", request_header, response_header)
+request_header = {"headers": "GET /second HTTP/1.1\r\n"
+                  "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
+                  "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK"
+                   "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionfile.log", request_header, response_header)
 
-# Define ATS and configure
+# Define ATS and configure it.
 ts = Test.MakeATSProcess("ts")
 replay_dir = os.path.join(ts.RunDirectory, "ts", "log")
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'traffic_dump',
+    'proxy.config.http.cache.http': 1,
+    'proxy.config.http.wait_for_cache': 1,
+    'proxy.config.http.insert_age_in_response': 0,
 })
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
@@ -68,6 +101,17 @@ ts.Disk.plugin_config.AddLine(
     'traffic_dump.so --logdir {0} --sample 1 --limit 1000000000 '
     '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"'.format(replay_dir)
 )
+# Configure logging of transactions. This is helpful for the cache test below.
+ts.Disk.logging_yaml.AddLines(
+    '''
+logging:
+  formats:
+    - name: basic
+      format: "%<cluc>: Read result: %<crc>:%<crsc>:%<chm>, Write result: %<cwr>"
+  logs:
+    - filename: transactions
+      format: basic
+'''.split('\n'))
 
 # Set up trafficserver expectations.
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
@@ -92,6 +136,12 @@ replay_file_session_3 = os.path.join(replay_dir, "127", "0000000000000002")
 ts.Disk.File(replay_file_session_3, exists=True)
 replay_file_session_4 = os.path.join(replay_dir, "127", "0000000000000003")
 ts.Disk.File(replay_file_session_4, exists=True)
+replay_file_session_5 = os.path.join(replay_dir, "127", "0000000000000004")
+ts.Disk.File(replay_file_session_5, exists=True)
+replay_file_session_6 = os.path.join(replay_dir, "127", "0000000000000005")
+ts.Disk.File(replay_file_session_6, exists=True)
+replay_file_session_7 = os.path.join(replay_dir, "127", "0000000000000006")
+ts.Disk.File(replay_file_session_7, exists=True)
 
 #
 # Test 1: Verify the correct behavior of two transactions across two sessions.
@@ -103,19 +153,19 @@ tr = Test.AddTestRun("First transaction")
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = \
-        ('curl --http1.1 http://127.0.0.1:{0} -H"Cookie: donotlogthis" '
+        ('curl --http1.1 http://127.0.0.1:{0}/one -H"Cookie: donotlogthis" '
          '-H"Host: www.example.com" -H"X-Request-1: ultra_sensitive" --verbose'.format(
              ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-session_1_protocols = "tcp,ipv4"
+http_protocols = "tcp,ipv4"
 
 # Execute the second transaction.
 tr = Test.AddTestRun("Second transaction")
 tr.Processes.Default.Command = \
-        ('curl http://127.0.0.1:{0}/one -H"Host: www.example.com" '
+        ('curl http://127.0.0.1:{0}/two -H"Host: www.example.com" '
          '-H"X-Request-2: also_very_sensitive" --verbose'.format(
             ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
@@ -137,7 +187,7 @@ tr.Processes.Default.Command = 'python3 {0} {1} {2} {3} --client-protocols "{4}"
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
         replay_file_session_1,
         sensitive_fields_arg,
-        session_1_protocols)
+        http_protocols)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -145,7 +195,7 @@ tr.StillRunningAfter = ts
 # Verify the properties of the replay file for the second transaction.
 tr = Test.AddTestRun("Verify the json content of the second session")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = "python3 {0} {1} {2} {3} --request-target '/one'".format(
+tr.Processes.Default.Command = "python3 {0} {1} {2} {3} --request-target '/two'".format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
         replay_file_session_2,
@@ -163,7 +213,7 @@ tr = Test.AddTestRun("Make a request with an explicit target.")
 request_target = "http://localhost:{0}/candy".format(ts.Variables.port)
 tr.Processes.Default.Command = (
         'curl --request-target "{0}" '
-        'http://127.0.0.1:{1} -H"Host: www.example.com" --verbose'.format(
+        'http://127.0.0.1:{1}/three -H"Host: www.example.com" --verbose'.format(
             request_target, ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/explicit_target.gold"
@@ -187,7 +237,6 @@ tr.StillRunningAfter = ts
 # Test 3: Verify correct handling of a POST with body data.
 #
 
-# Verify that an explicit path in the request line is recorded.
 tr = Test.AddTestRun("Make a POST request with a body.")
 request_target = "http://localhost:{0}/post_with_body".format(ts.Variables.port)
 
@@ -213,6 +262,62 @@ tr.Processes.Default.Command = \
             replay_file_session_4,
             sensitive_fields_arg,
             size_of_verify_replay_file)
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+#
+# Test 4: Verify correct handling of a response produced out of the cache.
+#
+tr = Test.AddTestRun("Make a request for an uncached object.")
+tr.Processes.Default.Command = \
+        ('curl --http1.1 http://127.0.0.1:{0}/cache_test -H"Host: www.example.com" --verbose'.format(
+             ts.Variables.port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/4_byte_response_body.gold"
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Repeat the previous request: should be cached now.")
+tr.Processes.Default.Command = \
+        ('curl --http1.1 http://127.0.0.1:{0}/cache_test -H"Host: www.example.com" --verbose'.format(
+             ts.Variables.port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/4_byte_response_body.gold"
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Verify that the cached response's replay file looks appropriate.")
+tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
+tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}"'.format(
+        verify_replay,
+        os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
+        replay_file_session_6,
+        http_protocols)
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+#
+# Test 5: Verify correct handling of two transactions in a session.
+#
+tr = Test.AddTestRun("Conduct two transactions in the same session.")
+tr.Processes.Default.Command = \
+        ('curl --http1.1 http://127.0.0.1:{0}/first -H"Host: www.example.com" --verbose --next '
+            'curl --http1.1 http://127.0.0.1:{0}/second -H"Host: www.example.com" --verbose'
+            .format(ts.Variables.port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stderr = "gold/two_transactions.gold"
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Verify that the dump file can be read.")
+tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
+tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}"'.format(
+        verify_replay,
+        os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
+        replay_file_session_7,
+        http_protocols)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

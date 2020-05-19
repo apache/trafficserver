@@ -117,7 +117,7 @@ class TSConfVar(std.Target):
             title.set_class(self.options.get('class'))
         # This has to be a distinct node before the title. if nested then
         # the browser will scroll forward to just past the title.
-        anchor = nodes.target('', '', names=[cv_name])
+        nodes.target('', '', names=[cv_name])
         # Second (optional) arg is 'msgNode' - no idea what I should pass for that
         # or if it even matters, although I now think it should not be used.
         self.state.document.note_explicit_target(title)
@@ -241,7 +241,7 @@ class TSStat(std.Target):
 
         # This has to be a distinct node before the title. if nested then
         # the browser will scroll forward to just past the title.
-        anchor = nodes.target('', '', names=[stat_name])
+        nodes.target('', '', names=[stat_name])
         # Second (optional) arg is 'msgNode' - no idea what I should pass for that
         # or if it even matters, although I now think it should not be used.
         self.state.document.note_explicit_target(title)
@@ -389,7 +389,7 @@ git_branch = subprocess.check_output(['git', '--git-dir', REPO_GIT_DIR,
                                       'rev-parse', '--abbrev-ref', 'HEAD'])
 
 
-def make_github_link(name, rawtext, text, lineno, inliner, options={}, content=[]):
+def make_github_link(name, rawtext, text, lineno, inliner, options=None, content=None):
     """
     This docutils role lets us link to source code via the handy :ts:git: markup.
     Link references are rooted at the top level source directory. All links resolve
@@ -405,6 +405,10 @@ def make_github_link(name, rawtext, text, lineno, inliner, options={}, content=[
 
             If you want to contribute, take a look at :ts:git:`CONTRIBUTING.md`.
     """
+    if options is None:
+        options = {}
+    if content is None:
+        content = []
     url = 'https://github.com/apache/trafficserver/blob/{}/{}'
     ref = autoconf_version if autoconf_version == git_branch else 'master'
     node = nodes.reference(rawtext, text, refuri=url.format(ref, text), **options)

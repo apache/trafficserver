@@ -48,7 +48,11 @@ public:
   // bool to check if certain command/option is called
   operator bool() const noexcept { return _is_called; }
   // index accessing []
-  std::string const &operator[](int x) const { return _values.at(x); }
+  std::string const &
+  operator[](int x) const
+  {
+    return _values.at(x);
+  }
   // return the Environment variable
   std::string const &env() const noexcept;
   // iterator for arguments

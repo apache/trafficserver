@@ -577,7 +577,8 @@ IOBufferReader::consume(int64_t n)
   }
 }
 
-TS_INLINE char &IOBufferReader::operator[](int64_t i)
+TS_INLINE char &
+IOBufferReader::operator[](int64_t i)
 {
   static char default_ret = '\0'; // This is just to avoid compiler warnings...
   IOBufferBlock *b        = block.get();

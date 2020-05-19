@@ -32,7 +32,7 @@ class HQSession : public ProxySession
 public:
   using super = ProxySession; ///< Parent type
 
-  HQSession(NetVConnection *vc) : _client_vc(vc){};
+  HQSession(NetVConnection *vc) : ProxySession(vc){};
   virtual ~HQSession();
 
   // Implement VConnection interface
@@ -47,16 +47,11 @@ public:
   void start() override;
   void destroy() override;
   void release(ProxyTransaction *trans) override;
-  NetVConnection *get_netvc() const override;
   int get_transact_count() const override;
-  bool support_sni() const override;
 
   // HQSession
   void add_transaction(HQTransaction *);
   HQTransaction *get_transaction(QUICStreamId);
-
-protected:
-  NetVConnection *_client_vc = nullptr;
 
 private:
   // this should be unordered map?

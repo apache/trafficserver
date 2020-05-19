@@ -5714,8 +5714,6 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     HTTP_INCREMENT_DYN_STAT(http_push_requests_stat);
   } else if (s->method == HTTP_WKSIDX_OPTIONS) {
     HTTP_INCREMENT_DYN_STAT(http_options_requests_stat);
-  } else if (s->method == HTTP_WKSIDX_TRACE) {
-    HTTP_INCREMENT_DYN_STAT(http_trace_requests_stat);
   } else {
     HTTP_INCREMENT_DYN_STAT(http_extension_method_requests_stat);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_METHOD);
@@ -6844,7 +6842,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
     case KA_CONNECTION:
       ink_assert(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
       if (ver == HTTPVersion(1, 0)) {
-        if (s->current.request_to == PARENT_PROXY) {
+        if (s->current.request_to == PARENT_PROXY && s->parent_result.parent_is_proxy()) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "keep-alive", 10);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "keep-alive", 10);
@@ -6858,7 +6856,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTPVersion(1, 1))) {
         /* Had keep-alive */
         s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-        if (s->current.request_to == PARENT_PROXY) {
+        if (s->current.request_to == PARENT_PROXY && s->parent_result.parent_is_proxy()) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
@@ -7143,25 +7141,36 @@ HttpTransact::does_client_request_permit_storing(CacheControlResult *c, HTTPHdr 
 }
 
 int
+HttpTransact::get_max_age(HTTPHdr *response)
+{
+  int max_age      = -1;
+  uint32_t cc_mask = response->get_cooked_cc_mask();
+
+  if (cc_mask & MIME_COOKED_MASK_CC_S_MAXAGE) {
+    // Precedence to s-maxage
+    max_age = static_cast<int>(response->get_cooked_cc_s_maxage());
+  } else if (cc_mask & MIME_COOKED_MASK_CC_MAX_AGE) {
+    // If s-maxage isn't set, try max-age
+    max_age = static_cast<int>(response->get_cooked_cc_max_age());
+  }
+
+  return max_age;
+}
+
+int
 HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic)
 {
   bool expires_set, date_set, last_modified_set;
   time_t date_value, expires_value, last_modified_value;
   MgmtInt min_freshness_bounds, max_freshness_bounds;
   int freshness_limit = 0;
-  uint32_t cc_mask    = response->get_cooked_cc_mask();
+  int max_age         = get_max_age(response);
 
   *heuristic = false;
 
-  if (cc_mask & (MIME_COOKED_MASK_CC_S_MAXAGE | MIME_COOKED_MASK_CC_MAX_AGE)) {
-    if (cc_mask & MIME_COOKED_MASK_CC_S_MAXAGE) {
-      freshness_limit = static_cast<int>(response->get_cooked_cc_s_maxage());
-      TxnDebug("http_match", "calculate_document_freshness_limit --- s_max_age set, freshness_limit = %d", freshness_limit);
-    } else if (cc_mask & MIME_COOKED_MASK_CC_MAX_AGE) {
-      freshness_limit = static_cast<int>(response->get_cooked_cc_max_age());
-      TxnDebug("http_match", "calculate_document_freshness_limit --- max_age set, freshness_limit = %d", freshness_limit);
-    }
-    freshness_limit = std::min(std::max(0, freshness_limit), static_cast<int>(s->txn_conf->cache_guaranteed_max_lifetime));
+  if (max_age >= 0) {
+    freshness_limit = std::min(std::max(0, max_age), static_cast<int>(s->txn_conf->cache_guaranteed_max_lifetime));
+    TxnDebug("http_match", "calculate_document_freshness_limit --- freshness_limit = %d", freshness_limit);
   } else {
     date_set = last_modified_set = false;
 

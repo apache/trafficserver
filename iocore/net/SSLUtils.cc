@@ -77,6 +77,7 @@ static constexpr std::string_view SSL_CA_TAG("ssl_ca_name"sv);
 static constexpr std::string_view SSL_ACTION_TAG("action"sv);
 static constexpr std::string_view SSL_ACTION_TUNNEL_TAG("tunnel"sv);
 static constexpr std::string_view SSL_SESSION_TICKET_ENABLED("ssl_ticket_enabled"sv);
+static constexpr std::string_view SSL_SESSION_TICKET_NUMBER("ssl_ticket_number"sv);
 static constexpr std::string_view SSL_KEY_DIALOG("ssl_key_dialog"sv);
 static constexpr std::string_view SSL_SERVERNAME("dest_fqdn"sv);
 static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
@@ -90,10 +91,6 @@ static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 #endif
 
 SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
-
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
-static int ssl_session_ticket_index = -1;
-#endif
 
 static int ssl_vc_index = -1;
 
@@ -173,14 +170,6 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
   return SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 }
 
-static bool
-ssl_session_timed_out(SSL_SESSION *session)
-{
-  return SSL_SESSION_get_timeout(session) < (time(nullptr) - SSL_SESSION_get_time(session));
-}
-
-static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
-
 static SSL_SESSION *
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
@@ -188,46 +177,14 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
 ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
 #endif
 {
-  SSLSessionID sid(id, len);
+  TLSSessionResumptionSupport *srs = TLSSessionResumptionSupport::getInstance(ssl);
 
-  *copy = 0;
-  if (diags->tag_activated("ssl.session_cache")) {
-    char printable_buf[(len * 2) + 1];
-    sid.toString(printable_buf, sizeof(printable_buf));
-    Debug("ssl.session_cache.get", "ssl_get_cached_session cached session '%s' context %p", printable_buf, SSL_get_SSL_CTX(ssl));
+  ink_assert(srs);
+  if (srs) {
+    return srs->getSession(ssl, id, len, copy);
   }
 
-  APIHook *hook = ssl_hooks->get(TSSslHookInternalID(TS_SSL_SESSION_HOOK));
-  while (hook) {
-    hook->invoke(TS_EVENT_SSL_SESSION_GET, &sid);
-    hook = hook->m_link.next;
-  }
-
-  SSL_SESSION *session             = nullptr;
-  ssl_session_cache_exdata *exdata = nullptr;
-  if (session_cache->getSession(sid, &session, &exdata)) {
-    ink_assert(session);
-    ink_assert(exdata);
-
-    // Double check the timeout
-    if (ssl_session_timed_out(session)) {
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
-// Due to bug in openssl, the timeout is checked, but only removed
-// from the openssl built-in hash table.  The external remove cb is not called
-#if 0 // This is currently eliminated, since it breaks things in odd ways (see TS-3710)
-      ssl_rm_cached_session(SSL_get_SSL_CTX(ssl), session);
-#endif
-      session = nullptr;
-    } else {
-      SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-      SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
-      netvc->setSSLSessionCacheHit(true);
-      netvc->setSSLCurveNID(exdata->curve);
-    }
-  } else {
-    SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
-  }
-  return session;
+  return nullptr;
 }
 
 static int
@@ -911,13 +868,6 @@ SSLInitializeLibrary()
     CRYPTO_set_dynlock_destroy_callback(ssl_dyn_destroy_callback);
   }
 
-#ifdef TS_HAVE_OPENSSL_SESSION_TICKETS
-  ssl_session_ticket_index = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, ssl_session_ticket_free);
-  if (ssl_session_ticket_index == -1) {
-    SSLError("failed to create session ticket index");
-  }
-#endif
-
 #if TS_USE_TLS_OCSP
   ssl_stapling_ex_init();
 #endif /* TS_USE_TLS_OCSP */
@@ -925,6 +875,8 @@ SSLInitializeLibrary()
   // Reserve an application data index so that we can attach
   // the SSLNetVConnection to the SSL session.
   ssl_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
+
+  TLSSessionResumptionSupport::initialize();
 
   open_ssl_initialized = true;
 }
@@ -1273,6 +1225,12 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
       Debug("ssl", "ssl session ticket is disabled");
     }
 #endif
+#if defined(TLS1_3_VERSION) && !defined(LIBRESSL_VERSION_NUMBER) && !defined(OPENSSL_IS_BORINGSSL)
+    if (!(params->ssl_ctx_options & SSL_OP_NO_TLSv1_3)) {
+      SSL_CTX_set_num_tickets(ctx, sslMultCertSettings->session_ticket_number);
+      Debug("ssl", "ssl session ticket number set to %d", sslMultCertSettings->session_ticket_number);
+    }
+#endif
   }
 
   if (params->clientCertLevel != 0) {
@@ -1424,8 +1382,13 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   shared_SSL_CTX ctx(this->init_server_ssl_ctx(data, sslMultCertSettings.get(), common_names), SSL_CTX_free);
 
   if (!ctx || !sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, common_names)) {
-    lookup->is_valid = false;
-    retval           = false;
+    retval = false;
+    std::string names;
+    for (auto name : data.cert_names_list) {
+      names.append(name);
+      names.append(" ");
+    }
+    Warning("Failed to insert SSL_CTX for certificate %s entries for names already made", names.c_str());
   }
 
   for (auto iter = unique_names.begin(); retval && iter != unique_names.end(); ++iter) {
@@ -1439,8 +1402,7 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 
     shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_data, sslMultCertSettings.get(), iter->second), SSL_CTX_free);
     if (!unique_ctx || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, unique_ctx, iter->second)) {
-      lookup->is_valid = false;
-      retval           = false;
+      retval = false;
     }
   }
 
@@ -1542,6 +1504,10 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
 
     if (strcasecmp(label, SSL_SESSION_TICKET_ENABLED) == 0) {
       sslMultCertSettings->session_ticket_enabled = atoi(value);
+    }
+
+    if (strcasecmp(label, SSL_SESSION_TICKET_NUMBER) == 0) {
+      sslMultCertSettings->session_ticket_number = atoi(value);
     }
 
     if (strcasecmp(label, SSL_KEY_DIALOG) == 0) {
@@ -2031,23 +1997,26 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
       common_names = name_set;
     } else {
       // Check that all elements in common_names are in name_set
-      for (auto name : common_names) {
-        auto iter = name_set.find(name);
+      auto common_iter = common_names.begin();
+      while (common_iter != common_names.end()) {
+        auto iter = name_set.find(*common_iter);
         if (iter == name_set.end()) {
           // Common_name not in new set, move name to unique set
           auto iter = unique_names.find(cert_index - 1);
           if (iter == unique_names.end()) {
             std::set<std::string> new_set;
-            new_set.insert(name);
+            new_set.insert(*common_iter);
             unique_names.insert({cert_index - 1, new_set});
           } else {
-            iter->second.insert(name);
+            iter->second.insert(*common_iter);
           }
-          auto erase_iter = common_names.find(name);
+          auto erase_iter = common_iter;
+          ++common_iter;
           common_names.erase(erase_iter);
         } else {
           // New name already in common set, go ahead and remove it from further consideration
           name_set.erase(iter);
+          ++common_iter;
         }
       }
       // Anything still in name_set was not in common_names
