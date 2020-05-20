@@ -668,7 +668,8 @@ Http2Stream::signal_read_event(int event)
 void
 Http2Stream::signal_write_event(int event)
 {
-  if (this->write_vio.cont == nullptr || this->write_vio.cont->mutex == nullptr || this->write_vio.op == VIO::NONE) {
+  if (this->write_vio.cont == nullptr || this->write_vio.cont->mutex == nullptr || this->write_vio.op == VIO::NONE ||
+      this->write_vio.nbytes == 0) {
     return;
   }
 
@@ -691,7 +692,7 @@ Http2Stream::signal_write_event(bool call_update)
     return;
   }
 
-  if (this->write_vio.get_writer()->write_avail() == 0) {
+  if (this->write_vio.get_writer()->write_avail() == 0 || this->write_vio.nbytes == 0) {
     return;
   }
 
