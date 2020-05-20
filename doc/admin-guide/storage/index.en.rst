@@ -137,6 +137,15 @@ To change the RAM cache size:
    1GB or more, then restart with the :program:`trafficserver` command
    (refer to :ref:`start-traffic-server`).
 
+Disabling the RAM Cache
+-----------------------
+
+It is possible to disable the RAM cache. If you have configured your
+storage using the :file:`volume.config` you can add an optional directive
+of ``ramcache=false`` to whichever volumes you wish to have it disabled on.
+This may be desirable for volumes composed of storage like RAM disks where
+you may want to avoid double RAM caching.
+
 Changing Cache Capacity
 =======================
 
