@@ -264,6 +264,8 @@ Http1ClientSession::do_io_close(int alerrno)
     _reader->consume(_reader->read_avail());
   } else {
     read_state = HCS_CLOSED;
+    SET_HANDLER(&Http1ClientSession::state_wait_for_sm_shutdown);
+    ka_vio = _vc->do_io_read(this, INT64_MAX, read_buffer);
     HttpSsnDebug("[%" PRId64 "] session closed", con_id);
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
@@ -272,6 +274,16 @@ Http1ClientSession::do_io_close(int alerrno)
   if (transact_count == released_transactions) {
     this->destroy();
   }
+}
+
+int
+Http1ClientSession::state_wait_for_sm_shutdown(int event, void *data)
+{
+  STATE_ENTER(&Http1ClientSession::state_wait_for_sm_shutdown, event, data);
+  ink_assert(read_state == HCS_CLOSED);
+
+  // Just eat IO events until the state machine has finished
+  return 0;
 }
 
 int
