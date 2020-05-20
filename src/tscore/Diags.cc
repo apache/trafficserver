@@ -460,15 +460,12 @@ Diags::dump(FILE *fp) const
 void
 Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_string, va_list ap) const
 {
-  va_list ap2;
-
-  if (DiagsLevel_IsTerminal(level)) {
-    va_copy(ap2, ap);
-  }
-
   print_va(nullptr, level, loc, format_string, ap);
 
   if (DiagsLevel_IsTerminal(level)) {
+    va_list ap2;
+
+    va_copy(ap2, ap);
     if (cleanup_func) {
       cleanup_func();
     }
@@ -479,9 +476,8 @@ Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_
     } else {
       ink_fatal_va(format_string, ap2);
     }
+    va_end(ap2);
   }
-
-  va_end(ap2);
 }
 
 /*
