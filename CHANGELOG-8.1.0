@@ -187,5 +187,8 @@ Changes with Apache Traffic Server 8.1.0
   #6708 - Adding logging fields for collapsed forwarding metrics
   #6729 - Fix a bug that current_active_client_connections doesn't decrease
   #6750 - backports parent.config  ignore_self_detect flag to 8.1.x
+  #6753 - Fix HPACK Dynamic Table Cleanup
   #6756 - Correct `schedule_every_local` to schedule locally
   #6779 - 8.1.x backport: header_rewrite: this fixes parsing where the [ ] section gets merged into values
+  #6785 - clang-analyzer: Fix dead nested assignment issues [8.1.x]
+  #6786 - HPACK: send back an error to the client when the index is invalid
