@@ -49,6 +49,25 @@ resetTransactionHandles(Transaction &transaction, TSEvent event)
   return;
 }
 
+void
+cleanupTransaction(Transaction &transaction, TSHttpTxn ats_txn_handle)
+{
+  delete &transaction;
+  // reset the txn arg to prevent use-after-free
+  TSUserArgSet(ats_txn_handle, TRANSACTION_STORAGE_INDEX, nullptr);
+}
+
+void
+cleanupTransactionPlugin(Plugin *plugin)
+{
+  TransactionPlugin *transaction_plugin = static_cast<TransactionPlugin *>(plugin);
+  std::shared_ptr<Mutex> trans_mutex    = utils::internal::getTransactionPluginMutex(*transaction_plugin);
+  LOG_DEBUG("Locking TransactionPlugin mutex to delete transaction plugin at %p", transaction_plugin);
+  trans_mutex->lock();
+  delete transaction_plugin;
+  trans_mutex->unlock();
+}
+
 int
 handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
 {
@@ -77,14 +96,9 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
     resetTransactionHandles(transaction, event);
     const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
     for (auto plugin : plugins) {
-      std::shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(*plugin);
-      LOG_DEBUG("Locking TransactionPlugin mutex to delete transaction plugin at %p", plugin);
-      trans_mutex->lock();
-      LOG_DEBUG("Locked Mutex...Deleting transaction plugin at %p", plugin);
-      delete plugin;
-      trans_mutex->unlock();
+      cleanupTransactionPlugin(plugin);
     }
-    delete &transaction;
+    cleanupTransaction(transaction, ats_txn_handle);
   } break;
   default:
     assert(false); /* we should never get here */
@@ -141,6 +155,15 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     plugin->handleReadCacheLookupComplete(transaction);
     break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    if (plugin) {
+      plugin->handleTxnClose(transaction);
+      cleanupTransactionPlugin(plugin);
+    } else {
+      LOG_ERROR("stray event TS_EVENT_HTTP_TXN_CLOSE, no transaction plugin to handle it!");
+    }
+    cleanupTransaction(transaction, ats_txn_handle);
+    break;
   default:
     assert(false); /* we should never get here */
     break;
@@ -191,6 +214,8 @@ utils::internal::convertInternalHookToTsHook(Plugin::HookType hooktype)
     return TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
   case Plugin::HOOK_SELECT_ALT:
     return TS_HTTP_SELECT_ALT_HOOK;
+  case Plugin::HOOK_TXN_CLOSE:
+    return TS_HTTP_TXN_CLOSE_HOOK;
   default:
     assert(false); // shouldn't happen, let's catch it early
     break;
