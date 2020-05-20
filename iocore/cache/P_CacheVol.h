@@ -279,12 +279,13 @@ struct AIO_Callback_handler : public Continuation {
 };
 
 struct CacheVol {
-  int vol_number      = -1;
-  int scheme          = 0;
-  off_t size          = 0;
-  int num_vols        = 0;
-  Vol **vols          = nullptr;
-  DiskVol **disk_vols = nullptr;
+  int vol_number        = -1;
+  int scheme            = 0;
+  off_t size            = 0;
+  int num_vols          = 0;
+  bool ramcache_enabled = true;
+  Vol **vols            = nullptr;
+  DiskVol **disk_vols   = nullptr;
   LINK(CacheVol, link);
   // per volume stats
   RecRawStatBlock *vol_rsb = nullptr;

@@ -57,14 +57,27 @@ volumes without deleting and clearing the existing volumes.
    Changing this file to add, remove or modify volumes effectively invalidates
    the cache.
 
+
+Optional ramcache setting
+-------------------------
+
+You can also add an option ``ramcache=true/false`` to the volume configuration
+line.  True is the default setting and so not needed unless you want to explicitly
+set it.  Setting ``ramcache=false`` will disable the ramcache that normally
+sits in front of a volume.  This may be desirable if you are using something like
+ramdisks, to avoid wasting RAM and cpu time on double caching objects.
+
+
 Examples
 ========
 
 The following example partitions the cache across 5 volumes to decreasing
-single-lock pressure for a machine with few drives.::
+single-lock pressure for a machine with few drives. The last volume being
+an example of one that might be composed of purely ramdisks so that the
+ramcache has been disabled.::
 
     volume=1 scheme=http size=20%
     volume=2 scheme=http size=20%
     volume=3 scheme=http size=20%
     volume=4 scheme=http size=20%
-    volume=5 scheme=http size=20%
+    volume=5 scheme=http size=20% ramcache=false
