@@ -443,7 +443,7 @@ INKUDPBind(TSCont contp, unsigned int ip, int port)
   ats_ip4_set(&addr, ip, htons(port));
 
   return reinterpret_cast<TSAction>(
-    udpNet.UDPBind((Continuation *)contp, ats_ip_sa_cast(&addr), INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
+    udpNet.UDPBind((Continuation *)contp, ats_ip_sa_cast(&addr), -1, INK_ETHERNET_MTU_SIZE, INK_ETHERNET_MTU_SIZE));
 }
 
 TSAction
