@@ -48,6 +48,8 @@ ts.Disk.remap_config.AddLines({
     ' @plugin=tslua.so @pparam={}/hello.lua'.format(Test.TestDirectory)
 })
 
+ts.Disk.plugin_config.AddLine('tslua.so {}/global.lua'.format(Test.TestDirectory))
+
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'ts_lua',
@@ -81,12 +83,13 @@ tr.StillRunningAfter = ts
 # 2 Test - Check for metrics
 tr = Test.AddTestRun("Check for metrics")
 tr.DelayStart = 15 # 5s lag on metrics to update
+tr.TimeOut = 5
 ps = tr.Processes.Default # alias
+ps.Env = ts.Env
 ps.Command = "traffic_ctl metric match lua"
 ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.Streams.stdout = "gold/metrics.stdout.gold"
-tr.TimeOut = 5
 tr.StillRunningAfter = ts
 
 # 3 Test - Check for developer lifecycle stats

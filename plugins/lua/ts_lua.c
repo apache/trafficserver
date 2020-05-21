@@ -75,7 +75,7 @@ typedef struct {
 } ts_lua_plugin_stats;
 
 ts_lua_plugin_stats *
-create_plugin_stats(ts_lua_main_ctx *const main_ctx_array)
+create_plugin_stats(ts_lua_main_ctx *const main_ctx_array, char const *const *stat_strs)
 {
   ts_lua_plugin_stats *const stats = TSmalloc(sizeof(ts_lua_plugin_stats));
   memset(stats, 0, sizeof(ts_lua_plugin_stats));
@@ -86,15 +86,7 @@ create_plugin_stats(ts_lua_main_ctx *const main_ctx_array)
   stats->gc_kb   = 0;
   stats->threads = 0;
 
-  char const *const *stat_strs = NULL;
-  int max_state_count          = 0;
-  if (main_ctx_array == ts_lua_main_ctx_array) { // remap
-    stat_strs       = ts_lua_stat_strs;
-    max_state_count = ts_lua_max_state_count;
-  } else { // global
-    stat_strs       = ts_lua_g_stat_strs;
-    max_state_count = ts_lua_max_state_count;
-  }
+  int const max_state_count = ts_lua_max_state_count;
 
   for (int ind = 0; ind < TS_LUA_IND_SIZE; ++ind) {
     stats->stat_inds[ind] = TSStatCreate(stat_strs[ind], TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
@@ -318,7 +310,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
       TSContDataSet(lcontp, ts_lua_main_ctx_array);
       TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, lcontp);
 
-      ts_lua_plugin_stats *const plugin_stats = create_plugin_stats(ts_lua_main_ctx_array);
+      ts_lua_plugin_stats *const plugin_stats = create_plugin_stats(ts_lua_main_ctx_array, ts_lua_stat_strs);
 
       // start the stats management
       if (NULL != plugin_stats) {
@@ -741,7 +733,7 @@ TSPluginInit(int argc, const char *argv[])
       TSContDataSet(contp, ts_lua_g_main_ctx_array);
       TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, contp);
 
-      ts_lua_plugin_stats *const plugin_stats = create_plugin_stats(ts_lua_main_ctx_array);
+      ts_lua_plugin_stats *const plugin_stats = create_plugin_stats(ts_lua_g_main_ctx_array, ts_lua_g_stat_strs);
 
       if (NULL != plugin_stats) {
         TSCont const scontp = TSContCreate(statsHandler, TSMutexCreate());
