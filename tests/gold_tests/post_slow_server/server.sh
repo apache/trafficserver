@@ -24,14 +24,16 @@ response ()
   #
   while (( 1 == 1 ))
   do
-    if tr '\r' '=' < rcv_file | grep '^=$' > /dev/null
-    then
-      break;
+    if [[ -f rcv_file ]] ; then
+      if tr '\r' '=' < rcv_file | grep '^=$' > /dev/null
+      then
+        break;
+      fi
     fi
     sleep 1
   done
 
-  sleep 2m
+  date >&2 ; sleep 2m ; date >&2
 
   # Send back 200 KBytes of data
 
@@ -42,8 +44,8 @@ response ()
   let I=0
   while (( I < ((200 * 1024) / 8) ))
   do
-    printf "1234567\n"
     let I=I+1
+    printf "%07.7u\n" $((I * 8))
   done
 }
 
