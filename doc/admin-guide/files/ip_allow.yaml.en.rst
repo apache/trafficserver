@@ -21,7 +21,7 @@ ip_allow.yaml
 .. configfile:: ip_allow.yaml
 
 The :file:`ip_allow.yaml` file controls client access to |TS| and |TS| connections to upstream servers.
-This control is specified rules. Each rule has
+This control is specified via rules. Each rule has:
 
 *  A direction (inbound or out).
 *  A range of IP address to which the rule applies.
@@ -69,7 +69,7 @@ Format
 Each rule is a mapping. The YAML data must have a top level key of "ip_allow" and its value must
 be a mapping or a sequence of mappings, each of those being one rule.
 
-The keys in a rule are
+The keys in a rule are:
 
 ``apply``
    This is where the rule is applied, either ``in`` or ``out``. Inbound application means
@@ -85,7 +85,7 @@ The keys in a rule are
 
 ``methods``
    This is optional. If not present, the rule action applies to all methods. If present, the rule
-   action is applied connections using those methods and its opposite to all other connections. The
+   action is applied to connections using those methods and its opposite to all other connections. The
    keyword "ALL" means all methods, making the specification of any other method redundant. All
    methods comparisons are case insensitive. This is an optional key.
 
@@ -97,14 +97,14 @@ allowed to have a range that contains addresses from different IP address famili
 *  A CIDR based value, e.g. "10.1.0.0/16", which is a range containing exactly the specified network.
 
 A rule must have the ``apply``, ``ip_addrs``, and ``action`` keys. Rules match based on
-IP addresses only, and are then applied to all matching sessions. If the rule is an ``allow`` rule,
+IP addresses only and are then applied to all matching sessions. If the rule is an ``allow`` rule,
 the specified methods are allowed and all other methods are denied. If the rule is a ``deny`` rule,
 the specified methods are denied and all other methods are allowed.
 
 For example, from the default configuration, the rule for ``127.0.0.1`` is ``allow`` with all
 methods. Therefore an inbound connection from the loopback address (127.0.0.1) is allowed to use any
 method. The general IPv4 rule, covering all IPv4 address, is a ``deny`` rule and therefore when it
-matches the methods "PURGE", "PUSH", and "DELETE" are denied, any other method is allowed.
+matches the methods "PURGE", "PUSH", and "DELETE", these methods are denied and any other method is allowed.
 
 The rules are matched in order, by IP address, therefore the general IPv4 rule does not apply to the
 loopback address because the latter is matched first.
@@ -113,6 +113,15 @@ A major difference in application between ``in`` and ``out`` rules is that by de
 inbound connections are denied and therefore if there is no rule that matches, the connection is
 denied. Outbound rules allow by default, so the absence of rules in the default configuration
 enables all methods for all outbound connections.
+
+.. note::
+
+   Be aware that ip_allow rules will not, and indeed cannot, be applied to TLS
+   connections which are tunneled via ``tunnel_route`` to the upstream target.
+   Such connections are not decrypted and thus are not processed by |TS|. This
+   applies as well to TLS connections which are forwarded via ``forward_route``
+   since, while those are decrypted, they are not processed by |TS|.  For
+   details, see :ref:`sni-routing` and :file:`sni.yaml`.
 
 Examples
 ========

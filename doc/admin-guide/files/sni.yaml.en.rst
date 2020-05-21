@@ -30,10 +30,10 @@ connections. The configuration is driven by the SNI values provided by the inbou
 file consists of a set of configuration items, each identified by an SNI value (``fqdn``).
 When an inbound TLS connection is made, the SNI value from the TLS negotiation is matched against
 the items specified by this file and if there is a match, the values specified in that item override
-the defaults. This is done during the inbound connection processing and be some outbound properties
+the defaults. This is done during the inbound connection processing; some outbound properties
 can be overridden again later, such as via :file:`remap.config` or plugins.
 
-By default this is named :file:`sni.yaml`. The file can be changed by setting
+By default this is named :file:`sni.yaml`. The filename can be changed by setting
 :ts:cv:`proxy.config.ssl.servername.filename`. This file is loaded on start up and by
 :option:`traffic_ctl config reload` if the file has been modified since process start.
 
@@ -239,7 +239,7 @@ Use FQDN captured group to match in ``tunnel_route``.
 FQDN ``some.foo.com`` will match and the captured string will be replaced in the ``tunnel_route`` which will end up being
 ``some.myfoo``.
 Second part is using multiple groups, having ``bob.bar.example.com`` as FQDN, ``tunnel_route`` will end up being
-``bar.some.example.yahoo``.
+``bar.some.bob.yahoo``.
 
 See Also
 ========
