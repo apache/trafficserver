@@ -45,7 +45,11 @@ extern "C" {
 #define NH_Note(fmt, ...) PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 #define NH_Warn(fmt, ...) PrintToStdErr("%s:%d:%s() " fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
+class HttpRequestData;
+
 void PrintToStdErr(const char *fmt, ...);
+void br_destroy(HttpRequestData &h);
+void build_request(HttpRequestData &h, const char *os_hostname);
 
 #ifdef __cplusplus
 }

@@ -32,32 +32,32 @@
 #include "HttpTransact.h"
 
 void
-br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
+br_destroy(HttpRequestData &h)
 {
-  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
-  h->hdr        = new HTTPHdr();
-  h->hdr->create(HTTP_TYPE_REQUEST, heap);
-  h->hostname_str = ats_strdup(os_hostname);
-  h->xact_start   = time(nullptr);
-  ink_zero(h->src_ip);
-  ink_zero(h->dest_ip);
-  ats_ip_copy(&h->dest_ip.sa, dest_ip);
-  h->incoming_port = 80;
-  h->api_info      = new HttpApiInfo();
+  delete h.hdr;
+  delete h.api_info;
+  ats_free(h.hostname_str);
 }
 
 void
-br_reinit(HttpRequestData *h)
+build_request(HttpRequestData &h, const char *os_hostname)
 {
-  if (h->hdr) {
-    ats_free(h->hdr);
-    ats_free(h->hostname_str);
-    if (h->hdr) {
-      delete h->hdr;
-    }
-    if (h->api_info) {
-      delete h->api_info;
-    }
+  HdrHeap *heap = nullptr;
+
+  if (h.hdr == nullptr) {
+    h.hdr = new HTTPHdr();
+    h.hdr->create(HTTP_TYPE_REQUEST, heap);
+    h.xact_start    = time(nullptr);
+    h.incoming_port = 80;
+    ink_zero(h.src_ip);
+    ink_zero(h.dest_ip);
+  }
+  if (h.hostname_str != nullptr) {
+    ats_free(h.hostname_str);
+    h.hostname_str = ats_strdup(os_hostname);
+  }
+  if (h.api_info == nullptr) {
+    h.api_info = new HttpApiInfo();
   }
 }
 

@@ -229,6 +229,7 @@ NextHopStrategyFactory::loadConfigFile(const std::string fileName, std::stringst
         }
       }
     }
+    closedir(dir);
   } else {
     std::ifstream file(fileName);
     if (file.is_open()) {
