@@ -586,7 +586,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 }
 
 void
-parse_host_res_preference(const char *value, HostResPreferenceOrder order)
+parse_host_res_preference(const char *value, HostResPreferenceOrder &order)
 {
   Tokenizer tokens(";/|");
   // preference from the config string.
@@ -601,7 +601,8 @@ parse_host_res_preference(const char *value, HostResPreferenceOrder order)
     found[i] = false;
   }
 
-  for (i = 0; i < n && np < N_HOST_RES_PREFERENCE_ORDER; ++i) {
+  const int order_size = static_cast<int>(order.size());
+  for (i = 0; i < n && np < order_size; ++i) {
     const char *elt = tokens[i];
     // special case none/only because that terminates the sequence.
     if (0 == strcasecmp(elt, HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_NONE])) {
@@ -632,7 +633,7 @@ parse_host_res_preference(const char *value, HostResPreferenceOrder order)
     if (!found[HOST_RES_PREFER_IPV6]) {
       order[np++] = HOST_RES_PREFER_IPV6;
     }
-    if (np < N_HOST_RES_PREFERENCE_ORDER) { // was N_HOST_RES_PREFERENCE)
+    if (np < order_size) { // was N_HOST_RES_PREFERENCE)
       order[np] = HOST_RES_PREFER_NONE;
     }
   }

@@ -208,7 +208,7 @@ HttpProxyPort::Group &HttpProxyPort::m_global = GLOBAL_DATA;
 HttpProxyPort::HttpProxyPort() : m_fd(ts::NO_FD)
 
 {
-  memcpy(m_host_res_preference, host_res_default_preference_order, sizeof(m_host_res_preference));
+  m_host_res_preference = host_res_default_preference_order;
 }
 
 bool
@@ -633,8 +633,7 @@ HttpProxyPort::print(char *out, size_t n)
    * transparent (which means the preference order is forced) or if
    * the order is the same as the default.
    */
-  if (!m_outbound_transparent_p &&
-      0 != memcmp(m_host_res_preference, host_res_default_preference_order, sizeof(m_host_res_preference))) {
+  if (!m_outbound_transparent_p && m_host_res_preference != host_res_default_preference_order) {
     zret += snprintf(out + zret, n - zret, ":%s=", OPT_HOST_RES_PREFIX);
     zret += ts_host_res_order_to_string(m_host_res_preference, out + zret, n - zret);
   }
@@ -689,9 +688,8 @@ void
 ts_host_res_global_init()
 {
   // Global configuration values.
-  memcpy(host_res_default_preference_order, HOST_RES_DEFAULT_PREFERENCE_ORDER, sizeof(host_res_default_preference_order));
-
-  char *ip_resolve = REC_ConfigReadString("proxy.config.hostdb.ip_resolve");
+  host_res_default_preference_order = HOST_RES_DEFAULT_PREFERENCE_ORDER;
+  char *ip_resolve                  = REC_ConfigReadString("proxy.config.hostdb.ip_resolve");
   if (ip_resolve) {
     parse_host_res_preference(ip_resolve, host_res_default_preference_order);
   }

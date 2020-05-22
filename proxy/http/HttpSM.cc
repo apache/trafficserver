@@ -550,9 +550,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   ink_assert(ua_txn->get_proxy_ssn()->accept_options);
 
   // default the upstream IP style host resolution order from inbound
-  std::copy(std::begin(ua_txn->get_proxy_ssn()->accept_options->host_res_preference),
-            std::end(ua_txn->get_proxy_ssn()->accept_options->host_res_preference),
-            std::begin(t_state.my_txn_conf().host_res_data.order));
+  t_state.my_txn_conf().host_res_data.order = ua_txn->get_proxy_ssn()->accept_options->host_res_preference;
 
   start_sub_sm();
 
