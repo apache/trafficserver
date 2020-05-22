@@ -38,6 +38,7 @@
 #include "tscpp/util/TextView.h"
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
+#include "tscore/Filenames.h"
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -405,7 +406,7 @@ LocalManager::pollMgmtProcessServer()
 
         // read the message
         if ((res = mgmt_read_pipe(watched_process_fd, reinterpret_cast<char *>(&mh_hdr), sizeof(MgmtMessageHdr))) > 0) {
-          MgmtMessageHdr *mh_full = static_cast<MgmtMessageHdr *>(alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len));
+          MgmtMessageHdr *mh_full = static_cast<MgmtMessageHdr *>(malloc(sizeof(MgmtMessageHdr) + mh_hdr.data_len));
           memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
           char *data_raw = reinterpret_cast<char *>(mh_full) + sizeof(MgmtMessageHdr);
           if ((res = mgmt_read_pipe(watched_process_fd, data_raw, mh_hdr.data_len)) > 0) {
@@ -413,6 +414,7 @@ LocalManager::pollMgmtProcessServer()
           } else if (res < 0) {
             mgmt_fatal(0, "[LocalManager::pollMgmtProcessServer] Error in read (errno: %d)\n", -res);
           }
+          free(mh_full);
         } else if (res < 0) {
           mgmt_fatal(0, "[LocalManager::pollMgmtProcessServer] Error in read (errno: %d)\n", -res);
         }
@@ -749,9 +751,9 @@ LocalManager::processEventQueue()
     // check if we have a local file update
     if (mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE) {
       // records.config
-      if (!(strcmp(payload.begin(), REC_CONFIG_FILE))) {
+      if (!(strcmp(payload.begin(), ts::filename::RECORDS))) {
         if (RecReadConfigFile() != REC_ERR_OKAY) {
-          mgmt_elog(errno, "[fileUpdated] Config update failed for records.config\n");
+          mgmt_elog(errno, "[fileUpdated] Config update failed for %s\n", ts::filename::RECORDS);
         } else {
           RecConfigWarnIfUnregistered();
         }

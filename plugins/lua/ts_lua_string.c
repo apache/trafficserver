@@ -17,6 +17,7 @@
 */
 
 #include "ts_lua_string.h"
+#include "ts_lua_util.h"
 
 u_char *
 ts_lua_hex_dump(u_char *dst, u_char *src, size_t len)
@@ -26,6 +27,43 @@ ts_lua_hex_dump(u_char *dst, u_char *src, size_t len)
   while (len--) {
     *dst++ = hex[*src >> 4];
     *dst++ = hex[*src++ & 0xf];
+  }
+
+  return dst;
+}
+
+unsigned char
+hex_to_int(unsigned char c)
+{
+  if (c >= '0' && c <= '9') {
+    return (c - '0');
+  }
+  if (c >= 'A' && c <= 'F') {
+    return (c - 'A' + 10);
+  }
+  if (c >= 'a' && c <= 'f') {
+    return (c - 'a' + 10);
+  }
+  return 255;
+}
+
+u_char *
+ts_lua_hex_to_bin(u_char *dst, u_char *src, size_t len)
+{
+  if (len % 2 != 0) {
+    TSDebug(TS_LUA_DEBUG_TAG, "ts_lua_hex_to_bin(): not an even number of hex digits");
+    return NULL;
+  }
+
+  for (unsigned int x = 0; x < len; x += 2) {
+    unsigned char a = hex_to_int(src[x]);
+    unsigned char b = hex_to_int(src[x + 1]);
+    if (a == 255 || b == 255) {
+      TSDebug(TS_LUA_DEBUG_TAG, "ts_lua_hex_to_bin(): failure in hex to binary conversion");
+      return NULL;
+    }
+    unsigned char result = (a << 4) + b;
+    dst[x / 2]           = result;
   }
 
   return dst;

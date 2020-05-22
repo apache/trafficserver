@@ -31,6 +31,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_sprintf.h"
 #include "tscore/ink_file.h"
+#include "tscore/Filenames.h"
 #include "HttpBodyFactory.h"
 #include <unistd.h>
 #include <dirent.h>
@@ -72,6 +73,16 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   bool found_requested_template = false;
   bool plain_flag               = false;
 
+  ///////////////////////////////////////////////
+  // if suppressing this response, return NULL //
+  ///////////////////////////////////////////////
+  if (is_response_suppressed(context)) {
+    if (enable_logging) {
+      Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
+    }
+    return nullptr;
+  }
+
   lock();
 
   *resulting_buffer_length = 0;
@@ -97,16 +108,6 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
         context->arena.str_free(s);
       }
     }
-  }
-  ///////////////////////////////////////////////
-  // if suppressing this response, return NULL //
-  ///////////////////////////////////////////////
-  if (is_response_suppressed(context)) {
-    if (enable_logging) {
-      Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
-    }
-    unlock();
-    return nullptr;
   }
   //////////////////////////////////////////////////////////////////////////////////
   // if language-targeting activated, get client Accept-Language & Accept-Charset //
@@ -334,7 +335,7 @@ HttpBodyFactory::HttpBodyFactory()
   for (i = 0; config_record_names[i] != nullptr; i++) {
     status = REC_RegisterConfigUpdateFunc(config_record_names[i], config_callback, (void *)this);
     if (status != REC_ERR_OKAY) {
-      Warning("couldn't register variable '%s', is records.config up to date?", config_record_names[i]);
+      Warning("couldn't register variable '%s', is %s up to date?", config_record_names[i], ts::filename::RECORDS);
     }
     no_registrations_failed = no_registrations_failed && (status == REC_ERR_OKAY);
   }
@@ -672,11 +673,7 @@ HttpBodyFactory::is_response_suppressed(HttpTransact::State *context)
   } else if (response_suppression_mode == 1) {
     return true;
   } else if (response_suppression_mode == 2) {
-    if (context->req_flavor == HttpTransact::REQ_FLAVOR_INTERCEPTED) {
-      return true;
-    } else {
-      return false;
-    }
+    return context->request_data.internal_txn;
   } else {
     return false;
   }

@@ -31,8 +31,12 @@ class Http2FrequencyCounter
 public:
   void increment(uint16_t amount = 1);
   uint32_t get_count();
+  virtual ~Http2FrequencyCounter() {}
 
 protected:
   uint16_t _count[2]      = {0};
   ink_hrtime _last_update = 0;
+
+private:
+  virtual ink_hrtime _get_hrtime();
 };

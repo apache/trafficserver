@@ -62,6 +62,10 @@
                 [
                   "Content-Length",
                   "6128"
+                ],
+                [
+                  "Connection",
+                  "close"
                 ]
               ]
             }
@@ -132,6 +136,10 @@
                 [
                   "Content-Length",
                   "6128"
+                ],
+                [
+                  "Connection",
+                  "close"
                 ]
               ]
             }

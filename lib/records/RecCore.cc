@@ -24,6 +24,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
+#include "tscore/Filenames.h"
 
 #include "RecordsConfig.h"
 #include "P_RecFile.h"
@@ -33,7 +34,7 @@
 
 // This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
 // and used (read) from several binaries / modules.
-int max_records_entries = REC_INTERNAL_RECORDS + REC_MIN_API_RECORDS;
+int max_records_entries = REC_INTERNAL_RECORDS + REC_DEFAULT_API_RECORDS;
 
 static bool g_initialized = false;
 
@@ -218,14 +219,10 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
     ink_mutex_init(&g_rec_config_lock);
 
-    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT));
+    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS));
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-      ats_free(const_cast<char *>(g_rec_config_fpath));
-      g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE));
-      if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-        RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
-        file_exists = false;
-      }
+      RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", ts::filename::RECORDS);
+      file_exists = false;
     }
 
     if (file_exists) {
@@ -610,7 +607,7 @@ RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lo
 }
 
 RecErrT
-RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
+RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock, bool check_sync_cb)
 {
   RecErrT err = REC_ERR_FAIL;
 
@@ -622,15 +619,17 @@ RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
     RecRecord *r = it->second;
 
     if (r->registered) {
-      rec_mutex_acquire(&(r->lock));
-      if (order) {
-        *order = r->order;
+      if (!check_sync_cb || r->stat_meta.sync_cb) {
+        rec_mutex_acquire(&(r->lock));
+        if (order) {
+          *order = r->order;
+        }
+        if (id) {
+          *id = r->rsb_id;
+        }
+        err = REC_ERR_OKAY;
+        rec_mutex_release(&(r->lock));
       }
-      if (id) {
-        *id = r->rsb_id;
-      }
-      err = REC_ERR_OKAY;
-      rec_mutex_release(&(r->lock));
     }
   }
 
@@ -1260,7 +1259,7 @@ std::string
 RecConfigReadPersistentStatsPath()
 {
   std::string rundir(RecConfigReadRuntimeDir());
-  return Layout::relative_to(rundir, REC_RAW_STATS_FILE);
+  return Layout::relative_to(rundir, ts::filename::RECORDS_STATS);
 }
 
 void
@@ -1286,11 +1285,12 @@ RecSignalWarning(int sig, const char *fmt, ...)
 void
 RecConfigWarnIfUnregistered()
 {
-  RecDumpRecords(RECT_CONFIG,
-                 [](RecT, void *, int registered_p, const char *name, int, RecData *) -> void {
-                   if (!registered_p) {
-                     Warning("Unrecognized configuration value '%s'", name);
-                   }
-                 },
-                 nullptr);
+  RecDumpRecords(
+    RECT_CONFIG,
+    [](RecT, void *, int registered_p, const char *name, int, RecData *) -> void {
+      if (!registered_p) {
+        Warning("Unrecognized configuration value '%s'", name);
+      }
+    },
+    nullptr);
 }

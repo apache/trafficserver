@@ -34,10 +34,11 @@ dist_sysconf_DATA =	\
 	parent.config.default \
 	plugin.config.default \
 	remap.config.default \
+	sni.yaml.default \
 	socks.config.default \
 	splitdns.config.default \
 	ssl_multicert.config.default \
-	sni.yaml.default \
+	strategies.yaml.default \
 	volume.config.default
 
 install-exec-hook:

@@ -27,4 +27,3 @@ t.Processes.Default.StartBefore(ts)
 t.Command = "curl 127.0.0.1:{port}".format(port=ts.Variables.port)
 t.ReturnCode = 0
 t.StillRunningAfter = ts
-

@@ -28,8 +28,6 @@
 #include <cmath>
 #include <cstdlib>
 
-using namespace std;
-
 CacheTestSM::CacheTestSM(RegressionTest *t, const char *name) : RegressionSM(t), cache_test_name(name)
 {
   SET_HANDLER(&CacheTestSM::event_handler);
@@ -333,13 +331,14 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   remove_fail_test.expect_event = CACHE_EVENT_REMOVE_FAILED;
   rand_CacheKey(&remove_fail_test.key, thread->mutex);
 
-  CACHE_SM(t, replace_write_test,
-           { cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_SYNC); } int open_write_callout() {
-             header.serial = 10;
-             cache_vc->set_header(&header, sizeof(header));
-             cvio = cache_vc->do_io_write(this, nbytes, buffer_reader);
-             return 1;
-           });
+  CACHE_SM(
+    t, replace_write_test,
+    { cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_SYNC); } int open_write_callout() {
+      header.serial = 10;
+      cache_vc->set_header(&header, sizeof(header));
+      cvio = cache_vc->do_io_write(this, nbytes, buffer_reader);
+      return 1;
+    });
   replace_write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   replace_write_test.expect_event         = VC_EVENT_WRITE_COMPLETE;
   replace_write_test.nbytes               = 100;
@@ -365,16 +364,17 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   replace_test.key                  = replace_write_test.key;
   replace_test.content_salt         = 1;
 
-  CACHE_SM(t, replace_read_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() {
-    CacheTestHeader *h = nullptr;
-    int hlen           = 0;
-    if (cache_vc->get_header((void **)&h, &hlen) < 0)
-      return -1;
-    if (h->serial != 11)
-      return -1;
-    cvio = cache_vc->do_io_read(this, nbytes, buffer);
-    return 1;
-  });
+  CACHE_SM(
+    t, replace_read_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() {
+      CacheTestHeader *h = nullptr;
+      int hlen           = 0;
+      if (cache_vc->get_header((void **)&h, &hlen) < 0)
+        return -1;
+      if (h->serial != 11)
+        return -1;
+      cvio = cache_vc->do_io_read(this, nbytes, buffer);
+      return 1;
+    });
   replace_read_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
   replace_read_test.expect_event         = VC_EVENT_READ_COMPLETE;
   replace_read_test.nbytes               = 100;
@@ -387,10 +387,11 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   large_write_test.nbytes               = 10000000;
   rand_CacheKey(&large_write_test.key, thread->mutex);
 
-  CACHE_SM(t, pread_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() {
-    cvio = cache_vc->do_io_pread(this, nbytes, buffer, 7000000);
-    return 1;
-  });
+  CACHE_SM(
+    t, pread_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() {
+      cvio = cache_vc->do_io_pread(this, nbytes, buffer, 7000000);
+      return 1;
+    });
   pread_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
   pread_test.expect_event         = VC_EVENT_READ_COMPLETE;
   pread_test.nbytes               = 100;
@@ -550,7 +551,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   bool pass = true;
   CacheKey key;
   Vol *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
-  vector<Ptr<IOBufferData>> data;
+  std::vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, vol);
 

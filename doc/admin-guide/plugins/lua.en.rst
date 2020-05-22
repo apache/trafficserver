@@ -128,6 +128,60 @@ If it is used as remap plugin, we can write the following in remap.config to def
 
     map http://a.tbcdn.cn/ http://inner.tbcdn.cn/ @plugin=/XXX/tslua.so @pparam=--states=64 @pparam=/XXX/test_hdr.lua
 
+The maximum number of allowed states is set to 256 which is also the
+default states value.  The default value can be globally changed by
+adding a configuration option to records.config.
+
+::
+
+    CONFIG proxy.config.plugin.lua.max_states INT 64
+
+Any per plugin --states value overrides this default value but must be less than or equal to this value.  This setting is not reloadable since it must be applied when all the lua states are first initialized.
+
+Profiling
+=========
+
+The lua module collects runtime statistics about the lua states, for remap
+and global instances.  Per state stats are constantly maintained and are
+made available through a lifecycle hook.  These may be accessed through:
+
+::
+
+    traffic_ctl plugin msg ts_lua stats_print
+
+Sample output:
+
+::
+
+    [Feb  5 19:00:15.072] ts_lua (remap) id:    0 gc_kb:   2508 gc_kb_max:   3491 threads:  417 threads_max:  438
+    [Feb  5 19:00:15.072] ts_lua (remap) id:    1 gc_kb:   1896 gc_kb_max:   3646 threads:  417 threads_max:  446
+    [Feb  5 19:00:15.072] ts_lua (remap) id:    2 gc_kb:   3376 gc_kb_max:   3740 threads:  417 threads_max:  442
+
+Max values may be reset at any time by running:
+
+::
+
+    traffic_ctl plugin msg ts_lua stats_reset
+
+
+Summary statistics are aggregated every 5s and are available as metrics.
+
+::
+
+    traffic_ctl metric match lua
+
+Sample output:
+
+::
+
+    plugin.lua.global.states 8
+    plugin.lua.remap.gc_bytes_min 4804608
+    plugin.lua.remap.gc_bytes_mean 5552537
+    plugin.lua.remap.gc_bytes_max 5779456
+    plugin.lua.remap.threads_min 31
+    plugin.lua.remap.threads_mean 44
+    plugin.lua.remap.threads_max 146
+
 TS API for Lua
 ==============
 
@@ -210,6 +264,38 @@ Here is an example:
 ::
 
        ts.error('This is an error message')
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.fatal
+--------
+**syntax:** *ts.fatal(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log and shutdown Traffic Server
+
+Here is an example:
+
+::
+
+       ts.fatal('This is an fatal message')
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.emergency
+------------
+**syntax:** *ts.emergency(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log and shutdown Traffic Server
+
+Here is an example:
+
+::
+
+       ts.emergency('This is an emergency message')
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
@@ -904,7 +990,7 @@ Here is an example:
         ts.debug(url_port)
     end
 
-Then Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
+Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
 
 ``8080``
 
@@ -1090,6 +1176,16 @@ ts.http.set_cache_lookup_url
 **context:** do_global_cache_lookup_complete
 
 **description:** This function can be used to set the cache lookup url for the client request.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.redo_cache_lookup
+-------------------------
+**syntax:** *ts.http.redo_cache_lookup()*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to redo cache lookup with a different url.
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
@@ -1704,6 +1800,125 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.sha256
+---------
+**syntax:** *digest = ts.sha256(str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the SHA-256 digest of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        print(uri)
+        print(ts.sha256(uri))
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.sha256_bin
+-------------
+**syntax:** *digest = ts.sha256_bin(str)*
+
+**context:** global
+
+**description:** Returns the binary form of the SHA-256 digest of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        bin = ts.sha256_bin(uri)
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.hmac_md5
+-----------
+**syntax:** *digest = ts.hmac_md5(key, str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the HMAC of the ``str`` argument.
+
+The message digest function used is MD5.
+
+The key value used is contained in the ``key`` argument. This should be a hexadecimal representation of the key value.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        key = "012345"
+        uri = ts.client_request.get_uri()
+        print(uri)
+        print(ts.hmac_md5(key, uri))
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.hmac_sha1
+------------
+**syntax:** *digest = ts.hmac_sha1(key, str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the HMAC of the ``str`` argument.
+
+The message digest function used is SHA-1.
+
+The key value used is contained in the ``key`` argument. This should be a hexadecimal representation of the key value.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        key = "012345"
+        uri = ts.client_request.get_uri()
+        print(uri)
+        print(ts.hmac_sha1(key, uri))
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.hmac_sha256
+--------------
+**syntax:** *digest = ts.hmac_sha256(key, str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the HMAC of the ``str`` argument.
+
+The message digest function used is SHA-256.
+
+The key value used is contained in the ``key`` argument. This should be a hexadecimal representation of the key value.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        key = "012345"
+        uri = ts.client_request.get_uri()
+        print(uri)
+        print(ts.hmac_sha256(key, uri))
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.server_request.server_addr.get_ip
 ------------------------------------
 **syntax:** *ts.server_request.server_addr.get_ip()*
@@ -1903,6 +2118,83 @@ ts.server_request.set_url_scheme
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.server_request.get_method
+----------------------------
+**syntax:** *ts.server_request.get_method()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description:** This function can be used to retrieve the current server request's method name. String like "GET" or "POST" is returned.
+
+Here is an example:
+
+::
+
+    function send_request()
+        local method = ts.server_request.get_method()
+        ts.debug(method)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+Then ``HEAD /`` will yield the output:
+
+``HEAD``
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_request.set_method
+----------------------------
+**syntax:** *ts.server_request.set_method()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description:** This function can be used to override the current server request's method with METHOD_NAME.
+
+::
+    ts.server_request.set_method('HEAD')
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_request_get_version
+------------------------------
+**syntax:** *ver = ts.server_request.get_version()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later.
+
+**description:** Return the http version string of the server request.
+
+Current possible values are 1.0, 1.1, and 0.9. ::
+
+    function send_request()
+        local version = ts.server_request.get_version()
+        ts.debug(version)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_request.set_version
+------------------------------
+**syntax:** *ts.server_request.set_version(VERSION_STR)*
+
+**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point
+
+**description:** Set the http version of the server request with the VERSION_STR
+
+::
+
+    ts.server_request.set_version('1.0')
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.server_response.get_status
 -----------------------------
 **syntax:** *status = ts.server_response.get_status()*
@@ -1962,6 +2254,42 @@ ts.server_response.get_version
 **description:** Return the http version string of the server response.
 
 Current possible values are 1.0, 1.1, and 0.9.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_response.is_cacheable
+-------------------------------
+**syntax:** *can_cache = ts.server_response.is_cacheable()*
+
+**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later.
+
+**description:** Return 1 if the server response can be cached, 0 otherwise.
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.server_response.get_maxage
+------------------------------
+**syntax:** *maxage = ts.server_response.get_maxage()*
+
+**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later.
+
+**description:** Return the maximum age of the server response in seconds if specified by Cache-Control, -1 otherwise.
+
+For example:
+
+::
+
+    function debug_long_maxage()
+        maxage = ts.server_response.get_maxage()
+        if ts.server_response.is_cacheable() and maxage > 86400 then
+            ts.debug('Cacheable response with maxage=' .. maxage)
+        end
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_READ_RESPONSE_HDR, debug_long_maxage)
+        return 0
+    end
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
@@ -2354,6 +2682,9 @@ Here is an example:
         ts.http.resp_cache_untransformed(1)
         return 0
     end
+
+The above example also shows the use of eos passed as a parameter to transform function. It indicates the end of the
+data stream to the transform function.
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
@@ -3731,7 +4062,7 @@ of seconds since the beginning of the transaction.
 :ref:`TOP <admin-plugins-ts-lua>`
 
 Milestone constants
-------------------------------
+-------------------
 **context:** do_remap/do_os_response or do_global_* or later
 
 ::
@@ -3760,6 +4091,36 @@ Milestone constants
     TS_LUA_MILESTONE_PLUGIN_TOTAL
     TS_LUA_MILESTONE_TLS_HANDSHAKE_START
     TS_LUA_MILESTONE_TLS_HANDSHAKE_END
+
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.txn_info_get
+--------------------
+**syntax:** *val = ts.http.txn_info_get(TXN_INFO_TYPE)*
+
+**context:** do_global_cache_lookup_complete
+
+**description:** This function can be used to retrieve the various cache related info about a transaction.
+
+::
+
+    val = ts.http.txn_info_get(TS_LUA_TXN_INFO_CACHE_HIT_RAM)
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+Txn Info constants
+------------------
+**context:** do_global_cache_lookup_complete
+
+::
+
+    TS_LUA_TXN_INFO_CACHE_HIT_RAM
+    TS_LUA_TXN_INFO_CACHE_COMPRESSED_IN_RAM
+    TS_LUA_TXN_INFO_CACHE_HIT_RWW
+    TS_LUA_TXN_INFO_CACHE_OPEN_READ_TRIES
+    TS_LUA_TXN_INFO_CACHE_OPEN_WRITE_TRIES
+    TS_LUA_TXN_INFo_CACHE_VOLUME
 
 
 :ref:`TOP <admin-plugins-ts-lua>`

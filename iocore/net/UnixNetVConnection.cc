@@ -99,7 +99,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_assert(vc->thread == this_ethread());
-    vc->nh->free_netvc(vc);
+    vc->nh->free_netevent(vc);
     return EVENT_DONE;
   } else {
     return EVENT_CONT;
@@ -130,7 +130,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
   if (!--vc->recursion && vc->closed) {
     /* BZ  31932 */
     ink_assert(vc->thread == this_ethread());
-    vc->nh->free_netvc(vc);
+    vc->nh->free_netevent(vc);
     return EVENT_DONE;
   } else {
     return EVENT_CONT;
@@ -197,7 +197,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // global session pool case.  If so, the closed flag should be stable once we get the
   // s->vio.mutex (the global session pool mutex).
   if (vc->closed) {
-    vc->nh->free_netvc(vc);
+    vc->nh->free_netevent(vc);
     return;
   }
   // if it is not enabled.
@@ -657,7 +657,7 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 
   if (close_inline) {
     if (nh) {
-      nh->free_netvc(this);
+      nh->free_netevent(this);
     } else {
       free(t);
     }
@@ -866,8 +866,7 @@ UnixNetVConnection::reenable_re(VIO *vio)
   }
 }
 
-UnixNetVConnection::UnixNetVConnection() : flags(0)
-
+UnixNetVConnection::UnixNetVConnection()
 {
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
 }
@@ -891,6 +890,12 @@ UnixNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   read_from_net(nh, this, lthread);
 }
 
+void
+UnixNetVConnection::net_write_io(NetHandler *nh, EThread *lthread)
+{
+  write_to_net(nh, this, lthread);
+}
+
 // This code was pulled out of write_to_net so
 // I could overwrite it for the SSL implementation
 // (SSL read does not support overlapped i/o)
@@ -908,7 +913,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
     try_to_write  = 0;
 
     while (niov < NET_MAX_IOV) {
-      int64_t wavail = towrite - total_written;
+      int64_t wavail = towrite - total_written - try_to_write;
       int64_t len    = tmp_reader->block_read_avail();
 
       // Check if we have done this block.
@@ -1139,7 +1144,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   writer_cont        = write.vio.cont;
 
   if (closed) {
-    nh->free_netvc(this);
+    nh->free_netevent(this);
     return EVENT_DONE;
   }
 
@@ -1347,12 +1352,23 @@ TS_INLINE void
 UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 {
   Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
-  if (timeout_in == 0) {
-    // set default inactivity timeout
-    timeout_in = HRTIME_SECONDS(nh->config.default_inactivity_timeout);
-  }
   inactivity_timeout_in      = timeout_in;
-  next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
+  next_inactivity_timeout_at = (timeout_in > 0) ? Thread::get_hrtime() + inactivity_timeout_in : 0;
+}
+
+TS_INLINE void
+UnixNetVConnection::set_default_inactivity_timeout(ink_hrtime timeout_in)
+{
+  Debug("socket", "Set default inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
+  inactivity_timeout_in      = 0;
+  default_inactivity_timeout = true;
+  next_inactivity_timeout_at = Thread::get_hrtime() + timeout_in;
+}
+
+TS_INLINE bool
+UnixNetVConnection::is_default_inactivity_timeout()
+{
+  return (default_inactivity_timeout && inactivity_timeout_in == 0);
 }
 
 /*
@@ -1384,29 +1400,31 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   // Go ahead and remove the fd from the original thread's epoll structure, so it is not
   // processed on two threads simultaneously
   this->ep.stop();
-  this->do_io_close();
 
   // Create new VC:
+  UnixNetVConnection *netvc = nullptr;
   if (save_ssl) {
     SSLNetVConnection *sslvc = static_cast<SSLNetVConnection *>(sslNetProcessor.allocate_vc(t));
     if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       sslvc->do_io_close();
       sslvc = nullptr;
     } else {
+      // Update the SSL fields
       sslvc->set_context(get_context());
     }
-    return sslvc;
-    // Update the SSL fields
+    netvc = sslvc;
   } else {
-    UnixNetVConnection *netvc = static_cast<UnixNetVConnection *>(netProcessor.allocate_vc(t));
+    netvc = static_cast<UnixNetVConnection *>(netProcessor.allocate_vc(t));
     if (netvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       netvc->do_io_close();
       netvc = nullptr;
     } else {
       netvc->set_context(get_context());
     }
-    return netvc;
   }
+  // Do not mark this closed until the end so it does not get freed by the other thread too soon
+  this->do_io_close();
+  return netvc;
 }
 
 void

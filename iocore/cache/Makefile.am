@@ -116,6 +116,7 @@ test_LDADD = \
 	@YAMLCPP_LIBS@ \
 	-lm
 
+if EXPENSIVE_TESTS
 check_PROGRAMS = \
   test_Cache \
   test_RWW \
@@ -128,6 +129,7 @@ check_PROGRAMS = \
   test_Update_L_to_S \
   test_Update_S_to_L \
   test_Update_header
+endif
 
 test_main_SOURCES = \
   ./test/main.cc \

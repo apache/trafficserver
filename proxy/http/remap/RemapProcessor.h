@@ -35,31 +35,16 @@
 #define EVENT_REMAP_ERROR (REMAP_EVENT_EVENTS_START + 1)
 #define EVENT_REMAP_COMPLETE (REMAP_EVENT_EVENTS_START + 2)
 
-class RemapProcessor : public Processor
+class RemapProcessor
 {
 public:
   RemapProcessor() {}
-  ~RemapProcessor() override {}
+  ~RemapProcessor() {}
   bool setup_for_remap(HttpTransact::State *s, UrlRewrite *table);
   bool finish_remap(HttpTransact::State *s, UrlRewrite *table);
 
   Action *perform_remap(Continuation *cont, HttpTransact::State *s);
-  int start(int num_threads, size_t stacksize) override;
   bool LessThan(HttpTransact::State *, HttpTransact::State *);
-  void
-  setUseSeparateThread()
-  {
-    _use_separate_remap_thread = true;
-  }
-  bool
-  using_separate_thread()
-  {
-    return _use_separate_remap_thread == true;
-  }
-
-private:
-  EventType ET_REMAP              = 0;
-  bool _use_separate_remap_thread = false;
 };
 
 /**

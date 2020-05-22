@@ -1,4 +1,6 @@
 *.o
+*.c_o
+*.cc_o
 *.a
 *.so
 *.pyc
@@ -41,7 +43,6 @@ Makefile-pl
 config.cache
 config.status
 config.nice
-config.h
 
 configs/records.config.default
 configs/storage.config.default
@@ -106,7 +107,14 @@ proxy/hdrs/test_proxy_hdrs
 proxy/hdrs/test_hdr_heap
 proxy/hdrs/test_Huffmancode
 proxy/hdrs/test_XPACK
+proxy/http/remap/test_NextHopRoundRobin
+proxy/http/remap/test_NextHopStrategyFactory
+proxy/http/remap/test_PluginDso
+proxy/http/remap/test_PluginFactory
+proxy/http/remap/test_RemapPluginInfo
 proxy/http/test_proxy_http
+proxy/http/remap/test_*
+proxy/http2/test_libhttp2
 proxy/http2/test_Http2DependencyTree
 proxy/http2/test_Http2FrequencyCounter
 proxy/http2/test_HPACK
@@ -115,6 +123,7 @@ proxy/http3/test_libhttp3
 proxy/http3/test_qpack
 proxy/logging/test_LogUtils
 proxy/logging/test_LogUtils2
+proxy/logging/test_RolledLogDeleter
 
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/cookie_remap/test_cookiejar
@@ -122,6 +131,7 @@ plugins/experimental/esi/*_test
 plugins/experimental/slice/test_*
 plugins/experimental/sslheaders/test_sslheaders
 plugins/s3_auth/test_s3auth
+plugins/experimental/traffic_dump/test_*
 
 plugins/esi/docnode_test
 plugins/esi/gzip_test
@@ -140,7 +150,7 @@ mgmt/tools/traffic_time_config
 mgmt/tools/traffic_vip_config
 mgmt/api/api_cli_remote
 mgmt/tools/shmem_clean
-mgmt/utils/test_marshall
+mgmt/utils/test_mgmt_utils
 
 libtool
 m4/libtool.m4

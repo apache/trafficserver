@@ -326,6 +326,7 @@ struct CacheVC : public CacheVConnection {
   int openReadFromWriterMain(int event, Event *e);
   int openReadFromWriterFailure(int event, Event *);
   int openReadChooseWriter(int event, Event *e);
+  int openReadDirDelete(int event, Event *e);
 
   int openWriteCloseDir(int event, Event *e);
   int openWriteCloseHeadDone(int event, Event *e);
@@ -441,7 +442,7 @@ struct CacheVC : public CacheVConnection {
   CacheFragType frag_type;
   CacheHTTPInfo *info;
   CacheHTTPInfoVector *write_vector;
-  OverridableHttpConfigParams *params;
+  const OverridableHttpConfigParams *params;
   int header_len;        // for communicating with agg_copy
   int frag_len;          // for communicating with agg_copy
   uint32_t write_len;    // for communicating with agg_copy
@@ -988,7 +989,7 @@ struct Cache {
                             const char *hostname = nullptr, int host_len = 0);
   Action *scan(Continuation *cont, const char *hostname = nullptr, int host_len = 0, int KB_per_second = 2500);
 
-  Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, OverridableHttpConfigParams *params,
+  Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const OverridableHttpConfigParams *params,
                     CacheFragType type, const char *hostname, int host_len);
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
                      const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,

@@ -287,3 +287,31 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_CIPHERSUITES], [
   TS_ARG_ENABLE_VAR([use], [tls-set-ciphersuites])
   AC_SUBST(use_tls_set_ciphersuites)
 ])
+
+dnl
+dnl Since OpenSSL 1.1.1
+dnl
+AC_DEFUN([TS_CHECK_EARLY_DATA], [
+  _set_ciphersuites_saved_LIBS=$LIBS
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_HEADERS(openssl/ssl.h)
+  AC_CHECK_FUNCS(
+    SSL_set_max_early_data,
+    [
+      has_tls_early_data=1
+      early_data_check=yes
+    ],
+    [
+      has_tls_early_data=0
+      early_data_check=no
+    ]
+  )
+
+  LIBS=$_set_ciphersuites_saved_LIBS
+
+  AC_MSG_CHECKING([for OpenSSL early data support])
+  AC_MSG_RESULT([$early_data_check])
+
+  AC_SUBST(has_tls_early_data)
+])

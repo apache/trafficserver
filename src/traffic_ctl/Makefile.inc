@@ -23,6 +23,8 @@ traffic_ctl_traffic_ctl_CPPFLAGS = \
     $(AM_CPPFLAGS) \
     $(iocore_include_dirs) \
     -I$(abs_top_srcdir)/include \
+    -I$(abs_top_srcdir)/proxy/http \
+    -I$(abs_top_srcdir)/proxy/hdrs \
     -I$(abs_top_srcdir)/lib \
     -I$(abs_top_srcdir)/mgmt \
     -I$(abs_top_srcdir)/mgmt/api/include \
@@ -37,6 +39,7 @@ traffic_ctl_traffic_ctl_SOURCES = \
 	traffic_ctl/server.cc \
 	traffic_ctl/storage.cc \
 	traffic_ctl/host.cc \
+	shared/overridable_txn_vars.cc \
 	traffic_ctl/traffic_ctl.cc
 
 traffic_ctl_traffic_ctl_LDADD = \

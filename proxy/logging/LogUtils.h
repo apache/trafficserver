@@ -26,6 +26,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Arena.h"
+#include <tscpp/util/TextView.h>
 
 class MIMEHdr;
 
@@ -61,6 +62,22 @@ int timestamp_to_hex_str(unsigned timestamp, char *str, size_t len, size_t *n_ch
 int seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_interval);
 int file_is_writeable(const char *full_filename, off_t *size_bytes = nullptr, bool *has_size_limit = nullptr,
                       uint64_t *current_size_limit_bytes = nullptr);
+
+/** Given a rolled file, determine the unrolled filename.
+ *
+ * For example, given this:
+ *   diags.log.20191114.21h43m16s-20191114.21h43m17s.old
+ *
+ * Return this:
+ *   diags.log
+ *
+ * @param[in] rolled_filename The rolled filename from which to derive the
+ * unrolled filename.
+ *
+ * @return The unrolled filename if it looked like a rolled log file or the
+ * input filename if it didn't.
+ */
+ts::TextView get_unrolled_filename(ts::TextView rolled_filename);
 
 // Marshals header tags and values together, with a single terminating nul character.  Returns buffer space required.  'buf' points
 // to where to put the marshaled data.  If 'buf' is null, no data is marshaled, but the function returns the amount of space that

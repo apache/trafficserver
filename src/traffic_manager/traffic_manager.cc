@@ -28,6 +28,7 @@
 #include "tscore/ink_args.h"
 #include "tscore/ink_syslog.h"
 #include "tscore/runroot.h"
+#include "tscore/Filenames.h"
 
 #include "WebMgmtUtils.h"
 #include "MgmtUtils.h"
@@ -50,6 +51,8 @@
 
 #include "records/P_RecLocal.h"
 #include "DerivativeMetrics.h"
+
+#include <random>
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -90,7 +93,7 @@ static char bind_stderr[512]  = "";
 static const char *mgmt_path  = nullptr;
 
 // By default, set the current directory as base
-static const char *recs_conf = "records.config";
+static const char *recs_conf = ts::filename::RECORDS;
 
 static int fds_limit;
 
@@ -557,6 +560,11 @@ main(int argc, const char **argv)
   }
 
   RecGetRecordInt("proxy.config.net.connections_throttle", &fds_throttle);
+  RecInt listen_per_thread = 0;
+  RecGetRecordInt("proxy.config.exec_thread.listen", &listen_per_thread);
+  if (listen_per_thread > 0) { // Turn off listening. Traffic server is going to listen on all the threads.
+    listen_off = true;
+  }
 
   set_process_limits(fds_throttle); // as root
 
@@ -702,9 +710,18 @@ main(int argc, const char **argv)
 
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.draining", 0, RECP_NON_PERSISTENT);
 
-  const int MAX_SLEEP_S      = 60; // Max sleep duration
-  int sleep_time             = 0;  // sleep_time given in sec
-  uint64_t last_start_epoc_s = 0;  // latest start attempt in seconds since epoc
+  int sleep_time             = 0; // sleep_time given in sec
+  uint64_t last_start_epoc_s = 0; // latest start attempt in seconds since epoc
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> dis(0.0, 0.5);
+
+  RecInt sleep_ceiling = 60;
+  RecGetRecordInt("proxy.node.config.manager_exponential_sleep_ceiling", &sleep_ceiling);
+  RecInt retry_cap = 0; // 0  means no cap.
+  RecGetRecordInt("proxy.node.config.manager_retry_cap", &retry_cap);
+  bool ignore_retry_cap{retry_cap <= 0};
 
   DerivativeMetrics derived; // This is simple class to calculate some useful derived metrics
 
@@ -792,12 +809,19 @@ main(int argc, const char **argv)
       break;
     }
 
-    if (lmgmt->run_proxy && !lmgmt->processRunning() && lmgmt->proxy_recoverable) { /* Make sure we still have a proxy up */
+    if (lmgmt->run_proxy && !lmgmt->processRunning() && lmgmt->proxy_recoverable &&
+        (retry_cap > 0 || ignore_retry_cap)) { /* Make sure we still have a proxy up */
       const uint64_t now = static_cast<uint64_t>(time(nullptr));
-      if (sleep_time && ((now - last_start_epoc_s) < MAX_SLEEP_S)) {
-        mgmt_log("Relaunching proxy after %d sec...", sleep_time);
-        millisleep(1000 * sleep_time); // we use millisleep instead of sleep because it doesnt interfere with signals
-        sleep_time = std::min(sleep_time * 2, MAX_SLEEP_S);
+      if (sleep_time && ((now - last_start_epoc_s) < static_cast<uint64_t>(sleep_ceiling))) {
+        const auto variance = dis(gen);
+        // We add a bit of variance to the regular sleep time.
+        const int mod_sleep_time = sleep_time + static_cast<int>(sleep_time * variance);
+        mgmt_log("Relaunching proxy after %d sec..", mod_sleep_time);
+        if (!ignore_retry_cap && sleep_time >= sleep_ceiling) {
+          --retry_cap;
+        }
+        millisleep((1000 * mod_sleep_time)); // we use millisleep instead of sleep because it doesnt interfere with signals
+        sleep_time = std::min<int>(sleep_time * 2, sleep_ceiling);
       } else {
         sleep_time = 1;
       }

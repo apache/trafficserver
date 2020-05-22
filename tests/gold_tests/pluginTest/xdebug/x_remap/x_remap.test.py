@@ -15,14 +15,15 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test xdebug plugin X-Remap and fwd headers
+Test xdebug plugin X-Remap, Probe and fwd headers
 '''
 
 server = Test.MakeOriginServer("server", options={'--load': (Test.TestDirectory + '/x_remap-observer.py')})
 
 request_header = {
     "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts = Test.MakeATSProcess("ts")
@@ -57,7 +58,7 @@ def sendMsg(msgFile):
 
     tr = Test.AddTestRun()
     tr.Processes.Default.Command = (
-        "( python {}/tcp_client.py 127.0.0.1 {} {}/{}.in".format(
+        "( python3 {}/tcp_client.py 127.0.0.1 {} {}/{}.in".format(
             Test.RunDirectory, ts.Variables.port, Test.TestDirectory, msgFile) +
         " ; echo '======' ) | sed 's/:{}/:SERVER_PORT/' >>  {}/out.log 2>&1 ".format(
             server.Variables.Port, Test.RunDirectory)

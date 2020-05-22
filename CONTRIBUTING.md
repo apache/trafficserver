@@ -56,7 +56,7 @@ are a few simple rules to follow:
    **WIP** label.
 
 8. Make sure you run **clang-format** before making the _PR_. This is easiest
-   done with e.g. "make clang-format", which works on OSX and Linux.
+   done with e.g. "make clang-format", which works on macOS and Linux.
 
 9. When making backports, make sure you mark the _PR_ for the appropriate
    Github branch (e.g. **6.2.x**).

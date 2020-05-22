@@ -30,6 +30,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
+#include "tscore/PluginUserArgs.h"
 #include "tscore/I_Layout.h"
 #include "tscore/I_Version.h"
 
@@ -72,6 +73,7 @@
 #include "records/I_RecCore.h"
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
+#include "shared/overridable_txn_vars.h"
 
 #include "ts/ts.h"
 
@@ -102,22 +104,15 @@ static RecRawStatBlock *api_rsb;
 /** Reservation for a user arg.
  */
 struct UserArg {
-  /// Types of user args.
-  enum Type {
-    TXN,   ///< Transaction based.
-    SSN,   ///< Session based
-    VCONN, ///< VConnection based
-    COUNT  ///< Fake enum, # of valid entries.
-  };
-
+  TSUserArgType type;
   std::string name;        ///< Name of reserving plugin.
   std::string description; ///< Description of use for this arg.
 };
 
-/// Table of reservations, indexed by type and then index.
-UserArg UserArgTable[UserArg::Type::COUNT][TS_HTTP_MAX_USER_ARG];
-/// Table of next reserved index.
-std::atomic<int> UserArgIdx[UserArg::Type::COUNT];
+// Managing the user args tables, and the global storage (which is assumed to be the biggest, by far).
+UserArg UserArgTable[TS_USER_ARGS_COUNT][MAX_USER_ARGS[TS_USER_ARGS_GLB]];
+static PluginUserArgs<TS_USER_ARGS_GLB> global_user_args;
+std::atomic<int> UserArgIdx[TS_USER_ARGS_COUNT]; // Table of next reserved index.
 
 /* URL schemes */
 tsapi const char *TS_URL_SCHEME_FILE;
@@ -1426,16 +1421,21 @@ HttpHookState::is_enabled()
 void
 HttpHookState::Scope::init(HttpAPIHooks const *feature_hooks, TSHttpHookID id)
 {
-  APIHooks const *hooks = (*feature_hooks)[id];
+  _hooks = (*feature_hooks)[id];
 
   _p = nullptr;
-  _c = hooks->head();
+  _c = _hooks->head();
 }
 
 APIHook const *
 HttpHookState::Scope::candidate()
 {
   /// Simply returns _c hook for now. Later will do priority checking here
+
+  // Check to see if a hook has been added since this was initialized empty
+  if (nullptr == _c && nullptr == _p && _hooks != nullptr) {
+    _c = _hooks->head();
+  }
   return _c;
 }
 
@@ -1449,6 +1449,7 @@ HttpHookState::Scope::operator++()
 void
 HttpHookState::Scope::clear()
 {
+  _hooks = nullptr;
   _p = _c = nullptr;
 }
 
@@ -4512,39 +4513,12 @@ TSContDataGet(TSCont contp)
 }
 
 TSAction
-TSContSchedule(TSCont contp, TSHRTime timeout)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
-
-  FORCE_PLUGIN_SCOPED_MUTEX(contp);
-
-  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
-
-  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
-    ink_assert(!"not reached");
-  }
-
-  EThread *eth = i->getThreadAffinity();
-  if (eth == nullptr) {
-    return nullptr;
-  }
-
-  TSAction action;
-  if (timeout == 0) {
-    action = reinterpret_cast<TSAction>(eth->schedule_imm(i));
-  } else {
-    action = reinterpret_cast<TSAction>(eth->schedule_in(i, HRTIME_MSECONDS(timeout)));
-  }
-
-  /* This is a hack. Should be handled in ink_types */
-  action = (TSAction)((uintptr_t)action | 0x1);
-  return action;
-}
-
-TSAction
 TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  /* ensure we are on a EThread */
+  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
@@ -4563,14 +4537,8 @@ TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
   case TS_THREAD_POOL_TASK:
     etype = ET_TASK;
     break;
-  case TS_THREAD_POOL_SSL:
-    etype = ET_TASK; // Should be ET_SSL
-    break;
   case TS_THREAD_POOL_DNS:
     etype = ET_DNS;
-    break;
-  case TS_THREAD_POOL_REMAP:
-    etype = ET_TASK; // Should be ET_REMAP
     break;
   case TS_THREAD_POOL_UDP:
     etype = ET_UDP;
@@ -4625,34 +4593,12 @@ TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
 }
 
 TSAction
-TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */)
-{
-  sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
-
-  FORCE_PLUGIN_SCOPED_MUTEX(contp);
-
-  INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
-
-  if (ink_atomic_increment(static_cast<int *>(&i->m_event_count), 1) < 0) {
-    ink_assert(!"not reached");
-  }
-
-  EThread *eth = i->getThreadAffinity();
-  if (eth == nullptr) {
-    return nullptr;
-  }
-
-  TSAction action = reinterpret_cast<TSAction>(eth->schedule_every(i, HRTIME_MSECONDS(every)));
-
-  /* This is a hack. Should be handled in ink_types */
-  action = (TSAction)((uintptr_t)action | 0x1);
-  return action;
-}
-
-TSAction
 TSContScheduleEveryOnPool(TSCont contp, TSHRTime every, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  /* ensure we are on a EThread */
+  sdk_assert(sdk_sanity_check_null_ptr((void *)this_ethread()) == TS_SUCCESS);
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
@@ -6103,29 +6049,30 @@ TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
   eventProcessor.schedule_imm(cb, ET_NET);
 }
 
-TSReturnCode TSHttpArgIndexNameLookup(UserArg::Type type, const char *name, int *arg_idx, const char **description);
+TSReturnCode TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description);
 
 TSReturnCode
-TSHttpArgIndexReserve(UserArg::Type type, const char *name, const char *description, int *ptr_idx)
+TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *description, int *ptr_idx)
 {
   sdk_assert(sdk_sanity_check_null_ptr(ptr_idx) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(name) == TS_SUCCESS);
-  sdk_assert(0 <= type && type < UserArg::Type::COUNT);
+  sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
 
   int idx;
 
   /* Since this function is meant to be called during plugin initialization we could end up "leaking" indices during plugins reload.
-   * Make sure we allocate 1 index per name, also current TSHttpArgIndexNameLookup() implementation assumes 1-1 relationship as
+   * Make sure we allocate 1 index per name, also current TSUserArgIndexNameLookup() implementation assumes 1-1 relationship as
    * well. */
   const char *desc;
-  if (TS_SUCCESS == TSHttpArgIndexNameLookup(type, name, &idx, &desc)) {
+
+  if (TS_SUCCESS == TSUserArgIndexNameLookup(type, name, &idx, &desc)) {
     // Found existing index.
     *ptr_idx = idx;
     return TS_SUCCESS;
   }
 
   idx       = UserArgIdx[type]++;
-  int limit = (type == UserArg::Type::VCONN) ? TS_VCONN_MAX_USER_ARG : TS_HTTP_MAX_USER_ARG;
+  int limit = MAX_USER_ARGS[type];
 
   if (idx < limit) {
     UserArg &arg(UserArgTable[type][idx]);
@@ -6141,9 +6088,9 @@ TSHttpArgIndexReserve(UserArg::Type type, const char *name, const char *descript
 }
 
 TSReturnCode
-TSHttpArgIndexLookup(UserArg::Type type, int idx, const char **name, const char **description)
+TSUserArgIndexLookup(TSUserArgType type, int idx, const char **name, const char **description)
 {
-  sdk_assert(0 <= type && type < UserArg::Type::COUNT);
+  sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
   if (sdk_sanity_check_null_ptr(name) == TS_SUCCESS) {
     if (idx < UserArgIdx[type]) {
       UserArg &arg(UserArgTable[type][idx]);
@@ -6159,10 +6106,10 @@ TSHttpArgIndexLookup(UserArg::Type type, int idx, const char **name, const char 
 
 // Not particularly efficient, but good enough for now.
 TSReturnCode
-TSHttpArgIndexNameLookup(UserArg::Type type, const char *name, int *arg_idx, const char **description)
+TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description)
 {
   sdk_assert(sdk_sanity_check_null_ptr(arg_idx) == TS_SUCCESS);
-  sdk_assert(0 <= type && type < UserArg::Type::COUNT);
+  sdk_assert(0 <= type && type < TS_USER_ARGS_COUNT);
 
   std::string_view n{name};
 
@@ -6179,85 +6126,113 @@ TSHttpArgIndexNameLookup(UserArg::Type type, const char *name, int *arg_idx, con
 }
 
 // -------------
+void
+TSUserArgSet(void *data, int arg_idx, void *arg)
+{
+  if (nullptr != data) {
+    PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(static_cast<Continuation *>(data));
+    sdk_assert(user_args);
+
+    user_args->set_user_arg(arg_idx, arg);
+  } else {
+    global_user_args.set_user_arg(arg_idx, arg);
+  }
+}
+
+void *
+TSUserArgGet(void *data, int arg_idx)
+{
+  if (nullptr != data) {
+    PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(static_cast<Continuation *>(data));
+    sdk_assert(user_args);
+
+    return user_args->get_user_arg(arg_idx);
+  } else {
+    return global_user_args.get_user_arg(arg_idx);
+  }
+}
+
+// -------------
 TSReturnCode
 TSHttpTxnArgIndexReserve(const char *name, const char *description, int *arg_idx)
 {
-  return TSHttpArgIndexReserve(UserArg::TXN, name, description, arg_idx);
+  return TSUserArgIndexReserve(TS_USER_ARGS_TXN, name, description, arg_idx);
 }
 
 TSReturnCode
 TSHttpTxnArgIndexLookup(int arg_idx, const char **name, const char **description)
 {
-  return TSHttpArgIndexLookup(UserArg::TXN, arg_idx, name, description);
+  return TSUserArgIndexLookup(TS_USER_ARGS_TXN, arg_idx, name, description);
 }
 
 TSReturnCode
 TSHttpTxnArgIndexNameLookup(const char *name, int *arg_idx, const char **description)
 {
-  return TSHttpArgIndexNameLookup(UserArg::TXN, name, arg_idx, description);
+  return TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, name, arg_idx, description);
 }
 
 TSReturnCode
 TSHttpSsnArgIndexReserve(const char *name, const char *description, int *arg_idx)
 {
-  return TSHttpArgIndexReserve(UserArg::SSN, name, description, arg_idx);
+  return TSUserArgIndexReserve(TS_USER_ARGS_SSN, name, description, arg_idx);
 }
 
 TSReturnCode
 TSHttpSsnArgIndexLookup(int arg_idx, const char **name, const char **description)
 {
-  return TSHttpArgIndexLookup(UserArg::SSN, arg_idx, name, description);
+  return TSUserArgIndexLookup(TS_USER_ARGS_SSN, arg_idx, name, description);
 }
 
 TSReturnCode
 TSHttpSsnArgIndexNameLookup(const char *name, int *arg_idx, const char **description)
 {
-  return TSHttpArgIndexNameLookup(UserArg::SSN, name, arg_idx, description);
+  return TSUserArgIndexNameLookup(TS_USER_ARGS_SSN, name, arg_idx, description);
 }
 
 TSReturnCode
 TSVConnArgIndexReserve(const char *name, const char *description, int *arg_idx)
 {
-  return TSHttpArgIndexReserve(UserArg::VCONN, name, description, arg_idx);
+  return TSUserArgIndexReserve(TS_USER_ARGS_VCONN, name, description, arg_idx);
 }
 
 TSReturnCode
 TSVConnArgIndexLookup(int arg_idx, const char **name, const char **description)
 {
-  return TSHttpArgIndexLookup(UserArg::VCONN, arg_idx, name, description);
+  return TSUserArgIndexLookup(TS_USER_ARGS_VCONN, arg_idx, name, description);
 }
 
 TSReturnCode
 TSVConnArgIndexNameLookup(const char *name, int *arg_idx, const char **description)
 {
-  return TSHttpArgIndexNameLookup(UserArg::VCONN, name, arg_idx, description);
+  return TSUserArgIndexNameLookup(TS_USER_ARGS_VCONN, name, arg_idx, description);
 }
 
 void
 TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_TXN]);
 
-  HttpSM *sm                     = reinterpret_cast<HttpSM *>(txnp);
-  sm->t_state.user_args[arg_idx] = arg;
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+
+  sm->set_user_arg(arg_idx, arg);
 }
 
 void *
 TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_TXN]);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return sm->t_state.user_args[arg_idx];
+  return sm->get_user_arg(arg_idx);
 }
 
 void
 TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_SSN]);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
 
@@ -6268,7 +6243,7 @@ void *
 TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_HTTP_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_SSN]);
 
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->get_user_arg(arg_idx);
@@ -6278,19 +6253,22 @@ void
 TSVConnArgSet(TSVConn connp, int arg_idx, void *arg)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_VCONN_MAX_USER_ARG);
-  AnnotatedVConnection *avc = reinterpret_cast<AnnotatedVConnection *>(connp);
-  avc->set_user_arg(arg_idx, arg);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_VCONN]);
+  PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
+  sdk_assert(user_args);
+
+  user_args->set_user_arg(arg_idx, arg);
 }
 
 void *
 TSVConnArgGet(TSVConn connp, int arg_idx)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
-  sdk_assert(arg_idx >= 0 && arg_idx < TS_VCONN_MAX_USER_ARG);
+  sdk_assert(arg_idx >= 0 && static_cast<size_t>(arg_idx) < MAX_USER_ARGS[TS_USER_ARGS_VCONN]);
+  PluginUserArgsMixin *user_args = dynamic_cast<PluginUserArgsMixin *>(reinterpret_cast<VConnection *>(connp));
+  sdk_assert(user_args);
 
-  AnnotatedVConnection *avc = reinterpret_cast<AnnotatedVConnection *>(connp);
-  return avc->get_user_arg(arg_idx);
+  return user_args->get_user_arg(arg_idx);
 }
 
 void
@@ -6777,19 +6755,19 @@ TSHttpConnectTransparent(sockaddr const *client_addr, sockaddr const *server_add
 void
 TSActionCancel(TSAction actionp)
 {
-  Action *a;
+  Action *thisaction;
   INKContInternal *i;
 
   /* This is a hack. Should be handled in ink_types */
   if ((uintptr_t)actionp & 0x1) {
-    a = (Action *)((uintptr_t)actionp - 1);
-    i = (INKContInternal *)a->continuation;
+    thisaction = (Action *)((uintptr_t)actionp - 1);
+    i          = (INKContInternal *)thisaction->continuation;
     i->handle_event_count(EVENT_IMMEDIATE);
   } else {
-    a = (Action *)actionp;
+    thisaction = (Action *)actionp;
   }
 
-  a->cancel();
+  thisaction->cancel();
 }
 
 // Currently no error handling necessary, actionp can be anything.
@@ -7410,7 +7388,7 @@ TSStatFindName(const char *name, int *idp)
 
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
 
-  if (RecGetRecordOrderAndId(name, nullptr, &id) != REC_ERR_OKAY) {
+  if (RecGetRecordOrderAndId(name, nullptr, &id, true, true) != REC_ERR_OKAY) {
     return TS_ERROR;
   }
 
@@ -7447,7 +7425,7 @@ TSIsDebugTagSet(const char *t)
 void
 TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 {
-  if (is_debug_tag_set(tag) || (debug_flag && diags->on())) {
+  if ((debug_flag && diags->on()) || is_debug_tag_set(tag)) {
     va_list ap;
 
     va_start(ap, format_str);
@@ -7486,7 +7464,7 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
   TextLogObject *tlog = new TextLogObject(
     filename, Log::config->logfile_dir, (bool)mode & TS_LOG_MODE_ADD_TIMESTAMP, nullptr, Log::config->rolling_enabled,
     Log::config->preproc_threads, Log::config->rolling_interval_sec, Log::config->rolling_offset_hr, Log::config->rolling_size_mb,
-    Log::config->rolling_max_count, Log::config->rolling_allow_empty);
+    Log::config->rolling_max_count, Log::config->rolling_min_count, Log::config->rolling_allow_empty);
   if (tlog == nullptr) {
     *new_object = nullptr;
     return TS_ERROR;
@@ -7783,34 +7761,6 @@ TSCacheHttpInfoSizeSet(TSCacheHttpInfo infop, int64_t size)
   info->object_size_set(size);
 }
 
-// This API tells the core to follow normal (301/302) redirects using the
-// standard Location: URL. This does not need to be called if you set an
-// explicit URL using TSHttpTxnRedirectUrlSet().
-TSReturnCode
-TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-
-  HttpSM *sm = (HttpSM *)txnp;
-
-  // This is necessary since we might not have setup these overridable configurations
-  sm->t_state.setup_per_txn_configs();
-
-  if (on) {
-    sm->redirection_tries  = 0;
-    sm->enable_redirection = true;
-    // Make sure we allow for at least one redirection.
-    if (sm->t_state.txn_conf->number_of_redirections <= 0) {
-      sm->t_state.txn_conf->number_of_redirections = 1;
-    }
-  } else {
-    sm->enable_redirection                       = false;
-    sm->t_state.txn_conf->number_of_redirections = 0;
-  }
-
-  return TS_SUCCESS;
-}
-
 // this function should be called at TS_EVENT_HTTP_READ_RESPONSE_HDR
 void
 TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
@@ -7834,7 +7784,7 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
   // Make sure we allow for at least one redirection.
   if (sm->t_state.txn_conf->number_of_redirections <= 0) {
     sm->t_state.setup_per_txn_configs();
-    sm->t_state.txn_conf->number_of_redirections = 1;
+    sm->t_state.my_txn_conf().number_of_redirections = 1;
   }
 }
 
@@ -7903,7 +7853,7 @@ TSFetchPages(TSFetchUrlParams_t *params)
   }
 }
 
-void
+TSFetchSM
 TSFetchUrl(const char *headers, int request_len, sockaddr const *ip, TSCont contp, TSFetchWakeUpOptions callback_options,
            TSFetchEvent events)
 {
@@ -7915,6 +7865,15 @@ TSFetchUrl(const char *headers, int request_len, sockaddr const *ip, TSCont cont
 
   fetch_sm->init((Continuation *)contp, callback_options, events, headers, request_len, ip);
   fetch_sm->httpConnect();
+
+  return reinterpret_cast<TSFetchSM>(fetch_sm);
+}
+
+void
+TSFetchFlagSet(TSFetchSM fetch_sm, int flags)
+{
+  sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
+  (reinterpret_cast<FetchSM *>(fetch_sm))->set_fetch_flags(flags);
 }
 
 TSFetchSM
@@ -8026,7 +7985,7 @@ TSHttpTxnIsInternal(TSHttpTxn txnp)
   return TSHttpSsnIsInternal(TSHttpTxnSsnGet(txnp));
 }
 
-void
+TSReturnCode
 TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
@@ -8035,26 +7994,37 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   url_obj.create(nullptr);
   if (url_obj.parse(url, url_len) == PARSE_RESULT_ERROR) {
     url_obj.destroy();
-    return;
+    return TS_ERROR;
   }
 
   HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
   Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
-  if (stream) {
-    Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_proxy_ssn());
-    SCOPED_MUTEX_LOCK(lock, ua_session->mutex, this_ethread());
-    if (!ua_session->connection_state.is_state_closed() && !ua_session->is_url_pushed(url, url_len)) {
-      HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);
-      TSMLoc obj    = reinterpret_cast<TSMLoc>(hptr->m_http);
-
-      MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
-      MIMEField *f    = mime_hdr_field_find(mh, MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
-      stream->push_promise(url_obj, f);
-
-      ua_session->add_url_to_pushed_table(url, url_len);
-    }
+  if (stream == nullptr) {
+    url_obj.destroy();
+    return TS_ERROR;
   }
+
+  Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_proxy_ssn());
+  SCOPED_MUTEX_LOCK(lock, ua_session->mutex, this_ethread());
+  if (ua_session->connection_state.is_state_closed() || ua_session->is_url_pushed(url, url_len)) {
+    url_obj.destroy();
+    return TS_ERROR;
+  }
+
+  HTTPHdr *hptr = &(sm->t_state.hdr_info.client_request);
+  TSMLoc obj    = reinterpret_cast<TSMLoc>(hptr->m_http);
+
+  MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(obj);
+  MIMEField *f    = mime_hdr_field_find(mh, MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
+  if (!stream->push_promise(url_obj, f)) {
+    url_obj.destroy();
+    return TS_ERROR;
+  }
+
+  ua_session->add_url_to_pushed_table(url, url_len);
+
   url_obj.destroy();
+  return TS_SUCCESS;
 }
 
 TSReturnCode
@@ -8184,7 +8154,7 @@ _memberp_to_generic(T *ptr, MgmtConverter const *&conv)
 inline void *
 _memberp_to_generic(MgmtInt *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter converter([](void *data) -> MgmtInt { return *static_cast<MgmtInt *>(data); },
+  static const MgmtConverter converter([](const void *data) -> MgmtInt { return *static_cast<const MgmtInt *>(data); },
                                        [](void *data, MgmtInt i) -> void { *static_cast<MgmtInt *>(data) = i; });
 
   conv = &converter;
@@ -8195,7 +8165,7 @@ _memberp_to_generic(MgmtInt *ptr, MgmtConverter const *&conv)
 inline void *
 _memberp_to_generic(MgmtByte *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter converter{[](void *data) -> MgmtInt { return *static_cast<MgmtByte *>(data); },
+  static const MgmtConverter converter{[](const void *data) -> MgmtInt { return *static_cast<const MgmtByte *>(data); },
                                        [](void *data, MgmtInt i) -> void { *static_cast<MgmtByte *>(data) = i; }};
 
   conv = &converter;
@@ -8206,7 +8176,7 @@ _memberp_to_generic(MgmtByte *ptr, MgmtConverter const *&conv)
 inline void *
 _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv)
 {
-  static const MgmtConverter converter{[](void *data) -> MgmtFloat { return *static_cast<MgmtFloat *>(data); },
+  static const MgmtConverter converter{[](const void *data) -> MgmtFloat { return *static_cast<const MgmtFloat *>(data); },
                                        [](void *data, MgmtFloat f) -> void { *static_cast<MgmtFloat *>(data) = f; }};
 
   conv = &converter;
@@ -8219,8 +8189,9 @@ template <typename E>
 inline auto
 _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std::enable_if<std::is_enum<E>::value, void *>::type
 {
-  static const MgmtConverter converter{[](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<E *>(data)); },
-                                       [](void *data, MgmtInt i) -> void { *static_cast<E *>(data) = static_cast<E>(i); }};
+  static const MgmtConverter converter{
+    [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const E *>(data)); },
+    [](void *data, MgmtInt i) -> void { *static_cast<E *>(data) = static_cast<E>(i); }};
 
   conv = &converter;
   return ptr;
@@ -8576,6 +8547,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret  = &overridableHttpConfig->outbound_conntrack.match;
     conv = &OutboundConnTrack::MATCH_CONV;
     break;
+  case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
+    ret  = &overridableHttpConfig->host_res_data;
+    conv = &HttpTransact::HOST_RES_CONV;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8583,6 +8558,13 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   }
 
   return ret;
+}
+
+// 2nd little helper function to find the struct member for getting.
+static const void *
+_conf_to_memberp(TSOverridableConfigKey conf, const OverridableHttpConfigParams *overridableHttpConfig, MgmtConverter const *&conv)
+{
+  return _conf_to_memberp(conf, const_cast<OverridableHttpConfigParams *>(overridableHttpConfig), conv);
 }
 
 /* APIs to manipulate the overridable configuration options.
@@ -8597,7 +8579,7 @@ TSHttpTxnConfigIntSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt val
 
   s->t_state.setup_per_txn_configs();
 
-  void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
+  void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
 
   if (!dest || !conv->store_int) {
     return TS_ERROR;
@@ -8616,7 +8598,7 @@ TSHttpTxnConfigIntGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtInt *va
 
   HttpSM *s = reinterpret_cast<HttpSM *>(txnp);
   MgmtConverter const *conv;
-  void *src = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
+  const void *src = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
 
   if (!src || !conv->load_int) {
     return TS_ERROR;
@@ -8637,7 +8619,7 @@ TSHttpTxnConfigFloatSet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
 
   s->t_state.setup_per_txn_configs();
 
-  void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
+  void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
 
   if (!dest || !conv->store_float) {
     return TS_ERROR;
@@ -8655,7 +8637,7 @@ TSHttpTxnConfigFloatGet(TSHttpTxn txnp, TSOverridableConfigKey conf, TSMgmtFloat
   sdk_assert(sdk_sanity_check_null_ptr(static_cast<void *>(value)) == TS_SUCCESS);
 
   MgmtConverter const *conv;
-  void *src = _conf_to_memberp(conf, reinterpret_cast<HttpSM *>(txnp)->t_state.txn_conf, conv);
+  const void *src = _conf_to_memberp(conf, reinterpret_cast<HttpSM *>(txnp)->t_state.txn_conf, conv);
 
   if (!src || !conv->load_float) {
     return TS_ERROR;
@@ -8681,29 +8663,29 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
     if (value && length > 0) {
-      s->t_state.txn_conf->proxy_response_server_string     = const_cast<char *>(value); // The "core" likes non-const char*
-      s->t_state.txn_conf->proxy_response_server_string_len = length;
+      s->t_state.my_txn_conf().proxy_response_server_string     = const_cast<char *>(value); // The "core" likes non-const char*
+      s->t_state.my_txn_conf().proxy_response_server_string_len = length;
     } else {
-      s->t_state.txn_conf->proxy_response_server_string     = nullptr;
-      s->t_state.txn_conf->proxy_response_server_string_len = 0;
+      s->t_state.my_txn_conf().proxy_response_server_string     = nullptr;
+      s->t_state.my_txn_conf().proxy_response_server_string_len = 0;
     }
     break;
   case TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER:
     if (value && length > 0) {
-      s->t_state.txn_conf->global_user_agent_header      = const_cast<char *>(value); // The "core" likes non-const char*
-      s->t_state.txn_conf->global_user_agent_header_size = length;
+      s->t_state.my_txn_conf().global_user_agent_header      = const_cast<char *>(value); // The "core" likes non-const char*
+      s->t_state.my_txn_conf().global_user_agent_header_size = length;
     } else {
-      s->t_state.txn_conf->global_user_agent_header      = nullptr;
-      s->t_state.txn_conf->global_user_agent_header_size = 0;
+      s->t_state.my_txn_conf().global_user_agent_header      = nullptr;
+      s->t_state.my_txn_conf().global_user_agent_header_size = 0;
     }
     break;
   case TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE:
     if (value && length > 0) {
-      s->t_state.txn_conf->body_factory_template_base     = const_cast<char *>(value);
-      s->t_state.txn_conf->body_factory_template_base_len = length;
+      s->t_state.my_txn_conf().body_factory_template_base     = const_cast<char *>(value);
+      s->t_state.my_txn_conf().body_factory_template_base_len = length;
     } else {
-      s->t_state.txn_conf->body_factory_template_base     = nullptr;
-      s->t_state.txn_conf->body_factory_template_base_len = 0;
+      s->t_state.my_txn_conf().body_factory_template_base     = nullptr;
+      s->t_state.my_txn_conf().body_factory_template_base_len = 0;
     }
     break;
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
@@ -8711,48 +8693,58 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       ts::LocalBufferWriter<1024> error;
       HttpForwarded::OptionBitSet bs = HttpForwarded::optStrToBitset(std::string_view(value, length), error);
       if (!error.size()) {
-        s->t_state.txn_conf->insert_forwarded = bs;
+        s->t_state.my_txn_conf().insert_forwarded = bs;
       } else {
         Error("HTTP %.*s", static_cast<int>(error.size()), error.data());
       }
     }
     break;
+  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
+    if (value && length > 0) {
+      HttpConfig::load_server_session_sharing_match(value, s->t_state.my_txn_conf().server_session_sharing_match);
+    }
+    break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_verify_server_policy = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_verify_server_policy = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_verify_server_properties = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_verify_server_properties = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_SNI_POLICY:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_sni_policy = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_sni_policy = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_CERT_FILENAME:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_cert_filename = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_cert_filename = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_private_key_filename = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_private_key_filename = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
     if (value && length > 0) {
-      s->t_state.txn_conf->ssl_client_ca_cert_filename = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_ca_cert_filename = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CERT_FILEPATH:
     /* noop */
     break;
+  case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
+    if (value && length > 0) {
+      s->t_state.my_txn_conf().host_res_data.conf_value = const_cast<char *>(value);
+    }
+    [[fallthrough]];
   default: {
     MgmtConverter const *conv;
-    void *dest = _conf_to_memberp(conf, s->t_state.txn_conf, conv);
+    void *dest = _conf_to_memberp(conf, &(s->t_state.my_txn_conf()), conv);
     if (dest != nullptr && conv != nullptr && conv->store_string) {
       conv->store_string(dest, std::string_view(value, length));
     } else {
@@ -8789,7 +8781,7 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   default: {
     MgmtConverter const *conv;
-    void *src = _conf_to_memberp(conf, sm->t_state.txn_conf, conv);
+    const void *src = _conf_to_memberp(conf, sm->t_state.txn_conf, conv);
     if (src != nullptr && conv != nullptr && conv->load_string) {
       auto sv = conv->load_string(src);
       *value  = sv.data();
@@ -8804,142 +8796,6 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   return TS_SUCCESS;
 }
 
-// This is a map of all overridable configurations, with the data type
-static const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigKey, const TSRecordDataType>> Overridable_Map(
-  {{"proxy.config.srv_enabled", {TS_CONFIG_SRV_ENABLED, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.http", {TS_CONFIG_HTTP_CACHE_HTTP, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.ssl.hsts_max_age", {TS_CONFIG_SSL_HSTS_MAX_AGE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.normalize_ae", {TS_CONFIG_HTTP_NORMALIZE_AE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.chunking.size", {TS_CONFIG_HTTP_CHUNKING_SIZE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.ssl.client.cert.path", {TS_CONFIG_SSL_CERT_FILEPATH, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.http.allow_half_open", {TS_CONFIG_HTTP_ALLOW_HALF_OPEN, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.chunking_enabled", {TS_CONFIG_HTTP_CHUNKING_ENABLED, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.generation", {TS_CONFIG_HTTP_CACHE_GENERATION, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.insert_client_ip", {TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.insert_forwarded", {TS_CONFIG_HTTP_INSERT_FORWARDED, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.http.cache.range.write", {TS_CONFIG_HTTP_CACHE_RANGE_WRITE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.allow_multi_range", {TS_CONFIG_HTTP_ALLOW_MULTI_RANGE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.range.lookup", {TS_CONFIG_HTTP_CACHE_RANGE_LOOKUP, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.net.sock_packet_tos_out", {TS_CONFIG_NET_SOCK_PACKET_TOS_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.slow.log.threshold", {TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.max_stale_age", {TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.default_buffer_size", {TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.response_server_str", {TS_CONFIG_HTTP_RESPONSE_SERVER_STR, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.http.keep_alive_post_out", {TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.net.sock_option_flag_out", {TS_CONFIG_NET_SOCK_OPTION_FLAG_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.net.sock_packet_mark_out", {TS_CONFIG_NET_SOCK_PACKET_MARK_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.websocket.active_timeout", {TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.flow_control.enabled", {TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.send_http11_requests", {TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.body_factory.template_base", {TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.http.anonymize_remove_from", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_FROM, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.keep_alive_enabled_in", {TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.doc_in_cache_skip_dns", {TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.forward_connect_method", {TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.request_buffer_enabled", {TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.down_server.cache_time", {TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.insert_age_in_response", {TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.url_remap.pristine_host_hdr", {TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.insert_request_via_str", {TS_CONFIG_HTTP_INSERT_REQUEST_VIA_STR, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.flow_control.low_water", {TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.required_headers", {TS_CONFIG_HTTP_CACHE_REQUIRED_HEADERS, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.ssl.hsts_include_subdomains", {TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.number_of_redirections", {TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.keep_alive_enabled_out", {TS_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.response_server_enabled", {TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.anonymize_remove_cookie", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_COOKIE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.request_header_max_size", {TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.parent_proxy.retry_time", {TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.insert_response_via_str", {TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.flow_control.high_water", {TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.negative_caching_enabled", {TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.when_to_revalidate", {TS_CONFIG_HTTP_CACHE_WHEN_TO_REVALIDATE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.response_header_max_size", {TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.anonymize_remove_referer", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.global_user_agent_header", {TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.net.sock_recv_buffer_size_out", {TS_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.net.sock_send_buffer_size_out", {TS_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.connect_attempts_timeout", {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.websocket.no_activity_timeout", {TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.negative_caching_lifetime", {TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.default_buffer_water_mark", {TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.heuristic_lm_factor", {TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR, TS_RECORDDATATYPE_FLOAT}},
-   {OutboundConnTrack::CONFIG_VAR_MAX, {TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX, TS_RECORDDATATYPE_INT}},
-   {OutboundConnTrack::CONFIG_VAR_MIN, {TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.anonymize_remove_client_ip", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.open_read_retry_time", {TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.down_server.abort_threshold", {TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD, TS_RECORDDATATYPE_INT}},
-   {OutboundConnTrack::CONFIG_VAR_MATCH, {TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.parent_proxy.fail_threshold", {TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.ignore_authentication", {TS_CONFIG_HTTP_CACHE_IGNORE_AUTHENTICATION, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.anonymize_remove_user_agent", {TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.connect_attempts_rr_retries", {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.max_open_read_retries", {TS_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.auth_server_session_private", {TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.redirect_use_orig_cache_key", {TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.ignore_client_no_cache", {TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.ims_on_client_no_cache", {TS_CONFIG_HTTP_CACHE_IMS_ON_CLIENT_NO_CACHE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.ignore_server_no_cache", {TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.heuristic_min_lifetime", {TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.heuristic_max_lifetime", {TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.server_session_sharing.match", {TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.ignore_accept_mismatch", {TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.open_write_fail_action", {TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.insert_squid_x_forwarded_for", {TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.connect_attempts_max_retries", {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.max_open_write_retries", {TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.forward.proxy_auth_to_parent", {TS_CONFIG_HTTP_FORWARD_PROXY_AUTH_TO_PARENT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.parent_proxy.mark_down_hostdb", {TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.negative_revalidating_enabled", {TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.guaranteed_min_lifetime", {TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.guaranteed_max_lifetime", {TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.transaction_active_timeout_in", {TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.post_connect_attempts_timeout", {TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.ignore_client_cc_max_age", {TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_CC_MAX_AGE, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.negative_revalidating_lifetime", {TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.transaction_active_timeout_out", {TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.background_fill_active_timeout", {TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.attach_server_session_to_client", {TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.cache_responses_to_cookies", {TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.keep_alive_no_activity_timeout_in",
-    {TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.post.check.content_length.enabled",
-    {TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.cache_urls_that_look_dynamic",
-    {TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.transaction_no_activity_timeout_in",
-    {TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.keep_alive_no_activity_timeout_out",
-    {TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.uncacheable_requests_bypass_parent",
-    {TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.transaction_no_activity_timeout_out",
-    {TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.background_fill_completed_threshold",
-    {TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD, TS_RECORDDATATYPE_FLOAT}},
-   {"proxy.config.http.parent_proxy.total_connect_attempts",
-    {TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.ignore_accept_charset_mismatch",
-    {TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_CHARSET_MISMATCH, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.ignore_accept_language_mismatch",
-    {TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.cache.ignore_accept_encoding_mismatch",
-    {TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.parent_proxy.connect_attempts_timeout",
-    {TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.connect_attempts_max_retries_dead_server",
-    {TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.http.parent_proxy.per_parent_connect_attempts",
-    {TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.ssl.client.verify.server", {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER, TS_RECORDDATATYPE_INT}},
-   {"proxy.config.ssl.client.verify.server.policy", {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.ssl.client.verify.server.properties", {TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.ssl.client.sni_policy", {TS_CONFIG_SSL_CLIENT_SNI_POLICY, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.ssl.client.cert.filename", {TS_CONFIG_SSL_CLIENT_CERT_FILENAME, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.ssl.client.cert.path", {TS_CONFIG_SSL_CERT_FILEPATH, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.ssl.client.private_key.filename", {TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME, TS_RECORDDATATYPE_STRING}},
-   {"proxy.config.ssl.client.CA.cert.filename", {TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME, TS_RECORDDATATYPE_STRING}}});
-
 TSReturnCode
 TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type)
 {
@@ -8947,11 +8803,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   sdk_assert(sdk_sanity_check_null_ptr(conf) == TS_SUCCESS);
 
   std::string_view name_sv(name, length < 0 ? strlen(name) : length);
-  auto config = Overridable_Map.find(name_sv);
-
-  if (config != Overridable_Map.end()) {
+  if (auto config = ts::Overridable_Txn_Vars.find(name_sv); config != ts::Overridable_Txn_Vars.end()) {
     std::tie(*conf, *type) = config->second;
-
     return TS_SUCCESS;
   }
 
@@ -9104,6 +8957,30 @@ TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
 
   // Make sure these are valid response / requests, then verify if it's cacheable.
   return (req->valid() && resp->valid() && HttpTransact::is_response_cacheable(&(sm->t_state), req, resp)) ? 1 : 0;
+}
+
+int
+TSHttpTxnGetMaxAge(TSHttpTxn txnp, TSMBuffer response)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *)txnp;
+  HTTPHdr *resp;
+
+  if (response) {
+    // Make sure the response we got as a parameter is valid
+    sdk_assert(sdk_sanity_check_mbuffer(response) == TS_SUCCESS);
+    resp = reinterpret_cast<HTTPHdr *>(response);
+  } else {
+    // Use the transactions origin response if the user passed NULL
+    resp = &(sm->t_state.hdr_info.server_response);
+  }
+
+  if (!resp || !resp->valid()) {
+    return -1;
+  }
+
+  // We have a valid response, return max_age
+  return HttpTransact::get_max_age(resp);
 }
 
 // Lookup various debug names for common HTTP types.

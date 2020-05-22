@@ -65,10 +65,10 @@ public:
         @return @c true if the request is matched, @c false if not.
     */
     virtual bool check(HttpRequestData *req ///< Request to check.
-                       ) const = 0;
+    ) const = 0;
     /// Print the mod information.
     virtual void print(FILE *f ///< Output stream.
-                       ) const = 0;
+    ) const = 0;
   };
 
   ControlBase();

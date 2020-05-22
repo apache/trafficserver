@@ -18,7 +18,6 @@ Test one delayed preaccept callback
 #  limitations under the License.
 
 import os
-import re
 
 Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.

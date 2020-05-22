@@ -44,7 +44,7 @@ namespace details
   void
   Schema::updateMemOffsets()
   {
-    ink_release_assert(instance_count == 0);
+    ink_release_assert(cnt_constructed == cnt_destructed);
 
     uint32_t acc_offset = 0;
     alloc_align         = 1;
@@ -86,7 +86,7 @@ namespace details
   bool
   Schema::reset()
   {
-    if (instance_count > 0) {
+    if (cnt_constructed > cnt_destructed) {
       // free instances before calling this so we don't leak memory
       return false;
     }
@@ -99,7 +99,9 @@ namespace details
   Schema::callConstructor(uintptr_t ext_loc)
   {
     ink_assert(ext_loc);
-    ++instance_count; // don't allow schema modification
+    ++cnt_fld_constructed; // don't allow schema modification
+    ink_assert(cnt_fld_constructed <= cnt_constructed);
+
     // init all extendible memory to 0, incase constructors don't
     memset(reinterpret_cast<void *>(ext_loc), 0, alloc_size);
 
@@ -119,7 +121,6 @@ namespace details
         elm.second.destructor(FieldPtr(ext_loc + elm.second.field_offset));
       }
     }
-    --instance_count;
   }
 
   size_t
@@ -132,7 +133,7 @@ namespace details
   bool
   Schema::no_instances() const
   {
-    return instance_count == 0;
+    return cnt_constructed == cnt_destructed;
   }
 } // namespace details
 

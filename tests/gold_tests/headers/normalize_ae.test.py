@@ -18,7 +18,6 @@ Test normalizations of the Accept-Encoding header field.
 #  limitations under the License.
 
 import os
-import subprocess
 
 Test.Summary = '''
 Test normalizations of the Accept-Encoding header field.

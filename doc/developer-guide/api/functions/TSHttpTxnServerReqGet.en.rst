@@ -24,7 +24,9 @@ TSHttpTxnServerReqGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * obj)
 

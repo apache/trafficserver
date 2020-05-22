@@ -52,3 +52,14 @@
 #define ERROR_LOG(fmt, ...)
 
 #endif
+
+#if defined(COLLECT_STATS)
+namespace stats
+{
+extern int DataCreate;
+extern int DataDestroy;
+extern int Reader;
+extern int Server;
+extern int Client;
+} // namespace stats
+#endif // COLLECT_STATS

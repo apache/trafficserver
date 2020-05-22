@@ -18,7 +18,7 @@ BUILD AND INSTALLATION
 Configure & Build from Git source tree:
     $ autoreconf -if  # generate the configure script and Makefile.in files
 
-On Linux, OSX:
+On Linux and macOS:
     $ ./configure [--prefix=PREFIX]
     $ make
 

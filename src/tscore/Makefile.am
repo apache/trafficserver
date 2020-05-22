@@ -19,7 +19,11 @@
 include $(top_srcdir)/build/tidy.mk
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_atomic test_freelist test_geometry test_X509HostnameValidator test_tscore
+check_PROGRAMS = test_geometry test_X509HostnameValidator test_tscore
+
+if EXPENSIVE_TESTS
+check_PROGRAMS += test_atomic test_freelist
+endif
 
 TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(abs_top_srcdir)/ci/asan_leak_suppression/unit_tests.txt
 
@@ -130,12 +134,6 @@ endif
 
 BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
 
-#test_UNUSED_SOURCES = \
-#  load_http_hdr.cc \
-#  IntrusivePtrTest.cc \
-#  IpMapTest.cc \
-#  TestHttpHeader.cc
-
 # Special hacks to generate the parser rules
 $(srcdir)/ParseRules.cc: ParseRulesCType
 
@@ -185,7 +183,9 @@ test_tscore_SOURCES = \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
-	unit_tests/test_ts_file.cc
+	unit_tests/test_Tokenizer.cc \
+	unit_tests/test_ts_file.cc \
+	unit_tests/test_Version.cc
 
 if HAS_HKDF
 test_tscore_SOURCES += \

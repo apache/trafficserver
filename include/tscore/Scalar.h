@@ -826,27 +826,39 @@ Scalar<N, C, T>::operator*=(C n) -> self &
   return *this;
 }
 
-template <intmax_t N, typename C, typename T> Scalar<N, C, T> operator*(Scalar<N, C, T> const &lhs, C n)
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(Scalar<N, C, T> const &lhs, C n)
 {
   return Scalar<N, C, T>(lhs) *= n;
 }
-template <intmax_t N, typename C, typename T> Scalar<N, C, T> operator*(C n, Scalar<N, C, T> const &rhs)
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(C n, Scalar<N, C, T> const &rhs)
 {
   return Scalar<N, C, T>(rhs) *= n;
 }
-template <intmax_t N, typename C, typename T> Scalar<N, C, T> operator*(Scalar<N, C, T> const &lhs, int n)
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(Scalar<N, C, T> const &lhs, int n)
 {
   return Scalar<N, C, T>(lhs) *= n;
 }
-template <intmax_t N, typename C, typename T> Scalar<N, C, T> operator*(int n, Scalar<N, C, T> const &rhs)
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(int n, Scalar<N, C, T> const &rhs)
 {
   return Scalar<N, C, T>(rhs) *= n;
 }
-template <intmax_t N> Scalar<N, int> operator*(Scalar<N, int> const &lhs, int n)
+template <intmax_t N>
+Scalar<N, int>
+operator*(Scalar<N, int> const &lhs, int n)
 {
   return Scalar<N, int>(lhs) *= n;
 }
-template <intmax_t N> Scalar<N, int> operator*(int n, Scalar<N, int> const &rhs)
+template <intmax_t N>
+Scalar<N, int>
+operator*(int n, Scalar<N, int> const &rhs)
 {
   return Scalar<N, int>(rhs) *= n;
 }

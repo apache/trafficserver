@@ -34,3 +34,8 @@ all-local:	$(LOCAL)
 
 clean-local:
 	$(MAKE) -C yamlcpp clean
+
+if EXPORT_YAML_HEADERS
+install-data-local:
+	$(MAKE) -C yamlcpp install
+endif

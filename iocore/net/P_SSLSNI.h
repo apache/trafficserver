@@ -45,6 +45,7 @@ struct NextHopProperty {
   std::string client_key_file;                                                     // full path to client key file for lookup
   YamlSNIConfig::Policy verifyServerPolicy       = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
   YamlSNIConfig::Property verifyServerProperties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
+  bool tls_upstream                              = false;                          // whether the upstream connection should be TLS
 
   SSL_CTX *ctx = nullptr; // ctx generated off the certificate to present to this server
   NextHopProperty() {}
@@ -66,7 +67,7 @@ public:
     }
     pos = 0;
     while ((pos = name.find('*', pos)) != std::string::npos) {
-      name.replace(pos, 1, ".{0,}");
+      name.replace(pos, 1, "(.{0,})");
     }
     Debug("ssl_sni", "Regexed fqdn=%s", name.c_str());
     setRegexName(name);
@@ -111,7 +112,7 @@ struct SNIConfigParams : public ConfigInfo {
   void cleanup();
   int Initialize();
   void loadSNIConfig();
-  const actionVector *get(const std::string &servername) const;
+  std::pair<const actionVector *, ActionItem::Context> get(const std::string &servername) const;
 };
 
 struct SNIConfig {
@@ -121,6 +122,8 @@ struct SNIConfig {
   static void release(SNIConfigParams *params);
 
   typedef ConfigProcessor::scoped_config<SNIConfig, SNIConfigParams> scoped_config;
+
+  static bool TestClientAction(const char *servername, const IpEndpoint &ep, int &enforcement_policy);
 
 private:
   static int configid;

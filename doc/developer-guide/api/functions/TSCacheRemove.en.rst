@@ -24,7 +24,9 @@ TSCacheRemove
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSAction TSCacheRemove(TSCont contp, TSCacheKey key)
 

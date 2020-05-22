@@ -44,6 +44,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
+#include "tscore/ink_resolver.h"
 #include "tscore/IpMap.h"
 #include "tscore/Regex.h"
 #include "string_view"
@@ -121,7 +122,6 @@ enum {
   http_cache_deletes_stat,
 
   http_tunnels_stat,
-  http_throttled_proxy_only_stat,
 
   // document size stats
   http_user_agent_request_header_total_size_stat,
@@ -331,6 +331,16 @@ enum {
   http_stat_count
 };
 
+enum CacheOpenWriteFailAction_t {
+  CACHE_WL_FAIL_ACTION_DEFAULT                           = 0x00,
+  CACHE_WL_FAIL_ACTION_ERROR_ON_MISS                     = 0x01,
+  CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE               = 0x02,
+  CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE = 0x03,
+  CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE       = 0x04,
+  CACHE_WL_FAIL_ACTION_READ_RETRY                        = 0x05,
+  TOTAL_CACHE_WL_FAIL_ACTION_TYPES
+};
+
 extern RecRawStatBlock *http_rsb;
 
 /* Stats should only be accessed using these macros */
@@ -455,9 +465,8 @@ struct OverridableHttpConfigParams {
   MgmtByte keep_alive_enabled_out = 1;
   MgmtByte keep_alive_post_out    = 1; // share server sessions for post
 
-  MgmtInt server_min_keep_alive_conns   = 0;
-  MgmtByte server_session_sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
-  //  MgmtByte share_server_sessions;
+  MgmtInt server_min_keep_alive_conns         = 0;
+  MgmtByte server_session_sharing_match       = 0;
   MgmtByte auth_server_session_private        = 1;
   MgmtByte fwd_proxy_auth_to_parent           = 0;
   MgmtByte uncacheable_requests_bypass_parent = 1;
@@ -553,9 +562,9 @@ struct OverridableHttpConfigParams {
   /////////////////////////////////////////////////
   MgmtByte allow_half_open = 1;
 
-  /////////////////////////////
-  // server verification mode//
-  /////////////////////////////
+  //////////////////////////////
+  // server verification mode //
+  //////////////////////////////
   MgmtByte ssl_client_verify_server         = 0;
   char *ssl_client_verify_server_policy     = nullptr;
   char *ssl_client_verify_server_properties = nullptr;
@@ -661,7 +670,7 @@ struct OverridableHttpConfigParams {
   size_t proxy_response_server_string_len = 0;       // Updated when server_string is set.
 
   ///////////////////////////////////////////////////////////////////
-  // Global User Agent header                                                 //
+  // Global User Agent header                                      //
   ///////////////////////////////////////////////////////////////////
   char *global_user_agent_header       = nullptr; // This does not get free'd by us!
   size_t global_user_agent_header_size = 0;       // Updated when user_agent is set.
@@ -673,6 +682,9 @@ struct OverridableHttpConfigParams {
   char *ssl_client_cert_filename        = nullptr;
   char *ssl_client_private_key_filename = nullptr;
   char *ssl_client_ca_cert_filename     = nullptr;
+
+  // Host Resolution order
+  HostResData host_res_data;
 };
 
 /////////////////////////////////////////////////////////////
@@ -788,6 +800,8 @@ public:
   MgmtInt http_request_line_max_size = 65535;
   MgmtInt http_hdr_field_max_size    = 131070;
 
+  MgmtByte http_host_sni_policy = 0;
+
   // noncopyable
   /////////////////////////////////////
   // operator = and copy constructor //
@@ -810,6 +824,8 @@ public:
 
   inkcoreapi static HttpConfigParams *acquire();
   inkcoreapi static void release(HttpConfigParams *params);
+
+  static bool load_server_session_sharing_match(const char *key, MgmtByte &mask);
 
   // parse ssl ports configuration string
   static HttpConfigPortRange *parse_ports_list(char *ports_str);
@@ -847,7 +863,33 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(redirect_actions_string);
   ats_free(oride.ssl_client_sni_policy);
+  ats_free(oride.host_res_data.conf_value);
 
   delete connect_ports;
   delete redirect_actions_map;
 }
+
+/** Enable a dynamic configuration variable.
+ *
+ * @param name Configuration var name.
+ * @param cb Callback to do the actual update of the master record.
+ * @param cookie Extra data for @a cb
+ *
+ * The purpose of this is to unite the different ways and times a configuration variable needs
+ * to be loaded. These are
+ * - Process start.
+ * - Dynamic update.
+ * - Plugin API update.
+ *
+ * @a cb is expected to perform the update. It must return a @c bool which is
+ * - @c true if the value was changed.
+ * - @c false if the value was not changed.
+ *
+ * Based on that, a run time configuration update is triggered or not.
+ *
+ * In addition, this invokes @a cb and passes it the information in the configuration variable
+ * global table in order to perform the initial loading of the value. No update is triggered for
+ * that call as it is not needed.
+ *
+ */
+extern void Enable_Config_Var(std::string_view const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie);

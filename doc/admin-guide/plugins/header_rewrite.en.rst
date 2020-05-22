@@ -193,7 +193,7 @@ COOKIE
 
     cond %{COOKIE:<name>} <operand>
 
-Value of of the cookie ``<name>``. This does not expose or match against a
+Value of the cookie ``<name>``. This does not expose or match against a
 cookie's expiration, the domain(s) on which it is valid, whether it is protocol
 restricted, or any of the other metadata; simply the current value of the
 cookie as presented by the client.
@@ -562,7 +562,7 @@ be specified multiple times, such as ``Set-Cookie``, but for headers which may
 only be specified once you may prefer to use `set-header`_ instead.
 
 The header's ``<value>`` may be specified as a literal string, or it may take
-advantage of :ref:`header-rewrite-concatenations` to calculate a dynamic value
+advantage of `String concatenations`_ to calculate a dynamic value
 for the header.
 
 counter
@@ -675,9 +675,8 @@ set-header
 Replaces the value of header ``<name>`` with ``<value>``, creating the header
 if necessary.
 
-The header's ``<value>`` may be specified according to `Header Values`_ or take
-advantage of :ref:`header-rewrite-concatenations` to calculate a dynamic value
-for the header.
+The header's ``<value>`` may be a literal string, or take advantage of
+`String concatenations`_ to calculate a dynamic value for the header.
 
 set-redirect
 ~~~~~~~~~~~~
@@ -689,7 +688,7 @@ When invoked, sends a redirect response to the client, with HTTP status
 ``<code>``, and a new location of ``<destination>``. If the ``QSA`` flag is
 enabled, the original query string will be preserved and added to the new
 location automatically. This operator supports
-:ref:`header-rewrite-concatenations` for ``<destination>``.
+`String concatenations`_ for ``<destination>``.
 
 set-status
 ~~~~~~~~~~
@@ -760,8 +759,6 @@ L      Last rule, do not continue.
 QSA    Append the results of the rule to the query string.
 ====== ========================================================================
 
-.. _header-rewrite-concatenations:
-
 String concatenations
 ---------------------
 
@@ -769,7 +766,8 @@ You can concatenate values using strings, condition values and variable expansio
 
     add-header CustomHeader "Hello from %{IP:SERVER}:%{INBOUND:LOCAL-PORT}"
 
-String concatenation is not yet supported in condition testing.
+This is the new, generic form of setting header values. Unfortunately, string
+concatenation is not yet supported in conditionals.
 
 Note: In versions prior to ATS v9.0.0, an alternative string expansion was available. those
 expansions are no longer available, but the following table can help migrations:
@@ -785,24 +783,6 @@ Old expansion variable   Condition variable to use with concatenations
 %<cque>                  %[CLIENT-URL}
 %<cquup>                 %{CLIENT-URL:PATH}
 ======================== ==========================================================================
-
-Header Values
--------------
-
-Setting a header with a value can take the following formats:
-
-- Any `condition <Conditions>`_ which extracts a value from the request.
-
-- ``$N``, where 0 <= N <= 9, from matching groups in a regular expression.
-
-- A string (which can contain the numbered matches from a regular expression as
-  described above).
-
-- Null.
-
-Supplying no value for a header for certain operators can lead to an effective
-no-op. In particular, `add-header`_ and `set-header`_ will simply short-circuit
-if no value has been supplied for the named header.
 
 URL Parts
 ---------
@@ -822,7 +802,9 @@ Part     Description
 HOST     Full hostname.
 
 PATH     URL substring beginning with (but not including) the first ``/`` after
-         the hostname up to, but not including, the query string.
+         the hostname up to, but not including, the query string. **Note**: previous
+         versions of ATS had a `%{PATH}` directive, this will no longer work. Instead,
+         you want to use `%{CLIENT-URL:PATH}`.
 
 PORT     Port number.
 
@@ -878,7 +860,7 @@ one forces the beginning of a new ruleset.
      node[shape=record];
 
      Client[height=4, label="{ Client|{<p1>|<p2>} }"];
-     ATS[height=4, fontsize=10,label="{ {{<clientside0>Global:\nREAD_REQUEST_PRE_REMAP_HOOK|<clientside01>Global:\nREAD_REQUEST_HDR_HOOK\nRemap rule:\nREMAP_PSEUDO_HOOK}|<clientside1>SEND_RESPONSE_HDR_HOOK}|ATS |{<originside0>SEND_REQUEST_HDR_HOOK|<originside1>READ_RESPONSE_HDR_HOOK} }",xlabel="ATS"];
+     ATS[height=4, fontsize=10,label="{ {{<clientside0>Global:\nREAD_REQUEST_HDR_HOOK\nREAD_REQUEST_PRE_REMAP_HOOK|<clientside01>Remap rule:\nREMAP_PSEUDO_HOOK}|<clientside1>SEND_RESPONSE_HDR_HOOK}|ATS |{<originside0>SEND_REQUEST_HDR_HOOK|<originside1>READ_RESPONSE_HDR_HOOK} }",xlabel="ATS"];
      Origin[height=4, label="{ {<request>|<response>}|Origin }"];
 
      Client:p1 -> ATS:clientside0 [ label = "Request" ];
@@ -931,7 +913,7 @@ READ_RESPONSE_HDR_HOOK
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Rulesets evaluated within this context will process only once the origin server
-response (or cached response) has been read, but prior to |TS| sending that
+response has been read, but prior to |TS| sending that
 response to the client.
 
 This is the default hook condition for all globally-configured rulesets.

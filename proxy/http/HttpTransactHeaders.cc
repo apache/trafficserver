@@ -253,10 +253,6 @@ HttpTransactHeaders::convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing
     convert_to_1_0_request_header(outgoing_request);
   } else if (outgoing_ver == HTTPVersion(1, 1)) {
     convert_to_1_1_request_header(outgoing_request);
-  } else if (outgoing_ver == HTTPVersion(0, 9)) {
-    // Http 0.9 is a special case - do not bother copying over fields,
-    // because they will all need to be removed anyway.
-    convert_to_0_9_request_header(outgoing_request);
   } else {
     Debug("http_trans", "[HttpTransactHeaders::convert_request]"
                         "Unsupported Version - passing through");
@@ -272,29 +268,10 @@ HttpTransactHeaders::convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoin
     convert_to_1_0_response_header(outgoing_response);
   } else if (outgoing_ver == HTTPVersion(1, 1)) {
     convert_to_1_1_response_header(outgoing_response);
-  } else if (outgoing_ver == HTTPVersion(0, 9)) {
-    // Http 0.9 is a special case - do not bother copying over fields,
-    // because they will all need to be removed anyway.
-    convert_to_0_9_response_header(outgoing_response);
   } else {
     Debug("http_trans", "[HttpTransactHeaders::convert_response]"
                         "Unsupported Version - passing through");
   }
-}
-
-////////////////////////////////////////////////////////////////////////
-// Take an existing outgoing request header and make it HTTP/0.9
-void
-HttpTransactHeaders::convert_to_0_9_request_header(HTTPHdr *outgoing_request)
-{
-  // These are required
-  ink_assert(outgoing_request->method_get_wksidx() == HTTP_WKSIDX_GET);
-  ink_assert(outgoing_request->url_get()->valid());
-
-  outgoing_request->version_set(HTTPVersion(0, 9));
-
-  // HTTP/0.9 has no headers: nuke them all
-  outgoing_request->fields_clear();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -336,20 +313,6 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr *outgoing_request)
   // so specify that response should use identity transfer coding.
   // outgoing_request->value_insert(MIME_FIELD_TE, "identity;q=1.0");
   // outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
-}
-
-////////////////////////////////////////////////////////////////////////
-// Take an existing outgoing response header and make it HTTP/0.9
-void
-HttpTransactHeaders::convert_to_0_9_response_header(HTTPHdr * /* outgoing_response ATS_UNUSED */)
-{
-  // Http 0.9 does not require a response header.
-
-  // There used to be clear header here, but the state machine
-  // does not write down the response header if the client is
-  // 0.9. We need the header fields to make decisions about
-  // the size of the response body, however.
-  // There is therefore no need to clear the header.
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -475,12 +438,6 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
   if (outgoing_request->version_get() == HTTPVersion(1, 1)) {
     // ver.set (HTTPVersion (1, 0));
     convert_to_1_0_request_header(outgoing_request);
-
-    // bz48199: only GET requests can be downgraded to HTTP/0.9
-  } else if (outgoing_request->version_get() == HTTPVersion(1, 0) && outgoing_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
-    // ver.set (HTTPVersion (0, 9));
-    convert_to_0_9_request_header(outgoing_request);
-
   } else {
     return false;
   }
@@ -961,7 +918,7 @@ HttpTransactHeaders::remove_host_name_from_url(HTTPHdr *outgoing_request)
 }
 
 void
-HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
+HttpTransactHeaders::add_global_user_agent_header_to_request(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (http_txn_conf->global_user_agent_header) {
     MIMEField *ua_field;
@@ -1160,7 +1117,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 } // end HttpTransact::add_forwarded_field_to_outgoing_request()
 
 void
-HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
+HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (http_txn_conf->proxy_response_server_enabled && http_txn_conf->proxy_response_server_string) {
     MIMEField *ua_field;
@@ -1186,7 +1143,7 @@ HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *
 
 void
 HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
-                                                         OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
+                                                         const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (!header) {
     return;

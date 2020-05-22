@@ -27,11 +27,13 @@
 #include "tscore/ink_resolver.h"
 #include "tscore/TSSystemState.h"
 #include <string_view>
+#include <memory>
 #include "P_Net.h"
 #include "InkAPIInternal.h"
 #include "http/Http1ServerSession.h"
 #include "http/HttpSessionAccept.h"
 #include "IPAllow.h"
+#include "private/SSLProxySession.h"
 
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
@@ -72,10 +74,11 @@ struct ProxyError {
 };
 
 /// Abstract class for HttpSM to interface with any session
-class ProxySession : public VConnection
+class ProxySession : public VConnection, public PluginUserArgs<TS_USER_ARGS_SSN>
 {
 public:
   ProxySession();
+  ProxySession(NetVConnection *vc);
 
   // noncopyable
   ProxySession(ProxySession &) = delete;
@@ -97,7 +100,7 @@ public:
   virtual void decrement_current_active_client_connections_stat() = 0;
 
   // Virtual Accessors
-  virtual NetVConnection *get_netvc() const       = 0;
+  NetVConnection *get_netvc() const;
   virtual int get_transact_count() const          = 0;
   virtual const char *get_protocol_string() const = 0;
 
@@ -122,11 +125,7 @@ public:
   virtual const char *protocol_contains(std::string_view tag_prefix) const;
 
   // Non-Virtual Methods
-  void do_api_callout(TSHttpHookID id);
-
-  // Non-Virtual Accessors
-  void *get_user_arg(unsigned ix) const;
-  void set_user_arg(unsigned ix, void *arg);
+  int do_api_callout(TSHttpHookID id);
 
   void set_debug(bool flag);
   bool debug() const;
@@ -141,8 +140,20 @@ public:
   TSHttpHookID get_hookid() const;
   bool has_hooks() const;
 
+  virtual bool support_sni() const;
+
   APIHook *hook_get(TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
+
+  // Returns null pointer if session does not use a TLS connection.
+  SSLProxySession const *ssl() const;
+
+  // Implement VConnection interface
+  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
+  void do_io_shutdown(ShutdownHowTo_t howto) override;
+  void reenable(VIO *vio) override;
+
   ////////////////////
   // Members
 
@@ -167,44 +178,36 @@ protected:
   int64_t con_id        = 0;
   Event *schedule_event = nullptr;
 
+  // This function should be called in all overrides of new_connection() where
+  // the new_vc may be an SSLNetVConnection object.
+  void _handle_if_ssl(NetVConnection *new_vc);
+
+  NetVConnection *_vc = nullptr; // The netvc associated with the concrete session class
+
 private:
   void handle_api_return(int event);
   int state_api_callout(int event, void *edata);
 
   APIHook const *cur_hook = nullptr;
   HttpAPIHooks api_hooks;
-  void *user_args[TS_HTTP_MAX_USER_ARG];
 
   // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to
   // be active until the transaction goes through or the client
   // aborts.
   bool m_active = false;
+
+  std::unique_ptr<SSLProxySession> _ssl;
+  static inline int64_t next_cs_id = 0;
 };
 
 ///////////////////
 // INLINE
 
-static inline int64_t next_cs_id = 0;
-
 inline int64_t
 ProxySession::next_connection_id()
 {
   return ink_atomic_increment(&next_cs_id, 1);
-}
-
-inline void *
-ProxySession::get_user_arg(unsigned ix) const
-{
-  ink_assert(ix < countof(user_args));
-  return this->user_args[ix];
-}
-
-inline void
-ProxySession::set_user_arg(unsigned ix, void *arg)
-{
-  ink_assert(ix < countof(user_args));
-  user_args[ix] = arg;
 }
 
 inline void
@@ -266,4 +269,16 @@ inline bool
 ProxySession::has_hooks() const
 {
   return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
+}
+
+inline SSLProxySession const *
+ProxySession::ssl() const
+{
+  return _ssl.get();
+}
+
+inline NetVConnection *
+ProxySession::get_netvc() const
+{
+  return _vc;
 }

@@ -18,17 +18,26 @@
 
 #include <openssl/md5.h>
 #include <openssl/sha.h>
+#include <openssl/hmac.h>
 #include "ts_lua_string.h"
 #include "ts_lua_util.h"
 
 #define TS_LUA_MD5_DIGEST_LENGTH 16
-#define TS_LUA_SHA_DIGEST_LENGTH 20
+#define TS_LUA_SHA1_DIGEST_LENGTH 20
+#define TS_LUA_SHA256_DIGEST_LENGTH 32
 
 static int ts_lua_md5(lua_State *L);
 static int ts_lua_md5_bin(lua_State *L);
 
 static int ts_lua_sha1(lua_State *L);
 static int ts_lua_sha1_bin(lua_State *L);
+
+static int ts_lua_sha256(lua_State *L);
+static int ts_lua_sha256_bin(lua_State *L);
+
+static int ts_lua_hmac_md5(lua_State *L);
+static int ts_lua_hmac_sha1(lua_State *L);
+static int ts_lua_hmac_sha256(lua_State *L);
 
 static int ts_lua_base64_encode(lua_State *L);
 static int ts_lua_base64_decode(lua_State *L);
@@ -47,13 +56,33 @@ ts_lua_inject_crypto_api(lua_State *L)
   lua_pushcfunction(L, ts_lua_md5_bin);
   lua_setfield(L, -2, "md5_bin");
 
-  /* ts.sha1_bin(...) */
+  /* ts.sha1(...) */
   lua_pushcfunction(L, ts_lua_sha1);
   lua_setfield(L, -2, "sha1");
 
   /* ts.sha1_bin(...) */
   lua_pushcfunction(L, ts_lua_sha1_bin);
   lua_setfield(L, -2, "sha1_bin");
+
+  /* ts.sha256(...) */
+  lua_pushcfunction(L, ts_lua_sha256);
+  lua_setfield(L, -2, "sha256");
+
+  /* ts.sha256_bin(...) */
+  lua_pushcfunction(L, ts_lua_sha256_bin);
+  lua_setfield(L, -2, "sha256_bin");
+
+  /* ts.hmac_md5(...) */
+  lua_pushcfunction(L, ts_lua_hmac_md5);
+  lua_setfield(L, -2, "hmac_md5");
+
+  /* ts.hmac_sha1(...) */
+  lua_pushcfunction(L, ts_lua_hmac_sha1);
+  lua_setfield(L, -2, "hmac_sha1");
+
+  /* ts.hmac_sha256(...) */
+  lua_pushcfunction(L, ts_lua_hmac_sha256);
+  lua_setfield(L, -2, "hmac_sha256");
 
   /* ts.base64_encode(...) */
   lua_pushcfunction(L, ts_lua_base64_encode);
@@ -142,7 +171,7 @@ ts_lua_sha1(lua_State *L)
   size_t slen;
 
   SHA_CTX sha;
-  u_char sha_buf[TS_LUA_SHA_DIGEST_LENGTH];
+  u_char sha_buf[TS_LUA_SHA1_DIGEST_LENGTH];
   u_char hex_buf[2 * sizeof(sha_buf)];
 
   if (lua_gettop(L) != 1) {
@@ -174,7 +203,7 @@ ts_lua_sha1_bin(lua_State *L)
   size_t slen;
 
   SHA_CTX sha;
-  u_char sha_buf[TS_LUA_SHA_DIGEST_LENGTH];
+  u_char sha_buf[TS_LUA_SHA1_DIGEST_LENGTH];
 
   if (lua_gettop(L) != 1) {
     return luaL_error(L, "expecting one argument");
@@ -194,6 +223,233 @@ ts_lua_sha1_bin(lua_State *L)
 
   lua_pushlstring(L, (char *)sha_buf, sizeof(sha_buf));
 
+  return 1;
+}
+
+static int
+ts_lua_sha256(lua_State *L)
+{
+  u_char *src;
+  size_t slen;
+
+  SHA256_CTX sha;
+  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
+  u_char hex_buf[2 * sizeof(sha_buf)];
+
+  if (lua_gettop(L) != 1) {
+    return luaL_error(L, "expecting one argument");
+  }
+
+  if (lua_isnil(L, 1)) {
+    src  = (u_char *)"";
+    slen = 0;
+
+  } else {
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
+  }
+
+  SHA256_Init(&sha);
+  SHA256_Update(&sha, src, slen);
+  SHA256_Final(sha_buf, &sha);
+
+  ts_lua_hex_dump(hex_buf, sha_buf, sizeof(sha_buf));
+  lua_pushlstring(L, (char *)hex_buf, sizeof(hex_buf));
+
+  return 1;
+}
+
+static int
+ts_lua_sha256_bin(lua_State *L)
+{
+  u_char *src;
+  size_t slen;
+
+  SHA256_CTX sha;
+  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
+
+  if (lua_gettop(L) != 1) {
+    return luaL_error(L, "expecting one argument");
+  }
+
+  if (lua_isnil(L, 1)) {
+    src  = (u_char *)"";
+    slen = 0;
+
+  } else {
+    src = (u_char *)luaL_checklstring(L, 1, &slen);
+  }
+
+  SHA256_Init(&sha);
+  SHA256_Update(&sha, src, slen);
+  SHA256_Final(sha_buf, &sha);
+
+  lua_pushlstring(L, (char *)sha_buf, sizeof(sha_buf));
+
+  return 1;
+}
+
+static int
+ts_lua_hmac_md5(lua_State *L)
+{
+  u_char *key;
+  u_char *src;
+  size_t klen;
+  size_t slen;
+
+  unsigned char *key_bin;
+  unsigned int key_bin_len;
+
+  u_char sha_buf[TS_LUA_MD5_DIGEST_LENGTH];
+  u_char hex_buf[2 * sizeof(sha_buf)];
+  unsigned int output_length;
+
+  if (lua_gettop(L) != 2) {
+    return luaL_error(L, "expecting two arguments");
+  }
+
+  if (lua_isnil(L, 1)) {
+    key  = (u_char *)"";
+    klen = 0;
+
+  } else {
+    key = (u_char *)luaL_checklstring(L, 1, &klen);
+  }
+
+  if (lua_isnil(L, 2)) {
+    src  = (u_char *)"";
+    slen = 0;
+
+  } else {
+    src = (u_char *)luaL_checklstring(L, 2, &slen);
+  }
+
+  key_bin = TSmalloc((int)((klen / 2) + 1));
+  if (key_bin == NULL) {
+    TSDebug(TS_LUA_DEBUG_TAG, "unable to allocate buffer for hex to binary conversion");
+    return luaL_error(L, "unable to allocate buffer for hex to binary conversion");
+  }
+  if (ts_lua_hex_to_bin(key_bin, key, klen) == NULL) {
+    TSfree(key_bin);
+    return luaL_error(L, "hex to binary conversion failed");
+  }
+  key_bin_len = klen / 2;
+
+  HMAC(EVP_md5(), key_bin, key_bin_len, src, slen, sha_buf, &output_length);
+
+  ts_lua_hex_dump(hex_buf, sha_buf, sizeof(sha_buf));
+  lua_pushlstring(L, (char *)hex_buf, sizeof(hex_buf));
+
+  TSfree(key_bin);
+  return 1;
+}
+
+static int
+ts_lua_hmac_sha1(lua_State *L)
+{
+  u_char *key;
+  u_char *src;
+  size_t klen;
+  size_t slen;
+
+  unsigned char *key_bin;
+  unsigned int key_bin_len;
+
+  u_char sha_buf[TS_LUA_SHA1_DIGEST_LENGTH];
+  u_char hex_buf[2 * sizeof(sha_buf)];
+  unsigned int output_length;
+
+  if (lua_gettop(L) != 2) {
+    return luaL_error(L, "expecting two arguments");
+  }
+
+  if (lua_isnil(L, 1)) {
+    key  = (u_char *)"";
+    klen = 0;
+
+  } else {
+    key = (u_char *)luaL_checklstring(L, 1, &klen);
+  }
+
+  if (lua_isnil(L, 2)) {
+    src  = (u_char *)"";
+    slen = 0;
+
+  } else {
+    src = (u_char *)luaL_checklstring(L, 2, &slen);
+  }
+
+  key_bin = TSmalloc((int)((klen / 2) + 1));
+  if (key_bin == NULL) {
+    TSDebug(TS_LUA_DEBUG_TAG, "unable to allocate buffer for hex to binary conversion");
+    return luaL_error(L, "unable to allocate buffer for hex to binary conversion");
+  }
+  if (ts_lua_hex_to_bin(key_bin, key, klen) == NULL) {
+    TSfree(key_bin);
+    return luaL_error(L, "hex to binary conversion failed");
+  }
+  key_bin_len = klen / 2;
+
+  HMAC(EVP_sha1(), key_bin, key_bin_len, src, slen, sha_buf, &output_length);
+
+  ts_lua_hex_dump(hex_buf, sha_buf, sizeof(sha_buf));
+  lua_pushlstring(L, (char *)hex_buf, sizeof(hex_buf));
+
+  TSfree(key_bin);
+  return 1;
+}
+
+static int
+ts_lua_hmac_sha256(lua_State *L)
+{
+  u_char *key;
+  u_char *src;
+  size_t klen;
+  size_t slen;
+
+  unsigned char *key_bin;
+  unsigned int key_bin_len;
+
+  u_char sha_buf[TS_LUA_SHA256_DIGEST_LENGTH];
+  u_char hex_buf[2 * sizeof(sha_buf)];
+  unsigned int output_length;
+
+  if (lua_gettop(L) != 2) {
+    return luaL_error(L, "expecting two arguments");
+  }
+
+  if (lua_isnil(L, 1)) {
+    key  = (u_char *)"";
+    klen = 0;
+
+  } else {
+    key = (u_char *)luaL_checklstring(L, 1, &klen);
+  }
+
+  if (lua_isnil(L, 2)) {
+    src  = (u_char *)"";
+    slen = 0;
+
+  } else {
+    src = (u_char *)luaL_checklstring(L, 2, &slen);
+  }
+
+  key_bin = TSmalloc((int)((klen / 2) + 1));
+  if (key_bin == NULL) {
+    TSDebug(TS_LUA_DEBUG_TAG, "unable to allocate buffer for hex to binary conversion");
+    return luaL_error(L, "unable to allocate buffer for hex to binary conversion");
+  }
+  if (ts_lua_hex_to_bin(key_bin, key, klen) == NULL) {
+    TSfree(key_bin);
+    return luaL_error(L, "hex to binary conversion failed");
+  }
+  key_bin_len = klen / 2;
+
+  HMAC(EVP_sha256(), key_bin, key_bin_len, src, slen, sha_buf, &output_length);
+
+  ts_lua_hex_dump(hex_buf, sha_buf, sizeof(sha_buf));
+  lua_pushlstring(L, (char *)hex_buf, sizeof(hex_buf));
+
+  TSfree(key_bin);
   return 1;
 }
 
@@ -316,8 +572,8 @@ ts_lua_unescape_uri(lua_State *L)
     return 1;
   }
 
-  /* the unescaped string can only be smaller */
-  dlen = len;
+  /* the unescaped string can not be larger, but need to account for terminating null. */
+  dlen = len + 1;
   dst  = lua_newuserdata(L, dlen);
 
   if (TS_SUCCESS == TSStringPercentDecode((const char *)src, len, (char *)dst, dlen, &length)) {

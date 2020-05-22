@@ -65,10 +65,15 @@ configure_net()
   REC_ReadConfigStringAlloc(ccp, "proxy.config.net.tcp_congestion_control_in");
   if (ccp && *ccp != '\0') {
     net_ccp_in = ccp;
+  } else {
+    ats_free(ccp);
   }
+
   REC_ReadConfigStringAlloc(ccp, "proxy.config.net.tcp_congestion_control_out");
   if (ccp && *ccp != '\0') {
     net_ccp_out = ccp;
+  } else {
+    ats_free(ccp);
   }
 }
 
@@ -97,7 +102,8 @@ register_net_stats()
   const std::pair<const char *, Net_Stats> non_persistent[] = {
     {"proxy.process.net.accepts_currently_open", net_accepts_currently_open_stat},
     {"proxy.process.net.connections_currently_open", net_connections_currently_open_stat},
-    {"proxy.process.net.default_inactivity_timeout_applied", default_inactivity_timeout_stat},
+    {"proxy.process.net.default_inactivity_timeout_applied", default_inactivity_timeout_applied_stat},
+    {"proxy.process.net.default_inactivity_timeout_count", default_inactivity_timeout_count_stat},
     {"proxy.process.net.dynamic_keep_alive_timeout_in_count", keep_alive_queue_timeout_count_stat},
     {"proxy.process.net.dynamic_keep_alive_timeout_in_total", keep_alive_queue_timeout_total_stat},
     {"proxy.process.socks.connections_currently_open", socks_connections_currently_open_stat},
@@ -125,7 +131,8 @@ register_net_stats()
   NET_CLEAR_DYN_STAT(socks_connections_currently_open_stat);
   NET_CLEAR_DYN_STAT(keep_alive_queue_timeout_total_stat);
   NET_CLEAR_DYN_STAT(keep_alive_queue_timeout_count_stat);
-  NET_CLEAR_DYN_STAT(default_inactivity_timeout_stat);
+  NET_CLEAR_DYN_STAT(default_inactivity_timeout_count_stat);
+  NET_CLEAR_DYN_STAT(default_inactivity_timeout_applied_stat);
 
   RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.tcp.total_accepts", RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(net_tcp_accept_stat), RecRawStatSyncSum);
@@ -135,6 +142,8 @@ register_net_stats()
                      (int)net_connections_throttled_in_stat, RecRawStatSyncSum);
   RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.connections_throttled_out", RECD_INT, RECP_PERSISTENT,
                      (int)net_connections_throttled_out_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.max.active.connections_throttled_in", RECD_INT, RECP_PERSISTENT,
+                     (int)net_connections_max_active_throttled_in_stat, RecRawStatSyncSum);
 }
 
 void

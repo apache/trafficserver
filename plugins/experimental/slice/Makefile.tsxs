@@ -22,7 +22,6 @@ all: $(PLUGIN).so
 SOURCES = \
 	Config.cc \
 	ContentRange.cc \
-	Data.cc \
 	HttpHeader.cc \
 	Range.cc \
 	client.cc \
@@ -62,5 +61,5 @@ TSCXXFLAGS = $(shell tsxs -q CXXFLAGS)
 slice_test: slice_test.cc ContentRange.cc Range.cc
 	$(TSCXX) -o $@ $^ $(TSCXXFLAGS) -I$(TSINCLUDE) -DUNITTEST
 
-clean: 
+clean:
 	rm -fv *.lo *.so

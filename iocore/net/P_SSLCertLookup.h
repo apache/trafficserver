@@ -46,9 +46,11 @@ struct SSLMultiCertConfigParams {
   SSLMultiCertConfigParams() : opt(SSLCertContextOption::OPT_NONE)
   {
     REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
+    REC_ReadConfigInt32(session_ticket_number, "proxy.config.ssl.server.session_ticket.number");
   }
 
   int session_ticket_enabled;   ///< session ticket enabled
+  int session_ticket_number;    ///< amount of session tickets to issue for new TLSv1.3 connections
   ats_scoped_str addr;          ///< IPv[64] address to match
   ats_scoped_str cert;          ///< certificate
   ats_scoped_str first_cert;    ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
@@ -98,7 +100,7 @@ public:
   {
   }
   SSLCertContext(shared_SSL_CTX sc, shared_SSLMultiCertConfigParams u)
-    : ctx_mutex(), ctx(sc), opt(u->opt), userconfig(nullptr), keyblock(nullptr)
+    : ctx_mutex(), ctx(sc), opt(u->opt), userconfig(u), keyblock(nullptr)
   {
   }
   SSLCertContext(shared_SSL_CTX sc, shared_SSLMultiCertConfigParams u, shared_ssl_ticket_key_block kb)

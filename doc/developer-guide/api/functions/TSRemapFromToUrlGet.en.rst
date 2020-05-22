@@ -24,7 +24,9 @@ TSRemapFrom/ToUrlGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSRemapFromUrlGet(TSHttpTxn txnp, TSMLoc * urlLocp)
 .. function:: TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc * urlLocp)

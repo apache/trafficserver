@@ -192,8 +192,13 @@ struct AIOThreadInfo : public Continuation {
     (void)event;
     (void)e;
 #if TS_USE_HWLOC
+#if HWLOC_API_VERSION >= 0x20000
+    hwloc_set_membind(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_INTERLEAVE,
+                      HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_BYNODESET);
+#else
     hwloc_set_membind_nodeset(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_INTERLEAVE,
                               HWLOC_MEMBIND_THREAD);
+#endif
 #endif
     aio_thread_main(this);
     delete this;
@@ -475,9 +480,9 @@ aio_thread_main(void *arg)
         SCOPED_MUTEX_LOCK(lock, op->mutex, thr_info->mutex->thread_holding);
         op->handleEvent(EVENT_NONE, nullptr);
       } else if (op->thread == AIO_CALLBACK_THREAD_ANY) {
-        eventProcessor.schedule_imm_signal(op);
+        eventProcessor.schedule_imm(op);
       } else {
-        op->thread->schedule_imm_signal(op);
+        op->thread->schedule_imm(op);
       }
       ink_mutex_acquire(&my_aio_req->aio_mutex);
     } while (true);

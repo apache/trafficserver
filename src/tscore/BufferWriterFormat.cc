@@ -467,17 +467,18 @@ namespace bw_fmt
       }
       w.write(digits);
     } else { // use generic Write_Aligned
-      Write_Aligned(w,
-                    [&]() {
-                      if (prefix1) {
-                        w.write(prefix1);
-                        if (prefix2) {
-                          w.write(prefix2);
-                        }
-                      }
-                      w.write(digits);
-                    },
-                    spec._align, width, spec._fill, neg);
+      Write_Aligned(
+        w,
+        [&]() {
+          if (prefix1) {
+            w.write(prefix1);
+            if (prefix2) {
+              w.write(prefix2);
+            }
+          }
+          w.write(digits);
+        },
+        spec._align, width, spec._fill, neg);
     }
     return w;
   }
@@ -574,13 +575,14 @@ namespace bw_fmt
     std::string_view whole_digits{whole + sizeof(whole) - l, l};
     std::string_view frac_digits{fraction + sizeof(fraction) - r, r};
 
-    Write_Aligned(w,
-                  [&]() {
-                    w.write(whole_digits);
-                    w.write(dec);
-                    w.write(frac_digits);
-                  },
-                  spec._align, width, spec._fill, neg);
+    Write_Aligned(
+      w,
+      [&]() {
+        w.write(whole_digits);
+        w.write(dec);
+        w.write(frac_digits);
+      },
+      spec._align, width, spec._fill, neg);
 
     return w;
   }
@@ -611,7 +613,8 @@ bwformat(BufferWriter &w, BWFSpec const &spec, std::string_view sv)
     return bwformat(w, spec, bwf::detail::MemDump(sv.data(), sv.size()));
   } else {
     width -= sv.size();
-    bw_fmt::Write_Aligned(w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
+    bw_fmt::Write_Aligned(
+      w, [&w, &sv]() { w.write(sv); }, spec._align, width, spec._fill, 0);
   }
   return w;
 }
@@ -963,8 +966,8 @@ bwformat(BufferWriter &w, BWFSpec const &spec, bwf::detail::MemDump const &hex)
     w.write(fmt_type);
     width -= 2;
   }
-  bw_fmt::Write_Aligned(w, [&w, &hex, digits]() { bw_fmt::Format_As_Hex(w, hex._view, digits); }, spec._align, width, spec._fill,
-                        0);
+  bw_fmt::Write_Aligned(
+    w, [&w, &hex, digits]() { bw_fmt::Format_As_Hex(w, hex._view, digits); }, spec._align, width, spec._fill, 0);
   return w;
 }
 

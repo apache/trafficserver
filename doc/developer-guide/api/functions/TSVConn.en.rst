@@ -26,7 +26,9 @@ Traffic Server APIs to get :type:`TSVConn` from :type:`TSHttpSsn` object
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSVConn TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 .. function:: TSVConn TSHttpSsnServerVConnGet(TSHttpSsn ssnp)

@@ -168,7 +168,7 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
   ink_release_assert(static_cast<size_t>(buf_exdata->block_size()) >= len_exdata);
   ssl_session_cache_exdata *exdata = reinterpret_cast<ssl_session_cache_exdata *>(buf_exdata->data());
   // This could be moved to a function in charge of populating exdata
-  exdata->curve = SSLGetCurveNID(ssl);
+  exdata->curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
 
   ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len, buf_exdata));
 

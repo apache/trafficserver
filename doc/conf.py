@@ -38,8 +38,6 @@ from sphinx import version_info
 sys.path.insert(0, os.path.abspath('ext'))
 sys.path.insert(0, os.path.abspath('.'))
 
-from manpages import man_pages
-
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
@@ -501,7 +499,7 @@ epub_copyright = u'2013, dev@trafficserver.apache.org'
 
 # Allow duplicate toc entries.
 #epub_tocdup = True
-mathjax_path = 'https://docs.trafficserver.apache.org/__RTD/MathJax.js'
+#mathjax_path = 'https://docs.trafficserver.apache.org/__RTD/MathJax.js'
 
 # Enabling marking bit fields as 'bitfield_N`.
 # Currently parameterized fields don't work. When they do, we should change to

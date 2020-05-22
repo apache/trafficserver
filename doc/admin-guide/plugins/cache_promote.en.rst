@@ -41,6 +41,13 @@ are available:
 
 If :option:`--policy` is set to ``lru`` the following options are also available:
 
+.. option:: --label
+
+   An optional label for this LRU, to allow sharing an LRU across multiple remap
+   rules. Note: In order for an LRU to be used by multiple remap rules, not only
+   must the label match, both the :option:`--hits` and  :option:`--buckets`
+   options must be identical.
+
 .. option:: --hits
 
    The minimum number of hits before promotion.
@@ -48,6 +55,21 @@ If :option:`--policy` is set to ``lru`` the following options are also available
 .. option:: --buckets
 
    The size (number of entries) of the LRU.
+
+.. option:: --stats-enable-with-id
+
+   Enables collecting statistics.  The option requires an argument, the
+   remap-identifier.  The remap-identifier is a string that is concatenated
+   to the stat name.  The following stats are collected.
+
+*  **plugin.cache_promote.${remap-identifier}.cache_hits** - Cache hit total, available for all policies.
+*  **plugin.cache_promote.${remap-identifier}.freelist_size** - Size of the freelist when using the LRU policy.
+*  **plugin.cache_promote.${remap-identifier}.lru_size** - Size of the LRU when using the LRU policy.
+*  **plugin.cache_promote.${remap-identifier}.lru_hit** - LRU hit count when using the LRU policy.
+*  **plugin.cache_promote.${remap-identifier}.lru_miss** - LRU miss count when using the LRU policy.
+*  **plugin.cache_promote.${remap-identifier}.lru_vacated** - count of LRU entries removed to make room for a new request.
+*  **plugin.cache_promote.${remap-identifier}.promoted** - count requests promoted, available in all policies.
+*  **plugin.cache_promote.${remap-identifier}.total_requests** - count of all requests.
 
 These two options combined with your usage patterns will control how likely a
 URL is to become promoted to enter the cache.

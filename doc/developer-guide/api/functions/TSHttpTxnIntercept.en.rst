@@ -27,7 +27,9 @@ origin server.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
 

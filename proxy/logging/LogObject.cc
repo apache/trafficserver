@@ -90,8 +90,8 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
 
 LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
-                     int rolling_offset_hr, int rolling_size_mb, bool auto_created, int max_rolled, bool reopen_after_rolling,
-                     int pipe_buffer_size)
+                     int rolling_offset_hr, int rolling_size_mb, bool auto_created, int rolling_max_count, int rolling_min_count,
+                     bool reopen_after_rolling, int pipe_buffer_size)
   : m_alt_filename(nullptr),
     m_flags(0),
     m_signature(0),
@@ -100,7 +100,8 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
     m_rolling_offset_hr(rolling_offset_hr),
     m_rolling_size_mb(rolling_size_mb),
     m_last_roll_time(0),
-    m_max_rolled(max_rolled),
+    m_max_rolled(rolling_max_count),
+    m_min_rolled(rolling_min_count),
     m_reopen_after_rolling(reopen_after_rolling),
     m_buffer_manager_idx(0),
     m_pipe_buffer_size(pipe_buffer_size)
@@ -150,6 +151,7 @@ LogObject::LogObject(LogObject &rhs)
     m_rolling_size_mb(rhs.m_rolling_size_mb),
     m_last_roll_time(rhs.m_last_roll_time),
     m_max_rolled(rhs.m_max_rolled),
+    m_min_rolled(rhs.m_min_rolled),
     m_reopen_after_rolling(rhs.m_reopen_after_rolling),
     m_buffer_manager_idx(rhs.m_buffer_manager_idx),
     m_pipe_buffer_size(rhs.m_pipe_buffer_size)
@@ -687,7 +689,7 @@ LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling
         m_rolling_size_mb = rolling_size_mb;
       }
     }
-
+    Log::config->register_rolled_log_auto_delete(m_basename, m_min_rolled);
     m_rolling_enabled = rolling_enabled;
   }
 }
@@ -789,9 +791,11 @@ const LogFormat *TextLogObject::textfmt = MakeTextLogFormat();
 
 TextLogObject::TextLogObject(const char *name, const char *log_dir, bool timestamps, const char *header,
                              Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
-                             int rolling_offset_hr, int rolling_size_mb, int max_rolled, bool reopen_after_rolling)
+                             int rolling_offset_hr, int rolling_size_mb, int rolling_max_count, int rolling_min_count,
+                             bool reopen_after_rolling)
   : LogObject(TextLogObject::textfmt, log_dir, name, LOG_FILE_ASCII, header, rolling_enabled, flush_threads, rolling_interval_sec,
-              rolling_offset_hr, rolling_size_mb, max_rolled, reopen_after_rolling)
+              rolling_offset_hr, rolling_size_mb, /* auto_created */ false, rolling_max_count, rolling_min_count,
+              reopen_after_rolling)
 {
   if (timestamps) {
     this->set_fmt_timestamps();
@@ -961,24 +965,20 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
         LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename);
         retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
       } else {
-        // either the meta file could not be read, or the new object's
-        // signature and the metafile signature do not match ==>
-        // roll old filename so the new object can use the filename
+        // Either the meta file could not be read, or the new object's
+        // signature and the metafile signature do not match.
+        // Roll the old filename so the new object can use the filename
         // it requested (previously we used to rename the NEW file
-        // but now we roll the OLD file), or if the log object writes
-        // to a pipe, just remove the file if it was open as a pipe
+        // but now we roll the OLD file). However, if the log object writes to
+        // a pipe don't roll because rolling is not applicable to pipes.
 
         bool roll_file = true;
 
         if (log_object->writes_to_pipe()) {
-          // determine if existing file is a pipe, and remove it if
-          // that is the case so the right metadata for the new pipe
-          // is created later
-          //
+          // Verify whether the existing file is a pipe. If it is,
+          // disable the roll_file flag so we don't attempt rolling.
           struct stat s;
           if (stat(filename, &s) < 0) {
-            // an error happened while trying to get file info
-            //
             const char *msg = "Cannot stat log file %s: %s";
             char *se        = strerror(errno);
 
@@ -988,7 +988,6 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
             roll_file = false;
           } else {
             if (S_ISFIFO(s.st_mode)) {
-              unlink(filename);
               roll_file = false;
             }
           }

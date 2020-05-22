@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "lua.h"
 #include "lualib.h"
@@ -29,7 +30,6 @@
 #include <ts/ts.h>
 #include <ts/experimental.h>
 #include <ts/remap.h>
-#include "tscore/ink_defs.h"
 #include "ts_lua_coroutine.h"
 
 #define TS_LUA_FUNCTION_REMAP "do_remap"
@@ -91,8 +91,8 @@ typedef struct {
   char script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
   void *conf_vars[TS_LUA_MAX_CONFIG_VARS_COUNT];
 
-  int _first : 1; // create current instance for 1st ts_lua_main_ctx
-  int _last : 1;  // create current instance for the last ts_lua_main_ctx
+  unsigned int _first : 1; // create current instance for 1st ts_lua_main_ctx
+  unsigned int _last : 1;  // create current instance for the last ts_lua_main_ctx
 
   int remap;
   int states;
@@ -160,10 +160,10 @@ typedef struct {
   ts_lua_http_ctx *hctx;
 
   int64_t to_flush;
-  int reuse : 1;
-  int recv_complete : 1;
-  int send_complete : 1;
-  int all_ready : 1;
+  unsigned int reuse : 1;
+  unsigned int recv_complete : 1;
+  unsigned int send_complete : 1;
+  unsigned int all_ready : 1;
 } ts_lua_http_intercept_ctx;
 
 #define TS_LUA_RELEASE_IO_HANDLE(ih)    \
@@ -177,3 +177,7 @@ typedef struct {
       ih->buffer = NULL;                \
     }                                   \
   } while (0)
+
+#ifndef ATS_UNUSED
+#define ATS_UNUSED __attribute__((unused))
+#endif

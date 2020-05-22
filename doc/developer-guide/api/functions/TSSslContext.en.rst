@@ -26,7 +26,9 @@ Traffic Server TLS server context.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSSslContext TSSslContextFindByName(const char * name)
 

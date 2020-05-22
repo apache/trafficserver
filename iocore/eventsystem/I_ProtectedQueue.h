@@ -37,13 +37,12 @@
 #include "tscore/ink_platform.h"
 #include "I_Event.h"
 struct ProtectedQueue {
-  void enqueue(Event *e, bool fast_signal = false);
+  void enqueue(Event *e);
   void signal();
   int try_signal();             // Use non blocking lock and if acquired, signal
   void enqueue_local(Event *e); // Safe when called from the same thread
   void remove(Event *e);
   Event *dequeue_local();
-  void dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool sleep);
   void dequeue_external();       // Dequeue any external events.
   void wait(ink_hrtime timeout); // Wait for @a timeout nanoseconds on a condition variable if there are no events.
 
@@ -54,5 +53,3 @@ struct ProtectedQueue {
 
   ProtectedQueue();
 };
-
-void flush_signals(EThread *t);

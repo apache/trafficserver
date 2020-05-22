@@ -26,7 +26,9 @@ Traffic Server TLS client cert update
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSSslClientCertUpdate(const char *cert_path, const char *key_path)
 

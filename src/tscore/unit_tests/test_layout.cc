@@ -23,6 +23,7 @@
 
 #include "tscore/I_Layout.h"
 #include "tscore/ink_platform.h"
+#include "tscore/Filenames.h"
 
 std::string
 append_slash(const char *path)
@@ -79,8 +80,8 @@ TEST_CASE("relative to test", "[relative_to]")
 
   // relative to (4 parameters)
   char config_file[PATH_NAME_MAX];
-  Layout::relative_to(config_file, sizeof(config_file), Layout::get()->sysconfdir, "records.config");
-  std::string a = Layout::relative_to(Layout::get()->sysconfdir, "records.config");
+  Layout::relative_to(config_file, sizeof(config_file), Layout::get()->sysconfdir, ts::filename::RECORDS);
+  std::string a = Layout::relative_to(Layout::get()->sysconfdir, ts::filename::RECORDS);
   std::string b = config_file;
   REQUIRE(a == b);
 }

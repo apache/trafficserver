@@ -17,11 +17,6 @@ Test HTTP/2 with h2spec
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
-# ----
-# Setup Test
-# ----
 Test.Summary = '''
 Test HTTP/2 with httpspec
 '''
@@ -39,13 +34,12 @@ httpbin = Test.MakeHttpBinServer("httpbin")
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(httpbin.Variables.Port)
 )
@@ -53,7 +47,6 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 ts.Disk.records_config.update({
-    'proxy.config.http.server_ports': '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.http.insert_request_via_str': 1,
     'proxy.config.http.insert_response_via_str': 1,
     'proxy.config.http.cache.http': 0,

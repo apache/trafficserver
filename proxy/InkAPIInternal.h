@@ -40,8 +40,6 @@
 
 /* Some defines that might be candidates for configurable settings later.
  */
-#define TS_HTTP_MAX_USER_ARG 16 /* max number of user arguments for Transactions and Sessions */
-
 typedef int8_t TSMgmtByte; // Not for external use
 
 /* ****** Cache Structure ********* */
@@ -226,7 +224,9 @@ FeatureAPIHooks<ID, N>::get(ID id) const
   return likely(is_valid(id)) ? m_hooks[id].head() : nullptr;
 }
 
-template <typename ID, int N> APIHooks const *FeatureAPIHooks<ID, N>::operator[](ID id) const
+template <typename ID, int N>
+APIHooks const *
+FeatureAPIHooks<ID, N>::operator[](ID id) const
 {
   return likely(is_valid(id)) ? &(m_hooks[id]) : nullptr;
 }
@@ -357,8 +357,9 @@ public:
 protected:
   /// Track the state of one scope of hooks.
   struct Scope {
-    APIHook const *_c; ///< Current hook (candidate for invocation).
-    APIHook const *_p; ///< Previous hook (already invoked).
+    APIHook const *_c;      ///< Current hook (candidate for invocation).
+    APIHook const *_p;      ///< Previous hook (already invoked).
+    APIHooks const *_hooks; ///< Reference to the real hook list
 
     /// Initialize the scope.
     void init(HttpAPIHooks const *scope, TSHttpHookID id);

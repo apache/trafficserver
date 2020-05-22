@@ -33,12 +33,27 @@ class HTTPHdr;
 
 typedef unsigned Http2StreamId;
 
+constexpr Http2StreamId HTTP2_CONNECTION_CONTROL_STRTEAM = 0;
+constexpr uint8_t HTTP2_FRAME_NO_FLAG                    = 0;
+
 // [RFC 7540] 6.9.2. Initial Flow Control Window Size
 // the flow control window can be come negative so we need to track it with a signed type.
 typedef int32_t Http2WindowSize;
 
 extern const char *const HTTP2_CONNECTION_PREFACE;
 const size_t HTTP2_CONNECTION_PREFACE_LEN = 24;
+
+extern const char *HTTP2_VALUE_SCHEME;
+extern const char *HTTP2_VALUE_METHOD;
+extern const char *HTTP2_VALUE_AUTHORITY;
+extern const char *HTTP2_VALUE_PATH;
+extern const char *HTTP2_VALUE_STATUS;
+
+extern const unsigned HTTP2_LEN_SCHEME;
+extern const unsigned HTTP2_LEN_METHOD;
+extern const unsigned HTTP2_LEN_AUTHORITY;
+extern const unsigned HTTP2_LEN_PATH;
+extern const unsigned HTTP2_LEN_STATUS;
 
 const size_t HTTP2_FRAME_HEADER_LEN       = 9;
 const size_t HTTP2_DATA_PADLEN_LEN        = 1;
@@ -299,7 +314,6 @@ struct Http2RstStream {
 
 // [RFC 7540] 6.6 PUSH_PROMISE Format
 struct Http2PushPromise {
-  Http2PushPromise() {}
   uint8_t pad_length              = 0;
   Http2StreamId promised_streamid = 0;
 };
@@ -319,10 +333,6 @@ http2_is_server_streamid(Http2StreamId streamid)
 bool http2_parse_frame_header(IOVec, Http2FrameHeader &);
 
 bool http2_write_frame_header(const Http2FrameHeader &, IOVec);
-
-bool http2_write_data(const uint8_t *, size_t, const IOVec &);
-
-bool http2_write_headers(const uint8_t *, size_t, const IOVec &);
 
 bool http2_write_rst_stream(uint32_t, IOVec);
 
@@ -357,7 +367,9 @@ Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint
 Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32_t *, HpackHandle &, int32_t);
 
 ParseResult http2_convert_header_from_2_to_1_1(HTTPHdr *);
-void http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers);
+ParseResult http2_convert_header_from_1_1_to_2(HTTPHdr *);
+void http2_init_pseudo_headers(HTTPHdr &);
+void http2_init();
 
 // Not sure where else to put this, but figure this is as good of a start as
 // anything else.
@@ -390,6 +402,7 @@ public:
   static float min_avg_window_update;
   static uint32_t con_slow_log_threshold;
   static uint32_t stream_slow_log_threshold;
+  static uint32_t header_table_size_limit;
 
   static void init();
 };

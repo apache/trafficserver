@@ -24,7 +24,9 @@ TSMgmtUpdateRegister
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSMgmtUpdateRegister(TSCont contp, const char * plugin_name)
 

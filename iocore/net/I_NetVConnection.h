@@ -213,6 +213,8 @@ struct NetVCOptions {
    */
   const char *ssl_client_ca_cert_path = nullptr;
 
+  bool tls_upstream = false;
+
   /// Reset all values to defaults.
 
   /**
@@ -332,7 +334,7 @@ struct NetVCOptions {
   stream IO to be done based on a single read or write call.
 
 */
-class NetVConnection : public AnnotatedVConnection
+class NetVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS_VCONN>
 {
 public:
   // How many bytes have been queued to the OS for sending by haven't been sent yet
@@ -457,6 +459,15 @@ public:
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
 
   /**
+    Return the server name that is appropriate for the network VC type
+  */
+  virtual const char *
+  get_server_name() const
+  {
+    return nullptr;
+  }
+
+  /**
     Cancels a scheduled send_OOB. Part of the message could have
     been sent already. Not callbacks to the cont are made after
     this call. The Action returned by send_OOB should not be accessed
@@ -528,7 +539,9 @@ public:
     is currently active. See section on timeout semantics above.
 
    */
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in)         = 0;
+  virtual void set_default_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual bool is_default_inactivity_timeout()                       = 0;
 
   /**
     Clears the active timeout. No active timeouts will be sent until
@@ -626,6 +639,22 @@ public:
   get_context() const
   {
     return netvc_context;
+  }
+
+  /**
+   * Returns true if the network protocol
+   * supports a client provided SNI value
+   */
+  virtual bool
+  support_sni() const
+  {
+    return false;
+  }
+
+  virtual const char *
+  get_sni_servername() const
+  {
+    return nullptr;
   }
 
   /** Structure holding user options. */
@@ -814,7 +843,7 @@ public:
     return pp_info.proxy_protocol_version;
   }
 
-  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData);
+  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData) const;
 
   sockaddr const *
   get_proxy_protocol_src_addr()
@@ -869,7 +898,7 @@ protected:
   NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
 };
 
-inline NetVConnection::NetVConnection() : AnnotatedVConnection(nullptr)
+inline NetVConnection::NetVConnection() : VConnection(nullptr)
 
 {
   ink_zero(local_addr);

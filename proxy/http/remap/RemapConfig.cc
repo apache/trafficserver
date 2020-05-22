@@ -31,6 +31,7 @@
 #include "tscore/ink_cap.h"
 #include "tscore/ink_file.h"
 #include "tscore/Tokenizer.h"
+#include "tscore/ts_file.h"
 #include "IPAllow.h"
 #include "PluginFactory.h"
 
@@ -691,6 +692,14 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
           idx = i;
         }
         ret_flags |= REMAP_OPTFLG_INTERNAL;
+      } else if (!strncasecmp(argv[i], "strategy=", 9)) {
+        if ((findmode & REMAP_OPTFLG_STRATEGY) != 0) {
+          idx = i;
+        }
+        if (argptr) {
+          *argptr = &argv[i][9];
+        }
+        ret_flags |= REMAP_OPTFLG_STRATEGY;
       } else {
         Warning("ignoring invalid remap option '%s'", argv[i]);
       }
@@ -809,12 +818,14 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-    pi = rewrite->pluginFactory.getRemapPlugin(ts::file::path(const_cast<const char *>(c)), parc, pargv, error);
+    pi = rewrite->pluginFactory.getRemapPlugin(ts::file::path(const_cast<const char *>(c)), parc, pargv, error,
+                                               isPluginDynamicReloadEnabled());
   } // done elevating access
 
   bool result = true;
   if (nullptr == pi) {
     snprintf(errbuf, errbufsize, "%s", error.c_str());
+    result = false;
   } else {
     mp->add_plugin_instance(pi);
   }
@@ -836,7 +847,6 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   const char *to_host;
   int to_host_len;
   int substitution_id;
-  int substitution_count = 0;
   int captures;
 
   reg_map->to_url_host_template     = nullptr;
@@ -866,10 +876,6 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   to_host = new_mapping->toURL.host_get(&to_host_len);
   for (int i = 0; i < (to_host_len - 1); ++i) {
     if (to_host[i] == '$') {
-      if (substitution_count > UrlRewrite::MAX_REGEX_SUBS) {
-        Warning("Cannot have more than %d substitutions in mapping with host [%s]", UrlRewrite::MAX_REGEX_SUBS, from_host_lower);
-        goto lFail;
-      }
       substitution_id = to_host[i + 1] - '0';
       if ((substitution_id < 0) || (substitution_id > captures)) {
         Warning("Substitution id [%c] has no corresponding capture pattern in regex [%s]", to_host[i + 1], from_host_lower);
@@ -936,15 +942,22 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   bool is_cur_mapping_regex;
   const char *type_id_str;
 
-  ats_scoped_str file_buf(readIntoBuffer(path, modulePrefix, nullptr));
-  if (!file_buf) {
-    Warning("can't load remapping configuration file %s", path);
-    return false;
+  std::error_code ec;
+  std::string content{ts::file::load(ts::file::path{path}, ec)};
+  if (ec) {
+    switch (ec.value()) {
+    case ENOENT:
+      Warning("Can't open remapping configuration file %s - %s", path, strerror(ec.value()));
+      break;
+    default:
+      Error("Failed load remapping configuration file %s - %s", path, strerror(ec.value()));
+      return false;
+    }
   }
 
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");
 
-  for (cur_line = tokLine(file_buf, &tok_state, '\\'); cur_line != nullptr;) {
+  for (cur_line = tokLine(content.data(), &tok_state, '\\'); cur_line != nullptr;) {
     reg_map      = nullptr;
     new_mapping  = nullptr;
     errStrBuf[0] = 0;
@@ -968,7 +981,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       --cur_line_tmp;
     }
 
-    if ((cur_line_size = strlen(cur_line)) <= 0 || *cur_line == '#' || *cur_line == '\0') {
+    if (strlen(cur_line) <= 0 || *cur_line == '#' || *cur_line == '\0') {
       cur_line = tokLine(nullptr, &tok_state, '\\');
       ++cln;
       continue;
@@ -1042,7 +1055,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     new_mapping = new url_mapping();
 
     // apply filter rules if we have to
-    if ((errStr = process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf))) != nullptr) {
+    if (process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf)) != nullptr) {
       errStr = errStrBuf;
       goto MAP_ERROR;
     }
@@ -1258,6 +1271,25 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         }
 
         freeaddrinfo(ai_records);
+      }
+    }
+
+    // check for a 'strategy' and if wire it up if one exists.
+    if ((bti->remap_optflg & REMAP_OPTFLG_STRATEGY) != 0 &&
+        (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
+      const char *strategy = strchr(bti->argv[0], static_cast<int>('='));
+      if (strategy == nullptr) {
+        errStr = "missing 'strategy' name argument, unable to add mapping rule";
+        goto MAP_ERROR;
+      } else {
+        strategy++;
+        new_mapping->strategy = bti->rewrite->strategyFactory->strategyInstance(strategy);
+        if (!new_mapping->strategy) {
+          snprintf(errStrBuf, sizeof(errStrBuf), "no strategy named '%s' is defined in the config", strategy);
+          errStr = errStrBuf;
+          goto MAP_ERROR;
+        }
+        Debug("url_rewrite_regex", "mapped the 'strategy' named %s", strategy);
       }
     }
 

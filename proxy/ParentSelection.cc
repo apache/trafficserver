@@ -30,6 +30,7 @@
 #include "HTTP.h"
 #include "HttpTransact.h"
 #include "I_Machine.h"
+#include "tscore/Filenames.h"
 
 #define MAX_SIMPLE_RETRIES 5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
@@ -46,8 +47,6 @@ static const char *file_var      = "proxy.config.http.parent_proxy.file";
 static const char *default_var   = "proxy.config.http.parent_proxies";
 static const char *retry_var     = "proxy.config.http.parent_proxy.retry_time";
 static const char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
-
-static const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
 
 //
 //  Config Callback Prototypes
@@ -107,12 +106,6 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
   ParentRecord *defaultPtr = DefaultParent;
   ParentRecord *rec;
 
-  Debug("parent_select", "In ParentConfigParams::findParent(): parent_table: %p.", parent_table);
-  ink_assert(result->result == PARENT_UNDEFINED);
-
-  // Initialize the result structure
-  result->reset();
-
   // Check to see if the parent was set through the
   //   api
   if (apiParentExists(rdata)) {
@@ -126,6 +119,9 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->hostname, result->port);
     return;
   }
+
+  // Initialize the result structure
+  result->reset();
 
   tablePtr->Match(rdata, result);
   rec = result->rec;
@@ -227,17 +223,38 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 bool
 ParentConfigParams::parentExists(HttpRequestData *rdata)
 {
-  unsigned int fail_threshold = policy.FailThreshold;
-  unsigned int retry_time     = policy.ParentRetryTime;
+  P_table *tablePtr = parent_table;
+  ParentRecord *rec = nullptr;
   ParentResult result;
 
-  findParent(rdata, &result, fail_threshold, retry_time);
+  // Initialize the result structure;
+  result.reset();
 
-  if (result.result == PARENT_SPECIFIED) {
-    return true;
-  } else {
+  tablePtr->Match(rdata, &result);
+  rec = result.rec;
+
+  if (rec == nullptr) {
+    Debug("parent_select", "No matching parent record was found for the request.");
     return false;
   }
+
+  if (rec->num_parents > 0) {
+    for (int ii = 0; ii < rec->num_parents; ii++) {
+      if (rec->parents[ii].available) {
+        Debug("parent_select", "found available parent: %s", rec->parents[ii].hostname);
+        return true;
+      }
+    }
+  }
+  if (rec->secondary_parents && rec->num_secondary_parents > 0) {
+    for (int ii = 0; ii < rec->num_secondary_parents; ii++) {
+      if (rec->secondary_parents[ii].available) {
+        Debug("parent_select", "found available parent: %s", rec->secondary_parents[ii].hostname);
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 int ParentConfig::m_id = 0;
@@ -264,7 +281,7 @@ ParentConfig::startup()
 void
 ParentConfig::reconfigure()
 {
-  Note("parent.config loading ...");
+  Note("%s loading ...", ts::filename::PARENT);
 
   ParentConfigParams *params = nullptr;
 
@@ -280,7 +297,7 @@ ParentConfig::reconfigure()
     ParentConfig::print();
   }
 
-  Note("parent.config finished loading");
+  Note("%s finished loading", ts::filename::PARENT);
 }
 
 // void ParentConfig::print
@@ -333,6 +350,33 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
   std::sort(codes.begin(), codes.end());
 }
 
+SimpleRetryResponseCodes::SimpleRetryResponseCodes(char *val)
+{
+  Tokenizer pTok(", \t\r");
+  int numTok = 0, c;
+
+  if (val == nullptr) {
+    Warning("SimpleRetryResponseCodes - simple_server_retry_responses is null loading default 404 code.");
+    codes.push_back(HTTP_STATUS_NOT_FOUND);
+    return;
+  }
+  numTok = pTok.Initialize(val, SHARE_TOKS);
+  if (numTok == 0) {
+    c = atoi(val);
+    if (c > 399 && c < 500) {
+      codes.push_back(HTTP_STATUS_NOT_FOUND);
+    }
+  }
+  for (int i = 0; i < numTok; i++) {
+    c = atoi(pTok[i]);
+    if (c > 399 && c < 500) {
+      Debug("parent_select", "loading simple response code: %d", c);
+      codes.push_back(c);
+    }
+  }
+  std::sort(codes.begin(), codes.end());
+}
+
 void
 ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, size_t len)
 {
@@ -346,10 +390,10 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
   token = strtok_r(_val, PARENT_DELIMITERS, &savePtr);
   while (token != nullptr) {
     if ((nm = strchr(token, ':')) != nullptr) {
-      size_t len = (nm - token);
-      ink_assert(len < sizeof(fqdn));
+      size_t length = (nm - token);
+      ink_assert(length < sizeof(fqdn));
       memset(fqdn, 0, sizeof(fqdn));
-      strncpy(fqdn, token, len);
+      strncpy(fqdn, token, length);
       if (self_detect && machine->is_self(fqdn)) {
         if (self_detect == 1) {
           Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", fqdn, line_num);
@@ -416,7 +460,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
   if (numTok == 0) {
     return "No parents specified";
   }
-  HostStatus &hs = HostStatus::instance();
   // Allocate the parents array
   if (isPrimary) {
     this->parents = static_cast<pRecord *>(ats_malloc(sizeof(pRecord) * numTok));
@@ -500,10 +543,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
         memcpy(this->parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->parents[i].name = this->parents[i].hash_string;
       }
-      HostStatRec *hst = hs.getHostStatus(this->parents[i].hostname);
-      if (hst == nullptr) {
-        hs.setHostStatus(this->parents[i].hostname, HOST_STATUS_UP, 0, Reason::MANUAL);
-      }
     } else {
       memcpy(this->secondary_parents[i].hostname, current, tmp - current);
       this->secondary_parents[i].hostname[tmp - current] = '\0';
@@ -518,10 +557,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       if (tmp3) {
         memcpy(this->secondary_parents[i].hash_string, tmp3 + 1, strlen(tmp3));
         this->secondary_parents[i].name = this->secondary_parents[i].hash_string;
-      }
-      HostStatRec *hst = hs.getHostStatus(this->secondary_parents[i].hostname);
-      if (hst == nullptr) {
-        hs.setHostStatus(this->secondary_parents[i].hostname, HOST_STATUS_UP, 0, Reason::MANUAL);
       }
     }
     tmp3 = nullptr;
@@ -686,6 +721,9 @@ ParentRecord::Init(matcher_line *line_info)
     } else if (strcasecmp(label, "unavailable_server_retry_responses") == 0 && unavailable_server_retry_responses == nullptr) {
       unavailable_server_retry_responses = new UnavailableServerResponseCodes(val);
       used                               = true;
+    } else if (strcasecmp(label, "simple_server_retry_responses") == 0 && simple_server_retry_responses == nullptr) {
+      simple_server_retry_responses = new SimpleRetryResponseCodes(val);
+      used                          = true;
     } else if (strcasecmp(label, "max_simple_retries") == 0) {
       int v = atoi(val);
       if (v >= 1 && v < MAX_SIMPLE_RETRIES) {
@@ -742,15 +780,27 @@ ParentRecord::Init(matcher_line *line_info)
     unavailable_server_retry_responses = new UnavailableServerResponseCodes(nullptr);
   }
 
+  // delete simple_server_retry_responses if simple_retry is not enabled.
+  if (simple_server_retry_responses != nullptr && !(parent_retry & PARENT_RETRY_SIMPLE)) {
+    Warning("%s ignore simple_server_Retry_responses directive on line %d, as simple_server_retry is not enabled.", modulePrefix,
+            line_num);
+    delete simple_server_retry_responses;
+    simple_server_retry_responses = nullptr;
+  } else if (simple_server_retry_responses == nullptr && (parent_retry & PARENT_RETRY_SIMPLE)) {
+    // initialize simple server respones codes to the default value if simple_retry is enabled.
+    Warning("%s initializing SimpleRetryResponseCodes on line %d to 404 default.", modulePrefix, line_num);
+    simple_server_retry_responses = new SimpleRetryResponseCodes(nullptr);
+  }
+
   if (this->parents == nullptr && go_direct == false) {
-    return Result::failure("%s No parent specified in parent.config at line %d", modulePrefix, line_num);
+    return Result::failure("%s No parent specified in %s at line %d", modulePrefix, ts::filename::PARENT, line_num);
   }
   // Process any modifiers to the directive, if they exist
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
     if (tmp != nullptr) {
-      return Result::failure("%s %s at line %d in parent.config", modulePrefix, tmp, line_num);
+      return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::PARENT);
     }
     // record SCHEME modifier if present.
     // NULL if not present
@@ -895,7 +945,7 @@ setup_socks_servers(ParentRecord *rec_arr, int len)
 void
 SocksServerConfig::reconfigure()
 {
-  Note("socks.config loading ...");
+  Note("%s loading ...", ts::filename::SOCKS);
 
   char *default_val = nullptr;
   int retry_time    = 30;
@@ -935,7 +985,7 @@ SocksServerConfig::reconfigure()
     SocksServerConfig::print();
   }
 
-  Note("socks.config finished loading");
+  Note("%s finished loading", ts::filename::SOCKS);
 }
 
 void

@@ -17,13 +17,22 @@
 .. include:: ../../../common.defs
 .. default-domain:: c
 
+
 TSHttpArgs
 **********
 
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. note::
+
+   This set of API is obsoleted as of ATS v9.0.0, and will be removed with ATS v10.0.0!
+   For details of the new APIs, see :ref:`tsuserargs`.
+
+
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnArgIndexReserve(const char * name, const char * description, int * arg_idx)
 .. function:: TSReturnCode TSHttpTxnArgIndexNameLookup(const char * name, int * arg__idx, const char ** description)
@@ -33,8 +42,8 @@ Synopsis
 .. function:: TSReturnCode TSHttpSsnArgIndexLookup(int arg_idx, const char ** name, const char ** description)
 .. function:: void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void * arg)
 .. function:: void * TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx)
-.. function:: void TSHttpSsnArgSet(TSHttpTxn txnp, int arg_idx, void * arg)
-.. function:: void * TSHttpSsnArgGet(TSHttpTxn txnp, int arg_idx)
+.. function:: void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void * arg)
+.. function:: void * TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx)
 
 Description
 ===========

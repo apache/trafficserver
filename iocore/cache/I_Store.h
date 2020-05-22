@@ -62,7 +62,11 @@ struct span_diskid_t {
     return id[0] == rhs.id[0] && id[1] == rhs.id[1];
   }
 
-  int64_t &operator[](unsigned i) { return id[i]; }
+  int64_t &
+  operator[](unsigned i)
+  {
+    return id[i];
+  }
 };
 
 //

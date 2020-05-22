@@ -164,7 +164,7 @@ is_empty(char *s)
 */
 int
 HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPHdr *client_request,
-                                        OverridableHttpConfigParams *http_config_params)
+                                        const OverridableHttpConfigParams *http_config_params)
 {
   time_t current_age, best_age = CacheHighAgeWatermark;
   time_t t_now         = 0;
@@ -284,7 +284,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
 
 */
 float
-HttpTransactCache::calculate_quality_of_match(OverridableHttpConfigParams *http_config_param, HTTPHdr *client_request,
+HttpTransactCache::calculate_quality_of_match(const OverridableHttpConfigParams *http_config_param, HTTPHdr *client_request,
                                               HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response)
 {
   // For PURGE requests, any alternate is good really.
@@ -1124,7 +1124,7 @@ language_wildcard:
 
 */
 Variability_t
-HttpTransactCache::CalcVariability(OverridableHttpConfigParams *http_config_params, HTTPHdr *client_request,
+HttpTransactCache::CalcVariability(const OverridableHttpConfigParams *http_config_params, HTTPHdr *client_request,
                                    HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response)
 {
   ink_assert(http_config_params != nullptr);
@@ -1381,13 +1381,13 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
         return HTTP_STATUS_RANGE_NOT_SATISFIABLE;
       }
     }
-    // this a Date, similar to If-Unmodified-Since
+    // this a Date, similar to If-Unmodified-Since but must be an exact match
     else {
       // lm_value is zero if Last-modified not exists
       ink_time_t lm_value = response->get_last_modified();
 
       // condition fails if Last-modified not exists
-      if ((request->get_if_range_date() < lm_value) || (lm_value == 0)) {
+      if ((request->get_if_range_date() != lm_value) || (lm_value == 0)) {
         return HTTP_STATUS_RANGE_NOT_SATISFIABLE;
       } else {
         return response->status_get();

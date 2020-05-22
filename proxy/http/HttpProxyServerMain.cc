@@ -308,9 +308,9 @@ init_accept_HttpProxyServer(int n_accept_threads)
  *  start_HttpProxyServer().
  */
 void
-init_HttpProxyServer(EThread *)
+init_HttpProxyServer()
 {
-  if (eventProcessor.thread_group[ET_NET]._started == num_of_net_threads) {
+  if (eventProcessor.has_tg_started(ET_NET)) {
     std::unique_lock<std::mutex> lock(proxyServerMutex);
     et_net_threads_ready = true;
     lock.unlock();

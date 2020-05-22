@@ -25,6 +25,7 @@
 #include "tscpp/api/Transaction.h"
 #include "tscpp/api/Url.h"
 #include "tscpp/api/utils.h"
+#include "ts/remap.h"
 
 namespace atscppapi
 {
@@ -48,6 +49,25 @@ public:
     RESULT_NO_REMAP_STOP,
     RESULT_DID_REMAP_STOP,
   };
+
+  /**
+   * Invoked when a request matches the remap.config line - it gives you access to the remap information
+   * if you want to have more control over how the remap happens.
+   *
+   * @param transaction Transaction
+   * @param rri The remap information in the remap.config line.
+   *
+   * @return Result of the remap - will dictate further processing by the system.
+   */
+  virtual Result
+  remapTransaction(Transaction &transaction, TSRemapRequestInfo *rri)
+  {
+    Url map_from_url(rri->requestBufp, rri->mapFromUrl), map_to_url(rri->requestBufp, rri->mapToUrl);
+    bool redirect              = false;
+    RemapPlugin::Result result = doRemap(map_from_url, map_to_url, transaction, redirect);
+    rri->redirect              = redirect ? 1 : 0;
+    return result;
+  }
 
   /**
    * Invoked when a request matches the remap.config line - implementation should perform the

@@ -37,6 +37,7 @@ Configuration Files
    ssl_multicert.config.en
    sni.yaml.en
    storage.config.en
+   strategies.yaml.en
    volume.config.en
 
 :doc:`cache.config.en`
@@ -79,6 +80,9 @@ Configuration Files
 
 :doc:`storage.config.en`
    Configures all storage devices and paths to be used for the |TS| cache.
+
+:doc:`strategies.yaml.en`
+   Configures NextHop strategies used with `remap.config`
 
 :doc:`volume.config.en`
     Defines cache space usage by individual protocols.

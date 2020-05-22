@@ -65,7 +65,8 @@ public:
     captive_action.init(this);
   }
 
-  Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, OverridableHttpConfigParams *params, time_t pin_in_cache);
+  Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, const OverridableHttpConfigParams *params,
+                    time_t pin_in_cache);
 
   Action *open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, CacheHTTPInfo *old_info, time_t pin_in_cache, bool retry,
                      bool allow_multiple);
@@ -194,10 +195,10 @@ private:
   bool open_write_cb = false;
 
   // Open read parameters
-  int open_read_tries                      = 0;
-  HTTPHdr *read_request_hdr                = nullptr;
-  OverridableHttpConfigParams *http_params = nullptr;
-  time_t read_pin_in_cache                 = 0;
+  int open_read_tries                            = 0;
+  HTTPHdr *read_request_hdr                      = nullptr;
+  const OverridableHttpConfigParams *http_params = nullptr;
+  time_t read_pin_in_cache                       = 0;
 
   // Open write parameters
   bool retry_write     = true;

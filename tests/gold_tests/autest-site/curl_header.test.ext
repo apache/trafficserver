@@ -140,7 +140,6 @@ class CurlHeader(Tester):
                 p_flag = 0
                 reason += '\n--------------------------------------------------------------------------------\n'
 
-
         if p_flag == 1:
             self.Result = tester.ResultType.Passed
             self.Reason = "Curl headers and values match"

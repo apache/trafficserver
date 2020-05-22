@@ -235,14 +235,17 @@ TSEventThreadSelf(void)
 
 ////////////////////////////////////////////////////////////////////
 //
-// Mutexes
+// Mutexes:  For TSMutexCreate and TSMutexDestroy, the refcount of the
+// ProxyMutex object is not incremented or decremented.  If the resulting
+// ProxyMutex is passed to a INKContInternal, it's mutex smart pointer
+// will take ownership of the ProxyMutex and delete it when the last
+// reference is removed.  TSMutexDestroy should not be called in that case.
 //
 ////////////////////////////////////////////////////////////////////
 TSMutex
 TSMutexCreate()
 {
   ProxyMutex *mutexp = new_ProxyMutex();
-  mutexp->refcount_inc();
 
   // TODO: Remove this when allocations can never fail.
   sdk_assert(sdk_sanity_check_mutex((TSMutex)mutexp) == TS_SUCCESS);
@@ -255,9 +258,9 @@ TSMutexDestroy(TSMutex m)
 {
   sdk_assert(sdk_sanity_check_mutex(m) == TS_SUCCESS);
   ProxyMutex *mutexp = reinterpret_cast<ProxyMutex *>(m);
-  // Decrement the refcount added in TSMutexCreate.  Delete if this
-  // was the last ref count
-  if (mutexp && mutexp->refcount_dec() == 0) {
+
+  if (mutexp) {
+    ink_release_assert(mutexp->refcount() == 0);
     mutexp->free();
   }
 }
@@ -296,7 +299,7 @@ void
 TSMutexLock(TSMutex mutexp)
 {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
-  Ptr<ProxyMutex> proxy_mutex(reinterpret_cast<ProxyMutex *>(mutexp));
+  ProxyMutex *proxy_mutex = reinterpret_cast<ProxyMutex *>(mutexp);
   MUTEX_TAKE_LOCK(proxy_mutex, this_ethread());
 }
 
@@ -304,7 +307,7 @@ TSReturnCode
 TSMutexLockTry(TSMutex mutexp)
 {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
-  Ptr<ProxyMutex> proxy_mutex(reinterpret_cast<ProxyMutex *>(mutexp));
+  ProxyMutex *proxy_mutex = reinterpret_cast<ProxyMutex *>(mutexp);
   return (MUTEX_TAKE_TRY_LOCK(proxy_mutex, this_ethread()) ? TS_SUCCESS : TS_ERROR);
 }
 
@@ -312,7 +315,7 @@ void
 TSMutexUnlock(TSMutex mutexp)
 {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
-  Ptr<ProxyMutex> proxy_mutex(reinterpret_cast<ProxyMutex *>(mutexp));
+  ProxyMutex *proxy_mutex(reinterpret_cast<ProxyMutex *>(mutexp));
   MUTEX_UNTAKE_LOCK(proxy_mutex, this_ethread());
 }
 

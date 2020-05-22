@@ -26,7 +26,9 @@ Traffic Server UUID construction APIs.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSUuid TSUuidCreate(void)
 .. function:: TSReturnCode TSUuidInitialize(TSUuid uuid, TSUuidVersion v)

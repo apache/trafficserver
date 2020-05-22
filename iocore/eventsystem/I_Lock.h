@@ -256,7 +256,7 @@ Mutex_trylock(
 #ifdef DEBUG
   const SourceLocation &location, const char *ahandler,
 #endif
-  Ptr<ProxyMutex> &m, EThread *t)
+  ProxyMutex *m, EThread *t)
 {
   ink_assert(t != nullptr);
   ink_assert(t == reinterpret_cast<EThread *>(this_thread()));
@@ -295,12 +295,26 @@ Mutex_trylock(
   return true;
 }
 
+inline bool
+Mutex_trylock(
+#ifdef DEBUG
+  const SourceLocation &location, const char *ahandler,
+#endif
+  Ptr<ProxyMutex> &m, EThread *t)
+{
+  return Mutex_trylock(
+#ifdef DEBUG
+    location, ahandler,
+#endif
+    m.get(), t);
+}
+
 inline int
 Mutex_lock(
 #ifdef DEBUG
   const SourceLocation &location, const char *ahandler,
 #endif
-  Ptr<ProxyMutex> &m, EThread *t)
+  ProxyMutex *m, EThread *t)
 {
   ink_assert(t != nullptr);
   if (m->thread_holding != t) {
@@ -327,8 +341,22 @@ Mutex_lock(
   return true;
 }
 
+inline int
+Mutex_lock(
+#ifdef DEBUG
+  const SourceLocation &location, const char *ahandler,
+#endif
+  Ptr<ProxyMutex> &m, EThread *t)
+{
+  return Mutex_lock(
+#ifdef DEBUG
+    location, ahandler,
+#endif
+    m.get(), t);
+}
+
 inline void
-Mutex_unlock(Ptr<ProxyMutex> &m, EThread *t)
+Mutex_unlock(ProxyMutex *m, EThread *t)
 {
   if (m->nthread_holding) {
     ink_assert(t == m->thread_holding);
@@ -349,6 +377,12 @@ Mutex_unlock(Ptr<ProxyMutex> &m, EThread *t)
       ink_mutex_release(&m->the_mutex);
     }
   }
+}
+
+inline void
+Mutex_unlock(Ptr<ProxyMutex> &m, EThread *t)
+{
+  Mutex_unlock(m.get(), t);
 }
 
 class WeakMutexLock

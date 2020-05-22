@@ -688,7 +688,7 @@ TSTerminate()
 
 /*--- plugin initialization -----------------------------------------------*/
 inkexp extern void
-TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
+TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */[])
 {
 }
 

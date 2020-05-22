@@ -119,6 +119,7 @@ TEST_CASE("HdrUtils", "[proxy][hdrutils]")
   REQUIRE(value == "charlie");
   value = iter.get_next();
   REQUIRE(value.empty());
+  heap->destroy();
 }
 
 TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
@@ -161,6 +162,7 @@ TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
   REQUIRE(parse != 0);
   REQUIRE(idx == text.size());
   REQUIRE(0 == memcmp(ts::TextView(buff, idx), text));
+  heap->destroy();
 };
 
 TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
@@ -203,4 +205,5 @@ TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
   REQUIRE(parse != 0);
   REQUIRE(idx == text.size());
   REQUIRE(0 == memcmp(ts::TextView(buff, idx), text));
+  heap->destroy();
 };

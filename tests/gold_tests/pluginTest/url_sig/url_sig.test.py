@@ -18,8 +18,7 @@
 
 import hashlib
 import hmac
-import os
-import subprocess
+
 Test.Summary = '''
 Test url_sig plugin
 '''

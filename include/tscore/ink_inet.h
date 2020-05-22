@@ -1214,7 +1214,7 @@ struct IpAddr {
   */
   char *toString(char *dest, ///< [out] Destination string buffer.
                  size_t len  ///< [in] Size of buffer.
-                 ) const;
+  ) const;
 
   /// Equality.
   bool

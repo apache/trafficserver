@@ -119,7 +119,7 @@ plugins to build large scale web applications.
     libtool
     linux-headers
 
-  OSX (we recommend HomeBrew):
+  macOS (we recommend HomeBrew):
     autoconf
     automake
     pkg-config

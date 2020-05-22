@@ -26,6 +26,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <netinet/in.h>
 
 #include "ts/ts.h"
 #include "lib/StringHash.h"
@@ -147,7 +148,7 @@ private:
 
   inline void _release(RequestData &req_data);
 
-  sockaddr const *_client_addr;
+  struct sockaddr_storage _client_addr;
 };
 
 inline void

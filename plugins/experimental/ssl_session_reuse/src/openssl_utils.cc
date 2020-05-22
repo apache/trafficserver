@@ -50,11 +50,16 @@ ssl_new_session(TSSslSessionID &sid)
     TSError("Encoded id failed.");
     return 0;
   }
+  std::string redis_channel = ssl_param.cluster_name + "." + encoded_id;
 
   int session_ret_len = SSL_SESSION_MAX_DER;
   char session_data[SSL_SESSION_MAX_DER];
-  if (!TSSslSessionGetBuffer(&sid, session_data, &session_ret_len)) {
-    TSError("Session data is too large: %d", session_ret_len);
+  const auto buffer_length = TSSslSessionGetBuffer(&sid, session_data, &session_ret_len);
+  if (buffer_length == 0) {
+    TSError("Failed to find a session buffer.");
+    return 0;
+  } else if (buffer_length > session_ret_len) {
+    TSError("Session data is too large. Its size is: %d but our max buffer size is: %d.", buffer_length, SSL_SESSION_MAX_DER);
     return 0;
   }
 
@@ -65,7 +70,6 @@ ssl_new_session(TSSslSessionID &sid)
     return 0;
   }
 
-  std::string redis_channel = ssl_param.cluster_name + "." + encoded_id;
   ssl_param.pub->publish(redis_channel, encrypted_data);
 
   TSDebug(PLUGIN, "Create new session id: %s encoded: %s channel: %s", encoded_id.c_str(), encrypted_data.c_str(),

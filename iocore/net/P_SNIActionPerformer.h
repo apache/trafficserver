@@ -38,7 +38,30 @@
 class ActionItem
 {
 public:
-  virtual int SNIAction(Continuation *cont) const = 0;
+  /**
+   * Context should contain extra data needed to be passed to the actual SNIAction.
+   */
+  struct Context {
+    /**
+     * if any, fqdn_wildcard_captured_groups will hold the captured groups from the `fqdn`
+     * match which will be used to construct the tunnel destination.
+     */
+    std::optional<std::vector<std::string>> _fqdn_wildcard_captured_groups;
+  };
+
+  virtual int SNIAction(Continuation *cont, const Context &ctx) const = 0;
+
+  /**
+    This method tests whether this action would have been triggered by a
+    particuarly SNI value and IP address combination.  This is run after the
+    TLS exchange finished to see if the client used an SNI name different from
+    the host name to avoid SNI-based policy
+  */
+  virtual bool
+  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const
+  {
+    return false;
+  }
   virtual ~ActionItem(){};
 };
 
@@ -49,7 +72,7 @@ public:
   ~ControlH2() override {}
 
   int
-  SNIAction(Continuation *cont) const override
+  SNIAction(Continuation *cont, const Context &ctx) const override
   {
     auto ssl_vc = dynamic_cast<SSLNetVConnection *>(cont);
     if (ssl_vc) {
@@ -69,21 +92,102 @@ private:
 class TunnelDestination : public ActionItem
 {
 public:
-  TunnelDestination(const std::string_view &dest, bool decrypt) : destination(dest), tunnel_decrypt(decrypt) {}
+  TunnelDestination(const std::string_view &dest, bool decrypt, bool tls_upstream)
+    : destination(dest), tunnel_decrypt(decrypt), tls_upstream(tls_upstream)
+  {
+    need_fix = (destination.find_first_of('$') != std::string::npos);
+  }
   ~TunnelDestination() override {}
 
   int
-  SNIAction(Continuation *cont) const override
+  SNIAction(Continuation *cont, const Context &ctx) const override
   {
     // Set the netvc option?
     SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(cont);
     if (ssl_netvc) {
-      ssl_netvc->set_tunnel_destination(destination, tunnel_decrypt);
+      // If needed, we will try to amend the tunnel destination.
+      if (ctx._fqdn_wildcard_captured_groups && need_fix) {
+        const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups);
+        ssl_netvc->set_tunnel_destination(fixed_dst, tunnel_decrypt, tls_upstream);
+        Debug("TunnelDestination", "Destination now is [%s], configured [%s]", fixed_dst.c_str(), destination.c_str());
+      } else {
+        ssl_netvc->set_tunnel_destination(destination, tunnel_decrypt, tls_upstream);
+      }
     }
     return SSL_TLSEXT_ERR_OK;
   }
+
+private:
+  bool
+  is_number(const std::string &s) const
+  {
+    return !s.empty() &&
+           std::find_if(std::begin(s), std::end(s), [](std::string::value_type c) { return !std::isdigit(c); }) == std::end(s);
+  }
+
+  /**
+   * `tunnel_route` may contain matching groups ie: `$1` which needs to be replaced by the corresponding
+   * captured group from the `fqdn`, this function will replace them using proper group string. Matching
+   * groups could be at any order.
+   */
+  std::string
+  replace_match_groups(const std::string &dst, const std::vector<std::string> &groups) const
+  {
+    if (dst.empty() || groups.empty()) {
+      return dst;
+    }
+    std::string real_dst;
+    std::string::size_type pos{0};
+
+    const auto end = std::end(dst);
+    // We need to split the tunnel string and place each corresponding match on the
+    // configured one, so we need to first, get the match, then get the match number
+    // making sure that it does exist in the captured group.
+    for (auto c = std::begin(dst); c != end; c++, pos++) {
+      if (*c == '$') {
+        // find the next '.' so we can get the group number.
+        const auto dot            = dst.find('.', pos);
+        std::string::size_type to = std::string::npos;
+        if (dot != std::string::npos) {
+          to = dot - (pos + 1);
+        } else {
+          // It may not have a dot, which could be because it's the last part. In that case
+          // we should check for the port separator.
+          if (const auto port = dst.find(':', pos); port != std::string::npos) {
+            to = (port - pos) - 1;
+          }
+        }
+        const auto &number_str = dst.substr(pos + 1, to);
+        if (!is_number(number_str)) {
+          // it may be some issue on the configured string, place the char and keep going.
+          real_dst += *c;
+          continue;
+        }
+        const std::size_t group_index = std::stoi(number_str);
+        if ((group_index - 1) < groups.size()) {
+          // place the captured group.
+          real_dst += groups[group_index - 1];
+          // if it was the last match, then ...
+          if (dot == std::string::npos && to == std::string::npos) {
+            // that's it.
+            break;
+          }
+          pos += number_str.size() + 1;
+          std::advance(c, number_str.size() + 1);
+        }
+        // If there is no match for a specific group, then we keep the `$#` as defined in the string.
+      }
+      real_dst += *c;
+    }
+
+    return real_dst;
+  }
+
   std::string destination;
-  bool tunnel_decrypt = false;
+
+  bool tunnel_decrypt;
+  bool need_fix;
+  bool tls_upstream;
 };
 
 class VerifyClient : public ActionItem
@@ -95,12 +199,42 @@ public:
   VerifyClient(uint8_t param) : mode(param) {}
   ~VerifyClient() override {}
   int
-  SNIAction(Continuation *cont) const override
+  SNIAction(Continuation *cont, const Context &ctx) const override
   {
     auto ssl_vc = dynamic_cast<SSLNetVConnection *>(cont);
     Debug("ssl_sni", "action verify param %d", this->mode);
     setClientCertLevel(ssl_vc->ssl, this->mode);
     return SSL_TLSEXT_ERR_OK;
+  }
+  bool
+  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const override
+  {
+    // This action is triggered by a SNI if it was set
+    return true;
+  }
+};
+
+class HostSniPolicy : public ActionItem
+{
+  uint8_t policy;
+
+public:
+  HostSniPolicy(const char *param) : policy(atoi(param)) {}
+  HostSniPolicy(uint8_t param) : policy(param) {}
+  ~HostSniPolicy() override {}
+  int
+  SNIAction(Continuation *cont, const Context &ctx) const override
+  {
+    // On action this doesn't do anything
+    return SSL_TLSEXT_ERR_OK;
+  }
+  bool
+  TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &in_policy) const override
+  {
+    // Update the policy when testing
+    in_policy = this->policy;
+    // But this action didn't really trigger during the action phase
+    return false;
   }
 };
 
@@ -118,7 +252,7 @@ public:
   TLSValidProtocols() : protocol_mask(max_mask) {}
   TLSValidProtocols(unsigned long protocols) : unset(false), protocol_mask(protocols) {}
   int
-  SNIAction(Continuation *cont) const override
+  SNIAction(Continuation *cont, const Context &ctx) const override
   {
     if (!unset) {
       auto ssl_vc = dynamic_cast<SSLNetVConnection *>(cont);
@@ -158,7 +292,7 @@ public:
   } // end function SNI_IpAllow
 
   int
-  SNIAction(Continuation *cont) const override
+  SNIAction(Continuation *cont, const Context &ctx) const override
   {
     // i.e, ip filtering is not required
     if (ip_map.count() == 0) {
@@ -177,5 +311,14 @@ public:
       Debug("ssl_sni", "%s is not allowed. Denying connection", buff);
       return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
+  }
+  bool
+  TestClientSNIAction(const char *servrername, const IpEndpoint &ep, int &policy) const override
+  {
+    bool retval = false;
+    if (ip_map.contains(ep)) {
+      retval = true;
+    }
+    return retval;
   }
 };

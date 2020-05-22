@@ -178,6 +178,18 @@ namespace file
   // Returns return the canonicalized absolute pathname
   path canonical(const path &p, std::error_code &ec);
 
+  // Return the filename derived from path p.
+  //
+  // This is made to match the std::filesystem::path::filename behavior:
+  //   https://en.cppreference.com/w/cpp/filesystem/path/filename
+  //
+  // Examples:
+  //   given "/foo/bar.txt", this returns "bar.txt"
+  //   given "/foo/bar", this returns "bar"
+  //   given "/foo/bar/", this returns ""
+  //   given "/", this returns ""
+  path filename(const path &p);
+
   // Checks if the file/directory exists
   bool exists(const path &p);
 

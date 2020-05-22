@@ -26,7 +26,9 @@ Traffic Server Debugging APIs.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSError(const char * format, ...)
 .. function:: void TSFatal(const char * format, ...)

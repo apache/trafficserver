@@ -25,7 +25,6 @@
 
 #include <string>
 #include <map>
-#include <pthread.h>
 #include "lib/ComponentBase.h"
 #include "lib/StringHash.h"
 #include "lib/DocNode.h"
@@ -36,7 +35,6 @@
 #include "SpecialIncludeHandler.h"
 #include "HandlerManager.h"
 
-extern pthread_key_t key;
 class EsiProcessor : private EsiLib::ComponentBase
 {
 public:
@@ -141,7 +139,6 @@ private:
   HttpDataFetcher &_fetcher;
   EsiLib::StringHash _include_urls;
 
-  bool _reqAdded;
   bool _usePackedNodeList;
 
   bool _processEsiNode(const EsiLib::DocNodeList::iterator &iter);

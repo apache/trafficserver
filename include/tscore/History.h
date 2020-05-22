@@ -67,7 +67,11 @@ public:
     return history_pos > Count ? Count : history_pos;
   }
 
-  const HistoryEntry &operator[](unsigned int i) const { return history[i]; }
+  const HistoryEntry &
+  operator[](unsigned int i) const
+  {
+    return history[i];
+  }
 
 private:
   HistoryEntry history[Count];

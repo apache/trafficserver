@@ -17,9 +17,7 @@ Test offering client cert to origin
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 import subprocess
-import re
 
 Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
@@ -177,7 +175,7 @@ tr2.Processes.Default.ReturnCode = 0
 # At that point the new sni settings are ready to go
 def sni_reload_done(tsenv):
   def done_reload(process, hasRunFor, **kw):
-    cmd = "grep 'sni.yaml finished loading' {0} | wc -l > {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
+    cmd = "grep 'sni.yaml finished loading' {0} | wc -l  | sed -e 's/ //g'> {1}/test.out".format(ts.Disk.diags_log.Name, Test.RunDirectory)
     retval = subprocess.run(cmd, shell=True, env=tsenv)
     if retval.returncode == 0:
       cmd ="if [ -f {0}/test.out -a \"`cat {0}/test.out`\" = \"2\" ] ; then true; else false; fi".format(Test.RunDirectory)

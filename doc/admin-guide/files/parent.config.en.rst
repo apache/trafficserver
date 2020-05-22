@@ -124,7 +124,7 @@ The following list shows the possible actions and their allowed values.
 
 .. _parent-config-format-parent:
 
-``parent`` `(hostname or IP address):port[|weight][,another host]`
+``parent`` `(hostname or IP address):port[|weight][&hash name][,another host]`
     An ordered list of parent servers, separated by commas or
     semicolons. If the request cannot be handled by the last parent
     server in the list, then it will be routed to the origin server.
@@ -141,7 +141,7 @@ The following list shows the possible actions and their allowed values.
 
         parent="p1.x.com:8080|2.0, 192.168.0.3:80|3.0, 192.168.0.4:80|5.0"
 
-    If ``round_robin`` is set to ``consistent_hash``, you may add a ``unique hash string``
+    If ``round_robin`` is set to ``consistent_hash``, you may add a unique ``hash string``
     following the ``weight`` for each parent.  The ``hash string`` must start with ``&``
     and is used to build both the primary and secondary rings using the ``hash string``
     for each parent instead of the parents ``hostname`` or ``ip address``. This can be
@@ -207,7 +207,8 @@ The following list shows the possible actions and their allowed values.
 .. _parent-config-format-parent-retry:
 
 ``parent_retry``
-    - ``simple_retry`` - If the parent origin server returns a 404 response on a request
+    - ``simple_retry`` - If the parent returns a 404 response or if the response matches
+      a list of http 4xx responses defined in ``simple_server_retry_responses`` on a request
       a new parent is selected and the request is retried.  The number of retries is controlled
       by ``max_simple_retries`` which is set to 1 by default.
     - ``unavailable_server_retry`` - If the parent returns a 503 response or if the response matches
@@ -215,6 +216,13 @@ The following list shows the possible actions and their allowed values.
       parent is marked down and a new parent is selected to retry the request.  The number of
       retries is controlled by ``max_unavailable_server_retries`` which is set to 1 by default.
     - ``both`` - This enables both ``simple_retry`` and ``unavailable_server_retry`` as described above.
+
+.. _parent-config-format-simple-server-retry-responses:
+
+``simple_server_retry_responses``
+   If ``parent_retry`` is set to either ``simple_retry`` or ``both``, this parameter is a comma separated list of
+   http 4xx response codes that will invoke the ``simple_retry`` described in the ``parent_retry`` section. By
+   default, ``simple_server_retry_responses`` is set to 404.
 
 .. _parent-config-format-unavailable-server-retry-responses:
 

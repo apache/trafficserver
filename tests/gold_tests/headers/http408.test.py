@@ -18,7 +18,6 @@ Test the 408 response header.
 #  limitations under the License.
 
 import os
-import subprocess
 
 Test.Summary = '''
 Check 408 response header for protocol stack data.
@@ -51,7 +50,7 @@ Test.Setup.Copy('data')
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = 'python tcp_client.py 127.0.0.1 {0} {1} --delay-after-send {2}'\
+tr.Processes.Default.Command = 'python3 tcp_client.py 127.0.0.1 {0} {1} --delay-after-send {2}'\
         .format(ts.Variables.port, 'data/{0}.txt'.format(HTTP_408_HOST), TIMEOUT + 2)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 10

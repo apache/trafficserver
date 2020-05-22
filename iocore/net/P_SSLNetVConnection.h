@@ -31,9 +31,13 @@
  ****************************************************************************/
 #pragma once
 
+#include <memory>
+
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
 #include <string_view>
+#include <cstring>
+#include <memory>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -43,6 +47,7 @@
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
 #include "P_ALPNSupport.h"
+#include "TLSSessionResumptionSupport.h"
 #include "P_SSLUtils.h"
 
 // These are included here because older OpenSSL libraries don't have them.
@@ -87,7 +92,7 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport
+class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport, public TLSSessionResumptionSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
@@ -123,18 +128,6 @@ public:
   setSSLHandShakeComplete(enum SSLHandshakeStatus state)
   {
     sslHandshakeStatus = state;
-  }
-
-  void
-  setSSLSessionCacheHit(bool state)
-  {
-    sslSessionCacheHit = state;
-  }
-
-  bool
-  getSSLSessionCacheHit() const
-  {
-    return sslSessionCacheHit;
   }
 
   int sslServerHandShakeEvent(int &err);
@@ -303,18 +296,6 @@ public:
     return ssl ? SSL_get_cipher_name(ssl) : nullptr;
   }
 
-  void
-  setSSLCurveNID(ssl_curve_id curve_nid)
-  {
-    sslCurveNID = curve_nid;
-  }
-
-  ssl_curve_id
-  getSSLCurveNID() const
-  {
-    return sslCurveNID;
-  }
-
   const char *
   getSSLCurve() const
   {
@@ -353,7 +334,7 @@ public:
     return tunnel_port;
   }
 
-  /* Returns true if this vc was configured for forward_route
+  /* Returns true if this vc was configured for forward_route or partial_blind_route
    */
   bool
   decrypt_tunnel()
@@ -361,8 +342,16 @@ public:
     return has_tunnel_destination() && tunnel_decrypt;
   }
 
+  /* Returns true if this vc was configured partial_blind_route
+   */
+  bool
+  upstream_tls()
+  {
+    return has_tunnel_destination() && tls_upstream;
+  }
+
   void
-  set_tunnel_destination(const std::string_view &destination, bool decrypt)
+  set_tunnel_destination(const std::string_view &destination, bool decrypt, bool upstream_tls)
   {
     auto pos = destination.find(":");
     if (nullptr != tunnel_host) {
@@ -376,6 +365,7 @@ public:
       tunnel_host = ats_strndup(destination.data(), destination.length());
     }
     tunnel_decrypt = decrypt;
+    tls_upstream   = upstream_tls;
   }
 
   int populate_protocol(std::string_view *results, int n) const override;
@@ -393,11 +383,22 @@ public:
   ink_hrtime sslHandshakeEndTime   = 0;
   ink_hrtime sslLastWriteTime      = 0;
   int64_t sslTotalBytesSent        = 0;
-  // The serverName is either a pointer to the name fetched from the
-  // SSL object or the empty string.  Therefore, we do not allocate
-  // extra memory for this value.  If plugins in the future can set the
-  // serverName value, this strategy will have to change.
-  const char *serverName = nullptr;
+
+  // The serverName is either a pointer to the (null-terminated) name fetched from the
+  // SSL object or the empty string.
+  const char *
+  get_server_name() const override
+  {
+    return _serverName.get() ? _serverName.get() : "";
+  }
+
+  void set_server_name(std::string_view name);
+
+  bool
+  support_sni() const override
+  {
+    return true;
+  }
 
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
@@ -408,6 +409,12 @@ public:
 
   bool protocol_mask_set = false;
   unsigned long protocol_mask;
+
+  // early data related stuff
+  bool early_data_finish            = false;
+  MIOBuffer *early_data_buf         = nullptr;
+  IOBufferReader *early_data_reader = nullptr;
+  int64_t read_from_early_data      = 0;
 
   // Only applies during the VERIFY certificate hooks (client and server side)
   // Means to give the plugin access to the data structure passed in during the underlying
@@ -424,20 +431,30 @@ public:
     verify_cert = ctx;
   }
 
+  const char *
+  get_sni_servername() const override
+  {
+    return SSL_get_servername(this->ssl, TLSEXT_NAMETYPE_host_name);
+  }
+
+protected:
+  const IpEndpoint &
+  _getLocalEndpoint() override
+  {
+    return local_addr;
+  }
+
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
   void increment_ssl_version_metric(int version) const;
-  void fetch_ssl_curve();
 
   enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
   bool sslClientRenegotiationAbort           = false;
-  bool sslSessionCacheHit                    = false;
   MIOBuffer *handShakeBuffer                 = nullptr;
   IOBufferReader *handShakeHolder            = nullptr;
   IOBufferReader *handShakeReader            = nullptr;
   int handShakeBioStored                     = 0;
-  int sslCurveNID                            = NID_undef;
 
   bool transparentPassThrough = false;
 
@@ -465,7 +482,11 @@ private:
   char *tunnel_host           = nullptr;
   in_port_t tunnel_port       = 0;
   bool tunnel_decrypt         = false;
+  bool tls_upstream           = false;
   X509_STORE_CTX *verify_cert = nullptr;
+
+  // Null-terminated string, or nullptr if there is no SNI server name.
+  std::unique_ptr<char[]> _serverName;
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);

@@ -165,7 +165,7 @@ FreeBSD
 OmniOS / illumos
 ----------------
 
-Mac OS X
+macOS
 --------
 
 Traffic Server Tuning

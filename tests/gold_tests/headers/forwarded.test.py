@@ -18,7 +18,6 @@ Test the Forwarded header and related configuration..
 #  limitations under the License.
 
 import os
-import subprocess
 
 Test.Summary = '''
 Test FORWARDED header.
@@ -78,12 +77,10 @@ forwarded_log_id = Test.Disk.File("forwarded.log")
 forwarded_log_id.Content = "forwarded.gold"
 
 
-def baselineTsSetup(ts, sslPort):
+def baselineTsSetup(ts):
 
     ts.addSSLfile("../remap/ssl/server.pem")
     ts.addSSLfile("../remap/ssl/server.key")
-
-    ts.Variables.ssl_port = sslPort
 
     ts.Disk.records_config.update({
         # 'proxy.config.diags.debug.enabled': 1,
@@ -91,10 +88,7 @@ def baselineTsSetup(ts, sslPort):
         'proxy.config.http.cache.http': 0,  # Make sure each request is forwarded to the origin server.
         'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.http.server_ports': (
-            'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'
-            .format(ts.Variables.port, ts.Variables.ssl_port))
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
     })
 
     ts.Disk.ssl_multicert_config.AddLine(
@@ -106,9 +100,9 @@ def baselineTsSetup(ts, sslPort):
     )
 
 
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", enable_tls=True)
 
-baselineTsSetup(ts, 4443)
+baselineTsSetup(ts)
 
 ts.Disk.remap_config.AddLine(
     'map http://www.forwarded-none.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
@@ -198,11 +192,9 @@ TestHttp1_1('www.forwarded-connection-compact.com')
 TestHttp1_1('www.forwarded-connection-std.com')
 TestHttp1_1('www.forwarded-connection-full.com')
 
-ts2 = Test.MakeATSProcess("ts2", command="traffic_manager", select_ports=False)
+ts2 = Test.MakeATSProcess("ts2", command="traffic_manager", enable_tls=True)
 
-ts2.Variables.port += 1
-
-baselineTsSetup(ts2, 4444)
+baselineTsSetup(ts2)
 
 ts2.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1,  # Retain Host header in original incoming client request.
@@ -276,13 +268,13 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    'curl --verbose --ipv6 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port)
+    'curl --verbose --ipv6 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.portv6)
 )
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     'curl --verbose --ipv6 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'.format(
-        ts2.Variables.ssl_port)
+        ts2.Variables.ssl_portv6)
 )
 tr.Processes.Default.ReturnCode = 0

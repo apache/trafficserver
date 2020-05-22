@@ -198,7 +198,7 @@ specifiers of the rule in question.
 .. _cache-config-format-revalidate:
 
 ``revalidate``
-   For objects that are in cache, overrides the the amount of time the object(s)
+   For objects that are in cache, overrides the amount of time the object(s)
    are to be considered fresh. Use the same time formats as ``pin-in-cache``.
 
 .. _cache-config-format-ttl-in-cache:

@@ -18,7 +18,6 @@ Use pre-accept hook to verify that both requests are made over the same TLS sess
 #  limitations under the License.
 
 import os
-import re
 
 Test.Summary = '''
 Verify that the client-side keep alive is honored for TLS and different versions of HTTP

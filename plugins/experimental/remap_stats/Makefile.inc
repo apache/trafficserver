@@ -17,4 +17,4 @@
 pkglib_LTLIBRARIES += experimental/remap_stats/remap_stats.la
 
 experimental_remap_stats_remap_stats_la_SOURCES = \
-  experimental/remap_stats/remap_stats.c
+  experimental/remap_stats/remap_stats.cc

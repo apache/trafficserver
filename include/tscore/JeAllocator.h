@@ -26,6 +26,9 @@
 
 #if TS_HAS_JEMALLOC
 #include <jemalloc/jemalloc.h>
+#if (JEMALLOC_VERSION_MAJOR == 0)
+#error jemalloc has bogus version
+#endif
 #if (JEMALLOC_VERSION_MAJOR == 5) && defined(MADV_DONTDUMP)
 #define JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED 1
 #endif /* MADV_DONTDUMP */

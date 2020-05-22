@@ -25,7 +25,9 @@ MemSpan
 Synopsis
 ========
 
-:code:`#include <ts/MemSpan.h>`
+.. code-block:: cpp
+
+    #include <ts/MemSpan.h>
 
 :class:`MemSpan` is a view on a contiguous section of writeable memory. A view does not own the memory
 and neither allocates nor de-allocates. The memory in the view is always owned by some other container

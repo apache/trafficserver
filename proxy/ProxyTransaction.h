@@ -37,7 +37,7 @@ public:
 
   /// Virtual Methods
   //
-  virtual void new_transaction();
+  virtual void new_transaction(bool from_early_data = false);
   virtual void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true);
   Action *adjust_thread(Continuation *cont, int event, void *data);
   virtual void release(IOBufferReader *r);
@@ -106,6 +106,8 @@ public:
   //
   void set_rx_error_code(ProxyError e);
   void set_tx_error_code(ProxyError e);
+
+  bool support_sni() const;
 
   /// Variables
   //
@@ -212,4 +214,10 @@ inline const char *
 ProxyTransaction::protocol_contains(std::string_view tag_prefix) const
 {
   return _proxy_ssn ? _proxy_ssn->protocol_contains(tag_prefix) : nullptr;
+}
+
+inline bool
+ProxyTransaction::support_sni() const
+{
+  return _proxy_ssn ? _proxy_ssn->support_sni() : false;
 }

@@ -17,7 +17,6 @@ Test cached responses and requests with bodies using CurlHeader tester
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 Test.Summary = '''
 Test cached responses and requests with bodies using CurlHeader tester
 '''

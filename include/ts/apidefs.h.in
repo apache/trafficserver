@@ -599,22 +599,6 @@ typedef enum {
 
 #ifndef _HTTP_PROXY_API_ENUMS_H_
 #define _HTTP_PROXY_API_ENUMS_H_
-/// Server session sharing values - match
-/// Must be identical to definition in HttpProxyAPIEnums.h
-typedef enum {
-  TS_SERVER_SESSION_SHARING_MATCH_NONE,
-  TS_SERVER_SESSION_SHARING_MATCH_BOTH,
-  TS_SERVER_SESSION_SHARING_MATCH_IP,
-  TS_SERVER_SESSION_SHARING_MATCH_HOST
-} TSServerSessionSharingMatchType;
-
-/// Server session sharing values - pool
-/// Must be identical to definition in HttpProxyAPIEnums.h
-typedef enum {
-  TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
-  TS_SERVER_SESSION_SHARING_POOL_THREAD,
-} TSServerSessionSharingPoolType;
-
 /// Values for per server outbound connection tracking group definition.
 /// See proxy.config.http.per_server.match
 typedef enum {
@@ -815,6 +799,7 @@ typedef enum {
   TS_CONFIG_SSL_CLIENT_SNI_POLICY,
   TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME,
   TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME,
+  TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
@@ -824,9 +809,7 @@ typedef enum {
   TS_THREAD_POOL_NET,
   TS_THREAD_POOL_TASK,
   /* unlikely you should use these */
-  TS_THREAD_POOL_SSL,
   TS_THREAD_POOL_DNS,
-  TS_THREAD_POOL_REMAP,
   TS_THREAD_POOL_UDP
 } TSThreadPool;
 
@@ -880,6 +863,15 @@ typedef enum {
   TS_MGMT_SOURCE_ENV       ///< Process environment variable.
 } TSMgmtSource;
 
+/// The User Arg type, used for Txn/Ssn/VConn user argument slots
+typedef enum {
+  TS_USER_ARGS_TXN,   ///< Transaction based.
+  TS_USER_ARGS_SSN,   ///< Session based
+  TS_USER_ARGS_VCONN, ///< VConnection based
+  TS_USER_ARGS_GLB,   ///< Global based
+  TS_USER_ARGS_COUNT  ///< Fake enum, # of valid entries.
+} TSUserArgType;
+
 typedef struct tsapi_file *TSFile;
 
 typedef struct tsapi_mloc *TSMLoc;
@@ -914,6 +906,8 @@ typedef struct tsapi_bufferreader *TSIOBufferReader;
 typedef struct tsapi_hostlookupresult *TSHostLookupResult;
 typedef struct tsapi_aiocallback *TSAIOCallback;
 typedef struct tsapi_net_accept *TSAcceptor;
+
+typedef struct tsapi_fetchsm *TSFetchSM;
 
 typedef void *(*TSThreadFunc)(void *data);
 typedef int (*TSEventFunc)(TSCont contp, TSEvent event, void *edata);

@@ -352,7 +352,9 @@ struct QueryMap {
 
   QueryMap(std::string &&s) : content_(s) { parse(); }
 
-  template <typename T> const Vector &operator[](T &&k) const
+  template <typename T>
+  const Vector &
+  operator[](T &&k) const
   {
     const auto iterator = map_.find(k);
     if (iterator != map_.end()) {

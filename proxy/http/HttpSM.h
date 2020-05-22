@@ -199,7 +199,7 @@ public:
   ~PostDataBuffers();
 };
 
-class HttpSM : public Continuation
+class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpPagesHandler;
   friend class CoreUtils;
@@ -210,11 +210,11 @@ public:
   virtual void destroy();
 
   static HttpSM *allocate();
-  HttpCacheSM &get_cache_sm();          // Added to get the object of CacheSM YTS Team, yamsat
-  HttpVCTableEntry *get_ua_entry();     // Added to get the ua_entry pointer  - YTS-TEAM
-  HttpVCTableEntry *get_server_entry(); // Added to get the server_entry pointer
+  HttpCacheSM &get_cache_sm(); // Added to get the object of CacheSM YTS Team, yamsat
+  std::string_view get_outbound_sni() const;
+  std::string_view get_outbound_cert() const;
 
-  void init();
+  void init(bool from_early_data = false);
 
   void attach_client_session(ProxyTransaction *client_vc_arg, IOBufferReader *buffer_reader);
 
@@ -339,6 +339,10 @@ public:
   bool get_postbuf_done();
   bool is_postbuf_valid();
 
+  // See if we should allow the transaction
+  // based on sni and host name header values
+  void check_sni_host();
+
 protected:
   int reentrancy_count = 0;
 
@@ -347,7 +351,6 @@ protected:
   HttpVCTable vc_table;
 
   HttpVCTableEntry *ua_entry = nullptr;
-  void remove_ua_entry();
 
 public:
   ProxyTransaction *ua_txn         = nullptr;
@@ -372,7 +375,6 @@ protected:
   bool will_be_private_ss              = false;
   int shared_session_retries           = 0;
   IOBufferReader *server_buffer_reader = nullptr;
-  void remove_server_entry();
 
   HttpTransformInfo transform_info;
   HttpTransformInfo post_transform_info;
@@ -460,8 +462,8 @@ protected:
   void do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_info, bool retry, bool allow_multiple = false);
   void do_cache_delete_all_alts(Continuation *cont);
   void do_auth_callout();
-  void do_api_callout();
-  void do_api_callout_internal();
+  int do_api_callout();
+  int do_api_callout_internal();
   void do_redirect();
   void redirect_request(const char *redirect_url, const int redirect_len);
   void do_drain_request_body(HTTPHdr &response);
@@ -634,6 +636,7 @@ private:
   PostDataBuffers _postbuf;
   int _client_connection_id = -1, _client_transaction_id = -1;
   int _client_transaction_priority_weight = -1, _client_transaction_priority_dependence = -1;
+  bool _from_early_data = false;
 };
 
 // Function to get the cache_sm object - YTS Team, yamsat
@@ -643,40 +646,11 @@ HttpSM::get_cache_sm()
   return cache_sm;
 }
 
-// Function to get the ua_entry pointer - YTS Team, yamsat
-inline HttpVCTableEntry *
-HttpSM::get_ua_entry()
-{
-  return ua_entry;
-}
-
-inline HttpVCTableEntry *
-HttpSM::get_server_entry()
-{
-  return server_entry;
-}
-
 inline HttpSM *
 HttpSM::allocate()
 {
   extern ClassAllocator<HttpSM> httpSMAllocator;
   return httpSMAllocator.alloc();
-}
-
-inline void
-HttpSM::remove_ua_entry()
-{
-  vc_table.remove_entry(ua_entry);
-  ua_entry = nullptr;
-}
-
-inline void
-HttpSM::remove_server_entry()
-{
-  if (server_entry) {
-    vc_table.remove_entry(server_entry);
-    server_entry = nullptr;
-  }
 }
 
 inline int

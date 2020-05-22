@@ -88,14 +88,15 @@
  * Form all types of queries.
  * Returns the size of the result or -1.
  */
-int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of query  */
-                    const char *dname,                         /*!< domain name  */
-                    int _class, int type,                      /*!< _class and type of query  */
-                    const u_char *data,                        /*!< resource record data  */
-                    int datalen,                               /*!< length of data  */
-                    const u_char * /* newrr_in  ATS_UNUSED */, /*!< new rr for modify or append  */
-                    u_char *buf,                               /*!< buffer to put query  */
-                    int buflen)                                /*!< size of buffer  */
+int
+ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of query  */
+                const char *dname,                         /*!< domain name  */
+                int _class, int type,                      /*!< _class and type of query  */
+                const u_char *data,                        /*!< resource record data  */
+                int datalen,                               /*!< length of data  */
+                const u_char * /* newrr_in  ATS_UNUSED */, /*!< new rr for modify or append  */
+                u_char *buf,                               /*!< buffer to put query  */
+                int buflen)                                /*!< size of buffer  */
 {
   HEADER *hp;
   u_char *cp, *ep;
@@ -544,14 +545,16 @@ ats_host_res_from(int family, HostResPreferenceOrder const &order)
   return HOST_RES_NONE;
 }
 
-HostResStyle
-ats_host_res_match(sockaddr const *addr)
+void
+ats_force_order_by_family(sockaddr const *addr, HostResPreferenceOrder order)
 {
-  HostResStyle zret = HOST_RES_NONE;
+  int pos{0};
   if (ats_is_ip6(addr)) {
-    zret = HOST_RES_IPV6_ONLY;
+    order[pos++] = HOST_RES_PREFER_IPV6;
   } else if (ats_is_ip4(addr)) {
-    zret = HOST_RES_IPV4_ONLY;
+    order[pos++] = HOST_RES_PREFER_IPV4;
   }
-  return zret;
+  for (; pos < N_HOST_RES_PREFERENCE_ORDER; pos++) {
+    order[pos] = HOST_RES_PREFER_NONE;
+  }
 }

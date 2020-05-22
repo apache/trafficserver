@@ -151,6 +151,9 @@ Cache Details
 .. _chm:
 .. _cwr:
 .. _cwtr:
+.. _crra:
+.. _cwra:
+.. _cccs:
 
 These log fields reveal details of the |TS| proxy interaction with its own
 cache while attempting to service incoming client requests.
@@ -173,6 +176,13 @@ cwr   Proxy Cache    Cache Write Result. Specifies the result of attempting to
                      (``WL_MISS``), write interrupted (``INTR``), error while
                      writing (``ERR``), or cache write successful (``FIN``).
 cwt   Proxy Cache    Cache Write Transform Result.
+crra  Proxy Cache    Cache read retry attempts to read the object from cache.
+cwra  Proxy Cache    Cache write retry attempts to write a fresh or updated
+                     object to cache.
+cccs  Proxy Cache    Cache collapsed connection success;
+                     -1: collapsing was attempted but failed, request went upstream
+                     0: collapsing was unnecessary
+                     1: attempted to collapse and got a cache hit on subsequent read attempts
 ===== ============== ==========================================================
 
 .. _admin-logging-fields-txn:
@@ -205,9 +215,9 @@ ctid  Client Request Client Transaction ID, a non-negative number for a transact
                      which is different for all currently-active transactions on the
                      same client connection.  For client HTTP/2 transactions, this
                      value is the stream ID for the transaction.
-ctpw  Client Request Client Transaction Priority Weight, the priority weight for the 
+ctpw  Client Request Client Transaction Priority Weight, the priority weight for the
                      underlying HTTP/2 protocol.
-ctpd  Client Request Client Transaction Priority Dependence, the transaction ID that 
+ctpd  Client Request Client Transaction Priority Dependence, the transaction ID that
                      the current transaction depends on for HTTP/2 priority logic.
 ===== ============== ==================================================================
 
@@ -331,7 +341,7 @@ cssh           ecssh
 ============== ===================
 
 It is also possible to log all of the headers in a transaction message with a
-single field.  For each original original field, there is a variant which ends in
+single field.  For each original field, there is a variant which ends in
 ``ah`` rather than ``h``, as shown here:
 
 ============== ===================
@@ -495,6 +505,13 @@ shi   Origin Server  IP address resolved via DNS by |TS| for the origin server.
 shn   Origin Server  Host name of the origin server.
 nhi   Origin Server  Destination IP address of next hop
 nhp   Origin Server  Destination port of next hop
+ppv   Proxy Protocol Proxy Protocol Version used (if any) between the Loadbalancer
+      Version        and |TS|
+pps   Proxy Protocol Source IP received via Proxy Protocol context from the LB to
+      Source IP      the |TS|
+ppd   Proxy Protocol Destination IP received via Proxy Protocol context from the LB
+      Dest IP        to the |TS|
+
 ===== ============== ==========================================================
 
 .. note::
@@ -579,6 +596,7 @@ cqtx  Client Request The full HTTP client request text, minus headers, e.g.
 SSL / Encryption
 ~~~~~~~~~~~~~~~~
 
+.. _cssn:
 .. _cqssl:
 .. _cqssr:
 .. _cqssv:
@@ -592,6 +610,10 @@ features.
 ===== ============== ==========================================================
 Field Source         Description
 ===== ============== ==========================================================
+cssn  Client TLS     SNI server name in client Hello message in TLS handshake.
+      Hello          If no server name present in Hello, or the transaction
+                     was not over TLS (over TCP), this field will contain
+                     ``-``.
 cqssl Client Request SSL client request status indicates if this client
                      connection is over SSL.
 cqssr Client Request SSL session ticket reused status; indicates if the current
@@ -791,6 +813,17 @@ cquup Client Request Canonical (prior to remapping) path component from the
                      client request. Compare with cqup_.
 cquuh Client Request Unmapped URL host from the client request.
 ===== ============== ==========================================================
+
+Line Length
+===========
+
+The maximum line size for a log entry can be configured via the following
+parameters, the details of which are documented in the linked
+:file:`records.config` descriptions:
+
+- :ts:cv:`proxy.config.log.max_line_size`
+- :ts:cv:`proxy.config.log.ascii_buffer_size`
+- :ts:cv:`proxy.config.log.log_buffer_size`
 
 Log Field Slicing
 =================

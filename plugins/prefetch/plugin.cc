@@ -451,7 +451,9 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
 
   TSEvent retEvent = TS_EVENT_HTTP_CONTINUE;
 
-  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &reqBuffer, &reqHdrLoc)) {
+  if ((event == TS_EVENT_HTTP_POST_REMAP || event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE ||
+       event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) &&
+      TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &reqBuffer, &reqHdrLoc)) {
     PrefetchError("failed to get client request");
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
     return 0;
@@ -608,7 +610,10 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
   }
 
   /* Release the request MLoc */
-  TSHandleMLocRelease(reqBuffer, TS_NULL_MLOC, reqHdrLoc);
+  if (event == TS_EVENT_HTTP_POST_REMAP || event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE ||
+      event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
+    TSHandleMLocRelease(reqBuffer, TS_NULL_MLOC, reqHdrLoc);
+  }
 
   /* Reenable and continue with the state machine. */
   TSHttpTxnReenable(txnp, retEvent);

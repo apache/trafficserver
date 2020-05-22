@@ -180,7 +180,7 @@ Http1ServerSession::release()
   server_vc->control_flags.set_flags(0);
 
   // Private sessions are never released back to the shared pool
-  if (private_session || TS_SERVER_SESSION_SHARING_MATCH_NONE == sharing_match) {
+  if (private_session || sharing_match == 0) {
     this->do_io_close();
     return;
   }

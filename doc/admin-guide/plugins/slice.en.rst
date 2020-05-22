@@ -5,9 +5,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -69,17 +69,36 @@ The slice plugin supports the following options::
         Suffix k,m,g supported
         Limited to 32k and 32m inclusive.
 
-    --test-blockbytes=<bytes> (optional)
+    --blockbytes-test=<bytes> (optional)
         Suffix k,m,g supported
         -t <bytes> for short.
         Limited to any positive number.
         Ignored if --blockbytes provided.
 
+    --remap-host=<loopback hostname> (optional)
+        Uses effective url with given hostname for remapping.
+        Requires setting up an intermediate loopback remap rule.
+        -r for short
+
     --pace-errorlog=<seconds> (optional)
         Limit stitching error logs to every 'n' second(s)
+        -p for short
 
     --disable-errorlog (optional)
         Disable writing block stitch errors to the error log.
+        -d for short
+
+    --exclude-regex=<regex> (optional)
+        If provided, only slice what matches.
+        If not provided will always slice
+        Cannot be used with --include-regex
+        -e for short
+
+    --include-regex=<regex> (optional)
+        If provided, only slice what matches.
+        If not provided will always slice
+        Cannot be used with --exclude-regex
+        -i for short
 
 Examples::
 
@@ -95,10 +114,10 @@ Byte suffix examples::
     slice.so -b 512k
     slice.so --blockbytes=32m
 
-For testing and extreme purposes the parameter ``test-blockbytes`` may
+For testing and extreme purposes the parameter ``blockbytes-test`` may
 be used instead which is unchecked::
 
-    slice.so --test-blockbytes=1G
+    slice.so --blockbytes-test=1G
     slice.so -t 13
 
 Because the slice plugin is susceptible to errors during block stitching
@@ -114,6 +133,16 @@ After modifying :file:`remap.config`, restart or reload traffic server
 (sudo traffic_ctl config reload) or (sudo traffic_ctl server restart)
 to activate the new configuration values.
 
+Don't slice txt files::
+
+  slice.so --exclude-regex=\\.txt
+  slice.so -e \\.txt
+
+Slice only mp4 files::
+
+  slice.so --include-regex=\\.mp4
+  slice.so -i \\.mp4
+
 Debug Options
 -------------
 
@@ -128,9 +157,12 @@ Under normal logging these slice block errors tend to show up as::
     crc value ERR_READ_ERROR
 
 By default more detailed stitching errors are written to ``diags.log``.
-An example is as follows::
 
-[Apr 19 20:26:13.639] [ET_NET 17] ERROR: [slice] 1555705573.639 reason="Non 206 internal block response" uri="http://localhost:18080/%7Ep.tex/%7Es.50M/%7Eui.20000/" uas="curl/7.29.0" req_range="bytes=1000000-" norm_range="bytes 1000000-52428799/52428800" etag_exp="%221603934496%22" lm_exp="Fri, 19 Apr 2019 18:53:20 GMT" blk_range="21000000-21999999" status_got="400" cr_got="" etag_got="" lm_got="" cc="no-store" via=""
+.. topic:: Example
+
+    ERROR: [slice.cc: 288] logSliceError(): 1555705573.639 reason="Non 206 internal block response" uri="http://ats_ep/someasset.mp4" uas="curl" req_range="bytes=1000000-" norm_range="bytes 1000000-52428799/52428800" etag_exp="%221603934496%22" lm_exp="Fri, 19 Apr 2019 18:53:20 GMT" blk_range="21000000-21999999" status_got="206" cr_got="" etag_got="%221603934496%22" lm_got="" cc="no-store" via=""
+
+    ERROR: [server.cc: 288] logSliceError(): 1572370000.219 reason="Mismatch block Etag" uri="http://ats_ep/someasset.mp4" uas="curl" req_range="bytes=1092779033-1096299354" norm_range="bytes 1092779033-1096299354/2147483648" etag_exp="%223719843648%22" lm_exp="Tue, 29 Oct 2019 14:40:00 GMT" blk_range="1095000000-1095999999" status_got="206" cr_got="bytes 1095000000-1095999999/2147483648" etag_got="%223719853648%22" lm_got="Tue, 29 Oct 2019 17:26:40 GMT" cc="max-age=10000" via=""
 
 Whether or how often these detailed log entries are written are
 configurable plugin options.
@@ -175,7 +207,7 @@ block header and sends its bytes to the client until the client
 request is satisfied.
 
 Any extra bytes at the end of the last block are consumed by
-the the Slice plugin to allow cache_range_requests to finish
+the Slice plugin to allow cache_range_requests to finish
 the block fetch to ensure the block is cached.
 
 Important Notes
@@ -204,14 +236,43 @@ by cache_range_requests.  The parent will trim those requests to
 account for the asset Content-Length so only the appropriate number
 of bytes are actually transferred and cached.
 
+Effective URL remap
+===================
+
+By default the plugin restores the Pristine Url which reuses the same
+remap rule for each slice block.  This is wasteful in that it reruns
+the previous remap rules, and those remap rules must be smart enough to
+check for the existence of any headers they may have created the first
+time they have were visited.
+
+To get around this the '--remap-host=<host>' or '-r <host>' option may
+be used.  This requires an intermediate loopback remap to be defined which
+handles each slice block request.
+
+This works well with any remap rules that use the url_sig or uri_signing
+plugins.  As the client remap rule is not caching any plugins that
+manipulate the cache key would need to go into the loopback to parent
+remap rule.
+
+NOTE: Requests NOT handled by the slice plugin (ie: HEAD requests) are
+handled as with a typical remap rule.  GET requests intercepted by the
+slice plugin are virtually reissued into ATS and are proxied through
+another remap rule which must contain the ``cache_range_requests`` plugin
+
+Examples::
+
+    map http://ats/ http://parent/ @plugin=slice.so @pparam=--remap-host=loopback
+    map http://loopback/ http://parent/ @plugin=cache_range_requests.so
+
+Alternatively::
+
+    map http://ats/ http://parent/ @plugin=slice.so @pparam=-r @pparam=loopback
+    map http://loopback/ http://parent/ @plugin=cache_range_requests.so
+
 Current Limitations
 ===================
 
-By restoring the pristine Url the plugin as it works today reuses the
-same remap rule for each slice block.  This is wasteful in that it reruns
-the previous remap rules, and those remap rules must be smart enough to
-check for the existence of any headers they may have created the
-first time they have were visited.
-
 Since the Slice plugin is written as an intercept handler it loses the
-ability to use normal state machine hooks and transaction states.
+ability to use normal state machine hooks and transaction states. This
+functionality is handled by using the ``cache_range_requests`` plugin
+to interact with ATS.

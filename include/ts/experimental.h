@@ -50,8 +50,6 @@ typedef enum {
   TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4  // Allow this fetch to be created as a non-internal request.
 } TSFetchFlags;
 
-typedef struct tsapi_fetchsm *TSFetchSM;
-
 /* Forward declaration of in_addr, any user of these APIs should probably
    include net/netinet.h or whatever is appropriate on the platform. */
 struct in_addr;
@@ -244,8 +242,6 @@ tsapi TSReturnCode TSHttpTxnUpdateCachedObject(TSHttpTxn txnp);
  ****************************************************************************/
 tsapi int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
 
-tsapi void TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
-
 /* ip addr parsing */
 tsapi TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sockaddr *addr);
 
@@ -380,6 +376,16 @@ tsapi TSReturnCode TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value);
  */
 tsapi TSFetchSM TSFetchCreate(TSCont contp, const char *method, const char *url, const char *version,
                               struct sockaddr const *client_addr, int flags);
+
+/*
+ * Set fetch flags to FetchSM Context
+ *
+ * @param fetch_sm: returned value of TSFetchCreate().
+ * @param flags: can be bitwise OR of several TSFetchFlags.
+ *
+ * return void
+ */
+tsapi void TSFetchFlagSet(TSFetchSM fetch_sm, int flags);
 
 /*
  * Create FetchSM, this API will enable stream IO automatically.

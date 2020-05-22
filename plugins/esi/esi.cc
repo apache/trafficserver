@@ -30,7 +30,6 @@
 #include <string>
 #include <list>
 #include <arpa/inet.h>
-#include <pthread.h>
 #include <getopt.h>
 
 #include "ts/ts.h"
@@ -47,7 +46,6 @@
 #include "serverIntercept.h"
 #include "Stats.h"
 #include "HttpDataFetcherImpl.h"
-#include "FailureInfo.h"
 using std::string;
 using std::list;
 using namespace EsiLib;
@@ -1212,7 +1210,7 @@ maskOsCacheHeaders(TSHttpTxn txnp)
   TSMLoc field_loc;
   const char *name, *value;
   int name_len, value_len, n_field_values;
-  bool os_response_cacheable, is_cache_header, mask_header;
+  bool os_response_cacheable, mask_header;
   string masked_name;
   os_response_cacheable = true;
   for (int i = 0; i < n_mime_headers; ++i) {
@@ -1223,14 +1221,14 @@ maskOsCacheHeaders(TSHttpTxn txnp)
     }
     name = TSMimeHdrFieldNameGet(bufp, hdr_loc, field_loc, &name_len);
     if (name) {
-      mask_header = is_cache_header = false;
-      n_field_values                = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+      mask_header    = false;
+      n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
       for (int j = 0; j < n_field_values; ++j) {
         value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
         if (nullptr == value || !value_len) {
           TSDebug(DEBUG_TAG, "[%s] Error while getting value #%d of header [%.*s]", __FUNCTION__, j, name_len, name);
         } else {
-          is_cache_header = checkForCacheHeader(name, name_len, value, value_len, os_response_cacheable);
+          bool is_cache_header = checkForCacheHeader(name, name_len, value, value_len, os_response_cacheable);
           if (!os_response_cacheable) {
             break;
           }
@@ -1493,7 +1491,6 @@ lFail:
   return false;
 }
 
-pthread_key_t threadKey = 0;
 static int
 globalHookHandler(TSCont contp, TSEvent event, void *edata)
 {
@@ -1629,28 +1626,14 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
     }
   }
 
-  int result = 0;
-  bool bKeySet;
-  if (threadKey == 0) {
-    bKeySet = true;
-    if ((result = pthread_key_create(&threadKey, nullptr)) != 0) {
-      TSError("[esi][%s] Could not create key", __FUNCTION__);
-      TSDebug(DEBUG_TAG, "[%s] Could not create key", __FUNCTION__);
-    }
-  } else {
-    bKeySet = false;
-  }
+  TSDebug(DEBUG_TAG,
+          "[%s] Plugin started, "
+          "packed-node-support: %d, private-response: %d, "
+          "disable-gzip-output: %d, first-byte-flush: %d ",
+          __FUNCTION__, pOptionInfo->packed_node_support, pOptionInfo->private_response, pOptionInfo->disable_gzip_output,
+          pOptionInfo->first_byte_flush);
 
-  if (result == 0) {
-    TSDebug(DEBUG_TAG,
-            "[%s] Plugin started%s, "
-            "packed-node-support: %d, private-response: %d, "
-            "disable-gzip-output: %d, first-byte-flush: %d ",
-            __FUNCTION__, bKeySet ? " and key is set" : "", pOptionInfo->packed_node_support, pOptionInfo->private_response,
-            pOptionInfo->disable_gzip_output, pOptionInfo->first_byte_flush);
-  }
-
-  return result;
+  return 0;
 }
 
 void

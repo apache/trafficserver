@@ -45,11 +45,17 @@ the user needs to enter the fqdn in the configuration with a ``*.`` followed by 
 .. _override-verify-origin-server:
 .. _override-verify-server-policy:
 .. _override-verify-server-properties:
+.. _override-host-sni-policy:
 
-========================= ==============================================================================
+========================= ========================================================================================
 Key                       Meaning
-========================= ==============================================================================
+========================= ========================================================================================
 fqdn                      Fully Qualified Domain Name. This item is used if the SNI value matches this.
+
+ip_allow                  Specify a list of client IP address, subnets, or ranges what are allowed to complete
+                          the connection. This list is comma separated. IPv4 and IPv6 addresses can be specified.
+                          Here is an example list: 192.168.1.0/24,192.168.10.1-4. This would allow connections
+                          from clients in the 19.168.1.0 network or in the range from 192.168.10.1 to 192.168.1.4.
 
 verify_server_policy      One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
@@ -73,15 +79,20 @@ verify_client             One of the values :code:`NONE`, :code:`MODERATE`, or :
 
                           By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
 
-valid_tls_versions_in     This specifies the list of TLS protocols that will be offered to user agents during
-                          the TLS negotiation.  This replaces the global settings in :ts:cv:`proxy.config.ssl.TLSv1`,
-                          :ts:cv:`proxy.config.ssl.TLSv1_1`, :ts:cv:`proxy.config.ssl.TLSv1_2`,
-                          and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential values are TLSv1, TLSv1_1, TLSv1_2, and
-                          TLSv1_3.  You must list all protocols that |TS| should offer to the client when using
-                          this key.  This key is only valid for openssl 1.1.0 and later. Older versions of openssl do not
-                          provide a hook early enough to update the SSL object.  It is a syntax error for |TS| built
-                          against earlier versions.
+host_sni_policy           One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
+                          If not specified, the value of :ts:cv:`proxy.config.http.host_sni_policy` is used.
+                          This controls how policy impacting mismatches between host header and SNI values are
+                          dealt with.
+
+valid_tls_versions_in     This specifies the list of TLS protocols that will be offered to user agents during
+                          the TLS negotiation.  This replaces the global settings in
+                          :ts:cv:`proxy.config.ssl.TLSv1`, :ts:cv:`proxy.config.ssl.TLSv1_1`,
+                          :ts:cv:`proxy.config.ssl.TLSv1_2`, and :ts:cv:`proxy.config.ssl.TLSv1_3`. The potential
+                          values are TLSv1, TLSv1_1, TLSv1_2, and TLSv1_3.  You must list all protocols that |TS|
+                          should offer to the client when using this key.  This key is only valid for openssl
+                          1.1.0 and later. Older versions of openssl do not provide a hook early enough to update
+                          the SSL object.  It is a syntax error for |TS| built against earlier versions.
 
 client_cert               The file containing the client certificate to use for the outbound connection.
 
@@ -97,13 +108,15 @@ client_key                The file containing the client private key that corres
                           |TS| tries to use a private key in client_cert.  Otherwise,
                           :ts:cv:`proxy.config.ssl.client.private_key.filename` is used.
 
-http2                     Indicates whether the H2 protocol should be added to or removed from the 
+http2                     Indicates whether the H2 protocol should be added to or removed from the
                           protocol negotiation list.  The valid values are :code:`on` or :code:`off`.
 
 disable_h2                Deprecated for the more general h2 setting.  Setting disable_h2
                           to :code:`true` is the same as setting http2 to :code:`on`.
 
 tunnel_route              Destination as an FQDN and port, separated by a colon ``:``.
+                          Match group number can be specified by ``$N`` where N should refer to a specified group
+                          in the FQDN, ``tunnel_route: $1.domain``.
 
                           This will forward all traffic to the specified destination without first terminating
                           the incoming TLS connection.
@@ -113,7 +126,14 @@ forward_route             Destination as an FQDN and port, separated by a colon 
                           This is similar to tunnel_route, but it terminates the TLS connection and forwards the
                           decrypted traffic. |TS| will not interpret the decrypted data, so the contents do not
                           need to be HTTP.
-========================= ==============================================================================
+
+partial_blind_route       Destination as an FQDN and port, separated by a colon ``:``.
+
+                          This is similar to forward_route in that |TS| terminates the incoming TLS connection.
+                          In addition partial_blind_route creates a new TLS connection to the specified origin.
+                          It does not interpret the decrypted data before passing it to the origin TLS
+                          connection, so the contents do not need to be HTTP.
+========================= ========================================================================================
 
 Client verification, via ``verify_client``, corresponds to setting
 :ts:cv:`proxy.config.ssl.client.certification_level` for this connection as noted below.
@@ -175,13 +195,24 @@ Disable HTTP/2 for ``no-http2.example.com``.
    - fqdn: no-http2.example.com
      http2: off
 
-Require client certificate verification for ``example.com`` and any server name ending with ``.yahoo.com``. Therefore, client request for a server name ending with yahoo.com (e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify the client certificate. By contrast, |TS| will allow a client certificate to be provided for ``example.com`` and if it is, |TS| will require the certificate to be valid.
+Require client certificate verification for ``foo.com`` and any server name ending with ``.yahoo.com``. Therefore, client
+request for a server name ending with yahoo.com (e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify
+the client certificate.
+
+For ``foo.com``, if the user agent sets the host header to foo.com but the SNI to some other value, |TS| will warn about the
+mismatch but continue to process the request.  Mismatches for the other domains will cause |TS| to warn and return 403.
+
+|TS| will allow a client certificate to be provided for ``example.com`` and if it is, |TS| will require the
+certificate to be valid.
 
 .. code-block:: yaml
 
    sni:
    - fqdn: example.com
      verify_client: MODERATE
+   - fqdn: 'foo.com'
+     verify_client: STRICT
+     host_sni_policy: PERMISSIVE
    - fqdn: '*.yahoo.com'
      verify_client: STRICT
 
@@ -194,6 +225,21 @@ client certificate.
    - fqdn: trusted.example.com
      verify_server_policy: DISABLED
      verify_client: STRICT
+
+Use FQDN captured group to match in ``tunnel_route``.
+
+.. code-block:: yaml
+
+   sni:
+   - fqdn: '*.foo.com'
+     tunnel_route: '$1.myfoo'
+   - fqdn: '*.bar.*.com'
+     tunnel_route: '$2.some.$1.yahoo'
+
+FQDN ``some.foo.com`` will match and the captured string will be replaced in the ``tunnel_route`` which will end up being
+``some.myfoo``.
+Second part is using multiple groups, having ``bob.bar.example.com`` as FQDN, ``tunnel_route`` will end up being
+``bar.some.example.yahoo``.
 
 See Also
 ========

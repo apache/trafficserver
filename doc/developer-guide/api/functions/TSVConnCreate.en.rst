@@ -24,7 +24,9 @@ TSVConnCreate
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSCont TSVConnCreate(TSEventFunc funcp, TSMutex mutexp)
 

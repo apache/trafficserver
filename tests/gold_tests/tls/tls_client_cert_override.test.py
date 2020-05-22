@@ -17,9 +17,6 @@ Test offering client cert to origin
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-import re
-
 Test.Summary = '''
 Test conf_remp to specify different client certificates to offer to the origin
 '''

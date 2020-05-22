@@ -24,7 +24,9 @@ TSHttpSsnReenable
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
 

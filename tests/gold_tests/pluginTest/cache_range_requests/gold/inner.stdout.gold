@@ -1,0 +1,10 @@
+HTTP/1.1 206 Partial Content
+Accept-Ranges: bytes
+Cache-Control: max-age=500
+Content-Range: bytes 7-15/18
+Etag: "path"
+Content-Length: 7
+Date: ``
+Server: ``
+X-Cache: ``
+``

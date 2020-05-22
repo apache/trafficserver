@@ -493,12 +493,16 @@ ts::IntrusiveDList<L>::iterator::operator--(int) -> self_type
   return tmp;
 }
 
-template <typename L> auto ts::IntrusiveDList<L>::const_iterator::operator-> () const -> value_type *
+template <typename L>
+auto
+ts::IntrusiveDList<L>::const_iterator::operator->() const -> value_type *
 {
   return _v;
 }
 
-template <typename L> auto ts::IntrusiveDList<L>::iterator::operator-> () const -> value_type *
+template <typename L>
+auto
+ts::IntrusiveDList<L>::iterator::operator->() const -> value_type *
 {
   return super_type::_v;
 }
@@ -508,12 +512,16 @@ template <typename L> ts::IntrusiveDList<L>::const_iterator::operator value_type
   return _v;
 }
 
-template <typename L> auto ts::IntrusiveDList<L>::const_iterator::operator*() const -> value_type &
+template <typename L>
+auto
+ts::IntrusiveDList<L>::const_iterator::operator*() const -> value_type &
 {
   return *_v;
 }
 
-template <typename L> auto ts::IntrusiveDList<L>::iterator::operator*() const -> value_type &
+template <typename L>
+auto
+ts::IntrusiveDList<L>::iterator::operator*() const -> value_type &
 {
   return *super_type::_v;
 }

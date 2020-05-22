@@ -30,6 +30,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Tokenizer.h"
+#include "tscore/Filenames.h"
 
 #ifdef SPLIT_DNS
 #include <sys/types.h>
@@ -130,7 +131,7 @@ SplitDNSConfig::reconfigure()
     return;
   }
 
-  Note("splitdns.config loading ...");
+  Note("%s loading ...", ts::filename::SPLITDNS);
 
   SplitDNS *params = new SplitDNS;
 
@@ -138,8 +139,7 @@ SplitDNSConfig::reconfigure()
   params->m_DNSSrvrTable    = new DNS_table("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags);
 
   if (nullptr == params->m_DNSSrvrTable || (0 == params->m_DNSSrvrTable->getEntryCount())) {
-    Error("splitdns.config failed to load");
-    Warning("No NAMEDs provided! Disabling SplitDNS");
+    Warning("Failed to load %s - No NAMEDs provided! Disabling SplitDNS", ts::filename::SPLITDNS);
     gsplit_dns_enabled = 0;
     delete params;
     return;
@@ -159,7 +159,7 @@ SplitDNSConfig::reconfigure()
     SplitDNSConfig::print();
   }
 
-  Note("splitdns.config finished loading");
+  Note("%s finished loading", ts::filename::SPLITDNS);
 }
 
 /* --------------------------------------------------------------
@@ -476,7 +476,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
   }
 
   if (!ats_is_ip(&m_servers.x_server_ip[0].sa)) {
-    return Result::failure("%s No server specified in splitdns.config at line %d", modulePrefix, line_num);
+    return Result::failure("%s No server specified in %s at line %d", modulePrefix, ts::filename::SPLITDNS, line_num);
   }
 
   DNSHandler *dnsH  = new DNSHandler;
@@ -505,7 +505,7 @@ SplitDNSRecord::Init(matcher_line *line_info)
   if (line_info->num_el > 0) {
     const char *tmp = ProcessModifiers(line_info);
     if (tmp != nullptr) {
-      return Result::failure("%s %s at line %d in splitdns.config", modulePrefix, tmp, line_num);
+      return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::SPLITDNS);
     }
   }
 

@@ -24,7 +24,9 @@ TSVIONBytesSet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSVIONBytesSet(TSVIO viop, int64_t nbytes)
 

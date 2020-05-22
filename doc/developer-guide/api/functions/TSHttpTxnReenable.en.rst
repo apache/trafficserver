@@ -27,7 +27,9 @@ processing the current hook.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event)
 

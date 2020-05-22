@@ -624,12 +624,14 @@ TextView::clear()
   return *this;
 }
 
-inline char TextView::operator*() const
+inline char
+TextView::operator*() const
 {
   return this->empty() ? 0 : *(this->data());
 }
 
-inline bool TextView::operator!() const
+inline bool
+TextView::operator!() const
 {
   return this->empty();
 }

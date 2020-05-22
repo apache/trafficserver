@@ -71,9 +71,9 @@ Http3HeaderFramer::is_done() const
 }
 
 void
-Http3HeaderFramer::_convert_header_from_1_1_to_3(HTTPHdr *h3_hdrs, HTTPHdr *h1_hdrs)
+Http3HeaderFramer::_convert_header_from_1_1_to_3(HTTPHdr *hdrs)
 {
-  http2_generate_h2_header_from_1_1(h1_hdrs, h3_hdrs);
+  http2_convert_header_from_1_1_to_2(hdrs);
 }
 
 void
@@ -85,22 +85,23 @@ Http3HeaderFramer::_generate_header_block()
 
   if (this->_transaction->direction() == NET_VCONNECTION_OUT) {
     this->_header.create(HTTP_TYPE_REQUEST);
+    http2_init_pseudo_headers(this->_header);
     parse_result = this->_header.parse_req(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
   } else {
     this->_header.create(HTTP_TYPE_RESPONSE);
+    http2_init_pseudo_headers(this->_header);
     parse_result = this->_header.parse_resp(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
   }
   this->_source_vio->ndone += this->_header.length_get();
 
   switch (parse_result) {
   case PARSE_RESULT_DONE: {
-    HTTPHdr h3_hdr;
-    this->_convert_header_from_1_1_to_3(&h3_hdr, &this->_header);
+    this->_convert_header_from_1_1_to_3(&this->_header);
 
     this->_header_block        = new_MIOBuffer();
     this->_header_block_reader = this->_header_block->alloc_reader();
 
-    this->_qpack->encode(this->_stream_id, h3_hdr, this->_header_block, this->_header_block_len);
+    this->_qpack->encode(this->_stream_id, this->_header, this->_header_block, this->_header_block_len);
     break;
   }
   case PARSE_RESULT_CONT:

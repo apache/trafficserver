@@ -24,6 +24,9 @@
 #pragma once
 
 #include <atomic>
+
+#include "NetTimeout.h"
+
 #include "HTTP2.h"
 #include "HPACK.h"
 #include "Http2Stream.h"
@@ -36,6 +39,7 @@ enum class Http2SendDataFrameResult {
   NO_ERROR = 0,
   NO_WINDOW,
   NO_PAYLOAD,
+  NOT_WRITE_AVAIL,
   ERROR,
   DONE,
 };
@@ -122,6 +126,7 @@ public:
   HpackHandle *local_hpack_handle  = nullptr;
   HpackHandle *remote_hpack_handle = nullptr;
   DependencyTree *dependency_tree  = nullptr;
+  ActivityCop<Http2Stream> _cop;
 
   // Settings.
   Http2ConnectionSettings server_settings;
@@ -130,18 +135,32 @@ public:
   void
   init()
   {
+    this->_server_rwnd = Http2::initial_window_size;
+
     local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
     remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
     if (Http2::stream_priority_enabled) {
       dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
     }
+
+    _cop = ActivityCop<Http2Stream>(this->mutex, &stream_list, 1);
+    _cop.start();
   }
 
   void
   destroy()
   {
+    if (in_destroy) {
+      schedule_zombie_event();
+      return;
+    }
+    in_destroy = true;
+
+    _cop.stop();
+
     if (shutdown_cont_event) {
       shutdown_cont_event->cancel();
+      shutdown_cont_event = nullptr;
     }
     cleanup_streams();
 
@@ -172,9 +191,9 @@ public:
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
   bool delete_stream(Http2Stream *stream);
-  void release_stream(Http2Stream *stream);
+  void release_stream();
   void cleanup_streams();
-
+  void restart_receiving(Http2Stream *stream);
   void update_initial_rwnd(Http2WindowSize new_size);
 
   Http2StreamId
@@ -224,11 +243,18 @@ public:
     return client_streams_in_count;
   }
 
+  void
+  decrement_stream_count()
+  {
+    --total_client_streams_count;
+  }
+
   double
   get_stream_error_rate() const
   {
     int total = get_stream_requests();
-    if (total > 0) {
+
+    if (total >= (1 / Http2::stream_error_rate_threshold)) {
       return (double)stream_error_count / (double)total;
     } else {
       return 0;
@@ -247,7 +273,7 @@ public:
   void send_data_frames(Http2Stream *stream);
   Http2SendDataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
-  void send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
+  bool send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_settings_frame(const Http2ConnectionSettings &new_settings);
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);
@@ -354,7 +380,7 @@ private:
 
   // Connection level window size
   ssize_t _client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
-  ssize_t _server_rwnd = Http2::initial_window_size;
+  ssize_t _server_rwnd = 0;
 
   std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index           = 0;
@@ -374,6 +400,7 @@ private:
   Http2StreamId continued_stream_id = 0;
   bool _scheduled                   = false;
   bool fini_received                = false;
+  bool in_destroy                   = false;
   int recursion                     = 0;
   Http2ShutdownState shutdown_state = HTTP2_SHUTDOWN_NONE;
   Http2ErrorCode shutdown_reason    = Http2ErrorCode::HTTP2_ERROR_MAX;

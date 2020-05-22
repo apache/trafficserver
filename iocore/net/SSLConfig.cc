@@ -41,7 +41,6 @@
 #include "HttpConfig.h"
 
 #include "P_Net.h"
-#include "P_SSLUtils.h"
 #include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
 #include "SSLDiags.h"
@@ -65,6 +64,11 @@ size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = nullptr;
 IpMap *SSLConfigParams::proxy_protocol_ipmap                = nullptr;
+
+const uint32_t EARLY_DATA_DEFAULT_SIZE               = 16384;
+uint32_t SSLConfigParams::server_max_early_data      = 0;
+uint32_t SSLConfigParams::server_recv_max_early_data = EARLY_DATA_DEFAULT_SIZE;
+bool SSLConfigParams::server_allow_early_data_params = false;
 
 int SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file      = nullptr;
@@ -249,6 +253,13 @@ SSLConfigParams::initialize()
   }
 #endif
 
+#ifdef SSL_OP_PRIORITIZE_CHACHA
+  REC_ReadConfigInteger(option, "proxy.config.ssl.server.prioritize_chacha");
+  if (option) {
+    ssl_ctx_options |= SSL_OP_PRIORITIZE_CHACHA;
+  }
+#endif
+
 #ifdef SSL_OP_NO_COMPRESSION
   ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
   ssl_client_ctx_options |= SSL_OP_NO_COMPRESSION;
@@ -277,6 +288,13 @@ SSLConfigParams::initialize()
   ssl_ctx_options |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
   ssl_client_ctx_options |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
 #endif
+
+  REC_ReadConfigInteger(server_max_early_data, "proxy.config.ssl.server.max_early_data");
+  REC_ReadConfigInt32(server_allow_early_data_params, "proxy.config.ssl.server.allow_early_data_params");
+
+  // According to OpenSSL the default value is 16384,
+  // we keep it unless "server_max_early_data" is higher.
+  server_recv_max_early_data = std::max(server_max_early_data, EARLY_DATA_DEFAULT_SIZE);
 
   REC_ReadConfigStringAlloc(serverCertChainFilename, "proxy.config.ssl.server.cert_chain.filename");
   REC_ReadConfigStringAlloc(serverCertRelativePath, "proxy.config.ssl.server.cert.path");
@@ -324,6 +342,8 @@ SSLConfigParams::initialize()
   REC_ReadConfigStringAlloc(ssl_ocsp_response_path, "proxy.config.ssl.ocsp.response.path");
   set_paths_helper(ssl_ocsp_response_path, nullptr, &ssl_ocsp_response_path_only, nullptr);
   ats_free(ssl_ocsp_response_path);
+
+  REC_ReadConfigInt32(ssl_handshake_timeout_in, "proxy.config.ssl.handshake_timeout_in");
 
   REC_ReadConfigInt32(async_handshake_enabled, "proxy.config.ssl.async.handshake.enabled");
   REC_ReadConfigStringAlloc(engine_conf_file, "proxy.config.ssl.engine.conf_file");

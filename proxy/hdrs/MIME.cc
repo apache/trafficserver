@@ -156,6 +156,7 @@ const char *MIME_FIELD_FORWARDED;
 const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
 const char *MIME_FIELD_SEC_WEBSOCKET_VERSION;
 const char *MIME_FIELD_HTTP2_SETTINGS;
+const char *MIME_FIELD_EARLY_DATA;
 
 const char *MIME_VALUE_BYTES;
 const char *MIME_VALUE_CHUNKED;
@@ -272,6 +273,7 @@ int MIME_LEN_FORWARDED;
 int MIME_LEN_SEC_WEBSOCKET_KEY;
 int MIME_LEN_SEC_WEBSOCKET_VERSION;
 int MIME_LEN_HTTP2_SETTINGS;
+int MIME_LEN_EARLY_DATA;
 
 int MIME_WKSIDX_ACCEPT;
 int MIME_WKSIDX_ACCEPT_CHARSET;
@@ -351,6 +353,7 @@ int MIME_WKSIDX_FORWARDED;
 int MIME_WKSIDX_SEC_WEBSOCKET_KEY;
 int MIME_WKSIDX_SEC_WEBSOCKET_VERSION;
 int MIME_WKSIDX_HTTP2_SETTINGS;
+int MIME_WKSIDX_EARLY_DATA;
 
 /***********************************************************************
  *                                                                     *
@@ -745,11 +748,10 @@ mime_init()
     MIME_FIELD_X_ID                      = hdrtoken_string_to_wks("X-ID");
     MIME_FIELD_X_FORWARDED_FOR           = hdrtoken_string_to_wks("X-Forwarded-For");
     MIME_FIELD_FORWARDED                 = hdrtoken_string_to_wks("Forwarded");
-
-    MIME_FIELD_SEC_WEBSOCKET_KEY     = hdrtoken_string_to_wks("Sec-WebSocket-Key");
-    MIME_FIELD_SEC_WEBSOCKET_VERSION = hdrtoken_string_to_wks("Sec-WebSocket-Version");
-
-    MIME_FIELD_HTTP2_SETTINGS = hdrtoken_string_to_wks("HTTP2-Settings");
+    MIME_FIELD_SEC_WEBSOCKET_KEY         = hdrtoken_string_to_wks("Sec-WebSocket-Key");
+    MIME_FIELD_SEC_WEBSOCKET_VERSION     = hdrtoken_string_to_wks("Sec-WebSocket-Version");
+    MIME_FIELD_HTTP2_SETTINGS            = hdrtoken_string_to_wks("HTTP2-Settings");
+    MIME_FIELD_EARLY_DATA                = hdrtoken_string_to_wks("Early-Data");
 
     MIME_LEN_ACCEPT                    = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT);
     MIME_LEN_ACCEPT_CHARSET            = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_CHARSET);
@@ -826,11 +828,10 @@ mime_init()
     MIME_LEN_X_ID                      = hdrtoken_wks_to_length(MIME_FIELD_X_ID);
     MIME_LEN_X_FORWARDED_FOR           = hdrtoken_wks_to_length(MIME_FIELD_X_FORWARDED_FOR);
     MIME_LEN_FORWARDED                 = hdrtoken_wks_to_length(MIME_FIELD_FORWARDED);
-
-    MIME_LEN_SEC_WEBSOCKET_KEY     = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_KEY);
-    MIME_LEN_SEC_WEBSOCKET_VERSION = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_VERSION);
-
-    MIME_LEN_HTTP2_SETTINGS = hdrtoken_wks_to_length(MIME_FIELD_HTTP2_SETTINGS);
+    MIME_LEN_SEC_WEBSOCKET_KEY         = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_KEY);
+    MIME_LEN_SEC_WEBSOCKET_VERSION     = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_VERSION);
+    MIME_LEN_HTTP2_SETTINGS            = hdrtoken_wks_to_length(MIME_FIELD_HTTP2_SETTINGS);
+    MIME_LEN_EARLY_DATA                = hdrtoken_wks_to_length(MIME_FIELD_EARLY_DATA);
 
     MIME_WKSIDX_ACCEPT                    = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT);
     MIME_WKSIDX_ACCEPT_CHARSET            = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_CHARSET);
@@ -909,6 +910,7 @@ mime_init()
     MIME_WKSIDX_SEC_WEBSOCKET_KEY         = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_KEY);
     MIME_WKSIDX_SEC_WEBSOCKET_VERSION     = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_VERSION);
     MIME_WKSIDX_HTTP2_SETTINGS            = hdrtoken_wks_to_index(MIME_FIELD_HTTP2_SETTINGS);
+    MIME_WKSIDX_EARLY_DATA                = hdrtoken_wks_to_index(MIME_FIELD_EARLY_DATA);
 
     MIME_VALUE_BYTES                = hdrtoken_string_to_wks("bytes");
     MIME_VALUE_CHUNKED              = hdrtoken_string_to_wks("chunked");
@@ -2273,24 +2275,22 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
   }
 
   if (field) {
-    ts::ConstBuffer b(field->m_ptr_value, field->m_len_value);
-    ts::ConstBuffer host, port;
+    ts::TextView b{field->m_ptr_value, static_cast<size_t>(field->m_len_value)};
+    ts::TextView host, port;
 
     if (b) {
-      const char *x;
-
       if ('[' == *b) {
-        x = static_cast<const char *>(memchr(b._ptr, ']', b._size));
-        if (x && b.contains(x + 1) && ':' == x[1]) {
-          host = b.splitOn(x + 1);
+        auto idx = b.find(']');
+        if (idx <= b.size() && b[idx + 1] == ':') {
+          host = b.take_prefix_at(idx + 1);
           port = b;
         } else {
           host = b;
         }
       } else {
-        x = static_cast<const char *>(memchr(b._ptr, ':', b._size));
+        auto x = b.split_prefix_at(':');
         if (x) {
-          host = b.splitOn(x);
+          host = x;
           port = b;
         } else {
           host = b;
@@ -2299,18 +2299,18 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
 
       if (host) {
         if (host_ptr) {
-          *host_ptr = host._ptr;
+          *host_ptr = host.data();
         }
         if (host_len) {
-          *host_len = static_cast<int>(host._size);
+          *host_len = static_cast<int>(host.size());
         }
       }
       if (port) {
         if (port_ptr) {
-          *port_ptr = port._ptr;
+          *port_ptr = port.data();
         }
         if (port_len) {
-          *port_len = static_cast<int>(port._size);
+          *port_len = static_cast<int>(port.size());
         }
       }
     } else {

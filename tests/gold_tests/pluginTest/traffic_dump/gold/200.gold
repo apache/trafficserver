@@ -1,0 +1,13 @@
+``
+> GET /`` HTTP/1.1
+> Host: www.example.com``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Content-Length: 0
+< Set-Cookie: classified_not_for_logging
+< Date: ``
+``
+< Server: ATS/``
+``

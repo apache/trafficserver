@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <deque>
 #include <records/P_RecDefs.h>
+#include <HttpConfig.h>
 #include "HttpConnectionCount.h"
 #include "tscore/bwf_std_format.h"
 #include "tscore/BufferWriter.h"
@@ -37,16 +38,16 @@ OutboundConnTrack::Imp OutboundConnTrack::_imp;
 OutboundConnTrack::GlobalConfig *OutboundConnTrack::_global_config{nullptr};
 
 const MgmtConverter OutboundConnTrack::MAX_CONV(
-  [](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<decltype(TxnConfig::max) *>(data)); },
+  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::max) *>(data)); },
   [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::max) *>(data) = static_cast<decltype(TxnConfig::max)>(i); });
 
 const MgmtConverter OutboundConnTrack::MIN_CONV(
-  [](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<decltype(TxnConfig::min) *>(data)); },
+  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::min) *>(data)); },
   [](void *data, MgmtInt i) -> void { *static_cast<decltype(TxnConfig::min) *>(data) = static_cast<decltype(TxnConfig::min)>(i); });
 
 // Do integer and string conversions.
 const MgmtConverter OutboundConnTrack::MATCH_CONV{
-  [](void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<decltype(TxnConfig::match) *>(data)); },
+  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::match) *>(data)); },
   [](void *data, MgmtInt i) -> void {
     // Problem - the InkAPITest requires being able to set an arbitrary value, so this can either
     // correctly clamp or pass the regression tests. Currently it passes the tests.
@@ -56,8 +57,8 @@ const MgmtConverter OutboundConnTrack::MATCH_CONV{
   },
   nullptr,
   nullptr,
-  [](void *data) -> std::string_view {
-    auto t = *static_cast<OutboundConnTrack::MatchType *>(data);
+  [](const void *data) -> std::string_view {
+    auto t = *static_cast<const OutboundConnTrack::MatchType *>(data);
     return t < 0 || t > OutboundConnTrack::MATCH_BOTH ? "Invalid"sv : OutboundConnTrack::MATCH_TYPE_NAME[t];
   },
   [](void *data, std::string_view src) -> void {
@@ -157,50 +158,6 @@ Config_Update_Conntrack_Alert_Delay(const char *name, RecDataT dtype, RecData da
     return true;
   }
   return false;
-}
-
-/** Function to do enable configuration variables.
- *
- * @param name Configuration var name.
- * @param cb Callback to do the actual update of the master record.
- * @param cookie Extra data for @a cb
- *
- * This sets up a librecords callback that invokes @a cb and checks the return value. That should
- * be @c true if the master record was updated, @c false if not. Based on that, the run time copy
- * update is triggered or not. This then invokes the callback directly, to do the initial load
- * of the configuration variable in to the master record.
- */
-void
-Enable_Config_Var(ts::TextView const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie)
-{
-  // Must use this indirection because the API requires a pure function, therefore no values can
-  // be bound in the lambda. Instead this is needed to pass in the data for both the lambda and
-  // the actual callback.
-  using Context = std::tuple<decltype(cb), void *>;
-
-  // To deal with process termination cleanup, store the context instances in a deque where
-  // tail insertion doesn't invalidate pointers.
-  static std::deque<Context> storage;
-
-  Context &ctx = storage.emplace_back(cb, cookie);
-  // Register the call back.
-  RecRegisterConfigUpdateCb(name.data(),
-                            [](const char *name, RecDataT dtype, RecData data, void *ctx) -> int {
-                              auto &&[cb, cookie] = *static_cast<Context *>(ctx);
-                              if ((*cb)(name, dtype, data, cookie)) {
-                                http_config_cb(name, dtype, data, cookie); // signal runtime config update.
-                              }
-                              return REC_ERR_OKAY;
-                            },
-                            &ctx);
-
-  // Use the record to do the initial data load.
-  RecLookupRecord(name.data(),
-                  [](RecRecord const *r, void *ctx) -> void {
-                    auto &&[cb, cookie] = *static_cast<Context *>(ctx);
-                    (*cb)(r->name, r->data_type, r->data, cookie);
-                  },
-                  &ctx);
 }
 
 } // namespace
@@ -415,7 +372,7 @@ OutboundConnTrack::Warning_Bad_Match_Type(std::string_view tag)
 }
 
 void
-OutboundConnTrack::TxnState::Note_Unblocked(TxnConfig *config, int count, sockaddr const *addr)
+OutboundConnTrack::TxnState::Note_Unblocked(const TxnConfig *config, int count, sockaddr const *addr)
 {
   time_t lat; // last alert time (epoch seconds)
 
@@ -431,7 +388,8 @@ OutboundConnTrack::TxnState::Note_Unblocked(TxnConfig *config, int count, sockad
 }
 
 void
-OutboundConnTrack::TxnState::Warn_Blocked(TxnConfig *config, int64_t sm_id, int count, sockaddr const *addr, char const *debug_tag)
+OutboundConnTrack::TxnState::Warn_Blocked(const TxnConfig *config, int64_t sm_id, int count, sockaddr const *addr,
+                                          char const *debug_tag)
 {
   bool alert_p     = _g->should_alert();
   auto blocked     = alert_p ? _g->_blocked.exchange(0) : _g->_blocked.load();

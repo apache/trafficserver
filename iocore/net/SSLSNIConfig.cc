@@ -40,6 +40,7 @@
 #include <pcre.h>
 
 static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
+static constexpr int OVECSIZE{30};
 
 const NextHopProperty *
 SNIConfigParams::getPropertyConfig(const std::string &servername) const
@@ -70,11 +71,14 @@ SNIConfigParams::loadSNIConfig()
     if (item.verify_client_level != 255) {
       ai->actions.push_back(std::make_unique<VerifyClient>(item.verify_client_level));
     }
+    if (item.host_sni_policy != 255) {
+      ai->actions.push_back(std::make_unique<HostSniPolicy>(item.host_sni_policy));
+    }
     if (!item.protocol_unset) {
       ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
     }
     if (item.tunnel_destination.length() > 0) {
-      ai->actions.push_back(std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_decrypt));
+      ai->actions.push_back(std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_decrypt, item.tls_upstream));
     }
 
     ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
@@ -98,6 +102,7 @@ SNIConfigParams::loadSNIConfig()
     nps->setGlobName(item.fqdn);
     nps->prop.verifyServerPolicy     = item.verify_server_policy;
     nps->prop.verifyServerProperties = item.verify_server_properties;
+    nps->prop.tls_upstream           = item.tls_upstream;
   } // end for
 }
 
@@ -105,17 +110,47 @@ int SNIConfig::configid = 0;
 /*definition of member functions of SNIConfigParams*/
 SNIConfigParams::SNIConfigParams() {}
 
-const actionVector *
+std::pair<const actionVector *, ActionItem::Context>
 SNIConfigParams::get(const std::string &servername) const
 {
+  int ovector[OVECSIZE];
+  ActionItem::Context context;
+
   for (const auto &retval : sni_action_list) {
-    if (retval.match == nullptr && servername.length() == 0) {
-      return &retval.actions;
-    } else if (pcre_exec(retval.match, nullptr, servername.c_str(), servername.length(), 0, 0, nullptr, 0) >= 0) {
-      return &retval.actions;
+    int length = servername.length();
+    if (retval.match == nullptr && length == 0) {
+      return {&retval.actions, context};
+    } else if (auto offset = pcre_exec(retval.match, nullptr, servername.c_str(), length, 0, 0, ovector, OVECSIZE); offset >= 0) {
+      if (offset == 1) {
+        // first pair identify the portion of the subject string matched by the entire pattern
+        if (ovector[0] == 0 && ovector[1] == length) {
+          // full match
+          return {&retval.actions, context};
+        } else {
+          continue;
+        }
+      }
+      // If contains groups
+      if (offset == 0) {
+        // reset to max if too many.
+        offset = OVECSIZE / 3;
+      }
+
+      const char *psubStrMatchStr = nullptr;
+      std::vector<std::string> groups;
+      for (int strnum = 1; strnum < offset; strnum++) {
+        pcre_get_substring(servername.c_str(), ovector, offset, strnum, &(psubStrMatchStr));
+        groups.emplace_back(psubStrMatchStr);
+      }
+      context._fqdn_wildcard_captured_groups = std::move(groups);
+      if (psubStrMatchStr) {
+        pcre_free_substring(psubStrMatchStr);
+      }
+
+      return {&retval.actions, context};
     }
   }
-  return nullptr;
+  return {nullptr, context};
 }
 
 int
@@ -179,4 +214,24 @@ void
 SNIConfig::release(SNIConfigParams *params)
 {
   configProcessor.release(configid, params);
+}
+
+// See if any of the client-side actions would trigger for this combination of servername and
+// client IP
+// host_sni_policy is an in/out paramter.  It starts with the global policy from the records.config
+// setting proxy.config.http.host_sni_policy and is possibly overridden if the sni policy
+// contains a host_sni_policy entry
+bool
+SNIConfig::TestClientAction(const char *servername, const IpEndpoint &ep, int &host_sni_policy)
+{
+  bool retval = false;
+  SNIConfig::scoped_config params;
+
+  const auto &actions = params->get(servername);
+  if (actions.first) {
+    for (auto &&item : *actions.first) {
+      retval |= item->TestClientSNIAction(servername, ep, host_sni_policy);
+    }
+  }
+  return retval;
 }

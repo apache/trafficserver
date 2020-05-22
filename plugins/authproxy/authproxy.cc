@@ -170,7 +170,7 @@ struct AuthRequestContext {
   {
     AuthOptions *opt;
 
-    opt = static_cast<AuthOptions *>(TSHttpTxnArgGet(this->txn, AuthTaggedRequestArg));
+    opt = static_cast<AuthOptions *>(TSUserArgGet(this->txn, AuthTaggedRequestArg));
     return opt ? opt : AuthGlobalOptions;
   }
 
@@ -472,7 +472,7 @@ StateAuthProxySendResponse(AuthRequestContext *auth, void * /* edata ATS_UNUSED 
 
   // We must not whack the content length for HEAD responses, since the
   // client already knows that there is no body. Forcing content length to
-  // zero breaks hdiutil(1) on Mac OS X.
+  // zero breaks hdiutil(1) on macOS
   if (TS_HTTP_METHOD_HEAD != auth->method) {
     HttpSetMimeHeader(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
   }
@@ -621,7 +621,7 @@ StateAuthorized(AuthRequestContext *auth, void *)
 static bool
 AuthRequestIsTagged(TSHttpTxn txn)
 {
-  return AuthTaggedRequestArg != -1 && TSHttpTxnArgGet(txn, AuthTaggedRequestArg) != nullptr;
+  return AuthTaggedRequestArg != -1 && TSUserArgGet(txn, AuthTaggedRequestArg) != nullptr;
 }
 
 static int
@@ -736,7 +736,8 @@ TSPluginInit(int argc, const char *argv[])
     AuthLogError("plugin registration failed");
   }
 
-  TSReleaseAssert(TSHttpTxnArgIndexReserve("AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) == TS_SUCCESS);
+  TSReleaseAssert(TSUserArgIndexReserve(TS_USER_ARGS_TXN, "AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) ==
+                  TS_SUCCESS);
 
   AuthOsDnsContinuation = TSContCreate(AuthProxyGlobalHook, nullptr);
   AuthGlobalOptions     = AuthParseOptions(argc, argv);
@@ -749,7 +750,8 @@ TSPluginInit(int argc, const char *argv[])
 TSReturnCode
 TSRemapInit(TSRemapInterface * /* api ATS_UNUSED */, char * /* err ATS_UNUSED */, int /* errsz ATS_UNUSED */)
 {
-  TSReleaseAssert(TSHttpTxnArgIndexReserve("AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) == TS_SUCCESS);
+  TSReleaseAssert(TSUserArgIndexReserve(TS_USER_ARGS_TXN, "AuthProxy", "AuthProxy authorization tag", &AuthTaggedRequestArg) ==
+                  TS_SUCCESS);
 
   AuthOsDnsContinuation = TSContCreate(AuthProxyGlobalHook, nullptr);
   return TS_SUCCESS;
@@ -785,7 +787,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_UN
 {
   AuthOptions *options = static_cast<AuthOptions *>(instance);
 
-  TSHttpTxnArgSet(txn, AuthTaggedRequestArg, options);
+  TSUserArgSet(txn, AuthTaggedRequestArg, options);
   TSHttpTxnHookAdd(txn, TS_HTTP_POST_REMAP_HOOK, AuthOsDnsContinuation);
 
   return TSREMAP_NO_REMAP;

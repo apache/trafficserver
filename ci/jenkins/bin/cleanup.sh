@@ -17,11 +17,10 @@
 #  limitations under the License.
 
 # Do a distclean, to verify that we can actually satisfy this (common) build target
-cd "${WORKSPACE}/${BUILD_NUMBER}/build"
+cd "${ATS_BUILD_BASEDIR}/build"
 [ -d BUILDS ] && cd BUILDS
 
 ${ATS_MAKE} distclean
 
-# Final cleanup, this removes the build and install areas
-cd "${WORKSPACE}"
-rm -rf ${BUILD_NUMBER}
+# Final cleanup, this removes the build and install areas, not really needed nor right for docker builds
+cd "${WORKSPACE}" && rm -rf ${BUILD_NUMBER}

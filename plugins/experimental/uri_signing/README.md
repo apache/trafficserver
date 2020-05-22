@@ -79,13 +79,13 @@ a path.
 ### More Configuration Options
 
 **Strip Token**
-When the strip_token parameter is set to true, the plugin removes the 
-token from both the url that is sent upstream to the origin and the url that 
+When the strip_token parameter is set to true, the plugin removes the
+token from both the url that is sent upstream to the origin and the url that
 is used as the cache key. The strip_token parameter defaults to false and should
 be set by only one issuer.
 **ID**
 The id field takes a string indicating the identification of the entity processing the request.
-This is used in aud claim checks to ensure that the receiver is the intended audience of a 
+This is used in aud claim checks to ensure that the receiver is the intended audience of a
 tokenized request. The id parameter can only be set by one issuer.
 
 Example:
@@ -140,7 +140,7 @@ These claims are not supported. If they are present, the token will not validate
   - `cdnicrit`
   - `cdniip`
 
-In addition, the `cdniuc` container of `hash` is 
+In addition, the `cdniuc` container of `hash` is
 **not supported**.
 
 ### Token Renewal

@@ -293,7 +293,7 @@ for them to a UNIX pipe that the alerting software can constantly read from.
      accept: cqup MATCH "/nightmare/scenario/dont/touch"
 
    logs:
-   - mode: pipe
+   - mode: ascii_pipe
      format: canaryformat
      filters:
      - canaryfilter
@@ -310,7 +310,7 @@ will default to the OS default size.
 .. code:: yaml
 
    logs:
-   - mode: pipe
+   - mode: ascii_pipe
      format: canaryformat
      filters:
      - canaryfilter
@@ -333,12 +333,13 @@ the request to clients during that hour.
    logging:
      formats:
      - name: originrepformat
-       format: '%<FIRST(cqtq)> %<COUNT(*)> %<AVERAGE(ttms)>'
+       format: '%<FIRST(cqtq)> %<COUNT(*)> %<AVG(ttms)>'
        interval: 3600
 
      filters:
      - name: originfilter
-       reject: crc CONTAINS "HIT"
+       action: reject
+       condition: crc CONTAINS "HIT"
 
      logs:
      - mode: ascii

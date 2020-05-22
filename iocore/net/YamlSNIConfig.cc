@@ -98,18 +98,18 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_verify_client,
                                                TS_tunnel_route,
                                                TS_forward_route,
+                                               TS_partial_blind_route,
                                                TS_verify_origin_server,
                                                TS_verify_server_policy,
                                                TS_verify_server_properties,
                                                TS_client_cert,
                                                TS_client_key,
                                                TS_http2,
-                                               TS_ip_allow
+                                               TS_ip_allow,
 #if TS_USE_HELLO_CB
-                                               ,
-                                               TS_valid_tls_versions_in
+                                               TS_valid_tls_versions_in,
 #endif
-};
+                                               TS_host_sni_policy};
 
 namespace YAML
 {
@@ -146,12 +146,24 @@ template <> struct convert<YamlSNIConfig::Item> {
       item.verify_client_level = static_cast<uint8_t>(level);
     }
 
+    if (node[TS_host_sni_policy]) {
+      auto value           = node[TS_host_sni_policy].as<std::string>();
+      int policy           = POLICY_DESCRIPTOR.get(value);
+      item.host_sni_policy = static_cast<uint8_t>(policy);
+    }
+
     if (node[TS_tunnel_route]) {
       item.tunnel_destination = node[TS_tunnel_route].as<std::string>();
       item.tunnel_decrypt     = false;
+      item.tls_upstream       = false;
     } else if (node[TS_forward_route]) {
       item.tunnel_destination = node[TS_forward_route].as<std::string>();
       item.tunnel_decrypt     = true;
+      item.tls_upstream       = false;
+    } else if (node[TS_partial_blind_route]) {
+      item.tunnel_destination = node[TS_partial_blind_route].as<std::string>();
+      item.tunnel_decrypt     = true;
+      item.tls_upstream       = true;
     }
 
     // remove before 9.0.0 release

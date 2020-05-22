@@ -18,20 +18,14 @@
 
 import os
 
-Test.Summary = ''' 
+Test.Summary = '''
 Test log filter.
 '''
-# Only on Linux (why??)
-Test.SkipUnless(
-    Condition.IsPlatform("linux")
-)
 
-# Define default ATS
 ts = Test.MakeATSProcess("ts")
-# Microserver
 server = Test.MakeOriginServer("server")
 
-request_header = {'timestamp': 100, "headers": "GET /test-1 HTTP/1.1\r\nHost: test-1\r\n\r\n", "body": ""} 
+request_header = {'timestamp': 100, "headers": "GET /test-1 HTTP/1.1\r\nHost: test-1\r\n\r\n", "body": ""}
 response_header = {'timestamp': 100,
                    "headers": "HTTP/1.1 200 OK\r\nTest: 1\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n", "body": "Test 1"}
 server.addResponse("sessionlog.json", request_header, response_header)
@@ -62,7 +56,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 ts.Disk.logging_yaml.AddLines(
-    ''' 
+    '''
 logging:
   filters:
     - name: queryparamescaper_cquuc
@@ -74,7 +68,7 @@ logging:
   logs:
     - filename: filter-test
       format: custom
-      filters: 
+      filters:
       - queryparamescaper_cquuc
 '''.split("\n")
 )
@@ -117,8 +111,10 @@ tr.Processes.Default.Command = 'curl --verbose --header "Host: test-5" "http://l
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
-tr.DelayStart = 10
-tr.Processes.Default.Command = 'echo "Delay for log flush"'
-tr.Processes.Default.ReturnCode = 0
-
+# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
+test_run = Test.AddTestRun()
+test_run.Processes.Default.Command = (
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
+    os.path.join(ts.Variables.LOGDIR, 'filter-test.log')
+)
+test_run.Processes.Default.ReturnCode = 0

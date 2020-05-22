@@ -17,8 +17,6 @@ Test cached responses and requests with bodies
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-import time
 Test.Summary = '''
 Test revalidating cached objects
 '''
@@ -59,7 +57,7 @@ response_etagfill_header = {"headers": "HTTP/1.1 404 Not Found\r\nConnection: cl
 server.addResponse("sessionlog.json", request_etagfill_header, response_etagfill_header)
 
 # ATS Configuration
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts")
 ts.Disk.plugin_config.AddLine('xdebug.so')
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,

@@ -14,11 +14,11 @@ Extract the file and set the flag  "C_Cpp.clang_format_path" to file path.
 2. Adding pre-commit hook :
    Copy the file path/to/trafficserver/tools/git/pre-commit under .git/hook/ directory.
    This will does the formatting every time does a commit.
-   
+
 -----------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
-Build and Install cmd = 
+Build and Install cmd =
 
 #building CPP ats_fastcgi.so
 
@@ -40,7 +40,7 @@ tsxs -o ats_fastcgi.so \
 # (for the case where the sudo context doesn't know about tsxs)
 mtsxs=$(which tsxs)
 
-sudo $mtsxs -o ats_fastcgi.so  -i 
+sudo $mtsxs -o ats_fastcgi.so  -i
 ```
 
 OR Build and install using Makefile utility:
@@ -50,7 +50,7 @@ OR Build and install using Makefile utility:
 
   Afterwords command, $> make && sudo -E make install
   For example:
-  make ATS_SRC=/home/oschaaf/code/apache/trafficserver ATS_EXEC=/usr/local/ CPPFLAGS=-std=c++11 
+  make ATS_SRC=/home/oschaaf/code/apache/trafficserver ATS_EXEC=/usr/local/ CPPFLAGS=-std=c++11
 
 ------------------------------------------------------------------------------
 
@@ -60,8 +60,8 @@ ATS (Apache Traffic Server) FastCGI Plugin
 This plugin collapses connections with identical CacheUrl/EffectiveUrl.
 
 If an entry was created for a given CacheUrl/EffectiveUrl in our global hashTable,
-successive GET requests with identical CacheUrl/EffectiveUrl will be blocked in 
-POST_REMAP hook until the hash entry was removed.  (POST_REMAP hook is the last 
+successive GET requests with identical CacheUrl/EffectiveUrl will be blocked in
+POST_REMAP hook until the hash entry was removed.  (POST_REMAP hook is the last
 hook before 'cache lookup')
 
 For requests going into 'cache lookup' stage,
@@ -75,7 +75,7 @@ For requests going into 'read server response header' stage,
     if proxy.config.cache.enable_read_while_writer is enabled,
       hash entry will be removed at earliest possible time.
     else
-      hash entry will be removed in TXN_CLOSE hook. 
+      hash entry will be removed in TXN_CLOSE hook.
   if response is not public cacheable,
     we will update hash entry with a special value to let successive requests pass collapsed check,
     this special hash entry will be removed in TXN_CLOSE hook if value of keep_pass_record_time is 0,
@@ -122,7 +122,7 @@ Meaning of these configurable options:
         fcgi server port number in string format e.g 60000
     root_directory
         root directory path from where fcgi server will server resources/web_contents
-    min_connections 
+    min_connections
         min number of connections plugin will open to the php server
     max_connections
         max number of connections plugin will make to the php server
@@ -145,7 +145,7 @@ Meaning of these configurable options:
   and require the C++11 standard.
 
   a. download libfcgi-dev package :i.e libfcgi-dev_2.4.0-8.4+b1_arm64.deb from https://packages.debian.org/sid/arm64/libfcgi-dev/download
- 
+
   b. download php7.0-cli php7.0-fpm with :  sudo apt-get install php7.0-cli php7.0-fpm
 
 
@@ -166,4 +166,3 @@ Using Profiler:
         #if ATS_FCGI_PROFILER
             ats_plugin::ProfileTaker profile_taker(&profiler, "functinName", (std::size_t)&plugin, "B");
         #endif
-        

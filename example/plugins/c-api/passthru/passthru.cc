@@ -315,7 +315,7 @@ PassthruListen()
 }
 
 void
-TSPluginInit(int /* argc */, const char * /* argv */ [])
+TSPluginInit(int /* argc */, const char * /* argv */[])
 {
   TSPluginRegistrationInfo info = {PLUGIN_NAME, "Apache Software Foundation", "dev@trafficserver.apache.org"};
 

@@ -591,7 +591,11 @@ public:
     return *this;
   }
 
-  T *operator->() const { return *this; }
+  T *
+  operator->() const
+  {
+    return *this;
+  }
 };
 
 /** Combine two strings as file paths.

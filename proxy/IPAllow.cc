@@ -29,6 +29,7 @@
 #include "tscore/BufferWriter.h"
 #include "tscore/ts_file.h"
 #include "tscore/ink_memory.h"
+#include "tscore/Filenames.h"
 
 #include "yaml-cpp/yaml.h"
 
@@ -136,14 +137,14 @@ IpAllow::reconfigure()
 {
   self_type *new_table;
 
-  Note("ip_allow.yaml loading ...");
+  Note("%s loading ...", ts::filename::IP_ALLOW);
 
   new_table = new self_type("proxy.config.cache.ip_allow.filename");
   new_table->BuildTable();
 
   configid = configProcessor.set(configid, new_table);
 
-  Note("ip_allow.yaml finished loading");
+  Note("%s finished loading", ts::filename::IP_ALLOW);
 }
 
 IpAllow *

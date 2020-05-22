@@ -41,14 +41,11 @@ class SlowPostAttack:
         self._server.addResponse("sessionlog.json", request_header2, response_header2)
 
     def setupTS(self):
-        self._ts = Test.MakeATSProcess("ts", select_ports=False)
+        self._ts = Test.MakeATSProcess("ts", select_ports=True)
         self._ts.Disk.remap_config.AddLine(
             'map / http://127.0.0.1:{0}'.format(self._server.Variables.Port)
         )
         # This plugin can enable request buffer for POST.
-        self._ts.Disk.plugin_config.AddLine(
-            'request_buffer.so'
-        )
         Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'request_buffer.c'), self._ts)
         self._ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,

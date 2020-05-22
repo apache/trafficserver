@@ -26,7 +26,9 @@ Traffic Server Records
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSMgmtStringCreate(TSRecordType rec_type, const char* name, \
                                               const TSMgmtString data_default, TSRecordUpdateType update_type, \

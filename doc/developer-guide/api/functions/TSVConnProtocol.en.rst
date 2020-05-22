@@ -24,7 +24,9 @@ TSVConnProtocolEnable/Disable
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSVConnProtocolEnable(TSVConn vconn, const char* protocol)
 .. function:: TSReturnCode TSVConnProtocolDisable(TSVConn vconn, const char* protocol)

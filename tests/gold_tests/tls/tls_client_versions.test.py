@@ -16,7 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 Test.Summary = '''
 Test TLS protocol offering  based on SNI
 '''
@@ -24,7 +23,6 @@ Test TLS protocol offering  based on SNI
 # By default only offer TLSv1_2
 # for special doman foo.com only offer TLSv1 and TLSv1_1
 
-# need Curl
 Test.SkipUnless(
     Condition.HasOpenSSLVersion("1.1.1")
 )

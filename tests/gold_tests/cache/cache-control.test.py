@@ -17,11 +17,10 @@ Test cached responses and requests with bodies
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 Test.Summary = '''
 Test cached responses and requests with bodies
 '''
- 
+
 Test.ContinueOnFail = True
 
 # Define default ATS

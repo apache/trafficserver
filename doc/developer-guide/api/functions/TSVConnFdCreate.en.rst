@@ -26,7 +26,9 @@ Create a TSVConn from a socket.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSVConn TSVConnFdCreate(int fd)
 

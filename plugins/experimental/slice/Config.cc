@@ -26,24 +26,39 @@
 
 #include "ts/experimental.h"
 
+Config::~Config()
+{
+  if (nullptr != m_regex_extra) {
+#ifndef PCRE_STUDY_JIT_COMPILE
+    pcre_free(m_regex_extra);
+#else
+    pcre_free_study(m_regex_extra);
+#endif
+  }
+  if (nullptr != m_regex) {
+    pcre_free(m_regex);
+  }
+}
+
 int64_t
 Config::bytesFrom(char const *const valstr)
 {
-  char *endptr       = nullptr;
-  int64_t blockbytes = strtoll(valstr, &endptr, 10);
+  char *endptr          = nullptr;
+  int64_t blockbytes    = strtoll(valstr, &endptr, 10);
+  constexpr int64_t kib = 1024;
 
   if (nullptr != endptr && valstr < endptr) {
     size_t const dist = endptr - valstr;
     if (dist < strlen(valstr) && 0 <= blockbytes) {
       switch (tolower(*endptr)) {
       case 'g':
-        blockbytes *= (static_cast<int64_t>(1024) * static_cast<int64_t>(1024) * static_cast<int64_t>(1024));
+        blockbytes *= (kib * kib * kib);
         break;
       case 'm':
-        blockbytes *= (static_cast<int64_t>(1024) * static_cast<int64_t>(1024));
+        blockbytes *= (kib * kib);
         break;
       case 'k':
-        blockbytes *= static_cast<int64_t>(1024);
+        blockbytes *= kib;
         break;
       default:
         break;
@@ -66,7 +81,7 @@ Config::fromArgs(int const argc, char const *const argv[])
     DEBUG_LOG("args[%d] = %s", index, argv[index]);
   }
 
-  // current "best" blockbytes from configuration
+  // look for lowest priority deprecated blockbytes
   int64_t blockbytes = 0;
 
   // backwards compat: look for blockbytes
@@ -91,19 +106,22 @@ Config::fromArgs(int const argc, char const *const argv[])
   }
 
   // standard parsing
-  constexpr const struct option longopts[] = {
+  constexpr struct option longopts[] = {
     {const_cast<char *>("blockbytes"), required_argument, nullptr, 'b'},
-    {const_cast<char *>("test-blockbytes"), required_argument, nullptr, 't'},
-    {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
     {const_cast<char *>("disable-errorlog"), no_argument, nullptr, 'd'},
+    {const_cast<char *>("exclude-regex"), required_argument, nullptr, 'e'},
+    {const_cast<char *>("include-regex"), required_argument, nullptr, 'i'},
+    {const_cast<char *>("throttle"), no_argument, nullptr, 'o'},
+    {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
+    {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
+    {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
     {nullptr, 0, nullptr, 0},
   };
 
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
-
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:t:p:d", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:de:i:op:r:t:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -120,30 +138,74 @@ Config::fromArgs(int const argc, char const *const argv[])
         ERROR_LOG("Invalid blockbytes: %s", optarg);
       }
     } break;
-    case 't':
-      if (0 == blockbytes) {
-        int64_t const bytesread = bytesFrom(optarg);
-        if (0 < bytesread) {
-          DEBUG_LOG("Using blockbytestest %" PRId64, bytesread);
-          blockbytes = bytesread;
-        } else {
-          ERROR_LOG("Invalid blockbytestest: %s", optarg);
-        }
-      } else {
-        DEBUG_LOG("Skipping blockbytestest in favor of blockbytes");
+    case 'd': {
+      m_paceerrsecs = -1;
+    } break;
+    case 'e': {
+      if (None != m_regex_type) {
+        ERROR_LOG("Regex already specified!");
+        break;
       }
-      break;
+
+      const char *errptr;
+      int erroffset;
+      m_regexstr = optarg;
+      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, NULL);
+      if (nullptr == m_regex) {
+        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
+      } else {
+        m_regex_type  = Exclude;
+        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+        DEBUG_LOG("Using regex for url exclude: '%s'", m_regexstr.c_str());
+      }
+    } break;
+    case 'i': {
+      if (None != m_regex_type) {
+        ERROR_LOG("Regex already specified!");
+        break;
+      }
+
+      const char *errptr;
+      int erroffset;
+      m_regexstr = optarg;
+      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, NULL);
+      if (nullptr == m_regex) {
+        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
+      } else {
+        m_regex_type  = Include;
+        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+        DEBUG_LOG("Using regex for url include: '%s'", m_regexstr.c_str());
+      }
+    } break;
+    case 'o': {
+      m_throttle = true;
+      DEBUG_LOG("Enabling internal block throttling");
+    } break;
     case 'p': {
       int const secsread = atoi(optarg);
       if (0 < secsread) {
         m_paceerrsecs = std::min(secsread, 60);
       } else {
-        DEBUG_LOG("Ignoring pace-errlog argument");
+        ERROR_LOG("Ignoring pace-errlog argument");
       }
     } break;
-    case 'd':
-      m_paceerrsecs = -1;
-      break;
+    case 'r': {
+      m_remaphost = optarg;
+      DEBUG_LOG("Using loopback remap host override: %s", m_remaphost.c_str());
+    } break;
+    case 't': {
+      if (0 == blockbytes) {
+        int64_t const bytesread = bytesFrom(optarg);
+        if (0 < bytesread) {
+          DEBUG_LOG("Using blockbytes-test %" PRId64, bytesread);
+          blockbytes = bytesread;
+        } else {
+          ERROR_LOG("Invalid blockbytes-test: %s", optarg);
+        }
+      } else {
+        DEBUG_LOG("Skipping blockbytes-test in favor of blockbytes");
+      }
+    } break;
     default:
       break;
     }
@@ -170,8 +232,6 @@ Config::fromArgs(int const argc, char const *const argv[])
 bool
 Config::canLogError()
 {
-  std::lock_guard<std::mutex> const guard(m_mutex);
-
   if (m_paceerrsecs < 0) {
     return false;
   } else if (0 == m_paceerrsecs) {
@@ -180,14 +240,42 @@ Config::canLogError()
 
 #if !defined(UNITTEST)
   TSHRTime const timenow = TShrtime();
+#endif
+
+  std::lock_guard<std::mutex> const guard(m_mutex);
+
+#if !defined(UNITTEST)
   if (timenow < m_nextlogtime) {
     return false;
   }
 
   m_nextlogtime = timenow + TS_HRTIME_SECONDS(m_paceerrsecs);
 #else
-  m_nextlogtime = 0; // thanks clang
+  m_nextlogtime = 0; // needed by clang
 #endif
 
   return true;
+}
+
+bool
+Config::matchesRegex(char const *const url, int const urllen) const
+{
+  bool matches = true;
+
+  switch (m_regex_type) {
+  case Exclude: {
+    if (0 <= pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, NULL, 0)) {
+      matches = false;
+    }
+  } break;
+  case Include: {
+    if (pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, NULL, 0) < 0) {
+      matches = false;
+    }
+  } break;
+  default:
+    break;
+  }
+
+  return matches;
 }

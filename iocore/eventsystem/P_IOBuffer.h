@@ -426,34 +426,6 @@ IOBufferBlock::set(IOBufferData *d, int64_t len, int64_t offset)
   _buf_end = buf() + d->block_size();
 }
 
-TS_INLINE void
-IOBufferBlock::realloc_set_internal(void *b, int64_t buf_size, int64_t asize_index)
-{
-  int64_t data_size = size();
-  memcpy(b, _start, size());
-  dealloc();
-  set_internal(b, buf_size, asize_index);
-  _end = _start + data_size;
-}
-
-TS_INLINE void
-IOBufferBlock::realloc(void *b, int64_t buf_size)
-{
-  realloc_set_internal(b, buf_size, BUFFER_SIZE_NOT_ALLOCATED);
-}
-
-TS_INLINE void
-IOBufferBlock::realloc(int64_t i)
-{
-  if ((i == data->_size_index) || (i >= (int64_t)countof(ioBufAllocator))) {
-    return;
-  }
-
-  ink_release_assert(i > data->_size_index && i != BUFFER_SIZE_NOT_ALLOCATED);
-  void *b = ioBufAllocator[i].alloc_void();
-  realloc_set_internal(b, BUFFER_SIZE_FOR_INDEX(i), i);
-}
-
 //////////////////////////////////////////////////////////////////
 //
 //  class IOBufferReader --
@@ -605,7 +577,8 @@ IOBufferReader::consume(int64_t n)
   }
 }
 
-TS_INLINE char &IOBufferReader::operator[](int64_t i)
+TS_INLINE char &
+IOBufferReader::operator[](int64_t i)
 {
   static char default_ret = '\0'; // This is just to avoid compiler warnings...
   IOBufferBlock *b        = block.get();
@@ -1048,12 +1021,6 @@ MIOBuffer::dealloc_all_readers()
       dealloc_reader(&reader);
     }
   }
-}
-
-TS_INLINE void
-MIOBuffer::set_size_index(int64_t size)
-{
-  size_index = iobuffer_size_to_index(size);
 }
 
 TS_INLINE void

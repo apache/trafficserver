@@ -97,9 +97,6 @@ union HostDBApplicationInfo {
   // http server attributes in the host database          //
   //                                                      //
   // http_version       - one of HttpVersion_t            //
-  // pipeline_max       - max pipeline.     (up to 127).  //
-  //                      0 - no keep alive               //
-  //                      1 - no pipeline, only keepalive //
   // keep_alive_timeout - in seconds. (up to 63 seconds). //
   // last_failure       - UNIX time for the last time     //
   //                      we tried the server & failed    //
@@ -108,7 +105,6 @@ union HostDBApplicationInfo {
   //////////////////////////////////////////////////////////
   struct http_server_attr {
     unsigned int http_version : 3;
-    unsigned int pipeline_max : 7;
     unsigned int keepalive_timeout : 6;
     unsigned int fail_count : 8;
     unsigned int unused1 : 8;

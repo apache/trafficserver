@@ -132,8 +132,12 @@ SSLInitializeStatistics()
   // SSL handshake time
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_handshake_time", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_handshake_time_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_attempts_handshake_count_in", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_attempts_handshake_count_in_stat, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_in", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_success_handshake_count_in_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_attempts_handshake_count_out", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_total_attempts_handshake_count_out_stat, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_out", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_success_handshake_count_out_stat, RecRawStatSyncCount);
 
@@ -169,7 +173,7 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_lock_contention", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_lock_contention, RecRawStatSyncCount);
 
-  /* Track dynamic record size */
+  // Track dynamic record size
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.default_record_size_count", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_dyn_def_tls_record_count, RecRawStatSyncSum);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.max_record_size_count", RECD_COUNTER, RECP_PERSISTENT,
@@ -177,7 +181,7 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.redo_record_size_count", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_dyn_redo_tls_record_count, RecRawStatSyncCount);
 
-  /* error stats */
+  // error stats
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_syscall", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_error_syscall, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_read_eos", RECD_COUNTER, RECP_PERSISTENT,
@@ -187,7 +191,7 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_sni_name_set_failure", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_sni_name_set_failure, RecRawStatSyncCount);
 
-  /* ocsp stapling stats */
+  // ocsp stapling stats
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_revoked_cert_stat", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_ocsp_revoked_cert_stat, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_unknown_cert_stat", RECD_COUNTER, RECP_PERSISTENT,
@@ -197,7 +201,7 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_refresh_cert_failure", RECD_INT, RECP_PERSISTENT,
                      (int)ssl_ocsp_refresh_cert_failure_stat, RecRawStatSyncCount);
 
-  /* SSL Version stats */
+  // SSL Version stats
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_sslv3", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_sslv3, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv1", RECD_COUNTER, RECP_PERSISTENT,
@@ -208,6 +212,10 @@ SSLInitializeStatistics()
                      (int)ssl_total_tlsv12, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_total_tlsv13", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_tlsv13, RecRawStatSyncCount);
+
+  // TLSv1.3 0-RTT stats
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.early_data_received", RECD_INT, RECP_PERSISTENT,
+                     (int)ssl_early_data_received_count, RecRawStatSyncCount);
 
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not

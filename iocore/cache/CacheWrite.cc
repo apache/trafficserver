@@ -105,7 +105,9 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
          called iff the update is a header only update so the fragment
          data should remain valid.
       */
-      if (alternate_index >= 0) {
+      // If we are not in header only updating case. Don't copy fragments.
+      if (alternate_index >= 0 &&
+          ((total_len == 0 && alternate.get_frag_offset_count() == 0) && !(f.allow_empty_doc && this->vio.nbytes == 0))) {
         alternate.copy_frag_offsets_from(write_vector->get(alternate_index));
       }
       alternate_index = write_vector->insert(&alternate, alternate_index);
@@ -358,7 +360,7 @@ Vol::aggWriteDone(int event, Event *e)
   CacheVC *c = nullptr;
   while ((c = sync.dequeue())) {
     if (UINT_WRAP_LTE(c->write_serial + 2, header->write_serial)) {
-      eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
+      eventProcessor.schedule_imm(c, ET_CALL, AIO_EVENT_DONE);
     } else {
       sync.push(c); // put it back on the front
       break;
@@ -1026,7 +1028,7 @@ Lagain:
       ink_assert(false);
       while ((c = agg.dequeue())) {
         agg_todo_size -= c->agg_len;
-        eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
+        eventProcessor.schedule_imm(c, ET_CALL, AIO_EVENT_DONE);
       }
       return EVENT_CONT;
     }
@@ -1090,7 +1092,7 @@ Lwait:
     if (event == EVENT_CALL && c->mutex->thread_holding == mutex->thread_holding) {
       ret = EVENT_RETURN;
     } else {
-      eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
+      eventProcessor.schedule_imm(c, ET_CALL, AIO_EVENT_DONE);
     }
   }
   return ret;

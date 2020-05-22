@@ -14,40 +14,44 @@
 --  See the License for the specific language governing permissions and
 --  limitations under the License.
 
-
 -- This script is for sorting query parameters on incoming requests before doing cache lookup
 -- so we can get better cache hit ratio
 -- It can be used in remap.config for a remap rule with the lua plugin.
 
-function pairsByKeys (t, f)
+function pairsByKeys(t, f)
   local a = {}
-  for n in pairs(t) do table.insert(a, n) end
+  for n in pairs(t) do
+    table.insert(a, n)
+  end
   table.sort(a, f)
-  local i = 0      -- iterator variable
-  local iter = function ()   -- iterator function
+  local i = 0 -- iterator variable
+  local iter = function()
+    -- iterator function
     i = i + 1
-    if a[i] == nil then return nil
-    else return a[i], t[a[i]]
+    if a[i] == nil then
+      return nil
+    else
+      return a[i], t[a[i]]
     end
   end
   return iter
 end
 
 function do_remap()
-  t = {} 
-  s = ts.client_request.get_uri_args() or ''
+  t = {}
+  s = ts.client_request.get_uri_args() or ""
   -- Original String
   i = 1
   for k, v in string.gmatch(s, "([0-9a-zA-Z-_]+)=([0-9a-zA-Z-_]+)") do
     t[k] = v
   end
 
-  output = ''
+  output = ""
   for name, line in pairsByKeys(t) do
-    output = output .. '&' .. name .. '=' .. line
+    output = output .. "&" .. name .. "=" .. line
   end
   output = string.sub(output, 2)
-  -- Modified String 
+  -- Modified String
   ts.client_request.set_uri_args(output)
   return 0
-end 
+end

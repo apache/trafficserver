@@ -59,12 +59,15 @@ enum ParentResultType {
   PARENT_FAIL,
 };
 
+static const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
+
 enum ParentRR_t {
   P_NO_ROUND_ROBIN = 0,
   P_STRICT_ROUND_ROBIN,
   P_HASH_ROUND_ROBIN,
   P_CONSISTENT_HASH,
   P_LATCHED_ROUND_ROBIN,
+  P_UNDEFINED
 };
 
 enum ParentRetry_t {
@@ -89,6 +92,19 @@ private:
   std::vector<int> codes;
 };
 
+struct SimpleRetryResponseCodes {
+  SimpleRetryResponseCodes(char *val);
+  ~SimpleRetryResponseCodes(){};
+
+  bool
+  contains(int code)
+  {
+    return binary_search(codes.begin(), codes.end(), code);
+  }
+
+private:
+  std::vector<int> codes;
+};
 // struct pRecord
 //
 //    A record for an individual parent
@@ -142,6 +158,7 @@ public:
   bool parent_is_proxy                                               = true;
   ParentSelectionStrategy *selection_strategy                        = nullptr;
   UnavailableServerResponseCodes *unavailable_server_retry_responses = nullptr;
+  SimpleRetryResponseCodes *simple_server_retry_responses            = nullptr;
   ParentRetry_t parent_retry                                         = PARENT_RETRY_NONE;
   int max_simple_retries                                             = 1;
   int max_unavailable_server_retries                                 = 1;
@@ -155,6 +172,11 @@ public:
 //   between HttpTransact & the parent selection code.  The following
 ParentRecord *const extApiRecord = (ParentRecord *)0xeeeeffff;
 
+// used here to to set the number of ATSConsistentHashIter's
+// used in NextHopSelectionStrategy to limit the host group
+// size as well, group size is one to one with the number of rings
+constexpr const uint32_t MAX_GROUP_RINGS = 5;
+
 struct ParentResult {
   ParentResult() { reset(); }
   // For outside consumption
@@ -162,15 +184,17 @@ struct ParentResult {
   const char *hostname;
   int port;
   bool retry;
-  bool chash_init[2]               = {false, false};
+  bool chash_init[MAX_GROUP_RINGS] = {false};
   HostStatus_t first_choice_status = HostStatus_t::HOST_STATUS_INIT;
 
   void
   reset()
   {
     ink_zero(*this);
-    line_number = -1;
-    result      = PARENT_UNDEFINED;
+    line_number   = -1;
+    result        = PARENT_UNDEFINED;
+    mapWrapped[0] = false;
+    mapWrapped[1] = false;
   }
 
   bool
@@ -232,7 +256,20 @@ struct ParentResult {
   bool
   response_is_retryable(HTTPStatus response_code) const
   {
-    return (retry_type() & PARENT_RETRY_UNAVAILABLE_SERVER) && rec->unavailable_server_retry_responses->contains(response_code);
+    Debug("parent_select", "In response_is_retryable, code: %d", response_code);
+    if (retry_type() == PARENT_RETRY_BOTH) {
+      Debug("parent_select", "Saw retry both");
+      return (rec->unavailable_server_retry_responses->contains(response_code) ||
+              rec->simple_server_retry_responses->contains(response_code));
+    } else if (retry_type() == PARENT_RETRY_UNAVAILABLE_SERVER) {
+      Debug("parent_select", "Saw retry unavailable server");
+      return rec->unavailable_server_retry_responses->contains(response_code);
+    } else if (retry_type() == PARENT_RETRY_SIMPLE) {
+      Debug("parent_select", "Saw retry simple retry");
+      return rec->simple_server_retry_responses->contains(response_code);
+    } else {
+      return false;
+    }
   }
 
   bool
@@ -248,6 +285,15 @@ struct ParentResult {
     }
   }
 
+  void
+  print()
+  {
+    printf("ParentResult - hostname: %s, port: %d, retry: %s, line_number: %d, last_parent: %d, start_parent: %d, wrap_around: %s, "
+           "last_lookup: %d, result: %s\n",
+           hostname, port, (retry) ? "true" : "false", line_number, last_parent, start_parent, (wrap_around) ? "true" : "false",
+           last_lookup, ParentResultStr[result]);
+  }
+
 private:
   // Internal use only
   //   Not to be modified by HTTP
@@ -255,11 +301,16 @@ private:
   ParentRecord *rec;
   uint32_t last_parent;
   uint32_t start_parent;
+  uint32_t last_group;
   bool wrap_around;
+  bool mapWrapped[2];
   // state for consistent hash.
   int last_lookup;
-  ATSConsistentHashIter chashIter[2];
+  ATSConsistentHashIter chashIter[MAX_GROUP_RINGS];
 
+  friend class NextHopSelectionStrategy;
+  friend class NextHopRoundRobin;
+  friend class NextHopConsistentHash;
   friend class ParentConsistentHash;
   friend class ParentRoundRobin;
   friend class ParentConfigParams;

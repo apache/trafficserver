@@ -26,6 +26,8 @@
 #include "tscore/HostLookup.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Regression.h"
+#include "tscore/Filenames.h"
+#include "tscore/ts_file.h"
 
 extern int gndisks;
 
@@ -244,7 +246,7 @@ int fstat_wrapper(int fd, struct stat *s);
 int
 CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_buf)
 {
-  Note("hosting.config loading ...");
+  Note("%s loading ...", ts::filename::HOSTING);
 
   // Table build locals
   Tokenizer bufTok("\n");
@@ -325,7 +327,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     if (gen_host_rec.Init(type)) {
       Warning("Problems encountered while initializing the Generic Volume");
     }
-    Note("hosting.config finished loading");
+    Note("%s finished loading", ts::filename::HOSTING);
     return 0;
   }
 
@@ -373,9 +375,9 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     last    = current;
     current = current->next;
     ats_free(last);
-
-    Note("hosting.config finished loading");
   }
+
+  Note("%s finished loading", ts::filename::HOSTING);
 
   if (!generic_rec_initd) {
     const char *cache_type = (type == CACHE_HTTP_TYPE) ? "http" : "mixt";
@@ -395,20 +397,22 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 int
 CacheHostTable::BuildTable(const char *config_file_path)
 {
-  char *file_buf;
-  int ret;
+  std::error_code ec;
+  std::string content{ts::file::load(ts::file::path{config_file_path}, ec)};
 
-  file_buf = readIntoBuffer(config_file_path, matcher_name, nullptr);
-
-  if (file_buf == nullptr) {
-    Warning("Cannot read the config file: %s", config_file_path);
-    gen_host_rec.Init(type);
-    return 0;
+  if (ec) {
+    switch (ec.value()) {
+    case ENOENT:
+      Warning("Cannot open the config file: %s - %s", config_file_path, strerror(ec.value()));
+      break;
+    default:
+      Error("%s failed to load: %s", config_file_path, strerror(ec.value()));
+      gen_host_rec.Init(type);
+      return 0;
+    }
   }
 
-  ret = BuildTableFromString(config_file_path, file_buf);
-  ats_free(file_buf);
-  return ret;
+  return BuildTableFromString(config_file_path, content.data());
 }
 
 int
@@ -591,23 +595,27 @@ void
 ConfigVolumes::read_config_file()
 {
   ats_scoped_str config_path;
-  char *file_buf;
 
   config_path = RecConfigReadConfigPath("proxy.config.cache.volume_filename");
   ink_release_assert(config_path);
 
-  Note("volume.config loading ...");
+  Note("%s loading ...", ts::filename::VOLUME);
 
-  file_buf = readIntoBuffer(config_path, "[CacheVolition]", nullptr);
-  if (file_buf == nullptr) {
-    Error("volume.config failed to load");
-    Warning("Cannot read the config file: %s", (const char *)config_path);
-    return;
+  std::error_code ec;
+  std::string content{ts::file::load(ts::file::path{config_path}, ec)};
+
+  if (ec) {
+    switch (ec.value()) {
+    case ENOENT:
+      Warning("Cannot open the config file: %s - %s", (const char *)config_path, strerror(ec.value()));
+      break;
+    default:
+      Error("%s failed to load: %s", (const char *)config_path, strerror(ec.value()));
+      return;
+    }
   }
 
-  BuildListFromString(config_path, file_buf);
-  ats_free(file_buf);
-
+  BuildListFromString(config_path, content.data());
   Note("volume.config finished loading");
 
   return;
@@ -642,12 +650,13 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     line_num++;
 
     char *end;
-    char *line_end    = nullptr;
-    const char *err   = nullptr;
-    int volume_number = 0;
-    CacheType scheme  = CACHE_NONE_TYPE;
-    int size          = 0;
-    int in_percent    = 0;
+    char *line_end        = nullptr;
+    const char *err       = nullptr;
+    int volume_number     = 0;
+    CacheType scheme      = CACHE_NONE_TYPE;
+    int size              = 0;
+    int in_percent        = 0;
+    bool ramcache_enabled = true;
 
     while (true) {
       // skip all blank spaces at beginning of line
@@ -735,6 +744,18 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
         } else {
           in_percent = 0;
         }
+      } else if (strcasecmp(tmp, "ramcache") == 0) { // match ramcache
+        tmp += 9;
+        if (!strcasecmp(tmp, "false")) {
+          tmp += 5;
+          ramcache_enabled = false;
+        } else if (!strcasecmp(tmp, "true")) {
+          tmp += 4;
+          ramcache_enabled = true;
+        } else {
+          err = "Unexpected end of line";
+          break;
+        }
       }
 
       // ends here
@@ -757,9 +778,10 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       } else {
         configp->in_percent = false;
       }
-      configp->scheme = scheme;
-      configp->size   = size;
-      configp->cachep = nullptr;
+      configp->scheme           = scheme;
+      configp->size             = size;
+      configp->cachep           = nullptr;
+      configp->ramcache_enabled = ramcache_enabled;
       cp_queue.enqueue(configp);
       num_volumes++;
       if (scheme == CACHE_HTTP_TYPE) {
@@ -767,7 +789,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       } else {
         ink_release_assert(!"Unexpected non-HTTP cache volume");
       }
-      Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d", volume_number, scheme, size, in_percent);
+      Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number, scheme, size,
+            in_percent, ramcache_enabled);
     }
 
     tmp = bufTok.iterNext(&i_state);
@@ -867,7 +890,7 @@ create_config(RegressionTest *t, int num)
     }
 
     // make sure we have at least 1280 M bytes
-    if (total_space<(10 << 27)>> STORE_BLOCK_SHIFT) {
+    if (total_space < ((10 << 27) >> STORE_BLOCK_SHIFT)) {
       rprintf(t, "Not enough space for 10 volume\n");
       return 0;
     }

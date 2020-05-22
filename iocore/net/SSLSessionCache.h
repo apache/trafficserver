@@ -33,7 +33,7 @@
 #define SSL_MAX_SESSION_SIZE 256
 
 struct ssl_session_cache_exdata {
-  ssl_curve_id curve;
+  ssl_curve_id curve = 0;
 };
 
 struct SSLSessionID : public TSSslSessionID {

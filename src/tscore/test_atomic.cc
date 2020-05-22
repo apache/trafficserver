@@ -139,7 +139,7 @@ cycle_data(void *d)
 #endif // LONG_ATOMICLIST_TEST
 
 int
-main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
+main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */[])
 {
 #ifndef LONG_ATOMICLIST_TEST
   int32_t m = 1, n = 100;

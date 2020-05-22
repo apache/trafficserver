@@ -1113,17 +1113,17 @@ ConditionCidr::append_value(std::string &s, const Resources &res)
   if (addr) {
     switch (addr->sa_family) {
     case AF_INET: {
-      char res[INET_ADDRSTRLEN];
+      char resource[INET_ADDRSTRLEN];
       struct in_addr ipv4 = reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr;
 
       ipv4.s_addr &= _v4_mask.s_addr;
-      inet_ntop(AF_INET, &ipv4, res, INET_ADDRSTRLEN);
-      if (res[0]) {
-        s += res;
+      inet_ntop(AF_INET, &ipv4, resource, INET_ADDRSTRLEN);
+      if (resource[0]) {
+        s += resource;
       }
     } break;
     case AF_INET6: {
-      char res[INET6_ADDRSTRLEN];
+      char resource[INET6_ADDRSTRLEN];
       struct in6_addr ipv6 = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
       if (_v6_zero_bytes > 0) {
@@ -1132,9 +1132,9 @@ ConditionCidr::append_value(std::string &s, const Resources &res)
       if (_v6_mask != 0xff) {
         ipv6.s6_addr[16 - _v6_zero_bytes] &= _v6_mask;
       }
-      inet_ntop(AF_INET6, &ipv6, res, INET6_ADDRSTRLEN);
-      if (res[0]) {
-        s += res;
+      inet_ntop(AF_INET6, &ipv6, resource, INET6_ADDRSTRLEN);
+      if (resource[0]) {
+        s += resource;
       }
     } break;
     }

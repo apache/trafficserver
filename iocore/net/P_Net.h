@@ -51,12 +51,14 @@ enum Net_Stats {
   inactivity_cop_lock_acquire_failure_stat,
   keep_alive_queue_timeout_total_stat,
   keep_alive_queue_timeout_count_stat,
-  default_inactivity_timeout_stat,
+  default_inactivity_timeout_applied_stat,
+  default_inactivity_timeout_count_stat,
   net_fastopen_attempts_stat,
   net_fastopen_successes_stat,
   net_tcp_accept_stat,
   net_connections_throttled_in_stat,
   net_connections_throttled_out_stat,
+  net_connections_max_active_throttled_in_stat,
   Net_Stat_Count
 };
 

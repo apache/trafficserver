@@ -78,6 +78,7 @@ enum HTTPStatus {
   HTTP_STATUS_REQUEST_URI_TOO_LONG          = 414,
   HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE        = 415,
   HTTP_STATUS_RANGE_NOT_SATISFIABLE         = 416,
+  HTTP_STATUS_TOO_EARLY                     = 425,
 
   HTTP_STATUS_INTERNAL_SERVER_ERROR = 500,
   HTTP_STATUS_NOT_IMPLEMENTED       = 501,
@@ -506,6 +507,8 @@ public:
   /// also had a port, @c false otherwise.
   mutable bool m_port_in_header = false;
 
+  mutable bool early_data = false;
+
   HTTPHdr() = default; // Force the creation of the default constructor
 
   int valid() const;
@@ -583,7 +586,7 @@ public:
       @note The results are cached so this is fast after the first call.
       @return A pointer to the host name.
   */
-  const char *host_get(int *length = nullptr);
+  const char *host_get(int *length = nullptr) const;
 
   /** Get the target port.
       If the target port is not found then it is adjusted to the
@@ -623,11 +626,14 @@ public:
   /// header internals, they must be able to do this.
   void mark_target_dirty() const;
 
-  HTTPStatus status_get();
+  HTTPStatus status_get() const;
   void status_set(HTTPStatus status);
 
   const char *reason_get(int *length);
   void reason_set(const char *value, int length);
+
+  void mark_early_data(bool flag = true) const;
+  bool is_early_data() const;
 
   ParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing = false,
                         size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = 131070);
@@ -642,6 +648,7 @@ public:
   bool is_cache_control_set(const char *cc_directive_wks);
   bool is_pragma_no_cache_set();
   bool is_keep_alive_set() const;
+  bool expect_final_response() const;
   HTTPKeepAlive keep_alive_get() const;
 
 protected:
@@ -850,7 +857,7 @@ HTTPHdr::_test_and_fill_target_cache() const
   -------------------------------------------------------------------------*/
 
 inline const char *
-HTTPHdr::host_get(int *length)
+HTTPHdr::host_get(int *length) const
 {
   this->_test_and_fill_target_cache();
   if (m_target_in_url) {
@@ -999,6 +1006,24 @@ inline bool
 HTTPHdr::is_keep_alive_set() const
 {
   return this->keep_alive_get() == HTTP_KEEPALIVE;
+}
+
+/**
+   Check the status code is informational and expecting final response
+   - e.g. "100 Continue", "103 Early Hints"
+
+   Please note that "101 Switching Protocol" is not included.
+ */
+inline bool
+HTTPHdr::expect_final_response() const
+{
+  switch (this->status_get()) {
+  case HTTP_STATUS_CONTINUE:
+  case HTTP_STATUS_EARLY_HINTS:
+    return true;
+  default:
+    return false;
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -1151,7 +1176,7 @@ http_hdr_status_get(HTTPHdrImpl *hh)
   -------------------------------------------------------------------------*/
 
 inline HTTPStatus
-HTTPHdr::status_get()
+HTTPHdr::status_get() const
 {
   ink_assert(valid());
 
@@ -1197,6 +1222,26 @@ HTTPHdr::reason_set(const char *value, int length)
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
   http_hdr_reason_set(m_heap, m_http, value, length, true);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline void
+HTTPHdr::mark_early_data(bool flag) const
+{
+  ink_assert(valid());
+  early_data = flag;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline bool
+HTTPHdr::is_early_data() const
+{
+  ink_assert(valid());
+  return early_data;
 }
 
 /*-------------------------------------------------------------------------

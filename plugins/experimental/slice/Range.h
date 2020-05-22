@@ -56,6 +56,10 @@ public:
    */
   int64_t firstBlockFor(int64_t const blockbytes) const;
 
+  /** block number of last (inclusive) range block
+   */
+  int64_t lastBlockFor(int64_t const blockbytes) const;
+
   /** block intersection
    */
   Range intersectedWith(Range const &other) const;

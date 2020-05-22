@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <unordered_map>
 #include <dlfcn.h>
 #include <vector>
 #include <ctime>
@@ -39,7 +40,10 @@
 namespace fs = ts::file;
 
 #include "tscore/Ptr.h"
+#include "I_EventSystem.h"
 #include "tscpp/util/IntrusiveDList.h"
+
+#include "Plugin.h"
 
 class PluginThreadContext : public RefCountObj
 {
@@ -67,6 +71,7 @@ public:
   const fs::path &effectivePath() const;
   const fs::path &runtimePath() const;
   time_t modTime() const;
+  void *dlOpenHandle() const;
 
   /* List used by the plugin factory */
   using self_type  = PluginDso; ///< Self reference type.
@@ -87,6 +92,31 @@ public:
   void incInstanceCount();
   void decInstanceCount();
   int instanceCount();
+  bool isDynamicReloadEnabled() const;
+
+  class LoadedPlugins : public RefCountObj
+  {
+  public:
+    LoadedPlugins() : _mutex(new_ProxyMutex()) {}
+    void add(PluginDso *plugin);
+    void remove(PluginDso *plugin);
+    PluginDso *findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled);
+    void indicatePreReload(const char *factoryId);
+    void indicatePostReload(bool reloadSuccessful, const std::unordered_map<PluginDso *, int> &pluginUsed, const char *factoryId);
+
+  private:
+    PluginList _list;       /** @brief plugin list */
+    Ptr<ProxyMutex> _mutex; /** @brief mutex used when updating the plugin list from multiple threads */
+  };
+
+  static const Ptr<LoadedPlugins> &
+  loadedPlugins()
+  {
+    if (!_plugins) {
+      _plugins = new LoadedPlugins();
+    }
+    return _plugins;
+  }
 
 protected:
   void clean(std::string &error);
@@ -102,6 +132,7 @@ protected:
   time_t _mtime                           = 0;            /* @brief modification time of the DSO's file, used for checking */
   bool _preventiveCleaning                = true;
 
-  static PluginList _list; /** @brief a global list of plugins, usually maintained by a plugin factory or plugin instance itself */
+  static Ptr<LoadedPlugins>
+    _plugins; /** @brief a global list of plugins, usually maintained by a plugin factory or plugin instance itself */
   RefCountObj _instanceCount; /** @brief used for properly calling "done" and "indicate config reload" methods by the factory */
 };

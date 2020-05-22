@@ -16,11 +16,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 Test.Summary = '''
 Test experimental/multiplexer.
 '''
-# need Curl
+
 Test.SkipUnless(
     Condition.PluginExists('multiplexer.so')
 )

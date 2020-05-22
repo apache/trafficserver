@@ -1,6 +1,6 @@
 /** @file
 
-  an example hello world plugin
+  an example intercept plugin
 
   @section license License
 
@@ -40,8 +40,7 @@
 // This plugin intercepts all cache misses and proxies them to a separate server
 // that is assumed to be running on localhost:60000. The plugin does no HTTP
 // processing at all, it simply shuffles data until the client closes the
-// request. The TSQA test test-server-intercept exercises this plugin. You can
-// enable extensive logging with the "intercept" diagnostic tag.
+// request. You can enable extensive logging with the "intercept" diagnostic tag.
 
 #define PLUGIN_NAME "intercept"
 #define PORT 60000
@@ -61,7 +60,7 @@
 static TSCont TxnHook;
 static TSCont InterceptHook;
 
-static int InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata);
+static int InterceptInterceptHook(TSCont contp, TSEvent event, void *edata);
 static int InterceptTxnHook(TSCont contp, TSEvent event, void *edata);
 
 // We are going to stream data between Traffic Server and an
@@ -267,7 +266,7 @@ InterceptTransferData(InterceptIO *from, InterceptIO *to)
 // starts with TS_EVENT_NET_ACCEPT, and then continues with
 // TSVConn events.
 static int
-InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
+InterceptInterceptHook(TSCont contp, TSEvent event, void *edata)
 {
   argument_type arg(edata);
 
@@ -515,7 +514,7 @@ InterceptTxnHook(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
     if (InterceptShouldInterceptRequest(arg.txn)) {
-      TSCont c = InterceptContCreate(InterceptInterceptionHook, TSMutexCreate(), arg.txn);
+      TSCont c = InterceptContCreate(InterceptInterceptHook, TSMutexCreate(), arg.txn);
 
       VDEBUG("intercepting origin server request for txn=%p, cont=%p", arg.txn, c);
       TSHttpTxnServerIntercept(c, arg.txn);
@@ -534,7 +533,7 @@ InterceptTxnHook(TSCont contp, TSEvent event, void *edata)
 }
 
 void
-TSPluginInit(int /* argc */, const char * /* argv */ [])
+TSPluginInit(int /* argc */, const char * /* argv */[])
 {
   TSPluginRegistrationInfo info;
 
@@ -549,9 +548,9 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
   // XXX accept hostname and port arguments
 
   TxnHook       = InterceptContCreate(InterceptTxnHook, nullptr, nullptr);
-  InterceptHook = InterceptContCreate(InterceptInterceptionHook, nullptr, nullptr);
+  InterceptHook = InterceptContCreate(InterceptInterceptHook, nullptr, nullptr);
 
   // Wait until after the cache lookup to decide whether to
-  // intercept a request. For cache hits we will never intercept.
+  // intercept a request. For cache hits, we will never intercept.
   TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, TxnHook);
 }

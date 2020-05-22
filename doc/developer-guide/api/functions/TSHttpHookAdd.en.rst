@@ -27,7 +27,9 @@ Intercept Traffic Server events.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 .. function:: void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)

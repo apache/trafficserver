@@ -41,11 +41,13 @@ experimental_sslheaders_sslheaders_la_LIBADD = \
         experimental/sslheaders/libsslhdr.la
 
 experimental_sslheaders_test_sslheaders_SOURCES = \
-	experimental/sslheaders/test_sslheaders.cc \
+	experimental/sslheaders/unit_tests/unit_test_main.cc \
+	experimental/sslheaders/unit_tests/test_sslheaders.cc \
 	experimental/sslheaders/sslheaders.h
 experimental_sslheaders_test_sslheaders_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	@OPENSSL_INCLUDES@ \
+	-I$(abs_top_srcdir)/tests/include \
 	-I$(abs_top_srcdir)/include
 experimental_sslheaders_test_sslheaders_LDFLAGS = @OPENSSL_LDFLAGS@
 experimental_sslheaders_test_sslheaders_LDADD = \

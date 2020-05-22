@@ -1193,10 +1193,8 @@ tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
 tsapi void TSContDestroy(TSCont contp);
 tsapi void TSContDataSet(TSCont contp, void *data);
 tsapi void *TSContDataGet(TSCont contp);
-tsapi TSAction TSContSchedule(TSCont contp, TSHRTime timeout);
 tsapi TSAction TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
 tsapi TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread);
-tsapi TSAction TSContScheduleEvery(TSCont contp, TSHRTime every /* millisecs */);
 tsapi TSAction TSContScheduleEveryOnPool(TSCont contp, TSHRTime every /* millisecs */, TSThreadPool tp);
 tsapi TSAction TSContScheduleEveryOnThread(TSCont contp, TSHRTime every /* millisecs */, TSEventThread ethread);
 tsapi TSReturnCode TSContThreadAffinitySet(TSCont contp, TSEventThread ethread);
@@ -1262,7 +1260,7 @@ TSReturnCode TSVConnProtocolEnable(TSVConn connp, const char *protocol_name);
 tsapi int TSVConnIsSsl(TSVConn sslp);
 tsapi TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 tsapi int TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
-tsapi TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session);
+tsapi TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);
 tsapi TSReturnCode TSSslSessionRemove(const TSSslSessionID *session_id);
 
 /* --------------------------------------------------------------------------
@@ -1548,25 +1546,32 @@ tsapi void TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on);
 tsapi void TSHttpTxnReenable(TSHttpTxn txnp, TSEvent event);
 tsapi TSReturnCode TSHttpCacheReenable(TSCacheTxn txnp, const TSEvent event, const void *data, const uint64_t size);
 
-tsapi void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
-tsapi void *TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
-tsapi void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
-tsapi void *TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx);
-tsapi void TSVConnArgSet(TSVConn connp, int arg_idx, void *arg);
-tsapi void *TSVConnArgGet(TSVConn connp, int arg_idx);
-
-/* The reserve API should only be use in TSAPI plugins, during plugin initialization! */
-/* The lookup methods can be used anytime, but are best used during initialization as well,
+/* The reserve API should only be use in TSAPI plugins, during plugin initialization!
+   The lookup methods can be used anytime, but are best used during initialization as well,
    or at least "cache" the results for best performance. */
-tsapi TSReturnCode TSHttpTxnArgIndexReserve(const char *name, const char *description, int *arg_idx);
-tsapi TSReturnCode TSHttpTxnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
-tsapi TSReturnCode TSHttpTxnArgIndexLookup(int arg_idx, const char **name, const char **description);
-tsapi TSReturnCode TSHttpSsnArgIndexReserve(const char *name, const char *description, int *arg_idx);
-tsapi TSReturnCode TSHttpSsnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
-tsapi TSReturnCode TSHttpSsnArgIndexLookup(int arg_idx, const char **name, const char **description);
-tsapi TSReturnCode TSVConnArgIndexReserve(const char *name, const char *description, int *arg_idx);
-tsapi TSReturnCode TSVConnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
-tsapi TSReturnCode TSVConnArgIndexLookup(int arg_idx, const char **name, const char **description);
+tsapi TSReturnCode TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *description, int *arg_idx);
+tsapi TSReturnCode TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description);
+tsapi TSReturnCode TSUserArgIndexLookup(TSUserArgType type, int arg_idx, const char **name, const char **description);
+tsapi void TSUserArgSet(void *data, int arg_idx, void *arg);
+tsapi void *TSUserArgGet(void *data, int arg_idx);
+
+/* These are deprecated as of v9.0.0, and will be removed in v10.0.0 */
+tsapi TS_DEPRECATED void TSHttpTxnArgSet(TSHttpTxn txnp, int arg_idx, void *arg);
+tsapi TS_DEPRECATED void *TSHttpTxnArgGet(TSHttpTxn txnp, int arg_idx);
+tsapi TS_DEPRECATED void TSHttpSsnArgSet(TSHttpSsn ssnp, int arg_idx, void *arg);
+tsapi TS_DEPRECATED void *TSHttpSsnArgGet(TSHttpSsn ssnp, int arg_idx);
+tsapi TS_DEPRECATED void TSVConnArgSet(TSVConn connp, int arg_idx, void *arg);
+tsapi TS_DEPRECATED void *TSVConnArgGet(TSVConn connp, int arg_idx);
+
+tsapi TS_DEPRECATED TSReturnCode TSHttpTxnArgIndexReserve(const char *name, const char *description, int *arg_idx);
+tsapi TS_DEPRECATED TSReturnCode TSHttpTxnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
+tsapi TS_DEPRECATED TSReturnCode TSHttpTxnArgIndexLookup(int arg_idx, const char **name, const char **description);
+tsapi TS_DEPRECATED TSReturnCode TSHttpSsnArgIndexReserve(const char *name, const char *description, int *arg_idx);
+tsapi TS_DEPRECATED TSReturnCode TSHttpSsnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
+tsapi TS_DEPRECATED TSReturnCode TSHttpSsnArgIndexLookup(int arg_idx, const char **name, const char **description);
+tsapi TS_DEPRECATED TSReturnCode TSVConnArgIndexReserve(const char *name, const char *description, int *arg_idx);
+tsapi TS_DEPRECATED TSReturnCode TSVConnArgIndexNameLookup(const char *name, int *arg_idx, const char **description);
+tsapi TS_DEPRECATED TSReturnCode TSVConnArgIndexLookup(int arg_idx, const char **name, const char **description);
 
 tsapi void TSHttpTxnStatusSet(TSHttpTxn txnp, TSHttpStatus status);
 tsapi TSHttpStatus TSHttpTxnStatusGet(TSHttpTxn txnp);
@@ -1715,8 +1720,8 @@ tsapi TSVConn TSHttpConnect(struct sockaddr const *addr);
  */
 tsapi TSVConn TSHttpConnectTransparent(struct sockaddr const *client_addr, struct sockaddr const *server_addr);
 
-tsapi void TSFetchUrl(const char *request, int request_len, struct sockaddr const *addr, TSCont contp,
-                      TSFetchWakeUpOptions callback_options, TSFetchEvent event);
+tsapi TSFetchSM TSFetchUrl(const char *request, int request_len, struct sockaddr const *addr, TSCont contp,
+                           TSFetchWakeUpOptions callback_options, TSFetchEvent event);
 tsapi void TSFetchPages(TSFetchUrlParams_t *params);
 
 /* Check if HTTP State machine is internal or not */
@@ -2354,21 +2359,7 @@ tsapi TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigK
 tsapi TSReturnCode TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
 /**
-   This API informs the core to try to follow redirections (e.g. 301 responses.
-   The new URL would be provided in the standard Location header.
-
-   This is deprecated as of v8.0.0. You should instead rely on using the overridable
-   proxy.config.http.number_of_redirections setting.
-
-   @param txnp the transaction pointer
-   @param on   turn this on or off (0 or 1)
-
-   @return @c TS_SUCCESS if it succeeded
-*/
-tsapi TS_DEPRECATED TSReturnCode TSHttpTxnFollowRedirect(TSHttpTxn txnp, int on);
-
-/**
-   This is a generalization of the TSHttpTxnFollowRedirect(), but gives finer
+   This is a generalization of the old TSHttpTxnFollowRedirect(), but gives finer
    control over the behavior. Instead of using the Location: header for the new
    destination, this API takes the new URL as a parameter. Calling this API
    transfers the ownership of the URL from the plugin to the core, so you must
@@ -2462,6 +2453,18 @@ tsapi TSReturnCode TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milest
 tsapi int TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response);
 
 /**
+  Get the maximum age in seconds as indicated by the origin server.
+  This would typically be used in TS_HTTP_READ_RESPONSE_HDR_HOOK, when you have
+  the server response ready.
+
+  @param txnp the transaction pointer
+  @param response the server response header. If NULL, use the transactions origin response.
+
+  @return the age in seconds if specified by Cache-Control, -1 otherwise
+*/
+tsapi int TSHttpTxnGetMaxAge(TSHttpTxn txnp, TSMBuffer response);
+
+/**
    Return a string representation for a TSServerState value. This is useful for plugin debugging.
 
    @param state the value of this TSServerState
@@ -2518,9 +2521,9 @@ tsapi const char *TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char cons
 tsapi const char *TSNormalizedProtocolTag(char const *tag);
 tsapi const char *TSRegisterProtocolTag(char const *tag);
 
-// If, for the given transaction, the URL has been remapped, this function puts the memory location of the "from" URL object in the
-// variable pointed to by urlLocp, and returns TS_SUCCESS.  (The URL object will be within memory allocated to the transaction
-// object.)  Otherwise, the function returns TS_ERROR.
+// If, for the given transaction, the URL has been remapped, this function puts the memory location of the "from" URL object in
+// the variable pointed to by urlLocp, and returns TS_SUCCESS.  (The URL object will be within memory allocated to the
+// transaction object.)  Otherwise, the function returns TS_ERROR.
 //
 tsapi TSReturnCode TSRemapFromUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
 
@@ -2534,6 +2537,15 @@ tsapi TSReturnCode TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp);
  * Get a TSIOBufferReader to read the buffered body. The return value needs to be freed.
  */
 tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
+
+/**
+ * Initiate an HTTP/2 Server Push preload request.
+ * Use this api to register a URL that you want to preload with HTTP/2 Server Push.
+ *
+ * @param url the URL string to preload.
+ * @param url_len the length of the URL string.
+ */
+tsapi TSReturnCode TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
 
 #ifdef __cplusplus
 }

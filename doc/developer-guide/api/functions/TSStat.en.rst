@@ -28,7 +28,9 @@ in contrast to processing log files.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: int TSStatCreate(const char * name, TSRecordDataType type, TSStatPersistence persistence, TSStatSync sync_style)
 .. function:: TSReturnCode TSStatFindName(const char * name, int * idx_ptr)

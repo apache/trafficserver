@@ -250,6 +250,14 @@ public:
   inkcoreapi int marshal_client_http_transaction_priority_weight(char *);     // INT
   inkcoreapi int marshal_client_http_transaction_priority_dependence(char *); // INT
   inkcoreapi int marshal_cache_lookup_url_canon(char *);                      // STR
+  inkcoreapi int marshal_client_sni_server_name(char *);                      // STR
+  inkcoreapi int marshal_version_build_number(char *);                        // STR
+  inkcoreapi int marshal_cache_read_retries(char *);                          // INT
+  inkcoreapi int marshal_cache_write_retries(char *);                         // INT
+  inkcoreapi int marshal_cache_collapsed_connection_success(char *);          // INT
+  inkcoreapi int marshal_proxy_protocol_version(char *);                      // STR
+  inkcoreapi int marshal_proxy_protocol_src_ip(char *);                       // STR
+  inkcoreapi int marshal_proxy_protocol_dst_ip(char *);                       // STR
 
   // named fields from within a http header
   //

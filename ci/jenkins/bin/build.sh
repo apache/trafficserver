@@ -33,14 +33,14 @@ echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
 
 # Change to the build area (this is previously setup in extract.sh)
-cd "${WORKSPACE}/${BUILD_NUMBER}/build"
+cd "${ATS_BUILD_BASEDIR}/build"
 mkdir -p BUILDS && cd BUILDS
 
 # Restore verbose shell output
 set -x
 
 ../configure \
-    --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
+    --prefix="${ATS_BUILD_BASEDIR}/install" \
     --enable-experimental-plugins \
     --enable-example-plugins \
     --with-user=jenkins \
@@ -48,6 +48,7 @@ set -x
     ${WERROR} \
     ${DEBUG}
 
+echo
 echo -n "Main build started at " && date
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q= || exit 1
 echo -n "Main build finished at " && date

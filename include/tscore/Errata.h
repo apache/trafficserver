@@ -336,7 +336,7 @@ public:
                       int indent,        ///< Additional indention per line for messages.
                       int shift,         ///< Additional @a indent for nested @c Errata.
                       char const *lead   ///< Leading text for nested @c Errata.
-                      ) const;
+  ) const;
   /// Simple formatted output to fixed sized buffer.
   /// @return Number of characters written to @a buffer.
   size_t write(char *buffer,    ///< Output buffer.
@@ -345,7 +345,7 @@ public:
                int indent,      ///< Additional indention per line for messages.
                int shift,       ///< Additional @a indent for nested @c Errata.
                char const *lead ///< Leading text for nested @c Errata.
-               ) const;
+  ) const;
 
 protected:
   /// Construct from implementation pointer.

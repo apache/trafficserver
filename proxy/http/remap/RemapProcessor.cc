@@ -26,16 +26,6 @@
 RemapProcessor remapProcessor;
 extern ClassAllocator<RemapPlugins> pluginAllocator;
 
-int
-RemapProcessor::start(int num_threads, size_t stacksize)
-{
-  if (_use_separate_remap_thread) {
-    ET_REMAP = eventProcessor.spawn_event_threads("ET_REMAP", num_threads, stacksize); // ET_REMAP is a class member
-  }
-
-  return 0;
-}
-
 /**
   Most of this comes from UrlRewrite::Remap(). Generally, all this does
   is set "map" to the appropriate entry from the HttpSM's leased m_remap
@@ -153,6 +143,11 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
   map = s->url_map.getMapping();
   if (!map) {
     return false;
+  }
+
+  // if there is a configured next hop strategy, make it available in the state.
+  if (map->strategy) {
+    s->next_hop_strategy = map->strategy;
   }
   // Do fast ACL filtering (it is safe to check map here)
   table->PerformACLFiltering(s, map);
@@ -300,29 +295,11 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
     return ACTION_RESULT_DONE;
   }
 
-  if (_use_separate_remap_thread) {
-    RemapPlugins *plugins = pluginAllocator.alloc();
+  RemapPlugins plugins(s, request_url, request_header, hh_info);
 
-    plugins->setState(s);
-    plugins->setRequestUrl(request_url);
-    plugins->setRequestHeader(request_header);
-    plugins->setHostHeaderInfo(hh_info);
-
-    // Execute "inline" if not using separate remap threads.
-    ink_assert(cont->mutex->thread_holding == this_ethread());
-    plugins->mutex  = cont->mutex;
-    plugins->action = cont;
-    SET_CONTINUATION_HANDLER(plugins, &RemapPlugins::run_remap);
-    eventProcessor.schedule_imm(plugins, ET_REMAP);
-
-    return &plugins->action;
-  } else {
-    RemapPlugins plugins(s, request_url, request_header, hh_info);
-
-    while (!plugins.run_single_remap()) {
-      ; // EMPTY
-    }
-
-    return ACTION_RESULT_DONE;
+  while (!plugins.run_single_remap()) {
+    ; // EMPTY
   }
+
+  return ACTION_RESULT_DONE;
 }

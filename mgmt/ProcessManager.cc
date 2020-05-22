@@ -266,6 +266,10 @@ ProcessManager::signalManager(int msg_id, std::string_view text)
 void
 ProcessManager::signalManager(MgmtMessageHdr *mh)
 {
+  if (!this->running) {
+    Warning("MgmtMessageHdr is ignored. Because ProcessManager is not running");
+    return;
+  }
   ink_release_assert(::enqueue(mgmt_signal_queue, mh));
 
 #if HAVE_EVENTFD

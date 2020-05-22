@@ -45,10 +45,8 @@ public:
 
   static void convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing_request);
   static void convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoing_response);
-  static void convert_to_0_9_request_header(HTTPHdr *outgoing_request);
   static void convert_to_1_0_request_header(HTTPHdr *outgoing_request);
   static void convert_to_1_1_request_header(HTTPHdr *outgoing_request);
-  static void convert_to_0_9_response_header(HTTPHdr *outgoing_response);
   static void convert_to_1_0_response_header(HTTPHdr *outgoing_response);
   static void convert_to_1_1_response_header(HTTPHdr *outgoing_response);
 
@@ -87,10 +85,10 @@ public:
   static void remove_conditional_headers(HTTPHdr *outgoing);
   static void remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing);
   static void remove_host_name_from_url(HTTPHdr *outgoing_request);
-  static void add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
-  static void add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
-  static void remove_privacy_headers_from_request(HttpConfigParams *http_config_param, OverridableHttpConfigParams *http_txn_conf,
-                                                  HTTPHdr *header);
+  static void add_global_user_agent_header_to_request(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
+  static void add_server_header_to_response(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
+  static void remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
+                                                  const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
   static void add_connection_close(HTTPHdr *header);
 
   static int nstrcpy(char *d, const char *as);

@@ -22,7 +22,9 @@ TSCacheDataType
 Synopsis
 ========
 
-`#include <ts/apidefs.h>`
+.. code-block:: cpp
+
+    #include <ts/apidefs.h>
 
 .. c:type:: TSCacheDataType
 

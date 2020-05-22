@@ -1,0 +1,4 @@
+notifications:
+  commits: commits@trafficserver.apache.org
+  issues: issues@trafficserver.apache.org
+  pullrequests: github@trafficserver.apache.org

@@ -22,8 +22,8 @@
 What's New in ATS v10.x
 =======================
 
-This version of ATS includes over <x> commits, from <y> pull requests. A total of <z> contributors
-have participated in this development cycle.
+This version of |ATS| includes over <x> commits, from <y> pull requests. A
+total of <z> contributors have participated in this development cycle.
 
 .. toctree::
    :maxdepth: 1
@@ -31,8 +31,9 @@ have participated in this development cycle.
 New Features
 ------------
 
-New or modifed Configurations
------------------------------
+
+New or modified Configurations
+------------------------------
 
 Logging and Metrics
 -------------------

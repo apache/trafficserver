@@ -23,12 +23,10 @@
 
 #include "EsiProcessor.h"
 #include "Stats.h"
-#include "FailureInfo.h"
 #include <cctype>
 
 using std::string;
 using namespace EsiLib;
-extern pthread_key_t threadKey;
 // this needs to be a fixed address as only the address is used for comparison
 const char *EsiProcessor::INCLUDE_DATA_ID_ATTR = reinterpret_cast<const char *>(0xbeadface);
 
@@ -45,7 +43,6 @@ EsiProcessor::EsiProcessor(const char *debug_tag, const char *parser_debug_tag, 
     _n_processed_try_nodes(0),
     _overall_len(0),
     _fetcher(fetcher),
-    _reqAdded(false),
     _usePackedNodeList(false),
     _esi_vars(variables),
     _expression(expression_debug_tag, debug_func, error_func, _esi_vars),
@@ -282,7 +279,6 @@ EsiProcessor::process(const char *&data, int &data_len)
   }
   DocNodeList::iterator node_iter, iter;
   bool attempt_succeeded;
-  std::vector<std::string> attemptUrls;
   TryBlockList::iterator try_iter = _try_blocks.begin();
   for (int i = 0; i < _n_try_blocks_processed; ++i, ++try_iter) {
     ;
@@ -294,7 +290,6 @@ EsiProcessor::process(const char *&data, int &data_len)
       if ((node_iter->type == DocNode::TYPE_INCLUDE) || (node_iter->type == DocNode::TYPE_SPECIAL_INCLUDE)) {
         const Attribute &url = (*node_iter).attr_list.front();
         string raw_url(url.value, url.value_len);
-        attemptUrls.push_back(_expression.expand(raw_url));
         if (!_getIncludeData(*node_iter)) {
           attempt_succeeded = false;
           _errorLog("[%s] attempt section errored; due to url [%s]", __FUNCTION__, raw_url.c_str());
@@ -303,44 +298,6 @@ EsiProcessor::process(const char *&data, int &data_len)
       }
     }
 
-    /* FAILURE CACHE */
-    FailureData *data = static_cast<FailureData *>(pthread_getspecific(threadKey));
-    _debugLog("plugin_esi_failureInfo", "[%s]Fetched data related to thread specific %p", __FUNCTION__, data);
-
-    for (iter = try_iter->attempt_nodes.begin(); iter != try_iter->attempt_nodes.end(); ++iter) {
-      if ((iter->type == DocNode::TYPE_INCLUDE) || iter->type == DocNode::TYPE_SPECIAL_INCLUDE) {
-        if (!attempt_succeeded && iter == node_iter) {
-          continue;
-        }
-        const Attribute &url = (*iter).attr_list.front();
-        string raw_url(url.value, url.value_len);
-        attemptUrls.push_back(_expression.expand(raw_url));
-      }
-    }
-
-    if (attemptUrls.size() > 0 && data) {
-      FailureData::iterator it = data->find(attemptUrls[0]);
-      FailureInfo *info;
-
-      if (it == data->end()) {
-        _debugLog("plugin_esi_failureInfo", "[%s]Inserting object for the attempt URLS", __FUNCTION__);
-        info = new FailureInfo(FAILURE_INFO_TAG, _debugLog, _errorLog);
-        for (int i = 0; i < static_cast<int>(attemptUrls.size()); i++) {
-          _debugLog("plugin_esi_failureInfo", "[%s] Urls [%.*s]", __FUNCTION__, attemptUrls[i].size(), attemptUrls[i].data());
-          (*data)[attemptUrls[i]] = info;
-        }
-
-        info->registerSuccFail(attempt_succeeded);
-
-      } else {
-        info = it->second;
-        // Should be registered only if attemp was made
-        // and it failed
-        if (_reqAdded) {
-          info->registerSuccFail(attempt_succeeded);
-        }
-      }
-    }
     if (attempt_succeeded) {
       _debugLog(_debug_tag, "[%s] attempt section succeeded; using attempt section", __FUNCTION__);
       _node_list.splice(try_iter->pos, try_iter->attempt_nodes);
@@ -399,7 +356,6 @@ EsiProcessor::flush(string &data, int &overall_len)
   bool attempt_succeeded;
   bool attempt_pending;
   bool node_pending;
-  std::vector<std::string> attemptUrls;
   _output_data.clear();
   TryBlockList::iterator try_iter = _try_blocks.begin();
   for (int i = 0; i < _n_try_blocks_processed; ++i, ++try_iter) {
@@ -425,7 +381,6 @@ EsiProcessor::flush(string &data, int &overall_len)
       if ((node_iter->type == DocNode::TYPE_INCLUDE) || (node_iter->type == DocNode::TYPE_SPECIAL_INCLUDE)) {
         const Attribute &url = (*node_iter).attr_list.front();
         string raw_url(url.value, url.value_len);
-        attemptUrls.push_back(_expression.expand(raw_url));
         if (_getIncludeStatus(*node_iter) != STATUS_DATA_AVAILABLE) {
           attempt_succeeded = false;
           _errorLog("[%s] attempt section errored; due to url [%s]", __FUNCTION__, raw_url.c_str());
@@ -434,44 +389,6 @@ EsiProcessor::flush(string &data, int &overall_len)
       }
     }
 
-    /* FAILURE CACHE */
-    FailureData *fdata = static_cast<FailureData *>(pthread_getspecific(threadKey));
-    _debugLog("plugin_esi_failureInfo", "[%s]Fetched data related to thread specific %p", __FUNCTION__, fdata);
-
-    for (iter = try_iter->attempt_nodes.begin(); iter != try_iter->attempt_nodes.end(); ++iter) {
-      if ((iter->type == DocNode::TYPE_INCLUDE) || iter->type == DocNode::TYPE_SPECIAL_INCLUDE) {
-        if (!attempt_succeeded && iter == node_iter) {
-          continue;
-        }
-        const Attribute &url = (*iter).attr_list.front();
-        string raw_url(url.value, url.value_len);
-        attemptUrls.push_back(_expression.expand(raw_url));
-      }
-    }
-
-    if (attemptUrls.size() > 0 && fdata) {
-      FailureData::iterator it = fdata->find(attemptUrls[0]);
-      FailureInfo *info;
-
-      if (it == fdata->end()) {
-        _debugLog("plugin_esi_failureInfo", "[%s]Inserting object for the attempt URLS", __FUNCTION__);
-        info = new FailureInfo(FAILURE_INFO_TAG, _debugLog, _errorLog);
-        for (int i = 0; i < static_cast<int>(attemptUrls.size()); i++) {
-          _debugLog("plugin_esi_failureInfo", "[%s] Urls [%.*s]", __FUNCTION__, attemptUrls[i].size(), attemptUrls[i].data());
-          (*fdata)[attemptUrls[i]] = info;
-        }
-
-        info->registerSuccFail(attempt_succeeded);
-
-      } else {
-        info = it->second;
-        // Should be registered only if attemp was made
-        // and it failed
-        if (_reqAdded) {
-          info->registerSuccFail(attempt_succeeded);
-        }
-      }
-    }
     if (attempt_succeeded) {
       _debugLog(_debug_tag, "[%s] attempt section succeeded; using attempt section", __FUNCTION__);
       _n_prescanned_nodes = _n_prescanned_nodes + try_iter->attempt_nodes.size();
@@ -764,43 +681,12 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
         continue;
       }
 
-      bool fetch = true;
-      FailureData *threadData;
-      /* FAILURE CACHE */
-      if ((threadData = static_cast<FailureData *>(pthread_getspecific(threadKey))) == nullptr) {
-        threadData = new FailureData();
-        if (pthread_setspecific(threadKey, threadData)) {
-          _errorLog("[%s] Unable to set the key", __FUNCTION__);
-          abort();
-        }
-        _debugLog("plugin_esi_failureInfo", "[%s] Data is set for this thread [threadData]%p [threadID]%u [%.*s]", __FUNCTION__,
-                  threadData, pthread_self(), expanded_url.size(), expanded_url.data());
-      } else {
-        _debugLog("plugin_esi_failureInfo", "[%s] URL request [%.*s] %u", __FUNCTION__, expanded_url.size(), expanded_url.data(),
-                  pthread_self());
-
-        FailureData::iterator it = threadData->find(expanded_url);
-        FailureInfo *info;
-
-        if (it != threadData->end()) {
-          info  = it->second;
-          fetch = _reqAdded = info->isAttemptReq();
-          _debugLog(_debug_tag, "[%s] Fetch result is %d", __FUNCTION__, fetch);
-        }
-      }
-
-      if (fetch) {
-        if (!_fetcher.addFetchRequest(expanded_url)) {
-          _errorLog("[%s] Couldn't add fetch request for URL [%.*s]", __FUNCTION__, raw_url.size(), raw_url.data());
-          Stats::increment(Stats::N_INCLUDE_ERRS);
-          continue;
-        }
-        _include_urls.insert(StringHash::value_type(raw_url, expanded_url));
-      } else {
-        _debugLog("plugin_esi_failureInfo", "[%s] Not adding fetch request for [%.*s]", __FUNCTION__, expanded_url.size(),
-                  expanded_url.data());
+      if (!_fetcher.addFetchRequest(expanded_url)) {
+        _errorLog("[%s] Couldn't add fetch request for URL [%.*s]", __FUNCTION__, raw_url.size(), raw_url.data());
+        Stats::increment(Stats::N_INCLUDE_ERRS);
         continue;
       }
+      _include_urls.insert(StringHash::value_type(raw_url, expanded_url));
       break;
     }
     case DocNode::TYPE_SPECIAL_INCLUDE: {

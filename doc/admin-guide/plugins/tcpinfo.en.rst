@@ -45,7 +45,6 @@ The following options may be specified in :file:`plugin.config`:
    Event Name     Triggered when
   ==============  ===============================================
   send_resp_hdr   The server begins sending an HTTP response.
-  ssn_close       The TCP connection closes.
   ssn_start       A new TCP connection is accepted.
   txn_close       A HTTP transaction is completed.
   txn_start       A HTTP transaction is initiated.

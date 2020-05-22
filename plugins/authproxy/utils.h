@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#pragma once
+
 #include <ts/ts.h>
 #include <netinet/in.h>
 #include <memory>

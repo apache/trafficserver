@@ -16,8 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import sys
-
 
 Test.Summary = 'Test that Trafficserver starts with different thread configurations.'
 Test.ContinueOnFail = True

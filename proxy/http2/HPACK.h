@@ -28,7 +28,7 @@
 #include "HTTP.h"
 #include "../hdrs/XPACK.h"
 
-#include <vector>
+#include <deque>
 
 // It means that any header field can be compressed/decompressed by ATS
 const static int HPACK_ERROR_COMPRESSION_ERROR   = -1;
@@ -112,13 +112,7 @@ public:
     _mhdr->create();
   }
 
-  ~HpackDynamicTable()
-  {
-    _headers.clear();
-    _mhdr->fields_clear();
-    _mhdr->destroy();
-    delete _mhdr;
-  }
+  ~HpackDynamicTable();
 
   // noncopyable
   HpackDynamicTable(HpackDynamicTable &) = delete;
@@ -129,18 +123,20 @@ public:
 
   uint32_t maximum_size() const;
   uint32_t size() const;
-  bool update_maximum_size(uint32_t new_size);
+  void update_maximum_size(uint32_t new_size);
 
   uint32_t length() const;
 
 private:
-  bool _evict_overflowed_entries();
+  void _evict_overflowed_entries();
+  void _mime_hdr_gc();
 
-  uint32_t _current_size;
-  uint32_t _maximum_size;
+  uint32_t _current_size = 0;
+  uint32_t _maximum_size = 0;
 
-  MIMEHdr *_mhdr;
-  std::vector<MIMEField *> _headers;
+  MIMEHdr *_mhdr     = nullptr;
+  MIMEHdr *_mhdr_old = nullptr;
+  std::deque<MIMEField *> _headers;
 };
 
 // [RFC 7541] 2.3. Indexing Table
@@ -161,7 +157,7 @@ public:
   void add_header_field(const MIMEField *field);
   uint32_t maximum_size() const;
   uint32_t size() const;
-  bool update_maximum_size(uint32_t new_size);
+  void update_maximum_size(uint32_t new_size);
 
 private:
   HpackDynamicTable *_dynamic_table;

@@ -1,0 +1,7 @@
+``
+> GET / HTTP/2
+> Host: bob--cert
+``
+< HTTP/2 200 
+< content-length: 0
+``

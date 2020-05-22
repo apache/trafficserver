@@ -27,6 +27,7 @@
 #include "Plugin.h"
 #include "ProxySession.h"
 #include "Http2ConnectionState.h"
+#include "Http2Frame.h"
 #include <string_view>
 #include "tscore/ink_inet.h"
 #include "tscore/History.h"
@@ -77,86 +78,6 @@ struct Http2UpgradeContext {
   Http2ConnectionSettings client_settings;
 };
 
-class Http2Frame
-{
-public:
-  Http2Frame(const Http2FrameHeader &h, IOBufferReader *r) : hdr(h), ioreader(r) {}
-  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags) : hdr({0, (uint8_t)type, flags, streamid}) {}
-
-  IOBufferReader *
-  reader() const
-  {
-    return ioreader;
-  }
-
-  const Http2FrameHeader &
-  header() const
-  {
-    return this->hdr;
-  }
-
-  // Allocate an IOBufferBlock for payload of this frame.
-  void
-  alloc(int index)
-  {
-    this->ioblock = new_IOBufferBlock();
-    this->ioblock->alloc(index);
-  }
-
-  // Return the writeable buffer space for frame payload
-  IOVec
-  write()
-  {
-    return make_iovec(this->ioblock->end(), this->ioblock->write_avail());
-  }
-
-  // Once the frame has been serialized, update the payload length of frame header.
-  void
-  finalize(size_t nbytes)
-  {
-    if (this->ioblock) {
-      ink_assert((int64_t)nbytes <= this->ioblock->write_avail());
-      this->ioblock->fill(nbytes);
-
-      this->hdr.length = this->ioblock->size();
-    }
-  }
-
-  void
-  xmit(MIOBuffer *iobuffer)
-  {
-    // Write frame header
-    uint8_t buf[HTTP2_FRAME_HEADER_LEN];
-    http2_write_frame_header(hdr, make_iovec(buf));
-    iobuffer->write(buf, sizeof(buf));
-
-    // Write frame payload
-    // It could be empty (e.g. SETTINGS frame with ACK flag)
-    if (ioblock && ioblock->read_avail() > 0) {
-      iobuffer->append_block(this->ioblock.get());
-    }
-  }
-
-  int64_t
-  size()
-  {
-    if (ioblock) {
-      return HTTP2_FRAME_HEADER_LEN + ioblock->size();
-    } else {
-      return HTTP2_FRAME_HEADER_LEN;
-    }
-  }
-
-  // noncopyable
-  Http2Frame(Http2Frame &) = delete;
-  Http2Frame &operator=(const Http2Frame &) = delete;
-
-private:
-  Http2FrameHeader hdr;       // frame header
-  Ptr<IOBufferBlock> ioblock; // frame payload
-  IOBufferReader *ioreader = nullptr;
-};
-
 class Http2ClientSession : public ProxySession
 {
 public:
@@ -169,11 +90,7 @@ public:
   // Methods
 
   // Implement VConnection interface
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
 
   // Implement ProxySession interface
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
@@ -184,10 +101,10 @@ public:
 
   // more methods
   void write_reenable();
+  int64_t xmit(const Http2TxFrame &frame);
 
   ////////////////////
   // Accessors
-  NetVConnection *get_netvc() const override;
   sockaddr const *get_client_addr() override;
   sockaddr const *get_local_addr() override;
   int get_transact_count() const override;
@@ -211,6 +128,8 @@ public:
 
   // Record history from Http2ConnectionState
   void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
+
+  int64_t write_avail();
 
   // noncopyable
   Http2ClientSession(Http2ClientSession &) = delete;
@@ -237,7 +156,6 @@ private:
 
   int64_t total_write_len        = 0;
   SessionHandler session_handler = nullptr;
-  NetVConnection *client_vc      = nullptr;
   MIOBuffer *read_buffer         = nullptr;
   IOBufferReader *_reader        = nullptr;
   MIOBuffer *write_buffer        = nullptr;
@@ -260,10 +178,13 @@ private:
   bool half_close_local          = false;
   int recursion                  = 0;
 
-  std::unordered_set<std::string> h2_pushed_urls;
+  std::unordered_set<std::string> *_h2_pushed_urls = nullptr;
 
   Event *_reenable_event = nullptr;
   int _n_frame_read      = 0;
+
+  int64_t read_from_early_data   = 0;
+  bool cur_frame_from_early_data = false;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
@@ -310,7 +231,11 @@ Http2ClientSession::get_half_close_local_flag() const
 inline bool
 Http2ClientSession::is_url_pushed(const char *url, int url_len)
 {
-  return h2_pushed_urls.find(url) != h2_pushed_urls.end();
+  if (_h2_pushed_urls == nullptr) {
+    return false;
+  }
+
+  return _h2_pushed_urls->find(url) != _h2_pushed_urls->end();
 }
 
 inline int64_t

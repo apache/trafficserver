@@ -106,6 +106,11 @@ host name. This is true regardless of pristine host headers
 (:ts:cv:`proxy.config.url_remap.pristine_host_hdr`) being enabled or not. The parent node
 will receive the translated request (and thus needs to be configured to accept it).
 
+:file:`remap.config` now also allows an alternative configuration that supports all the
+**Parent Selection** policies and failover mentioned here using a new :file:`remap.config` tag,
+**@strategy**. This eliminates the need for a second lookup against the remapped host name
+required when using :file:`parent.config`.  See using NextHop strategies with :file:`remap.config`,
+:doc:`../../admin-guide/files/strategies.yaml.en`
 
 Example
 ~~~~~~~
@@ -165,7 +170,11 @@ the configuration adjustments detailed below.
    cache.
 
 #. Edit :file:`parent.config` to set parent proxy rules which will specify the
-   parent cache to which you want missed requests to be forwarded.
+   parent cache to which you want missed requests to be forwarded.  Or as an
+   alternative to :file:`parent.config`, edit :file:`strategies.yaml` to
+   specify next hop parent proxy rules and hosts.  Then in :file:`remap.config`
+   use the **@strategy** tag to select the next hop parent proxy rules. See
+   :doc:`../../admin-guide/files/strategies.yaml.en`
 
 The following example configures Traffic Server to route all requests
 containing the regular expression ``politics`` and the path

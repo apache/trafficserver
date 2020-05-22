@@ -66,7 +66,7 @@ test(void *d)
 }
 
 int
-main(int /* argc ATS_UNUSED */, char * /*argv ATS_UNUSED */ [])
+main(int /* argc ATS_UNUSED */, char * /*argv ATS_UNUSED */[])
 {
   int i;
 

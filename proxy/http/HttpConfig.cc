@@ -1,4 +1,5 @@
 /** @file
+ *
 
   A brief file description
 
@@ -22,6 +23,7 @@
  */
 
 #include "tscore/ink_config.h"
+#include "tscore/Filenames.h"
 #include <cctype>
 #include <cstring>
 #include "HttpConfig.h"
@@ -74,11 +76,12 @@ template <typename T> struct ConfigEnumPair {
 /// If found @a value is set to the corresponding value in @a list.
 template <typename T, unsigned N>
 static bool
-http_config_enum_search(const char *key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
+http_config_enum_search(std::string_view key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
+  Debug("http_config", "enum element %.*s", static_cast<int>(key.size()), key.data());
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
-    if (0 == strcasecmp(list[i]._key, key)) {
+    if (key.compare(list[i]._key) == 0) {
       value = list[i]._value;
       return true;
     }
@@ -108,10 +111,56 @@ http_config_enum_read(const char *name, const ConfigEnumPair<T> (&list)[N], Mgmt
 ////////////////////////////////////////////////////////////////
 /// Session sharing match types.
 static const ConfigEnumPair<TSServerSessionSharingMatchType> SessionSharingMatchStrings[] = {
-  {TS_SERVER_SESSION_SHARING_MATCH_NONE, "none"},
-  {TS_SERVER_SESSION_SHARING_MATCH_IP, "ip"},
-  {TS_SERVER_SESSION_SHARING_MATCH_HOST, "host"},
-  {TS_SERVER_SESSION_SHARING_MATCH_BOTH, "both"}};
+  {TS_SERVER_SESSION_SHARING_MATCH_NONE, "none"}, {TS_SERVER_SESSION_SHARING_MATCH_IP, "ip"},
+  {TS_SERVER_SESSION_SHARING_MATCH_HOST, "host"}, {TS_SERVER_SESSION_SHARING_MATCH_HOST, "hostsni"},
+  {TS_SERVER_SESSION_SHARING_MATCH_BOTH, "both"}, {TS_SERVER_SESSION_SHARING_MATCH_HOSTONLY, "hostonly"},
+  {TS_SERVER_SESSION_SHARING_MATCH_SNI, "sni"},   {TS_SERVER_SESSION_SHARING_MATCH_CERT, "cert"}};
+
+bool
+HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
+{
+  MgmtByte value;
+  mask = 0;
+  // Parse through and build up mask
+  std::string_view key_list(key);
+  size_t start  = 0;
+  size_t offset = 0;
+  Debug("http_config", "enum mask value %s", key);
+  do {
+    offset = key_list.find(',', start);
+    if (offset == std::string_view::npos) {
+      std::string_view one_key = key_list.substr(start);
+      if (!http_config_enum_search(one_key, SessionSharingMatchStrings, value)) {
+        return false;
+      }
+    } else {
+      std::string_view one_key = key_list.substr(start, offset - start);
+      if (!http_config_enum_search(one_key, SessionSharingMatchStrings, value)) {
+        return false;
+      }
+      start = offset + 1;
+    }
+    if (value < TS_SERVER_SESSION_SHARING_MATCH_NONE) {
+      mask |= (1 << value);
+    } else if (value == TS_SERVER_SESSION_SHARING_MATCH_BOTH) {
+      mask |= TS_SERVER_SESSION_SHARING_MATCH_MASK_IP | TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY |
+              TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC;
+    } else if (value == TS_SERVER_SESSION_SHARING_MATCH_HOST) {
+      mask |= TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY | TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC;
+    }
+  } while (offset != std::string_view::npos);
+  return true;
+}
+
+static bool
+http_config_enum_mask_read(const char *name, MgmtByte &value)
+{
+  char key[512]; // it's just one key - painful UI if keys are longer than this
+  if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
+    return HttpConfig::load_server_session_sharing_match(key, value);
+  }
+  return false;
+}
 
 static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolStrings[] = {
   {TS_SERVER_SESSION_SHARING_POOL_GLOBAL, "global"},
@@ -149,6 +198,42 @@ http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
   return 0;
 }
 
+void
+Enable_Config_Var(std::string_view const &name, bool (*cb)(const char *, RecDataT, RecData, void *), void *cookie)
+{
+  // Must use this indirection because the API requires a pure function, therefore no values can
+  // be bound in the lambda. Instead this is needed to pass in the data for both the lambda and
+  // the actual callback.
+  using Context = std::tuple<decltype(cb), void *>;
+
+  // To deal with process termination cleanup, store the context instances in a deque where
+  // tail insertion doesn't invalidate pointers. These persist until process shutdown.
+  static std::deque<Context> storage;
+
+  Context &ctx = storage.emplace_back(cb, cookie);
+  // Register the call back - this handles external updates.
+  RecRegisterConfigUpdateCb(
+    name.data(),
+    [](const char *name, RecDataT dtype, RecData data, void *ctx) -> int {
+      auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+      if ((*cb)(name, dtype, data, cookie)) {
+        http_config_cb(name, dtype, data, cookie); // signal runtime config update.
+      }
+      return REC_ERR_OKAY;
+    },
+    &ctx);
+
+  // Use the record to do the initial data load.
+  // Look it up and call the updater @a cb on that data.
+  RecLookupRecord(
+    name.data(),
+    [](RecRecord const *r, void *ctx) -> void {
+      auto &&[cb, cookie] = *static_cast<Context *>(ctx);
+      (*cb)(r->name, r->data_type, r->data, cookie);
+    },
+    &ctx);
+}
+
 // [amc] Not sure which is uglier, this switch or having a micro-function for each var.
 // Oh, how I long for when we can use C++eleventy lambdas without compiler problems!
 // I think for 5.0 when the BC stuff is yanked, we should probably revert this to independent callbacks.
@@ -162,7 +247,7 @@ http_server_session_sharing_cb(const char *name, RecDataT dtype, RecData data, v
     MgmtByte &match = c->oride.server_session_sharing_match;
     if (RECD_INT == dtype) {
       match = static_cast<TSServerSessionSharingMatchType>(data.rec_int);
-    } else if (RECD_STRING == dtype && http_config_enum_search(data.rec_string, SessionSharingMatchStrings, match)) {
+    } else if (RECD_STRING == dtype && HttpConfig::load_server_session_sharing_match(data.rec_string, match)) {
       // empty
     } else {
       valid_p = false;
@@ -355,9 +440,6 @@ register_stat_callbacks()
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.tunnels", RECD_COUNTER, RECP_PERSISTENT, (int)http_tunnels_stat,
                      RecRawStatSyncCount);
-
-  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.throttled_proxy_only", RECD_COUNTER, RECP_PERSISTENT,
-                     (int)http_throttled_proxy_only_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.parent_proxy_transaction_time", RECD_INT, RECP_PERSISTENT,
                      (int)http_parent_proxy_transaction_time_stat, RecRawStatSyncSum);
@@ -1024,8 +1106,7 @@ HttpConfig::startup()
 
   // [amc] This is a bit of a mess, need to figure out to make this cleaner.
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
-  http_config_enum_read("proxy.config.http.server_session_sharing.match", SessionSharingMatchStrings,
-                        c.oride.server_session_sharing_match);
+  http_config_enum_mask_read("proxy.config.http.server_session_sharing.match", c.oride.server_session_sharing_match);
   http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.server_session_sharing_pool);
 
   RecRegisterConfigUpdateCb("proxy.config.http.insert_forwarded", &http_insert_forwarded_cb, &c);
@@ -1216,6 +1297,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.number_of_redirections, "proxy.config.http.number_of_redirections");
   HttpEstablishStaticConfigLongLong(c.post_copy_size, "proxy.config.http.post_copy_size");
   HttpEstablishStaticConfigStringAlloc(c.redirect_actions_string, "proxy.config.http.redirect.actions");
+  HttpEstablishStaticConfigByte(c.http_host_sni_policy, "proxy.config.http.host_sni_policy");
 
   HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_sni_policy, "proxy.config.ssl.client.sni_policy");
 
@@ -1269,9 +1351,9 @@ HttpConfig::reconfigure()
   if (params->outbound_conntrack.queue_size > 0 &&
       !(params->oride.outbound_conntrack.max > 0 || params->oride.outbound_conntrack.min > 0)) {
     Warning("'%s' is set, but neither '%s' nor '%s' are "
-            "set, please correct your records.config",
+            "set, please correct your %s",
             OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data(),
-            OutboundConnTrack::CONFIG_VAR_MIN.data());
+            OutboundConnTrack::CONFIG_VAR_MIN.data(), ts::filename::RECORDS);
   }
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
 
@@ -1279,8 +1361,8 @@ HttpConfig::reconfigure()
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
 
   if (params->oride.outbound_conntrack.max > 0 && params->oride.outbound_conntrack.max < params->oride.outbound_conntrack.min) {
-    Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your records.config",
-            OutboundConnTrack::CONFIG_VAR_MAX.data());
+    Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your %s",
+            OutboundConnTrack::CONFIG_VAR_MAX.data(), ts::filename::RECORDS);
     params->oride.outbound_conntrack.min = params->oride.outbound_conntrack.max;
   }
 
@@ -1434,6 +1516,14 @@ HttpConfig::reconfigure()
   params->keepalive_internal_vc      = INT_TO_BOOL(m_master.keepalive_internal_vc);
 
   params->oride.cache_open_write_fail_action = m_master.oride.cache_open_write_fail_action;
+  if (params->oride.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
+    if (params->oride.max_cache_open_read_retries <= 0 || params->oride.max_cache_open_write_retries <= 0) {
+      Warning("Invalid config, cache_open_write_fail_action (%d), max_cache_open_read_retries (%" PRIu64 "), "
+              "max_cache_open_write_retries (%" PRIu64 ")",
+              params->oride.cache_open_write_fail_action, params->oride.max_cache_open_read_retries,
+              params->oride.max_cache_open_write_retries);
+    }
+  }
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
   params->max_post_size                  = m_master.max_post_size;
@@ -1487,10 +1577,14 @@ HttpConfig::reconfigure()
   params->post_copy_size                    = m_master.post_copy_size;
   params->redirect_actions_string           = ats_strdup(m_master.redirect_actions_string);
   params->redirect_actions_map = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
+  params->http_host_sni_policy = m_master.http_host_sni_policy;
 
   params->oride.ssl_client_sni_policy = ats_strdup(m_master.oride.ssl_client_sni_policy);
 
   params->negative_caching_list = m_master.negative_caching_list;
+
+  params->oride.host_res_data            = m_master.oride.host_res_data;
+  params->oride.host_res_data.conf_value = ats_strdup(m_master.oride.host_res_data.conf_value);
 
   m_id = configProcessor.set(m_id, params);
 }

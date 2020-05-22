@@ -24,6 +24,7 @@
 #include "tscore/ink_platform.h"
 #include "P_Cache.h"
 #include "tscore/I_Layout.h"
+#include "tscore/Filenames.h"
 #include "tscore/ink_file.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/SimpleTokenizer.h"
@@ -36,7 +37,6 @@
 //
 // Store
 //
-
 const char Store::VOLUME_KEY[]           = "volume";
 const char Store::HASH_BASE_STRING_KEY[] = "id";
 
@@ -325,13 +325,13 @@ Store::read_config()
   Span *sd = nullptr, *cur = nullptr;
   Span *ns;
   ats_scoped_fd fd;
-  ats_scoped_str storage_path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
+  ats_scoped_str storage_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
 
-  Note("storage.config loading ...");
+  Note("%s loading ...", ts::filename::STORAGE);
   Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
   fd = ::open(storage_path, O_RDONLY);
   if (fd < 0) {
-    Error("storage.config failed to load");
+    Error("%s failed to load", ts::filename::STORAGE);
     return Result::failure("open %s: %s", (const char *)storage_path, strerror(errno));
   }
 
@@ -372,7 +372,7 @@ Store::read_config()
         const char *end;
         if ((size = ink_atoi64(e, &end)) <= 0 || *end != '\0') {
           delete sd;
-          Error("storage.config failed to load");
+          Error("%s failed to load", ts::filename::STORAGE);
           return Result::failure("failed to parse size '%s'", e);
         }
       } else if (0 == strncasecmp(HASH_BASE_STRING_KEY, e, sizeof(HASH_BASE_STRING_KEY) - 1)) {
@@ -390,7 +390,7 @@ Store::read_config()
         }
         if (!*e || !ParseRules::is_digit(*e) || 0 >= (volume_num = ink_atoi(e))) {
           delete sd;
-          Error("storage.config failed to load");
+          Error("%s failed to load", ts::filename::STORAGE);
           return Result::failure("failed to parse volume number '%s'", e);
         }
       }
@@ -442,7 +442,7 @@ Store::read_config()
   sd = nullptr; // these are all used.
   sort();
 
-  Note("storage.config finished loading");
+  Note("%s finished loading", ts::filename::STORAGE);
 
   return Result::ok();
 }
