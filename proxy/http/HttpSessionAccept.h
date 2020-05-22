@@ -84,7 +84,7 @@ public:
   /// Host address resolution preference order.
   HostResPreferenceOrder host_res_preference;
   /// Set the host query preference.
-  self &setHostResPreference(HostResPreferenceOrder const);
+  self &setHostResPreference(HostResPreferenceOrder const &);
   /// Acceptable session protocols.
   SessionProtocolSet session_protocol_preference;
   /// Set the session protocol preference.
@@ -94,7 +94,7 @@ public:
 inline HttpSessionAcceptOptions::HttpSessionAcceptOptions()
 
 {
-  memcpy(host_res_preference, host_res_default_preference_order, sizeof(host_res_preference));
+  host_res_preference = host_res_default_preference_order;
 }
 
 inline HttpSessionAcceptOptions &
@@ -146,9 +146,9 @@ HttpSessionAcceptOptions::setTransparentPassthrough(bool flag)
 }
 
 inline HttpSessionAcceptOptions &
-HttpSessionAcceptOptions::setHostResPreference(HostResPreferenceOrder const order)
+HttpSessionAcceptOptions::setHostResPreference(HostResPreferenceOrder const &order)
 {
-  memcpy(host_res_preference, order, sizeof(host_res_preference));
+  host_res_preference = order;
   return *this;
 }
 

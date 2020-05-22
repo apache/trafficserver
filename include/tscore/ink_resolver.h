@@ -74,6 +74,8 @@
 #include <resolv.h>
 #include <arpa/nameser.h>
 
+#include <array>
+
 #if defined(openbsd)
 #define NS_INT16SZ INT16SZ
 #define NS_INT32SZ INT32SZ
@@ -157,10 +159,8 @@ enum HostResPreference {
 };
 /// # of preference values.
 static int const N_HOST_RES_PREFERENCE = HOST_RES_PREFER_IPV6 + 1;
-/// # of entries in a preference ordering.
-static int const N_HOST_RES_PREFERENCE_ORDER = 3;
 /// Storage for preference ordering.
-typedef HostResPreference HostResPreferenceOrder[N_HOST_RES_PREFERENCE_ORDER];
+using HostResPreferenceOrder = std::array<HostResPreference, 3>;
 /// Global, hard wired default value for preference ordering.
 extern HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER;
 /// Global (configurable) default.
@@ -188,8 +188,8 @@ extern HostResStyle ats_host_res_from(int family,                    ///< Connec
 
 /** Parse a host resolution configuration string.
  */
-extern void parse_host_res_preference(const char *value,           ///< [in] Configuration string.
-                                      HostResPreferenceOrder order /// [out] Order to update.
+extern void parse_host_res_preference(const char *value,            ///< [in] Configuration string.
+                                      HostResPreferenceOrder &order /// [out] Order to update.
 );
 
 /// Configure the preference order to hold only what's from the client address.
