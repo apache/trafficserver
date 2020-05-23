@@ -8702,6 +8702,7 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
     if (value && length > 0) {
       HttpConfig::load_server_session_sharing_match(value, s->t_state.my_txn_conf().server_session_sharing_match);
+      s->t_state.my_txn_conf().server_session_sharing_match_str = const_cast<char *>(value);
     }
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
@@ -8778,6 +8779,10 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE:
     *value  = sm->t_state.txn_conf->body_factory_template_base;
     *length = sm->t_state.txn_conf->body_factory_template_base_len;
+    break;
+  case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
+    *value  = sm->t_state.txn_conf->server_session_sharing_match_str;
+    *length = *value ? strlen(*value) : 0;
     break;
   default: {
     MgmtConverter const *conv;
