@@ -50,7 +50,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
     uint16_t len        = 0;
     const uint8_t *data = nullptr;
 
-    data = params_in_ch.getAsBytes(QUICTransportParameterId::ORIGINAL_CONNECTION_ID, len);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID, len);
     CHECK(len == 4);
     CHECK(memcmp(data, "\x11\x22\x33\x44", 4) == 0);
 
@@ -62,7 +62,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
     CHECK(len == 2);
     CHECK(memcmp(data, "\x0a\x0b", 2) == 0);
 
-    data = params_in_ch.getAsBytes(QUICTransportParameterId::MAX_PACKET_SIZE, len);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, len);
     CHECK(len == 2);
     CHECK(memcmp(data, "\x05\x67", 2) == 0);
 
@@ -111,7 +111,7 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   params_in_ch.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, max_stream_data);
 
   uint16_t max_packet_size = 0x1bcd;
-  params_in_ch.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
+  params_in_ch.set(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, max_packet_size);
 
   uint8_t stateless_reset_token[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                                        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77};
@@ -242,7 +242,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     params_in_ee.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, max_stream_data);
 
     uint16_t max_packet_size = 0x1bcd;
-    params_in_ee.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
+    params_in_ee.set(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, max_packet_size);
 
     params_in_ee.add_version(0x01020304);
     params_in_ee.add_version(0x05060708);
@@ -273,7 +273,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     params_in_ee.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, max_stream_data);
 
     uint16_t max_packet_size = 0x1bcd;
-    params_in_ee.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
+    params_in_ee.set(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, max_packet_size);
     params_in_ee.set(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION, nullptr, 0);
 
     params_in_ee.add_version(0x01020304);

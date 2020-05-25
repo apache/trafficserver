@@ -386,7 +386,7 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
   // MUSTs
   tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
   if (this->_stateless_retry) {
-    tp->set(QUICTransportParameterId::ORIGINAL_CONNECTION_ID, this->_qc->first_connection_id(),
+    tp->set(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID, this->_qc->first_connection_id(),
             this->_qc->first_connection_id().length());
   }
 

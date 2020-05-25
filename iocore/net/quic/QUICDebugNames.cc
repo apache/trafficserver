@@ -189,8 +189,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "MAX_IDLE_TIMEOUT";
   case QUICTransportParameterId::PREFERRED_ADDRESS:
     return "PREFERRED_ADDRESS";
-  case QUICTransportParameterId::MAX_PACKET_SIZE:
-    return "MAX_PACKET_SIZE";
+  case QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE:
+    return "MAX_UDP_PAYLOAD_SIZE";
   case QUICTransportParameterId::STATELESS_RESET_TOKEN:
     return "STATELESS_RESET_TOKEN";
   case QUICTransportParameterId::ACK_DELAY_EXPONENT:
@@ -205,8 +205,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_MAX_STREAM_DATA_UNI";
   case QUICTransportParameterId::MAX_ACK_DELAY:
     return "INITIAL_MAX_ACK_DELAY";
-  case QUICTransportParameterId::ORIGINAL_CONNECTION_ID:
-    return "INITIAL_ORIGINAL_CONNECTION_ID";
+  case QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID:
+    return "INITIAL_ORIGINAL_DESTINATION_CONNECTION_ID";
   case QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT:
     return "ACTIVE_CONNECTION_ID_LIMIT";
   default:

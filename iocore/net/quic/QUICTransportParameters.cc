@@ -159,9 +159,9 @@ QUICTransportParameters::_validate_parameters() const
   if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_IDLE_TIMEOUT)) != this->_parameters.end()) {
   }
 
-  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_PACKET_SIZE)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE)) != this->_parameters.end()) {
     if (QUICIntUtil::read_nbytes_as_uint(ite->second->data(), ite->second->len()) < 1200) {
-      return -(TP_ERROR_VALUE | QUICTransportParameterId::MAX_PACKET_SIZE);
+      return -(TP_ERROR_VALUE | QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE);
     }
   }
 
@@ -372,11 +372,11 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
   decltype(this->_parameters)::const_iterator ite;
 
   // MUSTs if the server sent a Retry packet
-  if ((ite = this->_parameters.find(QUICTransportParameterId::ORIGINAL_CONNECTION_ID)) != this->_parameters.end()) {
+  if ((ite = this->_parameters.find(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID)) != this->_parameters.end()) {
     // We cannot check the length because it's not a fixed length.
   } else {
     // TODO Need a way that checks if we received a Retry from the server
-    // return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::ORIGINAL_CONNECTION_ID);
+    // return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID);
   }
 
   // MAYs
