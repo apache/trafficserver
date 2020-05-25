@@ -38,7 +38,7 @@
         this->_context.connection_info()->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
         this->_extra_packets_count, ##__VA_ARGS__)
 
-QUICNewRenoCongestionController::QUICNewRenoCongestionController(QUICCCContext &context)
+QUICNewRenoCongestionController::QUICNewRenoCongestionController(QUICContext &context)
   : _cc_mutex(new_ProxyMutex()), _context(context)
 {
   auto &cc_config                          = context.cc_config();

@@ -26,6 +26,8 @@
 #include "I_EventSystem.h"
 #include "I_Event.h"
 
+#include "QUICTypes.h"
+
 enum {
   QUIC_EVENT_PACKET_READ_READY = QUIC_EVENT_EVENTS_START,
   QUIC_EVENT_PACKET_WRITE_READY,
@@ -36,4 +38,31 @@ enum {
   QUIC_EVENT_SHUTDOWN,
   QUIC_EVENT_LD_SHUTDOWN,
   QUIC_EVENT_STATELESS_RESET,
+};
+
+class QUICContext;
+class QUICFrame;
+class QUICPacket;
+
+using QUICFrameReceiveFunc  = std::function<QUICConnectionErrorUPtr(QUICContext &, QUICEncryptionLevel, const QUICFrame &)>;
+using QUICPacketReceiveFunc = std::function<QUICConnectionErrorUPtr(QUICContext &, QUICEncryptionLevel, const QUICPacket &)>;
+using QUICPacketSendFunc    = std::function<QUICConnectionErrorUPtr(QUICContext &, QUICEncryptionLevel, const QUICPacket &)>;
+using QUICPacketLostFunc    = std::function<QUICConnectionErrorUPtr(QUICContext &, QUICEncryptionLevel, const QUICPacket &)>;
+
+class QUICEventRegister
+{
+public:
+  virtual void regist_frame_receive_event(QUICFrameReceiveFunc &&)   = 0;
+  virtual void regist_packet_receive_event(QUICPacketReceiveFunc &&) = 0;
+  virtual void regist_packet_send_event(QUICPacketSendFunc &&)       = 0;
+  virtual void regist_packet_lost_event(QUICPacketLostFunc &&)       = 0;
+};
+
+class QUICEventTrigger
+{
+public:
+  virtual QUICConnectionErrorUPtr trigger_frame_receive_event(QUICEncryptionLevel, QUICFrame &)   = 0;
+  virtual QUICConnectionErrorUPtr trigger_packet_receive_event(QUICEncryptionLevel, QUICPacket &) = 0;
+  virtual QUICConnectionErrorUPtr trigger_packet_send_event(QUICEncryptionLevel, QUICPacket &)    = 0;
+  virtual QUICConnectionErrorUPtr trigger_packet_lost_event(QUICEncryptionLevel, QUICPacket &)    = 0;
 };

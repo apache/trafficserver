@@ -25,6 +25,7 @@
 
 #include "QUICConnection.h"
 #include "QUICConfig.h"
+#include "QUICEvents.h"
 
 class QUICRTTProvider;
 class QUICCongestionController;
@@ -33,42 +34,20 @@ class QUICPathManager;
 
 class QUICNetVConnection;
 
-class QUICContext
+class QUICContext : public QUICEventTrigger, public QUICEventRegister
 {
 public:
   virtual ~QUICContext(){};
-  virtual QUICConnectionInfoProvider *connection_info() const = 0;
-  virtual QUICConfig::scoped_config config() const            = 0;
-};
-
-class QUICLDContext
-{
-public:
-  virtual ~QUICLDContext() {}
   virtual QUICConnectionInfoProvider *connection_info() const   = 0;
+  virtual QUICConfig::scoped_config config() const              = 0;
   virtual QUICLDConfig &ld_config() const                       = 0;
   virtual QUICPacketProtectionKeyInfoProvider *key_info() const = 0;
+  virtual QUICCCConfig &cc_config() const                       = 0;
+  virtual QUICRTTProvider *rtt_provider() const                 = 0;
+  virtual QUICPathManager *path_manager() const                 = 0;
 };
 
-class QUICCCContext
-{
-public:
-  virtual ~QUICCCContext() {}
-  virtual QUICConnectionInfoProvider *connection_info() const = 0;
-  virtual QUICCCConfig &cc_config() const                     = 0;
-  virtual QUICRTTProvider *rtt_provider() const               = 0;
-};
-
-class QUICStreamManagerContext
-{
-public:
-  virtual ~QUICStreamManagerContext() {}
-  virtual QUICConnectionInfoProvider *connection_info() const = 0;
-  virtual QUICRTTProvider *rtt_provider() const               = 0;
-  virtual QUICPathManager *path_manager() const               = 0;
-};
-
-class QUICContextImpl : public QUICContext, public QUICCCContext, public QUICLDContext, public QUICStreamManagerContext
+class QUICContextImpl : public QUICContext
 {
 public:
   QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
@@ -86,6 +65,18 @@ public:
 
   virtual QUICPathManager *path_manager() const override;
 
+  // regist event processor
+  virtual void regist_frame_receive_event(QUICFrameReceiveFunc &&) override;
+  virtual void regist_packet_receive_event(QUICPacketReceiveFunc &&) override;
+  virtual void regist_packet_send_event(QUICPacketSendFunc &&) override;
+  virtual void regist_packet_lost_event(QUICPacketLostFunc &&) override;
+
+  // trigger event
+  virtual QUICConnectionErrorUPtr trigger_frame_receive_event(QUICEncryptionLevel, QUICFrame &) override;
+  virtual QUICConnectionErrorUPtr trigger_packet_receive_event(QUICEncryptionLevel, QUICPacket &) override;
+  virtual QUICConnectionErrorUPtr trigger_packet_send_event(QUICEncryptionLevel, QUICPacket &) override;
+  virtual QUICConnectionErrorUPtr trigger_packet_lost_event(QUICEncryptionLevel, QUICPacket &) override;
+
 private:
   QUICConfig::scoped_config _config;
   QUICPacketProtectionKeyInfoProvider *_key_info = nullptr;
@@ -95,4 +86,9 @@ private:
 
   std::unique_ptr<QUICLDConfig> _ld_config = nullptr;
   std::unique_ptr<QUICCCConfig> _cc_config = nullptr;
+
+  std::vector<QUICFrameReceiveFunc> _frame_receive_funcs;
+  std::vector<QUICPacketSendFunc> _packet_send_funcs;
+  std::vector<QUICPacketReceiveFunc> _packet_recv_funcs;
+  std::vector<QUICPacketLostFunc> _packet_lost_funcs;
 };

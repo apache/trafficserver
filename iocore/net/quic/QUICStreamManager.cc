@@ -29,7 +29,7 @@
 static constexpr char tag[]                     = "quic_stream_manager";
 static constexpr QUICStreamId QUIC_STREAM_TYPES = 4;
 
-QUICStreamManager::QUICStreamManager(QUICStreamManagerContext *context, QUICApplicationMap *app_map)
+QUICStreamManager::QUICStreamManager(QUICContext *context, QUICApplicationMap *app_map)
   : _stream_factory(context->rtt_provider(), context->connection_info()), _context(context), _app_map(app_map)
 {
   if (this->_context->connection_info()->direction() == NET_VCONNECTION_OUT) {

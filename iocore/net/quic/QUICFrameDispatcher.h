@@ -28,11 +28,12 @@
 #include "QUICConnection.h"
 #include "QUICFrame.h"
 #include "QUICFrameHandler.h"
+#include "QUICContext.h"
 
 class QUICFrameDispatcher
 {
 public:
-  QUICFrameDispatcher(QUICConnectionInfoProvider *info);
+  QUICFrameDispatcher(QUICContext &_context, QUICConnectionInfoProvider *info);
 
   QUICConnectionErrorUPtr receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size,
                                          bool &should_send_ackbool, bool &is_flow_controlled, bool *has_non_probing_frame,
@@ -41,6 +42,7 @@ public:
   void add_handler(QUICFrameHandler *handler);
 
 private:
+  QUICContext &_context;
   QUICConnectionInfoProvider *_info = nullptr;
   QUICFrameFactory _frame_factory;
   std::vector<QUICFrameHandler *> _handlers[256];

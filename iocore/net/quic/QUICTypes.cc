@@ -297,6 +297,18 @@ QUICStatelessResetToken::_hashcode() const
          (static_cast<uint64_t>(this->_token[6]) << 8) + (static_cast<uint64_t>(this->_token[7]));
 }
 
+std::string
+QUICStatelessResetToken::hex() const
+{
+  std::stringstream stream;
+  stream << "0x";
+  for (auto i = 0; i < QUICStatelessResetToken::LEN; i++) {
+    stream << std::setfill('0') << std::setw(2) << std::hex;
+    stream << std::hex << static_cast<int>(this->_token[i]);
+  }
+  return stream.str();
+}
+
 QUICResumptionToken::QUICResumptionToken(const IpEndpoint &src, QUICConnectionId cid, ink_hrtime expire_time)
 {
   // TODO: read cookie secret from file like SSLTicketKeyConfig
@@ -796,3 +808,18 @@ QUICInvariants::scid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len
 
   return true;
 }
+
+namespace QUICBase
+{
+std::string
+to_hex(const uint8_t *buf, size_t len)
+{
+  std::stringstream stream;
+  stream << "0x";
+  for (size_t i = 0; i < len; i++) {
+    stream << std::setfill('0') << std::setw(2) << std::hex;
+    stream << std::hex << static_cast<int>(buf[i]);
+  }
+  return stream.str();
+}
+} // namespace QUICBase

@@ -69,6 +69,7 @@
 #include "quic/QUICPacketProtectionKeyInfo.h"
 #include "quic/QUICContext.h"
 #include "quic/QUICTokenCreator.h"
+#include "quic/QLog.h"
 
 // Size of connection ids for debug log : e.g. aaaaaaaa-bbbbbbbb\0
 static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
@@ -372,6 +373,9 @@ private:
   QUICAddrVerifyState _verified_state;
 
   std::unique_ptr<QUICContextImpl> _context;
+
+  QLog::QUICLog _qlog;
+  QLog::Trace *_trace;
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);

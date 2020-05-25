@@ -541,6 +541,22 @@ QUICCryptoFrame::data() const
 // ACK frame
 //
 
+std::set<QUICAckFrame::PacketNumberRange>
+QUICAckFrame::ranges() const
+{
+  std::set<QUICAckFrame::PacketNumberRange> numbers;
+  QUICPacketNumber x = this->largest_acknowledged();
+  numbers.insert({x, static_cast<uint64_t>(x) - this->ack_block_section()->first_ack_block()});
+  x -= this->ack_block_section()->first_ack_block() + 1;
+  for (auto &&block : *(this->ack_block_section())) {
+    x -= block.gap() + 1;
+    numbers.insert({x, static_cast<uint64_t>(x) - block.length()});
+    x -= block.length() + 1;
+  }
+
+  return numbers;
+}
+
 QUICAckFrame::QUICAckFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet) : QUICFrame(0, nullptr, packet)
 {
   this->parse(buf, len, packet);
@@ -2885,7 +2901,7 @@ QUICFrameFactory::create(uint8_t *buf, const uint8_t *src, size_t len, const QUI
   }
 }
 
-const QUICFrame &
+QUICFrame &
 QUICFrameFactory::fast_create(const uint8_t *buf, size_t len, const QUICPacketR *packet)
 {
   if (QUICFrame::type(buf) == QUICFrameType::UNKNOWN) {

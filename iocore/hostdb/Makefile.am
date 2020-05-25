@@ -25,7 +25,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+  @YAMLCPP_INCLUDES@
 
 EXTRA_DIST = I_HostDB.h
 

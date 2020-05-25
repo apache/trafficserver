@@ -30,6 +30,7 @@
 #include "I_IOBuffer.h"
 #include <vector>
 #include <iterator>
+#include <set>
 
 #include "QUICTypes.h"
 
@@ -268,6 +269,7 @@ public:
   QUICAckFrame(const uint8_t *buf, size_t len, const QUICPacketR *packet = nullptr);
   QUICAckFrame(QUICPacketNumber largest_acknowledged, uint64_t ack_delay, uint64_t first_ack_block, QUICFrameId id = 0,
                QUICFrameGenerator *owner = nullptr);
+  std::set<PacketNumberRange> ranges() const;
 
   // There's no reasont restrict copy, but we need to write the copy constructor. Otherwise it will crash on destruct.
   QUICAckFrame(const QUICAckFrame &) = delete;
@@ -745,6 +747,7 @@ public:
 
 class QUICUnknownFrame : public QUICFrame
 {
+public:
   QUICFrameType type() const override;
   size_t size() const override;
   virtual Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const override;
@@ -767,7 +770,7 @@ public:
    * This works almost the same as create() but it reuses created objects for performance.
    * If you create a frame object which has the same frame type that you created before, the object will be reset by new data.
    */
-  const QUICFrame &fast_create(const uint8_t *buf, size_t len, const QUICPacketR *packet);
+  QUICFrame &fast_create(const uint8_t *buf, size_t len, const QUICPacketR *packet);
 
   /*
    * Creates a STREAM frame.

@@ -29,7 +29,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils \
   $(TS_INCLUDES) \
-  @OPENSSL_INCLUDES@
+  @OPENSSL_INCLUDES@ @YAMLCPP_INCLUDES@
 
 noinst_LIBRARIES = libquic.a
 
@@ -51,6 +51,8 @@ QUICTLS_impl = QUICTLS_openssl.cc
 QUICKeyGenerator_impl = QUICKeyGenerator_openssl.cc
 endif
 endif
+
+QLog_impl = qlog/QLogEvent.cc qlog/QlogFrame.cc
 
 libquic_a_SOURCES = \
   QUICGlobals.cc \
@@ -103,7 +105,8 @@ libquic_a_SOURCES = \
   QUICStreamFactory.cc \
   QUICPadder.cc \
   QUICContext.cc \
-  QUICTokenCreator.cc
+  QUICTokenCreator.cc \
+  $(QLog_impl)
 
 #
 # Check Programs

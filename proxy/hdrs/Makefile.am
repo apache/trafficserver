@@ -22,7 +22,8 @@ AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
 
 noinst_LIBRARIES = libhdrs.a
 EXTRA_PROGRAMS = load_http_hdr
