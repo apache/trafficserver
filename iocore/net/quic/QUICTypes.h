@@ -308,6 +308,8 @@ public:
     return _token;
   }
 
+  std::string hex() const;
+
 private:
   uint8_t _token[LEN] = {0};
 
@@ -610,3 +612,9 @@ public:
 };
 
 int to_hex_str(char *dst, size_t dst_len, const uint8_t *src, size_t src_len);
+
+namespace QUICBase
+{
+std::string to_hex(const uint8_t *buf, size_t len);
+
+} // namespace QUICBase

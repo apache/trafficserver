@@ -35,7 +35,8 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	$(TS_INCLUDES) \
-	@OPENSSL_INCLUDES@
+	@OPENSSL_INCLUDES@ \
+	@YAMLCPP_INCLUDES@
 
 traffic_server_traffic_server_LDFLAGS = \
 	$(AM_LDFLAGS) \

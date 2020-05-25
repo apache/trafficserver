@@ -34,7 +34,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/hdrs \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
 
 libmgmt_c_la_SOURCES = \
 	RecordsConfig.cc \

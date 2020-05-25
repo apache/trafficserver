@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "QUICFrame.h"
+
 struct QUICPacketInfo {
   // 6.3.1.  Sent Packet Fields
   QUICPacketNumber packet_number;

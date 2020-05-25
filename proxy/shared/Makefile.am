@@ -35,7 +35,8 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/logging \
-	$(TS_INCLUDES)
+	$(TS_INCLUDES) \
+	@YAMLCPP_INCLUDES@
 
 libdiagsconfig_a_SOURCES = \
 	DiagsConfig.cc
