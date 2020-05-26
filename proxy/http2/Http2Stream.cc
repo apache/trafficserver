@@ -75,9 +75,11 @@ Http2Stream::main_event_handler(int event, void *edata)
   Event *e = static_cast<Event *>(edata);
   reentrancy_count++;
   if (e == _read_vio_event) {
+    _read_vio_event = nullptr;
     this->signal_read_event(e->callback_event);
     return 0;
   } else if (e == _write_vio_event) {
+    _write_vio_event = nullptr;
     this->signal_write_event(e->callback_event);
     return 0;
   } else if (e == cross_thread_event) {
@@ -899,12 +901,13 @@ Http2Stream::clear_io_events()
 {
   if (read_event) {
     read_event->cancel();
+    read_event = nullptr;
   }
-  read_event = nullptr;
+
   if (write_event) {
     write_event->cancel();
+    write_event = nullptr;
   }
-  write_event = nullptr;
 
   if (buffer_full_write_event) {
     buffer_full_write_event->cancel();
