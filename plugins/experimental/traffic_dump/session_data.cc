@@ -232,16 +232,12 @@ SessionData::get_client_protocol_description(TSHttpSsn ssnp)
 
 SessionData::SessionData()
 {
-  disk_io_mutex = TSMutexCreate();
-  aio_cont      = TSContCreate(session_aio_handler, TSMutexCreate());
-  txn_cont      = TSContCreate(TransactionData::global_transaction_handler, nullptr);
+  aio_cont = TSContCreate(session_aio_handler, TSMutexCreate());
+  txn_cont = TSContCreate(TransactionData::global_transaction_handler, nullptr);
 }
 
 SessionData::~SessionData()
 {
-  if (disk_io_mutex) {
-    TSMutexDestroy(disk_io_mutex);
-  }
   if (aio_cont) {
     TSContDestroy(aio_cont);
   }
@@ -267,7 +263,6 @@ SessionData::write_to_disk_no_lock(std::string_view content)
       write_offset += content.size();
       aio_count += 1;
 
-      TSMutexUnlock(disk_io_mutex);
       return TS_SUCCESS;
     }
     TSfree(pBuf);
@@ -278,16 +273,15 @@ SessionData::write_to_disk_no_lock(std::string_view content)
 int
 SessionData::write_to_disk(std::string_view content)
 {
-  TSMutexLock(disk_io_mutex);
+  const std::lock_guard<std::recursive_mutex> _(disk_io_mutex);
   const int result = write_to_disk_no_lock(content);
-  TSMutexUnlock(disk_io_mutex);
   return result;
 }
 
 int
 SessionData::write_transaction_to_disk(std::string_view content)
 {
-  TSMutexLock(disk_io_mutex);
+  const std::lock_guard<std::recursive_mutex> _(disk_io_mutex);
 
   int result = TS_SUCCESS;
   if (has_written_first_transaction) {
@@ -302,7 +296,6 @@ SessionData::write_transaction_to_disk(std::string_view content)
     has_written_first_transaction = true;
   }
 
-  TSMutexUnlock(disk_io_mutex);
   return result;
 }
 
@@ -318,7 +311,7 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
       return TS_ERROR;
     }
     char *buf = TSAIOBufGet(cb);
-    TSMutexLock(ssnData->disk_io_mutex);
+    const std::lock_guard<std::recursive_mutex> _(ssnData->disk_io_mutex);
 
     // Free the allocated buffer and update aio_count
     if (buf) {
@@ -327,7 +320,6 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
         // check for ssn close, if closed, do clean up
         TSContDataSet(contp, nullptr);
         close(ssnData->log_fd);
-        TSMutexUnlock(ssnData->disk_io_mutex);
         std::error_code ec;
         ts::file::file_status st = ts::file::status(ssnData->log_name, ec);
         if (!ec) {
@@ -338,7 +330,6 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
         return TS_SUCCESS;
       }
     }
-    TSMutexUnlock(ssnData->disk_io_mutex);
     return TS_SUCCESS;
   }
   default:
@@ -426,7 +417,7 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
     }
 
     // Initialize AIO file
-    TSMutexLock(ssnData->disk_io_mutex);
+    const std::lock_guard<std::recursive_mutex> _(ssnData->disk_io_mutex);
     if (ssnData->log_fd < 0) {
       ts::file::path log_p = log_directory / ts::file::path(std::string(client_str, 3));
       ts::file::path log_f = log_p / ts::file::path(session_hex_name);
@@ -442,7 +433,6 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
       // Try to open log files for AIO
       ssnData->log_fd = open(log_f.c_str(), O_RDWR | O_CREAT, S_IRWXU);
       if (ssnData->log_fd < 0) {
-        TSMutexUnlock(ssnData->disk_io_mutex);
         TSDebug(debug_tag, "global_session_handler(): Failed to open log files %s. Abort.", log_f.c_str());
         TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
         return TS_EVENT_HTTP_CONTINUE;
@@ -451,7 +441,6 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
       // Write log file beginning to disk
       ssnData->write_to_disk(beginning);
     }
-    TSMutexUnlock(ssnData->disk_io_mutex);
 
     TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_START_HOOK, ssnData->txn_cont);
     TSHttpSsnHookAdd(ssnp, TS_HTTP_TXN_CLOSE_HOOK, ssnData->txn_cont);
@@ -470,9 +459,10 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
       return TS_SUCCESS;
     }
     ssnData->write_to_disk(json_closing);
-    TSMutexLock(ssnData->disk_io_mutex);
-    ssnData->ssn_closed = true;
-    TSMutexUnlock(ssnData->disk_io_mutex);
+    {
+      const std::lock_guard<std::recursive_mutex> _(ssnData->disk_io_mutex);
+      ssnData->ssn_closed = true;
+    }
 
     break;
   }
