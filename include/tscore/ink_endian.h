@@ -60,4 +60,14 @@ htobe32(uint32_t x)
 {
   return OSSwapHostToBigInt32(x);
 }
+inline uint32_t
+le32toh(uint32_t x)
+{
+  return OSSwapLittleToHostInt32(x);
+}
+inline uint32_t
+htole32(uint32_t x)
+{
+  return OSSwapHostToLittleInt32(x);
+}
 #endif
