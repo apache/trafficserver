@@ -25,6 +25,8 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 
+Test.GetTcpPort("upstream_port")
+
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
@@ -81,7 +83,7 @@ ts.Disk.remap_config.AddLine(
     'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port)
 )
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:8888'
+    'map / http://127.0.0.1:{0}'.format(Test.Variables.upstream_port)
 )
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -144,7 +146,7 @@ tr = Test.AddTestRun()
 tr.TimeOut = 5
 tr.Setup.Copy('server4.sh')
 tr.Setup.Copy('case4.sh')
-tr.Processes.Default.Command = 'sh ./case4.sh {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'sh ./case4.sh {0} {1}'.format(ts.Variables.ssl_port, Test.Variables.upstream_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("content-length:", "Response should not include content length")
 # Transfer encoding to origin, but no content-length
