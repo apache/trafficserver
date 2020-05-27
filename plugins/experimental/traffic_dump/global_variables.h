@@ -20,6 +20,6 @@
 
 namespace traffic_dump
 {
-char const constexpr *const debug_tag = "traffic_dump";
+constexpr char debug_tag[] = "traffic_dump";
 
 } // namespace traffic_dump
