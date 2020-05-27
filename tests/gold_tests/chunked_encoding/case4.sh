@@ -14,6 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-nc -l 8888 -o outserver4 -c "sh ./server4.sh" &
+nc -l ${2} -o outserver4 -c "sh ./server4.sh" &
 sleep 1
 ./smuggle-client 127.0.0.1 ${1}
