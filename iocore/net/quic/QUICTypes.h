@@ -164,8 +164,9 @@ enum class QUICTransErrorCode : uint64_t {
   CONNECTION_ID_LIMIT_ERROR,
   PROTOCOL_VIOLATION,
   INVALID_TOKEN,
-  CRYPTO_BUFFER_EXCEEDED = 0x0D,
-  CRYPTO_ERROR           = 0x0100, // 0x100 - 0x1FF
+  APPLICATION_ERROR,
+  CRYPTO_BUFFER_EXCEEDED,
+  CRYPTO_ERROR = 0x0100, // 0x100 - 0x1FF
 };
 
 // Application Protocol Error Codes defined in application

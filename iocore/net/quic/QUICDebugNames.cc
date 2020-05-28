@@ -139,6 +139,8 @@ QUICDebugNames::error_code(uint16_t code)
     return "PROTOCOL_VIOLATION";
   case static_cast<uint16_t>(QUICTransErrorCode::INVALID_TOKEN):
     return "INVALID_TOKEN";
+  case static_cast<uint16_t>(QUICTransErrorCode::APPLICATION_ERROR):
+    return "APPLICATION_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::CRYPTO_BUFFER_EXCEEDED):
     return "CRYPTO_BUFFER_EXCEEDED";
   default:
