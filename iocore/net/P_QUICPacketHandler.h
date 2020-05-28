@@ -87,7 +87,7 @@ protected:
 private:
   void _recv_packet(int event, UDPPacket *udp_packet) override;
   int _stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPConnection *connection, IpEndpoint from, QUICConnectionId dcid,
-                       QUICConnectionId scid, QUICConnectionId *original_cid);
+                       QUICConnectionId scid, QUICConnectionId *original_cid, QUICConnectionId *retry_cid);
   bool _send_stateless_reset(QUICConnectionId dcid, uint32_t instance_id, UDPConnection *udp_con, IpEndpoint &addr,
                              size_t maximum_size);
   void _send_invalid_token_error(const uint8_t *initial_packet, uint64_t initial_packet_len, UDPConnection *connection,

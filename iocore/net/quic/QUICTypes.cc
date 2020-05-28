@@ -360,7 +360,7 @@ QUICResumptionToken::expire_time() const
   return QUICIntUtil::read_nbytes_as_uint(this->_token + (1 + 20), 4);
 }
 
-QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid)
+QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid, QUICConnectionId scid)
 {
   // TODO: read cookie secret from file like SSLTicketKeyConfig
   static constexpr char stateless_retry_token_secret[] = "stateless_cookie_secret";
@@ -371,7 +371,13 @@ QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_
   data_len = strlen(reinterpret_cast<char *>(data));
 
   size_t cid_len;
+  *(data + data_len) = original_dcid.length();
+  data_len += 1;
   QUICTypeUtil::write_QUICConnectionId(original_dcid, data + data_len, &cid_len);
+  data_len += cid_len;
+  *(data + data_len) = scid.length();
+  data_len += 1;
+  QUICTypeUtil::write_QUICConnectionId(scid, data + data_len, &cid_len);
   data_len += cid_len;
 
   this->_token[0] = static_cast<uint8_t>(Type::RETRY);
@@ -380,21 +386,38 @@ QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_
   ink_assert(this->_token_len == 20);
   this->_token_len += 1;
 
+  *(this->_token + this->_token_len) = original_dcid.length();
+  this->_token_len += 1;
   QUICTypeUtil::write_QUICConnectionId(original_dcid, this->_token + this->_token_len, &cid_len);
+  this->_token_len += cid_len;
+  *(this->_token + this->_token_len) = scid.length();
+  this->_token_len += 1;
+  QUICTypeUtil::write_QUICConnectionId(scid, this->_token + this->_token_len, &cid_len);
   this->_token_len += cid_len;
 }
 
 bool
 QUICRetryToken::is_valid(const IpEndpoint &src) const
 {
-  return *this == QUICRetryToken(src, this->original_dcid());
+  return *this == QUICRetryToken(src, this->original_dcid(), this->scid());
 }
 
 const QUICConnectionId
 QUICRetryToken::original_dcid() const
 {
   // Type uses 1 byte and output of EVP_sha1() should be 160 bits
-  return QUICTypeUtil::read_QUICConnectionId(this->_token + (1 + 20), this->_token_len - (1 + 20));
+  auto len   = *(this->_token + (1 + 20));
+  auto start = this->_token + (1 + 20 + 1);
+  return QUICTypeUtil::read_QUICConnectionId(start, len);
+}
+
+const QUICConnectionId
+QUICRetryToken::scid() const
+{
+  auto len   = *(this->_token + (1 + 20));
+  auto start = this->_token + (1 + 20 + 1 + len + 1);
+  len        = *(this->_token + (1 + 20 + 1 + len));
+  return QUICTypeUtil::read_QUICConnectionId(start, len);
 }
 
 QUICFrameType

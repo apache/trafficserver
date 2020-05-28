@@ -246,6 +246,7 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
   this->_original_quic_connection_id = original_cid;
   this->_rtable                      = rtable;
   this->_quic_connection_id.randomize();
+  this->_initial_source_connection_id = this->_quic_connection_id;
 
   this->_update_cids();
 
@@ -257,8 +258,8 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
 // Initialize QUICNetVC for in coming connection (NET_VCONNECTION_IN)
 void
 QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
-                         UDPConnection *udp_con, QUICPacketHandler *packet_handler, QUICResetTokenTable *rtable,
-                         QUICConnectionTable *ctable)
+                         QUICConnectionId retry_cid, UDPConnection *udp_con, QUICPacketHandler *packet_handler,
+                         QUICResetTokenTable *rtable, QUICConnectionTable *ctable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
   this->_udp_con                     = udp_con;
@@ -266,7 +267,9 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
   this->_peer_quic_connection_id     = peer_cid;
   this->_original_quic_connection_id = original_cid;
   this->_first_quic_connection_id    = first_cid;
+  this->_retry_source_connection_id  = retry_cid;
   this->_quic_connection_id.randomize();
+  this->_initial_source_connection_id = this->_quic_connection_id;
 
   if (ctable) {
     this->_ctable = ctable;
@@ -594,6 +597,18 @@ QUICConnectionId
 QUICNetVConnection::first_connection_id() const
 {
   return this->_first_quic_connection_id;
+}
+
+QUICConnectionId
+QUICNetVConnection::retry_source_connection_id() const
+{
+  return this->_retry_source_connection_id;
+}
+
+QUICConnectionId
+QUICNetVConnection::initial_source_connectoin_id() const
+{
+  return this->_initial_source_connection_id;
 }
 
 QUICConnectionId
@@ -1194,6 +1209,8 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICInitialPac
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
 
+    this->_handshake_handler->update(packet);
+
     // on client side, _handshake_handler is already started. Just process packet like _state_handshake_process_handshake_packet()
     error = this->_recv_and_ack(packet);
   }
@@ -1232,6 +1249,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(const QUICRetryPacketR
 
   // discard all transport state
   this->_handshake_handler->reset();
+  this->_handshake_handler->update(packet);
   this->_packet_factory.reset();
   this->_loss_detector->reset();
 

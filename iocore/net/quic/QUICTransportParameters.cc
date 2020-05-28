@@ -35,9 +35,9 @@ static constexpr char tag[] = "quic_handshake";
 
 static constexpr int TRANSPORT_PARAMETERS_MAXIMUM_SIZE = 65535;
 
-static constexpr uint32_t TP_ERROR_LENGTH = 0x010000;
-static constexpr uint32_t TP_ERROR_VALUE  = 0x020000;
-// static constexpr uint32_t TP_ERROR_MUST_EXIST     = 0x030000;
+static constexpr uint32_t TP_ERROR_LENGTH         = 0x010000;
+static constexpr uint32_t TP_ERROR_VALUE          = 0x020000;
+static constexpr uint32_t TP_ERROR_MUST_EXIST     = 0x030000;
 static constexpr uint32_t TP_ERROR_MUST_NOT_EXIST = 0x040000;
 
 QUICTransportParameters::Value::Value(const uint8_t *data, uint16_t len) : _len(len)
@@ -262,6 +262,10 @@ QUICTransportParameters::store(uint8_t *buf, uint16_t *len) const
   }
 
   *len = (p - buf);
+
+  if (is_debug_tag_set(tag)) {
+    this->_print();
+  }
 }
 
 void
@@ -326,12 +330,20 @@ QUICTransportParametersInClientHello::_validate_parameters() const
   decltype(this->_parameters)::const_iterator ite;
 
   // MUST NOTs
-  if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
-    return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::STATELESS_RESET_TOKEN);
+  if ((ite = this->_parameters.find(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID)) != this->_parameters.end()) {
+    return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID);
   }
 
   if ((ite = this->_parameters.find(QUICTransportParameterId::PREFERRED_ADDRESS)) != this->_parameters.end()) {
     return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::PREFERRED_ADDRESS);
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID)) != this->_parameters.end()) {
+    return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID);
+  }
+
+  if ((ite = this->_parameters.find(QUICTransportParameterId::STATELESS_RESET_TOKEN)) != this->_parameters.end()) {
+    return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::STATELESS_RESET_TOKEN);
   }
 
   return 0;
@@ -371,12 +383,27 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
 
   decltype(this->_parameters)::const_iterator ite;
 
-  // MUSTs if the server sent a Retry packet
-  if ((ite = this->_parameters.find(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID)) != this->_parameters.end()) {
-    // We cannot check the length because it's not a fixed length.
-  } else {
-    // TODO Need a way that checks if we received a Retry from the server
-    // return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID);
+  // MUSTs
+  if (true) { // draft-28
+    if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID)) != this->_parameters.end()) {
+      // We cannot check the length because it's not a fixed length.
+    } else {
+      return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID);
+    }
+
+    if ((ite = this->_parameters.find(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID)) != this->_parameters.end()) {
+      // We cannot check the length because it's not a fixed length.
+    } else {
+      return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID);
+    }
+
+    // MUSTs if the server sent a Retry packet, but MUST NOT if the server did not send a Retry packet
+    // TODO Check if the server sent Retry packet
+    if ((ite = this->_parameters.find(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID)) != this->_parameters.end()) {
+      // return -(TP_ERROR_MUST_NOT_EXIST | QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID);
+    } else {
+      // return -(TP_ERROR_MUST_EXIST | QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID);
+    }
   }
 
   // MAYs

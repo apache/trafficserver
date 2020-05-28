@@ -37,10 +37,21 @@ public:
   virtual ~QUICConnectionInfoProvider() {}
   virtual QUICConnectionId peer_connection_id() const     = 0;
   virtual QUICConnectionId original_connection_id() const = 0;
-  virtual QUICConnectionId first_connection_id() const    = 0;
-  virtual QUICConnectionId connection_id() const          = 0;
-  virtual std::string_view cids() const                   = 0;
-  virtual const QUICFiveTuple five_tuple() const          = 0;
+  /**
+   * This is S1 on 7.3.Authenticating Connection IDs
+   */
+  virtual QUICConnectionId first_connection_id() const = 0;
+  /**
+   * This is S2 on 7.3.Authenticating Connection IDs
+   */
+  virtual QUICConnectionId retry_source_connection_id() const = 0;
+  /**
+   * This is C1 or S3 on 7.3.Authenticating Connection IDs
+   */
+  virtual QUICConnectionId initial_source_connectoin_id() const = 0;
+  virtual QUICConnectionId connection_id() const                = 0;
+  virtual std::string_view cids() const                         = 0;
+  virtual const QUICFiveTuple five_tuple() const                = 0;
 
   virtual uint32_t pmtu() const                                = 0;
   virtual NetVConnectionContext_t direction() const            = 0;

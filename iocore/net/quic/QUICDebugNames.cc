@@ -209,6 +209,10 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_ORIGINAL_DESTINATION_CONNECTION_ID";
   case QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT:
     return "ACTIVE_CONNECTION_ID_LIMIT";
+  case QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID:
+    return "INITIAL_SOURCE_CONNECTION_ID";
+  case QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID:
+    return "RETRY_SOURCE_CONNECTION_ID";
   default:
     return "UNKNOWN";
   }

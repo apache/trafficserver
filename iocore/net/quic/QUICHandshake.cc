@@ -137,6 +137,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, const QUICInitialPacketR &in
     } else {
       return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
     }
+    this->_initial_source_cid_received = initial_packet.source_cid();
   }
   return nullptr;
 }
@@ -253,6 +254,17 @@ QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTran
     return false;
   }
 
+  // Check if CIDs in TP match with the ones in packets
+  if (true) { // draft-28
+    uint16_t cid_buf_len;
+    const uint8_t *cid_buf = tp->getAsBytes(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, cid_buf_len);
+    QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
+    if (cid_in_tp != this->_initial_source_cid_received) {
+      this->_abort_handshake(QUICTransErrorCode::PROTOCOL_VIOLATION);
+      return false;
+    }
+  }
+
   this->_remote_transport_parameters = tp;
 
   return true;
@@ -266,6 +278,26 @@ QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTran
     QUICHSDebug("Transport parameter is not valid");
     this->_abort_handshake(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR);
     return false;
+  }
+
+  // Check if CIDs in TP match with the ones in packets
+  if (true) { // draft-28
+    uint16_t cid_buf_len;
+    const uint8_t *cid_buf = tp->getAsBytes(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, cid_buf_len);
+    QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
+    if (cid_in_tp != this->_initial_source_cid_received) {
+      this->_abort_handshake(QUICTransErrorCode::PROTOCOL_VIOLATION);
+      return false;
+    }
+
+    if (!this->_retry_source_cid_received.is_zero()) {
+      cid_buf = tp->getAsBytes(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID, cid_buf_len);
+      QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
+      if (cid_in_tp != this->_retry_source_cid_received) {
+        this->_abort_handshake(QUICTransErrorCode::PROTOCOL_VIOLATION);
+        return false;
+      }
+    }
   }
 
   this->_remote_transport_parameters = tp;
@@ -300,6 +332,18 @@ QUICHandshake::reset()
     stream->reset_send_offset();
     stream->reset_recv_offset();
   }
+}
+
+void
+QUICHandshake::update(const QUICInitialPacketR &packet)
+{
+  this->_initial_source_cid_received = packet.source_cid();
+}
+
+void
+QUICHandshake::update(const QUICRetryPacketR &packet)
+{
+  this->_retry_source_cid_received = packet.source_cid();
 }
 
 std::vector<QUICFrameType>
@@ -388,7 +432,14 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
   if (this->_stateless_retry) {
     tp->set(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID, this->_qc->first_connection_id(),
             this->_qc->first_connection_id().length());
+    tp->set(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID, this->_qc->retry_source_connection_id(),
+            this->_qc->retry_source_connection_id().length());
+  } else {
+    tp->set(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID, this->_qc->original_connection_id(),
+            this->_qc->original_connection_id().length());
   }
+  tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connectoin_id(),
+          this->_qc->initial_source_connectoin_id().length());
 
   // MAYs
   if (tp_config.initial_max_data() != 0) {
@@ -444,6 +495,8 @@ QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_co
 
   // MUSTs
   tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
+  tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connectoin_id(),
+          this->_qc->initial_source_connectoin_id().length());
 
   // MAYs
   if (tp_config.initial_max_data() != 0) {

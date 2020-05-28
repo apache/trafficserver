@@ -60,6 +60,8 @@ public:
   QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_factory, bool vn_exercise_enabled);
   QUICConnectionErrorUPtr negotiate_version(const QUICVersionNegotiationPacketR &packet, QUICPacketFactory *packet_factory);
   void reset();
+  void update(const QUICInitialPacketR &initial_packet);
+  void update(const QUICRetryPacketR &retry_packet);
 
   // for server side
   QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, const QUICInitialPacketR &initial_packet,
@@ -91,8 +93,10 @@ private:
 
   QUICVersionNegotiator *_version_negotiator = nullptr;
   QUICStatelessResetToken _reset_token;
-  bool _client_initial  = false;
-  bool _stateless_retry = false;
+  bool _client_initial                          = false;
+  bool _stateless_retry                         = false;
+  QUICConnectionId _initial_source_cid_received = QUICConnectionId::ZERO();
+  QUICConnectionId _retry_source_cid_received   = QUICConnectionId::ZERO();
 
   QUICCryptoStream _crypto_streams[4];
 

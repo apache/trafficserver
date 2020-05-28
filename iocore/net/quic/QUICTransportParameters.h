@@ -49,6 +49,8 @@ public:
     DISABLE_ACTIVE_MIGRATION,
     PREFERRED_ADDRESS,
     ACTIVE_CONNECTION_ID_LIMIT,
+    INITIAL_SOURCE_CONNECTION_ID,
+    RETRY_SOURCE_CONNECTION_ID,
   };
 
   explicit operator bool() const { return true; }

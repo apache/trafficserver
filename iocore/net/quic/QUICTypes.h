@@ -381,7 +381,7 @@ class QUICRetryToken : public QUICAddressValidationToken
 {
 public:
   QUICRetryToken(const uint8_t *buf, size_t len) : QUICAddressValidationToken(buf, len) {}
-  QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid);
+  QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid, QUICConnectionId scid);
 
   bool
   operator==(const QUICRetryToken &x) const
@@ -395,9 +395,7 @@ public:
   bool is_valid(const IpEndpoint &src) const;
 
   const QUICConnectionId original_dcid() const;
-
-private:
-  QUICConnectionId _original_dcid;
+  const QUICConnectionId scid() const;
 };
 
 class QUICPreferredAddress

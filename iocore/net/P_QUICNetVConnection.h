@@ -149,8 +149,8 @@ public:
   ~QUICNetVConnection();
   void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *,
             QUICResetTokenTable *rtable);
-  void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid, UDPConnection *,
-            QUICPacketHandler *, QUICResetTokenTable *rtable, QUICConnectionTable *ctable);
+  void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid, QUICConnectionId retry_cid,
+            UDPConnection *, QUICPacketHandler *, QUICResetTokenTable *rtable, QUICConnectionTable *ctable);
 
   // accept new conn_id
   int acceptEvent(int event, Event *e);
@@ -199,6 +199,8 @@ public:
   QUICConnectionId peer_connection_id() const override;
   QUICConnectionId original_connection_id() const override;
   QUICConnectionId first_connection_id() const override;
+  QUICConnectionId retry_source_connection_id() const override;
+  QUICConnectionId initial_source_connectoin_id() const override;
   QUICConnectionId connection_id() const override;
   std::string_view cids() const override;
   const QUICFiveTuple five_tuple() const override;
@@ -226,11 +228,13 @@ private:
 
   QUICConfig::scoped_config _quic_config;
 
-  QUICConnectionId _peer_quic_connection_id;     // dst cid in local
-  QUICConnectionId _peer_old_quic_connection_id; // dst previous cid in local
-  QUICConnectionId _original_quic_connection_id; // dst cid of initial packet from client
-  QUICConnectionId _first_quic_connection_id;    // dst cid of initial packet from client that doesn't have retry token
-  QUICConnectionId _quic_connection_id;          // src cid in local
+  QUICConnectionId _peer_quic_connection_id;      // dst cid in local
+  QUICConnectionId _peer_old_quic_connection_id;  // dst previous cid in local
+  QUICConnectionId _original_quic_connection_id;  // dst cid of initial packet from client
+  QUICConnectionId _first_quic_connection_id;     // dst cid of initial packet from client that doesn't have retry token
+  QUICConnectionId _retry_source_connection_id;   // src cid used for sending Retry packet
+  QUICConnectionId _initial_source_connection_id; // src cid used for Initial packet
+  QUICConnectionId _quic_connection_id;           // src cid in local
   QUICFiveTuple _five_tuple;
   bool _connection_migration_initiated = false;
 
