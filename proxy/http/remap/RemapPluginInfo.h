@@ -26,6 +26,7 @@
 
 #include <string>
 #include <tuple>
+#include <memory>
 
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
@@ -33,6 +34,7 @@
 #include "PluginDso.h"
 
 class url_mapping;
+class TSNextHopSelectionStrategy;
 
 extern thread_local PluginThreadContext *pluginThreadContext;
 
@@ -44,6 +46,7 @@ static constexpr const char *const TSREMAP_FUNCNAME_NEW_INSTANCE       = "TSRema
 static constexpr const char *const TSREMAP_FUNCNAME_DELETE_INSTANCE    = "TSRemapDeleteInstance";
 static constexpr const char *const TSREMAP_FUNCNAME_DO_REMAP           = "TSRemapDoRemap";
 static constexpr const char *const TSREMAP_FUNCNAME_OS_RESPONSE        = "TSRemapOSResponse";
+static constexpr const char *const TSREMAP_FUNCNAME_INIT_STRATEGY      = "TSRemapInitStrategy";
 
 /**
  * Holds information for a remap plugin, remap specific callback entry points for plugin init/done and instance init/done, do_remap,
@@ -68,6 +71,8 @@ public:
   using Do_Remap_F = TSRemapStatus(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
   /// I have no idea what this is for.
   using OS_Response_F = void(void *ih, TSHttpTxn rh, int os_response_type);
+  /// Initialization function to create a new strategy, called on strategies load.
+  using Init_Strategy_F = TSReturnCode(TSNextHopSelectionStrategy *&strategy, void *ih, char *errbuf, int errbuf_size);
 
   void *dl_handle                       = nullptr; /* "handle" for the dynamic library */
   Init_F *init_cb                       = nullptr;
@@ -78,6 +83,7 @@ public:
   Delete_Instance_F *delete_instance_cb = nullptr;
   Do_Remap_F *do_remap_cb               = nullptr;
   OS_Response_F *os_response_cb         = nullptr;
+  Init_Strategy_F *init_strategy_cb     = nullptr;
 
   RemapPluginInfo(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath);
   ~RemapPluginInfo();
@@ -101,6 +107,8 @@ public:
   void indicatePreReload() override;
   void indicatePostReload(TSRemapReloadStatus reloadStatus) override;
 
+  /* Used by strategies on initialization, to add plugin-defined strategies for use by remaps */
+  std::shared_ptr<TSNextHopSelectionStrategy> initStrategy(void *ih);
 protected:
   /* Utility to be used only with unit testing */
   std::string missingRequiredSymbolError(const std::string &pluginName, const char *required, const char *requiring = nullptr);

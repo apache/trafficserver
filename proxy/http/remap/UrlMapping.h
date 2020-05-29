@@ -34,7 +34,7 @@
 #include "tscore/Regex.h"
 #include "tscore/List.h"
 
-class NextHopSelectionStrategy;
+class TSNextHopSelectionStrategy;
 
 /**
  * Used to store http referer strings (and/or regexp)
@@ -111,7 +111,7 @@ public:
   bool ip_allow_check_enabled_p      = false;
   acl_filter_rule *filter            = nullptr; // acl filtering (list of rules)
   LINK(url_mapping, link);                      // For use with the main Queue linked list holding all the mapping
-  std::shared_ptr<NextHopSelectionStrategy> strategy = nullptr;
+  std::shared_ptr<TSNextHopSelectionStrategy> strategy = nullptr;
 
   int
   getRank() const

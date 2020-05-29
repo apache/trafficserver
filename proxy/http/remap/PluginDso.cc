@@ -284,6 +284,12 @@ PluginDso::instanceCount()
   return _instanceCount.refcount();
 }
 
+fs::path
+PluginDso::configPath() const
+{
+	return _configPath;
+}
+
 bool
 PluginDso::isDynamicReloadEnabled() const
 {

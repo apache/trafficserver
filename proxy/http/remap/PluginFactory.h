@@ -54,6 +54,10 @@ public:
   TSRemapStatus doRemap(TSHttpTxn rh, TSRemapRequestInfo *rri);
   void osResponse(TSHttpTxn rh, int os_response_type);
 
+  /* gets the Strategy if the plugin has a TSRemapInitStrategy function. Returns a nullptr if not. */
+  std::shared_ptr<TSNextHopSelectionStrategy> getStrategy();
+  std::string name() const;
+
   /* List used by the plugin factory */
   using self_type  = RemapPluginInst; ///< Self reference type.
   self_type *_next = nullptr;

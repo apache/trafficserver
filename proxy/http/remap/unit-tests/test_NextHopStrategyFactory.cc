@@ -63,11 +63,11 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("Expect that these results for 'strategy-1'")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-1");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-1");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->parent_is_proxy == true);
-        CHECK(strategy->max_simple_retries == 1);
-        CHECK(strategy->policy_type == NH_CONSISTENT_HASH);
+        CHECK(strategy->parentIsProxy() == true);
+        CHECK(strategy->responseIsRetryable(0, static_cast<TSHttpStatus>(503)));
+        CHECK(!strategy->responseIsRetryable(1, static_cast<TSHttpStatus>(503)));
 
         // down cast here using the stored pointer so that I can verify the hash_key was set
         // properly.
@@ -75,16 +75,16 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         REQUIRE(ptr != nullptr);
         CHECK(ptr->hash_key == NH_CACHE_HASH_KEY);
 
-        CHECK(strategy->go_direct == false);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
-        CHECK(strategy->groups == 2);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        CHECK(strategy->goDirect() == false);
+        // CHECK(ptr->scheme == NH_SCHEME_HTTP); // TODO fix
+        CHECK(ptr->ring_mode == NH_EXHAUST_RING);
+        CHECK(ptr->groups == 2);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -138,9 +138,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
 
@@ -148,19 +148,21 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("Expect that these results for 'strategy-2'")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-2");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-2");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_STRICT);
-        CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
-        CHECK(strategy->groups == 2);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        NextHopRoundRobin *ptr = static_cast<NextHopRoundRobin *>(strategy.get());
+        REQUIRE(ptr != nullptr);
+        CHECK(ptr->policy_type == NH_RR_STRICT);
+        CHECK(ptr->go_direct == true);
+        CHECK(ptr->scheme == NH_SCHEME_HTTP);
+        CHECK(ptr->ring_mode == NH_EXHAUST_RING);
+        CHECK(ptr->groups == 2);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -210,9 +212,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
   }
@@ -235,19 +237,21 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("Expect that these results for 'strategy-3'")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-3");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-3");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_IP);
-        CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTPS);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
-        CHECK(strategy->groups == 2);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        NextHopRoundRobin *ptr = static_cast<NextHopRoundRobin *>(strategy.get());
+        REQUIRE(ptr != nullptr);
+        CHECK(ptr->policy_type == NH_RR_IP);
+        CHECK(ptr->go_direct == true);
+        CHECK(ptr->scheme == NH_SCHEME_HTTPS);
+        CHECK(ptr->ring_mode == NH_EXHAUST_RING);
+        CHECK(ptr->groups == 2);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -300,9 +304,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
 
@@ -310,19 +314,21 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("Expect that these results for 'strategy-4'")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-4");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("strategy-4");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_LATCHED);
-        CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
-        CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
-        CHECK(strategy->groups == 1);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        NextHopRoundRobin *ptr = static_cast<NextHopRoundRobin *>(strategy.get());
+        REQUIRE(ptr != nullptr);
+        CHECK(ptr->policy_type == NH_RR_LATCHED);
+        CHECK(ptr->go_direct == true);
+        CHECK(ptr->scheme == NH_SCHEME_HTTP);
+        CHECK(ptr->ring_mode == NH_ALTERNATE_RING);
+        CHECK(ptr->groups == 1);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -351,9 +357,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
   }
@@ -376,26 +382,28 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following details.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-north");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-north");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->parent_is_proxy == false);
-        CHECK(strategy->max_simple_retries == 2);
-        CHECK(strategy->policy_type == NH_RR_IP);
-        CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
-        CHECK(strategy->groups == 2);
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(502));
-        CHECK(!strategy->resp_codes.contains(604));
-        CHECK(strategy->health_checks.active == true);
-        CHECK(strategy->health_checks.passive == true);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        NextHopRoundRobin *ptr = static_cast<NextHopRoundRobin *>(strategy.get());
+        REQUIRE(ptr != nullptr);
+        CHECK(ptr->parent_is_proxy == false);
+        CHECK(ptr->max_simple_retries == 2);
+        CHECK(ptr->policy_type == NH_RR_IP);
+        CHECK(ptr->go_direct == true);
+        CHECK(ptr->scheme == NH_SCHEME_HTTP);
+        CHECK(ptr->ring_mode == NH_EXHAUST_RING);
+        CHECK(ptr->groups == 2);
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(502));
+        CHECK(!ptr->resp_codes.contains(604));
+        CHECK(ptr->health_checks.active == true);
+        CHECK(ptr->health_checks.passive == true);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -445,9 +453,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
 
@@ -455,27 +463,29 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-south");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-south");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_LATCHED);
-        CHECK(strategy->parent_is_proxy == false);
-        CHECK(strategy->ignore_self_detect == false);
-        CHECK(strategy->max_simple_retries == 2);
-        CHECK(strategy->go_direct == false);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
-        CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
-        CHECK(strategy->groups == 2);
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(502));
-        CHECK(!strategy->resp_codes.contains(604));
-        CHECK(strategy->health_checks.active == true);
-        CHECK(strategy->health_checks.passive == true);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        NextHopRoundRobin *ptr = static_cast<NextHopRoundRobin *>(strategy.get());
+        REQUIRE(ptr != nullptr);
+        CHECK(ptr->policy_type == NH_RR_LATCHED);
+        CHECK(ptr->parent_is_proxy == false);
+        CHECK(ptr->ignore_self_detect == false);
+        CHECK(ptr->max_simple_retries == 2);
+        CHECK(ptr->go_direct == false);
+        CHECK(ptr->scheme == NH_SCHEME_HTTP);
+        CHECK(ptr->ring_mode == NH_ALTERNATE_RING);
+        CHECK(ptr->groups == 2);
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(502));
+        CHECK(!ptr->resp_codes.contains(604));
+        CHECK(ptr->health_checks.active == true);
+        CHECK(ptr->health_checks.passive == true);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -525,9 +535,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
 
@@ -535,27 +545,29 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-east");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-east");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_FIRST_LIVE);
-        CHECK(strategy->parent_is_proxy == false);
-        CHECK(strategy->ignore_self_detect == true);
-        CHECK(strategy->max_simple_retries == 2);
-        CHECK(strategy->go_direct == false);
-        CHECK(strategy->scheme == NH_SCHEME_HTTPS);
-        CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
-        CHECK(strategy->groups == 2);
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(502));
-        CHECK(!strategy->resp_codes.contains(604));
-        CHECK(strategy->health_checks.active == false);
-        CHECK(strategy->health_checks.passive == true);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        NextHopRoundRobin *ptr = static_cast<NextHopRoundRobin *>(strategy.get());
+        REQUIRE(ptr != nullptr);
+        CHECK(ptr->policy_type == NH_FIRST_LIVE);
+        CHECK(ptr->parent_is_proxy == false);
+        CHECK(ptr->ignore_self_detect == true);
+        CHECK(ptr->max_simple_retries == 2);
+        CHECK(ptr->go_direct == false);
+        CHECK(ptr->scheme == NH_SCHEME_HTTPS);
+        CHECK(ptr->ring_mode == NH_ALTERNATE_RING);
+        CHECK(ptr->groups == 2);
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(502));
+        CHECK(!ptr->resp_codes.contains(604));
+        CHECK(ptr->health_checks.active == false);
+        CHECK(ptr->health_checks.passive == true);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -605,9 +617,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
 
@@ -615,26 +627,28 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-west");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-west");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_STRICT);
-        CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTPS);
-        CHECK(strategy->parent_is_proxy == false);
-        CHECK(strategy->max_simple_retries == 2);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
-        CHECK(strategy->groups == 2);
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(502));
-        CHECK(!strategy->resp_codes.contains(604));
-        CHECK(strategy->health_checks.active == true);
-        CHECK(strategy->health_checks.passive == false);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        NextHopRoundRobin *ptr = static_cast<NextHopRoundRobin *>(strategy.get());
+        REQUIRE(ptr != nullptr);
+        CHECK(ptr->policy_type == NH_RR_STRICT);
+        CHECK(ptr->go_direct == true);
+        CHECK(ptr->scheme == NH_SCHEME_HTTPS);
+        CHECK(ptr->parent_is_proxy == false);
+        CHECK(ptr->max_simple_retries == 2);
+        CHECK(ptr->ring_mode == NH_EXHAUST_RING);
+        CHECK(ptr->groups == 2);
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(502));
+        CHECK(!ptr->resp_codes.contains(604));
+        CHECK(ptr->health_checks.active == true);
+        CHECK(ptr->health_checks.passive == false);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -684,9 +698,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
 
@@ -694,33 +708,28 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-midwest");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-midwest");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_CONSISTENT_HASH);
-        CHECK(strategy->parent_is_proxy == false);
-        CHECK(strategy->max_simple_retries == 2);
-
-        // I need to down cast here using the stored pointer so that I can verify that
-        // the hash_key was set properly.
         NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
         REQUIRE(ptr != nullptr);
+        CHECK(ptr->parent_is_proxy == false);
+        CHECK(ptr->max_simple_retries == 2);
         CHECK(ptr->hash_key == NH_CACHE_HASH_KEY);
-
-        CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTPS);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
-        CHECK(strategy->groups == 2);
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(502));
-        CHECK(!strategy->resp_codes.contains(604));
-        CHECK(strategy->health_checks.active == true);
-        CHECK(strategy->health_checks.passive == false);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        CHECK(ptr->go_direct == true);
+        CHECK(ptr->scheme == NH_SCHEME_HTTPS);
+        CHECK(ptr->ring_mode == NH_EXHAUST_RING);
+        CHECK(ptr->groups == 2);
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(502));
+        CHECK(!ptr->resp_codes.contains(604));
+        CHECK(ptr->health_checks.active == true);
+        CHECK(ptr->health_checks.passive == false);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -770,9 +779,9 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
   }
@@ -798,26 +807,28 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-north");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-north");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->parent_is_proxy == false);
-        CHECK(strategy->max_simple_retries == 2);
-        CHECK(strategy->policy_type == NH_RR_IP);
-        CHECK(strategy->go_direct == true);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
-        CHECK(strategy->ring_mode == NH_EXHAUST_RING);
-        CHECK(strategy->groups == 2);
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(502));
-        CHECK(!strategy->resp_codes.contains(604));
-        CHECK(strategy->health_checks.active == true);
-        CHECK(strategy->health_checks.passive == true);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        NextHopRoundRobin *ptr = static_cast<NextHopRoundRobin *>(strategy.get());
+        REQUIRE(ptr != nullptr);
+        CHECK(ptr->parent_is_proxy == false);
+        CHECK(ptr->max_simple_retries == 2);
+        CHECK(ptr->policy_type == NH_RR_IP);
+        CHECK(ptr->go_direct == true);
+        CHECK(ptr->scheme == NH_SCHEME_HTTP);
+        CHECK(ptr->ring_mode == NH_EXHAUST_RING);
+        CHECK(ptr->groups == 2);
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(502));
+        CHECK(!ptr->resp_codes.contains(604));
+        CHECK(ptr->health_checks.active == true);
+        CHECK(ptr->health_checks.passive == true);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -867,9 +878,9 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
 
@@ -877,27 +888,29 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
     {
       THEN("expect the following results.")
       {
-        std::shared_ptr<NextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-south");
+        std::shared_ptr<TSNextHopSelectionStrategy> strategy = nhf.strategyInstance("mid-tier-south");
         REQUIRE(strategy != nullptr);
-        CHECK(strategy->policy_type == NH_RR_LATCHED);
-        CHECK(strategy->parent_is_proxy == false);
-        CHECK(strategy->ignore_self_detect == false);
-        CHECK(strategy->max_simple_retries == 2);
-        CHECK(strategy->go_direct == false);
-        CHECK(strategy->scheme == NH_SCHEME_HTTP);
-        CHECK(strategy->ring_mode == NH_ALTERNATE_RING);
-        CHECK(strategy->groups == 2);
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(502));
-        CHECK(!strategy->resp_codes.contains(604));
-        CHECK(strategy->health_checks.active == true);
-        CHECK(strategy->health_checks.passive == true);
-        std::shared_ptr<HostRecord> h = strategy->host_groups[0][0];
+        NextHopRoundRobin *ptr = static_cast<NextHopRoundRobin *>(strategy.get());
+        REQUIRE(ptr != nullptr);
+        CHECK(ptr->policy_type == NH_RR_LATCHED);
+        CHECK(ptr->parent_is_proxy == false);
+        CHECK(ptr->ignore_self_detect == false);
+        CHECK(ptr->max_simple_retries == 2);
+        CHECK(ptr->go_direct == false);
+        CHECK(ptr->scheme == NH_SCHEME_HTTP);
+        CHECK(ptr->ring_mode == NH_ALTERNATE_RING);
+        CHECK(ptr->groups == 2);
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(502));
+        CHECK(!ptr->resp_codes.contains(604));
+        CHECK(ptr->health_checks.active == true);
+        CHECK(ptr->health_checks.passive == true);
+        std::shared_ptr<HostRecord> h = ptr->host_groups[0][0];
         CHECK(h != nullptr);
-        for (unsigned int i = 0; i < strategy->groups; i++) {
-          CHECK(strategy->host_groups[i].size() == 2);
-          for (unsigned int j = 0; j < strategy->host_groups[i].size(); j++) {
-            h = strategy->host_groups[i][j];
+        for (unsigned int i = 0; i < ptr->groups; i++) {
+          CHECK(ptr->host_groups[i].size() == 2);
+          for (unsigned int j = 0; j < ptr->host_groups[i].size(); j++) {
+            h = ptr->host_groups[i][j];
             switch (i) {
             case 0:
               switch (j) {
@@ -947,9 +960,9 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
             }
           }
         }
-        CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
-        CHECK(!strategy->resp_codes.contains(604));
+        CHECK(ptr->resp_codes.contains(404));
+        CHECK(ptr->resp_codes.contains(503));
+        CHECK(!ptr->resp_codes.contains(604));
       }
     }
   }

@@ -30,6 +30,7 @@
 #include "tscore/ink_apidefs.h"
 
 #include "RemapPluginInfo.h"
+#include "NextHopSelectionStrategy.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
 #else
@@ -93,6 +94,7 @@ RemapPluginInfo::load(std::string &error)
   delete_instance_cb    = getFunctionSymbol<Delete_Instance_F>(TSREMAP_FUNCNAME_DELETE_INSTANCE);
   do_remap_cb           = getFunctionSymbol<Do_Remap_F>(TSREMAP_FUNCNAME_DO_REMAP);
   os_response_cb        = getFunctionSymbol<OS_Response_F>(TSREMAP_FUNCNAME_OS_RESPONSE);
+  init_strategy_cb      = getFunctionSymbol<Init_Strategy_F>(TSREMAP_FUNCNAME_INIT_STRATEGY);
 
   /* Validate if the callback TSREMAP functions are specified correctly in the plugin. */
   bool valid = true;
@@ -270,6 +272,31 @@ RemapPluginInfo::indicatePostReload(TSRemapReloadStatus reloadStatus)
 
   resetPluginContext();
 }
+
+/* Initialize strategy (optional). */
+std::shared_ptr<TSNextHopSelectionStrategy> RemapPluginInfo::initStrategy(void *ih)
+{
+  if (!init_strategy_cb) {
+    PluginDebug(_tag, "plugin '%s' has no init_strategy_cb, returning nullptr", _configPath.c_str());
+    return std::shared_ptr<TSNextHopSelectionStrategy>();
+  }
+  char tmpbuf[2048];
+  ink_zero(tmpbuf);
+  TSNextHopSelectionStrategy *strategy_raw = nullptr;
+  if (init_strategy_cb(strategy_raw, ih, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
+    PluginDebug(_tag, "plugin '%s' has init_strategy_cb but not success, returning error", _configPath.c_str());
+    std::string error;
+    error.assign("failed to initialize plugin ")
+      .append(_configPath.string())
+      .append(": ")
+      .append(tmpbuf[0] ? tmpbuf : "Unknown plugin error");
+    PluginError("plugin '%s' initializing strategy returned error: %s", _configPath.c_str(), error.c_str());
+    return std::shared_ptr<TSNextHopSelectionStrategy>();
+  }
+  PluginDebug(_tag, "plugin '%s' has init_strategy_cb, returning strategy", _configPath.c_str());
+  return std::shared_ptr<TSNextHopSelectionStrategy>(strategy_raw);
+}
+
 
 inline void
 RemapPluginInfo::setPluginContext()

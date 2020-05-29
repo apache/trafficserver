@@ -1,30 +1,51 @@
-/** @file
-
-  A brief file description
-
-  @section license License
-
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
+#include "strategy.h"
+#include "consistenthash.h"
+#include "util.h"
+
+#include <cinttypes>
+#include <string>
+#include <algorithm>
+#include <mutex>
+#include <unordered_map>
+#include <unordered_set>
+#include <fstream>
+#include <cstring>
+
+#include <sys/stat.h>
+#include <dirent.h>
+
 #include <yaml-cpp/yaml.h>
-#include "I_Machine.h"
-#include "HttpSM.h"
-#include "NextHopSelectionStrategy.h"
+
+#include "tscore/HashSip.h"
+#include "tscore/ConsistentHash.h"
+#include "tscore/ink_assert.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "ts/nexthop.h"
+#include "ts/parentresult.h"
+
+//
+// NextHopSelectionStrategy.cc
+//
 
 // ring mode strings
 constexpr std::string_view alternate_rings = "alternate_ring";
@@ -103,8 +124,8 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
           NH_Error("Error in the response_codes definition for the strategy named '%s', skipping response_codes.",
                    strategy_name.c_str());
         } else {
-          for (auto &&k : resp_codes_node) {
-            auto code = k.as<int>();
+          for (unsigned int k = 0; k < resp_codes_node.size(); ++k) {
+            auto code = resp_codes_node[k].as<int>();
             if (code > 300 && code < 599) {
               resp_codes.add(code);
             } else {
@@ -142,8 +163,6 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
       if (groups_node.Type() != YAML::NodeType::Sequence) {
         throw std::invalid_argument("Invalid groups definition, expected a sequence, '" + strategy_name + "' cannot be loaded.");
       } else {
-        Machine *mach      = Machine::instance();
-        HostStatus &h_stat = HostStatus::instance();
         uint32_t grp_size  = groups_node.size();
         if (grp_size > TS_MAX_GROUP_RINGS) {
           NH_Note("the groups list exceeds the maximum of %d for the strategy '%s'. Only the first %d groups will be configured.",
@@ -169,8 +188,8 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
               std::shared_ptr<HostRecord> host_rec = std::make_shared<HostRecord>(hosts_list[hst].as<HostRecord>());
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
-              if (mach->is_self(host_rec->hostname.c_str())) {
-                h_stat.setHostStatus(host_rec->hostname.c_str(), TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
+              if (TSHostnameIsSelf(host_rec->hostname.c_str())) {
+                TSHostStatusSet(host_rec->hostname.c_str(), TSHostStatus::TS_HOST_STATUS_DOWN, 0, (unsigned int)TS_HOST_STATUS_SELF_DETECT);
               }
               hosts_inner.push_back(std::move(host_rec));
               num_parents++;
@@ -192,18 +211,20 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
 void
 NextHopSelectionStrategy::markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, const time_t now)
 {
+  NH_Debug(NH_DEBUG_TAG, "nhplugin markNextHop calling");
   return passive_health.markNextHop(txnp, hostname, port, status, now);
 }
 
 bool
 NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp)
 {
-  HttpSM *sm    = reinterpret_cast<HttpSM *>(txnp);
-  int64_t sm_id = sm->sm_id;
+  NH_Debug(NH_DEBUG_TAG, "nhplugin nextHopExists calling");
+
+  const int64_t sm_id = TSHttpTxnIdGet(txnp);
 
   for (uint32_t gg = 0; gg < groups; gg++) {
-    for (auto &hh : host_groups[gg]) {
-      HostRecord *p = hh.get();
+    for (uint32_t hh = 0; hh < host_groups[gg].size(); hh++) {
+      HostRecord *p = host_groups[gg][hh].get();
       if (p->available) {
         NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] found available next hop %s", sm_id, p->hostname.c_str());
         return true;
@@ -215,7 +236,7 @@ NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp)
 
 bool
 NextHopSelectionStrategy::responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code) {
-  return this->resp_codes.contains(static_cast<HTTPStatus>(response_code)) &&
+  return this->resp_codes.contains(response_code) &&
     current_retry_attempts < this->max_simple_retries &&
     current_retry_attempts < this->num_parents;
 }
@@ -228,12 +249,14 @@ NextHopSelectionStrategy::onFailureMarkParentDown(TSHttpStatus response_code) {
 bool
 NextHopSelectionStrategy::goDirect()
 {
+  NH_Debug(NH_DEBUG_TAG, "nhplugin goDirect calling");
   return this->go_direct;
 }
 
 bool
 NextHopSelectionStrategy::parentIsProxy()
 {
+  NH_Debug(NH_DEBUG_TAG, "nhplugin parentIsProxy calling");
   return this->parent_is_proxy;
 }
 
@@ -267,9 +290,9 @@ template <> struct convert<HostRecord> {
     if (proto.Type() != YAML::NodeType::Sequence) {
       throw std::invalid_argument("Invalid host protocol definition, expected a sequence.");
     } else {
-      for (auto &&ii : proto) {
-        const YAML::Node &protocol_node = ii;
-        std::shared_ptr<NHProtocol> pr  = std::make_shared<NHProtocol>(protocol_node.as<NHProtocol>());
+      for (unsigned int ii = 0; ii < proto.size(); ii++) {
+        YAML::Node protocol_node       = proto[ii];
+        std::shared_ptr<NHProtocol> pr = std::make_shared<NHProtocol>(protocol_node.as<NHProtocol>());
         nh.protocols.push_back(std::move(pr));
       }
     }
@@ -319,4 +342,3 @@ template <> struct convert<NHProtocol> {
   }
 };
 }; // namespace YAML
-// namespace YAML

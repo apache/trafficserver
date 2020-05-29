@@ -1,49 +1,49 @@
-/** @file
-
-  A brief file description
-
-  @section license License
-
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #pragma once
 
+#include <vector>
+#include <mutex>
+#include <algorithm>
+#include <string>
+#include <memory>
+#include <unordered_map>
+#include <stdint.h>
+#include <time.h>
+#include <yaml-cpp/yaml.h>
+#include "tscore/ConsistentHash.h"
+#include "ts/ts.h"
 #include "ts/nexthop.h"
-#include "ParentSelection.h"
+#include "ts/remap.h"
+#include "healthstatus.h"
 
-#ifndef _NH_UNIT_TESTS_
-#define NH_Debug(tag, ...) Debug(tag, __VA_ARGS__)
-#define NH_Error(...) DiagsError(DL_Error, __VA_ARGS__)
-#define NH_Note(...) DiagsError(DL_Note, __VA_ARGS__)
-#define NH_Warn(...) DiagsError(DL_Warning, __VA_ARGS__)
-#else
-#include "unit-tests/nexthop_test_stubs.h"
-#endif /* _NH_UNIT_TESTS_ */
+// TODO rename, move to respective sub-plugins
+#define PLUGIN_NAME "nexthop_strategy_consistenthash.so"
 
-constexpr const char *NH_DEBUG_TAG = "next_hop";
+constexpr const char *NH_DEBUG_TAG = "plugin_nexthop";
+
+#define NH_Debug(tag, fmt, ...) TSDebug(tag, "[%s:%d]: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
+#define NH_Error(fmt, ...) TSError("(%s) [%s:%d]: " fmt, PLUGIN_NAME, __FILE__, __LINE__, ##__VA_ARGS__)
+#define NH_Note(fmt, ...) TSDebug(NH_DEBUG_TAG, "[%s:%d]: " fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 
 constexpr const char *policy_strings[] = {"NH_UNDEFINED", "NH_FIRST_LIVE", "NH_RR_STRICT",
                                           "NH_RR_IP",     "NH_RR_LATCHED", "NH_CONSISTENT_HASH"};
-
-namespace YAML
-{
-class Node;
-}
 
 enum NHPolicyType {
   NH_UNDEFINED = 0,
@@ -58,8 +58,6 @@ enum NHPolicyType {
 enum NHSchemeType { NH_SCHEME_NONE = 0, NH_SCHEME_HTTP, NH_SCHEME_HTTPS };
 
 enum NHRingMode { NH_ALTERNATE_RING = 0, NH_EXHAUST_RING };
-
-enum NH_HHealthCheck { NH_ACTIVE, NH_PASSIVE };
 
 // response codes container
 struct ResponseCodes {
@@ -188,7 +186,7 @@ struct HostRecord : ATSConsistentHashNode {
   }
 
   static std::string
-  makeHostPort(const std::string &hostname, const int port)
+  makeHostPort(const std::string& hostname, const int port)
   {
     return hostname + ":" + std::to_string(port);
   }
@@ -198,17 +196,6 @@ struct HostRecord : ATSConsistentHashNode {
   {
     return makeHostPort(this->hostname, port);
   }
-};
-
-class NextHopHealthStatus
-{
-public:
-  void insert(std::vector<std::shared_ptr<HostRecord>> &hosts);
-  void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, const time_t now = 0);
-  NextHopHealthStatus(){};
-
-private:
-  std::unordered_map<std::string, std::shared_ptr<HostRecord>> host_map;
 };
 
 class NextHopSelectionStrategy : public TSNextHopSelectionStrategy
@@ -226,7 +213,7 @@ public:
   virtual bool onFailureMarkParentDown(TSHttpStatus response_code);
   virtual bool goDirect();
   virtual bool parentIsProxy();
-// protected:
+protected:
   std::string strategy_name;
   bool go_direct           = true;
   bool parent_is_proxy     = true;

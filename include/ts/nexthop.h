@@ -30,20 +30,20 @@
 
 #include <ts/apidefs.h>
 
-// plugin callback commands.
 enum NHCmd { NH_MARK_UP, NH_MARK_DOWN };
 
-struct NHHealthStatus {
-  virtual bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) = 0;
-  virtual void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
-                           const time_t now = 0)                                                           = 0;
-  virtual ~NHHealthStatus() {}
-};
+class TSNextHopSelectionStrategy
+{
+public:
+  TSNextHopSelectionStrategy() {};
+  virtual ~TSNextHopSelectionStrategy() {};
 
-struct NHPluginStrategy {
-  virtual void findNextHop(TSHttpTxn txnp, void *ih = nullptr)   = 0;
-  virtual bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr) = 0;
-  virtual ~NHPluginStrategy() {}
+  virtual void findNextHop(TSHttpTxn txnp, time_t now = 0) = 0;
+  virtual void markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, const time_t now = 0) = 0;
+  virtual bool nextHopExists(TSHttpTxn txnp) = 0;
+  virtual bool responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code) = 0;
+  virtual bool onFailureMarkParentDown(TSHttpStatus response_code) = 0;
 
-  NHHealthStatus *healthStatus;
+  virtual bool goDirect() = 0;
+  virtual bool parentIsProxy() = 0;
 };

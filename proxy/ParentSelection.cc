@@ -109,14 +109,14 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
   // Check to see if the parent was set through the
   //   api
   if (apiParentExists(rdata)) {
-    result->result       = PARENT_SPECIFIED;
-    result->hostname     = rdata->api_info->parent_proxy_name;
-    result->port         = rdata->api_info->parent_proxy_port;
+    result->ts_result.result       = PARENT_SPECIFIED;
+    result->ts_result.hostname     = rdata->api_info->parent_proxy_name;
+    result->ts_result.port         = rdata->api_info->parent_proxy_port;
     result->rec          = extApiRecord;
-    result->start_parent = 0;
-    result->last_parent  = 0;
+    result->ts_result.start_parent = 0;
+    result->ts_result.last_parent  = 0;
 
-    Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->hostname, result->port);
+    Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->ts_result.hostname, result->ts_result.port);
     return;
   }
 
@@ -133,7 +133,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     if (defaultPtr != nullptr) {
       rec = result->rec = defaultPtr;
     } else {
-      result->result = PARENT_DIRECT;
+      result->ts_result.result = PARENT_DIRECT;
       Debug("parent_select", "Returning PARENT_DIRECT (no parents were found)");
       return;
     }
@@ -145,21 +145,21 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
 
   const char *host = rdata->get_host();
 
-  switch (result->result) {
+  switch (result->ts_result.result) {
   case PARENT_UNDEFINED:
     Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
+    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->ts_result.result]);
     break;
   case PARENT_FAIL:
     Debug("parent_select", "PARENT_FAIL");
     break;
   case PARENT_DIRECT:
     Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
+    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->ts_result.result]);
     break;
   case PARENT_SPECIFIED:
     Debug("parent_select", "PARENT_SPECIFIED");
-    Debug("parent_select", "Result for %s was parent %s:%d", host, result->hostname, result->port);
+    Debug("parent_select", "Result for %s was parent %s:%d", host, result->ts_result.hostname, result->ts_result.port);
     break;
   default:
     // Handled here:
@@ -177,19 +177,19 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 
   //  Make sure that we are being called back with a
   //   result structure with a parent
-  ink_assert(result->result == PARENT_SPECIFIED);
-  if (result->result != PARENT_SPECIFIED) {
-    result->result = PARENT_FAIL;
+  ink_assert(result->ts_result.result == PARENT_SPECIFIED);
+  if (result->ts_result.result != PARENT_SPECIFIED) {
+    result->ts_result.result = PARENT_FAIL;
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
   if (result->is_api_result()) {
-    Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->result]);
-    result->result = PARENT_FAIL;
+    Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->ts_result.result]);
+    result->ts_result.result = PARENT_FAIL;
     return;
   }
-  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->result, tablePtr);
+  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->ts_result.result, tablePtr);
 
   // Find the next parent in the array
   Debug("parent_select", "Calling selectParent() from nextParent");
@@ -197,21 +197,21 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 
   const char *host = rdata->get_host();
 
-  switch (result->result) {
+  switch (result->ts_result.result) {
   case PARENT_UNDEFINED:
     Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->ts_result.result]);
     break;
   case PARENT_FAIL:
     Debug("parent_select", "PARENT_FAIL");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->ts_result.result]);
     break;
   case PARENT_DIRECT:
     Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->ts_result.result]);
     break;
   case PARENT_SPECIFIED:
-    Debug("parent_select", "Retry result for %s was parent %s:%d", host, result->hostname, result->port);
+    Debug("parent_select", "Retry result for %s was parent %s:%d", host, result->ts_result.hostname, result->ts_result.port);
     break;
   default:
     // Handled here:
@@ -397,7 +397,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
           continue;
         } else {
           Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", fqdn, line_num);
-          hs.setHostStatus(fqdn, HostStatus_t::HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
+          hs.setHostStatus(fqdn, TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
         }
       }
     } else {
@@ -409,7 +409,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
         } else {
           Debug("parent_select", "token: %s, matches this machine.  Marking down self from parent list at line %d", token,
                 line_num);
-          hs.setHostStatus(token, HostStatus_t::HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
+          hs.setHostStatus(token, TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
         }
       }
     }
@@ -841,9 +841,9 @@ ParentRecord::Init(matcher_line *line_info)
 void
 ParentRecord::UpdateMatch(ParentResult *result, RequestData *rdata)
 {
-  if (this->CheckForMatch((HttpRequestData *)rdata, result->line_number) == true) {
+  if (this->CheckForMatch((HttpRequestData *)rdata, result->ts_result.line_number) == true) {
     result->rec         = this;
-    result->line_number = this->line_num;
+    result->ts_result.line_number = this->line_num;
 
     Debug("parent_select", "Matched with %p parent node from line %d", this, this->line_num);
   }
@@ -1106,11 +1106,11 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // from records.snap as DOWN due to previous testing.
   //
   HostStatus &_st = HostStatus::instance();
-  _st.setHostStatus("furry", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("frisky", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("curly", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("furry", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fluffy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("frisky", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("curly", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
 
   // Test 1
   tbl[0] = '\0';
@@ -1496,7 +1496,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 184
   // mark fuzzy down with HostStatus API.
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
 
   ST(184);
   REINIT;
@@ -1507,7 +1507,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 185
   // mark fluffy down and expect furry to be chosen
-  _st.setHostStatus("fluffy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("fluffy", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
 
   ST(185);
   REINIT;
@@ -1518,9 +1518,9 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 186
   // mark furry and frisky down, fuzzy up and expect fuzzy to be chosen
-  _st.setHostStatus("furry", HOST_STATUS_DOWN, 0, Reason::MANUAL);
-  _st.setHostStatus("frisky", HOST_STATUS_DOWN, 0, Reason::MANUAL);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("furry", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("frisky", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
 
   ST(186);
   REINIT;
@@ -1538,10 +1538,10 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   REBUILD;
 
   // mark all up.
-  _st.setHostStatus("furry", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("frisky", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("furry", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fluffy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("frisky", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
 
   REINIT;
   br(request, "i.am.rabbit.net");
@@ -1551,7 +1551,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 188
   // mark fuzzy down and expect fluffy.
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
 
   ST(188);
   REINIT;
@@ -1562,7 +1562,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 189
   // mark fuzzy back up and expect fuzzy.
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
 
   ST(189);
   REINIT;
@@ -1578,7 +1578,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // because the host status is set to down.
   params->markParentDown(result, fail_threshold, retry_time);
   // set host status down
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
   // sleep long enough so that fuzzy is retryable
   sleep(params->policy.ParentRetryTime + 1);
   ST(190);
@@ -1589,7 +1589,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // now set the host status on fuzzy to up and it should now
   // be retried.
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
   ST(191);
   REINIT;
   br(request, "i.am.rabbit.net");
@@ -1602,10 +1602,10 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=false go_direct=true\n");
   REBUILD;
   // mark all up.
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("fluffy", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("furry", HOST_STATUS_UP, 0, Reason::MANUAL);
-  _st.setHostStatus("frisky", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fluffy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("furry", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("frisky", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
   // fuzzy should be chosen.
   sleep(1);
   REINIT;
@@ -1620,7 +1620,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   sleep(params->policy.ParentRetryTime + 1);
   // since the host status is down even though fuzzy is
   // retryable, fluffy should be chosen
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
@@ -1630,7 +1630,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // set the host status for fuzzy  back up and since its
   // retryable fuzzy should be chosen
   ST(194);
-  _st.setHostStatus("fuzzy", HOST_STATUS_UP, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_UP, 0, Reason::MANUAL);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
@@ -1751,7 +1751,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   T("dest_domain=rabbit.net parent=fuzzy:80|1.0;fluffy:80|1.0 secondary_parent=furry:80|1.0;frisky:80|1.0 "
     "round_robin=consistent_hash go_direct=false secondary_mode=3\n");
   REBUILD;
-  _st.setHostStatus("fuzzy", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("fuzzy", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
   REINIT;
   br(request, "i.am.rabbit.net");
   FP;
@@ -1822,7 +1822,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     "round_robin=consistent_hash go_direct=false\n");
   REBUILD;
   REINIT;
-  _st.setHostStatus("curly", HOST_STATUS_DOWN, 0, Reason::MANUAL);
+  _st.setHostStatus("curly", TS_HOST_STATUS_DOWN, 0, Reason::MANUAL);
   br(request, "i.am.stooges.net");
   FP;
   RE(verify(result, PARENT_SPECIFIED, "carol", 80), 211);
@@ -1837,12 +1837,12 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
 // verify returns 1 iff the test passes
 int
-verify(ParentResult *r, ParentResultType e, const char *h, int p)
+verify(ParentResult *r, TSParentResultType e, const char *h, int p)
 {
   if (is_debug_tag_set("parent_select")) {
     show_result(r);
   }
-  return (r->result != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));
+  return (r->ts_result.result != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->ts_result.hostname, h) ? 0 : ((r->ts_result.port == p) ? 1 : 0)));
 }
 
 // br creates an HttpRequestData object
@@ -1864,7 +1864,7 @@ br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
 void
 show_result(ParentResult *p)
 {
-  switch (p->result) {
+  switch (p->ts_result.result) {
   case PARENT_UNDEFINED:
     printf("result is PARENT_UNDEFINED\n");
     break;
@@ -1873,8 +1873,8 @@ show_result(ParentResult *p)
     break;
   case PARENT_SPECIFIED:
     printf("result is PARENT_SPECIFIED\n");
-    printf("hostname is %s\n", p->hostname);
-    printf("port is %d\n", p->port);
+    printf("hostname is %s\n", p->ts_result.hostname);
+    printf("port is %d\n", p->ts_result.port);
     break;
   case PARENT_FAIL:
     printf("result is PARENT_FAIL\n");

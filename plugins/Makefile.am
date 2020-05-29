@@ -63,6 +63,7 @@ include experimental/cert_reporting_tool/Makefile.inc
 include experimental/collapsed_forwarding/Makefile.inc
 include experimental/cookie_remap/Makefile.inc
 include experimental/custom_redirect/Makefile.inc
+include experimental/nexthop_strategy_consistenthash/Makefile.inc
 include experimental/fq_pacing/Makefile.inc
 include experimental/geoip_acl/Makefile.inc
 include experimental/header_freq/Makefile.inc

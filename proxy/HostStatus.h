@@ -41,15 +41,12 @@
 // host_status stats prefix.
 static const std::string stat_prefix = "proxy.process.host_status.";
 
-enum HostStatus_t {
-  HOST_STATUS_INIT,
-  HOST_STATUS_DOWN,
-  HOST_STATUS_UP,
-};
-
 static const constexpr char *HostStatusNames[3] = {"HOST_STATUS_INIT", "HOST_STATUS_DOWN", "HOST_STATUS_UP"};
 static const constexpr char *ReasonStatus[2]    = {"UP", "DOWN"};
 
+/* MUST match apidefs.h.in TSHostStatusReason
+ * If a value is added here, it MUST be added there with the same value.
+ */
 struct Reason {
   static constexpr const unsigned int ACTIVE      = 0x1;
   static constexpr const unsigned int LOCAL       = 0x2;
@@ -97,7 +94,7 @@ struct Reason {
 
 // host status POD
 struct HostStatRec {
-  HostStatus_t status;
+  TSHostStatus status;
   unsigned int reasons;
   // time the host was marked down for a given reason.
   time_t active_marked_down;
@@ -186,7 +183,7 @@ struct HostStatus {
     static HostStatus instance;
     return instance;
   }
-  void setHostStatus(const char *name, const HostStatus_t status, const unsigned int down_time, const unsigned int reason);
+  void setHostStatus(const char *name, const TSHostStatus status, const unsigned int down_time, const unsigned int reason);
   HostStatRec *getHostStatus(const char *name);
   void createHostStat(const char *name, const char *data = nullptr);
   void loadHostStatusFromStats();

@@ -74,6 +74,7 @@
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
+#include "ts/parentresult.h"
 
 #include "ts/ts.h"
 
@@ -9907,6 +9908,42 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
     return TS_SUCCESS;
   }
   return TS_ERROR;
+}
+
+bool
+TSHostnameIsSelf(const char* hostname)
+{
+  return Machine::instance()->is_self(hostname);
+}
+
+bool
+TSHostStatusGet(const char *hostname, TSHostStatus* status, unsigned int *reason)
+{
+  HostStatRec *hst = HostStatus::instance().getHostStatus(hostname);
+  if (hst ==  nullptr)  {
+    return false;
+  }
+  if (status != nullptr) {
+    *status = hst->status;
+  }
+  if (reason != nullptr) {
+    *reason = hst->reasons;
+  }
+  return true;
+}
+
+void
+TSHostStatusSet(const char *hostname, TSHostStatus status, const unsigned int down_time, const unsigned int reason)
+{
+  HostStatus::instance().setHostStatus(hostname, status, down_time, reason);
+}
+
+TSParentResult*
+TSHttpTxnParentResultGet(TSHttpTxn txnp)
+{
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  ParentResult *result = &sm->t_state.parent_result;
+  return &result->ts_result;
 }
 
 namespace

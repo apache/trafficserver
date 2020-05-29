@@ -90,7 +90,7 @@ SocksEntry::findServer()
 
 #ifdef SOCKS_WITH_TS
   if (nattempts == 1) {
-    ink_assert(server_result.result == PARENT_UNDEFINED);
+    ink_assert(server_result.ts_result.result == PARENT_UNDEFINED);
     server_params->findParent(&req_data, &server_result, fail_threshold, retry_time);
   } else {
     socks_conf_struct *conf = netProcessor.socks_conf_stuff;
@@ -101,21 +101,21 @@ SocksEntry::findServer()
     server_params->markParentDown(&server_result, fail_threshold, retry_time);
 
     if (nattempts > conf->connection_attempts) {
-      server_result.result = PARENT_FAIL;
+      server_result.ts_result.result = PARENT_FAIL;
     } else {
       server_params->nextParent(&req_data, &server_result, fail_threshold, retry_time);
     }
   }
 
-  switch (server_result.result) {
+  switch (server_result.ts_result.result) {
   case PARENT_SPECIFIED:
     // Original was inet_addr, but should hostnames work?
     // ats_ip_pton only supports numeric (because other clients
     // explicitly want to avoid hostname lookups).
-    if (0 == ats_ip_pton(server_result.hostname, &server_addr)) {
-      ats_ip_port_cast(&server_addr) = htons(server_result.port);
+    if (0 == ats_ip_pton(server_result.ts_result.hostname, &server_addr)) {
+      ats_ip_port_cast(&server_addr) = htons(server_result.ts_result.port);
     } else {
-      Debug("SocksParent", "Invalid parent server specified %s", server_result.hostname);
+      Debug("SocksParent", "Invalid parent server specified %s", server_result.ts_result.hostname);
     }
     break;
 
@@ -151,7 +151,7 @@ SocksEntry::free()
   }
 
 #ifdef SOCKS_WITH_TS
-  if (!lerrno && netVConnection && server_result.retry) {
+  if (!lerrno && netVConnection && server_result.ts_result.retry) {
     server_params->markParentUp(&server_result);
   }
 #endif

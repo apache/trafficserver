@@ -1277,25 +1277,6 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       }
     }
 
-    // check for a 'strategy' and if wire it up if one exists.
-    if ((bti->remap_optflg & REMAP_OPTFLG_STRATEGY) != 0 &&
-        (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
-      const char *strategy = strchr(bti->argv[0], static_cast<int>('='));
-      if (strategy == nullptr) {
-        errStr = "missing 'strategy' name argument, unable to add mapping rule";
-        goto MAP_ERROR;
-      } else {
-        strategy++;
-        new_mapping->strategy = bti->rewrite->strategyFactory->strategyInstance(strategy);
-        if (!new_mapping->strategy) {
-          snprintf(errStrBuf, sizeof(errStrBuf), "no strategy named '%s' is defined in the config", strategy);
-          errStr = errStrBuf;
-          goto MAP_ERROR;
-        }
-        Debug("url_rewrite_regex", "mapped the 'strategy' named %s", strategy);
-      }
-    }
-
     // Check "remap" plugin options and load .so object
     if ((bti->remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 &&
         (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
@@ -1320,6 +1301,40 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             goto MAP_ERROR;
           }
         }
+      }
+    }
+
+    for (std::size_t pi = 0, pend = new_mapping->plugin_instance_count(); pi != pend; ++pi) {
+      RemapPluginInst *pluginInst = new_mapping->get_plugin_instance(pi);
+      if (pluginInst == nullptr) {
+        continue; // TODO error?
+      }
+      std::shared_ptr<TSNextHopSelectionStrategy> strategy = pluginInst->getStrategy();
+      const std::string pluginName = pluginInst->name();
+      if (strategy != nullptr) {
+        Debug("remap_plugin", "Remap plugin got strategy '%s'", pluginName.c_str());
+        bti->rewrite->strategyFactory->addStrategy(pluginName, strategy); // will log an error if the name already exists
+      } else {
+        Debug("remap_plugin", "Remap plugin has no strategy in '%s'", pluginName.c_str());
+      }
+    }
+
+    // check for a 'strategy' and if wire it up if one exists.
+    if ((bti->remap_optflg & REMAP_OPTFLG_STRATEGY) != 0 &&
+        (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
+      const char *strategy = strchr(bti->argv[0], static_cast<int>('='));
+      if (strategy == nullptr) {
+        errStr = "missing 'strategy' name argument, unable to add mapping rule";
+        goto MAP_ERROR;
+      } else {
+        strategy++;
+        new_mapping->strategy = bti->rewrite->strategyFactory->strategyInstance(strategy);
+        if (!new_mapping->strategy) {
+          snprintf(errStrBuf, sizeof(errStrBuf), "no strategy named '%s' is defined in the config", strategy);
+          errStr = errStrBuf;
+          goto MAP_ERROR;
+        }
+        Debug("url_rewrite_regex", "mapped the 'strategy' named %s", strategy);
       }
     }
 

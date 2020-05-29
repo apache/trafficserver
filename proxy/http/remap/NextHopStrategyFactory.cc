@@ -111,7 +111,7 @@ NextHopStrategyFactory::~NextHopStrategyFactory()
 void
 NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyType policy_type, const YAML::Node &node)
 {
-  std::shared_ptr<NextHopSelectionStrategy> strat;
+  std::shared_ptr<TSNextHopSelectionStrategy> strat;
   std::shared_ptr<NextHopRoundRobin> strat_rr;
   std::shared_ptr<NextHopConsistentHash> strat_chash;
 
@@ -134,7 +134,7 @@ NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyTy
     }
     break;
   case NH_CONSISTENT_HASH:
-    strat_chash = std::make_shared<NextHopConsistentHash>(name, policy_type);
+    strat_chash = std::make_shared<NextHopConsistentHash>(name);
     if (strat_chash->Init(node)) {
       _strategies.emplace(std::make_pair(std::string(name), strat_chash));
     } else {
@@ -146,26 +146,34 @@ NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyTy
   };
 }
 
-std::shared_ptr<NextHopSelectionStrategy>
+std::shared_ptr<TSNextHopSelectionStrategy>
 NextHopStrategyFactory::strategyInstance(const char *name)
 {
-  std::shared_ptr<NextHopSelectionStrategy> ps_strategy;
-
   if (!strategies_loaded) {
     NH_Error("no strategy configurations were defined, see defintions in '%s' file", fn.c_str());
     return nullptr;
-  } else {
-    auto it = _strategies.find(name);
-    if (it == _strategies.end()) {
-      // NH_Error("no strategy found for name: %s", name);
-      return nullptr;
-    } else {
-      ps_strategy           = it->second;
-      ps_strategy->distance = std::distance(_strategies.begin(), it);
-    }
   }
+  auto strategy = _strategies.find(name);
+  if (strategy == _strategies.end()) {
+    // NH_Error("no strategy found for name: %s", name);
+    return nullptr;
+  }
+  return strategy->second;
+}
 
-  return ps_strategy;
+/*
+ * Adds a new strategy to the factory.
+ * Designed for plugins which want to dynamically add strategies.
+ */
+bool
+NextHopStrategyFactory::addStrategy(const std::string &name, std::shared_ptr<TSNextHopSelectionStrategy> strategy) {
+  if (_strategies.find(name) != _strategies.end()) {
+    NH_Error("failed to add strategy '%s' because a strategy with that name already exists", name.c_str());
+    return false;
+  }
+  _strategies[name] = strategy;
+  strategies_loaded = true;
+  return true;
 }
 
 /*

@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <string.h>
 #include <ts/apidefs.h>
 
 #ifdef __cplusplus
@@ -2608,6 +2609,35 @@ tsapi TSReturnCode TSHttpTxnClientStreamIdGet(TSHttpTxn txnp, uint64_t *stream_i
  * implement stream priorities.
  */
 tsapi TSReturnCode TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority);
+
+/*
+ * Returns whether hostname is this machine, as used for parent and remap self-detection.
+ */
+bool TSHostnameIsSelf(const char* hostname);
+
+/*
+ * Gets the status of hostname in the outparam status, and the status reason in the outparam reason.
+ * The reason is a logical-and combination of the reasons in TSHostStatusReason.
+ * If either outparam is null, it will not be set and no error will be returned.
+ * Returns whether the hostname was a parent and existed in the HostStatus.
+ */
+bool TSHostStatusGet(const char *hostname, TSHostStatus* status, unsigned int *reason);
+
+/*
+ * Sets the status of hostname in status, down_time, and reason.
+ * The reason is a logical-and combination of the reasons in TSHostStatusReason.
+ */
+void TSHostStatusSet(const char *hostname, TSHostStatus status, const unsigned int down_time, const unsigned int reason);
+
+struct TSParentResult;
+
+/*
+ * Gets the Transaction Parent Result pointer.
+ * Note this is the actual pointer inside the TSHttpTxn.
+ * It MUST NOT be freed. The data it points to may be modified.
+ */
+struct TSParentResult*
+TSHttpTxnParentResultGet(TSHttpTxn txnp);
 
 #ifdef __cplusplus
 }

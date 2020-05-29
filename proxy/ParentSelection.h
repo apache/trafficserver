@@ -37,6 +37,7 @@
 #include "tscore/ConsistentHash.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ink_apidefs.h"
+#include "ts/parentresult.h"
 #include "HostStatus.h"
 
 #include <algorithm>
@@ -50,16 +51,6 @@ struct ParentResult;
 struct OverridableHttpConfigParams;
 class ParentRecord;
 class ParentSelectionStrategy;
-
-enum ParentResultType {
-  PARENT_UNDEFINED,
-  PARENT_DIRECT,
-  PARENT_SPECIFIED,
-  PARENT_AGENT,
-  PARENT_FAIL,
-};
-
-static const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
 
 enum ParentRR_t {
   P_NO_ROUND_ROBIN = 0,
@@ -174,29 +165,19 @@ public:
 //   between HttpTransact & the parent selection code.  The following
 ParentRecord *const extApiRecord = (ParentRecord *)0xeeeeffff;
 
-// used here to to set the number of ATSConsistentHashIter's
-// used in NextHopSelectionStrategy to limit the host group
-// size as well, group size is one to one with the number of rings
-constexpr const uint32_t MAX_GROUP_RINGS = 5;
-
 struct ParentResult {
+  TSParentResult ts_result;
+
   ParentResult() { reset(); }
-  // For outside consumption
-  ParentResultType result;
-  const char *hostname;
-  int port;
-  bool retry;
-  bool chash_init[MAX_GROUP_RINGS] = {false};
-  HostStatus_t first_choice_status = HostStatus_t::HOST_STATUS_INIT;
 
   void
   reset()
   {
     ink_zero(*this);
-    line_number   = -1;
-    result        = PARENT_UNDEFINED;
-    mapWrapped[0] = false;
-    mapWrapped[1] = false;
+    ts_result.line_number   = -1;
+    ts_result.result        = PARENT_UNDEFINED;
+    ts_result.mapWrapped[0] = false;
+    ts_result.mapWrapped[1] = false;
   }
 
   bool
@@ -213,7 +194,7 @@ struct ParentResult {
       // If we don't have a result, we either haven't done a parent
       // lookup yet (PARENT_UNDEFINED), or the lookup didn't match
       // anything (PARENT_DIRECT).
-      ink_assert(result == PARENT_UNDEFINED || result == PARENT_DIRECT);
+      ink_assert(ts_result.result == PARENT_UNDEFINED || ts_result.result == PARENT_DIRECT);
       return false;
     }
 
@@ -281,7 +262,7 @@ struct ParentResult {
       return false;
     } else {
       // Caller should check for a valid result beforehand.
-      ink_assert(result != PARENT_UNDEFINED);
+      ink_assert(ts_result.result != PARENT_UNDEFINED);
       ink_assert(is_some());
       return rec->bypass_ok();
     }
@@ -292,23 +273,14 @@ struct ParentResult {
   {
     printf("ParentResult - hostname: %s, port: %d, retry: %s, line_number: %d, last_parent: %d, start_parent: %d, wrap_around: %s, "
            "last_lookup: %d, result: %s\n",
-           hostname, port, (retry) ? "true" : "false", line_number, last_parent, start_parent, (wrap_around) ? "true" : "false",
-           last_lookup, ParentResultStr[result]);
+           ts_result.hostname, ts_result.port, (ts_result.retry) ? "true" : "false", ts_result.line_number, ts_result.last_parent, ts_result.start_parent, (ts_result.wrap_around) ? "true" : "false",
+           ts_result.last_lookup, ParentResultStr[ts_result.result]);
   }
 
 private:
   // Internal use only
   //   Not to be modified by HTTP
-  int line_number;
   ParentRecord *rec;
-  uint32_t last_parent;
-  uint32_t start_parent;
-  uint32_t last_group;
-  bool wrap_around;
-  bool mapWrapped[2];
-  // state for consistent hash.
-  int last_lookup;
-  ATSConsistentHashIter chashIter[MAX_GROUP_RINGS];
 
   friend class NextHopSelectionStrategy;
   friend class NextHopRoundRobin;
@@ -440,7 +412,7 @@ ParentRecord *createDefaultParent(char *val);
 // Unit Test Functions
 void show_result(ParentResult *aParentResult);
 void br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip = nullptr); // short for build request
-int verify(ParentResult *r, ParentResultType e, const char *h, int p);
+int verify(ParentResult *r, TSParentResultType e, const char *h, int p);
 
 /*
   For supporting multiple Socks servers, we essentially use the

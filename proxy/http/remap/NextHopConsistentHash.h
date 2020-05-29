@@ -38,16 +38,17 @@ enum NHHashKeyType {
 
 class NextHopConsistentHash : public NextHopSelectionStrategy
 {
-  std::vector<std::shared_ptr<ATSConsistentHash>> rings;
-
-  uint64_t getHashKey(uint64_t sm_id, HttpRequestData *hrdata, ATSHash64 *h);
-
 public:
+  const uint32_t LineNumberPlaceholder = 99999;
+
   NHHashKeyType hash_key = NH_PATH_HASH_KEY;
 
   NextHopConsistentHash() = delete;
-  NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy) : NextHopSelectionStrategy(name, policy) {}
+  NextHopConsistentHash(const std::string_view name);
   ~NextHopConsistentHash();
   bool Init(const YAML::Node &n);
-  void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
+  void findNextHop(TSHttpTxn txnp, time_t now = 0) override;
+//private:
+  std::vector<std::shared_ptr<ATSConsistentHash>> rings;
+  uint64_t getHashKey(uint64_t sm_id, HttpRequestData *hrdata, ATSHash64 *h);
 };

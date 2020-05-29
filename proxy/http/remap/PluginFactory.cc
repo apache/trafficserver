@@ -76,6 +76,16 @@ RemapPluginInst::doRemap(TSHttpTxn rh, TSRemapRequestInfo *rri)
   return _plugin.doRemap(_instance, rh, rri);
 }
 
+std::shared_ptr<TSNextHopSelectionStrategy>
+RemapPluginInst::getStrategy()
+{
+  return _plugin.initStrategy(this->_instance);
+}
+
+std::string RemapPluginInst::name() const {
+  return _plugin.configPath().string();
+}
+
 void
 RemapPluginInst::osResponse(TSHttpTxn rh, int os_response_type)
 {

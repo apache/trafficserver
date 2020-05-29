@@ -28,17 +28,20 @@
 
 class NextHopRoundRobin : public NextHopSelectionStrategy
 {
-  std::mutex _mutex;
-  uint32_t latched_index = 0;
-
 public:
+  const uint32_t LineNumberPlaceholder = 99999;
+
   NextHopRoundRobin() = delete;
-  NextHopRoundRobin(const std::string_view &name, const NHPolicyType &policy) : NextHopSelectionStrategy(name, policy) {}
+  NextHopRoundRobin(const std::string_view &name, const NHPolicyType &policy);
   ~NextHopRoundRobin();
   bool
   Init(const YAML::Node &n)
   {
     return NextHopSelectionStrategy::Init(n);
   }
-  void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
+  void findNextHop(TSHttpTxn txnp, time_t now = 0) override;
+//private:
+  std::mutex _mutex;
+  uint32_t latched_index = 0;
+  NHPolicyType policy_type = NH_UNDEFINED;
 };

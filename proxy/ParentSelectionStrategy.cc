@@ -32,8 +32,8 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
 
   //  Make sure that we are being called back with with a
   //   result structure with a parent
-  ink_assert(result->result == PARENT_SPECIFIED);
-  if (result->result != PARENT_SPECIFIED) {
+  ink_assert(result->ts_result.result == PARENT_SPECIFIED);
+  if (result->ts_result.result != PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover
@@ -42,8 +42,8 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
     return;
   }
 
-  ink_assert((result->last_parent) < numParents(result));
-  pRec = (parents + result->last_parent);
+  ink_assert((result->ts_result.last_parent) < numParents(result));
+  pRec = (parents + result->ts_result.last_parent);
 
   // If the parent has already been marked down, just increment
   //   the failure count.  If this is the first mark down on a
@@ -53,7 +53,7 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
   //   handle this condition.  If this was the result of a retry, we
   //   must update move the failedAt timestamp to now so that we continue
   //   negative cache the parent
-  if (pRec->failedAt == 0 || result->retry == true) {
+  if (pRec->failedAt == 0 || result->ts_result.retry == true) {
     // Reread the current time.  We want this to be accurate since
     //   it relates to how long the parent has been down.
     now = time(nullptr);
@@ -63,11 +63,11 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
 
     // If this is clean mark down and not a failed retry, we
     //   must set the count to reflect this
-    if (result->retry == false) {
+    if (result->ts_result.retry == false) {
       new_fail_count = pRec->failCount = 1;
     }
 
-    Note("Parent %s marked as down %s:%d", (result->retry) ? "retry" : "initially", pRec->hostname, pRec->port);
+    Note("Parent %s marked as down %s:%d", (result->ts_result.retry) ? "retry" : "initially", pRec->hostname, pRec->port);
 
   } else {
     int old_count = 0;
@@ -103,9 +103,9 @@ ParentSelectionStrategy::markParentUp(ParentResult *result)
 
   //  Make sure that we are being called back with with a
   //   result structure with a parent that is being retried
-  ink_release_assert(result->retry == true);
-  ink_assert(result->result == PARENT_SPECIFIED);
-  if (result->result != PARENT_SPECIFIED) {
+  ink_release_assert(result->ts_result.retry == true);
+  ink_assert(result->ts_result.result == PARENT_SPECIFIED);
+  if (result->ts_result.result != PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover
@@ -115,8 +115,8 @@ ParentSelectionStrategy::markParentUp(ParentResult *result)
     return;
   }
 
-  ink_assert((int)(result->last_parent) < num_parents);
-  pRec = parents + result->last_parent;
+  ink_assert((int)(result->ts_result.last_parent) < num_parents);
+  pRec = parents + result->ts_result.last_parent;
   ink_atomic_swap(&pRec->available, true);
 
   ink_atomic_swap(&pRec->failedAt, static_cast<time_t>(0));

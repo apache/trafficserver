@@ -203,14 +203,14 @@ HostStatus::getHostStatus(const char *name)
   if (this->hosts_statuses[name] == nullptr) {
     // for unit tests only, always return a record with HOST_STATUS_UP, if it wasn't set with setHostStatus
     static HostStatRec rec;
-    rec.status = HostStatus_t::HOST_STATUS_UP;
+    rec.status = TSHostStatus::TS_HOST_STATUS_UP;
     return &rec;
   }
   return this->hosts_statuses[name];
 }
 
 void
-HostStatus::setHostStatus(char const *host, HostStatus_t status, unsigned int down_time, unsigned int reason)
+HostStatus::setHostStatus(char const *host, TSHostStatus status, unsigned int down_time, unsigned int reason)
 {
   if (this->hosts_statuses[host] == nullptr) {
     this->hosts_statuses[host] = new (HostStatRec);
