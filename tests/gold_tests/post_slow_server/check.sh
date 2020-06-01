@@ -16,4 +16,12 @@
 
 # Check that curl command received 200 KBytes of data (in 8-byte lines).
 
-(( $( grep '^1234567$' curl.log | wc -l ) == ((200 * 1024) / 8) ))
+RECEIVED=$( grep '^[0-9][0-9][0-9][0-9][0-9][0-9][0-9]$' curl.log | wc -l )
+let RECEIVED=8*RECEIVED
+
+EXPECTED=$((200 * 1024))
+
+echo "Exepcted=$EXPECTED"
+echo "Recieved=$RECEIVED"
+
+(( RECEIVED == EXPECTED ))

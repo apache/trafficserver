@@ -25,7 +25,7 @@ pkglib_LTLIBRARIES =
 
 SUBDIRS =
 
-AM_LDFLAGS = $(TS_PLUGIN_LD_FLAGS)
+AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
 
 include authproxy/Makefile.inc
 include background_fetch/Makefile.inc

@@ -41,6 +41,7 @@
 #include "UrlMapping.h"
 #include "records/I_RecHttp.h"
 #include "ProxySession.h"
+#include "MgmtDefs.h"
 
 #define HTTP_RELEASE_ASSERT(X) ink_release_assert(X)
 
@@ -620,8 +621,7 @@ public:
       OS_ADDR_USE_CLIENT   ///< Use client target addr, no fallback.
     };
 
-    OS_Addr os_addr_style       = OS_Addr::OS_ADDR_TRY_DEFAULT;
-    HostResStyle host_res_style = HOST_RES_IPV4;
+    OS_Addr os_addr_style = OS_Addr::OS_ADDR_TRY_DEFAULT;
 
     bool lookup_success         = false;
     char *lookup_name           = nullptr;
@@ -638,6 +638,9 @@ public:
 
     _DNSLookupInfo() {}
   } DNSLookupInfo;
+
+  // Conversion handling for DNS host resolution type.
+  static const MgmtConverter HOST_RES_CONV;
 
   typedef struct _HeaderInfo {
     HTTPHdr client_request;

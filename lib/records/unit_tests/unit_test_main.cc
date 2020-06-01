@@ -38,9 +38,8 @@ main(int argc, char *argv[])
   // Global data initialization needed for the unit tests.
   ts_session_protocol_well_known_name_indices_init();
   // Cheat for ts_host_res_global_init as there's no records.config to check for non-default.
-  memcpy(host_res_default_preference_order, HOST_RES_DEFAULT_PREFERENCE_ORDER, sizeof(host_res_default_preference_order));
-
-  int result = Catch::Session().run(argc, argv);
+  host_res_default_preference_order = HOST_RES_DEFAULT_PREFERENCE_ORDER;
+  int result                        = Catch::Session().run(argc, argv);
 
   // global clean-up...
 

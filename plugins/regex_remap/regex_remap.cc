@@ -394,7 +394,8 @@ RemapRegex::compile(const char *&error, int &erroffset)
     return -1;
   }
 
-  _extra->match_limit_recursion = 2047;
+  // POOMA - also dependent on actual stack size. Crashes with previous value of 2047,
+  _extra->match_limit_recursion = 1750;
   _extra->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
 
   if (pcre_fullinfo(_rex, _extra, PCRE_INFO_CAPTURECOUNT, &ccount) != 0) {

@@ -61,8 +61,7 @@ server = Test.Processes.Process(
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     'curl --request POST --verbose --ipv4 --http2 --insecure --header "Content-Length: 0"' +
-    r" --header 'Host: localhost' https://localhost:{}/xyz 2>&1 | tr '\r' '\n' ".format(ts.Variables.ssl_port) +
-    ' > curl.log'
+    " --header 'Host: localhost' https://localhost:{}/xyz >curl.log 2>curl.err".format(ts.Variables.ssl_port)
 )
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)

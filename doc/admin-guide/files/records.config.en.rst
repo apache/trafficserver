@@ -2681,6 +2681,7 @@ HostDB
    of partitions
 
 .. ts:cv:: CONFIG proxy.config.hostdb.ip_resolve STRING NULL
+   :overridable:
 
    Set the host resolution style.
 

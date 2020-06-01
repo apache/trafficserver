@@ -516,8 +516,7 @@ ats_host_res_from(int family, HostResPreferenceOrder const &order)
   bool v4 = false, v6 = false;
   HostResPreference client = AF_INET6 == family ? HOST_RES_PREFER_IPV6 : HOST_RES_PREFER_IPV4;
 
-  for (int i = 0; i < N_HOST_RES_PREFERENCE_ORDER; ++i) {
-    HostResPreference p = order[i];
+  for (auto p : order) {
     if (HOST_RES_PREFER_CLIENT == p) {
       p = client; // CLIENT -> actual value
     }
@@ -545,14 +544,16 @@ ats_host_res_from(int family, HostResPreferenceOrder const &order)
   return HOST_RES_NONE;
 }
 
-HostResStyle
-ats_host_res_match(sockaddr const *addr)
+void
+ats_force_order_by_family(sockaddr const *addr, HostResPreferenceOrder order)
 {
-  HostResStyle zret = HOST_RES_NONE;
+  HostResPreferenceOrder::size_type pos{0};
   if (ats_is_ip6(addr)) {
-    zret = HOST_RES_IPV6_ONLY;
+    order[pos++] = HOST_RES_PREFER_IPV6;
   } else if (ats_is_ip4(addr)) {
-    zret = HOST_RES_IPV4_ONLY;
+    order[pos++] = HOST_RES_PREFER_IPV4;
   }
-  return zret;
+  for (; pos < order.size(); pos++) {
+    order[pos] = HOST_RES_PREFER_NONE;
+  }
 }

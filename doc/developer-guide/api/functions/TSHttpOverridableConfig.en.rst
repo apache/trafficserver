@@ -186,6 +186,7 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_SSL_CLIENT_CERT_FILENAME`                       :ts:cv:`proxy.config.ssl.client.cert.filename`
 :c:macro:`TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME`                :ts:cv:`proxy.config.ssl.client.private_key.filename`
 :c:macro:`TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME`                    :ts:cv:`proxy.config.ssl.client.CA.cert.filename`
+:c:macro:`TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE`                :ts:cv:`proxy.config.hostdb.ip_resolve`
 ==================================================================  ====================================================================
 
 Examples

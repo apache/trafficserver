@@ -72,6 +72,8 @@ typedef struct {
   config_t *config;
 } config_holder_t;
 
+typedef enum { JSON_OUTPUT, CSV_OUTPUT } output_format;
+
 int configReloadRequests = 0;
 int configReloads        = 0;
 time_t lastReloadRequest = 0;
@@ -95,6 +97,7 @@ typedef struct stats_state_t {
 
   int output_bytes;
   int body_written;
+  output_format output;
 } stats_state;
 
 static char *
@@ -141,12 +144,24 @@ stats_add_data_to_resp_buffer(const char *s, stats_state *my_state)
   return s_len;
 }
 
-static const char RESP_HEADER[] = "HTTP/1.0 200 Ok\r\nContent-Type: text/javascript\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_JSON[] = "HTTP/1.0 200 Ok\r\nContent-Type: text/json\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_CSV[]  = "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nCache-Control: no-cache\r\n\r\n";
 
 static int
 stats_add_resp_header(stats_state *my_state)
 {
-  return stats_add_data_to_resp_buffer(RESP_HEADER, my_state);
+  switch (my_state->output) {
+  case JSON_OUTPUT:
+    return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
+    break;
+  case CSV_OUTPUT:
+    return stats_add_data_to_resp_buffer(RESP_HEADER_CSV, my_state);
+    break;
+  default:
+    TSError("stats_add_resp_header: Unknown output format");
+    break;
+  }
+  return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
 }
 
 static void
@@ -171,13 +186,13 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
 }
 
 #define APPEND(a) my_state->output_bytes += stats_add_data_to_resp_buffer(a, my_state)
-#define APPEND_STAT(a, fmt, v)                                                   \
+#define APPEND_STAT_JSON(a, fmt, v)                                              \
   do {                                                                           \
     char b[256];                                                                 \
     if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < (int)sizeof(b)) \
       APPEND(b);                                                                 \
   } while (0)
-#define APPEND_STAT_NUMERIC(a, fmt, v)                                               \
+#define APPEND_STAT_JSON_NUMERIC(a, fmt, v)                                          \
   do {                                                                               \
     char b[256];                                                                     \
     if (integer_counters) {                                                          \
@@ -189,6 +204,20 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
         APPEND(b);                                                                   \
       }                                                                              \
     }                                                                                \
+  } while (0)
+
+#define APPEND_STAT_CSV(a, fmt, v)                                     \
+  do {                                                                 \
+    char b[256];                                                       \
+    if (snprintf(b, sizeof(b), "%s," fmt "\n", a, v) < (int)sizeof(b)) \
+      APPEND(b);                                                       \
+  } while (0)
+#define APPEND_STAT_CSV_NUMERIC(a, fmt, v)                               \
+  do {                                                                   \
+    char b[256];                                                         \
+    if (snprintf(b, sizeof(b), "%s," fmt "\n", a, v) < (int)sizeof(b)) { \
+      APPEND(b);                                                         \
+    }                                                                    \
   } while (0)
 
 // This wraps uint64_t values to the int64_t range to fit into a Java long. Java 8 has an unsigned long which
@@ -211,22 +240,47 @@ json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_
 
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    APPEND_STAT_JSON_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    APPEND_STAT_JSON_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
     break;
   case TS_RECORDDATATYPE_FLOAT:
-    APPEND_STAT_NUMERIC(name, "%f", datum->rec_float);
+    APPEND_STAT_JSON_NUMERIC(name, "%f", datum->rec_float);
     break;
   case TS_RECORDDATATYPE_STRING:
-    APPEND_STAT(name, "%s", datum->rec_string);
+    APPEND_STAT_JSON(name, "%s", datum->rec_string);
     break;
   default:
     TSDebug(PLUGIN_NAME, "unknown type for %s: %d", name, data_type);
     break;
   }
 }
+
+static void
+csv_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_UNUSED, const char *name, TSRecordDataType data_type,
+             TSRecordData *datum)
+{
+  stats_state *my_state = edata;
+  switch (data_type) {
+  case TS_RECORDDATATYPE_COUNTER:
+    APPEND_STAT_CSV_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    break;
+  case TS_RECORDDATATYPE_INT:
+    APPEND_STAT_CSV_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    break;
+  case TS_RECORDDATATYPE_FLOAT:
+    APPEND_STAT_CSV_NUMERIC(name, "%f", datum->rec_float);
+    break;
+  case TS_RECORDDATATYPE_STRING:
+    APPEND_STAT_CSV(name, "%s", datum->rec_string);
+    break;
+  default:
+    TSDebug(PLUGIN_NAME, "unknown type for %s: %d", name, data_type);
+    break;
+  }
+}
+
 static void
 json_out_stats(stats_state *my_state)
 {
@@ -242,13 +296,32 @@ json_out_stats(stats_state *my_state)
 }
 
 static void
+csv_out_stats(stats_state *my_state)
+{
+  const char *version;
+  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), csv_out_stat, my_state);
+  version = TSTrafficServerVersionGet();
+  APPEND_STAT_CSV("version", "%s", version);
+}
+
+static void
 stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (my_state->body_written == 0) {
       TSDebug(PLUGIN_NAME, "plugin adding response body");
       my_state->body_written = 1;
-      json_out_stats(my_state);
+      switch (my_state->output) {
+      case JSON_OUTPUT:
+        json_out_stats(my_state);
+        break;
+      case CSV_OUTPUT:
+        csv_out_stats(my_state);
+        break;
+      default:
+        TSError("stats_process_write: Unknown output type\n");
+        break;
+      }
       TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
     }
     TSVIOReenable(my_state->write_vio);
@@ -286,7 +359,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   config_t *config;
   TSHttpTxn txnp = (TSHttpTxn)edata;
   TSMBuffer reqp;
-  TSMLoc hdr_loc = NULL, url_loc = NULL;
+  TSMLoc hdr_loc = NULL, url_loc = NULL, accept_field = NULL;
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
   TSDebug(PLUGIN_NAME, "in the read stuff");
@@ -322,6 +395,22 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
   my_state = (stats_state *)TSmalloc(sizeof(*my_state));
   memset(my_state, 0, sizeof(*my_state));
+
+  accept_field     = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT);
+  my_state->output = JSON_OUTPUT; // default to json output
+  // accept header exists, use it to determine response type
+  if (accept_field != TS_NULL_MLOC) {
+    int len         = -1;
+    const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_field, -1, &len);
+
+    // Parse the Accept header, default to JSON output unless its another supported format
+    if (!strncasecmp(str, "text/csv", len)) {
+      my_state->output = CSV_OUTPUT;
+    } else {
+      my_state->output = JSON_OUTPUT;
+    }
+  }
+
   TSContDataSet(icontp, my_state);
   TSHttpTxnIntercept(icontp, txnp);
   goto cleanup;
@@ -335,7 +424,9 @@ cleanup:
   if (hdr_loc) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
   }
-
+  if (accept_field) {
+    TSHandleMLocRelease(reqp, TS_NULL_MLOC, accept_field);
+  }
   TSHttpTxnReenable(txnp, reenable);
   return 0;
 }

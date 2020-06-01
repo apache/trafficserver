@@ -650,12 +650,13 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     line_num++;
 
     char *end;
-    char *line_end    = nullptr;
-    const char *err   = nullptr;
-    int volume_number = 0;
-    CacheType scheme  = CACHE_NONE_TYPE;
-    int size          = 0;
-    int in_percent    = 0;
+    char *line_end        = nullptr;
+    const char *err       = nullptr;
+    int volume_number     = 0;
+    CacheType scheme      = CACHE_NONE_TYPE;
+    int size              = 0;
+    int in_percent        = 0;
+    bool ramcache_enabled = true;
 
     while (true) {
       // skip all blank spaces at beginning of line
@@ -743,6 +744,18 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
         } else {
           in_percent = 0;
         }
+      } else if (strcasecmp(tmp, "ramcache") == 0) { // match ramcache
+        tmp += 9;
+        if (!strcasecmp(tmp, "false")) {
+          tmp += 5;
+          ramcache_enabled = false;
+        } else if (!strcasecmp(tmp, "true")) {
+          tmp += 4;
+          ramcache_enabled = true;
+        } else {
+          err = "Unexpected end of line";
+          break;
+        }
       }
 
       // ends here
@@ -765,9 +778,10 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       } else {
         configp->in_percent = false;
       }
-      configp->scheme = scheme;
-      configp->size   = size;
-      configp->cachep = nullptr;
+      configp->scheme           = scheme;
+      configp->size             = size;
+      configp->cachep           = nullptr;
+      configp->ramcache_enabled = ramcache_enabled;
       cp_queue.enqueue(configp);
       num_volumes++;
       if (scheme == CACHE_HTTP_TYPE) {
@@ -775,7 +789,8 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
       } else {
         ink_release_assert(!"Unexpected non-HTTP cache volume");
       }
-      Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d", volume_number, scheme, size, in_percent);
+      Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d, ramcache enabled=%d", volume_number, scheme, size,
+            in_percent, ramcache_enabled);
     }
 
     tmp = bufTok.iterNext(&i_state);

@@ -87,6 +87,7 @@ GlobalPlugin::~GlobalPlugin()
 void
 GlobalPlugin::registerHook(Plugin::HookType hook_type)
 {
+  assert(hook_type != Plugin::HOOK_TXN_CLOSE);
   TSHttpHookID hook_id = utils::internal::convertInternalHookToTsHook(hook_type);
   TSHttpHookAdd(hook_id, state_->cont_);
   LOG_DEBUG("Registered global plugin %p for hook %s", this, HOOK_TYPE_STRINGS[hook_type].c_str());

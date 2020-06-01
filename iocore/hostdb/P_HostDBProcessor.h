@@ -37,7 +37,6 @@
 extern int hostdb_enable;
 extern int hostdb_migrate_on_demand;
 extern int hostdb_lookup_timeout;
-extern int hostdb_insert_timeout;
 extern int hostdb_re_dns_on_reload;
 
 // 0 = obey, 1 = ignore, 2 = min(X,ttl), 3 = max(X,ttl)
