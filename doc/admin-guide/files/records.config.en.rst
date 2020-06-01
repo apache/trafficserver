@@ -381,8 +381,11 @@ Thread Variables
    :reloadable:
 
    The shutdown timeout(in seconds) to apply when stopping Traffic
-   Server, in which ATS can initiate graceful shutdowns. It only supports
-   HTTP/2 graceful shutdown for now. Stopping |TS| here means sending
+   Server, in which ATS can initiate graceful shutdowns. In order
+   to effect graceful shutdown, the value specified should be greater
+   than 0. Value of 0 will not effect an abrupt shutdown. Abrupt
+   shutdowns can be achieved with out specifying --drain;
+   (traffic_ctl server stop /restart). Stopping |TS| here means sending
    `traffic_server` a signal either by `bin/trafficserver stop` or `kill`.
 
 .. ts:cv:: CONFIG proxy.config.thread.max_heartbeat_mseconds INT 60
