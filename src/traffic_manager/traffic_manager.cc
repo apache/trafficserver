@@ -196,7 +196,7 @@ waited_enough()
     return false;
   }
 
-  return (lmgmt->mgmt_shutdown_triggered_at + timeout >= time(nullptr));
+  return (timeout ? (lmgmt->mgmt_shutdown_triggered_at + timeout <= time(nullptr)) : false);
 }
 
 static void
