@@ -7011,10 +7011,8 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // unless we are going to use chunked encoding on HTTP/1.1 or the client issued a PUSH request
     if (s->client_info.keep_alive != HTTP_KEEPALIVE) {
       ka_action = KA_DISABLED;
-    } else if (s->state_machine->client_protocol && (IP_PROTO_TAG_HTTP_3.compare(s->state_machine->client_protocol) == 0 ||
-                                                     strncmp(s->state_machine->client_protocol, "http/2", 6) == 0)) {
-      ka_action = KA_CONNECTION;
-    } else if (s->hdr_info.trust_response_cl == false &&
+    } else if (s->hdr_info.trust_response_cl == false && s->state_machine->ua_txn &&
+               s->state_machine->ua_txn->is_chunked_encoding_supported() &&
                !(s->client_info.receive_chunked_response == true ||
                  (s->method == HTTP_WKSIDX_PUSH && s->client_info.keep_alive == HTTP_KEEPALIVE))) {
       ka_action = KA_CLOSE;
