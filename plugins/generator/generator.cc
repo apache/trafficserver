@@ -594,6 +594,21 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
   }
 }
 
+// Little helper function, to turn off the cache on requests which aren't cacheable to begin with.
+// This helps performance, a lot.
+static void
+CheckCacheable(TSHttpTxn txnp, TSMLoc url, TSMBuffer bufp)
+{
+  int pathsz       = 0;
+  const char *path = TSUrlPathGet(bufp, url, &pathsz);
+
+  if (path && (pathsz >= 8) && (0 == memcmp(path, "nocache/", 8))) {
+    // It's not cacheable, so, turn off the cache. This avoids major serialization and performance issues.
+    VDEBUG("turning off the cache, uncacehable");
+    TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_HTTP, 0);
+  }
+}
+
 // Handle events that occur on the TSHttpTxn.
 static int
 GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
@@ -603,6 +618,19 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
   VDEBUG("contp=%p, event=%s (%d), edata=%p", contp, TSHttpEventNameLookup(event), event, edata);
 
   switch (event) {
+  case TS_EVENT_HTTP_READ_REQUEST_HDR: {
+    TSMBuffer recp;
+    TSMLoc url_loc;
+    TSMLoc hdr_loc;
+
+    TSReleaseAssert(TSHttpTxnClientReqGet(arg.txn, &recp, &hdr_loc) == TS_SUCCESS);
+    TSReleaseAssert(TSHttpHdrUrlGet(recp, hdr_loc, &url_loc) == TS_SUCCESS);
+    CheckCacheable(arg.txn, url_loc, recp);
+    TSHandleMLocRelease(recp, hdr_loc, url_loc);
+    TSHandleMLocRelease(recp, TS_NULL_MLOC, hdr_loc);
+    break;
+  }
+
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
     int status;
 
@@ -612,7 +640,6 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
       VDEBUG("intercepting origin server request for txn=%p", arg.txn);
       TSHttpTxnServerIntercept(TSContCreate(GeneratorInterceptHook, TSMutexCreate()), arg.txn);
     }
-
     break;
   }
 
@@ -656,6 +683,10 @@ TSPluginInit(int /* argc */, const char * /* argv */[])
 
   GeneratorInitialize();
 
+  // We want to check early on if the request is cacheable or not, and if it's not cacheable,
+  // we benefit signifciantly from turning off the cache completely.
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TxnHook);
+
   // Wait until after the cache lookup to decide whether to
   // intercept a request. For cache hits we will never intercept.
   TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, TxnHook);
@@ -669,8 +700,10 @@ TSRemapInit(TSRemapInterface * /* api_info */, char * /* errbuf */, int /* errbu
 }
 
 TSRemapStatus
-TSRemapDoRemap(void * /* ih */, TSHttpTxn txn, TSRemapRequestInfo * /* rri ATS_UNUSED */)
+TSRemapDoRemap(void * /* ih */, TSHttpTxn txn, TSRemapRequestInfo *rri)
 {
+  // Check if we should turn off the cache before doing anything else ...
+  CheckCacheable(txn, rri->requestUrl, rri->requestBufp);
   TSHttpTxnHookAdd(txn, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, TxnHook);
   return TSREMAP_NO_REMAP; // This plugin never rewrites anything.
 }
