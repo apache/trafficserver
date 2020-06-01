@@ -1086,6 +1086,12 @@ QUICNetVConnection::_largest_acked_packet_number(QUICEncryptionLevel level) cons
   return this->_loss_detector->largest_acked_packet_number(index);
 }
 
+QUICVersion
+QUICNetVConnection::negotiated_version() const
+{
+  return this->_handshake_handler->negotiated_version();
+}
+
 std::string_view
 QUICNetVConnection::negotiated_application_name() const
 {

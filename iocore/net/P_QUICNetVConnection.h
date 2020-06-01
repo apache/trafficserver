@@ -206,6 +206,7 @@ public:
   const QUICFiveTuple five_tuple() const override;
   uint32_t pmtu() const override;
   NetVConnectionContext_t direction() const override;
+  QUICVersion negotiated_version() const override;
   std::string_view negotiated_application_name() const override;
   bool is_closed() const override;
 

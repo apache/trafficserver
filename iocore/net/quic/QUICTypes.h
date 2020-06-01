@@ -54,6 +54,7 @@ static constexpr uint8_t kPacketNumberSpace = 3;
 // Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
   0xff00001c,
+  0xff00001b,
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSION = 0x1a2a3a4a;
 

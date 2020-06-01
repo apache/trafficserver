@@ -70,6 +70,14 @@ QUICTransportParameters::Value::len() const
   return this->_len;
 }
 
+QUICTransportParameters::QUICTransportParameters(const uint8_t *buf, size_t len, QUICVersion version)
+{
+  this->_load(buf, len, version);
+  if (is_debug_tag_set(tag)) {
+    this->_print();
+  }
+}
+
 QUICTransportParameters::~QUICTransportParameters()
 {
   for (auto p : this->_parameters) {
@@ -78,7 +86,7 @@ QUICTransportParameters::~QUICTransportParameters()
 }
 
 void
-QUICTransportParameters::_load(const uint8_t *buf, size_t len)
+QUICTransportParameters::_load(const uint8_t *buf, size_t len, QUICVersion version)
 {
   bool has_error   = false;
   const uint8_t *p = buf;
@@ -130,7 +138,7 @@ QUICTransportParameters::_load(const uint8_t *buf, size_t len)
   }
 
   // Validate parameters
-  int res = this->_validate_parameters();
+  int res = this->_validate_parameters(version);
   if (res < 0) {
     Debug(tag, "Transport parameter is not valid (err=%d)", res);
     this->_valid = false;
@@ -140,7 +148,7 @@ QUICTransportParameters::_load(const uint8_t *buf, size_t len)
 }
 
 int
-QUICTransportParameters::_validate_parameters() const
+QUICTransportParameters::_validate_parameters(QUICVersion version) const
 {
   decltype(this->_parameters)::const_iterator ite;
 
@@ -305,12 +313,9 @@ QUICTransportParameters::_print() const
 // QUICTransportParametersInClientHello
 //
 
-QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const uint8_t *buf, size_t len)
+QUICTransportParametersInClientHello::QUICTransportParametersInClientHello(const uint8_t *buf, size_t len, QUICVersion version)
+  : QUICTransportParameters(buf, len, version)
 {
-  this->_load(buf, len);
-  if (is_debug_tag_set(tag)) {
-    this->_print();
-  }
 }
 
 std::ptrdiff_t
@@ -320,9 +325,9 @@ QUICTransportParametersInClientHello::_parameters_offset(const uint8_t *) const
 }
 
 int
-QUICTransportParametersInClientHello::_validate_parameters() const
+QUICTransportParametersInClientHello::_validate_parameters(QUICVersion version) const
 {
-  int res = QUICTransportParameters::_validate_parameters();
+  int res = QUICTransportParameters::_validate_parameters(version);
   if (res < 0) {
     return res;
   }
@@ -353,18 +358,10 @@ QUICTransportParametersInClientHello::_validate_parameters() const
 // QUICTransportParametersInEncryptedExtensions
 //
 
-QUICTransportParametersInEncryptedExtensions::QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len)
+QUICTransportParametersInEncryptedExtensions::QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len,
+                                                                                           QUICVersion version)
+  : QUICTransportParameters(buf, len, version)
 {
-  this->_load(buf, len);
-  if (is_debug_tag_set(tag)) {
-    this->_print();
-  }
-}
-
-void
-QUICTransportParametersInEncryptedExtensions::add_version(QUICVersion version)
-{
-  this->_versions[this->_n_versions++] = version;
 }
 
 std::ptrdiff_t
@@ -374,9 +371,9 @@ QUICTransportParametersInEncryptedExtensions::_parameters_offset(const uint8_t *
 }
 
 int
-QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
+QUICTransportParametersInEncryptedExtensions::_validate_parameters(QUICVersion version) const
 {
-  int res = QUICTransportParameters::_validate_parameters();
+  int res = QUICTransportParameters::_validate_parameters(version);
   if (res < 0) {
     return res;
   }
@@ -384,7 +381,7 @@ QUICTransportParametersInEncryptedExtensions::_validate_parameters() const
   decltype(this->_parameters)::const_iterator ite;
 
   // MUSTs
-  if (true) { // draft-28
+  if (version == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
     if ((ite = this->_parameters.find(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID)) != this->_parameters.end()) {
       // We cannot check the length because it's not a fixed length.
     } else {
@@ -449,14 +446,15 @@ int
 QUICTransportParametersHandler::parse(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *in, size_t inlen,
                                       X509 *x, size_t chainidx, int *al, void *parse_arg)
 {
-  QUICTLS *qtls = static_cast<QUICTLS *>(SSL_get_ex_data(s, QUIC::ssl_quic_tls_index));
-
+  QUICTLS *qtls            = static_cast<QUICTLS *>(SSL_get_ex_data(s, QUIC::ssl_quic_tls_index));
+  const QUICConnection *qc = static_cast<const QUICConnection *>(SSL_get_ex_data(s, QUIC::ssl_quic_qc_index));
+  QUICVersion version      = qc->negotiated_version();
   switch (context) {
   case SSL_EXT_CLIENT_HELLO:
-    qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(in, inlen));
+    qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(in, inlen, version));
     break;
   case SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS:
-    qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(in, inlen));
+    qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(in, inlen, version));
     break;
   default:
     // Do nothing

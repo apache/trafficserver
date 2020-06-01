@@ -58,6 +58,7 @@ public:
   virtual int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                                    unsigned inlen) const       = 0;
   virtual bool is_closed() const                               = 0;
+  virtual QUICVersion negotiated_version() const               = 0;
   virtual std::string_view negotiated_application_name() const = 0;
 };
 

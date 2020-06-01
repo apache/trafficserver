@@ -255,7 +255,7 @@ QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTran
   }
 
   // Check if CIDs in TP match with the ones in packets
-  if (true) { // draft-28
+  if (this->negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
     uint16_t cid_buf_len;
     const uint8_t *cid_buf = tp->getAsBytes(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, cid_buf_len);
     QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
@@ -281,7 +281,7 @@ QUICHandshake::_check_remote_transport_parameters(std::shared_ptr<const QUICTran
   }
 
   // Check if CIDs in TP match with the ones in packets
-  if (true) { // draft-28
+  if (this->negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
     uint16_t cid_buf_len;
     const uint8_t *cid_buf = tp->getAsBytes(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, cid_buf_len);
     QUICConnectionId cid_in_tp(cid_buf, cid_buf_len);
@@ -435,11 +435,15 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
     tp->set(QUICTransportParameterId::RETRY_SOURCE_CONNECTION_ID, this->_qc->retry_source_connection_id(),
             this->_qc->retry_source_connection_id().length());
   } else {
-    tp->set(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID, this->_qc->original_connection_id(),
-            this->_qc->original_connection_id().length());
+    if (this->negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
+      tp->set(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID, this->_qc->original_connection_id(),
+              this->_qc->original_connection_id().length());
+    }
   }
-  tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connectoin_id(),
-          this->_qc->initial_source_connectoin_id().length());
+  if (this->negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
+    tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connectoin_id(),
+            this->_qc->initial_source_connectoin_id().length());
+  }
 
   // MAYs
   if (tp_config.initial_max_data() != 0) {
@@ -476,8 +480,6 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
   // MAYs (server)
   tp->set(QUICTransportParameterId::STATELESS_RESET_TOKEN, this->_reset_token.buf(), QUICStatelessResetToken::LEN);
   tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, tp_config.ack_delay_exponent());
-
-  tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
 
   // Additional parameters
   for (auto &&param : tp_config.additional_tp()) {

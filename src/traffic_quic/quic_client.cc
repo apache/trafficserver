@@ -34,8 +34,8 @@
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
 // Should be integrate with IP_PROTO_TAG_HTTP_QUIC in ts/ink_inet.h ?
 using namespace std::literals;
-static constexpr std::string_view HQ_ALPN_PROTO_LIST("\5hq-28"sv);
-static constexpr std::string_view H3_ALPN_PROTO_LIST("\5h3-28"sv);
+static constexpr std::string_view HQ_ALPN_PROTO_LIST("\5hq-28\5hq-27"sv);
+static constexpr std::string_view H3_ALPN_PROTO_LIST("\5h3-28\5h3-27"sv);
 
 QUICClient::QUICClient(const QUICClientConfig *config) : Continuation(new_ProxyMutex()), _config(config)
 {
