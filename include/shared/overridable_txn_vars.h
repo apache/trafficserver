@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#pragma once
+
 #include <unordered_map>
 #include "HTTP.h"
 #include "HttpConnectionCount.h"
