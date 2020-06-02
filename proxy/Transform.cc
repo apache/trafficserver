@@ -125,11 +125,11 @@ TransformTerminus::TransformTerminus(TransformVConnection *tvc)
   SET_HANDLER(&TransformTerminus::handle_event);
 }
 
-#define RETRY()                                                  \
-  if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {      \
-    ink_assert(!"not reached");                                  \
-  }                                                              \
-  eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_NET); \
+#define RETRY()                                             \
+  if (ink_atomic_increment((int *)&m_event_count, 1) < 0) { \
+    ink_assert(!"not reached");                             \
+  }                                                         \
+  this_ethread()->schedule_in(this, HRTIME_MSECONDS(10));   \
   return 0;
 
 int
@@ -280,7 +280,7 @@ TransformTerminus::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   }
   Debug("transform", "[TransformTerminus::do_io_read] event_count %d", m_event_count);
 
-  eventProcessor.schedule_imm(this, ET_NET);
+  this_ethread()->schedule_imm_local(this);
 
   return &m_read_vio;
 }
@@ -305,7 +305,7 @@ TransformTerminus::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *
   }
   Debug("transform", "[TransformTerminus::do_io_write] event_count %d", m_event_count);
 
-  eventProcessor.schedule_imm(this, ET_NET);
+  this_ethread()->schedule_imm_local(this);
 
   return &m_write_vio;
 }
@@ -335,7 +335,7 @@ TransformTerminus::do_io_close(int error)
   m_write_vio.op = VIO::NONE;
   m_write_vio.buffer.clear();
 
-  eventProcessor.schedule_imm(this, ET_NET);
+  this_ethread()->schedule_imm_local(this);
 }
 
 /*-------------------------------------------------------------------------
@@ -368,7 +368,7 @@ TransformTerminus::reenable(VIO *vio)
       ink_assert(!"not reached");
     }
     Debug("transform", "[TransformTerminus::reenable] event_count %d", m_event_count);
-    eventProcessor.schedule_imm(this, ET_NET);
+    this_ethread()->schedule_imm_local(this);
   } else {
     Debug("transform", "[TransformTerminus::reenable] skipping due to "
                        "pending events");
@@ -731,7 +731,7 @@ void
 TransformTest::run()
 {
   if (is_action_tag_set("transform_test")) {
-    eventProcessor.schedule_imm(new TransformControl(), ET_NET);
+    this_ethread()->schedule_imm_local(new TransformControl());
   }
 }
 #endif
