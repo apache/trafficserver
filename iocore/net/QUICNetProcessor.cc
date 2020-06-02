@@ -25,6 +25,9 @@
 #include "P_Net.h"
 #include "records/I_RecHttp.h"
 
+#include "P_QUICNetProcessor.h"
+#include "P_QUICNet.h"
+#include "P_QUICPacketHandler.h"
 #include "QUICGlobals.h"
 #include "QUICConfig.h"
 #include "QUICMultiCertConfigLoader.h"

@@ -28,6 +28,7 @@
 #include <string_view>
 
 #include "Http3Transaction.h"
+#include "P_QUICNetVConnection.h"
 
 // OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html

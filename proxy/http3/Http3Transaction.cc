@@ -22,6 +22,7 @@
  */
 
 #include "Http3Transaction.h"
+#include "P_QUICNetVConnection.h"
 
 #include "QUICDebugNames.h"
 

@@ -40,6 +40,7 @@
 #include "HttpConnectionCount.h"
 #include "HttpProxyServerMain.h"
 #if TS_USE_QUIC == 1
+#include "P_QUICNetProcessor.h"
 #include "P_QUICNextProtocolAccept.h"
 #include "http3/Http3SessionAccept.h"
 #endif

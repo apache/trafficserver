@@ -22,6 +22,7 @@
  */
 
 #include "P_Net.h"
+#include "P_QUICNet.h"
 #include "quic/QUICEvents.h"
 
 ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");

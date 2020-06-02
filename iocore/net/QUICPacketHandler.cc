@@ -22,6 +22,9 @@
 #include "tscore/ink_config.h"
 #include "P_Net.h"
 
+#include "P_QUICPacketHandler.h"
+#include "P_QUICNetProcessor.h"
+#include "P_QUICNet.h"
 #include "P_QUICClosedConCollector.h"
 
 #include "QUICGlobals.h"

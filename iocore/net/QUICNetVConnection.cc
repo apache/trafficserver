@@ -27,6 +27,8 @@
 #include "records/I_RecHttp.h"
 #include "tscore/Diags.h"
 
+#include "P_QUICNetVConnection.h"
+#include "P_QUICPacketHandler.h"
 #include "P_Net.h"
 #include "InkAPIInternal.h" // Added to include the quic_hook definitions
 #include "Log.h"
