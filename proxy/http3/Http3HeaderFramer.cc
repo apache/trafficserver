@@ -92,7 +92,7 @@ Http3HeaderFramer::_generate_header_block()
     http2_init_pseudo_headers(this->_header);
     parse_result = this->_header.parse_resp(&this->_http_parser, this->_source_vio->get_reader(), &bytes_used, false);
   }
-  this->_source_vio->ndone += this->_header.length_get();
+  this->_source_vio->ndone += bytes_used;
 
   switch (parse_result) {
   case PARSE_RESULT_DONE: {
