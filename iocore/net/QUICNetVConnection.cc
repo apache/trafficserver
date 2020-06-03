@@ -1099,9 +1099,9 @@ QUICNetVConnection::_state_handshake_process_packet(const QUICPacket &packet)
     error = this->_state_handshake_process_zero_rtt_protected_packet(static_cast<const QUICZeroRttPacketR &>(packet));
     break;
   case QUICPacketType::PROTECTED:
-  default:
     QUICConDebug("Ignore %s(%" PRIu8 ") packet", QUICDebugNames::packet_type(packet.type()), static_cast<uint8_t>(packet.type()));
-
+    break;
+  default:
     error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::INTERNAL_ERROR);
     break;
   }
