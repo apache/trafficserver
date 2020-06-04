@@ -4,9 +4,10 @@ namespace QLog
 {
 template <typename Real>
 Real &
-Convert(QUICFrame &frame)
+Convert(const QUICFrame *frame)
 {
-  auto tmp = &frame;
+  // FIXME: dangerous
+  auto tmp = const_cast<QUICFrame *>(frame);
 #if defined(DEBUG)
   auto ref = dynamic_cast<Real *>(tmp);
   ink_assert(ref != nullptr);
@@ -16,9 +17,9 @@ Convert(QUICFrame &frame)
 }
 
 QLogFrameUPtr
-QLogFrameFactory::create(QUICFrame &frame)
+QLogFrameFactory::create(const QUICFrame *frame)
 {
-  switch (frame.type()) {
+  switch (frame->type()) {
   case QUICFrameType::ACK:
     return std::make_unique<Frame::AckFrame>(Convert<QUICAckFrame>(frame));
   case QUICFrameType::PADDING:

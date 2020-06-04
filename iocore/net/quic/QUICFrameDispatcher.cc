@@ -23,6 +23,7 @@
 
 #include "QUICFrameDispatcher.h"
 #include "QUICDebugNames.h"
+#include "QUICFrameReader.h"
 
 static constexpr char tag[] = "quic_net";
 
@@ -31,7 +32,7 @@ static constexpr char tag[] = "quic_net";
 //
 // Frame Dispatcher
 //
-QUICFrameDispatcher::QUICFrameDispatcher(QUICContext &context, QUICConnectionInfoProvider *info) : _context(context), _info(info) {}
+QUICFrameDispatcher::QUICFrameDispatcher(QUICConnectionInfoProvider *info) : _info(info) {}
 
 void
 QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
@@ -49,19 +50,19 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
   ack_only                      = true;
   is_flow_controlled            = false;
   QUICConnectionErrorUPtr error = nullptr;
+  QUICFrameReader reader(*packet);
 
-  while (cursor < size) {
-    QUICFrame &frame = this->_frame_factory.fast_create(payload + cursor, size - cursor, packet);
-    if (frame.type() == QUICFrameType::UNKNOWN) {
+  for (auto frame = reader.read_frame(this->_frame_factory); frame != nullptr; frame = reader.read_frame(this->_frame_factory)) {
+    if (frame->type() == QUICFrameType::UNKNOWN) {
       QUICDebug("Failed to create a frame (%u bytes skipped)", size - cursor);
       break;
     }
     if (has_non_probing_frame) {
-      *has_non_probing_frame |= !frame.is_probing_frame();
+      *has_non_probing_frame |= !frame->is_probing_frame();
     }
-    cursor += frame.size();
+    cursor += frame->size();
 
-    QUICFrameType type = frame.type();
+    QUICFrameType type = frame->type();
 
     if (type == QUICFrameType::STREAM) {
       is_flow_controlled = true;
@@ -69,7 +70,7 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
 
     if (is_debug_tag_set(tag) && type != QUICFrameType::PADDING) {
       char msg[1024];
-      frame.debug_msg(msg, sizeof(msg));
+      frame->debug_msg(msg, sizeof(msg));
       QUICDebug("[RX] | %s", msg);
     }
 
@@ -79,7 +80,7 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
 
     std::vector<QUICFrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
     for (auto h : handlers) {
-      error = h->handle_frame(level, frame);
+      error = h->handle_frame(level, *frame);
       // TODO: is there any case to continue this loop even if error?
       if (error != nullptr) {
         return error;

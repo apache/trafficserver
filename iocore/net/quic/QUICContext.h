@@ -31,51 +31,91 @@ class QUICRTTProvider;
 class QUICCongestionController;
 class QUICPacketProtectionKeyInfoProvider;
 class QUICPathManager;
+class QUICPacketR;
 
 class QUICNetVConnection;
+struct QUICPacketInfo;
 
-class QUICContext : public QUICEventTrigger, public QUICEventRegister
+// this class is a connection between the callbacks. it should do something
+// TODO: it should do something
+class QUICCallbackContext
 {
-public:
-  virtual ~QUICContext(){};
-  virtual QUICConnectionInfoProvider *connection_info() const   = 0;
-  virtual QUICConfig::scoped_config config() const              = 0;
-  virtual QUICLDConfig &ld_config() const                       = 0;
-  virtual QUICPacketProtectionKeyInfoProvider *key_info() const = 0;
-  virtual QUICCCConfig &cc_config() const                       = 0;
-  virtual QUICRTTProvider *rtt_provider() const                 = 0;
-  virtual QUICPathManager *path_manager() const                 = 0;
 };
 
-class QUICContextImpl : public QUICContext
+class QUICCallback
 {
 public:
-  QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
-                  QUICPathManager *path_manager);
+  virtual ~QUICCallback() {}
 
-  virtual QUICConnectionInfoProvider *connection_info() const override;
-  virtual QUICConfig::scoped_config config() const override;
-  virtual QUICRTTProvider *rtt_provider() const override;
+  // callback on connection close event
+  virtual void connection_close_callback(QUICCallbackContext &){};
+  // callback on packet send event
+  virtual void packet_send_callback(QUICCallbackContext &, const QUICPacket &p){};
+  // callback on packet receive event
+  virtual void packet_lost_callback(QUICCallbackContext &, const QUICPacket &p){};
+  // callback on packet receive event
+  virtual void packet_recv_callback(QUICCallbackContext &, const QUICPacket &p){};
+};
 
-  // TODO should be more abstract
-  virtual QUICPacketProtectionKeyInfoProvider *key_info() const override;
+class QUICContext
+{
+public:
+  QUICContext(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
+              QUICPathManager *path_manager);
 
-  virtual QUICLDConfig &ld_config() const override;
-  virtual QUICCCConfig &cc_config() const override;
+  virtual ~QUICContext(){};
+  virtual QUICConnectionInfoProvider *connection_info() const;
+  virtual QUICConfig::scoped_config config() const;
+  virtual QUICLDConfig &ld_config() const;
+  virtual QUICPacketProtectionKeyInfoProvider *key_info() const;
+  virtual QUICCCConfig &cc_config() const;
+  virtual QUICRTTProvider *rtt_provider() const;
+  virtual QUICPathManager *path_manager() const;
 
-  virtual QUICPathManager *path_manager() const override;
+  // regist a callback which will be called when specifed event happen.
+  void
+  regist_callback(std::shared_ptr<QUICCallback> cbs)
+  {
+    this->_callbacks.push_back(cbs);
+  }
 
-  // regist event processor
-  virtual void regist_frame_receive_event(QUICFrameReceiveFunc &&) override;
-  virtual void regist_packet_receive_event(QUICPacketReceiveFunc &&) override;
-  virtual void regist_packet_send_event(QUICPacketSendFunc &&) override;
-  virtual void regist_packet_lost_event(QUICPacketLostFunc &&) override;
+  enum class CallbackEvent : uint8_t {
+    PACKET_LOST,
+    PACKET_SEND,
+    PACKET_RECV,
+    CONNECTION_CLOSE,
+  };
 
-  // trigger event
-  virtual QUICConnectionErrorUPtr trigger_frame_receive_event(QUICEncryptionLevel, QUICFrame &) override;
-  virtual QUICConnectionErrorUPtr trigger_packet_receive_event(QUICEncryptionLevel, QUICPacket &) override;
-  virtual QUICConnectionErrorUPtr trigger_packet_send_event(QUICEncryptionLevel, QUICPacket &) override;
-  virtual QUICConnectionErrorUPtr trigger_packet_lost_event(QUICEncryptionLevel, QUICPacket &) override;
+  // FIXME stupid trigger should be fix in more smart way.
+  void
+  trigger(CallbackEvent e, const QUICPacket *p = nullptr)
+  {
+    QUICCallbackContext ctx;
+    switch (e) {
+    case CallbackEvent::PACKET_LOST:
+      for (auto &&it : this->_callbacks) {
+        it->packet_lost_callback(ctx, *p);
+      }
+      break;
+    case CallbackEvent::PACKET_RECV:
+      for (auto &&it : this->_callbacks) {
+        it->packet_recv_callback(ctx, *p);
+      }
+      break;
+    case CallbackEvent::PACKET_SEND:
+      for (auto &&it : this->_callbacks) {
+        it->packet_send_callback(ctx, *p);
+      }
+      break;
+    case CallbackEvent::CONNECTION_CLOSE:
+      for (auto &&it : this->_callbacks) {
+        it->connection_close_callback(ctx);
+      }
+      break;
+    default:
+      break;
+    }
+  }
 
 private:
   QUICConfig::scoped_config _config;
@@ -87,8 +127,5 @@ private:
   std::unique_ptr<QUICLDConfig> _ld_config = nullptr;
   std::unique_ptr<QUICCCConfig> _cc_config = nullptr;
 
-  std::vector<QUICFrameReceiveFunc> _frame_receive_funcs;
-  std::vector<QUICPacketSendFunc> _packet_send_funcs;
-  std::vector<QUICPacketReceiveFunc> _packet_recv_funcs;
-  std::vector<QUICPacketLostFunc> _packet_lost_funcs;
+  std::vector<std::shared_ptr<QUICCallback>> _callbacks;
 };

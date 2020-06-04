@@ -35,7 +35,7 @@ class QLogFrameFactory
 {
 public:
   // create QLogFrame
-  static QLogFrameUPtr create(QUICFrame &frame);
+  static QLogFrameUPtr create(const QUICFrame *frame);
 };
 
 namespace Frame

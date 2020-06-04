@@ -50,7 +50,7 @@ public:
   }
 
   void
-  set_vantage_point(const VantagePoint &vp)
+  set_vantage_point(const VantagePoint vp)
   {
     this->_vp = vp;
   }
@@ -75,16 +75,13 @@ private:
   std::vector<QLogEventUPtr> _events;
 };
 
-class QUICLog
+class QLog
 {
 public:
   static constexpr char QLOG_VERSION[] = "draft-01";
   // FIXME configurable
   static constexpr char FILENAME[] = "ats.qlog";
-  QUICLog(std::string filename = FILENAME, std::string title = "", std::string desc = "", std::string ver = QLOG_VERSION)
-    : _file(filename), _title(title), _desc(desc), _ver(ver)
-  {
-  }
+  QLog(std::string title = "", std::string desc = "", std::string ver = QLOG_VERSION) : _title(title), _desc(desc), _ver(ver) {}
 
   Trace &
   new_trace(Trace::VantagePoint vp, std::string odcid, std::string title = "", std::string desc = "")
@@ -100,10 +97,19 @@ public:
     return *this->_traces.back().get();
   }
 
-  void dump();
+  Trace &
+  last_trace()
+  {
+    if (this->_traces.empty()) {
+      throw std::invalid_argument("traces is empty");
+    }
+
+    return *this->_traces.back().get();
+  }
+
+  void dump(std::string filename = FILENAME);
 
 private:
-  std::string _file;
   std::string _title;
   std::string _desc;
   std::string _ver;
