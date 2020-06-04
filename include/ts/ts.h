@@ -162,6 +162,20 @@ int TSTrafficServerVersionGetPatch(void);
  */
 tsapi TSReturnCode TSPluginRegister(const TSPluginRegistrationInfo *plugin_info);
 
+/**
+   This function provides the ability to enable/disable programmatically
+   the plugin dynamic reloading when the same Dynamic Shared Object (DSO)
+   is also used as a remap plugin. This overrides `proxy.config.plugin.dynamic_reload_mode`
+   configuration variable.
+
+   @param enabled boolean flag. 0/false will disable the reload on the caller plugin.
+   @return TS_ERROR if the function is not called from within TSPluginInit or if TS is
+           unable to get the canonical path from the plugin's path. TS_SUCCESS otherwise.
+
+   @note This function should be called from within TSPluginInit
+ */
+tsapi TSReturnCode TSPluginDSOReloadEnable(int enabled);
+
 /* --------------------------------------------------------------------------
    Files */
 /**

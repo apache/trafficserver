@@ -32,6 +32,7 @@
 #include <unordered_map>
 #include <dlfcn.h>
 #include <vector>
+#include <forward_list>
 #include <ctime>
 
 #include "ts/apidefs.h"
@@ -104,9 +105,39 @@ public:
     void indicatePreReload(const char *factoryId);
     void indicatePostReload(bool reloadSuccessful, const std::unordered_map<PluginDso *, int> &pluginUsed, const char *factoryId);
 
+    /**
+     * @brief Check if the opt out table contains the passed plugin's effective path.
+     * @return true If the plugin was marked to not participate in the dynamic reload by
+     *         TSPluginDSOReloadEnable() API.
+     * @param effectivePath  canonical value of the plugin's path.
+     */
+    bool isPluginInDsoOptOutTable(const fs::path &effectivePath);
+    /**
+     *  @brief Add the plugin's path to the opt out table in order to let the Plugin Factory
+     *         that this plugin is not interested in taking part of the dynamic reloading.
+     *         This function will store the plugin's canonical path.
+     * @param effectivePath  Plugin's path.
+     * @return false if any errors converting the plugin's path to a canonical path, true otherwise.
+     */
+    bool addPluginPathToDsoOptOutTable(std::string_view pluginPath);
+    /**
+     * @brief Removes the passed plugin's effective path from the opt out list.
+     * @note This is mostly used by unit test than needs to remove the plugin's effectivePath
+     *       from the out out list.
+     * @param pluginPath plugin's path.
+     * @note This function is mainly for unit tests purposes.
+     */
+    void removePluginPathFromDsoOptOutTable(std::string_view pluginPath);
+
   private:
     PluginList _list;       /** @brief plugin list */
     Ptr<ProxyMutex> _mutex; /** @brief mutex used when updating the plugin list from multiple threads */
+
+    struct DisableDSOReloadPluginInfo {
+      fs::path dsoEffectivePath;
+    };
+
+    std::forward_list<DisableDSOReloadPluginInfo> _optoutDsoReloadPlugins;
   };
 
   static const Ptr<LoadedPlugins> &
