@@ -200,7 +200,7 @@ public:
   QUICConnectionId original_connection_id() const override;
   QUICConnectionId first_connection_id() const override;
   QUICConnectionId retry_source_connection_id() const override;
-  QUICConnectionId initial_source_connectoin_id() const override;
+  QUICConnectionId initial_source_connection_id() const override;
   QUICConnectionId connection_id() const override;
   std::string_view cids() const override;
   const QUICFiveTuple five_tuple() const override;

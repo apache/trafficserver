@@ -108,7 +108,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_fa
 {
   QUICVersion initital_version = QUIC_SUPPORTED_VERSIONS[0];
   if (vn_exercise_enabled) {
-    initital_version = QUIC_EXERCISE_VERSION;
+    initital_version = QUIC_EXERCISE_VERSION1;
   }
 
   this->_load_local_client_transport_parameters(tp_config);
@@ -441,8 +441,8 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
     }
   }
   if (this->negotiated_version() == QUIC_SUPPORTED_VERSIONS[0]) { // draft-28
-    tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connectoin_id(),
-            this->_qc->initial_source_connectoin_id().length());
+    tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connection_id(),
+            this->_qc->initial_source_connection_id().length());
   }
 
   // MAYs
@@ -497,8 +497,8 @@ QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_co
 
   // MUSTs
   tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
-  tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connectoin_id(),
-          this->_qc->initial_source_connectoin_id().length());
+  tp->set(QUICTransportParameterId::INITIAL_SOURCE_CONNECTION_ID, this->_qc->initial_source_connection_id(),
+          this->_qc->initial_source_connection_id().length());
 
   // MAYs
   if (tp_config.initial_max_data() != 0) {

@@ -961,7 +961,7 @@ QUICVersionNegotiationPacket::payload_block() const
   // [draft-18] 6.3. Using Reserved Versions
   // To help ensure this, a server SHOULD include a reserved version (see Section 15) while generating a
   // Version Negotiation packet.
-  QUICTypeUtil::write_QUICVersion(QUIC_EXERCISE_VERSION, buf + written_len, &n);
+  QUICTypeUtil::write_QUICVersion(QUIC_EXERCISE_VERSION1, buf + written_len, &n);
   written_len += n;
 
   block->fill(written_len);

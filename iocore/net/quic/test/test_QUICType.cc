@@ -103,11 +103,14 @@ TEST_CASE("QUICType", "[quic]")
     IpEndpoint ep;
     ats_ip4_set(&ep, 0x04030201, 0x2211);
 
-    uint8_t cid_buf[] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-                         0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27};
-    QUICConnectionId cid(cid_buf, sizeof(cid_buf));
+    uint8_t cid1_buf[] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+                          0x19, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27};
+    QUICConnectionId cid1(cid1_buf, sizeof(cid1_buf));
+    uint8_t cid2_buf[] = {0xA0, 0xA1, 0x12, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8,
+                          0xA9, 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7};
+    QUICConnectionId cid2(cid2_buf, sizeof(cid2_buf));
 
-    QUICRetryToken token1(ep, cid);
+    QUICRetryToken token1(ep, cid1, cid2);
     QUICRetryToken token2(token1.buf(), token1.length());
 
     CHECK(token1.is_valid(ep));
@@ -118,6 +121,7 @@ TEST_CASE("QUICType", "[quic]")
     CHECK(token1.length() == token2.length());
     CHECK(memcmp(token1.buf(), token2.buf(), token1.length()) == 0);
     CHECK(token1.original_dcid() == token2.original_dcid());
+    CHECK(token1.scid() == token2.scid());
   }
 
   SECTION("QUICResumptionToken")

@@ -44,7 +44,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
       0x05, 0x67,             // value
     };
 
-    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
+    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(params_in_ch.is_valid());
 
     uint16_t len        = 0;
@@ -82,7 +82,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
       0x12, 0x34, 0x56, 0x78, // value
     };
 
-    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
+    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(!params_in_ch.is_valid());
   }
 }
@@ -142,7 +142,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
       0x91, 0x22, 0x33, 0x44, // value
     };
 
-    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
+    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(params_in_ee.is_valid());
 
     uint16_t len        = 0;
@@ -183,7 +183,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
       0x00,                   // length of value
     };
 
-    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
+    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(params_in_ee.is_valid());
 
     uint16_t len        = 0;
@@ -215,7 +215,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
       0x12, 0x34, 0x56, 0x78, // value
     };
 
-    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
+    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(!params_in_ee.is_valid());
   }
 }
@@ -244,8 +244,6 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     uint16_t max_packet_size = 0x1bcd;
     params_in_ee.set(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, max_packet_size);
 
-    params_in_ee.add_version(0x01020304);
-    params_in_ee.add_version(0x05060708);
     params_in_ee.store(buf, &len);
     CHECK(len == 10);
     CHECK(memcmp(buf, expected, len) == 0);
@@ -276,8 +274,6 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     params_in_ee.set(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, max_packet_size);
     params_in_ee.set(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION, nullptr, 0);
 
-    params_in_ee.add_version(0x01020304);
-    params_in_ee.add_version(0x05060708);
     params_in_ee.store(buf, &len);
     CHECK(len == 12);
     CHECK(memcmp(buf, expected, len) == 0);

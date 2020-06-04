@@ -26,6 +26,8 @@
 #include "QUICPacketProtectionKeyInfo.h"
 #include "QUICPacketHeaderProtector.h"
 #include "QUICTLS.h"
+#include "QUICGlobals.h"
+#include "Mock.h"
 
 struct PollCont;
 #include "P_UDPConnection.h"
@@ -121,8 +123,12 @@ TEST_CASE("QUICPacketHeaderProtector")
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
     NetVCOptions netvc_options;
+    MockQUICConnection mock_client_connection;
+    MockQUICConnection mock_server_connection;
     QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
     QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
+    SSL_set_ex_data(static_cast<QUICTLS *>(client)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_client_connection);
+    SSL_set_ex_data(static_cast<QUICTLS *>(server)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_server_connection);
 
     auto client_tp = std::make_shared<QUICTransportParametersInClientHello>();
     auto server_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();

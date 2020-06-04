@@ -27,6 +27,8 @@
 #include "QUICPacketFactory.h"
 #include "QUICAckFrameCreator.h"
 #include "QUICEvents.h"
+#include "QUICPacketFactory.h"
+#include "QUICAckFrameCreator.h"
 #include "Mock.h"
 #include "tscore/ink_hrtime.h"
 

@@ -48,7 +48,7 @@ public:
   /**
    * This is C1 or S3 on 7.3.Authenticating Connection IDs
    */
-  virtual QUICConnectionId initial_source_connectoin_id() const = 0;
+  virtual QUICConnectionId initial_source_connection_id() const = 0;
   virtual QUICConnectionId connection_id() const                = 0;
   virtual std::string_view cids() const                         = 0;
   virtual const QUICFiveTuple five_tuple() const                = 0;

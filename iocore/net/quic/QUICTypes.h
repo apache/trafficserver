@@ -56,7 +56,8 @@ constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
   0xff00001c,
   0xff00001b,
 };
-constexpr QUICVersion QUIC_EXERCISE_VERSION = 0x1a2a3a4a;
+constexpr QUICVersion QUIC_EXERCISE_VERSION1 = 0x1a2a3a4a;
+constexpr QUICVersion QUIC_EXERCISE_VERSION2 = 0x5a6a7a8a;
 
 enum class QUICEncryptionLevel {
   NONE      = -1,

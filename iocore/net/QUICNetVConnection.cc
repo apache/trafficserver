@@ -606,7 +606,7 @@ QUICNetVConnection::retry_source_connection_id() const
 }
 
 QUICConnectionId
-QUICNetVConnection::initial_source_connectoin_id() const
+QUICNetVConnection::initial_source_connection_id() const
 {
   return this->_initial_source_connection_id;
 }

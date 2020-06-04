@@ -28,6 +28,9 @@
 #include "QUICApplication.h"
 #include "QUICStreamManager.h"
 #include "QUICLossDetector.h"
+#include "QUICPacketProtectionKeyInfo.h"
+#include "QUICPinger.h"
+#include "QUICPadder.h"
 #include "QUICEvents.h"
 #include "QUICPacketProtectionKeyInfo.h"
 #include "QUICPinger.h"
@@ -154,6 +157,18 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
     return {reinterpret_cast<const uint8_t *>("\x00"), 1};
   }
 
+  QUICConnectionId
+  retry_source_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  QUICConnectionId
+  initial_source_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
   const QUICFiveTuple
   five_tuple() const override
   {
@@ -190,6 +205,12 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
   is_closed() const override
   {
     return false;
+  }
+
+  QUICVersion
+  negotiated_version() const override
+  {
+    return QUIC_SUPPORTED_VERSIONS[0];
   }
 
   std::string_view
@@ -341,6 +362,18 @@ public:
     return {reinterpret_cast<const uint8_t *>("\x00"), 1};
   }
 
+  QUICConnectionId
+  retry_source_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
+  QUICConnectionId
+  initial_source_connection_id() const override
+  {
+    return {reinterpret_cast<const uint8_t *>("\x00"), 1};
+  }
+
   const QUICFiveTuple
   five_tuple() const override
   {
@@ -417,6 +450,12 @@ public:
   void
   ping() override
   {
+  }
+
+  QUICVersion
+  negotiated_version() const override
+  {
+    return QUIC_SUPPORTED_VERSIONS[0];
   }
 
   std::string_view
