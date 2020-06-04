@@ -51,6 +51,45 @@ convert_level_ats2ssl(enum ssl_encryption_level_t level)
   }
 }
 
+#if BORINGSSL_API_VERSION >= 10
+static int
+set_read_secret(SSL *ssl, enum ssl_encryption_level_t level, const SSL_CIPHER *cipher, const uint8_t *secret, size_t secret_len)
+{
+  QUICTLS *qtls = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
+
+  qtls->update_negotiated_cipher();
+
+  QUICEncryptionLevel ats_level = convert_level_ats2ssl(level);
+  qtls->update_key_materials_for_read(ats_level, secret, secret_len);
+
+  return 1;
+}
+
+static int
+set_write_secret(SSL *ssl, enum ssl_encryption_level_t level, const SSL_CIPHER *cipher, const uint8_t *secret, size_t secret_len)
+{
+  QUICTLS *qtls = static_cast<QUICTLS *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_tls_index));
+
+  qtls->update_negotiated_cipher();
+
+  QUICEncryptionLevel ats_level = convert_level_ats2ssl(level);
+  qtls->update_key_materials_for_write(ats_level, secret, secret_len);
+
+  if (ats_level == QUICEncryptionLevel::ONE_RTT) {
+    // FIXME Where should this be placed?
+    const uint8_t *tp_buf;
+    size_t tp_buf_len;
+    SSL_get_peer_quic_transport_params(ssl, &tp_buf, &tp_buf_len);
+    if (SSL_is_server(ssl)) {
+      qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(tp_buf, tp_buf_len));
+    } else {
+      qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(tp_buf, tp_buf_len));
+    }
+  }
+
+  return 1;
+}
+#else
 static int
 set_encryption_secrets(SSL *ssl, enum ssl_encryption_level_t level, const uint8_t *read_secret, const uint8_t *write_secret,
                        size_t secret_len)
@@ -81,6 +120,7 @@ set_encryption_secrets(SSL *ssl, enum ssl_encryption_level_t level, const uint8_
 
   return 1;
 }
+#endif
 
 static int
 add_handshake_data(SSL *ssl, enum ssl_encryption_level_t level, const uint8_t *data, size_t len)
@@ -110,7 +150,11 @@ send_alert(SSL *ssl, enum ssl_encryption_level_t level, uint8_t alert)
   return 1;
 }
 
+#if BORINGSSL_API_VERSION >= 10
+static const SSL_QUIC_METHOD quic_method = {set_read_secret, set_write_secret, add_handshake_data, flush_flight, send_alert};
+#else
 static const SSL_QUIC_METHOD quic_method = {set_encryption_secrets, add_handshake_data, flush_flight, send_alert};
+#endif
 
 void
 QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, size_t len, SSL *ssl, void *arg)
