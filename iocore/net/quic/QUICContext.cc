@@ -100,8 +100,8 @@ private:
   const QUICConfigParams *_params;
 };
 
-QUICContextImpl::QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info,
-                                 QUICPacketProtectionKeyInfoProvider *key_info, QUICPathManager *path_manager)
+QUICContext::QUICContext(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
+                         QUICPathManager *path_manager)
   : _key_info(key_info),
     _connection_info(info),
     _rtt_provider(rtt),
@@ -112,115 +112,43 @@ QUICContextImpl::QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvide
 }
 
 QUICConnectionInfoProvider *
-QUICContextImpl::connection_info() const
+QUICContext::connection_info() const
 {
   return _connection_info;
 }
 
 QUICConfig::scoped_config
-QUICContextImpl::config() const
+QUICContext::config() const
 {
   return _config;
 }
 
 QUICPacketProtectionKeyInfoProvider *
-QUICContextImpl::key_info() const
+QUICContext::key_info() const
 {
   return _key_info;
 }
 
 QUICRTTProvider *
-QUICContextImpl::rtt_provider() const
+QUICContext::rtt_provider() const
 {
   return _rtt_provider;
 }
 
 QUICLDConfig &
-QUICContextImpl::ld_config() const
+QUICContext::ld_config() const
 {
   return *_ld_config;
 }
 
 QUICCCConfig &
-QUICContextImpl::cc_config() const
+QUICContext::cc_config() const
 {
   return *_cc_config;
 }
 
 QUICPathManager *
-QUICContextImpl::path_manager() const
+QUICContext::path_manager() const
 {
   return _path_manager;
-}
-
-void
-QUICContextImpl::regist_frame_receive_event(QUICFrameReceiveFunc &&func)
-{
-  this->_frame_receive_funcs.emplace_back(std::move(func));
-}
-
-void
-QUICContextImpl::regist_packet_receive_event(QUICPacketReceiveFunc &&func)
-{
-  this->_packet_recv_funcs.emplace_back(std::move(func));
-}
-
-void
-QUICContextImpl::regist_packet_send_event(QUICPacketSendFunc &&func)
-{
-  this->_packet_send_funcs.emplace_back(std::move(func));
-}
-
-void
-QUICContextImpl::regist_packet_lost_event(QUICPacketLostFunc &&func)
-{
-  this->_packet_lost_funcs.emplace_back(std::move(func));
-}
-
-QUICConnectionErrorUPtr
-QUICContextImpl::trigger_frame_receive_event(QUICEncryptionLevel l, QUICFrame &frame)
-{
-  for (auto &&func : this->_frame_receive_funcs) {
-    auto err = func(*this, l, frame);
-    if (err != nullptr) {
-      return err;
-    }
-  }
-  return nullptr;
-}
-
-QUICConnectionErrorUPtr
-QUICContextImpl::trigger_packet_lost_event(QUICEncryptionLevel l, QUICPacket &packet)
-{
-  for (auto &&func : this->_packet_lost_funcs) {
-    auto err = func(*this, l, packet);
-    if (err != nullptr) {
-      return err;
-    }
-  }
-  return nullptr;
-}
-
-QUICConnectionErrorUPtr
-QUICContextImpl::trigger_packet_receive_event(QUICEncryptionLevel l, QUICPacket &packet)
-{
-  for (auto &&func : this->_packet_recv_funcs) {
-    auto err = func(*this, l, packet);
-    if (err != nullptr) {
-      return err;
-    }
-  }
-  return nullptr;
-}
-
-QUICConnectionErrorUPtr
-QUICContextImpl::trigger_packet_send_event(QUICEncryptionLevel l, QUICPacket &packet)
-{
-  for (auto &&func : this->_packet_send_funcs) {
-    auto err = func(*this, l, packet);
-    if (err != nullptr) {
-      return err;
-    }
-  }
-  return nullptr;
 }

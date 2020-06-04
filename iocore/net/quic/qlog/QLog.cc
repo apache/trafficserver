@@ -49,7 +49,7 @@ Trace::encode(YAML::Node &node)
 }
 
 void
-QUICLog::dump()
+QLog::dump(std::string filename)
 {
   YAML::Node root;
   root["qlog_version"] = this->_ver;
@@ -61,11 +61,8 @@ QUICLog::dump()
     root["traces"].push_back(node);
   }
 
-  std::cout << "traces: " << root["traces"].size() << std::endl;
-  std::cout << "events: " << root["traces"][0]["events"].size() << std::endl;
-
   std::ofstream ofs;
-  ofs.open(this->_file, std::ofstream::in | std::ofstream::trunc);
+  ofs.open(filename, std::ofstream::in | std::ofstream::trunc);
 
   YAML::Emitter emitter(ofs);
   emitter << YAML::DoubleQuoted << YAML::Flow << root;

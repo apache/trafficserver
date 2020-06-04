@@ -1,4 +1,4 @@
-#include "QUICLog.h"
+#include "QLog.h"
 #include "QUICPacket.h"
 
 namespace QLog
@@ -26,10 +26,10 @@ PacketTypeToName(QUICPacketType pt)
   }
 }
 
-inline static QLog::PacketHeader
+inline static PacketHeader
 QUICPacketToLogPacket(const QUICPacket &packet)
 {
-  QLog::PacketHeader ph;
+  PacketHeader ph;
   ph.dcid           = packet.destination_cid().hex();
   ph.packet_number  = std::to_string(packet.packet_number());
   ph.packet_size    = packet.size();
