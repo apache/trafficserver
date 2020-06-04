@@ -197,10 +197,11 @@ QUICPacketFactory::create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoin
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid)
+QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid, QUICVersion version_in_initial)
 {
-  return QUICPacketUPtr(new QUICVersionNegotiationPacket(dcid, scid, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS)),
-                        &QUICPacketDeleter::delete_packet_new);
+  return QUICPacketUPtr(
+    new QUICVersionNegotiationPacket(dcid, scid, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS), version_in_initial),
+    &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr

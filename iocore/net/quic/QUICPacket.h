@@ -319,7 +319,8 @@ public:
   /**
    * For sending packet
    */
-  QUICVersionNegotiationPacket(QUICConnectionId dcid, QUICConnectionId scid, const QUICVersion versions[], int nversions);
+  QUICVersionNegotiationPacket(QUICConnectionId dcid, QUICConnectionId scid, const QUICVersion versions[], int nversions,
+                               QUICVersion version_in_initial);
 
   QUICPacketType type() const override;
   QUICVersion version() const override;
@@ -335,6 +336,7 @@ public:
 private:
   const QUICVersion *_versions;
   int _nversions;
+  const QUICVersion _version_in_initial;
 };
 
 class QUICVersionNegotiationPacketR : public QUICLongHeaderPacketR

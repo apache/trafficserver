@@ -37,7 +37,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   QUICConnectionId dcid(raw_dcid, 8);
   QUICConnectionId scid(raw_scid, 8);
 
-  QUICPacketUPtr packet = factory.create_version_negotiation_packet(scid, dcid);
+  QUICPacketUPtr packet = factory.create_version_negotiation_packet(scid, dcid, QUIC_EXERCISE_VERSION1);
   REQUIRE(packet != nullptr);
 
   QUICVersionNegotiationPacket &vn_packet = static_cast<QUICVersionNegotiationPacket &>(*packet);
@@ -58,7 +58,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Source Connection ID
     0xff, 0x00, 0x00, 0x1c,                         // Supported Version
     0xff, 0x00, 0x00, 0x1b,                         // Supported Version
-    0x1a, 0x2a, 0x3a, 0x4a,                         // Excercise Version
+    0x5a, 0x6a, 0x7a, 0x8a,                         // Excercise Version
   };
   uint8_t buf[1024] = {0};
   size_t buf_len;

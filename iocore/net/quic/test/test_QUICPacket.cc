@@ -44,7 +44,7 @@ TEST_CASE("Receiving Packet", "[quic]")
       0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00, 0x00, 0x00, 0x08,                         // Supported Version 1
-      0x00, 0x00, 0x00, 0x09,                         // Supported Version 1
+      0x00, 0x00, 0x00, 0x09,                         // Supported Version 2
     };
     Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
     input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
@@ -286,6 +286,21 @@ TEST_CASE("Sending Packet", "[quic]")
     packet.store(buf, &len);
     CHECK(len == packet.size());
     CHECK(memcmp(buf, expected, sizeof(expected) - 16) == 0);
+  }
+
+  SECTION("VersionNegotiation Packet")
+  {
+    QUICConnectionId dummy;
+    QUICVersionNegotiationPacket vn1(dummy, dummy, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS),
+                                     QUIC_EXERCISE_VERSION1);
+    for (auto i = 0; i < vn1.nversions(); ++i) {
+      REQUIRE(vn1.versions()[i] != QUIC_EXERCISE_VERSION1);
+    }
+    QUICVersionNegotiationPacket vn2(dummy, dummy, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS),
+                                     QUIC_EXERCISE_VERSION2);
+    for (auto i = 0; i < vn2.nversions(); ++i) {
+      REQUIRE(vn2.versions()[i] != QUIC_EXERCISE_VERSION2);
+    }
   }
 }
 

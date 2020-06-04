@@ -884,8 +884,12 @@ QUICStatelessResetPacketR::destination_cid() const
 // QUICVersionNegotiationPacket
 //
 QUICVersionNegotiationPacket::QUICVersionNegotiationPacket(QUICConnectionId dcid, QUICConnectionId scid,
-                                                           const QUICVersion versions[], int nversions)
-  : QUICLongHeaderPacket(0, dcid, scid, false, false, false), _versions(versions), _nversions(nversions)
+                                                           const QUICVersion versions[], int nversions,
+                                                           QUICVersion version_in_initial)
+  : QUICLongHeaderPacket(0, dcid, scid, false, false, false),
+    _versions(versions),
+    _nversions(nversions),
+    _version_in_initial(version_in_initial)
 {
 }
 
@@ -961,7 +965,11 @@ QUICVersionNegotiationPacket::payload_block() const
   // [draft-18] 6.3. Using Reserved Versions
   // To help ensure this, a server SHOULD include a reserved version (see Section 15) while generating a
   // Version Negotiation packet.
-  QUICTypeUtil::write_QUICVersion(QUIC_EXERCISE_VERSION1, buf + written_len, &n);
+  QUICVersion exersice_version = QUIC_EXERCISE_VERSION1;
+  if (this->_version_in_initial == QUIC_EXERCISE_VERSION1) {
+    exersice_version = QUIC_EXERCISE_VERSION2;
+  }
+  QUICTypeUtil::write_QUICVersion(exersice_version, buf + written_len, &n);
   written_len += n;
 
   block->fill(written_len);

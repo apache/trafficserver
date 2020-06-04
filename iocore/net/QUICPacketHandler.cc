@@ -256,7 +256,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     if (!QUICInvariants::is_version_negotiation(v) && !QUICTypeUtil::is_supported_version(v)) {
       QUICDebugDS(scid, dcid, "Unsupported version: 0x%x", v);
 
-      QUICPacketUPtr vn = QUICPacketFactory::create_version_negotiation_packet(scid, dcid);
+      QUICPacketUPtr vn = QUICPacketFactory::create_version_negotiation_packet(scid, dcid, v);
       this->_send_packet(*vn, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
       udp_packet->free();
       return;

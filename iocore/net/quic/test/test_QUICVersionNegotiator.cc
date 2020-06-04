@@ -134,8 +134,8 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
     QUICInitialPacket &initial_packet = static_cast<QUICInitialPacket &>(*packet);
 
     // Server send VN packet based on Initial packet
-    QUICPacketUPtr vn_packet =
-      packet_factory.create_version_negotiation_packet(initial_packet.source_cid(), initial_packet.destination_cid());
+    QUICPacketUPtr vn_packet = packet_factory.create_version_negotiation_packet(
+      initial_packet.source_cid(), initial_packet.destination_cid(), QUIC_EXERCISE_VERSION1);
     REQUIRE(vn_packet != nullptr);
 
     auto blocks  = vn_packet->header_block();
