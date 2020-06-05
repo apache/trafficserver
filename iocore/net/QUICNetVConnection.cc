@@ -1497,6 +1497,9 @@ QUICNetVConnection::_state_common_send_packet()
   }
 
   if (packet_count) {
+    this->_context->trigger(QUICContext::CallbackEvent::METRICS_UPDATE, this->_congestion_controller->congestion_window(),
+                            this->_congestion_controller->bytes_in_flight(), this->_congestion_controller->current_ssthresh());
+
     QUIC_INCREMENT_DYN_STAT_EX(QUICStats::total_packets_sent_stat, packet_count);
     net_activity(this, this_ethread());
   }

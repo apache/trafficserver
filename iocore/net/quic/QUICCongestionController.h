@@ -52,4 +52,8 @@ public:
   virtual void add_extra_credit()                                                                                   = 0;
   virtual void reset()                                                                                              = 0;
   virtual uint32_t credit() const                                                                                   = 0;
+  // Debug
+  virtual uint32_t bytes_in_flight() const   = 0;
+  virtual uint32_t congestion_window() const = 0;
+  virtual uint32_t current_ssthresh() const  = 0;
 };

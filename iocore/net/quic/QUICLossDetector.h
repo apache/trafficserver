@@ -71,9 +71,9 @@ public:
   bool is_app_limited();
 
   // Debug
-  uint32_t bytes_in_flight() const;
-  uint32_t congestion_window() const;
-  uint32_t current_ssthresh() const;
+  uint32_t bytes_in_flight() const override;
+  uint32_t congestion_window() const override;
+  uint32_t current_ssthresh() const override;
 
   void add_extra_credit() override;
 
