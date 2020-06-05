@@ -82,7 +82,7 @@ xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_
   }
   p += len;
 
-  if ((p + encoded_string_len) > buf_end) {
+  if (buf_end < p || static_cast<uint64_t>(buf_end - p) < encoded_string_len) {
     return XPACK_ERROR_COMPRESSION_ERROR;
   }
 
