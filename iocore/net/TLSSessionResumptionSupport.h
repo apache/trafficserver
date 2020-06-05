@@ -33,6 +33,8 @@
 class TLSSessionResumptionSupport
 {
 public:
+  virtual ~TLSSessionResumptionSupport() = default;
+
   static void initialize();
   static TLSSessionResumptionSupport *getInstance(SSL *ssl);
   static void bind(SSL *ssl, TLSSessionResumptionSupport *srs);
