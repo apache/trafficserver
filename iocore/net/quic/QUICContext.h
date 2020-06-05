@@ -51,10 +51,13 @@ public:
   virtual void connection_close_callback(QUICCallbackContext &){};
   // callback on packet send event
   virtual void packet_send_callback(QUICCallbackContext &, const QUICPacket &p){};
-  // callback on packet receive event
+  // callback on packet lost event
   virtual void packet_lost_callback(QUICCallbackContext &, const QUICPacket &p){};
   // callback on packet receive event
   virtual void packet_recv_callback(QUICCallbackContext &, const QUICPacket &p){};
+  // callback on packet acked event
+  virtual void cc_metrics_update_callback(QUICCallbackContext &, uint64_t congestion_window, uint64_t bytes_in_flight,
+                                          uint64_t sshresh){};
 };
 
 class QUICContext
@@ -83,6 +86,7 @@ public:
     PACKET_LOST,
     PACKET_SEND,
     PACKET_RECV,
+    METRICS_UPDATE,
     CONNECTION_CLOSE,
   };
 
@@ -114,6 +118,15 @@ public:
       break;
     default:
       break;
+    }
+  }
+
+  void
+  trigger(CallbackEvent e, uint64_t congestion_window, uint64_t bytes_in_flight, uint64_t sshresh)
+  {
+    QUICCallbackContext ctx;
+    for (auto &&it : this->_callbacks) {
+      it->cc_metrics_update_callback(ctx, congestion_window, bytes_in_flight, sshresh);
     }
   }
 

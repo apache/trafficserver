@@ -41,6 +41,14 @@ public:
   };
 
   void
+  cc_metrics_update_callback(QUICCallbackContext &, uint64_t congestion_window, uint64_t bytes_in_flight, uint64_t sshresh) override
+  {
+    auto qe = std::make_unique<Recovery::MetricsUpdated>();
+    qe->set_congestion_window(static_cast<int>(congestion_window)).set_bytes_in_flight(bytes_in_flight).set_ssthresh(sshresh);
+    this->_log.last_trace().push_event(std::move(qe));
+  }
+
+  void
   connection_close_callback(QUICCallbackContext &) override
   {
     this->_log.dump(this->_context.config()->qlog_file());

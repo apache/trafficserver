@@ -12,7 +12,7 @@ Trace::encode(YAML::Node &node)
   {
     YAML::Node cf;
     cf["ODCID"]           = _odcid;
-    cf["reference_time"]  = std::to_string(this->_reference_time);
+    cf["reference_time"]  = std::to_string(this->_reference_time / HRTIME_MSECOND);
     node["common_fields"] = cf;
   }
 
@@ -38,7 +38,7 @@ Trace::encode(YAML::Node &node)
   // events
   for (auto &&it : _events) {
     YAML::Node sub(YAML::NodeType::value::Sequence);
-    sub.push_back((it->get_time() - this->_reference_time) / 1000000);
+    sub.push_back((it->get_time() - this->_reference_time) / HRTIME_MSECOND);
     sub.push_back(it->category());
     sub.push_back(it->event());
     YAML::Node event;
