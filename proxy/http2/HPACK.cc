@@ -704,7 +704,7 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
   }
   p += len;
 
-  if ((p + encoded_string_len) > buf_end) {
+  if (buf_end < p || static_cast<uint64_t>(buf_end - p) < encoded_string_len) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
