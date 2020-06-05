@@ -109,16 +109,6 @@ public:
   }
 
   bool
-  trackFirstHandshake() override
-  {
-    bool retval = sslHandshakeBeginTime == 0;
-    if (retval) {
-      sslHandshakeBeginTime = Thread::get_hrtime();
-    }
-    return retval;
-  }
-
-  bool
   getSSLHandShakeComplete() const override
   {
     return sslHandshakeStatus != SSL_HANDSHAKE_ONGOING;
