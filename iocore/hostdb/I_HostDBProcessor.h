@@ -146,16 +146,17 @@ struct HostDBInfo : public RefCountObj {
     ink_release_assert(iobuffer_index >= 0);
     void *ptr = ioBufAllocator[iobuffer_index].alloc_void();
     memset(ptr, 0, size);
-    HostDBInfo *ret     = new (ptr) HostDBInfo();
-    ret->iobuffer_index = iobuffer_index;
+    HostDBInfo *ret      = new (ptr) HostDBInfo();
+    ret->_iobuffer_index = iobuffer_index;
     return ret;
   }
 
   void
   free() override
   {
-    Debug("hostdb", "freeing %d bytes at [%p]", (1 << (7 + iobuffer_index)), this);
-    ioBufAllocator[iobuffer_index].free_void((void *)(this));
+    ink_release_assert(from_alloc());
+    Debug("hostdb", "freeing %d bytes at [%p]", (1 << (7 + _iobuffer_index)), this);
+    ioBufAllocator[_iobuffer_index].free_void((void *)(this));
   }
 
   // return a version number-- so we can manage compatibility with the marshal/unmarshal
@@ -172,12 +173,12 @@ struct HostDBInfo : public RefCountObj {
       return nullptr;
     }
     HostDBInfo *ret = HostDBInfo::alloc(size - sizeof(HostDBInfo));
-    int buf_index   = ret->iobuffer_index;
+    int buf_index   = ret->_iobuffer_index;
     memcpy((void *)ret, buf, size);
     // Reset the refcount back to 0, this is a bit ugly-- but I'm not sure we want to expose a method
     // to mess with the refcount, since this is a fairly unique use case
-    ret                 = new (ret) HostDBInfo();
-    ret->iobuffer_index = buf_index;
+    ret                  = new (ret) HostDBInfo();
+    ret->_iobuffer_index = buf_index;
     return ret;
   }
 
@@ -315,8 +316,6 @@ struct HostDBInfo : public RefCountObj {
     }
   }
 
-  int iobuffer_index;
-
   uint64_t key;
 
   // Application specific data. NOTE: We need an integral number of
@@ -341,6 +340,35 @@ struct HostDBInfo : public RefCountObj {
 
   unsigned int round_robin : 1;     // This is the root of a round robin block
   unsigned int round_robin_elt : 1; // This is an address in a round robin block
+
+  HostDBInfo() : _iobuffer_index{-1} {}
+
+  HostDBInfo(HostDBInfo const &src) : RefCountObj()
+  {
+    memcpy(static_cast<void *>(this), static_cast<const void *>(&src), sizeof(*this));
+    _iobuffer_index = -1;
+  }
+
+  HostDBInfo &
+  operator=(HostDBInfo const &src)
+  {
+    if (this != &src) {
+      int iob_idx = _iobuffer_index;
+      memcpy(static_cast<void *>(this), static_cast<const void *>(&src), sizeof(*this));
+      _iobuffer_index = iob_idx;
+    }
+    return *this;
+  }
+
+  bool
+  from_alloc() const
+  {
+    return _iobuffer_index >= 0;
+  }
+
+private:
+  // The value of this will be -1 for objects that are not created by the alloc() static member function.
+  int _iobuffer_index;
 };
 
 struct HostDBRoundRobin {
