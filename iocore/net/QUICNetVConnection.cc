@@ -1604,6 +1604,7 @@ QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel l
       frame =
         g->generate_frame(frame_instance_buffer, level, this->_remote_flow_controller->credit(), max_frame_size, len, seq_num);
       if (frame) {
+        this->_context->trigger(QUICContext::CallbackEvent::FRAME_PACKETIZE, *frame);
         // Some frame types must not be sent on Initial and Handshake packets
         switch (auto t = frame->type(); level) {
         case QUICEncryptionLevel::INITIAL:
@@ -1711,10 +1712,10 @@ QUICNetVConnection::_recv_and_ack(const QUICPacketR &packet, bool *has_non_probi
     *has_non_probing_frame = false;
   }
 
+  error = this->_frame_dispatcher->receive_frames(*this->_context.get(), level, payload, size, ack_only, is_flow_controlled,
+                                                  has_non_probing_frame, static_cast<const QUICPacketR *>(&packet));
   this->_context->trigger(QUICContext::CallbackEvent::PACKET_RECV, &packet);
 
-  error = this->_frame_dispatcher->receive_frames(level, payload, size, ack_only, is_flow_controlled, has_non_probing_frame,
-                                                  static_cast<const QUICPacketR *>(&packet));
   if (error != nullptr) {
     return error;
   }

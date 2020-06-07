@@ -26,8 +26,6 @@
 #include "I_EventSystem.h"
 #include "I_Event.h"
 
-#include "QUICTypes.h"
-
 enum {
   QUIC_EVENT_PACKET_READ_READY = QUIC_EVENT_EVENTS_START,
   QUIC_EVENT_PACKET_WRITE_READY,
@@ -39,7 +37,3 @@ enum {
   QUIC_EVENT_LD_SHUTDOWN,
   QUIC_EVENT_STATELESS_RESET,
 };
-
-class QUICContext;
-class QUICFrame;
-class QUICPacket;
