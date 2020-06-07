@@ -26,6 +26,7 @@
 #include "QUICConnection.h"
 #include "QUICConfig.h"
 #include "QUICEvents.h"
+#include "QUICCongestionController.h"
 
 class QUICRTTProvider;
 class QUICCongestionController;
@@ -52,12 +53,18 @@ public:
   // callback on packet send event
   virtual void packet_send_callback(QUICCallbackContext &, const QUICPacket &p){};
   // callback on packet lost event
-  virtual void packet_lost_callback(QUICCallbackContext &, const QUICPacket &p){};
+  virtual void packet_lost_callback(QUICCallbackContext &, const QUICPacketInfo &p){};
   // callback on packet receive event
   virtual void packet_recv_callback(QUICCallbackContext &, const QUICPacket &p){};
   // callback on packet acked event
   virtual void cc_metrics_update_callback(QUICCallbackContext &, uint64_t congestion_window, uint64_t bytes_in_flight,
                                           uint64_t sshresh){};
+  // callback on packet receive event
+  virtual void frame_packetize_callback(QUICCallbackContext &, const QUICFrame &p){};
+  // callback on packet receive event
+  virtual void frame_recv_callback(QUICCallbackContext &, const QUICFrame &p){};
+  // callback on packet receive event
+  virtual void congestion_state_updated_callback(QUICCallbackContext &, QUICCongestionController::State p){};
 };
 
 class QUICContext
@@ -85,9 +92,12 @@ public:
   enum class CallbackEvent : uint8_t {
     PACKET_LOST,
     PACKET_SEND,
+    FRAME_PACKETIZE,
     PACKET_RECV,
+    FRAME_RECV,
     METRICS_UPDATE,
     CONNECTION_CLOSE,
+    CONGESTION_STATE_CHANGED,
   };
 
   // FIXME stupid trigger should be fix in more smart way.
@@ -96,11 +106,6 @@ public:
   {
     QUICCallbackContext ctx;
     switch (e) {
-    case CallbackEvent::PACKET_LOST:
-      for (auto &&it : this->_callbacks) {
-        it->packet_lost_callback(ctx, *p);
-      }
-      break;
     case CallbackEvent::PACKET_RECV:
       for (auto &&it : this->_callbacks) {
         it->packet_recv_callback(ctx, *p);
@@ -122,11 +127,51 @@ public:
   }
 
   void
+  trigger(CallbackEvent e, const QUICPacketInfo &p)
+  {
+    QUICCallbackContext ctx;
+    for (auto &&it : this->_callbacks) {
+      it->packet_lost_callback(ctx, p);
+    }
+  }
+
+  void
   trigger(CallbackEvent e, uint64_t congestion_window, uint64_t bytes_in_flight, uint64_t sshresh)
   {
     QUICCallbackContext ctx;
     for (auto &&it : this->_callbacks) {
       it->cc_metrics_update_callback(ctx, congestion_window, bytes_in_flight, sshresh);
+    }
+  }
+
+  void
+  trigger(CallbackEvent e, QUICCongestionController::State state)
+  {
+    QUICCallbackContext ctx;
+    for (auto &&it : this->_callbacks) {
+      it->congestion_state_updated_callback(ctx, state);
+    }
+  }
+
+  void
+  trigger(CallbackEvent e, const QUICFrame &frame)
+  {
+    QUICCallbackContext ctx;
+    switch (e) {
+    case CallbackEvent::FRAME_PACKETIZE:
+
+      for (auto &&it : this->_callbacks) {
+        it->frame_packetize_callback(ctx, frame);
+      }
+      break;
+
+    case CallbackEvent::FRAME_RECV:
+      for (auto &&it : this->_callbacks) {
+        it->frame_recv_callback(ctx, frame);
+      }
+      break;
+    default:
+      break;
     }
   }
 

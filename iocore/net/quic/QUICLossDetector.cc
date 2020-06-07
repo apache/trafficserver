@@ -444,6 +444,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumberSpace pn_space)
   if (!lost_packets.empty()) {
     this->_cc->on_packets_lost(lost_packets);
     for (auto lost_packet : lost_packets) {
+      this->_context.trigger(QUICContext::CallbackEvent::PACKET_LOST, *lost_packet.second);
       // -- ADDITIONAL CODE --
       // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
       // them somewhere.

@@ -770,7 +770,7 @@ public:
    * This works almost the same as create() but it reuses created objects for performance.
    * If you create a frame object which has the same frame type that you created before, the object will be reset by new data.
    */
-  QUICFrame &fast_create(const uint8_t *buf, size_t len, const QUICPacketR *packet);
+  const QUICFrame &fast_create(const uint8_t *buf, size_t len, const QUICPacketR *packet);
 
   /*
    * Creates a STREAM frame.

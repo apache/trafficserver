@@ -2901,7 +2901,7 @@ QUICFrameFactory::create(uint8_t *buf, const uint8_t *src, size_t len, const QUI
   }
 }
 
-QUICFrame &
+const QUICFrame &
 QUICFrameFactory::fast_create(const uint8_t *buf, size_t len, const QUICPacketR *packet)
 {
   if (QUICFrame::type(buf) == QUICFrameType::UNKNOWN) {

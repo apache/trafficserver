@@ -44,6 +44,13 @@ struct QUICPacketInfo {
 class QUICCongestionController
 {
 public:
+  enum class State : uint8_t {
+    RECOVERY,
+    CONGESTION_AVOIDANCE,
+    SLOW_START,
+    APPPLICATION_LIMITED,
+  };
+
   virtual ~QUICCongestionController() {}
   virtual void on_packet_sent(size_t bytes_sent)                                                                    = 0;
   virtual void on_packet_acked(const QUICPacketInfo &acked_packet)                                                  = 0;

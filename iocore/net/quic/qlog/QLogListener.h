@@ -1,10 +1,32 @@
+/** @file
+ *
+ *  A brief file description
+ *
+ *  @section license License
+ *
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 #pragma once
 
 #include "QLog.h"
 #include "QLogUtils.h"
 #include "QUICPacket.h"
 #include "QUICContext.h"
-#include "QUICFrameReader.h"
 
 namespace QLog
 {
@@ -17,26 +39,43 @@ public:
   }
 
   void
+  frame_recv_callback(QUICCallbackContext &, const QUICFrame &frame) override
+  {
+    this->_recv_frames.push_back(QLogFrameFactory::create(static_cast<const QUICFrame *>(&frame)));
+  }
+
+  void
+  frame_packetize_callback(QUICCallbackContext &, const QUICFrame &frame) override
+  {
+    this->_send_frames.push_back(QLogFrameFactory::create(static_cast<const QUICFrame *>(&frame)));
+  }
+
+  void
   packet_send_callback(QUICCallbackContext &, const QUICPacket &packet) override
   {
-    QUICFrameReaderUnbond reader(packet);
-    // This packet is encrypted packet. We don't have enough info to decrypted it
-    // TODO: In this way we need separate the packet encryption and packet generating into two step.
-    // And insert the callback into these two steps.
-    // see QUICPacketFactory. For Now, emit the frame info .
     auto qe = std::make_unique<Transport::PacketSent>(PacketTypeToName(packet.type()), QUICPacketToLogPacket(packet));
+    for (auto &it : this->_send_frames) {
+      qe->append_frames(std::move(it));
+    }
+    this->_send_frames.clear();
     this->_log.last_trace().push_event(std::move(qe));
   };
 
   void
   packet_recv_callback(QUICCallbackContext &, const QUICPacket &packet) override
   {
-    QUICFrameReaderUnbond reader(packet);
-    uint8_t buf[2048];
     auto qe = std::make_unique<Transport::PacketReceived>(PacketTypeToName(packet.type()), QUICPacketToLogPacket(packet));
-    for (auto frame = reader.read_frame(buf); frame; frame = reader.read_frame(buf)) {
-      qe->append_frames(QLogFrameFactory::create(frame));
+    for (auto &it : this->_recv_frames) {
+      qe->append_frames(std::move(it));
     }
+    this->_recv_frames.clear();
+    this->_log.last_trace().push_event(std::move(qe));
+  };
+
+  void
+  packet_lost_callback(QUICCallbackContext &, const QUICPacketInfo &packet) override
+  {
+    auto qe = std::make_unique<Recovery::PacketLost>(PacketTypeToName(packet.type), packet.packet_number);
     this->_log.last_trace().push_event(std::move(qe));
   };
 
@@ -46,6 +85,15 @@ public:
     auto qe = std::make_unique<Recovery::MetricsUpdated>();
     qe->set_congestion_window(static_cast<int>(congestion_window)).set_bytes_in_flight(bytes_in_flight).set_ssthresh(sshresh);
     this->_log.last_trace().push_event(std::move(qe));
+  }
+
+  void
+  congestion_state_updated_callback(QUICCallbackContext &, QUICCongestionController::State state) override
+  {
+    if (state != this->_state) {
+      this->_log.last_trace().push_event(std::make_unique<Recovery::CongestionStateUpdated>(CongestionStateConvert(state)));
+      this->_state = state;
+    }
   }
 
   void
@@ -61,6 +109,9 @@ public:
   }
 
 private:
+  QUICCongestionController::State _state = QUICCongestionController::State::SLOW_START;
+  std::vector<QLogFrameUPtr> _recv_frames;
+  std::vector<QLogFrameUPtr> _send_frames;
   QLog _log;
   QUICContext &_context;
 };
