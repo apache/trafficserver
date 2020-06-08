@@ -276,7 +276,7 @@ HttpHeader::setKeyTime(char const *const keystr, int const keylen, time_t const 
     if (TS_SUCCESS == TSMimeHdrFieldValueDateSet(m_buffer, m_lochdr, locfield, timeval)) {
       if (TS_SUCCESS == TSMimeHdrFieldAppend(m_buffer, m_lochdr, locfield)) {
         status = true;
-        DEBUG_LOG("Set header %.*s to %" PRId64, keylen, keystr, timeval);
+        DEBUG_LOG("Set header %.*s to %jd", keylen, keystr, static_cast<intmax_t>(timeval));
       }
     }
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);

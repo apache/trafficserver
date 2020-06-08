@@ -332,12 +332,12 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
             " status_got=\"%d\""
             " cr_got=\"%.*s\""
             " etag_got=\"%.*s\""
-            " lm_got=\"%" PRId64 "\""
+            " lm_got=\"%jd\""
             " cc=\"%.*s\""
             " via=\"%.*s\"  - attempting to recover",
             secs, ms, message, (int)urlplen, urlpstr, uaslen, uasstr, rangelen, rangestr, normlen, normstr, (int)etagexplen,
             etagexpstr, data->m_lastmodifiedlen, data->m_lastmodified, blockbeg, blockend - 1, statusgot, crlen, crstr,
-            (int)etaggotlen, etaggotstr, lmgot, cclen, ccstr, vialen, viastr);
+            (int)etaggotlen, etaggotstr, static_cast<intmax_t>(lmgot), cclen, ccstr, vialen, viastr);
 }
 
 bool
@@ -426,7 +426,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
       // Ask for any slice newer than the cached one
       time_t const dateims = date + 1;
 
-      DEBUG_LOG("Attempting to reissue interior slice block request with IMS header time: %" PRId64, dateims);
+      DEBUG_LOG("Attempting to reissue interior slice block request with IMS header time: %jd", static_cast<intmax_t>(dateims));
 
       // add special CRR IMS header to the request
       HttpHeader headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
@@ -448,7 +448,7 @@ handleNextServerHeader(Data *const data, TSCont const contp)
       // Ask for any slice newer than the cached one
       time_t const dateims = date + 1;
 
-      DEBUG_LOG("Attempting to reissue reference slice block request with IMS header time: %" PRId64, dateims);
+      DEBUG_LOG("Attempting to reissue reference slice block request with IMS header time: %jd", static_cast<intmax_t>(dateims));
 
       // add special CRR IMS header to the request
       HttpHeader headerreq(data->m_req_hdrmgr.m_buffer, data->m_req_hdrmgr.m_lochdr);
