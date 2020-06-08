@@ -302,7 +302,12 @@ public:
     if (!ssl) {
       return nullptr;
     }
-    ssl_curve_id curve = getSSLCurveNID();
+    ssl_curve_id curve;
+    if (getSSLSessionCacheHit()) {
+      curve = getSSLCurveNID();
+    } else {
+      curve = SSLGetCurveNID(ssl);
+    }
 #ifndef OPENSSL_IS_BORINGSSL
     if (curve == NID_undef) {
       return nullptr;
