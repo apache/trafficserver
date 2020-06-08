@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ink_autoconf.h"
 #include "configuration.h"
 #include <fstream>
 #include <algorithm>
