@@ -479,7 +479,8 @@ handle_cache_lookup_complete(TSHttpTxn txnp, txndata *const txn_state)
   if (TS_SUCCESS == TSHttpTxnCacheLookupStatusGet(txnp, &cachestat)) {
     if (TS_CACHE_LOOKUP_HIT_FRESH == cachestat) {
       time_t const ch_time = get_date_from_cached_hdr(txnp);
-      DEBUG_LOG("IMS Cached header time %" PRId64 " vs IMS %" PRId64, ch_time, txn_state->ims_time);
+      DEBUG_LOG("IMS Cached header time %jd vs IMS %jd", static_cast<intmax_t>(ch_time),
+                static_cast<intmax_t>(txn_state->ims_time));
       if (ch_time < txn_state->ims_time) {
         TSHttpTxnCacheLookupStatusSet(txnp, TS_CACHE_LOOKUP_HIT_STALE);
         if (TSIsDebugTagSet(PLUGIN_NAME)) {
