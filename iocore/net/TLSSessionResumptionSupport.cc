@@ -199,7 +199,6 @@ TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblo
       }
 
       this->_setSSLSessionCacheHit(true);
-      this->_setSSLCurveNID(SSLGetCurveNID(ssl));
 
 #ifdef TLS1_3_VERSION
       if (SSL_version(ssl) >= TLS1_3_VERSION) {
