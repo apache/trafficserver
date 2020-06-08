@@ -30,7 +30,7 @@ Test.SkipUnless(
 server = Test.MakeOriginServer("server")
 
 request_header = {"headers": "GET / HTTP/1.1\r\n"
-                  "Host: www.example.com\r\nContent-Length: 0\r\n\r\n",
+                  "Host: bob\r\nContent-Length: 0\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK"
                    "\r\nConnection: close\r\nContent-Length: 0"
@@ -45,6 +45,9 @@ replay_dir = os.path.join(ts.RunDirectory, "ts", "log")
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
+
+ts.Setup.Copy("ssl/signed-foo.pem")
+ts.Setup.Copy("ssl/signed-foo.key")
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
@@ -77,7 +80,7 @@ ts.Disk.sni_yaml.AddLines([
     '  verify_client: STRICT',
 ])
 
-# Configure traffic_dump to filter to only dump with connections with SNI bob.
+# Configure traffic_dump's SNI filter to only dump connections with SNI bob.
 sni_filter = "bob"
 ts.Disk.plugin_config.AddLine(
     'traffic_dump.so --logdir {0} --sample 1 --limit 1000000000 '
@@ -114,8 +117,6 @@ ts.Disk.File(replay_file_session_2, exists=False)
 
 # Execute the first transaction with an SNI of bob.
 tr = Test.AddTestRun("Verify dumping of a session with the filtered SNI")
-tr.Setup.Copy("ssl/signed-foo.pem")
-tr.Setup.Copy("ssl/signed-foo.key")
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = \
@@ -125,8 +126,10 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200_sni_bob.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-session_1_protocols = "h2,tls/1.2,tcp,ipv4"
-session_1_tls_features = 'sni:bob'
+session_1_protocols = "h2,tls,tcp,ipv4"
+# Observe that the sni.yaml config dictates STRICT as the verify_client
+# attribute.
+session_1_tls_features = 'sni:bob,proxy-verify-mode:7,proxy-provided-cert:true'
 
 # Execute the second transaction with an SNI of dave.
 tr = Test.AddTestRun("Verify that a session of a different SNI is not dumped.")

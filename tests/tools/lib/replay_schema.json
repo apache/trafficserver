@@ -24,12 +24,9 @@
         "required": [ "transactions" ],
         "properties": {
           "protocol": {
-            "description": "The network protocol stack of the inbound connection.",
-            "type": "array",
-            "items": {
-              "description": "Protocol tag",
-              "type": "string"
-            }
+            "description": "The network protocol description of the inbound connection.",
+            "type": "object",
+            "$ref": "#/definitions/protocol"
           },
           "connect-time": {
             "description": "User Agent connection time.",
@@ -120,6 +117,58 @@
         }
       ]
     },
+    "protocol": {
+      "description": "The characteristics of the lower level protocols.",
+      "type": "object",
+      "properties": {
+        "ip": {
+          "desciption": "A description of the IP layer of the connection.",
+          "type": "object"
+        },
+        "ipv6": {
+          "desciption": "A description of the IP layer of the connection.",
+          "type": "object"
+        },
+        "tcp": {
+          "desciption": "A description of the TCP layer of the connection.",
+          "type": "object"
+        },
+        "tls": {
+          "description": "The description of the TLS details.",
+          "type": "object",
+          "properties": {
+            "version": {
+              "desciption": "The TLS version.",
+              "type": "string"
+            },
+            "sni": {
+              "desciption": "The SNI in the client hello.",
+              "type": "string"
+            },
+            "request-certificate": {
+              "desciption": "Whether a certificate should be requested from the proxy.",
+              "type": "boolean"
+            },
+            "verify-mode": {
+              "desciption": "The server or client's OpenSSL verify mode against the proxy.",
+              "type": "boolean"
+            },
+            "proxy-verify-mode": {
+              "desciption": "The proxy's OpenSSL verify mode against the peer.",
+              "type": "integer"
+            },
+            "proxy-provided-cert": {
+              "desciption": "Whether the proxy provided a cert in the handshake.",
+              "type": "boolean"
+            }
+          }
+        },
+        "h2": {
+          "desciption": "A description of the HTTP/2 protocol for the connection.",
+          "type": "object"
+        }
+      }
+    },
     "header-fields": {
       "description": "HTTP header fields.",
       "type": "object",
@@ -178,6 +227,11 @@
         "headers": {
           "description": "HTTP header fields.",
           "$ref": "#/definitions/header-fields"
+        },
+        "protocol": {
+          "description": "The network protocol description of the connection.",
+          "type": "object",
+          "$ref": "#/definitions/protocol"
         }
       }
     },

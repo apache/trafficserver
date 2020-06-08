@@ -1,6 +1,6 @@
 ``
 > GET http://localhost:``/candy HTTP/1.1
-> Host: www.example.com``
+> Host: www.notls.com``
 > User-Agent: curl/``
 > Accept: */*
 ``

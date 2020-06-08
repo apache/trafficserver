@@ -8125,7 +8125,7 @@ HttpSM::is_redirect_required()
   return redirect_required;
 }
 
-// Fill in the client protocols used.  Return the number of entries returned
+// Fill in the client protocols used.  Return the number of entries populated.
 int
 HttpSM::populate_client_protocol(std::string_view *result, int n) const
 {
@@ -8142,7 +8142,7 @@ HttpSM::populate_client_protocol(std::string_view *result, int n) const
   return retval;
 }
 
-// Look for a specific protocol
+// Look for a specific client protocol
 const char *
 HttpSM::client_protocol_contains(std::string_view tag_prefix) const
 {
@@ -8159,10 +8159,51 @@ HttpSM::client_protocol_contains(std::string_view tag_prefix) const
   return retval;
 }
 
+// Fill in the server protocols used.  Return the number of entries populated.
+int
+HttpSM::populate_server_protocol(std::string_view *result, int n) const
+{
+  int retval = 0;
+  if (!t_state.hdr_info.server_request.valid()) {
+    return retval;
+  }
+  if (n > 0) {
+    std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.server_request.version_get());
+    if (!proto.empty()) {
+      result[retval++] = proto;
+      if (n > retval && server_session) {
+        retval += server_session->populate_protocol(result + retval, n - retval);
+      }
+    }
+  }
+  return retval;
+}
+
+// Look for a specific server protocol
+const char *
+HttpSM::server_protocol_contains(std::string_view tag_prefix) const
+{
+  const char *retval     = nullptr;
+  std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.server_request.version_get());
+  if (!proto.empty()) {
+    std::string_view prefix(tag_prefix);
+    if (prefix.size() <= proto.size() && 0 == strncmp(proto.data(), prefix.data(), prefix.size())) {
+      retval = proto.data();
+    } else {
+      if (server_session) {
+        retval = server_session->protocol_contains(prefix);
+      }
+    }
+  }
+  return retval;
+}
+
 std::string_view
 HttpSM::find_proto_string(HTTPVersion version) const
 {
-  if (version == HTTPVersion(1, 1)) {
+  if (version == HTTPVersion(2, 0)) {
+    return IP_PROTO_TAG_HTTP_2_0;
+  } else if (version == HTTPVersion(1, 1)) {
     return IP_PROTO_TAG_HTTP_1_1;
   } else if (version == HTTPVersion(1, 0)) {
     return IP_PROTO_TAG_HTTP_1_0;

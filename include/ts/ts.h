@@ -1216,9 +1216,11 @@ tsapi void TSHttpHookAdd(TSHttpHookID id, TSCont contp);
 tsapi void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp);
 tsapi void TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event);
 tsapi int TSHttpSsnTransactionCount(TSHttpSsn ssnp);
-/* get TSVConn from session */
+/* Get the TSVConn from a session. */
 tsapi TSVConn TSHttpSsnClientVConnGet(TSHttpSsn ssnp);
 tsapi TSVConn TSHttpSsnServerVConnGet(TSHttpSsn ssnp);
+/* Get the TSVConn from a transaction. */
+tsapi TSVConn TSHttpTxnServerVConnGet(TSHttpTxn txnp);
 
 /* --------------------------------------------------------------------------
    SSL connections */
@@ -1258,6 +1260,10 @@ TSReturnCode TSVConnProtocolEnable(TSVConn connp, const char *protocol_name);
 
 /*  Returns 1 if the sslp argument refers to a SSL connection */
 tsapi int TSVConnIsSsl(TSVConn sslp);
+/* Returns 1 if a certificate was provided in the TLS handshake, 0 otherwise.
+ */
+tsapi int TSVConnProvidedSslCert(TSVConn sslp);
+
 tsapi TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 tsapi int TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);
 tsapi TSReturnCode TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn);
@@ -2512,7 +2518,7 @@ tsapi TSUuid TSProcessUuidGet(void);
 tsapi const char *TSHttpTxnPluginTagGet(TSHttpTxn txnp);
 
 /*
- * Return information about the client protocols
+ * Return information about the client protocols.
  */
 tsapi TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual);
 tsapi TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int *actual);
@@ -2520,6 +2526,12 @@ tsapi const char *TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, char cons
 tsapi const char *TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char const *tag);
 tsapi const char *TSNormalizedProtocolTag(char const *tag);
 tsapi const char *TSRegisterProtocolTag(char const *tag);
+
+/*
+ * Return information about the server protocols.
+ */
+tsapi TSReturnCode TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual);
+tsapi const char *TSHttpTxnServerProtocolStackContains(TSHttpTxn txnp, char const *tag);
 
 // If, for the given transaction, the URL has been remapped, this function puts the memory location of the "from" URL object in
 // the variable pointed to by urlLocp, and returns TS_SUCCESS.  (The URL object will be within memory allocated to the

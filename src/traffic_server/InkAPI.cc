@@ -4833,8 +4833,27 @@ TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 TSVConn
 TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
 {
+  TSVConn vconn          = nullptr;
   Http1ServerSession *ss = reinterpret_cast<Http1ServerSession *>(ssnp);
-  return reinterpret_cast<TSVConn>(ss->get_netvc());
+  if (ss != nullptr) {
+    vconn = reinterpret_cast<TSVConn>(ss->get_netvc());
+  }
+  return vconn;
+}
+
+TSVConn
+TSHttpTxnServerVConnGet(TSHttpTxn txnp)
+{
+  TSVConn vconn = nullptr;
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  if (sm != nullptr) {
+    Http1ServerSession *ss = sm->get_server_session();
+    if (ss != nullptr) {
+      vconn = reinterpret_cast<TSVConn>(ss->get_netvc());
+    }
+  }
+  return vconn;
 }
 
 class TSHttpSsnCallback : public Continuation
@@ -9426,6 +9445,13 @@ TSVConnIsSsl(TSVConn sslp)
   return ssl_vc != nullptr;
 }
 
+tsapi int
+TSVConnProvidedSslCert(TSVConn sslp)
+{
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(sslp);
+  return vc->provided_cert();
+}
+
 void
 TSVConnReenable(TSVConn vconn)
 {
@@ -9625,7 +9651,7 @@ int64_t
 TSHttpSsnIdGet(TSHttpSsn ssnp)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
+  ProxySession const *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->connection_id();
 }
 
@@ -9655,11 +9681,32 @@ TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int 
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   sdk_assert(n == 0 || result != nullptr);
-  ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
-  int count        = 0;
+  auto const *cs = reinterpret_cast<ProxySession *>(ssnp);
+  int count      = 0;
   if (cs && n > 0) {
     auto mem = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
     count    = cs->populate_protocol(mem, n);
+    for (int i = 0; i < count; ++i) {
+      result[i] = mem[i].data();
+    }
+  }
+  if (actual) {
+    *actual = count;
+  }
+  return TS_SUCCESS;
+}
+
+// Return information about the protocols used by the server
+TSReturnCode
+TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(n == 0 || result != nullptr);
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  int count  = 0;
+  if (sm && n > 0) {
+    auto mem = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
+    count    = sm->populate_server_protocol(mem, n);
     for (int i = 0; i < count; ++i) {
       result[i] = mem[i].data();
     }
@@ -9680,7 +9727,7 @@ const char *
 TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  HttpSM *sm = (HttpSM *)txnp;
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   return sm->client_protocol_contains(std::string_view{tag});
 }
 
@@ -9690,6 +9737,14 @@ TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return cs->protocol_contains(std::string_view{tag});
+}
+
+const char *
+TSHttpTxnServerProtocolStackContains(TSHttpTxn txnp, const char *tag)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  return sm->server_protocol_contains(std::string_view{tag});
 }
 
 const char *
