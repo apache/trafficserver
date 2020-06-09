@@ -27,6 +27,9 @@
 bool
 handle_client_req(TSCont contp, TSEvent event, Data *const data)
 {
+#if defined(COLLECT_STATS)
+  stats::StatsRAI const rai(stats::ClientTime);
+#endif
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
   case TS_EVENT_VCONN_READ_COMPLETE: {
@@ -85,15 +88,19 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
       rangebe            = Range(0, Range::maxval);
     }
 
-    // set to the first block in range
-    data->m_blocknum  = rangebe.firstBlockFor(data->m_config->m_blockbytes);
+    if (Config::RefType::First == data->m_config->m_reftype) {
+      data->m_blocknum = 0;
+    } else {
+      data->m_blocknum = rangebe.firstBlockFor(data->m_config->m_blockbytes);
+    }
+
     data->m_req_range = rangebe;
 
     // remove ATS keys to avoid 404 loop
     header.removeKey(TS_MIME_FIELD_VIA, TS_MIME_LEN_VIA);
     header.removeKey(TS_MIME_FIELD_X_FORWARDED_FOR, TS_MIME_LEN_X_FORWARDED_FOR);
 
-    // send the first block request to server
+    // send block request to server
     if (!request_block(contp, data)) {
       abort(contp, data);
       return false;
@@ -119,15 +126,28 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
 void
 handle_client_resp(TSCont contp, TSEvent event, Data *const data)
 {
-  DEBUG_LOG("%p handle_client_resp %s", data, TSHttpEventNameLookup(event));
-
 #if defined(COLLECT_STATS)
   TSStatIntIncrement(stats::Client, 1);
+  stats::StatsRAI const rai(stats::ClientTime);
 #endif
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY: {
-    if (Data::BlockState::Pending == data->m_blockstate) {
+    switch (data->m_blockstate) {
+    case BlockState::Fail:
+    case BlockState::PendingRef:
+    case BlockState::ActiveRef: {
+      TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
+      int64_t const output_done = TSVIONDoneGet(output_vio);
+      int64_t const output_sent = data->m_bytessent;
+
+      if (output_sent == output_done) {
+        DEBUG_LOG("Downstream output is done, shutting down");
+        shutdown(contp, data);
+      }
+    } break;
+
+    case BlockState::Pending: {
       bool start_next_block = true;
 
       if (data->m_config->m_throttle) {
@@ -140,11 +160,17 @@ handle_client_resp(TSCont contp, TSEvent event, Data *const data)
           start_next_block = false;
           DEBUG_LOG("%p handle_client_resp: throttling %" PRId64, data, (output_done - output_sent));
         }
-      }
 
-      if (start_next_block) {
-        request_block(contp, data);
+        if (start_next_block) {
+          DEBUG_LOG("Starting next block request");
+          request_block(contp, data);
+        }
       }
+    } break;
+    case BlockState::Passthru: {
+    } break;
+    default:
+      break;
     }
   } break;
   case TS_EVENT_VCONN_WRITE_COMPLETE: {

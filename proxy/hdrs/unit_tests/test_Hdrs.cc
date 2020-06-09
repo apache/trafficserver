@@ -861,7 +861,7 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     bool must_copy_strs = false;
 
     hdr.create(nullptr);
-    err = hdr.parse(&parser, &start, end, must_copy_strs, false);
+    err = hdr.parse(&parser, &start, end, must_copy_strs, false, false);
 
     REQUIRE(err >= 0);
 

@@ -195,13 +195,13 @@ static const BIO_METHOD fastopen_methods[] = {{
 }};
 #else
 static const BIO_METHOD *fastopen_methods = [] {
-  BIO_METHOD *fastopen_methods = BIO_meth_new(BIO_TYPE_SOCKET, "fastopen");
-  BIO_meth_set_write(fastopen_methods, fastopen_bwrite);
-  BIO_meth_set_read(fastopen_methods, fastopen_bread);
-  BIO_meth_set_ctrl(fastopen_methods, fastopen_ctrl);
-  BIO_meth_set_create(fastopen_methods, fastopen_create);
-  BIO_meth_set_destroy(fastopen_methods, fastopen_destroy);
-  return fastopen_methods;
+  BIO_METHOD *methods = BIO_meth_new(BIO_TYPE_SOCKET, "fastopen");
+  BIO_meth_set_write(methods, fastopen_bwrite);
+  BIO_meth_set_read(methods, fastopen_bread);
+  BIO_meth_set_ctrl(methods, fastopen_ctrl);
+  BIO_meth_set_create(methods, fastopen_create);
+  BIO_meth_set_destroy(methods, fastopen_destroy);
+  return methods;
 }();
 #endif
 

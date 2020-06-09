@@ -20,6 +20,7 @@
 
 #include <atomic>
 #include <cstdlib>
+#include <mutex>
 #include <string_view>
 
 #include "ts/ts.h"
@@ -61,9 +62,12 @@ private:
   /// Whether the first transaction in this session has been written.
   bool has_written_first_transaction = false;
 
-  TSCont aio_cont       = nullptr; /// AIO continuation callback
-  TSCont txn_cont       = nullptr; /// Transaction continuation callback
-  TSMutex disk_io_mutex = nullptr; /// AIO mutex
+  TSCont aio_cont = nullptr; /// AIO continuation callback
+  TSCont txn_cont = nullptr; /// Transaction continuation callback
+
+  // The following has to be recursive because the stack does not unwind
+  // between event invocations.
+  std::recursive_mutex disk_io_mutex; /// The mutex for guarding IO calls.
 
   //
   // Static Variables

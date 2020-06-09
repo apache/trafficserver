@@ -761,7 +761,7 @@ void mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, c
 void mime_parser_init(MIMEParser *parser);
 void mime_parser_clear(MIMEParser *parser);
 ParseResult mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char **real_s, const char *real_e,
-                              bool must_copy_strings, bool eof, size_t max_hdr_field_size = 131070);
+                              bool must_copy_strings, bool eof, bool remove_ws_from_field_name, size_t max_hdr_field_size = 131070);
 
 void mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse);
 void mime_field_block_describe(HdrHeapObjImpl *raw, bool recurse);
@@ -1017,7 +1017,7 @@ public:
 
   int print(char *buf, int bufsize, int *bufindex, int *chars_to_skip);
 
-  int parse(MIMEParser *parser, const char **start, const char *end, bool must_copy_strs, bool eof,
+  int parse(MIMEParser *parser, const char **start, const char *end, bool must_copy_strs, bool eof, bool remove_ws_from_field_name,
             size_t max_hdr_field_size = UINT16_MAX);
 
   int value_get_index(const char *name, int name_length, const char *value, int value_length) const;
@@ -1299,7 +1299,8 @@ MIMEHdr::print(char *buf, int bufsize, int *bufindex, int *chars_to_skip)
   -------------------------------------------------------------------------*/
 
 inline int
-MIMEHdr::parse(MIMEParser *parser, const char **start, const char *end, bool must_copy_strs, bool eof, size_t max_hdr_field_size)
+MIMEHdr::parse(MIMEParser *parser, const char **start, const char *end, bool must_copy_strs, bool eof,
+               bool remove_ws_from_field_name, size_t max_hdr_field_size)
 {
   if (!m_heap)
     m_heap = new_HdrHeap();
@@ -1307,7 +1308,7 @@ MIMEHdr::parse(MIMEParser *parser, const char **start, const char *end, bool mus
   if (!m_mime)
     m_mime = mime_hdr_create(m_heap);
 
-  return mime_parser_parse(parser, m_heap, m_mime, start, end, must_copy_strs, eof, max_hdr_field_size);
+  return mime_parser_parse(parser, m_heap, m_mime, start, end, must_copy_strs, eof, remove_ws_from_field_name, max_hdr_field_size);
 }
 
 /*-------------------------------------------------------------------------

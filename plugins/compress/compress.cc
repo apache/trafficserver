@@ -24,6 +24,8 @@
 #include <cstring>
 #include <zlib.h>
 
+#include "ink_autoconf.h"
+
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>
 #endif
@@ -873,7 +875,6 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
 
   case TS_EVENT_HTTP_TXN_CLOSE:
     // Release the ocnif lease, and destroy this continuation
-    hc->release();
     TSContDestroy(contp);
     break;
 
@@ -904,9 +905,9 @@ handle_request(TSHttpTxn txnp, Configuration *config)
 
   if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
     if (config == nullptr) {
-      hc = find_host_configuration(txnp, req_buf, req_loc, nullptr); // Get a lease on the global config
+      hc = find_host_configuration(txnp, req_buf, req_loc, nullptr);
     } else {
-      hc = find_host_configuration(txnp, req_buf, req_loc, config); // Get a lease on the local config passed through doRemap
+      hc = find_host_configuration(txnp, req_buf, req_loc, config);
     }
     bool allowed = false;
 
@@ -929,8 +930,6 @@ handle_request(TSHttpTxn txnp, Configuration *config)
       normalize_accept_encoding(txnp, req_buf, req_loc);
       TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, transform_contp);
       TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, transform_contp); // To release the config
-    } else {
-      hc->release(); // No longer need this configuration, release it.
     }
     TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
   }
@@ -965,11 +964,7 @@ load_global_configuration(TSCont contp)
 
   debug("config swapped, old config %p", oldconfig);
 
-  // First, if there was a previous configuration, clean that one out. This avoids the
-  // small race condition tht exist between doing a find() and calling hold() on a
-  // HostConfig object.
   if (prev_config) {
-    prev_config->release_all();
     debug("deleting previous configuration container, %p", prev_config);
     delete prev_config;
   }
@@ -1072,7 +1067,6 @@ TSRemapDeleteInstance(void *instance)
 {
   debug("Cleanup configs read from remap");
   auto c = static_cast<Configuration *>(instance);
-  c->release_all();
   delete c;
 }
 

@@ -21,11 +21,14 @@
   limitations under the License.
  */
 
+#include "ink_autoconf.h"
 #include "configuration.h"
 #include <fstream>
 #include <algorithm>
 #include <vector>
 #include <fnmatch.h>
+
+#include "debug_macros.h"
 
 namespace Gzip
 {
@@ -110,7 +113,6 @@ enum ParserState {
 void
 Configuration::add_host_configuration(HostConfiguration *hc)
 {
-  hc->hold(); // We hold a lease on the HostConfig while it's in this container
   host_configurations_.push_back(hc);
 }
 
@@ -152,16 +154,7 @@ Configuration::find(const char *host, int host_length)
     }
   }
 
-  host_configuration->hold(); // Hold a lease
   return host_configuration;
-}
-
-void
-Configuration::release_all()
-{
-  for (auto &host_configuration : host_configurations_) {
-    host_configuration->release();
-  }
 }
 
 bool
