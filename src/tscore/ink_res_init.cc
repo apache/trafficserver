@@ -93,7 +93,8 @@
 #define isascii(c) (!(c & 0200))
 #endif
 
-HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {HOST_RES_PREFER_IPV4, HOST_RES_PREFER_IPV6, HOST_RES_PREFER_NONE};
+HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {
+  {HOST_RES_PREFER_IPV4, HOST_RES_PREFER_IPV6, HOST_RES_PREFER_NONE}};
 
 HostResPreferenceOrder host_res_default_preference_order;
 
