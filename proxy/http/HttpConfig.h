@@ -328,6 +328,9 @@ enum {
 
   http_origin_connections_throttled_stat,
 
+  http_origin_connect_adjust_thread_stat,
+  http_cache_open_write_adjust_thread_stat,
+
   http_stat_count
 };
 
