@@ -107,6 +107,9 @@ Http2ClientSession::free()
   REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session free");
 
+  // Don't free active ProxySession
+  ink_release_assert(is_active() == false);
+
   this->_milestones.mark(Http2SsnMilestone::CLOSE);
   ink_hrtime total_time = this->_milestones.elapsed(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE);
 
