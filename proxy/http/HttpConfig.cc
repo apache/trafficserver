@@ -1284,6 +1284,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.enable_http_info, "proxy.config.http.enable_http_info");
 
   HttpEstablishStaticConfigLongLong(c.max_post_size, "proxy.config.http.max_post_size");
+  HttpEstablishStaticConfigLongLong(c.max_payload_iobuf_index, "proxy.config.payload.io.max_buffer_index");
+  HttpEstablishStaticConfigLongLong(c.max_msg_iobuf_index, "proxy.config.msg.io.max_buffer_index");
 
   //##############################################################################
   //#
@@ -1527,6 +1529,8 @@ HttpConfig::reconfigure()
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
   params->max_post_size                  = m_master.max_post_size;
+  params->max_payload_iobuf_index        = m_master.max_payload_iobuf_index;
+  params->max_msg_iobuf_index            = m_master.max_msg_iobuf_index;
 
   params->oride.cache_required_headers = m_master.oride.cache_required_headers;
   params->oride.cache_range_lookup     = INT_TO_BOOL(m_master.oride.cache_range_lookup);

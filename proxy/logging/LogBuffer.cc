@@ -111,8 +111,8 @@ LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t wri
   //
   int64_t alloc_size = size + buf_align;
 
-  if (alloc_size <= max_iobuffer_size) {
-    m_buffer_fast_allocator_size = buffer_size_to_index(alloc_size);
+  if (alloc_size <= BUFFER_SIZE_FOR_INDEX(Log::config->logbuffer_max_iobuf_index)) {
+    m_buffer_fast_allocator_size = buffer_size_to_index(alloc_size, Log::config->logbuffer_max_iobuf_index);
     m_unaligned_buffer           = static_cast<char *>(ioBufAllocator[m_buffer_fast_allocator_size].alloc_void());
   } else {
     m_buffer_fast_allocator_size = -1;

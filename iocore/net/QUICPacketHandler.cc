@@ -76,7 +76,7 @@ QUICPacketHandler::_send_packet(const QUICPacket &packet, UDPConnection *udp_con
 {
   size_t udp_len;
   Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
-  udp_payload->alloc(iobuffer_size_to_index(pmtu));
+  udp_payload->alloc(iobuffer_size_to_index(pmtu, BUFFER_SIZE_INDEX_32K));
   packet.store(reinterpret_cast<uint8_t *>(udp_payload->end()), &udp_len);
   udp_payload->fill(udp_len);
 

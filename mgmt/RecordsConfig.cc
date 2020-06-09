@@ -720,6 +720,14 @@ static const RecordElement RecordsConfig[] =
   //##############################################################################
   {RECT_CONFIG, "proxy.config.io.max_buffer_size", RECD_INT, "32768", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.hostdb.io.max_buffer_index", RECD_INT, "8", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.payload.io.max_buffer_index", RECD_INT, "8", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.msg.io.max_buffer_index", RECD_INT, "8", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.log.io.max_buffer_index", RECD_INT, "8", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
 
   //##############################################################################
   //#

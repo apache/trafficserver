@@ -747,6 +747,9 @@ public:
   MgmtInt post_copy_size = 2048;
   MgmtInt max_post_size  = 0;
 
+  MgmtInt max_payload_iobuf_index = BUFFER_SIZE_INDEX_32K;
+  MgmtInt max_msg_iobuf_index     = BUFFER_SIZE_INDEX_32K;
+
   char *redirect_actions_string                        = nullptr;
   IpMap *redirect_actions_map                          = nullptr;
   RedirectEnabled::Action redirect_actions_self_action = RedirectEnabled::Action::INVALID;
