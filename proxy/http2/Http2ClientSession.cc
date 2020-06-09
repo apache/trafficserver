@@ -282,8 +282,8 @@ Http2ClientSession::do_io_close(int alerrno)
 
   this->clear_session_active();
 
-  // Clean up the write VIO in case of inactivity timeout
-  this->do_io_write(nullptr, 0, nullptr);
+  // Point the write_vio at the session in case of inactivity timeout
+  this->do_io_write(this, 0, nullptr);
 }
 
 void
@@ -345,10 +345,6 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_EOS:
     this->set_dying_event(event);
     this->do_io_close();
-    if (_vc != nullptr) {
-      _vc->do_io_close();
-      _vc = nullptr;
-    }
     retval = 0;
     break;
 
