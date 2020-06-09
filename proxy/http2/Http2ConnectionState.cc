@@ -1403,6 +1403,8 @@ Http2ConnectionState::release_stream()
 
     if (total_client_streams_count == 0) {
       if (fini_received) {
+        ua_session->clear_session_active();
+
         // We were shutting down, go ahead and terminate the session
         // this is a member of Http2ConnectionState and will be freed
         // when ua_session is destroyed
