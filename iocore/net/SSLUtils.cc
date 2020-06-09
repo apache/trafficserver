@@ -1019,7 +1019,7 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
-  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
+  if (netvc && (where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
       SSLConfigParams::ssl_allow_client_renegotiation == false) {
     int state = SSL_get_state(ssl);
 
