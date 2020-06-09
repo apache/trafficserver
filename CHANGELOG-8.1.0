@@ -78,6 +78,7 @@ Changes with Apache Traffic Server 8.1.0
   #5697 - Coalesce empty objects in HdrHeap
   #5701 - fix If-Match and If-Unmodified-Since priority problem
   #5710 - Convert regression tests for XPACK into Catch based unit tests
+  #5721 - Fixes autodetect of brotli
   #5727 - Add effective url options to slice plugin.
   #5747 - Add slow logs for HTTP/2 Connection & Stream
   #5766 - Record HttpSM Id on new transaction
@@ -192,3 +193,7 @@ Changes with Apache Traffic Server 8.1.0
   #6779 - 8.1.x backport: header_rewrite: this fixes parsing where the [ ] section gets merged into values
   #6785 - clang-analyzer: Fix dead nested assignment issues [8.1.x]
   #6786 - HPACK: send back an error to the client when the index is invalid
+  #6802 - 8.1.x backport code and documentation for lua states configuration and stats printing
+  #6825 - Clear handling tracked events of Http2Stream
+  #6854 - Fix pointer overflow in XPACK
+  #6862 - Fix brotli plugin
