@@ -331,6 +331,25 @@ enum {
   http_origin_connect_adjust_thread_stat,
   http_cache_open_write_adjust_thread_stat,
 
+  http_origin_shutdown_pool_lock_contention,
+  http_origin_shutdown_migration_failure,
+  http_origin_shutdown_tunnel_server,
+  http_origin_shutdown_tunnel_server_no_keep_alive,
+  http_origin_shutdown_tunnel_server_eos,
+  http_origin_shutdown_tunnel_server_plugin_tunnel,
+  http_origin_shutdown_tunnel_server_detach,
+  http_origin_shutdown_tunnel_client,
+  http_origin_shutdown_tunnel_transform_read,
+  http_origin_shutdown_release_no_sharing,
+  http_origin_shutdown_release_no_server,
+  http_origin_shutdown_release_no_keep_alive,
+  http_origin_shutdown_release_invalid_response,
+  http_origin_shutdown_release_invalid_request,
+  http_origin_shutdown_release_modified,
+  http_origin_shutdown_release_misc,
+  http_origin_shutdown_cleanup_entry,
+  http_origin_shutdown_tunnel_abort,
+
   http_stat_count
 };
 
