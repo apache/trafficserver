@@ -150,51 +150,44 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     // This is broken out because only in this case do we check the host hash first. The range must be checked
     // to verify an upstream that matches port and SNI name is selected. Walk backwards to select oldest.
     in_port_t port = ats_ip_port_cast(addr);
-    FQDNTable::iterator first, last;
-    // FreeBSD/clang++ bug workaround: explicit cast to super type to make overload work. Not needed on Fedora27 nor gcc.
-    // Not fixed on FreeBSD as of llvm 6.0.1.
-    std::tie(first, last) = static_cast<const decltype(m_fqdn_pool)::range::super_type &>(m_fqdn_pool.equal_range(hostname_hash));
-    while (last != first) {
-      --last;
-      if (port == ats_ip_port_cast(last->get_server_ip()) &&
-          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, last->get_netvc())) &&
-          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, last->get_netvc())) &&
-          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, last->get_netvc()))) {
+    auto first     = m_fqdn_pool.find(hostname_hash);
+    while (first != m_fqdn_pool.end() && first->hostname_hash == hostname_hash) {
+      if (port == ats_ip_port_cast(first->get_server_ip()) &&
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, first->get_netvc())) &&
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, first->get_netvc())) &&
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, first->get_netvc()))) {
         zret = HSM_DONE;
         break;
       }
+      ++first;
     }
     if (zret == HSM_DONE) {
-      to_return = last;
-      m_fqdn_pool.erase(last);
+      to_return = first;
+      m_fqdn_pool.erase(first);
       m_ip_pool.erase(to_return);
     }
   } else if (TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style) { // matching is not disabled.
-    IPTable::iterator first, last;
-    // FreeBSD/clang++ bug workaround: explicit cast to super type to make overload work. Not needed on Fedora27 nor gcc.
-    // Not fixed on FreeBSD as of llvm 6.0.1.
-    std::tie(first, last) = static_cast<const decltype(m_ip_pool)::range::super_type &>(m_ip_pool.equal_range(addr));
+    auto first = m_ip_pool.find(addr);
     // The range is all that is needed in the match IP case, otherwise need to scan for matching fqdn
     // And matches the other constraints as well
     // Note the port is matched as part of the address key so it doesn't need to be checked again.
     if (match_style & (~TS_SERVER_SESSION_SHARING_MATCH_MASK_IP)) {
-      while (last != first) {
-        --last;
-        if ((!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY) || last->hostname_hash == hostname_hash) &&
-            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, last->get_netvc())) &&
-            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, last->get_netvc())) &&
-            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, last->get_netvc()))) {
+      while (first != m_ip_pool.end() && ats_ip_addr_port_eq(first->get_server_ip(), addr)) {
+        if ((!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY) || first->hostname_hash == hostname_hash) &&
+            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, first->get_netvc())) &&
+            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, first->get_netvc())) &&
+            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, first->get_netvc()))) {
           zret = HSM_DONE;
           break;
         }
+        ++first;
       }
-    } else if (last != first) {
-      --last;
+    } else if (first != m_ip_pool.end()) {
       zret = HSM_DONE;
     }
     if (zret == HSM_DONE) {
-      to_return = last;
-      m_ip_pool.erase(last);
+      to_return = first;
+      m_ip_pool.erase(first);
       m_fqdn_pool.erase(to_return);
     }
   }
