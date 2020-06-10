@@ -1126,6 +1126,11 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   Event **signal_timeout        = &t;
 
   switch (event) {
+  // Treating immediate as inactivity timeout for any
+  // deprecated remaining immediates. The previous code was using EVENT_INTERVAL
+  // and EVENT_IMMEDIATE to distinguish active and inactive timeouts.
+  // There appears to be some stray EVENT_IMMEDIATEs floating around
+  case EVENT_IMMEDIATE:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     signal_event      = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout_at = &next_inactivity_timeout_at;
