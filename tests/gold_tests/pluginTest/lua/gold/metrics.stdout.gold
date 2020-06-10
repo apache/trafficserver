@@ -1,6 +1,0 @@
-plugin.lua.global.states ``
-plugin.lua.global.gc_bytes ``
-plugin.lua.global.threads ``
-plugin.lua.remap.states ``
-plugin.lua.remap.gc_bytes ``
-plugin.lua.remap.threads ``

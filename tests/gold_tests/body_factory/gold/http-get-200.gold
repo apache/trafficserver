@@ -1,6 +1,0 @@
-HTTP/1.1 200 OK
-``
-Content-Length: 47
-``
-
-This body should be returned for a GET request.

@@ -1,5 +1,0 @@
-`` DIAG: (ssl_hook_test) Setup callbacks pa=0 client_hello=0 client_hello_imm=0 sni=0 cert=0 cert_imm=0 pa_delay=0
-`` DIAG: (ssl_hook_test) Outbound delay start callback 0 ``
-`` DIAG: (ssl_hook_test) Callback reenable ssl_vc=``
-`` DIAG: (ssl_hook_test) Outbound delay start callback 1 ``
-`` DIAG: (ssl_hook_test) Callback reenable ssl_vc=``

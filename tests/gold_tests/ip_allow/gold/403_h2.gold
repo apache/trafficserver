@@ -1,5 +1,0 @@
-``
-> PUSH /h2_push HTTP/2
-``
-< HTTP/2 403``
-``
