@@ -337,8 +337,12 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
   write_vio.op        = VIO::WRITE;
   response_reader     = abuffer;
 
-  update_write_request(abuffer, nbytes, false);
-
+  if (c != nullptr && nbytes > 0 && this->is_client_state_writeable()) {
+    update_write_request(abuffer, nbytes, false);
+  } else if (!this->is_client_state_writeable()) {
+    // Cannot start a write on a closed stream
+    return nullptr;
+  }
   return &write_vio;
 }
 
