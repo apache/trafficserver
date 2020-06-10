@@ -591,7 +591,6 @@ Changes with Apache Traffic Server 9.0.0
   #5715 - Sets macOS luajit linker flags only when luajit detected
   #5716 - Fixes memory leak in traffic_crashlog
   #5717 - Change default proxy name to be "traffic_server", not the build machine.
-  #5721 - Fixes autodetect of brotli
   #5722 - In test_hooks Au test case, add work-around for flakeyness of VCONN start/close events.
   #5724 - Enable logging of the Elliptic Curve used to communicate with the client
   #5726 - Expose client request SSL stats via API & Lua plugin
@@ -858,6 +857,7 @@ Changes with Apache Traffic Server 9.0.0
   #6523 - Removes noisy log statement from xdebug
   #6532 - Add FetchSM support to dechunking in non-streaming mode with new TS API TSFetchFlagSet
   #6538 - Adds partial_blind_route sni action
+  #6542 - Rework stats over http so that it supports both a config file and the original path parameter
   #6550 - Fixes some tls autests on macOS
   #6555 - Enable logging autests on macOS, clarify why Linux is required
   #6556 - Removes copypasta curl text from tests and removes checks for curl
@@ -874,8 +874,10 @@ Changes with Apache Traffic Server 9.0.0
   #6586 - traffic_dump: don't dump cookies from the wire
   #6590 - Skip compressible content type check with null strings.
   #6591 - Cleanup: fix a inline function style
+  #6605 - Add support for a simple_server_retry_responses list
   #6606 - Making client session id unique across HTTP/1 and 2 sessions
   #6607 - Return TSFetchSM from TSFetchUrl so TSFetchFlagSet can set fetch flags
+  #6608 - Fix typo in system stats, change loadavg 10min to be 15min
   #6613 - SNI - Tunnel: Add support to match captured group from fqdn into tunnel_route
   #6615 - Updated ink_rwlock to be a real reader writer lock
   #6617 - Remove configure option --max-api-stats which does not do anything. S…
@@ -893,11 +895,14 @@ Changes with Apache Traffic Server 9.0.0
   #6677 - Format to match perferred if/else formatting for sh scripts
   #6678 - Removes commented out code from example
   #6682 - Lua Plugin - Extend the crypto API with SHA-256 and HMAC functions.
+  #6686 - Fixes to hostDB to avoid event and memory leaks
   #6690 - Remove tls_versions from host sni policy check
   #6694 - Normalizes function names to match hook names in intercept plugins
   #6697 - Increase the default max_record_entries to match the original value
   #6700 - traffic_dump: add nullptr check for sni string
+  #6701 - slice plugin: add --include-regex, --exclude-regex parameters
   #6704 - Removes ATS version from gold files
+  #6711 - cache_range_request autests: make more robust and clean up.
   #6714 - Add Access log fields for ProxyProtocol Context
   #6717 - Fixup .gitignores to match repo reality
   #6718 - gcc10: fixed warning about returning local variable in int64_to_str()
@@ -907,9 +912,12 @@ Changes with Apache Traffic Server 9.0.0
   #6731 - Fix g++ 10 compile errors.
   #6734 - Update expired test certificates for cert_update
   #6735 - Remove unused index for SSL application specific data
+  #6736 - Generalize callbacks for TLS session resumption
+  #6737 - Removes refcounting from compress and s3_auth plugins
   #6740 - Cleans up doubled words in documentation
   #6742 - gcc10: fixed clearing an object of non-trivial type for wccp
   #6743 - traffic_dump: refactor to make transactions written atomically
+  #6746 - Add an optional ramcache setting to volume.config to disable it
   #6754 - Enforce Active Connection limits
   #6755 - Add metrics to track default inactivity timed out connections
   #6757 - ASAN: Fixed one definition rule violation
@@ -920,5 +928,25 @@ Changes with Apache Traffic Server 9.0.0
   #6774 - Fixed `AddressSanitizer: odr-violation`
   #6781 - 1. Set a non-zero default value for TLS Client Handshake Timeout
   #6789 - Adding HTTP Status code 451 for Unavailable For Legal Reasons (RFC 7725)
+  #6797 - Adding HTTP status 451 in apidefs as well (See PR#6789)
   #6798 - clang-analyzer: uninitialized va_list
   #6800 - Add TXN_CLOSE hook to CPPAPI TransactionPlugin
+  #6803 - fixes issue 6765, memory leak in unit test
+  #6805 - Fix session pool to add and fetch to beginning of hash chain instead of end
+  #6807 - Add le32toh and htole32 for macOS
+  #6812 - Fix missing virtual destructor in TLSSessionResumptionSupport.
+  #6813 - Adding a basic ip_allow test.
+  #6816 - Fixes remaining memory leaks with nexthop strategy unit tests
+  #6817 - lua plugin: fix for incorrectly injecting global plugin stats
+  #6818 - Add CSV output as an option format for stats_over_http
+  #6819 - regex_remap: Adjust regex recursion limit down due to crashes in testing
+  #6824 - Fix test certs in client_context_dump
+  #6827 - Make chunked encoding test more resilient
+  #6829 - traffic_dump: debug_tag and lock improvements
+  #6834 - Drastically improve generator.so performance for /nocache
+  #6835 - Change AM_LDFLAGS to be an addition, not an overwrite, in the plugin makefile
+  #6837 - Generalize KA check logic
+  #6839 - Issue 6838 Fixing the comparison in waited_enough (drain functionality)
+  #6843 - Schedule Transform on the same thread as the continuation
+  #6845 - LGTM: add header guard
+  #6861 - Fix a crash on TLS resumption
