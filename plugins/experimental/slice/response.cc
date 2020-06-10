@@ -48,8 +48,8 @@ bodyString416()
 }
 
 // Form a 502 response, preliminary
-std::string const &
-string502()
+std::string
+string502(int const httpver)
 {
   static std::string msg;
   static std::mutex mutex;
@@ -68,10 +68,13 @@ string502()
     bodystr.append("</body>\n");
     bodystr.append("</html>\n");
 
+    char hverstr[64];
+    int const hlen =
+      snprintf(hverstr, sizeof(hverstr), "HTTP/%d.%d 502 Bad Gateway\r\n", TS_HTTP_MAJOR(httpver), TS_HTTP_MINOR(httpver));
+    msg.append(hverstr, hlen);
+
     char clenstr[1024];
     int const clen = snprintf(clenstr, sizeof(clenstr), "%lu", bodystr.size());
-
-    msg.append("HTTP/1.1 502 Bad Gateway\r\n");
     msg.append("Content-Length: ");
     msg.append(clenstr, clen);
     msg.append("\r\n");
@@ -87,6 +90,7 @@ void
 form416HeaderAndBody(HttpHeader &header, int64_t const contentlen, std::string const &bodystr)
 {
   header.removeKey(TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED);
+  header.removeKey(TS_MIME_FIELD_EXPIRES, TS_MIME_LEN_EXPIRES);
   header.removeKey(TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
   header.removeKey(TS_MIME_FIELD_ACCEPT_RANGES, TS_MIME_LEN_ACCEPT_RANGES);
 
