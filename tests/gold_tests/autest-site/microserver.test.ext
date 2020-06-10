@@ -122,14 +122,18 @@ def uServerUpAndRunning(serverHost, port, isSsl, isIPv6, request, clientcert='',
         plain_sock = socket.socket(socket.AF_INET)
 
     if isSsl:
+        print("isSsl")
         if clientcert != '' or clientkey != '':
+            print("using certs on wrap_socket")
             sock = ssl.wrap_socket(plain_sock, keyfile=clientkey, certfile=clientcert)
         else:
+            print("no certs on wrap_socket")
             sock = ssl.wrap_socket(plain_sock)
     else:
         sock = plain_sock
 
     try:
+        print("connecting to: {}:{}".format(serverHost, port))
         sock.connect((serverHost, port))
     except ConnectionRefusedError:
         return False
@@ -193,6 +197,7 @@ def MakeOriginServer(obj, name, port=None, s_port=None, ip='INADDR_LOOPBACK', de
     for flag, value in options.items():
         command += " {} {}".format(flag, value if value else '')
 
+    print("microserver Command: {}".format(command))
     p.Command = command
     p.Setup.MakeDir(data_dir)
     p.Variables.DataDir = data_dir
