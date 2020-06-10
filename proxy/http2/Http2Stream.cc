@@ -436,7 +436,7 @@ Http2Stream::initiating_close()
     bool sent_write_complete = false;
     if (_sm) {
       // Push out any last IO events
-      if (write_vio.cont) {
+      if (write_vio.cont && write_vio.nbytes > 0) {
         SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
         // Are we done?
         if (write_vio.nbytes == write_vio.ndone) {
