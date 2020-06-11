@@ -375,14 +375,6 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   // This function will always return true unless
   // vc is an SSLNetVConnection.
   if (!vc->getSSLHandShakeComplete()) {
-    if (vc->trackFirstHandshake()) {
-      // Eat the first write-ready.  Until the TLS handshake is complete,
-      // we should still be under the connect timeout and shouldn't bother
-      // the state machine until the TLS handshake is complete
-      vc->write.triggered = 0;
-      nh->write_ready_list.remove(vc);
-    }
-
     int err, ret;
 
     if (vc->get_context() == NET_VCONNECTION_OUT) {
