@@ -223,7 +223,6 @@ ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 ps.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
 ps.Command = curl_and_args + ' http://www.example.com/path -H "uuid: full"'
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/full.stdout.gold"
 ps.Streams.stderr = "gold/full.stderr.gold"
 tr.StillRunningAfter = ts
 
@@ -233,9 +232,9 @@ tr = Test.AddTestRun("inner range cache miss")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str)
 ps.ReturnCode = 0
-#ps.Streams.stdout = "gold/inner.stdout.gold"
 ps.Streams.stderr = "gold/inner.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 7-15/18", "expected content-range header")
 tr.StillRunningAfter = ts
 
 # 2 Test - Fetch from cache
@@ -243,9 +242,9 @@ tr = Test.AddTestRun("inner range cache hit")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {}'.format(inner_str)
 ps.ReturnCode = 0
-#ps.Streams.stdout = "gold/inner.stdout.gold"
 ps.Streams.stderr = "gold/inner.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 7-15/18", "expected content-range header")
 tr.StillRunningAfter = ts
 
 # full range
@@ -255,9 +254,9 @@ tr = Test.AddTestRun("0- request miss")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: frange"'.format(frange_str)
 ps.ReturnCode = 0
-#ps.Streams.stdout = "gold/frange.stdout.gold"
-ps.Streams.stderr = "gold/frange.stderr.gold"
+ps.Streams.stderr = "gold/full.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-18/18", "expected content-range header")
 tr.StillRunningAfter = ts
 
 # 4 Test - 0- request
@@ -265,9 +264,9 @@ tr = Test.AddTestRun("0- request hit")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {}'.format(frange_str)
 ps.ReturnCode = 0
-#ps.Streams.stdout = "gold/frange.stdout.gold"
-ps.Streams.stderr = "gold/frange.stderr.gold"
+ps.Streams.stderr = "gold/full.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-18/18", "expected content-range header")
 tr.StillRunningAfter = ts
 
 # end range
@@ -277,9 +276,9 @@ tr = Test.AddTestRun("-5 request miss")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: last"'.format(last_str)
 ps.ReturnCode = 0
-#ps.Streams.stdout = "gold/last.stdout.gold"
 ps.Streams.stderr = "gold/last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 13-18/18", "expected content-range header")
 tr.StillRunningAfter = ts
 
 # 6 Test - -5 request hit
@@ -287,9 +286,9 @@ tr = Test.AddTestRun("-5 request hit")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {}'.format(last_str)
 ps.ReturnCode = 0
-#ps.Streams.stdout = "gold/last.stdout.gold"
 ps.Streams.stderr = "gold/last.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 13-18/18", "expected content-range header")
 tr.StillRunningAfter = ts
 
 # Ensure 404's aren't getting cached
@@ -306,20 +305,19 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("404 request 2nd")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/404 -r 0-'
-ps.Streams.stdout = "gold/404.stdout.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-tr.StillRunningAfter = ts
+ps.Streams.stdout.Content += Testers.ContainsExpression("404 Not Found", "expected 404 response")
 
-'''
+tr.StillRunningAfter = ts
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-parentselection-key"'.format(ts.Variables.port)
 
+'''
 # 9 Test - cache_key_url request
 tr = Test.AddTestRun("cache_key_url request")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://parentselect/path -r {} -H "uuid: pselect"'.format(pselect_str)
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/pselect.stdout.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression(
   "X-ParentSelection-Key: .*-bytes=",
   "expected bytes in parent selection key",
@@ -327,13 +325,24 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
-# 10 Test - non cache_key_url request ... no X-ParentSelectionKey
+# 10 Test - non cache_key_url request ... no X-ParentSelection-Key
 tr = Test.AddTestRun("non cache_key_url request")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str)
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/pselect_none.stdout.gold"
+ps.Streams.stdout.Content = Testers.ExcludesExpression("X-ParentSelection-Key",  "parent select key shouldn't show up")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
+# 11 Test - cache_key_url request -- deprecated
+tr = Test.AddTestRun("cache_key_url request - dprecated")
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://psd/path -r {} -H "uuid: pselect"'.format(pselect_str)
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression(
+  "X-ParentSelection-Key: .*-bytes=",
+  "expected bytes in parent selection key",
+)
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
 '''
