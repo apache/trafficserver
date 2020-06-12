@@ -118,12 +118,14 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
   char const *cp     = nullptr;
   TSMLoc url_loc     = nullptr;
 
+  // 1. "version"
+  // Note that we print this for both requests and responses, so the first
+  // element in each has to start with a comma.
+  int version = TSHttpHdrVersionGet(buffer, hdr_loc);
+  result += R"("version":")" + std::to_string(TS_HTTP_MAJOR(version)) + "." + std::to_string(TS_HTTP_MINOR(version)) + '"';
+
   // Log scheme+method+request-target or status+reason based on header type
   if (TSHttpHdrTypeGet(buffer, hdr_loc) == TS_HTTP_TYPE_REQUEST) {
-    // 1. "version"
-    int version = TSHttpHdrVersionGet(buffer, hdr_loc);
-    result += R"("version":")" + std::to_string(TS_HTTP_MAJOR(version)) + "." + std::to_string(TS_HTTP_MINOR(version)) + '"';
-
     TSAssert(TS_SUCCESS == TSHttpHdrUrlGet(buffer, hdr_loc, &url_loc));
     // 2. "scheme":
     cp = TSUrlSchemeGet(buffer, url_loc, &len);
@@ -156,12 +158,11 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
     TSfree(url);
     TSHandleMLocRelease(buffer, hdr_loc, url_loc);
   } else {
-    // 1. "status":(string)
-    result += R"("status":)" + std::to_string(TSHttpHdrStatusGet(buffer, hdr_loc));
-    // 2. "reason":(string)
+    // 2. "status":(string)
+    result += R"(,"status":)" + std::to_string(TSHttpHdrStatusGet(buffer, hdr_loc));
+    // 3. "reason":(string)
     cp = TSHttpHdrReasonGet(buffer, hdr_loc, &len);
     result += "," + traffic_dump::json_entry("reason", cp, len);
-    // 3. "encoding"
   }
 
   // "headers": [[name(string), value(string)]]
