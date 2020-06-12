@@ -157,7 +157,7 @@
         "version": {
           "description": "HTTP version",
           "type": "string",
-          "enum": ["0.9", "1.0", "1.1"]
+          "enum": ["0.9", "1.0", "1.1", "2.0"]
         },
         "scheme": {
           "description": "HTTP scheme (request).",
@@ -187,6 +187,11 @@
       "type": "object",
       "required": ["status"],
       "properties": {
+        "version": {
+          "description": "HTTP version",
+          "type": "string",
+          "enum": ["0.9", "1.0", "1.1", "2.0"]
+        },
         "status": {
           "description": "Status code.",
           "type": "number"
