@@ -3224,6 +3224,11 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
         server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
       }
 
+      // Even with the background fill, the client side should go down
+      c->write_vio = nullptr;
+      c->vc->do_io_close(EHTTP_ERROR);
+      c->alive = false;
+
     } else {
       // No background fill
       p = c->producer;
