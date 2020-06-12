@@ -46,7 +46,7 @@ public:
     VantagePointType flow = VantagePointType::unknown;
   };
 
-  Trace(std::string odcid, std::string title = "", std::string desc = "") : _reference_time(Thread::get_hrtime()) {}
+  Trace(std::string odcid, std::string title = "", std::string desc = "") : _reference_time(Thread::get_hrtime()), _odcid(odcid) {}
 
   Trace(const VantagePoint &vp, std::string odcid, std::string title = "", std::string desc = "") : Trace(odcid, title, desc)
   {
@@ -83,6 +83,12 @@ public:
     return *this;
   }
 
+  std::string
+  odcid() const
+  {
+    return this->_odcid;
+  }
+
   void encode(YAML::Node &node);
 
 private:
@@ -100,8 +106,7 @@ class QLog
 {
 public:
   static constexpr char QLOG_VERSION[] = "draft-01";
-  // FIXME configurable
-  static constexpr char FILENAME[] = "ats.qlog";
+
   QLog(std::string title = "", std::string desc = "", std::string ver = QLOG_VERSION) : _title(title), _desc(desc), _ver(ver) {}
 
   Trace &
@@ -128,7 +133,7 @@ public:
     return *this->_traces.back().get();
   }
 
-  void dump(std::string filename = FILENAME);
+  void dump(std::string dir);
 
 private:
   std::string _title;
