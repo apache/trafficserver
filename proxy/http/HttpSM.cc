@@ -2451,6 +2451,7 @@ HttpSM::state_cache_open_write(int event, void *data)
       pending_action->cancel();
     }
     if ((pending_action = ua_txn->adjust_thread(this, event, data))) {
+      HTTP_INCREMENT_DYN_STAT(http_cache_open_write_adjust_thread_stat);
       return 0; // Go away if we reschedule
     }
   }
@@ -4818,6 +4819,7 @@ HttpSM::do_http_server_open(bool raw)
   // Make sure we are on the "right" thread
   if (ua_txn) {
     if ((pending_action = ua_txn->adjust_thread(this, EVENT_INTERVAL, nullptr))) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_connect_adjust_thread_stat);
       return; // Go away if we reschedule
     }
   }

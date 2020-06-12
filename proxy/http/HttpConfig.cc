@@ -942,6 +942,12 @@ register_stat_callbacks()
                      (int)http_origin_connections_throttled_stat, RecRawStatSyncCount);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.post_body_too_large", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_post_body_too_large, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.connect.adjust_thread", RECD_COUNTER, RECP_NON_PERSISTENT,
+                     (int)http_origin_connect_adjust_thread_stat, RecRawStatSyncCount);
+  HTTP_CLEAR_DYN_STAT(http_origin_connect_adjust_thread_stat);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.cache.open_write.adjust_thread", RECD_COUNTER, RECP_NON_PERSISTENT,
+                     (int)http_cache_open_write_adjust_thread_stat, RecRawStatSyncCount);
+  HTTP_CLEAR_DYN_STAT(http_cache_open_write_adjust_thread_stat);
   // milestones
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.ua_begin", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_ua_begin_time_stat, RecRawStatSyncSum);

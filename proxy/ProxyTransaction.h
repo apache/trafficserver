@@ -221,3 +221,20 @@ ProxyTransaction::support_sni() const
 {
   return _proxy_ssn ? _proxy_ssn->support_sni() : false;
 }
+
+// See if we need to schedule on the primary thread for the transaction or change the thread that is associated with the VC.
+// If we reschedule, the scheduled action is returned.  Otherwise, NULL is returned
+inline Action *
+ProxyTransaction::adjust_thread(Continuation *cont, int event, void *data)
+{
+  NetVConnection *vc   = this->get_netvc();
+  EThread *this_thread = this_ethread();
+  if (vc && vc->thread != this_thread) {
+    if (vc->thread->is_event_type(ET_NET)) {
+      return vc->thread->schedule_imm(cont, event, data);
+    } else { // Not a net thread, take over this thread
+      vc->thread = this_thread;
+    }
+  }
+  return nullptr;
+}
