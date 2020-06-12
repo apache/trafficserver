@@ -2383,7 +2383,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
       } else {
         // This really should be an error (spec doesn't permit lone CR) but the regression tests
         // require it.
-        this->append({&RAW_CR, 1});
+        this->append(TextView(&RAW_CR, 1)); // This is to fix a core dump of the icc 19.1 compiler when {&RAW_CR, 1} is used
         m_state = MIME_PARSE_INSIDE;
       }
       break;
