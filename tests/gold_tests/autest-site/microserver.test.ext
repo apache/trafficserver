@@ -21,6 +21,7 @@ import socket
 import ssl
 
 from autest.api import AddWhenFunction
+import hosts.output as host
 from ports import get_port
 
 import trlib.ipconstants as IPConstants
@@ -132,6 +133,16 @@ def uServerUpAndRunning(serverHost, port, isSsl, isIPv6, request, clientcert='',
     try:
         sock.connect((serverHost, port))
     except ConnectionRefusedError:
+        host.WriteDebug(
+            ['uServerUpAndRunning', 'when'],
+            "Connection refused: {0}:{1}".format(
+                serverHost, port))
+        return False
+    except ssl.SSLError:
+        host.WriteDebug(
+            ['uServerUpAndRunning', 'when'],
+            "SSL connection error: {0}:{1}".format(
+                serverHost, port))
         return False
 
     sock.sendall(request.encode())
