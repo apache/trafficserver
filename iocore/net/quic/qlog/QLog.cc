@@ -20,6 +20,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
+#include <string>
+
 #include "QLog.h"
 
 namespace QLog
@@ -71,7 +74,7 @@ Trace::encode(YAML::Node &node)
 }
 
 void
-QLog::dump(std::string filename)
+QLog::dump(std::string dir)
 {
   YAML::Node root;
   root["qlog_version"] = this->_ver;
@@ -83,8 +86,13 @@ QLog::dump(std::string filename)
     root["traces"].push_back(node);
   }
 
+  auto file = dir;
+  if (file.back() != '/') {
+    file += "/";
+  }
+  file += this->last_trace().odcid() + ".qlog";
   std::ofstream ofs;
-  ofs.open(filename, std::ofstream::in | std::ofstream::trunc);
+  ofs.open(file, std::ofstream::in | std::ofstream::trunc);
 
   YAML::Emitter emitter(ofs);
   emitter << YAML::DoubleQuoted << YAML::Flow << root;

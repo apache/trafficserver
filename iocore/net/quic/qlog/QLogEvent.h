@@ -895,6 +895,8 @@ namespace Recovery
       default:
         break;
       }
+
+      return nullptr;
     }
   };
 
@@ -937,7 +939,10 @@ namespace Recovery
         return "expired";
       case EventType::cancelled:
         return "cancelled";
+      default:
+        break;
       }
+      return nullptr;
     }
 
   private:

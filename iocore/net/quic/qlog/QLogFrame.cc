@@ -26,17 +26,17 @@
 namespace QLog
 {
 template <typename Real>
-Real &
+const Real &
 Convert(const QUICFrame *frame)
 {
   // FIXME: dangerous
-  auto tmp = const_cast<QUICFrame *>(frame);
+  auto tmp = static_cast<const QUICFrame *>(frame);
 #if defined(DEBUG)
-  auto ref = dynamic_cast<Real *>(tmp);
+  auto ref = dynamic_cast<const Real *>(tmp);
   ink_assert(ref != nullptr);
   return *ref;
 #endif
-  return *static_cast<Real *>(tmp);
+  return *static_cast<const Real *>(tmp);
 }
 
 QLogFrameUPtr

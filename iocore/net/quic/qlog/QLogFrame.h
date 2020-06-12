@@ -64,7 +64,7 @@ public:
 namespace Frame
 {
   struct AckFrame : public QLogFrame {
-    AckFrame(QUICAckFrame &frame) : QLogFrame(frame.type())
+    AckFrame(const QUICAckFrame &frame) : QLogFrame(frame.type())
     {
       acked_range = frame.ranges();
       ack_delay   = frame.ack_delay();
@@ -85,7 +85,7 @@ namespace Frame
   };
 
   struct StreamFrame : public QLogFrame {
-    StreamFrame(QUICStreamFrame &frame) : QLogFrame(frame.type())
+    StreamFrame(const QUICStreamFrame &frame) : QLogFrame(frame.type())
     {
       stream_id = std::to_string(static_cast<uint64_t>(frame.stream_id()));
       offset    = std::to_string(static_cast<uint64_t>(frame.offset()));
@@ -109,17 +109,17 @@ namespace Frame
   };
 
   struct PaddingFrame : public QLogFrame {
-    PaddingFrame(QUICPaddingFrame &frame) : QLogFrame(frame.type()) {}
+    PaddingFrame(const QUICPaddingFrame &frame) : QLogFrame(frame.type()) {}
     void encode(YAML::Node &) override;
   };
 
   struct PingFrame : public QLogFrame {
-    PingFrame(QUICPingFrame &frame) : QLogFrame(frame.type()) {}
+    PingFrame(const QUICPingFrame &frame) : QLogFrame(frame.type()) {}
     void encode(YAML::Node &) override;
   };
 
   struct RstStreamFrame : public QLogFrame {
-    RstStreamFrame(QUICRstStreamFrame &frame) : QLogFrame(frame.type())
+    RstStreamFrame(const QUICRstStreamFrame &frame) : QLogFrame(frame.type())
     {
       stream_id  = std::to_string(static_cast<uint64_t>(frame.stream_id()));
       error_code = frame.error_code();
@@ -134,7 +134,7 @@ namespace Frame
   };
 
   struct StopSendingFrame : public QLogFrame {
-    StopSendingFrame(QUICStopSendingFrame &frame) : QLogFrame(frame.type())
+    StopSendingFrame(const QUICStopSendingFrame &frame) : QLogFrame(frame.type())
     {
       stream_id  = std::to_string(static_cast<uint64_t>(frame.stream_id()));
       error_code = frame.error_code();
@@ -147,7 +147,7 @@ namespace Frame
   };
 
   struct CryptoFrame : public QLogFrame {
-    CryptoFrame(QUICCryptoFrame &frame) : QLogFrame(frame.type())
+    CryptoFrame(const QUICCryptoFrame &frame) : QLogFrame(frame.type())
     {
       offset = std::to_string(static_cast<uint64_t>(frame.offset()));
       length = frame.data_length();
@@ -159,7 +159,7 @@ namespace Frame
   };
 
   struct NewTokenFrame : public QLogFrame {
-    NewTokenFrame(QUICNewTokenFrame &frame) : QLogFrame(frame.type())
+    NewTokenFrame(const QUICNewTokenFrame &frame) : QLogFrame(frame.type())
     {
       token  = QUICBase::to_hex(frame.token(), frame.token_length());
       length = frame.token_length();
@@ -171,14 +171,14 @@ namespace Frame
   };
 
   struct MaxDataFrame : public QLogFrame {
-    MaxDataFrame(QUICMaxDataFrame &frame) : QLogFrame(frame.type()) { maximum = std::to_string(frame.maximum_data()); }
+    MaxDataFrame(const QUICMaxDataFrame &frame) : QLogFrame(frame.type()) { maximum = std::to_string(frame.maximum_data()); }
 
     void encode(YAML::Node &) override;
     std::string maximum;
   };
 
   struct MaxStreamDataFrame : public QLogFrame {
-    MaxStreamDataFrame(QUICMaxStreamDataFrame &frame) : QLogFrame(frame.type())
+    MaxStreamDataFrame(const QUICMaxStreamDataFrame &frame) : QLogFrame(frame.type())
     {
       stream_id = std::to_string(static_cast<uint64_t>(frame.stream_id()));
       maximum   = std::to_string(frame.maximum_stream_data());
@@ -190,7 +190,7 @@ namespace Frame
   };
 
   struct MaxStreamsFrame : public QLogFrame {
-    MaxStreamsFrame(QUICMaxStreamsFrame &frame) : QLogFrame(frame.type())
+    MaxStreamsFrame(const QUICMaxStreamsFrame &frame) : QLogFrame(frame.type())
     {
       maximum = std::to_string(frame.maximum_streams());
       // FIXME
@@ -203,7 +203,7 @@ namespace Frame
   };
 
   struct DataBlockedFrame : public QLogFrame {
-    DataBlockedFrame(QUICDataBlockedFrame &frame) : QLogFrame(frame.type())
+    DataBlockedFrame(const QUICDataBlockedFrame &frame) : QLogFrame(frame.type())
     {
       limit = std::to_string(static_cast<uint64_t>(frame.offset()));
     }
@@ -212,7 +212,7 @@ namespace Frame
   };
 
   struct StreamDataBlockedFrame : public QLogFrame {
-    StreamDataBlockedFrame(QUICStreamDataBlockedFrame &frame) : QLogFrame(frame.type())
+    StreamDataBlockedFrame(const QUICStreamDataBlockedFrame &frame) : QLogFrame(frame.type())
     {
       limit     = std::to_string(static_cast<uint64_t>(frame.offset()));
       stream_id = std::to_string(static_cast<uint64_t>(frame.stream_id()));
@@ -223,7 +223,7 @@ namespace Frame
   };
 
   struct StreamsBlockedFrame : public QLogFrame {
-    StreamsBlockedFrame(QUICStreamIdBlockedFrame &frame) : QLogFrame(frame.type())
+    StreamsBlockedFrame(const QUICStreamIdBlockedFrame &frame) : QLogFrame(frame.type())
     {
       stream_type = "bidirectional";
       stream_id   = std::to_string(static_cast<uint64_t>(frame.stream_id()));
@@ -234,7 +234,7 @@ namespace Frame
   };
 
   struct NewConnectionIDFrame : public QLogFrame {
-    NewConnectionIDFrame(QUICNewConnectionIdFrame &frame) : QLogFrame(frame.type())
+    NewConnectionIDFrame(const QUICNewConnectionIdFrame &frame) : QLogFrame(frame.type())
     {
       sequence_number       = std::to_string(frame.sequence());
       retire_prior_to       = std::to_string(frame.retire_prior_to());
@@ -249,7 +249,7 @@ namespace Frame
   };
 
   struct RetireConnectionIDFrame : public QLogFrame {
-    RetireConnectionIDFrame(QUICRetireConnectionIdFrame &frame) : QLogFrame(frame.type())
+    RetireConnectionIDFrame(const QUICRetireConnectionIdFrame &frame) : QLogFrame(frame.type())
     {
       sequence_number = std::to_string(frame.seq_num());
     }
@@ -258,7 +258,7 @@ namespace Frame
   };
 
   struct PathChallengeFrame : public QLogFrame {
-    PathChallengeFrame(QUICPathChallengeFrame &frame) : QLogFrame(frame.type())
+    PathChallengeFrame(const QUICPathChallengeFrame &frame) : QLogFrame(frame.type())
     {
       data = QUICBase::to_hex(frame.data(), QUICPathChallengeFrame::DATA_LEN);
     }
@@ -267,7 +267,7 @@ namespace Frame
   };
 
   struct PathResponseFrame : public QLogFrame {
-    PathResponseFrame(QUICPathResponseFrame &frame) : QLogFrame(frame.type())
+    PathResponseFrame(const QUICPathResponseFrame &frame) : QLogFrame(frame.type())
     {
       data = QUICBase::to_hex(frame.data(), QUICPathChallengeFrame::DATA_LEN);
     }
@@ -276,7 +276,7 @@ namespace Frame
   };
 
   struct ConnectionCloseFrame : public QLogFrame {
-    ConnectionCloseFrame(QUICConnectionCloseFrame &frame, bool app = false) : QLogFrame(frame.type())
+    ConnectionCloseFrame(const QUICConnectionCloseFrame &frame, bool app = false) : QLogFrame(frame.type())
     {
       error_space = app ? "application" : "transport";
       error_code  = frame.error_code();
@@ -291,12 +291,12 @@ namespace Frame
   };
 
   struct HandshakeDoneFrame : public QLogFrame {
-    HandshakeDoneFrame(QUICHandshakeDoneFrame &frame) : QLogFrame(frame.type()){};
+    HandshakeDoneFrame(const QUICHandshakeDoneFrame &frame) : QLogFrame(frame.type()){};
     void encode(YAML::Node &) override;
   };
 
   struct UnknownFrame : public QLogFrame {
-    UnknownFrame(QUICUnknownFrame &frame) : QLogFrame(frame.type())
+    UnknownFrame(const QUICUnknownFrame &frame) : QLogFrame(frame.type())
     {
       // FIXME
       raw_frame_type = static_cast<uint8_t>(frame.type());

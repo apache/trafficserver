@@ -130,7 +130,7 @@ QUICConfigParams::initialize()
   REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_session_file, "proxy.config.quic.client.session_file");
   REC_ReadConfigStringAlloc(this->_client_keylog_file, "proxy.config.quic.client.keylog_file");
-  REC_ReadConfigStringAlloc(this->_qlog_file, "proxy.config.quic.qlog_file");
+  REC_ReadConfigStringAlloc(this->_qlog_dir, "proxy.config.quic.qlog_dir");
 
   // Transport Parameters
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
@@ -473,9 +473,9 @@ QUICConfigParams::client_keylog_file() const
 }
 
 const char *
-QUICConfigParams::qlog_file() const
+QUICConfigParams::qlog_dir() const
 {
-  return this->_qlog_file;
+  return this->_qlog_dir;
 }
 
 //

@@ -464,8 +464,8 @@ QUICNetVConnection::start()
   this->_frame_dispatcher->add_handler(this->_handshake_handler);
 
   // regist qlog
-  if (this->_context->config()->qlog_file() != nullptr) {
-    this->_qlog = std::make_unique<QLog::QLogListener>(*this->_context.get(), this->_original_quic_connection_id.hex());
+  if (this->_context->config()->qlog_dir() != nullptr) {
+    this->_qlog = std::make_unique<QLog::QLogListener>(*this->_context, this->_original_quic_connection_id.hex());
     this->_qlog->last_trace().set_vantage_point(
       {"ats", QLog::Trace::VantagePointType::server, QLog::Trace::VantagePointType::server});
     this->_context->regist_callback(this->_qlog);
@@ -1712,7 +1712,7 @@ QUICNetVConnection::_recv_and_ack(const QUICPacketR &packet, bool *has_non_probi
     *has_non_probing_frame = false;
   }
 
-  error = this->_frame_dispatcher->receive_frames(*this->_context.get(), level, payload, size, ack_only, is_flow_controlled,
+  error = this->_frame_dispatcher->receive_frames(*this->_context, level, payload, size, ack_only, is_flow_controlled,
                                                   has_non_probing_frame, static_cast<const QUICPacketR *>(&packet));
   this->_context->trigger(QUICContext::CallbackEvent::PACKET_RECV, &packet);
 

@@ -52,7 +52,7 @@ QUICKeyGenerator_impl = QUICKeyGenerator_openssl.cc
 endif
 endif
 
-QLog_impl = qlog/QLogEvent.cc qlog/QlogFrame.cc qlog/QLog.cc
+QLog_impl = qlog/QLogEvent.cc qlog/QLogFrame.cc qlog/QLog.cc
 
 libquic_a_SOURCES = \
   QUICGlobals.cc \

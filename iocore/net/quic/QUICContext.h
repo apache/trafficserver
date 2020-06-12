@@ -33,6 +33,7 @@ class QUICCongestionController;
 class QUICPacketProtectionKeyInfoProvider;
 class QUICPathManager;
 class QUICPacketR;
+class QUICPacket;
 
 class QUICNetVConnection;
 struct QUICPacketInfo;
