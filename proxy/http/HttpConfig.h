@@ -469,6 +469,7 @@ struct OverridableHttpConfigParams {
 
   MgmtInt server_min_keep_alive_conns         = 0;
   MgmtByte server_session_sharing_match       = 0;
+  char *server_session_sharing_match_str      = nullptr;
   MgmtByte auth_server_session_private        = 1;
   MgmtByte fwd_proxy_auth_to_parent           = 0;
   MgmtByte uncacheable_requests_bypass_parent = 1;
@@ -853,6 +854,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(proxy_response_via_string);
   ats_free(anonymize_other_header_list);
   ats_free(oride.body_factory_template_base);
+  ats_free(oride.server_session_sharing_match_str);
   ats_free(oride.proxy_response_server_string);
   ats_free(oride.global_user_agent_header);
   ats_free(oride.ssl_client_cert_filename);

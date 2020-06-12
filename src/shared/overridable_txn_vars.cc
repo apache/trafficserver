@@ -101,7 +101,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {"proxy.config.http.cache.ignore_server_no_cache", {TS_CONFIG_HTTP_CACHE_IGNORE_SERVER_NO_CACHE, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.heuristic_min_lifetime", {TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.heuristic_max_lifetime", {TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME, TS_RECORDDATATYPE_INT}},
-     {"proxy.config.http.server_session_sharing.match", {TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.http.server_session_sharing.match", {TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH, TS_RECORDDATATYPE_STRING}},
      {"proxy.config.http.cache.ignore_accept_mismatch", {TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.open_write_fail_action", {TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.insert_squid_x_forwarded_for", {TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR, TS_RECORDDATATYPE_INT}},
