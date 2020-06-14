@@ -748,6 +748,7 @@ Changes with Apache Traffic Server 9.0.0
   #6197 - Fix problems with "Probe" option for X-Debug MIME header field.
   #6198 - Move logging before session could be freed
   #6201 - ssl_session_reuse optimization to check if diags is on
+  #6203 - Fix the relative path for template_sets_dir to be install directory
   #6204 - Lua plugin fix: Account for null in output from TSUrlPercentDecode.
   #6206 - Fix the strategies.yaml documentation.
   #6207 - Add autopep8 & pyflakes in dev-packages for AuTest
@@ -921,6 +922,7 @@ Changes with Apache Traffic Server 9.0.0
   #6754 - Enforce Active Connection limits
   #6755 - Add metrics to track default inactivity timed out connections
   #6757 - ASAN: Fixed one definition rule violation
+  #6758 - Fix set manipulation in dual cert resolution
   #6760 - Do not fail multicert load if line does not create entry
   #6768 - clang-analyzer: Fix dead nested assignment issues
   #6770 - Weird characters in debug message
