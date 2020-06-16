@@ -4749,11 +4749,13 @@ HttpSM::get_outbound_sni() const
 {
   const char *sni_name = nullptr;
   size_t len           = 0;
-  if (t_state.txn_conf->ssl_client_sni_policy != nullptr && !strcmp(t_state.txn_conf->ssl_client_sni_policy, "remap")) {
+  if (t_state.txn_conf->ssl_client_sni_policy == nullptr || !strcmp(t_state.txn_conf->ssl_client_sni_policy, "host")) {
+    // By default the host header field value is used for the SNI.
+    sni_name = t_state.hdr_info.server_request.host_get(reinterpret_cast<int *>(&len));
+  } else {
+    // If other is specified, like "remap" and "verify_with_name_source", the remapped origin name is used for the SNI value
     len      = strlen(t_state.server_info.name);
     sni_name = t_state.server_info.name;
-  } else { // Do the default of host header for SNI
-    sni_name = t_state.hdr_info.server_request.host_get(reinterpret_cast<int *>(&len));
   }
   return std::string_view(sni_name, len);
 }
