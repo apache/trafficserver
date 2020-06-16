@@ -346,6 +346,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
+    Http2SsnDebug("Closing event %d", event);
     this->set_dying_event(event);
     this->do_io_close();
     if (_vc != nullptr) {
