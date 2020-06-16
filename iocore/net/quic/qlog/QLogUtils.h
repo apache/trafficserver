@@ -61,6 +61,8 @@ CongestionStateConvert(QUICCongestionController::State state)
     return Recovery::CongestionStateUpdated::State::congestion_avoidance;
   case QUICCongestionController::State::RECOVERY:
     return Recovery::CongestionStateUpdated::State::recovery;
+  default:
+    return Recovery::CongestionStateUpdated::State::slow_start;
   }
 }
 
