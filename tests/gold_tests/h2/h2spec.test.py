@@ -55,8 +55,8 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.verify.server':  0,
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http2',
+    'proxy.config.diags.debug.enabled': 0,
+    'proxy.config.diags.debug.tags': 'http',
 })
 
 # ----
@@ -67,7 +67,7 @@ ts.Disk.records_config.update({
 h2spec_targets = "http2/1 http2/2 http2/3 http2/4 http2/5 http2/6.1 http2/6.2 http2/6.3 http2/6.5 http2/6.6 http2/6.7 http2/6.8 http2/7 http2/8 hpack"
 
 test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = 'h2spec {0} -t -k -p {1}'.format(h2spec_targets, ts.Variables.ssl_port)
+test_run.Processes.Default.Command = 'h2spec {0} -t -k --timeout 10 -p {1}'.format(h2spec_targets, ts.Variables.ssl_port)
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 test_run.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
