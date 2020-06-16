@@ -184,6 +184,7 @@ Changes with Apache Traffic Server 8.1.0
   #6676 - Fixes the 'traffic_ctl host status' for trafficserver 8.1.x
   #6685 - 8.1.x backport cache_range_requests autests: remove last-modified
   #6688 - Fixes minor memory leak in configure_net
+  #6689 - Handle immediate as inactivity timeout
   #6692 - Fix deprecated-copy warning in cache tool
   #6708 - Adding logging fields for collapsed forwarding metrics
   #6729 - Fix a bug that current_active_client_connections doesn't decrease
@@ -195,5 +196,8 @@ Changes with Apache Traffic Server 8.1.0
   #6786 - HPACK: send back an error to the client when the index is invalid
   #6802 - 8.1.x backport code and documentation for lua states configuration and stats printing
   #6825 - Clear handling tracked events of Http2Stream
+  #6848 - 8.1.x: cache_range_request: Overhaul and clean up the core autest.
   #6854 - Fix pointer overflow in XPACK
   #6862 - Fix brotli plugin
+  #6876 - Make Http2ClientSession inactive on EOS event
+  #6885 - Revert 4028 for 8.1.x branch
