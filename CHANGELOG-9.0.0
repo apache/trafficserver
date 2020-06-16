@@ -787,6 +787,7 @@ Changes with Apache Traffic Server 9.0.0
   #6283 - Adjust debug tag for ssl_sni_whitelist plugin to match plugin
   #6284 - Removes the remaining references to TSQA
   #6287 - Introduce NetEvent to split UnixNetVConnection and NetHandler
+  #6291 - Add extension ip.test.ext to Au Test, with Test method to allocate extra TCP ports.
   #6293 - Add invalid config warning when cache open write fail and read retry are inconsistent
   #6297 - Add links to RWW sections
   #6303 - Fixes a  case where the NextHop consistent hash ring may not be completely searched.
@@ -856,6 +857,7 @@ Changes with Apache Traffic Server 9.0.0
   #6517 - Make traffic_ctl limp along for now with large records.snap
   #6519 - Adds support for configure option --enable-yaml-headers
   #6523 - Removes noisy log statement from xdebug
+  #6524 - Require 1.1.1 as minimum openssl lib version for tls_check_dual_cert_selection Au test.
   #6532 - Add FetchSM support to dechunking in non-streaming mode with new TS API TSFetchFlagSet
   #6538 - Adds partial_blind_route sni action
   #6542 - Rework stats over http so that it supports both a config file and the original path parameter
@@ -881,6 +883,7 @@ Changes with Apache Traffic Server 9.0.0
   #6608 - Fix typo in system stats, change loadavg 10min to be 15min
   #6613 - SNI - Tunnel: Add support to match captured group from fqdn into tunnel_route
   #6615 - Updated ink_rwlock to be a real reader writer lock
+  #6616 - Adding a log pipe buffer size configuration test
   #6617 - Remove configure option --max-api-stats which does not do anything. S…
   #6618 - Fix missing virtual destructor for PluginUserArgsMixin.
   #6628 - Use default rwlock attributes on initialize
@@ -936,13 +939,16 @@ Changes with Apache Traffic Server 9.0.0
   #6803 - fixes issue 6765, memory leak in unit test
   #6805 - Fix session pool to add and fetch to beginning of hash chain instead of end
   #6807 - Add le32toh and htole32 for macOS
+  #6809 - Fix assert when client aborts during backfill
   #6812 - Fix missing virtual destructor in TLSSessionResumptionSupport.
   #6813 - Adding a basic ip_allow test.
   #6816 - Fixes remaining memory leaks with nexthop strategy unit tests
   #6817 - lua plugin: fix for incorrectly injecting global plugin stats
   #6818 - Add CSV output as an option format for stats_over_http
   #6819 - regex_remap: Adjust regex recursion limit down due to crashes in testing
+  #6822 - change overridable var type for proxy.config.http.server_session_sharing.match from int to string
   #6824 - Fix test certs in client_context_dump
+  #6826 - Return null when  do_io_write called on closed stream
   #6827 - Make chunked encoding test more resilient
   #6829 - traffic_dump: debug_tag and lock improvements
   #6834 - Drastically improve generator.so performance for /nocache
@@ -951,4 +957,12 @@ Changes with Apache Traffic Server 9.0.0
   #6839 - Issue 6838 Fixing the comparison in waited_enough (drain functionality)
   #6843 - Schedule Transform on the same thread as the continuation
   #6845 - LGTM: add header guard
+  #6856 - Traffic Dump: Add server response HTTP version
   #6861 - Fix a crash on TLS resumption
+  #6866 - Protect against nullptr access during SSL Callback
+  #6868 - avoid dynamic_cast for non_internal requests
+  #6872 - Track thread changes during origin connect and cache open write
+  #6884 - microserver error handling: SSLError check and debug.
+  #6891 - Make h2spec test more resiliant by extending timeout
+  #6892 - Fix compiler issue with ICC 19.1
+  #6898 - set sni_name with remapped origin name if sni_policy is not the default value
