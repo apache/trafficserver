@@ -187,6 +187,7 @@ Changes with Apache Traffic Server 8.1.0
   #6689 - Handle immediate as inactivity timeout
   #6692 - Fix deprecated-copy warning in cache tool
   #6708 - Adding logging fields for collapsed forwarding metrics
+  #6711 - cache_range_request autests: make more robust and clean up.
   #6729 - Fix a bug that current_active_client_connections doesn't decrease
   #6750 - backports parent.config  ignore_self_detect flag to 8.1.x
   #6753 - Fix HPACK Dynamic Table Cleanup
