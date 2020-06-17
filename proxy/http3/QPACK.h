@@ -23,11 +23,17 @@
 
 #pragma once
 
+#include <map>
+
 #include "I_EventSystem.h"
 #include "I_Event.h"
+#include "I_IOBuffer.h"
+#include "tscore/Arena.h"
 #include "tscpp/util/IntrusiveDList.h"
 #include "MIME.h"
+#include "HTTP.h"
 #include "QUICApplication.h"
+#include "QUICConnection.h"
 
 class HTTPHdr;
 
