@@ -1374,7 +1374,7 @@ public:
 #define new_IOBufferData IOBufferData_tracker(RES_PATH("memory/IOBuffer/"))
 #define new_xmalloc_IOBufferData(b, size) new_xmalloc_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
 
-extern int64_t iobuffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size);
+extern int64_t iobuffer_size_to_index(int64_t size, int64_t max);
 extern int64_t index_to_buffer_size(int64_t idx);
 /**
   Clone a IOBufferBlock chain. Used to snarf a IOBufferBlock chain
