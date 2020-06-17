@@ -173,7 +173,7 @@ them into activity.
 
 A plugin may consist of just one static continuation that is called
 whenever certain events happen. Examples of such plugins include
-``blacklist_1.c``, ``basic_auth.c``, and ``redirect_1.c``.
+``blocklist_1.c``, ``basic_auth.c``, and ``redirect_1.c``.
 Alternatively, a plugin might dynamically create other continuations as
 needed. Transform plugins are built in this manner: a static parent
 continuation checks all transactions to see if any are transformable;
@@ -266,35 +266,35 @@ reflects the Traffic Server state that was *just completed*. For
 example, the "OS DNS lookup" hook wakes up a plugin right *after* the
 origin server DNS lookup. For a plugin that requires the IP address of
 the requested origin server, this hook is the right one to use. The
-Blacklist plugin works in this manner, as shown in the :ref:`BlackListPlugin`
+Blocklist plugin works in this manner, as shown in the :ref:`BlockListPlugin`
 diagram below.
 
-**Blacklist Plugin**
+**Blocklist Plugin**
 
-.. _BlackListPlugin:
+.. _BlockListPlugin:
 
-.. figure:: /static/images/sdk/blacklist75.jpg
-   :alt: Blacklist Plugin
+.. figure:: /static/images/sdk/blocklist75.jpg
+   :alt: Blocklist Plugin
 
-   Blacklist Plugin
+   Blocklist Plugin
 
-Traffic Server calls the Blacklist plugin right after the origin server
+Traffic Server calls the Blocklist plugin right after the origin server
 DNS lookup. The plugin checks the requested host against a list of
-blacklisted servers; if the request is allowed, then the transaction
-proceeds. If the host is forbidden, then the Blacklist plugin sends the
+blocklisted servers; if the request is allowed, then the transaction
+proceeds. If the host is forbidden, then the Blocklist plugin sends the
 transaction into an error state. When the HTTP state machine gets to the
-"send reply header" state, it then calls the Blacklist plugin to provide
+"send reply header" state, it then calls the Blocklist plugin to provide
 the error message that's sent to the client.
 
 Types of Hooks
 ^^^^^^^^^^^^^^
 
-The Blacklist plugin's hook to the origin server DNS lookup state is a *global
+The Blocklist plugin's hook to the origin server DNS lookup state is a *global
 hook*, meaning that the plugin is called every time there's an HTTP transaction
 with a DNS lookup event. The plugin's hook to the send reply header state is a
 *transaction hook*, meaning that this hook is only invoked for specified
-transactions (in the :ref:`developer-plugins-examples-blacklist` example, it's
-only used for requests to blacklisted servers). Several examples of setting up
+transactions (in the :ref:`developer-plugins-examples-blocklist` example, it's
+only used for requests to blocklisted servers). Several examples of setting up
 hooks are provided in :ref:`developer-plugins-header-based-examples` and
 :ref:`developer-plugins-http-transformations`.
 

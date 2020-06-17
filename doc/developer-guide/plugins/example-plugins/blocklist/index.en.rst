@@ -17,21 +17,21 @@
 
 .. include:: ../../../../common.defs
 
-.. _developer-plugins-examples-blacklist:
+.. _developer-plugins-examples-blocklist:
 
-Blacklist Plugin
+Blocklist Plugin
 ****************
 
-The sample blacklisting plugin included in the Traffic Server SDK is
-``blacklist_1.c``. This plugin checks every incoming HTTP client request
-against a list of blacklisted web sites. If the client requests a
-blacklisted site, then the plugin returns an ``Access forbidden``
+The sample blocklisting plugin included in the Traffic Server SDK is
+``blocklist_1.c``. This plugin checks every incoming HTTP client request
+against a list of blocklisted web sites. If the client requests a
+blocklisted site, then the plugin returns an ``Access forbidden``
 message to the client.
 
-The flow of HTTP processing with the blacklist plugin is illustrated in
-the figure titled :ref:`BlackListPlugin`.
+The flow of HTTP processing with the blocklist plugin is illustrated in
+the figure titled :ref:`BlockListPlugin`.
 This example also contains a simple configuration management interface.
-It can read a list of blacklisted sites from a file (``blacklist.txt``)
+It can read a list of blocklisted sites from a file (``blocklist.txt``)
 that can be updated by a Traffic Server administrator. When the
 configuration file is updated, Traffic Server sends an event to the
 plugin that wakes it up to do some work.
@@ -52,7 +52,7 @@ Traffic Server has a multi-threaded design, race conditions can occur if
 several threads try to access the same continuation's data.
 
 Here is how the static parent continuation is created in
-``blacklist_1.c``:
+``blocklist_1.c``:
 
 .. code-block:: c
 
@@ -62,20 +62,20 @@ Here is how the static parent continuation is created in
       // ...
       TSCont contp;
 
-      contp = TSContCreate (blacklist_plugin, NULL);
+      contp = TSContCreate (blocklist_plugin, NULL);
       // ...
    }
 
-The handler function for the plugin is ``blacklist_plugin``, and the
+The handler function for the plugin is ``blocklist_plugin``, and the
 mutex is null. The continuation handler function's job is to handle the
-events that are sent to it; accordingly, the ``blacklist_plugin``
+events that are sent to it; accordingly, the ``blocklist_plugin``
 routine consists of a switch statement that covers each of the events
 that might be sent to it:
 
 .. code-block:: c
 
    static int
-   blacklist_plugin (TSCont contp, TSEvent event, void *edata)
+   blocklist_plugin (TSCont contp, TSEvent event, void *edata)
    {
       TSHttpTxn txnp = (TSHttpTxn) edata;
       switch (event) {
@@ -86,7 +86,7 @@ that might be sent to it:
             handle_response (txnp);
             return 0;
          default:
-            TSDebug ("blacklist_plugin", "This event was unexpected: %d", );
+            TSDebug ("blocklist_plugin", "This event was unexpected: %d", );
             break;
       }
       return 0;
@@ -94,10 +94,10 @@ that might be sent to it:
 
 When you write handler functions, you have to anticipate any events that
 might be sent to the handler by hooks or by other functions. In the
-Blacklist plugin, ``TS_EVENT_OS_DNS`` is sent because of the global hook
+Blocklist plugin, ``TS_EVENT_OS_DNS`` is sent because of the global hook
 established in ``TSPluginInit``, ``TS_EVENT_HTTP_SEND_RESPONSE_HDR`` is
 sent because the plugin contains a transaction hook
-(see :ref:`developer-plugins-examples-blacklist-txn-hook`).
+(see :ref:`developer-plugins-examples-blocklist-txn-hook`).
 It is good practice to have a default case in your switch statements.
 
 .. toctree::

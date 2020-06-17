@@ -17,12 +17,12 @@
 
 .. include:: ../../../../common.defs
 
-.. _developer-plugins-examples-blacklist-http-header-functions:
+.. _developer-plugins-examples-blocklist-http-header-functions:
 
 Working with HTTP Header Functions
 **********************************
 
-The Blacklist plugin examines the host header in every client
+The Blocklist plugin examines the host header in every client
 transaction. This is done in the ``handle_dns`` routine, using
 ``TSHttpTxnClientReqGet``, ``TSHttpHdrUrlGet``, and ``TSUrlHostGet``.
 
@@ -39,19 +39,19 @@ transaction. This is done in the ``handle_dns`` routine, using
    int host_length;
 
    if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-      TSError("[blacklist] Couldn't retrieve client request header");
+      TSError("[blocklist] Couldn't retrieve client request header");
       goto done;
    }
 
    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-      TSError("[blacklist] Couldn't retrieve request url");
+      TSError("[blocklist] Couldn't retrieve request url");
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       goto done;
    }
 
    host = TSUrlHostGet(bufp, url_loc, &host_length);
    if (!host) {
-      TSError("[blacklist] couldn't retrieve request hostname");
+      TSError("[blocklist] couldn't retrieve request hostname");
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       goto done;

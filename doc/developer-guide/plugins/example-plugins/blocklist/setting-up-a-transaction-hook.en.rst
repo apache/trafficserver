@@ -17,16 +17,16 @@
 
 .. include:: ../../../../common.defs
 
-.. _developer-plugins-examples-blacklist-txn-hook:
+.. _developer-plugins-examples-blocklist-txn-hook:
 
 Setting Up a Transaction Hook
 *****************************
 
-The Blacklist plugin sends "access forbidden" messages to clients if
-their requests are directed to blacklisted hosts. Therefore, the plugin
+The Blocklist plugin sends "access forbidden" messages to clients if
+their requests are directed to blocklisted hosts. Therefore, the plugin
 needs a transaction hook so it will be called back when Traffic Server's
 HTTP state machine reaches the "send response header" event. In the
-Blacklist plugin's ``handle_dns`` routine, the transaction hook is added
+Blocklist plugin's ``handle_dns`` routine, the transaction hook is added
 as follows:
 
 .. code-block:: c
@@ -34,7 +34,7 @@ as follows:
    TSMutexLock (sites_mutex);
    for (i = 0; i < nsites; i++) {
       if (strncmp (host, sites[i], host_length) == 0) {
-         printf ("blacklisting site: %s\n", sites[i]);
+         printf ("blocklisting site: %s\n", sites[i]);
          TSHttpTxnHookAdd (txnp,
             TS_HTTP_SEND_RESPONSE_HDR_HOOK,
             contp);
@@ -50,10 +50,10 @@ as follows:
    TSHttpTxnReenable (txnp, TS_EVENT_HTTP_CONTINUE);
 
 This code fragment shows some interesting features. The plugin is
-comparing the requested site to the list of blacklisted sites. While the
-plugin is using the blacklist, it must acquire the mutex lock for the
-blacklist to prevent configuration changes in the middle of a
-blacklisting operation. If the requested site is blacklisted, then the
+comparing the requested site to the list of blocklisted sites. While the
+plugin is using the blocklist, it must acquire the mutex lock for the
+blocklist to prevent configuration changes in the middle of a
+blocklisting operation. If the requested site is blocklisted, then the
 following things happen:
 
 #. A transaction hook is added with ``TSHttpTxnHookAdd``; the plugin is
@@ -66,7 +66,7 @@ following things happen:
    ``TS_EVENT_HTTP_ERROR`` as its event argument. Reenabling with an
    error event tells the HTTP state machine to stop the transaction and
    jump to the "send response header" state. Notice that if the
-   requested site is not blacklisted, then the transaction is reenabled
+   requested site is not blocklisted, then the transaction is reenabled
    with the ``TS_EVENT_HTTP_CONTINUE`` event.
 
 #. The string and ``TSMLoc`` data stored in the marshal buffer ``bufp`` is

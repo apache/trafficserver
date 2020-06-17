@@ -23,7 +23,7 @@ Setting a Global Hook
 Global hooks are always added in ``TSPluginInit`` using
 ``TSHttpHookAdd``. The two arguments of ``TSHttpHookAdd`` are the hook
 ID and the continuation to call when processing the event corresponding
-to the hook. In ``blacklist_1.c``, the global hook is added as follows:
+to the hook. In ``blocklist_1.c``, the global hook is added as follows:
 
 .. code-block:: c
 
@@ -32,7 +32,7 @@ to the hook. In ``blacklist_1.c``, the global hook is added as follows:
 Above, ``TS_HTTP_OS_DNS_HOOK`` is the ID for the origin server DNS
 lookup hook and ``contp`` is the parent continuation created earlier.
 
-This means that the Blacklist plugin is called at every origin server
-DNS lookup. When it is called, the handler functio ``blacklist_plugin``
+This means that the Blocklist plugin is called at every origin server
+DNS lookup. When it is called, the handler functio ``blocklist_plugin``
 receives ``TS_EVENT_HTTP_OS_DNS`` and calls ``handle_dns`` to see if the
 request is forbidden.

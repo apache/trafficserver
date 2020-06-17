@@ -59,11 +59,11 @@ type.
 
 Possible uses for plugins include the following:
 
-* HTTP processing plugins can filter, blacklist, authorize users or transform content.
+* HTTP processing plugins can filter, blocklist, authorize users or transform content.
 
 * Protocol plugins can enable Traffic Server to proxy-cache new protocol content.
 
-* A blacklisting plugin denies attempts to access web sites that are off-limits.
+* A blocklisting plugin denies attempts to access web sites that are off-limits.
 
 * Append transform plugins add data to HTTP response content.
 

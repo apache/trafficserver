@@ -1772,7 +1772,7 @@ Proxy User Variables
 
 .. ts:cv:: CONFIG proxy.config.http.proxy_protocol_whitelist STRING ```<ip list>```
 
-   This defines a whitelist of server IPs that are trusted to provide
+   This defines a allowlist of server IPs that are trusted to provide
    connections with Proxy Protocol information.  This is a comma delimited list
    of IP addresses.  Addressed may be listed individually, in a range separated
    by a dash or by using CIDR notation.

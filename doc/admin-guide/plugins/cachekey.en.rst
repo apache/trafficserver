@@ -179,10 +179,10 @@ Cache key structure and related plugin parameters
 ^^^^^^^^^^^^^^^
 
 * If no query related plugin parameters are used, the query string is included in the `cache key`.
-* ``--exclude-params`` (default: empty list) - comma-separated list of query params to be black-listed in the `cache key`. If the list is empty then no black-list is applied (no query parameters will be excluded from the `cache key`). The exclude list overrides the include list.
-* ``--include-params`` (default: empty list) - comma-separated list of query params to be white-listed in the `cache key`. If the list is empty then no white-list is applied (all query parameters will be included in the `cache key`).
-* ``--include-match-params`` (default: empty list) - regular expression matching query parameter names which will be white-listed in the `cache key`.
-* ``--exclude-match-params`` (default: empty list) - regular expression matching query parameter names which will be black-listed in the `cache key`.
+* ``--exclude-params`` (default: empty list) - comma-separated list of query params to be block-listed in the `cache key`. If the list is empty then no block-list is applied (no query parameters will be excluded from the `cache key`). The exclude list overrides the include list.
+* ``--include-params`` (default: empty list) - comma-separated list of query params to be allow-listed in the `cache key`. If the list is empty then no allow-list is applied (all query parameters will be included in the `cache key`).
+* ``--include-match-params`` (default: empty list) - regular expression matching query parameter names which will be allow-listed in the `cache key`.
+* ``--exclude-match-params`` (default: empty list) - regular expression matching query parameter names which will be block-listed in the `cache key`.
 * ``--remove-all-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, default: ``false``) - if equals ``true`` then all query parameters are removed (the whole query string) and all other URI query parameter related settings (if used) will have no effect.
 * ``--sort-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, default: ``false``) - if equals ``true`` then all query parameters are sorted in an increasing case-sensitive order
 
@@ -377,7 +377,7 @@ The following will make sure only query parameters ``a`` and ``c`` will be used 
 
 If the URI has the following query string ``c=1&a=1&b=2&x=1&k=1&u=1&y=1`` the `cache key` will use ``c=1&a=1``
 
-White-list + black-list certain parameters using multiple parameters in the same remap rule.
+Allow-list + block-list certain parameters using multiple parameters in the same remap rule.
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameters in the remap rule: ::
 
@@ -390,7 +390,7 @@ If the plugin is used with the following plugin parameters in the remap rule: ::
 
 and if the URI has the following query string ``c=1&a=1&b=2&x=1&k=1&u=1&y=1`` the `cache key` will use ``c=1&b=1``
 
-White-list + black-list certain parameters using multiple parameters in the same remap rule and regular expressions (PCRE).
+Allow-list + block-list certain parameters using multiple parameters in the same remap rule and regular expressions (PCRE).
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameters in the remap rule: ::
 
@@ -570,7 +570,7 @@ If the plugin is used with the following plugin parameter::
 
 then ``Mozilla/5.0_AppleWebKit/537.75.14`` will be used when constructing the key.
 
-User-Agent white-list classifier
+User-Agent allow-list classifier
 """"""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameter::
 
@@ -585,7 +585,7 @@ and if ``browser_agents.config`` contains: ::
 
 then ``browser`` will be used when constructing the key.
 
-User-Agent black-list classifier
+User-Agent block-list classifier
 """"""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameter::
 
