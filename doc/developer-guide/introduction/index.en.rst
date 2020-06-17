@@ -53,7 +53,7 @@ Below is a section-by-section breakdown of this guide:
    How to compile and load plugins. Walks through a simple "hello world"
    example; explains how to initialize and register plugins. Basic structures
    that all plugins use: events, continuations, and how to hook on to |TS|
-   processes. Detailed explication of a sample blacklisting plugin.
+   processes. Detailed explication of a sample denylisting plugin.
 
 :ref:`developer-plugins-examples-query-remap`
    This chapter demonstrates on a practical example how you can
@@ -61,7 +61,7 @@ Below is a section-by-section breakdown of this guide:
 
 :ref:`developer-plugins-header-based-examples`
    Detailed explanation about writing plugins that work on HTTP
-   headers; discusses sample blacklisting and basic authorization
+   headers; discusses sample denylisting and basic authorization
    plugins.
 
 :ref:`developer-plugins-http-transformations`

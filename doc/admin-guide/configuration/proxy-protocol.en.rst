@@ -44,12 +44,12 @@ Proxy Protocol on a port.  Once enabled, all incoming requests must be prefaced
 with the PROXY v1 header.  Any request not preface by this header will be
 dropped.
 
-As a security measure, an optional whitelist of trusted IP addresses may be
+As a security measure, an optional list of trusted IP addresses may be
 configured with :ts:cv:`proxy.config.http.proxy_protocol_allowlist`.
 
    .. important::
 
-       If the whitelist is configured, requests will only be accepted from these
+       If the allowlist is configured, requests will only be accepted from these
        IP addresses and must be prefaced with the PROXY v1 header.
 
 See :ts:cv:`proxy.config.http.insert_forwarded` for configuration information.

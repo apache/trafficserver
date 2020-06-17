@@ -71,12 +71,12 @@ by other continuations).
 Locking Global Data
 ===================
 
-The :ref:`blacklist-1.c` sample plugin implements a mutex that locks global
-data. The blacklist plugin reads its blacklisted sites from a
+The :ref:`denylist-1.c` sample plugin implements a mutex that locks global
+data. The denylist plugin reads sites to be denied from a
 configuration file; file read operations are protected by a mutex
-created in :c:func:`TSPluginInit`. The :ref:`blacklist-1.c` code uses
+created in :c:func:`TSPluginInit`. The :ref:`denylist-1.c` code uses
 :c:func:`TSMutexLockTry` instead of :c:func:`TSMutexLock`. For more detailed
-information, see the :ref:`blacklist-1.c` code;
+information, see the :ref:`denylist-1.c` code;
 start by looking at the :c:func:`TSPluginInit` function.
 
 General guidelines for locking shared data are as follows:
@@ -368,7 +368,7 @@ continuation created in ``txn_handler``:
         TSCont newCont;
         ....
             newCont = TSContCreate (newCont_handler, NULL);
-        //It's not necessary to create a new mutex for newCont.
+        // It's not necessary to create a new mutex for newCont.
 
         ...
 

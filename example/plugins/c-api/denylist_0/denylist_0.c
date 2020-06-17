@@ -22,8 +22,8 @@
  */
 
 /*
- *   blocklist_0.c:
- *	original version of blocklist-1, now used for internal testing
+ *   denylist_0.c:
+ *	original version of denylist-1, now used for internal testing
  *
  *
  *	Usage:
@@ -34,7 +34,7 @@
 #include <string.h>
 #include <ts/ts.h>
 
-#define PLUGIN_NAME "blocklist_0"
+#define PLUGIN_NAME "denylist_0"
 
 static char **sites;
 static int nsites;
@@ -69,7 +69,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   }
   for (i = 0; i < nsites; i++) {
     if (strncmp(host, sites[i], host_length) == 0) {
-      printf("blocklisting site: %s\n", sites[i]);
+      printf("denylisting site: %s\n", sites[i]);
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
@@ -130,7 +130,7 @@ done:
 }
 
 static int
-blocklist_plugin(TSCont contp, TSEvent event, void *edata)
+denylist_plugin(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
 
@@ -168,6 +168,6 @@ TSPluginInit(int argc, const char *argv[])
       sites[i] = TSstrdup(argv[i + 1]);
     }
 
-    TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(blocklist_plugin, NULL));
+    TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(denylist_plugin, NULL));
   }
 }
