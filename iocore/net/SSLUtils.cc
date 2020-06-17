@@ -893,7 +893,12 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::str
 #ifndef OPENSSL_IS_BORINGSSL
   ENGINE *e = ENGINE_get_default_RSA();
   if (e != nullptr) {
-    const char *argkey = (keyPath == nullptr || keyPath[0] == '\0') ? completeServerCertPath.c_str() : keyPath;
+    ats_scoped_str argkey;
+    if (keyPath == nullptr || keyPath[0] == '\0') {
+      argkey = completeServerCertPath.c_str();
+    } else {
+      argkey = Layout::get()->relative_to(params->serverKeyPathOnly, keyPath);
+    }
     if (!SSL_CTX_use_PrivateKey(ctx, ENGINE_load_private_key(e, argkey, nullptr, nullptr))) {
       SSLError("failed to load server private key from engine");
     }

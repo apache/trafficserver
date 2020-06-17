@@ -1233,18 +1233,22 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 #if TS_USE_TLS_ASYNC
   if (ssl_error == SSL_ERROR_WANT_ASYNC) {
     size_t numfds;
-    OSSL_ASYNC_FD waitfd;
+    OSSL_ASYNC_FD *waitfds;
     // Set up the epoll entry for the signalling
-    if (SSL_get_all_async_fds(ssl, &waitfd, &numfds) && numfds > 0) {
-      // Temporarily disable regular net
-      read_disable(nh, this);
-      this->ep.stop(); // Modify used in read_disable doesn't work for edge triggered epol
-      // Have to have the read NetState enabled because we are using it for the signal vc
-      read.enabled = true;
-      write_disable(nh, this);
-      PollDescriptor *pd = get_PollDescriptor(this_ethread());
-      this->ep.start(pd, waitfd, this, EVENTIO_READ);
-      this->ep.type = EVENTIO_READWRITE_VC;
+    if (SSL_get_all_async_fds(ssl, nullptr, &numfds) && numfds > 0) {
+      // Allocate space for the waitfd on the stack, should only be one most all of the time
+      waitfds = reinterpret_cast<OSSL_ASYNC_FD *>(alloca(sizeof(OSSL_ASYNC_FD) * numfds));
+      if (SSL_get_all_async_fds(ssl, waitfds, &numfds) && numfds > 0) {
+        // Temporarily disable regular net
+        this->read.triggered  = false;
+        this->write.triggered = false;
+        this->ep.stop(); // Modify used in read_disable doesn't work for edge triggered epol
+        // Have to have the read NetState enabled because we are using it for the signal vc
+        read.enabled       = true;
+        PollDescriptor *pd = get_PollDescriptor(this_ethread());
+        this->ep.start(pd, waitfds[0], static_cast<NetEvent *>(this), EVENTIO_READ);
+        this->ep.type = EVENTIO_READWRITE_VC;
+      }
     }
   } else if (SSLConfigParams::async_handshake_enabled) {
     // Clean up the epoll entry for signalling
