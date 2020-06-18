@@ -367,6 +367,10 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
     return;
   }
 
+  /* Read the data out of the reader */
+  if (reader->block != NULL)
+    reader->skip_empty_blocks();
+
   read_avail = reader->read_avail();
   Debug(DEBUG_TAG, "[%s] total avail %" PRId64, __FUNCTION__, read_avail);
   if (!read_avail) {
@@ -376,10 +380,6 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
 
   info            = (char *)ats_malloc(sizeof(char) * (read_avail + 1));
   client_response = info;
-
-  /* Read the data out of the reader */
-  if (reader->block != NULL)
-    reader->skip_empty_blocks();
 
   blk = reader->block.get();
 
@@ -391,7 +391,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
     int bytes_used = 0;
     header_done    = 1;
     if (client_response_hdr.parse_resp(&http_parser, reader, &bytes_used, 0) == PARSE_RESULT_DONE) {
-      if (bytes_used > 0) {
+      if ((bytes_used > 0) && (bytes_used <= read_avail)) {
         memcpy(info, buf, bytes_used);
         info += bytes_used;
         client_bytes += bytes_used;
@@ -418,7 +418,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
       buf       = blk->start() + reader->start_offset;
       read_done = blk->read_avail() - reader->start_offset;
 
-      if (read_done > 0) {
+      if ((read_done > 0) && ((read_done <= read_avail))) {
         memcpy(info, buf, read_done);
         reader->consume(read_done);
         read_avail -= read_done;
@@ -453,7 +453,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
       buf       = blk->start() + reader->start_offset;
       read_done = blk->read_avail() - reader->start_offset;
 
-      if (read_done > 0) {
+      if ((read_done > 0) && (read_done <= read_avail)) {
         memcpy(info, buf, read_done);
         reader->consume(read_done);
         read_avail -= read_done;
