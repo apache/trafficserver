@@ -26,8 +26,8 @@ example_Plugins = \
 	add_header.la \
 	append_transform.la \
 	basic_auth.la \
-	blacklist_0.la \
-	blacklist_1.la \
+	blocklist_0.la \
+	blocklist_1.la \
 	bnull_transform.la \
 	cert_update.la \
 	request_buffer.la \
@@ -54,7 +54,7 @@ example_Plugins = \
 	server_transform.la \
 	session_hooks.la \
 	ssl_preaccept.la \
-	ssl_sni_whitelist.la \
+	ssl_sni_allowlist.la \
 	ssl_sni.la \
 	statistic.la \
 	thread_1.la \
@@ -71,8 +71,8 @@ endif
 add_header_la_SOURCES = add_header/add_header.c
 append_transform_la_SOURCES = append_transform/append_transform.c
 basic_auth_la_SOURCES = basic_auth/basic_auth.c
-blacklist_0_la_SOURCES = blacklist_0/blacklist_0.c
-blacklist_1_la_SOURCES = blacklist_1/blacklist_1.c
+blocklist_0_la_SOURCES = blocklist_0/blocklist_0.c
+blocklist_1_la_SOURCES = blocklist_1/blocklist_1.c
 bnull_transform_la_SOURCES = bnull_transform/bnull_transform.c
 cert_update_la_SOURCES = cert_update/cert_update.cc
 request_buffer_la_SOURCES = request_buffer/request_buffer.c
@@ -98,7 +98,7 @@ server_push_la_SOURCES = server_push/server_push.c
 server_transform_la_SOURCES = server_transform/server_transform.c
 ssl_preaccept_la_SOURCES = ssl_preaccept/ssl_preaccept.cc
 ssl_sni_la_SOURCES = ssl_sni/ssl_sni.cc
-ssl_sni_whitelist_la_SOURCES = ssl_sni_whitelist/ssl_sni_whitelist.cc
+ssl_sni_allowlist_la_SOURCES = ssl_sni_allowlist/ssl_sni_allowlist.cc
 disable_http2_la_SOURCES = disable_http2/disable_http2.cc
 verify_cert_la_SOURCES = verify_cert/verify_cert.cc
 statistic_la_SOURCES = statistic/statistic.cc
