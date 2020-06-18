@@ -33,16 +33,11 @@
 #if defined(COLLECT_STATS)
 namespace stats
 {
-int DataCreate      = -1;
-int DataDestroy     = -1;
-int Reader          = -1;
-int Server          = -1;
-int Client          = -1;
-int RequestTime     = -1;
-int FirstHeaderTime = -1;
-int NextHeaderTime  = -1;
-int ServerTime      = -1;
-int ClientTime      = -1;
+int DataCreate  = -1;
+int DataDestroy = -1;
+int Reader      = -1;
+int Server      = -1;
+int Client      = -1;
 } // namespace stats
 #endif // COLLECT_STATS
 
@@ -53,10 +48,6 @@ Config globalConfig;
 bool
 read_request(TSHttpTxn txnp, Config *const config)
 {
-#if defined(COLLECT_STATS)
-  stats::StatsRAI const rai(stats::RequestTime);
-#endif
-
   DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
@@ -68,24 +59,8 @@ read_request(TSHttpTxn txnp, Config *const config)
       // check if any previous plugin has monkeyed with the transaction status
       TSHttpStatus const txnstat = TSHttpTxnStatusGet(txnp);
       if (0 != (int)txnstat) {
-        DEBUG_LOG("txn status change detected (%d), skipping plugin\n", (int)txnstat);
+        DEBUG_LOG("slice: txn status change detected (%d), skipping plugin\n", (int)txnstat);
         return false;
-      }
-
-      if (config->hasRegex()) {
-        int urllen         = 0;
-        char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
-        if (nullptr != urlstr) {
-          bool const shouldslice = config->matchesRegex(urlstr, urllen);
-          if (!shouldslice) {
-            DEBUG_LOG("request failed regex, not slicing: '%.*s'", urllen, urlstr);
-            TSfree(urlstr);
-            return false;
-          }
-
-          DEBUG_LOG("request passed regex, slicing: '%.*s'", urllen, urlstr);
-          TSfree(urlstr);
-        }
       }
 
       // turn off any and all transaction caching (shouldn't matter)
@@ -124,8 +99,8 @@ read_request(TSHttpTxn txnp, Config *const config)
       // is the plugin configured to use a remap host?
       std::string const &newhost = config->m_remaphost;
       if (newhost.empty()) {
-        TSMBuffer urlbuf   = nullptr;
-        TSMLoc urlloc      = nullptr;
+        TSMBuffer urlbuf;
+        TSMLoc urlloc;
         TSReturnCode rcode = TSHttpTxnPristineUrlGet(txnp, &urlbuf, &urlloc);
 
         if (TS_SUCCESS == rcode) {
@@ -189,7 +164,7 @@ read_request(TSHttpTxn txnp, Config *const config)
 
       // we'll intercept this GET and do it ourselves
       TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
-      //  TSMutex const mutex = TSMutexCreate();
+      // TSMutex const mutex = TSMutexCreate();
       TSCont const icontp(TSContCreate(intercept_hook, mutex));
       TSContDataSet(icontp, (void *)data);
       TSHttpTxnIntercept(icontp, txnp);
@@ -300,31 +275,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbug, int errbuf_size)
     stats::Client = TSStatCreate(nameclient.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
 
     assert(0 <= stats::Client);
-
-    std::string const namerequest = std::string(PLUGIN_NAME) + ".RequestTime";
-    stats::RequestTime = TSStatCreate(namerequest.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::RequestTime);
-
-    std::string const namefirst = std::string(PLUGIN_NAME) + ".FirstHeaderTime";
-    stats::FirstHeaderTime      = TSStatCreate(namefirst.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::FirstHeaderTime);
-
-    std::string const namenext = std::string(PLUGIN_NAME) + ".NextHeaderTime";
-    stats::NextHeaderTime      = TSStatCreate(namenext.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::NextHeaderTime);
-
-    std::string const nameservertime = std::string(PLUGIN_NAME) + ".ServerTime";
-    stats::ServerTime = TSStatCreate(nameservertime.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::ServerTime);
-
-    std::string const nameclienttime = std::string(PLUGIN_NAME) + ".ClientTime";
-    stats::ClientTime = TSStatCreate(nameclienttime.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::ClientTime);
   }
 #endif // COLLECT_STATS
 

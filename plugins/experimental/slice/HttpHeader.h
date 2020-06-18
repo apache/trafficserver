@@ -47,7 +47,6 @@ struct HttpHeader {
   TSMLoc const m_lochdr;
 
   explicit HttpHeader(TSMBuffer buffer, TSMLoc lochdr) : m_buffer(buffer), m_lochdr(lochdr) {}
-
   bool
   isValid() const
   {
@@ -113,7 +112,6 @@ struct HttpHeader {
   // returns false if header invalid or something went wrong with removal.
   bool removeKey(char const *const key, int const keylen);
 
-  // retrieves header value as a char*
   bool valueForKey(char const *const keystr, int const keylen,
                    char *const valstr,  // <-- return string value
                    int *const vallen,   // <-- pass in capacity, returns len of string
@@ -126,12 +124,6 @@ struct HttpHeader {
   bool setKeyVal(char const *const key, int const keylen, char const *const val, int const vallen,
                  int const index = -1 // sets all values
   );
-
-  // retrieves header value as a time_t
-  bool timeForKey(char const *const keystr, int const keylen, time_t *const timeval) const;
-
-  // sets header value as a time_t
-  bool setKeyTime(char const *const key, int const keylen, time_t const timeval);
 
   /** dump header into provided char buffer
    */

@@ -51,15 +51,9 @@ request_block(TSCont contp, Data *const data)
     return false;
   }
 
-  switch (data->m_blockstate) {
-  case BlockState::Pending:
-  case BlockState::PendingInt:
-  case BlockState::PendingRef:
-    break;
-  default:
-    ERROR_LOG("request_block called with non Pending* state!");
+  if (Data::BlockState::Pending != data->m_blockstate) {
+    ERROR_LOG("request_block called with non Pending state!");
     return false;
-    break;
   }
 
   int64_t const blockbeg = (data->m_config->m_blockbytes * data->m_blocknum);
@@ -96,10 +90,10 @@ request_block(TSCont contp, Data *const data)
   TSHttpHdrPrint(header.m_buffer, header.m_lochdr, data->m_upstream.m_write.m_iobuf);
   TSVIOReenable(data->m_upstream.m_write.m_vio);
 
-  if (TSIsDebugTagSet(PLUGIN_NAME)) {
-    std::string const headerstr(header.toString());
-    DEBUG_LOG("Headers\n%s", headerstr.c_str());
-  }
+  /*
+          std::string const headerstr(header.toString());
+          DEBUG_LOG("Headers\n%s", headerstr.c_str());
+  */
 
   // get ready for data back from the server
   data->m_upstream.setupVioRead(contp, INT64_MAX);
@@ -110,24 +104,8 @@ request_block(TSCont contp, Data *const data)
 
   data->m_blockexpected              = 0;
   data->m_blockconsumed              = 0;
+  data->m_blockstate                 = Data::BlockState::Active;
   data->m_server_block_header_parsed = false;
-
-  switch (data->m_blockstate) {
-  case BlockState::Pending:
-    data->m_blockstate = BlockState::Active;
-    break;
-  case BlockState::PendingInt:
-    data->m_blockstate = BlockState::ActiveInt;
-    header.removeKey(X_CRR_IMS_HEADER.data(), X_CRR_IMS_HEADER.size());
-    break;
-  case BlockState::PendingRef:
-    data->m_blockstate = BlockState::ActiveRef;
-    header.removeKey(X_CRR_IMS_HEADER.data(), X_CRR_IMS_HEADER.size());
-    break;
-  default:
-    ERROR_LOG("Invalid blockstate");
-    break;
-  }
 
   return true;
 }

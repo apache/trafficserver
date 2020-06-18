@@ -19,10 +19,8 @@
 #pragma once
 
 #include "ts/ts.h"
-#include "ts/experimental.h"
 
 #include <cstring>
-#include <string_view>
 
 #ifndef SLICE_EXPORT
 #define SLICE_EXPORT extern "C" tsapi
@@ -32,17 +30,11 @@
 #define PLUGIN_NAME "slice"
 #endif
 
-#ifndef COLLECT_STATS
-#define COLLECT_STATS
-#endif
-
-constexpr std::string_view X_CRR_IMS_HEADER = {"X-Crr-Ims"};
-
 #if !defined(UNITTEST)
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #define DEBUG_LOG(fmt, ...)                                                      \
-  TSDebug(PLUGIN_NAME, "[%s:% 4d] %s(): " fmt, __FILENAME__, __LINE__, __func__, \
+  TSDebug(PLUGIN_NAME, "[%s:%04d] %s(): " fmt, __FILENAME__, __LINE__, __func__, \
           ##__VA_ARGS__) /*                                                      \
                                  ; fprintf(stderr, "[%s:%04d]: " fmt "\n"        \
                                          , __FILENAME__                          \
@@ -51,7 +43,7 @@ constexpr std::string_view X_CRR_IMS_HEADER = {"X-Crr-Ims"};
                          */
 
 #define ERROR_LOG(fmt, ...)                                                         \
-  TSError("[%s:% 4d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__); \
+  TSError("[%s:%04d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__); \
   TSDebug(PLUGIN_NAME, "[%s:%04d] %s(): " fmt, __FILENAME__, __LINE__, __func__, ##__VA_ARGS__)
 
 #else
@@ -69,24 +61,5 @@ extern int DataDestroy;
 extern int Reader;
 extern int Server;
 extern int Client;
-extern int RequestTime;
-extern int FirstHeaderTime;
-extern int NextHeaderTime;
-extern int ServerTime;
-extern int ClientTime;
-
-struct StatsRAI {
-  int m_statid;
-  TSHRTime m_timebeg;
-
-  StatsRAI(int statid) : m_statid(statid), m_timebeg(TShrtime()) {}
-
-  ~StatsRAI()
-  {
-    TSHRTime const timeend = TShrtime();
-    TSStatIntIncrement(m_statid, timeend - m_timebeg);
-  }
-};
-
 } // namespace stats
 #endif // COLLECT_STATS
