@@ -24,6 +24,7 @@ Test lua states and stats functionality
 Test.SkipUnless(
     Condition.PluginExists('tslua.so'),
 )
+Test.SkipIf(Condition.true("Test cannot deterministically wait until the stats appear"))
 
 Test.ContinueOnFail = True
 # Define default ATS
