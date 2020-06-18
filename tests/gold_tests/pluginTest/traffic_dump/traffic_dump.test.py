@@ -89,8 +89,6 @@ replay_dir = os.path.join(ts.RunDirectory, "ts", "log")
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'traffic_dump',
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.wait_for_cache': 1,
     'proxy.config.http.insert_age_in_response': 0,
 })
 ts.Disk.remap_config.AddLine(

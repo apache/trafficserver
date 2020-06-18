@@ -59,7 +59,6 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}" --verbose'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-# time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
 tr = Test.AddTestRun()

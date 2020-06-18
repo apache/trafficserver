@@ -91,7 +91,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 # build test code
-tr=Test.Build(target='smuggle-client',sources=['smuggle-client.c'])
+tr = Test.Build(target='smuggle-client', sources=['smuggle-client.c'])
 tr.TimeOut = 5
 tr.Setup.Copy('smuggle-client.c')
 
@@ -101,7 +101,6 @@ tr.TimeOut = 5
 tr.Processes.Default.Command = 'curl --http1.1 --proxy 127.0.0.1:{0} http://www.example.com  --verbose'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
-# time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
 tr.Processes.Default.StartBefore(server3)

@@ -35,9 +35,6 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
 ts.Disk.records_config.update({
-    # Do not accept connections from clients until cache subsystem is operational.
-    'proxy.config.http.wait_for_cache': 1,
-
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|dns|cache',
     'proxy.config.http.cache.http': 1,  # enable caching.
@@ -78,7 +75,7 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 # Delay on readiness of TS IPv4 ssl port
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
 # Put object with URL http://localhost/bigobj in cache using PUSH request.
 tr.Processes.Default.Command = (

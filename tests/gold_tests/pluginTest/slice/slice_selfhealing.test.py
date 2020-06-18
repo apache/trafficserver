@@ -68,13 +68,10 @@ ts.Disk.remap_config.AddLines([
 
 ts.Disk.plugin_config.AddLine('xdebug.so')
 
-# minimal configuration
-ts.Disk.records_config.update({
-  'proxy.config.http.cache.http': 1,
-  'proxy.config.http.wait_for_cache': 1,
-#  'proxy.config.diags.debug.enabled': 1,
-#  'proxy.config.diags.debug.tags': 'cache_range_requests|slice',
-})
+# ts.Disk.records_config.update({
+#   'proxy.config.diags.debug.enabled': 1,
+#   'proxy.config.diags.debug.tags': 'cache_range_requests|slice',
+# })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
 
@@ -156,7 +153,7 @@ server.addResponse("sessionlog.json", req_header_2ndnew1, res_header_2ndnew1)
 tr = Test.AddTestRun("Preload reference etagnew-0")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-ps.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+ps.StartBefore(Test.Processes.ts)
 ps.Command = curl_and_args + ' http://cache_range_requests/second -r 0-2 -H "uuid: etagnew-0"'
 ps.ReturnCode = 0
 ps.Streams.stderr = "gold/bbb.gold"

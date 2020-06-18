@@ -33,8 +33,8 @@ Test.ContinueOnFail = False
 # configure origin server
 server = Test.MakeOriginServer("server")
 
-# Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_server")
+# Define ATS and configure.
+ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
 
 # default root
 request_header_chk = {"headers":
@@ -126,7 +126,6 @@ ts.Disk.remap_config.AddLines([
 ts.Disk.records_config.update({
 #  'proxy.config.diags.debug.enabled': 1,
 #  'proxy.config.diags.debug.tags': 'slice',
-  'proxy.config.http.cache.http': 0,
   'proxy.config.http.wait_for_cache': 0,
   'proxy.config.http.insert_age_in_response': 0,
   'proxy.config.http.response_via_str': 0,
@@ -136,7 +135,7 @@ ts.Disk.records_config.update({
 tr = Test.AddTestRun("Exclude - asset passed through")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-ps.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+ps.StartBefore(Test.Processes.ts)
 ps.Command = curl_and_args + ' http://exclude/slice.txt'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Info: notsliced", "expected not sliced header")

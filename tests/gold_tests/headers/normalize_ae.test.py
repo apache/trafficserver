@@ -43,15 +43,15 @@ server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.ae-2.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-# Define first ATS
-ts = Test.MakeATSProcess("ts", select_ports=True)
+# Define first ATS. Disable the cache to make sure each request is sent to the
+# origin server.
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_cache=False)
 
 
 def baselineTsSetup(ts):
 
     ts.Disk.records_config.update({
         # 'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.http.cache.http': 0,  # Make sure each request is sent to the origin server.
     })
 
     ts.Disk.remap_config.AddLine(

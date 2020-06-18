@@ -19,14 +19,33 @@ When extensions.
 
 from autest.api import AddWhenFunction
 import hosts.output as host
+import os
 
 
 def FileContains(haystack, needle):
+    """
+    Return whether the file haystack contains the string needle.
+
+    Args:
+        haystack (str): The path to the file to be inspected.
+        needle (str): The content to look for in haystack.
+
+    Returns:
+        True if the haystack exists as a file and contains needle, False
+        otherwise.
+    """
+    if not os.path.exists(haystack):
+        host.WriteDebug(
+            ['FileContains', 'when'],
+            "Testing for file content '{0}' in file '{1}': file does not exist".format(
+                needle, haystack))
+        return False
+
     with open(haystack) as f:
         result = needle in f.read()
 
         host.WriteDebug(
-            ['FileExists', 'when'],
+            ['FileContains', 'when'],
             "Testing for file content '{0}' in '{1}' : {2}".format(
                 needle, haystack, result))
 
