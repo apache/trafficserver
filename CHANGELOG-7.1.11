@@ -1,0 +1,4 @@
+Changes with Apache Traffic Server 7.1.11
+  #6741 - Remove using namespace std
+  #6788 - HPACK: send back an error to the client when the index is invalid
+  #6921 - Fixed bug in the calculation of the header block fragment length
