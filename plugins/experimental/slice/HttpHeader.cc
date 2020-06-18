@@ -20,6 +20,7 @@
 
 #include "slice.h"
 
+#include <cinttypes>
 #include <cstdlib>
 #include <cstring>
 
@@ -54,18 +55,20 @@ HttpHeader::setStatus(TSHttpStatus const newstatus)
 }
 
 char *
-HttpHeader ::urlString(int *const urllen) const
+HttpHeader::urlString(int *const urllen) const
 {
   char *urlstr = nullptr;
   TSAssert(nullptr != urllen);
 
   TSMLoc locurl            = nullptr;
   TSReturnCode const rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurl);
-  if (TS_SUCCESS == rcode && nullptr != locurl) {
-    urlstr = TSUrlStringGet(m_buffer, locurl, urllen);
+  if (nullptr != locurl) {
+    if (TS_SUCCESS == rcode) {
+      urlstr = TSUrlStringGet(m_buffer, locurl, urllen);
+    } else {
+      *urllen = 0;
+    }
     TSHandleMLocRelease(m_buffer, m_lochdr, locurl);
-  } else {
-    *urllen = 0;
   }
 
   return urlstr;
@@ -223,6 +226,59 @@ HttpHeader::setKeyVal(char const *const keystr, int const keylen, char const *co
   }
 
   if (nullptr != locfield) {
+    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
+  }
+
+  return status;
+}
+
+bool
+HttpHeader::timeForKey(char const *const keystr, int const keylen, time_t *const timeval) const
+{
+  TSAssert(nullptr != timeval);
+
+  if (!isValid()) {
+    *timeval = 0;
+    return false;
+  }
+
+  bool status = false;
+
+  TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
+
+  if (nullptr != locfield) {
+    *timeval = TSMimeHdrFieldValueDateGet(m_buffer, m_lochdr, locfield);
+    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
+  } else {
+    *timeval = 0;
+  }
+
+  return status;
+}
+
+bool
+HttpHeader::setKeyTime(char const *const keystr, int const keylen, time_t const timeval)
+{
+  if (!isValid()) {
+    return false;
+  }
+
+  bool status(false);
+
+  TSMLoc locfield(TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen));
+
+  if (nullptr == locfield) {
+    DEBUG_LOG("Creating header %.*s", keylen, keystr);
+    TSMimeHdrFieldCreateNamed(m_buffer, m_lochdr, keystr, keylen, &locfield);
+  }
+
+  if (nullptr != locfield) {
+    if (TS_SUCCESS == TSMimeHdrFieldValueDateSet(m_buffer, m_lochdr, locfield, timeval)) {
+      if (TS_SUCCESS == TSMimeHdrFieldAppend(m_buffer, m_lochdr, locfield)) {
+        status = true;
+        DEBUG_LOG("Set header %.*s to %jd", keylen, keystr, static_cast<intmax_t>(timeval));
+      }
+    }
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
   }
 

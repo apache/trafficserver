@@ -16,8 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
 Test.Summary = '''
 Basic cache_range_requests plugin test
 '''
@@ -195,11 +193,30 @@ res_pselect = {"headers":
 
 server.addResponse("sessionlog.json", req_pselect, res_pselect)
 
+req_psd = {"headers":
+  "GET /path HTTP/1.1\r\n" +
+  "Host: psd\r\n" +
+  "Accept: */*\r\n" +
+  "Range: bytes={}\r\n".format(pselect_str) +
+  "uuid: pselect\r\n" +
+  "\r\n",
+  "timestamp": "1469733493.993",
+  "body": ""
+}
+
+server.addResponse("sessionlog.json", req_psd, res_pselect)
+
 # cache range requests plugin remap
 ts.Disk.remap_config.AddLines([
   'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
     ' @plugin=cache_range_requests.so',
+
+	# parent select cache key option
   'map http://parentselect http://127.0.0.1:{}'.format(server.Variables.Port) +
+    ' @plugin=cache_range_requests.so @pparam=--ps-cachekey',
+
+	# deprecated
+  'map http://psd http://127.0.0.1:{}'.format(server.Variables.Port) +
     ' @plugin=cache_range_requests.so @pparam=ps_mode:cache_key_url',
 ])
 
@@ -312,7 +329,6 @@ tr.StillRunningAfter = ts
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-parentselection-key"'.format(ts.Variables.port)
 
-'''
 # 9 Test - cache_key_url request
 tr = Test.AddTestRun("cache_key_url request")
 ps = tr.Processes.Default
@@ -345,4 +361,3 @@ ps.Streams.stdout.Content = Testers.ContainsExpression(
 )
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-'''

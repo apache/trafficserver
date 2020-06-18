@@ -133,7 +133,7 @@ tsapi void TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t bufl
 /*
 ////////////////////////////////////////////////////////////////////
 //
-//	Map from units to ts_hrtime values
+//  Map from units to ts_hrtime values
 //
 ////////////////////////////////////////////////////////////////////
 */
@@ -425,6 +425,17 @@ tsapi TSMBuffer TSFetchRespHdrMBufGet(TSFetchSM fetch_sm);
  * Get client response hdr mloc
  */
 tsapi TSMLoc TSFetchRespHdrMLocGet(TSFetchSM fetch_sm);
+
+/*
+ * Parse a MIME header date string.
+ */
+tsapi time_t TSMimeParseDate(char const *const value_str, int const value_len);
+
+/*
+ * Print as a MIME header date string.
+ */
+tsapi TSReturnCode TSMimeFormatDate(time_t const value_time, char *const value_str, int *const value_len);
+
 
 #ifdef __cplusplus
 }
