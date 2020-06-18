@@ -33,7 +33,6 @@ Test.SkipIf(Condition.true("This test is sensitive to timing issues which makes 
 class TestLogRetention:
     __base_records_config = {
         # Do not accept connections from clients until cache subsystem is operational.
-        'proxy.config.http.wait_for_cache': 1,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'logspace',
 

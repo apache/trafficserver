@@ -27,7 +27,8 @@ Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
 
-# setup some config file for this server
+# Setup some config file for this server. Note that setting wait_for_cache to 3
+# will intentionally override the value set in MakeATSProcess.
 ts.Disk.records_config.update({
     'proxy.config.body_factory.enable_customizations': 3,  # enable domain specific body factory
     'proxy.config.http.cache.generation': -1,  # Start with cache turned off

@@ -78,7 +78,7 @@ tr.Processes.Default.Command = "echo foo | openssl s_client -servername foo.com 
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Peer signature type: ECDSA", "Should select EC cert")

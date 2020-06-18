@@ -28,7 +28,7 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
@@ -36,7 +36,6 @@ ts.addSSLfile("ssl/server.key")
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http',
-    'proxy.config.http.cache.http': 0,  # disable caching.
     'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),

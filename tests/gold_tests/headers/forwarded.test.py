@@ -85,7 +85,6 @@ def baselineTsSetup(ts):
     ts.Disk.records_config.update({
         # 'proxy.config.diags.debug.enabled': 1,
         'proxy.config.url_remap.pristine_host_hdr': 1,  # Retain Host header in original incoming client request.
-        'proxy.config.http.cache.http': 0,  # Make sure each request is forwarded to the origin server.
         'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
@@ -100,7 +99,9 @@ def baselineTsSetup(ts):
     )
 
 
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+# Disable the cache to make sure each request is forwarded to the origin
+# server.
+ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 
 baselineTsSetup(ts)
 
@@ -154,7 +155,7 @@ tr = Test.AddTestRun()
 # Wait for the micro server
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 # Delay on readiness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts.Variables.port)
@@ -207,7 +208,7 @@ ts2.Disk.remap_config.AddLine(
 # Forwarded header with UUID of 2nd ATS.
 tr = Test.AddTestRun()
 # Delay on readiness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts2, ready=When.PortOpen(ts2.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts2)
 #
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.no-oride.com'.format(ts2.Variables.port)

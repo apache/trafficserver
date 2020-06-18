@@ -20,13 +20,17 @@ Test.Summary = "Test start up of Traffic server with configuration modification 
 
 # set up some ATS processes
 ts1 = Test.MakeATSProcess("ts1", select_ports=False)
-ts1.Setup.ts.CopyConfig('config/records_8090.config', 'records.config')
 ts1.Variables.port = 8090
+ts1.Disk.records_config.update({
+    'proxy.config.http.server_ports': str(ts1.Variables.port),
+})
 ts1.Ready = When.PortOpen(ts1.Variables.port)
 
 ts2 = Test.MakeATSProcess("ts2", select_ports=False)
-ts2.Setup.ts.CopyConfig('config/records_8091.config', 'records.config')
 ts2.Variables.port = 8091
+ts2.Disk.records_config.update({
+    'proxy.config.http.server_ports': str(ts2.Variables.port),
+})
 ts2.Ready = When.PortOpen(ts2.Variables.port)
 
 # setup a testrun
