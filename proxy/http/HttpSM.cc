@@ -5739,7 +5739,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
       (t_state.redirect_info.redirect_in_process && enable_redirection && this->_postbuf.postdata_copy_buffer_start != nullptr)) {
     post_redirect = true;
     // copy the post data into a new producer buffer for static producer
-    MIOBuffer *postdata_producer_buffer      = new_empty_MIOBuffer();
+    MIOBuffer *postdata_producer_buffer      = new_empty_MIOBuffer(t_state.http_config_param->max_payload_iobuf_index);
     IOBufferReader *postdata_producer_reader = postdata_producer_buffer->alloc_reader();
 
     postdata_producer_buffer->write(this->_postbuf.postdata_copy_buffer_start);

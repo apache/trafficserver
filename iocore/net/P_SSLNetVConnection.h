@@ -49,6 +49,7 @@
 #include "P_ALPNSupport.h"
 #include "TLSSessionResumptionSupport.h"
 #include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
 
 // These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -186,7 +187,7 @@ public:
   void
   initialize_handshake_buffers()
   {
-    this->handShakeBuffer    = new_MIOBuffer();
+    this->handShakeBuffer    = new_MIOBuffer(SSLConfigParams::ssl_misc_max_iobuffer_size_index);
     this->handShakeReader    = this->handShakeBuffer->alloc_reader();
     this->handShakeHolder    = this->handShakeReader->clone();
     this->handShakeBioStored = 0;

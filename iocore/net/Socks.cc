@@ -44,7 +44,7 @@ void
 SocksEntry::init(Ptr<ProxyMutex> &m, SocksNetVC *vc, unsigned char socks_support, unsigned char ver)
 {
   mutex  = m;
-  buf    = new_MIOBuffer();
+  buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   reader = buf->alloc_reader();
 
   socks_cmd = socks_support;

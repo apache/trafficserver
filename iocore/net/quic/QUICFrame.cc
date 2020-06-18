@@ -199,7 +199,7 @@ QUICStreamFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 
   this->_valid = true;
   this->_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  this->_block->alloc();
+  this->_block->alloc(BUFFER_SIZE_INDEX_32K);
   ink_assert(static_cast<uint64_t>(this->_block->write_avail()) > data_len);
   memcpy(this->_block->start(), pos, data_len);
   this->_block->fill(data_len);
@@ -426,7 +426,7 @@ QUICCryptoFrame::parse(const uint8_t *buf, size_t len, const QUICPacket *packet)
 
   this->_valid = true;
   this->_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  this->_block->alloc();
+  this->_block->alloc(BUFFER_SIZE_INDEX_32K);
   ink_assert(static_cast<uint64_t>(this->_block->write_avail()) > data_len);
   memcpy(this->_block->start(), pos, data_len);
   this->_block->fill(data_len);

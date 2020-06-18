@@ -64,9 +64,9 @@ OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vc
 
   int64_t size_index = 0;
   if (size_estimate) {
-    size_index = buffer_size_to_index(size_estimate, default_large_iobuffer_size);
+    size_index = buffer_size_to_index(size_estimate, BUFFER_SIZE_INDEX_32K);
   } else {
-    size_index = default_large_iobuffer_size;
+    size_index = BUFFER_SIZE_INDEX_32K;
   }
 
   tunnel_till_done = (nbytes == TUNNEL_TILL_DONE);
