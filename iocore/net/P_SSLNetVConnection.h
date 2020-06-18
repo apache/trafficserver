@@ -177,10 +177,6 @@ public:
   /// Reenable the VC after a pre-accept or SNI hook is called.
   virtual void reenable(NetHandler *nh, int event = TS_EVENT_CONTINUE);
 
-  /// Set the SSL context.
-  /// @note This must be called after the SSL endpoint has been created.
-  virtual bool sslContextSet(void *ctx);
-
   int64_t read_raw_data();
 
   void
