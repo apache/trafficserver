@@ -67,4 +67,5 @@ port\.h
 ^catch[.]hpp$
 ^configuru.hpp$
 ^yamlcpp$
+^ocsp4boring$
 ^tests/gold_tests/autest-site/min_cfg$

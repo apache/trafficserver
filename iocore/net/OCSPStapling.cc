@@ -24,7 +24,13 @@
 
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
+
+#ifdef OPENSSL_IS_BORINGSSL
+#include "ocsp4boring/ocsp.h"
+#else
 #include <openssl/ocsp.h>
+#endif
+
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
@@ -213,6 +219,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
   cinf->is_expire     = true;
   cinf->expire_time   = 0;
 
+#ifndef OPENSSL_IS_BORINGSSL
   if (cinf->is_prefetched) {
     Debug("ssl_ocsp", "using OCSP prefetched response file %s", rsp_file);
     rsp_bio = BIO_new_file(rsp_file, "r");
@@ -236,6 +243,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
       rsp_bio = nullptr;
     }
   }
+#endif
 
   issuer = stapling_get_issuer(ctx, cert);
   if (issuer == nullptr) {
@@ -264,7 +272,7 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
   map->insert(std::make_pair(cert, cinf));
   SSL_CTX_set_ex_data(ctx, ssl_stapling_index, map);
 
-  Note("successfully initialized stapling for %s into SSL_CTX: %p", certname, ctx);
+  Note("successfully initialized stapling for %s into SSL_CTX: %p uri=%s", certname, ctx, cinf->uri);
   return true;
 
 err:
@@ -455,7 +463,7 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
   if (!stapling_cache_response(*prsp, cinf)) {
     Error("stapling_refresh_response: can not cache response");
   } else {
-    Debug("ssl_ocsp", "stapling_refresh_response: successful refresh OCSP response");
+    Debug("ssl_ocsp", "stapling_refresh_response: successfully refreshed OCSP response");
   }
   goto done;
 
@@ -518,9 +526,13 @@ ocsp_update()
   }
 }
 
-// RFC 6066 Section-8: Certificate Status Request
 int
+// RFC 6066 Section-8: Certificate Status Request
+#ifndef OPENSSL_IS_BORINGSSL
 ssl_callback_ocsp_stapling(SSL *ssl)
+#else
+ssl_callback_ocsp_stapling(SSL *ssl, void *)
+#endif
 {
   // Assume SSL_get_SSL_CTX() is the same as reaching into the ssl structure
   // Using the official call, to avoid leaking internal openssl knowledge

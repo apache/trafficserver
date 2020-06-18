@@ -1331,6 +1331,13 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/base.h>]],
                   [AC_MSG_RESULT([no])])
 AM_CONDITIONAL([OPENSSL_IS_BORINGSSL], [test -n "$openssl_is_boringssl"])
 
+if test "$openssl_is_boringssl" == "1"; then
+  OCSP4BORING_LIBS=-locsp4boring
+  OCSP4BORING_LDFLAGS=-L\${abs_top_builddir}/lib/ocsp4boring
+fi
+AC_SUBST([OCSP4BORING_LIBS])
+AC_SUBST([OCSP4BORING_LDFLAGS])
+
 LIBS="$saved_LIBS"
 
 #
@@ -2192,6 +2199,7 @@ AC_CONFIG_FILES([
   include/tscore/ink_config.h
   src/wccp/Makefile
   lib/yamlcpp/Makefile
+  lib/ocsp4boring/Makefile
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile

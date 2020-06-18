@@ -495,7 +495,9 @@ ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   return SSL_TLSEXT_ERR_OK;
 }
 
+#ifndef OPENSSL_IS_BORINGSSL
 #if TS_USE_GET_DH_2048_256 == 0
+
 /* Build 2048-bit MODP Group with 256-bit Prime Order Subgroup from RFC 5114 */
 static DH *
 DH_get_2048_256()
@@ -569,6 +571,7 @@ ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
 
   return ctx;
 }
+#endif // !OPENSSL_IS_BORINGSSL
 
 // SSL_CTX_set_ecdh_auto() is removed by OpenSSL v1.1.0 and ECDH is enabled in default.
 // TODO: remove this function when we drop support of OpenSSL v1.0.2* and lower.
@@ -1326,9 +1329,12 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
   }
 #endif
 
+// ???
+#ifndef OPENSSL_IS_BORINGSSL
   if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
     goto fail;
   }
+#endif
 
   ssl_context_enable_ecdh(ctx);
 

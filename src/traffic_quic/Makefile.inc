@@ -36,7 +36,8 @@ traffic_quic_traffic_quic_CPPFLAGS = \
 
 traffic_quic_traffic_quic_LDFLAGS = \
 	$(AM_LDFLAGS) \
-	@OPENSSL_LDFLAGS@
+	@OPENSSL_LDFLAGS@ \
+	@OCSP4BORING_LDFLAGS@
 
 traffic_quic_traffic_quic_SOURCES = \
 	traffic_quic/quic_client.cc \
@@ -59,5 +60,6 @@ traffic_quic_traffic_quic_LDADD = \
 	@HWLOC_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@OPENSSL_LIBS@ \
+	@OCSP4BORING_LIBS@ \
 	@LIBPCRE@
 

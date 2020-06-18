@@ -1,4 +1,5 @@
-# lib Makefile.am
+#
+# Makefile.am for ocsp library
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,30 +17,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = . records
+include $(top_srcdir)/build/tidy.mk
 
-if BUILD_PERL_LIB
-SUBDIRS += perl
-endif
+AM_CPPFLAGS += -I$(abs_top_srcdir)/lib/ocsp4boring
 
-if OPENSSL_IS_BORINGSSL
-SUBDIRS += ocsp4boring
-endif
+noinst_LTLIBRARIES = libocsp4boring.la
 
-# to prevent Clang Analyzer warning
-LOCAL =
+libocsp4boring_la_SOURCES = ocsp_asn.c \
+ocsp_cl.c \
+ocsp_lib.c \
+ocsp_prn.c \
+ocsp_vfy.c \
+ocsp_srv.c \
+ocsp_ht.c \
+ocsp_ext.c
 
-if BUILD_YAML_CPP
-LOCAL += yamlcpp
-endif
-
-all-local:	$(LOCAL)
-	$(MAKE) -C yamlcpp
-
-clean-local:
-	$(MAKE) -C yamlcpp clean
-
-if EXPORT_YAML_HEADERS
-install-data-local:
-	$(MAKE) -C yamlcpp install
-endif
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)
