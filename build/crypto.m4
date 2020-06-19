@@ -259,10 +259,13 @@ AC_DEFUN([TS_CHECK_CRYPTO_OCSP], [
   _ocsp_saved_LIBS=$LIBS
 
   TS_ADDTO(LIBS, [$OPENSSL_LIBS])
-  AC_CHECK_HEADERS(openssl/ocsp.h)
-  AC_CHECK_FUNCS(OCSP_sendreq_new OCSP_REQ_CTX_add1_header OCSP_REQ_CTX_set1_req, [enable_tls_ocsp=yes], [enable_tls_ocsp=no])
+  AC_CHECK_HEADERS(openssl/ocsp.h, [ocsp_have_headers=1], [enable_tls_ocsp=no])
 
-  LIBS=$_ocsp_saved_LIBS
+  if test "$ocsp_have_headers" == "1"; then
+    AC_CHECK_FUNCS(OCSP_sendreq_new OCSP_REQ_CTX_add1_header OCSP_REQ_CTX_set1_req, [enable_tls_ocsp=yes], [enable_tls_ocsp=no])
+
+    LIBS=$_ocsp_saved_LIBS
+  fi
 
   AC_MSG_CHECKING(whether OCSP is supported)
   AC_MSG_RESULT([$enable_tls_ocsp])
