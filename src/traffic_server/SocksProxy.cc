@@ -144,7 +144,7 @@ void
 SocksProxy::init(NetVConnection *netVC)
 {
   mutex  = new_ProxyMutex();
-  buf    = new_MIOBuffer();
+  buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   reader = buf->alloc_reader();
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());

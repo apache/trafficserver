@@ -2946,7 +2946,7 @@ REGRESSION_TEST(SDK_API_TSIOBufferBlockReadAvail)(RegressionTest *test, int /* a
     SDK_RPRINT(test, "TSIOBufferBlockWriteStart", "TestCase1", TC_FAIL, "failed");
   }
 
-  if ((TSIOBufferBlockReadAvail(blockp, readerp) + TSIOBufferBlockWriteAvail(blockp)) == 4096) {
+  if ((TSIOBufferBlockReadAvail(blockp, readerp) + TSIOBufferBlockWriteAvail(blockp)) == 32768) {
     SDK_RPRINT(test, "TSIOBufferBlockReadAvail", "TestCase1", TC_PASS, "ok");
     SDK_RPRINT(test, "TSIOBufferBlockWriteAvail", "TestCase1", TC_PASS, "ok");
     test_passed_2 = true;

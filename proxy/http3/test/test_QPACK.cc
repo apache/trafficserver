@@ -301,7 +301,7 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
   qpack->set_stream(decoder_stream);
 
   uint64_t stream_id                  = 1;
-  MIOBuffer *header_block             = new_MIOBuffer();
+  MIOBuffer *header_block             = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   uint64_t header_block_len           = 0;
   IOBufferReader *header_block_reader = header_block->alloc_reader();
   for (int i = 0; i < n_requests; ++i) {

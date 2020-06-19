@@ -166,7 +166,10 @@ SSLNextProtocolAccept::enableProtocols(const SessionProtocolSet &protos)
 }
 
 SSLNextProtocolAccept::SSLNextProtocolAccept(Continuation *ep, bool transparent_passthrough)
-  : SessionAccept(nullptr), buffer(new_empty_MIOBuffer()), endpoint(ep), transparent_passthrough(transparent_passthrough)
+  : SessionAccept(nullptr),
+    buffer(new_empty_MIOBuffer(SSLConfigParams::ssl_misc_max_iobuffer_size_index)),
+    endpoint(ep),
+    transparent_passthrough(transparent_passthrough)
 {
   SET_HANDLER(&SSLNextProtocolAccept::mainEvent);
 }

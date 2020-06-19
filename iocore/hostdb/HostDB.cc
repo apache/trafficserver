@@ -62,6 +62,7 @@ int hostdb_max_count                               = DEFAULT_HOST_DB_SIZE;
 char hostdb_hostfile_path[PATH_NAME_MAX]           = "";
 int hostdb_sync_frequency                          = 0;
 int hostdb_disable_reverse_lookup                  = 0;
+int hostdb_max_iobuf_index                         = BUFFER_SIZE_INDEX_32K;
 
 ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 
@@ -324,6 +325,8 @@ HostDBCache::start(int flags)
   REC_ReadConfigInt32(hostdb_partitions, "proxy.config.hostdb.partitions");
   // how often to sync hostdb to disk
   REC_EstablishStaticConfigInt32(hostdb_sync_frequency, "proxy.config.cache.hostdb.sync_frequency");
+
+  REC_EstablishStaticConfigInt32(hostdb_max_iobuf_index, "proxy.config.hostdb.io.max_buffer_index");
 
   if (hostdb_max_size == 0) {
     Fatal("proxy.config.hostdb.max_size must be a non-zero number");

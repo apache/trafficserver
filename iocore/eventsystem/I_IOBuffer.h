@@ -52,10 +52,6 @@ class MIOBuffer;
 class IOBufferReader;
 class VIO;
 
-inkcoreapi extern int64_t max_iobuffer_size;
-extern int64_t default_small_iobuffer_size;
-extern int64_t default_large_iobuffer_size; // matched to size of OS buffers
-
 enum AllocType {
   NO_ALLOC,
   MEMALIGNED,
@@ -417,7 +413,7 @@ public:
     section in MIOBuffer.
 
   */
-  void alloc(int64_t i = default_large_iobuffer_size);
+  void alloc(int64_t i);
 
   /**
     Clear the IOBufferData this IOBufferBlock handles. Clears this
@@ -1148,7 +1144,7 @@ public:
   void dealloc_all_readers();
 
   void set(void *b, int64_t len);
-  void alloc(int64_t i = default_large_iobuffer_size);
+  void alloc(int64_t i);
   void append_block_internal(IOBufferBlock *b);
   int64_t write(IOBufferBlock const *b, int64_t len, int64_t offset);
 
@@ -1290,7 +1286,7 @@ private:
   IOBufferReader *entry = nullptr;
 };
 
-extern MIOBuffer *new_MIOBuffer_internal(const char *loc, int64_t size_index = default_large_iobuffer_size);
+extern MIOBuffer *new_MIOBuffer_internal(const char *loc, int64_t size_index);
 
 class MIOBuffer_tracker
 {
@@ -1299,13 +1295,13 @@ class MIOBuffer_tracker
 public:
   explicit MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
   MIOBuffer *
-  operator()(int64_t size_index = default_large_iobuffer_size)
+  operator()(int64_t size_index)
   {
     return new_MIOBuffer_internal(loc, size_index);
   }
 };
 
-extern MIOBuffer *new_empty_MIOBuffer_internal(const char *loc, int64_t size_index = default_large_iobuffer_size);
+extern MIOBuffer *new_empty_MIOBuffer_internal(const char *loc, int64_t size_index);
 
 class Empty_MIOBuffer_tracker
 {
@@ -1314,7 +1310,7 @@ class Empty_MIOBuffer_tracker
 public:
   explicit Empty_MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
   MIOBuffer *
-  operator()(int64_t size_index = default_large_iobuffer_size)
+  operator()(int64_t size_index)
   {
     return new_empty_MIOBuffer_internal(loc, size_index);
   }
@@ -1352,8 +1348,7 @@ public:
 #define new_IOBufferBlock IOBufferBlock_tracker(RES_PATH("memory/IOBuffer/"))
 ////////////////////////////////////////////////////////////
 
-extern IOBufferData *new_IOBufferData_internal(const char *location, int64_t size_index = default_large_iobuffer_size,
-                                               AllocType type = DEFAULT_ALLOC);
+extern IOBufferData *new_IOBufferData_internal(const char *location, int64_t size_index, AllocType type = DEFAULT_ALLOC);
 
 extern IOBufferData *new_xmalloc_IOBufferData_internal(const char *location, void *b, int64_t size);
 
@@ -1364,7 +1359,7 @@ class IOBufferData_tracker
 public:
   explicit IOBufferData_tracker(const char *_loc) : loc(_loc) {}
   IOBufferData *
-  operator()(int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC)
+  operator()(int64_t size_index, AllocType type = DEFAULT_ALLOC)
   {
     return new_IOBufferData_internal(loc, size_index, type);
   }
@@ -1374,7 +1369,7 @@ public:
 #define new_IOBufferData IOBufferData_tracker(RES_PATH("memory/IOBuffer/"))
 #define new_xmalloc_IOBufferData(b, size) new_xmalloc_IOBufferData_internal(RES_PATH("memory/IOBuffer/"), (b), (size))
 
-extern int64_t iobuffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size);
+extern int64_t iobuffer_size_to_index(int64_t size, int64_t max);
 extern int64_t index_to_buffer_size(int64_t idx);
 /**
   Clone a IOBufferBlock chain. Used to snarf a IOBufferBlock chain

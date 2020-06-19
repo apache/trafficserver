@@ -427,7 +427,7 @@ ShowCache::handleCacheEvent(int event, Event *e)
 
   case VC_EVENT_READ_READY:
     if (!cvio) {
-      buffer         = new_empty_MIOBuffer();
+      buffer         = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
       buffer_reader  = buffer->alloc_reader();
       content_length = cache_vc->get_object_size();
       cvio           = cache_vc->do_io_read(this, content_length, buffer);

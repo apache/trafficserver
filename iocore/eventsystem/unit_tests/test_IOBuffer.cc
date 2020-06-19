@@ -35,26 +35,19 @@
 
 TEST_CASE("MIOBuffer", "[iocore]")
 {
-  // These value could be tweaked by `ink_event_system_init()` using `proxy.config.io.max_buffer_size`
-  REQUIRE(default_small_iobuffer_size == DEFAULT_SMALL_BUFFER_SIZE);
-  REQUIRE(default_large_iobuffer_size == DEFAULT_LARGE_BUFFER_SIZE);
-
-  REQUIRE(BUFFER_SIZE_FOR_INDEX(default_small_iobuffer_size) == 512);
-  REQUIRE(BUFFER_SIZE_FOR_INDEX(default_large_iobuffer_size) == 4096);
-
   SECTION("new_MIOBuffer 100 times")
   {
     int64_t read_avail_len1 = 0;
     int64_t read_avail_len2 = 0;
 
     for (unsigned i = 0; i < 100; ++i) {
-      MIOBuffer *b1            = new_MIOBuffer(default_small_iobuffer_size);
+      MIOBuffer *b1            = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
       int64_t len1             = b1->write_avail();
       IOBufferReader *b1reader = b1->alloc_reader();
       b1->fill(len1);
       read_avail_len1 += b1reader->read_avail();
 
-      MIOBuffer *b2            = new_MIOBuffer(default_large_iobuffer_size);
+      MIOBuffer *b2            = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
       int64_t len2             = b2->write_avail();
       IOBufferReader *b2reader = b2->alloc_reader();
       b2->fill(len2);
@@ -64,19 +57,19 @@ TEST_CASE("MIOBuffer", "[iocore]")
       free_MIOBuffer(b1);
     }
 
-    CHECK(read_avail_len1 == 100 * BUFFER_SIZE_FOR_INDEX(default_small_iobuffer_size));
-    CHECK(read_avail_len2 == 100 * BUFFER_SIZE_FOR_INDEX(default_large_iobuffer_size));
+    CHECK(read_avail_len1 == 100 * BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_512));
+    CHECK(read_avail_len2 == 100 * BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_4K));
   }
 
   SECTION("write")
   {
-    MIOBuffer *miob            = new_MIOBuffer();
+    MIOBuffer *miob            = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     IOBufferReader *miob_r     = miob->alloc_reader();
     const IOBufferBlock *block = miob->first_write_block();
 
     SECTION("initial state")
     {
-      CHECK(miob->size_index == default_large_iobuffer_size);
+      CHECK(miob->size_index == BUFFER_SIZE_INDEX_4K);
       CHECK(miob->water_mark == 0);
       CHECK(miob->first_write_block() != nullptr);
       CHECK(miob->block_size() == 4096);
@@ -176,7 +169,7 @@ TEST_CASE("MIOBuffer", "[iocore]")
 
   SECTION("write_avail")
   {
-    MIOBuffer *miob        = new_MIOBuffer();
+    MIOBuffer *miob        = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
     IOBufferReader *miob_r = miob->alloc_reader();
     uint8_t buf[8192];
     memset(buf, 0xAA, sizeof(buf));
@@ -347,7 +340,6 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     init_diags("", nullptr);
     RecProcessInit(RECM_STAND_ALONE);
 
-    // Initialize LibRecordsConfig for `proxy.config.io.max_buffer_size` (32K)
     LibRecordsConfigInit();
 
     ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);

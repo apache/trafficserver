@@ -52,6 +52,7 @@ int SSLConfig::configid                                     = 0;
 int SSLCertificateConfig::configid                          = 0;
 int SSLTicketKeyConfig::configid                            = 0;
 int SSLConfigParams::ssl_maxrecord                          = 0;
+int SSLConfigParams::ssl_misc_max_iobuffer_size_index       = 8;
 bool SSLConfigParams::ssl_allow_client_renegotiation        = false;
 bool SSLConfigParams::ssl_ocsp_enabled                      = false;
 int SSLConfigParams::ssl_ocsp_cache_timeout                 = 3600;
@@ -451,6 +452,8 @@ SSLConfigParams::initialize()
   REC_ReadConfigStringAlloc(client_groups_list, "proxy.config.ssl.client.groups_list");
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
+
+  REC_ReadConfigInt32(ssl_misc_max_iobuffer_size_index, "proxy.config.ssl.misc.io.max_buffer_index");
 
   // Enable client regardless of config file settings as remap file
   // can cause HTTP layer to connect using SSL. But only if SSL

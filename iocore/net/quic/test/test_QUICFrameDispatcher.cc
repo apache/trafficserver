@@ -30,7 +30,7 @@
 TEST_CASE("QUICFrameHandler", "[quic]")
 {
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc();
+  block->alloc(BUFFER_SIZE_INDEX_32K);
   block->fill(1);
   CHECK(block->read_avail() == 1);
 

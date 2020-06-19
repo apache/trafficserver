@@ -62,6 +62,8 @@ extern unsigned int hostdb_ip_fail_timeout_interval;
 extern unsigned int hostdb_serve_stale_but_revalidate;
 extern unsigned int hostdb_round_robin_max_count;
 
+extern int hostdb_max_iobuf_index;
+
 static inline unsigned int
 makeHostHash(const char *string)
 {
@@ -146,7 +148,7 @@ struct HostDBInfo : public RefCountObj {
   alloc(int size = 0)
   {
     size += sizeof(HostDBInfo);
-    int iobuffer_index = iobuffer_size_to_index(size);
+    int iobuffer_index = iobuffer_size_to_index(size, hostdb_max_iobuf_index);
     ink_release_assert(iobuffer_index >= 0);
     void *ptr = ioBufAllocator[iobuffer_index].alloc_void();
     memset(ptr, 0, size);

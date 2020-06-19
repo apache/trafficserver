@@ -27,7 +27,7 @@
 
 TEST_CASE("Http2Frame", "[http2][Http2Frame]")
 {
-  MIOBuffer *miob        = new_MIOBuffer();
+  MIOBuffer *miob        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   IOBufferReader *miob_r = miob->alloc_reader();
 
   SECTION("PUSH_PROMISE")

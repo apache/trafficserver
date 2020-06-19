@@ -97,7 +97,7 @@ Http3HeaderFramer::_generate_header_block()
     HTTPHdr h3_hdr;
     this->_convert_header_from_1_1_to_3(&h3_hdr, &this->_header);
 
-    this->_header_block        = new_MIOBuffer();
+    this->_header_block        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     this->_header_block_reader = this->_header_block->alloc_reader();
 
     this->_qpack->encode(this->_stream_id, h3_hdr, this->_header_block, this->_header_block_len);
