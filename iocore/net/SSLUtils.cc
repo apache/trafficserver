@@ -250,6 +250,12 @@ set_context_cert(SSL *ssl)
   bool found               = true;
   int retval               = 1;
 
+  if (!netvc || netvc->ssl != ssl) {
+    Debug("ssl.error", "set_context_cert call back on stale netvc");
+    retval = 0; // Error
+    goto done;
+  }
+
   Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername, netvc->getSSLHandShakeComplete());
 
   // catch the client renegotiation early on
@@ -317,6 +323,11 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   auto *ssl                = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
+  if (!netvc || netvc->ssl != ssl) {
+    Debug("ssl.error", "ssl_verify_client_callback call back on stale netvc");
+    return false;
+  }
+
   netvc->set_verify_cert(ctx);
   netvc->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
   netvc->set_verify_cert(nullptr);
@@ -355,6 +366,12 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
   const char *servername   = nullptr;
   const unsigned char *p;
   size_t remaining, len;
+
+  if (!netvc || netvc->ssl != s) {
+    Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
+    return SSL_CLIENT_HELLO_ERROR;
+  }
+
   // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
   if (SSL_client_hello_get0_ext(s, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
@@ -414,6 +431,11 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
   bool reenabled;
   int retval = 1;
 
+  if (!netvc || netvc->ssl != ssl) {
+    Debug("ssl.error", "ssl_cert_callback call back on stale netvc");
+    return 0;
+  }
+
   // If we are in tunnel mode, don't select a cert.  Pause!
   if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
     return -1; // Pause
@@ -447,6 +469,12 @@ static int
 ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+
+  if (!netvc || netvc->ssl != ssl) {
+    Debug("ssl.error", "ssl_servername_callback call back on stale netvc");
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
+
   netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
 
   const char *name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
@@ -1019,7 +1047,12 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
-  if (netvc && (where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
+  if (!netvc || netvc->ssl != ssl) {
+    Debug("ssl.error", "ssl_callback_info call back on stale netvc");
+    return;
+  }
+
+  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
       SSLConfigParams::ssl_allow_client_renegotiation == false) {
     int state = SSL_get_state(ssl);
 
@@ -1790,6 +1823,7 @@ SSLAccept(SSL *ssl)
 
 #if TS_HAS_TLS_EARLY_DATA
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+
   if (SSLConfigParams::server_max_early_data > 0 && !netvc->early_data_finish) {
     size_t nread;
     if (netvc->early_data_buf == nullptr) {
