@@ -45,6 +45,7 @@
 
 #include <syslog.h>
 #include <algorithm>
+#include <atomic>
 #include <list>
 #include <string>
 
@@ -172,6 +173,9 @@ static int accept_mss           = 0;
 static int poll_timeout         = -1; // No value set.
 static int cmd_disable_freelist = 0;
 static bool signal_received[NSIG];
+
+static std::atomic<bool> ports_are_open       = false;
+static std::atomic<bool> cache_is_initialized = false;
 
 // 1: delay listen, wait for cache.
 // 0: Do not delay, start listen ASAP.
@@ -709,7 +713,8 @@ CB_After_Cache_Init()
   APIHook *hook;
   int start;
 
-  start = ink_atomic_swap(&delay_listen_for_cache_p, -1);
+  start                = ink_atomic_swap(&delay_listen_for_cache_p, -1);
+  cache_is_initialized = true;
 
 #if TS_ENABLE_FIPS == 0
   // Check for cache BC after the cache is initialized and before listen, if possible.
@@ -726,6 +731,7 @@ CB_After_Cache_Init()
   if (1 == start) {
     Debug("http_listen", "Delayed listen enable, cache initialization finished");
     start_HttpProxyServer();
+    ports_are_open = true;
   }
 
   time_t cache_ready_at = time(nullptr);
@@ -736,6 +742,9 @@ CB_After_Cache_Init()
   while (hook) {
     hook->invoke(TS_EVENT_LIFECYCLE_CACHE_READY, nullptr);
     hook = hook->next();
+  }
+  if (ports_are_open) {
+    Note("traffic server initialized");
   }
 }
 
@@ -2094,7 +2103,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       if (delay_p && ink_atomic_cas(&delay_listen_for_cache_p, 0, 1)) {
         Debug("http_listen", "Delaying listen, waiting for cache initialization");
       } else {
+        Debug("http_listen", "Not delaying listen");
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
+        ports_are_open = true;
       }
     }
     // Plugins can register their own configuration names so now after they've done that
@@ -2125,6 +2136,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     ink_set_thread_name("[TS_MAIN]");
 
+    if (ports_are_open && cache_is_initialized) {
+      Note("traffic server initialized");
+    }
     Note("traffic server running");
 
 #if TS_HAS_TESTS

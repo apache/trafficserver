@@ -281,10 +281,9 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
     get_port(p, "manager_port")
     get_port(p, "admin_port")
 
-    if enable_tls:
-        p.Ready = When.PortsOpen([p.Variables.port, p.Variables.ssl_port])
-    else:
-        p.Ready = When.PortOpen(p.Variables.port)
+    # The following message was added so that tests and users can know when
+    # Traffic Server is ready to both receive and optimize traffic.
+    p.Ready = When.FileContains(p.Disk.diags_log.AbsPath, "NOTE: traffic server initialized")
 
     if select_ports:
         # default config
