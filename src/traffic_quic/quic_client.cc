@@ -268,8 +268,8 @@ Http3ClientApp::~Http3ClientApp()
 void
 Http3ClientApp::start()
 {
-  this->_req_buf                  = new_MIOBuffer();
-  this->_resp_buf                 = new_MIOBuffer();
+  this->_req_buf                  = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  this->_resp_buf                 = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   IOBufferReader *resp_buf_reader = _resp_buf->alloc_reader();
 
   this->_resp_handler = new RespHandler(this->_config, resp_buf_reader);

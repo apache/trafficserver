@@ -549,7 +549,7 @@ TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
     }
     ink_assert(m_tvc != nullptr);
 
-    m_write_buf = new_MIOBuffer();
+    m_write_buf = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     s           = m_write_buf->end();
     e           = m_write_buf->buf_end();
 
@@ -561,7 +561,7 @@ TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
   }
 
   case TRANSFORM_READ_READY: {
-    MIOBuffer *buf = new_empty_MIOBuffer();
+    MIOBuffer *buf = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
 
     m_read_buf = buf->alloc_reader();
     m_tvc->do_io_read(this, INT64_MAX, buf);
@@ -652,7 +652,7 @@ NullTransform::handle_event(int event, void *edata)
       ink_assert(m_output_vc != nullptr);
 
       if (!m_output_vio) {
-        m_output_buf    = new_empty_MIOBuffer();
+        m_output_buf    = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
         m_output_reader = m_output_buf->alloc_reader();
         m_output_vio    = m_output_vc->do_io_write(this, m_write_vio.nbytes, m_output_reader);
       }
@@ -802,7 +802,7 @@ RangeTransform::handle_event(int event, void *edata)
       ink_assert(m_output_vc != nullptr);
 
       if (!m_output_vio) {
-        m_output_buf    = new_empty_MIOBuffer();
+        m_output_buf    = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
         m_output_reader = m_output_buf->alloc_reader();
         m_output_vio    = m_output_vc->do_io_write(this, m_output_cl, m_output_reader);
 

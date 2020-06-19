@@ -843,7 +843,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
       // immediately, before receive the real response from original server.
       if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
-        int64_t alloc_index = buffer_size_to_index(len_100_continue_response);
+        int64_t alloc_index = buffer_size_to_index(len_100_continue_response, t_state.http_config_param->max_payload_iobuf_index);
         if (ua_entry->write_buffer) {
           free_MIOBuffer(ua_entry->write_buffer);
           ua_entry->write_buffer = nullptr;
@@ -898,7 +898,7 @@ HttpSM::wait_for_full_body()
       alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
     }
   } else {
-    alloc_index = buffer_size_to_index(t_state.hdr_info.request_content_length);
+    alloc_index = buffer_size_to_index(t_state.hdr_info.request_content_length, t_state.http_config_param->max_payload_iobuf_index);
   }
   MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = post_buffer->alloc_reader();
@@ -5685,7 +5685,7 @@ HttpSM::setup_transform_to_server_transfer()
   ink_assert(post_transform_info.entry->vc == post_transform_info.vc);
 
   int64_t nbytes            = t_state.hdr_info.transform_request_cl;
-  int64_t alloc_index       = buffer_size_to_index(nbytes);
+  int64_t alloc_index       = buffer_size_to_index(nbytes, t_state.http_config_param->max_payload_iobuf_index);
   MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = post_buffer->alloc_reader();
 
@@ -5748,7 +5748,7 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
       (t_state.redirect_info.redirect_in_process && enable_redirection && this->_postbuf.postdata_copy_buffer_start != nullptr)) {
     post_redirect = true;
     // copy the post data into a new producer buffer for static producer
-    MIOBuffer *postdata_producer_buffer      = new_empty_MIOBuffer();
+    MIOBuffer *postdata_producer_buffer      = new_empty_MIOBuffer(t_state.http_config_param->max_payload_iobuf_index);
     IOBufferReader *postdata_producer_reader = postdata_producer_buffer->alloc_reader();
 
     postdata_producer_buffer->write(this->_postbuf.postdata_copy_buffer_start);
@@ -5765,7 +5765,8 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
         alloc_index = DEFAULT_REQUEST_BUFFER_SIZE_INDEX;
       }
     } else {
-      alloc_index = buffer_size_to_index(t_state.hdr_info.request_content_length);
+      alloc_index =
+        buffer_size_to_index(t_state.hdr_info.request_content_length, t_state.http_config_param->max_payload_iobuf_index);
     }
     MIOBuffer *post_buffer    = new_MIOBuffer(alloc_index);
     IOBufferReader *buf_start = post_buffer->alloc_reader();
@@ -6186,7 +6187,8 @@ HttpSM::setup_cache_read_transfer()
   ink_assert(cache_sm.cache_read_vc != nullptr);
 
   doc_size    = t_state.cache_info.object_read->object_size_get();
-  alloc_index = buffer_size_to_index(doc_size + index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX));
+  alloc_index = buffer_size_to_index(doc_size + index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX),
+                                     t_state.http_config_param->max_payload_iobuf_index);
 
 #ifndef USE_NEW_EMPTY_MIOBUFFER
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
@@ -6239,7 +6241,7 @@ HttpSM::setup_cache_transfer_to_transform()
   cache_response_hdr_bytes = t_state.hdr_info.cache_response.length_get();
 
   doc_size                  = t_state.cache_info.object_read->object_size_get();
-  alloc_index               = buffer_size_to_index(doc_size);
+  alloc_index               = buffer_size_to_index(doc_size, t_state.http_config_param->max_payload_iobuf_index);
   MIOBuffer *buf            = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = buf->alloc_reader();
 
@@ -6384,7 +6386,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
   int64_t buf_size =
     index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + (is_msg_buf_present ? t_state.internal_msg_buffer_size : 0);
 
-  MIOBuffer *buf            = new_MIOBuffer(buffer_size_to_index(buf_size));
+  MIOBuffer *buf            = new_MIOBuffer(buffer_size_to_index(buf_size, t_state.http_config_param->max_payload_iobuf_index));
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // First write the client response header into the buffer
@@ -6452,7 +6454,7 @@ HttpSM::find_http_resp_buffer_size(int64_t content_length)
     }
   } else {
     int64_t buf_size = index_to_buffer_size(HTTP_HEADER_BUFFER_SIZE_INDEX) + content_length;
-    alloc_index      = buffer_size_to_index(buf_size);
+    alloc_index      = buffer_size_to_index(buf_size, t_state.http_config_param->max_payload_iobuf_index);
   }
 
   return alloc_index;

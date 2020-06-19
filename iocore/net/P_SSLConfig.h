@@ -108,6 +108,7 @@ struct SSLConfigParams : public ConfigInfo {
   static bool server_allow_early_data_params;
 
   static int ssl_maxrecord;
+  static int ssl_misc_max_iobuffer_size_index;
   static bool ssl_allow_client_renegotiation;
 
   static bool ssl_ocsp_enabled;

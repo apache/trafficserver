@@ -197,7 +197,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
 
     uint8_t raw1[]           = "\x01\x02\x03\x04\x05";
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     memcpy(block->start(), raw1, 5);
     block->fill(5);
 
@@ -226,7 +226,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     };
     uint8_t raw2[]           = "\x01\x02\x03\x04\x05";
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     memcpy(block->start(), raw2, 5);
     block->fill(5);
 
@@ -255,7 +255,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     };
     uint8_t raw3[]           = "\x01\x02\x03\x04\x05";
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     memcpy(block->start(), raw3, 5);
     block->fill(5);
 
@@ -284,7 +284,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     };
     uint8_t raw4[]           = "\x01\x02\x03\x04\x05";
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     memcpy(block->start(), raw4, 5);
     block->fill(5);
 
@@ -313,7 +313,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     };
     uint8_t raw5[]           = "\x01\x02\x03\x04\x05";
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     memcpy(block->start(), raw5, 5);
     block->fill(5);
 
@@ -342,7 +342,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     };
     uint8_t raw6[]           = "\x01\x02\x03\x04\x05";
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     memcpy(block->start(), raw6, 5);
     block->fill(5);
 
@@ -371,7 +371,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     };
     uint8_t raw7[]           = "\x01\x02\x03\x04\x05";
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     memcpy(block->start(), raw7, 5);
     block->fill(5);
 
@@ -400,7 +400,7 @@ TEST_CASE("Store STREAM Frame", "[quic]")
     };
     uint8_t raw[]            = "\x01\x02\x03\x04\x05";
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     memcpy(block->start(), raw, 5);
     block->fill(5);
 
@@ -461,7 +461,7 @@ TEST_CASE("CRYPTO Frame", "[quic]")
     };
     uint8_t raw_data[]       = "\x01\x02\x03\x04\x05";
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     memcpy(block->start(), raw_data, 5);
     block->fill(5);
 

@@ -126,9 +126,9 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
   int64_t size_index = 0;
 
   if (size_estimate) {
-    size_index = buffer_size_to_index(size_estimate);
+    size_index = buffer_size_to_index(size_estimate, BUFFER_SIZE_INDEX_32K);
   } else {
-    size_index = default_large_iobuffer_size;
+    size_index = BUFFER_SIZE_INDEX_32K;
   }
 
   Debug("one_way_tunnel", "buffer size index [%" PRId64 "] [%d]", size_index, size_estimate);
