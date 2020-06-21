@@ -90,10 +90,9 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
-# build test code
-tr = Test.Build(target='smuggle-client', sources=['smuggle-client.c'])
-tr.TimeOut = 5
-tr.Setup.Copy('smuggle-client.c')
+# smuggle-client is built via `make`. Here we copy the built binary down to the
+# test directory so that the test runs in this file can use it.
+Test.Setup.Copy('smuggle-client')
 
 # HTTP1.1 GET: www.example.com
 tr = Test.AddTestRun()

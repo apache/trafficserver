@@ -21,6 +21,7 @@
   limitations under the License.
 */
 #include <ts/ts.h>    // for debug
+#include <cstdlib>    // for abort
 #include <inttypes.h> // for PRIu64
 #include <unordered_set>
 
@@ -83,7 +84,7 @@ TSPluginInit(int argc, const char *argv[])
   if (contp == nullptr) {
     // Continuation initialization failed. Unrecoverable, report and exit.
     TSError("[%s] could not create continuation.", PLUGIN_NAME);
-    abort();
+    std::abort();
   } else {
     // Add all hooks.
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
