@@ -1505,7 +1505,7 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
-  ink_release_assert(netvc != nullptr);
+  ink_release_assert(netvc && netvc->ssl == ssl);
 
   if (netvc->getNPN(out, outlen)) {
     // Successful return tells OpenSSL to advertise.
@@ -1522,7 +1522,7 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
-  ink_release_assert(netvc != nullptr);
+  ink_release_assert(netvc && netvc->ssl == ssl);
   const unsigned char *npnptr = nullptr;
   unsigned int npnsize        = 0;
   if (netvc->getNPN(&npnptr, &npnsize)) {
