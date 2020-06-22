@@ -833,7 +833,11 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
 
     field->name_get(&name_len);
     field->value_get(&value_len);
-    total_header_size += name_len + value_len;
+
+    // [RFC 7540] 6.5.2. SETTINGS_MAX_HEADER_LIST_SIZE:
+    // The value is based on the uncompressed size of header fields, including the length of the name and value in octets plus an
+    // overhead of 32 octets for each header field.
+    total_header_size += name_len + value_len + ADDITIONAL_OCTETS;
 
     if (total_header_size > max_header_size) {
       return HPACK_ERROR_SIZE_EXCEEDED_ERROR;
