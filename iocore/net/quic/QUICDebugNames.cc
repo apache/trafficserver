@@ -121,6 +121,8 @@ QUICDebugNames::error_code(uint16_t code)
     return "NO_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::INTERNAL_ERROR):
     return "INTERNAL_ERROR";
+  case static_cast<uint16_t>(QUICTransErrorCode::CONNECTION_REFUSED):
+    return "CONNECTION_REFUSED";
   case static_cast<uint16_t>(QUICTransErrorCode::FLOW_CONTROL_ERROR):
     return "FLOW_CONTROL_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::STREAM_LIMIT_ERROR):
