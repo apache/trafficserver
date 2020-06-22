@@ -152,7 +152,7 @@ tr.StillRunningAfter = server
 
 # Test Case 5: h2_active_timeout
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'python3 h2active_timeout.py -p {0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'python3 h2active_timeout.py -p {0} -d 4'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
 tr.StillRunningAfter = server
