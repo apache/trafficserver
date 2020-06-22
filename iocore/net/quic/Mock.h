@@ -40,7 +40,7 @@
 class MockQUICContext;
 
 using namespace std::literals;
-std::string_view negotiated_application_name_sv = "h3-28"sv;
+std::string_view negotiated_application_name_sv = "h3-29"sv;
 
 class MockQUICLDConfig : public QUICLDConfig
 {
