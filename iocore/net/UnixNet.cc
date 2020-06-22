@@ -111,7 +111,7 @@ public:
     // Therefore we don't have to check all the NetEvents as much as open_list.
 
     // Cleanup the active and keep-alive queues periodically
-    nh.manage_active_queue(true); // close any connections over the active timeout
+    nh.manage_active_queue(nullptr, true); // close any connections over the active timeout
     nh.manage_keep_alive_queue();
 
     return 0;
@@ -565,7 +565,7 @@ NetHandler::signalActivity()
 }
 
 bool
-NetHandler::manage_active_queue(bool ignore_queue_size = false)
+NetHandler::manage_active_queue(NetEvent *enabling_ne, bool ignore_queue_size = false)
 {
   const int total_connections_in = active_queue_size + keep_alive_queue_size;
   Debug("v_net_queue",
@@ -594,6 +594,11 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
   int total_idle_count = 0;
   for (; ne != nullptr; ne = ne_next) {
     ne_next = ne->active_queue_link.next;
+    // It seems dangerous closing the current ne at this point
+    // Let the activity_cop deal with it
+    if (ne == enabling_ne) {
+      continue;
+    }
     if ((ne->inactivity_timeout_in && ne->next_inactivity_timeout_at <= now) ||
         (ne->active_timeout_in && ne->next_activity_timeout_at <= now)) {
       _close_ne(ne, now, handle_event, closed, total_idle_time, total_idle_count);
@@ -741,7 +746,7 @@ NetHandler::add_to_active_queue(NetEvent *ne)
   bool active_queue_full = false;
 
   // if active queue is over size then close inactive connections
-  if (manage_active_queue() == false) {
+  if (manage_active_queue(ne) == false) {
     active_queue_full = true;
   }
 

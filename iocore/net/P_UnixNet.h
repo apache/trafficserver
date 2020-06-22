@@ -297,7 +297,7 @@ public:
   void process_enabled_list();
   void process_ready_list();
   void manage_keep_alive_queue();
-  bool manage_active_queue(bool ignore_queue_size);
+  bool manage_active_queue(NetEvent *ne, bool ignore_queue_size);
   void add_to_keep_alive_queue(NetEvent *ne);
   void remove_from_keep_alive_queue(NetEvent *ne);
   bool add_to_active_queue(NetEvent *ne);
