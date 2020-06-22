@@ -95,7 +95,7 @@ CacheTestSM::event_handler(int event, void *data)
     cancel_timeout();
     cache_action  = nullptr;
     cache_vc      = static_cast<CacheVConnection *>(data);
-    buffer        = new_empty_MIOBuffer();
+    buffer        = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     buffer_reader = buffer->alloc_reader();
     if (open_read_callout() < 0) {
       goto Lclose_error_next;
@@ -129,7 +129,7 @@ CacheTestSM::event_handler(int event, void *data)
     cancel_timeout();
     cache_action  = nullptr;
     cache_vc      = static_cast<CacheVConnection *>(data);
-    buffer        = new_empty_MIOBuffer();
+    buffer        = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     buffer_reader = buffer->alloc_reader();
     if (open_write_callout() < 0) {
       goto Lclose_error_next;

@@ -328,6 +328,9 @@ enum {
 
   http_origin_connections_throttled_stat,
 
+  http_origin_connect_adjust_thread_stat,
+  http_cache_open_write_adjust_thread_stat,
+
   http_stat_count
 };
 
@@ -467,6 +470,7 @@ struct OverridableHttpConfigParams {
 
   MgmtInt server_min_keep_alive_conns         = 0;
   MgmtByte server_session_sharing_match       = 0;
+  char *server_session_sharing_match_str      = nullptr;
   MgmtByte auth_server_session_private        = 1;
   MgmtByte fwd_proxy_auth_to_parent           = 0;
   MgmtByte uncacheable_requests_bypass_parent = 1;
@@ -747,6 +751,9 @@ public:
   MgmtInt post_copy_size = 2048;
   MgmtInt max_post_size  = 0;
 
+  MgmtInt max_payload_iobuf_index = BUFFER_SIZE_INDEX_32K;
+  MgmtInt max_msg_iobuf_index     = BUFFER_SIZE_INDEX_32K;
+
   char *redirect_actions_string                        = nullptr;
   IpMap *redirect_actions_map                          = nullptr;
   RedirectEnabled::Action redirect_actions_self_action = RedirectEnabled::Action::INVALID;
@@ -854,6 +861,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(proxy_response_via_string);
   ats_free(anonymize_other_header_list);
   ats_free(oride.body_factory_template_base);
+  ats_free(oride.server_session_sharing_match_str);
   ats_free(oride.proxy_response_server_string);
   ats_free(oride.global_user_agent_header);
   ats_free(oride.ssl_client_cert_filename);

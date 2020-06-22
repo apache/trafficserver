@@ -34,24 +34,13 @@ void
 ink_event_system_init(ts::ModuleVersion v)
 {
   ink_release_assert(v.check(EVENT_SYSTEM_MODULE_INTERNAL_VERSION));
-  int config_max_iobuffer_size = DEFAULT_MAX_BUFFER_SIZE;
-  int iobuffer_advice          = 0;
+  int iobuffer_advice = 0;
 
   // For backwards compatibility make sure to allow thread_freelist_size
   // This needs to change in 6.0
   REC_EstablishStaticConfigInt32(thread_freelist_high_watermark, "proxy.config.allocator.thread_freelist_size");
 
   REC_EstablishStaticConfigInt32(thread_freelist_low_watermark, "proxy.config.allocator.thread_freelist_low_watermark");
-
-  REC_ReadConfigInteger(config_max_iobuffer_size, "proxy.config.io.max_buffer_size");
-
-  max_iobuffer_size = buffer_size_to_index(config_max_iobuffer_size, DEFAULT_BUFFER_SIZES - 1);
-  if (default_small_iobuffer_size > max_iobuffer_size) {
-    default_small_iobuffer_size = max_iobuffer_size;
-  }
-  if (default_large_iobuffer_size > max_iobuffer_size) {
-    default_large_iobuffer_size = max_iobuffer_size;
-  }
 
 #ifdef MADV_DONTDUMP // This should only exist on Linux 3.4 and higher.
   RecBool dont_dump_enabled = true;

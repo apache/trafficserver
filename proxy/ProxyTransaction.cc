@@ -43,10 +43,13 @@ ProxyTransaction::new_transaction(bool from_early_data)
   HttpTxnDebug("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", _proxy_ssn->connection_id(),
                _proxy_ssn->get_transact_count(), _sm->sm_id);
 
-  PluginIdentity *pi = dynamic_cast<PluginIdentity *>(this->get_netvc());
-  if (pi) {
-    _sm->plugin_tag = pi->getPluginTag();
-    _sm->plugin_id  = pi->getPluginId();
+  // PI tag valid only for internal requests
+  if (this->get_netvc()->get_is_internal_request()) {
+    PluginIdentity *pi = dynamic_cast<PluginIdentity *>(this->get_netvc());
+    if (pi) {
+      _sm->plugin_tag = pi->getPluginTag();
+      _sm->plugin_id  = pi->getPluginId();
+    }
   }
 
   this->increment_client_transactions_stat();
@@ -78,23 +81,6 @@ ProxyTransaction::destroy()
 {
   _sm = nullptr;
   this->mutex.clear();
-}
-
-// See if we need to schedule on the primary thread for the transaction or change the thread that is associated with the VC.
-// If we reschedule, the scheduled action is returned.  Otherwise, NULL is returned
-Action *
-ProxyTransaction::adjust_thread(Continuation *cont, int event, void *data)
-{
-  NetVConnection *vc   = this->get_netvc();
-  EThread *this_thread = this_ethread();
-  if (vc && vc->thread != this_thread) {
-    if (vc->thread->is_event_type(ET_NET)) {
-      return vc->thread->schedule_imm(cont, event, data);
-    } else { // Not a net thread, take over this thread
-      vc->thread = this_thread;
-    }
-  }
-  return nullptr;
 }
 
 void

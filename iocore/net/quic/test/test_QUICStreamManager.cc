@@ -61,7 +61,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
 
   // STREAM frames create new streams
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc();
+  block->alloc(BUFFER_SIZE_INDEX_32K);
   block->fill(4);
   CHECK(block->read_avail() == 4);
 
@@ -110,7 +110,7 @@ TEST_CASE("QUICStreamManager_first_initial_map", "[quic]")
 
   // STREAM frames create new streams
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc();
+  block->alloc(BUFFER_SIZE_INDEX_32K);
   block->fill(4);
   CHECK(block->read_avail() == 4);
 
@@ -166,7 +166,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
 
   // total_offset should be a integer in unit of 1024 octets
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc();
+  block->alloc(BUFFER_SIZE_INDEX_32K);
   block->fill(1024);
   CHECK(block->read_avail() == 1024);
 
@@ -211,7 +211,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
 
   // Create a stream with STREAM_DATA_BLOCKED (== noop)
   Ptr<IOBufferBlock> block_3 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_3->alloc();
+  block_3->alloc(BUFFER_SIZE_INDEX_32K);
   block_3->fill(3);
   CHECK(block_3->read_avail() == 3);
 
@@ -225,7 +225,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
   CHECK(sm.total_offset_sent() == 0);
 
   Ptr<IOBufferBlock> block_1024 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_1024->alloc();
+  block_1024->alloc(BUFFER_SIZE_INDEX_32K);
   block_1024->fill(1024);
   CHECK(block_1024->read_avail() == 1024);
 

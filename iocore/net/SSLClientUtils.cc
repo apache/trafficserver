@@ -53,7 +53,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   // No enforcing, go away
   if (netvc == nullptr) {
     // No netvc, very bad.  Go away.  Things are not good.
-    Warning("Netvc gone by in verify_callback");
+    SSLDebug("WARN, Netvc gone by in verify_callback");
     return false;
   } else if (netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
     return true; // Tell them that all is well

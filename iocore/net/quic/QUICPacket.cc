@@ -612,7 +612,7 @@ QUICShortHeaderPacket::header_block() const
   size_t written_len = 0;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + QUICConnectionId::MAX_LENGTH + 4));
+  block->alloc(iobuffer_size_to_index(1 + QUICConnectionId::MAX_LENGTH + 4, BUFFER_SIZE_INDEX_32K));
   uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
 
   size_t n;
@@ -685,7 +685,7 @@ QUICShortHeaderPacketR::QUICShortHeaderPacketR(UDPConnection *udp_con, IpEndpoin
   }
 
   Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len));
+  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
   concatinated_block->fill(len);
 
   uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
@@ -805,7 +805,7 @@ QUICStatelessResetPacket::header_block() const
   }
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(MIN_UNPREDICTABLE_FIELD_LEN + random_extra_length));
+  block->alloc(iobuffer_size_to_index(MIN_UNPREDICTABLE_FIELD_LEN + random_extra_length, BUFFER_SIZE_INDEX_32K));
   uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
 
   // Generate random octets
@@ -827,7 +827,7 @@ QUICStatelessResetPacket::payload_block() const
   size_t written_len = 0;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(QUICStatelessResetToken::LEN));
+  block->alloc(iobuffer_size_to_index(QUICStatelessResetToken::LEN, BUFFER_SIZE_INDEX_32K));
   uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
 
   memcpy(buf, this->_token.buf(), QUICStatelessResetToken::LEN);
@@ -927,7 +927,7 @@ QUICVersionNegotiationPacket::header_block() const
   size_t written_len = 0;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(2048));
+  block->alloc(iobuffer_size_to_index(2048, BUFFER_SIZE_INDEX_32K));
   uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
 
   // Common Long Header
@@ -950,7 +950,7 @@ QUICVersionNegotiationPacket::payload_block() const
   size_t n;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(sizeof(QUICVersion) * (this->_nversions + 1)));
+  block->alloc(iobuffer_size_to_index(sizeof(QUICVersion) * (this->_nversions + 1), BUFFER_SIZE_INDEX_32K));
   buf = reinterpret_cast<uint8_t *>(block->start());
 
   for (auto i = 0; i < this->_nversions; ++i) {
@@ -994,7 +994,7 @@ QUICVersionNegotiationPacketR::QUICVersionNegotiationPacketR(UDPConnection *udp_
   }
 
   Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len));
+  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
   concatinated_block->fill(len);
 
   uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
@@ -1108,7 +1108,7 @@ QUICInitialPacket::header_block() const
   size_t n;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(2048));
+  block->alloc(iobuffer_size_to_index(2048, BUFFER_SIZE_INDEX_32K));
   uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
 
   // Common Long Header
@@ -1186,7 +1186,7 @@ QUICInitialPacketR::QUICInitialPacketR(UDPConnection *udp_con, IpEndpoint from, 
   }
 
   Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len));
+  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
   concatinated_block->fill(len);
 
   uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
@@ -1342,7 +1342,7 @@ QUICZeroRttPacket::header_block() const
   size_t n;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(2048));
+  block->alloc(iobuffer_size_to_index(2048, BUFFER_SIZE_INDEX_32K));
   uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
 
   // Common Long Header
@@ -1412,7 +1412,7 @@ QUICZeroRttPacketR::QUICZeroRttPacketR(UDPConnection *udp_con, IpEndpoint from, 
   }
 
   Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len));
+  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
   concatinated_block->fill(len);
 
   uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
@@ -1521,7 +1521,7 @@ QUICHandshakePacket::header_block() const
   size_t n;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(2048));
+  block->alloc(iobuffer_size_to_index(2048, BUFFER_SIZE_INDEX_32K));
   uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
 
   // Common Long Header
@@ -1591,7 +1591,7 @@ QUICHandshakePacketR::QUICHandshakePacketR(UDPConnection *udp_con, IpEndpoint fr
   }
 
   Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len));
+  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
   concatinated_block->fill(len);
 
   uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
@@ -1705,7 +1705,7 @@ QUICRetryPacket::header_block() const
   size_t written_len = 0;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(2048));
+  block->alloc(iobuffer_size_to_index(2048, BUFFER_SIZE_INDEX_32K));
   uint8_t *buf = reinterpret_cast<uint8_t *>(block->start());
 
   // Common Long Header
@@ -1724,7 +1724,7 @@ QUICRetryPacket::payload_block() const
   size_t written_len = 0;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(QUICConnectionId::MAX_LENGTH + this->_token.length() + QUICRetryIntegrityTag::LEN));
+  block->alloc(iobuffer_size_to_index(QUICConnectionId::MAX_LENGTH + this->_token.length() + QUICRetryIntegrityTag::LEN, BUFFER_SIZE_INDEX_32K));
   buf = reinterpret_cast<uint8_t *>(block->start());
 
   // Retry Token
@@ -1758,7 +1758,7 @@ QUICRetryPacketR::QUICRetryPacketR(UDPConnection *udp_con, IpEndpoint from, IpEn
   }
 
   Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len));
+  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
   concatinated_block->fill(len);
 
   uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());

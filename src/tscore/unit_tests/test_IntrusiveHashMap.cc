@@ -123,7 +123,7 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   auto r = map.equal_range("dup"sv);
   REQUIRE(r.first != r.second);
   REQUIRE(r.first->_payload == "dup"sv);
-  REQUIRE(r.first->_n == 79);
+  REQUIRE(r.first->_n == 81);
 
   Map::iterator idx;
 
@@ -138,13 +138,13 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
   REQUIRE(r.first != r.second);
   idx = r.first;
   REQUIRE(idx->_payload == "dup"sv);
+  REQUIRE(idx->_n == 81);
+  REQUIRE((++idx)->_payload == "dup"sv);
+  REQUIRE(idx->_n != r.first->_n);
   REQUIRE(idx->_n == 79);
   REQUIRE((++idx)->_payload == "dup"sv);
   REQUIRE(idx->_n != r.first->_n);
   REQUIRE(idx->_n == 80);
-  REQUIRE((++idx)->_payload == "dup"sv);
-  REQUIRE(idx->_n != r.first->_n);
-  REQUIRE(idx->_n == 81);
   REQUIRE(++idx == map.end());
   // Verify only the "dup" items are left.
   for (auto &&elt : map) {
@@ -200,7 +200,7 @@ TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
   }
   for (int idx = 23; idx < N; idx += 23) {
     auto spot = ihm.find(strings[idx]);
-    if (spot == ihm.end() || spot->_n != idx || ++spot == ihm.end() || spot->_n != 2000 + idx) {
+    if (spot == ihm.end() || spot->_n != 2000 + idx || ++spot == ihm.end() || spot->_n != idx) {
       miss_p = true;
     }
   }
@@ -213,7 +213,7 @@ TEST_CASE("IntrusiveHashMapManyStrings", "[IntrusiveHashMap]")
   }
   for (int idx = 31; idx < N; idx += 31) {
     auto spot = ihm.find(strings[idx]);
-    if (spot == ihm.end() || spot->_n != idx || ++spot == ihm.end() || (idx != (23 * 31) && spot->_n != 3000 + idx) ||
+    if (spot == ihm.end() || spot->_n != 3000 + idx || ++spot == ihm.end() || (idx != (23 * 31) && spot->_n != idx) ||
         (idx == (23 * 31) && spot->_n != 2000 + idx)) {
       miss_p = true;
     }

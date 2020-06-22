@@ -69,7 +69,7 @@ QUICPacketFactory::create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoin
 
   // FIXME This is temporal. Receive IOBufferBlock from the caller.
   Ptr<IOBufferBlock> whole_data = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  whole_data->alloc(iobuffer_size_to_index(len));
+  whole_data->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
   memcpy(whole_data->start(), buf.get(), len);
   whole_data->fill(len);
 

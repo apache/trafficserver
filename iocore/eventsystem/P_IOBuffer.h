@@ -36,7 +36,7 @@
 //
 //////////////////////////////////////////////////////////////
 TS_INLINE int64_t
-buffer_size_to_index(int64_t size, int64_t max = max_iobuffer_size)
+buffer_size_to_index(int64_t size, int64_t max)
 {
   int64_t r = max;
 
@@ -212,12 +212,6 @@ TS_INLINE IOBufferData *
 new_xmalloc_IOBufferData_internal(const char *location, void *b, int64_t size)
 {
   return new_IOBufferData_internal(location, b, size, BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(size));
-}
-
-TS_INLINE IOBufferData *
-new_IOBufferData_internal(const char *location, void *b, int64_t size)
-{
-  return new_IOBufferData_internal(location, b, size, iobuffer_size_to_index(size));
 }
 
 TS_INLINE IOBufferData *

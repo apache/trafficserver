@@ -205,6 +205,7 @@ public:
 
   int ascii_buffer_size;
   int max_line_size;
+  int logbuffer_max_iobuf_index;
 
   char *hostname;
   char *logfile_dir;

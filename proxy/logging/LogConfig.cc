@@ -96,8 +96,9 @@ LogConfig::setup_default_values()
   file_stat_frequency  = 16;
   space_used_frequency = 900;
 
-  ascii_buffer_size = 4 * 9216;
-  max_line_size     = 9216; // size of pipe buffer for SunOS 5.6
+  ascii_buffer_size         = 4 * 9216;
+  max_line_size             = 9216; // size of pipe buffer for SunOS 5.6
+  logbuffer_max_iobuf_index = BUFFER_SIZE_INDEX_32K;
 }
 
 void LogConfig::reconfigure_mgmt_variables(ts::MemSpan<void>)
@@ -143,6 +144,11 @@ LogConfig::read_configuration_variables()
   val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.max_space_mb_headroom"));
   if (val > 0) {
     max_space_mb_headroom = val;
+  }
+
+  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.io.max_buffer_index"));
+  if (val > 0) {
+    logbuffer_max_iobuf_index = val;
   }
 
   ptr                     = REC_ConfigReadString("proxy.config.log.logfile_perm");
@@ -359,6 +365,7 @@ LogConfig::display(FILE *fd)
   fprintf(fd, "   sampling_frequency = %d\n", sampling_frequency);
   fprintf(fd, "   file_stat_frequency = %d\n", file_stat_frequency);
   fprintf(fd, "   space_used_frequency = %d\n", space_used_frequency);
+  fprintf(fd, "   logbuffer_max_iobuf_index = %d\n", logbuffer_max_iobuf_index);
 
   fprintf(fd, "\n");
   fprintf(fd, "************ Log Objects (%u objects) ************\n", log_object_manager.get_num_objects());
@@ -434,6 +441,7 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.rolling_offset_hr",     "proxy.config.log.rolling_size_mb",     "proxy.config.log.auto_delete_rolled_files",
     "proxy.config.log.rolling_max_count",     "proxy.config.log.rolling_allow_empty", "proxy.config.log.config.filename",
     "proxy.config.log.sampling_frequency",    "proxy.config.log.file_stat_frequency", "proxy.config.log.space_used_frequency",
+    "proxy.config.log.io.max_buffer_index",
   };
 
   for (unsigned i = 0; i < countof(names); ++i) {

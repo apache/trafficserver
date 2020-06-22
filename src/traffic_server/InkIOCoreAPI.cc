@@ -567,7 +567,7 @@ INKUDPPacketGet(INKUDPacketQueue queuep)
 TSIOBuffer
 TSIOBufferCreate()
 {
-  MIOBuffer *b = new_empty_MIOBuffer();
+  MIOBuffer *b = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
 
   // TODO: Should remove this when memory allocations can't fail.
   sdk_assert(sdk_sanity_check_iocore_structure(b) == TS_SUCCESS);

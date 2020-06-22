@@ -942,6 +942,12 @@ register_stat_callbacks()
                      (int)http_origin_connections_throttled_stat, RecRawStatSyncCount);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.post_body_too_large", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_post_body_too_large, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.connect.adjust_thread", RECD_COUNTER, RECP_NON_PERSISTENT,
+                     (int)http_origin_connect_adjust_thread_stat, RecRawStatSyncCount);
+  HTTP_CLEAR_DYN_STAT(http_origin_connect_adjust_thread_stat);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.cache.open_write.adjust_thread", RECD_COUNTER, RECP_NON_PERSISTENT,
+                     (int)http_cache_open_write_adjust_thread_stat, RecRawStatSyncCount);
+  HTTP_CLEAR_DYN_STAT(http_cache_open_write_adjust_thread_stat);
   // milestones
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.ua_begin", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_ua_begin_time_stat, RecRawStatSyncSum);
@@ -1107,6 +1113,7 @@ HttpConfig::startup()
   // [amc] This is a bit of a mess, need to figure out to make this cleaner.
   RecRegisterConfigUpdateCb("proxy.config.http.server_session_sharing.match", &http_server_session_sharing_cb, &c);
   http_config_enum_mask_read("proxy.config.http.server_session_sharing.match", c.oride.server_session_sharing_match);
+  HttpEstablishStaticConfigStringAlloc(c.oride.server_session_sharing_match_str, "proxy.config.http.server_session_sharing.match");
   http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.server_session_sharing_pool);
 
   RecRegisterConfigUpdateCb("proxy.config.http.insert_forwarded", &http_insert_forwarded_cb, &c);
@@ -1284,6 +1291,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.enable_http_info, "proxy.config.http.enable_http_info");
 
   HttpEstablishStaticConfigLongLong(c.max_post_size, "proxy.config.http.max_post_size");
+  HttpEstablishStaticConfigLongLong(c.max_payload_iobuf_index, "proxy.config.payload.io.max_buffer_index");
+  HttpEstablishStaticConfigLongLong(c.max_msg_iobuf_index, "proxy.config.msg.io.max_buffer_index");
 
   //##############################################################################
   //#
@@ -1403,10 +1412,11 @@ HttpConfig::reconfigure()
     params->oride.flow_high_water_mark = params->oride.flow_low_water_mark = 0;
   }
 
-  params->oride.server_session_sharing_match = m_master.oride.server_session_sharing_match;
-  params->oride.server_min_keep_alive_conns  = m_master.oride.server_min_keep_alive_conns;
-  params->server_session_sharing_pool        = m_master.server_session_sharing_pool;
-  params->oride.keep_alive_post_out          = m_master.oride.keep_alive_post_out;
+  params->oride.server_session_sharing_match     = m_master.oride.server_session_sharing_match;
+  params->oride.server_session_sharing_match_str = ats_strdup(m_master.oride.server_session_sharing_match_str);
+  params->oride.server_min_keep_alive_conns      = m_master.oride.server_min_keep_alive_conns;
+  params->server_session_sharing_pool            = m_master.server_session_sharing_pool;
+  params->oride.keep_alive_post_out              = m_master.oride.keep_alive_post_out;
 
   params->oride.keep_alive_no_activity_timeout_in   = m_master.oride.keep_alive_no_activity_timeout_in;
   params->oride.keep_alive_no_activity_timeout_out  = m_master.oride.keep_alive_no_activity_timeout_out;
@@ -1527,6 +1537,8 @@ HttpConfig::reconfigure()
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
   params->max_post_size                  = m_master.max_post_size;
+  params->max_payload_iobuf_index        = m_master.max_payload_iobuf_index;
+  params->max_msg_iobuf_index            = m_master.max_msg_iobuf_index;
 
   params->oride.cache_required_headers = m_master.oride.cache_required_headers;
   params->oride.cache_range_lookup     = INT_TO_BOOL(m_master.oride.cache_range_lookup);

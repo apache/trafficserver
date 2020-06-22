@@ -138,8 +138,8 @@ NetVCTest::start_test()
   test_vc->set_inactivity_timeout(HRTIME_SECONDS(timeout));
   test_vc->set_active_timeout(HRTIME_SECONDS(timeout + 5));
 
-  read_buffer  = new_MIOBuffer();
-  write_buffer = new_MIOBuffer();
+  read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
 
   reader_for_rbuf = read_buffer->alloc_reader();
   reader_for_wbuf = write_buffer->alloc_reader();

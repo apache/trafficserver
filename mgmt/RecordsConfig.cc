@@ -668,7 +668,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.body_factory.enable_logging", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.body_factory.template_sets_dir", RECD_STRING, "body_factory", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.body_factory.template_sets_dir", RECD_STRING, TS_BUILD_SYSCONFDIR "/body_factory", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.body_factory.response_max_size", RECD_INT, "8192", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -718,7 +718,15 @@ static const RecordElement RecordsConfig[] =
   //# I/O Subsystem
   //#
   //##############################################################################
-  {RECT_CONFIG, "proxy.config.io.max_buffer_size", RECD_INT, "32768", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.misc.io.max_buffer_index", RECD_INT, "8", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.hostdb.io.max_buffer_index", RECD_INT, "8", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.payload.io.max_buffer_index", RECD_INT, "8", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.msg.io.max_buffer_index", RECD_INT, "8", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.log.io.max_buffer_index", RECD_INT, "8", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
   //##############################################################################

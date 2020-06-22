@@ -87,6 +87,7 @@ private:
   int state_keep_alive(int event, void *data);
   int state_slave_keep_alive(int event, void *data);
   int state_wait_for_close(int event, void *data);
+  int state_wait_for_sm_shutdown(int event, void *data);
 
   enum C_Read_State {
     HCS_INIT,
@@ -96,11 +97,10 @@ private:
     HCS_CLOSED,
   };
 
-  NetVConnection *client_vc = nullptr;
-  int magic                 = HTTP_SS_MAGIC_DEAD;
-  int transact_count        = 0;
-  bool half_close           = false;
-  bool conn_decrease        = false;
+  int magic          = HTTP_SS_MAGIC_DEAD;
+  int transact_count = 0;
+  bool half_close    = false;
+  bool conn_decrease = false;
 
   MIOBuffer *read_buffer  = nullptr;
   IOBufferReader *_reader = nullptr;

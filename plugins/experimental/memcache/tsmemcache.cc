@@ -145,7 +145,7 @@ MC::new_connection(NetVConnection *netvc, EThread *thread)
   rbuf             = new_MIOBuffer(MAX_IOBUFFER_SIZE);
   rbuf->water_mark = TSMEMCACHE_TMP_CMD_BUFFER_SIZE;
   reader           = rbuf->alloc_reader();
-  wbuf             = new_empty_MIOBuffer();
+  wbuf             = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   cbuf             = 0;
   writer           = wbuf->alloc_reader();
   SCOPED_MUTEX_LOCK(lock, mutex, thread);
@@ -826,7 +826,7 @@ MC::ascii_set_event(int event, void *data)
     if (f.set_append) {
       TS_PUSH_HANDLER(&MC::tunnel_event);
       if (!cbuf) {
-        cbuf = new_empty_MIOBuffer();
+        cbuf = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
       }
       creader = cbuf->alloc_reader();
       crvio   = crvc->do_io_read(this, rcache_header->nbytes, cbuf);
@@ -838,7 +838,7 @@ MC::ascii_set_event(int event, void *data)
           a = static_cast<int64_t>(nbytes);
         }
         if (!cbuf) {
-          cbuf = new_empty_MIOBuffer();
+          cbuf = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
         }
         creader = cbuf->alloc_reader();
         if (a) {

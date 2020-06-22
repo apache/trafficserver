@@ -4407,6 +4407,31 @@ Sockets
    platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP
    with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
 
+.. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
+
+   Configures the max IOBuffer Block index used for various SSL Operations
+   such as Handshake or Protocol Probe. Default value is 8 which maps to a 32K buffer
+
+.. ts:cv:: CONFIG proxy.config.hostdb.io.max_buffer_index INT 8
+
+   Configures the max IOBuffer Block index used for storing HostDB records.
+   Default value is 8 which maps to a 32K buffer
+
+.. ts:cv:: CONFIG proxy.config.payload.io.max_buffer_index INT 8
+
+   Configures the max IOBuffer Block index used for storing request payload buffer
+   for a POST request. Default value is 8 which maps to a 32K buffer
+
+.. ts:cv:: CONFIG proxy.config.msg.io.max_buffer_index INT 8
+
+   Configures the max IOBuffer Block index used for storing miscellaneous transactional
+   buffers such as error response body. Default value is 8 which maps to a 32K buffer
+
+.. ts:cv:: CONFIG proxy.config.log.io.max_buffer_index INT 8
+
+   Configures the max IOBuffer Block index used for storing an access log entry.
+   Default value is 8 which maps to a 32K buffer
+
 .. ts:cv:: CONFIG proxy.config.http.enabled INT 1
 
    Turn on or off support for HTTP proxying. This is rarely used, the one

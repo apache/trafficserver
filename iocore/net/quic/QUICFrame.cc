@@ -199,7 +199,7 @@ QUICStreamFrame::parse(const uint8_t *buf, size_t len, const QUICPacketR *packet
 
   this->_valid = true;
   this->_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  this->_block->alloc();
+  this->_block->alloc(BUFFER_SIZE_INDEX_32K);
   ink_assert(static_cast<uint64_t>(this->_block->write_avail()) > data_len);
   memcpy(this->_block->start(), pos, data_len);
   this->_block->fill(data_len);
@@ -279,7 +279,7 @@ QUICStreamFrame::to_io_buffer_block(size_t limit) const
   // Create header block
   size_t written_len = 0;
   header             = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  header->alloc(iobuffer_size_to_index(MAX_HEADER_SIZE));
+  header->alloc(iobuffer_size_to_index(MAX_HEADER_SIZE, BUFFER_SIZE_INDEX_32K));
   this->_store_header(reinterpret_cast<uint8_t *>(header->start()), &written_len, true);
   header->fill(written_len);
 
@@ -426,7 +426,7 @@ QUICCryptoFrame::parse(const uint8_t *buf, size_t len, const QUICPacketR *packet
 
   this->_valid = true;
   this->_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  this->_block->alloc();
+  this->_block->alloc(BUFFER_SIZE_INDEX_32K);
   ink_assert(static_cast<uint64_t>(this->_block->write_avail()) > data_len);
   memcpy(this->_block->start(), pos, data_len);
   this->_block->fill(data_len);
@@ -487,7 +487,7 @@ QUICCryptoFrame::to_io_buffer_block(size_t limit) const
   // Create header block
   size_t written_len = 0;
   header             = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  header->alloc(iobuffer_size_to_index(MAX_HEADER_SIZE));
+  header->alloc(iobuffer_size_to_index(MAX_HEADER_SIZE, BUFFER_SIZE_INDEX_32K));
   this->_store_header(reinterpret_cast<uint8_t *>(header->start()), &written_len);
   header->fill(written_len);
 
@@ -698,7 +698,7 @@ QUICAckFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + 24));
+  block->alloc(iobuffer_size_to_index(1 + 24, BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -871,7 +871,7 @@ QUICAckFrame::AckBlockSection::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(limit));
+  block->alloc(iobuffer_size_to_index(limit, BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   QUICIntUtil::write_QUICVariableInt(this->_first_ack_block, block_start + n, &written_len);
@@ -1092,7 +1092,7 @@ QUICRstStreamFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + 24));
+  block->alloc(iobuffer_size_to_index(1 + 24, BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -1181,7 +1181,7 @@ QUICPingFrame::to_io_buffer_block(size_t limit) const
   }
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(this->size()));
+  block->alloc(iobuffer_size_to_index(this->size(), BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -1247,7 +1247,7 @@ QUICPaddingFrame::to_io_buffer_block(size_t limit) const
   }
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(this->_size));
+  block->alloc(iobuffer_size_to_index(this->_size, BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   memset(block_start, 0, this->_size);
@@ -1393,7 +1393,7 @@ QUICConnectionCloseFrame::to_io_buffer_block(size_t limit) const
   // Create a block for Error Code(i) and Frame Type(i)
   size_t written_len = 0;
   first_block        = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  first_block->alloc(iobuffer_size_to_index(1 + 24));
+  first_block->alloc(iobuffer_size_to_index(1 + 24, BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(first_block->start());
 
   // Type
@@ -1422,7 +1422,7 @@ QUICConnectionCloseFrame::to_io_buffer_block(size_t limit) const
   if (this->_reason_phrase_length != 0) {
     // Reason Phrase (*)
     Ptr<IOBufferBlock> reason_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    reason_block->alloc(iobuffer_size_to_index(this->_reason_phrase_length));
+    reason_block->alloc(iobuffer_size_to_index(this->_reason_phrase_length, BUFFER_SIZE_INDEX_32K));
     memcpy(reinterpret_cast<uint8_t *>(reason_block->start()), this->_reason_phrase, this->_reason_phrase_length);
     reason_block->fill(this->_reason_phrase_length);
 
@@ -1554,7 +1554,7 @@ QUICMaxDataFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t)));
+  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t), BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -1659,7 +1659,7 @@ QUICMaxStreamDataFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + sizeof(uint64_t) + sizeof(size_t)));
+  block->alloc(iobuffer_size_to_index(1 + sizeof(uint64_t) + sizeof(size_t), BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -1767,7 +1767,7 @@ QUICMaxStreamsFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t)));
+  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t), BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -1859,7 +1859,7 @@ QUICDataBlockedFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t)));
+  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t), BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -1957,7 +1957,7 @@ QUICStreamDataBlockedFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t)));
+  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t), BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -2053,7 +2053,7 @@ QUICStreamIdBlockedFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t)));
+  block->alloc(iobuffer_size_to_index(1 + sizeof(size_t), BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -2172,7 +2172,8 @@ QUICNewConnectionIdFrame::to_io_buffer_block(size_t limit) const
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   block->alloc(iobuffer_size_to_index(1 + sizeof(uint64_t) + sizeof(uint64_t) + 1 + QUICConnectionId::MAX_LENGTH +
-                                      QUICStatelessResetToken::LEN));
+                                        QUICStatelessResetToken::LEN,
+                                      BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -2318,7 +2319,7 @@ QUICStopSendingFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + 24));
+  block->alloc(iobuffer_size_to_index(1 + 24, BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -2419,7 +2420,7 @@ QUICPathChallengeFrame::to_io_buffer_block(size_t limit) const
   }
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + QUICPathChallengeFrame::DATA_LEN));
+  block->alloc(iobuffer_size_to_index(1 + QUICPathChallengeFrame::DATA_LEN, BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -2478,7 +2479,7 @@ QUICPathResponseFrame::to_io_buffer_block(size_t limit) const
   }
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + QUICPathResponseFrame::DATA_LEN));
+  block->alloc(iobuffer_size_to_index(1 + QUICPathResponseFrame::DATA_LEN, BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -2614,7 +2615,7 @@ QUICNewTokenFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + 24));
+  block->alloc(iobuffer_size_to_index(1 + 24, BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -2711,7 +2712,7 @@ QUICRetireConnectionIdFrame::to_io_buffer_block(size_t limit) const
 
   size_t written_len = 0;
   block              = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(1 + sizeof(uint64_t)));
+  block->alloc(iobuffer_size_to_index(1 + sizeof(uint64_t), BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type
@@ -2780,7 +2781,7 @@ QUICHandshakeDoneFrame::to_io_buffer_block(size_t limit) const
   }
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(this->size()));
+  block->alloc(iobuffer_size_to_index(this->size(), BUFFER_SIZE_INDEX_32K));
   uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
 
   // Type

@@ -35,12 +35,12 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_fin_offset", "[quic]")
   QUICErrorUPtr err = nullptr;
 
   Ptr<IOBufferBlock> block_1024 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_1024->alloc();
+  block_1024->alloc(BUFFER_SIZE_INDEX_32K);
   block_1024->fill(1024);
   CHECK(block_1024->read_avail() == 1024);
 
   Ptr<IOBufferBlock> block_0 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_0->alloc();
+  block_0->alloc(BUFFER_SIZE_INDEX_32K);
   CHECK(block_0->read_avail() == 0);
 
   SECTION("single frame")
@@ -127,12 +127,12 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_pop", "[quic]")
   QUICErrorUPtr err = nullptr;
 
   Ptr<IOBufferBlock> block_1024 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_1024->alloc();
+  block_1024->alloc(BUFFER_SIZE_INDEX_32K);
   block_1024->fill(1024);
   CHECK(block_1024->read_avail() == 1024);
 
   Ptr<IOBufferBlock> block_0 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_0->alloc();
+  block_0->alloc(BUFFER_SIZE_INDEX_32K);
   CHECK(block_0->read_avail() == 0);
 
   uint8_t frame_buf0[QUICFrame::MAX_INSTANCE_SIZE];
@@ -209,12 +209,12 @@ TEST_CASE("QUICIncomingStreamFrameBuffer_dup_frame", "[quic]")
   QUICErrorUPtr err = nullptr;
 
   Ptr<IOBufferBlock> block_1024 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_1024->alloc();
+  block_1024->alloc(BUFFER_SIZE_INDEX_32K);
   block_1024->fill(1024);
   CHECK(block_1024->read_avail() == 1024);
 
   Ptr<IOBufferBlock> block_0 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_0->alloc();
+  block_0->alloc(BUFFER_SIZE_INDEX_32K);
   CHECK(block_0->read_avail() == 0);
 
   uint8_t frame_buf0[QUICFrame::MAX_INSTANCE_SIZE];

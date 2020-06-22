@@ -51,7 +51,7 @@ QUICPacketPayloadProtector::protect(const Ptr<IOBufferBlock> unprotected_header,
   for (Ptr<IOBufferBlock> tmp = unprotected_payload; tmp; tmp = tmp->next) {
     unprotected_payload_len += tmp->size();
   }
-  protected_payload->alloc(iobuffer_size_to_index(unprotected_payload_len + tag_len));
+  protected_payload->alloc(iobuffer_size_to_index(unprotected_payload_len + tag_len, BUFFER_SIZE_INDEX_32K));
 
   size_t written_len = 0;
   if (!this->_protect(reinterpret_cast<uint8_t *>(protected_payload->start()), written_len, protected_payload->write_avail(),
@@ -84,7 +84,7 @@ QUICPacketPayloadProtector::unprotect(const Ptr<IOBufferBlock> unprotected_heade
   const EVP_CIPHER *cipher = this->_pp_key_info.get_cipher(phase);
 
   unprotected_payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  unprotected_payload->alloc(iobuffer_size_to_index(protected_payload->size()));
+  unprotected_payload->alloc(iobuffer_size_to_index(protected_payload->size(), BUFFER_SIZE_INDEX_32K));
 
   size_t written_len = 0;
   if (!this->_unprotect(reinterpret_cast<uint8_t *>(unprotected_payload->start()), written_len, unprotected_payload->write_avail(),

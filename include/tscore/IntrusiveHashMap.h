@@ -539,16 +539,6 @@ IntrusiveHashMap<H>::insert(value_type *v)
     if (spot != bucket->_v) {
       mixed_p = true; // found some other key, it's going to be mixed.
     }
-    if (spot != limit) {
-      // If an equal key was found, walk past those to insert at the upper end of the range.
-      do {
-        spot = H::next_ptr(spot);
-      } while (spot != limit && H::equal(key, H::key_of(spot)));
-      if (spot != limit) { // something not equal past last equivalent, it's going to be mixed.
-        mixed_p = true;
-      }
-    }
-
     _list.insert_before(spot, v);
     if (spot == bucket->_v) { // added before the bucket start, update the start.
       bucket->_v = v;

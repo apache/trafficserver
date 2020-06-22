@@ -5560,8 +5560,9 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
       s->free_internal_msg_buffer();
       s->internal_msg_buffer_size = req_length * 2;
 
-      if (s->internal_msg_buffer_size <= max_iobuffer_size) {
-        s->internal_msg_buffer_fast_allocator_size = buffer_size_to_index(s->internal_msg_buffer_size);
+      if (s->internal_msg_buffer_size <= BUFFER_SIZE_FOR_INDEX(s->http_config_param->max_msg_iobuf_index)) {
+        s->internal_msg_buffer_fast_allocator_size =
+          buffer_size_to_index(s->internal_msg_buffer_size, s->http_config_param->max_msg_iobuf_index);
         s->internal_msg_buffer = static_cast<char *>(ioBufAllocator[s->internal_msg_buffer_fast_allocator_size].alloc_void());
       } else {
         s->internal_msg_buffer_fast_allocator_size = -1;

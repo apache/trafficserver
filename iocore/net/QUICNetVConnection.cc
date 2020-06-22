@@ -699,7 +699,7 @@ QUICNetVConnection::reset_quic_connection()
   auto packet = QUICPacketFactory::create_stateless_reset_packet(token, 128);
   if (packet) {
     Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
-    udp_payload->alloc(iobuffer_size_to_index(128));
+    udp_payload->alloc(iobuffer_size_to_index(128, BUFFER_SIZE_INDEX_32K));
     uint8_t *buf = reinterpret_cast<uint8_t *>(udp_payload->end());
     size_t len   = 0;
     packet->store(buf, &len);
@@ -1417,7 +1417,7 @@ QUICNetVConnection::_state_common_send_packet()
 
     Ptr<IOBufferBlock> udp_payload(new_IOBufferBlock());
     uint32_t udp_payload_len = std::min(window, this->_pmtu);
-    udp_payload->alloc(iobuffer_size_to_index(udp_payload_len));
+    udp_payload->alloc(iobuffer_size_to_index(udp_payload_len, BUFFER_SIZE_INDEX_32K));
 
     uint32_t written = 0;
     for (int i = static_cast<int>(this->_minimum_encryption_level); i <= static_cast<int>(QUICEncryptionLevel::ONE_RTT); ++i) {
@@ -1583,7 +1583,7 @@ QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel l
   size_t len                     = 0;
   Ptr<IOBufferBlock> first_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   Ptr<IOBufferBlock> last_block  = first_block;
-  first_block->alloc(iobuffer_size_to_index(0));
+  first_block->alloc(iobuffer_size_to_index(0, BUFFER_SIZE_INDEX_32K));
   first_block->fill(0);
 
   uint32_t seq_num   = this->_seq_num++;
@@ -1679,7 +1679,7 @@ QUICNetVConnection::_packetize_closing_frame()
   std::vector<QUICFrameInfo> frames;
   Ptr<IOBufferBlock> first_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   Ptr<IOBufferBlock> last_block  = first_block;
-  first_block->alloc(iobuffer_size_to_index(0));
+  first_block->alloc(iobuffer_size_to_index(0, BUFFER_SIZE_INDEX_32K));
   first_block->fill(0);
   last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
 
