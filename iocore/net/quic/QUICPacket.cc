@@ -1724,7 +1724,8 @@ QUICRetryPacket::payload_block() const
   size_t written_len = 0;
 
   block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(QUICConnectionId::MAX_LENGTH + this->_token.length() + QUICRetryIntegrityTag::LEN, BUFFER_SIZE_INDEX_32K));
+  block->alloc(iobuffer_size_to_index(QUICConnectionId::MAX_LENGTH + this->_token.length() + QUICRetryIntegrityTag::LEN,
+                                      BUFFER_SIZE_INDEX_32K));
   buf = reinterpret_cast<uint8_t *>(block->start());
 
   // Retry Token
