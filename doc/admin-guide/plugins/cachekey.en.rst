@@ -121,9 +121,9 @@ Cache key structure and related plugin parameters
   configured               |
 
 * ``User-Agent`` classification
-    * ``--ua-whitelist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if matched ``<classname>`` is added it to the key.
-    * ``--ua-blacklist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if **not** matched ``<classname>`` is added it to the key.
-    * Multiple ``--ua-whitelist`` and ``--ua-blacklist`` can be used and the result will be defined by their order in the plugin configuration.
+    * ``--ua-allowlist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if matched ``<classname>`` is added it to the key.
+    * ``--ua-blocklist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if **not** matched ``<classname>`` is added it to the key.
+    * Multiple ``--ua-allowlist`` and ``--ua-blocklist`` can be used and the result will be defined by their order in the plugin configuration.
 * ``User-Agent`` regex capturing and replacement
     * ``--ua-capture=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from the ``User-Agent`` header based on ``<capture_definition>`` (see below) and are added to the `cache key`.
 * If any ``User-Agent`` classification and regex capturing and replacement plugin parameters are used together they are added to the `cache key` in the order shown in the diagram.
@@ -264,7 +264,7 @@ Traffic server configuration ::
   $ cat etc/trafficserver/remap.config
   map http://www.example.com http://www.origin.com \
       @plugin=cachekey.so \
-          @pparam=--ua-whitelist=popular:popular_agents.config \
+          @pparam=--ua-allowlist=popular:popular_agents.config \
           @pparam=--ua-capture=(Mozilla\/[^\s]*).* \
           @pparam=--include-headers=H1,H2 \
           @pparam=--include-cookies=C1,C2 \
@@ -575,7 +575,7 @@ User-Agent white-list classifier
 If the plugin is used with the following plugin parameter::
 
   @plugin=cachekey.so \
-      @pparam=--ua-whitelist=browser:browser_agents.config
+      @pparam=--ua-allowlist=browser:browser_agents.config
 
 and if ``browser_agents.config`` contains: ::
 
