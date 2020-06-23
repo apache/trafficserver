@@ -189,6 +189,7 @@ Changes with Apache Traffic Server 8.1.0
   #6708 - Adding logging fields for collapsed forwarding metrics
   #6711 - cache_range_request autests: make more robust and clean up.
   #6729 - Fix a bug that current_active_client_connections doesn't decrease
+  #6747 - Fix old MIMEHdr handling of HPACK
   #6750 - backports parent.config  ignore_self_detect flag to 8.1.x
   #6753 - Fix HPACK Dynamic Table Cleanup
   #6756 - Correct `schedule_every_local` to schedule locally
@@ -202,3 +203,4 @@ Changes with Apache Traffic Server 8.1.0
   #6862 - Fix brotli plugin
   #6876 - Make Http2ClientSession inactive on EOS event
   #6885 - Revert 4028 for 8.1.x branch
+  #6936 - Fix rare SSN/TXN Start/Close Hook misorderings (#6364)
