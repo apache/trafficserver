@@ -159,7 +159,7 @@ public:
   }
 
   // Initiate an API hook invocation.
-  void do_api_callout(TSHttpHookID id);
+  int do_api_callout(TSHttpHookID id);
 
   // Override if your session protocol allows this.
   virtual bool
