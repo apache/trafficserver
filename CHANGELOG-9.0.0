@@ -656,6 +656,7 @@ Changes with Apache Traffic Server 9.0.0
   #5906 - Cleanup: unifdef TRACK_BUFFER_USER
   #5907 - Fix macOS build
   #5908 - ProxySession cleanup: moving inline functions to .h
+  #5917 - Make compress plugin normalization of Accept-Encoding header compatible with normalization in core TS.
   #5919 - Rearrange config reload notifications
   #5922 - Make code buildable with BoringSSL
   #5926 - Fix AuTest for HTTP/2 using httpbin
@@ -851,6 +852,7 @@ Changes with Apache Traffic Server 9.0.0
   #6493 - Make all_headers test more resilient to timing
   #6500 - traffic_dump: Make the client-request node gathered in a global hook
   #6501 - Remove method that does nothing.
+  #6502 - Change Proxy Header Regression tests into Catch unit tests.
   #6508 - Include start line of HTTP messages in xdebug probe output.
   #6513 - Moves hosting.config finished loading message outside of parsing loop
   #6516 - Fix SDK_API_TSSslServerContextCreate
@@ -906,7 +908,6 @@ Changes with Apache Traffic Server 9.0.0
   #6700 - traffic_dump: add nullptr check for sni string
   #6701 - slice plugin: add --include-regex, --exclude-regex parameters
   #6704 - Removes ATS version from gold files
-  #6711 - cache_range_request autests: make more robust and clean up.
   #6714 - Add Access log fields for ProxyProtocol Context
   #6717 - Fixup .gitignores to match repo reality
   #6718 - gcc10: fixed warning about returning local variable in int64_to_str()
@@ -914,6 +915,7 @@ Changes with Apache Traffic Server 9.0.0
   #6727 - traffic_dump: add tls information to dump.
   #6730 - Add HttpTransact::get_max_age and TSHttpTxnGetMaxAge
   #6731 - Fix g++ 10 compile errors.
+  #6733 - Various python fixes
   #6734 - Update expired test certificates for cert_update
   #6735 - Remove unused index for SSL application specific data
   #6736 - Generalize callbacks for TLS session resumption
@@ -926,6 +928,7 @@ Changes with Apache Traffic Server 9.0.0
   #6755 - Add metrics to track default inactivity timed out connections
   #6757 - ASAN: Fixed one definition rule violation
   #6758 - Fix set manipulation in dual cert resolution
+  #6759 - Promote netvc to ProxySession
   #6760 - Do not fail multicert load if line does not create entry
   #6768 - clang-analyzer: Fix dead nested assignment issues
   #6770 - Weird characters in debug message
@@ -933,6 +936,7 @@ Changes with Apache Traffic Server 9.0.0
   #6774 - Fixed `AddressSanitizer: odr-violation`
   #6781 - 1. Set a non-zero default value for TLS Client Handshake Timeout
   #6789 - Adding HTTP Status code 451 for Unavailable For Legal Reasons (RFC 7725)
+  #6794 - Remove whitespace from header field name in http response due to RFC7230:3.2.4 (#6793)
   #6797 - Adding HTTP status 451 in apidefs as well (See PR#6789)
   #6798 - clang-analyzer: uninitialized va_list
   #6800 - Add TXN_CLOSE hook to CPPAPI TransactionPlugin
@@ -965,4 +969,15 @@ Changes with Apache Traffic Server 9.0.0
   #6884 - microserver error handling: SSLError check and debug.
   #6891 - Make h2spec test more resiliant by extending timeout
   #6892 - Fix compiler issue with ICC 19.1
+  #6896 - Fix dual_cert_select test to run with older openssl binary
   #6898 - set sni_name with remapped origin name if sni_policy is not the default value
+  #6903 - Disable max_connections_active_in default and fix close logic
+  #6906 - Make QPACK.h self-contained
+  #6915 - Make compress Au test less flakey.
+  #6916 - Ensure read_avail is set for the first non-empty block
+  #6917 - Disable lua_stats autest until we can reliably wait for stats
+  #6918 - example: Move to blocklists and allowlists
+  #6920 - Removes SSLNetVConnection::sslContextSet
+  #6923 - Fixed bug in the calculation of the header block fragment length
+  #6925 - Prevent stale netvc access on SSL Callbacks
+  #6929 - build: Require OCSP headers for OCSP-enablement
