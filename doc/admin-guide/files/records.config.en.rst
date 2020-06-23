@@ -3884,6 +3884,12 @@ QUIC Configuration
 All configurations for QUIC are still experimental and may be changed or
 removed in the future without prior notice.
 
+.. ts:cv:: CONFIG proxy.config.quic.qlog_dir STRING NULL
+   :reloadable:
+
+    The qlog is enabled when this configuration is not NULL. And will dump
+    the qlog to this dir.
+
 .. ts:cv:: CONFIG proxy.config.quic.instance_id INT 0
    :reloadable:
 
