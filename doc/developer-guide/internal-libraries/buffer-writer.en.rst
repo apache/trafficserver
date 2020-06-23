@@ -107,7 +107,7 @@ Usage
 +++++
 
 The header files are divided in to two variants. :ts:git:`include/tscore/BufferWriter.h` provides the basic
-capabilities of buffer output control. :ts:git:`include/tscore/BufferWriterFormat.h` provides the basic
+capabilities of buffer output control. :ts:git:`include/tscore/BufferWriterForward.h` provides the basic
 :ref:`formatted output mechanisms <bw-formatting>`, primarily the implementation and ancillary
 classes for :class:`BWFSpec` which is used to build formatters.
 
