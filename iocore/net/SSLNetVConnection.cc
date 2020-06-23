@@ -410,7 +410,7 @@ SSLNetVConnection::read_raw_data()
   if (this->get_is_proxy_protocol()) {
     Debug("proxyprotocol", "proxy protocol is enabled on this port");
     if (pp_ipmap->count() > 0) {
-      Debug("proxyprotocol", "proxy protocol has a configured whitelist of trusted IPs - checking");
+      Debug("proxyprotocol", "proxy protocol has a configured allowlist of trusted IPs - checking");
 
       // At this point, using get_remote_addr() will return the ip of the
       // proxy source IP, not the Proxy Protocol client ip. Since we are
@@ -418,17 +418,17 @@ SSLNetVConnection::read_raw_data()
       // what we want now.
       void *payload = nullptr;
       if (!pp_ipmap->contains(get_remote_addr(), &payload)) {
-        Debug("proxyprotocol", "proxy protocol src IP is NOT in the configured whitelist of trusted IPs - "
+        Debug("proxyprotocol", "proxy protocol src IP is NOT in the configured allowlist of trusted IPs - "
                                "closing connection");
         r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
         goto proxy_protocol_bypass;
       } else {
         char new_host[INET6_ADDRSTRLEN];
-        Debug("proxyprotocol", "Source IP [%s] is in the trusted whitelist for proxy protocol",
+        Debug("proxyprotocol", "Source IP [%s] is in the trusted allowlist for proxy protocol",
               ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
       }
     } else {
-      Debug("proxyprotocol", "proxy protocol DOES NOT have a configured whitelist of trusted IPs but "
+      Debug("proxyprotocol", "proxy protocol DOES NOT have a configured allowlist of trusted IPs but "
                              "proxy protocol is enabled on this port - processing all connections");
     }
 
