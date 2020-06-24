@@ -159,7 +159,7 @@ fastopen_bread(BIO *bio, char *out, int outsz)
   if (err < 0) {
     errno = -err;
     if (BIO_sock_non_fatal_error(errno)) {
-      BIO_set_retry_write(bio);
+      BIO_set_retry_read(bio);
     }
   }
 
