@@ -59,7 +59,7 @@ struct OptionInfo {
 };
 
 static HandlerManager *gHandlerManager = nullptr;
-static Utils::HeaderValueList gWhitelistCookies;
+static Utils::HeaderValueList gAllowlistCookies;
 
 #define DEBUG_TAG "plugin_esi"
 #define PROCESSOR_DEBUG_TAG "plugin_esi_processor"
@@ -254,7 +254,7 @@ ContData::init()
       data_fetcher = new HttpDataFetcherImpl(contp, client_addr, createDebugTag(FETCHER_DEBUG_TAG, contp, fetcher_tag));
     }
     if (!esi_vars) {
-      esi_vars = new Variables(createDebugTag(VARS_DEBUG_TAG, contp, vars_tag), &TSDebug, &TSError, gWhitelistCookies);
+      esi_vars = new Variables(createDebugTag(VARS_DEBUG_TAG, contp, vars_tag), &TSDebug, &TSError, gAllowlistCookies);
     }
 
     esi_proc = new EsiProcessor(
@@ -288,7 +288,7 @@ ContData::getClientState()
 
   if (!esi_vars) {
     string vars_tag;
-    esi_vars = new Variables(createDebugTag(VARS_DEBUG_TAG, contp, vars_tag), &TSDebug, &TSError, gWhitelistCookies);
+    esi_vars = new Variables(createDebugTag(VARS_DEBUG_TAG, contp, vars_tag), &TSDebug, &TSError, gAllowlistCookies);
   }
   if (!data_fetcher) {
     string fetcher_tag;
@@ -1564,7 +1564,7 @@ loadHandlerConf(const char *file_name, Utils::KeyValueMap &handler_conf)
       conf_lines.push_back(string(buf));
     }
     TSfclose(conf_file);
-    Utils::parseKeyValueConfig(conf_lines, handler_conf, gWhitelistCookies);
+    Utils::parseKeyValueConfig(conf_lines, handler_conf, gAllowlistCookies);
     TSDebug(DEBUG_TAG, "[%s] Loaded handler conf file [%s]", __FUNCTION__, file_name);
   } else {
     TSError("[esi][%s] Failed to open handler config file [%s]", __FUNCTION__, file_name);
