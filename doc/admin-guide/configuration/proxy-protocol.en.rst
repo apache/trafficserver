@@ -45,7 +45,7 @@ with the PROXY v1 header.  Any request not preface by this header will be
 dropped.
 
 As a security measure, an optional whitelist of trusted IP addresses may be
-configured with :ts:cv:`proxy.config.http.proxy_protocol_whitelist`.
+configured with :ts:cv:`proxy.config.http.proxy_protocol_allowlist`.
 
    .. important::
 
