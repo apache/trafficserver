@@ -124,7 +124,7 @@ Http2Stream::main_event_handler(int event, void *edata)
         signal_read_event(event);
       }
     } else {
-      this->update_read_request(INT64_MAX, true);
+      this->update_read_request(true);
     }
     break;
   case VC_EVENT_EOS:
@@ -489,7 +489,7 @@ Http2Stream::send_tracked_event(Event *event, int send_event, VIO *vio)
 }
 
 void
-Http2Stream::update_read_request(int64_t read_len, bool call_update, bool check_eos)
+Http2Stream::update_read_request(bool call_update)
 {
   if (closed || _proxy_ssn == nullptr || _sm == nullptr || read_vio.mutex == nullptr) {
     return;
@@ -750,7 +750,7 @@ Http2Stream::reenable(VIO *vio)
       }
 
       SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-      update_read_request(INT64_MAX, true);
+      update_read_request(true);
     }
   }
 }

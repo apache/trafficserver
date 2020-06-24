@@ -74,7 +74,7 @@ public:
   void send_request(Http2ConnectionState &cstate);
   void initiating_close();
   void terminate_if_possible();
-  void update_read_request(int64_t read_len, bool send_update, bool check_eos = false);
+  void update_read_request(bool send_update);
   void update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
 
   void signal_read_event(int event);
