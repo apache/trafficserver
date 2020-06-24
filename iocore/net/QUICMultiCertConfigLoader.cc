@@ -164,63 +164,6 @@ fail:
   return nullptr;
 }
 
-bool
-QUICMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams multi_cert_params)
-{
-  bool retval = true;
-  std::vector<X509 *> cert_list;
-  SSLMultiCertConfigLoader::CertLoadData data;
-  std::set<std::string> common_names;
-  std::unordered_map<int, std::set<std::string>> unique_names;
-  const SSLConfigParams *params = this->_params;
-  this->load_certs_and_cross_reference_names(cert_list, data, params, multi_cert_params.get(), common_names, unique_names);
-
-  for (size_t i = 0; i < cert_list.size(); i++) {
-    const char *current_cert_name = data.cert_names_list[i].c_str();
-    if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert_list[i], current_cert_name)) {
-      /* At this point, we know cert is bad, and we've already printed a
-         descriptive reason as to why cert is bad to the log file */
-      QUICConfDebug("Marking certificate as NOT VALID: %s", current_cert_name);
-      lookup->is_valid = false;
-    }
-  }
-
-  shared_SSL_CTX ctx(this->init_server_ssl_ctx(data, multi_cert_params.get(), common_names), SSL_CTX_free);
-
-  shared_ssl_ticket_key_block keyblock = nullptr;
-
-  if (!ctx || !multi_cert_params || !this->_store_single_ssl_ctx(lookup, multi_cert_params, ctx, common_names)) {
-    retval = false;
-    std::string names;
-    for (auto name : data.cert_names_list) {
-      names.append(name);
-      names.append(" ");
-    }
-    Warning("QUIC: Failed to insert SSL_CTX for certificate %s entries for names already made", names.c_str());
-  }
-
-  for (auto iter = unique_names.begin(); retval && iter != unique_names.end(); ++iter) {
-    size_t i = iter->first;
-
-    SSLMultiCertConfigLoader::CertLoadData single_data;
-    single_data.cert_names_list.push_back(data.cert_names_list[i]);
-    single_data.key_list.push_back(i < data.key_list.size() ? data.key_list[i] : "");
-    single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
-    single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
-
-    shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_data, multi_cert_params.get(), iter->second), SSL_CTX_free);
-    if (!unique_ctx || !this->_store_single_ssl_ctx(lookup, multi_cert_params, unique_ctx, iter->second)) {
-      retval = false;
-    }
-  }
-
-  for (auto &i : cert_list) {
-    X509_free(i);
-  }
-
-  return retval;
-}
-
 void
 QUICMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ssl_ctx)
 {
@@ -302,4 +245,10 @@ QUICMultiCertConfigLoader::ssl_cert_cb(SSL *ssl, void * /*arg*/)
   }
 
   return 1;
+}
+
+const char *
+QUICMultiCertConfigLoader::_debug_tag() const
+{
+  return "quic";
 }
