@@ -53,6 +53,8 @@ WCCP=""
 LUAJIT=""
 QUIC=""
 CURL=""
+AUTEST_DEBUG=""
+AUTEST_VERBOSE=""
 
 [ "1" == "$enable_ccache" ] && CCACHE="--enable-ccache"
 [ "1" == "$enable_werror" ] && WERROR="--enable-werror"
@@ -61,6 +63,8 @@ CURL=""
 [ "1" == "$enable_luajit" ] && LUAJIT="--enable-luajit"
 [ "1" == "$enable_quic" ] && QUIC="--with-openssl=/opt/openssl-quic"
 [ "1" == "$disable_curl" ] && CURL="--disable-curl"
+[ "1" == "$enable_autest_debug" ] && AUTEST_DEBUG="--debug"
+[ "1" == "$enable_autest_verbose" ] && AUTEST_VERBOSE="--verbose"
 
 mkdir -p ${INSTALL}
 
@@ -105,7 +109,7 @@ AUTEST="/usr/bin/autest"
 [ ! -x ${AUTEST} ] && AUTEST="/usr/local/bin/autest"
 set -x
 
-${AUTEST} -D ./tests/gold_tests --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin"
+${AUTEST} -D ./tests/gold_tests --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin" $AUTEST_DEBUG $AUTEST_VERBOSE
 status=$?
 
 set +x
