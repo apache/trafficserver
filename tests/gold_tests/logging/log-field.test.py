@@ -22,7 +22,7 @@ Test.Summary = '''
 Test log fields.
 '''
 
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 server = Test.MakeOriginServer("server")
 
 request_header = {'timestamp': 100, "headers": "GET /test-1 HTTP/1.1\r\nHost: test-1\r\n\r\n", "body": ""}
@@ -48,7 +48,6 @@ server.addResponse("sessionlog.json",
 
 ts.Disk.records_config.update({
     'proxy.config.net.connections_throttle': 100,
-    'proxy.config.http.cache.http': 0
 })
 # setup some config file for this server
 ts.Disk.remap_config.AddLine(

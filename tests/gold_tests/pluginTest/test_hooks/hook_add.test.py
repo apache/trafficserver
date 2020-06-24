@@ -30,12 +30,11 @@ request_header = {
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=False)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=False, enable_cache=False)
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'test',
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.http.cache.http': 0,
     'proxy.config.url_remap.remap_required': 0,
 })
 
@@ -48,8 +47,7 @@ ts.Disk.remap_config.AddLine(
 tr = Test.AddTestRun()
 # Probe server port to check if ready.
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-# Probe TS cleartext port to check if ready (probing TLS port causes spurious VCONN hook triggers).
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port)

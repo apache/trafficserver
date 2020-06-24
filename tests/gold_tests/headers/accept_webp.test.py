@@ -44,8 +44,6 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'http_match',
     'proxy.config.http.cache.ignore_accept_mismatch': 0,
     'proxy.config.http.insert_response_via_str': 3,
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.wait_for_cache': 1,
 })
 
 ts.Disk.remap_config.AddLine(

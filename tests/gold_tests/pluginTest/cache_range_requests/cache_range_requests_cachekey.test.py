@@ -162,8 +162,6 @@ ts.Disk.plugin_config.AddLine('xdebug.so')
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'cache_range_requests',
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.wait_for_cache': 1,
 })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
@@ -172,7 +170,7 @@ curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-deb
 tr = Test.AddTestRun("full asset fetch")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-ps.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+ps.StartBefore(Test.Processes.ts)
 ps.Command = curl_and_args + ' http://www.example.com/path -H "uuid: full"'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")

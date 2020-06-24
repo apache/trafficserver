@@ -112,8 +112,8 @@ ts.Disk.ctwl_cfg.AddLine("  application/javascript")
 ts.Disk.ctwl_cfg.AddLine("text/css")
 
 tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
-tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(ts)
+tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.Command = "echo start stuff"
 tr.Processes.Default.ReturnCode = 0
 

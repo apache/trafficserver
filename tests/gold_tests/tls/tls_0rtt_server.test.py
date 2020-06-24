@@ -134,7 +134,7 @@ tr = Test.AddTestRun('Basic Curl Test')
 tr.Processes.Default.Command = 'curl https://127.0.0.1:{0} -k'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('curl test', 'Making sure the basics still work')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('early data accepted', '')
 tr.StillRunningAfter = server

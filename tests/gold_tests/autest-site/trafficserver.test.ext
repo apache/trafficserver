@@ -28,7 +28,8 @@ def make_id(s):
 # this forms is for the global process define
 
 
-def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enable_tls=False):
+def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
+                   enable_tls=False, enable_cache=True):
     #####################################
     # common locations
 
@@ -279,10 +280,26 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
     get_port(p, "manager_port")
     get_port(p, "admin_port")
 
-    if enable_tls:
-        p.Ready = When.PortsOpen([p.Variables.port, p.Variables.ssl_port])
+    if enable_cache:
+        # In records.config, the cache is enabled by default so there's nothing
+        # we have to do here to functionally enable it. However, the tests that
+        # rely upon the cache will not function correctly if ATS starts
+        # processing traffic before the cache is ready. Thus we set the
+        # wait_for_cache configuration.
+        p.Disk.records_config.update({
+            # Do not accept connections from clients until cache subsystem is
+            # operational.
+            'proxy.config.http.wait_for_cache': 1,
+        })
     else:
-        p.Ready = When.PortOpen(p.Variables.port)
+        # The user wants the cache to be disabled.
+        p.Disk.records_config.update({
+            'proxy.config.http.cache.http': 0
+        })
+
+    # The following message was added so that tests and users can know when
+    # Traffic Server is ready to both receive and optimize traffic.
+    p.Ready = When.FileContains(p.Disk.diags_log.AbsPath, "NOTE: Traffic Server is fully initialized")
 
     # set the ports
     if select_ports:

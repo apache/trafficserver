@@ -109,12 +109,11 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
         tr.Processes.Default.StartBefore(dns)
 
     if config not in trafficservers:
-        trafficservers[config] = Test.MakeATSProcess('ts_{0}'.format(normConfig))
+        trafficservers[config] = Test.MakeATSProcess('ts_{0}'.format(normConfig), enable_cache=False)
         trafficservers[config].Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'http|dns|redirect',
             'proxy.config.http.number_of_redirections': 1,
-            'proxy.config.http.cache.http': 0,
             'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
             'proxy.config.dns.resolv_conf': 'NULL',
             'proxy.config.url_remap.remap_required': 0,

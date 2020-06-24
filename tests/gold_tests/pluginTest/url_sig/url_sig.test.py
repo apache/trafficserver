@@ -43,8 +43,9 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
 
-# Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+# Define default ATS. Disable the cache to make sure each request is forwarded
+# to the origin server.
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
 
 ts.addSSLfile("../../remap/ssl/server.pem")
 ts.addSSLfile("../../remap/ssl/server.key")
@@ -53,7 +54,6 @@ ts.addSSLfile("../../remap/ssl/server.key")
 ts.Disk.records_config.update({
     # 'proxy.config.diags.debug.enabled': 1,
     # 'proxy.config.diags.debug.tags': 'http|url_sig',
-    'proxy.config.http.cache.http': 0,  # Make sure each request is forwarded to the origin server.
     'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),

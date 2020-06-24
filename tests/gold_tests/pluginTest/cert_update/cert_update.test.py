@@ -83,7 +83,7 @@ Test.PrepareInstalledPlugin('cert_update.so', ts)
 # curl should see that Traffic Server presents bar.com cert from alice
 tr = Test.AddTestRun("Server-Cert-Pre")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = (
     'curl --verbose --insecure --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}'.format(ts.Variables.ssl_port)
 )

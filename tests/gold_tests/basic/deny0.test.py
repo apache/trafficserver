@@ -31,10 +31,10 @@ redirect_serv = Test.MakeOriginServer("redirect_serv", ip='0.0.0.0')
 dns = Test.MakeDNServer("dns")
 dns.addRecords(records={HOST1: ['127.0.0.1']})
 
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 ts.Disk.records_config.update({
     # need this so the domain gets a chance to be evaluated through DNS
-    'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'http|dns|redirect', 'proxy.config.http.redirection_enabled': 1, 'proxy.config.http.number_of_redirections': 1, 'proxy.config.http.cache.http': 0, 'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port), 'proxy.config.dns.resolv_conf': 'NULL', 'proxy.config.url_remap.remap_required': 0
+    'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'http|dns|redirect', 'proxy.config.http.redirection_enabled': 1, 'proxy.config.http.number_of_redirections': 1, 'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port), 'proxy.config.dns.resolv_conf': 'NULL', 'proxy.config.url_remap.remap_required': 0
 })
 
 Test.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, 'tcp_client.py'))
@@ -54,7 +54,7 @@ def buildMetaTest(testName, requestString):
     global isFirstTest
     if isFirstTest:
         isFirstTest = False
-        tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+        tr.Processes.Default.StartBefore(ts)
         tr.Processes.Default.StartBefore(redirect_serv, ready=When.PortOpen(redirect_serv.Variables.Port))
         tr.Processes.Default.StartBefore(dns)
     with open(os.path.join(data_path, tr.Name), 'w') as f:
