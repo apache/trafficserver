@@ -141,7 +141,7 @@ ts.Streams.stderr += Testers.ContainsExpression(
         "The PUSH request should be denied by ip_allow")
 
 #
-# TEST 1: Perform a GET request. Should be allowed because GET is in the whitelist.
+# TEST 1: Perform a GET request. Should be allowed because GET is in the allowlist.
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
@@ -156,7 +156,7 @@ tr.StillRunningAfter = server
 
 #
 # TEST 2: Perform a CONNECT request. Should not be allowed because CONNECT is
-# not in the whitelist.
+# not in the allowlist.
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = ('curl --verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.
@@ -168,7 +168,7 @@ tr.StillRunningAfter = server
 
 #
 # TEST 3: Perform a PUSH request over HTTP/2. Should not be allowed because
-# PUSH is not in the whitelist.
+# PUSH is not in the allowlist.
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = ('curl --http2 --verbose -k -X PUSH -H "Host: localhost" https://localhost:{ts_port}/h2_push'.
