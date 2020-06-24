@@ -87,10 +87,10 @@ ts.Disk.remap_config.AddLines([
     ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(block_bytes)
 ])
 
-# ts.Disk.records_config.update({
-#   'proxy.config.diags.debug.enabled': 1,
-#   'proxy.config.diags.debug.tags': 'slice',
-# })
+ts.Disk.records_config.update({
+  'proxy.config.diags.debug.enabled': 0,
+  'proxy.config.diags.debug.tags': 'slice',
+})
 
 # 0 Test - Prefetch entire asset into cache
 tr = Test.AddTestRun("Fetch first slice range")

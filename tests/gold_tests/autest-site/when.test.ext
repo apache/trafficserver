@@ -52,12 +52,13 @@ def FileContains(haystack, needle, desired_count=1):
                 needle, haystack))
         return False
 
+    needle_regex = re.compile(needle)
     with open(haystack) as f:
         needle_seen_count = 0
         line_count = 0
         for line in f:
             line_count += 1
-            if re.search(needle, line):
+            if needle_regex.search(line):
                 host.WriteDebug(
                     ['FileContains', 'when'],
                     "Found '{0}' in file '{1}' in line: '{2}', line number: {3}".format(

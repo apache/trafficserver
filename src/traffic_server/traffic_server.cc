@@ -465,6 +465,15 @@ private:
  *
  * 1. The cache is initialized.
  * 2. The ports are open and accept has been called upon them.
+ *
+ * Note that Traffic Server configures the port objects and may even open the
+ * ports before calling accept on those ports. The difference between these two
+ * events is communicated to plugins via the
+ * TS_LIFECYCLE_PORTS_INITIALIZED_HOOK and TS_LIFECYCLE_PORTS_READY_HOOK hooks.
+ * If wait_for_cache is enabled, the difference in time between these events
+ * may measure in the tens of milliseconds.  The message emitted by this
+ * function happens after this full lifecycle takes place on these ports and
+ * after cache is initialized.
  */
 static void
 emit_fully_initialized_message()
