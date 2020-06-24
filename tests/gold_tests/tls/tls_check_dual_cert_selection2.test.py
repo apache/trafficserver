@@ -18,6 +18,7 @@
 
 Test.Summary = '''
 Test ATS offering both RSA and EC certificates
+Combined key and cert files.  Faulty key path
 '''
 
 import os
@@ -41,32 +42,32 @@ ts.addSSLfile("ssl/signed-san.pem")
 ts.addSSLfile("ssl/signed-san.key")
 ts.addSSLfile("ssl/signed-san-ec.pem")
 ts.addSSLfile("ssl/signed-san-ec.key")
+ts.addSSLfile("ssl/combined-ec.pem")
+ts.addSSLfile("ssl/combined.pem")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
 
 ts.Disk.remap_config.AddLine(
     'map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
 
 ts.Disk.ssl_multicert_config.AddLines([
-    'ssl_cert_name=signed-foo-ec.pem,signed-foo.pem ssl_key_name=signed-foo-ec.key,signed-foo.key',
-    'ssl_cert_name=signed-san-ec.pem,signed-san.pem ssl_key_name=signed-san-ec.key,signed-san.key',
-    'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
+    'ssl_cert_name=combined-ec.pem,combined.pem',
+    'ssl_cert_name=signed-foo-ec.pem,signed-foo.pem',
+    'dest_ip=* ssl_cert_name=signed-san-ec.pem,signed-san.pem'
 ])
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.ssl.server.private_key.path': '/tmp', # Faulty key path should not matter, since there are no key files
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256',
     'proxy.config.url_remap.pristine_host_hdr': 1,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.dns.resolv_conf': 'NULL',
     'proxy.config.diags.debug.tags': 'ssl',
-    'proxy.config.diags.debug.enabled': 1
+    'proxy.config.diags.debug.enabled': 0
 })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
@@ -76,6 +77,8 @@ foo_ec_string = ""
 foo_rsa_string = ""
 san_ec_string = ""
 san_rsa_string = ""
+combo_ec_string = ""
+combo_rsa_string = ""
 with open(os.path.join(Test.TestDirectory,'ssl', 'signed-foo-ec.pem'), 'r') as myfile:
     file_string = myfile.read()
     cert_end = file_string.find("END CERTIFICATE-----")
@@ -92,6 +95,14 @@ with open(os.path.join(Test.TestDirectory,'ssl', 'signed-san.pem'), 'r') as myfi
     file_string = myfile.read()
     cert_end = file_string.find("END CERTIFICATE-----")
     san_rsa_string = re.escape(file_string[0:cert_end])
+with open(os.path.join(Test.TestDirectory,'ssl', 'combined-ec.pem'), 'r') as myfile:
+    file_string = myfile.read()
+    cert_end = file_string.find("END CERTIFICATE-----")
+    combo_ec_string = re.escape(file_string[0 : cert_end])
+with open(os.path.join(Test.TestDirectory,'ssl', 'combined.pem'), 'r') as myfile:
+    file_string = myfile.read()
+    cert_end = file_string.find("END CERTIFICATE-----")
+    combo_rsa_string = re.escape(file_string[0 : cert_end])
 
 # Should receive a EC cert since ATS cipher list prefers EC
 tr = Test.AddTestRun("Default for foo should return EC cert")
@@ -148,4 +159,22 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_ec_string, "Should select EC cert", reflags=re.S | re.M)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN");
+
+# Should receive a EC cert
+tr = Test.AddTestRun("Default for combined.com should return EC cert")
+tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername combined.com -connect 127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(combo_ec_string, "Should select EC cert", reflags=re.S | re.M)
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = combined.com", "Should select combined pem")
+
+# Should receive a RSA cert
+tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
+tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername combined.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(combo_rsa_string,  "Should select RSA cert", reflags=re.S | re.M)
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = combined.com", "Should select combined pem")
 

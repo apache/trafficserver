@@ -929,7 +929,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::str
   ENGINE *e = nullptr;
   if (false) {
 #endif
-  } else if (!keyPath) {
+  } else if (!keyPath || keyPath[0] == '\0') {
     // assume private key is contained in cert obtained from multicert file.
     if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath.c_str(), SSL_FILETYPE_PEM)) {
       SSLError("failed to load server private key from %s", completeServerCertPath.c_str());
@@ -1429,7 +1429,9 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 
     SSLMultiCertConfigLoader::CertLoadData single_data;
     single_data.cert_names_list.push_back(data.cert_names_list[i]);
-    single_data.key_list.push_back(i < data.key_list.size() ? data.key_list[i] : "");
+    if (i < data.key_list.size()) {
+      single_data.key_list.push_back(data.key_list[i]);
+    }
     single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
     single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
 
@@ -1925,8 +1927,6 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
   SimpleTokenizer key_tok(SSL_CERT_SEPARATE_DELIM);
   if (sslMultCertSettings && sslMultCertSettings->key) {
     key_tok.setString((const char *)sslMultCertSettings->key);
-  } else if (sslMultCertSettings && sslMultCertSettings->cert) {
-    key_tok.setString((const char *)sslMultCertSettings->cert);
   } else {
     key_tok.setString("");
   }
@@ -2111,7 +2111,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, SSLMultiCertConfigLoader::Cer
     // Load up any additional chain certificates
     SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 
-    const char *keyPath = data.key_list[i].c_str();
+    const char *keyPath = i < data.key_list.size() ? data.key_list[i].c_str() : nullptr;
     if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, keyPath)) {
       return false;
     }
