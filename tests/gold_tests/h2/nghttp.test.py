@@ -46,7 +46,7 @@ microserver.addResponse("sessionlog.json",
 # ----
 # Setup ATS
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
@@ -65,7 +65,6 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'http',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.cache.http': 0,
     'proxy.config.http2.active_timeout_in': 3,
 })
 
@@ -79,6 +78,6 @@ tr.Processes.Default.Command = "nghttp -v --no-dep 'https://127.0.0.1:{0}/post' 
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(microserver, ready=When.PortOpen(microserver.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stdout = "gold/nghttp_0_stdout.gold"
 tr.StillRunningAfter = microserver
