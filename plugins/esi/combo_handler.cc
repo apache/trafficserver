@@ -66,7 +66,7 @@ unsigned MaxFileCount = DEFAULT_MAX_FILE_COUNT;
 
 int arg_idx;
 static string SIG_KEY_NAME;
-static vector<string> HEADER_WHITELIST;
+static vector<string> HEADER_ALLOWLIST;
 
 #define DEFAULT_COMBO_HANDLER_PATH "admin/v1/combo"
 static string COMBO_HANDLER_PATH{DEFAULT_COMBO_HANDLER_PATH};
@@ -176,14 +176,14 @@ class ContentTypeHandler
 public:
   ContentTypeHandler(std::string &resp_header_fields) : _resp_header_fields(resp_header_fields) {}
 
-  // Returns false if _content_type_whitelist is not empty, and content-type field is either not present or not in the
-  // whitelist.  Adds first Content-type field it encounters in the headers passed to this function.
+  // Returns false if _content_type_allowlist is not empty, and content-type field is either not present or not in the
+  // allowlist.  Adds first Content-type field it encounters in the headers passed to this function.
   //
   bool nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc);
 
-  // Load whitelist from config file.
+  // Load allowlist from config file.
   //
-  static void loadWhiteList(std::string const &file_spec);
+  static void loadAllowList(std::string const &file_spec);
 
 private:
   // Add Content-Type field to these.
@@ -192,10 +192,10 @@ private:
 
   bool _added_content_type{false};
 
-  static vector<std::string> _content_type_whitelist;
+  static vector<std::string> _content_type_allowlist;
 };
 
-vector<std::string> ContentTypeHandler::_content_type_whitelist;
+vector<std::string> ContentTypeHandler::_content_type_allowlist;
 
 bool
 InterceptData::init(TSVConn vconn)
@@ -411,26 +411,26 @@ TSPluginInit(int argc, const char *argv[])
     stringstream strstream(argv[optind++]);
     string header;
     while (getline(strstream, header, ':')) {
-      HEADER_WHITELIST.push_back(header);
+      HEADER_ALLOWLIST.push_back(header);
     }
   }
   ++optind;
 
-  for (unsigned int i = 0; i < HEADER_WHITELIST.size(); i++) {
-    LOG_DEBUG("WhiteList: %s", HEADER_WHITELIST[i].c_str());
+  for (unsigned int i = 0; i < HEADER_ALLOWLIST.size(); i++) {
+    LOG_DEBUG("AllowList: %s", HEADER_ALLOWLIST[i].c_str());
   }
 
-  std::string content_type_whitelist_filespec = (argc > optind && (argv[optind][0] != '-' || argv[optind][1])) ? argv[optind] : "";
-  if (content_type_whitelist_filespec.empty()) {
-    LOG_DEBUG("No Content-Type whitelist file specified (all content types allowed)");
+  std::string content_type_allowlist_filespec = (argc > optind && (argv[optind][0] != '-' || argv[optind][1])) ? argv[optind] : "";
+  if (content_type_allowlist_filespec.empty()) {
+    LOG_DEBUG("No Content-Type allowlist file specified (all content types allowed)");
   } else {
     // If we have a path and it's not an absolute path, make it relative to the
     // configuration directory.
-    if (content_type_whitelist_filespec[0] != '/') {
-      content_type_whitelist_filespec = std::string(TSConfigDirGet()) + '/' + content_type_whitelist_filespec;
+    if (content_type_allowlist_filespec[0] != '/') {
+      content_type_allowlist_filespec = std::string(TSConfigDirGet()) + '/' + content_type_allowlist_filespec;
     }
-    LOG_DEBUG("Content-Type whitelist file: %s", content_type_whitelist_filespec.c_str());
-    ContentTypeHandler::loadWhiteList(content_type_whitelist_filespec);
+    LOG_DEBUG("Content-Type allowlist file: %s", content_type_allowlist_filespec.c_str());
+    ContentTypeHandler::loadAllowList(content_type_allowlist_filespec);
   }
   ++optind;
 
@@ -973,7 +973,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
     TSMLoc field_loc;
     time_t expires_time;
     bool got_expires_time = false;
-    int num_headers       = HEADER_WHITELIST.size();
+    int num_headers       = HEADER_ALLOWLIST.size();
     int flags_list[num_headers];
     CacheControlHeader cch;
 
@@ -986,7 +986,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
     for (StringList::iterator iter = int_data.creq.file_urls.begin(); iter != int_data.creq.file_urls.end(); ++iter) {
       if (int_data.fetcher->getData(*iter, resp_data) && resp_data.status == TS_HTTP_STATUS_OK) {
         body_blocks.push_back(ByteBlock(resp_data.content, resp_data.content_len));
-        if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_CONTENT_TYPE) == HEADER_WHITELIST.end()) {
+        if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_CONTENT_TYPE) == HEADER_ALLOWLIST.end()) {
           if (!cth.nextObjectHeader(resp_data.bufp, resp_data.hdr_loc)) {
             LOG_ERROR("Content type missing or forbidden for requested URL [%s]", iter->c_str());
             int_data.creq.status = TS_HTTP_STATUS_FORBIDDEN;
@@ -1018,7 +1018,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
             continue;
           }
 
-          const string &header = HEADER_WHITELIST[i];
+          const string &header = HEADER_ALLOWLIST[i];
 
           field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, header.c_str(), header.size());
           if (field_loc != TS_NULL_MLOC) {
@@ -1054,10 +1054,10 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
     }
     if (int_data.creq.status == TS_HTTP_STATUS_OK) {
       // Add in Cache-Control header
-      if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_CACHE_CONTROL) == HEADER_WHITELIST.end()) {
+      if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_CACHE_CONTROL) == HEADER_ALLOWLIST.end()) {
         resp_header_fields.append(cch.generate());
       }
-      if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_EXPIRES) == HEADER_WHITELIST.end()) {
+      if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_EXPIRES) == HEADER_ALLOWLIST.end()) {
         if (got_expires_time) {
           if (expires_time <= 0) {
             resp_header_fields.append("Expires: 0\r\n");
@@ -1098,14 +1098,14 @@ ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
       ts::TextView tv{value, value_len};
       tv = tv.prefix(';').rtrim(std::string_view(" \t"));
-      if (_content_type_whitelist.empty()) {
+      if (_content_type_allowlist.empty()) {
         ;
-      } else if (std::find_if(_content_type_whitelist.begin(), _content_type_whitelist.end(), [tv](ts::TextView tv2) -> bool {
+      } else if (std::find_if(_content_type_allowlist.begin(), _content_type_allowlist.end(), [tv](ts::TextView tv2) -> bool {
                    return strcasecmp(tv, tv2) == 0;
-                 }) == _content_type_whitelist.end()) {
+                 }) == _content_type_allowlist.end()) {
         return false;
       } else if (tv.empty()) {
-        // Whitelist is bad, contains an empty string.
+        // allowlist is bad, contains an empty string.
         return false;
       }
       if (!_added_content_type) {
@@ -1127,12 +1127,12 @@ ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
     }
     return true;
   }
-  // No content type header field so doesn't pass whitelist if there is one.
-  return _content_type_whitelist.empty();
+  // No content type header field so doesn't pass allowlist if there is one.
+  return _content_type_allowlist.empty();
 }
 
 void
-ContentTypeHandler::loadWhiteList(std::string const &file_spec)
+ContentTypeHandler::loadAllowList(std::string const &file_spec)
 {
   std::fstream fs;
   char line_buffer[256];
@@ -1160,22 +1160,22 @@ ContentTypeHandler::loadWhiteList(std::string const &file_spec)
         extra_junk_on_line = true;
         break;
       }
-      _content_type_whitelist.emplace_back(content_type);
+      _content_type_allowlist.emplace_back(content_type);
     }
   }
   if (fs.fail() && !(fs.eof() && (fs.gcount() == 0))) {
-    LOG_ERROR("Error reading Content-Type whitelist config file %s, line %d", file_spec.c_str(), line_num);
+    LOG_ERROR("Error reading Content-Type allowlist config file %s, line %d", file_spec.c_str(), line_num);
   } else if (extra_junk_on_line) {
-    LOG_ERROR("More than one type on line %d in Content-Type whitelist config file %s", line_num, file_spec.c_str());
-  } else if (_content_type_whitelist.empty()) {
-    LOG_ERROR("Content-type whitelist config file %s must have at least one entry", file_spec.c_str());
+    LOG_ERROR("More than one type on line %d in Content-Type allowlist config file %s", line_num, file_spec.c_str());
+  } else if (_content_type_allowlist.empty()) {
+    LOG_ERROR("Content-type allowlist config file %s must have at least one entry", file_spec.c_str());
   } else {
     // End of file.
     return;
   }
-  _content_type_whitelist.clear();
+  _content_type_allowlist.clear();
   // An empty string marks object as bad.
-  _content_type_whitelist.emplace_back("");
+  _content_type_allowlist.emplace_back("");
 }
 
 static const char INVARIANT_FIELD_LINES[]    = {"Vary: Accept-Encoding\r\n"};
@@ -1184,7 +1184,7 @@ static const char INVARIANT_FIELD_LINES_SIZE = sizeof(INVARIANT_FIELD_LINES) - 1
 static bool
 writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written)
 {
-  if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_VARY) == HEADER_WHITELIST.end()) {
+  if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_VARY) == HEADER_ALLOWLIST.end()) {
     if (TSIOBufferWrite(int_data.output.buffer, INVARIANT_FIELD_LINES, INVARIANT_FIELD_LINES_SIZE) == TS_ERROR) {
       LOG_ERROR("Error while writing invariant fields");
       return false;
@@ -1192,7 +1192,7 @@ writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written)
     n_bytes_written += INVARIANT_FIELD_LINES_SIZE;
   }
 
-  if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_LAST_MODIFIED) == HEADER_WHITELIST.end()) {
+  if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_LAST_MODIFIED) == HEADER_ALLOWLIST.end()) {
     time_t time_now = static_cast<time_t>(TShrtime() / 1000000000); // it returns nanoseconds!
     char last_modified_line[128];
     struct tm gmnow;

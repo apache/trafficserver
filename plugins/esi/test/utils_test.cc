@@ -121,8 +121,8 @@ main()
 
   cout << "Test 11 " << endl;
   std::list<string> lines;
-  lines.push_back("whitelistCookie AGE");
-  lines.push_back("whitelistCookie GRADE");
+  lines.push_back("allowlistCookie AGE");
+  lines.push_back("allowlistCookie GRADE");
   lines.push_back("a b");
   Utils::KeyValueMap kv;
   Utils::HeaderValueList list;

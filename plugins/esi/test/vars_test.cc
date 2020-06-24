@@ -75,13 +75,13 @@ main()
 
   {
     cout << endl << "===================== Test 1" << endl;
-    Utils::HeaderValueList whitelistCookies;
-    whitelistCookies.push_back("c1");
-    whitelistCookies.push_back("c2");
-    whitelistCookies.push_back("c3");
-    whitelistCookies.push_back("c4");
-    whitelistCookies.push_back("c5");
-    Variables esi_vars("vars_test", &Debug, &Error, whitelistCookies);
+    Utils::HeaderValueList allowlistCookies;
+    allowlistCookies.push_back("c1");
+    allowlistCookies.push_back("c2");
+    allowlistCookies.push_back("c3");
+    allowlistCookies.push_back("c4");
+    allowlistCookies.push_back("c5");
+    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
     const char *strings[] = {"Cookie",
                              "; c1=v1; c2=v2; ;   c3; c4=;    c5=v5  ",
                              "Host",
@@ -314,8 +314,8 @@ main()
   {
     cout << endl << "===================== Test 2" << endl;
     gFakeDebugLog.assign("");
-    Utils::HeaderValueList whitelistCookies;
-    Variables esi_vars("vars_test", &fakeDebug, &Error, whitelistCookies);
+    Utils::HeaderValueList allowlistCookies;
+    Variables esi_vars("vars_test", &fakeDebug, &Error, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Referer", -1, "google.com", -1));
@@ -344,17 +344,17 @@ main()
 
   {
     cout << endl << "===================== Test 3" << endl;
-    Utils::HeaderValueList whitelistCookies;
-    whitelistCookies.push_back("age");
-    whitelistCookies.push_back("grade");
-    whitelistCookies.push_back("avg");
-    whitelistCookies.push_back("t1");
-    whitelistCookies.push_back("t2");
-    whitelistCookies.push_back("t3");
-    whitelistCookies.push_back("t4");
-    whitelistCookies.push_back("t5");
-    whitelistCookies.push_back("c1");
-    Variables esi_vars("vars_test", &Debug, &Error, whitelistCookies);
+    Utils::HeaderValueList allowlistCookies;
+    allowlistCookies.push_back("age");
+    allowlistCookies.push_back("grade");
+    allowlistCookies.push_back("avg");
+    allowlistCookies.push_back("t1");
+    allowlistCookies.push_back("t2");
+    allowlistCookies.push_back("t3");
+    allowlistCookies.push_back("t4");
+    allowlistCookies.push_back("t5");
+    allowlistCookies.push_back("c1");
+    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Referer", -1, "google.com", -1));
@@ -390,15 +390,15 @@ main()
 
   {
     cout << endl << "===================== Test 4" << endl;
-    Utils::HeaderValueList whitelistCookies;
-    whitelistCookies.push_back("FPS");
-    whitelistCookies.push_back("mb");
-    whitelistCookies.push_back("Y");
-    whitelistCookies.push_back("C");
-    whitelistCookies.push_back("F");
-    whitelistCookies.push_back("a");
-    whitelistCookies.push_back("c");
-    Variables esi_vars("vars_test", &Debug, &Error, whitelistCookies);
+    Utils::HeaderValueList allowlistCookies;
+    allowlistCookies.push_back("FPS");
+    allowlistCookies.push_back("mb");
+    allowlistCookies.push_back("Y");
+    allowlistCookies.push_back("C");
+    allowlistCookies.push_back("F");
+    allowlistCookies.push_back("a");
+    allowlistCookies.push_back("c");
+    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
     string cookie_str("FPS=dl; mb=d=OPsv7rvU4FFaAOoIRi75BBuqdMdbMLFuDwQmk6nKrCgno7L4xuN44zm7QBQJRmQSh8ken6GSVk8-&v=1; C=mg=1; "
                       "Y=v=1&n=fmaptagvuff50&l=fc0d94i7/o&p=m2f0000313000400&r=8j&lg=en-US&intl=us; "
                       "F=a=4KvLV9IMvTJnIAqCk25y9Use6hnPALtUf3n78PihlcIqvmzoW.Ax8UyW8_oxtgFNrrdmooqZmPa7WsX4gE."
@@ -440,8 +440,8 @@ main()
 
   {
     cout << endl << "===================== Test 5" << endl;
-    Utils::HeaderValueList whitelistCookies;
-    Variables esi_vars("vars_test", &Debug, &Error, whitelistCookies);
+    Utils::HeaderValueList allowlistCookies;
+    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
     esi_vars.populate(HttpHeader("hdr1", -1, "hval1", -1));
     esi_vars.populate(HttpHeader("Hdr2", -1, "hval2", -1));
     esi_vars.populate(HttpHeader("@Intenal-hdr1", -1, "internal-hval1", -1));
@@ -457,9 +457,9 @@ main()
 
   {
     cout << endl << "===================== Test 6" << endl;
-    Utils::HeaderValueList whitelistCookies;
-    whitelistCookies.push_back("*");
-    Variables esi_vars("vars_test", &Debug, &Error, whitelistCookies);
+    Utils::HeaderValueList allowlistCookies;
+    allowlistCookies.push_back("*");
+    Variables esi_vars("vars_test", &Debug, &Error, allowlistCookies);
 
     esi_vars.populate(HttpHeader("Host", -1, "example.com", -1));
     esi_vars.populate(HttpHeader("Cookie", -1, "age=21; grade=-5; avg=4.3; t1=\" \"; t2=0.0", -1));
