@@ -1781,10 +1781,9 @@ HttpSM::state_http_server_open(int event, void *data)
 
   switch (event) {
   case NET_EVENT_OPEN: {
-    Http1ServerSession *session =
-      (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.http_config_param->server_session_sharing_pool) ?
-        THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
-        httpServerSessionAllocator.alloc();
+    Http1ServerSession *session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == httpSessionManager.get_pool_type()) ?
+                                    THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
+                                    httpServerSessionAllocator.alloc();
     session->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchMask>(t_state.txn_conf->server_session_sharing_match);
 

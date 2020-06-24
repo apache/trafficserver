@@ -376,6 +376,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.server_session_sharing.pool", RECD_STRING, "thread", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.http.server_session_sharing.pool_hybrid_limit", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.http.default_buffer_size", RECD_INT, "8", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.default_buffer_water_mark", RECD_INT, "32768", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}

@@ -330,6 +330,7 @@ HSMresult_t
 HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockaddr const *ip, const char *hostname,
                                     ProxyTransaction *ua_txn, HttpSM *sm)
 {
+  // First test for any session bound to the ua_txn
   Http1ServerSession *to_return = nullptr;
   TSServerSessionSharingMatchMask match_style =
     static_cast<TSServerSessionSharingMatchMask>(sm->t_state.txn_conf->server_session_sharing_match);
@@ -370,6 +371,25 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     to_return = nullptr;
   }
 
+  // Otherwise, check the thread pool first
+  if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_THREAD || this->get_hybrid_limit() != 0) {
+    retval = acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_THREAD);
+  }
+
+  //  If you didn't get a match, and the global pool is an option go there.
+  if (retval != HSM_DONE && (TS_SERVER_SESSION_SHARING_POOL_GLOBAL == this->get_pool_type())) {
+    retval = acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_GLOBAL);
+  }
+  return retval;
+}
+
+HSMresult_t
+HttpSessionManager::acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
+                                    TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type)
+{
+  Http1ServerSession *to_return = nullptr;
+  HSMresult_t retval            = HSM_NOT_FOUND;
+
   // Extend the mutex window until the acquired Server session is attached
   // to the SM. Releasing the mutex before that results in race conditions
   // due to a potential parallel network read on the VC with no mutex guarding
@@ -377,12 +397,10 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     // Now check to see if we have a connection in our shared connection pool
     EThread *ethread = this_ethread();
     Ptr<ProxyMutex> pool_mutex =
-      (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.http_config_param->server_session_sharing_pool) ?
-        ethread->server_session_pool->mutex :
-        m_g_pool->mutex;
+      (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) ? ethread->server_session_pool->mutex : m_g_pool->mutex;
     MUTEX_TRY_LOCK(lock, pool_mutex, ethread);
     if (lock.is_locked()) {
-      if (TS_SERVER_SESSION_SHARING_POOL_THREAD == sm->t_state.http_config_param->server_session_sharing_pool) {
+      if (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) {
         retval = ethread->server_session_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
         Debug("http_ss", "[acquire session] thread pool search %s", to_return ? "successful" : "failed");
       } else {
@@ -446,6 +464,11 @@ HttpSessionManager::release_session(Http1ServerSession *to_release)
   MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
   if (lock.is_locked()) {
     pool->releaseSession(to_release);
+  } else if (to_release->sharing_pool == TS_SERVER_SESSION_SHARING_POOL_GLOBAL &&
+             (m_hybrid_limit < 0 || ethread->server_session_pool->count() < m_hybrid_limit)) {
+    // Try again with the thread pool
+    to_release->sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
+    return release_session(to_release);
   } else {
     Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
     released_p = false;

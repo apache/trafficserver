@@ -67,6 +67,11 @@ public:
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_cert(HttpSM *sm, NetVConnection *netvc);
+  int
+  count() const
+  {
+    return m_ip_pool.count();
+  }
 
 protected:
   using IPTable   = IntrusiveHashMap<Http1ServerSession::IPLinkage>;
@@ -110,11 +115,35 @@ public:
   void purge_keepalives();
   void init();
   int main_handler(int event, void *data);
+  void
+  set_hybrid_limit(int limit)
+  {
+    m_hybrid_limit = limit;
+  }
+  void
+  set_pool_type(int pool_type)
+  {
+    m_pool_type = static_cast<TSServerSessionSharingPoolType>(pool_type);
+  }
+  TSServerSessionSharingPoolType
+  get_pool_type() const
+  {
+    return m_pool_type;
+  }
+  int
+  get_hybrid_limit() const
+  {
+    return m_hybrid_limit;
+  }
 
 private:
   /// Global pool, used if not per thread pools.
   /// @internal We delay creating this because the session manager is created during global statics init.
   ServerSessionPool *m_g_pool = nullptr;
+  HSMresult_t acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
+                              TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type);
+  int m_hybrid_limit                         = 0;
+  TSServerSessionSharingPoolType m_pool_type = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 };
 
 extern HttpSessionManager httpSessionManager;
