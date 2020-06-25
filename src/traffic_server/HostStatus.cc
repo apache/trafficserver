@@ -406,10 +406,6 @@ HostStatus::getHostStatus(const char *name)
     }
     _status->reasons = reasons;
   }
-  // didn't find this host in host status db, create the record
-  if (!lookup) {
-    createHostStat(name);
-  }
 
   return _status;
 }
