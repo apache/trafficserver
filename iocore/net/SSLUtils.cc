@@ -1406,7 +1406,7 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
     if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert, current_cert_name)) {
       /* At this point, we know cert is bad, and we've already printed a
          descriptive reason as to why cert is bad to the log file */
-      Debug("ssl", "Marking certificate as NOT VALID: %s", current_cert_name);
+      Debug(this->_debug_tag(), "Marking certificate as NOT VALID: %s", current_cert_name);
       lookup->is_valid = false;
     }
     i++;
@@ -1421,7 +1421,7 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
       names.append(name);
       names.append(" ");
     }
-    Warning("Failed to insert SSL_CTX for certificate %s entries for names already made", names.c_str());
+    Warning("(%s) Failed to insert SSL_CTX for certificate %s entries for names already made", this->_debug_tag(), names.c_str());
   }
 
   for (auto iter = unique_names.begin(); retval && iter != unique_names.end(); ++iter) {
@@ -2236,6 +2236,12 @@ fail:
   EVP_MD_CTX_free(digest);
 
   return result;
+}
+
+const char *
+SSLMultiCertConfigLoader::_debug_tag() const
+{
+  return "ssl";
 }
 
 /**

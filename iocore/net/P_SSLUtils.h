@@ -89,7 +89,8 @@ protected:
                              std::set<std::string> &names);
 
 private:
-  virtual bool _store_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams ssl_multi_cert_params);
+  virtual const char *_debug_tag() const;
+  bool _store_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams ssl_multi_cert_params);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
 };
 
