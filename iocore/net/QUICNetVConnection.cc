@@ -236,10 +236,11 @@ QUICNetVConnection::~QUICNetVConnection()
 // XXX This might be called on ET_UDP thread
 // Initialize QUICNetVC for out going connection (NET_VCONNECTION_OUT)
 void
-QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
+QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
                          QUICPacketHandler *packet_handler, QUICResetTokenTable *rtable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
+  this->_initial_version             = version;
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
   this->_peer_quic_connection_id     = peer_cid;
@@ -257,11 +258,12 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
 
 // Initialize QUICNetVC for in coming connection (NET_VCONNECTION_IN)
 void
-QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
+QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
                          QUICConnectionId retry_cid, UDPConnection *udp_con, QUICPacketHandler *packet_handler,
                          QUICResetTokenTable *rtable, QUICConnectionTable *ctable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
+  this->_initial_version             = version;
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
   this->_peer_quic_connection_id     = peer_cid;
@@ -401,10 +403,10 @@ QUICNetVConnection::start()
 
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::SERVER);
     this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_in());
-    this->_reset_token = QUICStatelessResetToken(this->_quic_connection_id, this->_quic_config->instance_id());
-    this->_hs_protocol = this->_setup_handshake_protocol(server_cert->ssl_default);
-    this->_handshake_handler =
-      new QUICHandshake(this, this->_hs_protocol, this->_reset_token, this->_quic_config->stateless_retry());
+    this->_reset_token       = QUICStatelessResetToken(this->_quic_connection_id, this->_quic_config->instance_id());
+    this->_hs_protocol       = this->_setup_handshake_protocol(server_cert->ssl_default);
+    this->_handshake_handler = new QUICHandshake(this->_initial_version, this, this->_hs_protocol, this->_reset_token,
+                                                 this->_quic_config->stateless_retry());
     this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_in());
     this->_schedule_ack_manager_periodic(this->_quic_config->max_ack_delay_in());
   } else {
@@ -416,7 +418,7 @@ QUICNetVConnection::start()
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::CLIENT);
     this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(this->_quic_config->client_ssl_ctx());
-    this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
+    this->_handshake_handler = new QUICHandshake(this->_initial_version, this, this->_hs_protocol);
     this->_handshake_handler->start(tp_config, &this->_packet_factory, this->_quic_config->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
     this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_out());
@@ -1264,7 +1266,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(const QUICRetryPacketR
 
   // Initialize Key Materials with peer CID. Because peer CID is DCID of (second) INITIAL packet from client which reply to RETRY
   // packet from server
-  this->_hs_protocol->initialize_key_materials(this->_peer_quic_connection_id);
+  this->_hs_protocol->initialize_key_materials(this->_peer_quic_connection_id, packet.version());
 
   // start handshake over
   this->_handshake_handler->do_handshake();

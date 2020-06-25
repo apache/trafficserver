@@ -147,10 +147,11 @@ class QUICNetVConnection : public UnixNetVConnection,
 public:
   QUICNetVConnection();
   ~QUICNetVConnection();
-  void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *,
+  void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *,
             QUICResetTokenTable *rtable);
-  void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid, QUICConnectionId retry_cid,
-            UDPConnection *, QUICPacketHandler *, QUICResetTokenTable *rtable, QUICConnectionTable *ctable);
+  void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
+            QUICConnectionId retry_cid, UDPConnection *, QUICPacketHandler *, QUICResetTokenTable *rtable,
+            QUICConnectionTable *ctable);
 
   // accept new conn_id
   int acceptEvent(int event, Event *e);
@@ -242,6 +243,7 @@ private:
   char _cids_data[MAX_CIDS_SIZE] = {0};
   std::string_view _cids;
 
+  QUICVersion _initial_version;
   UDPConnection *_udp_con = nullptr;
   QUICPacketProtectionKeyInfo _pp_key_info;
   QUICPacketHandler *_packet_handler = nullptr;

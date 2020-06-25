@@ -215,6 +215,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   IOBufferBlock *block = udp_packet->getIOBlockChain();
   const uint8_t *buf   = reinterpret_cast<uint8_t *>(block->buf());
   uint64_t buf_len     = block->size();
+  QUICVersion version;
 
   if (buf_len == 0) {
     QUICDebug("Ignore packet - payload is too small");
@@ -246,17 +247,16 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
                   ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
     }
 
-    QUICVersion v;
-    if (unlikely(!QUICInvariants::version(v, buf, buf_len))) {
+    if (unlikely(!QUICInvariants::version(version, buf, buf_len))) {
       QUICDebug("Ignore packet - payload is too small");
       udp_packet->free();
       return;
     }
 
-    if (!QUICInvariants::is_version_negotiation(v) && !QUICTypeUtil::is_supported_version(v)) {
-      QUICDebugDS(scid, dcid, "Unsupported version: 0x%x", v);
+    if (!QUICInvariants::is_version_negotiation(version) && !QUICTypeUtil::is_supported_version(version)) {
+      QUICDebugDS(scid, dcid, "Unsupported version: 0x%x", version);
 
-      QUICPacketUPtr vn = QUICPacketFactory::create_version_negotiation_packet(scid, dcid, v);
+      QUICPacketUPtr vn = QUICPacketFactory::create_version_negotiation_packet(scid, dcid, version);
       this->_send_packet(*vn, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
       udp_packet->free();
       return;
@@ -354,8 +354,8 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
-    vc->init(peer_cid, original_cid, ocid_in_retry_token, rcid_in_retry_token, udp_packet->getConnection(), this, &this->_rtable,
-             &this->_ctable);
+    vc->init(version, peer_cid, original_cid, ocid_in_retry_token, rcid_in_retry_token, udp_packet->getConnection(), this,
+             &this->_rtable, &this->_ctable);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
@@ -474,6 +474,8 @@ QUICPacketHandlerIn::_send_invalid_token_error(const uint8_t *initial_packet, ui
   QUICConnectionId dcid_in_initial;
   QUICInvariants::scid(scid_in_initial, initial_packet, initial_packet_len);
   QUICInvariants::dcid(dcid_in_initial, initial_packet, initial_packet_len);
+  QUICVersion version_in_initial;
+  QUICLongHeaderPacketR::version(version_in_initial, initial_packet, initial_packet_len);
 
   // Create CONNECTION_CLOSE frame
   auto error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::INVALID_TOKEN);
@@ -493,7 +495,7 @@ QUICPacketHandlerIn::_send_invalid_token_error(const uint8_t *initial_packet, ui
   QUICPacketHeaderProtector php(ppki);
   QUICCertConfig::scoped_config server_cert;
   QUICTLS tls(ppki, server_cert->ssl_default.get(), NET_VCONNECTION_IN, {}, "", "");
-  tls.initialize_key_materials(dcid_in_initial);
+  tls.initialize_key_materials(dcid_in_initial, version_in_initial);
 
   // Create INITIAL packet
   QUICConnectionId scid;

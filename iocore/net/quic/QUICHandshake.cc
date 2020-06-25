@@ -82,16 +82,20 @@
 
 static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp) : QUICHandshake(qc, hsp, {}, false) {}
+QUICHandshake::QUICHandshake(QUICVersion version, QUICConnection *qc, QUICHandshakeProtocol *hsp)
+  : QUICHandshake(version, qc, hsp, {}, false)
+{
+}
 
-QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp, QUICStatelessResetToken token, bool stateless_retry)
+QUICHandshake::QUICHandshake(QUICVersion version, QUICConnection *qc, QUICHandshakeProtocol *hsp, QUICStatelessResetToken token,
+                             bool stateless_retry)
   : _qc(qc),
     _hs_protocol(hsp),
     _version_negotiator(new QUICVersionNegotiator()),
     _reset_token(token),
     _stateless_retry(stateless_retry)
 {
-  this->_hs_protocol->initialize_key_materials(this->_qc->original_connection_id());
+  this->_hs_protocol->initialize_key_materials(this->_qc->original_connection_id(), version);
 
   if (this->_qc->direction() == NET_VCONNECTION_OUT) {
     this->_client_initial = true;

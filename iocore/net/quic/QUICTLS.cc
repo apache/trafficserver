@@ -165,7 +165,7 @@ QUICTLS::is_ready_to_derive() const
 }
 
 int
-QUICTLS::initialize_key_materials(QUICConnectionId cid)
+QUICTLS::initialize_key_materials(QUICConnectionId cid, QUICVersion version)
 {
   this->_pp_key_info.set_cipher_initial(EVP_aes_128_gcm());
   this->_pp_key_info.set_cipher_for_hp_initial(EVP_aes_128_ecb());
@@ -217,8 +217,8 @@ QUICTLS::initialize_key_materials(QUICConnectionId cid)
     server_iv_len         = this->_pp_key_info.decryption_iv_len(QUICKeyPhase::INITIAL);
   }
 
-  this->_keygen_for_client.generate(client_key_for_hp, client_key, client_iv, client_iv_len, cid);
-  this->_keygen_for_server.generate(server_key_for_hp, server_key, server_iv, server_iv_len, cid);
+  this->_keygen_for_client.generate(version, client_key_for_hp, client_key, client_iv, client_iv_len, cid);
+  this->_keygen_for_server.generate(version, server_key_for_hp, server_key, server_iv, server_iv_len, cid);
 
   this->_pp_key_info.set_decryption_key_available(QUICKeyPhase::INITIAL);
   this->_pp_key_info.set_encryption_key_available(QUICKeyPhase::INITIAL);
