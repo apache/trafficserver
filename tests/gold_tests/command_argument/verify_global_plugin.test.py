@@ -86,8 +86,8 @@ have the expected Plugin symbols.
 tr = Test.AddTestRun("Verify the requirement of our Plugin API.")
 ts = create_ts_process()
 Test.PreparePlugin(
-    os.path.join(Test.Variables.AtsTestToolsDir,
-                 'plugins', 'missing_ts_plugin_init.cc'),
+    os.path.join(Test.Variables.AtsTestPluginsDir,
+                 'missing_ts_plugin_init.so'),
     ts)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = \
@@ -98,7 +98,8 @@ tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*unable to find TSPluginInit function in",
     "Should warn about the need for the TSPluginInit symbol")
-ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR",
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    "ERROR",
     "ERROR: .*unable to find TSPluginInit function in")
 
 
@@ -109,8 +110,8 @@ it doesn't have the global plugin symbols.
 tr = Test.AddTestRun("Verify a properly formed plugin works as expected.")
 ts = create_ts_process()
 Test.PreparePlugin(
-    os.path.join(Test.Variables.AtsTestToolsDir,
-                 'plugins', 'conf_remap_stripped.cc'),
+    os.path.join(Test.Variables.AtsTestPluginsDir,
+                 'conf_remap_stripped.so'),
     ts)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = \
@@ -121,7 +122,8 @@ tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*unable to find TSPluginInit function in",
     "Should warn about the need for the TSPluginInit symbol")
-ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR",
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    "ERROR",
     "ERROR: .*unable to find TSPluginInit function in")
 
 
@@ -132,8 +134,8 @@ argument that has the definition for the expected Plugin symbols.
 tr = Test.AddTestRun("Verify a properly formed plugin works as expected.")
 ts = create_ts_process()
 Test.PreparePlugin(
-    os.path.join(Test.Variables.AtsTestToolsDir,
-                 'plugins', 'ssl_hook_test.cc'),
+    os.path.join(Test.Variables.AtsTestPluginsDir,
+                 'ssl_hook_test.so'),
     ts)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = \
@@ -146,32 +148,6 @@ tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "Verification should succeed")
 
 
-def prepare_undefined_symbol_plugin(tsproc, path_c, path_cpp, path_h):
-    """
-    Intentionally create an SO file with an undefined symbol.
-
-    We've seen issues where a plugin is created in which a C++ file
-    includes a function declaration and then expects a definition
-    of the mangled version of that function. However, the definition
-    was created with a c-compiler and thus is not mangled. This
-    builds a plugin with just such an undefined mangled symbol.
-    """
-    plugin_dir = tsproc.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
-    tsproc.Setup.Copy(path_c, plugin_dir)
-    tsproc.Setup.Copy(path_cpp, plugin_dir)
-    tsproc.Setup.Copy(path_h, plugin_dir)
-
-    in_basename = os.path.basename(path_c)
-    out_basename = os.path.splitext(in_basename)[0] + '.so'
-    out_path = os.path.join(plugin_dir, out_basename)
-    tsproc.Setup.RunCommand(
-        ("gcc -c -fPIC {path_c} -o {path_c}_o; "
-            "g++ -c -fPIC {path_cpp} -o {path_cpp}_o; "
-            "g++ {path_c}_o {path_cpp}_o -shared -o {out_path}").format(
-                **locals())
-    )
-
-
 """
 TEST: This is a regression test for a shared object file that doesn't have all
 of the required symbols defined because of a malformed interaction between C
@@ -179,20 +155,19 @@ and C++ files.
 """
 tr = Test.AddTestRun("Regression test for an undefined, mangled C++ symbol.")
 ts = create_ts_process()
-plugins_dir = os.path.join(Test.Variables.AtsTestToolsDir, 'plugins')
-prepare_undefined_symbol_plugin(
-    ts,
-    os.path.join(plugins_dir, 'missing_mangled_definition.c'),
-    os.path.join(plugins_dir, 'missing_mangled_definition.cc'),
-    os.path.join(plugins_dir, 'missing_mangled_definition.h'))
+plugin_filename = 'missing_mangled_definition.so'
+built_plugin_path = os.path.join(Test.Variables.AtsTestPluginsDir, plugin_filename)
+ats_plugin_dir = ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
+ts.Setup.Copy(built_plugin_path, ats_plugin_dir)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = \
-    "traffic_server -C 'verify_global_plugin {filename}'".format(
-        filename="${PROXY_CONFIG_PLUGIN_PLUGIN_DIR}/missing_mangled_definition.so")
+    "traffic_server -C 'verify_global_plugin {plugin_path}'".format(
+        plugin_path=os.path.join(ats_plugin_dir, plugin_filename))
 tr.Processes.Default.ReturnCode = 1
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*: undefined symbol: .*foo.*",
     "Should warn about the need for the TSPluginInit symbol")
-ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR",
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    "ERROR",
     "ERROR: .*: undefined symbol: .*foo.*")
