@@ -38,7 +38,7 @@ ts.Disk.records_config.update({
 })
 
 # Load plugin
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'emergency_shutdown.cc'), ts)
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'emergency_shutdown.so'), ts)
 
 # www.example.com Host
 tr = Test.AddTestRun()

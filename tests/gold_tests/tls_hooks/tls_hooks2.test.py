@@ -51,7 +51,7 @@ ts.Disk.remap_config.AddLine(
     'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port)
 )
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_hook_test.cc'), ts, '-sni=1')
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-sni=1')
 
 tr = Test.AddTestRun("Test one sni hook")
 tr.Processes.Default.StartBefore(server)

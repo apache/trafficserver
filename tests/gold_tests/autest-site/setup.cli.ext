@@ -80,6 +80,7 @@ if ENV['ATS_BIN'] is not None:
     Variables.update(out)
 Variables.AtsExampleDir = os.path.join(AutestSitePath, '../../../example')
 Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '../../tools')
+Variables.AtsTestPluginsDir = os.path.join(AutestSitePath, '../../tools/plugins/.libs')
 
 # modify delay times as we always have to kill Trafficserver
 # no need to wait

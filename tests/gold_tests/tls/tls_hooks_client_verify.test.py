@@ -70,13 +70,7 @@ ts.Disk.sni_yaml.AddLines([
     '  verify_client: STRICT',
 ])
 
-Test.PreparePlugin(
-    os.path.join(
-        Test.Variables.AtsTestToolsDir,
-        'plugins',
-        'ssl_client_verify_test.cc'),
-    ts,
-    '-count=2 -good=foo.com')
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_client_verify_test.so'), ts, '-count=2 -good=foo.com')
 
 tr = Test.AddTestRun("request good name")
 tr.Setup.Copy("ssl/signed-foo.pem")

@@ -251,7 +251,7 @@ test.tr.StillRunningAfter = test.server
 #
 test = TestLogRetention(twelve_meg_log_space,
                         "Verify log rotation and deletion of plugin logs.")
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'test_log_interface.cc'), test.ts)
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_log_interface.so'), test.ts)
 
 # Verify that the plugin's logs and other core logs were registered for deletion.
 test.ts.Streams.stderr = Testers.ContainsExpression(
