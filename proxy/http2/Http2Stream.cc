@@ -331,7 +331,6 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
   write_vio.ndone     = 0;
   write_vio.vc_server = this;
   write_vio.op        = VIO::WRITE;
-  response_reader     = abuffer;
 
   if (c != nullptr && nbytes > 0 && this->is_client_state_writeable()) {
     update_write_request(abuffer, nbytes, false);
@@ -549,7 +548,7 @@ void
 Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool call_update)
 {
   if (!this->is_client_state_writeable() || closed || _proxy_ssn == nullptr || write_vio.mutex == nullptr ||
-      (buf_reader == nullptr && write_len == 0) || this->response_reader == nullptr) {
+      (buf_reader == nullptr && write_len == 0) || write_vio.get_reader() == nullptr) {
     return;
   }
 
@@ -563,7 +562,8 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
 
   SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
 
-  int64_t bytes_avail = this->response_reader->read_avail();
+  IOBufferReader *vio_reader = write_vio.get_reader();
+  int64_t bytes_avail        = vio_reader->read_avail();
   if (write_vio.nbytes > 0 && write_vio.ntodo() > 0) {
     int64_t num_to_write = write_vio.ntodo();
     if (num_to_write > write_len) {
@@ -586,8 +586,8 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   if (!this->response_header_done) {
     // Still parsing the response_header
     int bytes_used = 0;
-    int state      = this->response_header.parse_resp(&http_parser, this->response_reader, &bytes_used, false);
-    // HTTPHdr::parse_resp() consumed the response_reader in above (consumed size is `bytes_used`)
+    int state      = this->response_header.parse_resp(&http_parser, vio_reader, &bytes_used, false);
+    // HTTPHdr::parse_resp() consumed the vio_reader in above (consumed size is `bytes_used`)
     write_vio.ndone += bytes_used;
 
     switch (state) {
@@ -625,7 +625,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
 
       this->signal_write_event(call_update);
 
-      if (this->response_reader->is_read_avail_more_than(0)) {
+      if (vio_reader->is_read_avail_more_than(0)) {
         this->_milestones.mark(Http2StreamMilestone::START_TX_DATA_FRAMES);
         this->send_response_body(call_update);
       }
@@ -836,7 +836,7 @@ Http2Stream::destroy()
 IOBufferReader *
 Http2Stream::response_get_data_reader() const
 {
-  return this->response_reader;
+  return write_vio.get_reader();
 }
 
 void

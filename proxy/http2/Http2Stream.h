@@ -144,7 +144,6 @@ public:
   bool is_first_transaction_flag = false;
 
   HTTPHdr response_header;
-  IOBufferReader *response_reader          = nullptr;
   Http2DependencyTree::Node *priority_node = nullptr;
 
 private:
