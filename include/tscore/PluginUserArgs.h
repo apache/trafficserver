@@ -53,14 +53,14 @@ public:
   void *
   get_user_arg(size_t ix) const
   {
-    ink_assert(ix < user_args.size());
+    ink_release_assert(ix < user_args.size());
     return this->user_args[ix];
   };
 
   void
   set_user_arg(size_t ix, void *arg)
   {
-    ink_assert(ix < user_args.size());
+    ink_release_assert(ix < user_args.size());
     user_args[ix] = arg;
   };
 
