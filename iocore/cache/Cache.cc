@@ -1363,8 +1363,6 @@ Vol::handle_dir_read(int event, void *data)
   sector_size = header->sector_size;
 
   return this->recover_data();
-
-  return EVENT_CONT;
 }
 
 int
