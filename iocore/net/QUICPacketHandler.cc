@@ -299,7 +299,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
   QUICConnectionId rcid_in_retry_token = QUICConnectionId::ZERO();
   if (!vc && params->stateless_retry() && QUICInvariants::is_long_header(buf)) {
     int ret = this->_stateless_retry(buf, buf_len, udp_packet->getConnection(), udp_packet->from, dcid, scid, &ocid_in_retry_token,
-                                     &rcid_in_retry_token);
+                                     &rcid_in_retry_token, version);
     if (ret < 0) {
       udp_packet->free();
       return;
@@ -397,7 +397,7 @@ QUICPacketHandler::send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_pa
 int
 QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPConnection *connection, IpEndpoint from,
                                       QUICConnectionId dcid, QUICConnectionId scid, QUICConnectionId *original_cid,
-                                      QUICConnectionId *retry_cid)
+                                      QUICConnectionId *retry_cid, QUICVersion version)
 {
   QUICPacketType type = QUICPacketType::UNINITIALIZED;
   QUICPacketR::type(type, buf, buf_len);
@@ -418,7 +418,7 @@ QUICPacketHandlerIn::_stateless_retry(const uint8_t *buf, uint64_t buf_len, UDPC
     QUICConnectionId local_cid;
     local_cid.randomize();
     QUICRetryToken token(from, dcid, local_cid);
-    QUICPacketUPtr retry_packet = QUICPacketFactory::create_retry_packet(scid, local_cid, token);
+    QUICPacketUPtr retry_packet = QUICPacketFactory::create_retry_packet(version, scid, local_cid, token);
 
     QUICDebug("[TX] %s packet ODCID=%" PRIx64 " RCID=%" PRIx64 " token_length=%u token=%02x%02x%02x%02x...",
               QUICDebugNames::packet_type(retry_packet->type()), static_cast<uint64_t>(token.original_dcid()),

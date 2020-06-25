@@ -1742,7 +1742,7 @@ QUICRetryPacket::payload_block() const
   block->fill(written_len);
 
   // Retry Integrity Tag
-  QUICRetryIntegrityTag::compute(buf + written_len, this->_token.original_dcid(), this->header_block(), block);
+  QUICRetryIntegrityTag::compute(buf + written_len, this->version(), this->_token.original_dcid(), this->header_block(), block);
   written_len += QUICRetryIntegrityTag::LEN;
   block->fill(QUICRetryIntegrityTag::LEN);
 
@@ -1844,7 +1844,7 @@ bool
 QUICRetryPacketR::has_valid_tag(QUICConnectionId &odcid) const
 {
   uint8_t tag_computed[QUICRetryIntegrityTag::LEN];
-  QUICRetryIntegrityTag::compute(tag_computed, odcid, this->_header_block, this->_payload_block_without_tag);
+  QUICRetryIntegrityTag::compute(tag_computed, this->version(), odcid, this->_header_block, this->_payload_block_without_tag);
 
   return memcmp(this->_integrity_tag, tag_computed, QUICRetryIntegrityTag::LEN) == 0;
 }

@@ -229,10 +229,10 @@ QUICPacketFactory::create_initial_packet(uint8_t *packet_buf, QUICConnectionId d
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, QUICRetryToken &token)
+QUICPacketFactory::create_retry_packet(QUICVersion version, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                       QUICRetryToken &token)
 {
-  return QUICPacketUPtr(new QUICRetryPacket(QUIC_SUPPORTED_VERSIONS[0], destination_cid, source_cid, token),
-                        &QUICPacketDeleter::delete_packet_new);
+  return QUICPacketUPtr(new QUICRetryPacket(version, destination_cid, source_cid, token), &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr
