@@ -51,7 +51,7 @@ public:
                                const SSLMultiCertConfigParams *sslMultCertSettings, std::set<std::string> &names) override;
 
 private:
-  bool _store_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams ssl_multi_cert_params) override;
+  const char *_debug_tag() const override;
   virtual void _set_handshake_callbacks(SSL_CTX *ssl_ctx) override;
   static int ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                                       unsigned inlen, void *);
