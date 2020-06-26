@@ -779,7 +779,7 @@ public:
   }
 
   int
-  initialize_key_materials(QUICConnectionId cid) override
+  initialize_key_materials(QUICConnectionId cid, QUICVersion version) override
   {
     return 0;
   }

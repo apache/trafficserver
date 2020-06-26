@@ -35,8 +35,8 @@
 #include "QUICKeyGenerator.h"
 #include "QUICPacketProtectionKeyInfo.h"
 
-// https://github.com/quicwg/base-drafts/wiki/Test-Vector-for-the-Clear-Text-AEAD-key-derivation
-TEST_CASE("draft-23 Test Vectors", "[quic]")
+// https://github.com/quicwg/base-drafts/wiki/Test-Vector-for-the-Initial-AEAD-key-derivation
+TEST_CASE("draft-23~27 Test Vectors", "[quic]")
 {
   SECTION("CLIENT Initial")
   {
@@ -51,8 +51,9 @@ TEST_CASE("draft-23 Test Vectors", "[quic]")
     QUICPacketProtectionKeyInfo pp_key_info;
     pp_key_info.set_cipher_initial(EVP_aes_128_gcm());
     pp_key_info.set_cipher_for_hp_initial(EVP_aes_128_ecb());
-    keygen.generate(pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
-                    pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
+    keygen.generate(0xff00001b, pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL),
+                    pp_key_info.encryption_key(QUICKeyPhase::INITIAL), pp_key_info.encryption_iv(QUICKeyPhase::INITIAL),
+                    pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
 
     CHECK(pp_key_info.encryption_key_len(QUICKeyPhase::INITIAL) == sizeof(expected_client_key));
     CHECK(memcmp(pp_key_info.encryption_key(QUICKeyPhase::INITIAL), expected_client_key, sizeof(expected_client_key)) == 0);
@@ -76,8 +77,9 @@ TEST_CASE("draft-23 Test Vectors", "[quic]")
     QUICPacketProtectionKeyInfo pp_key_info;
     pp_key_info.set_cipher_initial(EVP_aes_128_gcm());
     pp_key_info.set_cipher_for_hp_initial(EVP_aes_128_ecb());
-    keygen.generate(pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL), pp_key_info.encryption_key(QUICKeyPhase::INITIAL),
-                    pp_key_info.encryption_iv(QUICKeyPhase::INITIAL), pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
+    keygen.generate(0xff00001b, pp_key_info.encryption_key_for_hp(QUICKeyPhase::INITIAL),
+                    pp_key_info.encryption_key(QUICKeyPhase::INITIAL), pp_key_info.encryption_iv(QUICKeyPhase::INITIAL),
+                    pp_key_info.encryption_iv_len(QUICKeyPhase::INITIAL), cid);
 
     CHECK(pp_key_info.encryption_key_len(QUICKeyPhase::INITIAL) == sizeof(expected_server_key));
     CHECK(memcmp(pp_key_info.encryption_key(QUICKeyPhase::INITIAL), expected_server_key, sizeof(expected_server_key)) == 0);

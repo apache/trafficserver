@@ -76,9 +76,9 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
   uint8_t raw[] = {0xaa, 0xbb, 0xcc, 0xdd};
   QUICRetryToken token(raw, 4);
 
-  QUICPacketUPtr packet =
-    factory.create_retry_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
-                                QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4), token);
+  QUICPacketUPtr packet = factory.create_retry_packet(
+    QUIC_SUPPORTED_VERSIONS[0], QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
+    QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4), token);
 
   REQUIRE(packet != nullptr);
 
