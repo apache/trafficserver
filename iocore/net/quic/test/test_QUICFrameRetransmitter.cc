@@ -189,7 +189,7 @@ TEST_CASE("QUICFrameRetransmitter successfully split crypto frame", "[quic]")
   info->level                   = QUICEncryptionLevel::INITIAL;
 
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc();
+  block->alloc(BUFFER_SIZE_INDEX_32K);
   memcpy(block->start(), data, sizeof(data));
   block->fill(sizeof(data));
 
@@ -243,7 +243,7 @@ TEST_CASE("QUICFrameRetransmitter successfully split stream frame with fin flag"
   info->level                   = QUICEncryptionLevel::INITIAL;
 
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc();
+  block->alloc(BUFFER_SIZE_INDEX_32K);
   memcpy(block->start(), data, sizeof(data));
   block->fill(sizeof(data));
 

@@ -62,7 +62,8 @@ TEST_CASE("QUICFrameHandler", "[quic]")
   }
   bool should_send_ack;
   bool is_flow_controlled;
-  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr, nullptr);
+  quicFrameDispatcher.receive_frames(context, QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr,
+                                     nullptr);
   CHECK(connection.getTotalFrameCount() == 0);
   CHECK(streamManager.getTotalFrameCount() == 1);
 
@@ -74,7 +75,8 @@ TEST_CASE("QUICFrameHandler", "[quic]")
     memcpy(buf + len, b->start(), b->size());
     len += b->size();
   }
-  quicFrameDispatcher.receive_frames(QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr, nullptr);
+  quicFrameDispatcher.receive_frames(context, QUICEncryptionLevel::INITIAL, buf, len, should_send_ack, is_flow_controlled, nullptr,
+                                     nullptr);
   CHECK(connection.getTotalFrameCount() == 1);
   CHECK(streamManager.getTotalFrameCount() == 1);
 }

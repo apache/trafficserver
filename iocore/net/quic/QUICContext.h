@@ -176,6 +176,10 @@ public:
     }
   }
 
+protected:
+  // For Mock
+  QUICContext() {}
+
 private:
   QUICConfig::scoped_config _config;
   QUICPacketProtectionKeyInfoProvider *_key_info = nullptr;

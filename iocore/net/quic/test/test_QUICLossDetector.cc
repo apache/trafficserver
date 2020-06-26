@@ -24,6 +24,8 @@
 #include "catch.hpp"
 
 #include "QUICLossDetector.h"
+#include "QUICPacketFactory.h"
+#include "QUICAckFrameCreator.h"
 #include "QUICEvents.h"
 #include "Mock.h"
 #include "tscore/ink_hrtime.h"
@@ -44,7 +46,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   MockQUICCongestionController cc;
   QUICLossDetector detector(context, &cc, &rtt_measure, &pinger, &padder);
   Ptr<IOBufferBlock> payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  payload->alloc(iobuffer_size_to_index(512));
+  payload->alloc(iobuffer_size_to_index(512, BUFFER_SIZE_INDEX_32K));
   size_t payload_len    = 512;
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
   QUICAckFrame *frame   = nullptr;
@@ -68,7 +70,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
 
     // Send SERVER_CLEARTEXT (Handshake message)
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(sizeof(raw)));
+    payload->alloc(iobuffer_size_to_index(sizeof(raw), BUFFER_SIZE_INDEX_32K));
     memcpy(payload->start(), raw, sizeof(raw));
     payload->fill(sizeof(raw));
 
@@ -107,62 +109,62 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     QUICPacketNumberSpace pn_space = QUICPacketNumberSpace::ApplicationData;
     QUICEncryptionLevel level      = QUICEncryptionLevel::ONE_RTT;
     payload                        = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_1_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet1 = pf.create_short_header_packet(
       packet_1_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     REQUIRE(packet1 != nullptr);
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_2_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet2 = pf.create_short_header_packet(
       packet_2_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_3_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet3 = pf.create_short_header_packet(
       packet_3_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_4_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet4 = pf.create_short_header_packet(
       packet_4_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_5_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet5 = pf.create_short_header_packet(
       packet_5_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_6_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet6 = pf.create_short_header_packet(
       packet_6_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_7_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet7 = pf.create_short_header_packet(
       packet_7_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_8_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet8 = pf.create_short_header_packet(
       packet_8_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_9_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet9 = pf.create_short_header_packet(
       packet_9_buf, connection_id, detector.largest_acked_packet_number(pn_space), payload, payload_len, true, false);
     payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(payload_len));
+    payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
     payload->fill(payload_len);
     uint8_t packet_10_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet10 = pf.create_short_header_packet(

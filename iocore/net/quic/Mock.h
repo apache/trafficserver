@@ -29,6 +29,10 @@
 #include "QUICStreamManager.h"
 #include "QUICLossDetector.h"
 #include "QUICEvents.h"
+#include "QUICPacketProtectionKeyInfo.h"
+#include "QUICPinger.h"
+#include "QUICPadder.h"
+#include "QUICHandshakeProtocol.h"
 
 class MockQUICContext;
 
@@ -198,7 +202,7 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
 class MockQUICStreamManager : public QUICStreamManager
 {
 public:
-  MockQUICStreamManager(QUICStreamManagerContext *context) : QUICStreamManager(context, nullptr) {}
+  MockQUICStreamManager(QUICContext *context) : QUICStreamManager(context, nullptr) {}
 
   // Override
   virtual QUICConnectionErrorUPtr
@@ -476,6 +480,21 @@ public:
   {
     return 0;
   }
+  virtual uint32_t
+  bytes_in_flight() const override
+  {
+    return 0;
+  }
+  virtual uint32_t
+  congestion_window() const override
+  {
+    return 0;
+  }
+  virtual uint32_t
+  current_ssthresh() const override
+  {
+    return 0;
+  }
 
   // for Test
   int
@@ -531,10 +550,10 @@ public:
   }
 };
 
-class MockQUICContext : public QUICContext, public QUICLDContext, public QUICCCContext, public QUICStreamManagerContext
+class MockQUICContext : public QUICContext
 {
 public:
-  MockQUICContext()
+  MockQUICContext() : QUICContext()
   {
     _info         = std::make_unique<MockQUICConnectionInfoProvider>();
     _key_info     = std::make_unique<MockQUICPacketProtectionKeyInfo>();

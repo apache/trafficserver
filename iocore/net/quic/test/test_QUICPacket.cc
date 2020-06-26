@@ -196,7 +196,7 @@ TEST_CASE("Sending Packet", "[quic]")
     };
     size_t payload_len         = 5;
     Ptr<IOBufferBlock> payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(5));
+    payload->alloc(iobuffer_size_to_index(5, BUFFER_SIZE_INDEX_32K));
     payload->fill(5);
     memcpy(payload->start(), expected + sizeof(expected) - payload_len, payload_len);
 
@@ -231,7 +231,7 @@ TEST_CASE("Sending Packet", "[quic]")
       0x11, 0x22, 0x33, 0x44, 0x55,                   // Payload (dummy)
     };
     Ptr<IOBufferBlock> payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    payload->alloc(iobuffer_size_to_index(5));
+    payload->alloc(iobuffer_size_to_index(5, BUFFER_SIZE_INDEX_32K));
     payload->fill(5);
     memcpy(payload->start(), expected + 17, 5);
 

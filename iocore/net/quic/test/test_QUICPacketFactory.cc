@@ -24,6 +24,7 @@
 #include "catch.hpp"
 
 #include "quic/QUICPacket.h"
+#include "quic/QUICPacketFactory.h"
 #include "quic/Mock.h"
 
 TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
@@ -96,7 +97,7 @@ TEST_CASE("QUICPacketFactory_Create_Handshake", "[quic]")
 
   uint8_t raw[]              = {0xaa, 0xbb, 0xcc, 0xdd};
   Ptr<IOBufferBlock> payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  payload->alloc(iobuffer_size_to_index(sizeof(raw)));
+  payload->alloc(iobuffer_size_to_index(sizeof(raw), BUFFER_SIZE_INDEX_32K));
   payload->fill(sizeof(raw));
   memcpy(payload->start(), raw, sizeof(raw));
 

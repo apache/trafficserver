@@ -33,7 +33,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
   uint8_t payload[]        = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
   uint32_t stream_id       = 0x03;
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc();
+  block->alloc(BUFFER_SIZE_INDEX_32K);
   memcpy(block->start(), payload, sizeof(payload));
   block->fill(sizeof(payload));
 
@@ -178,7 +178,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     block->fill(1024);
 
     // Start with 1024 but not 0 so received frames won't be processed
@@ -421,7 +421,7 @@ TEST_CASE("QUIC receive only stream", "[quic]")
   uint8_t payload[]        = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
   uint32_t stream_id       = 0x03;
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc();
+  block->alloc(BUFFER_SIZE_INDEX_32K);
   memcpy(block->start(), payload, sizeof(payload));
   block->fill(sizeof(payload));
 
@@ -562,7 +562,7 @@ TEST_CASE("QUIC receive only stream", "[quic]")
     stream->do_io_read(nullptr, INT64_MAX, read_buffer);
 
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-    block->alloc();
+    block->alloc(BUFFER_SIZE_INDEX_32K);
     block->fill(1024);
 
     // Start with 1024 but not 0 so received frames won't be processed
@@ -619,7 +619,7 @@ TEST_CASE("QUIC send only stream", "[quic]")
   uint8_t payload[]        = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
   uint32_t stream_id       = 0x03;
   Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc();
+  block->alloc(BUFFER_SIZE_INDEX_32K);
   memcpy(block->start(), payload, sizeof(payload));
   block->fill(sizeof(payload));
 

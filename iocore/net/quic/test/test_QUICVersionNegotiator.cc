@@ -25,6 +25,7 @@
 
 #include "quic/QUICVersionNegotiator.h"
 #include "quic/QUICPacketProtectionKeyInfo.h"
+#include "quic/QUICPacketFactory.h"
 #include "quic/Mock.h"
 
 TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
@@ -37,7 +38,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
 
   size_t dummy_payload_len         = 128;
   Ptr<IOBufferBlock> dummy_payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  dummy_payload->alloc(iobuffer_size_to_index(dummy_payload_len));
+  dummy_payload->alloc(iobuffer_size_to_index(dummy_payload_len, BUFFER_SIZE_INDEX_32K));
   dummy_payload->fill(dummy_payload_len);
 
   SECTION("Normal case")
@@ -107,7 +108,7 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
   QUICVersionNegotiator vn;
   size_t dummy_payload_len         = 128;
   Ptr<IOBufferBlock> dummy_payload = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  dummy_payload->alloc(iobuffer_size_to_index(dummy_payload_len));
+  dummy_payload->alloc(iobuffer_size_to_index(dummy_payload_len, BUFFER_SIZE_INDEX_32K));
   dummy_payload->fill(dummy_payload_len);
 
   SECTION("Normal case")
