@@ -617,7 +617,6 @@ Vol::evacuateDocReadDone(int event, Event *e)
   if (doc->magic != DOC_MAGIC) {
     Debug("cache_evac", "DOC magic: %X %d", (int)dir_tag(&doc_evacuator->overwrite_dir),
           (int)dir_offset(&doc_evacuator->overwrite_dir));
-    ink_assert(doc->magic == DOC_MAGIC);
     goto Ldone;
   }
   DDebug("cache_evac", "evacuateDocReadDone %X offset %d", (int)doc->key.slice32(0),
