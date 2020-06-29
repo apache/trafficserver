@@ -187,7 +187,7 @@ trreload.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun("foo.com no Tunnel-test")
 tr.StillRunningAfter = ts
 # Wait for the reload to complete by running the sni_reload_done test
-tr.Processes.Default.StartBefore(server2, ready=When.SNIReloadDone(ts.Env, ts.Disk.diags_log.Name))
+tr.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags_log.Name, 'sni.yaml finished loading', 2))
 tr.Processes.Default.Command = "curl -v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
