@@ -350,6 +350,44 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_marked_down_count", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_total_parent_marked_down_count, RecRawStatSyncCount);
 
+  // Stats to track causes of ATS initiated origin shutdowns
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.pool_lock_contention", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)http_origin_shutdown_pool_lock_contention, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.migration_failure", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_migration_failure, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.tunnel_server", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_tunnel_server, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.tunnel_server_no_keep_alive", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)http_origin_shutdown_tunnel_server_no_keep_alive, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.tunnel_server_eos", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_tunnel_server_eos, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.tunnel_server_plugin_tunnel", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)http_origin_shutdown_tunnel_server_plugin_tunnel, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.tunnel_server_detach", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)http_origin_shutdown_tunnel_server_detach, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.tunnel_client", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_tunnel_client, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.tunnel_transform_read", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)http_origin_shutdown_tunnel_transform_read, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.release_no_sharing", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_release_no_sharing, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.release_no_server", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_release_no_server, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.release_no_keep_alive", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)http_origin_shutdown_release_no_keep_alive, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.release_invalid_response", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)http_origin_shutdown_release_invalid_response, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.release_invalid_request", RECD_INT,
+                     RECP_NON_PERSISTENT, (int)http_origin_shutdown_release_invalid_request, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.release_modified", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_release_modified, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.release_misc", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_release_misc, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.cleanup_entry", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_cleanup_entry, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.tunnel_abort", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_shutdown_tunnel_abort, RecRawStatSyncCount);
+
   // Upstream current connections stats
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.current_parent_proxy_connections", RECD_INT, RECP_NON_PERSISTENT,
                      (int)http_current_parent_proxy_connections_stat, RecRawStatSyncSum);

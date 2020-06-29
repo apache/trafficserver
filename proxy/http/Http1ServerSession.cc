@@ -196,6 +196,7 @@ Http1ServerSession::release()
     //  due to lock contention
     // FIX:  should retry instead of closing
     this->do_io_close();
+    HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_pool_lock_contention);
   } else {
     // The session was successfully put into the session
     //    manager and it will manage it
