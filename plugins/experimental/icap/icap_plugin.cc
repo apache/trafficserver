@@ -30,6 +30,7 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <cinttypes>
 #include <iostream>
 #include <sstream>
 
@@ -552,7 +553,7 @@ handle_write_header(TSCont contp, TransformData *data)
           "RESPMOD %s ICAP/%s\r\n"
           "Host: %s\r\n"
           "Connection: close\r\n" // "Connection: close" is used since each scan creates a new connection
-          "Encapsulated: req-hdr=0, res-hdr=%lu, res-body=%lu\r\n\r\n",
+          "Encapsulated: req-hdr=0, res-hdr=%" PRIu64 ", res-body=%" PRIu64 "\r\n\r\n",
           ICAP_SERVICE_URL, ICAP_VERSION, server_ip.c_str(), client_req_size, server_resp_size + client_req_size);
 
   TSIOBufferWrite(data->input_buf, (const char *)res_buf, strlen(res_buf));
