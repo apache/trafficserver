@@ -113,7 +113,7 @@ Http2Stream::main_event_handler(int event, void *edata)
         this->signal_write_event(event);
       }
     } else {
-      update_write_request(write_vio.get_reader(), INT64_MAX, true);
+      update_write_request(true);
     }
     break;
   case VC_EVENT_READ_COMPLETE:
@@ -333,7 +333,7 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
   write_vio.op        = VIO::WRITE;
 
   if (c != nullptr && nbytes > 0 && this->is_client_state_writeable()) {
-    update_write_request(abuffer, nbytes, false);
+    update_write_request(false);
   } else if (!this->is_client_state_writeable()) {
     // Cannot start a write on a closed stream
     return nullptr;
@@ -545,10 +545,10 @@ Http2Stream::restart_sending()
 }
 
 void
-Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool call_update)
+Http2Stream::update_write_request(bool call_update)
 {
   if (!this->is_client_state_writeable() || closed || _proxy_ssn == nullptr || write_vio.mutex == nullptr ||
-      (buf_reader == nullptr && write_len == 0) || write_vio.get_reader() == nullptr) {
+      write_vio.get_reader() == nullptr) {
     return;
   }
 
@@ -563,22 +563,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
 
   IOBufferReader *vio_reader = write_vio.get_reader();
-  int64_t bytes_avail        = vio_reader->read_avail();
-  if (write_vio.nbytes > 0 && write_vio.ntodo() > 0) {
-    int64_t num_to_write = write_vio.ntodo();
-    if (num_to_write > write_len) {
-      num_to_write = write_len;
-    }
-    if (bytes_avail > num_to_write) {
-      bytes_avail = num_to_write;
-    }
-  }
-
-  Http2StreamDebug("write_vio.nbytes=%" PRId64 ", write_vio.ndone=%" PRId64 ", write_vio.write_avail=%" PRId64
-                   ", reader.read_avail=%" PRId64,
-                   write_vio.nbytes, write_vio.ndone, write_vio.get_writer()->write_avail(), bytes_avail);
-
-  if (bytes_avail <= 0) {
+  if (write_vio.ntodo() == 0 || !vio_reader->is_read_avail_more_than(0)) {
     return;
   }
 
@@ -741,7 +726,7 @@ Http2Stream::reenable(VIO *vio)
   if (this->_proxy_ssn) {
     if (vio->op == VIO::WRITE) {
       SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-      update_write_request(vio->get_reader(), INT64_MAX, true);
+      update_write_request(true);
     } else if (vio->op == VIO::READ) {
       Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
       {
