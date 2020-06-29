@@ -401,6 +401,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
               ink_assert(new_vc == nullptr || new_vc->nh != nullptr);
               if (!new_vc) {
                 // Close out to_return, we were't able to get a connection
+                HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_migration_failure);
                 to_return->do_io_close();
                 to_return = nullptr;
                 retval    = HSM_NOT_FOUND;
