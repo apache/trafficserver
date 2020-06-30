@@ -75,7 +75,7 @@ public:
   void initiating_close();
   void terminate_if_possible();
   void update_read_request(bool send_update);
-  void update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
+  void update_write_request(bool send_update);
 
   void signal_read_event(int event);
   void signal_write_event(int event);
