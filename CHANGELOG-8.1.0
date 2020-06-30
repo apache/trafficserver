@@ -198,6 +198,7 @@ Changes with Apache Traffic Server 8.1.0
   #6786 - HPACK: send back an error to the client when the index is invalid
   #6802 - 8.1.x backport code and documentation for lua states configuration and stats printing
   #6825 - Clear handling tracked events of Http2Stream
+  #6841 - Retry read when fastopen_bread() get non fatal error
   #6848 - 8.1.x: cache_range_request: Overhaul and clean up the core autest.
   #6854 - Fix pointer overflow in XPACK
   #6862 - Fix brotli plugin
