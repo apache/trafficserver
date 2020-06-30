@@ -273,7 +273,7 @@ public:
   /// configuration settings for managing the active and keep-alive queues
   struct Config {
     uint32_t max_connections_in                 = 0;
-    uint32_t max_connections_active_in          = 0;
+    uint32_t max_requests_in                    = 0;
     uint32_t inactive_threshold_in              = 0;
     uint32_t transaction_no_activity_timeout_in = 0;
     uint32_t keep_alive_no_activity_timeout_in  = 0;
@@ -302,8 +302,8 @@ public:
   Config config; ///< Per thread copy of the @c global_config
   // Active and keep alive queue values that depend on other configuration values.
   // These are never updated directly, they are computed from other config values.
-  uint32_t max_connections_per_thread_in        = 0;
-  uint32_t max_connections_active_per_thread_in = 0;
+  uint32_t max_connections_per_thread_in = 0;
+  uint32_t max_requests_per_thread_in    = 0;
   /// Number of configuration items in @c Config.
   static constexpr int CONFIG_ITEM_COUNT = sizeof(Config) / sizeof(uint32_t);
   /// Which members of @c Config the per thread values depend on.
