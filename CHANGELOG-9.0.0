@@ -803,7 +803,6 @@ Changes with Apache Traffic Server 9.0.0
   #6359 - Cleanup: Remove unused accessors of HttpVCTableEntry
   #6362 - Change localtime/gmtime usages to use the threadsafe versions with local storage
   #6363 - Removing always true/false comparisons
-  #6364 - Fix rare SSN/TXN Start/Close Hook misorderings
   #6369 - Improve config_describe logs to print a better output format.
   #6370 - Change default matching for connection value from ip to both
   #6371 - Fixing shadowed variables, both global and local
@@ -931,6 +930,7 @@ Changes with Apache Traffic Server 9.0.0
   #6759 - Promote netvc to ProxySession
   #6760 - Do not fail multicert load if line does not create entry
   #6768 - clang-analyzer: Fix dead nested assignment issues
+  #6769 - ip_resolve - Make config variable overridable
   #6770 - Weird characters in debug message
   #6772 - Ensure inactivity timeout is not set when passed in timeout value is 0
   #6774 - Fixed `AddressSanitizer: odr-violation`
@@ -966,6 +966,7 @@ Changes with Apache Traffic Server 9.0.0
   #6866 - Protect against nullptr access during SSL Callback
   #6868 - avoid dynamic_cast for non_internal requests
   #6872 - Track thread changes during origin connect and cache open write
+  #6873 - Metrics for origin close
   #6884 - microserver error handling: SSLError check and debug.
   #6891 - Make h2spec test more resiliant by extending timeout
   #6892 - Fix compiler issue with ICC 19.1
@@ -981,3 +982,10 @@ Changes with Apache Traffic Server 9.0.0
   #6923 - Fixed bug in the calculation of the header block fragment length
   #6925 - Prevent stale netvc access on SSL Callbacks
   #6929 - build: Require OCSP headers for OCSP-enablement
+  #6933 - Load combined file with bogus key path
+  #6937 - Prevent use-after-free of TransactionPlugin
+  #6940 - plugins: Move to blocklists and allowlists
+  #6941 - Move to blocklists and allowlists
+  #6942 - Remove dup code in QUICMultiCertConfigLoader
+  #6949 - Set the default thread count factor to 1x the number of logical cores
+  #6950 - Prevent buffer overflow during log filter actions
