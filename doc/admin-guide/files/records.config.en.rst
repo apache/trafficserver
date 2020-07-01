@@ -2554,6 +2554,18 @@ DNS
    ``2`` TCP_ONLY:  |TS| always talks to nameservers over TCP.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.dns.max_dns_in_flight INT 2048
+
+   Maximum inflight DNS queries made by |TS| at any given instant
+
+.. ts:cv:: CONFIG proxy.config.dns.lookup_timeout INT 20
+
+   Time to wait for a DNS response in seconds.
+
+.. ts:cv:: CONFIG proxy.config.dns.retries INT 5
+
+   Maximum number of retries made by |TS| on a given DNS query
+
 HostDB
 ======
 
