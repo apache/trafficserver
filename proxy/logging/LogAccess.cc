@@ -1300,6 +1300,44 @@ LogAccess::marshal_client_sni_server_name(char *buf)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_provided_cert(char *buf)
+{
+  int provided_cert = 0;
+  if (m_http_sm) {
+    auto txn = m_http_sm->get_ua_txn();
+    if (txn) {
+      auto ssn = txn->get_proxy_ssn();
+      if (ssn) {
+        auto ssl = ssn->ssl();
+        if (ssl) {
+          provided_cert = ssl->client_provided_certificate();
+        }
+      }
+    }
+  }
+  if (buf) {
+    marshal_int(buf, provided_cert);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_proxy_provided_cert(char *buf)
+{
+  int provided_cert = 0;
+  if (m_http_sm) {
+    provided_cert = m_http_sm->server_connection_provided_cert;
+  }
+  if (buf) {
+    marshal_int(buf, provided_cert);
+  }
+  return INK_MIN_ALIGN;
+}
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
 
 int
 LogAccess::marshal_version_build_number(char *buf)

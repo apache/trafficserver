@@ -26,6 +26,7 @@ cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer("server", ssl=True, options = { "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-foo.pem".format(Test.RunDirectory), clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
 server2 = Test.MakeOriginServer("server2", ssl=True, options = { "--clientCA": cafile2, "--clientverify": ""}, clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory), clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+server4 = Test.MakeOriginServer("server4")
 server.Setup.Copy("ssl/signer.pem")
 server.Setup.Copy("ssl/signer2.pem")
 server.Setup.Copy("ssl/signed-foo.pem")
@@ -95,6 +96,18 @@ ts.Disk.sni_yaml.AddLines([
     '  client_key: {0}/signed-foo.key'.format(ts.Variables.SSLDir),
 ])
 
+ts.Disk.logging_yaml.AddLines(
+'''
+logging:
+  formats:
+    - name: testformat
+      format: '%<pssc> %<cquc> %<pscert> %<cscert>'
+  logs:
+    - mode: ascii
+      format: testformat
+      filename: squid
+'''.split("\n")
+)
 
 # Should succeed
 tr = Test.AddTestRun("bob.bar.com to server 1")
@@ -170,3 +183,11 @@ trfail.StillRunningAfter = server2
 trfail.Processes.Default.Command = 'curl -H host:random.foo.com  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 trfail.Processes.Default.ReturnCode = 0
 trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
+
+tr = Test.AddTestRun("Wait for the access log to write out")
+tr.Processes.Default.StartBefore(server4, ready=When.FileExists(ts.Disk.squid_log))
+tr.StillRunningAfter = ts
+tr.Processes.Default.Command = 'echo "Log file exists"'
+tr.Processes.Default.ReturnCode = 0
+
+ts.Disk.squid_log.Content = "gold/proxycert2-accesslog.gold"
