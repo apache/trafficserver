@@ -43,7 +43,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-L
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
                                 'ssntxnorder_verify.so'), ts)
 
 # add response to the server dictionary

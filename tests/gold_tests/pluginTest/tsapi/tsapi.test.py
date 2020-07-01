@@ -63,7 +63,7 @@ ts.Disk.remap_config.AddLine(
     "map https://myhost.test:{0}  http://127.0.0.1:{0}".format(server.Variables.Port)
 )
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_tsapi.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_tsapi.so'), ts)
 
 tr = Test.AddTestRun()
 # Probe server port to check if ready.

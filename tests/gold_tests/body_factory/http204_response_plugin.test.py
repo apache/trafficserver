@@ -37,7 +37,7 @@ ts.Disk.remap_config.AddLine(
 )
 ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine('//.*/ http://donotcare.test @status=204')
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'custom204plugin.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'custom204plugin.so'), ts)
 
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')

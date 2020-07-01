@@ -54,7 +54,7 @@ ts.Disk.remap_config.AddLine(
     'map https://example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
 )
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-client_hello_imm=1')
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-client_hello_imm=1')
 
 tr = Test.AddTestRun("Test one immediate client hello hook")
 tr.Processes.Default.StartBefore(server)

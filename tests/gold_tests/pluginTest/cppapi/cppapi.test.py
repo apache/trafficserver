@@ -23,7 +23,7 @@ Execute plugin with cppapi tests.
 
 ts = Test.MakeATSProcess("ts")
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_cppapi.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_cppapi.so'), ts)
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)
