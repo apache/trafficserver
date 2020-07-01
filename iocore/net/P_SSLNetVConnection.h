@@ -439,6 +439,34 @@ public:
     return SSL_get_servername(this->ssl, TLSEXT_NAMETYPE_host_name);
   }
 
+  bool
+  peer_provided_cert() const override
+  {
+    X509 *cert = SSL_get_peer_certificate(this->ssl);
+    if (cert != nullptr) {
+      X509_free(cert);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  int
+  provided_cert() const override
+  {
+    if (this->get_context() == NET_VCONNECTION_OUT) {
+      return this->sent_cert;
+    } else {
+      return 1;
+    }
+  }
+
+  void
+  set_sent_cert(int send_the_cert)
+  {
+    sent_cert = send_the_cert;
+  }
+
 protected:
   const IpEndpoint &
   _getLocalEndpoint() override
@@ -459,6 +487,8 @@ private:
   int handShakeBioStored                     = 0;
 
   bool transparentPassThrough = false;
+
+  int sent_cert = 0;
 
   /// The current hook.
   /// @note For @C SSL_HOOKS_INVOKE, this is the hook to invoke.

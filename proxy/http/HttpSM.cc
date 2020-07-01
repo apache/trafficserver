@@ -1855,7 +1855,11 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
-  case NET_EVENT_OPEN_FAILED:
+  case NET_EVENT_OPEN_FAILED: {
+    NetVConnection *vc = server_session->get_netvc();
+    if (vc) {
+      server_connection_provided_cert = vc->provided_cert();
+    }
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
     t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : ECONNABORTED);
@@ -1887,7 +1891,7 @@ HttpSM::state_http_server_open(int event, void *data)
       call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
     return 0;
-
+  }
   default:
     Error("[HttpSM::state_http_server_open] Unknown event: %d", event);
     ink_release_assert(0);
@@ -5550,13 +5554,16 @@ HttpSM::handle_http_server_open()
   //          server session's first transaction.
   if (nullptr != server_session) {
     NetVConnection *vc = server_session->get_netvc();
-    if (vc != nullptr && (vc->options.sockopt_flags != t_state.txn_conf->sock_option_flag_out ||
-                          vc->options.packet_mark != t_state.txn_conf->sock_packet_mark_out ||
-                          vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out)) {
-      vc->options.sockopt_flags = t_state.txn_conf->sock_option_flag_out;
-      vc->options.packet_mark   = t_state.txn_conf->sock_packet_mark_out;
-      vc->options.packet_tos    = t_state.txn_conf->sock_packet_tos_out;
-      vc->apply_options();
+    if (vc) {
+      server_connection_provided_cert = vc->provided_cert();
+      if (vc->options.sockopt_flags != t_state.txn_conf->sock_option_flag_out ||
+          vc->options.packet_mark != t_state.txn_conf->sock_packet_mark_out ||
+          vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out) {
+        vc->options.sockopt_flags = t_state.txn_conf->sock_option_flag_out;
+        vc->options.packet_mark   = t_state.txn_conf->sock_packet_mark_out;
+        vc->options.packet_tos    = t_state.txn_conf->sock_packet_tos_out;
+        vc->apply_options();
+      }
     }
   }
 
