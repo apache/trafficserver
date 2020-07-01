@@ -97,18 +97,21 @@ struct EventIO {
     UnixUDPConnection *uc;
   } data; ///< a kind of continuation
 
+  /** The start methods all logically Setup a class to be called
+     when a file descriptor is available for read or write.
+     The type of the classes vary.  Generally the file descriptor
+     is pulled from the class, but there is one option that lets
+     the file descriptor be expressed directly.
+     @param l the event loop
+     @param events a mask of flags (for details `man epoll_ctl`)
+     @return int the number of events created, -1 is error
+   */
   int start(EventLoop l, DNSConnection *vc, int events);
   int start(EventLoop l, NetAccept *vc, int events);
   int start(EventLoop l, NetEvent *ne, int events);
   int start(EventLoop l, UnixUDPConnection *vc, int events);
-  /** Setup a continuation to be called when a file descriptor is available for read or write.
-     @param l the event loop
-     @param fd file descriptor (or port)
-     @param c the continuation to call
-     @param events a mask of flags (for details `man epoll_ctl`)
-     @return int the number of events created, -1 is error
-   */
-  int start(EventLoop l, int fd, Continuation *c, int events);
+  int start(EventLoop l, int fd, NetEvent *ne, int events);
+  int start_common(EventLoop l, int fd, int events);
 
   /** Alter the events that will trigger the continuation, for level triggered I/O.
      @param events add with positive mask(+EVENTIO_READ), or remove with negative mask (-EVENTIO_READ)
@@ -577,27 +580,33 @@ write_disable(NetHandler *nh, NetEvent *ne)
 TS_INLINE int
 EventIO::start(EventLoop l, DNSConnection *vc, int events)
 {
-  type = EVENTIO_DNS_CONNECTION;
-  return start(l, vc->fd, (Continuation *)vc, events);
+  type        = EVENTIO_DNS_CONNECTION;
+  data.dnscon = vc;
+  return start_common(l, vc->fd, events);
 }
 TS_INLINE int
 EventIO::start(EventLoop l, NetAccept *vc, int events)
 {
-  type = EVENTIO_NETACCEPT;
-  return start(l, vc->server.fd, (Continuation *)vc, events);
+  type    = EVENTIO_NETACCEPT;
+  data.na = vc;
+  return start_common(l, vc->server.fd, events);
 }
 TS_INLINE int
 EventIO::start(EventLoop l, NetEvent *ne, int events)
 {
-  type = EVENTIO_READWRITE_VC;
-  return start(l, ne->get_fd(), (Continuation *)ne, events);
+  type    = EVENTIO_READWRITE_VC;
+  data.ne = ne;
+  return start_common(l, ne->get_fd(), events);
 }
+
 TS_INLINE int
 EventIO::start(EventLoop l, UnixUDPConnection *vc, int events)
 {
-  type = EVENTIO_UDP_CONNECTION;
-  return start(l, vc->fd, (Continuation *)vc, events);
+  type    = EVENTIO_UDP_CONNECTION;
+  data.uc = vc;
+  return start_common(l, vc->fd, events);
 }
+
 TS_INLINE int
 EventIO::close()
 {
@@ -624,13 +633,19 @@ EventIO::close()
 }
 
 TS_INLINE int
-EventIO::start(EventLoop l, int afd, Continuation *c, int e)
+EventIO::start(EventLoop l, int afd, NetEvent *ne, int e)
+{
+  data.ne = ne;
+  return start_common(l, afd, e);
+}
+
+TS_INLINE int
+EventIO::start_common(EventLoop l, int afd, int e)
 {
   if (!this->syscall) {
     return 0;
   }
 
-  data.c     = c;
   fd         = afd;
   event_loop = l;
 #if TS_USE_EPOLL
