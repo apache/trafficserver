@@ -72,6 +72,15 @@ static int async_rsa_finish(RSA *rsa);
 
 static RSA_METHOD *async_rsa_method = NULL;
 
+EVP_PKEY *async_load_privkey(ENGINE *e, const char *s_key_id, UI_METHOD *ui_method, void *callback_data)
+{
+  printf("Loading key %s\n", s_key_id);
+  FILE *f = fopen(s_key_id, "r");
+  EVP_PKEY *key = PEM_read_PrivateKey(f, NULL, NULL, NULL);
+  fclose(f);
+  return key;
+}
+
 static int bind_async(ENGINE *e)
 {
     /* Setup RSA_METHOD */
@@ -96,7 +105,8 @@ static int bind_async(ENGINE *e)
         || !ENGINE_set_RSA(e, async_rsa_method)
         || !ENGINE_set_destroy_function(e, async_destroy)
         || !ENGINE_set_init_function(e, engine_async_init)
-        || !ENGINE_set_finish_function(e, async_finish)) {
+        || !ENGINE_set_finish_function(e, async_finish)
+        || !ENGINE_set_load_privkey_function(e, async_load_privkey)) {
         fprintf(stderr, "Failed to initialize\n");
         return 0;
     }
@@ -176,14 +186,17 @@ static void async_pause_job(void) {
     OSSL_ASYNC_FD *writefd;
     char buf = DUMMY_CHAR;
 
-    if ((job = ASYNC_get_current_job()) == NULL)
+    if ((job = ASYNC_get_current_job()) == NULL) {
+        printf("No job\n");
         return;
+    }
 
     waitctx = ASYNC_get_wait_ctx(job);
 
     if (ASYNC_WAIT_CTX_get_fd(waitctx, engine_id, &pipefds[0],
                               (void **)&writefd)) {
-        pipefds[1] = *writefd;
+        printf("Existing wait ctx\n");
+        return;
     } else {
         writefd = (OSSL_ASYNC_FD *)OPENSSL_malloc(sizeof(*writefd));
         if (writefd == NULL)
@@ -193,6 +206,8 @@ static void async_pause_job(void) {
             return;
         }
         *writefd = pipefds[1];
+
+        printf("New wait ctx %d %d\n", pipefds[0], pipefds[1]);
 
         if(!ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0],
                                        writefd, wait_cleanup)) {
@@ -213,9 +228,11 @@ void *
 delay_method(void *arg)
 {
   int signal_fd = (intptr_t)arg;
-  sleep(5);
-  uint64_t buf = 1;
+  sleep(2);
+  char buf = DUMMY_CHAR;
   write(signal_fd, &buf, sizeof(buf));
+  printf("Send signal to %d\n", signal_fd);
+  return NULL;
 }
 
 
@@ -223,25 +240,27 @@ void
 spawn_delay_thread()
 {
   pthread_t thread_id;
-  OSSL_ASYNC_FD signal_fd;
-  OSSL_ASYNC_FD pipefds[2] = {0, 0};
   ASYNC_JOB *job;
-  if ((job = ASYNC_get_current_job()) == NULL)
+  if ((job = ASYNC_get_current_job()) == NULL) {
+      printf("Spawn no job\n");
       return;
+  }
 
   ASYNC_WAIT_CTX *waitctx = ASYNC_get_wait_ctx(job);
 
   size_t numfds;
-  if (ASYNC_WAIT_CTX_get_all_fds(waitctx, &signal_fd, &numfds) && numfds > 0) {
+  if (ASYNC_WAIT_CTX_get_all_fds(waitctx, NULL, &numfds) && numfds > 0) {
+    printf("Spawn, wait_ctx exists.  Go away, something else is using this job\n");
   } else {
+    OSSL_ASYNC_FD signal_fd;
     OSSL_ASYNC_FD pipefds[2] = {0,0};
     OSSL_ASYNC_FD *writefd = OPENSSL_malloc(sizeof(*writefd));
     pipe(pipefds);
     signal_fd = *writefd = pipefds[1];
     ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0], writefd, wait_cleanup);
+    printf("Spawn, create wait_ctx %d %d\n", pipefds[0], pipefds[1]);
+    pthread_create(&thread_id, NULL, delay_method, (void *)((intptr_t)signal_fd));
   }
-
-  pthread_create(&thread_id, NULL, delay_method, (void *)((intptr_t)signal_fd));
 }
 
 
@@ -264,7 +283,7 @@ static int async_pub_dec(int flen, const unsigned char *from,
 static int async_rsa_priv_enc(int flen, const unsigned char *from,
                       unsigned char *to, RSA *rsa, int padding)
 {
-    //printf("async_priv_enc\n");
+    printf("async_priv_enc\n");
     spawn_delay_thread();
     async_pause_job();
     return RSA_meth_get_priv_enc(RSA_PKCS1_OpenSSL())
@@ -274,7 +293,7 @@ static int async_rsa_priv_enc(int flen, const unsigned char *from,
 static int async_rsa_priv_dec(int flen, const unsigned char *from,
                       unsigned char *to, RSA *rsa, int padding)
 {
-    //printf("async_priv_dec\n");
+    printf("async_priv_dec\n");
     spawn_delay_thread();
     async_pause_job();
     return RSA_meth_get_priv_dec(RSA_PKCS1_OpenSSL())
