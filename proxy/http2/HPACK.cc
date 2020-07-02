@@ -25,6 +25,8 @@
 
 #include "tscpp/util/LocalBuffer.h"
 
+namespace
+{
 // [RFC 7541] 4.1. Calculating Table Size
 // The size of an entry is the sum of its name's length in octets (as defined in Section 5.2),
 // its value's length in octets, and 32.
@@ -182,10 +184,10 @@ static const StaticTable STATIC_TABLE[] = {{"", ""},
 */
 static constexpr uint32_t HPACK_HDR_HEAP_THRESHOLD = sizeof(MIMEHdrImpl) + sizeof(MIMEFieldBlockImpl) * (2 + 7 + 15);
 
-/******************
- * Local functions
- ******************/
-static inline bool
+//
+// Local functions
+//
+bool
 hpack_field_is_literal(HpackField ftype)
 {
   return ftype == HpackField::INDEXED_LITERAL || ftype == HpackField::NOINDEX_LITERAL || ftype == HpackField::NEVERINDEX_LITERAL;
@@ -219,9 +221,45 @@ hpack_parse_field_type(uint8_t ftype)
   return HpackField::NOINDEX_LITERAL;
 }
 
-/************************
- * HpackIndexingTable
- ************************/
+//
+// HpackStaticTable
+//
+namespace HpackStaticTable
+{
+  HpackLookupResult
+  lookup(const char *name, int name_len, const char *value, int value_len)
+  {
+    HpackLookupResult result;
+
+    for (unsigned int index = 1; index < TS_HPACK_STATIC_TABLE_ENTRY_NUM; ++index) {
+      const char *table_name  = STATIC_TABLE[index].name;
+      int table_name_len      = STATIC_TABLE[index].name_size;
+      const char *table_value = STATIC_TABLE[index].value;
+      int table_value_len     = STATIC_TABLE[index].value_size;
+
+      // Check whether name (and value) are matched
+      if (ptr_len_casecmp(name, name_len, table_name, table_name_len) == 0) {
+        if ((value_len == table_value_len) && (memcmp(value, table_value, value_len) == 0)) {
+          result.index      = index;
+          result.index_type = HpackIndex::STATIC;
+          result.match_type = HpackMatch::EXACT;
+          break;
+        } else if (!result.index) {
+          result.index      = index;
+          result.index_type = HpackIndex::STATIC;
+          result.match_type = HpackMatch::NAME;
+        }
+      }
+    }
+
+    return result;
+  }
+} // namespace HpackStaticTable
+} // namespace
+
+//
+// HpackIndexingTable
+//
 HpackLookupResult
 HpackIndexingTable::lookup(const MIMEFieldWrapper &field) const
 {
@@ -234,45 +272,18 @@ HpackIndexingTable::lookup(const MIMEFieldWrapper &field) const
 HpackLookupResult
 HpackIndexingTable::lookup(const char *name, int name_len, const char *value, int value_len) const
 {
-  HpackLookupResult result;
-  const unsigned int entry_num = TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table->length();
+  // static table
+  HpackLookupResult result = HpackStaticTable::lookup(name, name_len, value, value_len);
 
-  for (unsigned int index = 1; index < entry_num; ++index) {
-    const char *table_name, *table_value;
-    int table_name_len = 0, table_value_len = 0;
-
-    if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
-      // static table
-      table_name      = STATIC_TABLE[index].name;
-      table_value     = STATIC_TABLE[index].value;
-      table_name_len  = STATIC_TABLE[index].name_size;
-      table_value_len = STATIC_TABLE[index].value_size;
-    } else {
-      // dynamic table
-      const MIMEField *m_field = _dynamic_table->get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
-
-      table_name  = m_field->name_get(&table_name_len);
-      table_value = m_field->value_get(&table_value_len);
-    }
-
-    // Check whether name (and value) are matched
-    if (ptr_len_casecmp(name, name_len, table_name, table_name_len) == 0) {
-      if ((value_len == table_value_len) && (memcmp(value, table_value, value_len) == 0)) {
-        result.index      = index;
-        result.match_type = HpackMatch::EXACT;
-        break;
-      } else if (!result.index) {
-        result.index      = index;
-        result.match_type = HpackMatch::NAME;
-      }
-    }
+  // if result is not EXACT match, lookup dynamic table
+  if (result.match_type == HpackMatch::EXACT) {
+    return result;
   }
-  if (result.match_type != HpackMatch::NONE) {
-    if (result.index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
-      result.index_type = HpackIndex::STATIC;
-    } else {
-      result.index_type = HpackIndex::DYNAMIC;
-    }
+
+  // dynamic table
+  if (HpackLookupResult dt_result = this->_dynamic_table.lookup(name, name_len, value, value_len);
+      dt_result.match_type == HpackMatch::EXACT) {
+    return dt_result;
   }
 
   return result;
@@ -290,9 +301,9 @@ HpackIndexingTable::get_header_field(uint32_t index, MIMEFieldWrapper &field) co
     // static table
     field.name_set(STATIC_TABLE[index].name, STATIC_TABLE[index].name_size);
     field.value_set(STATIC_TABLE[index].value, STATIC_TABLE[index].value_size);
-  } else if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table->length()) {
+  } else if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM + _dynamic_table.length()) {
     // dynamic table
-    const MIMEField *m_field = _dynamic_table->get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
+    const MIMEField *m_field = _dynamic_table.get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
 
     int name_len, value_len;
     const char *name  = m_field->name_get(&name_len);
@@ -313,30 +324,36 @@ HpackIndexingTable::get_header_field(uint32_t index, MIMEFieldWrapper &field) co
 void
 HpackIndexingTable::add_header_field(const MIMEField *field)
 {
-  _dynamic_table->add_header_field(field);
+  _dynamic_table.add_header_field(field);
 }
 
 uint32_t
 HpackIndexingTable::maximum_size() const
 {
-  return _dynamic_table->maximum_size();
+  return _dynamic_table.maximum_size();
 }
 
 uint32_t
 HpackIndexingTable::size() const
 {
-  return _dynamic_table->size();
+  return _dynamic_table.size();
 }
 
 void
 HpackIndexingTable::update_maximum_size(uint32_t new_size)
 {
-  _dynamic_table->update_maximum_size(new_size);
+  _dynamic_table.update_maximum_size(new_size);
 }
 
 //
 // HpackDynamicTable
 //
+HpackDynamicTable::HpackDynamicTable(uint32_t size) : _maximum_size(size)
+{
+  _mhdr = new MIMEHdr();
+  _mhdr->create();
+}
+
 HpackDynamicTable::~HpackDynamicTable()
 {
   this->_headers.clear();
@@ -391,6 +408,39 @@ HpackDynamicTable::add_header_field(const MIMEField *field)
     this->_mhdr->field_attach(new_field);
     this->_headers.push_front(new_field);
   }
+}
+
+HpackLookupResult
+HpackDynamicTable::lookup(const char *name, int name_len, const char *value, int value_len) const
+{
+  HpackLookupResult result;
+  const unsigned int entry_num = TS_HPACK_STATIC_TABLE_ENTRY_NUM + this->length();
+
+  for (unsigned int index = TS_HPACK_STATIC_TABLE_ENTRY_NUM; index < entry_num; ++index) {
+    const MIMEField *m_field = this->get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
+
+    int table_name_len     = 0;
+    const char *table_name = m_field->name_get(&table_name_len);
+
+    int table_value_len     = 0;
+    const char *table_value = m_field->value_get(&table_value_len);
+
+    // Check whether name (and value) are matched
+    if (ptr_len_casecmp(name, name_len, table_name, table_name_len) == 0) {
+      if ((value_len == table_value_len) && (memcmp(value, table_value, value_len) == 0)) {
+        result.index      = index;
+        result.index_type = HpackIndex::DYNAMIC;
+        result.match_type = HpackMatch::EXACT;
+        break;
+      } else if (!result.index) {
+        result.index      = index;
+        result.index_type = HpackIndex::DYNAMIC;
+        result.match_type = HpackMatch::NAME;
+      }
+    }
+  }
+
+  return result;
 }
 
 uint32_t
@@ -478,6 +528,9 @@ HpackDynamicTable::_mime_hdr_gc()
   }
 }
 
+//
+// Global functions
+//
 int64_t
 encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index)
 {
