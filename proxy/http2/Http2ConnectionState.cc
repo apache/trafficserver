@@ -30,6 +30,7 @@
 #include "HttpDebugNames.h"
 
 #include "tscpp/util/PostScript.h"
+#include "tscpp/util/LocalBuffer.h"
 
 #include <sstream>
 #include <numeric>
@@ -1628,8 +1629,6 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
 void
 Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 {
-  uint8_t *buf                = nullptr;
-  uint32_t buf_len            = 0;
   uint32_t header_blocks_size = 0;
   int payload_length          = 0;
   uint8_t flags               = 0x00;
@@ -1639,17 +1638,14 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   HTTPHdr *resp_hdr = &stream->response_header;
   http2_convert_header_from_1_1_to_2(resp_hdr);
 
-  buf_len = resp_hdr->length_get() * 2; // Make it double just in case
-  buf     = static_cast<uint8_t *>(ats_malloc(buf_len));
-  if (buf == nullptr) {
-    return;
-  }
+  uint32_t buf_len = resp_hdr->length_get() * 2; // Make it double just in case
+  ts::LocalBuffer local_buffer(buf_len);
+  uint8_t *buf = local_buffer.data();
 
   stream->mark_milestone(Http2StreamMilestone::START_ENCODE_HEADERS);
   Http2ErrorCode result = http2_encode_header_blocks(resp_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
                                                      client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
-    ats_free(buf);
     return;
   }
 
@@ -1676,7 +1672,6 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
       fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
     }
 
-    ats_free(buf);
     return;
   }
 
@@ -1699,15 +1694,11 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     this->ua_session->xmit(continuation_frame);
     sent += payload_length;
   }
-
-  ats_free(buf);
 }
 
 bool
 Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding)
 {
-  uint8_t *buf                = nullptr;
-  uint32_t buf_len            = 0;
   uint32_t header_blocks_size = 0;
   int payload_length          = 0;
   uint8_t flags               = 0x00;
@@ -1739,15 +1730,13 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 
   http2_convert_header_from_1_1_to_2(&hdr);
 
-  buf_len = hdr.length_get() * 2; // Make it double just in case
-  buf     = static_cast<uint8_t *>(ats_malloc(buf_len));
-  if (buf == nullptr) {
-    return false;
-  }
+  uint32_t buf_len = hdr.length_get() * 2; // Make it double just in case
+  ts::LocalBuffer local_buffer(buf_len);
+  uint8_t *buf = local_buffer.data();
+
   Http2ErrorCode result = http2_encode_header_blocks(&hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
                                                      client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
-    ats_free(buf);
     return false;
   }
 
@@ -1783,7 +1772,6 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
     this->ua_session->xmit(continuation);
     sent += payload_length;
   }
-  ats_free(buf);
 
   Http2Error error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   stream = this->create_stream(id, error);

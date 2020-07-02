@@ -21,10 +21,12 @@
   limitations under the License.
  */
 
-#include "tscore/Arena.h"
-#include "tscore/ink_memory.h"
 #include "XPACK.h"
 #include "HuffmanCodec.h"
+
+#include "tscore/Arena.h"
+#include "tscore/ink_memory.h"
+#include "tscpp/util/LocalBuffer.h"
 
 //
 // [RFC 7541] 5.1. Integer representation
@@ -150,26 +152,20 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
 {
   uint8_t *p       = buf_start;
   bool use_huffman = true;
-  char *data       = nullptr;
+
+  ts::LocalBuffer<uint8_t, 4096> local_buffer(value_len * 4);
+  uint8_t *data    = local_buffer.data();
   int64_t data_len = 0;
 
   // TODO Choose whether to use Huffman encoding wisely
   // cppcheck-suppress knownConditionTrueFalse; leaving "use_huffman" for wise huffman usage in the future
   if (use_huffman && value_len) {
-    data = static_cast<char *>(ats_malloc(value_len * 4));
-    if (data == nullptr) {
-      return -1;
-    }
-    data_len = huffman_encode(reinterpret_cast<uint8_t *>(data), reinterpret_cast<const uint8_t *>(value), value_len);
+    data_len = huffman_encode(data, reinterpret_cast<const uint8_t *>(value), value_len);
   }
 
   // Length
   const int64_t len = xpack_encode_integer(p, buf_end, data_len, n);
   if (len == -1) {
-    if (use_huffman) {
-      ats_free(data);
-    }
-
     return -1;
   }
 
@@ -181,10 +177,6 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
   p += len;
 
   if (buf_end < p || buf_end - p < data_len) {
-    if (use_huffman) {
-      ats_free(data);
-    }
-
     return -1;
   }
 
@@ -192,10 +184,6 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
   if (data_len) {
     memcpy(p, data, data_len);
     p += data_len;
-  }
-
-  if (use_huffman) {
-    ats_free(data);
   }
 
   return p - buf_start;
