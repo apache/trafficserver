@@ -276,9 +276,9 @@ NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, vo
   if (name == "proxy.config.net.max_connections_in"sv) {
     updated_member = &NetHandler::global_config.max_connections_in;
     Debug("net_queue", "proxy.config.net.max_connections_in updated to %" PRId64, data.rec_int);
-  } else if (name == "proxy.config.net.max_active_connections_in"sv) {
-    updated_member = &NetHandler::global_config.max_connections_active_in;
-    Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.max_requests_in"sv) {
+    updated_member = &NetHandler::global_config.max_requests_in;
+    Debug("net_queue", "proxy.config.net.max_requests_in updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.inactive_threshold_in"sv) {
     updated_member = &NetHandler::global_config.inactive_threshold_in;
     Debug("net_queue", "proxy.config.net.inactive_threshold_in updated to %" PRId64, data.rec_int);
@@ -321,21 +321,21 @@ NetHandler::init_for_process()
 {
   // read configuration values and setup callbacks for when they change
   REC_ReadConfigInt32(global_config.max_connections_in, "proxy.config.net.max_connections_in");
-  REC_ReadConfigInt32(global_config.max_connections_active_in, "proxy.config.net.max_connections_active_in");
+  REC_ReadConfigInt32(global_config.max_requests_in, "proxy.config.net.max_requests_in");
   REC_ReadConfigInt32(global_config.inactive_threshold_in, "proxy.config.net.inactive_threshold_in");
   REC_ReadConfigInt32(global_config.transaction_no_activity_timeout_in, "proxy.config.net.transaction_no_activity_timeout_in");
   REC_ReadConfigInt32(global_config.keep_alive_no_activity_timeout_in, "proxy.config.net.keep_alive_no_activity_timeout_in");
   REC_ReadConfigInt32(global_config.default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
 
   RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, nullptr);
-  RecRegisterConfigUpdateCb("proxy.config.net.max_active_connections_in", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.max_requests_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.inactive_threshold_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.transaction_no_activity_timeout_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.keep_alive_no_activity_timeout_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_nethandler_config, nullptr);
 
   Debug("net_queue", "proxy.config.net.max_connections_in updated to %d", global_config.max_connections_in);
-  Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %d", global_config.max_connections_active_in);
+  Debug("net_queue", "proxy.config.net.max_requests_in updated to %d", global_config.max_requests_in);
   Debug("net_queue", "proxy.config.net.inactive_threshold_in updated to %d", global_config.inactive_threshold_in);
   Debug("net_queue", "proxy.config.net.transaction_no_activity_timeout_in updated to %d",
         global_config.transaction_no_activity_timeout_in);
@@ -569,17 +569,16 @@ NetHandler::manage_active_queue(NetEvent *enabling_ne, bool ignore_queue_size = 
 {
   const int total_connections_in = active_queue_size + keep_alive_queue_size;
   Debug("v_net_queue",
-        "max_connections_per_thread_in: %d max_connections_active_per_thread_in: %d total_connections_in: %d "
+        "max_connections_per_thread_in: %d max_requests_per_thread_in: %d total_connections_in: %d "
         "active_queue_size: %d keep_alive_queue_size: %d",
-        max_connections_per_thread_in, max_connections_active_per_thread_in, total_connections_in, active_queue_size,
-        keep_alive_queue_size);
+        max_connections_per_thread_in, max_requests_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
 
-  if (!max_connections_active_per_thread_in) {
+  if (!max_requests_per_thread_in) {
     // active queue has no max
     return true;
   }
 
-  if (ignore_queue_size == false && max_connections_active_per_thread_in > active_queue_size) {
+  if (ignore_queue_size == false && max_requests_per_thread_in > active_queue_size) {
     return true;
   }
 
@@ -603,12 +602,12 @@ NetHandler::manage_active_queue(NetEvent *enabling_ne, bool ignore_queue_size = 
         (ne->active_timeout_in && ne->next_activity_timeout_at <= now)) {
       _close_ne(ne, now, handle_event, closed, total_idle_time, total_idle_count);
     }
-    if (ignore_queue_size == false && max_connections_active_per_thread_in > active_queue_size) {
+    if (ignore_queue_size == false && max_requests_per_thread_in > active_queue_size) {
       return true;
     }
   }
 
-  if (max_connections_active_per_thread_in > active_queue_size) {
+  if (max_requests_per_thread_in > active_queue_size) {
     return true;
   }
 
@@ -619,12 +618,11 @@ void
 NetHandler::configure_per_thread_values()
 {
   // figure out the number of threads and calculate the number of connections per thread
-  int threads                          = eventProcessor.thread_group[ET_NET]._count;
-  max_connections_per_thread_in        = config.max_connections_in / threads;
-  max_connections_active_per_thread_in = config.max_connections_active_in / threads;
+  int threads                   = eventProcessor.thread_group[ET_NET]._count;
+  max_connections_per_thread_in = config.max_connections_in / threads;
+  max_requests_per_thread_in    = config.max_requests_in / threads;
   Debug("net_queue", "max_connections_per_thread_in updated to %d threads: %d", max_connections_per_thread_in, threads);
-  Debug("net_queue", "max_connections_active_per_thread_in updated to %d threads: %d", max_connections_active_per_thread_in,
-        threads);
+  Debug("net_queue", "max_requests_per_thread_in updated to %d threads: %d", max_requests_per_thread_in, threads);
 }
 
 void
@@ -756,7 +754,7 @@ NetHandler::add_to_active_queue(NetEvent *ne)
   } else {
     if (active_queue_full) {
       // there is no room left in the queue
-      NET_SUM_DYN_STAT(net_connections_max_active_throttled_in_stat, 1);
+      NET_SUM_DYN_STAT(net_requests_max_throttled_in_stat, 1);
       return false;
     }
     // in the keep-alive queue or no queue, new to this queue

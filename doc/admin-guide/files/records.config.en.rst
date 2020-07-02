@@ -414,19 +414,20 @@ Network
 
 .. ts:cv:: CONFIG proxy.config.net.max_connections_in INT 30000
 
-   The total number of client connections that the :program:`traffic_server`
-   can handle simultaneously. This should be tuned according to your memory size,
-   and expected work load (network, cpu etc). This limit includes both keepalive
-   and active client connections that :program:`traffic_server` can handle at
-   any given instant.
+   The total number of client requests that |TS| can handle simultaneously.
+   This should be tuned according to your memory size, and expected work load
+   (network, cpu etc). This limit includes both idle (keep alive) connections
+   and active requests that |TS| can handle at any given instant. The delta
+   between `proxy.config.net.max_connections_in` and `proxy.config.net.max_requests_in`
+   is the amount of maximum idle (keepalive) connections |TS| will maintain.
 
-.. ts:cv:: CONFIG proxy.config.net.max_active_connections_in INT 10000
+.. ts:cv:: CONFIG proxy.config.net.max_requests_in INT 0
 
-   The total number of active client connections that the |TS| can handle
-   simultaneously. This should be tuned according to your memory size,
-   and expected work load (network, cpu etc). If this is set to 0, active
-   connection tracking is disabled and active connections have no separate
-   limit and the total connections follow `proxy.config.net.connections_throttle`
+   The total number of concurrent requests or active client connections
+   that the |TS| can handle simultaneously. This should be tuned according
+   to your memory size, and expected work load (network, cpu etc). When
+   set to 0, active request tracking is disabled and max requests has no
+   separate limit and the total connections follow `proxy.config.net.connections_throttle`
 
 .. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
    :reloadable:

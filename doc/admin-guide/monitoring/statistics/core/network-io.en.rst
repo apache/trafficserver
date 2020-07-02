@@ -66,7 +66,7 @@ Network I/O
 .. ts:stat:: global proxy.process.net.connections_throttled_out integer
    :type: counter
 
-.. ts:stat:: global proxy.process.net.max.active.connections_throttled_in integer
+.. ts:stat:: global proxy.process.net.max.requests_throttled_in integer
    :type: counter
 
 .. ts:stat:: global proxy.process.net.default_inactivity_timeout_applied integer
