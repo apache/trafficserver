@@ -19,8 +19,53 @@ Builds, installs, and enables an ATS plugin in the sandbox environment
 
 import os
 
+import hosts.output as host
 
-def prepare_plugin(self, so_path, tsproc, plugin_args=""):
+
+def prepare_plugin_helper(so_name, tsproc, plugin_args="", copy_plugin=True):
+    """
+    Installs and enables an ATS plugin in the sandbox environment.
+
+    Args:
+        so_name (str): The path or filename of a built .so file.
+
+        tsproc (Process): The Traffic Server process whose plugin.config should
+        be configured to use the provided plugin.
+
+        plugin_args (str): The arguments to provide the plugin in the
+        plugin.config.
+
+        copy_plugin (bool): Whether to copy the plugin to the sandbox's plugin
+        directory.
+    """
+
+    filename, extension = os.path.splitext(so_name)
+    if extension != ".so":
+        raise ValueError('so_name argument must have a ".so" extension. '
+                         'Received: {}'.format(so_name))
+
+    plugin_dir = tsproc.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
+    if copy_plugin:
+        host.WriteVerbose(
+                "prepare_plugin",
+                "Copying down {} into {}.".format(so_name, plugin_dir))
+        tsproc.Setup.Copy(so_name, plugin_dir)
+    else:
+        host.WriteVerbose(
+                "prepare_plugin",
+                "Skipping copying {} into {} due to configuration.".format(
+                    so_name, plugin_dir))
+
+    # Add an entry to plugin.config.
+    basename = os.path.basename(so_name)
+    config_line = "{0} {1}".format(basename, plugin_args)
+    host.WriteVerbose(
+            "prepare_plugin",
+            'Adding line to plugin.config: "{}"'.format(config_line))
+    tsproc.Disk.plugin_config.AddLine(config_line)
+
+
+def prepare_test_plugin(self, so_path, tsproc, plugin_args=""):
     """
     Installs and enables an ATS plugin in the sandbox environment.
 
@@ -33,19 +78,42 @@ def prepare_plugin(self, so_path, tsproc, plugin_args=""):
         plugin_args (str): The arguments to provide the plugin in the
         plugin.config.
     """
+    if not os.path.exists(so_path):
+        raise ValueError(
+                'PrepareTestPlugin: file does not exist: "{}"'.format(so_path))
 
-    filename, extension = os.path.splitext(so_path)
-    if extension != ".so":
-        raise ValueError('so_path argument must have a ".so" extension. '
-                         'Received: {}'.format(so_path))
-
-    # Copy the shared object to the sandbox directory.
-    plugin_dir = tsproc.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
-    tsproc.Setup.Copy(so_path, plugin_dir)
-
-    # Add an entry to plugin.config.
-    basename = os.path.basename(so_path)
-    tsproc.Disk.plugin_config.AddLine("{0} {1}".format(basename, plugin_args))
+    prepare_plugin_helper(so_path, tsproc, plugin_args, copy_plugin=True)
 
 
-ExtendTest(prepare_plugin, name="PreparePlugin")
+def prepare_installed_plugin(self, so_name, tsproc, plugin_args=""):
+    """
+    Configures an already-installed ATS plugin in the sandbox environment.
+
+    Args:
+        so_name (str): The name of a plugin to configure.
+
+        tsproc (Process): The Traffic Server process whose plugin.config should
+        be configured to use the provided plugin.
+
+        plugin_args (str): The arguments to provide the plugin in the
+        plugin.config.
+    """
+    if os.path.dirname(so_name):
+        raise ValueError(
+                'PrepareInstalledPlugin expects a filename not a path: '
+                '"{}"'.format(so_name))
+    prepare_plugin_helper(so_name, tsproc, plugin_args, copy_plugin=False)
+
+
+"""
+PrepareTestPlugin should be used for the test-specific plugins that need to
+be copied down into the sandbox directory.
+"""
+ExtendTest(prepare_test_plugin, name="PrepareTestPlugin")
+
+"""
+PrepareInstalledPlugin should be used for the plugins installed via Automake
+make install. They are already sym linked into the test directory via the
+MakeATSProcess extension.
+"""
+ExtendTest(prepare_installed_plugin, name="PrepareInstalledPlugin")

@@ -54,7 +54,7 @@ ts.Disk.records_config.update({
 })
 
 # add plugin to assist with test metrics
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
                                  'continuations_verify.so'), ts)
 
 comparator_command = '''
