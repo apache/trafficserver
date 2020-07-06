@@ -50,7 +50,7 @@ ts.Disk.remap_config.AddLine(
     'map https://example.com:{0} https://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port)
 )
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-out_start_delay=2')
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-out_start_delay=2')
 
 tr = Test.AddTestRun("Test outbound delay start")
 tr.Processes.Default.StartBefore(server)

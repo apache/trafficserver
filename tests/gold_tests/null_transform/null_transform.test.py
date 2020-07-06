@@ -18,10 +18,13 @@
 #  limitations under the License.
 
 
-import os
 Test.Summary = '''
 Test a basic null transform plugin
 '''
+
+Test.SkipUnless(
+    Condition.PluginExists('null_transform.so')
+)
 
 Test.ContinueOnFail = True
 
@@ -51,7 +54,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 # Load plugin
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'null_transform.so'), ts)
+Test.PrepareInstalledPlugin('null_transform.so', ts)
 
 # www.example.com Host
 tr = Test.AddTestRun()

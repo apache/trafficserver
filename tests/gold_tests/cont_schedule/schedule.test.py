@@ -38,7 +38,7 @@ ts.Disk.records_config.update({
 })
 
 # Load plugin
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'cont_schedule.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'cont_schedule.so'), ts)
 
 # www.example.com Host
 tr = Test.AddTestRun()

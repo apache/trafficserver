@@ -47,12 +47,6 @@ tools_plugins_missing_mangled_definition_la_SOURCES = \
 noinst_LTLIBRARIES += tools/plugins/missing_ts_plugin_init.la
 tools_plugins_missing_ts_plugin_init_la_SOURCES = tools/plugins/missing_ts_plugin_init.cc
 
-noinst_LTLIBRARIES += tools/plugins/null_transform.la
-tools_plugins_null_transform_la_SOURCES = tools/plugins/null_transform.c
-
-noinst_LTLIBRARIES += tools/plugins/request_buffer.la
-tools_plugins_request_buffer_la_SOURCES = tools/plugins/request_buffer.cc
-
 noinst_LTLIBRARIES += tools/plugins/ssl_client_verify_test.la
 tools_plugins_ssl_client_verify_test_la_SOURCES = tools/plugins/ssl_client_verify_test.cc
 

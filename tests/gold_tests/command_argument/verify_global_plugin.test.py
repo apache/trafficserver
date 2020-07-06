@@ -85,7 +85,7 @@ have the expected Plugin symbols.
 """
 tr = Test.AddTestRun("Verify the requirement of our Plugin API.")
 ts = create_ts_process()
-Test.PreparePlugin(
+Test.PrepareTestPlugin(
     os.path.join(Test.Variables.AtsTestPluginsDir,
                  'missing_ts_plugin_init.so'),
     ts)
@@ -109,7 +109,7 @@ it doesn't have the global plugin symbols.
 """
 tr = Test.AddTestRun("Verify a properly formed plugin works as expected.")
 ts = create_ts_process()
-Test.PreparePlugin(
+Test.PrepareTestPlugin(
     os.path.join(Test.Variables.AtsTestPluginsDir,
                  'conf_remap_stripped.so'),
     ts)
@@ -133,7 +133,7 @@ argument that has the definition for the expected Plugin symbols.
 """
 tr = Test.AddTestRun("Verify a properly formed plugin works as expected.")
 ts = create_ts_process()
-Test.PreparePlugin(
+Test.PrepareTestPlugin(
     os.path.join(Test.Variables.AtsTestPluginsDir,
                  'ssl_hook_test.so'),
     ts)
