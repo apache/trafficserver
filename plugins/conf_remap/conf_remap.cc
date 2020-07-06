@@ -63,8 +63,6 @@ str_to_datatype(const char *str)
     type = TS_RECORDDATATYPE_INT;
   } else if (!strcmp(str, "STRING")) {
     type = TS_RECORDDATATYPE_STRING;
-  } else if (!strcmp(str, "FLOAT")) {
-    type = TS_RECORDDATATYPE_FLOAT;
   }
 
   return type;
@@ -107,9 +105,6 @@ RemapConfigs::parse_inline(const char *arg)
       _items[_current]._data.rec_string = TSstrdup(value.c_str());
       _items[_current]._data_len        = value.size();
     }
-    break;
-  case TS_RECORDDATATYPE_FLOAT:
-    _items[_current]._data.rec_float = strtof(value.c_str(), nullptr);
     break;
   default:
     TSError("[%s] Configuration variable '%s' is of an unsupported type", PLUGIN_NAME, key.c_str());
@@ -186,7 +181,7 @@ RemapConfigs::parse_file(const char *filename)
     // Find the type (INT or STRING only)
     tok = strtok_r(nullptr, " \t", &ln);
     if (TS_RECORDDATATYPE_NULL == (type = str_to_datatype(tok))) {
-      TSError("[%s] file %s, line %d: only INT, STRING, and FLOAT types supported", PLUGIN_NAME, path.c_str(), line_num);
+      TSError("[%s] file %s, line %d: only INT and STRING types supported", PLUGIN_NAME, path.c_str(), line_num);
       continue;
     }
 
@@ -235,9 +230,6 @@ RemapConfigs::parse_file(const char *filename)
         _items[_current]._data.rec_string = TSstrdup(tok);
         _items[_current]._data_len        = strlen(tok);
       }
-      break;
-    case TS_RECORDDATATYPE_FLOAT:
-      _items[_current]._data.rec_float = strtof(tok, nullptr);
       break;
     default:
       TSError("[%s] file %s, line %d: type not support (unheard of)", PLUGIN_NAME, path.c_str(), line_num);
@@ -337,10 +329,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
       case TS_RECORDDATATYPE_STRING:
         TSHttpTxnConfigStringSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_string, conf->_items[ix]._data_len);
         TSDebug(PLUGIN_NAME, "Setting config id %d to %s", conf->_items[ix]._name, conf->_items[ix]._data.rec_string);
-        break;
-      case TS_RECORDDATATYPE_FLOAT:
-        TSHttpTxnConfigFloatSet(txnp, conf->_items[ix]._name, conf->_items[ix]._data.rec_int);
-        TSDebug(PLUGIN_NAME, "Setting config id %d to %f", conf->_items[ix]._name, conf->_items[ix]._data.rec_float);
         break;
       default:
         break; // Error ?

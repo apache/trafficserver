@@ -108,7 +108,7 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
     const char *session_sni       = netvc->get_sni_servername();
     std::string_view proposed_sni = sm->get_outbound_sni();
-    Debug("http_ss", "validate_sni proposed_sni=%s, sni=%s", proposed_sni.data(), session_sni);
+    Debug("http_ss", "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(), session_sni);
     if (!session_sni || proposed_sni.length() == 0) {
       retval = session_sni == nullptr && proposed_sni.length() == 0;
     } else {
