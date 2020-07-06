@@ -105,7 +105,8 @@ get_server_tls_description(TSHttpTxn txnp)
   return get_tls_description_helper(server_ssn_vc);
 }
 
-using get_protocol_stack_f = std::function<TSReturnCode(int, const char **, int *)>;
+using get_protocol_stack_f  = std::function<TSReturnCode(int, const char **, int *)>;
+using get_tls_description_f = std::function<std::string()>;
 
 /** Create the protocol stack for a session.
  *
@@ -118,7 +119,7 @@ using get_protocol_stack_f = std::function<TSReturnCode(int, const char **, int 
  * @return The description of the protocol stack.
  */
 std::string
-get_protocol_stack_helper(get_protocol_stack_f get_protocol_stack)
+get_protocol_stack_helper(get_protocol_stack_f get_protocol_stack, get_tls_description_f get_tls_node)
 {
   std::ostringstream protocol_description;
   char const *protocol[10];
@@ -127,16 +128,15 @@ get_protocol_stack_helper(get_protocol_stack_f get_protocol_stack)
   bool is_first_printed_protocol = true;
   for (int i = 0; i < count; ++i) {
     std::string_view protocol_string(protocol[i]);
-    if (protocol_string.find("tls") != std::string::npos) {
-      // TLS attributes, if this is a TLS connection, are handled separately
-      // via get_client_tls_description and get_server_tls_description.
-      continue;
-    }
     if (!is_first_printed_protocol) {
       protocol_description << ",";
     }
-    protocol_description << '"' << protocol_string << R"(":{})";
     is_first_printed_protocol = false;
+    if (protocol_string.find("tls") != std::string::npos) {
+      protocol_description << get_tls_node();
+    } else {
+      protocol_description << '"' << protocol_string << R"(":{})";
+    }
   }
   return protocol_description.str();
 }
@@ -215,13 +215,11 @@ SessionData::get_client_protocol_description(TSHttpSsn client_ssnp)
 {
   std::ostringstream protocol_description;
   protocol_description << R"("protocol":{)";
-  protocol_description << get_protocol_stack_helper([&client_ssnp](int n, const char **result, int *actual) {
-    return TSHttpSsnClientProtocolStackGet(client_ssnp, n, result, actual);
-  });
-  std::string tls_description = get_client_tls_description(client_ssnp);
-  if (!tls_description.empty()) {
-    protocol_description << "," << tls_description;
-  }
+  protocol_description << get_protocol_stack_helper(
+    [&client_ssnp](int n, const char **result, int *actual) {
+      return TSHttpSsnClientProtocolStackGet(client_ssnp, n, result, actual);
+    },
+    [&client_ssnp]() { return get_client_tls_description(client_ssnp); });
   protocol_description << "}"; // Close the "protocol" map.
   return protocol_description.str();
 }
@@ -231,13 +229,11 @@ SessionData::get_server_protocol_description(TSHttpTxn server_txnp)
 {
   std::ostringstream protocol_description;
   protocol_description << R"("protocol":{)";
-  protocol_description << get_protocol_stack_helper([&server_txnp](int n, const char **result, int *actual) {
-    return TSHttpTxnServerProtocolStackGet(server_txnp, n, result, actual);
-  });
-  std::string tls_description = get_server_tls_description(server_txnp);
-  if (!tls_description.empty()) {
-    protocol_description << "," << tls_description;
-  }
+  protocol_description << get_protocol_stack_helper(
+    [&server_txnp](int n, const char **result, int *actual) {
+      return TSHttpTxnServerProtocolStackGet(server_txnp, n, result, actual);
+    },
+    [&server_txnp]() { return get_server_tls_description(server_txnp); });
   protocol_description << "}"; // Close the "protocol" map.
   return protocol_description.str();
 }
