@@ -400,6 +400,9 @@ HdrHeap::evacuate_from_str_heaps(HdrStrHeap *new_heap)
     while (data < h->m_free_start) {
       HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(data);
 
+      // Object length cannot be 0 by design, otherwise something is wrong + infinite loop here!
+      ink_release_assert(0 != obj->m_length);
+
       switch (obj->m_type) {
       case HDR_HEAP_OBJ_URL:
         ((URLImpl *)obj)->move_strings(new_heap);
@@ -439,6 +442,9 @@ HdrHeap::required_space_for_evacuation()
 
     while (data < h->m_free_start) {
       HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(data);
+
+      // Object length cannot be 0 by design, otherwise something is wrong + infinite loop here!
+      ink_release_assert(0 != obj->m_length);
 
       switch (obj->m_type) {
       case HDR_HEAP_OBJ_URL:
@@ -513,6 +519,9 @@ HdrHeap::sanity_check_strs()
 
     while (data < h->m_free_start) {
       HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(data);
+
+      // Object length cannot be 0 by design, otherwise something is wrong + infinite loop here!
+      ink_release_assert(0 != obj->m_length);
 
       switch (obj->m_type) {
       case HDR_HEAP_OBJ_URL:
@@ -936,6 +945,9 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
   while (obj_data < m_free_start) {
     HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(obj_data);
     ink_assert(obj_is_aligned(obj));
+
+    // Object length cannot be 0 by design, otherwise something is wrong + infinite loop here!
+    ink_release_assert(0 != obj->m_length);
 
     if (obj->m_type == static_cast<unsigned>(obj_type) && *found_obj == nullptr) {
       *found_obj = obj;
