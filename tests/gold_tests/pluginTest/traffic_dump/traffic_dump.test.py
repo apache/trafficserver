@@ -199,7 +199,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-http_protocols = "tcp,ipv4"
+http_protocols = "tcp,ip"
 
 # Execute the second transaction.
 tr = Test.AddTestRun("Second transaction")
@@ -375,7 +375,7 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Verify the client protocol stack.")
-https_protocols = "tcp,ipv4,tls"
+https_protocols = "tls,tcp,ip"
 client_tls_features = "sni:www.tls.com,proxy-verify-mode:0,proxy-provided-cert:true"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}" --client-tls-features "{4}"'.format(
@@ -389,7 +389,7 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Verify the server protocol stack.")
-https_server_stack = "http/1.1,tcp,ipv4,tls"
+https_server_stack = "http,tls,tcp,ip"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 server_tls_features = 'proxy-provided-cert:false,sni:www.tls.com,proxy-verify-mode:1'
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --server-protocols "{3}" --server-tls-features "{4}"'.format(
@@ -416,7 +416,7 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Verify the client protocol stack.")
-h2_protocols = "h2,tcp,ipv4,tls"
+h2_protocols = "http,tls,tcp,ip"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}" --client-tls-features "{4}"'.format(
         verify_replay,
@@ -468,7 +468,7 @@ tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Verify the server protocol stack.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-http_server_stack = "http/1.1,tcp,ipv4"
+http_server_stack = "http,tcp,ip"
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --server-protocols "{3}"'.format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),

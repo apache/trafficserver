@@ -126,7 +126,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200_sni_bob.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-session_1_protocols = "h2,tls,tcp,ipv4"
+session_1_protocols = "http,tls,tcp,ip"
 # Observe that the sni.yaml config dictates STRICT as the verify_client
 # attribute.
 session_1_tls_features = 'sni:bob,proxy-verify-mode:7,proxy-provided-cert:true'
