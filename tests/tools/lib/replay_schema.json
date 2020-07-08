@@ -145,7 +145,7 @@
           "desciption": "The proxy's OpenSSL verify mode against the peer.",
           "type": "integer"
         },
-        "proxy-provided-cert": {
+        "proxy-provided-certificate": {
           "desciption": "Whether the proxy provided a cert in the handshake.",
           "type": "boolean"
         }
