@@ -20,6 +20,7 @@ bin_PROGRAMS += traffic_quic/traffic_quic
 traffic_quic_traffic_quic_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	$(iocore_include_dirs) \
+	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_top_srcdir)/lib/records \
 	-I$(abs_top_srcdir)/mgmt \
