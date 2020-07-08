@@ -344,11 +344,14 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     TSDebug(PLUGIN_NAME, "   Scheme to match is: %.*s", i, q_str);
     break;
   case URL_QUAL_URL:
-  case URL_QUAL_NONE:
-    q_str = TSUrlStringGet(bufp, url, &i);
-    s.append(q_str, i);
-    TSDebug(PLUGIN_NAME, "   URL to match is: %.*s", i, q_str);
+  case URL_QUAL_NONE: {
+    // TSUrlStringGet returns an allocated char * we must free
+    char *non_const_q_str = TSUrlStringGet(bufp, url, &i);
+    s.append(non_const_q_str, i);
+    TSDebug(PLUGIN_NAME, "   URL to match is: %.*s", i, non_const_q_str);
+    TSfree(non_const_q_str);
     break;
+  }
   }
 }
 
