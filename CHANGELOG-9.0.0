@@ -729,6 +729,7 @@ Changes with Apache Traffic Server 9.0.0
   #6147 - Reverse debug specific check.
   #6148 - Disable the most expensive "make check" tests by default
   #6149 - For per-transaction config override, crossing the const-correctness event horizon.
+  #6155 - Remove unused functions of IOBuffer
   #6159 - Detect bogus jemalloc version
   #6160 - Fixes misc. spelling and whitespace
   #6163 - Update yaml-cpp to 0.6.3
@@ -904,9 +905,11 @@ Changes with Apache Traffic Server 9.0.0
   #6690 - Remove tls_versions from host sni policy check
   #6694 - Normalizes function names to match hook names in intercept plugins
   #6697 - Increase the default max_record_entries to match the original value
+  #6699 - Log whether client certs were exchanged in TLS handshake
   #6700 - traffic_dump: add nullptr check for sni string
   #6701 - slice plugin: add --include-regex, --exclude-regex parameters
   #6704 - Removes ATS version from gold files
+  #6712 - Commenting EventIO methods
   #6714 - Add Access log fields for ProxyProtocol Context
   #6717 - Fixup .gitignores to match repo reality
   #6718 - gcc10: fixed warning about returning local variable in int64_to_str()
@@ -965,6 +968,7 @@ Changes with Apache Traffic Server 9.0.0
   #6861 - Fix a crash on TLS resumption
   #6866 - Protect against nullptr access during SSL Callback
   #6868 - avoid dynamic_cast for non_internal requests
+  #6869 - Customize Max IOBuffer Size
   #6872 - Track thread changes during origin connect and cache open write
   #6873 - Metrics for origin close
   #6884 - microserver error handling: SSLError check and debug.
@@ -974,6 +978,7 @@ Changes with Apache Traffic Server 9.0.0
   #6898 - set sni_name with remapped origin name if sni_policy is not the default value
   #6903 - Disable max_connections_active_in default and fix close logic
   #6906 - Make QPACK.h self-contained
+  #6910 - Fix support for openssl async engine
   #6915 - Make compress Au test less flakey.
   #6916 - Ensure read_avail is set for the first non-empty block
   #6917 - Disable lua_stats autest until we can reliably wait for stats
@@ -989,3 +994,6 @@ Changes with Apache Traffic Server 9.0.0
   #6942 - Remove dup code in QUICMultiCertConfigLoader
   #6949 - Set the default thread count factor to 1x the number of logical cores
   #6950 - Prevent buffer overflow during log filter actions
+  #6953 - Assert on valid boundaries for UserArgTable access
+  #6968 - RateLimiting and Connection Config changes
+  #6969 - Update docs for some DNS config settings
