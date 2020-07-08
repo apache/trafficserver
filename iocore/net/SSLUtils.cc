@@ -2191,12 +2191,8 @@ SSLMultiCertConfigLoader::set_session_id_context(SSL_CTX *ctx, const SSLConfigPa
   const char *setting_cert = sslMultCertSettings ? sslMultCertSettings->cert.get() : nullptr;
   bool result              = false;
 
-  // Set the list of CA's to send to client if we ask for a client certificate
   if (params->serverCACertFilename) {
     ca_list = SSL_load_client_CA_file(params->serverCACertFilename);
-    if (ca_list) {
-      SSL_CTX_set_client_CA_list(ctx, ca_list);
-    }
   }
 
   if (EVP_DigestInit_ex(digest, evp_md_func, nullptr) == 0) {
@@ -2223,6 +2219,9 @@ SSLMultiCertConfigLoader::set_session_id_context(SSL_CTX *ctx, const SSLConfigPa
         goto fail;
       }
     }
+
+    // Set the list of CA's to send to client if we ask for a client certificate
+    SSL_CTX_set_client_CA_list(ctx, ca_list);
   }
 
   if (EVP_DigestFinal_ex(digest, hash_buf, &hash_len) == 0) {
