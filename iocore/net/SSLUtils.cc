@@ -2080,7 +2080,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   }
 #endif
 
-#ifdef TS_USE_TLS_OCSP
+#if TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
     Debug("ssl", "SSL OCSP Stapling is enabled");
     SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
