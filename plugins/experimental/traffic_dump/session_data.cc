@@ -61,7 +61,7 @@ std::unordered_map<std::string, std::string> tag_to_node = {
   {std::string(IP_PROTO_TAG_HTTP_2_0), R"("name":"http","version":"2")"},
 
   {std::string(IP_PROTO_TAG_HTTP_QUIC), R"("name":"http","version":"0.9")"},
-  {std::string(IP_PROTO_TAG_HTTP_QUIC), R"("name":"http","version":"3")"},
+  {std::string(IP_PROTO_TAG_HTTP_3), R"("name":"http","version":"3")"},
 };
 
 /** Create a TLS characteristics node.
