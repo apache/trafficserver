@@ -410,6 +410,7 @@ Http2Stream::terminate_if_possible()
     REMEMBER(NO_EVENT, this->reentrancy_count);
     Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(parent);
     SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+    h2_proxy_ssn->connection_state.delete_stream(this);
     destroy();
   }
 }
@@ -779,10 +780,8 @@ Http2Stream::destroy()
     // In many cases, this has been called earlier, so this call is a no-op
     h2_proxy_ssn->connection_state.delete_stream(this);
 
-    h2_proxy_ssn->connection_state.decrement_stream_count();
-
     // Update session's stream counts, so it accurately goes into keep-alive state
-    h2_proxy_ssn->connection_state.release_stream();
+    h2_proxy_ssn->connection_state.release_stream(this);
 
     // Do not access `_proxy_ssn` in below. It might be freed by `release_stream`.
   }
@@ -932,6 +931,7 @@ void
 Http2Stream::release(IOBufferReader *r)
 {
   super::release(r);
+  current_reader = nullptr; // State machine is on its own way down.
   this->do_io_close();
 }
 
