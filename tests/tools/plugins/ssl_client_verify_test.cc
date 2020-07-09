@@ -113,7 +113,8 @@ CB_client_verify(TSCont cont, TSEvent event, void *edata)
     STACK_OF(X509) *chain = X509_STORE_CTX_get1_chain(ctx);
     // X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
     bool retval = false;
-    for (int i = 0; i < sk_X509_num(chain) && !retval; i++) {
+    // BoringSSL has sk_X509_num() return size_t.
+    for (int i = 0; i < static_cast<int>(sk_X509_num(chain)) && !retval; i++) {
       auto cert = sk_X509_value(chain, i);
       retval    = check_names(cert);
     }
