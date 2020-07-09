@@ -1252,6 +1252,10 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     if (err < 0) {
       return err;
     }
+    // Make sure the length headers are consistent
+    if (err == PARSE_RESULT_DONE) {
+      err = validate_hdr_content_length(heap, hh);
+    }
     if ((err == PARSE_RESULT_DONE) || (err == PARSE_RESULT_CONT)) {
       return err;
     }
@@ -1287,7 +1291,12 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 
       end                    = real_end;
       parser->m_parsing_http = false;
-      return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
+      auto ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
+      // Make sure the length headers are consistent
+      if (ret == PARSE_RESULT_DONE) {
+        ret = validate_hdr_content_length(heap, hh);
+      }
+      return ret;
     }
 #endif
 
@@ -1402,8 +1411,12 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     end                    = real_end;
     parser->m_parsing_http = false;
   }
-
-  return mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
+  auto ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof, true);
+  // Make sure the length headers are consistent
+  if (ret == PARSE_RESULT_DONE) {
+    ret = validate_hdr_content_length(heap, hh);
+  }
+  return ret;
 }
 
 /*-------------------------------------------------------------------------
