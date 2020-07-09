@@ -37,6 +37,8 @@
 #include "QUICMultiCertConfigLoader.h"
 #include "QUICTLS.h"
 
+#include "QUICNewRenoCongestionController.h"
+
 #include "QUICStats.h"
 #include "QUICGlobals.h"
 #include "QUICDebugNames.h"
@@ -285,6 +287,15 @@ QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICCon
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
     QUICConDebug("dcid=%s scid=%s", this->_peer_quic_connection_id.hex().c_str(), this->_quic_connection_id.hex().c_str());
   }
+
+  this->_pinger                = new QUICPinger();
+  this->_padder                = new QUICPadder(this->netvc_context);
+  this->_path_manager          = new QUICPathManagerImpl(*this, *this->_path_validator);
+  this->_context               = std::make_unique<QUICContext>(&this->_rtt_measure, this, &this->_pp_key_info, this->_path_manager);
+  this->_congestion_controller = new QUICNewRenoCongestionController(*_context);
+  this->_rtt_measure.init(this->_context->ld_config());
+  this->_loss_detector =
+    new QUICLossDetector(*_context, this->_congestion_controller, &this->_rtt_measure, this->_pinger, this->_padder);
 }
 
 bool
@@ -393,8 +404,6 @@ QUICNetVConnection::start()
       this->ping();
     }
   });
-  this->_path_manager   = new QUICPathManagerImpl(*this, *this->_path_validator);
-  this->_context        = std::make_unique<QUICContext>(&this->_rtt_measure, this, &this->_pp_key_info, this->_path_manager);
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   QUICPath trusted_path = {{}, {}};
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
@@ -431,12 +440,6 @@ QUICNetVConnection::start()
   this->_frame_dispatcher = new QUICFrameDispatcher(this);
 
   // Create frame handlers
-  this->_pinger = new QUICPinger();
-  this->_padder = new QUICPadder(this->netvc_context);
-  this->_rtt_measure.init(this->_context->ld_config());
-  this->_congestion_controller = new QUICNewRenoCongestionController(*_context);
-  this->_loss_detector =
-    new QUICLossDetector(*_context, this->_congestion_controller, &this->_rtt_measure, this->_pinger, this->_padder);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
@@ -688,6 +691,7 @@ void
 QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 {
   this->_packet_recv_queue.enqueue(packet);
+  this->_loss_detector->on_datagram_received();
 }
 
 void
@@ -1080,6 +1084,44 @@ QUICNetVConnection::is_closed() const
   return this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closed);
 }
 
+bool
+QUICNetVConnection::is_at_anti_amplification_limit() const
+{
+  return !this->_verified_state.is_verified() || this->_verified_state.windows() == 0;
+}
+
+bool
+QUICNetVConnection::is_address_validation_completed() const
+{
+  return this->_verified_state.is_verified();
+}
+
+bool
+QUICNetVConnection::is_handshake_completed() const
+{
+  return this->_handshake_completed;
+}
+
+bool
+QUICNetVConnection::has_keys_for(QUICPacketNumberSpace space) const
+{
+  switch (space) {
+  case QUICPacketNumberSpace::INITIAL:
+    return this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL) &&
+           this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::INITIAL);
+  case QUICPacketNumberSpace::HANDSHAKE:
+    return this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::HANDSHAKE) &&
+           this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::HANDSHAKE);
+  case QUICPacketNumberSpace::APPLICATION_DATA:
+    return (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::PHASE_0) &&
+            this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_0)) ||
+           (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::PHASE_1) &&
+            this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_1));
+  default:
+    return false;
+  }
+}
+
 QUICPacketNumber
 QUICNetVConnection::_largest_acked_packet_number(QUICEncryptionLevel level) const
 {
@@ -1459,8 +1501,8 @@ QUICNetVConnection::_state_common_send_packet()
         max_packet_size = std::min(max_packet_size, this->_verified_state.windows());
       }
 
-      QUICPacketInfoUPtr packet_info = std::make_unique<QUICPacketInfo>();
-      QUICPacketUPtr packet          = this->_packetize_frames(packet_buf, level, max_packet_size, packet_info->frames);
+      QUICSentPacketInfoUPtr packet_info = std::make_unique<QUICSentPacketInfo>();
+      QUICPacketUPtr packet              = this->_packetize_frames(packet_buf, level, max_packet_size, packet_info->frames);
 
       if (packet) {
         // trigger callback
@@ -1469,12 +1511,7 @@ QUICNetVConnection::_state_common_send_packet()
         packet_info->packet_number = packet->packet_number();
         packet_info->time_sent     = Thread::get_hrtime();
         packet_info->ack_eliciting = packet->is_ack_eliciting();
-        if (packet->type() == QUICPacketType::PROTECTED) {
-          packet_info->is_crypto_packet = false;
-        } else {
-          packet_info->is_crypto_packet = static_cast<QUICLongHeaderPacket &>(*packet).is_crypto_packet();
-        }
-        packet_info->in_flight = true;
+        packet_info->in_flight     = true;
         if (packet_info->ack_eliciting) {
           packet_info->sent_bytes = packet->size();
         } else {
@@ -1554,7 +1591,7 @@ QUICNetVConnection::_state_closing_send_packet()
 
 Ptr<IOBufferBlock>
 QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_added, uint64_t &max_frame_size, QUICFrame &frame,
-                                 std::vector<QUICFrameInfo> &frames)
+                                 std::vector<QUICSentPacketInfo::FrameInfo> &frames)
 {
   Ptr<IOBufferBlock> new_block = frame.to_io_buffer_block(max_frame_size);
 
@@ -1590,7 +1627,7 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
 
 QUICPacketUPtr
 QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel level, uint64_t max_packet_size,
-                                      std::vector<QUICFrameInfo> &frames)
+                                      std::vector<QUICSentPacketInfo::FrameInfo> &frames)
 {
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
   if (max_packet_size <= MAX_PACKET_OVERHEAD) {
@@ -1702,7 +1739,7 @@ QUICNetVConnection::_packetize_closing_frame()
 
   size_t size_added       = 0;
   uint64_t max_frame_size = static_cast<uint64_t>(max_size);
-  std::vector<QUICFrameInfo> frames;
+  std::vector<QUICSentPacketInfo::FrameInfo> frames;
   Ptr<IOBufferBlock> first_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   Ptr<IOBufferBlock> last_block  = first_block;
   first_block->alloc(iobuffer_size_to_index(0, BUFFER_SIZE_INDEX_32K));
@@ -2034,10 +2071,13 @@ QUICNetVConnection::_complete_handshake_if_possible()
   this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                   this->_handshake_handler->remote_transport_parameters());
 
-  // PN space doesn't matter but seems like this is the way to pick the LossDetector for 0-RTT and Short packet
   uint64_t ack_delay_exponent =
     this->_handshake_handler->remote_transport_parameters()->getAsUInt(QUICTransportParameterId::ACK_DELAY_EXPONENT);
   this->_loss_detector->update_ack_delay_exponent(ack_delay_exponent);
+
+  uint64_t max_ack_delay =
+    this->_handshake_handler->remote_transport_parameters()->getAsUInt(QUICTransportParameterId::MAX_ACK_DELAY);
+  this->_rtt_measure.set_max_ack_delay(max_ack_delay);
 
   const uint8_t *reset_token;
   uint16_t reset_token_len;
@@ -2048,6 +2088,8 @@ QUICNetVConnection::_complete_handshake_if_possible()
   }
 
   this->_start_application();
+
+  this->_handshake_completed = true;
 
   return 0;
 }

@@ -210,6 +210,10 @@ public:
   QUICVersion negotiated_version() const override;
   std::string_view negotiated_application_name() const override;
   bool is_closed() const override;
+  bool is_at_anti_amplification_limit() const override;
+  bool is_address_validation_completed() const override;
+  bool is_handshake_completed() const override;
+  bool has_keys_for(QUICPacketNumberSpace space) const override;
 
   // QUICConnection (QUICFrameHandler)
   std::vector<QUICFrameType> interests() override;
@@ -311,9 +315,9 @@ private:
   uint64_t _maximum_stream_frame_data_size();
 
   Ptr<IOBufferBlock> _store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_added, uint64_t &max_frame_size, QUICFrame &frame,
-                                  std::vector<QUICFrameInfo> &frames);
+                                  std::vector<QUICSentPacketInfo::FrameInfo> &frames);
   QUICPacketUPtr _packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel level, uint64_t max_packet_size,
-                                   std::vector<QUICFrameInfo> &frames);
+                                   std::vector<QUICSentPacketInfo::FrameInfo> &frames);
   void _packetize_closing_frame();
   QUICPacketUPtr _build_packet(uint8_t *packet_buf, QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block,
                                bool retransmittable, bool probing, bool crypto);
@@ -344,7 +348,9 @@ private:
   QUICPacketUPtr _dequeue_recv_packet(uint8_t *packet_buf, QUICPacketCreationResult &result);
   void _validate_new_path(const QUICPath &path);
 
+  bool _handshake_completed = false;
   int _complete_handshake_if_possible();
+
   void _switch_to_handshake_state();
   void _switch_to_established_state();
   void _switch_to_closing_state(QUICConnectionErrorUPtr error);

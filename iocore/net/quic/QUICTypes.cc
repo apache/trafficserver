@@ -153,13 +153,14 @@ QUICTypeUtil::key_phase(QUICPacketType type)
 QUICPacketNumberSpace
 QUICTypeUtil::pn_space(QUICEncryptionLevel level)
 {
+  // TODO Optimize the case order
   switch (level) {
   case QUICEncryptionLevel::HANDSHAKE:
-    return QUICPacketNumberSpace::Handshake;
+    return QUICPacketNumberSpace::HANDSHAKE;
   case QUICEncryptionLevel::INITIAL:
-    return QUICPacketNumberSpace::Initial;
+    return QUICPacketNumberSpace::INITIAL;
   default:
-    return QUICPacketNumberSpace::ApplicationData;
+    return QUICPacketNumberSpace::APPLICATION_DATA;
   }
 }
 
@@ -695,6 +696,18 @@ QUICConnectionId::hex() const
     stream << std::hex << static_cast<int>(this->_id[i]);
   }
   return stream.str();
+}
+
+QUICFrameId
+QUICSentPacketInfo::FrameInfo::id() const
+{
+  return this->_id;
+}
+
+QUICFrameGenerator *
+QUICSentPacketInfo::FrameInfo::generated_by() const
+{
+  return this->_generator;
 }
 
 //

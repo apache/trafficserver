@@ -78,7 +78,7 @@ public:
 
     QUICAckFrameManager *_ack_manager = nullptr;
 
-    QUICPacketNumberSpace _pn_space = QUICPacketNumberSpace::Initial;
+    QUICPacketNumberSpace _pn_space = QUICPacketNumberSpace::INITIAL;
   };
 
   static constexpr int MAXIMUM_PACKET_COUNT = 256;

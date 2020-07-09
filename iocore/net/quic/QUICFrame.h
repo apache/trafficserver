@@ -40,8 +40,6 @@ class QUICCryptoFrame;
 class QUICPacketR;
 class QUICFrameGenerator;
 
-using QUICFrameId = uint64_t;
-
 class QUICFrame
 {
 public:
@@ -907,16 +905,4 @@ private:
   QUICFrame *_reusable_frames[256] = {nullptr};
   uint8_t _buf_for_fast_create[256 * QUICFrame::MAX_INSTANCE_SIZE];
   QUICUnknownFrame _unknown_frame;
-};
-
-class QUICFrameInfo
-{
-public:
-  QUICFrameInfo(QUICFrameId id, QUICFrameGenerator *generator) : _id(id), _generator(generator) {}
-  QUICFrameId id() const;
-  QUICFrameGenerator *generated_by() const;
-
-private:
-  QUICFrameId _id = 0;
-  QUICFrameGenerator *_generator;
 };

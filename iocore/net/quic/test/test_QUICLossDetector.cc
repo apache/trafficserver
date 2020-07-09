@@ -81,16 +81,15 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
       {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, sizeof(raw), 0, true, true, false);
     handshake_packet->attach_payload(payload, true);
     QUICPacketUPtr packet = QUICPacketUPtr(handshake_packet, [](QUICPacket *p) { delete p; });
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{
       packet->packet_number(),
-      Thread::get_hrtime(),
       packet->is_ack_eliciting(),
-      static_cast<QUICLongHeaderPacket &>(*packet).is_crypto_packet(),
       true,
       packet->size(),
+      Thread::get_hrtime(),
       packet->type(),
       {},
-      QUICPacketNumberSpace::Handshake,
+      QUICPacketNumberSpace::HANDSHAKE,
     }));
     ink_hrtime_sleep(HRTIME_MSECONDS(1000));
     CHECK(g.lost_frame_count >= 0);
@@ -108,7 +107,7 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
   SECTION("1-RTT")
   {
     // Send packet (1) to (7)
-    QUICPacketNumberSpace pn_space = QUICPacketNumberSpace::ApplicationData;
+    QUICPacketNumberSpace pn_space = QUICPacketNumberSpace::APPLICATION_DATA;
     QUICEncryptionLevel level      = QUICEncryptionLevel::ONE_RTT;
     payload                        = make_ptr<IOBufferBlock>(new_IOBufferBlock());
     payload->alloc(iobuffer_size_to_index(payload_len, BUFFER_SIZE_INDEX_32K));
@@ -183,97 +182,87 @@ TEST_CASE("QUICLossDetector_Loss", "[quic]")
     QUICPacketNumber pn9  = packet9->packet_number();
     QUICPacketNumber pn10 = packet10->packet_number();
 
-    QUICPacketInfoUPtr packet_info = nullptr;
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet1->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet1->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet1->size(),
-                                                                  packet1->type(),
-                                                                  {},
-                                                                  pn_space}));
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet2->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet2->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet2->size(),
-                                                                  packet2->type(),
-                                                                  {},
-                                                                  pn_space}));
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet3->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet3->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet3->size(),
-                                                                  packet3->type(),
-                                                                  {},
-                                                                  pn_space}));
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet4->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet4->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet4->size(),
-                                                                  packet4->type(),
-                                                                  {},
-                                                                  pn_space}));
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet5->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet5->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet5->size(),
-                                                                  packet5->type(),
-                                                                  {},
-                                                                  pn_space}));
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet6->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet6->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet6->size(),
-                                                                  packet6->type(),
-                                                                  {},
-                                                                  pn_space}));
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet7->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet6->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet7->size(),
-                                                                  packet7->type(),
-                                                                  {},
-                                                                  pn_space}));
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet8->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet6->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet8->size(),
-                                                                  packet8->type(),
-                                                                  {},
-                                                                  pn_space}));
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet9->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet6->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet9->size(),
-                                                                  packet9->type(),
-                                                                  {},
-                                                                  pn_space}));
-    detector.on_packet_sent(QUICPacketInfoUPtr(new QUICPacketInfo{packet10->packet_number(),
-                                                                  Thread::get_hrtime(),
-                                                                  packet10->is_ack_eliciting(),
-                                                                  false,
-                                                                  true,
-                                                                  packet10->size(),
-                                                                  packet10->type(),
-                                                                  {},
-                                                                  pn_space}));
+    QUICSentPacketInfoUPtr packet_info = nullptr;
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet1->packet_number(),
+                                                                          packet1->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet1->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet1->type(),
+                                                                          {},
+                                                                          pn_space}));
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet2->packet_number(),
+                                                                          packet2->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet2->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet2->type(),
+                                                                          {},
+                                                                          pn_space}));
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet3->packet_number(),
+                                                                          packet3->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet3->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet3->type(),
+                                                                          {},
+                                                                          pn_space}));
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet4->packet_number(),
+                                                                          packet4->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet4->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet4->type(),
+                                                                          {},
+                                                                          pn_space}));
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet5->packet_number(),
+                                                                          packet5->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet5->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet5->type(),
+                                                                          {},
+                                                                          pn_space}));
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet6->packet_number(),
+                                                                          packet6->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet6->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet6->type(),
+                                                                          {},
+                                                                          pn_space}));
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet7->packet_number(),
+                                                                          packet6->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet7->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet7->type(),
+                                                                          {},
+                                                                          pn_space}));
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet8->packet_number(),
+                                                                          packet6->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet8->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet8->type(),
+                                                                          {},
+                                                                          pn_space}));
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet9->packet_number(),
+                                                                          packet6->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet9->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet9->type(),
+                                                                          {},
+                                                                          pn_space}));
+    detector.on_packet_sent(QUICSentPacketInfoUPtr(new QUICSentPacketInfo{packet10->packet_number(),
+                                                                          packet10->is_ack_eliciting(),
+                                                                          true,
+                                                                          packet10->size(),
+                                                                          Thread::get_hrtime(),
+                                                                          packet10->type(),
+                                                                          {},
+                                                                          pn_space}));
 
     ink_hrtime_sleep(HRTIME_MSECONDS(2000));
     // Receive an ACK for (1) (4) (5) (7) (8) (9)

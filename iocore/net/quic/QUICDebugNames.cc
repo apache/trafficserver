@@ -331,12 +331,12 @@ const char *
 QUICDebugNames::pn_space(QUICPacketNumberSpace pn_space)
 {
   switch (pn_space) {
-  case QUICPacketNumberSpace::Initial:
-    return "QUICPacketNumberSpace::Initial";
-  case QUICPacketNumberSpace::Handshake:
-    return "QUICPacketNumberSpace::Handshake";
-  case QUICPacketNumberSpace::ApplicationData:
-    return "QUICPacketNumberSpace::ApplicationData";
+  case QUICPacketNumberSpace::INITIAL:
+    return "INITIAL";
+  case QUICPacketNumberSpace::HANDSHAKE:
+    return "HANDSHAKE";
+  case QUICPacketNumberSpace::APPLICATION_DATA:
+    return "APPLCIATION_DATA";
   default:
     return "UNKNOWN";
   }

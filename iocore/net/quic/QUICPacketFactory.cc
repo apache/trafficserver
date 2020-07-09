@@ -330,7 +330,7 @@ QUICPacketFactory::is_ready_to_create_protected_packet()
 void
 QUICPacketFactory::reset()
 {
-  for (auto i = 0; i < kPacketNumberSpace; i++) {
+  for (auto i = 0; i < QUIC_N_PACKET_SPACES; i++) {
     this->_packet_number_generator[i].reset();
   }
 }

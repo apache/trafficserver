@@ -25,22 +25,6 @@
 
 #include "QUICFrame.h"
 
-struct QUICPacketInfo {
-  // 6.3.1.  Sent Packet Fields
-  QUICPacketNumber packet_number;
-  ink_hrtime time_sent;
-  bool ack_eliciting;
-  bool is_crypto_packet;
-  bool in_flight;
-  size_t sent_bytes;
-
-  // addition
-  QUICPacketType type;
-  std::vector<QUICFrameInfo> frames;
-  QUICPacketNumberSpace pn_space;
-  // end
-};
-
 class QUICCongestionController
 {
 public:
@@ -52,15 +36,17 @@ public:
   };
 
   virtual ~QUICCongestionController() {}
-  virtual void on_packet_sent(size_t bytes_sent)                                                                    = 0;
-  virtual void on_packet_acked(const QUICPacketInfo &acked_packet)                                                  = 0;
-  virtual void process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section) = 0;
-  virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets)                         = 0;
-  virtual void add_extra_credit()                                                                                   = 0;
-  virtual void reset()                                                                                              = 0;
-  virtual uint32_t credit() const                                                                                   = 0;
+  virtual void on_packet_sent(size_t bytes_sent)                                                                               = 0;
+  virtual void on_packet_acked(const QUICSentPacketInfo &acked_packet)                                                         = 0;
+  virtual void process_ecn(const QUICAckFrame &ack, QUICPacketNumberSpace pn_space, ink_hrtime largest_acked_packet_time_sent) = 0;
+  virtual void on_packets_acked(const std::vector<QUICSentPacketInfoUPtr> &packets)                                            = 0;
+  virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &packets)                              = 0;
+  virtual void add_extra_credit()                                                                                              = 0;
+  virtual void reset()                                                                                                         = 0;
+  virtual uint32_t credit() const                                                                                              = 0;
+  virtual uint32_t bytes_in_flight() const                                                                                     = 0;
+
   // Debug
-  virtual uint32_t bytes_in_flight() const   = 0;
   virtual uint32_t congestion_window() const = 0;
   virtual uint32_t current_ssthresh() const  = 0;
 };

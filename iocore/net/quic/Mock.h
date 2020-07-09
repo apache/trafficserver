@@ -207,6 +207,30 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
     return false;
   }
 
+  bool
+  is_at_anti_amplification_limit() const override
+  {
+    return false;
+  }
+
+  bool
+  is_address_validation_completed() const override
+  {
+    return true;
+  }
+
+  bool
+  is_handshake_completed() const override
+  {
+    return true;
+  }
+
+  bool
+  has_keys_for(QUICPacketNumberSpace space) const override
+  {
+    return true;
+  }
+
   QUICVersion
   negotiated_version() const override
   {
@@ -442,6 +466,30 @@ public:
     return false;
   }
 
+  bool
+  is_at_anti_amplification_limit() const override
+  {
+    return false;
+  }
+
+  bool
+  is_address_validation_completed() const override
+  {
+    return true;
+  }
+
+  bool
+  is_handshake_completed() const override
+  {
+    return true;
+  }
+
+  bool
+  has_keys_for(QUICPacketNumberSpace space) const override
+  {
+    return true;
+  }
+
   void
   handle_received_packet(UDPPacket *) override
   {
@@ -486,8 +534,13 @@ class MockQUICCongestionController : public QUICCongestionController
 public:
   MockQUICCongestionController() {}
   // Override
+  void
+  on_packets_acked(const std::vector<QUICSentPacketInfoUPtr> &packets) override
+  {
+  }
+
   virtual void
-  on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &packets) override
+  on_packets_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &packets) override
   {
     for (auto &p : packets) {
       lost_packets.insert(p.first);
@@ -499,11 +552,11 @@ public:
   {
   }
   virtual void
-  on_packet_acked(const QUICPacketInfo &acked_packet) override
+  on_packet_acked(const QUICSentPacketInfo &acked_packet) override
   {
   }
   virtual void
-  process_ecn(const QUICPacketInfo &acked_largest_packet, const QUICAckFrame::EcnSection *ecn_section) override
+  process_ecn(const QUICAckFrame &ack_frame, QUICPacketNumberSpace pn_space, ink_hrtime largest_acked_time_sent) override
   {
   }
   virtual void
