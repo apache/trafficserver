@@ -451,7 +451,7 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   // Update PRIORITY frame count per minute
   cstate.increment_received_priority_frame_count();
-  // Close this conection if its priority frame count received exceeds a limit
+  // Close this connection if its priority frame count received exceeds a limit
   if (Http2::max_priority_frames_per_minute != 0 &&
       cstate.get_received_priority_frame_count() > Http2::max_priority_frames_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
@@ -565,7 +565,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   // Update SETTIGNS frame count per minute
   cstate.increment_received_settings_frame_count();
-  // Close this conection if its SETTINGS frame count exceeds a limit
+  // Close this connection if its SETTINGS frame count exceeds a limit
   if (cstate.get_received_settings_frame_count() > Http2::max_settings_frames_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent SETTINGS frames: %u frames within a last minute",
@@ -645,7 +645,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   // Update settigs count per minute
   cstate.increment_received_settings_count(n_settings);
-  // Close this conection if its settings count received exceeds a limit
+  // Close this connection if its settings count received exceeds a limit
   if (cstate.get_received_settings_count() > Http2::max_settings_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent setting changes: %u settings within a last minute",
@@ -699,7 +699,7 @@ rcv_ping_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   // Update PING frame count per minute
   cstate.increment_received_ping_frame_count();
-  // Close this conection if its ping count received exceeds a limit
+  // Close this connection if its ping count received exceeds a limit
   if (cstate.get_received_ping_frame_count() > Http2::max_ping_frames_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent PING frames: %u PING frames within a last minute",
