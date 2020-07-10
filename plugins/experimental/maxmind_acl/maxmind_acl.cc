@@ -18,27 +18,6 @@
 
 #include "mmdb.h"
 
-static int
-config_handler(TSCont cont, TSEvent event, void *edata)
-{
-  TSMutex mutex;
-
-  mutex = TSContMutexGet(cont);
-  TSMutexLock(mutex);
-
-  TSDebug(PLUGIN_NAME, "In config Handler");
-  Acl *a = static_cast<Acl *>(TSContDataGet(cont));
-
-  a->init(a->get_state()->config_file.c_str());
-  TSMutexUnlock(mutex);
-
-  // Don't reschedule for TS_EVENT_MGMT_UPDATE
-  if (event == TS_EVENT_TIMEOUT) {
-    TSContScheduleOnPool(cont, CONFIG_TMOUT, TS_THREAD_POOL_TASK);
-  }
-  return 0;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin as a remap plugin.
 //
@@ -63,8 +42,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
-  TSCont config_cont;
-
   if (argc < 3) {
     TSError("[%s] Unable to create remap instance, missing configuration file", PLUGIN_NAME);
     return TS_ERROR;
@@ -76,10 +53,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
     TSError("[%s] Failed to initialize maxmind with %s", PLUGIN_NAME, argv[2]);
     return TS_ERROR;
   }
-
-  config_cont = TSContCreate(config_handler, TSMutexCreate());
-  TSContDataSet(config_cont, static_cast<void *>(a));
-  TSMgmtUpdateRegister(config_cont, PLUGIN_NAME);
 
   TSDebug(PLUGIN_NAME, "created remap instance with configuration %s", argv[2]);
   return TS_SUCCESS;

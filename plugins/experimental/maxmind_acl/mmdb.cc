@@ -45,23 +45,20 @@ Acl::init(char const *filename)
     return status;
   }
 
-  if ((plugin_state.last_load == 0) || (s.st_mtime > plugin_state.last_load)) {
-    TSDebug(PLUGIN_NAME, "Loading config %s, lastload: %ld, file time: %ld", configloc.c_str(), plugin_state.last_load, s.st_mtime);
+  try {
+    _config = YAML::LoadFile(configloc.c_str());
 
-    try {
-      _config = YAML::LoadFile(configloc.c_str());
+    if (_config.IsNull()) {
+      TSDebug(PLUGIN_NAME, "Config file not found or unreadable");
+      return status;
+    }
+    if (!_config["maxmind"]) {
+      TSDebug(PLUGIN_NAME, "Config file not in maxmind namespace");
+      return status;
+    }
 
-      if (_config.IsNull()) {
-        TSDebug(PLUGIN_NAME, "Config file not found or unreadable");
-        return status;
-      }
-      if (!_config["maxmind"]) {
-        TSDebug(PLUGIN_NAME, "Config file not in maxmind namespace");
-        return status;
-      }
-
-      // Get our root maxmind node
-      maxmind = _config["maxmind"];
+    // Get our root maxmind node
+    maxmind = _config["maxmind"];
 #if 0
       // Test junk
       for (YAML::const_iterator it = maxmind.begin(); it != maxmind.end(); ++it) {
@@ -70,52 +67,48 @@ Acl::init(char const *filename)
         TSDebug(PLUGIN_NAME, "name: %s, value: %d", name.c_str(), type);
       }
 #endif
-    } catch (const YAML::Exception &e) {
-      TSError("YAML::Exception %s when parsing YAML config file %s for maxmind", e.what(), configloc.c_str());
-      return status;
-    }
+  } catch (const YAML::Exception &e) {
+    TSError("YAML::Exception %s when parsing YAML config file %s for maxmind", e.what(), configloc.c_str());
+    return status;
+  }
 
-    // Find our database name and convert to full path as needed
-    status = loaddb(maxmind["database"]);
+  // Find our database name and convert to full path as needed
+  status = loaddb(maxmind["database"]);
 
-    if (!status) {
-      TSDebug(PLUGIN_NAME, "Failed to load MaxMind Database");
-      return status;
-    }
+  if (!status) {
+    TSDebug(PLUGIN_NAME, "Failed to load MaxMind Database");
+    return status;
+  }
 
-    // Clear out existing data, these may no longer exist in a new config and so we
-    // dont want old ones left behind
-    allow_country.clear();
-    allow_ip_map.clear();
-    deny_ip_map.clear();
-    allow_regex.clear();
-    deny_regex.clear();
-    _html.clear();
-    default_allow = false;
+  // Clear out existing data, these may no longer exist in a new config and so we
+  // dont want old ones left behind
+  allow_country.clear();
+  allow_ip_map.clear();
+  deny_ip_map.clear();
+  allow_regex.clear();
+  deny_regex.clear();
+  _html.clear();
+  default_allow = false;
 
-    if (loadallow(maxmind["allow"])) {
-      TSDebug(PLUGIN_NAME, "Loaded Allow ruleset");
-      status = true;
-    } else {
-      // We have no proper allow ruleset
-      // setting to allow by default to only apply deny rules
-      default_allow = true;
-    }
+  if (loadallow(maxmind["allow"])) {
+    TSDebug(PLUGIN_NAME, "Loaded Allow ruleset");
+    status = true;
+  } else {
+    // We have no proper allow ruleset
+    // setting to allow by default to only apply deny rules
+    default_allow = true;
+  }
 
-    if (loaddeny(maxmind["deny"])) {
-      TSDebug(PLUGIN_NAME, "Loaded Deny ruleset");
-      status = true;
-    }
+  if (loaddeny(maxmind["deny"])) {
+    TSDebug(PLUGIN_NAME, "Loaded Deny ruleset");
+    status = true;
+  }
 
-    loadhtml(maxmind["html"]);
+  loadhtml(maxmind["html"]);
 
-    if (!status) {
-      TSDebug(PLUGIN_NAME, "Failed to load any rulesets, none specified");
-      status = false;
-    }
-
-    plugin_state.config_file = configloc;
-    plugin_state.last_load   = time(NULL);
+  if (!status) {
+    TSDebug(PLUGIN_NAME, "Failed to load any rulesets, none specified");
+    status = false;
   }
 
   return status;
@@ -386,7 +379,7 @@ Acl::loaddb(YAML::Node dbNode)
   }
 
   // Make sure we close any previously opened DBs in case this is a reload
-  if (plugin_state.db_loaded) {
+  if (db_loaded) {
     MMDB_close(&_mmdb);
   }
 
@@ -396,7 +389,7 @@ Acl::loaddb(YAML::Node dbNode)
     return false;
   }
 
-  plugin_state.db_loaded = true;
+  db_loaded = true;
   TSDebug(PLUGIN_NAME, "Initialized MMDB with %s", dbloc.c_str());
   return true;
 }

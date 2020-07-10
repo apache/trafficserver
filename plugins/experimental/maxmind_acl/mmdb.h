@@ -68,18 +68,13 @@ public:
   Acl() {}
   ~Acl()
   {
-    if (plugin_state.db_loaded) {
+    if (db_loaded) {
       MMDB_close(&_mmdb);
     }
   }
 
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp);
   bool init(char const *filename);
-  plugin_state_t *
-  get_state()
-  {
-    return &plugin_state;
-  }
 
   void
   send_html(TSHttpTxn txnp) const
@@ -107,8 +102,7 @@ protected:
   // Do we want to allow by default or not? Useful
   // for deny only rules
   bool default_allow = false;
-
-  plugin_state_t plugin_state = {"", 0, false};
+  bool db_loaded     = false;
 
   bool loaddb(YAML::Node dbNode);
   bool loadallow(YAML::Node allowNode);
