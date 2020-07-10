@@ -1809,10 +1809,13 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED: {
-    NetVConnection *vc = server_session->get_netvc();
-    if (vc) {
-      server_connection_provided_cert = vc->provided_cert();
+    if (server_session) {
+      NetVConnection *vc = server_session->get_netvc();
+      if (vc) {
+        server_connection_provided_cert = vc->provided_cert();
+      }
     }
+
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
     t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : ECONNABORTED);
