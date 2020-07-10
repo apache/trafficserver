@@ -48,12 +48,6 @@
 #define CONFIG_TMOUT 60000
 
 typedef struct {
-  std::string config_file;
-  time_t last_load;
-  bool db_loaded;
-} plugin_state_t;
-
-typedef struct {
   std::string _regex_s;
   pcre *_rex;
   pcre_extra *_extra;
