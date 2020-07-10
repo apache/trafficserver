@@ -1654,9 +1654,8 @@ HostDBContinuation::do_dns()
     HostsFileMap::iterator find_result                = current_host_file_map->hosts_file_map.find(hname);
     if (find_result != current_host_file_map->hosts_file_map.end()) {
       if (action.continuation) {
-        // Set the TTL based on how much time remains until the next sync
-        HostDBInfo *r = lookup_done(IpAddr(find_result->second), hash.host_name, false,
-                                    current_host_file_map->next_sync_time - ink_time(), nullptr);
+        // Set the TTL based on how often we stat() the host file
+        HostDBInfo *r = lookup_done(IpAddr(find_result->second), hash.host_name, false, hostdb_hostfile_check_interval, nullptr);
         reply_to_cont(action.continuation, r);
       }
       hostdb_cont_free(this);
@@ -2240,9 +2239,8 @@ ParseHostFile(const char *path, unsigned int hostdb_hostfile_check_interval_pars
         // +1 in case no terminating newline
         int64_t size = info.st_size + 1;
 
-        parsed_hosts_file_ptr                 = new RefCountedHostsFileMap;
-        parsed_hosts_file_ptr->next_sync_time = ink_time() + hostdb_hostfile_check_interval_parse;
-        parsed_hosts_file_ptr->HostFileText   = static_cast<char *>(ats_malloc(size));
+        parsed_hosts_file_ptr               = new RefCountedHostsFileMap;
+        parsed_hosts_file_ptr->HostFileText = static_cast<char *>(ats_malloc(size));
         if (parsed_hosts_file_ptr->HostFileText) {
           char *base = parsed_hosts_file_ptr->HostFileText;
           char *limit;

@@ -182,7 +182,6 @@ typedef std::map<ts::ConstBuffer, IpAddr, CmpConstBuffferCaseInsensitive> HostsF
 struct RefCountedHostsFileMap : public RefCountObj {
   HostsFileMap hosts_file_map;
   ats_scoped_str HostFileText;
-  ink_time_t next_sync_time; // time of the next sync
 };
 
 //
