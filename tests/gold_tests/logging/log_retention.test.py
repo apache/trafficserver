@@ -33,7 +33,6 @@ Test.SkipIf(Condition.true("This test is sensitive to timing issues which makes 
 class TestLogRetention:
     __base_records_config = {
         # Do not accept connections from clients until cache subsystem is operational.
-        'proxy.config.http.wait_for_cache': 1,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'logspace',
 
@@ -251,7 +250,7 @@ test.tr.StillRunningAfter = test.server
 #
 test = TestLogRetention(twelve_meg_log_space,
                         "Verify log rotation and deletion of plugin logs.")
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'test_log_interface.cc'), test.ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_log_interface.so'), test.ts)
 
 # Verify that the plugin's logs and other core logs were registered for deletion.
 test.ts.Streams.stderr = Testers.ContainsExpression(

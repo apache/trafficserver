@@ -42,8 +42,8 @@ static const int FETCHER_STATIC_DATA_SIZE = 30;
 int
 main()
 {
-  Utils::HeaderValueList whitelistCookies;
-  Variables esi_vars("vars", &Debug, &Error, whitelistCookies);
+  Utils::HeaderValueList allowlistCookies;
+  Variables esi_vars("vars", &Debug, &Error, allowlistCookies);
   HandlerManager handler_mgr("handler_mgr", &Debug, &Error);
 
   Utils::init(&Debug, &Error);

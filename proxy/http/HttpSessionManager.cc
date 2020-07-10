@@ -108,7 +108,8 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
     const char *session_sni       = netvc->get_sni_servername();
     std::string_view proposed_sni = sm->get_outbound_sni();
-    Debug("http_ss", "validate_sni proposed_sni=%s, sni=%s", proposed_sni.data(), session_sni);
+    Debug("http_ss", "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
+          session_sni);
     if (!session_sni || proposed_sni.length() == 0) {
       retval = session_sni == nullptr && proposed_sni.length() == 0;
     } else {
@@ -401,6 +402,7 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
               ink_assert(new_vc == nullptr || new_vc->nh != nullptr);
               if (!new_vc) {
                 // Close out to_return, we were't able to get a connection
+                HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_migration_failure);
                 to_return->do_io_close();
                 to_return = nullptr;
                 retval    = HSM_NOT_FOUND;

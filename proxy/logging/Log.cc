@@ -467,6 +467,16 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cssn", field);
 
+  field = new LogField("client_ssl_cert_provided", "cscert", LogField::STRING, &LogAccess::marshal_client_provided_cert,
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_int_to_str));
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cscert", field);
+
+  field = new LogField("proxy_ssl_cert_provided", "pscert", LogField::STRING, &LogAccess::marshal_proxy_provided_cert,
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_int_to_str));
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("pscert", field);
+
   field = new LogField("process_uuid", "puuid", LogField::STRING, &LogAccess::marshal_process_uuid,
                        reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);

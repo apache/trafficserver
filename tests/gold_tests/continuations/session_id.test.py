@@ -33,18 +33,17 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-L
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_header)
 
-# Configure ATS.
-ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=True)
+# Configure ATS. Disable the cache to simplify the test.
+ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=True, enable_cache=False)
 
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-Test.PreparePlugin(os.path.join(Test.TestDirectory, 'plugins', 'session_id_verify.cc'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.TestDirectory, 'plugins', '.libs', 'session_id_verify.so'), ts)
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'session_id_verify',
-    'proxy.config.http.cache.http': 0,  # disable cache to simplify the test.
     'proxy.config.cache.enable_read_while_writer': 0,
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
@@ -73,7 +72,7 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 

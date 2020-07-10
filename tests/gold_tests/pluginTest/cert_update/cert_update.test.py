@@ -24,7 +24,8 @@ Test cert_update plugin.
 '''
 
 Test.SkipUnless(
-    Condition.HasProgram("openssl", "Openssl need to be installed on system for this test to work")
+    Condition.HasProgram("openssl", "Openssl need to be installed on system for this test to work"),
+    Condition.PluginExists('cert_update.so')
 )
 
 # Set up origin server
@@ -72,13 +73,13 @@ ts.Disk.sni_yaml.AddLines([
 ])
 
 # Set up plugin
-Test.PreparePlugin(Test.Variables.AtsExampleDir + '/plugins/c-api/cert_update/cert_update.cc', ts)
+Test.PrepareInstalledPlugin('cert_update.so', ts)
 
 # Server-Cert-Pre
 # curl should see that Traffic Server presents bar.com cert from alice
 tr = Test.AddTestRun("Server-Cert-Pre")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = (
     'curl --verbose --insecure --ipv4 --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}'.format(ts.Variables.ssl_port)
 )

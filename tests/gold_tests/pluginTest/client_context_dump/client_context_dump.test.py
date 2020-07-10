@@ -17,9 +17,12 @@ Test the client_context_dump plugin.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+
 Test.Summary = '''
 Test client_context_dump plugin
 '''
+
+Test.SkipUnless(Condition.PluginExists('client_context_dump.so'))
 
 # Set up ATS
 ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, enable_tls=True)
@@ -50,7 +53,7 @@ ts.Disk.sni_yaml.AddLines([
 ])
 
 # Set up plugin
-Test.PreparePlugin(Test.Variables.AtsExampleDir + '/plugins/c-api/client_context_dump/client_context_dump.cc', ts)
+Test.PrepareInstalledPlugin('client_context_dump.so', ts)
 
 # custom log comparison.  Verify the two certs we have loaded are dumped
 log = Test.Disk.File(ts.Variables.LOGDIR + '/client_context_dump.log', exists=True)

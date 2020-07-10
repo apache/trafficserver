@@ -20,8 +20,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include <ts/ts.h>    // for debug
-#include <inttypes.h> // for PRIu64
+#include <ts/ts.h>   // for debug
+#include <cstdlib>   // for abort
+#include <cinttypes> // for PRId64
 #include <unordered_set>
 
 // plugin registration info
@@ -42,11 +43,11 @@ global_handler(TSCont continuation, TSEvent event, void *data)
 
     static std::unordered_set<int64_t> seen_ids;
     if (seen_ids.find(id) != seen_ids.end()) {
-      TSError("[%s] Plugin encountered a duplicate session id: %ld", PLUGIN_NAME, id);
+      TSError("[%s] Plugin encountered a duplicate session id: %" PRId64, PLUGIN_NAME, id);
     } else {
       seen_ids.insert(id);
     }
-    TSDebug(PLUGIN_NAME, "session id: %ld", id);
+    TSDebug(PLUGIN_NAME, "session id: %" PRId64, id);
   } break;
 
   default:
@@ -83,7 +84,7 @@ TSPluginInit(int argc, const char *argv[])
   if (contp == nullptr) {
     // Continuation initialization failed. Unrecoverable, report and exit.
     TSError("[%s] could not create continuation.", PLUGIN_NAME);
-    abort();
+    std::abort();
   } else {
     // Add all hooks.
     TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);

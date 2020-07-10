@@ -409,7 +409,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-For the strlcat, strlcpy in inktomi++/ink_string.cc:
+For the strlcat, strlcpy in src/tscore/ink_string.cc:
 
 Copyright (c) 1998 Todd C. Miller <Todd.Miller@courtesan.com>
 

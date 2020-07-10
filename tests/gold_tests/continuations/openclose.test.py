@@ -22,8 +22,8 @@ Test.Summary = '''
 Test transactions and sessions, making sure they open and close in the proper order.
 '''
 
-# Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+# Define default ATS. Disable the cache to simplify the test.
+ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_cache=False)
 
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
@@ -35,15 +35,14 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: oc.test\r\n\r\n",
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir,
-                                'plugins', 'ssntxnorder_verify.cc'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
+                                'ssntxnorder_verify.so'), ts)
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'ssntxnorder_verify.*',
-    'proxy.config.http.cache.http': 0,  # disable cache to simply the test.
     'proxy.config.cache.enable_read_while_writer': 0
 })
 
@@ -66,7 +65,7 @@ tr.Processes.Default.ReturnCode = Any(0,2)
 # Execution order is: ts/server, ps(curl cmds), Default Process.
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts

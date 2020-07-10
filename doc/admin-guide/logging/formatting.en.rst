@@ -597,35 +597,43 @@ SSL / Encryption
 ~~~~~~~~~~~~~~~~
 
 .. _cssn:
+.. _cscert:
 .. _cqssl:
 .. _cqssr:
 .. _cqssv:
 .. _cqssc:
 .. _cqssu:
 .. _pqssl:
+.. _pscert:
 
 Fields which expose the use, or lack thereof, of specific SSL and encryption
 features.
 
-===== ============== ==========================================================
-Field Source         Description
-===== ============== ==========================================================
-cssn  Client TLS     SNI server name in client Hello message in TLS handshake.
-      Hello          If no server name present in Hello, or the transaction
-                     was not over TLS (over TCP), this field will contain
-                     ``-``.
-cqssl Client Request SSL client request status indicates if this client
-                     connection is over SSL.
-cqssr Client Request SSL session ticket reused status; indicates if the current
-                     request hit the SSL session ticket and avoided a full SSL
-                     handshake.
-cqssv Client Request SSL version used to communicate with the client.
-cqssc Client Request SSL Cipher used by |TS| to communicate with the client.
-cqssu Client Request SSL Elliptic Curve used by |TS| to communicate with the
-                     client when using an ECDHE cipher.
-pqssl Proxy Request  Indicates whether the connection from |TS| to the origin
-                     was over SSL or not.
-===== ============== ==========================================================
+====== ============== ==========================================================
+Field  Source         Description
+====== ============== ==========================================================
+cssn   Client TLS     SNI server name in client Hello message in TLS handshake.
+       Hello          If no server name present in Hello, or the transaction
+                      was not over TLS (over TCP), this field will contain
+                      ``-``.
+cscert Client Request 1 if |TS| requested certificate from client during TLS
+                      handshake. 0 otherwise.
+cqssl  Client Request SSL client request status indicates if this client
+                      connection is over SSL.
+cqssr  Client Request SSL session ticket reused status; indicates if the current
+                      request hit the SSL session ticket and avoided a full SSL
+                      handshake.
+cqssv  Client Request SSL version used to communicate with the client.
+cqssc  Client Request SSL Cipher used by |TS| to communicate with the client.
+cqssu  Client Request SSL Elliptic Curve used by |TS| to communicate with the
+                      client when using an ECDHE cipher.
+pqssl  Proxy Request  Indicates whether the connection from |TS| to the origin
+                      was over SSL or not.
+pscert Proxy Request  1 if origin requested certificate from |TS| during TLS
+                      handshake but no client certificate was defined. 2 if origin
+                      requested certificate from |TS| during TLS handshake and a
+                      client certificate was defined. 0 otherwise.
+====== ============== ==========================================================
 
 .. _admin-logging-fields-status:
 

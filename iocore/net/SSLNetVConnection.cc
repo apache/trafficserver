@@ -410,7 +410,7 @@ SSLNetVConnection::read_raw_data()
   if (this->get_is_proxy_protocol()) {
     Debug("proxyprotocol", "proxy protocol is enabled on this port");
     if (pp_ipmap->count() > 0) {
-      Debug("proxyprotocol", "proxy protocol has a configured whitelist of trusted IPs - checking");
+      Debug("proxyprotocol", "proxy protocol has a configured allowlist of trusted IPs - checking");
 
       // At this point, using get_remote_addr() will return the ip of the
       // proxy source IP, not the Proxy Protocol client ip. Since we are
@@ -418,17 +418,17 @@ SSLNetVConnection::read_raw_data()
       // what we want now.
       void *payload = nullptr;
       if (!pp_ipmap->contains(get_remote_addr(), &payload)) {
-        Debug("proxyprotocol", "proxy protocol src IP is NOT in the configured whitelist of trusted IPs - "
+        Debug("proxyprotocol", "proxy protocol src IP is NOT in the configured allowlist of trusted IPs - "
                                "closing connection");
         r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
         goto proxy_protocol_bypass;
       } else {
         char new_host[INET6_ADDRSTRLEN];
-        Debug("proxyprotocol", "Source IP [%s] is in the trusted whitelist for proxy protocol",
+        Debug("proxyprotocol", "Source IP [%s] is in the trusted allowlist for proxy protocol",
               ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
       }
     } else {
-      Debug("proxyprotocol", "proxy protocol DOES NOT have a configured whitelist of trusted IPs but "
+      Debug("proxyprotocol", "proxy protocol DOES NOT have a configured allowlist of trusted IPs but "
                              "proxy protocol is enabled on this port - processing all connections");
     }
 
@@ -1233,18 +1233,22 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 #if TS_USE_TLS_ASYNC
   if (ssl_error == SSL_ERROR_WANT_ASYNC) {
     size_t numfds;
-    OSSL_ASYNC_FD waitfd;
+    OSSL_ASYNC_FD *waitfds;
     // Set up the epoll entry for the signalling
-    if (SSL_get_all_async_fds(ssl, &waitfd, &numfds) && numfds > 0) {
-      // Temporarily disable regular net
-      read_disable(nh, this);
-      this->ep.stop(); // Modify used in read_disable doesn't work for edge triggered epol
-      // Have to have the read NetState enabled because we are using it for the signal vc
-      read.enabled = true;
-      write_disable(nh, this);
-      PollDescriptor *pd = get_PollDescriptor(this_ethread());
-      this->ep.start(pd, waitfd, this, EVENTIO_READ);
-      this->ep.type = EVENTIO_READWRITE_VC;
+    if (SSL_get_all_async_fds(ssl, nullptr, &numfds) && numfds > 0) {
+      // Allocate space for the waitfd on the stack, should only be one most all of the time
+      waitfds = reinterpret_cast<OSSL_ASYNC_FD *>(alloca(sizeof(OSSL_ASYNC_FD) * numfds));
+      if (SSL_get_all_async_fds(ssl, waitfds, &numfds) && numfds > 0) {
+        // Temporarily disable regular net
+        this->read.triggered  = false;
+        this->write.triggered = false;
+        this->ep.stop(); // Modify used in read_disable doesn't work for edge triggered epol
+        // Have to have the read NetState enabled because we are using it for the signal vc
+        read.enabled       = true;
+        PollDescriptor *pd = get_PollDescriptor(this_ethread());
+        this->ep.start(pd, waitfds[0], static_cast<NetEvent *>(this), EVENTIO_READ);
+        this->ep.type = EVENTIO_READWRITE_VC;
+      }
     }
   } else if (SSLConfigParams::async_handshake_enabled) {
     // Clean up the epoll entry for signalling
@@ -1505,7 +1509,7 @@ SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, 
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
-  ink_release_assert(netvc != nullptr);
+  ink_release_assert(netvc && netvc->ssl == ssl);
 
   if (netvc->getNPN(out, outlen)) {
     // Successful return tells OpenSSL to advertise.
@@ -1522,7 +1526,7 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
-  ink_release_assert(netvc != nullptr);
+  ink_release_assert(netvc && netvc->ssl == ssl);
   const unsigned char *npnptr = nullptr;
   unsigned int npnsize        = 0;
   if (netvc->getNPN(&npnptr, &npnsize)) {

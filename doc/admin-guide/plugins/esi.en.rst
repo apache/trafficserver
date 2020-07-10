@@ -98,14 +98,14 @@ And inside handler.conf you can provide the list of cookie name that is allowed.
 
 ::
 
-    whitelistCookie A
-    whitelistCookie LOGIN
+    allowlistCookie A
+    allowlistCookie LOGIN
 
 We can also allow all cookie for HTTP_COOKIE variable by using a wildcard character. e.g.
 
 ::
 
-    whitelistCookie *
+    allowlistCookie *
 
 4. We need a mapping for origin server response that contains the ESI markup. Assume that the ATS server is abc.com. And your origin server is xyz.com and the response containing ESI markup is http://xyz.com/esi.php. We will need
    the following line in /usr/local/etc/trafficserver/remap.config

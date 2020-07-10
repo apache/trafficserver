@@ -33,9 +33,7 @@
 #pragma once
 
 #include "tscore/Ptr.h"
-#include "tscore/ink_defs.h"
 #include "tscore/ink_assert.h"
-#include "tscore/Arena.h"
 #include "tscore/Scalar.h"
 #include "HdrToken.h"
 

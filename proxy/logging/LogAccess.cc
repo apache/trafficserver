@@ -1144,7 +1144,7 @@ void
 LogAccess::set_client_req_url(char *buf, int len)
 {
   if (buf) {
-    m_client_req_url_len = len;
+    m_client_req_url_len = std::min(len, m_client_req_url_len);
     ink_strlcpy(m_client_req_url_str, buf, m_client_req_url_len + 1);
   }
 }
@@ -1153,7 +1153,7 @@ void
 LogAccess::set_client_req_url_canon(char *buf, int len)
 {
   if (buf) {
-    m_client_req_url_canon_len = len;
+    m_client_req_url_canon_len = std::min(len, m_client_req_url_canon_len);
     ink_strlcpy(m_client_req_url_canon_str, buf, m_client_req_url_canon_len + 1);
   }
 }
@@ -1162,7 +1162,7 @@ void
 LogAccess::set_client_req_unmapped_url_canon(char *buf, int len)
 {
   if (buf && m_client_req_unmapped_url_canon_str) {
-    m_client_req_unmapped_url_canon_len = len;
+    m_client_req_unmapped_url_canon_len = std::min(len, m_client_req_unmapped_url_canon_len);
     ink_strlcpy(m_client_req_unmapped_url_canon_str, buf, m_client_req_unmapped_url_canon_len + 1);
   }
 }
@@ -1171,7 +1171,7 @@ void
 LogAccess::set_client_req_unmapped_url_path(char *buf, int len)
 {
   if (buf && m_client_req_unmapped_url_path_str) {
-    m_client_req_unmapped_url_path_len = len;
+    m_client_req_unmapped_url_path_len = std::min(len, m_client_req_unmapped_url_path_len);
     ink_strlcpy(m_client_req_unmapped_url_path_str, buf, m_client_req_unmapped_url_path_len + 1);
   }
 }
@@ -1180,7 +1180,7 @@ void
 LogAccess::set_client_req_unmapped_url_host(char *buf, int len)
 {
   if (buf && m_client_req_unmapped_url_host_str) {
-    m_client_req_unmapped_url_host_len = len;
+    m_client_req_unmapped_url_host_len = std::min(len, m_client_req_unmapped_url_host_len);
     ink_strlcpy(m_client_req_unmapped_url_host_str, buf, m_client_req_unmapped_url_host_len + 1);
   }
 }
@@ -1190,7 +1190,7 @@ LogAccess::set_client_req_url_path(char *buf, int len)
 {
   //?? use m_client_req_unmapped_url_path_str for now..may need to enhance later..
   if (buf && m_client_req_unmapped_url_path_str) {
-    m_client_req_url_path_len = len;
+    m_client_req_url_path_len = std::min(len, m_client_req_url_path_len);
     ink_strlcpy(m_client_req_unmapped_url_path_str, buf, m_client_req_url_path_len + 1);
   }
 }
@@ -1298,6 +1298,44 @@ LogAccess::marshal_client_sni_server_name(char *buf)
   return len;
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_provided_cert(char *buf)
+{
+  int provided_cert = 0;
+  if (m_http_sm) {
+    auto txn = m_http_sm->get_ua_txn();
+    if (txn) {
+      auto ssn = txn->get_proxy_ssn();
+      if (ssn) {
+        auto ssl = ssn->ssl();
+        if (ssl) {
+          provided_cert = ssl->client_provided_certificate();
+        }
+      }
+    }
+  }
+  if (buf) {
+    marshal_int(buf, provided_cert);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_proxy_provided_cert(char *buf)
+{
+  int provided_cert = 0;
+  if (m_http_sm) {
+    provided_cert = m_http_sm->server_connection_provided_cert;
+  }
+  if (buf) {
+    marshal_int(buf, provided_cert);
+  }
+  return INK_MIN_ALIGN;
+}
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 

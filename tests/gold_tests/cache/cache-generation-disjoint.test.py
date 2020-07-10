@@ -30,7 +30,6 @@ ts = Test.MakeATSProcess("ts")
 ts.Disk.records_config.update({
     'proxy.config.body_factory.enable_customizations': 3,  # enable domain specific body factory
     'proxy.config.http.cache.generation': -1,  # Start with cache turned off
-    'proxy.config.http.wait_for_cache': 1,
     'proxy.config.config_update_interval_ms': 1,
 
 })
@@ -53,8 +52,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
     ts.Variables.port, objectid)
 tr.Processes.Default.ReturnCode = 0
-# time delay as proxy.config.http.wait_for_cache could be broken
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=2)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.All = "gold/miss_default-1.gold"
 
 # Same URL in generation 1 is a MISS.

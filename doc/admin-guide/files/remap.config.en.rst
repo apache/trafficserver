@@ -92,7 +92,7 @@ Traffic Server recognizes three space-delimited fields: ``type``,
 .. _remap-config-format-target:
 
 ``target``
-    Enter the origin ("from") URL. You can enter up to four components: ::
+    Enter the request ("from") URL. You can enter up to four components: ::
 
         scheme://host:port/path_prefix
 
@@ -101,7 +101,7 @@ Traffic Server recognizes three space-delimited fields: ``type``,
 .. _remap-config-format-replacement:
 
 ``replacement``
-    Enter the origin ("from") URL. You can enter up to four components: ::
+    Enter the origin ("to") URL. You can enter up to four components: ::
 
         scheme://host:port/path_prefix
 

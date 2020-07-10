@@ -58,8 +58,8 @@ ts.Streams.All = Testers.ContainsExpression("WMbytes\(31337\)", "Upstream waterm
 
 # Test if watermark upstream is set
 tr = Test.AddTestRun("Lua Watermark")
-tr.Processes.Default.Command = "curl http://127.0.0.1:{0}".format(ts.Variables.port)
+tr.Processes.Default.Command = "curl -v http://127.0.0.1:{0}".format(ts.Variables.port)
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.StillRunningAfter = server
 
+tr.Processes.Default.StartBefore(ts)
+tr.StillRunningAfter = server

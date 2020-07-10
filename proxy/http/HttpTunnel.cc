@@ -1419,6 +1419,7 @@ HttpTunnel::chain_abort_all(HttpTunnelProducer *p)
     }
     p->read_vio = nullptr;
     p->vc->do_io_close(EHTTP_ERROR);
+    HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_abort);
     update_stats_after_abort(p->vc_type);
   }
 }

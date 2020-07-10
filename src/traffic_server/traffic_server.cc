@@ -45,6 +45,7 @@
 
 #include <syslog.h>
 #include <algorithm>
+#include <atomic>
 #include <list>
 #include <string>
 
@@ -174,10 +175,10 @@ static int poll_timeout         = -1; // No value set.
 static int cmd_disable_freelist = 0;
 static bool signal_received[NSIG];
 
-// 1: delay listen, wait for cache.
-// 0: Do not delay, start listen ASAP.
+// 1: the main thread delayed accepting, start accepting.
+// 0: delay accept, wait for cache initialization.
 // -1: cache is already initialized, don't delay.
-static int delay_listen_for_cache_p;
+static int delay_listen_for_cache = 0;
 
 AppVersionInfo appVersionInfo; // Build info for this application
 
@@ -453,6 +454,42 @@ private:
   struct rusage _usage;
 };
 
+/** Gate the emission of the "Traffic Server is fuly initialized" log message.
+ *
+ * This message is intended to be helpful to users who want to know that
+ * Traffic Server is not just running but has become fully initialized and is
+ * ready to optimize traffic. This is in contrast to the "traffic server is
+ * running" message which can be printed before either of these conditions.
+ *
+ * This function is called on each initialization state transition. Currently,
+ * the two state transitions of interest are:
+ *
+ * 1. The cache is initialized.
+ * 2. The ports are open and accept has been called upon them.
+ *
+ * Note that Traffic Server configures the port objects and may even open the
+ * ports before calling accept on those ports. The difference between these two
+ * events is communicated to plugins via the
+ * TS_LIFECYCLE_PORTS_INITIALIZED_HOOK and TS_LIFECYCLE_PORTS_READY_HOOK hooks.
+ * If wait_for_cache is enabled, the difference in time between these events
+ * may measure in the tens of milliseconds.  The message emitted by this
+ * function happens after this full lifecycle takes place on these ports and
+ * after cache is initialized.
+ */
+static void
+emit_fully_initialized_message()
+{
+  static std::atomic<unsigned int> initialization_state_counter = 0;
+
+  // See the doxygen comment above explaining what the states are that
+  // constitute Traffic Server being fully initialized.
+  constexpr unsigned int num_initialization_states = 2;
+
+  if (++initialization_state_counter == num_initialization_states) {
+    Note("Traffic Server is fully initialized.");
+  }
+}
+
 void
 set_debug_ip(const char *ip_string)
 {
@@ -710,7 +747,8 @@ CB_After_Cache_Init()
   APIHook *hook;
   int start;
 
-  start = ink_atomic_swap(&delay_listen_for_cache_p, -1);
+  start = ink_atomic_swap(&delay_listen_for_cache, -1);
+  emit_fully_initialized_message();
 
 #if TS_ENABLE_FIPS == 0
   // Check for cache BC after the cache is initialized and before listen, if possible.
@@ -725,8 +763,12 @@ CB_After_Cache_Init()
 #endif
 
   if (1 == start) {
+    // The delay_listen_for_cache value was 1, therefore the main function
+    // delayed the call to start_HttpProxyServer until we got here. We must
+    // call accept on the ports now that the cache is initialized.
     Debug("http_listen", "Delayed listen enable, cache initialization finished");
     start_HttpProxyServer();
+    emit_fully_initialized_message();
   }
 
   time_t cache_ready_at = time(nullptr);
@@ -2092,10 +2134,19 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
       // Delay only if config value set and flag value is zero
       // (-1 => cache already initialized)
-      if (delay_p && ink_atomic_cas(&delay_listen_for_cache_p, 0, 1)) {
+      if (delay_p && ink_atomic_cas(&delay_listen_for_cache, 0, 1)) {
         Debug("http_listen", "Delaying listen, waiting for cache initialization");
       } else {
+        // If we've come here, either:
+        //
+        // 1. The user did not configure wait_for_cache, and/or
+        // 2. The previous delay_listen_for_cache value was not 0, thus the cache
+        //    must have been initialized already.
+        //
+        // In either case we should not delay to accept the ports.
+        Debug("http_listen", "Not delaying listen");
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
+        emit_fully_initialized_message();
       }
     }
     // Plugins can register their own configuration names so now after they've done that

@@ -217,16 +217,16 @@ public:
   Pattern _prefixCaptureUri; /**< @brief cache key prefix captured from the URI as a whole */
   Pattern _pathCapture;      /**< @brief cache key element captured from the URI path */
   Pattern _pathCaptureUri;   /**< @brief cache key element captured from the URI as a whole */
-  Classifier _classifier;    /**< @brief blacklist and white-list classifier used to classify User-Agent header */
+  Classifier _classifier;    /**< @brief blocklist and allow-list classifier used to classify User-Agent header */
 
 private:
   /**
    * @brief a helper function which loads the classifier from files.
    * @param args classname + filename in '<classname>:<filename>' format.
-   * @param blacklist true - load as a blacklist classifier, false - white-list.
+   * @param blocklist true - load as a blocklist classifier, false - allow-list.
    * @return true if successful, false otherwise.
    */
-  bool loadClassifiers(const String &args, bool blacklist = true);
+  bool loadClassifiers(const String &args, bool blocklist = true);
 
   bool _prefixToBeRemoved  = false; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
   bool _pathToBeRemoved    = false; /**< @brief instructs the path not to added to the cache key */

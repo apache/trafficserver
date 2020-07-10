@@ -55,7 +55,7 @@ namespace utils
     static HttpVersion getHttpVersion(TSMBuffer hdr_buf, TSMLoc hdr_loc);
     static void initTransactionManagement();
     static std::string consumeFromTSIOBufferReader(TSIOBufferReader);
-    static std::shared_ptr<Mutex> getTransactionPluginMutex(TransactionPlugin &);
+    static std::shared_ptr<Mutex> getTransactionPluginMutex(TransactionPlugin &, TSHttpTxn);
     static Transaction &getTransaction(TSHttpTxn);
 
     static AsyncHttpFetchState *

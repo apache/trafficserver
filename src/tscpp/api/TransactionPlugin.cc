@@ -71,6 +71,12 @@ TransactionPlugin::getMutex()
   return state_->mutex_;
 }
 
+std::shared_ptr<Mutex>
+TransactionPlugin::getMutex(TSHttpTxn txnp)
+{
+  return state_->ats_txn_handle_ == txnp ? state_->mutex_ : nullptr;
+}
+
 bool
 TransactionPlugin::isWebsocket() const
 {

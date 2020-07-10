@@ -414,19 +414,20 @@ Network
 
 .. ts:cv:: CONFIG proxy.config.net.max_connections_in INT 30000
 
-   The total number of client connections that the :program:`traffic_server`
-   can handle simultaneously. This should be tuned according to your memory size,
-   and expected work load (network, cpu etc). This limit includes both keepalive
-   and active client connections that :program:`traffic_server` can handle at
-   any given instant.
+   The total number of client requests that |TS| can handle simultaneously.
+   This should be tuned according to your memory size, and expected work load
+   (network, cpu etc). This limit includes both idle (keep alive) connections
+   and active requests that |TS| can handle at any given instant. The delta
+   between `proxy.config.net.max_connections_in` and `proxy.config.net.max_requests_in`
+   is the amount of maximum idle (keepalive) connections |TS| will maintain.
 
-.. ts:cv:: CONFIG proxy.config.net.max_active_connections_in INT 10000
+.. ts:cv:: CONFIG proxy.config.net.max_requests_in INT 0
 
-   The total number of active client connections that the |TS| can handle
-   simultaneously. This should be tuned according to your memory size,
-   and expected work load (network, cpu etc). If this is set to 0, active
-   connection tracking is disabled and active connections have no separate
-   limit and the total connections follow `proxy.config.net.connections_throttle`
+   The total number of concurrent requests or active client connections
+   that the |TS| can handle simultaneously. This should be tuned according
+   to your memory size, and expected work load (network, cpu etc). When
+   set to 0, active request tracking is disabled and max requests has no
+   separate limit and the total connections follow `proxy.config.net.connections_throttle`
 
 .. ts:cv:: CONFIG proxy.config.net.default_inactivity_timeout INT 86400
    :reloadable:
@@ -1770,9 +1771,9 @@ Proxy User Variables
    is prohibited by RFC 7239. Currently, for the ``host`` parameter to provide the original host from the
    incoming client request, `proxy.config.url_remap.pristine_host_hdr`_ must be enabled.
 
-.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_whitelist STRING ```<ip list>```
+.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_allowlist STRING ```<ip list>```
 
-   This defines a whitelist of server IPs that are trusted to provide
+   This defines a allowlist of server IPs that are trusted to provide
    connections with Proxy Protocol information.  This is a comma delimited list
    of IP addresses.  Addressed may be listed individually, in a range separated
    by a dash or by using CIDR notation.
@@ -2553,6 +2554,18 @@ DNS
    ``1`` TCP_RETRY: |TS| first UDP, retries with TCP if UDP response is truncated.
    ``2`` TCP_ONLY:  |TS| always talks to nameservers over TCP.
    ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.dns.max_dns_in_flight INT 2048
+
+   Maximum inflight DNS queries made by |TS| at any given instant
+
+.. ts:cv:: CONFIG proxy.config.dns.lookup_timeout INT 20
+
+   Time to wait for a DNS response in seconds.
+
+.. ts:cv:: CONFIG proxy.config.dns.retries INT 5
+
+   Maximum number of retries made by |TS| on a given DNS query
 
 HostDB
 ======

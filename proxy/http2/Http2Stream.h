@@ -74,8 +74,8 @@ public:
   void send_request(Http2ConnectionState &cstate);
   void initiating_close();
   void terminate_if_possible();
-  void update_read_request(int64_t read_len, bool send_update, bool check_eos = false);
-  void update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
+  void update_read_request(bool send_update);
+  void update_write_request(bool send_update);
 
   void signal_read_event(int event);
   void signal_write_event(int event);
@@ -133,10 +133,8 @@ public:
   //////////////////
   // Variables
   uint8_t *header_blocks        = nullptr;
-  uint32_t header_blocks_length = 0;  // total length of header blocks (not include
-                                      // Padding or other fields)
-  uint32_t request_header_length = 0; // total length of payload (include Padding
-                                      // and other fields)
+  uint32_t header_blocks_length = 0; // total length of header blocks (not include Padding or other fields)
+
   bool recv_end_stream = false;
   bool send_end_stream = false;
 
@@ -146,7 +144,6 @@ public:
   bool is_first_transaction_flag = false;
 
   HTTPHdr response_header;
-  IOBufferReader *response_reader          = nullptr;
   Http2DependencyTree::Node *priority_node = nullptr;
 
 private:

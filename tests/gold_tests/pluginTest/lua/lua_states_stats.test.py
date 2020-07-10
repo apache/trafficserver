@@ -53,7 +53,7 @@ ts.Disk.plugin_config.AddLine('tslua.so {}/global.lua'.format(Test.TestDirectory
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'ts_lua',
-		'proxy.config.plugin.lua.max_states': 4,
+    'proxy.config.plugin.lua.max_states': 4,
 })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} '.format(ts.Variables.port)
@@ -62,7 +62,7 @@ curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} '.format(
 tr = Test.AddTestRun("Lua states")
 ps = tr.Processes.Default # alias
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-ps.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+ps.StartBefore(Test.Processes.ts)
 ps.Command = "traffic_ctl config match lua"
 ps.Env = ts.Env
 ps.ReturnCode = 0

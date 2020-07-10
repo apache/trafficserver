@@ -371,8 +371,8 @@ Variables::_parseCookieString(const char *str, int str_len)
     }
 
     bool found = false;
-    for (auto &_whitelistCookie : _whitelistCookies) {
-      if ((_whitelistCookie == "*") || (_whitelistCookie == cookie)) {
+    for (auto &_allowlistCookie : _allowlistCookies) {
+      if ((_allowlistCookie == "*") || (_allowlistCookie == cookie)) {
         found = true;
       }
     }

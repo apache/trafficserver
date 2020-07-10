@@ -66,17 +66,16 @@ def curl(ts, idx, encodingList):
         "curl --verbose --proxy http://127.0.0.1:{}".format(ts.Variables.port) +
         " --header 'X-Ats-Compress-Test: {}/{}'".format(idx, encodingList) +
         " --header 'Accept-Encoding: {0}' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
-        " >> {0}/compress_long.log 2>&1 ; printf '\n\n' >> {0}/compress_long.log".format(Test.RunDirectory)
+        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log"
     )
 
 waitForServer = True
 
 waitForTs = True
 
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 
 ts.Disk.records_config.update({
-    'proxy.config.http.cache.http': 0,
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'compress',
     'proxy.config.http.normalize_ae': 0,
@@ -101,7 +100,7 @@ for i in range(3):
 
     tr = Test.AddTestRun()
     if (waitForTs):
-        tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+        tr.Processes.Default.StartBefore(ts)
     waitForTs = False
     if (waitForServer):
         tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
@@ -159,11 +158,16 @@ tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = curl(ts, 0, "aaa, gzip;q=0.666 , ")
 
+# compress_long.log contains all the output from the curl commands.  The tr removes the carriage returns for easier
+# readability.  Curl seems to have a bug, where it will neglect to output an end of line before outputing an HTTP
+# message header line.  The sed command is a work-around for this problem.  greplog.sh uses the grep command to
+# select HTTP request/response line that should be consitent every time the test runs.
+#
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
-    r"tr -d '\r' < {1}/compress_long.log | sed 's/\(..*\)\([<>]\)/\1\n\2/' | {0}/greplog.sh > {1}/compress_short.log"
-).format(Test.TestDirectory, Test.RunDirectory)
+    r"tr -d '\r' < compress_long.log | sed 's/\(..*\)\([<>]\)/\1\n\2/' | {0}/greplog.sh > compress_short.log"
+).format(Test.TestDirectory)
 f = tr.Disk.File("compress_short.log")
 f.Content = "compress.gold"
 

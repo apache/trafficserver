@@ -78,4 +78,63 @@ Origin Server
    :type: derivative
    :units: bytes
 
+.. ts:stat:: global proxy.process.http.origin_shutdown.pool_lock_contention integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.migration_failure integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.tunnel_server integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.tunnel_server_no_keep_alive integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.tunnel_server_eos integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.tunnel_server_plugin_tunnel integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.tunnel_transform_read integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.release_no_sharing integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.release_no_keep_alive integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.release_invalid_repsonse integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.release_invalid_request integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.release_modified integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.release_misc integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.cleanup_entry integer
+   :type counter
+   :units bytes
+
+.. ts:stat:: global proxy.process.http.origin_shutdown.tunnel_abort integer
+   :type counter
+   :units bytes
 

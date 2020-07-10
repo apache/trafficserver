@@ -111,7 +111,7 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
 }
 
 void
-Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap, HeaderValueList &whitelistCookies)
+Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap, HeaderValueList &allowlistCookies)
 {
   string key, value;
   std::istringstream iss;
@@ -125,8 +125,8 @@ Utils::parseKeyValueConfig(const std::list<string> &lines, KeyValueMap &kvMap, H
     if (iss.good()) {
       iss >> key;
       iss >> value;
-      if (key == "whitelistCookie") {
-        whitelistCookies.push_back(value);
+      if (key == "allowlistCookie") {
+        allowlistCookies.push_back(value);
         continue;
       }
       if (key.size() && value.size()) {

@@ -14,13 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
+
 Test.Summary = '''
 Execute plugin with cppapi tests.
 '''
 
 ts = Test.MakeATSProcess("ts")
 
-Test.PreparePlugin(Test.Variables.AtsTestToolsDir + '/plugins/test_cppapi.cc', ts, extra_build_args='-l tscppapi')
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_cppapi.so'), ts)
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(Test.Processes.ts)

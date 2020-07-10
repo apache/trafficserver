@@ -65,11 +65,11 @@ ts.Disk.sni_yaml.AddLine(
 ts.Disk.sni_yaml.AddLine(
   '  verify_server_policy: PERMISSIVE')
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_verify_test.cc'), ts, '-count=2 -bad=random.com -bad=bar.com')
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_verify_test.so'), ts, '-count=2 -bad=random.com -bad=bar.com')
 
 tr = Test.AddTestRun("request good name")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --resolve \"foo.com:{0}:127.0.0.1\" -k  https://foo.com:{0}".format(ts.Variables.ssl_port)

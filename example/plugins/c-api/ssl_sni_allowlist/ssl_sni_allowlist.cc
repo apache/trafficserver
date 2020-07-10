@@ -1,6 +1,6 @@
 /** @file
 
-  SSL SNI white list plugin
+  SSL SNI allow list plugin
   If the server name and IP address are not in the ssl_multicert.config
   go ahead and blind tunnel it.
 
@@ -31,13 +31,13 @@
 
 #include <openssl/ssl.h>
 
-#define PLUGIN_NAME "ssl_sni_whitelist"
+#define PLUGIN_NAME "ssl_sni_allowlist"
 #define PCP "[" PLUGIN_NAME "] "
 
 namespace
 {
 int
-CB_servername_whitelist(TSCont /* contp */, TSEvent /* event */, void *edata)
+CB_servername_allowlist(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
   TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
@@ -84,7 +84,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError(PCP "registration failed");
   } else if (TSTrafficServerVersionGetMajor() < 2) {
     TSError(PCP "requires Traffic Server 2.0 or later");
-  } else if (nullptr == (cb_sni = TSContCreate(&CB_servername_whitelist, TSMutexCreate()))) {
+  } else if (nullptr == (cb_sni = TSContCreate(&CB_servername_allowlist, TSMutexCreate()))) {
     TSError(PCP "Failed to create SNI callback");
   } else {
     TSHttpHookAdd(TS_SSL_CERT_HOOK, cb_sni);

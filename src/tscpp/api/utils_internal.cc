@@ -58,10 +58,14 @@ cleanupTransaction(Transaction &transaction, TSHttpTxn ats_txn_handle)
 }
 
 void
-cleanupTransactionPlugin(Plugin *plugin)
+cleanupTransactionPlugin(Plugin *plugin, TSHttpTxn ats_txn_handle)
 {
   TransactionPlugin *transaction_plugin = static_cast<TransactionPlugin *>(plugin);
-  std::shared_ptr<Mutex> trans_mutex    = utils::internal::getTransactionPluginMutex(*transaction_plugin);
+  std::shared_ptr<Mutex> trans_mutex    = utils::internal::getTransactionPluginMutex(*transaction_plugin, ats_txn_handle);
+  if (trans_mutex == nullptr) {
+    LOG_ERROR("TransactionPlugin use-after-free! plugin %p, txn %p", plugin, ats_txn_handle);
+    return;
+  }
   LOG_DEBUG("Locking TransactionPlugin mutex to delete transaction plugin at %p", transaction_plugin);
   trans_mutex->lock();
   delete transaction_plugin;
@@ -96,7 +100,7 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
     resetTransactionHandles(transaction, event);
     const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
     for (auto plugin : plugins) {
-      cleanupTransactionPlugin(plugin);
+      cleanupTransactionPlugin(plugin, ats_txn_handle);
     }
     cleanupTransaction(transaction, ats_txn_handle);
   } break;
@@ -158,7 +162,7 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
   case TS_EVENT_HTTP_TXN_CLOSE:
     if (plugin) {
       plugin->handleTxnClose(transaction);
-      cleanupTransactionPlugin(plugin);
+      cleanupTransactionPlugin(plugin, ats_txn_handle);
     } else {
       LOG_ERROR("stray event TS_EVENT_HTTP_TXN_CLOSE, no transaction plugin to handle it!");
     }
@@ -185,9 +189,9 @@ utils::internal::getTransaction(TSHttpTxn ats_txn_handle)
 }
 
 std::shared_ptr<Mutex>
-utils::internal::getTransactionPluginMutex(TransactionPlugin &transaction_plugin)
+utils::internal::getTransactionPluginMutex(TransactionPlugin &transaction_plugin, TSHttpTxn txnp)
 {
-  return transaction_plugin.getMutex();
+  return transaction_plugin.getMutex(txnp);
 }
 
 TSHttpHookID

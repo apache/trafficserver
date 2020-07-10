@@ -24,9 +24,9 @@ Test tls
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
-# build test code
-tr=Test.Build(target='ssl-post',sources=['ssl-post.c'])
-tr.Setup.Copy('ssl-post.c')
+# ssl-post is built via `make`. Here we copy the built binary down to the test
+# directory so that the test runs in this file can use it.
+Test.Setup.Copy('ssl-post')
 
 requestLocation = "test2"
 reHost = "www.example.com"
@@ -73,8 +73,7 @@ ts.Disk.records_config.update({
 tr = Test.AddTestRun("Run-Test")
 tr.Command = './ssl-post 127.0.0.1 40 {0} {1}'.format(header_count, ts.Variables.ssl_port)
 tr.ReturnCode = 0
-# time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stdout = "gold/ssl-post.gold"
 tr.StillRunningAfter = server

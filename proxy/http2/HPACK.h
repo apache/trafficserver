@@ -56,8 +56,7 @@ enum class HpackMatch {
 
 // Result of looking for a header field in IndexingTable
 struct HpackLookupResult {
-  HpackLookupResult() {}
-  int index             = 0;
+  uint32_t index        = 0;
   HpackIndex index_type = HpackIndex::NONE;
   HpackMatch match_type = HpackMatch::NONE;
 };
@@ -106,12 +105,7 @@ private:
 class HpackDynamicTable
 {
 public:
-  explicit HpackDynamicTable(uint32_t size) : _current_size(0), _maximum_size(size)
-  {
-    _mhdr = new MIMEHdr();
-    _mhdr->create();
-  }
-
+  explicit HpackDynamicTable(uint32_t size);
   ~HpackDynamicTable();
 
   // noncopyable
@@ -121,6 +115,7 @@ public:
   const MIMEField *get_header_field(uint32_t index) const;
   void add_header_field(const MIMEField *field);
 
+  HpackLookupResult lookup(const char *name, int name_len, const char *value, int value_len) const;
   uint32_t maximum_size() const;
   uint32_t size() const;
   void update_maximum_size(uint32_t new_size);
@@ -143,8 +138,8 @@ private:
 class HpackIndexingTable
 {
 public:
-  explicit HpackIndexingTable(uint32_t size) { _dynamic_table = new HpackDynamicTable(size); }
-  ~HpackIndexingTable() { delete _dynamic_table; }
+  explicit HpackIndexingTable(uint32_t size) : _dynamic_table(size){};
+  ~HpackIndexingTable() {}
 
   // noncopyable
   HpackIndexingTable(HpackIndexingTable &) = delete;
@@ -160,7 +155,7 @@ public:
   void update_maximum_size(uint32_t new_size);
 
 private:
-  HpackDynamicTable *_dynamic_table;
+  HpackDynamicTable _dynamic_table;
 };
 
 // Low level interfaces

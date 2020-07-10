@@ -49,7 +49,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 
 tr = Test.AddTestRun("tr")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Command = 'curl -i  http://127.0.0.1:{0}/file'.format(ts.Variables.port)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Activity Timeout", "Request should fail with active timeout")
 

@@ -229,6 +229,9 @@ HttpVCTable::cleanup_entry(HttpVCTableEntry *e)
       break;
     }
 
+    if (e->vc_type == HTTP_SERVER_VC) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_cleanup_entry);
+    }
     e->vc->do_io_close();
     e->vc = nullptr;
   }
@@ -1852,7 +1855,11 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
-  case NET_EVENT_OPEN_FAILED:
+  case NET_EVENT_OPEN_FAILED: {
+    NetVConnection *vc = server_session->get_netvc();
+    if (vc) {
+      server_connection_provided_cert = vc->provided_cert();
+    }
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
     t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : ECONNABORTED);
@@ -1884,7 +1891,7 @@ HttpSM::state_http_server_open(int event, void *data)
       call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
     return 0;
-
+  }
   default:
     Error("[HttpSM::state_http_server_open] Unknown event: %d", event);
     ink_release_assert(0);
@@ -2983,6 +2990,13 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL && t_state.txn_conf->keep_alive_enabled_out == 1) {
     close_connection = false;
   } else {
+    if (t_state.current.server->keep_alive != HTTP_KEEPALIVE) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_no_keep_alive);
+    } else if (server_entry->eos == true) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_eos);
+    } else {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_plugin_tunnel);
+    }
     close_connection = true;
   }
 
@@ -3011,6 +3025,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       break;
     }
 
+    HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server);
     close_connection = true;
 
     ink_assert(p->vc_type == HT_HTTP_SERVER);
@@ -3079,7 +3094,8 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     p->read_success               = true;
     t_state.current.server->state = HttpTransact::TRANSACTION_COMPLETE;
     t_state.current.server->abort = HttpTransact::DIDNOT_ABORT;
-    close_connection              = true;
+    HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_detach);
+    close_connection = true;
     break;
 
   case VC_EVENT_READ_READY:
@@ -3939,6 +3955,7 @@ HttpSM::tunnel_handler_transform_read(int event, HttpTunnelProducer *p)
   //  transform hasn't detached yet.  If it is still alive,
   //  don't close the transform vc
   if (p->self_consumer->alive == false) {
+    HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_transform_read);
     p->vc->do_io_close();
   }
   p->handler_state = HTTP_SM_TRANSFORM_CLOSED;
@@ -5438,6 +5455,23 @@ HttpSM::release_server_session(bool serve_from_cache)
       ua_txn->attach_server_session(server_session, false);
     }
   } else {
+    if (TS_SERVER_SESSION_SHARING_MATCH_NONE == t_state.txn_conf->server_session_sharing_match) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_no_sharing);
+    } else if (t_state.current.server == nullptr) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_no_server);
+    } else if (t_state.current.server->keep_alive != HTTP_KEEPALIVE) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_no_keep_alive);
+    } else if (!t_state.hdr_info.server_response.valid()) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_invalid_response);
+    } else if (!t_state.hdr_info.server_request.valid()) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_invalid_request);
+    } else if (t_state.hdr_info.server_response.status_get() != HTTP_STATUS_NOT_MODIFIED &&
+               (t_state.hdr_info.server_request.method_get_wksidx() != HTTP_WKSIDX_HEAD ||
+                t_state.www_auth_content == HttpTransact::CACHE_AUTH_NONE)) {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_modified);
+    } else {
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_release_misc);
+    }
     server_session->do_io_close();
   }
 
@@ -5520,13 +5554,16 @@ HttpSM::handle_http_server_open()
   //          server session's first transaction.
   if (nullptr != server_session) {
     NetVConnection *vc = server_session->get_netvc();
-    if (vc != nullptr && (vc->options.sockopt_flags != t_state.txn_conf->sock_option_flag_out ||
-                          vc->options.packet_mark != t_state.txn_conf->sock_packet_mark_out ||
-                          vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out)) {
-      vc->options.sockopt_flags = t_state.txn_conf->sock_option_flag_out;
-      vc->options.packet_mark   = t_state.txn_conf->sock_packet_mark_out;
-      vc->options.packet_tos    = t_state.txn_conf->sock_packet_tos_out;
-      vc->apply_options();
+    if (vc) {
+      server_connection_provided_cert = vc->provided_cert();
+      if (vc->options.sockopt_flags != t_state.txn_conf->sock_option_flag_out ||
+          vc->options.packet_mark != t_state.txn_conf->sock_packet_mark_out ||
+          vc->options.packet_tos != t_state.txn_conf->sock_packet_tos_out) {
+        vc->options.sockopt_flags = t_state.txn_conf->sock_option_flag_out;
+        vc->options.packet_mark   = t_state.txn_conf->sock_packet_mark_out;
+        vc->options.packet_tos    = t_state.txn_conf->sock_packet_tos_out;
+        vc->apply_options();
+      }
     }
   }
 

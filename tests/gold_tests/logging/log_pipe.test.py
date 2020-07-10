@@ -39,6 +39,7 @@ def get_ts(logging_config):
     ts.Disk.records_config.update({
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'log-file',
+        'proxy.config.log.max_secs_per_buffer': 1,
         })
 
     # Since we're only verifying logs and not traffic, we don't need an origin
@@ -90,18 +91,22 @@ curl = tr.Processes.Process("client_request", 'curl "http://127.0.0.1:{0}" --ver
 
 reader_output = os.path.join(ts.Variables.LOGDIR, "reader_output")
 pipe_reader = tr.Processes.Process("pipe_reader", 'cat {} | tee {}'.format(pipe_path, reader_output))
-curl_ready = tr.Processes.Process("curl_ready", 'sleep 30')
-# In the AuTest environment, it can take more than 10 seconds for the log file
-# to be created.
-curl_ready.StartupTimeout = 30
-curl_ready.Ready = When.FileContains(reader_output, '127.0.0.1')
 
-tr.Processes.Default.Command = "sleep 10"
+# Create an arbitrary process that just sleeps so that we can provide a wait
+# condition upon the log being emitted. The test won't wait this entire sleep
+# period, it will only poll until the FileContains Ready condition is
+# fulfilled.
+wait_for_log = tr.Processes.Process("wait_for_log", 'sleep 15')
+wait_for_log.Ready = When.FileContains(reader_output, '127.0.0.1')
+
+# This is an arbitrary Default process that will simply provide for
+# ordering of the Processes.
+tr.Processes.Default.Command = "echo 'Default place holder for process ordering.'"
 tr.Processes.Default.Return = 0
 
 # Process ordering.
-tr.Processes.Default.StartBefore(curl_ready)
-curl_ready.StartBefore(curl)
+tr.Processes.Default.StartBefore(wait_for_log)
+wait_for_log.StartBefore(curl)
 curl.StartBefore(pipe_reader)
 pipe_reader.StartBefore(ts)
 
@@ -168,19 +173,23 @@ curl = tr.Processes.Process("client_request", 'curl "http://127.0.0.1:{0}" --ver
 
 reader_output = os.path.join(ts.Variables.LOGDIR, "reader_output")
 pipe_reader = tr.Processes.Process("pipe_reader", 'cat {} | tee {}'.format(pipe_path, reader_output))
-curl_ready = tr.Processes.Process("curl_ready", 'sleep 30')
-# In the AuTest environment, it can take more than 10 seconds for the log file
-# to be created.
-curl_ready.StartupTimeout = 30
-curl_ready.Ready = When.FileContains(reader_output, '127.0.0.1')
 
-tr.Processes.Default.Command = "sleep 10"
+# Create an arbitrary process that just sleeps so that we can provide a wait
+# condition upon the log being emitted. The test won't wait this entire sleep
+# period, it will only poll until the FileContains Ready condition is
+# fulfilled.
+wait_for_log = tr.Processes.Process("wait_for_log", 'sleep 15')
+wait_for_log.Ready = When.FileContains(reader_output, '127.0.0.1')
+
+# This is an arbitrary Default process that will simply provide for
+# ordering of the Processes.
+tr.Processes.Default.Command = "echo 'Default place holder for process ordering.'"
 tr.Processes.Default.Return = 0
 
 
 # Process ordering.
 tr.Processes.Default.StartBefore(verify_buffer_size)
-verify_buffer_size.StartBefore(curl_ready)
-curl_ready.StartBefore(curl)
+verify_buffer_size.StartBefore(wait_for_log)
+wait_for_log.StartBefore(curl)
 curl.StartBefore(pipe_reader)
 pipe_reader.StartBefore(ts)

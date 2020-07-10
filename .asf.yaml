@@ -1,4 +1,9 @@
+# Documentation https://cwiki.apache.org/confluence/display/INFRA/git+-+.asf.yaml+features
 notifications:
   commits: commits@trafficserver.apache.org
   issues: issues@trafficserver.apache.org
   pullrequests: github@trafficserver.apache.org
+github:
+  enabled_merge_buttons:
+    # enable squash button:
+    squash:  true
