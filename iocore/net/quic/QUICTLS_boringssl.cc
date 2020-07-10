@@ -81,10 +81,13 @@ set_write_secret(SSL *ssl, enum ssl_encryption_level_t level, const SSL_CIPHER *
     const uint8_t *tp_buf;
     size_t tp_buf_len;
     SSL_get_peer_quic_transport_params(ssl, &tp_buf, &tp_buf_len);
+    const QUICConnection *qc = static_cast<const QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
+    QUICVersion version      = qc->negotiated_version();
     if (SSL_is_server(ssl)) {
-      qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(tp_buf, tp_buf_len));
+      qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInClientHello>(tp_buf, tp_buf_len, version));
     } else {
-      qtls->set_remote_transport_parameters(std::make_shared<QUICTransportParametersInEncryptedExtensions>(tp_buf, tp_buf_len));
+      qtls->set_remote_transport_parameters(
+        std::make_shared<QUICTransportParametersInEncryptedExtensions>(tp_buf, tp_buf_len, version));
     }
   }
 
