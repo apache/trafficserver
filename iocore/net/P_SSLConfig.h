@@ -41,6 +41,7 @@
 #include "YamlSNIConfig.h"
 
 #include "P_SSLUtils.h"
+#include "P_SSLSecret.h"
 
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
@@ -144,9 +145,16 @@ struct SSLConfigParams : public ConfigInfo {
   mutable std::unordered_map<std::string, CTX_MAP> top_level_ctx_map;
   mutable ink_mutex ctxMapLock;
 
+  mutable SSLSecret secrets;
+
   shared_SSL_CTX getClientSSL_CTX() const;
+  shared_SSL_CTX getCTX(const std::string &client_cert, const std::string &key_file, const char *ca_bundle_file,
+                        const char *ca_bundle_path) const;
   shared_SSL_CTX getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file,
                         const char *ca_bundle_path) const;
+  void updateCTX(const std::string &secret_string_name) const;
+
+  void clearCTX(const std::string &client_cert) const;
 
   void cleanupCTXTable();
 
@@ -166,11 +174,22 @@ struct SSLConfig {
   static void startup();
   static void reconfigure();
   static SSLConfigParams *acquire();
+  static SSLConfigParams *load_acquire();
   static void release(SSLConfigParams *params);
+  static void load_release(SSLConfigParams *params);
+
+  // These methods manipulate the double buffering of the configs
+  // The "loading" version is only active during loading.  Once
+  // it is fliped to the active by comit_config_id, it/ becomes the
+  // version accessble to the rest of the system.
+  static int get_config_index();
+  static int get_loading_config_index();
+  static void commit_config_id();
   typedef ConfigProcessor::scoped_config<SSLConfig, SSLConfigParams> scoped_config;
 
 private:
-  static int configid;
+  static int config_index;
+  static int configids[2];
 };
 
 struct SSLCertificateConfig {
@@ -221,5 +240,14 @@ private:
   static int configid;
 };
 
+// A class to pass the ConfigUpdateHandler, so both SSLConfig and SNIConfig get updated
+// when the relevant files/configs get updated.
+class SSLClientCoordinator
+{
+public:
+  static void reconfigure();
+};
+
 extern SSLSessionCache *session_cache;
 extern SSLOriginSessionCache *origin_sess_cache;
+extern std::unique_ptr<ConfigUpdateHandler<SSLClientCoordinator>> sslClientUpdate;

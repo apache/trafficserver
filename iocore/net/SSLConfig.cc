@@ -35,6 +35,10 @@
 #include <cmath>
 
 #include "tscore/ink_config.h"
+#include <openssl/pem.h>
+
+#include "InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
+
 #include "tscore/ink_platform.h"
 #include "tscore/I_Layout.h"
 #include "records/I_RecHttp.h"
@@ -43,6 +47,7 @@
 
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
+#include "P_SSLSNI.h"
 #include "P_SSLCertLookup.h"
 #include "P_SSLSNI.h"
 #include "SSLDiags.h"
@@ -50,7 +55,8 @@
 #include "SSLSessionTicket.h"
 #include "YamlSNIConfig.h"
 
-int SSLConfig::configid                                     = 0;
+int SSLConfig::config_index                                 = 0;
+int SSLConfig::configids[]                                  = {0, 0};
 int SSLCertificateConfig::configid                          = 0;
 int SSLTicketKeyConfig::configid                            = 0;
 int SSLConfigParams::ssl_maxrecord                          = 0;
@@ -79,6 +85,7 @@ int SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file      = nullptr;
 
 static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
+std::unique_ptr<ConfigUpdateHandler<SSLClientCoordinator>> sslClientUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
 
 SSLConfigParams::SSLConfigParams()
@@ -438,8 +445,44 @@ SSLConfigParams::getClientSSL_CTX() const
 }
 
 void
+SSLClientCoordinator::reconfigure()
+{
+  SSLConfig::reconfigure();
+  SNIConfig::reconfigure();
+}
+
+int
+SSLConfig::get_config_index()
+{
+  return config_index;
+}
+
+int
+SSLConfig::get_loading_config_index()
+{
+  return config_index == 0 ? 1 : 0;
+}
+
+void
+SSLConfig::commit_config_id()
+{
+  // Update the active config index
+  config_index = get_loading_config_index();
+
+  if (configids[get_loading_config_index()] != 0) {
+    // Start draining to free the old config
+    configProcessor.set(configids[get_loading_config_index()], nullptr);
+  }
+}
+
+void
 SSLConfig::startup()
 {
+  sslClientUpdate.reset(new ConfigUpdateHandler<SSLClientCoordinator>());
+  sslClientUpdate->attach("proxy.config.ssl.client.cert.path");
+  sslClientUpdate->attach("proxy.config.ssl.client.cert.filename");
+  sslClientUpdate->attach("proxy.config.ssl.client.private_key.path");
+  sslClientUpdate->attach("proxy.config.ssl.client.private_key.filename");
   reconfigure();
 }
 
@@ -449,20 +492,36 @@ SSLConfig::reconfigure()
   Debug("ssl", "Reload SSLConfig");
   SSLConfigParams *params;
   params = new SSLConfigParams;
+  // start loading the next config
+  int loading_config_index        = get_loading_config_index();
+  configids[loading_config_index] = configProcessor.set(configids[loading_config_index], params);
   params->initialize(); // re-read configuration
-  configid = configProcessor.set(configid, params);
+  // Make the new config avaiable for use.
+  commit_config_id();
 }
 
 SSLConfigParams *
 SSLConfig::acquire()
 {
-  return static_cast<SSLConfigParams *>(configProcessor.get(configid));
+  return static_cast<SSLConfigParams *>(configProcessor.get(configids[get_config_index()]));
+}
+
+SSLConfigParams *
+SSLConfig::load_acquire()
+{
+  return static_cast<SSLConfigParams *>(configProcessor.get(configids[get_loading_config_index()]));
 }
 
 void
 SSLConfig::release(SSLConfigParams *params)
 {
-  configProcessor.release(configid, params);
+  configProcessor.release(configids[get_config_index()], params);
+}
+
+void
+SSLConfig::load_release(SSLConfigParams *params)
+{
+  configProcessor.release(configids[get_loading_config_index()], params);
 }
 
 bool
@@ -657,16 +716,62 @@ SSLTicketParams::cleanup()
   ticket_key_filename = static_cast<char *>(ats_free_null(ticket_key_filename));
 }
 
+void
+cleanup_bio(BIO *&biop)
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-value"
+  BIO_set_close(biop, BIO_NOCLOSE);
+#pragma GCC diagnostic pop
+  BIO_free(biop);
+  biop = nullptr;
+}
+
+void
+SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
+{
+  // Clear the corresponding client CTX's.  They will be lazy loaded later
+  Debug("ssl", "Update cert %s", cert_secret_name.c_str());
+  this->clearCTX(cert_secret_name);
+
+  // Update the server cert
+  SSLMultiCertConfigLoader loader(this);
+  loader.update_ssl_ctx(cert_secret_name);
+}
+
+void
+SSLConfigParams::clearCTX(const std::string &client_cert) const
+{
+  ink_mutex_acquire(&ctxMapLock);
+  for (auto ctx_map_iter = top_level_ctx_map.begin(); ctx_map_iter != top_level_ctx_map.end(); ++ctx_map_iter) {
+    auto ctx_iter = ctx_map_iter->second.find(client_cert);
+    if (ctx_iter != ctx_map_iter->second.end()) {
+      ctx_iter->second = nullptr;
+      Debug("ssl", "Clear client cert %s %s", ctx_map_iter->first.c_str(), ctx_iter->first.c_str());
+    }
+  }
+  ink_mutex_release(&ctxMapLock);
+}
+
 shared_SSL_CTX
 SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const char *ca_bundle_file, const char *ca_bundle_path) const
 {
+  return this->getCTX(std::string(client_cert ? client_cert : ""), std::string(key_file ? key_file : ""), ca_bundle_file,
+                      ca_bundle_path);
+}
+
+shared_SSL_CTX
+SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_file, const char *ca_bundle_file,
+                        const char *ca_bundle_path) const
+{
   shared_SSL_CTX client_ctx = nullptr;
   std::string top_level_key, ctx_key;
+  ctx_key = client_cert;
   ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
-  ts::bwprint(ctx_key, "{}:{}", client_cert, key_file);
 
-  Debug("ssl", "Load client cert %s %s", client_cert, key_file);
+  Debug("ssl", "Look for client cert %s %s", top_level_key.c_str(), ctx_key.c_str());
 
+  ink_mutex_acquire(&ctxMapLock);
   auto ctx_map_iter = top_level_ctx_map.find(top_level_key);
   if (ctx_map_iter != top_level_ctx_map.end()) {
     auto ctx_iter = ctx_map_iter->second.find(ctx_key);
@@ -674,29 +779,84 @@ SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const cha
       client_ctx = ctx_iter->second;
     }
   }
+  ink_mutex_release(&ctxMapLock);
 
+  BIO *biop     = nullptr;
+  X509 *cert    = nullptr;
+  EVP_PKEY *key = nullptr;
   // Create context if doesn't exists
   if (!client_ctx) {
+    Debug("ssl", "Load new cert for %s %s", top_level_key.c_str(), ctx_key.c_str());
     client_ctx = shared_SSL_CTX(SSLInitClientContext(this), SSLReleaseContext);
 
-    if (client_cert) {
-      // Set public and private keys
-      if (!SSL_CTX_use_certificate_chain_file(client_ctx.get(), client_cert)) {
-        SSLError("failed to load client certificate from %s", client_cert);
-        goto fail;
-      }
-      if (!key_file || key_file[0] == '\0') {
-        key_file = client_cert;
-      }
-      if (!SSL_CTX_use_PrivateKey_file(client_ctx.get(), key_file, SSL_FILETYPE_PEM)) {
-        SSLError("failed to load client private key file from %s", key_file);
+    // Set public and private keys
+    if (!client_cert.empty()) {
+      std::string_view secret_data;
+      std::string_view secret_key_data;
+
+      // Fetch the client_cert data
+      std::string completeSecretPath{Layout::get()->relative_to(this->clientCertPathOnly, client_cert)};
+      std::string completeKeySecretPath{!key_file.empty() ? Layout::get()->relative_to(this->clientKeyPathOnly, key_file) : ""};
+      secrets.getOrLoadSecret(completeSecretPath, completeKeySecretPath, secret_data, secret_key_data);
+      if (secret_data.empty()) {
+        SSLError("failed to access cert %s", client_cert.c_str());
         goto fail;
       }
 
-      if (!SSL_CTX_check_private_key(client_ctx.get())) {
-        SSLError("client private key (%s) does not match the certificate public key (%s)", key_file, client_cert);
+      biop = BIO_new_mem_buf(secret_data.data(), secret_data.size());
+
+      cert = PEM_read_bio_X509(biop, NULL, 0, NULL);
+      if (!cert) {
+        SSLError("failed to load cert %s", client_cert.c_str());
         goto fail;
       }
+      if (!SSL_CTX_use_certificate(client_ctx.get(), cert)) {
+        SSLError("failed to attach client certificate from %s", client_cert.c_str());
+        goto fail;
+      }
+      X509_free(cert);
+
+      // Continue to fetch certs to associate intermediate certificates
+      cert = PEM_read_bio_X509(biop, NULL, 0, NULL);
+      while (cert) {
+        if (!SSL_CTX_use_certificate(client_ctx.get(), cert)) {
+          SSLError("failed to attach client chain certificate from %s", client_cert.c_str());
+          goto fail;
+        }
+        X509_free(cert);
+        cert = PEM_read_bio_X509(biop, NULL, 0, NULL);
+      }
+
+      cleanup_bio(biop);
+
+      const std::string &key_file_name = (secret_key_data.empty()) ? client_cert : key_file;
+
+      // If there is a separate key file, fetch the new content
+      // otherwise, continue on with the cert data and hope for the best
+      if (!secret_key_data.empty()) {
+        biop = BIO_new_mem_buf(secret_key_data.data(), secret_key_data.size());
+      } else {
+        biop = BIO_new_mem_buf(secret_data.data(), secret_data.size());
+      }
+
+      key = PEM_read_bio_PrivateKey(biop, NULL, 0, NULL);
+      if (!key) {
+        SSLError("failed to load client private key file from %s", key_file_name.c_str());
+        goto fail;
+      }
+      if (!SSL_CTX_use_PrivateKey(client_ctx.get(), key)) {
+        SSLError("failed to use client private key file from %s", key_file_name.c_str());
+        goto fail;
+      }
+      EVP_PKEY_free(key);
+      key = nullptr;
+
+      if (!SSL_CTX_check_private_key(client_ctx.get())) {
+        SSLError("client private key (%s) does not match the certificate public key (%s)", key_file_name.c_str(),
+                 client_cert.c_str());
+        goto fail;
+      }
+      cleanup_bio(biop);
     }
 
     // Set CA information for verifying peer cert
@@ -723,6 +883,15 @@ SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const cha
   return client_ctx;
 
 fail:
+  if (biop) {
+    cleanup_bio(biop);
+  }
+  if (cert) {
+    X509_free(cert);
+  }
+  if (key) {
+    EVP_PKEY_free(key);
+  }
   return nullptr;
 }
 

@@ -65,10 +65,12 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
   // Don't be an idiot and use a zero timeout ...
   ink_assert(timeout_secs > 0);
 
-  // New objects *must* start with a zero refcount. The config
-  // processor holds it's own refcount. We should be the only
-  // refcount holder at this point.
-  ink_release_assert(info->refcount_inc() == 1);
+  if (info) {
+    // New objects *must* start with a zero refcount. The config
+    // processor holds it's own refcount. We should be the only
+    // refcount holder at this point.
+    ink_release_assert(info->refcount_inc() == 1);
+  }
 
   if (id > MAX_CONFIGS) {
     // invalid index
@@ -108,9 +110,11 @@ ConfigProcessor::get(unsigned int id)
   idx  = id - 1;
   info = infos[idx];
 
-  // Hand out a refcount to the caller. We should still have out
-  // own refcount, so it should be at least 2.
-  ink_release_assert(info->refcount_inc() > 1);
+  if (info) {
+    // Hand out a refcount to the caller. We should still have out
+    // own refcount, so it should be at least 2.
+    ink_release_assert(info->refcount_inc() > 1);
+  }
   return info;
 }
 

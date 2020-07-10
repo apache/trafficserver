@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <set>
 #include <openssl/ssl.h>
 
 #include "ProxyConfig.h"
@@ -140,7 +141,7 @@ struct SSLCertLookup : public ConfigInfo {
       Exact matches have priority, then wildcards. Only destination based matches are checked.
       @return @c A pointer to the matched context, @c nullptr if no match is found.
   */
-  SSLCertContext *find(const char *name) const;
+  SSLCertContext *find(const std::string &name) const;
 
   // Return the last-resort default TLS context if there is no name or address match.
   SSL_CTX *
@@ -152,8 +153,15 @@ struct SSLCertLookup : public ConfigInfo {
   unsigned count() const;
   SSLCertContext *get(unsigned i) const;
 
+  void register_cert_secrets(std::vector<std::string> const &cert_secrets, std::set<std::string> &lookup_names);
+  void getPolicies(const std::string &secret_name, std::set<shared_SSLMultiCertConfigParams> &policies) const;
+
   SSLCertLookup();
   ~SSLCertLookup() override;
+
+private:
+  // Map cert_secret name to lookup keys
+  std::unordered_map<std::string, std::vector<std::string>> cert_secret_registry;
 };
 
 void ticket_block_free(void *ptr);
