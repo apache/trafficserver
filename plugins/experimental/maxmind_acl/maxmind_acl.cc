@@ -29,10 +29,7 @@ config_handler(TSCont cont, TSEvent event, void *edata)
   TSDebug(PLUGIN_NAME, "In config Handler");
   Acl *a = static_cast<Acl *>(TSContDataGet(cont));
 
-  // strdup for const string return
-  char *config = strdup(a->get_state()->config_file.c_str());
-  a->init(config);
-  free(config);
+  a->init(a->get_state()->config_file.c_str());
   TSMutexUnlock(mutex);
 
   // Don't reschedule for TS_EVENT_MGMT_UPDATE

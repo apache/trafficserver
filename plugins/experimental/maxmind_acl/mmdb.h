@@ -74,7 +74,7 @@ public:
   }
 
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp);
-  bool init(char *filename);
+  bool init(char const *filename);
   plugin_state_t *
   get_state()
   {

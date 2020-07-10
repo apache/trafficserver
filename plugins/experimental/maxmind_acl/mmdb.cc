@@ -23,7 +23,7 @@
 // check for basics
 // Clear out any existing data since this may be a reload
 bool
-Acl::init(char *filename)
+Acl::init(char const *filename)
 {
   std::string configloc;
   struct stat s;
