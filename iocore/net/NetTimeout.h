@@ -69,7 +69,7 @@ private:
   };
   ```
  */
-template <class T, class List = DLL<T>> class ActivityCop : Continuation
+template <class T, class List = DLL<T>> class ActivityCop : public Continuation
 {
 public:
   ActivityCop(){};

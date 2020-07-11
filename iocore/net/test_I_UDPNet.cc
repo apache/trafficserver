@@ -47,12 +47,12 @@ class EchoServer : public Continuation
 {
 public:
   EchoServer() : Continuation(new_ProxyMutex()) { SET_HANDLER(&EchoServer::start); };
-  bool start();
+  int start(int, void *);
   int handle_packet(int event, void *data);
 };
 
-bool
-EchoServer::start()
+int
+EchoServer::start(int, void *)
 {
   SET_HANDLER(&EchoServer::handle_packet);
 

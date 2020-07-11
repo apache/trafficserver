@@ -63,6 +63,35 @@ extern EThread *this_event_thread();
 
 typedef int (Continuation::*ContinuationHandler)(int event, void *data);
 
+// Convert event handler pointer fp to type ContinuationHandler, but with a compiler error if class C is not
+// derived from the class Continuation.
+//
+template <class C, typename T>
+constexpr ContinuationHandler
+continuation_handler_void_ptr(int (C::*fp)(int, T *))
+{
+  auto fp2 = reinterpret_cast<int (C::*)(int, void *)>(fp);
+  return static_cast<ContinuationHandler>(fp2);
+}
+
+// Overload for nullptr.
+//
+constexpr ContinuationHandler continuation_handler_void_ptr(std::nullptr_t)
+{
+#undef X
+#if !defined(__GNUC__)
+#define X 1
+#else
+#define X (__GNUC__ > 7)
+#endif
+#if X
+  static_assert(!static_cast<ContinuationHandler>(nullptr));
+#endif
+#undef X
+
+  return static_cast<ContinuationHandler>(nullptr);
+}
+
 class force_VFPT_to_top
 {
 public:
@@ -210,9 +239,9 @@ protected:
 
 */
 #ifdef DEBUG
-#define SET_HANDLER(_h) (handler = ((ContinuationHandler)_h), handler_name = #_h)
+#define SET_HANDLER(_h) (handler = continuation_handler_void_ptr(_h), handler_name = #_h)
 #else
-#define SET_HANDLER(_h) (handler = ((ContinuationHandler)_h))
+#define SET_HANDLER(_h) (handler = continuation_handler_void_ptr(_h))
 #endif
 
 /**
@@ -225,9 +254,9 @@ protected:
 
 */
 #ifdef DEBUG
-#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = ((ContinuationHandler)_h), _c->handler_name = #_h)
+#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = continuation_handler_void_ptr(_h), _c->handler_name = #_h)
 #else
-#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = ((ContinuationHandler)_h))
+#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = continuation_handler_void_ptr(_h))
 #endif
 
 inline Continuation::Continuation(Ptr<ProxyMutex> &amutex) : mutex(amutex)
