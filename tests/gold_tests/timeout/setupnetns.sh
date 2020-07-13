@@ -14,30 +14,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-include $(top_srcdir)/build/tidy.mk
+ip netns del testserver
+ip link del veth0 type veth peer name veth1
+ip netns add testserver
+ip link add veth0 type veth peer name veth1
+ip addr add 10.1.1.2/24 dev veth0
+ip link set up dev veth0
+ip link set veth1 netns testserver
+ip netns exec testserver ip addr add 10.1.1.1/24 dev veth1
+ip netns exec testserver ip link set up  dev veth1
+ip netns exec testserver iptables -t filter -A INPUT -p tcp --dport $1 -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m comment --comment v4-new-connections -j DROP
+ip netns exec testserver iptables -t filter -A INPUT -p tcp --dport $2 -j ACCEPT
+ip netns exec testserver iptables -t filter -A OUTPUT -p tcp  -j ACCEPT
+# Depending on your iptables policy, you may need to adjust to allow traffic to pass over the veth0 virtual connection
 
-noinst_LTLIBRARIES =
-noinst_PROGRAMS =
-
-SUBDIRS =
-
-AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
-
-# Automake is pretty draconian about not creating shared object (.so) files for
-# non-installed files. However we do not want to install our test plugins so
-# we prefix them with noinst_.  The following -rpath argument coerces the
-# generation of so objects for these test files.
-AM_LDFLAGS += -rpath $(abs_builddir)
-
-include gold_tests/continuations/plugins/Makefile.inc
-include gold_tests/chunked_encoding/Makefile.inc
-include gold_tests/timeout/Makefile.inc
-include gold_tests/tls/Makefile.inc
-include tools/plugins/Makefile.inc
-
-TESTS = $(check_PROGRAMS)
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
-	$(CC_Clang_Tidy)
