@@ -45,7 +45,18 @@ IN6_IS_ADDR_UNSPECIFIED(in6_addr const *addr)
 }
 #endif
 
-// IP protocol stack tags.
+/*
+ * IP protocol stack tags.
+ *
+ * When adding support for an additional protocol, the following minimum steps
+ * should be done:
+ *
+ * 1. This set of string_views should be updated with the new tag.
+ * 2. A populate_protocol function overload should be implemented for the
+ *    appropriate VConnection or ProxySession virtual function.
+ * 3. Traffic Dump should be updated to handle the new tag in:
+ *    plugins/experimental/traffic_dump/session_data.cc
+ */
 extern const std::string_view IP_PROTO_TAG_IPV4;
 extern const std::string_view IP_PROTO_TAG_IPV6;
 extern const std::string_view IP_PROTO_TAG_UDP;

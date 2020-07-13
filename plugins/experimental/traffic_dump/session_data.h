@@ -124,19 +124,19 @@ public:
    */
   static void set_max_disk_usage(int64_t new_max_disk_usage);
 
-#if 0
-  // TODO: This will eventually be used by TransactionData to dump
-  // the server protocol description in the "server-response" node,
-  // but the TS API does not yet support this.
-
   /** Get the JSON string that describes the server session stack.
    *
-   * @param[in] ssnp The reference to the server session.
+   * The server side protocol description may change on a per-transaction
+   * basis. Therefore we print this for each transaction and take an TSHttpTxn
+   * instead of a TSHttpSsn that the analogous get_client_protocol_description
+   * receives.
    *
-   * @return A JSON description of the server protocol stack.
+   * @param[in] txnp The reference to the transaction.
+   *
+   * @return A JSON description of the server protocol stack for the
+   * transaction.
    */
-  static std::string get_server_protocol_description(TSHttpSsn ssnp);
-#endif
+  static std::string get_server_protocol_description(TSHttpTxn txnp);
 
   /** Write the string to the session's dump file.
    *

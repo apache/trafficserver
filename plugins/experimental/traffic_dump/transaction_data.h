@@ -37,6 +37,9 @@ private:
   /** The string for the JSON content of this transaction. */
   std::string txn_json;
 
+  /** The '"protocol" node for this transaction's server-side conection. */
+  std::string server_protocol_description;
+
   // The index to be used for the TS API for storing this TransactionData on a
   // per-transaction basis.
   static int transaction_arg_index;
