@@ -54,6 +54,8 @@ An example configuration ::
       - [US, ".*\\.txt"]  # Because these get parsed you must escape the escape of the ``.`` in order to have it be escaped in the regex, resulting in ".*\.txt"
       - [US, ".*\\.mp3"]
 
+In order to load an updated configuration while ATS is running you will have to touch or modify the remap.config file in order to initiate a plugin reload to pull in any changes.
+
 Rules
 =====
 
