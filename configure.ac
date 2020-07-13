@@ -1685,6 +1685,21 @@ AC_CHECK_HEADERS([GeoIP.h], [
   ])
 ])
 
+#
+# Check for libmaxmind.  This is the maxmind v2 API where GeoIP is the legacy
+# v1 dat file based API
+#
+AC_CHECK_HEADERS([maxminddb.h], [
+  AC_CHECK_LIB([maxminddb], [MMDB_open], [
+    AC_SUBST([MAXMINDDB_LIBS], ["-lmaxminddb"])
+    AC_SUBST(has_maxmind, 1)
+  ], [
+    AC_SUBST([MAXMINDDB_LIBS], [""])
+    AC_SUBST(has_maxmind, 0)
+  ])
+])
+
+AM_CONDITIONAL([BUILD_MAXMIND_ACL_PLUGIN], [test "x${has_maxmind}" = "x1" ])
 
 # Right now, the healthcheck plugins requires inotify_init (and friends)
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
