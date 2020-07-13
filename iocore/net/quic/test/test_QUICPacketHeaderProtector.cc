@@ -124,6 +124,13 @@ TEST_CASE("QUICPacketHeaderProtector")
     QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
     QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
 
+    auto client_tp = std::make_shared<QUICTransportParametersInClientHello>();
+    auto server_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
+    client_tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, 10);
+    server_tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, 10);
+    client->set_local_transport_parameters(client_tp);
+    server->set_local_transport_parameters(server_tp);
+
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
