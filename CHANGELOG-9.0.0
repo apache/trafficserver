@@ -946,6 +946,7 @@ Changes with Apache Traffic Server 9.0.0
   #6803 - fixes issue 6765, memory leak in unit test
   #6805 - Fix session pool to add and fetch to beginning of hash chain instead of end
   #6807 - Add le32toh and htole32 for macOS
+  #6808 - Open UDP ports on traffic_manager if ports are configured for QUIC
   #6809 - Fix assert when client aborts during backfill
   #6812 - Fix missing virtual destructor in TLSSessionResumptionSupport.
   #6813 - Adding a basic ip_allow test.
@@ -972,6 +973,7 @@ Changes with Apache Traffic Server 9.0.0
   #6872 - Track thread changes during origin connect and cache open write
   #6873 - Metrics for origin close
   #6884 - microserver error handling: SSLError check and debug.
+  #6889 - Improve client_vc tracking
   #6891 - Make h2spec test more resiliant by extending timeout
   #6892 - Fix compiler issue with ICC 19.1
   #6896 - Fix dual_cert_select test to run with older openssl binary
