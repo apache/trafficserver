@@ -286,7 +286,7 @@ Http2ClientSession::do_io_close(int alerrno)
   this->clear_session_active();
 
   // Clean up the write VIO in case of inactivity timeout
-  this->do_io_write(nullptr, 0, nullptr);
+  this->do_io_write(this, 0, nullptr);
 }
 
 void
@@ -349,10 +349,6 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     Http2SsnDebug("Closing event %d", event);
     this->set_dying_event(event);
     this->do_io_close();
-    if (_vc != nullptr) {
-      _vc->do_io_close();
-      _vc = nullptr;
-    }
     retval = 0;
     break;
 
@@ -594,7 +590,6 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
         if (!this->connection_state.is_state_closed()) {
           this->connection_state.send_goaway_frame(this->connection_state.get_latest_stream_id_in(), err);
           this->set_half_close_local_flag(true);
-          this->do_io_close();
         }
       }
       return 0;

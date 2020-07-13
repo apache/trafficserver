@@ -96,3 +96,4 @@ tr.Processes.Default.Command = "echo check log"
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("log.txt")
 f.Content = "log.gold"
+f.Content += Testers.ContainsExpression("Global: event=TS_EVENT_VCONN_CLOSE", "VCONN_CLOSE should trigger 2 times")

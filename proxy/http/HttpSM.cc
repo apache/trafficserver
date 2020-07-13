@@ -540,7 +540,8 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
-  ua_entry->read_vio = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
+  ua_entry->read_vio  = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
+  ua_entry->write_vio = client_vc->do_io_write(this, 0, nullptr);
 
   /////////////////////////
   // set up timeouts     //
@@ -2732,7 +2733,6 @@ HttpSM::tunnel_handler_post(int event, void *data)
     if (ua_entry->write_buffer) {
       free_MIOBuffer(ua_entry->write_buffer);
       ua_entry->write_buffer = nullptr;
-      ua_entry->vc->do_io_write(nullptr, 0, nullptr);
     }
     if (!p->handler_state) {
       p->handler_state = HTTP_SM_POST_UA_FAIL;
@@ -3494,9 +3494,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       // if it is active timeout case, we need to give another chance to send 408 response;
       ua_txn->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
 
-      p->vc->do_io_write(nullptr, 0, nullptr);
-      p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
-
       return 0;
     }
   // fall through
@@ -3508,8 +3505,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     //   server and close the ua
     p->handler_state = HTTP_SM_POST_UA_FAIL;
     set_ua_abort(HttpTransact::ABORTED, event);
-    p->vc->do_io_write(nullptr, 0, nullptr);
-    p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
     tunnel.chain_abort_all(p);
     server_session = nullptr;
     // the in_tunnel status on both the ua & and
@@ -3520,6 +3515,11 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     if (p->consumer_list.head && p->consumer_list.head->vc_type == HT_TRANSFORM) {
       hsm_release_assert(post_transform_info.entry->in_tunnel == true);
     } // server side may have completed before the user agent side, so it may no longer be in tunnel
+
+    // In the error case, start to take down the client session. There should
+    // be no reuse here
+    vc_table.remove_entry(this->ua_entry);
+    ua_txn->do_io_close();
     break;
 
   case VC_EVENT_READ_COMPLETE:
@@ -3536,8 +3536,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       }
     }
 
-    // Initiate another read to watch catch aborts and
-    //   timeouts
+    // Initiate another read to catch aborts and timeouts.
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
     ua_entry->read_vio   = p->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
     break;
