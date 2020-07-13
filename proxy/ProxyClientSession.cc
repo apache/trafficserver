@@ -130,7 +130,7 @@ ProxyClientSession::state_api_callout(int event, void *data)
             if (!schedule_event) { // Don't bother to schedule is there is already one out.
               schedule_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
             }
-            return -1;
+            return 0;
           }
         }
 
@@ -160,7 +160,7 @@ ProxyClientSession::state_api_callout(int event, void *data)
   return 0;
 }
 
-int
+void
 ProxyClientSession::do_api_callout(TSHttpHookID id)
 {
   ink_assert(id == TS_HTTP_SSN_START_HOOK || id == TS_HTTP_SSN_CLOSE_HOOK);
@@ -171,11 +171,10 @@ ProxyClientSession::do_api_callout(TSHttpHookID id)
 
   if (this->hooks_on && this->has_hooks()) {
     SET_HANDLER(&ProxyClientSession::state_api_callout);
-    return this->state_api_callout(EVENT_NONE, nullptr);
+    this->state_api_callout(EVENT_NONE, nullptr);
   } else {
     this->handle_api_return(TS_EVENT_HTTP_CONTINUE);
   }
-  return 0;
 }
 
 void

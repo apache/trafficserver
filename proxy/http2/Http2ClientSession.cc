@@ -308,7 +308,7 @@ Http2ClientSession::do_io_close(int alerrno)
 
   {
     SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-    this->connection_state.release_stream();
+    this->connection_state.release_stream(nullptr);
   }
 
   this->clear_session_active();
