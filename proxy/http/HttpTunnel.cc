@@ -1499,9 +1499,7 @@ HttpTunnel::finish_all_internal(HttpTunnelProducer *p, bool chain)
         ink_assert(c->write_vio->nbytes >= 0);
 
         if (c->write_vio->nbytes < 0) {
-          // TODO: Wtf, printf?
-          fprintf(stderr, "[HttpTunnel::finish_all_internal] ERROR: Incorrect total_bytes - c->skip_bytes = %" PRId64 "\n",
-                  static_cast<int64_t>(total_bytes - c->skip_bytes));
+          Error("Incorrect total_bytes - c->skip_bytes = %" PRId64 "\n", total_bytes - c->skip_bytes);
         }
       }
 
