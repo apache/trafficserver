@@ -999,6 +999,7 @@ Changes with Apache Traffic Server 9.0.0
   #6957 - Fix leak in early data
   #6968 - RateLimiting and Connection Config changes
   #6969 - Update docs for some DNS config settings
+  #6977 - Preserve cert name through ssl vc migration
   #6984 - Fix out of source tree builds for QUIC
   #6985 - Fixes use after free when boringssl is used
   #6994 - Adds null check
