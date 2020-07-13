@@ -995,5 +995,10 @@ Changes with Apache Traffic Server 9.0.0
   #6949 - Set the default thread count factor to 1x the number of logical cores
   #6950 - Prevent buffer overflow during log filter actions
   #6953 - Assert on valid boundaries for UserArgTable access
+  #6954 - Assert non-zero HdrHeap object size
+  #6957 - Fix leak in early data
   #6968 - RateLimiting and Connection Config changes
   #6969 - Update docs for some DNS config settings
+  #6984 - Fix out of source tree builds for QUIC
+  #6985 - Fixes use after free when boringssl is used
+  #6994 - Adds null check
