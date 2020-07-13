@@ -185,7 +185,13 @@ The following list shows the possible actions and their allowed values.
       - If the chosen parent is marked down then another parent will
         be chosen from the ``secondary_parent`` list. The
         ``secondary_parent`` list will be exhausted before attempting
-        to choose another parent in the ``parent`` list.
+        to choose another parent in the ``parent`` list. This depends
+        on taking a parent down from a particular EDGE using traffic_ctl
+        like ``traffic_ctl host down sample.server.com``. This will be
+        useful during maintenance window or as a debugging aid when a
+        user wants to take down specific parents. Taking parents down
+        using ``traffic_ctl`` will cause the EDGE to ignore those parent
+        immediately from parent selection logic.
 
       - If the chosen parent is unavailable but not marked down then
         another parent will be chosen from the ``parent`` list. The
