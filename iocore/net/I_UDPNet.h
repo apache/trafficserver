@@ -63,6 +63,7 @@ public:
      @param c Continuation that is called back with newly created
      socket.
      @param addr Address to bind (includes port)
+     @param fd File descriptor to use (if exists)
      @param send_bufsize (optional) Socket buffer size for sending.
      Limits how much outstanding data to OS before it is able to send
      to the NIC.
@@ -71,7 +72,7 @@ public:
      @return Action* Always returns ACTION_RESULT_DONE if socket was
      created successfully, or ACTION_IO_ERROR if not.
   */
-  inkcoreapi Action *UDPBind(Continuation *c, sockaddr const *addr, int send_bufsize = 0, int recv_bufsize = 0);
+  inkcoreapi Action *UDPBind(Continuation *c, sockaddr const *addr, int fd = -1, int send_bufsize = 0, int recv_bufsize = 0);
 
   // Regarding sendto_re, sendmsg_re, recvfrom_re:
   // * You may be called back on 'c' with completion or error status.
