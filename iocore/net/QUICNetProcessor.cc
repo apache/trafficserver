@@ -215,7 +215,7 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   na->init_accept();
 
   SCOPED_MUTEX_LOCK(lock, na->mutex, this_ethread());
-  udpNet.UDPBind((Continuation *)na, &na->server.accept_addr.sa, 1048576, 1048576);
+  udpNet.UDPBind((Continuation *)na, &na->server.accept_addr.sa, fd, 1048576, 1048576);
 
   return na->action_.get();
 }

@@ -735,20 +735,24 @@ HardError:
 }
 
 Action *
-UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufsize, int recv_bufsize)
+UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int send_bufsize, int recv_bufsize)
 {
   int res              = 0;
-  int fd               = -1;
   UnixUDPConnection *n = nullptr;
   IpEndpoint myaddr;
   int myaddr_len     = sizeof(myaddr);
   PollCont *pc       = nullptr;
   PollDescriptor *pd = nullptr;
+  bool need_bind     = true;
 
-  if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
-    goto Lerror;
+  if (fd == -1) {
+    if ((res = socketManager.socket(addr->sa_family, SOCK_DGRAM, 0)) < 0) {
+      goto Lerror;
+    }
+    fd = res;
+  } else {
+    need_bind = false;
   }
-  fd = res;
   if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
     goto Lerror;
   }
@@ -798,11 +802,12 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufs
     }
   }
 
-  if (ats_is_ip6(addr) && safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
+  if (need_bind && ats_is_ip6(addr) && safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
 
-  if (socketManager.ink_bind(fd, addr, ats_ip_size(addr)) < 0) {
+  if (need_bind && (socketManager.ink_bind(fd, addr, ats_ip_size(addr)) < 0)) {
+    Debug("udpnet", "ink_bind failed");
     goto Lerror;
   }
 
