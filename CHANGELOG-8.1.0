@@ -205,5 +205,7 @@ Changes with Apache Traffic Server 8.1.0
   #6876 - Make Http2ClientSession inactive on EOS event
   #6885 - Revert 4028 for 8.1.x branch
   #6955 - Do not create Host Status stats for Origin servers.
+  #6985 - Fixes use after free when boringssl is used
   #6986 - Fix memory leak in header_rewrite
   #6987 - Fixes use of TS_USE_TLS_OCSP
+  #6990 - [8.1.x] Disable openclose_h2 AuTest on 8.1.x
