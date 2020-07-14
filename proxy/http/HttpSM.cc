@@ -586,7 +586,8 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
-  ua_entry->read_vio = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
+  ua_entry->read_vio  = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
+  ua_entry->write_vio = client_vc->do_io_write(this, 0, nullptr);
 
   /////////////////////////
   // set up timeouts     //
@@ -1856,10 +1857,13 @@ HttpSM::state_http_server_open(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_ERROR:
   case NET_EVENT_OPEN_FAILED: {
-    NetVConnection *vc = server_session->get_netvc();
-    if (vc) {
-      server_connection_provided_cert = vc->provided_cert();
+    if (server_session) {
+      NetVConnection *vc = server_session->get_netvc();
+      if (vc) {
+        server_connection_provided_cert = vc->provided_cert();
+      }
     }
+
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     // save the errno from the connect fail for future use (passed as negative value, flip back)
     t_state.current.server->set_connect_fail(event == NET_EVENT_OPEN_FAILED ? -reinterpret_cast<intptr_t>(data) : ECONNABORTED);
@@ -2772,7 +2776,6 @@ HttpSM::tunnel_handler_post(int event, void *data)
     if (ua_entry->write_buffer) {
       free_MIOBuffer(ua_entry->write_buffer);
       ua_entry->write_buffer = nullptr;
-      ua_entry->vc->do_io_write(nullptr, 0, nullptr);
     }
     if (!p->handler_state) {
       p->handler_state = HTTP_SM_POST_UA_FAIL;
@@ -3533,9 +3536,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       // if it is active timeout case, we need to give another chance to send 408 response;
       ua_txn->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
 
-      p->vc->do_io_write(nullptr, 0, nullptr);
-      p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
-
       return 0;
     }
   // fall through
@@ -3547,8 +3547,6 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     //   server and close the ua
     p->handler_state = HTTP_SM_POST_UA_FAIL;
     set_ua_abort(HttpTransact::ABORTED, event);
-    p->vc->do_io_write(nullptr, 0, nullptr);
-    p->vc->do_io_shutdown(IO_SHUTDOWN_READ);
     tunnel.chain_abort_all(p);
     server_session = nullptr;
     // the in_tunnel status on both the ua & and
@@ -3559,6 +3557,11 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     if (p->consumer_list.head && p->consumer_list.head->vc_type == HT_TRANSFORM) {
       hsm_release_assert(post_transform_info.entry->in_tunnel == true);
     } // server side may have completed before the user agent side, so it may no longer be in tunnel
+
+    // In the error case, start to take down the client session. There should
+    // be no reuse here
+    vc_table.remove_entry(this->ua_entry);
+    ua_txn->do_io_close();
     break;
 
   case VC_EVENT_READ_COMPLETE:
@@ -3575,8 +3578,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       }
     }
 
-    // Initiate another read to watch catch aborts and
-    //   timeouts
+    // Initiate another read to catch aborts and timeouts.
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
     ua_entry->read_vio   = p->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
     break;
@@ -8125,7 +8127,7 @@ HttpSM::is_redirect_required()
   return redirect_required;
 }
 
-// Fill in the client protocols used.  Return the number of entries returned
+// Fill in the client protocols used.  Return the number of entries populated.
 int
 HttpSM::populate_client_protocol(std::string_view *result, int n) const
 {
@@ -8142,7 +8144,7 @@ HttpSM::populate_client_protocol(std::string_view *result, int n) const
   return retval;
 }
 
-// Look for a specific protocol
+// Look for a specific client protocol
 const char *
 HttpSM::client_protocol_contains(std::string_view tag_prefix) const
 {
@@ -8159,10 +8161,51 @@ HttpSM::client_protocol_contains(std::string_view tag_prefix) const
   return retval;
 }
 
+// Fill in the server protocols used.  Return the number of entries populated.
+int
+HttpSM::populate_server_protocol(std::string_view *result, int n) const
+{
+  int retval = 0;
+  if (!t_state.hdr_info.server_request.valid()) {
+    return retval;
+  }
+  if (n > 0) {
+    std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.server_request.version_get());
+    if (!proto.empty()) {
+      result[retval++] = proto;
+      if (n > retval && server_session) {
+        retval += server_session->populate_protocol(result + retval, n - retval);
+      }
+    }
+  }
+  return retval;
+}
+
+// Look for a specific server protocol
+const char *
+HttpSM::server_protocol_contains(std::string_view tag_prefix) const
+{
+  const char *retval     = nullptr;
+  std::string_view proto = HttpSM::find_proto_string(t_state.hdr_info.server_request.version_get());
+  if (!proto.empty()) {
+    std::string_view prefix(tag_prefix);
+    if (prefix.size() <= proto.size() && 0 == strncmp(proto.data(), prefix.data(), prefix.size())) {
+      retval = proto.data();
+    } else {
+      if (server_session) {
+        retval = server_session->protocol_contains(prefix);
+      }
+    }
+  }
+  return retval;
+}
+
 std::string_view
 HttpSM::find_proto_string(HTTPVersion version) const
 {
-  if (version == HTTPVersion(1, 1)) {
+  if (version == HTTPVersion(2, 0)) {
+    return IP_PROTO_TAG_HTTP_2_0;
+  } else if (version == HTTPVersion(1, 1)) {
     return IP_PROTO_TAG_HTTP_1_1;
   } else if (version == HTTPVersion(1, 0)) {
     return IP_PROTO_TAG_HTTP_1_0;

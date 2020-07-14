@@ -20,11 +20,14 @@
 #include <chrono>
 #include <fcntl.h>
 #include <iomanip>
-#include <openssl/ssl.h>
 #include <netinet/in.h>
+#include <openssl/ssl.h>
 #include <sstream>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unordered_map>
+
+#include <tscore/ink_inet.h>
 
 #include "session_data.h"
 #include "global_variables.h"
@@ -34,6 +37,148 @@ namespace
 {
 /** The final string used to close a JSON session. */
 char const constexpr *const json_closing = "]}]}";
+
+/**
+ * A mapping from IP_PROTO_TAG to the string describing the JSON protocol node.
+ */
+std::unordered_map<std::string, std::string> tag_to_node = {
+  {std::string(IP_PROTO_TAG_IPV4), R"("name":"ip","version":"4")"},
+  {std::string(IP_PROTO_TAG_IPV6), R"("name":"ip","version":"6")"},
+
+  {std::string(IP_PROTO_TAG_TCP), R"("name":"tcp")"},
+  {std::string(IP_PROTO_TAG_UDP), R"("name":"udp")"},
+
+  {std::string(IP_PROTO_TAG_QUIC), R"("name:":"quic")"},
+
+  {std::string(IP_PROTO_TAG_TLS_1_0), R"("name":"tls","version":"1.0")"},
+  {std::string(IP_PROTO_TAG_TLS_1_1), R"("name":"tls","version":"1.1")"},
+  {std::string(IP_PROTO_TAG_TLS_1_2), R"("name":"tls","version":"1.2")"},
+  {std::string(IP_PROTO_TAG_TLS_1_3), R"("name":"tls","version":"1.3")"},
+
+  {std::string(IP_PROTO_TAG_HTTP_0_9), R"("name":"http","version":"0.9")"},
+  {std::string(IP_PROTO_TAG_HTTP_1_0), R"("name":"http","version":"1.0")"},
+  {std::string(IP_PROTO_TAG_HTTP_1_1), R"("name":"http","version":"1.1")"},
+  {std::string(IP_PROTO_TAG_HTTP_2_0), R"("name":"http","version":"2")"},
+
+  {std::string(IP_PROTO_TAG_HTTP_QUIC), R"("name":"http","version":"0.9")"},
+  {std::string(IP_PROTO_TAG_HTTP_3), R"("name":"http","version":"3")"},
+};
+
+/** Create a TLS characteristics node.
+ *
+ * This function encapsulates the logic common between the client-side and
+ * server-side logic for populating a "tls" node.
+ *
+ * @param[in] vconn The virtual connection for the session.
+ *
+ * @return The node describing the TLS properties of this session.
+ */
+std::string
+get_tls_description_helper(TSVConn vconn)
+{
+  if (vconn == nullptr) {
+    return "";
+  }
+  SSL *ssl_obj = reinterpret_cast<SSL *>(TSVConnSslConnectionGet(vconn));
+  if (ssl_obj == nullptr) {
+    return "";
+  }
+  std::ostringstream tls_description;
+  tls_description << R"("name":"tls",)";
+  char const *version_ptr = SSL_get_version(ssl_obj);
+  if (version_ptr != nullptr) {
+    std::string_view version{version_ptr};
+    if (!version.empty()) {
+      tls_description << R"("version":")" << version << R"(",)";
+    }
+  }
+  char const *sni_ptr = SSL_get_servername(ssl_obj, TLSEXT_NAMETYPE_host_name);
+  if (sni_ptr != nullptr) {
+    std::string_view sni{sni_ptr};
+    if (!sni.empty()) {
+      tls_description << R"("sni":")" << sni << R"(",)";
+    }
+  }
+
+  int verify_mode = SSL_get_verify_mode(ssl_obj);
+  tls_description << R"("proxy-verify-mode":)" << std::to_string(verify_mode) << ",";
+  bool provided_cert = TSVConnProvidedSslCert(vconn);
+  tls_description << R"("proxy-provided-cert":)" << (provided_cert ? "true" : "false");
+  return tls_description.str();
+}
+
+/** Create a client-side TLS characteristics node.
+ *
+ * @param[in] ssnp The pointer for this session.
+ *
+ * @return The node describing the TLS properties of this session.
+ */
+std::string
+get_client_tls_description(TSHttpSsn ssnp)
+{
+  TSVConn client_ssn_vc = TSHttpSsnClientVConnGet(ssnp);
+  return get_tls_description_helper(client_ssn_vc);
+}
+
+/** Create a server-side TLS characteristics node.
+ *
+ * @param[in] ssnp The pointer for this session.
+ *
+ * @return The node describing the TLS properties of this session.
+ */
+std::string
+get_server_tls_description(TSHttpTxn txnp)
+{
+  TSVConn server_ssn_vc = TSHttpTxnServerVConnGet(txnp);
+  return get_tls_description_helper(server_ssn_vc);
+}
+
+using get_protocol_stack_f  = std::function<TSReturnCode(int, const char **, int *)>;
+using get_tls_description_f = std::function<std::string()>;
+
+/** Create the protocol stack for a session.
+ *
+ * This function encapsulates the logic common between the client-side and
+ * server-side logic for populating a protocol stack.
+ *
+ * @param[in] get_protocol_stack The function to use to populate a protocol
+ * stack.
+ *
+ * @return The description of the protocol stack.
+ */
+std::string
+get_protocol_stack_helper(get_protocol_stack_f get_protocol_stack, get_tls_description_f get_tls_node)
+{
+  std::ostringstream protocol_description;
+  protocol_description << R"("protocol":[)";
+  char const *protocol[10];
+  int count = -1;
+  TSAssert(TS_SUCCESS == get_protocol_stack(10, protocol, &count));
+  bool is_first_printed_protocol = true;
+  for (int i = 0; i < count; ++i) {
+    std::string_view protocol_string(protocol[i]);
+    if (!is_first_printed_protocol) {
+      protocol_description << ",";
+    }
+    is_first_printed_protocol = false;
+    if (protocol_string.find("tls") != std::string::npos) {
+      protocol_description << '{' << get_tls_node() << '}';
+    } else {
+      auto search = tag_to_node.find(std::string(protocol_string));
+      if (search == tag_to_node.end()) {
+        // If the tag from get_protocol_stack is not in our list, then our
+        // tag_to_node has not been updated with the new tag. Update tag_to_node.
+        TSError("[%s] Missing tag node description: '%.*s'", traffic_dump::debug_tag, static_cast<int>(protocol_string.length()),
+                protocol_string.data());
+        protocol_description << R"({"name":")" << protocol_string << R"("})";
+      } else {
+        protocol_description << '{' << search->second << '}';
+      }
+    }
+  }
+  protocol_description << "]"; // Close the "protocol" sequence.
+  return protocol_description.str();
+}
 } // namespace
 
 namespace traffic_dump
@@ -104,130 +249,24 @@ SessionData::init(std::string_view log_directory, int64_t max_disk_usage, int64_
   return true;
 }
 
-/** Create a TLS characteristics node.
- *
- * This function encapsulates the logic common between the client-side and
- * server-side logic for populating the TLS node.
- *
- * @param[in] ssnp The pointer for this session.
- *
- * @return The node describing the TLS properties of this session.
- */
 std::string
-get_tls_description_helper(TSVConn ssn_vc)
+SessionData::get_client_protocol_description(TSHttpSsn client_ssnp)
 {
-  TSSslConnection ssl_conn = TSVConnSslConnectionGet(ssn_vc);
-  SSL *ssl_obj             = (SSL *)ssl_conn;
-  if (ssl_obj == nullptr) {
-    return "";
-  }
-  std::ostringstream tls_description;
-  tls_description << R"("tls":{)";
-  char const *sni_ptr = SSL_get_servername(ssl_obj, TLSEXT_NAMETYPE_host_name);
-  if (sni_ptr != nullptr) {
-    std::string_view sni{sni_ptr};
-    if (!sni.empty()) {
-      tls_description << R"("sni":")" << sni << R"(",)";
-    }
-  }
-  tls_description << R"("verify_mode":")" << std::to_string(SSL_get_verify_mode(ssl_obj)) << R"(")";
-  tls_description << "}";
-  return tls_description.str();
+  return get_protocol_stack_helper(
+    [&client_ssnp](int n, const char **result, int *actual) {
+      return TSHttpSsnClientProtocolStackGet(client_ssnp, n, result, actual);
+    },
+    [&client_ssnp]() { return get_client_tls_description(client_ssnp); });
 }
 
-/** Create a server-side TLS characteristics node.
- *
- * @param[in] ssnp The pointer for this session.
- *
- * @return The node describing the TLS properties of this session.
- */
 std::string
-get_server_tls_description(TSHttpSsn ssnp)
+SessionData::get_server_protocol_description(TSHttpTxn server_txnp)
 {
-  TSVConn ssn_vc = TSHttpSsnServerVConnGet(ssnp);
-  return get_tls_description_helper(ssn_vc);
-}
-
-/** Create a client-side TLS characteristics node.
- *
- * @param[in] ssnp The pointer for this session.
- *
- * @return The node describing the TLS properties of this session.
- */
-std::string
-get_client_tls_description(TSHttpSsn ssnp)
-{
-  TSVConn ssn_vc = TSHttpSsnClientVConnGet(ssnp);
-  return get_tls_description_helper(ssn_vc);
-}
-
-/// A named boolean for callers who pass the is_client parameter.
-constexpr bool IS_CLIENT = true;
-
-/** Create the nodes that describe the session's sub-HTTP protocols.
- *
- * This function encapsulates the logic common between the client-side and
- * server-side logic for describing the session's characteristics.
- *
- * This will create the string representing the "protocol" and "tls" nodes. The
- * "tls" node will only be present if the connection is over SSL/TLS.
- *
- * @param[in] ssnp The pointer for this session.
- *
- * @return The description of the protocol stack and certain TLS attributes.
- */
-std::string
-get_protocol_description_helper(TSHttpSsn ssnp, bool is_client)
-{
-  std::ostringstream protocol_description;
-  protocol_description << R"("protocol":[)";
-
-  char const *protocol[10];
-  int count = -1;
-  if (is_client) {
-    TSAssert(TS_SUCCESS == TSHttpSsnClientProtocolStackGet(ssnp, 10, protocol, &count));
-  } else {
-    // See the TODO below in the commented out defintion of get_server_protocol_description.
-    // TSAssert(TS_SUCCESS == TSHttpSsnServerProtocolStackGet(ssnp, 10, protocol, &count));
-  }
-  for (int i = 0; i < count; i++) {
-    if (i > 0) {
-      protocol_description << ",";
-    }
-    protocol_description << '"' << std::string(protocol[i]) << '"';
-  }
-
-  protocol_description << "]";
-  std::string tls_description;
-  if (is_client) {
-    tls_description = get_client_tls_description(ssnp);
-  } else {
-    tls_description = get_server_tls_description(ssnp);
-  }
-  if (!tls_description.empty()) {
-    protocol_description << "," << tls_description;
-  }
-  return protocol_description.str();
-}
-
-#if 0
-// See the TODO above the get_server_protocol_description declaration.
-//
-// It will be important to add this eventually, but
-// TSHttpSsnServerProtocolStackGet is not defined yet. Once it (or some other
-// mechanism for getting the server side stack) is implemented, we will call
-// this as a part of writing the server-response node.
-std::string
-SessionData::get_server_protocol_description(TSHttpSsn ssnp)
-{
-  return get_protocol_description_helper(ssnp, !IS_CLIENT);
-}
-#endif
-
-std::string
-SessionData::get_client_protocol_description(TSHttpSsn ssnp)
-{
-  return get_protocol_description_helper(ssnp, IS_CLIENT);
+  return get_protocol_stack_helper(
+    [&server_txnp](int n, const char **result, int *actual) {
+      return TSHttpTxnServerProtocolStackGet(server_txnp, n, result, actual);
+    },
+    [&server_txnp]() { return get_server_tls_description(server_txnp); });
 }
 
 SessionData::SessionData()
@@ -295,7 +334,6 @@ SessionData::write_transaction_to_disk(std::string_view content)
     result                        = write_to_disk_no_lock(content);
     has_written_first_transaction = true;
   }
-
   return result;
 }
 
@@ -392,8 +430,8 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
 
     TSContDataSet(ssnData->aio_cont, ssnData);
 
-    // "protocol":(string),"tls":(string)
-    // The "tls" node will only be present if the session is over SSL/TLS.
+    // "protocol":
+    // This is the protocol stack for the client side of the session.
     std::string protocol_description = get_client_protocol_description(ssnp);
 
     std::string beginning = R"({"meta":{"version":"1.0"},"sessions":[{)" + protocol_description + R"(,"connection-time":)" +

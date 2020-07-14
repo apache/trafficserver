@@ -303,6 +303,13 @@ public:
   /// @arg n [in] Size of the array @a result.
   int populate_client_protocol(std::string_view *result, int n) const;
   const char *client_protocol_contains(std::string_view tag_prefix) const;
+
+  /// Get the protocol stack for the outbound (origin server) connection.
+  /// @arg result [out] Array to store the results
+  /// @arg n [in] Size of the array @a result.
+  int populate_server_protocol(std::string_view *result, int n) const;
+  const char *server_protocol_contains(std::string_view tag_prefix) const;
+
   std::string_view find_proto_string(HTTPVersion version) const;
 
   int64_t sm_id      = -1;

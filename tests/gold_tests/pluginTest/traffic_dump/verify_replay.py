@@ -139,38 +139,114 @@ def verify_sensitive_fields_not_dumped(replay_json, sensitive_fields):
     return True
 
 
-def verify_client_protocols(replay_json, expected_protocol_features):
-    expected_protocols_list = expected_protocol_features.split(',')
-    expected_protocols_list.sort()
+def verify_protocols_helper(replay_json, expected_protocols, is_client):
     try:
-        protocol_node = replay_json['sessions'][0]['protocol']
-        protocol_list = protocol_node.copy()
-        protocol_list.sort()
-        if protocol_list == expected_protocols_list:
+        if is_client:
+            protocol_node = replay_json['sessions'][0]['protocol']
+        else:
+            protocol_node = replay_json['sessions'][0]['transactions'][0]['proxy-request']['protocol']
+
+        dumped_protocols = ''
+        is_first_protocol = True
+        for protocol in protocol_node:
+            if not is_first_protocol:
+                dumped_protocols += ","
+            is_first_protocol = False
+            dumped_protocols += protocol['name']
+
+        if dumped_protocols == expected_protocols:
             return True
         else:
-            print('Unexpected protocol stack. Expected: "{}", found: "{}".'.format(
-                ','.join(expected_protocols_list), ','.join(protocol_list)))
+            host_name = "client" if is_client else "server"
+            print('Unexpected protocol {} stack. Expected: "{}", found: "{}".'.format(
+                host_name, expected_protocols, dumped_protocols))
             return False
     except KeyError:
-        print("Could not find client protocol stack node in the replay file.")
+        print("Could not find {} protocol stack node in the replay file.".format(host_name))
         return False
+
+
+def verify_client_protocols(replay_json, expected_protocols):
+    return verify_protocols_helper(replay_json, expected_protocols, is_client=True)
+
+
+def verify_server_protocols(replay_json, expected_protocols):
+    return verify_protocols_helper(replay_json, expected_protocols, is_client=False)
+
+
+def get_tls_features(replay_json, is_client):
+    session = replay_json['sessions'][0]
+    if is_client:
+        protocol_parent = session['protocol']
+    else:
+        protocol_parent = session['transactions'][0]['proxy-request']['protocol']
+
+    for protocol in protocol_parent:
+        if protocol['name'] == "tls":
+            return protocol
+    else:
+        raise KeyError('The "tls" protocol node was not found.')
+
+
+def verify_tls_features(expected_tls_features, found_tls_features):
+    for expected_tls_feature in expected_tls_features.split(','):
+        expected_key, expected_value = expected_tls_feature.split(':')
+        try:
+            found_value = found_tls_features[expected_key]
+        except KeyError:
+            print("Could not find tls feature in the replay file: {}".format(expected_key))
+            return False
+        value_matches = False
+        if type(found_value) == str:
+            value_matches = found_value == expected_value
+        elif type(found_value) == int:
+            value_matches = found_value == int(expected_value)
+        elif type(found_value) == bool:
+            if expected_value.lower() == "false":
+                expected_value = False
+            elif expected_value.lower() == "true":
+                expected_value = True
+            else:
+                raise ValueError("Cannot convert expected value to a boolean: {}, found: {}".format(
+                    expected_value, found_value))
+            value_matches = found_value == bool(expected_value)
+        else:
+            raise ValueError("Cannot determine type of found value: {}".format(
+                found_value))
+
+        if not value_matches:
+            print('Mismatched value for "{}", expected "{}", received "{}"'.format(
+                expected_key, expected_value, found_value))
+            return False
+    return True
 
 
 def verify_client_tls_features(replay_json, expected_tls_features):
     try:
-        session = replay_json['sessions'][0]
-        for expected_tls_feature in expected_tls_features.split(','):
-            expected_key, expected_value = expected_tls_feature.split(':')
-            tls_features = session['tls']
-            try:
-                return tls_features[expected_key] == expected_value
-            except KeyError:
-                print("Could not find client tls feature in the replay file: {}".format(expected_key))
-                return False
+        tls_features = get_tls_features(replay_json, is_client=True)
     except KeyError:
         print("Could not find client tls node in the replay file.")
         return False
+
+    if not verify_tls_features(expected_tls_features, tls_features):
+        print('Failed to verify client tls features in "{}"'.format(
+            expected_tls_features))
+        return False
+    return True
+
+
+def verify_server_tls_features(replay_json, expected_tls_features):
+    try:
+        tls_features = get_tls_features(replay_json, is_client=False)
+    except KeyError:
+        print("Could not find server tls node in the replay file.")
+        return False
+
+    if not verify_tls_features(expected_tls_features, tls_features):
+        print('Failed to verify server tls features in "{}"'.format(
+            expected_tls_features))
+        return False
+    return True
 
 
 def parse_args():
@@ -190,9 +266,13 @@ def parse_args():
                         action="append",
                         help="The fields that are considered sensitive and replaced with insensitive values.")
     parser.add_argument("--client-protocols",
-                        help="The comma-separated protocol features to expect for the client connection.")
+                        help="The comma-separated sequence of protocols to expect for the client connection.")
+    parser.add_argument("--server-protocols",
+                        help="The comma-separated sequence of protocols to expect for the server connection.")
     parser.add_argument("--client-tls-features",
                         help="The TLS values to expect for the client connection.")
+    parser.add_argument("--server-tls-features",
+                        help="The TLS values to expect for the server connection.")
     return parser.parse_args()
 
 
@@ -229,7 +309,13 @@ def main():
     if args.client_protocols and not verify_client_protocols(replay_json, args.client_protocols):
         return 1
 
+    if args.server_protocols and not verify_server_protocols(replay_json, args.server_protocols):
+        return 1
+
     if args.client_tls_features and not verify_client_tls_features(replay_json, args.client_tls_features):
+        return 1
+
+    if args.server_tls_features and not verify_server_tls_features(replay_json, args.server_tls_features):
         return 1
 
     return 0

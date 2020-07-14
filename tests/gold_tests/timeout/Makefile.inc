@@ -14,30 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-include $(top_srcdir)/build/tidy.mk
-
-noinst_LTLIBRARIES =
-noinst_PROGRAMS =
-
-SUBDIRS =
-
-AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
-
-# Automake is pretty draconian about not creating shared object (.so) files for
-# non-installed files. However we do not want to install our test plugins so
-# we prefix them with noinst_.  The following -rpath argument coerces the
-# generation of so objects for these test files.
-AM_LDFLAGS += -rpath $(abs_builddir)
-
-include gold_tests/continuations/plugins/Makefile.inc
-include gold_tests/chunked_encoding/Makefile.inc
-include gold_tests/timeout/Makefile.inc
-include gold_tests/tls/Makefile.inc
-include tools/plugins/Makefile.inc
-
-TESTS = $(check_PROGRAMS)
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
-	$(CC_Clang_Tidy)
+noinst_PROGRAMS += gold_tests/timeout/ssl-delay-server
+gold_tests_timeout_ssl_delay_server_SOURCES = gold_tests/timeout/ssl-delay-server.cc
+gold_tests_timeout_ssl_delay_server_LDADD = -lssl -lcrypto

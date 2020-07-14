@@ -18,10 +18,8 @@
 
 .. default-domain:: c
 
-TSVConn
-*******
-
-Traffic Server APIs to get :type:`TSVConn` from :type:`TSHttpSsn` or :type:`TSHttpTxn` object.
+TSVConnProvidedSslCert
+********************************
 
 Synopsis
 ========
@@ -30,15 +28,11 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSVConn TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
-.. function:: TSVConn TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
-.. function:: TSVConn TSHttpTxnServerVConnGet(TSHttpTxn txnp)
+.. function:: int TSVConnProvidedSslCert(TSVConn svc)
 
 Description
 ===========
 
-These APIs allow the developer to get the NetVconnection (represented by :type:`TSVConn`) from the Http session (:type:`TSHttpSsn`) or transaction (:type:`TSHttpTxn`) object.
-
-:func:`TSHttpSsnClientVConnGet` returns the :type:`TSVConn` associated with the client side :type:`TSHttpSsn` object.
-:func:`TSHttpSsnServerVConnGet` returns the same associated with the server side :type:`TSHttpSsn`.
-:func:`TSHttpTxnServerVConnGet` returns the same associated with a :type:`TSHttpTxn`.
+Determines whether the connection associated with :arg:`svc` was an SSL
+connection on which a server certificate was provided in the SSL handshake.
+Returns :literal:`1` if it was and :literal:`0` otherwise.

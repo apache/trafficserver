@@ -113,10 +113,10 @@ TransactionData::write_content_node(int64_t num_body_bytes)
 std::string
 TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_loc)
 {
-  std::string result = "{";
-  int len            = 0;
-  char const *cp     = nullptr;
-  TSMLoc url_loc     = nullptr;
+  std::string result;
+  int len        = 0;
+  char const *cp = nullptr;
+  TSMLoc url_loc = nullptr;
 
   // 1. "version"
   // Note that we print this for both requests and responses, so the first
@@ -228,6 +228,7 @@ TransactionData::init_helper()
   // processed before session and transaction ones.)
   TSCont txn_cont = TSContCreate(global_transaction_handler, nullptr);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, txn_cont);
+  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, txn_cont);
   return true;
 }
 
@@ -287,7 +288,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     }
     // This hook is registered globally, not at TS_EVENT_HTTP_SSN_START in
     // global_session_handler(). As such, this handler will be called with every
-    // transaction. However, we know that we are dumping this transaction
+    // transaction. However, we infer that we are dumping this transaction
     // because there is a ssnData associated with it.
 
     // We must grab the client request information before remap happens because
@@ -298,10 +299,20 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
       TSDebug(debug_tag, "Found client request");
       // We don't have an accurate view of the body size until TXN_CLOSE so we hold
       // off on writing the content:size node until then.
-      txnData->txn_json += R"(,"client-request":)" + txnData->write_message_node_no_content(buffer, hdr_loc);
+      txnData->txn_json += R"(,"client-request":{)" + txnData->write_message_node_no_content(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
+    break;
+  }
+
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR: {
+    TransactionData *txnData = static_cast<TransactionData *>(TSUserArgGet(txnp, transaction_arg_index));
+    if (!txnData) {
+      TSError("[%s] No transaction data found for the header hook we registered for.", traffic_dump::debug_tag);
+      break;
+    }
+    txnData->server_protocol_description = ssnData->get_server_protocol_description(txnp);
     break;
   }
 
@@ -321,22 +332,22 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     }
     if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(debug_tag, "Found proxy request");
-      txnData->txn_json +=
-        R"(,"proxy-request":)" + txnData->write_message_node(buffer, hdr_loc, TSHttpTxnServerReqBodyBytesGet(txnp));
+      txnData->txn_json += R"(,"proxy-request":{)" + txnData->server_protocol_description + "," +
+                           txnData->write_message_node(buffer, hdr_loc, TSHttpTxnServerReqBodyBytesGet(txnp));
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(debug_tag, "Found server response");
       txnData->txn_json +=
-        R"(,"server-response":)" + txnData->write_message_node(buffer, hdr_loc, TSHttpTxnServerRespBodyBytesGet(txnp));
+        R"(,"server-response":{)" + txnData->write_message_node(buffer, hdr_loc, TSHttpTxnServerRespBodyBytesGet(txnp));
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(debug_tag, "Found proxy response");
       txnData->txn_json +=
-        R"(,"proxy-response":)" + txnData->write_message_node(buffer, hdr_loc, TSHttpTxnClientRespBodyBytesGet(txnp));
+        R"(,"proxy-response":{)" + txnData->write_message_node(buffer, hdr_loc, TSHttpTxnClientRespBodyBytesGet(txnp));
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }

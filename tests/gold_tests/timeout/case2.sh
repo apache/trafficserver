@@ -14,30 +14,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-include $(top_srcdir)/build/tidy.mk
+# This is funky delaying and backgrounding the client request, but I just
+# could not get the command executing in the network space to go to background
+# without blocking the autest.
 
-noinst_LTLIBRARIES =
-noinst_PROGRAMS =
 
-SUBDIRS =
+if [ $# == 5 ]
+then
+./ssl-delay-server $1 $2 $3 server.pem 2> server${1}post.log  &
+sleep 1
+curl -H'Connection:close' -d "bob" -i http://127.0.0.1:$4/${5} --tlsv1.2
+else
+./ssl-delay-server $1 $2 $3 server.pem 2> server${1}get.log  &
+sleep 1
+curl -H'Connection:close' -i http://127.0.0.1:$4/${5} --tlsv1.2
+fi
 
-AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
+kill $(jobs -pr)
 
-# Automake is pretty draconian about not creating shared object (.so) files for
-# non-installed files. However we do not want to install our test plugins so
-# we prefix them with noinst_.  The following -rpath argument coerces the
-# generation of so objects for these test files.
-AM_LDFLAGS += -rpath $(abs_builddir)
+exit 0
 
-include gold_tests/continuations/plugins/Makefile.inc
-include gold_tests/chunked_encoding/Makefile.inc
-include gold_tests/timeout/Makefile.inc
-include gold_tests/tls/Makefile.inc
-include tools/plugins/Makefile.inc
 
-TESTS = $(check_PROGRAMS)
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
-	$(CC_Clang_Tidy)

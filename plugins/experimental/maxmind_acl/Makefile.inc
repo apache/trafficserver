@@ -14,30 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/plugins.mk
-include $(top_srcdir)/build/tidy.mk
+pkglib_LTLIBRARIES += experimental/maxmind_acl/maxmind_acl.la
 
-noinst_LTLIBRARIES =
-noinst_PROGRAMS =
+experimental_maxmind_acl_maxmind_acl_la_SOURCES = \
+  experimental/maxmind_acl/maxmind_acl.cc \
+  experimental/maxmind_acl/mmdb.cc
 
-SUBDIRS =
+experimental_maxmind_acl_maxmind_acl_la_LIBADD = $(MAXMINDDB_LIBS)
 
-AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
+experimental_maxmind_acl_maxmind_acl_la_LDFLAGS = \
+	$(AM_LDFLAGS)
 
-# Automake is pretty draconian about not creating shared object (.so) files for
-# non-installed files. However we do not want to install our test plugins so
-# we prefix them with noinst_.  The following -rpath argument coerces the
-# generation of so objects for these test files.
-AM_LDFLAGS += -rpath $(abs_builddir)
-
-include gold_tests/continuations/plugins/Makefile.inc
-include gold_tests/chunked_encoding/Makefile.inc
-include gold_tests/timeout/Makefile.inc
-include gold_tests/tls/Makefile.inc
-include tools/plugins/Makefile.inc
-
-TESTS = $(check_PROGRAMS)
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
-	$(CC_Clang_Tidy)
+AM_CPPFLAGS += @YAMLCPP_INCLUDES@

@@ -24,12 +24,8 @@
         "required": [ "transactions" ],
         "properties": {
           "protocol": {
-            "description": "The network protocol stack of the inbound connection.",
-            "type": "array",
-            "items": {
-              "description": "Protocol tag",
-              "type": "string"
-            }
+            "description": "The network protocol description of the inbound connection.",
+            "$ref": "#/definitions/protocol"
           },
           "connect-time": {
             "description": "User Agent connection time.",
@@ -120,6 +116,41 @@
         }
       ]
     },
+    "protocol": {
+      "description": "The characteristics of the lower level protocols.",
+      "type": "array",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "desciption": "The name of the protocol.",
+          "type": "string"
+        },
+        "version": {
+          "desciption": "The version of the protocol.",
+          "type": "string"
+        },
+        "sni": {
+          "desciption": "The SNI in the client hello.",
+          "type": "string"
+        },
+        "request-certificate": {
+          "desciption": "Whether a certificate should be requested from the proxy.",
+          "type": "boolean"
+        },
+        "verify-mode": {
+          "desciption": "The server or client's OpenSSL verify mode against the proxy.",
+          "type": "boolean"
+        },
+        "proxy-verify-mode": {
+          "desciption": "The proxy's OpenSSL verify mode against the peer.",
+          "type": "integer"
+        },
+        "proxy-provided-certificate": {
+          "desciption": "Whether the proxy provided a cert in the handshake.",
+          "type": "boolean"
+        }
+      }
+    },
     "header-fields": {
       "description": "HTTP header fields.",
       "type": "object",
@@ -178,6 +209,10 @@
         "headers": {
           "description": "HTTP header fields.",
           "$ref": "#/definitions/header-fields"
+        },
+        "protocol": {
+          "description": "The network protocol description of the connection.",
+          "$ref": "#/definitions/protocol"
         }
       }
     },

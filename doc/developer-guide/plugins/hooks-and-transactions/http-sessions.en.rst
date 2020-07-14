@@ -40,7 +40,10 @@ The HTTP session hooks are:
 
 -  ``TS_HTTP_SSN_CLOSE_HOOK`` Called when an HTTP session ends (a
    session ends when the client connection is closed). This hook must be
-   added as a global hook.
+   added as a global hook.  The relative order of invocation between the
+   ``TS_VCONN_CLOSE_HOOK`` and ``TS_HTTP_SSN_CLOSE_HOOK`` is undefined.  In
+   most cases the ``TS_VCONN_CLOSE_HOOK`` will execute first, but that is
+   not guaranteed.
 
 Use the session hooks to get a handle to a session (an ``TSHttpSsn``
 object). If you want your plugin to be called back for each transaction

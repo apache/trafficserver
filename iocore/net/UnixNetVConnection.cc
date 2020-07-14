@@ -88,6 +88,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Debug("inactivity_cop", "event %d: null read.vio cont, closing vc %p", event, vc);
+      Warning("read: Closing orphaned vc %p", vc);
       vc->closed = 1;
       break;
     default:
@@ -119,6 +120,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Debug("inactivity_cop", "event %d: null write.vio cont, closing vc %p", event, vc);
+      Warning("write: Closing orphaned vc %p", vc);
       vc->closed = 1;
       break;
     default:
@@ -1394,8 +1396,9 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   hold_con.move(this->con);
   SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(this);
 
-  SSL *save_ssl = (sslvc) ? sslvc->ssl : nullptr;
-  if (save_ssl) {
+  SSL *save_ssl = nullptr;
+  if (sslvc) {
+    save_ssl = sslvc->ssl;
     SSLNetVCDetach(sslvc->ssl);
     sslvc->ssl = nullptr;
   }
@@ -1409,7 +1412,7 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   // Create new VC:
   UnixNetVConnection *netvc = nullptr;
   if (save_ssl) {
-    SSLNetVConnection *sslvc = static_cast<SSLNetVConnection *>(sslNetProcessor.allocate_vc(t));
+    sslvc = static_cast<SSLNetVConnection *>(sslNetProcessor.allocate_vc(t));
     if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       sslvc->do_io_close();
       sslvc = nullptr;
@@ -1426,6 +1429,9 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     } else {
       netvc->set_context(get_context());
     }
+  }
+  if (netvc) {
+    netvc->options = this->options;
   }
   // Do not mark this closed until the end so it does not get freed by the other thread too soon
   this->do_io_close();

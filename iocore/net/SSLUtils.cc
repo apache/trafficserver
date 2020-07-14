@@ -1833,10 +1833,6 @@ SSLAccept(SSL *ssl)
 
   if (SSLConfigParams::server_max_early_data > 0 && !netvc->early_data_finish) {
     size_t nread;
-    if (netvc->early_data_buf == nullptr) {
-      netvc->early_data_buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_16K);
-      netvc->early_data_reader = netvc->early_data_buf->alloc_reader();
-    }
 
     while (true) {
       IOBufferBlock *block = new_IOBufferBlock();
@@ -1845,9 +1841,14 @@ SSLAccept(SSL *ssl)
 
       if (ret == SSL_READ_EARLY_DATA_ERROR) {
         Debug("ssl_early_data", "SSL_READ_EARLY_DATA_ERROR");
+        block->free();
         break;
       } else {
         if (nread > 0) {
+          if (netvc->early_data_buf == nullptr) {
+            netvc->early_data_buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_16K);
+            netvc->early_data_reader = netvc->early_data_buf->alloc_reader();
+          }
           block->fill(nread);
           netvc->early_data_buf->append_block(block);
           SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
@@ -1856,13 +1857,15 @@ SSLAccept(SSL *ssl)
             std::string early_data_str(reinterpret_cast<char *>(block->buf()), nread);
             Debug("ssl_early_data_show_received", "Early data buffer: \n%s", early_data_str.c_str());
           }
+        } else {
+          block->free();
         }
 
         if (ret == SSL_READ_EARLY_DATA_FINISH) {
           netvc->early_data_finish = true;
           Debug("ssl_early_data", "SSL_READ_EARLY_DATA_FINISH: size = %lu", nread);
 
-          if (netvc->early_data_reader->read_avail() == 0) {
+          if (netvc->early_data_reader == nullptr || netvc->early_data_reader->read_avail() == 0) {
             Debug("ssl_early_data", "no data in early data buffer");
             ERR_clear_error();
             ret = SSL_accept(ssl);
