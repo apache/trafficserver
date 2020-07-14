@@ -35,20 +35,21 @@ QUICVersionNegotiator::negotiate(const QUICPacket &packet)
 {
   switch (packet.type()) {
   case QUICPacketType::INITIAL: {
-    if (QUICTypeUtil::is_supported_version(packet.version())) {
+    const QUICInitialPacketR &initial_packet = static_cast<const QUICInitialPacketR &>(packet);
+    if (QUICTypeUtil::is_supported_version(initial_packet.version())) {
       this->_status             = QUICVersionNegotiationStatus::NEGOTIATED;
-      this->_negotiated_version = packet.version();
+      this->_negotiated_version = initial_packet.version();
     }
 
     break;
   }
   case QUICPacketType::VERSION_NEGOTIATION: {
-    const uint8_t *supported_versions = packet.payload();
-    uint16_t supported_versions_len   = packet.payload_length();
-    uint16_t len                      = 0;
+    const QUICVersionNegotiationPacketR &vn_packet = static_cast<const QUICVersionNegotiationPacketR &>(packet);
+    uint16_t n_supported_version                   = vn_packet.nversions();
+    uint16_t len                                   = 0;
 
-    while (len < supported_versions_len) {
-      QUICVersion version = QUICTypeUtil::read_QUICVersion(supported_versions + len);
+    for (int i = 0; i < n_supported_version; ++i) {
+      QUICVersion version = vn_packet.supported_version(i);
       len += sizeof(QUICVersion);
 
       if (QUICTypeUtil::is_supported_version(version)) {

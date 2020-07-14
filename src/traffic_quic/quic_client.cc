@@ -28,13 +28,14 @@
 #include <string_view>
 
 #include "Http3Transaction.h"
+#include "P_QUICNetVConnection.h"
 
 // OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
 // https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
 // Should be integrate with IP_PROTO_TAG_HTTP_QUIC in ts/ink_inet.h ?
 using namespace std::literals;
-static constexpr std::string_view HQ_ALPN_PROTO_LIST("\5hq-23"sv);
-static constexpr std::string_view H3_ALPN_PROTO_LIST("\5h3-23"sv);
+static constexpr std::string_view HQ_ALPN_PROTO_LIST("\5hq-27"sv);
+static constexpr std::string_view H3_ALPN_PROTO_LIST("\5h3-27"sv);
 
 QUICClient::QUICClient(const QUICClientConfig *config) : Continuation(new_ProxyMutex()), _config(config)
 {
@@ -80,7 +81,11 @@ QUICClient::start(int, void *)
     opt.socket_recv_bufsize = 1048576;
     opt.socket_send_bufsize = 1048576;
     opt.alpn_protos         = alpn_protos;
-    opt.set_sni_servername(this->_config->addr, strnlen(this->_config->addr, 1023));
+    if (strlen(this->_config->server_name) == 0) {
+      opt.set_sni_servername(this->_config->addr, strnlen(this->_config->addr, 1023));
+    } else {
+      opt.set_sni_servername(this->_config->server_name, strnlen(this->_config->server_name, 1023));
+    }
 
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
@@ -224,7 +229,8 @@ Http09ClientApp::main_event_handler(int event, Event *data)
 
     if (stream_io->is_read_done() && this->_config->close) {
       // Connection Close Exercise
-      this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
+      this->_qc->close_quic_connection(
+        QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
     }
 
     break;
@@ -272,7 +278,16 @@ Http3ClientApp::start()
   this->_resp_buf                 = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   IOBufferReader *resp_buf_reader = _resp_buf->alloc_reader();
 
-  this->_resp_handler = new RespHandler(this->_config, resp_buf_reader);
+  this->_resp_handler = new RespHandler(this->_config, resp_buf_reader, [&](void) {
+    if (this->_config->close) {
+      // Connection Close Exercise
+      this->_qc->close_quic_connection(
+        QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
+    } else if (this->_config->reset) {
+      // Stateless Reset Excercise
+      this->_qc->reset_quic_connection();
+    }
+  });
 
   super::start();
   this->_do_http_request();
@@ -309,7 +324,13 @@ Http3ClientApp::_do_http_request()
     format = "GET https://%s/%s HTTP/1.1\r\n\r\n";
   }
 
-  int request_len = snprintf(request, sizeof(request), format.c_str(), this->_config->addr, this->_config->path);
+  const char *authority;
+  if (strlen(this->_config->server_name) == 0) {
+    authority = this->_config->addr;
+  } else {
+    authority = this->_config->server_name;
+  }
+  int request_len = snprintf(request, sizeof(request), format.c_str(), authority, this->_config->path);
 
   Http09ClientAppDebug("\n%s", request);
 
@@ -322,8 +343,8 @@ Http3ClientApp::_do_http_request()
 //
 // Response Handler
 //
-RespHandler::RespHandler(const QUICClientConfig *config, IOBufferReader *reader)
-  : Continuation(new_ProxyMutex()), _config(config), _reader(reader)
+RespHandler::RespHandler(const QUICClientConfig *config, IOBufferReader *reader, std::function<void()> on_complete)
+  : Continuation(new_ProxyMutex()), _config(config), _reader(reader), _on_complete(on_complete)
 {
   if (this->_config->output[0] != 0x0) {
     this->_filename = this->_config->output;
@@ -370,6 +391,10 @@ RespHandler::main_event_handler(int event, Event *data)
     if (this->_filename) {
       f_stream.close();
       std::cout.rdbuf(default_stream);
+    }
+
+    if (event == VC_EVENT_READ_COMPLETE) {
+      this->_on_complete();
     }
 
     break;

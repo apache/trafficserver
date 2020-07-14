@@ -49,10 +49,6 @@ quic_new_ssl_ctx()
 
   SSL_CTX_set_max_early_data(ssl_ctx, UINT32_C(0xFFFFFFFF));
 
-  SSL_CTX_add_custom_ext(ssl_ctx, QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID,
-                         SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS,
-                         &QUICTransportParametersHandler::add, &QUICTransportParametersHandler::free, nullptr,
-                         &QUICTransportParametersHandler::parse, nullptr);
 #else
   // QUIC Transport Parameters are accesible with SSL_set_quic_transport_params and SSL_get_peer_quic_transport_params
 #endif
@@ -61,6 +57,11 @@ quic_new_ssl_ctx()
   // tatsuhiro-t's custom OpenSSL for QUIC draft-13
   // https://github.com/tatsuhiro-t/openssl/tree/quic-draft-13
   SSL_CTX_set_mode(ssl_ctx, SSL_MODE_QUIC_HACK);
+  SSL_CTX_add_custom_ext(ssl_ctx, QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID,
+                         SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS,
+                         &QUICTransportParametersHandler::add, &QUICTransportParametersHandler::free, nullptr,
+                         &QUICTransportParametersHandler::parse, nullptr);
+
 #endif
 
   return ssl_ctx;
@@ -120,11 +121,16 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_stateless_retry, "proxy.config.quic.server.stateless_retry_enabled");
   REC_EstablishStaticConfigInt32U(this->_vn_exercise_enabled, "proxy.config.quic.client.vn_exercise_enabled");
   REC_EstablishStaticConfigInt32U(this->_cm_exercise_enabled, "proxy.config.quic.client.cm_exercise_enabled");
+  REC_EstablishStaticConfigInt32U(this->_quantum_readiness_test_enabled_out,
+                                  "proxy.config.quic.client.quantum_readiness_test_enabled");
+  REC_EstablishStaticConfigInt32U(this->_quantum_readiness_test_enabled_in,
+                                  "proxy.config.quic.server.quantum_readiness_test_enabled");
 
   REC_ReadConfigStringAlloc(this->_server_supported_groups, "proxy.config.quic.server.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_supported_groups, "proxy.config.quic.client.supported_groups");
   REC_ReadConfigStringAlloc(this->_client_session_file, "proxy.config.quic.client.session_file");
   REC_ReadConfigStringAlloc(this->_client_keylog_file, "proxy.config.quic.client.keylog_file");
+  REC_ReadConfigStringAlloc(this->_qlog_dir, "proxy.config.quic.qlog_dir");
 
   // Transport Parameters
   REC_EstablishStaticConfigInt32U(this->_no_activity_timeout_in, "proxy.config.quic.no_activity_timeout_in");
@@ -159,6 +165,7 @@ QUICConfigParams::initialize()
   REC_EstablishStaticConfigInt32U(this->_max_ack_delay_out, "proxy.config.quic.max_ack_delay_out");
   REC_EstablishStaticConfigInt32U(this->_active_cid_limit_in, "proxy.config.quic.active_cid_limit_in");
   REC_EstablishStaticConfigInt32U(this->_active_cid_limit_out, "proxy.config.quic.active_cid_limit_out");
+  REC_EstablishStaticConfigInt32U(this->_disable_active_migration, "proxy.config.quic.disable_active_migration");
 
   // Loss Detection
   REC_EstablishStaticConfigInt32U(this->_ld_packet_threshold, "proxy.config.quic.loss_detection.packet_threshold");
@@ -242,6 +249,18 @@ uint32_t
 QUICConfigParams::cm_exercise_enabled() const
 {
   return this->_cm_exercise_enabled;
+}
+
+uint32_t
+QUICConfigParams::quantum_readiness_test_enabled_in() const
+{
+  return this->_quantum_readiness_test_enabled_in;
+}
+
+uint32_t
+QUICConfigParams::quantum_readiness_test_enabled_out() const
+{
+  return this->_quantum_readiness_test_enabled_out;
 }
 
 uint32_t
@@ -352,6 +371,12 @@ QUICConfigParams::active_cid_limit_out() const
   return this->_active_cid_limit_out;
 }
 
+bool
+QUICConfigParams::disable_active_migration() const
+{
+  return this->_disable_active_migration;
+}
+
 const char *
 QUICConfigParams::server_supported_groups() const
 {
@@ -445,6 +470,12 @@ const char *
 QUICConfigParams::client_keylog_file() const
 {
   return this->_client_keylog_file;
+}
+
+const char *
+QUICConfigParams::qlog_dir() const
+{
+  return this->_qlog_dir;
 }
 
 //

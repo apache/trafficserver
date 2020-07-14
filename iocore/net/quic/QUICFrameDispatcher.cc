@@ -42,8 +42,9 @@ QUICFrameDispatcher::add_handler(QUICFrameHandler *handler)
 }
 
 QUICConnectionErrorUPtr
-QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *payload, uint16_t size, bool &ack_only,
-                                    bool &is_flow_controlled, bool *has_non_probing_frame, const QUICPacket *packet)
+QUICFrameDispatcher::receive_frames(QUICContext &ctx, QUICEncryptionLevel level, const uint8_t *payload, uint16_t size,
+                                    bool &ack_only, bool &is_flow_controlled, bool *has_non_probing_frame,
+                                    const QUICPacketR *packet)
 {
   uint16_t cursor               = 0;
   ack_only                      = true;
@@ -62,6 +63,8 @@ QUICFrameDispatcher::receive_frames(QUICEncryptionLevel level, const uint8_t *pa
     cursor += frame.size();
 
     QUICFrameType type = frame.type();
+
+    ctx.trigger(QUICContext::CallbackEvent::FRAME_RECV, frame);
 
     if (type == QUICFrameType::STREAM) {
       is_flow_controlled = true;

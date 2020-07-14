@@ -30,7 +30,7 @@ AM_CPPFLAGS += \
   -I$(abs_top_srcdir)/mgmt \
   -I$(abs_top_srcdir)/mgmt/utils \
   $(TS_INCLUDES) \
-  @OPENSSL_INCLUDES@
+  @OPENSSL_INCLUDES@ @YAMLCPP_INCLUDES@
 
 noinst_LIBRARIES = libquic.a
 
@@ -40,11 +40,20 @@ QUICPPProtector_impl = QUICPacketPayloadProtector_boringssl.cc
 QUICTLS_impl = QUICTLS_boringssl.cc
 QUICKeyGenerator_impl = QUICKeyGenerator_boringssl.cc
 else
+if ENABLE_QUIC_OLD_API
+QUICPHProtector_impl = QUICPacketHeaderProtector_legacy.cc
+QUICPPProtector_impl = QUICPacketPayloadProtector_legacy.cc
+QUICTLS_impl = QUICTLS_legacy.cc
+QUICKeyGenerator_impl = QUICKeyGenerator_legacy.cc
+else
 QUICPHProtector_impl = QUICPacketHeaderProtector_openssl.cc
 QUICPPProtector_impl = QUICPacketPayloadProtector_openssl.cc
 QUICTLS_impl = QUICTLS_openssl.cc
 QUICKeyGenerator_impl = QUICKeyGenerator_openssl.cc
 endif
+endif
+
+QLog_impl = qlog/QLogEvent.cc qlog/QLogFrame.cc qlog/QLog.cc
 
 libquic_a_SOURCES = \
   QUICGlobals.cc \
@@ -86,6 +95,8 @@ libquic_a_SOURCES = \
   QUICPathManager.cc \
   QUICPathValidator.cc \
   QUICPinger.cc \
+  QUICRetryIntegrityTag.cc \
+  QUICResetTokenTable.cc \
   QUICFrameGenerator.cc \
   QUICFrameRetransmitter.cc \
   QUICAddrVerifyState.cc \
@@ -95,7 +106,8 @@ libquic_a_SOURCES = \
   QUICStreamFactory.cc \
   QUICPadder.cc \
   QUICContext.cc \
-  QUICTokenCreator.cc
+  QUICTokenCreator.cc \
+  $(QLog_impl)
 
 #
 # Check Programs

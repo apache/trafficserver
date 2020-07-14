@@ -33,7 +33,7 @@
 TEST_CASE("QUICSendStreamState", "[quic]")
 {
   Ptr<IOBufferBlock> block_4 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_4->alloc();
+  block_4->alloc(BUFFER_SIZE_INDEX_32K);
   block_4->fill(4);
   CHECK(block_4->read_avail() == 4);
 
@@ -183,7 +183,7 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 TEST_CASE("QUICReceiveStreamState", "[quic]")
 {
   Ptr<IOBufferBlock> block_4 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_4->alloc();
+  block_4->alloc(BUFFER_SIZE_INDEX_32K);
   block_4->fill(4);
   CHECK(block_4->read_avail() == 4);
 
@@ -366,7 +366,7 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
 TEST_CASE("QUICBidiState", "[quic]")
 {
   Ptr<IOBufferBlock> block_4 = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block_4->alloc();
+  block_4->alloc(BUFFER_SIZE_INDEX_32K);
   block_4->fill(4);
   CHECK(block_4->read_avail() == 4);
 

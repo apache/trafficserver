@@ -35,7 +35,7 @@ class QUICTransportParameterId
 public:
   enum {
     ORIGINAL_CONNECTION_ID,
-    IDLE_TIMEOUT,
+    MAX_IDLE_TIMEOUT,
     STATELESS_RESET_TOKEN,
     MAX_PACKET_SIZE,
     INITIAL_MAX_DATA,
@@ -109,7 +109,6 @@ protected:
 
   virtual std::ptrdiff_t _parameters_offset(const uint8_t *buf) const = 0;
   virtual int _validate_parameters() const;
-  virtual void _store(uint8_t *buf, uint16_t *len) const = 0;
   void _print() const;
 
   std::map<QUICTransportParameterId, Value *> _parameters;
@@ -124,7 +123,6 @@ public:
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
   int _validate_parameters() const override;
-  void _store(uint8_t *buf, uint16_t *len) const override;
 
 private:
 };
@@ -139,7 +137,6 @@ public:
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
   int _validate_parameters() const override;
-  void _store(uint8_t *buf, uint16_t *len) const override;
 
   uint8_t _n_versions        = 0;
   QUICVersion _versions[256] = {};

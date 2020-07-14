@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "QUICFrame.h"
+
 struct QUICPacketInfo {
   // 6.3.1.  Sent Packet Fields
   QUICPacketNumber packet_number;
@@ -42,6 +44,13 @@ struct QUICPacketInfo {
 class QUICCongestionController
 {
 public:
+  enum class State : uint8_t {
+    RECOVERY,
+    CONGESTION_AVOIDANCE,
+    SLOW_START,
+    APPPLICATION_LIMITED,
+  };
+
   virtual ~QUICCongestionController() {}
   virtual void on_packet_sent(size_t bytes_sent)                                                                    = 0;
   virtual void on_packet_acked(const QUICPacketInfo &acked_packet)                                                  = 0;
@@ -50,4 +59,8 @@ public:
   virtual void add_extra_credit()                                                                                   = 0;
   virtual void reset()                                                                                              = 0;
   virtual uint32_t credit() const                                                                                   = 0;
+  // Debug
+  virtual uint32_t bytes_in_flight() const   = 0;
+  virtual uint32_t congestion_window() const = 0;
+  virtual uint32_t current_ssthresh() const  = 0;
 };

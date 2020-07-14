@@ -23,9 +23,36 @@
 
 #include "QUICPacketHeaderProtector.h"
 
+#include "openssl/chacha.h"
+
 bool
 QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *cipher) const
 {
-  ink_assert(!"not implemented");
-  return false;
+  static constexpr unsigned char FIVE_ZEROS[] = {0x00, 0x00, 0x00, 0x00, 0x00};
+
+  if (cipher == nullptr) {
+    uint32_t counter = htole32(*reinterpret_cast<const uint32_t *>(&sample[0]));
+    CRYPTO_chacha_20(mask, FIVE_ZEROS, sizeof(FIVE_ZEROS), key, &sample[4], counter);
+  } else {
+    int len             = 0;
+    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+      return false;
+    }
+    if (!EVP_EncryptInit_ex(ctx, cipher, nullptr, key, sample)) {
+      EVP_CIPHER_CTX_free(ctx);
+      return false;
+    }
+    if (!EVP_EncryptUpdate(ctx, mask, &len, sample, 16)) {
+      EVP_CIPHER_CTX_free(ctx);
+      return false;
+    }
+    if (!EVP_EncryptFinal_ex(ctx, mask + len, &len)) {
+      EVP_CIPHER_CTX_free(ctx);
+      return false;
+    }
+    EVP_CIPHER_CTX_free(ctx);
+  }
+
+  return true;
 }

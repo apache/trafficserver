@@ -22,6 +22,7 @@
  */
 
 #include "QUICPacketReceiveQueue.h"
+#include "QUICPacketHeaderProtector.h"
 #include "QUICPacketFactory.h"
 
 #include "QUICIntUtil.h"
@@ -44,7 +45,7 @@ QUICPacketReceiveQueue::enqueue(UDPPacket *packet)
 }
 
 QUICPacketUPtr
-QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
+QUICPacketReceiveQueue::dequeue(uint8_t *packet_buf, QUICPacketCreationResult &result)
 {
   QUICPacketUPtr quic_packet = QUICPacketFactory::create_null_packet();
   UDPPacket *udp_packet      = nullptr;
@@ -67,7 +68,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     IOBufferBlock *b   = udp_packet->getIOBlockChain();
     size_t written     = 0;
     while (b) {
-      memcpy(this->_payload.get() + written, b->buf(), b->read_avail());
+      memcpy(this->_payload.get() + written, b->start(), b->read_avail());
       written += b->read_avail();
       b = b->next.get();
     }
@@ -83,7 +84,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
 
     if (QUICInvariants::is_long_header(buf)) {
       QUICVersion version;
-      QUICPacketLongHeader::version(version, buf, remaining_len);
+      QUICLongHeaderPacketR::version(version, buf, remaining_len);
       if (is_vn(version)) {
         pkt_len = remaining_len;
         type    = QUICPacketType::VERSION_NEGOTIATION;
@@ -91,17 +92,17 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
         result  = QUICPacketCreationResult::UNSUPPORTED;
         pkt_len = remaining_len;
       } else {
-        QUICPacketLongHeader::type(type, this->_payload.get() + this->_offset, remaining_len);
+        QUICLongHeaderPacketR::type(type, this->_payload.get() + this->_offset, remaining_len);
         if (type == QUICPacketType::RETRY) {
           pkt_len = remaining_len;
         } else {
-          if (!QUICPacketLongHeader::packet_length(pkt_len, this->_payload.get() + this->_offset, remaining_len)) {
+          if (!QUICLongHeaderPacketR::packet_length(pkt_len, this->_payload.get() + this->_offset, remaining_len)) {
+            // This should not happen basically. Ignore rest of data on current packet.
             this->_payload.release();
             this->_payload     = nullptr;
             this->_payload_len = 0;
             this->_offset      = 0;
-
-            result = QUICPacketCreationResult::IGNORED;
+            result             = QUICPacketCreationResult::IGNORED;
 
             return quic_packet;
           }
@@ -148,7 +149,7 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
   }
 
   if (this->_ph_protector.unprotect(pkt.get(), pkt_len)) {
-    quic_packet = this->_packet_factory.create(this->_udp_con, this->_from, this->_to, std::move(pkt), pkt_len,
+    quic_packet = this->_packet_factory.create(packet_buf, this->_udp_con, this->_from, this->_to, std::move(pkt), pkt_len,
                                                this->_largest_received_packet_number, result);
   } else {
     // ZERO_RTT might be rejected
@@ -175,7 +176,8 @@ QUICPacketReceiveQueue::dequeue(QUICPacketCreationResult &result)
     // do nothing - if the packet is unsupported version, we don't know packet number
     break;
   default:
-    if (quic_packet && quic_packet->packet_number() > this->_largest_received_packet_number) {
+    if (quic_packet && quic_packet->type() != QUICPacketType::VERSION_NEGOTIATION &&
+        quic_packet->packet_number() > this->_largest_received_packet_number) {
       this->_largest_received_packet_number = quic_packet->packet_number();
     }
   }

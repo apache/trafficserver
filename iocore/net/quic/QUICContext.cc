@@ -100,48 +100,55 @@ private:
   const QUICConfigParams *_params;
 };
 
-QUICContextImpl::QUICContextImpl(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info,
-                                 QUICPacketProtectionKeyInfoProvider *key_info)
+QUICContext::QUICContext(QUICRTTProvider *rtt, QUICConnectionInfoProvider *info, QUICPacketProtectionKeyInfoProvider *key_info,
+                         QUICPathManager *path_manager)
   : _key_info(key_info),
     _connection_info(info),
     _rtt_provider(rtt),
+    _path_manager(path_manager),
     _ld_config(std::make_unique<QUICLDConfigQCP>(_config)),
     _cc_config(std::make_unique<QUICCCConfigQCP>(_config))
 {
 }
 
 QUICConnectionInfoProvider *
-QUICContextImpl::connection_info() const
+QUICContext::connection_info() const
 {
   return _connection_info;
 }
 
 QUICConfig::scoped_config
-QUICContextImpl::config() const
+QUICContext::config() const
 {
   return _config;
 }
 
 QUICPacketProtectionKeyInfoProvider *
-QUICContextImpl::key_info() const
+QUICContext::key_info() const
 {
   return _key_info;
 }
 
 QUICRTTProvider *
-QUICContextImpl::rtt_provider() const
+QUICContext::rtt_provider() const
 {
   return _rtt_provider;
 }
 
 QUICLDConfig &
-QUICContextImpl::ld_config() const
+QUICContext::ld_config() const
 {
   return *_ld_config;
 }
 
 QUICCCConfig &
-QUICContextImpl::cc_config() const
+QUICContext::cc_config() const
 {
   return *_cc_config;
+}
+
+QUICPathManager *
+QUICContext::path_manager() const
+{
+  return _path_manager;
 }

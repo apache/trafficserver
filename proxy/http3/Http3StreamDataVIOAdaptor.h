@@ -36,6 +36,10 @@ public:
   std::vector<Http3FrameType> interests() override;
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
 
+  // Http3StreamDataVIOAdaptor
+  void finalize();
+
 private:
-  VIO *_sink_vio = nullptr;
+  VIO *_sink_vio             = nullptr;
+  int64_t _total_data_length = 0;
 };

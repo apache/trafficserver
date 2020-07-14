@@ -24,6 +24,7 @@
 #pragma once
 
 #include <cstring>
+#include <unordered_map>
 #include "tscore/ink_endian.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/Ptr.h"
@@ -34,6 +35,7 @@
 #include <memory>
 #include <random>
 #include <cstdint>
+#include <string>
 #include "tscore/ink_memory.h"
 #include "tscore/ink_inet.h"
 #include "openssl/evp.h"
@@ -51,7 +53,7 @@ static constexpr uint8_t kPacketNumberSpace = 3;
 // Note: Fix QUIC_ALPN_PROTO_LIST in QUICConfig.cc
 // Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
-  0xff000017,
+  0xff00001b,
 };
 constexpr QUICVersion QUIC_EXERCISE_VERSION = 0x1a2a3a4a;
 
@@ -115,7 +117,8 @@ enum class QUICFrameType : uint8_t {
   PATH_CHALLENGE,
   PATH_RESPONSE,
   CONNECTION_CLOSE, // 0x1c - 0x1d
-  UNKNOWN = 0x1e,
+  HANDSHAKE_DONE = 0x1e,
+  UNKNOWN        = 0x1f,
 };
 
 enum class QUICVersionNegotiationStatus {
@@ -158,7 +161,9 @@ enum class QUICTransErrorCode : uint64_t {
   FINAL_SIZE_ERROR,
   FRAME_ENCODING_ERROR,
   TRANSPORT_PARAMETER_ERROR,
-  PROTOCOL_VIOLATION     = 0x0A,
+  CONNECTION_ID_LIMIT_ERROR,
+  PROTOCOL_VIOLATION,
+  INVALID_TOKEN,
   CRYPTO_BUFFER_EXCEEDED = 0x0D,
   CRYPTO_ERROR           = 0x0100, // 0x100 - 0x1FF
 };
@@ -224,9 +229,9 @@ class QUICConnectionId
 public:
   static uint8_t SCID_LEN;
 
-  static const int MIN_LENGTH_FOR_INITIAL = 8;
-  static const int MAX_LENGTH             = 20;
-  static const size_t MAX_HEX_STR_LENGTH  = MAX_LENGTH * 2 + 1;
+  static constexpr int MIN_LENGTH_FOR_INITIAL = 8;
+  static constexpr int MAX_LENGTH             = 20;
+  static constexpr size_t MAX_HEX_STR_LENGTH  = MAX_LENGTH * 2 + 1;
   static QUICConnectionId ZERO();
   QUICConnectionId();
   QUICConnectionId(const uint8_t *buf, uint8_t len);
@@ -259,7 +264,7 @@ public:
    * This is just for debugging.
    */
   uint32_t h32() const;
-  int hex(char *buf, size_t len) const;
+  std::string hex() const;
 
   uint8_t length() const;
   bool is_zero() const;
@@ -280,10 +285,21 @@ public:
   QUICStatelessResetToken(const QUICConnectionId &conn_id, uint32_t instance_id);
   QUICStatelessResetToken(const uint8_t *buf) { memcpy(this->_token, buf, QUICStatelessResetToken::LEN); }
 
+  /**
+   * Note that this returns a kind of hash code so we can use a StatelessResetToken as a key for a hashtable.
+   */
+  operator uint64_t() const { return this->_hashcode(); }
+
   bool
   operator==(const QUICStatelessResetToken &x) const
   {
     return memcmp(this->_token, x._token, QUICStatelessResetToken::LEN) == 0;
+  }
+
+  bool
+  operator!=(const QUICStatelessResetToken &x) const
+  {
+    return memcmp(this->_token, x._token, QUICStatelessResetToken::LEN) != 0;
   }
 
   const uint8_t *
@@ -292,10 +308,13 @@ public:
     return _token;
   }
 
+  std::string hex() const;
+
 private:
   uint8_t _token[LEN] = {0};
 
   void _generate(uint64_t data);
+  uint64_t _hashcode() const;
 };
 
 class QUICAddressValidationToken
@@ -306,6 +325,8 @@ public:
     RETRY,
   };
 
+  // FIXME Check token length
+  QUICAddressValidationToken(const uint8_t *buf, size_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
   virtual ~QUICAddressValidationToken(){};
 
   static Type
@@ -315,15 +336,30 @@ public:
     return static_cast<Type>(buf[0]) == Type::RESUMPTION ? Type::RESUMPTION : Type::RETRY;
   }
 
-  virtual const uint8_t *buf() const = 0;
-  virtual uint8_t length() const     = 0;
+  virtual const uint8_t *
+  buf() const
+  {
+    return this->_token;
+  }
+
+  virtual uint8_t
+  length() const
+  {
+    return this->_token_len;
+  }
+
+protected:
+  QUICAddressValidationToken() {}
+
+  // The size should be smaller than maximum size of Retry packet
+  uint8_t _token[1200] = {0};
+  unsigned int _token_len;
 };
 
 class QUICResumptionToken : public QUICAddressValidationToken
 {
 public:
-  QUICResumptionToken() {}
-  QUICResumptionToken(const uint8_t *buf, uint8_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
+  QUICResumptionToken(const uint8_t *buf, uint8_t len) : QUICAddressValidationToken(buf, len) {}
   QUICResumptionToken(const IpEndpoint &src, QUICConnectionId cid, ink_hrtime expire_time);
 
   bool
@@ -339,29 +375,12 @@ public:
 
   const QUICConnectionId cid() const;
   const ink_hrtime expire_time() const;
-
-  const uint8_t *
-  buf() const override
-  {
-    return this->_token;
-  }
-
-  uint8_t
-  length() const override
-  {
-    return this->_token_len;
-  }
-
-private:
-  uint8_t _token[1 + EVP_MAX_MD_SIZE + QUICConnectionId::MAX_LENGTH + 4];
-  unsigned int _token_len;
 };
 
 class QUICRetryToken : public QUICAddressValidationToken
 {
 public:
-  QUICRetryToken() {}
-  QUICRetryToken(const uint8_t *buf, uint8_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
+  QUICRetryToken(const uint8_t *buf, size_t len) : QUICAddressValidationToken(buf, len) {}
   QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid);
 
   bool
@@ -377,21 +396,7 @@ public:
 
   const QUICConnectionId original_dcid() const;
 
-  const uint8_t *
-  buf() const override
-  {
-    return this->_token;
-  }
-
-  uint8_t
-  length() const override
-  {
-    return this->_token_len;
-  }
-
 private:
-  uint8_t _token[1 + EVP_MAX_MD_SIZE + QUICConnectionId::MAX_LENGTH] = {};
-  unsigned int _token_len                                            = 0;
   QUICConnectionId _original_dcid;
 };
 
@@ -515,18 +520,20 @@ private:
 class QUICTPConfig
 {
 public:
-  virtual uint32_t no_activity_timeout() const                 = 0;
-  virtual const IpEndpoint *preferred_address_ipv4() const     = 0;
-  virtual const IpEndpoint *preferred_address_ipv6() const     = 0;
-  virtual uint32_t initial_max_data() const                    = 0;
-  virtual uint32_t initial_max_stream_data_bidi_local() const  = 0;
-  virtual uint32_t initial_max_stream_data_bidi_remote() const = 0;
-  virtual uint32_t initial_max_stream_data_uni() const         = 0;
-  virtual uint64_t initial_max_streams_bidi() const            = 0;
-  virtual uint64_t initial_max_streams_uni() const             = 0;
-  virtual uint8_t ack_delay_exponent() const                   = 0;
-  virtual uint8_t max_ack_delay() const                        = 0;
-  virtual uint8_t active_cid_limit() const                     = 0;
+  virtual uint32_t no_activity_timeout() const                                                     = 0;
+  virtual const IpEndpoint *preferred_address_ipv4() const                                         = 0;
+  virtual const IpEndpoint *preferred_address_ipv6() const                                         = 0;
+  virtual uint32_t initial_max_data() const                                                        = 0;
+  virtual uint32_t initial_max_stream_data_bidi_local() const                                      = 0;
+  virtual uint32_t initial_max_stream_data_bidi_remote() const                                     = 0;
+  virtual uint32_t initial_max_stream_data_uni() const                                             = 0;
+  virtual uint64_t initial_max_streams_bidi() const                                                = 0;
+  virtual uint64_t initial_max_streams_uni() const                                                 = 0;
+  virtual uint8_t ack_delay_exponent() const                                                       = 0;
+  virtual uint8_t max_ack_delay() const                                                            = 0;
+  virtual uint8_t active_cid_limit() const                                                         = 0;
+  virtual bool disable_active_migration() const                                                    = 0;
+  virtual std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>> additional_tp() const = 0;
 };
 
 class QUICLDConfig
@@ -566,11 +573,11 @@ public:
   static int read_QUICPacketNumberLen(const uint8_t *buf);
   static QUICPacketNumber read_QUICPacketNumber(const uint8_t *buf, int len);
   static QUICVersion read_QUICVersion(const uint8_t *buf);
-  static QUICStreamId read_QUICStreamId(const uint8_t *buf);
-  static QUICOffset read_QUICOffset(const uint8_t *buf);
+  static QUICStreamId read_QUICStreamId(const uint8_t *buf, size_t buf_len);
+  static QUICOffset read_QUICOffset(const uint8_t *buf, size_t buf_len);
   static uint16_t read_QUICTransErrorCode(const uint8_t *buf);
   static QUICAppErrorCode read_QUICAppErrorCode(const uint8_t *buf);
-  static uint64_t read_QUICMaxData(const uint8_t *buf);
+  static uint64_t read_QUICMaxData(const uint8_t *buf, size_t buf_len);
 
   static void write_QUICConnectionId(QUICConnectionId connection_id, uint8_t *buf, size_t *len);
   static void write_QUICPacketNumberLen(int len, uint8_t *buf);
@@ -605,3 +612,9 @@ public:
 };
 
 int to_hex_str(char *dst, size_t dst_len, const uint8_t *src, size_t src_len);
+
+namespace QUICBase
+{
+std::string to_hex(const uint8_t *buf, size_t len);
+
+} // namespace QUICBase

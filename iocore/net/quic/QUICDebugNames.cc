@@ -90,6 +90,8 @@ QUICDebugNames::frame_type(QUICFrameType type)
     return "RETIRE_CONNECTION_ID";
   case QUICFrameType::NEW_TOKEN:
     return "NEW_TOKEN";
+  case QUICFrameType::HANDSHAKE_DONE:
+    return "HANDSHAKE_DONE";
   case QUICFrameType::UNKNOWN:
   default:
     return "UNKNOWN";
@@ -131,8 +133,12 @@ QUICDebugNames::error_code(uint16_t code)
     return "FRAME_ENCODING_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::TRANSPORT_PARAMETER_ERROR):
     return "TRANSPORT_PARAMETER_ERROR";
+  case static_cast<uint16_t>(QUICTransErrorCode::CONNECTION_ID_LIMIT_ERROR):
+    return "CONNECTION_ID_LIMIT_ERROR";
   case static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION):
     return "PROTOCOL_VIOLATION";
+  case static_cast<uint16_t>(QUICTransErrorCode::INVALID_TOKEN):
+    return "INVALID_TOKEN";
   case static_cast<uint16_t>(QUICTransErrorCode::CRYPTO_BUFFER_EXCEEDED):
     return "CRYPTO_BUFFER_EXCEEDED";
   default:
@@ -179,8 +185,8 @@ QUICDebugNames::transport_parameter_id(QUICTransportParameterId id)
     return "INITIAL_MAX_DATA";
   case QUICTransportParameterId::INITIAL_MAX_STREAMS_BIDI:
     return "INITIAL_MAX_STREAMS_BIDI";
-  case QUICTransportParameterId::IDLE_TIMEOUT:
-    return "IDLE_TIMEOUT";
+  case QUICTransportParameterId::MAX_IDLE_TIMEOUT:
+    return "MAX_IDLE_TIMEOUT";
   case QUICTransportParameterId::PREFERRED_ADDRESS:
     return "PREFERRED_ADDRESS";
   case QUICTransportParameterId::MAX_PACKET_SIZE:

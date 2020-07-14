@@ -37,18 +37,20 @@
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
 #include "P_UDPNet.h"
+#include "P_ALPNSupport.h"
+#include "TLSSessionResumptionSupport.h"
 #include "tscore/ink_apidefs.h"
 #include "tscore/List.h"
 
 #include "quic/QUICConfig.h"
 #include "quic/QUICConnection.h"
 #include "quic/QUICConnectionTable.h"
+#include "quic/QUICResetTokenTable.h"
 #include "quic/QUICVersionNegotiator.h"
 #include "quic/QUICPacket.h"
 #include "quic/QUICPacketFactory.h"
 #include "quic/QUICFrame.h"
 #include "quic/QUICFrameDispatcher.h"
-#include "quic/QUICHandshake.h"
 #include "quic/QUICApplication.h"
 #include "quic/QUICStream.h"
 #include "quic/QUICHandshakeProtocol.h"
@@ -62,10 +64,12 @@
 #include "quic/QUICPathManager.h"
 #include "quic/QUICApplicationMap.h"
 #include "quic/QUICPacketReceiveQueue.h"
+#include "quic/QUICPacketHeaderProtector.h"
 #include "quic/QUICAddrVerifyState.h"
 #include "quic/QUICPacketProtectionKeyInfo.h"
 #include "quic/QUICContext.h"
 #include "quic/QUICTokenCreator.h"
+#include "quic/qlog/QLogListener.h"
 
 // Size of connection ids for debug log : e.g. aaaaaaaa-bbbbbbbb\0
 static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
@@ -80,6 +84,7 @@ static constexpr size_t MAX_CIDS_SIZE = 8 + 1 + 8 + 1;
 
 class QUICPacketHandler;
 class QUICLossDetector;
+class QUICHandshake;
 
 class SSLNextProtocolSet;
 
@@ -131,16 +136,21 @@ class SSLNextProtocolSet;
  *    WRITE:
  *      Do nothing
  **/
-class QUICNetVConnection : public UnixNetVConnection, public QUICConnection, public RefCountObj, public ALPNSupport
+class QUICNetVConnection : public UnixNetVConnection,
+                           public QUICConnection,
+                           public RefCountObj,
+                           public ALPNSupport,
+                           public TLSSessionResumptionSupport
 {
   using super = UnixNetVConnection; ///< Parent type.
 
 public:
   QUICNetVConnection();
   ~QUICNetVConnection();
-  void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *);
+  void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *,
+            QUICResetTokenTable *rtable);
   void init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid, UDPConnection *,
-            QUICPacketHandler *, QUICConnectionTable *ctable);
+            QUICPacketHandler *, QUICResetTokenTable *rtable, QUICConnectionTable *ctable);
 
   // accept new conn_id
   int acceptEvent(int event, Event *e);
@@ -180,7 +190,8 @@ public:
 
   // QUICConnection
   QUICStreamManager *stream_manager() override;
-  void close(QUICConnectionErrorUPtr error) override;
+  void close_quic_connection(QUICConnectionErrorUPtr error) override;
+  void reset_quic_connection() override;
   void handle_received_packet(UDPPacket *packet) override;
   void ping() override;
 
@@ -206,6 +217,9 @@ public:
 
   LINK(QUICNetVConnection, closed_link);
   SLINK(QUICNetVConnection, closed_alink);
+
+protected:
+  const IpEndpoint &_getLocalEndpoint() override;
 
 private:
   std::random_device _rnd;
@@ -247,6 +261,7 @@ private:
   QUICCongestionController *_congestion_controller  = nullptr;
   QUICRemoteFlowController *_remote_flow_controller = nullptr;
   QUICLocalFlowController *_local_flow_controller   = nullptr;
+  QUICResetTokenTable *_rtable                      = nullptr;
   QUICConnectionTable *_ctable                      = nullptr;
   QUICAltConnectionManager *_alt_con_manager        = nullptr;
   QUICPathValidator *_path_validator                = nullptr;
@@ -290,22 +305,23 @@ private:
 
   Ptr<IOBufferBlock> _store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_added, uint64_t &max_frame_size, QUICFrame &frame,
                                   std::vector<QUICFrameInfo> &frames);
-  QUICPacketUPtr _packetize_frames(QUICEncryptionLevel level, uint64_t max_packet_size, std::vector<QUICFrameInfo> &frames);
+  QUICPacketUPtr _packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel level, uint64_t max_packet_size,
+                                   std::vector<QUICFrameInfo> &frames);
   void _packetize_closing_frame();
-  QUICPacketUPtr _build_packet(QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block, bool retransmittable, bool probing,
-                               bool crypto);
+  QUICPacketUPtr _build_packet(uint8_t *packet_buf, QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block,
+                               bool retransmittable, bool probing, bool crypto);
 
-  QUICConnectionErrorUPtr _recv_and_ack(const QUICPacket &packet, bool *has_non_probing_frame = nullptr);
+  QUICConnectionErrorUPtr _recv_and_ack(const QUICPacketR &packet, bool *has_non_probing_frame = nullptr);
 
   QUICConnectionErrorUPtr _state_handshake_process_packet(const QUICPacket &packet);
-  QUICConnectionErrorUPtr _state_handshake_process_version_negotiation_packet(const QUICPacket &packet);
-  QUICConnectionErrorUPtr _state_handshake_process_initial_packet(const QUICPacket &packet);
-  QUICConnectionErrorUPtr _state_handshake_process_retry_packet(const QUICPacket &packet);
-  QUICConnectionErrorUPtr _state_handshake_process_handshake_packet(const QUICPacket &packet);
-  QUICConnectionErrorUPtr _state_handshake_process_zero_rtt_protected_packet(const QUICPacket &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_version_negotiation_packet(const QUICVersionNegotiationPacketR &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_initial_packet(const QUICInitialPacketR &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_retry_packet(const QUICRetryPacketR &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_handshake_packet(const QUICHandshakePacketR &packet);
+  QUICConnectionErrorUPtr _state_handshake_process_zero_rtt_protected_packet(const QUICZeroRttPacketR &packet);
   QUICConnectionErrorUPtr _state_connection_established_receive_packet();
-  QUICConnectionErrorUPtr _state_connection_established_process_protected_packet(const QUICPacket &packet);
-  QUICConnectionErrorUPtr _state_connection_established_migrate_connection(const QUICPacket &packet);
+  QUICConnectionErrorUPtr _state_connection_established_process_protected_packet(const QUICShortHeaderPacketR &packet);
+  QUICConnectionErrorUPtr _state_connection_established_migrate_connection(const QUICPacketR &packet);
   QUICConnectionErrorUPtr _state_connection_established_initiate_connection_migration();
   QUICConnectionErrorUPtr _state_closing_receive_packet();
   QUICConnectionErrorUPtr _state_draining_receive_packet();
@@ -318,7 +334,7 @@ private:
   void _init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                  const std::shared_ptr<const QUICTransportParameters> &remote_tp);
   void _handle_error(QUICConnectionErrorUPtr error);
-  QUICPacketUPtr _dequeue_recv_packet(QUICPacketCreationResult &result);
+  QUICPacketUPtr _dequeue_recv_packet(uint8_t *packet_buf, QUICPacketCreationResult &result);
   void _validate_new_path(const QUICPath &path);
 
   int _complete_handshake_if_possible();
@@ -344,6 +360,7 @@ private:
   QUICHandshakeProtocol *_setup_handshake_protocol(shared_SSL_CTX ctx);
 
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
+  uint8_t _final_packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
   QUICStatelessResetToken _reset_token;
 
   ats_unique_buf _av_token = {nullptr};
@@ -353,9 +370,11 @@ private:
   uint32_t _seq_num            = 0;
 
   // TODO: Source addresses verification through an address validation token
-  QUICAddrVerifyState _verfied_state;
+  QUICAddrVerifyState _verified_state;
 
-  std::unique_ptr<QUICContextImpl> _context;
+  std::unique_ptr<QUICContext> _context;
+
+  std::shared_ptr<QLog::QLogListener> _qlog;
 };
 
 typedef int (QUICNetVConnection::*QUICNetVConnHandler)(int, void *);
