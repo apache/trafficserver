@@ -1879,13 +1879,8 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
     SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
   }
 
-  // Set the list of CA's to send to client if we ask for a client
-  // certificate
   if (params->serverCACertFilename) {
     ca_list = SSL_load_client_CA_file(params->serverCACertFilename);
-    if (ca_list) {
-      SSL_CTX_set_client_CA_list(ctx, ca_list);
-    }
   }
 
   if (EVP_DigestInit_ex(digest, evp_md_func, nullptr) == 0) {
@@ -1912,6 +1907,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
         goto fail;
       }
     }
+
+    // Set the list of CA's to send to client if we ask for a client certificate
+    SSL_CTX_set_client_CA_list(ctx, ca_list);
   }
 
   if (EVP_DigestFinal_ex(digest, hash_buf, &hash_len) == 0) {
