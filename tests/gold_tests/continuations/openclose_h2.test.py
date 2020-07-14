@@ -20,6 +20,11 @@ import os
 Test.Summary = '''
 Test transactions and sessions for http2, making sure they open and close in the proper order.
 '''
+
+# Disable this test on the 8.1.x branch because this test is sensitive to timing issues of SSN/TXN close hook.
+# 9.0.x+ should fix issues and enabled this test. Details in #6983.
+Test.SkipIf(Condition.true("This test is sensitive to timing issues of SSN/TXN close hook which makes it flaky."))
+
 Test.SkipUnless(
     Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2')
