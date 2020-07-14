@@ -157,8 +157,11 @@ HQTransaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf,
   this->_write_vio.vc_server = this;
   this->_write_vio.op        = VIO::WRITE;
 
-  this->_process_write_vio();
-  this->_send_tracked_event(this->_write_event, VC_EVENT_WRITE_READY, &this->_write_vio);
+  if (c != nullptr && nbytes > 0) {
+    // TODO Return nullptr if the stream is not on writable state
+    this->_process_write_vio();
+    this->_send_tracked_event(this->_write_event, VC_EVENT_WRITE_READY, &this->_write_vio);
+  }
 
   return &this->_write_vio;
 }
