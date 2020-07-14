@@ -52,6 +52,34 @@ do not allocate all the disk space in the cache, then the extra disk
 space is not used. You can use the extra space later to create new
 volumes without deleting and clearing the existing volumes.
 
+
+Exclusive spans and volume sizes
+================================
+
+In the following sample configuration 2 spans `/dev/disk1` and `/dev/disk2` are defined
+in :file:`storage.config`, where span `/dev/disk2` is assigned to `volume 3` exclusively
+(`volume 3` is forced to an "exclusive" span `/dev/disk2`).
+In :file:`volume.config` there are 3 volumes defined, where `volume 1` and `volume 2`
+occupy span `/dev/disk1` taking each 50% of its space and `volume 3` takes 100% of span
+`/dev/disk2` exclusively.
+
+storage.config::
+
+      /dev/disk1
+      /dev/disk2 volume=3 # <- exclusinve span
+
+volume.config::
+
+      volume=1 scheme=http size=50%
+      volume=2 scheme=http size=50%
+      volume=3 scheme=http size=512 # <- volume forced to a specific exclusive span
+
+It is important to note that when percentages are used to specify volume sizes
+and "exclusive" spans are assigned (forced) to a particular volume (in this case `volume 3`),
+the "exclusive" spans (in this case `/dev/disk2`) are excluded from the total cache
+space when the "non-forced" volumes sizes are calculated (in this case `volume 1` and `volume 2`).
+
+
 Examples
 ========
 
