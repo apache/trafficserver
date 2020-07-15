@@ -1,0 +1,25 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "make -j 16",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Configure",
+            "type": "shell",
+            "command": "./configure --enable-ccache  --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror",
+            "problemMatcher": []
+        }
+    ]
+}
