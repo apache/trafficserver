@@ -204,11 +204,11 @@ http_protocols = "tcp,ip"
 # Execute the second transaction.
 tr = Test.AddTestRun("Second transaction")
 tr.Processes.Default.Command = \
-    ('curl http://127.0.0.1:{0}/two -H"Host: www.notls.com" '
+    ('curl --http1.0 http://127.0.0.1:{0}/two -H"Host: www.notls.com" '
      '-H"X-Request-2: also_very_sensitive" --verbose'.format(
          ts.Variables.port))
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/200.gold"
+tr.Processes.Default.Streams.stderr = "gold/200_http10.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
@@ -221,12 +221,14 @@ sensitive_fields_arg = (
     "--sensitive-fields x-request-1 "
     "--sensitive-fields x-request-2 ")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = 'python3 {0} {1} {2} {3} --client-protocols "{4}"'.format(
-    verify_replay,
-    os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
-    replay_file_session_1,
-    sensitive_fields_arg,
-    http_protocols)
+tr.Processes.Default.Command = \
+    ('python3 {0} {1} {2} {3} --client-http-version "1.1" '
+     '--client-protocols "{4}"'.format(
+         verify_replay,
+         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
+         replay_file_session_1,
+         sensitive_fields_arg,
+         http_protocols))
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -234,11 +236,13 @@ tr.StillRunningAfter = ts
 # Verify the properties of the replay file for the second transaction.
 tr = Test.AddTestRun("Verify the json content of the second session")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = "python3 {0} {1} {2} {3} --request-target '/two'".format(
-    verify_replay,
-    os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
-    replay_file_session_2,
-    sensitive_fields_arg)
+tr.Processes.Default.Command = \
+    ('python3 {0} {1} {2} {3} --client-http-version "1.0" '
+     '--request-target "/two"'.format(
+         verify_replay,
+         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
+         replay_file_session_2,
+         sensitive_fields_arg))
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -418,12 +422,14 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the client protocol stack.")
 h2_protocols = "http,tls,tcp,ip"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}" --client-tls-features "{4}"'.format(
-    verify_replay,
-    os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
-    replay_file_session_9,
-    h2_protocols,
-    client_tls_features)
+tr.Processes.Default.Command = \
+    ('python3 {0} {1} {2} --client-http-version "2" '
+     '--client-protocols "{3}" --client-tls-features "{4}"'.format(
+         verify_replay,
+         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
+         replay_file_session_9,
+         h2_protocols,
+         client_tls_features))
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -457,7 +463,7 @@ tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Verify the client protocol stack.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}"'.format(
+tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-http-version "1.1" --client-protocols "{3}"'.format(
     verify_replay,
     os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
     replay_file_session_10,

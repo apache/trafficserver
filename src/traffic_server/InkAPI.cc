@@ -8109,6 +8109,43 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 }
 
 TSReturnCode
+TSHttpTxnClientStreamIdGet(TSHttpTxn txnp, uint64_t *stream_id)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(stream_id != nullptr);
+
+  auto *sm     = reinterpret_cast<HttpSM *>(txnp);
+  auto *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
+  if (stream == nullptr) {
+    return TS_ERROR;
+  }
+  *stream_id = stream->get_id();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority)
+{
+  static_assert(sizeof(TSHttpPriority) >= sizeof(TSHttp2Priority),
+                "TSHttpPriorityType is incorrectly smaller than TSHttp2Priority.");
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(priority != nullptr);
+
+  auto *sm     = reinterpret_cast<HttpSM *>(txnp);
+  auto *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
+  if (stream == nullptr) {
+    return TS_ERROR;
+  }
+
+  auto *priority_out              = reinterpret_cast<TSHttp2Priority *>(priority);
+  priority_out->priority_type     = HTTP_PRIORITY_TYPE_HTTP_2;
+  priority_out->stream_dependency = stream->get_transaction_priority_dependence();
+  priority_out->weight            = stream->get_transaction_priority_weight();
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
