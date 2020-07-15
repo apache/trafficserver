@@ -29,11 +29,11 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, char const** result, int* actual)
+.. function:: TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int count, char const** result, int* actual)
 
-.. function:: TSReturnCode TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int n, const char** result, int* actual)
+.. function:: TSReturnCode TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int count, const char** result, int* actual)
 
-.. function:: TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, char const** result, int* actual)
+.. function:: TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int count, char const** result, int* actual)
 
 .. function:: char const* TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp)
 

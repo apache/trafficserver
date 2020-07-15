@@ -2520,8 +2520,8 @@ tsapi const char *TSHttpTxnPluginTagGet(TSHttpTxn txnp);
 /*
  * Return information about the client protocols.
  */
-tsapi TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual);
-tsapi TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int *actual);
+tsapi TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int count, const char **result, int *actual);
+tsapi TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int count, const char **result, int *actual);
 tsapi const char *TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, char const *tag);
 tsapi const char *TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char const *tag);
 tsapi const char *TSNormalizedProtocolTag(char const *tag);
@@ -2530,7 +2530,7 @@ tsapi const char *TSRegisterProtocolTag(char const *tag);
 /*
  * Return information about the server protocols.
  */
-tsapi TSReturnCode TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual);
+tsapi TSReturnCode TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int count, const char **result, int *actual);
 tsapi const char *TSHttpTxnServerProtocolStackContains(TSHttpTxn txnp, char const *tag);
 
 // If, for the given transaction, the URL has been remapped, this function puts the memory location of the "from" URL object in
