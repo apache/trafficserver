@@ -12,7 +12,7 @@
         {
             "label": "Configure",
             "type": "shell",
-            "command": "./configure --prefix=/opt/ats --enable-ccache  --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror",
+            "command": "./configure --prefix=${workspaceFolder}/target --enable-ccache  --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror",
             "dependsOrder": "sequence",
             "dependsOn": ["Autoreconf"],
             "problemMatcher": []
