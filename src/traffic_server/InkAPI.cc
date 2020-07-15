@@ -9657,62 +9657,62 @@ TSHttpSsnIdGet(TSHttpSsn ssnp)
 
 // Return information about the protocols used by the client
 TSReturnCode
-TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual)
+TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int count, const char **result, int *actual)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(n == 0 || result != nullptr);
-  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  int count  = 0;
-  if (sm && n > 0) {
-    auto mem = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
-    count    = sm->populate_client_protocol(mem, n);
-    for (int i = 0; i < count; ++i) {
+  sdk_assert(count == 0 || result != nullptr);
+  HttpSM *sm    = reinterpret_cast<HttpSM *>(txnp);
+  int new_count = 0;
+  if (sm && count > 0) {
+    auto mem  = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * count));
+    new_count = sm->populate_client_protocol(mem, count);
+    for (int i = 0; i < new_count; ++i) {
       result[i] = mem[i].data();
     }
   }
   if (actual) {
-    *actual = count;
+    *actual = new_count;
   }
   return TS_SUCCESS;
 }
 
 TSReturnCode
-TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, const char **result, int *actual)
+TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int count, const char **result, int *actual)
 {
   sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
-  sdk_assert(n == 0 || result != nullptr);
+  sdk_assert(count == 0 || result != nullptr);
   auto const *cs = reinterpret_cast<ProxySession *>(ssnp);
-  int count      = 0;
-  if (cs && n > 0) {
-    auto mem = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
-    count    = cs->populate_protocol(mem, n);
-    for (int i = 0; i < count; ++i) {
+  int new_count  = 0;
+  if (cs && count > 0) {
+    auto mem  = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * count));
+    new_count = cs->populate_protocol(mem, count);
+    for (int i = 0; i < new_count; ++i) {
       result[i] = mem[i].data();
     }
   }
   if (actual) {
-    *actual = count;
+    *actual = new_count;
   }
   return TS_SUCCESS;
 }
 
 // Return information about the protocols used by the server
 TSReturnCode
-TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int n, const char **result, int *actual)
+TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int count, const char **result, int *actual)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  sdk_assert(n == 0 || result != nullptr);
-  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  int count  = 0;
-  if (sm && n > 0) {
-    auto mem = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
-    count    = sm->populate_server_protocol(mem, n);
-    for (int i = 0; i < count; ++i) {
+  sdk_assert(count == 0 || result != nullptr);
+  HttpSM *sm    = reinterpret_cast<HttpSM *>(txnp);
+  int new_count = 0;
+  if (sm && count > 0) {
+    auto mem  = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * count));
+    new_count = sm->populate_server_protocol(mem, count);
+    for (int i = 0; i < new_count; ++i) {
       result[i] = mem[i].data();
     }
   }
   if (actual) {
-    *actual = count;
+    *actual = new_count;
   }
   return TS_SUCCESS;
 }
