@@ -1919,22 +1919,27 @@ HttpTransact::OSDNSLookup(State *s)
       ink_release_assert(s->http_config_param->redirect_actions_map->contains(s->host_db_info.ip(), reinterpret_cast<void **>(&x)));
       action = static_cast<RedirectEnabled::Action>(x);
     }
-    switch (action) {
-    case RedirectEnabled::Action::FOLLOW:
+
+    if (action == RedirectEnabled::Action::FOLLOW) {
       TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Following");
-      break;
-    case RedirectEnabled::Action::REJECT:
-      TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Rejecting.");
+    } else if (action == RedirectEnabled::Action::REJECT || s->hdr_info.server_response.valid() == false) {
+      if (action == RedirectEnabled::Action::REJECT) {
+        TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Rejecting.");
+      } else {
+        // Invalid server response, since we can't copy it we are going to reject
+        TxnDebug("http_trans", "[OSDNSLookup] Invalid server response. Rejecting.");
+        Error("Invalid server response. Rejecting.");
+      }
       build_error_response(s, HTTP_STATUS_FORBIDDEN, nullptr, "request#syntax_error");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-      break;
-    case RedirectEnabled::Action::RETURN:
-      TxnDebug("http_trans", "[OSDNSLookup] Configured to return on invalid redirect address.");
-      // fall-through
-    default:
-      // Return this 3xx to the client as-is.
-      TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Returning.");
+    } else {
+      // Return this 3xx to the client as-is
+      if (action == RedirectEnabled::Action::RETURN) {
+        TxnDebug("http_trans", "[OSDNSLookup] Configured to return on invalid redirect address.");
+      } else {
+        TxnDebug("http_trans", "[OSDNSLookup] Invalid redirect address. Returning.");
+      }
       build_response_copy(s, &s->hdr_info.server_response, &s->hdr_info.client_response, s->client_info.http_version);
       TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, nullptr);
     }
