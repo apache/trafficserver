@@ -18,7 +18,7 @@
         {
             "label": "Configure",
             "type": "shell",
-            "command": "./configure --enable-ccache  --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror",
+            "command": "autoreconf -if; ./configure --enable-ccache  --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror",
             "problemMatcher": []
         }
     ]
