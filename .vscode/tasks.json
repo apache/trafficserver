@@ -4,6 +4,20 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Autoreconf",
+            "type": "shell",
+            "command": "autoreconf -if",
+            "problemMatcher": []
+        },
+        {
+            "label": "Configure",
+            "type": "shell",
+            "command": "./configure --prefix=/opt/ats --enable-ccache  --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror",
+            "dependsOrder": "sequence",
+            "dependsOn": ["Autoreconf"],
+            "problemMatcher": []
+        },
+        {
             "label": "Build",
             "type": "shell",
             "command": "make -j 16",
@@ -16,10 +30,33 @@
             }
         },
         {
-            "label": "Configure",
+            "label": "Install",
             "type": "shell",
-            "command": "autoreconf -if; ./configure --enable-ccache  --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror",
-            "problemMatcher": []
+            "command": "make -j 16 install",
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Test",
+            "type": "shell",
+            "command": "make -j 8 test",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        // It is good to run this first and then you can run the other tasks
+        {
+            "label": "Full Build",
+            "dependsOrder": "sequence",
+            "dependsOn": ["Configure", "Build", "Install"],
+            "problemMatcher": [
+                "$gcc"
+            ]
         }
     ]
 }
