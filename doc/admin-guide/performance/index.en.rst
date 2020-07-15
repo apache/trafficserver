@@ -182,7 +182,7 @@ CPU and Thread Optimization
 Thread Scaling
 ~~~~~~~~~~~~~~
 
-By default, |TS| creates 1.5 threads per CPU core on the host system. This may
+By default, |TS| creates one thread per CPU core on the host system. This may
 be adjusted with the following settings in :file:`records.config`:
 
 * :ts:cv:`proxy.config.exec_thread.autoconfig`

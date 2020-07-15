@@ -9,7 +9,7 @@
 #    https://docs.trafficserver.apache.org/records.config#thread-variables
 ##############################################################################
 CONFIG proxy.config.exec_thread.autoconfig INT 1
-CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.5
+CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.0
 CONFIG proxy.config.exec_thread.limit INT 2
 CONFIG proxy.config.accept_threads INT 1
 CONFIG proxy.config.task_threads INT 2

@@ -231,7 +231,7 @@ msgstr ""
 
 #: ../../../admin-guide/performance/index.en.rst:185
 msgid ""
-"By default, |TS| creates 1.5 threads per CPU core on the host system. This "
+"By default, |TS| creates one thread per CPU core on the host system. This "
 "may be adjusted with the following settings in :file:`records.config`:"
 msgstr ""
 
