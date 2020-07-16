@@ -48,7 +48,6 @@ extern "C" {
 class HttpRequestData;
 
 void PrintToStdErr(const char *fmt, ...);
-void br_destroy(HttpRequestData &h);
 void build_request(HttpRequestData &h, const char *os_hostname);
 
 #ifdef __cplusplus
@@ -56,34 +55,23 @@ void build_request(HttpRequestData &h, const char *os_hostname);
 #endif /* __cplusplus */
 
 #include "ControlMatcher.h"
-struct TestData : public HttpRequestData {
-  std::string hostname;
-  sockaddr client_ip;
-  sockaddr server_ip;
+#include "ParentSelection.h"
 
-  TestData()
-  {
-    client_ip.sa_family = AF_INET;
-    memset(client_ip.sa_data, 0, sizeof(client_ip.sa_data));
-  }
-  const char *
-  get_host()
-  {
-    return hostname.c_str();
-  }
-  sockaddr const *
-  get_ip()
-  {
-    return &server_ip;
-  }
-  sockaddr const *
-  get_client_ip()
-  {
-    return &client_ip;
-  }
-  char *
-  get_string()
-  {
-    return nullptr;
-  }
+struct trans_config {
+  int64_t parent_retry_time     = 0;
+  int64_t parent_fail_threshold = 0;
+  trans_config() {}
 };
+
+struct trans_state {
+  ParentResult parent_result;
+  HttpRequestData request_data;
+  trans_config txn_conf;
+  trans_state() {}
+};
+
+class HttpSM;
+
+void br_destroy(HttpSM &sm);
+
+void build_request(int64_t sm_id, HttpSM *sm, sockaddr_in *ip, const char *os_hostname, sockaddr const *dest_ip);

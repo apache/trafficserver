@@ -41,6 +41,7 @@ libhttp_remap_a_SOURCES = \
 	NextHopSelectionStrategy.cc \
 	NextHopConsistentHash.h \
 	NextHopConsistentHash.cc \
+	NextHopHealthStatus.cc \
 	NextHopRoundRobin.h \
 	NextHopRoundRobin.cc \
 	NextHopStrategyFactory.h \
@@ -148,6 +149,7 @@ test_NextHopStrategyFactory_SOURCES = \
 	NextHopStrategyFactory.cc \
 	NextHopRoundRobin.cc \
 	NextHopConsistentHash.cc \
+	NextHopHealthStatus.cc \
 	unit-tests/test_NextHopStrategyFactory.cc \
 	unit-tests/nexthop_test_stubs.cc
 
@@ -178,6 +180,7 @@ test_NextHopRoundRobin_SOURCES = \
 	NextHopStrategyFactory.cc \
 	NextHopRoundRobin.cc \
 	NextHopConsistentHash.cc \
+	NextHopHealthStatus.cc \
 	unit-tests/test_NextHopRoundRobin.cc \
 	unit-tests/nexthop_test_stubs.cc
 
@@ -207,6 +210,7 @@ test_NextHopConsistentHash_SOURCES = \
 	NextHopSelectionStrategy.cc \
 	NextHopStrategyFactory.cc \
 	NextHopConsistentHash.cc \
+	NextHopHealthStatus.cc \
 	NextHopRoundRobin.cc \
 	unit-tests/test_NextHopConsistentHash.cc \
 	unit-tests/nexthop_test_stubs.cc

@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include "ts/nexthop.h"
 #include "tscore/ink_platform.h"
 
 #include <strings.h>
@@ -122,39 +123,26 @@ is_api_result(HttpTransact::State *s)
   return r;
 }
 
-// wrapper to choose between a remap next hop strategy or use parent.config
-// remap next hop strategy is preferred
+// wrapper to get the max_retries.
+// Does NOT check the strategy; if strategy exists, strategy->responseIsRetryable should be called instead.
 inline static unsigned
 max_retries(HttpTransact::State *s, ParentRetry_t method)
 {
-  unsigned int r  = 0;
-  url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
-    // remap strategies does not support unavailable_server_responses
-    if (method == PARENT_RETRY_SIMPLE) {
-      r = mp->strategy->max_simple_retries;
-    }
-  } else if (s->parent_params) {
-    r = s->parent_result.max_retries(method);
+  if (s->parent_params) {
+    return s->parent_result.max_retries(method);
   }
-  return r;
+  return 0;
 }
 
-// wrapper to choose between a remap next hop strategy or use parent.config
-// remap next hop strategy is preferred
+// wrapper to get the numParents.
+// Does NOT check the strategy; if strategy exists, strategy->responseIsRetryable should be called instead.
 inline static uint32_t
 numParents(HttpTransact::State *s)
 {
-  uint32_t r      = 0;
-  url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
-    r = mp->strategy->num_parents;
-  } else if (s->parent_params) {
-    r = s->parent_params->numParents(&s->parent_result);
+  if (s->parent_params) {
+    return s->parent_params->numParents(&s->parent_result);
   }
-  return r;
+  return 0;
 }
 
 // wrapper to choose between a remap next hop strategy or use parent.config
@@ -173,40 +161,15 @@ parent_is_proxy(HttpTransact::State *s)
   return r;
 }
 
-// wrapper to choose between a remap next hop strategy or use parent.config
-// remap next hop strategy is preferred
-inline static bool
-response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
-{
-  bool r          = false;
-  url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
-    if (mp->strategy->resp_codes.codes.size() > 0) {
-      r = mp->strategy->resp_codes.contains(response_code);
-    }
-  } else if (s->parent_params) {
-    r = s->parent_result.response_is_retryable(response_code);
-  }
-  return r;
-}
-
-// wrapper to choose between a remap next hop strategy or use parent.config
-// remap next hop strategy is preferred
+// wrapper to get the parent.config retry type.
+// Does NOT check the strategy; if strategy exists, strategy->responseIsRetryable should be called instead.
 inline static unsigned
 retry_type(HttpTransact::State *s)
 {
-  unsigned r      = PARENT_RETRY_NONE;
-  url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
-    if (mp->strategy->resp_codes.codes.size() > 0) {
-      r = PARENT_RETRY_SIMPLE;
-    }
-  } else if (s->parent_params) {
-    r = s->parent_result.retry_type();
+  if (s->parent_params) {
+    return s->parent_result.retry_type();
   }
-  return r;
+  return PARENT_RETRY_NONE;
 }
 
 // wrapper to choose between a remap next hop strategy or use parent.config
@@ -217,8 +180,7 @@ findParent(HttpTransact::State *s)
   url_mapping *mp = s->url_map.getMapping();
 
   if (mp && mp->strategy) {
-    return mp->strategy->findNextHop(s->state_machine->sm_id, s->parent_result, s->request_data, s->txn_conf->parent_fail_threshold,
-                                     s->txn_conf->parent_retry_time);
+    return mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
     return s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
                                         s->txn_conf->parent_retry_time);
@@ -230,11 +192,12 @@ findParent(HttpTransact::State *s)
 inline static void
 markParentDown(HttpTransact::State *s)
 {
+  HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
   url_mapping *mp = s->url_map.getMapping();
 
   if (mp && mp->strategy) {
-    return mp->strategy->markNextHopDown(s->state_machine->sm_id, s->parent_result, s->txn_conf->parent_fail_threshold,
-                                         s->txn_conf->parent_retry_time);
+    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
+                                     s->parent_result.port, NH_MARK_DOWN);
   } else if (s->parent_params) {
     return s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
   }
@@ -247,7 +210,8 @@ markParentUp(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
-    return mp->strategy->markNextHopUp(s->state_machine->sm_id, s->parent_result);
+    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
+                                     s->parent_result.port, NH_MARK_UP);
   } else if (s->parent_params) {
     return s->parent_params->markParentUp(&s->parent_result);
   }
@@ -260,7 +224,7 @@ parentExists(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
-    return mp->strategy->nextHopExists(s->state_machine->sm_id);
+    return mp->strategy->nextHopExists(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
     return s->parent_params->parentExists(&s->request_data);
   }
@@ -275,8 +239,7 @@ nextParent(HttpTransact::State *s)
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
     // NextHop only has a findNextHop() function.
-    return mp->strategy->findNextHop(s->state_machine->sm_id, s->parent_result, s->request_data, s->txn_conf->parent_fail_threshold,
-                                     s->txn_conf->parent_retry_time);
+    return mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
     return s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
                                         s->txn_conf->parent_retry_time);
@@ -310,40 +273,128 @@ is_response_unavailable_code(HTTPStatus response_code)
   return true;
 }
 
+bool
+HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
+{
+  if (s->current.state != CONNECTION_ALIVE) {
+    ink_assert((s->current.state == CONNECTION_ERROR) || (s->current.state == OPEN_RAW_ERROR) ||
+               (s->current.state == PARSE_ERROR) || (s->current.state == CONNECTION_CLOSED) ||
+               (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT) ||
+               s->current.state == OUTBOUND_CONGESTION);
+
+    s->hdr_info.response_error = CONNECTION_OPEN_FAILED;
+    return false;
+  }
+
+  s->hdr_info.response_error = check_response_validity(s, incoming_response);
+
+  switch (s->hdr_info.response_error) {
+#ifdef REALLY_NEED_TO_CHECK_DATE_VALIDITY
+  case BOGUS_OR_NO_DATE_IN_RESPONSE:
+    // We could modify the response to add the date, if need be.
+    //          incoming_response->set_date(s->request_sent_time);
+    return true;
+#endif
+  case NO_RESPONSE_HEADER_ERROR:
+    TxnDebug("http_trans", "[is_response_valid] No errors in response");
+    return true;
+
+  case MISSING_REASON_PHRASE:
+    TxnDebug("http_trans", "[is_response_valid] Response Error: Missing reason phrase - allowing");
+    return true;
+
+  case STATUS_CODE_SERVER_ERROR:
+    TxnDebug("http_trans", "[is_response_valid] Response Error: Origin Server returned 500 - allowing");
+    return true;
+
+  case CONNECTION_OPEN_FAILED:
+    TxnDebug("http_trans", "[is_response_valid] Response Error: connection open failed");
+    s->current.state = CONNECTION_ERROR;
+    return false;
+
+  case NON_EXISTANT_RESPONSE_HEADER:
+    TxnDebug("http_trans", "[is_response_valid] Response Error: No response header");
+    s->current.state = BAD_INCOMING_RESPONSE;
+    return false;
+
+  case NOT_A_RESPONSE_HEADER:
+    TxnDebug("http_trans", "[is_response_valid] Response Error: Not a response header");
+    s->current.state = BAD_INCOMING_RESPONSE;
+    return false;
+
+  case MISSING_STATUS_CODE:
+    TxnDebug("http_trans", "[is_response_valid] Response Error: Missing status code");
+    s->current.state = BAD_INCOMING_RESPONSE;
+    return false;
+
+  default:
+    TxnDebug("http_trans", "[is_response_valid] Errors in response");
+    s->current.state = BAD_INCOMING_RESPONSE;
+    return false;
+  }
+}
+
+inline static ParentRetry_t
+response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
+{
+  if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response) || s->current.request_to != HttpTransact::PARENT_PROXY) {
+    return PARENT_RETRY_NONE;
+  }
+
+  const url_mapping *mp = s->url_map.getMapping();
+  if (mp && mp->strategy) {
+    if (mp->strategy->responseIsRetryable(s->current.simple_retry_attempts, response_code)) {
+      if (mp->strategy->onFailureMarkParentDown(response_code)) {
+        return PARENT_RETRY_UNAVAILABLE_SERVER;
+      } else {
+        return PARENT_RETRY_SIMPLE;
+      }
+    } else {
+      return PARENT_RETRY_NONE;
+    }
+  }
+
+  if (s->parent_params && !s->parent_result.response_is_retryable(response_code)) {
+    return PARENT_RETRY_NONE;
+  }
+
+  const unsigned int s_retry_type  = retry_type(s);
+  const HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
+  if ((s_retry_type & PARENT_RETRY_SIMPLE) && is_response_simple_code(server_response) &&
+      s->current.simple_retry_attempts < max_retries(s, PARENT_RETRY_SIMPLE)) {
+    if (s->current.simple_retry_attempts < numParents(s)) {
+      return PARENT_RETRY_SIMPLE;
+    }
+    return PARENT_RETRY_NONE;
+  }
+  if ((s_retry_type & PARENT_RETRY_UNAVAILABLE_SERVER) && is_response_unavailable_code(server_response) &&
+      s->current.unavailable_server_retry_attempts < max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER)) {
+    if (s->current.unavailable_server_retry_attempts < numParents(s)) {
+      return PARENT_RETRY_UNAVAILABLE_SERVER;
+    }
+    return PARENT_RETRY_NONE;
+  }
+  return PARENT_RETRY_NONE;
+}
+
 inline static void
 simple_or_unavailable_server_retry(HttpTransact::State *s)
 {
-  // server response.
   HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
-
-  TxnDebug("http_trans", "[simple_or_unavailabe_server_retry] server_response = %d, simple_retry_attempts: %d, numParents:%d ",
-           server_response, s->current.simple_retry_attempts, numParents(s));
-  // simple retry is enabled, 0x1
-  if ((retry_type(s) & PARENT_RETRY_SIMPLE) && is_response_simple_code(server_response) &&
-      s->current.simple_retry_attempts < max_retries(s, PARENT_RETRY_SIMPLE) && response_is_retryable(s, server_response)) {
-    TxnDebug("parent_select", "RECEIVED A SIMPLE RETRY RESPONSE");
-    if (s->current.simple_retry_attempts < numParents(s)) {
-      s->current.state      = HttpTransact::PARENT_RETRY;
-      s->current.retry_type = PARENT_RETRY_SIMPLE;
-      return;
-    } else {
-      TxnDebug("http_trans", "PARENT_RETRY_SIMPLE: retried all parents, send response to client.");
-      return;
-    }
-  }
-  // unavailable server retry is enabled 0x2
-  else if ((retry_type(s) & PARENT_RETRY_UNAVAILABLE_SERVER) && is_response_unavailable_code(server_response) &&
-           s->current.unavailable_server_retry_attempts < max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER) &&
-           response_is_retryable(s, server_response)) {
-    TxnDebug("parent_select", "RECEIVED A PARENT_RETRY_UNAVAILABLE_SERVER RESPONSE");
-    if (s->current.unavailable_server_retry_attempts < numParents(s)) {
-      s->current.state      = HttpTransact::PARENT_RETRY;
-      s->current.retry_type = PARENT_RETRY_UNAVAILABLE_SERVER;
-      return;
-    } else {
-      TxnDebug("http_trans", "PARENT_RETRY_UNAVAILABLE_SERVER: retried all parents, send error to client.");
-      return;
-    }
+  switch (response_is_retryable(s, server_response)) {
+  case PARENT_RETRY_SIMPLE:
+    s->current.state      = HttpTransact::PARENT_RETRY;
+    s->current.retry_type = PARENT_RETRY_SIMPLE;
+    break;
+  case PARENT_RETRY_UNAVAILABLE_SERVER:
+    s->current.state      = HttpTransact::PARENT_RETRY;
+    s->current.retry_type = PARENT_RETRY_UNAVAILABLE_SERVER;
+    break;
+  case PARENT_RETRY_BOTH:
+    ink_assert(!"response_is_retryable should return an exact retry type, never both");
+    break;
+  case PARENT_RETRY_NONE:
+    break; // no retry
   }
 }
 
@@ -1656,7 +1707,6 @@ HttpTransact::PPDNSLookup(State *s)
   ink_assert(s->dns_info.looking_up == PARENT_PROXY);
   if (!s->dns_info.lookup_success) {
     // Mark parent as down due to resolving failure
-    HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
     markParentDown(s);
     // DNS lookup of parent failed, find next parent or o.s.
     if (find_server_and_update_current_info(s) == HttpTransact::HOST_NONE) {
@@ -3404,7 +3454,7 @@ HttpTransact::HandleResponse(State *s)
     ink_release_assert(s->cache_info.action != CACHE_PREPARE_TO_WRITE);
   }
 
-  if (!is_response_valid(s, &s->hdr_info.server_response)) {
+  if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
     TxnDebug("http_seq", "[HttpTransact::HandleResponse] Response not valid");
   } else {
     TxnDebug("http_seq", "[HttpTransact::HandleResponse] Response valid");
@@ -3543,13 +3593,7 @@ HttpTransact::handle_response_from_parent(State *s)
   TxnDebug("http_trans", "[handle_response_from_parent] (hrfp)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
 
-  // response is from a parent origin server.
-  if (is_response_valid(s, &s->hdr_info.server_response) && s->current.request_to == HttpTransact::PARENT_PROXY) {
-    // check for a retryable response if simple or unavailable server retry are enabled.
-    if (retry_type(s) & (PARENT_RETRY_SIMPLE | PARENT_RETRY_UNAVAILABLE_SERVER)) {
-      simple_or_unavailable_server_retry(s);
-    }
-  }
+  simple_or_unavailable_server_retry(s);
 
   s->parent_info.state = s->current.state;
   switch (s->current.state) {
@@ -3564,28 +3608,13 @@ HttpTransact::handle_response_from_parent(State *s)
     break;
   case PARENT_RETRY:
     if (s->current.retry_type == PARENT_RETRY_SIMPLE) {
-      if (s->current.simple_retry_attempts >= max_retries(s, PARENT_RETRY_SIMPLE)) {
-        TxnDebug("http_trans", "PARENT_RETRY_SIMPLE: retried all parents, send error to client.");
-        s->current.retry_type = PARENT_RETRY_NONE;
-      } else {
-        s->current.simple_retry_attempts++;
-        TxnDebug("http_trans", "PARENT_RETRY_SIMPLE: try another parent.");
-        s->current.retry_type = PARENT_RETRY_NONE;
-        next_lookup           = find_server_and_update_current_info(s);
-      }
-    } else if (s->current.retry_type == PARENT_RETRY_UNAVAILABLE_SERVER) {
-      if (s->current.unavailable_server_retry_attempts >= max_retries(s, PARENT_RETRY_UNAVAILABLE_SERVER)) {
-        TxnDebug("http_trans", "PARENT_RETRY_UNAVAILABLE_SERVER: retried all parents, send error to client.");
-        s->current.retry_type = PARENT_RETRY_NONE;
-      } else {
-        s->current.unavailable_server_retry_attempts++;
-        TxnDebug("http_trans", "PARENT_RETRY_UNAVAILABLE_SERVER: marking parent down and trying another.");
-        s->current.retry_type = PARENT_RETRY_NONE;
-        HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
-        markParentDown(s);
-        next_lookup = find_server_and_update_current_info(s);
-      }
+      s->current.simple_retry_attempts++;
+    } else {
+      markParentDown(s);
+      s->current.unavailable_server_retry_attempts++;
     }
+    next_lookup           = find_server_and_update_current_info(s);
+    s->current.retry_type = PARENT_RETRY_NONE;
     break;
   default:
     TxnDebug("http_trans", "[hrfp] connection not alive");
@@ -3607,7 +3636,6 @@ HttpTransact::handle_response_from_parent(State *s)
     // If the request is not retryable, just give up!
     if (!is_request_retryable(s)) {
       if (s->current.state != OUTBOUND_CONGESTION) {
-        HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
         markParentDown(s);
       }
       s->parent_result.result = PARENT_FAIL;
@@ -3635,7 +3663,6 @@ HttpTransact::handle_response_from_parent(State *s)
         //  to the parent otherwise slow origin servers cause
         //  us to mark the parent down
         if (s->current.state == CONNECTION_ERROR) {
-          HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
           markParentDown(s);
         }
         // We are done so look for another parent if any
@@ -3647,7 +3674,6 @@ HttpTransact::handle_response_from_parent(State *s)
       HTTP_INCREMENT_DYN_STAT(http_total_parent_retries_exhausted_stat);
       TxnDebug("http_trans", "[handle_response_from_parent] Error. No more retries.");
       if (s->current.state == CONNECTION_ERROR) {
-        HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
         markParentDown(s);
       }
       s->parent_result.result = PARENT_FAIL;
@@ -6491,67 +6517,6 @@ HttpTransact::is_request_retryable(State *s)
   }
 
   return true;
-}
-
-bool
-HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
-{
-  if (s->current.state != CONNECTION_ALIVE) {
-    ink_assert((s->current.state == CONNECTION_ERROR) || (s->current.state == OPEN_RAW_ERROR) ||
-               (s->current.state == PARSE_ERROR) || (s->current.state == CONNECTION_CLOSED) ||
-               (s->current.state == INACTIVE_TIMEOUT) || (s->current.state == ACTIVE_TIMEOUT) ||
-               s->current.state == OUTBOUND_CONGESTION);
-
-    s->hdr_info.response_error = CONNECTION_OPEN_FAILED;
-    return false;
-  }
-
-  s->hdr_info.response_error = check_response_validity(s, incoming_response);
-
-  switch (s->hdr_info.response_error) {
-#ifdef REALLY_NEED_TO_CHECK_DATE_VALIDITY
-  case BOGUS_OR_NO_DATE_IN_RESPONSE:
-    // We could modify the response to add the date, if need be.
-    //          incoming_response->set_date(s->request_sent_time);
-    return true;
-#endif
-  case NO_RESPONSE_HEADER_ERROR:
-    TxnDebug("http_trans", "[is_response_valid] No errors in response");
-    return true;
-
-  case MISSING_REASON_PHRASE:
-    TxnDebug("http_trans", "[is_response_valid] Response Error: Missing reason phrase - allowing");
-    return true;
-
-  case STATUS_CODE_SERVER_ERROR:
-    TxnDebug("http_trans", "[is_response_valid] Response Error: Origin Server returned 500 - allowing");
-    return true;
-
-  case CONNECTION_OPEN_FAILED:
-    TxnDebug("http_trans", "[is_response_valid] Response Error: connection open failed");
-    s->current.state = CONNECTION_ERROR;
-    return false;
-
-  case NON_EXISTANT_RESPONSE_HEADER:
-    TxnDebug("http_trans", "[is_response_valid] Response Error: No response header");
-    s->current.state = BAD_INCOMING_RESPONSE;
-    return false;
-
-  case NOT_A_RESPONSE_HEADER:
-    TxnDebug("http_trans", "[is_response_valid] Response Error: Not a response header");
-    s->current.state = BAD_INCOMING_RESPONSE;
-    return false;
-
-  case MISSING_STATUS_CODE:
-    TxnDebug("http_trans", "[is_response_valid] Response Error: Missing status code");
-    s->current.state = BAD_INCOMING_RESPONSE;
-    return false;
-
-  default:
-    TxnDebug("http_trans", "[is_response_valid] Errors in response");
-    s->current.state = BAD_INCOMING_RESPONSE;
-    return false;
-  }
 }
 
 void
