@@ -32,10 +32,7 @@
 
 #include "tscore/ink_platform.h"
 
-#ifdef SPLIT_DNS
 #include "P_SplitDNS.h"
-#endif
-
 #include "P_EventSystem.h"
 
 #include "I_HostDB.h"

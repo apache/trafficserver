@@ -2049,9 +2049,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     HostStatus::instance().loadHostStatusFromStats();
     netProcessor.init_socks();
     ParentConfig::startup();
-#ifdef SPLIT_DNS
     SplitDNSConfig::startup();
-#endif
 
     // Initialize HTTP/2
     Http2::init();
