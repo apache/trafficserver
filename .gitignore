@@ -170,6 +170,7 @@ rc/trafficserver.service
 
 .svn/
 .vscode/
+target
 
 tsxs
 
