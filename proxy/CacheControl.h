@@ -107,7 +107,10 @@ public:
   CacheControlType directive     = CC_INVALID;
   int time_arg                   = 0;
   int cache_responses_to_cookies = -1;
+
   Result Init(matcher_line *line_info);
+  Result Init(const YAML::Node &node);
+
   inkcoreapi void UpdateMatch(CacheControlResult *result, RequestData *rdata);
   void Print() const;
 };

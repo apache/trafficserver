@@ -346,6 +346,12 @@ CacheControlRecord::Init(matcher_line *line_info)
   return Result::ok();
 }
 
+Result
+CacheControlRecord::Init(const YAML::Node &node)
+{
+  return Result::failure("not implemented");
+}
+
 // void CacheControlRecord::UpdateMatch(CacheControlResult* result, RequestData* rdata)
 //
 //    Updates the parameters in result if the this element

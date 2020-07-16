@@ -28,21 +28,24 @@
  *
  *
  ****************************************************************************/
+
+#include "ControlBase.h"
+
+#include <vector>
+#include <yaml-cpp/yaml.h>
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_time.h"
+#include "tscore/Diags.h"
+#include "tscore/MatcherUtils.h"
+#include "tscore/Tokenizer.h"
+#include "tscore/TsBuffer.h"
 
 #include "URL.h"
-#include "tscore/Tokenizer.h"
-#include "ControlBase.h"
-#include "tscore/MatcherUtils.h"
 #include "HTTP.h"
 #include "ControlMatcher.h"
 #include "HdrUtils.h"
-
-#include "tscore/TsBuffer.h"
-
-#include <vector>
 
 /** Used for printing IP address.
     @code
@@ -697,15 +700,12 @@ ControlBase::clear()
 void
 ControlBase::Print() const
 {
-  int n = _mods.size();
-
-  if (0 >= n) {
+  if (_mods.empty()) {
     return;
   }
 
   printf("\t\t\t");
-  for (intptr_t i = 0; i < n; ++i) {
-    Modifier *cur_mod = _mods[i];
+  for (const auto &cur_mod : _mods) {
     if (!cur_mod) {
       printf("INVALID  ");
     } else {
@@ -742,7 +742,7 @@ ControlBase::CheckModifiers(HttpRequestData *request_data)
     return false;
   }
 
-  for (auto &cur_mod : _mods) {
+  for (const auto &cur_mod : _mods) {
     if (cur_mod && !cur_mod->check(request_data)) {
       return false;
     }
@@ -768,7 +768,7 @@ static const char *errorFormats[] = {
 ControlBase::Modifier *
 ControlBase::findModOfType(Modifier::Type t) const
 {
-  for (auto &m : _mods) {
+  for (const auto &m : _mods) {
     if (m && t == m->type()) {
       return m;
     }
@@ -847,6 +847,83 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
     } else {
       delete mod; // we still need to clean up because we didn't transfer ownership.
     }
+  }
+
+  if (err != ME_UNKNOWN) {
+    this->clear();
+    if (err != ME_CALLEE_GENERATED) {
+      errBuf = errorFormats[err];
+    }
+  }
+
+  return errBuf;
+}
+
+const char *
+ControlBase::ProcessModifiers(const YAML::Node &node)
+{
+  // Variables for error processing
+  const char *errBuf = nullptr;
+  mod_errors err     = ME_UNKNOWN;
+
+  _mods.clear();
+
+  for (auto const &v : node) {
+    std::string label = v.first.as<std::string>();
+
+    if (!v.second.IsScalar()) {
+      // Skip these nodes as the keys in use here do not use/expect them.
+      continue;
+    }
+
+    if (v.second.IsNull()) {
+      Debug("control", "Skipping null value for key '%s'", label.c_str());
+      err = ME_PARSE_FAILED;
+      break;
+    }
+
+    Modifier *mod = nullptr;
+    bool skipped  = false;
+    char *value   = ats_strdup(v.second.as<std::string>().c_str());
+
+    if (label == "port") {
+      mod = PortMod::make(value, &errBuf);
+    } else if (label == "ipport") {
+      mod = IPortMod::make(value, &errBuf);
+    } else if (label == "scheme") {
+      mod = SchemeMod::make(value, &errBuf);
+    } else if (label == "method") {
+      mod = MethodMod::make(value, &errBuf);
+    } else if (label == "prefix") {
+      mod = PrefixMod::make(value, &errBuf);
+    } else if (label == "suffix") {
+      mod = SuffixMod::make(value, &errBuf);
+    } else if (label == "src_ip") {
+      mod = SrcIPMod::make(value, &errBuf);
+    } else if (label == "time") {
+      mod = TimeMod::make(value, &errBuf);
+    } else if (label == "tag") {
+      mod = TagMod::make(value, &errBuf);
+    } else if (label == "internal") {
+      mod = InternalMod::make(value, &errBuf);
+    } else {
+      skipped = true;
+    }
+
+    if (errBuf) {
+      err = ME_CALLEE_GENERATED; // Mod make failed
+    } else if (!skipped) {
+      Debug("control", "Added modifier of '%s' with value '%s'", label.c_str(), value);
+    }
+
+    // If nothing went wrong, add the mod
+    if (err == ME_UNKNOWN && !skipped) {
+      _mods.push_back(mod);
+    } else {
+      delete mod; // we still need to clean up because we didn't transfer ownership.
+    }
+
+    ats_free(value);
   }
 
   if (err != ME_UNKNOWN) {

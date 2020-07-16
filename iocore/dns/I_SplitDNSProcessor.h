@@ -30,11 +30,12 @@
 
 #pragma once
 
-struct SplitDNS;
+namespace YAML
+{
+class Node;
+};
 
-/* --------------------------------------------------------------
-   **                struct SplitDNSConfig
-   -------------------------------------------------------------- */
+class SplitDNS;
 
 struct SplitDNSConfig {
   static void startup();
@@ -42,7 +43,9 @@ struct SplitDNSConfig {
   static bool isSplitDNSEnabled();
 
   static void reconfigure();
+
   static SplitDNS *acquire();
+
   static void release(SplitDNS *params);
   static void print();
 

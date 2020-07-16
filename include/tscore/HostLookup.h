@@ -60,7 +60,7 @@ struct HostLeaf {
   };
   Type type{LEAF_INVALID};    ///< Type of this leaf instance.
   std::string match;          // Contains a copy of the match data
-  bool isNot{false};          // used by any fasssst path ...
+  bool isNot{false};          // used by any fast path ...
   void *opaque_data{nullptr}; // Data associated with this leaf
 
   HostLeaf() {}

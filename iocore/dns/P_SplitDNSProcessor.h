@@ -32,9 +32,6 @@
 
 #include "ProxyConfig.h"
 
-/* ---------------------------
-   forward declarations ...
-   --------------------------- */
 void ink_split_dns_init(ts::ModuleVersion version);
 
 struct RequestData;
@@ -54,15 +51,9 @@ enum DNSResultType {
 
 typedef ControlMatcher<SplitDNSRecord, SplitDNSResult> DNS_table;
 
-/* --------------------------------------------------------------
-   **                struct SplitDNSResult
-   -------------------------------------------------------------- */
 struct SplitDNSResult {
   SplitDNSResult();
 
-  /* ------------
-     public
-     ------------ */
   DNSResultType r = DNS_SRVR_UNDEFINED;
 
   int m_line_number = 0;
@@ -70,32 +61,25 @@ struct SplitDNSResult {
   SplitDNSRecord *m_rec = nullptr;
 };
 
-/* --------------------------------------------------------------
-   **                struct SplitDNS
-   -------------------------------------------------------------- */
-struct SplitDNS : public ConfigInfo {
-  SplitDNS();
+class SplitDNS : public ConfigInfo
+{
+public:
+  SplitDNS(){};
   ~SplitDNS() override;
 
   void *getDNSRecord(const char *hostname);
   void findServer(RequestData *rdata, SplitDNSResult *result);
 
-  DNS_table *m_DNSSrvrTable = nullptr;
+  DNS_table *m_DNSSrvrTable{nullptr};
 
-  int32_t m_SplitDNSlEnable = 0;
+  int32_t m_SplitDNSlEnable{0};
 
-  /* ----------------------------
-     required by the alleged fast
-     path
-     ---------------------------- */
-  bool m_bEnableFastPath = false;
-  void *m_pxLeafArray    = nullptr;
-  int m_numEle           = 0;
+  // required by the fast path
+  bool m_bEnableFastPath{false};
+  void *m_pxLeafArray{nullptr};
+  int m_numEle{0};
 };
 
-/* --------------------------------------------------------------
-   SplitDNSConfig::isSplitDNSEnabled()
-   -------------------------------------------------------------- */
 TS_INLINE bool
 SplitDNSConfig::isSplitDNSEnabled()
 {
@@ -106,11 +90,7 @@ SplitDNSConfig::isSplitDNSEnabled()
 // End API to outside world
 //
 
-/* --------------------------------------------------------------
-   **                class DNSRequestData
-
-   A record for an single server
-   -------------------------------------------------------------- */
+// a record for a single server
 class DNSRequestData : public RequestData
 {
 public:
@@ -126,42 +106,27 @@ public:
   const char *m_pHost = nullptr;
 };
 
-/* --------------------------------------------------------------
-   DNSRequestData::get_string()
-   -------------------------------------------------------------- */
 TS_INLINE
 DNSRequestData::DNSRequestData() {}
 
-/* --------------------------------------------------------------
-   DNSRequestData::get_string()
-   -------------------------------------------------------------- */
 TS_INLINE char *
 DNSRequestData::get_string()
 {
   return ats_strdup((char *)m_pHost);
 }
 
-/* --------------------------------------------------------------
-   DNSRequestData::get_host()
-   -------------------------------------------------------------- */
 TS_INLINE const char *
 DNSRequestData::get_host()
 {
   return m_pHost;
 }
 
-/* --------------------------------------------------------------
-   DNSRequestData::get_ip()
-   -------------------------------------------------------------- */
 TS_INLINE sockaddr const *
 DNSRequestData::get_ip()
 {
   return nullptr;
 }
 
-/* --------------------------------------------------------------
-   DNSRequestData::get_client_ip()
-   -------------------------------------------------------------- */
 TS_INLINE sockaddr const *
 DNSRequestData::get_client_ip()
 {
@@ -171,7 +136,7 @@ DNSRequestData::get_client_ip()
 /* --------------------------------------------------------------
    *                 class SplitDNSRecord
 
-   A record for a configuration line in the splitdns.config file
+   A record for a configuration element in the splitdns config file
    -------------------------------------------------------------- */
 class SplitDNSRecord : public ControlBase
 {
@@ -180,6 +145,7 @@ public:
   ~SplitDNSRecord();
 
   Result Init(matcher_line *line_info);
+  Result Init(const YAML::Node &node);
 
   const char *ProcessDNSHosts(char *val);
   const char *ProcessDomainSrchList(char *val);
@@ -193,13 +159,7 @@ public:
   int m_domain_srch_list = 0;
 };
 
-/* --------------------------------------------------------------
-   SplitDNSRecord::SplitDNSRecord()
-   -------------------------------------------------------------- */
 TS_INLINE
 SplitDNSRecord::SplitDNSRecord() {}
 
-/* --------------------------------------------------------------
-   SplitDNSRecord::~SplitDNSRecord()
-   -------------------------------------------------------------- */
 TS_INLINE SplitDNSRecord::~SplitDNSRecord() {}

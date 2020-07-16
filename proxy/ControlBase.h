@@ -35,6 +35,11 @@
 
 #include "tscore/ink_platform.h"
 
+namespace YAML
+{
+class Node;
+};
+
 class HttpRequestData;
 class Tokenizer;
 struct matcher_line;
@@ -76,6 +81,8 @@ public:
   ~ControlBase();
 
   const char *ProcessModifiers(matcher_line *line_info);
+  const char *ProcessModifiers(const YAML::Node &node);
+
   bool CheckModifiers(HttpRequestData *request_data);
   bool CheckForMatch(HttpRequestData *request_data, int last_number);
 
@@ -91,8 +98,7 @@ protected:
   const char *getSchemeModText() const;
 
 private:
-  typedef std::vector<Modifier *> Array;
-  Array _mods;
+  std::vector<Modifier *> _mods;
   const char *ProcessSrcIp(char *val, void **opaque_ptr);
   const char *ProcessTimeOfDay(char *val, void **opaque_ptr);
   const char *ProcessPort(char *val, void **opaque_ptr);
