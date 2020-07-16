@@ -88,8 +88,13 @@ Http1ClientSession::release_transaction()
   released_transactions++;
   if (transact_count == released_transactions) {
     // Make sure we previously called release() or do_io_close() on the session
-    ink_release_assert(read_state != HCS_ACTIVE_READER && read_state != HCS_INIT);
-    destroy();
+    ink_release_assert(read_state != HCS_INIT);
+    if (read_state == HCS_ACTIVE_READER) {
+      // (in)active timeout
+      do_io_close(HTTP_ERRNO);
+    } else {
+      destroy();
+    }
   }
 }
 
@@ -254,10 +259,13 @@ Http1ClientSession::do_io_close(int alerrno)
     // READ_READY event.
     _reader->consume(_reader->read_avail());
   } else {
-    read_state = HCS_CLOSED;
     HttpSsnDebug("[%" PRId64 "] session closed", con_id);
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
-    HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
+    if (read_state != HCS_ACTIVE_READER) {
+      // donot double decrement
+      HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
+    }
+    read_state    = HCS_CLOSED;
     conn_decrease = false;
     // Can go ahead and close the netvc now, but keeping around the session object
     // until all the transactions are closed
