@@ -26,7 +26,7 @@ import platform
 import sys
 
 pip_packages = [
-    "autest==1.7.3",
+    "autest==1.8.0",
     "hyper",
     "requests",
     "dnslib",
@@ -39,8 +39,8 @@ pip_packages = [
 distro_packages = {
     "RHEL": [
         "install epel-release",
-        "install python35",
-        "install rh-python35-python-virtualenv"
+        "install python36",
+        "install rh-python36-python-virtualenv"
     ],
     "Fedora": [
         "install python3",
@@ -55,7 +55,7 @@ distro_packages = {
     ],
     "CentOS": [
         "install epel-release",
-        "install rh-python35-python-virtualenv"
+        "install rh-python36-python-virtualenv"
     ]
 }
 
@@ -169,7 +169,7 @@ def gen_package_cmds(packages):
 
 extra = ''
 if distro() == 'RHEL' or distro() == 'CentOS':
-    extra = ". /opt/rh/rh-python35/enable ;"
+    extra = ". /opt/rh/rh-python36/enable ;"
 
 
 def venv_cmds(path):
@@ -181,7 +181,7 @@ def venv_cmds(path):
     return [
         # first command only needed for rhel and centos systems at this time
         extra + " virtualenv --python=python3 {0}".format(path),
-        extra + " {0}/bin/pip install pip --upgrade".format(path)
+        extra + " {0}/bin/pip install pip setuptools --upgrade".format(path)
     ]
 
 

@@ -27,7 +27,7 @@ if [ ! -f ./env-test/bin/autest ]; then\
         echo -e "${GREEN}Done!${NC}";\
 	fi
 # this is for rhel or centos systems
-test -r /opt/rh/rh-python35/enable && . /opt/rh/rh-python35/enable
+test -r /opt/rh/rh-python36/enable && . /opt/rh/rh-python36/enable
 . env-test/bin/activate
 ./env-test/bin/autest -D gold_tests "$@"
 ret=$?
