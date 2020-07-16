@@ -22,11 +22,18 @@
  */
 
 #pragma once
+
 #include "P_Cache.h"
+
 #include "tscore/MatcherUtils.h"
 #include "tscore/HostLookup.h"
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
+
+namespace YAML
+{
+class Node;
+};
 
 struct Vol;
 struct CacheVol;

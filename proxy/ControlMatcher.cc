@@ -29,11 +29,14 @@
  ****************************************************************************/
 
 #include <sys/types.h>
+#include <yaml-cpp/yaml.h>
 
 #include "tscore/ink_config.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
+#include "tscore/EnumDescriptor.h"
 #include "tscore/ts_file.h"
+
 #include "ProxyConfig.h"
 #include "ControlMatcher.h"
 #include "CacheControl.h"
@@ -45,10 +48,6 @@
 #include "P_Net.h"
 #include "P_Cache.h"
 #include "P_SplitDNS.h"
-
-/****************************************************************
- *   Place all template instantiations at the bottom of the file
- ****************************************************************/
 
 // HttpRequestData accessors
 //   Can not be inlined due being virtual functions
@@ -97,12 +96,6 @@ template <class Data, class MatchResult> HostMatcher<Data, MatchResult>::~HostMa
   delete host_lookup;
 }
 
-//
-// template <class Data,class MatchResult>
-// void HostMatcher<Data,MatchResult>::Print()
-//
-//  Debugging Method
-//
 template <class Data, class MatchResult>
 void
 HostMatcher<Data, MatchResult>::Print() const
@@ -121,7 +114,7 @@ template <class Data, class MatchResult>
 void
 HostMatcher<Data, MatchResult>::PrintFunc(void *opaque_data)
 {
-  Data *d = (Data *)opaque_data;
+  Data *d = static_cast<Data *>(opaque_data);
   d->Print();
 }
 
@@ -175,10 +168,6 @@ HostMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) c
   }
 }
 
-//
-// Result HostMatcher<Data,MatchResult>::NewEntry(bool domain_record,
-//          char* match_data, char* match_info, int line_num)
-//
 //   Creates a new host/domain record
 //
 //   If successful, returns NULL
@@ -219,6 +208,42 @@ HostMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   } else {
     // Fill in the matching info
     host_lookup->NewEntry(match_data, (line_info->type == MATCH_DOMAIN) ? true : false, cur_d);
+    num_el++;
+  }
+
+  return error;
+}
+
+template <class Data, class MatchResult>
+Result
+HostMatcher<Data, MatchResult>::NewEntry(const YAML::Node &node)
+{
+  // Make sure space has been allocated
+  ink_assert(num_el >= 0);
+  ink_assert(array_len >= 0);
+
+  // Make sure we do not overrun the array;
+  ink_assert(num_el < array_len);
+
+  if (!node[YAML_TAG_TYPE]) {
+    return Result::failure("%s No '%s' specified at %s line %d", matcher_name, YAML_TAG_TYPE, file_name, node.Mark().line);
+  }
+  if (!node["dest"]) {
+    return Result::failure("%s No 'dest' specified at %s line %d", matcher_name, file_name, node.Mark().line);
+  }
+
+  std::string nodeType = node[YAML_TAG_TYPE].as<std::string>();
+  std::string dest     = node["dest"].as<std::string>();
+
+  // Fill in the parameter info
+  Data *cur_d  = data_array + num_el;
+  Result error = cur_d->Init(node);
+  if (error.failed()) {
+    // There was a problem so undo the effects this function
+    new (cur_d) Data; // reconstruct
+  } else {
+    // Fill in the matching info
+    host_lookup->NewEntry(dest, (nodeType == "domain") ? true : false, cur_d);
     num_el++;
   }
 
@@ -283,9 +308,6 @@ UrlMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
   num_el    = 0;
 }
 
-//
-// Result UrlMatcher<Data,MatchResult>::NewEntry(matcher_line* line_info)
-//
 template <class Data, class MatchResult>
 Result
 UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
@@ -307,7 +329,7 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   ink_assert(pattern != nullptr);
 
   if (url_ht.find(pattern) != url_ht.end()) {
-    return Result::failure("%s url expression error (have exist) at line %d position", matcher_name, line_info->line_num);
+    return Result::failure("%s url expression error (have exist) at line %d", matcher_name, line_info->line_num);
   }
 
   // Remove our consumed label from the parsed line
@@ -327,10 +349,44 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   return error;
 }
 
+template <class Data, class MatchResult>
+Result
+UrlMatcher<Data, MatchResult>::NewEntry(const YAML::Node &node)
+{
+  // Make sure space has been allocated
+  ink_assert(num_el >= 0);
+  ink_assert(array_len >= 0);
+
+  // Make sure we do not overrun the array;
+  ink_assert(num_el < array_len);
+
+  if (!node["regex"]) {
+    return Result::failure("%s No 'regex' specified at %s line %d", matcher_name, file_name, node.Mark().line);
+  }
+
+  std::string pattern = node["regex"].as<std::string>();
+
+  if (url_ht.find(pattern) != url_ht.end()) {
+    return Result::failure("%s url expression error (have exist) at line %d", matcher_name, node["dest"].Mark().line);
+  }
+
+  // Fill in the parameter info
+  Data *cur_d  = data_array + num_el;
+  Result error = cur_d->Init(node);
+  if (error.failed()) {
+    url_str[num_el]   = ats_strdup(pattern.c_str());
+    url_value[num_el] = num_el;
+    url_ht.emplace(url_str[num_el], url_value[num_el]);
+    num_el++;
+  }
+
+  return error;
+}
+
 //
 // void UrlMatcher<Data,MatchResult>::Match(RD* rdata, MatchResult* result)
 //
-//   Coduncts a linear search through the regex array and
+//   Conducts a linear search through the regex array and
 //     updates arg result for each regex that matches arg URL
 //
 template <class Data, class MatchResult>
@@ -339,16 +395,14 @@ UrlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) co
 {
   char *url_str;
 
-  // Check to see there is any work to before we copy the
-  //   URL
+  // Check to see there is any work to before we copy the URL
   if (num_el <= 0) {
     return;
   }
 
   url_str = rdata->get_string();
 
-  // Can't do a regex match with a NULL string so
-  //  use an empty one instead
+  // Can't do a regex match with a NULL string so use an empty one instead
   if (url_str == nullptr) {
     url_str = ats_strdup("");
   }
@@ -382,11 +436,6 @@ template <class Data, class MatchResult> RegexMatcher<Data, MatchResult>::~Regex
   ats_free(re_array);
 }
 
-//
-// void RegexMatcher<Data,MatchResult>::Print() const
-//
-//   Debugging function
-//
 template <class Data, class MatchResult>
 void
 RegexMatcher<Data, MatchResult>::Print() const
@@ -420,9 +469,6 @@ RegexMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
   num_el    = 0;
 }
 
-//
-// Result RegexMatcher<Data,MatchResult>::NewEntry(matcher_line* line_info)
-//
 template <class Data, class MatchResult>
 Result
 RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
@@ -460,6 +506,54 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   // Fill in the parameter info
   cur_d = data_array + num_el;
   error = cur_d->Init(line_info);
+
+  if (error.failed()) {
+    // There was a problem so undo the effects this function
+    ats_free(re_str[num_el]);
+    re_str[num_el] = nullptr;
+    pcre_free(re_array[num_el]);
+    re_array[num_el] = nullptr;
+  } else {
+    num_el++;
+  }
+
+  return error;
+}
+
+template <class Data, class MatchResult>
+Result
+RegexMatcher<Data, MatchResult>::NewEntry(const YAML::Node &node)
+{
+  // Make sure space has been allocated
+  ink_assert(num_el >= 0);
+  ink_assert(array_len >= 0);
+
+  // Make sure we do not overrun the array;
+  ink_assert(num_el < array_len);
+
+  if (!node["dest"]) {
+    return Result::failure("%s No 'dest' specified at %s line %d", matcher_name, file_name, node.Mark().line);
+  }
+
+  std::string pattern = node["dest"].as<std::string>();
+  if (pattern.empty()) {
+    return Result::failure("%s Empty 'dest' specified at %s line %d", matcher_name, file_name, node.Mark().line);
+  }
+
+  // Create the compiled regular expression
+  const char *errptr;
+  int erroffset;
+  re_array[num_el] = pcre_compile(pattern.c_str(), 0, &errptr, &erroffset, nullptr);
+  if (!re_array[num_el]) {
+    return Result::failure("%s regular expression error at line %d position %d : %s", matcher_name, node["dest"].Mark().line,
+                           erroffset, errptr);
+  }
+
+  re_str[num_el] = ats_strdup(pattern.c_str());
+
+  // Fill in the parameter info
+  Data *cur_d  = data_array + num_el;
+  Result error = cur_d->Init(node);
 
   if (error.failed()) {
     // There was a problem so undo the effects this function
@@ -590,9 +684,6 @@ IpMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
   num_el    = 0;
 }
 
-//
-// Result IpMatcher<Data,MatchResult>::NewEntry(matcher_line* line_info)
-//
 //    Inserts a range the ip lookup table.
 //        Creates new table levels as needed
 //
@@ -648,6 +739,44 @@ IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 // void IpMatcherData,MatchResult>::Match(in_addr_t addr, RequestData* rdata, MatchResult* result)
 //
 template <class Data, class MatchResult>
+Result
+IpMatcher<Data, MatchResult>::NewEntry(const YAML::Node &node)
+{
+  IpEndpoint addr1, addr2;
+
+  // Make sure space has been allocated
+  ink_assert(num_el >= 0);
+  ink_assert(array_len >= 0);
+
+  // Make sure we do not overrun the array;
+  ink_assert(num_el < array_len);
+
+  if (!node["dest"]) {
+    return Result::failure("%s No 'dest' specified at %s line %d", matcher_name, file_name, node.Mark().line);
+  }
+
+  std::string match_data = node["dest"].as<std::string>();
+  if (match_data.empty()) {
+    return Result::failure("%s Empty 'dest' specified at %s line %d", matcher_name, file_name, node.Mark().line);
+  }
+
+  // Extract the IP range
+  const char *errptr = ExtractIpRange((char *)match_data.c_str(), &addr1.sa, &addr2.sa); // TODO bad cast!
+  if (errptr != nullptr) {
+    return Result::failure("%s %s at %s line %d", matcher_name, errptr, file_name, node["dest"].Mark().line);
+  }
+
+  // Fill in the parameter info
+  Data *cur_d  = data_array + num_el;
+  Result error = cur_d->Init(node);
+  if (!error.failed()) {
+    ip_map.mark(&addr1.sa, &addr2.sa, cur_d);
+    ++num_el;
+  }
+  return error;
+}
+
+template <class Data, class MatchResult>
 void
 IpMatcher<Data, MatchResult>::Match(sockaddr const *addr, RequestData *rdata, MatchResult *result) const
 {
@@ -672,15 +801,22 @@ IpMatcher<Data, MatchResult>::Print() const
 }
 
 template <class Data, class MatchResult>
-ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags, int flags_in)
+ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const char *matcherName, const matcher_tags *tags,
+                                                  int flags_in)
+  : reMatch(nullptr),
+    urlMatch(nullptr),
+    hostMatch(nullptr),
+    ipMatch(nullptr),
+    hrMatch(nullptr),
+    config_tags(tags),
+    flags(flags_in),
+    m_numEntries(0),
+    matcher_name(matcherName)
 {
-  flags = flags_in;
   ink_assert(flags & (ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE));
 
-  config_tags = tags;
   ink_assert(config_tags != nullptr);
 
-  matcher_name        = name;
   config_file_path[0] = '\0';
 
   if (!(flags & DONT_BUILD_TABLE)) {
@@ -690,16 +826,36 @@ ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const ch
     ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));
   }
 
-  reMatch   = nullptr;
-  urlMatch  = nullptr;
-  hostMatch = nullptr;
-  ipMatch   = nullptr;
-  hrMatch   = nullptr;
-
   if (!(flags & DONT_BUILD_TABLE)) {
     m_numEntries = this->BuildTable();
-  } else {
-    m_numEntries = 0;
+  }
+}
+
+template <class Data, class MatchResult>
+ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const char *matcherName, const YAML::Node &node,
+                                                  int flags_in)
+  : reMatch(nullptr),
+    urlMatch(nullptr),
+    hostMatch(nullptr),
+    ipMatch(nullptr),
+    hrMatch(nullptr),
+    config_tags(nullptr),
+    flags(flags_in),
+    m_numEntries(0),
+    matcher_name(matcherName)
+{
+  ink_assert(flags & (ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE));
+
+  config_file_path[0] = '\0';
+  if (!(flags & DONT_BUILD_TABLE)) {
+    ats_scoped_str config_path(RecConfigReadConfigPath(file_var));
+
+    ink_release_assert(config_path);
+    ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));
+  }
+
+  if (!(flags & DONT_BUILD_TABLE)) {
+    m_numEntries = this->BuildTable(node);
   }
 }
 
@@ -712,10 +868,6 @@ template <class Data, class MatchResult> ControlMatcher<Data, MatchResult>::~Con
   delete hrMatch;
 }
 
-// void ControlMatcher<Data, MatchResult>::Print()
-//
-//   Debugging method
-//
 template <class Data, class MatchResult>
 void
 ControlMatcher<Data, MatchResult>::Print() const
@@ -764,10 +916,8 @@ ControlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result
   }
 }
 
-// int ControlMatcher::BuildTable()
 //
-//    Reads the cache.config file and build the records array
-//      from it
+// Reads the config file and build the records array from it
 //
 template <class Data, class MatchResult>
 int
@@ -930,6 +1080,162 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
     Print();
   }
   return numEntries;
+}
+
+// NOTE: Needs to line up with matcher_type
+TsEnumDescriptor CFG_TYPE_TEXT = {
+  {{"none", 0}, {"host", 1}, {"domain", 2}, {"ip", 3}, {"regex", 4}, {"url", 5}, {"host_regex", 6}}};
+
+static std::set<std::string> valid_object_keys = {"regex", "named", "def_domain", "search_list", YAML_TAG_TYPE};
+
+// Walks the YAML::Node and builds the records array from it
+template <class Data, class MatchResult>
+int
+ControlMatcher<Data, MatchResult>::BuildTable(const YAML::Node &in)
+{
+  YAML::Node validNodes;
+  bool alarmAlready = false;
+  std::map<std::string_view, int> typeCounts;
+
+  // zero out for easier access later
+  for (auto const &v : CFG_TYPE_TEXT.values) {
+    typeCounts[v.first] = 0;
+  }
+
+  for (auto const &node : in) {
+    // TODO
+    //    if (std::none_of(valid_object_keys.begin(), valid_object_keys.end(),
+    //                     [&node](const std::string &s) { return s == node.first.as<std::string>(); })) {
+    //      std::string key = node.first.as<std::string>();
+    //      Result error    = Result::failure("unsupported key '%s' on line %d", key.c_str(), node.first.Mark().line);
+    //      SignalError(error.message(), alarmAlready);
+    //      continue;
+    //    }
+
+    if (!node[YAML_TAG_TYPE]) {
+      Result error = Result::failure("discarding entry at line %d : missing '%s' argument", node.Mark().line, YAML_TAG_TYPE);
+      SignalError(error.message(), alarmAlready);
+      continue;
+    }
+
+    std::string value = node[YAML_TAG_TYPE].as<std::string>();
+    int ival          = CFG_TYPE_TEXT.get(value);
+    if (ival < 0) {
+      Result error =
+        Result::failure("discarding entry at line %d : %s is invalid '%s'", node.Mark().line, value.c_str(), YAML_TAG_TYPE);
+      SignalError(error.message(), alarmAlready);
+      continue;
+    }
+
+    // TODO fix use of vaules here
+    switch (ival) {
+    case 1: // host
+    case 2: // domain
+      // collapse host and domain into a single bucket (like non-yaml form
+      typeCounts["host"]++;
+      break;
+    default:
+      typeCounts[value]++;
+    }
+    validNodes.push_back(node);
+  }
+
+  // Make we have something to do before going on
+  if (validNodes.size() == 0) {
+    return 0;
+  }
+
+  // Now allocate space for the record pointers
+  {
+    int count = typeCounts["regex"];
+    if ((flags & ALLOW_REGEX_TABLE) && count > 0) {
+      Debug("matcher", "regex count=%d", count);
+      reMatch = new RegexMatcher<Data, MatchResult>(matcher_name, config_file_path);
+      reMatch->AllocateSpace(count);
+    }
+
+    count = typeCounts["url"];
+    if ((flags & ALLOW_URL_TABLE) && count > 0) {
+      Debug("matcher", "url count=%d", count);
+      urlMatch = new UrlMatcher<Data, MatchResult>(matcher_name, config_file_path);
+      urlMatch->AllocateSpace(count);
+    }
+
+    count = typeCounts["host"];
+    if ((flags & ALLOW_HOST_TABLE) && count > 0) {
+      Debug("matcher", "host count=%d", count);
+
+      hostMatch = new HostMatcher<Data, MatchResult>(matcher_name, config_file_path);
+      hostMatch->AllocateSpace(count);
+    }
+
+    count = typeCounts["ip"];
+    if ((flags & ALLOW_IP_TABLE) && count > 0) {
+      Debug("matcher", "ip count=%d", count);
+
+      ipMatch = new IpMatcher<Data, MatchResult>(matcher_name, config_file_path);
+      ipMatch->AllocateSpace(count);
+    }
+
+    count = typeCounts["host_regex"];
+    if ((flags & ALLOW_HOST_REGEX_TABLE) && count > 0) {
+      Debug("matcher", "host_regex count=%d", count);
+      hrMatch = new HostRegexMatcher<Data, MatchResult>(matcher_name, config_file_path);
+      hrMatch->AllocateSpace(count);
+    }
+  }
+
+  // Traverse the valid nodes and build the records table
+  for (auto const &node : validNodes) {
+    Result error      = Result::ok();
+    std::string value = node[YAML_TAG_TYPE].as<std::string>();
+    int ival          = CFG_TYPE_TEXT.get(value);
+
+    switch (ival) {
+    case 1: // host
+    case 2: // domain
+      if (flags & ALLOW_HOST_TABLE) {
+        //        Debug("matcher", "host_regex count=%d", count);
+
+        error = hostMatch->NewEntry(node);
+      }
+      break;
+    case 3: // ip
+      if (flags & ALLOW_IP_TABLE) {
+        error = ipMatch->NewEntry(node);
+      }
+      break;
+    case 4: // regex
+      if (flags & ALLOW_REGEX_TABLE) {
+        error = reMatch->NewEntry(node);
+      }
+      break;
+    case 5: // url
+      if (flags & ALLOW_URL_TABLE) {
+        error = urlMatch->NewEntry(node);
+      }
+      break;
+    case 6: // host_regex
+      if (flags & ALLOW_HOST_REGEX_TABLE) {
+        error = hrMatch->NewEntry(node);
+      }
+      break;
+    default:
+      // we should've filtered this already
+      ink_assert(0);
+    }
+
+    // Check to see if there was an error in creating the NewEntry
+    if (error.failed()) {
+      SignalError(error.message(), alarmAlready);
+    }
+  }
+
+  if (is_debug_tag_set("matcher")) {
+    Print();
+  }
+
+  return validNodes.size();
 }
 
 template <class Data, class MatchResult>

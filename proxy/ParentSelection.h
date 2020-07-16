@@ -134,6 +134,8 @@ public:
   ~ParentRecord();
 
   Result Init(matcher_line *line_info);
+  Result Init(const YAML::Node &node);
+
   bool DefaultInit(char *val);
   void UpdateMatch(ParentResult *result, RequestData *rdata);
 

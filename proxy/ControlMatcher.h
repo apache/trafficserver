@@ -25,9 +25,6 @@
  *
  *  ControlMatcher.h - Interface to general purpose matcher
  *
- *
- *
- *
  *  Description:
  *
  *     The control matcher module provides the ability to lookup arbitrary
@@ -74,16 +71,6 @@
  *
  ****************************************************************************/
 
-//
-// IMPORTANT: Instantiating these templates
-//
-//    The Implementation for these templates appears in
-//     ControlMatcher.cc   To get the templates instantiated
-//     correctly on all compilers new uses MUST explicitly
-//     instantiate the new instance at the bottom of
-//     ControlMatcher.cc
-//
-
 #pragma once
 
 #include "tscore/IpMap.h"
@@ -97,10 +84,14 @@
 #include "URL.h"
 
 #include <unordered_map>
-
-#ifdef HAVE_CTYPE_H
 #include <cctype>
-#endif
+
+namespace YAML
+{
+class Node;
+};
+
+static constexpr char YAML_TAG_TYPE[] = "type";
 
 #define SignalError(_buf, _already)                         \
   {                                                         \
@@ -186,6 +177,7 @@ public:
 
   void AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
+  Result NewEntry(const YAML::Node &node);
 
   void Match(RequestData *rdata, MatchResult *result) const;
   void Print() const;
@@ -212,6 +204,7 @@ public:
 
   void AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
+  Result NewEntry(const YAML::Node &node);
 
   void Match(RequestData *rdata, MatchResult *result) const;
   void Print() const;
@@ -252,6 +245,7 @@ public:
 
   void AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
+  Result NewEntry(const YAML::Node &node);
 
   void Match(RequestData *rdata, MatchResult *result) const;
   void Print() const;
@@ -282,6 +276,7 @@ public:
 
   void AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
+  Result NewEntry(const YAML::Node &node);
 
   void Match(sockaddr const *ip_addr, RequestData *rdata, MatchResult *result) const;
   void Print() const;
@@ -308,12 +303,17 @@ template <class Data, class MatchResult> class ControlMatcher
 {
 public:
   // Parameter name must not be deallocated before this object is
-  ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags,
+  ControlMatcher(const char *file_var, const char *matcherName, const matcher_tags *tags,
                  int flags_in = (ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE));
+
+  ControlMatcher(const char *file_var, const char *matcherName, const YAML::Node &node,
+                 int flags_in = (ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE));
+
   ~ControlMatcher();
 
   int BuildTable();
   int BuildTableFromString(char *str);
+  int BuildTable(const YAML::Node &node);
 
   void Match(RequestData *rdata, MatchResult *result) const;
   void Print() const;

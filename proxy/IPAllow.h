@@ -45,7 +45,7 @@ struct IpAllowUpdate;
 namespace YAML
 {
 class Node;
-}
+};
 
 /** Singleton class for access controls.
  */

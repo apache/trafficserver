@@ -833,6 +833,12 @@ ParentRecord::Init(matcher_line *line_info)
   return Result::ok();
 }
 
+Result
+ParentRecord::Init(const YAML::Node &node)
+{
+  return Result::failure("not implemented");
+}
+
 // void ParentRecord::UpdateMatch(ParentResult* result, RequestData* rdata);
 //
 //    Updates the record ptr in result if the this element
