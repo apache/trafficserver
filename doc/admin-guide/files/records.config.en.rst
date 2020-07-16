@@ -282,11 +282,11 @@ Thread Variables
    When enabled (the default, ``1``), |TS| scales threads according to the
    available CPU cores. See the config option below.
 
-.. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.5
+.. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.0
 
    Factor by which |TS| scales the number of threads. The multiplier is usually
    the number of available CPU cores. By default this is scaling factor is
-   ``1.5``.
+   ``1.0``.
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.limit INT 2
 
