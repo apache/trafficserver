@@ -158,6 +158,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    JA3 Fingerprint <ja3_fingerprint.en>
    Maxmind ACL <maxmind_acl.en>
    Memcache <memcache.en>
+   Memory Profile <memory_profile.en>
    Metalink <metalink.en>
    Money Trace <money_trace.en>
    MP4 <mp4.en>
