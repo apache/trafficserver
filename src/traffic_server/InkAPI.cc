@@ -1966,6 +1966,23 @@ TSPluginRegister(const TSPluginRegistrationInfo *plugin_info)
   return TS_SUCCESS;
 }
 
+TSReturnCode
+TSPluginDSOReloadEnable(int enabled)
+{
+  TSReturnCode ret = TS_SUCCESS;
+  if (!plugin_reg_current) {
+    return TS_ERROR;
+  }
+
+  if (!enabled) {
+    if (!PluginDso::loadedPlugins()->addPluginPathToDsoOptOutTable(plugin_reg_current->plugin_path)) {
+      ret = TS_ERROR;
+    }
+  }
+
+  return ret;
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // API file management
