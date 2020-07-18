@@ -70,7 +70,7 @@ public:
   unsigned
   get(Http2SettingsIdentifier id) const
   {
-    if (id < HTTP2_SETTINGS_MAX) {
+    if (0 < id && id < HTTP2_SETTINGS_MAX) {
       return this->settings[indexof(id)];
     } else {
       ink_assert(!"Bad Settings Identifier");
@@ -82,7 +82,7 @@ public:
   unsigned
   set(Http2SettingsIdentifier id, unsigned value)
   {
-    if (id < HTTP2_SETTINGS_MAX) {
+    if (0 < id && id < HTTP2_SETTINGS_MAX) {
       return this->settings[indexof(id)] = value;
     } else {
       // Do nothing - 6.5.2 Unsupported parameters MUST be ignored
@@ -96,7 +96,7 @@ private:
   static unsigned
   indexof(Http2SettingsIdentifier id)
   {
-    ink_assert(id < HTTP2_SETTINGS_MAX);
+    ink_assert(0 < id && id < HTTP2_SETTINGS_MAX);
 
     return id - 1;
   }
