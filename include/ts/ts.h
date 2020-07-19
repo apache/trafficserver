@@ -2353,6 +2353,16 @@ tsapi const char *TSVConnSslProtocolGet(TSVConn sslp);
 */
 tsapi const char *TSVConnSslCurveGet(TSVConn sslp);
 
+/**
+   Return the current (if set) SSL Server Name. This is still owned by the
+   core, and must not be free'd.
+
+   @param txnp the transaction pointer
+
+   @return the SSL Curve
+*/
+tsapi const char *TSVConnSslServerNameGet(TSVConn sslp);
+
 /* NetVC timeout APIs. */
 tsapi void TSVConnInactivityTimeoutSet(TSVConn connp, TSHRTime timeout);
 tsapi void TSVConnInactivityTimeoutCancel(TSVConn connp);

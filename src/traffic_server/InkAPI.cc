@@ -6563,6 +6563,15 @@ TSVConnSslCurveGet(TSVConn sslp)
   return ssl_vc ? ssl_vc->getSSLCurve() : nullptr;
 }
 
+const char *
+TSVConnSslServerNameGet(TSVConn sslp)
+{
+  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+
+  return ssl_vc ? ssl_vc->get_server_name() : nullptr;
+}
+
 int
 TSHttpTxnPushedRespHdrBytesGet(TSHttpTxn txnp)
 {
