@@ -1004,3 +1004,5 @@ Changes with Apache Traffic Server 9.0.0
   #6977 - Preserve cert name through ssl vc migration
   #6984 - Fix out of source tree builds for QUIC
   #6994 - Adds null check
+  #7004 - Fixed core when sending back a redirect and having an invalid server response
+  #7007 - Updates to thread scale factor
