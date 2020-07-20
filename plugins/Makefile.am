@@ -74,6 +74,7 @@ include experimental/maxmind_acl/Makefile.inc
 endif
 
 include experimental/memcache/Makefile.inc
+include experimental/memory_profile/Makefile.inc
 include experimental/metalink/Makefile.inc
 include experimental/money_trace/Makefile.inc
 include experimental/mp4/Makefile.inc
