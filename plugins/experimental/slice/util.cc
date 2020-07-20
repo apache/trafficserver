@@ -25,6 +25,8 @@ void
 shutdown(TSCont const contp, Data *const data)
 {
   DEBUG_LOG("shutting down transaction");
+  data->m_upstream.close();
+  data->m_dnstream.close();
   TSContDataSet(contp, nullptr);
   delete data;
   TSContDestroy(contp);
@@ -34,9 +36,9 @@ void
 abort(TSCont const contp, Data *const data)
 {
   DEBUG_LOG("aborting transaction");
-  TSContDataSet(contp, nullptr);
   data->m_upstream.abort();
   data->m_dnstream.abort();
+  TSContDataSet(contp, nullptr);
   delete data;
   TSContDestroy(contp);
 }

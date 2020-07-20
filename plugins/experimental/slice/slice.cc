@@ -27,24 +27,7 @@
 #include "ts/ts.h"
 
 #include <netinet/in.h>
-#include <cassert>
 #include <mutex>
-
-#if defined(COLLECT_STATS)
-namespace stats
-{
-int DataCreate      = -1;
-int DataDestroy     = -1;
-int Reader          = -1;
-int Server          = -1;
-int Client          = -1;
-int RequestTime     = -1;
-int FirstHeaderTime = -1;
-int NextHeaderTime  = -1;
-int ServerTime      = -1;
-int ClientTime      = -1;
-} // namespace stats
-#endif // COLLECT_STATS
 
 namespace
 {
@@ -53,10 +36,6 @@ Config globalConfig;
 bool
 read_request(TSHttpTxn txnp, Config *const config)
 {
-#if defined(COLLECT_STATS)
-  stats::StatsRAI const rai(stats::RequestTime);
-#endif
-
   DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
   hdrmgr.populateFrom(txnp, TSHttpTxnClientReqGet);
@@ -102,6 +81,8 @@ read_request(TSHttpTxn txnp, Config *const config)
 
       TSAssert(nullptr != config);
       Data *const data = new Data(config);
+
+      data->m_txnp = txnp;
 
       // set up feedback connect
       if (AF_INET == ip->sa_family) {
@@ -189,10 +170,15 @@ read_request(TSHttpTxn txnp, Config *const config)
 
       // we'll intercept this GET and do it ourselves
       TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
-      //  TSMutex const mutex = TSMutexCreate();
       TSCont const icontp(TSContCreate(intercept_hook, mutex));
       TSContDataSet(icontp, (void *)data);
+
+      // Skip remap and remap rule requirement
+      TSSkipRemappingSet(txnp, 1);
+
+      // Grab the transaction
       TSHttpTxnIntercept(icontp, txnp);
+
       return true;
     } else {
       DEBUG_LOG("slice passing GET request through to next plugin");
@@ -266,68 +252,6 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbug, int errbuf_size)
 {
   DEBUG_LOG("slice remap initializing.");
-
-#if defined(COLLECT_STATS)
-  static bool init = false;
-  static std::mutex mutex;
-
-  std::lock_guard<std::mutex> lock(mutex);
-
-  if (!init) {
-    init = true;
-
-    std::string const namedatacreate = std::string(PLUGIN_NAME) + ".DataCreate";
-    stats::DataCreate = TSStatCreate(namedatacreate.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::DataCreate);
-
-    std::string const namedatadestroy = std::string(PLUGIN_NAME) + ".DataDestroy";
-    stats::DataDestroy = TSStatCreate(namedatadestroy.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::DataDestroy);
-
-    std::string const namereader = std::string(PLUGIN_NAME) + ".Reader";
-    stats::Reader = TSStatCreate(namereader.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::Reader);
-
-    std::string const nameserver = std::string(PLUGIN_NAME) + ".Server";
-    stats::Server = TSStatCreate(nameserver.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::Server);
-
-    std::string const nameclient = std::string(PLUGIN_NAME) + ".Client";
-    stats::Client = TSStatCreate(nameclient.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::Client);
-
-    std::string const namerequest = std::string(PLUGIN_NAME) + ".RequestTime";
-    stats::RequestTime = TSStatCreate(namerequest.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::RequestTime);
-
-    std::string const namefirst = std::string(PLUGIN_NAME) + ".FirstHeaderTime";
-    stats::FirstHeaderTime      = TSStatCreate(namefirst.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::FirstHeaderTime);
-
-    std::string const namenext = std::string(PLUGIN_NAME) + ".NextHeaderTime";
-    stats::NextHeaderTime      = TSStatCreate(namenext.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::NextHeaderTime);
-
-    std::string const nameservertime = std::string(PLUGIN_NAME) + ".ServerTime";
-    stats::ServerTime = TSStatCreate(nameservertime.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::ServerTime);
-
-    std::string const nameclienttime = std::string(PLUGIN_NAME) + ".ClientTime";
-    stats::ClientTime = TSStatCreate(nameclienttime.c_str(), TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
-
-    assert(0 <= stats::ClientTime);
-  }
-#endif // COLLECT_STATS
-
   return TS_SUCCESS;
 }
 

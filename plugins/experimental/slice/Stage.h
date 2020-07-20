@@ -34,9 +34,6 @@ struct Channel {
   {
     if (nullptr != m_reader) {
       TSIOBufferReaderFree(m_reader);
-#if defined(COLLECT_STATS)
-      TSStatIntDecrement(stats::Reader, 1);
-#endif
     }
     if (nullptr != m_iobuf) {
       TSIOBufferDestroy(m_iobuf);
@@ -67,9 +64,6 @@ struct Channel {
     if (nullptr == m_iobuf) {
       m_iobuf  = TSIOBufferCreate();
       m_reader = TSIOBufferReaderAlloc(m_iobuf);
-#if defined(COLLECT_STATS)
-      TSStatIntIncrement(stats::Reader, 1);
-#endif
     } else {
       int64_t const drained = drainReader();
       if (0 < drained) {
@@ -87,9 +81,6 @@ struct Channel {
     if (nullptr == m_iobuf) {
       m_iobuf  = TSIOBufferCreate();
       m_reader = TSIOBufferReaderAlloc(m_iobuf);
-#if defined(COLLECT_STATS)
-      TSStatIntIncrement(stats::Reader, 1);
-#endif
     } else {
       int64_t const drained = drainReader();
       if (0 < drained) {
