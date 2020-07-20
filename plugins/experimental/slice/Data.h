@@ -48,6 +48,9 @@ struct Data {
 
   sockaddr_storage m_client_ip;
 
+  // transaction pointer
+  TSHttpTxn m_txnp{nullptr};
+
   // for pristine/effective url coming in
   TSMBuffer m_urlbuf{nullptr};
   TSMLoc m_urlloc{nullptr};
@@ -96,16 +99,10 @@ struct Data {
     m_hostname[0]     = '\0';
     m_etag[0]         = '\0';
     m_lastmodified[0] = '\0';
-#if defined(COLLECT_STATS)
-    TSStatIntIncrement(stats::DataCreate, 1);
-#endif
   }
 
   ~Data()
   {
-#if defined(COLLECT_STATS)
-    TSStatIntIncrement(stats::DataDestroy, 1);
-#endif
     if (nullptr != m_urlbuf) {
       if (nullptr != m_urlloc) {
         TSHandleMLocRelease(m_urlbuf, TS_NULL_MLOC, m_urlloc);

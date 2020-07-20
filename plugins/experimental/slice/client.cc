@@ -27,9 +27,6 @@
 bool
 handle_client_req(TSCont contp, TSEvent event, Data *const data)
 {
-#if defined(COLLECT_STATS)
-  stats::StatsRAI const rai(stats::ClientTime);
-#endif
   switch (event) {
   case TS_EVENT_VCONN_READ_READY:
   case TS_EVENT_VCONN_READ_COMPLETE: {
@@ -126,11 +123,6 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
 void
 handle_client_resp(TSCont contp, TSEvent event, Data *const data)
 {
-#if defined(COLLECT_STATS)
-  TSStatIntIncrement(stats::Client, 1);
-  stats::StatsRAI const rai(stats::ClientTime);
-#endif
-
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY: {
     switch (data->m_blockstate) {

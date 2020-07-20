@@ -91,10 +91,6 @@ enum HeaderState {
 HeaderState
 handleFirstServerHeader(Data *const data, TSCont const contp)
 {
-#if defined(COLLECT_STATS)
-  stats::StatsRAI const rai(stats::FirstHeaderTime);
-#endif
-
   HeaderState state = HeaderState::Good;
 
   HttpHeader header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
@@ -116,7 +112,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     // Should run TSVIONSetBytes(output_io, hlen + bodybytes);
     int64_t const hlen = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
     int64_t const clen = contentLengthFrom(header);
-    DEBUG_LOG("Passthru: header: %" PRId64 " body: %" PRId64, hlen, clen);
+    DEBUG_LOG("Passthru bytes: header: %" PRId64 " body: %" PRId64, hlen, clen);
     if (clen != INT64_MAX) {
       TSVIONBytesSet(output_vio, hlen + clen);
     } else {
@@ -129,9 +125,9 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
 
   ContentRange const blockcr = contentRangeFrom(header);
 
-  // 206 with bad content range?
+  // 206 with bad content range -- should NEVER happen.
   if (!blockcr.isValid()) {
-    static std::string const &msg502 = string502();
+    std::string const msg502 = string502(header.version());
     TSVIONBytesSet(output_vio, msg502.size());
     TSIOBufferWrite(output_buf, msg502.data(), msg502.size());
     TSVIOReenable(output_vio);
@@ -343,10 +339,6 @@ logSliceError(char const *const message, Data const *const data, HttpHeader cons
 bool
 handleNextServerHeader(Data *const data, TSCont const contp)
 {
-#if defined(COLLECT_STATS)
-  stats::StatsRAI const rai(stats::NextHeaderTime);
-#endif
-
   // block response header
   HttpHeader header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
   if (TSIsDebugTagSet(PLUGIN_NAME)) {
@@ -490,11 +482,6 @@ handleNextServerHeader(Data *const data, TSCont const contp)
 void
 handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 {
-#if defined(COLLECT_STATS)
-  TSStatIntIncrement(stats::Server, 1);
-  stats::StatsRAI const rai(stats::ServerTime);
-#endif
-
   switch (event) {
   case TS_EVENT_VCONN_READ_READY: {
     if (data->m_blockstate == BlockState::Passthru) {
@@ -512,11 +499,11 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + consumed);
 
       // the server response header didn't fit into the input buffer.
+      // wait for more data from upstream
       if (TS_PARSE_CONT == res) {
         return;
       }
 
-      // very first server response header
       bool headerStat = false;
 
       if (TS_PARSE_DONE == res) {
@@ -545,8 +532,6 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
         }
 
         data->m_server_block_header_parsed = true;
-      } else if (TS_PARSE_CONT == res) {
-        return;
       }
 
       // kill the upstream and allow dnstream to clean up
