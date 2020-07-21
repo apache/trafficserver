@@ -23,12 +23,6 @@
 
 #pragma once
 
-/*
-  #include "I_DNS.h"
-  #include <arpa/nameser.h>
-  #include "I_Cache.h"
-  #include "P_Net.h"
-*/
 #include "I_EventSystem.h"
 
 #define MAX_NAMED 32
@@ -78,12 +72,7 @@ extern unsigned int dns_sequence_number;
 #endif
 
 // Events
-
 #define DNS_EVENT_LOOKUP DNS_EVENT_EVENTS_START
-
-extern int dns_fd;
-
-void *dns_udp_receiver(void *arg);
 
 // Stats
 enum DNS_Stats {
@@ -95,7 +84,6 @@ enum DNS_Stats {
   dns_fail_time_stat,
   dns_retries_stat,
   dns_max_retries_exceeded_stat,
-  dns_sequence_number_stat,
   dns_in_flight_stat,
   DNS_Stat_Count
 };
@@ -107,26 +95,11 @@ struct RecRawStatBlock;
 extern RecRawStatBlock *dns_rsb;
 
 // Stat Macros
-
-#define DNS_DEBUG_COUNT_DYN_STAT(_x, _y) RecIncrRawStatCount(dns_rsb, mutex->thread_holding, (int)_x, _y)
-
 #define DNS_INCREMENT_DYN_STAT(_x) RecIncrRawStatSum(dns_rsb, mutex->thread_holding, (int)_x, 1)
 
 #define DNS_DECREMENT_DYN_STAT(_x) RecIncrRawStatSum(dns_rsb, mutex->thread_holding, (int)_x, -1)
 
 #define DNS_SUM_DYN_STAT(_x, _r) RecIncrRawStatSum(dns_rsb, mutex->thread_holding, (int)_x, _r)
-
-#define DNS_READ_DYN_STAT(_x, _count, _sum)        \
-  do {                                             \
-    RecGetRawStatSum(dns_rsb, (int)_x, &_sum);     \
-    RecGetRawStatCount(dns_rsb, (int)_x, &_count); \
-  } while (0)
-
-#define DNS_SET_DYN_COUNT(_x, _count) RecSetRawStatCount(dns_rsb, _x, _count);
-
-#define DNS_INCREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(dns_rsb, _t, (int)_s, 1);
-
-#define DNS_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(dns_rsb, _t, (int)_s, -1);
 
 /**
   One DNSEntry is allocated per outstanding request. This continuation
@@ -330,6 +303,3 @@ DNSHandler::DNSHandler()
   SET_HANDLER(&DNSHandler::startEvent);
   Debug("net_epoll", "inline DNSHandler::DNSHandler()");
 }
-
-#define DOT_SEPARATED(_x) \
-  ((unsigned char *)&(_x))[0], ((unsigned char *)&(_x))[1], ((unsigned char *)&(_x))[2], ((unsigned char *)&(_x))[3]
