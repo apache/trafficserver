@@ -7763,6 +7763,16 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
   return TS_SUCCESS;
 }
 
+extern void load_config_file_callback(const char *parent, const char *remap_file);
+
+/* Config file name setting */
+TSReturnCode
+TSMgmtConfigFileAdd(const char *parent, const char *fileName)
+{
+  load_config_file_callback(parent, fileName);
+  return TS_SUCCESS;
+}
+
 TSReturnCode
 TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
 {

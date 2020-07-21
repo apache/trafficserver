@@ -1187,6 +1187,7 @@ tsapi TSReturnCode TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 tsapi TSReturnCode TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result);
 tsapi TSReturnCode TSMgmtStringGet(const char *var_name, TSMgmtString *result);
 tsapi TSReturnCode TSMgmtSourceGet(const char *var_name, TSMgmtSource *source);
+tsapi TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 /* --------------------------------------------------------------------------
    Continuations */
 tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);

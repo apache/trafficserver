@@ -25,11 +25,12 @@
 bool
 Acl::init(char const *filename)
 {
-  std::string configloc;
   struct stat s;
   bool status = false;
 
   YAML::Node maxmind;
+
+  configloc.clear();
 
   if (filename[0] != '/') {
     // relative file
@@ -71,6 +72,12 @@ Acl::init(char const *filename)
     TSError("YAML::Exception %s when parsing YAML config file %s for maxmind", e.what(), configloc.c_str());
     return status;
   }
+
+  // Associate our config file with remap.config to be able to initiate reloads
+  TSMgmtString result;
+  const char *var_name = "proxy.config.url_remap.filename";
+  TSMgmtStringGet(var_name, &result);
+  TSMgmtConfigFileAdd(result, configloc.c_str());
 
   // Find our database name and convert to full path as needed
   status = loaddb(maxmind["database"]);

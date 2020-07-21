@@ -58,3 +58,5 @@ void mgmt_fatal(const int lerrno, const char *message_format, ...) TS_NORETURN;
 
 void mgmt_sleep_sec(int);
 void mgmt_sleep_msec(int);
+
+void load_config_file_callback(const char *parent_file, const char *remap_file);

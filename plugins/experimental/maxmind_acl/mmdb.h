@@ -82,6 +82,7 @@ public:
 
 protected:
   // Class members
+  std::string configloc;
   YAML::Node _config;
   MMDB_s _mmdb;
   std::string _html;
