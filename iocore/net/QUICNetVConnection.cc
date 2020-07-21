@@ -1165,6 +1165,7 @@ QUICNetVConnection::_state_handshake_process_packet(const QUICPacket &packet)
     error = this->_state_handshake_process_handshake_packet(static_cast<const QUICHandshakePacketR &>(packet));
     if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL) && this->netvc_context == NET_VCONNECTION_IN) {
       this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
+      this->_loss_detector->on_packet_number_space_discarded(QUICPacketNumberSpace::INITIAL);
       this->_minimum_encryption_level = QUICEncryptionLevel::HANDSHAKE;
     }
     break;
@@ -1543,6 +1544,7 @@ QUICNetVConnection::_state_common_send_packet()
         if (this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::INITIAL) && packet->type() == QUICPacketType::HANDSHAKE &&
             this->netvc_context == NET_VCONNECTION_OUT) {
           this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
+          this->_loss_detector->on_packet_number_space_discarded(QUICPacketNumberSpace::INITIAL);
           this->_minimum_encryption_level = QUICEncryptionLevel::HANDSHAKE;
         }
 

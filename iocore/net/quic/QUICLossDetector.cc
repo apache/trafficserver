@@ -164,6 +164,29 @@ QUICLossDetector::on_datagram_received()
 }
 
 void
+QUICLossDetector::on_packet_number_space_discarded(QUICPacketNumberSpace pn_space)
+{
+  ink_assert(pn_space != QUICPacketNumberSpace::APPLICATION_DATA);
+  size_t bytes_in_flight = 0;
+  for (auto it = this->_sent_packets[static_cast<int>(pn_space)].begin();
+       it != this->_sent_packets[static_cast<int>(pn_space)].end();) {
+    auto ret = this->_remove_from_sent_packet_list(it, pn_space);
+    auto &pi = ret.first;
+    if (pi->in_flight) {
+      bytes_in_flight += pi->sent_bytes;
+    }
+    it = ret.second;
+  }
+  this->_cc->on_packet_number_space_discarded(bytes_in_flight);
+  // Reset the loss detection and PTO timer
+  this->_time_of_last_ack_eliciting_packet[static_cast<int>(pn_space)] = 0;
+  this->_loss_time[static_cast<int>(pn_space)]                         = 0;
+  this->_rtt_measure->set_pto_count(0);
+  this->_set_loss_detection_timer();
+  QUICLDDebug("[%s] Packets have been discarded because keys for the space are discarded", QUICDebugNames::pn_space(pn_space));
+}
+
+void
 QUICLossDetector::reset()
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
@@ -257,7 +280,7 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame, QUICPacketNumb
   }
   this->_cc->on_packets_acked(newly_acked_packets);
 
-  QUICLDDebug("[%s] Newly acked %lu Lost %lu Unacked packets %lu (%u ack eliciting)", QUICDebugNames::pn_space(pn_space),
+  QUICLDDebug("[%s] Newly acked:%lu Lost:%lu Unacked packets:%lu (%u ack eliciting)", QUICDebugNames::pn_space(pn_space),
               newly_acked_packets.size(), lost_packets.size(), this->_sent_packets[index].size(),
               this->_ack_eliciting_outstanding.load());
 
@@ -401,7 +424,7 @@ QUICLossDetector::_set_loss_detection_timer()
   // PTO Duration
   ink_hrtime timeout = this->_get_pto_time_and_space(pn_space);
   update_timer(timeout);
-  QUICLDDebug("[%s] PTO timeout will be set: %" PRId64 "ms", QUICDebugNames::pn_space(pn_space),
+  QUICLDDebug("[%s] PTO timeout has been set: %" PRId64 "ms", QUICDebugNames::pn_space(pn_space),
               (timeout - this->_time_of_last_ack_eliciting_packet[static_cast<int>(pn_space)]) / HRTIME_MSECOND);
 }
 

@@ -555,6 +555,10 @@ public:
   on_packet_acked(const QUICSentPacketInfo &acked_packet) override
   {
   }
+  void
+  on_packet_number_space_discarded(size_t bytes_in_flight) override
+  {
+  }
   virtual void
   process_ecn(const QUICAckFrame &ack_frame, QUICPacketNumberSpace pn_space, ink_hrtime largest_acked_time_sent) override
   {
@@ -717,6 +721,12 @@ public:
   void
   on_packet_sent(QUICPacketUPtr packet)
   {
+  }
+
+  void
+  on_packet_number_space_discarded(QUICPacketNumberSpace pn_space)
+  {
+    this->_cc.on_packet_number_space_discarded(0);
   }
 
 private:

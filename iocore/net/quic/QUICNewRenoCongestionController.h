@@ -37,6 +37,7 @@ public:
   void on_packet_acked(const QUICSentPacketInfo &acked_packet) override;
   virtual void on_packets_acked(const std::vector<QUICSentPacketInfoUPtr> &packets) override;
   virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &packets) override;
+  void on_packet_number_space_discarded(size_t bytes_in_flight) override;
   void process_ecn(const QUICAckFrame &ack, QUICPacketNumberSpace pn_space, ink_hrtime largest_acked_packet_time_sent) override;
   uint32_t credit() const override;
   void reset() override;

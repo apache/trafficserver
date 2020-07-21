@@ -184,6 +184,12 @@ QUICNewRenoCongestionController::on_packets_lost(const std::map<QUICPacketNumber
   }
 }
 
+void
+QUICNewRenoCongestionController::on_packet_number_space_discarded(size_t bytes_in_flight)
+{
+  this->_bytes_in_flight -= bytes_in_flight;
+}
+
 bool
 QUICNewRenoCongestionController::_check_credit() const
 {

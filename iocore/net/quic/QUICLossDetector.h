@@ -59,6 +59,9 @@ public:
 
   void on_packet_sent(QUICSentPacketInfoUPtr packet_info, bool in_flight = true);
   void on_datagram_received();
+  // OnPacketNumberSpaceDiscarded is on Congestion Control section but having it here makes more sense because most processes are
+  // for LD.
+  void on_packet_number_space_discarded(QUICPacketNumberSpace pn_space);
   QUICPacketNumber largest_acked_packet_number(QUICPacketNumberSpace pn_space);
   void update_ack_delay_exponent(uint8_t ack_delay_exponent);
   void reset();
