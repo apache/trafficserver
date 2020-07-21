@@ -1309,7 +1309,8 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-Match: must match strongly //
   if (request->presence(MIME_PRESENCE_IF_MATCH)) {
-    int raw_etags_len, comma_sep_tag_list_len;
+    int raw_etags_len              = 0;
+    int comma_sep_tag_list_len     = 0;
     const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
     const char *comma_sep_tag_list = nullptr;
 
