@@ -76,6 +76,7 @@ class InkAssertExcept
 
 TEST_CASE("MIOBufferWriter", "[MIOBW]")
 {
-  MIOBuffer *theMIOBuffer = new_MIOBuffer(default_large_iobuffer_size);
+  constexpr int64_t const default_large_iobuffer_size = DEFAULT_LARGE_BUFFER_SIZE;
+  MIOBuffer *theMIOBuffer                             = new_MIOBuffer(default_large_iobuffer_size);
   MIOBufferWriter bw(theMIOBuffer);
 }
