@@ -549,8 +549,6 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   // Errors may override the other codes, so check the via string error codes last
   switch (via_string[VIA_ERROR_TYPE]) {
   case VIA_ERROR_AUTHORIZATION:
-    // TODO decide which one?
-    // log_code = SQUID_LOG_TCP_DENIED;
     log_code = SQUID_LOG_ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_CONNECTION:
