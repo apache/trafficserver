@@ -299,6 +299,15 @@ QUICNetVConnection::_init_submodules()
 {
   this->_pinger                = new QUICPinger();
   this->_padder                = new QUICPadder(this->netvc_context);
+  this->_path_validator        = new QUICPathValidator(*this, [this](bool succeeded) {
+    if (succeeded) {
+      this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
+      // FIXME This is a kind of workaround for connection migration.
+      // This PING make peer to send an ACK frame so that ATS can detect packet loss.
+      // It would be better if QUICLossDetector could detect the loss in another way.
+      this->ping();
+    }
+  });
   this->_path_manager          = new QUICPathManagerImpl(*this, *this->_path_validator);
   this->_context               = std::make_unique<QUICContext>(&this->_rtt_measure, this, &this->_pp_key_info, this->_path_manager);
   this->_congestion_controller = new QUICNewRenoCongestionController(*_context);
@@ -404,15 +413,6 @@ void
 QUICNetVConnection::start()
 {
   ink_release_assert(this->thread != nullptr);
-  this->_path_validator = new QUICPathValidator(*this, [this](bool succeeded) {
-    if (succeeded) {
-      this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
-      // FIXME This is a kind of workaround for connection migration.
-      // This PING make peer to send an ACK frame so that ATS can detect packet loss.
-      // It would be better if QUICLossDetector could detect the loss in another way.
-      this->ping();
-    }
-  });
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   QUICPath trusted_path = {{}, {}};
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
