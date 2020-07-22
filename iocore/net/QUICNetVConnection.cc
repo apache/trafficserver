@@ -257,6 +257,8 @@ QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICCon
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
     QUICConDebug("dcid=%s scid=%s", this->_peer_quic_connection_id.hex().c_str(), this->_quic_connection_id.hex().c_str());
   }
+
+  this->_init_submodules();
 }
 
 // Initialize QUICNetVC for in coming connection (NET_VCONNECTION_IN)
@@ -289,6 +291,12 @@ QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICCon
     QUICConDebug("dcid=%s scid=%s", this->_peer_quic_connection_id.hex().c_str(), this->_quic_connection_id.hex().c_str());
   }
 
+  this->_init_submodules();
+}
+
+void
+QUICNetVConnection::_init_submodules()
+{
   this->_pinger                = new QUICPinger();
   this->_padder                = new QUICPadder(this->netvc_context);
   this->_path_manager          = new QUICPathManagerImpl(*this, *this->_path_validator);
