@@ -31,6 +31,12 @@
         "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra: %" PRIu32 " " fmt,                             \
         this->_context.connection_info()->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
         this->_extra_packets_count, ##__VA_ARGS__)
+#define QUICCCVDebug(fmt, ...)                                                                                              \
+  Debug("v_quic_cc",                                                                                                        \
+        "[%s] "                                                                                                             \
+        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra: %" PRIu32 " " fmt,                             \
+        this->_context.connection_info()->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
+        this->_extra_packets_count, ##__VA_ARGS__)
 
 #define QUICCCError(fmt, ...)                                                                                               \
   Error("quic_cc",                                                                                                          \
@@ -97,13 +103,13 @@ QUICNewRenoCongestionController::on_packet_acked(const QUICSentPacketInfo &acked
     // Slow start.
     this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED, QUICCongestionController::State::SLOW_START);
     this->_congestion_window += acked_packet.sent_bytes;
-    QUICCCDebug("slow start window chaged");
+    QUICCCVDebug("slow start window chaged");
   } else {
     // Congestion avoidance.
     this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED,
                            QUICCongestionController::State::CONGESTION_AVOIDANCE);
     this->_congestion_window += this->_k_max_datagram_size * acked_packet.sent_bytes / this->_congestion_window;
-    QUICCCDebug("Congestion avoidance window changed");
+    QUICCCVDebug("Congestion avoidance window changed");
   }
 }
 

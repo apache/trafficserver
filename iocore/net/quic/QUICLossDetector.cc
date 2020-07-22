@@ -141,8 +141,8 @@ QUICLossDetector::on_packet_sent(QUICSentPacketInfoUPtr packet_info, bool in_fli
   size_t sent_bytes              = packet_info->sent_bytes;
   QUICPacketNumberSpace pn_space = packet_info->pn_space;
 
-  QUICLDDebug("%s packet sent : %" PRIu64 " bytes: %lu ack_eliciting: %d", QUICDebugNames::pn_space(packet_info->pn_space),
-              packet_number, sent_bytes, ack_eliciting);
+  QUICLDVDebug("%s packet sent : %" PRIu64 " bytes: %lu ack_eliciting: %d", QUICDebugNames::pn_space(packet_info->pn_space),
+               packet_number, sent_bytes, ack_eliciting);
 
   this->_add_to_sent_packet_list(packet_number, std::move(packet_info));
 
@@ -280,9 +280,9 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame, QUICPacketNumb
   }
   this->_cc->on_packets_acked(newly_acked_packets);
 
-  QUICLDDebug("[%s] Newly acked:%lu Lost:%lu Unacked packets:%lu (%u ack eliciting)", QUICDebugNames::pn_space(pn_space),
-              newly_acked_packets.size(), lost_packets.size(), this->_sent_packets[index].size(),
-              this->_ack_eliciting_outstanding.load());
+  QUICLDVDebug("[%s] Newly acked:%lu Lost:%lu Unacked packets:%lu (%u ack eliciting)", QUICDebugNames::pn_space(pn_space),
+               newly_acked_packets.size(), lost_packets.size(), this->_sent_packets[index].size(),
+               this->_ack_eliciting_outstanding.load());
 
   if (this->_peer_completed_address_validation()) {
     this->_rtt_measure->set_pto_count(0);
@@ -294,8 +294,8 @@ void
 QUICLossDetector::_on_packet_acked(const QUICSentPacketInfo &acked_packet)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
-  QUICLDDebug("[%s] Packet number %" PRIu64 " has been acked", QUICDebugNames::pn_space(acked_packet.pn_space),
-              acked_packet.packet_number);
+  QUICLDVDebug("[%s] Packet number %" PRIu64 " has been acked", QUICDebugNames::pn_space(acked_packet.pn_space),
+               acked_packet.packet_number);
 
   if (acked_packet.in_flight) {
     this->_cc->on_packet_acked(acked_packet);
@@ -424,8 +424,8 @@ QUICLossDetector::_set_loss_detection_timer()
   // PTO Duration
   ink_hrtime timeout = this->_get_pto_time_and_space(pn_space);
   update_timer(timeout);
-  QUICLDDebug("[%s] PTO timeout has been set: %" PRId64 "ms", QUICDebugNames::pn_space(pn_space),
-              (timeout - this->_time_of_last_ack_eliciting_packet[static_cast<int>(pn_space)]) / HRTIME_MSECOND);
+  QUICLDVDebug("[%s] PTO timeout has been set: %" PRId64 "ms", QUICDebugNames::pn_space(pn_space),
+               (timeout - this->_time_of_last_ack_eliciting_packet[static_cast<int>(pn_space)]) / HRTIME_MSECOND);
 }
 
 void

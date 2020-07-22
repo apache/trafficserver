@@ -59,6 +59,7 @@ static constexpr uint8_t QUANTUM_TEST_VALUE[1200] = {'Q'};
 #define QUICConVVVDebug(fmt, ...) Debug("vvv_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 #define QUICFCDebug(fmt, ...) Debug("quic_flow_ctrl", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
+#define QUICFCVDebug(fmt, ...) Debug("v_quic_flow_ctrl", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 #define QUICError(fmt, ...)                                           \
   Debug("quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__); \
@@ -1538,8 +1539,8 @@ QUICNetVConnection::_state_common_send_packet()
           ink_assert(!"failed to protect buffer");
         }
 
-        QUICConDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
-                     len);
+        QUICConVDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
+                      len);
 
         if (this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::INITIAL) && packet->type() == QUICPacketType::HANDSHAKE &&
             this->netvc_context == NET_VCONNECTION_OUT) {
@@ -1616,7 +1617,7 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
     char msg[1024];
     frame.debug_msg(msg, sizeof(msg));
-    QUICConDebug("[TX] | %s", msg);
+    QUICConVDebug("[TX] | %s", msg);
   }
 
   frames.emplace_back(frame.id(), frame.generated_by());
@@ -1685,8 +1686,8 @@ QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel l
         probing |= frame->is_probing_frame();
         if (frame->is_flow_controlled()) {
           int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
-          QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
-                      this->_remote_flow_controller->current_limit());
+          QUICFCVDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
+                       this->_remote_flow_controller->current_limit());
           ink_assert(ret == 0);
         }
         last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
@@ -1787,16 +1788,16 @@ QUICNetVConnection::_recv_and_ack(const QUICPacketR &packet, bool *has_non_probi
 
   if (is_flow_controlled) {
     int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
-    QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
-                this->_local_flow_controller->current_limit());
+    QUICFCVDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
+                 this->_local_flow_controller->current_limit());
 
     if (ret != 0) {
       return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FLOW_CONTROL_ERROR);
     }
 
     this->_local_flow_controller->forward_limit(this->_stream_manager->total_reordered_bytes() + this->_flow_control_buffer_size);
-    QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
-                this->_local_flow_controller->current_limit());
+    QUICFCVDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
+                 this->_local_flow_controller->current_limit());
   }
 
   this->_ack_frame_manager.update(level, packet_num, size, ack_only);
@@ -1941,11 +1942,11 @@ QUICNetVConnection::_dequeue_recv_packet(uint8_t *packet_buf, QUICPacketCreation
     switch (packet->type()) {
     case QUICPacketType::VERSION_NEGOTIATION:
     case QUICPacketType::RETRY:
-      QUICConDebug("[RX] %s packet size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
+      QUICConVDebug("[RX] %s packet size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
       break;
     default:
-      QUICConDebug("[RX] %s packet #%" PRIu64 " size=%u header_len=%u payload_len=%u", QUICDebugNames::packet_type(packet->type()),
-                   packet->packet_number(), packet->size(), packet->header_size(), packet->payload_length());
+      QUICConVDebug("[RX] %s packet #%" PRIu64 " size=%u header_len=%u payload_len=%u", QUICDebugNames::packet_type(packet->type()),
+                    packet->packet_number(), packet->size(), packet->header_size(), packet->payload_length());
       break;
     }
     break;

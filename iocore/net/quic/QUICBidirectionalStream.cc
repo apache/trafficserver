@@ -469,8 +469,8 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
     // Calling update always success, because len is always less than stream_credit
     ink_assert(ret == 0);
 
-    QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
-                      this->_remote_flow_controller.current_limit());
+    QUICVStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
+                       this->_remote_flow_controller.current_limit());
     if (this->_remote_flow_controller.current_offset() == this->_remote_flow_controller.current_limit()) {
       QUICStreamDebug("Flow Controller will block sending a STREAM frame");
     }

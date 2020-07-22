@@ -37,14 +37,17 @@
 #include "QUICMultiCertConfigLoader.h"
 #include "QUICTLS.h"
 
-static constexpr char debug_tag[] = "quic_sec";
+static constexpr char debug_tag[]   = "quic_sec";
+static constexpr char v_debug_tag[] = "v_quic_sec";
 
 #define QUICDebug(fmt, ...) Debug(debug_tag, fmt, ##__VA_ARGS__)
-#define QUICDebugQC(qc, fmt, ...) Debug(debug_tag, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
+#define QUICQCDebug(qc, fmt, ...) Debug(debug_tag, "[%s] " fmt, qc->cids().data(), ##__VA_ARGS__)
 
 // ["local dcid" - "local scid"]
-#define QUICDebugDS(dcid, scid, fmt, ...) \
+#define QUICPHDebug(dcid, scid, fmt, ...) \
   Debug(debug_tag, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
+#define QUICVPHDebug(dcid, scid, fmt, ...) \
+  Debug(v_debug_tag, "[%08" PRIx32 "-%08" PRIx32 "] " fmt, dcid.h32(), scid.h32(), ##__VA_ARGS__)
 
 //
 // QUICPacketHandler
@@ -99,7 +102,7 @@ QUICPacketHandler::_send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IO
 {
   UDPPacket *udp_packet = new_UDPPacket(addr, 0, udp_payload);
 
-  if (is_debug_tag_set(debug_tag)) {
+  if (is_debug_tag_set(v_debug_tag)) {
     ip_port_text_buffer ipb;
     QUICConnectionId dcid = QUICConnectionId::ZERO();
     QUICConnectionId scid = QUICConnectionId::ZERO();
@@ -117,8 +120,8 @@ QUICPacketHandler::_send_packet(UDPConnection *udp_con, IpEndpoint &addr, Ptr<IO
       }
     }
 
-    QUICDebugDS(dcid, scid, "send %s packet to %s from port %u size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
-                ats_ip_nptop(&addr, ipb, sizeof(ipb)), udp_con->getPortNum(), buf_len);
+    QUICVPHDebug(dcid, scid, "send %s packet to %s from port %u size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
+                 ats_ip_nptop(&addr, ipb, sizeof(ipb)), udp_con->getPortNum(), buf_len);
   }
 
   udp_con->send(this->_get_continuation(), udp_packet);
@@ -239,12 +242,12 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
       return;
     }
 
-    if (is_debug_tag_set(debug_tag)) {
+    if (is_debug_tag_set(v_debug_tag)) {
       ip_port_text_buffer ipb_from;
       ip_port_text_buffer ipb_to;
-      QUICDebugDS(scid, dcid, "recv LH packet from %s to %s size=%" PRId64,
-                  ats_ip_nptop(&udp_packet->from.sa, ipb_from, sizeof(ipb_from)),
-                  ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
+      QUICVPHDebug(scid, dcid, "recv LH packet from %s to %s size=%" PRId64,
+                   ats_ip_nptop(&udp_packet->from.sa, ipb_from, sizeof(ipb_from)),
+                   ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
     }
 
     if (unlikely(!QUICInvariants::version(version, buf, buf_len))) {
@@ -254,7 +257,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
 
     if (!QUICInvariants::is_version_negotiation(version) && !QUICTypeUtil::is_supported_version(version)) {
-      QUICDebugDS(scid, dcid, "Unsupported version: 0x%x", version);
+      QUICPHDebug(scid, dcid, "Unsupported version: 0x%x", version);
 
       QUICPacketUPtr vn = QUICPacketFactory::create_version_negotiation_packet(scid, dcid, version);
       this->_send_packet(*vn, udp_packet->getConnection(), udp_packet->from, 1200, nullptr, 0);
@@ -281,12 +284,12 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     }
   } else {
     // TODO: lookup DCID by 5-tuple when ATS omits SCID
-    if (is_debug_tag_set(debug_tag)) {
+    if (is_debug_tag_set(v_debug_tag)) {
       ip_port_text_buffer ipb_from;
       ip_port_text_buffer ipb_to;
-      QUICDebugDS(scid, dcid, "recv SH packet from %s to %s size=%" PRId64,
-                  ats_ip_nptop(&udp_packet->from.sa, ipb_from, sizeof(ipb_from)),
-                  ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
+      QUICVPHDebug(scid, dcid, "recv SH packet from %s to %s size=%" PRId64,
+                   ats_ip_nptop(&udp_packet->from.sa, ipb_from, sizeof(ipb_from)),
+                   ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
     }
   }
 
@@ -322,7 +325,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     udp_packet->free();
 
     if (is_debug_tag_set(debug_tag) && sent) {
-      QUICDebugDS(scid, dcid, "sent Stateless Reset : connection not found, dcid=%s", dcid.hex().c_str());
+      QUICPHDebug(scid, dcid, "sent Stateless Reset : connection not found, dcid=%s", dcid.hex().c_str());
     }
 
     return;
@@ -333,7 +336,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     udp_packet->free();
 
     if (is_debug_tag_set(debug_tag) && sent) {
-      QUICDebugDS(scid, dcid, "sent Stateless Reset : connection is already closed, dcid=%s", dcid.hex().c_str());
+      QUICPHDebug(scid, dcid, "sent Stateless Reset : connection is already closed, dcid=%s", dcid.hex().c_str());
     }
 
     return;
@@ -350,7 +353,7 @@ QUICPacketHandlerIn::_recv_packet(int event, UDPPacket *udp_packet)
     QUICConnectionId peer_cid     = scid;
 
     if (is_debug_tag_set("quic_sec")) {
-      QUICDebugDS(peer_cid, original_cid, "client initial dcid=%s", original_cid.hex().c_str());
+      QUICPHDebug(peer_cid, original_cid, "client initial dcid=%s", original_cid.hex().c_str());
     }
 
     vc = static_cast<QUICNetVConnection *>(getNetProcessor()->allocate_vc(nullptr));
@@ -561,7 +564,7 @@ QUICPacketHandlerOut::_recv_packet(int event, UDPPacket *udp_packet)
   if (is_debug_tag_set(debug_tag)) {
     ip_port_text_buffer ipb_from;
     ip_port_text_buffer ipb_to;
-    QUICDebugQC(this->_vc, "recv %s packet from %s to %s size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
+    QUICQCDebug(this->_vc, "recv %s packet from %s to %s size=%" PRId64, (QUICInvariants::is_long_header(buf) ? "LH" : "SH"),
                 ats_ip_nptop(&udp_packet->from.sa, ipb_from, sizeof(ipb_from)),
                 ats_ip_nptop(&udp_packet->to.sa, ipb_to, sizeof(ipb_to)), udp_packet->getPktLength());
   }

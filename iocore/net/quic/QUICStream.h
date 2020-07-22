@@ -130,5 +130,8 @@ protected:
 #define QUICStreamFCDebug(fmt, ...)                                                                         \
   Debug("quic_flow_ctrl", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
         QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
+#define QUICVStreamFCDebug(fmt, ...)                                                                          \
+  Debug("v_quic_flow_ctrl", "[%s] [%" PRIu64 "] [%s] " fmt, this->_connection_info->cids().data(), this->_id, \
+        QUICDebugNames::stream_state(this->_state.get()), ##__VA_ARGS__)
 
 extern const uint32_t MAX_STREAM_FRAME_OVERHEAD;
