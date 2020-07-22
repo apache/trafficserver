@@ -547,7 +547,6 @@ class QUICCCConfig
 {
 public:
   virtual ~QUICCCConfig() {}
-  virtual uint32_t max_datagram_size() const               = 0;
   virtual uint32_t initial_window() const                  = 0;
   virtual uint32_t minimum_window() const                  = 0;
   virtual float loss_reduction_factor() const              = 0;

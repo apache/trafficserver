@@ -36,17 +36,19 @@ public:
   };
 
   virtual ~QUICCongestionController() {}
+  // Appendix B.  Congestion Control Pseudocode
   virtual void on_packet_sent(size_t bytes_sent)                                                                               = 0;
-  virtual void on_packet_acked(const QUICSentPacketInfo &acked_packet)                                                         = 0;
-  virtual void process_ecn(const QUICAckFrame &ack, QUICPacketNumberSpace pn_space, ink_hrtime largest_acked_packet_time_sent) = 0;
   virtual void on_packets_acked(const std::vector<QUICSentPacketInfoUPtr> &packets)                                            = 0;
+  virtual void process_ecn(const QUICAckFrame &ack, QUICPacketNumberSpace pn_space, ink_hrtime largest_acked_packet_time_sent) = 0;
   virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &packets)                              = 0;
   // The function signature is different from the pseudo code because LD takes care of most of the processes
   virtual void on_packet_number_space_discarded(size_t bytes_in_flight) = 0;
-  virtual void add_extra_credit()                                       = 0;
-  virtual void reset()                                                  = 0;
-  virtual uint32_t credit() const                                       = 0;
-  virtual uint32_t bytes_in_flight() const                              = 0;
+
+  // These are additional and not on the spec
+  virtual void add_extra_credit()          = 0;
+  virtual void reset()                     = 0;
+  virtual uint32_t credit() const          = 0;
+  virtual uint32_t bytes_in_flight() const = 0;
 
   // Debug
   virtual uint32_t congestion_window() const = 0;

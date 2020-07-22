@@ -34,8 +34,7 @@ public:
   virtual ~QUICNewRenoCongestionController() {}
 
   void on_packet_sent(size_t bytes_sent) override;
-  void on_packet_acked(const QUICSentPacketInfo &acked_packet) override;
-  virtual void on_packets_acked(const std::vector<QUICSentPacketInfoUPtr> &packets) override;
+  void on_packets_acked(const std::vector<QUICSentPacketInfoUPtr> &packets) override;
   virtual void on_packets_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &packets) override;
   void on_packet_number_space_discarded(size_t bytes_in_flight) override;
   void process_ecn(const QUICAckFrame &ack, QUICPacketNumberSpace pn_space, ink_hrtime largest_acked_packet_time_sent) override;
@@ -53,28 +52,30 @@ private:
   Ptr<ProxyMutex> _cc_mutex;
   uint32_t _extra_packets_count = 0;
   QUICContext &_context;
+  bool _check_credit() const;
 
+  // Appendix B.  Congestion Control Pseudocode
+  bool _in_congestion_recovery(ink_hrtime sent_time);
   void _congestion_event(ink_hrtime sent_time);
   bool _in_persistent_congestion(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &lost_packets,
                                  const QUICSentPacketInfoUPtr &largest_lost_packet);
-  bool _in_window_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &lost_packets,
-                       const QUICSentPacketInfoUPtr &largest_lost_packet, ink_hrtime period) const;
-  bool _in_congestion_recovery(ink_hrtime sent_time);
-  bool _check_credit() const;
-  bool _is_app_limited();
+  bool _is_app_or_flow_control_limited();
+  void _maybe_send_one_packet();
+  bool _are_all_packets_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &lost_packets,
+                             const QUICSentPacketInfoUPtr &largest_lost_packet, ink_hrtime period) const;
 
   // Recovery B.1. Constants of interest
   // Values will be loaded from records.config via QUICConfig at constructor
-  uint32_t _k_max_datagram_size               = 0;
   uint32_t _k_initial_window                  = 0;
   uint32_t _k_minimum_window                  = 0;
   float _k_loss_reduction_factor              = 0.0;
   uint32_t _k_persistent_congestion_threshold = 0;
 
   // B.2. Variables of interest
-  uint32_t _ecn_ce_counter                   = 0;
-  uint32_t _bytes_in_flight                  = 0;
-  uint32_t _congestion_window                = 0;
-  ink_hrtime _congestion_recovery_start_time = 0;
-  uint32_t _ssthresh                         = UINT32_MAX;
+  uint32_t _max_datagram_size                     = 0;
+  uint32_t _ecn_ce_counters[QUIC_N_PACKET_SPACES] = {0};
+  uint32_t _bytes_in_flight                       = 0;
+  uint32_t _congestion_window                     = 0;
+  ink_hrtime _congestion_recovery_start_time      = 0;
+  uint32_t _ssthresh                              = UINT32_MAX;
 };

@@ -534,11 +534,6 @@ class MockQUICCongestionController : public QUICCongestionController
 public:
   MockQUICCongestionController() {}
   // Override
-  void
-  on_packets_acked(const std::vector<QUICSentPacketInfoUPtr> &packets) override
-  {
-  }
-
   virtual void
   on_packets_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &packets) override
   {
@@ -552,7 +547,7 @@ public:
   {
   }
   virtual void
-  on_packet_acked(const QUICSentPacketInfo &acked_packet) override
+  on_packets_acked(const std::vector<QUICSentPacketInfoUPtr> &packets) override
   {
   }
   void

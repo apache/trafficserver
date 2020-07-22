@@ -269,10 +269,12 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame, QUICPacketNumb
     this->_cc->process_ecn(ack_frame, pn_space, largest_acked->time_sent);
   }
 
+  // ADDITIONAL CODE
   // Find all newly acked packets.
   for (const auto &info : newly_acked_packets) {
     this->_on_packet_acked(*info);
   }
+  // END OF ADDITIONAL CODE
 
   auto lost_packets = this->_detect_and_remove_lost_packets(pn_space);
   if (!lost_packets.empty()) {
@@ -296,10 +298,6 @@ QUICLossDetector::_on_packet_acked(const QUICSentPacketInfo &acked_packet)
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
   QUICLDVDebug("[%s] Packet number %" PRIu64 " has been acked", QUICDebugNames::pn_space(acked_packet.pn_space),
                acked_packet.packet_number);
-
-  if (acked_packet.in_flight) {
-    this->_cc->on_packet_acked(acked_packet);
-  }
 
   for (const QUICSentPacketInfo::FrameInfo &frame_info : acked_packet.frames) {
     auto reactor = frame_info.generated_by();
