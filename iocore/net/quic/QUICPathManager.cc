@@ -28,7 +28,7 @@
 #define QUICDebug(fmt, ...) Debug("quic_path", "[%s] " fmt, this->_cinfo.cids().data(), ##__VA_ARGS__)
 
 void
-QUICPathManager::open_new_path(const QUICPath &path, ink_hrtime timeout_in)
+QUICPathManagerImpl::open_new_path(const QUICPath &path, ink_hrtime timeout_in)
 {
   if (this->_verify_timeout_at == 0) {
     // Overwrite _previous_path only if _current_path is verified
@@ -41,14 +41,14 @@ QUICPathManager::open_new_path(const QUICPath &path, ink_hrtime timeout_in)
 }
 
 void
-QUICPathManager::set_trusted_path(const QUICPath &path)
+QUICPathManagerImpl::set_trusted_path(const QUICPath &path)
 {
   this->_current_path  = path;
   this->_previous_path = path;
 }
 
 void
-QUICPathManager::_check_verify_timeout()
+QUICPathManagerImpl::_check_verify_timeout()
 {
   if (this->_verify_timeout_at != 0) {
     if (this->_path_validator.is_validated(this->_current_path)) {
@@ -66,14 +66,14 @@ QUICPathManager::_check_verify_timeout()
 }
 
 const QUICPath &
-QUICPathManager::get_current_path()
+QUICPathManagerImpl::get_current_path()
 {
   this->_check_verify_timeout();
   return this->_current_path;
 }
 
 const QUICPath &
-QUICPathManager::get_verified_path()
+QUICPathManagerImpl::get_verified_path()
 {
   this->_check_verify_timeout();
   if (this->_verify_timeout_at != 0) {

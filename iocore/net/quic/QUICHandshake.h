@@ -35,6 +35,7 @@
  */
 class QUICVersionNegotiator;
 class QUICPacketFactory;
+class QUICHandshakeProtocol;
 class SSLNextProtocolSet;
 
 class QUICHandshake : public QUICFrameHandler, public QUICFrameGenerator
@@ -57,12 +58,12 @@ public:
 
   // for client side
   QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_factory, bool vn_exercise_enabled);
-  QUICConnectionErrorUPtr negotiate_version(const QUICPacket &packet, QUICPacketFactory *packet_factory);
+  QUICConnectionErrorUPtr negotiate_version(const QUICVersionNegotiationPacketR &packet, QUICPacketFactory *packet_factory);
   void reset();
 
   // for server side
-  QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, const QUICPacket &initial_packet, QUICPacketFactory *packet_factory,
-                                const QUICPreferredAddress *pref_addr);
+  QUICConnectionErrorUPtr start(const QUICTPConfig &tp_config, const QUICInitialPacketR &initial_packet,
+                                QUICPacketFactory *packet_factory, const QUICPreferredAddress *pref_addr);
 
   QUICConnectionErrorUPtr do_handshake();
 
@@ -77,6 +78,7 @@ public:
 
   bool is_version_negotiated() const;
   bool is_completed() const;
+  bool is_confirmed() const;
   bool is_stateless_retry_enabled() const;
   bool has_remote_tp() const;
 
@@ -102,4 +104,10 @@ private:
   std::shared_ptr<const QUICTransportParameters> _remote_transport_parameters = nullptr;
 
   void _abort_handshake(QUICTransErrorCode code);
+
+  bool _is_handshake_done_sent     = false;
+  bool _is_handshake_done_received = false;
+
+  // QUICFrameGenerator
+  void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 };

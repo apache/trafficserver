@@ -24,26 +24,25 @@
 #include "QUICKeyGenerator.h"
 
 #include <openssl/ssl.h>
-
 size_t
-QUICKeyGenerator::_get_key_len(const QUIC_EVP_CIPHER *cipher) const
+QUICKeyGenerator::_get_key_len(const EVP_CIPHER *cipher) const
 {
   return EVP_CIPHER_key_length(cipher);
 }
 
 size_t
-QUICKeyGenerator::_get_iv_len(const QUIC_EVP_CIPHER *cipher) const
+QUICKeyGenerator::_get_iv_len(const EVP_CIPHER *cipher) const
 {
   return EVP_CIPHER_iv_length(cipher);
 }
 
-const QUIC_EVP_CIPHER *
+const EVP_CIPHER *
 QUICKeyGenerator::_get_cipher_for_initial() const
 {
   return EVP_aes_128_gcm();
 }
 
-const QUIC_EVP_CIPHER *
+const EVP_CIPHER *
 QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
 {
   switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
@@ -61,3 +60,21 @@ QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
     return nullptr;
   }
 }
+
+// SSL_HANDSHAKE_MAC_SHA256, SSL_HANDSHAKE_MAC_SHA384 are defind in `ssl/internal.h` of BoringSSL
+/*
+const EVP_MD *
+QUICKeyGenerator::get_handshake_digest(const SSL *ssl)
+{
+  switch (SSL_CIPHER_get_id(SSL_get_current_cipher(ssl))) {
+  case TLS1_CK_AES_128_GCM_SHA256:
+  case TLS1_CK_CHACHA20_POLY1305_SHA256:
+    return EVP_sha256();
+  case TLS1_CK_AES_256_GCM_SHA384:
+    return EVP_sha384();
+  default:
+    ink_assert(false);
+    return nullptr;
+  }
+}
+*/

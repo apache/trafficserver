@@ -22,6 +22,10 @@
  */
 
 #include <algorithm>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
+
 #include "QUICTypes.h"
 #include "QUICIntUtil.h"
 #include "tscore/CryptoHash.h"
@@ -190,15 +194,15 @@ QUICTypeUtil::read_QUICVersion(const uint8_t *buf)
 }
 
 QUICStreamId
-QUICTypeUtil::read_QUICStreamId(const uint8_t *buf)
+QUICTypeUtil::read_QUICStreamId(const uint8_t *buf, size_t buf_len)
 {
-  return static_cast<QUICStreamId>(QUICIntUtil::read_QUICVariableInt(buf));
+  return static_cast<QUICStreamId>(QUICIntUtil::read_QUICVariableInt(buf, buf_len));
 }
 
 QUICOffset
-QUICTypeUtil::read_QUICOffset(const uint8_t *buf)
+QUICTypeUtil::read_QUICOffset(const uint8_t *buf, size_t buf_len)
 {
-  return static_cast<QUICOffset>(QUICIntUtil::read_QUICVariableInt(buf));
+  return static_cast<QUICOffset>(QUICIntUtil::read_QUICVariableInt(buf, buf_len));
 }
 
 uint16_t
@@ -214,9 +218,9 @@ QUICTypeUtil::read_QUICAppErrorCode(const uint8_t *buf)
 }
 
 uint64_t
-QUICTypeUtil::read_QUICMaxData(const uint8_t *buf)
+QUICTypeUtil::read_QUICMaxData(const uint8_t *buf, size_t buf_len)
 {
-  return QUICIntUtil::read_QUICVariableInt(buf);
+  return QUICIntUtil::read_QUICVariableInt(buf, buf_len);
 }
 
 void
@@ -282,6 +286,27 @@ QUICStatelessResetToken::QUICStatelessResetToken(const QUICConnectionId &conn_id
   size_t dummy;
   QUICIntUtil::write_uint_as_nbytes(_hash.u64[0], 8, _token, &dummy);
   QUICIntUtil::write_uint_as_nbytes(_hash.u64[1], 8, _token + 8, &dummy);
+}
+
+uint64_t
+QUICStatelessResetToken::_hashcode() const
+{
+  return (static_cast<uint64_t>(this->_token[0]) << 56) + (static_cast<uint64_t>(this->_token[1]) << 48) +
+         (static_cast<uint64_t>(this->_token[2]) << 40) + (static_cast<uint64_t>(this->_token[3]) << 32) +
+         (static_cast<uint64_t>(this->_token[4]) << 24) + (static_cast<uint64_t>(this->_token[5]) << 16) +
+         (static_cast<uint64_t>(this->_token[6]) << 8) + (static_cast<uint64_t>(this->_token[7]));
+}
+
+std::string
+QUICStatelessResetToken::hex() const
+{
+  std::stringstream stream;
+  stream << "0x";
+  for (auto i = 0; i < QUICStatelessResetToken::LEN; i++) {
+    stream << std::setfill('0') << std::setw(2) << std::hex;
+    stream << std::hex << static_cast<int>(this->_token[i]);
+  }
+  return stream.str();
 }
 
 QUICResumptionToken::QUICResumptionToken(const IpEndpoint &src, QUICConnectionId cid, ink_hrtime expire_time)
@@ -577,7 +602,7 @@ QUICConnectionId
 QUICConnectionId::ZERO()
 {
   uint8_t zero[MAX_LENGTH] = {0};
-  return QUICConnectionId(zero, sizeof(zero));
+  return QUICConnectionId(zero, 0);
 }
 
 QUICConnectionId::QUICConnectionId()
@@ -587,7 +612,8 @@ QUICConnectionId::QUICConnectionId()
 
 QUICConnectionId::QUICConnectionId(const uint8_t *buf, uint8_t len) : _len(len)
 {
-  memcpy(this->_id, buf, len);
+  ink_assert(len <= QUICConnectionId::MAX_LENGTH);
+  memcpy(this->_id, buf, std::min(static_cast<int>(len), QUICConnectionId::MAX_LENGTH));
 }
 
 uint8_t
@@ -636,10 +662,16 @@ QUICConnectionId::h32() const
   return static_cast<uint32_t>(QUICIntUtil::read_nbytes_as_uint(this->_id, 4));
 }
 
-int
-QUICConnectionId::hex(char *buf, size_t len) const
+std::string
+QUICConnectionId::hex() const
 {
-  return to_hex_str(buf, len, this->_id, this->_len);
+  std::stringstream stream;
+  stream << "0x";
+  for (auto i = 0; i < this->_len; i++) {
+    stream << std::setfill('0') << std::setw(2) << std::hex;
+    stream << std::hex << static_cast<int>(this->_id[i]);
+  }
+  return stream.str();
 }
 
 //
@@ -692,8 +724,11 @@ QUICInvariants::scil(uint8_t &dst, const uint8_t *buf, uint64_t buf_len)
   if (!QUICInvariants::dcil(dcil, buf, buf_len)) {
     return false;
   }
-
-  dst = buf[QUICInvariants::LH_CIL_OFFSET + 1 + dcil];
+  uint64_t scil_offset = QUICInvariants::LH_CIL_OFFSET + 1 + dcil;
+  if (scil_offset >= buf_len) {
+    return false;
+  }
+  dst = buf[scil_offset];
 
   return true;
 }
@@ -721,6 +756,10 @@ QUICInvariants::dcid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len
     // remote dcil is local scil
     dcid_len    = QUICConnectionId::SCID_LEN;
     dcid_offset = QUICInvariants::SH_DCID_OFFSET;
+  }
+
+  if (dcid_len > QUICConnectionId::MAX_LENGTH) {
+    return false;
   }
 
   if (dcid_offset + dcid_len > buf_len) {
@@ -769,3 +808,18 @@ QUICInvariants::scid(QUICConnectionId &dst, const uint8_t *buf, uint64_t buf_len
 
   return true;
 }
+
+namespace QUICBase
+{
+std::string
+to_hex(const uint8_t *buf, size_t len)
+{
+  std::stringstream stream;
+  stream << "0x";
+  for (size_t i = 0; i < len; i++) {
+    stream << std::setfill('0') << std::setw(2) << std::hex;
+    stream << std::hex << static_cast<int>(buf[i]);
+  }
+  return stream.str();
+}
+} // namespace QUICBase

@@ -31,15 +31,25 @@ class QUICPathValidator;
 class QUICPathManager
 {
 public:
-  QUICPathManager(const QUICConnectionInfoProvider &info, QUICPathValidator &path_validator)
+  virtual ~QUICPathManager() {}
+  virtual const QUICPath &get_current_path()                              = 0;
+  virtual const QUICPath &get_verified_path()                             = 0;
+  virtual void open_new_path(const QUICPath &path, ink_hrtime timeout_in) = 0;
+  virtual void set_trusted_path(const QUICPath &path)                     = 0;
+};
+
+class QUICPathManagerImpl : public QUICPathManager
+{
+public:
+  QUICPathManagerImpl(const QUICConnectionInfoProvider &info, QUICPathValidator &path_validator)
     : _cinfo(info), _path_validator(path_validator)
   {
   }
 
-  const QUICPath &get_current_path();
-  const QUICPath &get_verified_path();
-  void open_new_path(const QUICPath &path, ink_hrtime timeout_in);
-  void set_trusted_path(const QUICPath &path);
+  const QUICPath &get_current_path() override;
+  const QUICPath &get_verified_path() override;
+  void open_new_path(const QUICPath &path, ink_hrtime timeout_in) override;
+  void set_trusted_path(const QUICPath &path) override;
 
 private:
   const QUICConnectionInfoProvider &_cinfo;

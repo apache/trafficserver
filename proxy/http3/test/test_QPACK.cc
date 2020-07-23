@@ -41,7 +41,7 @@ extern char appname[256];
 extern char pattern[256];
 
 constexpr int ACK_MODE_IMMEDIATE = 1;
-constexpr int ACK_MODE_NONE      = 0;
+// constexpr int ACK_MODE_NONE      = 0;
 
 constexpr int MAX_SEQUENCE = 1024;
 

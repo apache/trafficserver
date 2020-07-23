@@ -27,6 +27,7 @@
 
 #include "P_Net.h"
 #include "P_VConnection.h"
+#include "P_QUICNetVConnection.h"
 #include "QUICDebugNames.h"
 
 #include "Http3Session.h"

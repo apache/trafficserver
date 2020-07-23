@@ -32,19 +32,15 @@ bool
 QUICPacketHeaderProtector::protect(uint8_t *unprotected_packet, size_t unprotected_packet_len, int dcil) const
 {
   // Do nothing if the packet is VN
-  if (QUICInvariants::is_long_header(unprotected_packet)) {
-    QUICVersion version;
-    QUICPacketLongHeader::version(version, unprotected_packet, unprotected_packet_len);
-    if (version == 0x0) {
-      return true;
-    }
+  QUICPacketType type;
+  QUICPacketR::type(type, unprotected_packet, unprotected_packet_len);
+  if (type == QUICPacketType::VERSION_NEGOTIATION) {
+    return true;
   }
 
   QUICKeyPhase phase;
-  QUICPacketType type;
   if (QUICInvariants::is_long_header(unprotected_packet)) {
-    QUICPacketLongHeader::key_phase(phase, unprotected_packet, unprotected_packet_len);
-    QUICPacketLongHeader::type(type, unprotected_packet, unprotected_packet_len);
+    QUICLongHeaderPacketR::key_phase(phase, unprotected_packet, unprotected_packet_len);
   } else {
     // This is a kind of hack. For short header we need to use the same key for header protection regardless of the key phase.
     phase = QUICKeyPhase::PHASE_0;
@@ -89,24 +85,15 @@ bool
 QUICPacketHeaderProtector::unprotect(uint8_t *protected_packet, size_t protected_packet_len) const
 {
   // Do nothing if the packet is VN or RETRY
-  if (QUICInvariants::is_long_header(protected_packet)) {
-    QUICVersion version;
-    QUICPacketLongHeader::version(version, protected_packet, protected_packet_len);
-    if (version == 0x0) {
-      return true;
-    }
-    QUICPacketType type;
-    QUICPacketLongHeader::type(type, protected_packet, protected_packet_len);
-    if (type == QUICPacketType::RETRY) {
-      return true;
-    }
+  QUICPacketType type;
+  QUICPacketR::type(type, protected_packet, protected_packet_len);
+  if (type == QUICPacketType::VERSION_NEGOTIATION || type == QUICPacketType::RETRY) {
+    return true;
   }
 
   QUICKeyPhase phase;
-  QUICPacketType type;
   if (QUICInvariants::is_long_header(protected_packet)) {
-    QUICPacketLongHeader::key_phase(phase, protected_packet, protected_packet_len);
-    QUICPacketLongHeader::type(type, protected_packet, protected_packet_len);
+    QUICLongHeaderPacketR::key_phase(phase, protected_packet, protected_packet_len);
   } else {
     // This is a kind of hack. For short header we need to use the same key for header protection regardless of the key phase.
     phase = QUICKeyPhase::PHASE_0;
@@ -155,7 +142,7 @@ QUICPacketHeaderProtector::_calc_sample_offset(uint8_t *sample_offset, const uin
     size_t dummy;
     uint8_t length_len;
     size_t length_offset;
-    if (!QUICPacketLongHeader::length(dummy, length_len, length_offset, protected_packet, protected_packet_len)) {
+    if (!QUICLongHeaderPacketR::length(dummy, length_len, length_offset, protected_packet, protected_packet_len)) {
       return false;
     }
 
@@ -175,10 +162,10 @@ QUICPacketHeaderProtector::_unprotect(uint8_t *protected_packet, size_t protecte
   // Unprotect packet number
   if (QUICInvariants::is_long_header(protected_packet)) {
     protected_packet[0] ^= mask[0] & 0x0f;
-    QUICPacketLongHeader::packet_number_offset(pn_offset, protected_packet, protected_packet_len);
+    QUICLongHeaderPacketR::packet_number_offset(pn_offset, protected_packet, protected_packet_len);
   } else {
     protected_packet[0] ^= mask[0] & 0x1f;
-    QUICPacketShortHeader::packet_number_offset(pn_offset, protected_packet, protected_packet_len, QUICConnectionId::SCID_LEN);
+    QUICShortHeaderPacketR::packet_number_offset(pn_offset, protected_packet, protected_packet_len, QUICConnectionId::SCID_LEN);
   }
   uint8_t pn_length = QUICTypeUtil::read_QUICPacketNumberLen(protected_packet);
 
@@ -199,10 +186,10 @@ QUICPacketHeaderProtector::_protect(uint8_t *protected_packet, size_t protected_
   // Protect packet number
   if (QUICInvariants::is_long_header(protected_packet)) {
     protected_packet[0] ^= mask[0] & 0x0f;
-    QUICPacketLongHeader::packet_number_offset(pn_offset, protected_packet, protected_packet_len);
+    QUICLongHeaderPacketR::packet_number_offset(pn_offset, protected_packet, protected_packet_len);
   } else {
     protected_packet[0] ^= mask[0] & 0x1f;
-    QUICPacketShortHeader::packet_number_offset(pn_offset, protected_packet, protected_packet_len, dcil);
+    QUICShortHeaderPacketR::packet_number_offset(pn_offset, protected_packet, protected_packet_len, dcil);
   }
 
   for (int i = 0; i < pn_length; ++i) {

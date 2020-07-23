@@ -38,7 +38,7 @@ public:
 class QUICIntUtil
 {
 public:
-  static uint64_t read_QUICVariableInt(const uint8_t *buf);
+  static uint64_t read_QUICVariableInt(const uint8_t *buf, size_t buf_len);
   static void write_QUICVariableInt(uint64_t data, uint8_t *buf, size_t *len);
   static uint64_t read_nbytes_as_uint(const uint8_t *buf, uint8_t n);
   static void write_uint_as_nbytes(uint64_t value, uint8_t n, uint8_t *buf, size_t *len);

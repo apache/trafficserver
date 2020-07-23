@@ -30,18 +30,17 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
   SECTION("OK")
   {
     uint8_t buf[] = {
-      0x00, 0x1c,             // size of parameters
-      0x00, 0x00,             // parameter id
-      0x00, 0x04,             // length of value
+      0x00,                   // parameter id
+      0x04,                   // length of value
       0x11, 0x22, 0x33, 0x44, // value
-      0x00, 0x01,             // parameter id
-      0x00, 0x04,             // length of value
+      0x01,                   // parameter id
+      0x04,                   // length of value
       0x12, 0x34, 0x56, 0x78, // value
-      0x00, 0x05,             // parameter id
-      0x00, 0x02,             // length of value
+      0x05,                   // parameter id
+      0x02,                   // length of value
       0x0a, 0x0b,             // value
-      0x00, 0x03,             // parameter id
-      0x00, 0x02,             // length of value
+      0x03,                   // parameter id
+      0x02,                   // length of value
       0x05, 0x67,             // value
     };
 
@@ -55,7 +54,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
     CHECK(len == 4);
     CHECK(memcmp(data, "\x11\x22\x33\x44", 4) == 0);
 
-    data = params_in_ch.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::MAX_IDLE_TIMEOUT, len);
     CHECK(len == 4);
     CHECK(memcmp(data, "\x12\x34\x56\x78", 4) == 0);
 
@@ -75,12 +74,11 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
   SECTION("Duplicate parameters")
   {
     uint8_t buf[] = {
-      0x00, 0x10,             // size of parameters
-      0x00, 0x00,             // parameter id
-      0x00, 0x04,             // length of value
+      0x00,                   // parameter id
+      0x04,                   // length of value
       0x11, 0x22, 0x33, 0x44, // value
-      0x00, 0x00,             // parameter id
-      0x00, 0x04,             // length of value
+      0x00,                   // parameter id
+      0x04,                   // length of value
       0x12, 0x34, 0x56, 0x78, // value
     };
 
@@ -95,16 +93,15 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   uint16_t len;
 
   uint8_t expected[] = {
-    0x00, 0x22,                                     // size of parameters
-    0x00, 0x02,                                     // parameter id
-    0x00, 0x10,                                     // length of value
+    0x02,                                           // parameter id
+    0x10,                                           // length of value
     0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // value
     0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, // value
-    0x00, 0x03,                                     // parameter id
-    0x00, 0x02,                                     // length of value
+    0x03,                                           // parameter id
+    0x02,                                           // length of value
     0x5b, 0xcd,                                     // value
-    0x00, 0x05,                                     // parameter id
-    0x00, 0x04,                                     // length of value
+    0x05,                                           // parameter id
+    0x04,                                           // length of value
     0x91, 0x22, 0x33, 0x44,                         // value
   };
 
@@ -121,7 +118,7 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   params_in_ch.set(QUICTransportParameterId::STATELESS_RESET_TOKEN, stateless_reset_token, 16);
 
   params_in_ch.store(buf, &len);
-  CHECK(len == 36);
+  CHECK(len == 28);
   CHECK(memcmp(buf, expected, len) == 0);
 }
 
@@ -130,19 +127,19 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
   SECTION("OK case")
   {
     uint8_t buf[] = {
-      0x00, 0x2a,                                                                         // size of parameters
-      0x00, 0x01,                                                                         // parameter id
-      0x00, 0x02,                                                                         // length of value
-      0x51, 0x23,                                                                         // value
-      0x00, 0x02,                                                                         // parameter id
-      0x00, 0x10,                                                                         // length of value
-      0x00, 0x10, 0x20, 0x30,                                                             // value
-      0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0, 0x00, 0x04, // parameter id
-      0x00, 0x04,                                                                         // length of value
-      0x92, 0x34, 0x56, 0x78,                                                             // value
-      0x00, 0x06,                                                                         // parameter id
-      0x00, 0x04,                                                                         // length of value
-      0x91, 0x22, 0x33, 0x44,                                                             // value
+      0x01,                   // parameter id
+      0x02,                   // length of value
+      0x51, 0x23,             // value
+      0x02,                   // parameter id
+      0x10,                   // length of value
+      0x00, 0x10, 0x20, 0x30, // value
+      0x40, 0x50, 0x60, 0x70, 0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,
+      0x04,                   // parameter id
+      0x04,                   // length of value
+      0x92, 0x34, 0x56, 0x78, // value
+      0x06,                   // parameter id
+      0x04,                   // length of value
+      0x91, 0x22, 0x33, 0x44, // value
     };
 
     QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
@@ -159,13 +156,13 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
     CHECK(len == 4);
     CHECK(memcmp(data, "\x92\x34\x56\x78", 4) == 0);
 
-    data = params_in_ee.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::MAX_IDLE_TIMEOUT, len);
     CHECK(len == 2);
     CHECK(memcmp(data, "\x51\x23", 2) == 0);
 
     data = params_in_ee.getAsBytes(QUICTransportParameterId::STATELESS_RESET_TOKEN, len);
     CHECK(len == 16);
-    CHECK(memcmp(data, buf + 12, 16) == 0);
+    CHECK(memcmp(data, buf + 6, 16) == 0);
 
     CHECK(!params_in_ee.contains(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION));
   }
@@ -173,18 +170,17 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
   SECTION("OK case - zero length value")
   {
     uint8_t buf[] = {
-      0x00, 0x1a,             // size of parameters
-      0x00, 0x01,             // parameter id
-      0x00, 0x02,             // length of value
+      0x01,                   // parameter id
+      0x02,                   // length of value
       0x51, 0x23,             // value
-      0x00, 0x04,             // parameter id
-      0x00, 0x04,             // length of value
+      0x04,                   // parameter id
+      0x04,                   // length of value
       0xa2, 0x34, 0x56, 0x78, // value
-      0x00, 0x06,             // parameter id
-      0x00, 0x04,             // length of value
+      0x06,                   // parameter id
+      0x04,                   // length of value
       0xa1, 0x22, 0x33, 0x44, // value
-      0x00, 0x0c,             // parameter id
-      0x00, 0x00,             // length of value
+      0x0c,                   // parameter id
+      0x00,                   // length of value
     };
 
     QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
@@ -201,7 +197,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
     CHECK(len == 4);
     CHECK(memcmp(data, "\xa2\x34\x56\x78", 4) == 0);
 
-    data = params_in_ee.getAsBytes(QUICTransportParameterId::IDLE_TIMEOUT, len);
+    data = params_in_ee.getAsBytes(QUICTransportParameterId::MAX_IDLE_TIMEOUT, len);
     CHECK(len == 2);
     CHECK(memcmp(data, "\x51\x23", 2) == 0);
 
@@ -211,12 +207,11 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
   SECTION("Duplicate parameters")
   {
     uint8_t buf[] = {
-      0x00, 0x1e,             // size of parameters
-      0x00, 0x00,             // parameter id
-      0x00, 0x04,             // length of value
+      0x00,                   // parameter id
+      0x04,                   // length of value
       0x01, 0x02, 0x03, 0x04, // value
-      0x00, 0x00,             // parameter id
-      0x00, 0x04,             // length of value
+      0x00,                   // parameter id
+      0x04,                   // length of value
       0x12, 0x34, 0x56, 0x78, // value
     };
 
@@ -233,12 +228,11 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     uint16_t len;
 
     uint8_t expected[] = {
-      0x00, 0x0e,             // size of parameters
-      0x00, 0x03,             // parameter id
-      0x00, 0x02,             // length of value
+      0x03,                   // parameter id
+      0x02,                   // length of value
       0x5b, 0xcd,             // value
-      0x00, 0x06,             // parameter id
-      0x00, 0x04,             // length of value
+      0x06,                   // parameter id
+      0x04,                   // length of value
       0x91, 0x22, 0x33, 0x44, // value
     };
 
@@ -253,7 +247,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     params_in_ee.add_version(0x01020304);
     params_in_ee.add_version(0x05060708);
     params_in_ee.store(buf, &len);
-    CHECK(len == 16);
+    CHECK(len == 10);
     CHECK(memcmp(buf, expected, len) == 0);
   }
 
@@ -263,15 +257,14 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     uint16_t len;
 
     uint8_t expected[] = {
-      0x00, 0x12,             // size of parameters
-      0x00, 0x03,             // parameter id
-      0x00, 0x02,             // length of value
+      0x03,                   // parameter id
+      0x02,                   // length of value
       0x5b, 0xcd,             // value
-      0x00, 0x06,             // parameter id
-      0x00, 0x04,             // length of value
+      0x06,                   // parameter id
+      0x04,                   // length of value
       0x91, 0x22, 0x33, 0x44, // value
-      0x00, 0x0c,             // parameter id
-      0x00, 0x00,             // length of value
+      0x0c,                   // parameter id
+      0x00,                   // length of value
     };
 
     QUICTransportParametersInEncryptedExtensions params_in_ee;
@@ -286,7 +279,7 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     params_in_ee.add_version(0x01020304);
     params_in_ee.add_version(0x05060708);
     params_in_ee.store(buf, &len);
-    CHECK(len == 20);
+    CHECK(len == 12);
     CHECK(memcmp(buf, expected, len) == 0);
   }
 }

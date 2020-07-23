@@ -38,8 +38,10 @@ struct QUICClientConfig {
   char output[1024]     = {0};
   char port[16]         = "4433";
   char path[1018]       = "/";
+  char server_name[128] = "";
   char debug_tags[1024] = "quic|vv_quic_crypto|http3|qpack";
   int close             = false;
+  int reset             = false;
   int http0_9           = true;
   int http3             = false;
 };
@@ -47,7 +49,7 @@ struct QUICClientConfig {
 class RespHandler : public Continuation
 {
 public:
-  RespHandler(const QUICClientConfig *config, IOBufferReader *reader);
+  RespHandler(const QUICClientConfig *config, IOBufferReader *reader, std::function<void()> on_complete);
   int main_event_handler(int event, Event *data);
   void set_read_vio(VIO *vio);
 
@@ -56,6 +58,7 @@ private:
   const char *_filename           = nullptr;
   IOBufferReader *_reader         = nullptr;
   VIO *_read_vio                  = nullptr;
+  std::function<void()> _on_complete;
 };
 
 class QUICClient : public Continuation

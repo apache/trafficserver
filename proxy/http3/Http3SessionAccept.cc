@@ -22,6 +22,7 @@
  */
 
 #include "Http3SessionAccept.h"
+#include "P_QUICNetVConnection.h"
 
 #include "P_Net.h"
 #include "I_Machine.h"

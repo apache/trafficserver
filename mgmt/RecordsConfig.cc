@@ -1365,6 +1365,10 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.client.cm_exercise_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.quic.client.quantum_readiness_test_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.server.quantum_readiness_test_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.quic.server.supported_groups", RECD_STRING, "P-256:X25519:P-384:P-521" , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.client.supported_groups", RECD_STRING, "P-256:X25519:P-384:P-521" , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -1372,6 +1376,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.quic.client.session_file", RECD_STRING, nullptr , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.client.keylog_file", RECD_STRING, nullptr , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.qlog_dir", RECD_STRING, nullptr , RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   // Transport Parameters
   {RECT_CONFIG, "proxy.config.quic.no_activity_timeout_in", RECD_INT, "30000", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
@@ -1417,6 +1423,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.quic.active_cid_limit_in", RECD_INT, "4", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.active_cid_limit_out", RECD_INT, "8", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.disable_active_migration", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
   ,
   // Constants of Loss Detection
   {RECT_CONFIG, "proxy.config.quic.loss_detection.packet_threshold", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
