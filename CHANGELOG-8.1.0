@@ -210,3 +210,5 @@ Changes with Apache Traffic Server 8.1.0
   #6987 - Fixes use of TS_USE_TLS_OCSP
   #6990 - [8.1.x] Disable openclose_h2 AuTest on 8.1.x
   #6995 - Fix volume/stripe calcs when using forced volumes
+  #7013 - Update autest python version to 36
+  #7028 - Fixed problem with all "forced" volumes cache
