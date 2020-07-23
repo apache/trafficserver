@@ -691,6 +691,7 @@ Changes with Apache Traffic Server 9.0.0
   #6025 - Remove remnants of obsolete remap thread.
   #6026 - Remove obsolete 4-2-0-fixup
   #6031 - listen on all the net threads
+  #6032 - Restore the MIOBufferWriter unit tests.
   #6037 - Promote 'Enable_Config_Var' from HttpConnectionCount to HttpConfig.
   #6049 - set host name in TLS extension for SNI Host check in service side with sni policy verify_with_name_source.
   #6053 - Enhance Connection Collapse in ATS core
@@ -700,6 +701,7 @@ Changes with Apache Traffic Server 9.0.0
   #6070 - Updated API header and ssl_session_reuse for new TSSslSessionInsert changes
   #6071 - Premature DSO unload with "suicidal" continuations
   #6074 - Allow txn handler to be set from ssn on same hook
+  #6075 - Disable tests using exceptions in MIOBufferWriter UT.
   #6076 - Issue 4635: Address pipe reuse after configuration reload issues
   #6078 - Cleanup: Ignore checkprograms of remap
   #6084 - Improving the messaging around the use of TSSslSessionGetBuffer
@@ -721,6 +723,7 @@ Changes with Apache Traffic Server 9.0.0
   #6131 - Remove never implemented HttpTransact::service_transaction_in_proxy_only_mode
   #6132 - Normalize loopback usage in session_match autest
   #6134 - Removes the records.config.shadow alternative config file
+  #6137 - Make MIOBufferWriter unit tests work when compiled without -DDEBUG.
   #6138 - tests: Adds autest for WebSocket mappings
   #6139 - tests: fixes various python code issues found by pyflakes
   #6140 - Remove using namespace std
@@ -848,6 +851,7 @@ Changes with Apache Traffic Server 9.0.0
   #6486 - Issue 3546: Add "overridable" to the configuration variable description.
   #6487 - Fix session reuse plugin shutdown crashes and cleanups
   #6488 - Bikeshedding some code structures for reloadable plugins config
+  #6490 - Fix a compile warning
   #6492 - Add null check to fix error tunnel crash
   #6493 - Make all_headers test more resilient to timing
   #6500 - traffic_dump: Make the client-request node gathered in a global hook
@@ -892,6 +896,7 @@ Changes with Apache Traffic Server 9.0.0
   #6632 - Fixes a bug where the nexthop markNextHop method to mark a host down is not called.
   #6642 - Fixes crash loading combined(cert+key) certs
   #6645 - Traffic Dump: Adding an SNI filtering option.
+  #6650 - Extendible asan simple
   #6655 - Fix origin scheme selection with partial-blind addition
   #6656 - Check sni against SSL object
   #6658 - Update TSStatFindName to check that sync callback is set on the stat
@@ -1004,5 +1009,12 @@ Changes with Apache Traffic Server 9.0.0
   #6977 - Preserve cert name through ssl vc migration
   #6984 - Fix out of source tree builds for QUIC
   #6994 - Adds null check
+  #7000 - Add QUIC draft-27 support
   #7004 - Fixed core when sending back a redirect and having an invalid server response
+  #7005 - Added tasks and launch files for vscode, to configure, build and debug
   #7007 - Updates to thread scale factor
+  #7008 - slice plugin: fix throttle not work 
+  #7012 - Remove incorrect assert in inactivity timeout handling
+  #7031 - Fix code to eliminate warning and enable feature
+  #7035 - Add a null check to avoid crashing
+  #7036 - Add virtual destructor to QUICTPConfig.
