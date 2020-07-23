@@ -4771,6 +4771,9 @@ std::string_view
 HttpSM::get_outbound_cert() const
 {
   const char *cert_name = t_state.txn_conf->ssl_client_cert_filename;
+  if (cert_name == nullptr) {
+    cert_name = "";
+  }
   return std::string_view(cert_name);
 }
 
