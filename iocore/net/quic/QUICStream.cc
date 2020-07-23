@@ -245,7 +245,7 @@ QUICStreamVConnection::_signal_read_event()
   }
   MUTEX_TRY_LOCK(lock, this->_read_vio.mutex, this_ethread());
 
-  int event = this->_read_vio.ntodo() ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
+  int event = this->_read_vio.nbytes == INT64_MAX ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
 
   if (lock.is_locked()) {
     this->_read_vio.cont->handleEvent(event, &this->_read_vio);

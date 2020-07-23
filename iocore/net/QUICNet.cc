@@ -22,6 +22,7 @@
  */
 
 #include "P_Net.h"
+#include "P_QUICNet.h"
 #include "quic/QUICEvents.h"
 
 ClassAllocator<QUICPollEvent> quicPollEventAllocator("quicPollEvent");
@@ -68,7 +69,7 @@ QUICPollCont::_process_long_header_packet(QUICPollEvent *e, NetHandler *nh)
   uint8_t *buf           = (uint8_t *)p->getIOBlockChain()->buf();
 
   QUICPacketType ptype;
-  QUICPacketLongHeader::type(ptype, buf, 1);
+  QUICLongHeaderPacketR::type(ptype, buf, 1);
   if (ptype == QUICPacketType::INITIAL && !vc->read.triggered) {
     SCOPED_MUTEX_LOCK(lock, vc->mutex, this_ethread());
     vc->read.triggered = 1;

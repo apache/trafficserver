@@ -38,7 +38,7 @@
 #define QUICLDVDebug(fmt, ...) \
   Debug("v_quic_loss_detector", "[%s] " fmt, this->_context.connection_info()->cids().data(), ##__VA_ARGS__)
 
-QUICLossDetector::QUICLossDetector(QUICLDContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
+QUICLossDetector::QUICLossDetector(QUICContext &context, QUICCongestionController *cc, QUICRTTMeasure *rtt_measure,
                                    QUICPinger *pinger, QUICPadder *padder)
   : _rtt_measure(rtt_measure), _pinger(pinger), _padder(padder), _cc(cc), _context(context)
 {
@@ -444,6 +444,7 @@ QUICLossDetector::_detect_lost_packets(QUICPacketNumberSpace pn_space)
   if (!lost_packets.empty()) {
     this->_cc->on_packets_lost(lost_packets);
     for (auto lost_packet : lost_packets) {
+      this->_context.trigger(QUICContext::CallbackEvent::PACKET_LOST, *lost_packet.second);
       // -- ADDITIONAL CODE --
       // Not sure how we can get feedback from congestion control and when we should retransmit the lost packets but we need to send
       // them somewhere.
@@ -487,7 +488,7 @@ QUICLossDetector::_send_packet(QUICEncryptionLevel level, bool padded)
   if (padded) {
     this->_padder->request(level);
   } else {
-    this->_pinger->request();
+    this->_pinger->request(level);
   }
   this->_cc->add_extra_credit();
 }
@@ -497,23 +498,25 @@ QUICLossDetector::_send_one_or_two_packet()
 {
   this->_send_packet(QUICEncryptionLevel::ONE_RTT);
   this->_send_packet(QUICEncryptionLevel::ONE_RTT);
-  ink_assert(this->_pinger->count() >= 2);
+  ink_assert(this->_pinger->count(QUICEncryptionLevel::ONE_RTT) >= 2);
   QUICLDDebug("[%s] send ping frame %" PRIu64, QUICDebugNames::encryption_level(QUICEncryptionLevel::ONE_RTT),
-              this->_pinger->count());
+              this->_pinger->count(QUICEncryptionLevel::ONE_RTT));
 }
 
 void
 QUICLossDetector::_send_one_handshake_packets()
 {
   this->_send_packet(QUICEncryptionLevel::HANDSHAKE);
-  QUICLDDebug("[%s] send handshake packet", QUICDebugNames::encryption_level(QUICEncryptionLevel::HANDSHAKE));
+  QUICLDDebug("[%s] send handshake packet: ping count=%" PRIu64, QUICDebugNames::encryption_level(QUICEncryptionLevel::HANDSHAKE),
+              this->_pinger->count(QUICEncryptionLevel::HANDSHAKE));
 }
 
 void
 QUICLossDetector::_send_one_padded_packets()
 {
   this->_send_packet(QUICEncryptionLevel::INITIAL, true);
-  QUICLDDebug("[%s] send PADDING frame", QUICDebugNames::encryption_level(QUICEncryptionLevel::INITIAL));
+  QUICLDDebug("[%s] send PADDING frame: ping count=%" PRIu64, QUICDebugNames::encryption_level(QUICEncryptionLevel::INITIAL),
+              this->_pinger->count(QUICEncryptionLevel::INITIAL));
 }
 
 // ===== Functions below are helper functions =====

@@ -40,11 +40,14 @@ public:
   uint32_t stateless_retry() const;
   uint32_t vn_exercise_enabled() const;
   uint32_t cm_exercise_enabled() const;
+  uint32_t quantum_readiness_test_enabled_in() const;
+  uint32_t quantum_readiness_test_enabled_out() const;
 
   const char *server_supported_groups() const;
   const char *client_supported_groups() const;
   const char *client_session_file() const;
   const char *client_keylog_file() const;
+  const char *qlog_dir() const;
 
   shared_SSL_CTX client_ssl_ctx() const;
 
@@ -71,6 +74,7 @@ public:
   uint8_t max_ack_delay_out() const;
   uint8_t active_cid_limit_in() const;
   uint8_t active_cid_limit_out() const;
+  bool disable_active_migration() const;
 
   // Loss Detection
   uint32_t ld_packet_threshold() const;
@@ -93,15 +97,18 @@ private:
   // TODO: make configurable
   static const uint8_t _scid_len = 18; //< Length of Source Connection ID
 
-  uint32_t _instance_id         = 0;
-  uint32_t _stateless_retry     = 0;
-  uint32_t _vn_exercise_enabled = 0;
-  uint32_t _cm_exercise_enabled = 0;
+  uint32_t _instance_id                        = 0;
+  uint32_t _stateless_retry                    = 0;
+  uint32_t _vn_exercise_enabled                = 0;
+  uint32_t _cm_exercise_enabled                = 0;
+  uint32_t _quantum_readiness_test_enabled_in  = 0;
+  uint32_t _quantum_readiness_test_enabled_out = 0;
 
   char *_server_supported_groups = nullptr;
   char *_client_supported_groups = nullptr;
   char *_client_session_file     = nullptr;
   char *_client_keylog_file      = nullptr;
+  char *_qlog_dir                = nullptr;
 
   shared_SSL_CTX _client_ssl_ctx = nullptr;
 
@@ -130,6 +137,7 @@ private:
   uint32_t _max_ack_delay_out                       = 0;
   uint32_t _active_cid_limit_in                     = 0;
   uint32_t _active_cid_limit_out                    = 0;
+  uint32_t _disable_active_migration                = 0;
 
   // [draft-17 recovery] 6.4.1.  Constants of interest
   uint32_t _ld_packet_threshold = 3;

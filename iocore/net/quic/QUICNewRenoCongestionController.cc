@@ -38,7 +38,7 @@
         this->_context.connection_info()->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
         this->_extra_packets_count, ##__VA_ARGS__)
 
-QUICNewRenoCongestionController::QUICNewRenoCongestionController(QUICCCContext &context)
+QUICNewRenoCongestionController::QUICNewRenoCongestionController(QUICContext &context)
   : _cc_mutex(new_ProxyMutex()), _context(context)
 {
   auto &cc_config                          = context.cc_config();
@@ -94,10 +94,13 @@ QUICNewRenoCongestionController::on_packet_acked(const QUICPacketInfo &acked_pac
 
   if (this->_congestion_window < this->_ssthresh) {
     // Slow start.
+    this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED, QUICCongestionController::State::SLOW_START);
     this->_congestion_window += acked_packet.sent_bytes;
     QUICCCDebug("slow start window chaged");
   } else {
     // Congestion avoidance.
+    this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED,
+                           QUICCongestionController::State::CONGESTION_AVOIDANCE);
     this->_congestion_window += this->_k_max_datagram_size * acked_packet.sent_bytes / this->_congestion_window;
     QUICCCDebug("Congestion avoidance window changed");
   }
@@ -116,6 +119,9 @@ QUICNewRenoCongestionController::_congestion_event(ink_hrtime sent_time)
     this->_congestion_window *= this->_k_loss_reduction_factor;
     this->_congestion_window = std::max(this->_congestion_window, this->_k_minimum_window);
     this->_ssthresh          = this->_congestion_window;
+    this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED, QUICCongestionController::State::RECOVERY);
+    this->_context.trigger(QUICContext::CallbackEvent::METRICS_UPDATE, this->_congestion_window, this->_bytes_in_flight,
+                           this->_ssthresh);
   }
 }
 

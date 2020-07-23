@@ -26,25 +26,28 @@
 #include "tscore/ink_defs.h"
 #include "QUICAltConnectionManager.h"
 #include "QUICConnectionTable.h"
+#include "QUICResetTokenTable.h"
 
 static constexpr char V_DEBUG_TAG[] = "v_quic_alt_con";
 
 #define QUICACMVDebug(fmt, ...) Debug(V_DEBUG_TAG, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
 
-QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable,
+QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConnectionTable &ctable, QUICResetTokenTable &rtable,
                                                    const QUICConnectionId &peer_initial_cid, uint32_t instance_id,
                                                    uint8_t local_active_cid_limit, const IpEndpoint *preferred_endpoint_ipv4,
                                                    const IpEndpoint *preferred_endpoint_ipv6)
-  : _qc(qc), _ctable(ctable), _instance_id(instance_id), _local_active_cid_limit(local_active_cid_limit)
+  : _qc(qc), _ctable(ctable), _rtable(rtable), _instance_id(instance_id), _local_active_cid_limit(local_active_cid_limit)
 {
   // Sequence number of the initial CID is 0
   this->_alt_quic_connection_ids_remote.push_back({0, peer_initial_cid, {}, {true}});
+  this->_alt_quic_connection_ids_local[0].seq_num    = 0;
+  this->_alt_quic_connection_ids_local[0].advertised = true;
 
   if ((preferred_endpoint_ipv4 && !ats_ip_addr_port_eq(*preferred_endpoint_ipv4, qc->five_tuple().source())) ||
       (preferred_endpoint_ipv6 && !ats_ip_addr_port_eq(*preferred_endpoint_ipv6, qc->five_tuple().source()))) {
-    this->_alt_quic_connection_ids_local[0] = this->_generate_next_alt_con_info();
+    this->_alt_quic_connection_ids_local[1] = this->_generate_next_alt_con_info();
     // This alt cid will be advertised via Transport Parameter, so no need to advertise it via NCID frame
-    this->_alt_quic_connection_ids_local[0].advertised = true;
+    this->_alt_quic_connection_ids_local[1].advertised = true;
 
     IpEndpoint empty_endpoint_ipv4;
     IpEndpoint empty_endpoint_ipv6;
@@ -59,8 +62,8 @@ QUICAltConnectionManager::QUICAltConnectionManager(QUICConnection *qc, QUICConne
 
     // FIXME Check nullptr dereference
     this->_local_preferred_address =
-      new QUICPreferredAddress(*preferred_endpoint_ipv4, *preferred_endpoint_ipv6, this->_alt_quic_connection_ids_local[0].id,
-                               this->_alt_quic_connection_ids_local[0].token);
+      new QUICPreferredAddress(*preferred_endpoint_ipv4, *preferred_endpoint_ipv6, this->_alt_quic_connection_ids_local[1].id,
+                               this->_alt_quic_connection_ids_local[1].token);
   }
 }
 
@@ -116,9 +119,7 @@ QUICAltConnectionManager::_generate_next_alt_con_info()
   }
 
   if (is_debug_tag_set(V_DEBUG_TAG)) {
-    char new_cid_str[QUICConnectionId::MAX_HEX_STR_LENGTH];
-    conn_id.hex(new_cid_str, QUICConnectionId::MAX_HEX_STR_LENGTH);
-    QUICACMVDebug("alt-cid=%s", new_cid_str);
+    QUICACMVDebug("alt-cid=%s", conn_id.hex().c_str());
   }
 
   return aci;
@@ -127,7 +128,7 @@ QUICAltConnectionManager::_generate_next_alt_con_info()
 void
 QUICAltConnectionManager::_init_alt_connection_ids()
 {
-  for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
+  for (int i = this->_alt_quic_connection_id_seq_num + 1; i < this->_remote_active_cid_limit; ++i) {
     this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
   }
   this->_need_advertise = true;
@@ -136,16 +137,6 @@ QUICAltConnectionManager::_init_alt_connection_ids()
 bool
 QUICAltConnectionManager::_update_alt_connection_id(uint64_t chosen_seq_num)
 {
-  // Seq 0 is special so it's not in the array
-  if (chosen_seq_num == 0) {
-    return true;
-  }
-
-  // Seq 1 is for Preferred Address
-  if (chosen_seq_num == 1) {
-    return true;
-  }
-
   for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
     if (this->_alt_quic_connection_ids_local[i].seq_num == chosen_seq_num) {
       this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
@@ -166,10 +157,17 @@ QUICAltConnectionManager::_register_remote_connection_id(const QUICNewConnection
     error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received zero-length cid",
                                                   QUICFrameType::NEW_CONNECTION_ID);
   } else {
-    int unused = std::count_if(this->_alt_quic_connection_ids_remote.begin(), this->_alt_quic_connection_ids_remote.end(),
-                               [](AltConnectionInfo info) { return info.used == false && info.seq_num != 1; });
+    int unused = 0;
+    for (auto &&x : this->_alt_quic_connection_ids_remote) {
+      if (x.seq_num == frame.sequence()) {
+        return error;
+      }
+      if (x.used == false && x.seq_num != 1) {
+        ++unused;
+      }
+    }
     if (unused > this->_local_active_cid_limit) {
-      error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received too many alt CIDs",
+      error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::CONNECTION_ID_LIMIT_ERROR, "received too many alt CIDs",
                                                     QUICFrameType::NEW_CONNECTION_ID);
     } else {
       this->_alt_quic_connection_ids_remote.push_back(
@@ -215,6 +213,7 @@ QUICAltConnectionManager::migrate_to_alt_cid()
       continue;
     }
     info.used = true;
+    this->_rtable.insert(info.token, this->_qc);
     return info.id;
   }
 
@@ -250,6 +249,7 @@ QUICAltConnectionManager::drop_cid(const QUICConnectionId &cid)
     if (it->id == cid) {
       QUICACMVDebug("Dropping advertized CID %" PRIx32 " seq# %" PRIu64, it->id.h32(), it->seq_num);
       this->_retired_seq_nums.push(it->seq_num);
+      this->_rtable.erase(it->token);
       this->_alt_quic_connection_ids_remote.erase(it);
       return;
     }

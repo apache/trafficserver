@@ -133,11 +133,34 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     ack_manager.update(level, 0, 1, false);
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
-    ack_manager.update(level, 1, 1, false);
+    ack_manager.update(level, 1, 1, true);
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
 
     ack_manager.update(level, 3, 1, false);
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
+  }
+
+  SECTION("QUIC every two ack eliciting packet", "[quic]")
+  {
+    QUICAckFrameManager ack_manager;
+    uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+    ack_manager.update(level, 0, 1, false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
+
+    ack_manager.update(level, 1, 1, false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
+
+    CHECK(ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0) != nullptr);
+
+    ack_manager.update(level, 2, 1, false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
+
+    ack_manager.update(level, 3, 1, false);
+    CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
+
+    CHECK(ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0) != nullptr);
   }
 
   SECTION("QUIC delay too much time", "[quic]")

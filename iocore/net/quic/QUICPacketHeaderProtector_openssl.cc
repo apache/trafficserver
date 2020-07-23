@@ -29,21 +29,28 @@ QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, 
   static constexpr unsigned char FIVE_ZEROS[] = {0x00, 0x00, 0x00, 0x00, 0x00};
   EVP_CIPHER_CTX *ctx                         = EVP_CIPHER_CTX_new();
 
-  if (!ctx || !EVP_EncryptInit_ex(ctx, cipher, nullptr, key, sample)) {
+  if (!ctx) {
+    return false;
+  }
+  if (!EVP_EncryptInit_ex(ctx, cipher, nullptr, key, sample)) {
+    EVP_CIPHER_CTX_free(ctx);
     return false;
   }
 
   int len = 0;
   if (cipher == EVP_chacha20()) {
     if (!EVP_EncryptUpdate(ctx, mask, &len, FIVE_ZEROS, sizeof(FIVE_ZEROS))) {
+      EVP_CIPHER_CTX_free(ctx);
       return false;
     }
   } else {
     if (!EVP_EncryptUpdate(ctx, mask, &len, sample, 16)) {
+      EVP_CIPHER_CTX_free(ctx);
       return false;
     }
   }
   if (!EVP_EncryptFinal_ex(ctx, mask + len, &len)) {
+    EVP_CIPHER_CTX_free(ctx);
     return false;
   }
 

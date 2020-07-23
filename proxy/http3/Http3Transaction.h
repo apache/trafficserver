@@ -34,6 +34,7 @@ class Http09Session;
 class Http3Session;
 class Http3HeaderFramer;
 class Http3DataFramer;
+class Http3StreamDataVIOAdaptor;
 
 class HQTransaction : public ProxyTransaction
 {
@@ -115,10 +116,10 @@ private:
   // These are for HTTP/3
   Http3FrameDispatcher _frame_dispatcher;
   Http3FrameCollector _frame_collector;
-  Http3FrameGenerator *_header_framer = nullptr;
-  Http3FrameGenerator *_data_framer   = nullptr;
-  Http3FrameHandler *_header_handler  = nullptr;
-  Http3FrameHandler *_data_handler    = nullptr;
+  Http3FrameGenerator *_header_framer      = nullptr;
+  Http3FrameGenerator *_data_framer        = nullptr;
+  Http3FrameHandler *_header_handler       = nullptr;
+  Http3StreamDataVIOAdaptor *_data_handler = nullptr;
 };
 
 /**

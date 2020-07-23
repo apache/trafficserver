@@ -45,27 +45,26 @@ class QUICPacketFactory
 public:
   static QUICPacketUPtr create_null_packet();
   static QUICPacketUPtr create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid);
-  static QUICPacketUPtr create_stateless_reset_packet(QUICConnectionId connection_id,
-                                                      QUICStatelessResetToken stateless_reset_token);
-  static QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                            QUICConnectionId original_dcid, QUICRetryToken &token);
+  static QUICPacketUPtr create_stateless_reset_packet(QUICStatelessResetToken stateless_reset_token, size_t maximum_size);
+  static QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, QUICRetryToken &token);
 
   QUICPacketFactory(const QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info), _pp_protector(pp_key_info) {}
 
-  QUICPacketUPtr create(UDPConnection *udp_con, IpEndpoint from, IpEndpoint to, ats_unique_buf buf, size_t len,
+  QUICPacketUPtr create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoint from, IpEndpoint to, ats_unique_buf buf, size_t len,
                         QUICPacketNumber base_packet_number, QUICPacketCreationResult &result);
-  QUICPacketUPtr create_initial_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                       QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len, bool ack_eliciting,
-                                       bool probing, bool crypto, ats_unique_buf token = ats_unique_buf(nullptr),
-                                       size_t token_len = 0);
-  QUICPacketUPtr create_handshake_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                         QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len,
+  QUICPacketUPtr create_initial_packet(uint8_t *packet_buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                       QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
+                                       bool ack_eliciting, bool probing, bool crypto,
+                                       ats_unique_buf token = ats_unique_buf(nullptr), size_t token_len = 0);
+  QUICPacketUPtr create_handshake_packet(uint8_t *packet_buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                         QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
                                          bool ack_eliciting, bool probing, bool crypto);
-  QUICPacketUPtr create_zero_rtt_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid,
-                                        QUICPacketNumber base_packet_number, ats_unique_buf payload, size_t len, bool ack_eliciting,
-                                        bool probing);
-  QUICPacketUPtr create_protected_packet(QUICConnectionId connection_id, QUICPacketNumber base_packet_number,
-                                         ats_unique_buf payload, size_t len, bool ack_eliciting, bool probing);
+  QUICPacketUPtr create_zero_rtt_packet(uint8_t *packet_buf, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                        QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
+                                        bool ack_eliciting, bool probing);
+  QUICPacketUPtr create_short_header_packet(uint8_t *packet_buf, QUICConnectionId destination_cid,
+                                            QUICPacketNumber base_packet_number, Ptr<IOBufferBlock> payload, size_t length,
+                                            bool ack_eliciting, bool probing);
   void set_version(QUICVersion negotiated_version);
 
   bool is_ready_to_create_protected_packet();
@@ -79,7 +78,4 @@ private:
 
   // Initial, 0/1-RTT, and Handshake
   QUICPacketNumberGenerator _packet_number_generator[3];
-
-  static QUICPacketUPtr _create_unprotected_packet(QUICPacketHeaderUPtr header);
-  QUICPacketUPtr _create_encrypted_packet(QUICPacketHeaderUPtr header, bool ack_eliciting, bool probing);
 };

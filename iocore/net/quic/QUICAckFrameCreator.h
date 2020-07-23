@@ -69,7 +69,7 @@ public:
     bool _available                         = false; // packet_number has data to sent
     bool _should_send                       = false; // ack frame should be sent immediately
     bool _has_new_data                      = false; // new data after last sent
-    size_t _size_unsend                     = 0;
+    uint32_t _ack_eliciting_count           = 0;     // every two ack-eliciting packet should send ack immediatly
     uint16_t _max_ack_delay                 = 25;
     QUICPacketNumber _largest_ack_number    = 0;
     QUICPacketNumber _expect_next           = 0;

@@ -46,7 +46,7 @@ public:
   void generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICConnectionId cid);
 
   void regenerate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, const uint8_t *secret, size_t secret_len,
-                  const QUIC_EVP_CIPHER *cipher, QUICHKDF &hkdf);
+                  const EVP_CIPHER *cipher, QUICHKDF &hkdf);
 
 private:
   Context _ctx = Context::SERVER;
@@ -55,15 +55,15 @@ private:
   size_t _last_secret_len = 0;
 
   int _generate(uint8_t *hp_key, uint8_t *pp_key, uint8_t *iv, size_t *iv_len, QUICHKDF &hkdf, const uint8_t *secret,
-                size_t secret_len, const QUIC_EVP_CIPHER *cipher);
+                size_t secret_len, const EVP_CIPHER *cipher);
   int _generate_initial_secret(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, QUICConnectionId cid, const char *label,
                                size_t label_len, size_t length);
   int _generate_key(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len,
                     size_t key_length) const;
   int _generate_iv(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t iv_length) const;
   int _generate_hp(uint8_t *out, size_t *out_len, QUICHKDF &hkdf, const uint8_t *secret, size_t secret_len, size_t hp_length) const;
-  size_t _get_key_len(const QUIC_EVP_CIPHER *cipher) const;
-  size_t _get_iv_len(const QUIC_EVP_CIPHER *cipher) const;
-  const QUIC_EVP_CIPHER *_get_cipher_for_initial() const;
-  const QUIC_EVP_CIPHER *_get_cipher_for_protected_packet(const SSL *ssl) const;
+  size_t _get_key_len(const EVP_CIPHER *cipher) const;
+  size_t _get_iv_len(const EVP_CIPHER *cipher) const;
+  const EVP_CIPHER *_get_cipher_for_initial() const;
+  const EVP_CIPHER *_get_cipher_for_protected_packet(const SSL *ssl) const;
 };

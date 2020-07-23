@@ -31,13 +31,15 @@
 #include "QUICFrame.h"
 #include "QUICStreamFactory.h"
 #include "QUICLossDetector.h"
+#include "QUICPathManager.h"
+#include "QUICContext.h"
 
 class QUICTransportParameters;
 
 class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
-  QUICStreamManager(QUICConnectionInfoProvider *info, QUICRTTProvider *rtt_provider, QUICApplicationMap *app_map);
+  QUICStreamManager(QUICContext *context, QUICApplicationMap *app_map);
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
@@ -82,7 +84,7 @@ private:
 
   QUICStreamFactory _stream_factory;
 
-  QUICConnectionInfoProvider *_info                           = nullptr;
+  QUICContext *_context                                       = nullptr;
   QUICApplicationMap *_app_map                                = nullptr;
   std::shared_ptr<const QUICTransportParameters> _local_tp    = nullptr;
   std::shared_ptr<const QUICTransportParameters> _remote_tp   = nullptr;
@@ -97,4 +99,6 @@ private:
     QUICEncryptionLevel::ZERO_RTT,
     QUICEncryptionLevel::ONE_RTT,
   };
+
+  uint64_t _stream_id_to_nth_stream(QUICStreamId stream_id);
 };

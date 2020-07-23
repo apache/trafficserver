@@ -32,9 +32,6 @@ struct PollCont;
 #include "P_UnixNet.h"
 #include "P_UnixNetVConnection.h"
 
-// depends on size of cert
-static constexpr uint32_t MAX_HANDSHAKE_MSG_LEN = 8192;
-
 #include "./server_cert.h"
 
 TEST_CASE("QUICPacketHeaderProtector")
@@ -127,6 +124,13 @@ TEST_CASE("QUICPacketHeaderProtector")
     QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
     QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
 
+    auto client_tp = std::make_shared<QUICTransportParametersInClientHello>();
+    auto server_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
+    client_tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, 10);
+    server_tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, 10);
+    client->set_local_transport_parameters(client_tp);
+    server->set_local_transport_parameters(server_tp);
+
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
     CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
 
@@ -135,41 +139,37 @@ TEST_CASE("QUICPacketHeaderProtector")
 
     // Handshake
     // CH
-    QUICHandshakeMsgs msg1;
-    uint8_t msg1_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
-    msg1.buf                                = msg1_buf;
-    msg1.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
+    QUICHandshakeMsgs msg0;
+    msg0.offsets[0] = 0;
+    msg0.offsets[1] = 0;
+    msg0.offsets[2] = 0;
+    msg0.offsets[3] = 0;
+    msg0.offsets[4] = 0;
 
-    REQUIRE(client->handshake(&msg1, nullptr) == 1);
+    QUICHandshakeMsgs *msg1 = nullptr;
+    REQUIRE(client->handshake(&msg1, &msg0) == 1);
+    REQUIRE(msg1);
 
     // SH, EE, CERT, CV, FIN
-    QUICHandshakeMsgs msg2;
-    uint8_t msg2_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
-    msg2.buf                                = msg2_buf;
-    msg2.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
-
-    REQUIRE(server->handshake(&msg2, &msg1) == 1);
+    QUICHandshakeMsgs *msg2 = nullptr;
+    REQUIRE(server->handshake(&msg2, msg1) == 1);
+    REQUIRE(msg2);
 
     // FIN
-    QUICHandshakeMsgs msg3;
-    uint8_t msg3_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
-    msg3.buf                                = msg3_buf;
-    msg3.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
+    QUICHandshakeMsgs *msg3 = nullptr;
 
-#ifdef SSL_MODE_QUIC_HACK
-    // -- Hacks for OpenSSL with SSL_MODE_QUIC_HACK --
     // SH
     QUICHandshakeMsgs msg2_1;
     uint8_t msg2_1_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
     msg2_1.buf                                = msg2_1_buf;
     msg2_1.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
 
-    memcpy(msg2_1.buf, msg2.buf, msg2.offsets[1]);
+    memcpy(msg2_1.buf, msg2->buf, msg2->offsets[1]);
     msg2_1.offsets[0] = 0;
-    msg2_1.offsets[1] = msg2.offsets[1];
-    msg2_1.offsets[2] = msg2.offsets[1];
-    msg2_1.offsets[3] = msg2.offsets[1];
-    msg2_1.offsets[4] = msg2.offsets[1];
+    msg2_1.offsets[1] = msg2->offsets[1];
+    msg2_1.offsets[2] = msg2->offsets[1];
+    msg2_1.offsets[3] = msg2->offsets[1];
+    msg2_1.offsets[4] = msg2->offsets[1];
 
     // EE - FIN
     QUICHandshakeMsgs msg2_2;
@@ -177,8 +177,8 @@ TEST_CASE("QUICPacketHeaderProtector")
     msg2_2.buf                                = msg2_2_buf;
     msg2_2.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
 
-    size_t len = msg2.offsets[3] - msg2.offsets[2];
-    memcpy(msg2_2.buf, msg2.buf + msg2.offsets[1], len);
+    size_t len = msg2->offsets[3] - msg2->offsets[2];
+    memcpy(msg2_2.buf, msg2->buf + msg2->offsets[1], len);
     msg2_2.offsets[0] = 0;
     msg2_2.offsets[1] = 0;
     msg2_2.offsets[2] = 0;
@@ -187,23 +187,16 @@ TEST_CASE("QUICPacketHeaderProtector")
 
     REQUIRE(client->handshake(&msg3, &msg2_1) == 1);
     REQUIRE(client->handshake(&msg3, &msg2_2) == 1);
-#else
-    REQUIRE(client->handshake(&msg3, &msg2) == 1);
-#endif
+    REQUIRE(msg3);
 
     // NS
-    QUICHandshakeMsgs msg4;
-    uint8_t msg4_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
-    msg4.buf                                = msg4_buf;
-    msg4.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
+    QUICHandshakeMsgs *msg4 = nullptr;
+    REQUIRE(server->handshake(&msg4, msg3) == 1);
+    REQUIRE(msg4);
 
-    REQUIRE(server->handshake(&msg4, &msg3) == 1);
-
-    QUICHandshakeMsgs msg5;
-    uint8_t msg5_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
-    msg5.buf                                = msg5_buf;
-    msg5.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
-    REQUIRE(client->handshake(&msg5, &msg4) == 1);
+    QUICHandshakeMsgs *msg5 = nullptr;
+    REQUIRE(client->handshake(&msg5, msg4) == 1);
+    REQUIRE(msg5 == nullptr);
 
     // ## Client -> Server
     REQUIRE(client_ph_protector.protect(tmp, sizeof(tmp), 18));

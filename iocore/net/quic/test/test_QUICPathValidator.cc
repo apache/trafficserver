@@ -95,7 +95,7 @@ TEST_CASE("QUICPathValidator", "[quic]")
       memcpy(buf + len, b->start(), b->size());
       len += b->size();
     }
-    MockQUICPacket mock_packet;
+    MockQUICPacketR mock_packet;
     auto received_frame = QUICFrameFactory::create(received_frame_buf, buf, len, &mock_packet);
     mock_packet.set_from(remote);
     mock_packet.set_to(local);

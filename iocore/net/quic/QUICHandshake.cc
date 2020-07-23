@@ -27,6 +27,7 @@
 
 #include "QUICEvents.h"
 #include "QUICGlobals.h"
+#include "QUICHandshakeProtocol.h"
 #include "QUICPacketFactory.h"
 #include "QUICVersionNegotiator.h"
 #include "QUICConfig.h"
@@ -80,8 +81,6 @@
   }
 
 static constexpr int UDP_MAXIMUM_PAYLOAD_SIZE = 65527;
-// TODO: fix size
-static constexpr int MAX_HANDSHAKE_MSG_LEN = 65527;
 
 QUICHandshake::QUICHandshake(QUICConnection *qc, QUICHandshakeProtocol *hsp) : QUICHandshake(qc, hsp, {}, false) {}
 
@@ -119,7 +118,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_fa
 }
 
 QUICConnectionErrorUPtr
-QUICHandshake::start(const QUICTPConfig &tp_config, const QUICPacket &initial_packet, QUICPacketFactory *packet_factory,
+QUICHandshake::start(const QUICTPConfig &tp_config, const QUICInitialPacketR &initial_packet, QUICPacketFactory *packet_factory,
                      const QUICPreferredAddress *pref_addr)
 {
   // Negotiate version
@@ -143,7 +142,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, const QUICPacket &initial_pa
 }
 
 QUICConnectionErrorUPtr
-QUICHandshake::negotiate_version(const QUICPacket &vn, QUICPacketFactory *packet_factory)
+QUICHandshake::negotiate_version(const QUICVersionNegotiationPacketR &vn, QUICPacketFactory *packet_factory)
 {
   // Client side only
   ink_assert(this->_qc->direction() == NET_VCONNECTION_OUT);
@@ -183,6 +182,16 @@ bool
 QUICHandshake::is_completed() const
 {
   return this->_hs_protocol->is_handshake_finished();
+}
+
+bool
+QUICHandshake::is_confirmed() const
+{
+  if (this->_qc->direction() == NET_VCONNECTION_IN) {
+    return this->is_completed();
+  } else {
+    return this->_is_handshake_done_received;
+  }
 }
 
 bool
@@ -298,6 +307,7 @@ QUICHandshake::interests()
 {
   return {
     QUICFrameType::CRYPTO,
+    QUICFrameType::HANDSHAKE_DONE,
   };
 }
 
@@ -308,8 +318,15 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
   switch (frame.type()) {
   case QUICFrameType::CRYPTO:
     error = this->_crypto_streams[static_cast<int>(level)].recv(static_cast<const QUICCryptoFrame &>(frame));
-    if (error != nullptr) {
-      return error;
+    if (error == nullptr) {
+      error = this->do_handshake();
+    }
+    break;
+  case QUICFrameType::HANDSHAKE_DONE:
+    if (this->_qc->direction() == NET_VCONNECTION_IN) {
+      error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);
+    } else {
+      this->_is_handshake_done_received = true;
     }
     break;
   default:
@@ -318,7 +335,7 @@ QUICHandshake::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame)
     break;
   }
 
-  return this->do_handshake();
+  return error;
 }
 
 bool
@@ -328,7 +345,8 @@ QUICHandshake::will_generate_frame(QUICEncryptionLevel level, size_t current_pac
     return false;
   }
 
-  return this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level, current_packet_size, ack_eliciting, seq_num);
+  return (this->_qc->direction() == NET_VCONNECTION_IN && !this->_is_handshake_done_sent) ||
+         this->_crypto_streams[static_cast<int>(level)].will_generate_frame(level, current_packet_size, ack_eliciting, seq_num);
 }
 
 QUICFrame *
@@ -338,8 +356,23 @@ QUICHandshake::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t 
   QUICFrame *frame = nullptr;
 
   if (this->_is_level_matched(level)) {
+    // CRYPTO
     frame = this->_crypto_streams[static_cast<int>(level)].generate_frame(buf, level, connection_credit, maximum_frame_size,
                                                                           current_packet_size, seq_num);
+    if (frame) {
+      return frame;
+    }
+  }
+
+  if (level == QUICEncryptionLevel::ONE_RTT) {
+    // HANDSHAKE_DONE
+    if (!this->_is_handshake_done_sent && this->is_completed()) {
+      frame = QUICFrameFactory::create_handshake_done_frame(buf, this->_issue_frame_id(), this);
+    }
+    if (frame) {
+      this->_is_handshake_done_sent = true;
+      return frame;
+    }
   }
 
   return frame;
@@ -351,7 +384,7 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
   QUICTransportParametersInEncryptedExtensions *tp = new QUICTransportParametersInEncryptedExtensions();
 
   // MUSTs
-  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
+  tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
   if (this->_stateless_retry) {
     tp->set(QUICTransportParameterId::ORIGINAL_CONNECTION_ID, this->_qc->first_connection_id(),
             this->_qc->first_connection_id().length());
@@ -376,6 +409,9 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
   if (tp_config.initial_max_stream_data_uni() != 0) {
     tp->set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_UNI, tp_config.initial_max_stream_data_uni());
   }
+  if (tp_config.disable_active_migration()) {
+    tp->set(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION, nullptr, 0);
+  }
   if (pref_addr != nullptr) {
     uint8_t pref_addr_buf[QUICPreferredAddress::MAX_LEN];
     uint16_t len;
@@ -392,6 +428,11 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
 
   tp->add_version(QUIC_SUPPORTED_VERSIONS[0]);
 
+  // Additional parameters
+  for (auto &&param : tp_config.additional_tp()) {
+    tp->set(param.first, param.second.first, param.second.second);
+  }
+
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(this->_local_transport_parameters);
 }
@@ -402,7 +443,7 @@ QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_co
   QUICTransportParametersInClientHello *tp = new QUICTransportParametersInClientHello();
 
   // MUSTs
-  tp->set(QUICTransportParameterId::IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
+  tp->set(QUICTransportParameterId::MAX_IDLE_TIMEOUT, static_cast<uint16_t>(tp_config.no_activity_timeout()));
 
   // MAYs
   if (tp_config.initial_max_data() != 0) {
@@ -426,6 +467,11 @@ QUICHandshake::_load_local_client_transport_parameters(const QUICTPConfig &tp_co
   tp->set(QUICTransportParameterId::ACK_DELAY_EXPONENT, tp_config.ack_delay_exponent());
   if (tp_config.active_cid_limit() != 0) {
     tp->set(QUICTransportParameterId::ACTIVE_CONNECTION_ID_LIMIT, tp_config.active_cid_limit());
+  }
+
+  // Additional parameters
+  for (auto &&param : tp_config.additional_tp()) {
+    tp->set(param.first, param.second.first, param.second.second);
   }
 
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
@@ -452,18 +498,13 @@ QUICHandshake::do_handshake()
       // TODO: check size
       if (bytes_avail > 0) {
         stream->read(in.buf + in.offsets[index], bytes_avail);
-        in.offsets[index] = bytes_avail;
-        in.offsets[4] += bytes_avail;
       }
+      in.offsets[index + 1] = in.offsets[index] + bytes_avail;
     }
   }
 
-  QUICHandshakeMsgs out;
-  uint8_t out_buf[MAX_HANDSHAKE_MSG_LEN] = {0};
-  out.buf                                = out_buf;
-  out.max_buf_len                        = MAX_HANDSHAKE_MSG_LEN;
-
-  int result = this->_hs_protocol->handshake(&out, &in);
+  QUICHandshakeMsgs *out = nullptr;
+  int result             = this->_hs_protocol->handshake(&out, &in);
   if (this->_remote_transport_parameters == nullptr) {
     if (!this->check_remote_transport_parameters()) {
       result = 0;
@@ -471,18 +512,25 @@ QUICHandshake::do_handshake()
   }
 
   if (result == 1) {
-    for (auto level : QUIC_ENCRYPTION_LEVELS) {
-      int index                = static_cast<int>(level);
-      QUICCryptoStream *stream = &this->_crypto_streams[index];
-      size_t len               = out.offsets[index + 1] - out.offsets[index];
-      // TODO: check size
-      if (len > 0) {
-        stream->write(out.buf + out.offsets[index], len);
+    if (out) {
+      for (auto level : QUIC_ENCRYPTION_LEVELS) {
+        int index                = static_cast<int>(level);
+        QUICCryptoStream *stream = &this->_crypto_streams[index];
+        size_t len               = out->offsets[index + 1] - out->offsets[index];
+        // TODO: check size
+        if (len > 0) {
+          stream->write(out->buf + out->offsets[index], len);
+        }
       }
     }
-  } else if (out.error_code != 0) {
+  } else {
     this->_hs_protocol->abort_handshake();
-    error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT, out.error_code);
+    if (this->_hs_protocol->has_crypto_error()) {
+      error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT, this->_hs_protocol->crypto_error());
+    } else {
+      error = std::make_unique<QUICConnectionError>(QUICErrorClass::TRANSPORT,
+                                                    static_cast<uint16_t>(QUICTransErrorCode::PROTOCOL_VIOLATION));
+    }
   }
 
   return error;
@@ -495,7 +543,7 @@ QUICHandshake::_abort_handshake(QUICTransErrorCode code)
 
   this->_hs_protocol->abort_handshake();
 
-  this->_qc->close(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
+  this->_qc->close_quic_connection(QUICConnectionErrorUPtr(new QUICConnectionError(code)));
 }
 
 /*
@@ -513,4 +561,11 @@ bool
 QUICHandshake::_is_level_matched(QUICEncryptionLevel level)
 {
   return true;
+}
+
+void
+QUICHandshake::_on_frame_lost(QUICFrameInformationUPtr &info)
+{
+  ink_assert(info->type == QUICFrameType::HANDSHAKE_DONE);
+  this->_is_handshake_done_sent = false;
 }
