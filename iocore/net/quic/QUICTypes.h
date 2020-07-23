@@ -520,6 +520,7 @@ private:
 class QUICTPConfig
 {
 public:
+  virtual ~QUICTPConfig()                                                                          = default; // required
   virtual uint32_t no_activity_timeout() const                                                     = 0;
   virtual const IpEndpoint *preferred_address_ipv4() const                                         = 0;
   virtual const IpEndpoint *preferred_address_ipv6() const                                         = 0;
