@@ -99,7 +99,6 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_tunnel_route,
                                                TS_forward_route,
                                                TS_partial_blind_route,
-                                               TS_verify_origin_server,
                                                TS_verify_server_policy,
                                                TS_verify_server_properties,
                                                TS_client_cert,
@@ -164,25 +163,6 @@ template <> struct convert<YamlSNIConfig::Item> {
       item.tunnel_destination = node[TS_partial_blind_route].as<std::string>();
       item.tunnel_decrypt     = true;
       item.tls_upstream       = true;
-    }
-
-    // remove before 9.0.0 release
-    // backwards compatibility
-    if (node[TS_verify_origin_server]) {
-      auto value                    = node[TS_verify_origin_server].as<std::string>();
-      YamlSNIConfig::Level level    = static_cast<YamlSNIConfig::Level>(LEVEL_DESCRIPTOR.get(value));
-      item.verify_server_properties = YamlSNIConfig::Property::ALL_MASK;
-      switch (level) {
-      case YamlSNIConfig::Level::NONE:
-        item.verify_server_policy = YamlSNIConfig::Policy::DISABLED;
-        break;
-      case YamlSNIConfig::Level::MODERATE:
-        item.verify_server_policy = YamlSNIConfig::Policy::PERMISSIVE;
-        break;
-      case YamlSNIConfig::Level::STRICT:
-        item.verify_server_policy = YamlSNIConfig::Policy::ENFORCED;
-        break;
-      }
     }
 
     if (node[TS_verify_server_policy]) {
