@@ -172,7 +172,6 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_SRV_ENABLED`                                    :ts:cv:`proxy.config.srv_enabled`
 :c:macro:`TS_CONFIG_SSL_CLIENT_CERT_FILENAME`                       :ts:cv:`proxy.config.ssl.client.cert.filename`
 :c:macro:`TS_CONFIG_SSL_CERT_FILEPATH`                              :ts:cv:`proxy.config.ssl.client.cert.path`
-:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER`                       :ts:cv:`proxy.config.ssl.client.verify.server`
 :c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES`            :ts:cv:`proxy.config.ssl.client.verify.server.properties`
 :c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY`                :ts:cv:`proxy.config.ssl.client.verify.server.policy`
 :c:macro:`TS_CONFIG_SSL_CLIENT_SNI_POLICY`                          :ts:cv:`proxy.config.ssl.client.sni_policy`
@@ -181,8 +180,6 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_URL_REMAP_PRISTINE_HOST_HDR`                    :ts:cv:`proxy.config.url_remap.pristine_host_hdr`
 :c:macro:`TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT`                       :ts:cv:`proxy.config.websocket.active_timeout`
 :c:macro:`TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT`                  :ts:cv:`proxy.config.websocket.no_activity_timeout`
-:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY`                :ts:cv:`proxy.config.ssl.client.verify.server.policy`
-:c:macro:`TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES`            :ts:cv:`proxy.config.ssl.client.verify.server.properties`
 :c:macro:`TS_CONFIG_SSL_CLIENT_CERT_FILENAME`                       :ts:cv:`proxy.config.ssl.client.cert.filename`
 :c:macro:`TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME`                :ts:cv:`proxy.config.ssl.client.private_key.filename`
 :c:macro:`TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME`                    :ts:cv:`proxy.config.ssl.client.CA.cert.filename`

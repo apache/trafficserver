@@ -3533,22 +3533,6 @@ Client-Related Configuration
 :code:`ALL`
    Check both the signature and the name.
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server INT 0
-   :reloadable:
-   :deprecated:
-
-   This setting has been deprecated and :ts:cv:`proxy.config.ssl.client.verify.server.policy` and
-   :ts:cv:`proxy.config.ssl.client.verify.server.properties` should be used instead.
-
-   Configures |TS| to verify the origin server certificate
-   with the Certificate Authority (CA). This configuration takes a value between 0 to 2.
-
-   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_origin_server attribute<override-verify-origin-server>`.
-
-   :0: Server Certificate will not be verified
-   :1: Certificate will be verified and the connection will not be established if verification fail
-   :2: The provided certificate will be verified and the connection will be established
-
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
    :reloadable:
    :overridable:
