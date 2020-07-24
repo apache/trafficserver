@@ -38,6 +38,7 @@
 #include <openssl/err.h>
 #include <sys/time.h>
 #include <sys/select.h>
+#include <errno.h>
 
 char req_buf[10000];
 char post_buf[1000];
@@ -81,7 +82,7 @@ run_session(void *arg)
   SSL *ssl = SSL_new(svr_ctx);
   if (ssl == NULL) {
     fprintf(stderr, "Failed to create ssl\n");
-    exit(1);
+    return nullptr;
   }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -99,55 +100,19 @@ run_session(void *arg)
     sleep(connect_delay);
   }
   int did_accept = 0;
-  struct timeval timeout;
-  fd_set read_fd, write_fd, except_fd;
 
   int ret = SSL_accept(ssl);
-  while (ret < 0) {
-    timeout.tv_sec  = 1;
-    timeout.tv_usec = 0;
-    FD_ZERO(&read_fd);
-    FD_ZERO(&write_fd);
-    FD_ZERO(&except_fd);
-    FD_SET(sfd, &read_fd);
-    FD_SET(sfd, &write_fd);
-    FD_SET(sfd, &except_fd);
-    int select_r;
-    if ((select_r = select(sfd + 1, &read_fd, &write_fd, &except_fd, &timeout)) < 0) {
-      perror("Select failed");
-      exit(1);
-    }
-    if (select_r > 0) {
-      if (FD_ISSET(sfd, &except_fd)) {
-        fprintf(stderr, "Socket failed\n");
-        break;
-      }
-      if (FD_ISSET(sfd, &read_fd)) {
-        ret = SSL_accept(ssl);
-      } else if (FD_ISSET(sfd, &write_fd)) {
-        ret = SSL_connect(ssl);
-      }
-    } else {
-      fprintf(stderr, "Select timeout %ld\n", time(NULL));
-    }
-  }
 
   if (!did_accept && ret == 1) {
     did_accept = 1;
     fprintf(stderr, "Done accept\n");
   } else {
-    fprintf(stderr, "Failed accept\n");
-    exit(1);
+    int ssl_err = SSL_get_error(ssl, ret);
+    fprintf(stderr, "Failed accept ssl_error=%d errno=%d\n", ssl_err, errno);
+    return nullptr;
   }
 
   if (did_accept) {
-    int opt = fcntl(sfd, F_GETFL);
-    opt     = opt & ~O_NONBLOCK;
-    if (fcntl(sfd, F_SETFL, opt) < 0) {
-      perror("Failed to set block");
-      exit(1);
-    }
-
     ret = SSL_read(ssl, input_buf, sizeof(input_buf));
     if (ret < 0) {
       // Failure
@@ -242,10 +207,6 @@ main(int argc, char *argv[])
     }
 
     fprintf(stderr, "Spawn off new sesson thread %d\n", sfd);
-
-    if (fcntl(sfd, F_SETFL, O_NONBLOCK) < 0) {
-      perror("Failed to set non-blocking");
-    }
 
     // Spawn off new thread
     pthread_t thread_id;
