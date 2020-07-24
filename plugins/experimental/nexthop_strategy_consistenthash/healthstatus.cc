@@ -60,7 +60,9 @@ void
 NextHopHealthStatus::markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, const time_t now)
 {
   const time_t _now = now == 0 ? time(nullptr) : now;
-  TSParentResult* result = TSHttpTxnParentResultGet(txnp);
+  TSParentResult result_obj;
+  TSParentResult *result = &result_obj;
+  TSHttpTxnParentResultGet(txnp, result);
   const int64_t sm_id    = TSHttpTxnIdGet(txnp);
 
   int64_t fail_threshold; //  = sm->t_state.txn_conf->parent_fail_threshold;

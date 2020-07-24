@@ -224,10 +224,11 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, TSMBuffer reqp, TSMLoc url, TS
   return h->get();
 }
 
-static void setParentResultErr(TSParentResult *result) {
+static void setParentResultErr(TSHttpTxn txnp, TSParentResult *result) {
   result->hostname = nullptr;
   result->port     = 0;
   result->retry    = false;
+  TSHttpTxnParentResultSet(txnp, result);
 }
 
 void
@@ -235,7 +236,10 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
 {
   NH_Debug(NH_DEBUG_TAG, "NH plugin findNexthop calling");
 
-  TSParentResult* result = TSHttpTxnParentResultGet(txnp);
+  TSParentResult result_obj;
+  TSParentResult *result = &result_obj;
+  TSHttpTxnParentResultGet(txnp, result);
+
   int64_t sm_id  = TSHttpTxnIdGet(txnp);
 
   TSMBuffer reqp; // TODO verify doesn't need freed
@@ -243,7 +247,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
   TSMLoc hdr;
   ScopedFreeMLoc hdr_cleanup(&reqp, TS_NULL_MLOC, &hdr);
   if (TSHttpTxnClientReqGet(txnp, &reqp, &hdr) == TS_ERROR) {
-    setParentResultErr(result);
+    setParentResultErr(txnp, result);
     return;
   }
 
@@ -251,7 +255,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
   ScopedFreeMLoc parent_selection_url_cleanup(&reqp, TS_NULL_MLOC, &parent_selection_url);
   if (TSUrlCreate(reqp, &parent_selection_url) != TS_SUCCESS) {
     NH_Error("nexthop failed to create url for parent_selection_url");
-    setParentResultErr(result);
+    setParentResultErr(txnp, result);
     return;
   }
   if (TSHttpTxnParentSelectionUrlGet(txnp, reqp, parent_selection_url) != TS_SUCCESS) {
@@ -262,7 +266,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
   ScopedFreeMLoc url_cleanup(&reqp, hdr, &url);
   if (TSHttpHdrUrlGet(reqp, hdr, &url) != TS_SUCCESS) {
     NH_Error("failed to get header url, cannot find next hop");
-    setParentResultErr(result);
+    setParentResultErr(txnp, result);
     return;
   }
 
@@ -273,7 +277,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
   if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME, &retry_time) != TS_SUCCESS) {
     // TODO get and cache on init, to prevent potential runtime failure?
     NH_Error("failed to get parent retry time, cannot find next hop");
-    setParentResultErr(result);
+    setParentResultErr(txnp, result);
     return;
   }
 
@@ -473,4 +477,6 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
     result->retry    = false;
     NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result->result: %s set hostname null port 0 retry false", sm_id, ParentResultStr[result->result]);
   }
+
+  TSHttpTxnParentResultSet(txnp, result);
 }

@@ -2633,11 +2633,13 @@ struct TSParentResult;
 
 /*
  * Gets the Transaction Parent Result pointer.
- * Note this is the actual pointer inside the TSHttpTxn.
- * It MUST NOT be freed. The data it points to may be modified.
  */
-struct TSParentResult*
-TSHttpTxnParentResultGet(TSHttpTxn txnp);
+void TSHttpTxnParentResultGet(TSHttpTxn txnp, struct TSParentResult* result);
+
+/*
+* Sets the Transaction Parent Result pointer.
+*/
+void TSHttpTxnParentResultSet(TSHttpTxn txnp, struct TSParentResult* result);
 
 #ifdef __cplusplus
 }

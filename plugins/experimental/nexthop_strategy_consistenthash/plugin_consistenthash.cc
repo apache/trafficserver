@@ -85,16 +85,16 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   // TODO add ATS API Version check here, to bail if ATS doesn't support the version necessary for strategy plugins
 
-  // if (!api_info) {
-  //   strncpy(errbuf, "[tsstrategy_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
-  //   return TS_ERROR;
-  // }
+  if (!api_info) {
+    strncpy(errbuf, "[tsstrategy_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
+    return TS_ERROR;
+  }
 
-  // if (api_info->tsremap_version < TSREMAP_VERSION) {
-  //   snprintf(errbuf, errbuf_size, "[TSStrategyInit] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
-  //            (api_info->tsremap_version & 0xffff));
-  //   return TS_ERROR;
-  // }
+  if (api_info->tsremap_version < TSREMAP_VERSION) {
+    snprintf(errbuf, errbuf_size, "[TSStrategyInit] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
+             (api_info->tsremap_version & 0xffff));
+    return TS_ERROR;
+  }
 
   NH_Debug(NH_DEBUG_TAG, "%s is successfully initialized.", PLUGIN_NAME);
   return TS_SUCCESS;

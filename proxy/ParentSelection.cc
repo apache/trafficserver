@@ -109,14 +109,14 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
   // Check to see if the parent was set through the
   //   api
   if (apiParentExists(rdata)) {
-    result->ts_result.result       = PARENT_SPECIFIED;
-    result->ts_result.hostname     = rdata->api_info->parent_proxy_name;
-    result->ts_result.port         = rdata->api_info->parent_proxy_port;
+    result->result       = PARENT_SPECIFIED;
+    result->hostname     = rdata->api_info->parent_proxy_name;
+    result->port         = rdata->api_info->parent_proxy_port;
     result->rec          = extApiRecord;
-    result->ts_result.start_parent = 0;
-    result->ts_result.last_parent  = 0;
+    result->start_parent = 0;
+    result->last_parent  = 0;
 
-    Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->ts_result.hostname, result->ts_result.port);
+    Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->hostname, result->port);
     return;
   }
 
@@ -133,7 +133,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     if (defaultPtr != nullptr) {
       rec = result->rec = defaultPtr;
     } else {
-      result->ts_result.result = PARENT_DIRECT;
+      result->result = PARENT_DIRECT;
       Debug("parent_select", "Returning PARENT_DIRECT (no parents were found)");
       return;
     }
@@ -145,21 +145,21 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
 
   const char *host = rdata->get_host();
 
-  switch (result->ts_result.result) {
+  switch (result->result) {
   case PARENT_UNDEFINED:
     Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->ts_result.result]);
+    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_FAIL:
     Debug("parent_select", "PARENT_FAIL");
     break;
   case PARENT_DIRECT:
     Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->ts_result.result]);
+    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_SPECIFIED:
     Debug("parent_select", "PARENT_SPECIFIED");
-    Debug("parent_select", "Result for %s was parent %s:%d", host, result->ts_result.hostname, result->ts_result.port);
+    Debug("parent_select", "Result for %s was parent %s:%d", host, result->hostname, result->port);
     break;
   default:
     // Handled here:
@@ -177,19 +177,19 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 
   //  Make sure that we are being called back with a
   //   result structure with a parent
-  ink_assert(result->ts_result.result == PARENT_SPECIFIED);
-  if (result->ts_result.result != PARENT_SPECIFIED) {
-    result->ts_result.result = PARENT_FAIL;
+  ink_assert(result->result == PARENT_SPECIFIED);
+  if (result->result != PARENT_SPECIFIED) {
+    result->result = PARENT_FAIL;
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
   if (result->is_api_result()) {
-    Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->ts_result.result]);
-    result->ts_result.result = PARENT_FAIL;
+    Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->result]);
+    result->result = PARENT_FAIL;
     return;
   }
-  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->ts_result.result, tablePtr);
+  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->result, tablePtr);
 
   // Find the next parent in the array
   Debug("parent_select", "Calling selectParent() from nextParent");
@@ -197,21 +197,21 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result, uns
 
   const char *host = rdata->get_host();
 
-  switch (result->ts_result.result) {
+  switch (result->result) {
   case PARENT_UNDEFINED:
     Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->ts_result.result]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_FAIL:
     Debug("parent_select", "PARENT_FAIL");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->ts_result.result]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_DIRECT:
     Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->ts_result.result]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_SPECIFIED:
-    Debug("parent_select", "Retry result for %s was parent %s:%d", host, result->ts_result.hostname, result->ts_result.port);
+    Debug("parent_select", "Retry result for %s was parent %s:%d", host, result->hostname, result->port);
     break;
   default:
     // Handled here:
@@ -841,9 +841,9 @@ ParentRecord::Init(matcher_line *line_info)
 void
 ParentRecord::UpdateMatch(ParentResult *result, RequestData *rdata)
 {
-  if (this->CheckForMatch((HttpRequestData *)rdata, result->ts_result.line_number) == true) {
+  if (this->CheckForMatch((HttpRequestData *)rdata, result->line_number) == true) {
     result->rec         = this;
-    result->ts_result.line_number = this->line_num;
+    result->line_number = this->line_num;
 
     Debug("parent_select", "Matched with %p parent node from line %d", this, this->line_num);
   }
@@ -1842,7 +1842,7 @@ verify(ParentResult *r, TSParentResultType e, const char *h, int p)
   if (is_debug_tag_set("parent_select")) {
     show_result(r);
   }
-  return (r->ts_result.result != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->ts_result.hostname, h) ? 0 : ((r->ts_result.port == p) ? 1 : 0)));
+  return (r->result != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));
 }
 
 // br creates an HttpRequestData object
@@ -1864,7 +1864,7 @@ br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
 void
 show_result(ParentResult *p)
 {
-  switch (p->ts_result.result) {
+  switch (p->result) {
   case PARENT_UNDEFINED:
     printf("result is PARENT_UNDEFINED\n");
     break;
@@ -1873,8 +1873,8 @@ show_result(ParentResult *p)
     break;
   case PARENT_SPECIFIED:
     printf("result is PARENT_SPECIFIED\n");
-    printf("hostname is %s\n", p->ts_result.hostname);
-    printf("port is %d\n", p->ts_result.port);
+    printf("hostname is %s\n", p->hostname);
+    printf("port is %d\n", p->port);
     break;
   case PARENT_FAIL:
     printf("result is PARENT_FAIL\n");
@@ -1883,5 +1883,47 @@ show_result(ParentResult *p)
     // Handled here:
     // PARENT_AGENT
     break;
+  }
+}
+
+void
+ParentResult::copyFrom(TSParentResult *r)
+{
+  this->hostname = r->hostname;
+  this->port = r->port;
+  this->retry = r->retry;
+  this->result = r->result;
+  memcpy(this->chash_init, r->chash_init, TS_MAX_GROUP_RINGS*sizeof(bool));
+  this->first_choice_status = r->first_choice_status;
+  this->line_number = r->line_number;
+  this->last_parent = r->last_parent;
+  this->start_parent = r->start_parent;
+  this->last_group = r->last_group;
+  this->wrap_around = r->wrap_around;
+  memcpy(this->mapWrapped, r->mapWrapped, 2*sizeof(bool));
+  this->last_lookup = r->last_lookup;
+  for (int i = 0; i < TS_MAX_GROUP_RINGS; ++i) {
+    this->chashIter[i] = r->chashIter[i];
+  }
+}
+
+void
+ParentResult::copyTo(TSParentResult *r)
+{
+  r->hostname = this->hostname;
+  r->port = this->port;
+  r->retry = this->retry;
+  r->result = this->result;
+  memcpy(r->chash_init, this->chash_init, TS_MAX_GROUP_RINGS*sizeof(bool));
+  r->first_choice_status = this->first_choice_status;
+  r->line_number = this->line_number;
+  r->last_parent = this->last_parent;
+  r->start_parent = this->start_parent;
+  r->last_group = this->last_group;
+  r->wrap_around = this->wrap_around;
+  memcpy(r->mapWrapped, this->mapWrapped, 2*sizeof(bool));
+  r->last_lookup = this->last_lookup;
+  for (int i = 0; i < TS_MAX_GROUP_RINGS; ++i) {
+    r->chashIter[i] = this->chashIter[i];
   }
 }

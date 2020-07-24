@@ -37,15 +37,12 @@ struct TSParentResult {
   TSParentResultType result;
   bool chash_init[TS_MAX_GROUP_RINGS] = {false};
   TSHostStatus first_choice_status = TSHostStatus::TS_HOST_STATUS_INIT;
-  // Internal use only
-  //   Not to be modified by HTTP
   int line_number;
   uint32_t last_parent;
   uint32_t start_parent;
   uint32_t last_group;
   bool wrap_around;
   bool mapWrapped[2];
-  // state for consistent hash.
   int last_lookup;
   ATSConsistentHashIter chashIter[TS_MAX_GROUP_RINGS];
 };

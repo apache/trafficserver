@@ -76,13 +76,13 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       ink_assert(result->rec->go_direct == true);
       // Could not find a parent
       if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-        result->ts_result.result = PARENT_DIRECT;
+        result->result = PARENT_DIRECT;
       } else {
-        result->ts_result.result = PARENT_FAIL;
+        result->result = PARENT_FAIL;
       }
 
-      result->ts_result.hostname = nullptr;
-      result->ts_result.port     = 0;
+      result->hostname = nullptr;
+      result->port     = 0;
       return;
     } else {
       switch (round_robin_type) {
@@ -93,20 +93,20 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         // preserved for now anyway as ats_ip_hash returns the 32-bit address in
         // that case.
         if (rdata->get_client_ip() != nullptr) {
-          cur_index = result->ts_result.start_parent = ntohl(ats_ip_hash(rdata->get_client_ip())) % num_parents;
+          cur_index = result->start_parent = ntohl(ats_ip_hash(rdata->get_client_ip())) % num_parents;
         } else {
           cur_index = 0;
         }
         break;
       case P_STRICT_ROUND_ROBIN:
-        cur_index = result->ts_result.start_parent =
+        cur_index = result->start_parent =
           ink_atomic_increment(reinterpret_cast<uint32_t *>(&result->rec->rr_next), 1) % num_parents;
         break;
       case P_NO_ROUND_ROBIN:
-        cur_index = result->ts_result.start_parent = 0;
+        cur_index = result->start_parent = 0;
         break;
       case P_LATCHED_ROUND_ROBIN:
-        cur_index = result->ts_result.start_parent = latched_parent;
+        cur_index = result->start_parent = latched_parent;
         break;
       default:
         ink_release_assert(0);
@@ -114,20 +114,20 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
     }
   } else {
     // Move to next parent due to failure
-    latched_parent = cur_index = (result->ts_result.last_parent + 1) % num_parents;
+    latched_parent = cur_index = (result->last_parent + 1) % num_parents;
 
     // Check to see if we have wrapped around
-    if (static_cast<unsigned int>(cur_index) == result->ts_result.start_parent) {
+    if (static_cast<unsigned int>(cur_index) == result->start_parent) {
       // We've wrapped around so bypass if we can
       if (result->rec->go_direct == true) {
         // Could not find a parent
         if (result->rec->parent_is_proxy == true) {
-          result->ts_result.result = PARENT_DIRECT;
+          result->result = PARENT_DIRECT;
         } else {
-          result->ts_result.result = PARENT_FAIL;
+          result->result = PARENT_FAIL;
         }
-        result->ts_result.hostname = nullptr;
-        result->ts_result.port     = 0;
+        result->hostname = nullptr;
+        result->port     = 0;
         return;
       }
     }
@@ -145,7 +145,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         host_stat = TS_HOST_STATUS_UP;
       }
     }
-    Debug("parent_select", "cur_index: %d, result->ts_result.start_parent: %d", cur_index, result->ts_result.start_parent);
+    Debug("parent_select", "cur_index: %d, result->start_parent: %d", cur_index, result->start_parent);
     // DNS ParentOnly inhibits bypassing the parent so always return that t
     if ((parents[cur_index].failedAt == 0) || (parents[cur_index].failCount < static_cast<int>(fail_threshold))) {
       if (host_stat == TS_HOST_STATUS_UP) {
@@ -155,10 +155,10 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         parentUp = true;
       }
     } else {
-      if ((result->ts_result.wrap_around) ||
+      if ((result->wrap_around) ||
           ((parents[cur_index].failedAt + retry_time) < request_info->xact_start && host_stat == TS_HOST_STATUS_UP)) {
         Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u,xact_start = %" PRId64 " but wrap = %d", cur_index,
-              (unsigned)parents[cur_index].failedAt, retry_time, (int64_t)request_info->xact_start, result->ts_result.wrap_around);
+              (unsigned)parents[cur_index].failedAt, retry_time, (int64_t)request_info->xact_start, result->wrap_around);
         // Reuse the parent
         parentUp    = true;
         parentRetry = true;
@@ -170,27 +170,27 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
 
     if (parentUp == true && host_stat != TS_HOST_STATUS_DOWN) {
       Debug("parent_select", "status for %s: %d", parents[cur_index].hostname, host_stat);
-      result->ts_result.result      = PARENT_SPECIFIED;
-      result->ts_result.hostname    = parents[cur_index].hostname;
-      result->ts_result.port        = parents[cur_index].port;
-      result->ts_result.last_parent = cur_index;
-      result->ts_result.retry       = parentRetry;
-      ink_assert(result->ts_result.hostname != nullptr);
-      ink_assert(result->ts_result.port != 0);
-      Debug("parent_select", "Chosen parent = %s.%d", result->ts_result.hostname, result->ts_result.port);
+      result->result      = PARENT_SPECIFIED;
+      result->hostname    = parents[cur_index].hostname;
+      result->port        = parents[cur_index].port;
+      result->last_parent = cur_index;
+      result->retry       = parentRetry;
+      ink_assert(result->hostname != nullptr);
+      ink_assert(result->port != 0);
+      Debug("parent_select", "Chosen parent = %s.%d", result->hostname, result->port);
       return;
     }
     latched_parent = cur_index = (cur_index + 1) % num_parents;
-  } while (static_cast<unsigned int>(cur_index) != result->ts_result.start_parent);
+  } while (static_cast<unsigned int>(cur_index) != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-    result->ts_result.result = PARENT_DIRECT;
+    result->result = PARENT_DIRECT;
   } else {
-    result->ts_result.result = PARENT_FAIL;
+    result->result = PARENT_FAIL;
   }
 
-  result->ts_result.hostname = nullptr;
-  result->ts_result.port     = 0;
+  result->hostname = nullptr;
+  result->port     = 0;
 }
 
 uint32_t

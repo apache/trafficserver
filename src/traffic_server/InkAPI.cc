@@ -9938,13 +9938,22 @@ TSHostStatusSet(const char *hostname, TSHostStatus status, const unsigned int do
   HostStatus::instance().setHostStatus(hostname, status, down_time, reason);
 }
 
-TSParentResult*
-TSHttpTxnParentResultGet(TSHttpTxn txnp)
+void
+TSHttpTxnParentResultGet(TSHttpTxn txnp, TSParentResult* result)
 {
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  ParentResult *result = &sm->t_state.parent_result;
-  return &result->ts_result;
+  ParentResult *sm_result = &sm->t_state.parent_result;
+  sm_result->copyTo(result);
 }
+
+void
+TSHttpTxnParentResultSet(TSHttpTxn txnp, TSParentResult* result)
+{
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  ParentResult *sm_result = &sm->t_state.parent_result;
+  sm_result->copyFrom(result);
+}
+
 
 namespace
 {

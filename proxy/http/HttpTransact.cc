@@ -196,7 +196,7 @@ markParentDown(HttpTransact::State *s)
   url_mapping *mp = s->url_map.getMapping();
 
   if (mp && mp->strategy) {
-    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.ts_result.hostname, s->parent_result.ts_result.port, NH_MARK_DOWN);
+    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port, NH_MARK_DOWN);
   } else if (s->parent_params) {
     return s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
   }
@@ -209,7 +209,7 @@ markParentUp(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
-    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.ts_result.hostname, s->parent_result.ts_result.port, NH_MARK_UP);
+    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port, NH_MARK_UP);
   } else if (s->parent_params) {
     return s->parent_params->markParentUp(&s->parent_result);
   }
@@ -533,16 +533,16 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
     TxnDebug("http_trans", "request is from localhost, so bypass parent");
-    s->parent_result.ts_result.result = PARENT_DIRECT;
+    s->parent_result.result = PARENT_DIRECT;
   } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
-    if (s->parent_result.ts_result.result == PARENT_SPECIFIED) {
+    if (s->parent_result.result == PARENT_SPECIFIED) {
       nextParent(s);
     } else {
       findParent(s);
     }
     if (!s->parent_result.is_some() || is_api_result(s) || parent_is_proxy(s)) {
       TxnDebug("http_trans", "request not cacheable, so bypass parent");
-      s->parent_result.ts_result.result = PARENT_DIRECT;
+      s->parent_result.result = PARENT_DIRECT;
     }
   } else if (s->txn_conf->uncacheable_requests_bypass_parent && s->http_config_param->no_dns_forward_to_parent == 0 &&
              !HttpTransact::is_request_cache_lookupable(s)) {
@@ -552,17 +552,17 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // we are assuming both child and parent have similar configuration
     // with respect to whether a request is cacheable or not.
     // For example, the cache_urls_that_look_dynamic variable.
-    if (s->parent_result.ts_result.result == PARENT_SPECIFIED) {
+    if (s->parent_result.result == PARENT_SPECIFIED) {
       nextParent(s);
     } else {
       findParent(s);
     }
     if (!s->parent_result.is_some() || is_api_result(s) || parent_is_proxy(s)) {
       TxnDebug("http_trans", "request not cacheable, so bypass parent");
-      s->parent_result.ts_result.result = PARENT_DIRECT;
+      s->parent_result.result = PARENT_DIRECT;
     }
   } else {
-    switch (s->parent_result.ts_result.result) {
+    switch (s->parent_result.result) {
     case PARENT_UNDEFINED:
       findParent(s);
       break;
@@ -573,9 +573,9 @@ find_server_and_update_current_info(HttpTransact::State *s)
       // We already have a parent that failed, if we are now told
       //  to go the origin server, we can only obey this if we
       //  dns'ed the origin server
-      if (s->parent_result.ts_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 0) {
+      if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 0) {
         ink_assert(!s->server_info.dst_addr.isValid());
-        s->parent_result.ts_result.result = PARENT_FAIL;
+        s->parent_result.result = PARENT_FAIL;
       }
       break;
     case PARENT_FAIL:
@@ -586,7 +586,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       //   3) the parent was not set from API
       if (s->http_config_param->no_dns_forward_to_parent == 0 && bypass_ok(s) && parent_is_proxy(s) &&
           !s->parent_params->apiParentExists(&s->request_data)) {
-        s->parent_result.ts_result.result = PARENT_DIRECT;
+        s->parent_result.result = PARENT_DIRECT;
       }
       break;
     default:
@@ -600,9 +600,9 @@ find_server_and_update_current_info(HttpTransact::State *s)
     }
   }
 
-  switch (s->parent_result.ts_result.result) {
+  switch (s->parent_result.result) {
   case PARENT_SPECIFIED:
-    s->parent_info.name = s->arena.str_store(s->parent_result.ts_result.hostname, strlen(s->parent_result.ts_result.hostname));
+    s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
     update_current_info(&s->current, &s->parent_info, HttpTransact::PARENT_PROXY, (s->current.attempts)++);
     update_dns_info(&s->dns_info, &s->current);
     ink_assert(s->dns_info.looking_up == HttpTransact::PARENT_PROXY);
@@ -619,7 +619,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // we're unable to go direct to the origin.
     if (s->http_config_param->no_dns_forward_to_parent) {
       Warning("no available parents and the config proxy.config.http.no_dns_just_forward_to_parent, prevents origin lookups.");
-      s->parent_result.ts_result.result = PARENT_FAIL;
+      s->parent_result.result = PARENT_FAIL;
       return HttpTransact::HOST_NONE;
     }
   /* fall through */
@@ -1731,7 +1731,7 @@ HttpTransact::PPDNSLookup(State *s)
     if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
-      } else if (s->parent_result.ts_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
+      } else if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
         // We ran out of parents but parent configuration allows us to go to Origin Server directly
         return CallOSDNSLookup(s);
       } else {
@@ -1744,7 +1744,7 @@ HttpTransact::PPDNSLookup(State *s)
   } else {
     // lookup succeeded, open connection to p.p.
     ats_ip_copy(&s->parent_info.dst_addr, s->host_db_info.ip());
-    s->parent_info.dst_addr.port() = htons(s->parent_result.ts_result.port);
+    s->parent_info.dst_addr.port() = htons(s->parent_result.port);
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
 
     char addrbuf[INET6_ADDRSTRLEN];
@@ -2147,7 +2147,7 @@ HttpTransact::LookupSkipOpenServer(State *s)
 
   if (s->current.request_to == PARENT_PROXY) {
     TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
-  } else if (s->parent_result.ts_result.result == PARENT_FAIL) {
+  } else if (s->parent_result.result == PARENT_FAIL) {
     handle_parent_died(s);
     return;
   }
@@ -2831,7 +2831,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     }
     // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
     // there are no available parents (all down).
-    else if (s->current.request_to == HOST_NONE && s->parent_result.ts_result.result == PARENT_FAIL) {
+    else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
       if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
         server_up = false;
         update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
@@ -3273,14 +3273,14 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     find_server_and_update_current_info(s);
     // a parent lookup could come back as PARENT_FAIL if in parent.config go_direct == false and
     // there are no available parents (all down).
-    if (s->parent_result.ts_result.result == PARENT_FAIL) {
+    if (s->parent_result.result == PARENT_FAIL) {
       handle_parent_died(s);
       return;
     }
     if (!s->current.server->dst_addr.isValid()) {
-      ink_release_assert(s->parent_result.ts_result.result == PARENT_DIRECT || s->current.request_to == PARENT_PROXY ||
+      ink_release_assert(s->parent_result.result == PARENT_DIRECT || s->current.request_to == PARENT_PROXY ||
                          s->http_config_param->no_dns_forward_to_parent != 0);
-      if (s->parent_result.ts_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
+      if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
         return CallOSDNSLookup(s);
       }
       if (s->current.request_to == PARENT_PROXY) {
@@ -3548,7 +3548,7 @@ HttpTransact::handle_response_from_parent(State *s)
     TxnDebug("http_trans", "[hrfp] connection alive");
     s->current.server->connect_result = 0;
     SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_SUCCESS);
-    if (s->parent_result.ts_result.retry) {
+    if (s->parent_result.retry) {
       markParentUp(s);
     }
     handle_forward_server_connection_open(s);
@@ -3585,7 +3585,7 @@ HttpTransact::handle_response_from_parent(State *s)
       if (s->current.state != OUTBOUND_CONGESTION) {
         markParentDown(s);
       }
-      s->parent_result.ts_result.result = PARENT_FAIL;
+      s->parent_result.result = PARENT_FAIL;
       handle_parent_died(s);
       return;
     }
@@ -3623,7 +3623,7 @@ HttpTransact::handle_response_from_parent(State *s)
       if (s->current.state == CONNECTION_ERROR) {
         markParentDown(s);
       }
-      s->parent_result.ts_result.result = PARENT_FAIL;
+      s->parent_result.result = PARENT_FAIL;
       next_lookup             = HOST_NONE;
     }
     break;
@@ -7451,7 +7451,7 @@ HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr
 void
 HttpTransact::handle_parent_died(State *s)
 {
-  ink_assert(s->parent_result.ts_result.result == PARENT_FAIL);
+  ink_assert(s->parent_result.result == PARENT_FAIL);
 
   if (s->current.state == OUTBOUND_CONGESTION) {
     build_error_response(s, HTTP_STATUS_SERVICE_UNAVAILABLE, "Next Hop Congested", "congestion#retryAfter");

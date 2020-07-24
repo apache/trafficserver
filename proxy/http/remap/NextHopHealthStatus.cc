@@ -58,9 +58,9 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
   // make sure we're called back with a result structure for a parent
   // that is being retried.
   if (status == NH_MARK_UP) {
-    ink_assert(result.ts_result.retry == true);
+    ink_assert(result.retry == true);
   }
-  if (result.ts_result.result != PARENT_SPECIFIED) {
+  if (result.result != PARENT_SPECIFIED) {
     return;
   }
 
@@ -88,19 +88,19 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
     break;
   // Mark the host down.
   case NH_MARK_DOWN:
-    if (h->failedAt == 0 || result.ts_result.retry == true) {
+    if (h->failedAt == 0 || result.retry == true) {
       { // lock guard
         std::lock_guard<std::mutex> guard(h->_mutex);
         if (h->failedAt == 0) {
           h->failedAt = _now;
-          if (result.ts_result.retry == false) {
+          if (result.retry == false) {
             new_fail_count = h->failCount = 1;
           }
-        } else if (result.ts_result.retry == true) {
+        } else if (result.retry == true) {
           h->failedAt = _now;
         }
       } // end lock guard
-      NH_Note("[%" PRId64 "] NextHop %s marked as down %s", sm_id, (result.ts_result.retry) ? "retry" : "initially", h->hostname.c_str());
+      NH_Note("[%" PRId64 "] NextHop %s marked as down %s", sm_id, (result.retry) ? "retry" : "initially", h->hostname.c_str());
     } else {
       int old_count = 0;
       // if the last failure was outside the retry window, set the failcount to 1 and failedAt to now.

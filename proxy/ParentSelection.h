@@ -166,18 +166,23 @@ public:
 ParentRecord *const extApiRecord = (ParentRecord *)0xeeeeffff;
 
 struct ParentResult {
-  TSParentResult ts_result;
-
   ParentResult() { reset(); }
+  // For outside consumption
+  TSParentResultType result;
+  const char *hostname;
+  int port;
+  bool retry;
+  bool chash_init[TS_MAX_GROUP_RINGS] = {false};
+  TSHostStatus first_choice_status = TSHostStatus::TS_HOST_STATUS_INIT;
 
   void
   reset()
   {
     ink_zero(*this);
-    ts_result.line_number   = -1;
-    ts_result.result        = PARENT_UNDEFINED;
-    ts_result.mapWrapped[0] = false;
-    ts_result.mapWrapped[1] = false;
+    line_number   = -1;
+    result        = PARENT_UNDEFINED;
+    mapWrapped[0] = false;
+    mapWrapped[1] = false;
   }
 
   bool
@@ -194,7 +199,7 @@ struct ParentResult {
       // If we don't have a result, we either haven't done a parent
       // lookup yet (PARENT_UNDEFINED), or the lookup didn't match
       // anything (PARENT_DIRECT).
-      ink_assert(ts_result.result == PARENT_UNDEFINED || ts_result.result == PARENT_DIRECT);
+      ink_assert(result == PARENT_UNDEFINED || result == PARENT_DIRECT);
       return false;
     }
 
@@ -262,7 +267,7 @@ struct ParentResult {
       return false;
     } else {
       // Caller should check for a valid result beforehand.
-      ink_assert(ts_result.result != PARENT_UNDEFINED);
+      ink_assert(result != PARENT_UNDEFINED);
       ink_assert(is_some());
       return rec->bypass_ok();
     }
@@ -273,14 +278,26 @@ struct ParentResult {
   {
     printf("ParentResult - hostname: %s, port: %d, retry: %s, line_number: %d, last_parent: %d, start_parent: %d, wrap_around: %s, "
            "last_lookup: %d, result: %s\n",
-           ts_result.hostname, ts_result.port, (ts_result.retry) ? "true" : "false", ts_result.line_number, ts_result.last_parent, ts_result.start_parent, (ts_result.wrap_around) ? "true" : "false",
-           ts_result.last_lookup, ParentResultStr[ts_result.result]);
+           hostname, port, (retry) ? "true" : "false", line_number, last_parent, start_parent, (wrap_around) ? "true" : "false",
+           last_lookup, ParentResultStr[result]);
   }
+
+  void copyFrom(TSParentResult *r);
+  void copyTo(TSParentResult *r);
 
 private:
   // Internal use only
   //   Not to be modified by HTTP
+  int line_number;
   ParentRecord *rec;
+  uint32_t last_parent;
+  uint32_t start_parent;
+  uint32_t last_group;
+  bool wrap_around;
+  bool mapWrapped[2];
+  // state for consistent hash.
+  int last_lookup;
+  ATSConsistentHashIter chashIter[TS_MAX_GROUP_RINGS];
 
   friend class NextHopSelectionStrategy;
   friend class NextHopRoundRobin;

@@ -7411,7 +7411,7 @@ HttpSM::set_next_state()
       call_transact_and_set_next_state(nullptr);
       break;
     } else if (t_state.http_config_param->use_client_target_addr == 2 && !t_state.url_remap_success &&
-               t_state.parent_result.ts_result.result != PARENT_SPECIFIED && t_state.client_info.is_transparent &&
+               t_state.parent_result.result != PARENT_SPECIFIED && t_state.client_info.is_transparent &&
                t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_Addr::OS_ADDR_TRY_DEFAULT &&
                ats_is_ip(addr = ua_txn->get_netvc()->get_local_addr())) {
       /* If the connection is client side transparent and the URL
@@ -7440,14 +7440,14 @@ HttpSM::set_next_state()
       t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_Addr::OS_ADDR_TRY_CLIENT;
       call_transact_and_set_next_state(nullptr);
       break;
-    } else if (t_state.parent_result.ts_result.result == PARENT_UNDEFINED && t_state.dns_info.lookup_success) {
+    } else if (t_state.parent_result.result == PARENT_UNDEFINED && t_state.dns_info.lookup_success) {
       // Already set, and we don't have a parent proxy to lookup
       ink_assert(ats_is_ip(t_state.host_db_info.ip()));
       SMDebug("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup, provided by plugin");
       call_transact_and_set_next_state(nullptr);
       break;
     } else if (t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER && t_state.http_config_param->no_dns_forward_to_parent &&
-               t_state.parent_result.ts_result.result != PARENT_UNDEFINED) {
+               t_state.parent_result.result != PARENT_UNDEFINED) {
       t_state.dns_info.lookup_success = true;
       call_transact_and_set_next_state(nullptr);
       break;

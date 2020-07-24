@@ -55,7 +55,7 @@ public:
   pRecord *
   getParents(ParentResult *result) override
   {
-    return parents[result->ts_result.last_lookup];
+    return parents[result->last_lookup];
   }
   uint64_t getPathHash(HttpRequestData *hrdata, ATSHash64 *h);
   void selectParent(bool firstCall, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
