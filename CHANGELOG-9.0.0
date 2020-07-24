@@ -1013,7 +1013,7 @@ Changes with Apache Traffic Server 9.0.0
   #7004 - Fixed core when sending back a redirect and having an invalid server response
   #7005 - Added tasks and launch files for vscode, to configure, build and debug
   #7007 - Updates to thread scale factor
-  #7008 - slice plugin: fix throttle not work 
+  #7008 - slice plugin: fix throttle not work
   #7012 - Remove incorrect assert in inactivity timeout handling
   #7031 - Fix code to eliminate warning and enable feature
   #7035 - Add a null check to avoid crashing
