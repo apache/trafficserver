@@ -1,3 +1,5 @@
+.. include:: ../../common.defs
+
 Memory_profile Plugin
 *********************
 

@@ -1,4 +1,5 @@
 .. _icap-plugin:
+.. include:: ../../common.defs
 
 ICAP Plugin
 ***********
