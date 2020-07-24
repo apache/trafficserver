@@ -28,7 +28,6 @@
 
 #include "InkAPIInternal.h" // Added to include the ssl_hook definitions
 #include "Log.h"
-#include "HttpTunnel.h"
 #include "ProxyProtocol.h"
 #include "HttpConfig.h"
 

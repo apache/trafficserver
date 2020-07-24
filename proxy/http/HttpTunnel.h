@@ -333,6 +333,7 @@ private:
   void finish_all_internal(HttpTunnelProducer *p, bool chain);
   void update_stats_after_abort(HttpTunnelType_t t);
   void producer_run(HttpTunnelProducer *p);
+  void assert_freed_buffers();
 
   HttpTunnelProducer *get_producer(VIO *vio);
   HttpTunnelConsumer *get_consumer(VIO *vio);

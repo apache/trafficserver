@@ -6334,6 +6334,7 @@ HttpSM::setup_100_continue_transfer()
 
   // Clear the decks before we set up new producers.  As things stand, we cannot have two static operators
   // at once
+  tunnel.deallocate_buffers();
   tunnel.reset();
 
   // Setup the tunnel to the client
@@ -6466,6 +6467,7 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
   // Clear the decks before we setup the new producers
   // As things stand, we cannot have two static producers operating at
   // once
+  tunnel.deallocate_buffers();
   tunnel.reset();
 
   // Setup the tunnel to the client
