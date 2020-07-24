@@ -204,7 +204,7 @@ public:
     }
   }
 
-  std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>>
+  const std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>> &
   additional_tp() const override
   {
     return this->_additional_tp;
