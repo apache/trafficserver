@@ -1,6 +1,9 @@
-/** @txn_data.cc
+/** @file
+
   Implementation of Traffic Dump transaction data.
+
   @section license License
+
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -8,7 +11,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
+
       http://www.apache.org/licenses/LICENSE-2.0
+
   Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +31,7 @@ namespace traffic_dump
 int TransactionData::transaction_arg_index = 0;
 sensitive_fields_t TransactionData::sensitive_fields;
 
-std::string defaut_sensitive_field_value;
+std::string default_sensitive_field_value;
 
 /// Fields considered sensitive because they may contain user-private
 /// information. These fields are replaced with auto-generated generic content by
@@ -45,9 +50,9 @@ TransactionData::initialize_default_sensitive_field()
   // 128 KB is the maximum size supported for all headers, so this size should
   // be plenty large for our needs.
   constexpr size_t default_field_size = 128 * 1024;
-  defaut_sensitive_field_value.resize(default_field_size);
+  default_sensitive_field_value.resize(default_field_size);
 
-  char *field_buffer = defaut_sensitive_field_value.data();
+  char *field_buffer = default_sensitive_field_value.data();
   for (auto i = 0u; i < default_field_size; i += 8) {
     sprintf(field_buffer, "%07x ", i / 8);
     field_buffer += 8;
@@ -95,13 +100,13 @@ TransactionData::replace_sensitive_fields(std::string_view name, std::string_vie
     return original_value;
   }
   auto new_value_size = original_value.size();
-  if (original_value.size() > defaut_sensitive_field_value.size()) {
-    new_value_size = defaut_sensitive_field_value.size();
+  if (original_value.size() > default_sensitive_field_value.size()) {
+    new_value_size = default_sensitive_field_value.size();
     TSError("[%s] Encountered a sensitive field value larger than our default "
             "field size. Default size: %zu, incoming field size: %zu",
-            debug_tag, defaut_sensitive_field_value.size(), original_value.size());
+            debug_tag, default_sensitive_field_value.size(), original_value.size());
   }
-  return std::string_view{defaut_sensitive_field_value.data(), new_value_size};
+  return std::string_view{default_sensitive_field_value.data(), new_value_size};
 }
 
 std::string
