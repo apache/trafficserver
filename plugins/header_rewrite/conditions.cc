@@ -274,11 +274,17 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
   TSMLoc url     = nullptr;
   TSMBuffer bufp = nullptr;
 
-  if (res._rri != nullptr) {
+  if (_type == CLIENT) {
+    // CLIENT always uses the pristine URL
+    TSDebug(PLUGIN_NAME, "   Using the pristine url");
+    if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url) != TS_SUCCESS) {
+      TSError("[header_rewrite] Error getting the pristine URL");
+      return;
+    }
+  } else if (res._rri != nullptr) {
     // called at the remap hook
     bufp = res._rri->requestBufp;
-    if (_type == URL || _type == CLIENT) {
-      // res._rri->requestBufp and res.client_bufp are the same if it is at the remap hook
+    if (_type == URL) {
       TSDebug(PLUGIN_NAME, "   Using the request url");
       url = res._rri->requestUrl;
     } else if (_type == FROM) {
@@ -292,19 +298,15 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
       return;
     }
   } else {
-    TSMLoc hdr_loc = nullptr;
-    if (_type == CLIENT) {
-      bufp    = res.client_bufp;
-      hdr_loc = res.client_hdr_loc;
-    } else if (_type == URL) {
-      bufp    = res.bufp;
-      hdr_loc = res.hdr_loc;
+    if (_type == URL) {
+      bufp           = res.bufp;
+      TSMLoc hdr_loc = res.hdr_loc;
+      if (TSHttpHdrUrlGet(bufp, hdr_loc, &url) != TS_SUCCESS) {
+        TSError("[header_rewrite] Error getting the URL");
+        return;
+      }
     } else {
       TSError("[header_rewrite] Rule not supported at this hook");
-      return;
-    }
-    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url) != TS_SUCCESS) {
-      TSError("[header_rewrite] Error getting the URL");
       return;
     }
   }
