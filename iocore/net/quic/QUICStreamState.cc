@@ -199,7 +199,7 @@ QUICSendStreamStateMachine::is_allowed_to_send(QUICFrameType type) const
     }
     break;
   default:
-    ink_assert("This shouuldn't be happen");
+    ink_assert("This shouldn't be happen");
     break;
   }
 
@@ -221,7 +221,7 @@ QUICSendStreamStateMachine::is_allowed_to_receive(QUICFrameType type) const
 
   // A sender could receive either of these two frames(MAX_STREAM_DATA and STOP_SENDING) in any state as a result of delayed
   // delivery of packets.
-  // PS: Because we need to reply a RESET_STREAM frame. STOP_SENDING frame is accpeted in all states. But we
+  // PS: Because we need to reply a RESET_STREAM frame. STOP_SENDING frame is accepted in all states. But we
   // don't need to do anything for MAX_STREAM_DATA frame when we are in terminal state.
   if (type == QUICFrameType::STOP_SENDING) {
     return true;

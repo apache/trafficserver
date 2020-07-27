@@ -61,7 +61,7 @@ QUICKeyGenerator::_get_cipher_for_protected_packet(const SSL *ssl) const
   }
 }
 
-// SSL_HANDSHAKE_MAC_SHA256, SSL_HANDSHAKE_MAC_SHA384 are defind in `ssl/internal.h` of BoringSSL
+// SSL_HANDSHAKE_MAC_SHA256, SSL_HANDSHAKE_MAC_SHA384 are defined in `ssl/internal.h` of BoringSSL
 /*
 const EVP_MD *
 QUICKeyGenerator::get_handshake_digest(const SSL *ssl)

@@ -53,7 +53,7 @@ inline static Recovery::CongestionStateUpdated::State
 CongestionStateConvert(QUICCongestionController::State state)
 {
   switch (state) {
-  case QUICCongestionController::State::APPPLICATION_LIMITED:
+  case QUICCongestionController::State::APPLICATION_LIMITED:
     return Recovery::CongestionStateUpdated::State::application_limited;
   case QUICCongestionController::State::SLOW_START:
     return Recovery::CongestionStateUpdated::State::slow_start;

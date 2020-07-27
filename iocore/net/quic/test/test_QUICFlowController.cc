@@ -369,7 +369,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     CHECK(!frame);
 
-    // This should not be retransmition
+    // This should not be retransmission
     ret   = fc.update(2048);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);
@@ -410,7 +410,7 @@ TEST_CASE("Frame retransmission", "[quic]")
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     CHECK(!frame);
 
-    // This should not be retransmition
+    // This should not be retransmission
     ret   = fc.update(2048);
     frame = fc.generate_frame(frame_buf, level, 1024, 1024, 0, 0);
     REQUIRE(frame);

@@ -70,7 +70,7 @@ TEST_CASE("QUICFrame Type", "[quic]")
 
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1e")) == QUICFrameType::HANDSHAKE_DONE);
 
-  // Undefined ragne
+  // Undefined range
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\x1f")) == QUICFrameType::UNKNOWN);
   CHECK(QUICFrame::type(reinterpret_cast<const uint8_t *>("\xff")) == QUICFrameType::UNKNOWN);
 }
@@ -456,7 +456,7 @@ TEST_CASE("CRYPTO Frame", "[quic]")
     uint8_t buf[32]    = {0};
     size_t len         = 0;
     uint8_t expected[] = {
-      0x06,                         // Typr
+      0x06,                         // Type
       0x80, 0x01, 0x00, 0x00,       // Offset
       0x05,                         // Length
       0x01, 0x02, 0x03, 0x04, 0x05, // Crypto Data

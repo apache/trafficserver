@@ -83,7 +83,7 @@ public:
   virtual QUICRTTProvider *rtt_provider() const;
   virtual QUICPathManager *path_manager() const;
 
-  // regist a callback which will be called when specifed event happen.
+  // regist a callback which will be called when specified event happen.
   void
   regist_callback(std::shared_ptr<QUICCallback> cbs)
   {

@@ -33,7 +33,7 @@ enum class Http3StreamType : uint8_t {
   QPACK_ENCODER = 0x02, ///< QPACK : encoder -> decoder
   QPACK_DECODER = 0x03, ///< QPACK : decoder -> encoder
   RESERVED      = 0x21,
-  UNKOWN        = 0xFF,
+  UNKNOWN       = 0xFF,
 };
 
 enum class Http3SettingsId : uint64_t {
