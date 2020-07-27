@@ -40,7 +40,7 @@ QUICResetTokenTable::lookup(QUICStatelessResetToken token)
     Debug("quic_reset_token_table", "CID:%08" PRIx32 "...", result->second->connection_id().h32());
     return result->second;
   } else {
-    Debug("quic_reset_token_table", "not fouund");
+    Debug("quic_reset_token_table", "not found");
     return nullptr;
   }
 }
