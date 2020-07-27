@@ -298,7 +298,6 @@ SCENARIO("loading plugins", "[plugin][core]")
     {
       fs::path configPath = searchDir / "subdir" / pluginName;
       CHECK(configPath.is_absolute()); /* make sure this is absolute path - this is what we are testing */
-
       setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
       RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
@@ -321,7 +320,6 @@ SCENARIO("loading plugins", "[plugin][core]")
       disablePluginDynamicReload();
       fs::path configPath = searchDir / "subdir" / pluginName;
       CHECK(configPath.is_absolute()); /* make sure this is absolute path - this is what we are testing */
-
       setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
       PluginFactoryUnitTest *factory = getFactory(tempComponent);
       RemapPluginInst *plugin        = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
@@ -336,6 +334,39 @@ SCENARIO("loading plugins", "[plugin][core]")
         CHECK(fs::exists(plugin->_plugin.effectivePath()));
       }
 
+      teardownConfigPathTest(factory);
+      enablePluginDynamicReload();
+    }
+
+    WHEN("config is using plugin absolute path - dynamic reload is ENABLED but overwritten by optout")
+    {
+      enablePluginDynamicReload();
+      fs::path configPath = searchDir / "subdir" / pluginName;
+      CHECK(configPath.is_absolute()); /* make sure this is absolute path - this is what we are testing */
+
+      // We have to force the path to be the effective == runtime
+      disablePluginDynamicReload();
+      setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
+      enablePluginDynamicReload();
+
+      PluginFactoryUnitTest *factory = getFactory(tempComponent);
+      // make the factory take this plugin as it opt out.
+      PluginDso::loadedPlugins()->addPluginPathToDsoOptOutTable(effectivePath.string());
+
+      RemapPluginInst *plugin = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
+
+      THEN("expect it to successfully load")
+      {
+        validateSuccessfulConfigPathTest(plugin, error, effectivePath, runtimePath);
+        static const bool disableDynamicReloadByOptOut{false};
+        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath, disableDynamicReloadByOptOut));
+
+        // check Dso still exists
+        CHECK(plugin->_plugin.effectivePath() == plugin->_plugin.runtimePath());
+        CHECK(fs::exists(plugin->_plugin.effectivePath()));
+      }
+      // we need to remove this from the list so next tests can work as expected.
+      PluginDso::loadedPlugins()->removePluginPathFromDsoOptOutTable(effectivePath.string());
       teardownConfigPathTest(factory);
       enablePluginDynamicReload();
     }
@@ -587,7 +618,7 @@ checkTwoLoadedVersionsDifferent(const RemapPluginInst *plugin_v1, const RemapPlu
 }
 
 void
-checkTwoLoadedVersionsSame(RemapPluginInst *plugin_v1, RemapPluginInst *plugin_v2)
+checkTwoLoadedVersionsSame(RemapPluginInst *plugin_v1, RemapPluginInst *plugin_v2, bool pluginOptOut = false)
 {
   void *tsRemapInitSym_v1_t2 = nullptr; /* callback address from DSO v1 at moment t2 */
   void *tsRemapInitSym_v2_t2 = nullptr; /* callback address from DSO v2 at moment t2 */
@@ -610,9 +641,9 @@ checkTwoLoadedVersionsSame(RemapPluginInst *plugin_v1, RemapPluginInst *plugin_v
   CHECK(tsRemapInitSym_v1_t2 == tsRemapInitSym_v2_t2);
 
   // 2 versions can be same even when dynamic reload is enabled
-  // 2 versions must be same when dynamic reload is disabled
+  // 2 versions must be same when dynamic reload is disabled or the plugin opt out
   // check presence/absence of Dso files
-  if (!isPluginDynamicReloadEnabled()) {
+  if (pluginOptOut || !isPluginDynamicReloadEnabled()) {
     CHECK(plugin_v1->_plugin.effectivePath() == plugin_v1->_plugin.runtimePath());
     CHECK(fs::exists(plugin_v1->_plugin.effectivePath()));
   } else {
@@ -631,6 +662,27 @@ testSetupLoadPlugin(const fs::path &configName, const fs::path &buildPath, const
   auto factory    = getFactory(uuid);
   auto pluginInst = factory->getRemapPlugin(configName, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
+  return {pluginInst, factory};
+}
+
+std::tuple<RemapPluginInst *, PluginFactoryUnitTest *>
+testSetupLoadPluginWithOptOut(const fs::path &configName, const fs::path &buildPath, const fs::path &uuid, const time_t mtime,
+                              fs::path &effectivePath, fs::path &runtimePath)
+{
+  std::string error;
+
+  // force paths to be as dynamic disabled which will be the case for a plugin that opt out.
+  disablePluginDynamicReload();
+  setupConfigPathTest(configName, buildPath, uuid, effectivePath, runtimePath, mtime);
+  enablePluginDynamicReload();
+
+  auto factory = getFactory(uuid);
+
+  // Set factory's opt out plugin information.
+  PluginDso::loadedPlugins()->addPluginPathToDsoOptOutTable(effectivePath.string());
+  auto pluginInst = factory->getRemapPlugin(configName, 0, nullptr, error, isPluginDynamicReloadEnabled());
+  // make sure we remove it so there is no evidence of this in the Plugin's list.
+  PluginDso::loadedPlugins()->removePluginPathFromDsoOptOutTable(effectivePath.string());
   return {pluginInst, factory};
 }
 
@@ -767,6 +819,50 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
         validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v1);
 
         checkTwoLoadedVersionsSame(plugin_v1, plugin_v2);
+
+        /* Make sure v1 callback functions addresses did not change for v1 after v2 was loaded */
+        CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
+      }
+
+      teardownConfigPathTest(factory1);
+      teardownConfigPathTest(factory2);
+      enablePluginDynamicReload();
+    }
+  }
+
+  GIVEN("two different versions v1 and v2 of same plugin with different time stamps - dynamic plugin reload ENABLED")
+  {
+    WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
+         "(*) v1 and v2 DSOs modification time are different (changed)")
+    {
+      enablePluginDynamicReload();
+
+      /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
+      auto [plugin_v1, factory1] =
+        testSetupLoadPluginWithOptOut(configName, buildPath_v1, uuid_t1, 1556825556, effectivePath_v1, runtimePath_v1);
+
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
+
+      /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
+      /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so which was v1 */
+      auto [plugin_v2, factory2] =
+        testSetupLoadPluginWithOptOut(configName, buildPath_v2, uuid_t2, 1556825557, effectivePath_v2, runtimePath_v2);
+      plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+
+      /* Make sure plugin.so was overriden */
+      CHECK(effectivePath_v1 == effectivePath_v2);
+
+      /* since dynamic reload is disabled, runtimepaths should be same */
+      CHECK(runtimePath_v1 == runtimePath_v2);
+
+      THEN("expect v1 plugin to remain loaded since dynamic reload is disabled, even though the timestamp has changed")
+      {
+        /* Both getRemapPlugin() calls should succeed but only v1 plugin DSO should be used */
+        validateSuccessfulConfigPathTest(plugin_v1, error1, effectivePath_v1, runtimePath_v1);
+        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v1);
+
+        const bool pluginOptOut{true};
+        checkTwoLoadedVersionsSame(plugin_v1, plugin_v2, pluginOptOut);
 
         /* Make sure v1 callback functions addresses did not change for v1 after v2 was loaded */
         CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
@@ -919,6 +1015,64 @@ SCENARIO("loading multiple version of the same plugin in mixed mode - global as 
       }
 
       teardownConfigPathTest(factory2);
+      enablePluginDynamicReload();
+    }
+  }
+
+  GIVEN("two different versions v1 and v2 of same plugin in mixed mode - dynamic plugin reload ENABLED but overwritten by opt out")
+  {
+    WHEN("(1) loading v1, (2) overwriting with v2 and then (3) reloading by using the same plugin name, "
+         "(*) v1 and v2 DSOs modification time are different (changed)")
+    {
+      // just to get the proper path's
+      disablePluginDynamicReload();
+      /* Simulate installing plugin plugin_v1.so (ver 1) as plugin.so and loading it at some point of time t1 */
+      setupConfigPathTest(configName, buildPath_v1, uuid_t1, effectivePath_v1, runtimePath_v1, 1556825556);
+
+      GlobalPluginInfo global_plugin_v1;
+      CHECK(global_plugin_v1.loadDso(effectivePath_v1) == true);
+      global_plugin_v1.getSymbol("TSRemapInit", tsRemapInitSym_v1_t1, error);
+
+      /* Simulate installing plugin plugin_v2.so (v1) as plugin.so and loading it at some point of time t2 */
+      /* Note that during the installation plugin_v2.so (v2) is "barberically" overriding the existing plugin.so which was v1 */
+      setupConfigPathTest(configName, buildPath_v2, uuid_t2, effectivePath_v2, runtimePath_v2, 1556825557);
+      enablePluginDynamicReload();
+      PluginFactoryUnitTest *factory = getFactory(uuid_t2);
+
+      // Set factory's opt out plugin information.
+      PluginDso::loadedPlugins()->addPluginPathToDsoOptOutTable(effectivePath_v1.string());
+
+      RemapPluginInst *plugin_v2 = factory->getRemapPlugin(configName, 0, nullptr, error2, isPluginDynamicReloadEnabled());
+
+      /* Make sure plugin.so was overriden */
+      CHECK(effectivePath_v1 == effectivePath_v2);
+
+      /* since dynamic reload is disabled, runtimepaths should be same */
+      CHECK(runtimePath_v1 == runtimePath_v2);
+
+      THEN("expect v1 plugin to remain loaded since dynamic reload is disabled, even though the timestamp has changed")
+      {
+        validateSuccessfulConfigPathTest(plugin_v2, error2, effectivePath_v2, runtimePath_v2);
+
+        /* Make sure we ended up with the same DSO object and runtime paths should be same - no new plugin was loaded */
+        CHECK(global_plugin_v1.dlOpenHandle() == plugin_v2->_plugin.dlOpenHandle());
+
+        /* Make sure v2 DSO was NOT really loaded - both instances should return same v1 version */
+        CHECK(1 == global_plugin_v1.getPluginVersion());
+        CHECK(1 == getPluginVersion(plugin_v2->_plugin));
+
+        /* Make sure the symbols we get from the 2 loaded plugins yield the same callback function pointer */
+        global_plugin_v1.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
+        plugin_v2->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v2_t2, error);
+        CHECK(nullptr != tsRemapInitSym_v1_t2);
+        CHECK(nullptr != tsRemapInitSym_v2_t2);
+        CHECK(tsRemapInitSym_v1_t2 == tsRemapInitSym_v2_t2);
+
+        /* check that the symbol we got originally is still valid */
+        CHECK(tsRemapInitSym_v1_t1 == tsRemapInitSym_v1_t2);
+      }
+      PluginDso::loadedPlugins()->removePluginPathFromDsoOptOutTable(effectivePath_v1.string());
+      teardownConfigPathTest(factory);
       enablePluginDynamicReload();
     }
   }

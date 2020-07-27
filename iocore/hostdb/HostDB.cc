@@ -169,7 +169,7 @@ HostDBHash::set_host(const char *name, int len)
 {
   host_name = name;
   host_len  = len;
-#ifdef SPLIT_DNS
+
   if (host_name && SplitDNSConfig::isSplitDNSEnabled()) {
     const char *scan;
     // I think this is checking for a hostname that is just an address.
@@ -189,7 +189,7 @@ HostDBHash::set_host(const char *name, int len)
       dns_server = nullptr;
     }
   }
-#endif // SPLIT_DNS
+
   return *this;
 }
 

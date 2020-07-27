@@ -24,9 +24,7 @@
 #include "P_DNS.h"
 #include "tscore/ink_inet.h"
 
-#ifdef SPLIT_DNS
 #include "I_SplitDNS.h"
-#endif
 
 #define SRV_COST (RRFIXEDSZ + 0)
 #define SRV_WEIGHT (RRFIXEDSZ + 2)
@@ -411,15 +409,11 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
   action        = acont;
   submit_thread = acont->mutex->thread_holding;
 
-#ifdef SPLIT_DNS
   if (SplitDNSConfig::gsplit_dns_enabled) {
     dnsH = opt.handler ? opt.handler : dnsProcessor.handler;
   } else {
     dnsH = dnsProcessor.handler;
   }
-#else
-  dnsH = dnsProcessor.handler;
-#endif // SPLIT_DNS
 
   dnsH->txn_lookup_timeout = opt.timeout;
 

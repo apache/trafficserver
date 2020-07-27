@@ -2530,6 +2530,8 @@ cplist_init()
   }
 }
 
+static int fillExclusiveDisks(CacheVol *cp);
+
 void
 cplist_update()
 {
@@ -2586,6 +2588,42 @@ cplist_update()
       cp = cp->link.next;
     }
   }
+
+  // Look for (exclusive) spans forced to a specific volume but not yet referenced by any volumes in cp_list,
+  // if found then create a new volume. This also makes sure new exclusive disk volumes are created first
+  // before any other new volumes to assure proper span free space calculation and proper volume block distribution.
+  for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+    if (nullptr == config_vol->cachep) {
+      // Find out if this is a forced volume assigned exclusively to a span which was cleared (hence not referenced in cp_list).
+      // Note: non-exclusive cleared spans are not handled here, only the "exclusive"
+      bool forced_volume = false;
+      for (int d_no = 0; d_no < gndisks; d_no++) {
+        if (gdisks[d_no]->forced_volume_num == config_vol->number) {
+          forced_volume = true;
+        }
+      }
+
+      if (forced_volume) {
+        CacheVol *new_cp = new CacheVol();
+        if (nullptr != new_cp) {
+          new_cp->disk_vols = static_cast<decltype(new_cp->disk_vols)>(ats_malloc(gndisks * sizeof(DiskVol *)));
+          if (nullptr != new_cp->disk_vols) {
+            memset(new_cp->disk_vols, 0, gndisks * sizeof(DiskVol *));
+            new_cp->vol_number = config_vol->number;
+            new_cp->scheme     = config_vol->scheme;
+            config_vol->cachep = new_cp;
+            fillExclusiveDisks(config_vol->cachep);
+            cp_list.enqueue(new_cp);
+          } else {
+            delete new_cp;
+          }
+        }
+      }
+    } else {
+      // Fill if this is exclusive disk.
+      fillExclusiveDisks(config_vol->cachep);
+    }
+  }
 }
 
 static int
@@ -2599,20 +2637,32 @@ fillExclusiveDisks(CacheVol *cp)
     if (gdisks[i]->forced_volume_num != volume_number) {
       continue;
     }
-    /* The user had created several volumes before - clear the disk
-       and create one volume for http */
+
+    /* OK, this should be an "exclusive" disk (span). */
+    diskCount++;
+
+    /* There should be a single "forced" volume and no other volumes should exist on this "exclusive" disk (span) */
+    bool found_nonforced_volumes = false;
     for (int j = 0; j < static_cast<int>(gdisks[i]->header->num_volumes); j++) {
       if (volume_number != gdisks[i]->disk_vols[j]->vol_number) {
-        Note("Clearing Disk: %s", gdisks[i]->path);
-        gdisks[i]->delete_all_volumes();
+        found_nonforced_volumes = true;
         break;
       }
     }
-    diskCount++;
+
+    if (found_nonforced_volumes) {
+      /* The user had created several volumes before - clear the disk and create one volume for http */
+      Note("Clearing Disk: %s", gdisks[i]->path);
+      gdisks[i]->delete_all_volumes();
+    } else if (1 == gdisks[i]->header->num_volumes) {
+      /* "Forced" volumes take the whole disk (span) hence nothing more to do for this span. */
+      continue;
+    }
+
+    /* Now, volumes have been either deleted or did not exist to begin with so we need to create them. */
 
     int64_t size_diff = gdisks[i]->num_usable_blocks;
     DiskVolBlock *dpb;
-
     do {
       dpb = gdisks[i]->create_volume(volume_number, size_diff, cp->scheme);
       if (dpb) {
@@ -2628,6 +2678,8 @@ fillExclusiveDisks(CacheVol *cp)
       }
     } while ((size_diff > 0));
   }
+
+  /* Report back the number of disks (spans) that were assigned to volume specified by volume_number. */
   return diskCount;
 }
 
@@ -2692,7 +2744,11 @@ cplist_reconfigure()
     /* sum up the total space available on all the disks.
        round down the space to 128 megabytes */
     for (int i = 0; i < gndisks; i++) {
-      tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
+      // Exclude exclusive disks (with forced volumes) from the following total space calculation,
+      // in such a way forced volumes will not impact volume percentage calculations.
+      if (-1 == gdisks[i]->forced_volume_num) {
+        tot_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
+      }
     }
 
     double percent_remaining = 100.00;
@@ -2703,14 +2759,34 @@ cplist_reconfigure()
           Warning("no volumes created");
           return -1;
         }
-        int64_t space_in_blks = static_cast<int64_t>(((config_vol->percent / percent_remaining)) * tot_space_in_blks);
+
+        // Find if the volume is forced and if it is then calculate the total forced volume size.
+        // Forced volumes take the whole span (disk) also sum all disk space this volume is forced to.
+        int64_t tot_forced_space_in_blks = 0;
+        for (int i = 0; i < gndisks; i++) {
+          if (config_vol->number == gdisks[i]->forced_volume_num) {
+            tot_forced_space_in_blks += (gdisks[i]->num_usable_blocks / blocks_per_vol) * blocks_per_vol;
+          }
+        }
+
+        int64_t space_in_blks = 0;
+        if (0 == tot_forced_space_in_blks) {
+          // Calculate the space as percentage of total space in blocks.
+          space_in_blks = static_cast<int64_t>(((double)(config_vol->percent / percent_remaining)) * tot_space_in_blks);
+        } else {
+          // Forced volumes take all disk space, so no percentage calculations here.
+          space_in_blks = tot_forced_space_in_blks;
+        }
 
         space_in_blks = space_in_blks >> (20 - STORE_BLOCK_SHIFT);
         /* round down to 128 megabyte multiple */
         space_in_blks    = (space_in_blks >> 7) << 7;
         config_vol->size = space_in_blks;
-        tot_space_in_blks -= space_in_blks << (20 - STORE_BLOCK_SHIFT);
-        percent_remaining -= (config_vol->size < 128) ? 0 : config_vol->percent;
+
+        if (0 == tot_forced_space_in_blks) {
+          tot_space_in_blks -= space_in_blks << (20 - STORE_BLOCK_SHIFT);
+          percent_remaining -= (config_vol->size < 128) ? 0 : config_vol->percent;
+        }
       }
       if (config_vol->size < 128) {
         Warning("the size of volume %d (%" PRId64 ") is less than the minimum required volume size %d", config_vol->number,
@@ -2721,16 +2797,8 @@ cplist_reconfigure()
             config_vol->ramcache_enabled);
     }
     cplist_update();
+
     /* go through volume config and grow and create volumes */
-
-    for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
-      // if volume is given exclusive disks, fill here and continue
-      if (!config_vol->cachep) {
-        continue;
-      }
-      fillExclusiveDisks(config_vol->cachep);
-    }
-
     for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
       size = config_vol->size;
       if (size < 128) {

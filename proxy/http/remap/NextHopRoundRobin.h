@@ -40,6 +40,5 @@ public:
   {
     return NextHopSelectionStrategy::Init(n);
   }
-  void findNextHop(const uint64_t sm_id, ParentResult &result, RequestData &rdata, const uint64_t fail_threshold,
-                   const uint64_t retry_time, time_t now = 0) override;
+  void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
 };

@@ -95,8 +95,6 @@
 
 #define TS_MAX_HOST_NAME_LEN @max_host_name_len@
 
-#define SPLIT_DNS 1
-
 /* Defaults for user / group */
 #define TS_PKGSYSUSER "@pkgsysuser@"
 #define TS_PKGSYSGROUP "@pkgsysgroup@"

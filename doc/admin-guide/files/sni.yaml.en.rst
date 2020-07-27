@@ -42,7 +42,6 @@ Each table is a set of key / value pairs that create a configuration item. This 
 wildcard entries. To apply an SNI based setting on all the server names with a common upper level domain name,
 the user needs to enter the fqdn in the configuration with a ``*.`` followed by the common domain name. (``*.yahoo.com`` for example).
 
-.. _override-verify-origin-server:
 .. _override-verify-server-policy:
 .. _override-verify-server-properties:
 .. _override-host-sni-policy:
@@ -66,10 +65,6 @@ verify_server_properties  One of the values :code:`NONE`, :code:`SIGNATURE`, :co
 
                           By default this is :ts:cv:`proxy.config.ssl.client.verify.server.properties`.
                           This controls what Traffic Server checks when evaluating the origin certificate.
-
-verify_origin_server      Deprecated.  Use verify_server_policy and verify_server_properties instead.
-                          One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
-                          By default this is :ts:cv:`proxy.config.ssl.client.verify.server`.
 
 verify_client             One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
                           If ``NONE`` is specified, |TS| requests no certificate.  If ``MODERATE`` is specified

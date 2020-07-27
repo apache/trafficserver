@@ -37,6 +37,7 @@ class QUICPacketR;
 class QUICPacket;
 
 class QUICNetVConnection;
+struct QUICPacketInfo;
 
 // this class is a connection between the callbacks. it should do something
 // TODO: it should do something

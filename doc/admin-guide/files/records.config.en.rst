@@ -282,11 +282,11 @@ Thread Variables
    When enabled (the default, ``1``), |TS| scales threads according to the
    available CPU cores. See the config option below.
 
-.. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.5
+.. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.0
 
    Factor by which |TS| scales the number of threads. The multiplier is usually
    the number of available CPU cores. By default this is scaling factor is
-   ``1.5``.
+   ``1.0``.
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.limit INT 2
 
@@ -3560,22 +3560,6 @@ Client-Related Configuration
    Check only that the SNI name is in the certificate.
 :code:`ALL`
    Check both the signature and the name.
-
-.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server INT 0
-   :reloadable:
-   :deprecated:
-
-   This setting has been deprecated and :ts:cv:`proxy.config.ssl.client.verify.server.policy` and
-   :ts:cv:`proxy.config.ssl.client.verify.server.properties` should be used instead.
-
-   Configures |TS| to verify the origin server certificate
-   with the Certificate Authority (CA). This configuration takes a value between 0 to 2.
-
-   You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`verify_origin_server attribute<override-verify-origin-server>`.
-
-   :0: Server Certificate will not be verified
-   :1: Certificate will be verified and the connection will not be established if verification fail
-   :2: The provided certificate will be verified and the connection will be established
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert.filename STRING NULL
    :reloadable:

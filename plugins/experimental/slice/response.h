@@ -21,7 +21,7 @@
 #include "HttpHeader.h"
 #include <string>
 
-std::string const &string502();
+std::string string502(int const httpver);
 
 std::string const &bodyString416();
 

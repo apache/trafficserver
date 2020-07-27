@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Traffic Server SDK API header file
 
   @section license License
 
@@ -19,31 +19,31 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+  @section developers Developers
+
+  NextHop plugin interface.
+
  */
-
-/****************************************************************************
-
-  P_HostDB.h
-
-
- ****************************************************************************/
 
 #pragma once
 
-#include "tscore/ink_platform.h"
+#include <ts/apidefs.h>
 
-#include "P_SplitDNS.h"
-#include "P_EventSystem.h"
+// plugin callback commands.
+enum NHCmd { NH_MARK_UP, NH_MARK_DOWN };
 
-#include "I_HostDB.h"
+struct NHHealthStatus {
+  virtual bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) = 0;
+  virtual void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
+                           const time_t now = 0)                                                           = 0;
+  virtual ~NHHealthStatus() {}
+};
 
-// HostDB files
-#include "P_DNS.h"
-#include "P_RefCountCache.h"
-#include "P_HostDBProcessor.h"
+struct NHPluginStrategy {
+  virtual void findNextHop(TSHttpTxn txnp, void *ih = nullptr)   = 0;
+  virtual bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr) = 0;
+  virtual ~NHPluginStrategy() {}
 
-static constexpr ts::ModuleVersion HOSTDB_MODULE_INTERNAL_VERSION{HOSTDB_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE};
-
-Ptr<HostDBInfo> probe(Ptr<ProxyMutex> mutex, CryptoHash const &hash, bool ignore_timeout);
-
-void make_crypto_hash(CryptoHash &hash, const char *hostname, int len, int port, const char *pDNSServers, HostDBMark mark);
+  NHHealthStatus *healthStatus;
+};

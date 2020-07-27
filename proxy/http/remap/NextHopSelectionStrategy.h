@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "ts/nexthop.h"
 #include "ParentSelection.h"
 
 #ifndef _NH_UNIT_TESTS_
@@ -122,7 +123,7 @@ struct HostRecord : ATSConsistentHashNode {
     failCount   = o.failCount;
     upAt        = o.upAt;
     weight      = o.weight;
-    hash_string = "";
+    hash_string = o.hash_string;
     host_index  = -1;
     group_index = -1;
     available   = true;
@@ -170,7 +171,7 @@ struct HostRecord : ATSConsistentHashNode {
   }
 
   int
-  getPort(NHSchemeType scheme)
+  getPort(NHSchemeType scheme) const
   {
     int port = 0;
     for (uint32_t i = 0; i < protocols.size(); i++) {
@@ -181,6 +182,31 @@ struct HostRecord : ATSConsistentHashNode {
     }
     return port;
   }
+
+  static std::string
+  makeHostPort(const std::string &hostname, const int port)
+  {
+    return hostname + ":" + std::to_string(port);
+  }
+
+  std::string
+  getHostPort(const int port) const
+  {
+    return makeHostPort(this->hostname, port);
+  }
+};
+
+class NextHopHealthStatus : public NHHealthStatus
+{
+public:
+  void insert(std::vector<std::shared_ptr<HostRecord>> &hosts);
+  bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) override;
+  void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
+                   const time_t now = 0) override;
+  NextHopHealthStatus(){};
+
+private:
+  std::unordered_map<std::string, std::shared_ptr<HostRecord>> host_map;
 };
 
 class NextHopSelectionStrategy
@@ -190,12 +216,13 @@ public:
   NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &type);
   virtual ~NextHopSelectionStrategy(){};
   bool Init(const YAML::Node &n);
-  virtual void findNextHop(const uint64_t sm_id, ParentResult &result, RequestData &rdata, const uint64_t fail_threshold,
-                           const uint64_t retry_time, time_t now = 0) = 0;
-  void markNextHopDown(const uint64_t sm_id, ParentResult &result, const uint64_t fail_threshold, const uint64_t retry_time,
-                       time_t now = 0);
-  void markNextHopUp(const uint64_t sm_id, ParentResult &result);
-  bool nextHopExists(const uint64_t sm_id);
+  virtual void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) = 0;
+  void markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
+                   const time_t now = 0);
+  bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr);
+
+  virtual bool responseIsRetryable(unsigned int current_retry_attempts, HTTPStatus response_code);
+  virtual bool onFailureMarkParentDown(HTTPStatus response_code);
 
   std::string strategy_name;
   bool go_direct           = true;
@@ -206,6 +233,7 @@ public:
   NHRingMode ring_mode     = NH_ALTERNATE_RING;
   ResponseCodes resp_codes;
   HealthChecks health_checks;
+  NextHopHealthStatus passive_health;
   std::vector<std::vector<std::shared_ptr<HostRecord>>> host_groups;
   uint32_t max_simple_retries = 1;
   uint32_t groups             = 0;

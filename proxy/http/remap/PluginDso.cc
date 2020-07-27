@@ -308,7 +308,7 @@ PluginDso::LoadedPlugins::remove(PluginDso *plugin)
 }
 
 /* check if need to reload the plugin DSO
- * if dynamic reload not enabled: check if plugin Dso with same effective path aready loaded
+ * if dynamic reload not enabled: check if plugin Dso with same effective path already loaded
  * if dynamic reload enabled: check if plugin Dso with same effective path and same time stamp already loaded
  * return pointer to already loaded plugin if found, else return null
  */
@@ -359,6 +359,53 @@ PluginDso::LoadedPlugins::indicatePostReload(bool reloadSuccessful, const std::u
     }
     plugin.indicatePostReload(status);
   }
+}
+
+bool
+PluginDso::LoadedPlugins::addPluginPathToDsoOptOutTable(std::string_view pluginPath)
+{
+  std::error_code ec;
+  auto effectivePath = fs::canonical(fs::path{pluginPath}, ec);
+
+  if (ec) {
+    PluginError("Error getting the canonical path: %s", ec.message().c_str());
+    return false;
+  }
+
+  {
+    SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+    _optoutDsoReloadPlugins.push_front(DisableDSOReloadPluginInfo{effectivePath});
+  }
+
+  return true;
+}
+
+void
+PluginDso::LoadedPlugins::removePluginPathFromDsoOptOutTable(std::string_view pluginPath)
+{
+  std::error_code ec;
+  auto effectivePath = fs::canonical(fs::path{pluginPath}, ec);
+
+  if (ec) {
+    PluginError("Error getting the canonical path: %s", ec.message().c_str());
+    return;
+  }
+
+  {
+    SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+    _optoutDsoReloadPlugins.remove_if([&effectivePath](auto const &info) { return info.dsoEffectivePath == effectivePath; });
+  }
+}
+
+bool
+PluginDso::LoadedPlugins::isPluginInDsoOptOutTable(const fs::path &effectivePath)
+{
+  SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+  const auto found = std::find_if(std::begin(this->_optoutDsoReloadPlugins), std::end(this->_optoutDsoReloadPlugins),
+                                  [&effectivePath](const auto &info) { return info.dsoEffectivePath == effectivePath; });
+
+  // if is found, then the plugin opt out.
+  return (found != std::end(this->_optoutDsoReloadPlugins));
 }
 
 Ptr<PluginDso::LoadedPlugins> PluginDso::_plugins;

@@ -32,7 +32,6 @@
 #include "tscore/Tokenizer.h"
 #include "tscore/Filenames.h"
 
-#ifdef SPLIT_DNS
 #include <sys/types.h>
 #include "P_SplitDNS.h"
 #include "tscore/MatcherUtils.h"
@@ -552,5 +551,3 @@ ink_split_dns_init(ts::ModuleVersion v)
 
   init_called = 1;
 }
-
-#endif // SPLIT_DNS

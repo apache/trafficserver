@@ -217,11 +217,3 @@ SplitDNSRecord::SplitDNSRecord() {}
    SplitDNSRecord::~SplitDNSRecord()
    -------------------------------------------------------------- */
 TS_INLINE SplitDNSRecord::~SplitDNSRecord() {}
-
-/* ------------------
-   Helper Functions
-   ------------------ */
-
-SplitDNSRecord *createDefaultServer();
-void reloadDefaultParent(char *val);
-void reloadParentFile();

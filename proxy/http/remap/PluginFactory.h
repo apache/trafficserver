@@ -82,6 +82,8 @@ public:
  * filesystem links and different dl library implementations.
  *
  * @note This is meant to unify the way global and remap plugins are (re)loaded (global plugin support is not implemented yet).
+ * @note In the case of a mixed plugin, getRemapPlugin/dynamicReloadEnabled can be internally overwritten if the plugin opt out to
+ * take part in the dynamic reload process.
  */
 class PluginFactory
 {
@@ -115,6 +117,13 @@ protected:
   ATSUuid *_uuid = nullptr;
   std::error_code _ec;
   bool _preventiveCleaning = true;
+
+  // Hold the full path for global plugins not taking part of the dynamic reloading.
+  struct DisableReloadPluginInfo {
+    fs::path fullPath;
+  };
+
+  std::forward_list<DisableReloadPluginInfo> optoutPlugins;
 
   static constexpr const char *const _tag = "plugin_factory"; /** @brief log tag used by this class */
 };

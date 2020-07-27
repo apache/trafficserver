@@ -490,6 +490,11 @@ QUICHandshake::_load_local_server_transport_parameters(const QUICTPConfig &tp_co
     tp->set(param.first, param.second.first, param.second.second);
   }
 
+  // Additional parameters
+  for (auto &&param : tp_config.additional_tp()) {
+    tp->set(param.first, param.second.first, param.second.second);
+  }
+
   this->_local_transport_parameters = std::shared_ptr<QUICTransportParameters>(tp);
   this->_hs_protocol->set_local_transport_parameters(this->_local_transport_parameters);
 }

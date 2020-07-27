@@ -152,6 +152,13 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
     return nullptr;
   }
 
+  // The plugin may have opt out by `TSPluginDSOReloadEnable`, let's check and overwrite
+  if (dynamicReloadEnabled && PluginDso::loadedPlugins()->isPluginInDsoOptOutTable(effectivePath)) {
+    // plugin not interested to be reload.
+    PluginDebug(_tag, "Plugin %s not interested in taking part of the reload.", effectivePath.c_str());
+    dynamicReloadEnabled = false;
+  }
+
   /* Only one plugin with this effective path can be loaded by a plugin factory */
   RemapPluginInfo *plugin = dynamic_cast<RemapPluginInfo *>(findByEffectivePath(effectivePath, dynamicReloadEnabled));
   RemapPluginInst *inst   = nullptr;

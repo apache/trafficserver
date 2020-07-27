@@ -101,7 +101,7 @@ useful case.
    If this is unsuitable then an identity remap rule can be added for the peer |TS|. If the peer
    |TS| was named "peer.ats" and it listens on port 4443, then the remap rule would be ::
 
-      remap https://peer.ats:4443 https://peer.ats:4443
+      map https://peer.ats:4443 https://peer.ats:4443
 
    Remapping will be disabled for the user agent connection and so it will not need a rule.
 
