@@ -48,7 +48,7 @@ Plugin Configuration
 
    .. option:: --sensitive-fields <field1,field2,...,fieldn>
 
-   (`optional`) - a comma seperatated list of HTTP case-insensitive field names whose values are considered sensitive information. Traffic Dump will not dump the incoming field values for any of these fields but will instead dump a generic value for them of the same length as the original. If this option is not used, a default list of "Cookie,Set-Cookie" is used. Providing this option overwrites that default list with whatever values the user provides. Pass a quoted empty string as the argument to specify that no fields are sensitive,
+   (`optional`) - a comma separated list of HTTP case-insensitive field names whose values are considered sensitive information. Traffic Dump will not dump the incoming field values for any of these fields but will instead dump a generic value for them of the same length as the original. If this option is not used, a default list of "Cookie,Set-Cookie" is used. Providing this option overwrites that default list with whatever values the user provides. Pass a quoted empty string as the argument to specify that no fields are sensitive,
 
    .. option:: --sni-filter <SNI_Name>
 

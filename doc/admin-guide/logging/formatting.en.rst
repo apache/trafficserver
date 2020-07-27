@@ -505,7 +505,7 @@ shi   Origin Server  IP address resolved via DNS by |TS| for the origin server.
 shn   Origin Server  Host name of the origin server.
 nhi   Origin Server  Destination IP address of next hop
 nhp   Origin Server  Destination port of next hop
-ppv   Proxy Protocol Proxy Protocol Version used (if any) between the Loadbalancer
+ppv   Proxy Protocol Proxy Protocol Version used (if any) between the Load Balancer
       Version        and |TS|
 pps   Proxy Protocol Source IP received via Proxy Protocol context from the LB to
       Source IP      the |TS|

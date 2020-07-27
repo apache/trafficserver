@@ -81,7 +81,7 @@ occupy span `/dev/disk1` taking each 50% of its space and `volume 3` takes 100% 
 storage.config::
 
       /dev/disk1
-      /dev/disk2 volume=3 # <- exclusinve span
+      /dev/disk2 volume=3 # <- exclusive span
 
 volume.config::
 
