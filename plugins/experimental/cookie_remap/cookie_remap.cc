@@ -43,13 +43,8 @@ using namespace std;
 // for bucketizing
 
 #define MY_NAME "cookie_remap"
-const int OVECCOUNT = 30; // We support $1 - $9 only, and this needs to be 3x that
 
-#if TS_VERSION_MAJOR > 7
-#define SETHTTPSTATUS(TXN, STATUS) TSHttpTxnStatusSet((TXN), STATUS)
-#else
-#define SETHTTPSTATUS(TXN, STATUS) TSHttpTxnSetHttpRetStatus((TXN), STATUS)
-#endif
+const int OVECCOUNT = 30; // We support $1 - $9 only, and this needs to be 3x that
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers for memory management (to make sure pcre uses the TS APIs).
@@ -1079,18 +1074,18 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       // Maybe set the return status
       if (status > TS_HTTP_STATUS_NONE) {
         TSDebug(MY_NAME, "Setting return status to %d", status);
-        SETHTTPSTATUS(txnp, status);
+        TSHttpTxnStatusSet(txnp, status);
         if ((status == TS_HTTP_STATUS_MOVED_PERMANENTLY) || (status == TS_HTTP_STATUS_MOVED_TEMPORARILY)) {
           if (rewrite_to.size() > 8192) {
             TSError("Redirect in target "
                     "URL too long");
-            SETHTTPSTATUS(txnp, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
+            TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_REQUEST_URI_TOO_LONG);
           } else {
             const char *start = rewrite_to.c_str();
             int dest_len      = rewrite_to.size();
 
             if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
-              SETHTTPSTATUS(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+              TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
               TSError("can't parse "
                       "substituted "
                       "URL string");
@@ -1113,7 +1108,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
       // set the new url
       if (TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + rewrite_to.length()) == TS_PARSE_ERROR) {
-        SETHTTPSTATUS(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
+        TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
         TSError("can't parse substituted URL string");
         goto error;
       } else {

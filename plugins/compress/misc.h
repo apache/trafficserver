@@ -94,6 +94,5 @@ void normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);
 void hide_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
 void restore_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);
 const char *init_hidden_header_name();
-int check_ts_version();
 int register_plugin();
 void log_compression_ratio(int64_t in, int64_t out);
