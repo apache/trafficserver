@@ -1,6 +1,6 @@
 /** @file
 
-  An example plugin that denies client access to blocklisted sites (blocklist.txt).
+  An example plugin that denies client access to specified sites (denylist.txt).
 
   @section license License
 
@@ -27,7 +27,7 @@
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
 
-#define PLUGIN_NAME "blocklist_1"
+#define PLUGIN_NAME "denylist_1"
 
 #define MAX_NSITES 500
 #define RETRY_TIME 10
@@ -95,7 +95,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   }
 
   /* We need to lock the sites_mutex as that is the mutex that is
-     protecting the global list of all blocklisted sites. */
+     protecting the global list of all denylisted sites. */
   if (TSMutexLockTry(sites_mutex) != TS_SUCCESS) {
     TSDebug(PLUGIN_NAME, "Unable to get lock. Will retry after some time");
     TSHandleMLocRelease(bufp, hdr_loc, url_loc);
@@ -107,9 +107,9 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
   for (i = 0; i < nsites; i++) {
     if (strncmp(host, sites[i], host_length) == 0) {
       if (log) {
-        TSTextLogObjectWrite(log, "blocklisting site: %s", sites[i]);
+        TSTextLogObjectWrite(log, "denylisting site: %s", sites[i]);
       } else {
-        TSDebug(PLUGIN_NAME, "blocklisting site: %s", sites[i]);
+        TSDebug(PLUGIN_NAME, "denylisting site: %s", sites[i]);
       }
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
@@ -174,13 +174,13 @@ done:
 }
 
 static void
-read_blocklist(TSCont contp)
+read_denylist(TSCont contp)
 {
-  char blocklist_file[1024];
+  char denylist_file[1024];
   TSFile file;
 
-  sprintf(blocklist_file, "%s/blocklist.txt", TSPluginDirGet());
-  file   = TSfopen(blocklist_file, "r");
+  sprintf(denylist_file, "%s/denylist.txt", TSPluginDirGet());
+  file   = TSfopen(denylist_file, "r");
   nsites = 0;
 
   /* If the Mutex lock is not successful try again in RETRY_TIME */
@@ -215,7 +215,7 @@ read_blocklist(TSCont contp)
 
     TSfclose(file);
   } else {
-    TSError("[%s] Unable to open %s", PLUGIN_NAME, blocklist_file);
+    TSError("[%s] Unable to open %s", PLUGIN_NAME, denylist_file);
     TSError("[%s] All sites will be allowed", PLUGIN_NAME);
   }
 
@@ -223,7 +223,7 @@ read_blocklist(TSCont contp)
 }
 
 static int
-blocklist_plugin(TSCont contp, TSEvent event, void *edata)
+denylist_plugin(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp;
   cdata *cd;
@@ -276,7 +276,7 @@ blocklist_plugin(TSCont contp, TSEvent event, void *edata)
         break;
       }
     } else {
-      read_blocklist(contp);
+      read_denylist(contp);
       return 0;
     }
   default:
@@ -291,7 +291,7 @@ handle_txn_start(TSCont contp ATS_UNUSED, TSHttpTxn txnp)
   TSCont txn_contp;
   cdata *cd;
 
-  txn_contp = TSContCreate((TSEventFunc)blocklist_plugin, TSMutexCreate());
+  txn_contp = TSContCreate((TSEventFunc)denylist_plugin, TSMutexCreate());
   /* create the data that'll be associated with the continuation */
   cd = (cdata *)TSmalloc(sizeof(cdata));
   TSContDataSet(txn_contp, cd);
@@ -319,8 +319,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
     TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
-  /* create an TSTextLogObject to log blocklisted requests to */
-  error = TSTextLogObjectCreate("blocklist", TS_LOG_MODE_ADD_TIMESTAMP, &log);
+  /* create an TSTextLogObject to log denied requests to */
+  error = TSTextLogObjectCreate("denylist", TS_LOG_MODE_ADD_TIMESTAMP, &log);
   if (!log || error == TS_ERROR) {
     TSDebug(PLUGIN_NAME, "error while creating log");
   }
@@ -332,8 +332,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
     sites[i] = NULL;
   }
 
-  global_contp = TSContCreate(blocklist_plugin, sites_mutex);
-  read_blocklist(global_contp);
+  global_contp = TSContCreate(denylist_plugin, sites_mutex);
+  read_denylist(global_contp);
 
   /*TSHttpHookAdd (TS_HTTP_OS_DNS_HOOK, contp); */
   TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, global_contp);

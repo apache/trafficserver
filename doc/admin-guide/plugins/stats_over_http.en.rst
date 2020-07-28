@@ -88,16 +88,16 @@ This sets the path value for stats
 
 .. option:: allow_ip=
 
-A comma separated white list of ipv4 addresses allowed to access the endpoint
+A comma separated list of IPv4 addresses allowed to access the endpoint
 
 .. option:: allow_ip6=
 
-A comma separated white list of ipv6 addresses allowed to access the endpoint
+A comma separated list of IPv6 addresses allowed to access the endpoint
 
 Output Format
 =============
 
-By default stats_over_http.so will output all the stats in json format. However
+By default stats_over_http.so will output all the stats in JSON format. However
 if you wish to have it in CSV format you can do so by passing an ``Accept`` header:
 
 .. option:: Accept: text/csv

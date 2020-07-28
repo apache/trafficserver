@@ -93,7 +93,7 @@ Possible Uses for Plugins
 
 Possible uses for plugins include the following:
 
--  HTTP processing: plugins can filter, blacklist, authorize users,
+-  HTTP processing: plugins can filter, deny access, authorize users,
    transform content
 
 -  Protocol support: plugins can enable Traffic Server to proxy-cache
@@ -101,7 +101,7 @@ Possible uses for plugins include the following:
 
 Some examples of plugins include:
 
--  **Blacklisting plugin**: denies attempts to access web sites that are
+-  **Denylisting plugin**: denies attempts to access web sites that are
    off-limits.
 
 -  **Append transform plugin**: adds text to HTTP response content.
@@ -151,9 +151,9 @@ You can find basic examples for many plugins in the SDK sample code:
 
 -  ``basic_auth.c`` performs basic HTTP proxy authorization.
 
--  ``blacklist_1.c`` reads blacklisted servers from a configuration file
+-  ``denylist_1.c`` reads a list of servers from a configuration file
    and denies client access to these servers. This plugin is explained
-   in :ref:`developer-plugins-examples-blacklist`.
+   in :ref:`developer-plugins-examples-denylist`.
 
 Plugin Loading
 --------------
