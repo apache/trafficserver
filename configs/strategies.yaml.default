@@ -108,7 +108,7 @@
 #         - 404
 #         - 502
 #         - 503
-#       health_check: # specifies the list of healthchecks that should be considered for failover. A list of enums: 'passive' or 'active'
+#       health_check: # specifies the list of health checks that should be considered for failover. A list of enums: 'passive' or 'active'
 #         - passive
 #         - active
 #   - strategy: 'mid-tier-south'
