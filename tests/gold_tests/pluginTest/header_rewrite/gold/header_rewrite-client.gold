@@ -8,5 +8,6 @@
 < Date: ``
 < Proxy-Connection: keep-alive
 < Server: ATS/``
+< Cache-Control: no-store
 <
 ``
