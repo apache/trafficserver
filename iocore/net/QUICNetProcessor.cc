@@ -43,7 +43,7 @@ QUICNetProcessor::QUICNetProcessor() {}
 
 QUICNetProcessor::~QUICNetProcessor()
 {
-  // TODO: clear all values before destory the table.
+  // TODO: clear all values before destroy the table.
   delete this->_ctable;
 }
 

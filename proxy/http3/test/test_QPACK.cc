@@ -158,7 +158,7 @@ output_encoder_stream_data(FILE *fd, TestQUICStream *stream)
   uint64_t stream_id = 0;
   fwrite(reinterpret_cast<uint8_t *>(&stream_id), 8, 1, fd);
 
-  // Skip 32 bits for Legnth
+  // Skip 32 bits for Length
   fseek(fd, 4, SEEK_CUR);
 
   // Write QPACKData
@@ -169,7 +169,7 @@ output_encoder_stream_data(FILE *fd, TestQUICStream *stream)
     total += nread;
   }
 
-  // Back to the posistion for Length
+  // Back to the position for Length
   fseek(fd, -(total + 4), SEEK_CUR);
 
   // Write Length
@@ -189,7 +189,7 @@ output_encoded_data(FILE *fd, uint64_t stream_id, IOBufferReader *header_block_r
   stream_id = htobe64(stream_id);
   fwrite(reinterpret_cast<uint8_t *>(&stream_id), 8, 1, fd);
 
-  // Skip 32 bits for Legnth
+  // Skip 32 bits for Length
   fseek(fd, 4, SEEK_CUR);
 
   // Write QPACKData
@@ -200,7 +200,7 @@ output_encoded_data(FILE *fd, uint64_t stream_id, IOBufferReader *header_block_r
     total += nread;
   }
 
-  // Back to the posistion for Length
+  // Back to the position for Length
   fseek(fd, -(total + 4), SEEK_CUR);
 
   // Write Length

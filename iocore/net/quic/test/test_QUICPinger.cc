@@ -69,7 +69,7 @@ TEST_CASE("QUICPinger", "[quic]")
     REQUIRE(pinger.count(level) == 0);
   }
 
-  SECTION("generating PING Frame for next continuos un-ack-eliciting packets")
+  SECTION("generating PING Frame for next continuous un-ack-eliciting packets")
   {
     QUICPinger pinger;
     REQUIRE(pinger.will_generate_frame(level, UINT64_MAX, false, 0) == true);

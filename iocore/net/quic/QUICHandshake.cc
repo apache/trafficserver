@@ -106,13 +106,13 @@ QUICHandshake::~QUICHandshake()
 QUICConnectionErrorUPtr
 QUICHandshake::start(const QUICTPConfig &tp_config, QUICPacketFactory *packet_factory, bool vn_exercise_enabled)
 {
-  QUICVersion initital_version = QUIC_SUPPORTED_VERSIONS[0];
+  QUICVersion initial_version = QUIC_SUPPORTED_VERSIONS[0];
   if (vn_exercise_enabled) {
-    initital_version = QUIC_EXERCISE_VERSION;
+    initial_version = QUIC_EXERCISE_VERSION;
   }
 
   this->_load_local_client_transport_parameters(tp_config);
-  packet_factory->set_version(initital_version);
+  packet_factory->set_version(initial_version);
 
   return nullptr;
 }
@@ -132,7 +132,7 @@ QUICHandshake::start(const QUICTPConfig &tp_config, const QUICInitialPacketR &in
         this->_load_local_server_transport_parameters(tp_config, pref_addr);
         packet_factory->set_version(this->_version_negotiator->negotiated_version());
       } else {
-        ink_assert(!"Unsupported version initial packet should be droped QUICPakcetHandler");
+        ink_assert(!"Unsupported version initial packet should be dropped QUICPacketHandler");
       }
     } else {
       return std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION);

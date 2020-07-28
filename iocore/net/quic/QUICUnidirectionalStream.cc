@@ -572,7 +572,7 @@ QUICReceiveStream::recv(const QUICStreamDataBlockedFrame &frame)
 /**
  * @brief Receive STREAM frame
  * @detail When receive STREAM frame, reorder frames and write to buffer of read_vio.
- * If the reordering or writting operation is heavy, split out them to read function,
+ * If the reordering or writing operation is heavy, split out them to read function,
  * which is called by application via do_io_read() or reenable().
  */
 QUICConnectionErrorUPtr

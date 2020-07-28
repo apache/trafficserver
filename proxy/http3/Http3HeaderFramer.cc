@@ -106,7 +106,7 @@ Http3HeaderFramer::_generate_header_block()
   case PARSE_RESULT_CONT:
     break;
   default:
-    Debug("http3_trans", "Ignore ivalid headers");
+    Debug("http3_trans", "Ignore invalid headers");
     break;
   }
 }

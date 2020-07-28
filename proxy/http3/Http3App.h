@@ -51,7 +51,7 @@ public:
   virtual void start();
   virtual int main_event_handler(int event, Event *data);
 
-  // TODO: Return StreamIO. It looks bother that coller have to look up StreamIO by stream id.
+  // TODO: Return StreamIO. It looks bother that caller have to look up StreamIO by stream id.
   // Why not create_bidi_stream ?
   QUICConnectionErrorUPtr create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type);
 
@@ -106,6 +106,6 @@ public:
 
 private:
   NetVConnectionContext_t _context;
-  bool _is_done = false; ///< Becarefull when set FIN flag on CONTROL stream. Maybe never?
+  bool _is_done = false; ///< Be careful when setting FIN flag on CONTROL stream. Maybe never?
   bool _is_sent = false; ///< Send SETTINGS frame only once
 };
