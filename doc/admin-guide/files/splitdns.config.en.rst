@@ -105,7 +105,7 @@ Examples
 
 Consider the following DNS server selection specifications: ::
 
-      dest_domain=internal.company.com named=255.255.255.255:212 255.255.255.254 def_domain=company.com search_list=company.com company1.com
+      dest_domain=internal.company.com named="255.255.255.255:212 255.255.255.254" def_domain=company.com search_list="company.com company1.com"
       dest_domain=!internal.company.com named=255.255.255.253
 
 Now consider the following two requests: ::
