@@ -58,8 +58,8 @@ The logging API enables you to:
    :c:func:`TSTextLogObjectDestroy`
 
 The steps below show how the logging API is used in the
-``blacklist_1.c`` sample plugin. For the complete source code, see the
-:ref:`developer-plugins-examples-blacklist-code` section.
+``denylist_1.c`` sample plugin. For the complete source code, see the
+:ref:`developer-plugins-examples-denylist-code` section.
 
 #. A new log file is defined as a global variable.
 
@@ -71,10 +71,10 @@ The steps below show how the logging API is used in the
 
    .. code-block:: c
 
-           TSReturnCode error = TSTextLogObjectCreate("blacklist",
+           TSReturnCode error = TSTextLogObjectCreate("denylist",
                                 TS_LOG_MODE_ADD_TIMESTAMP, &log);
 
-   The new log is named ``blacklist.log``. Each entry written to the log
+   The new log is named ``denylist.log``. Each entry written to the log
    will have a timestamp. The ``NULL`` argument specifies that the new
    log does not have a log header. The error argument stores the result
    of the log creation; if the log is created successfully, then an
@@ -86,11 +86,11 @@ The steps below show how the logging API is used in the
    .. code-block:: c
 
        if (error != TS_SUCCESS) {
-           printf("Blacklist plugin: error %d while creating log\n", error);
+           printf("denylist plugin: error %d while creating log\n", error);
        }
 
-#. The :ref:`developer-plugins-examples-blacklist` matches the host portion of
-   the URL (in each client request) with a list of blacklisted sites (stored in
+#. The :ref:`developer-plugins-examples-denylist` matches the host portion of
+   the URL (in each client request) with a list of denylisted sites (stored in
    the array ``sites[]``):
 
    .. code-block:: c
@@ -101,23 +101,23 @@ The steps below show how the logging API is used in the
          }
        }
 
-   If the host matches one of the blacklisted
-   sites (such as ``sites[i]``), then the plugin writes a blacklist
-   entry to ``blacklist.log``:
+   If the host matches one of the denylisted
+   sites (such as ``sites[i]``), then the plugin writes a denylist
+   entry to ``denylist.log``:
 
    .. code-block:: c
 
-       if (log) { TSTextLogObjectWrite(log, "blacklisting site: %s",
+       if (log) { TSTextLogObjectWrite(log, "denylisting site: %s",
        sites[i]);
 
    The format of the log entry is as follows:
 
    ::
 
-       blacklisting site: sites[i]
+       denylisting site: sites[i]
 
    The log is not flushed or
-   destroyed in the ``blacklist_1`` plugin - it lives for the life of
+   destroyed in the ``denylist_1`` plugin - it lives for the life of
    the plugin.
 
 

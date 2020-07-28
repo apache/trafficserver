@@ -26,13 +26,13 @@ example_Plugins = \
 	add_header.la \
 	append_transform.la \
 	basic_auth.la \
-	blocklist_0.la \
-	blocklist_1.la \
 	bnull_transform.la \
 	cert_update.la \
 	request_buffer.la \
 	cache_scan.la \
 	client_context_dump.la \
+	denylist_0.la \
+	denylist_1.la \
 	file_1.la \
 	hello.la \
 	intercept.la \
@@ -71,8 +71,8 @@ endif
 add_header_la_SOURCES = add_header/add_header.c
 append_transform_la_SOURCES = append_transform/append_transform.c
 basic_auth_la_SOURCES = basic_auth/basic_auth.c
-blocklist_0_la_SOURCES = blocklist_0/blocklist_0.c
-blocklist_1_la_SOURCES = blocklist_1/blocklist_1.c
+denylist_0_la_SOURCES = denylist_0/denylist_0.c
+denylist_1_la_SOURCES = denylist_1/denylist_1.c
 bnull_transform_la_SOURCES = bnull_transform/bnull_transform.c
 cert_update_la_SOURCES = cert_update/cert_update.cc
 request_buffer_la_SOURCES = request_buffer/request_buffer.c
