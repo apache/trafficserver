@@ -114,7 +114,7 @@ Origin Server
    :type counter
    :units bytes
 
-.. ts:stat:: global proxy.process.http.origin_shutdown.release_invalid_repsonse integer
+.. ts:stat:: global proxy.process.http.origin_shutdown.release_invalid_response integer
    :type counter
    :units bytes
 

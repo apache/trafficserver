@@ -19,7 +19,7 @@ Memory_profile Plugin
   under the License.
 
 
-This plugin listens for plugin msgs and invokes jemalloc control
+This plugin listens for plugin messages and invokes jemalloc control
 operations.
 
 Installation
@@ -45,7 +45,7 @@ restart to pick up.
 Plugin Messages
 ===============
 
-The plugin responds to the following mesages sent via traffic_ctl.
+The plugin responds to the following messages sent via traffic_ctl.
 
 Message    Action
 ========== ===================================================================================
@@ -89,11 +89,11 @@ to get text output or graphs. Details of how to use jeprof are in the man pages 
 You may want to send the dump message periodically to analyze how the |TS| memory allocation changes over time.  This periodic dump can also be achieved by setting the
 ``lg_prof_interval`` option in the run time configuration string.
 
-If the profiling is taking a significating amount of processing time and affecting |TS| performance, send the deactivate message to turn off profiling.::
+If the profiling is taking a significant amount of processing time and affecting |TS| performance, send the deactivate message to turn off profiling.::
 
     traffic_ctl plugin msg memory_profile deactivate
 
-Send the stats message to cause detailed jemalloc stats to be printed in traffic.out.  These stats represent actvitiy since the start of the |TS| process.::
+Send the stats message to cause detailed jemalloc stats to be printed in traffic.out.  These stats represent activity since the start of the |TS| process.::
 
     traffic_ctl plugin msg memory_profile stats
 

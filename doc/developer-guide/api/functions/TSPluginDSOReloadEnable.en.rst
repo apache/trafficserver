@@ -21,7 +21,7 @@
 TSPluginDSOReloadEnable
 *************************
 
-Control whether this plugin will take part in the remap dynamic reload preocess (remap.config)
+Control whether this plugin will take part in the remap dynamic reload process (remap.config)
 
 Synopsis
 ========
