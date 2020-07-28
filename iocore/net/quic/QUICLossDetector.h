@@ -137,7 +137,7 @@ private:
 class QUICRTTMeasure : public QUICRTTProvider
 {
 public:
-  // use `friend` so ld can acesss RTTMeasure.
+  // use `friend` so ld can access RTTMeasure.
   // friend QUICLossDetector;
 
   QUICRTTMeasure(const QUICLDConfig &ld_config);

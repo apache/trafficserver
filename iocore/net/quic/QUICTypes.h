@@ -67,7 +67,7 @@ enum class QUICEncryptionLevel {
 };
 
 // For range-based for loop. This starts from INITIAL to ONE_RTT. It doesn't include NONE.
-// Defining begin, end, operator*, operator++ doen't work for duplicate symbol issue with libmgmt_p.a :(
+// Defining begin, end, operator*, operator++ doesn't work for duplicate symbol issue with libmgmt_p.a :(
 // TODO: support ZERO_RTT
 constexpr QUICEncryptionLevel QUIC_ENCRYPTION_LEVELS[] = {
   QUICEncryptionLevel::INITIAL,
@@ -81,7 +81,7 @@ enum class QUICPacketNumberSpace : int { INITIAL, HANDSHAKE, APPLICATION_DATA, N
 // For conveniece (this removes neccesity of static_cast)
 constexpr int QUIC_N_PACKET_SPACES = static_cast<int>(QUICPacketNumberSpace::N_SPACES);
 
-// Devide to QUICPacketType and QUICPacketLongHeaderType ?
+// Divide to QUICPacketType and QUICPacketLongHeaderType ?
 enum class QUICPacketType : uint8_t {
   INITIAL             = 0x00, // draft-17 version-specific type
   ZERO_RTT_PROTECTED  = 0x01, // draft-17 version-specific type

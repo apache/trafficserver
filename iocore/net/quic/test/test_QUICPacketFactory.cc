@@ -58,7 +58,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Source Connection ID
     0xff, 0x00, 0x00, 0x1d,                         // Supported Version
     0xff, 0x00, 0x00, 0x1b,                         // Supported Version
-    0x5a, 0x6a, 0x7a, 0x8a,                         // Excercise Version
+    0x5a, 0x6a, 0x7a, 0x8a,                         // Exercise Version
   };
   uint8_t buf[1024] = {0};
   size_t buf_len;

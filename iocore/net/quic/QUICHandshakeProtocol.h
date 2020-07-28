@@ -34,7 +34,7 @@ struct QUICHandshakeMsgs {
   uint8_t *buf        = nullptr; //< pointer to the buffer
   size_t max_buf_len  = 0;       //< size of buffer
   size_t offsets[5]   = {0};     //< offset to the each encryption level - {initial, zero_rtt, handshake, one_rtt, total length}
-  uint16_t error_code = 0;       //< CRYPTO_ERROR - TLS Alert Desciption + 0x100
+  uint16_t error_code = 0;       //< CRYPTO_ERROR - TLS Alert Description + 0x100
 };
 
 class QUICHandshakeProtocol

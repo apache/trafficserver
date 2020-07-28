@@ -216,7 +216,7 @@ namespace Transport
   {
     node["new"]       = static_cast<int>(_new);
     node["stream_id"] = _stream_id;
-    // FXIME
+    // FIXME
     // node["stream_type"] = bidi ? "bidirectional" : "unidirectional";
     // node["stream_side"] = "sending";
   }

@@ -32,7 +32,7 @@ public:
     RECOVERY,
     CONGESTION_AVOIDANCE,
     SLOW_START,
-    APPPLICATION_LIMITED,
+    APPLICATION_LIMITED,
   };
 
   virtual ~QUICCongestionController() {}

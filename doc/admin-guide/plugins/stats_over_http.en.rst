@@ -88,7 +88,7 @@ This sets the path value for stats
 
 .. option:: allow_ip=
 
-A comma separated white list of ipv4 addresses allowed to accesss the endpoint
+A comma separated white list of ipv4 addresses allowed to access the endpoint
 
 .. option:: allow_ip6=
 

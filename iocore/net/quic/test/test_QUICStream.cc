@@ -373,7 +373,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::RESET_STREAM);
-    // Don't send it again untill it is considers as lost
+    // Don't send it again until it is considers as lost
     CHECK(stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0) == nullptr);
     // Loss the frame
     stream->on_frame_lost(frame->id());
@@ -404,7 +404,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::STOP_SENDING);
-    // Don't send it again untill it is considers as lost
+    // Don't send it again until it is considers as lost
     CHECK(stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0) == nullptr);
     // Loss the frame
     stream->on_frame_lost(frame->id());
@@ -602,7 +602,7 @@ TEST_CASE("QUIC receive only stream", "[quic]")
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::STOP_SENDING);
-    // Don't send it again untill it is considers as lost
+    // Don't send it again until it is considers as lost
     CHECK(stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0) == nullptr);
     // Loss the frame
     stream->on_frame_lost(frame->id());
@@ -826,7 +826,7 @@ TEST_CASE("QUIC send only stream", "[quic]")
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::RESET_STREAM);
-    // Don't send it again untill it is considers as lost
+    // Don't send it again until it is considers as lost
     CHECK(stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0) == nullptr);
     // Loss the frame
     stream->on_frame_lost(frame->id());

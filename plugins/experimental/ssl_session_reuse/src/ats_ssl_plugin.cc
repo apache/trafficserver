@@ -52,15 +52,11 @@ TSPluginInit(int argc, const char *argv[])
 
   TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, TSContCreate(shutdown_handler, nullptr));
 
-#if (TS_VERSION_NUMBER >= 7000000)
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("Plugin registration failed.");
+    return;
   }
-#else
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-    TSError("Plugin registration failed.");
-  }
-#endif
+
   if (argc < 2) {
     TSError("Must specify config file.");
   } else if (!init_ssl_params(argv[1])) {

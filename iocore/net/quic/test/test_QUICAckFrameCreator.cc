@@ -178,7 +178,7 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
   }
 
-  SECTION("QUIC intial packet", "[quic]")
+  SECTION("QUIC initial packet", "[quic]")
   {
     QUICAckFrameManager ack_manager;
 

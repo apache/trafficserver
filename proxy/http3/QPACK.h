@@ -281,7 +281,7 @@ private:
   int _read_table_state_synchronize(QUICStreamIO &stream_io, uint16_t &insert_count);
   int _read_header_acknowledgement(QUICStreamIO &stream_io, uint64_t &stream_id);
   int _read_stream_cancellation(QUICStreamIO &stream_io, uint64_t &stream_id);
-  int _write_table_state_syncrhonize(uint16_t insert_count);
+  int _write_table_state_synchronize(uint16_t insert_count);
   int _write_header_acknowledgement(uint64_t stream_id);
   int _write_stream_cancellation(uint64_t stream_id);
 

@@ -79,7 +79,7 @@ QUICFlowController::update(QUICOffset offset)
 void
 QUICFlowController::forward_limit(QUICOffset limit)
 {
-  // MAX_(STREAM_)DATA might be unorderd due to delay
+  // MAX_(STREAM_)DATA might be unordered due to delay
   // Just ignore if the size was smaller than the last one
   if (this->_limit > limit) {
     return;

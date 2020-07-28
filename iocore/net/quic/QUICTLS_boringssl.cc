@@ -338,7 +338,7 @@ QUICTLS::_pass_quic_data_to_ssl_impl(const QUICHandshakeMsgs &in)
       ossl_level = ssl_encryption_application;
       break;
     default:
-      // Should not be happend
+      // Should not be happened
       ossl_level = ssl_encryption_application;
       break;
     }

@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __P_QUICNET_H__
-#define __P_QUICNET_H__
+#pragma once
 
 #include <bitset>
 
@@ -77,4 +76,3 @@ get_QUICPollCont(EThread *t)
 }
 
 extern ClassAllocator<QUICPollEvent> quicPollEventAllocator;
-#endif

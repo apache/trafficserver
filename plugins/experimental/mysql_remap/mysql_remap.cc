@@ -129,14 +129,9 @@ not_found:
     TSHttpHdrStatusSet(reqp, hdr_loc, TS_HTTP_STATUS_NOT_FOUND);
     TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_NOT_FOUND);
   }
-  if (res)
+  if (res) {
     mysql_free_result(res);
-#if (TS_VERSION_NUMBER < 2001005)
-  if (request_host)
-    TSHandleStringRelease(reqp, hdr_loc, request_host);
-  if (request_scheme)
-    TSHandleStringRelease(reqp, hdr_loc, request_scheme);
-#endif
+  }
 release_field:
   if (field_loc) {
     TSHandleMLocRelease(reqp, hdr_loc, field_loc);

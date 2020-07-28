@@ -971,7 +971,7 @@ mptcp
 
    The setting must contain at least one of ``ip``, ``host``, ``hostonly`` or ``both``
    for session reuse to operate.  The other values may be used for greater control
-   with TLS sessoin reuse.
+   with TLS session reuse.
 
 .. note::
 
@@ -3475,7 +3475,7 @@ SSL Termination
   Lowering this setting to ``1`` can be interesting when ``proxy.config.ssl.session_cache`` is enabled because
   otherwise for every new TLSv1.3 connection two session IDs will be inserted in the session cache.
   On the other hand, if ``proxy.config.ssl.session_cache``  is disabled, using the default value is recommended.
-  In those scenarios, increasing the number of tickets could be potentially benefitial for clients performing
+  In those scenarios, increasing the number of tickets could be potentially beneficial for clients performing
   multiple requests over concurrent TLS connections as per RFC 8446 clients SHOULDN'T reuse TLS Tickets.
 
   For more information see https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_num_tickets.html

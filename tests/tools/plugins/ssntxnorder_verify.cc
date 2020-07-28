@@ -260,7 +260,6 @@ handle_order(TSCont contp, TSEvent event, void *edata)
     break;
   }
 
-#if ((TS_VERSION_MAJOR == 6 && TS_VERSION_MINOR >= 2) || TS_VERSION_MAJOR > 6)
   case TS_EVENT_LIFECYCLE_MSG: // External trigger, such as traffic_ctl
   {
     TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_LIFECYCLE_MSG");
@@ -275,7 +274,6 @@ handle_order(TSCont contp, TSEvent event, void *edata)
 
     break;
   }
-#endif
 
   case TS_EVENT_IMMEDIATE:
     TSStatIntIncrement(stat_test_done, 1);
@@ -308,13 +306,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name   = vendor_name;
   info.support_email = support_email;
 
-#if (TS_VERSION_MAJOR < 3)
-  if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
-#elif (TS_VERSION_MAJOR < 6)
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-#else
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-#endif
     TSDebug(DEBUG_TAG_HOOK, "[%s] Plugin registration failed. \n", plugin_name);
   }
 
@@ -340,8 +332,6 @@ TSPluginInit(int argc, const char *argv[])
     TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp);
     TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, contp);
 
-#if ((TS_VERSION_MAJOR == 6 && TS_VERSION_MINOR >= 2) || TS_VERSION_MAJOR > 6)
     TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, contp);
-#endif
   }
 }

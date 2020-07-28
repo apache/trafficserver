@@ -122,14 +122,7 @@ TSPluginInit(int argc, const char **argv)
   info.support_email = const_cast<char *>("shinrich@verizonmedia.com");
   info.vendor_name   = const_cast<char *>("Verizon Media");
 
-  TSReturnCode ret;
-#if (TS_VERSION_MAJOR >= 7)
-  ret = TSPluginRegister(&info);
-#else
-  ret = TSPluginRegister(TS_SDK_VERSION_3_0, &info);
-#endif
-
-  if (TS_ERROR == ret) {
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[" PLUGIN_TAG "] plugin registration failed\n");
     return;
   }

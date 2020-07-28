@@ -27,7 +27,7 @@
 
 #include "Http3FrameHandler.h"
 
-// TODO: rename, this is not VIOAdoptor anymore
+// TODO: rename, this is not VIOAdaptor anymore
 class Http3HeaderVIOAdaptor : public Http3FrameHandler
 {
 public:

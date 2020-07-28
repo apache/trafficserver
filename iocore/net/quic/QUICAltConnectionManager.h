@@ -56,7 +56,7 @@ public:
   /**
    * Migrate to new CID
    *
-   * cid need to match with one of alt CID that AltConnnectionManager prepared.
+   * cid need to match with one of alt CID that AltConnectionManager prepared.
    */
   bool migrate_to(const QUICConnectionId &cid, QUICStatelessResetToken &new_reset_token);
 

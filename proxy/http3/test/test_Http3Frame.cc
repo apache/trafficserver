@@ -29,7 +29,7 @@
 TEST_CASE("Http3Frame Type", "[http3]")
 {
   CHECK(Http3Frame::type(reinterpret_cast<const uint8_t *>("\x00\x00"), 2) == Http3FrameType::DATA);
-  // Undefined ragne
+  // Undefined range
   CHECK(Http3Frame::type(reinterpret_cast<const uint8_t *>("\x0f\x00"), 2) == Http3FrameType::UNKNOWN);
   CHECK(Http3Frame::type(reinterpret_cast<const uint8_t *>("\xff\xff\xff\xff\xff\xff\xff\x00"), 9) == Http3FrameType::UNKNOWN);
 }

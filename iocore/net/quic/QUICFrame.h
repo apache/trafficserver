@@ -269,7 +269,7 @@ public:
                QUICFrameGenerator *owner = nullptr);
   std::set<PacketNumberRange> ranges() const;
 
-  // There's no reasont restrict copy, but we need to write the copy constructor. Otherwise it will crash on destruct.
+  // There's no reason to restrict copy, but we need to write the copy constructor. Otherwise it will crash on destruct.
   QUICAckFrame(const QUICAckFrame &) = delete;
 
   virtual ~QUICAckFrame();
@@ -874,7 +874,7 @@ public:
    * Creates a NEW_CONNECTION_ID frame.
    */
   static QUICNewConnectionIdFrame *create_new_connection_id_frame(uint8_t *buf, uint64_t sequence, uint64_t retire_prior_to,
-                                                                  QUICConnectionId connectoin_id,
+                                                                  QUICConnectionId connection_id,
                                                                   QUICStatelessResetToken stateless_reset_token, QUICFrameId id = 0,
                                                                   QUICFrameGenerator *owner = nullptr);
 

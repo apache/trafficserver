@@ -36,6 +36,6 @@ Http3Stream::type(const uint8_t *buf)
   case static_cast<uint8_t>(Http3StreamType::QPACK_DECODER):
     return Http3StreamType::QPACK_DECODER;
   default:
-    return Http3StreamType::UNKOWN;
+    return Http3StreamType::UNKNOWN;
   }
 }
