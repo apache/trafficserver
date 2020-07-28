@@ -44,13 +44,13 @@ quic_new_ssl_ctx()
   SSL_CTX_set_max_proto_version(ssl_ctx, TLS1_3_VERSION);
 
 #ifndef OPENSSL_IS_BORINGSSL
-  // FIXME: OpenSSL (1.1.1-alpha) enable this option by default. But this shoule be removed when OpenSSL disable this by default.
+  // FIXME: OpenSSL (1.1.1-alpha) enable this option by default. But this should be removed when OpenSSL disable this by default.
   SSL_CTX_clear_options(ssl_ctx, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
 
   SSL_CTX_set_max_early_data(ssl_ctx, UINT32_C(0xFFFFFFFF));
 
 #else
-  // QUIC Transport Parameters are accesible with SSL_set_quic_transport_params and SSL_get_peer_quic_transport_params
+  // QUIC Transport Parameters are accessible with SSL_set_quic_transport_params and SSL_get_peer_quic_transport_params
 #endif
 
 #ifdef SSL_MODE_QUIC_HACK

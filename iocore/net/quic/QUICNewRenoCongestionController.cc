@@ -96,7 +96,7 @@ QUICNewRenoCongestionController::on_packet_acked(const QUICPacketInfo &acked_pac
     // Slow start.
     this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED, QUICCongestionController::State::SLOW_START);
     this->_congestion_window += acked_packet.sent_bytes;
-    QUICCCDebug("slow start window chaged");
+    QUICCCDebug("slow start window changed");
   } else {
     // Congestion avoidance.
     this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED,
@@ -106,7 +106,7 @@ QUICNewRenoCongestionController::on_packet_acked(const QUICPacketInfo &acked_pac
   }
 }
 
-// addtional code
+// additional code
 // the original one is:
 //   CongestionEvent(sent_time):
 void

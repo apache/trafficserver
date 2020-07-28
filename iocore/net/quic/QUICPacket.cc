@@ -684,11 +684,11 @@ QUICShortHeaderPacketR::QUICShortHeaderPacketR(UDPConnection *udp_con, IpEndpoin
     len += b->size();
   }
 
-  Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
-  concatinated_block->fill(len);
+  Ptr<IOBufferBlock> concatenated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  concatenated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
+  concatenated_block->fill(len);
 
-  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
+  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatenated_block->start());
 
   size_t copied_len = 0;
   for (auto b = blocks; b; b = b->next) {
@@ -710,10 +710,10 @@ QUICShortHeaderPacketR::QUICShortHeaderPacketR(UDPConnection *udp_con, IpEndpoin
   QUICPacket::decode_packet_number(this->_packet_number, src, this->_packet_number_len, base_packet_number);
   offset += this->_packet_number_len;
 
-  this->_header_block          = concatinated_block->clone();
+  this->_header_block          = concatenated_block->clone();
   this->_header_block->_end    = this->_header_block->_start + offset;
   this->_header_block->next    = nullptr;
-  this->_payload_block         = concatinated_block->clone();
+  this->_payload_block         = concatenated_block->clone();
   this->_payload_block->_start = this->_payload_block->_start + offset;
 }
 
@@ -993,11 +993,11 @@ QUICVersionNegotiationPacketR::QUICVersionNegotiationPacketR(UDPConnection *udp_
     len += b->size();
   }
 
-  Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
-  concatinated_block->fill(len);
+  Ptr<IOBufferBlock> concatenated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  concatenated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
+  concatenated_block->fill(len);
 
-  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
+  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatenated_block->start());
 
   size_t copied_len = 0;
   for (auto b = blocks; b; b = b->next) {
@@ -1019,10 +1019,10 @@ QUICVersionNegotiationPacketR::QUICVersionNegotiationPacketR(UDPConnection *udp_
   this->_versions  = raw_buf + offset;
   this->_nversions = (len - offset) / sizeof(QUICVersion);
 
-  this->_header_block          = concatinated_block->clone();
+  this->_header_block          = concatenated_block->clone();
   this->_header_block->_end    = this->_header_block->_start + offset;
   this->_header_block->next    = nullptr;
-  this->_payload_block         = concatinated_block->clone();
+  this->_payload_block         = concatenated_block->clone();
   this->_payload_block->_start = this->_payload_block->_start + offset;
 }
 
@@ -1185,11 +1185,11 @@ QUICInitialPacketR::QUICInitialPacketR(UDPConnection *udp_con, IpEndpoint from, 
     len += b->size();
   }
 
-  Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
-  concatinated_block->fill(len);
+  Ptr<IOBufferBlock> concatenated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  concatenated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
+  concatenated_block->fill(len);
 
-  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
+  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatenated_block->start());
 
   size_t copied_len = 0;
   for (auto b = blocks; b; b = b->next) {
@@ -1229,10 +1229,10 @@ QUICInitialPacketR::QUICInitialPacketR(UDPConnection *udp_con, IpEndpoint from, 
                                    base_packet_number);
   offset += pn_len;
 
-  this->_header_block          = concatinated_block->clone();
+  this->_header_block          = concatenated_block->clone();
   this->_header_block->_end    = this->_header_block->_start + offset;
   this->_header_block->next    = nullptr;
-  this->_payload_block         = concatinated_block->clone();
+  this->_payload_block         = concatenated_block->clone();
   this->_payload_block->_start = this->_payload_block->_start + offset;
 }
 
@@ -1411,11 +1411,11 @@ QUICZeroRttPacketR::QUICZeroRttPacketR(UDPConnection *udp_con, IpEndpoint from, 
     len += b->size();
   }
 
-  Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
-  concatinated_block->fill(len);
+  Ptr<IOBufferBlock> concatenated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  concatenated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
+  concatenated_block->fill(len);
 
-  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
+  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatenated_block->start());
 
   size_t copied_len = 0;
   for (auto b = blocks; b; b = b->next) {
@@ -1443,10 +1443,10 @@ QUICZeroRttPacketR::QUICZeroRttPacketR(UDPConnection *udp_con, IpEndpoint from, 
                                    base_packet_number);
   offset += pn_len;
 
-  this->_header_block          = concatinated_block->clone();
+  this->_header_block          = concatenated_block->clone();
   this->_header_block->_end    = this->_header_block->_start + offset;
   this->_header_block->next    = nullptr;
-  this->_payload_block         = concatinated_block->clone();
+  this->_payload_block         = concatenated_block->clone();
   this->_payload_block->_start = this->_payload_block->_start + offset;
 }
 
@@ -1590,11 +1590,11 @@ QUICHandshakePacketR::QUICHandshakePacketR(UDPConnection *udp_con, IpEndpoint fr
     len += b->size();
   }
 
-  Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
-  concatinated_block->fill(len);
+  Ptr<IOBufferBlock> concatenated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  concatenated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
+  concatenated_block->fill(len);
 
-  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
+  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatenated_block->start());
 
   size_t copied_len = 0;
   for (auto b = blocks; b; b = b->next) {
@@ -1622,10 +1622,10 @@ QUICHandshakePacketR::QUICHandshakePacketR(UDPConnection *udp_con, IpEndpoint fr
                                    base_packet_number);
   offset += pn_len;
 
-  this->_header_block          = concatinated_block->clone();
+  this->_header_block          = concatenated_block->clone();
   this->_header_block->_end    = this->_header_block->_start + offset;
   this->_header_block->next    = nullptr;
-  this->_payload_block         = concatinated_block->clone();
+  this->_payload_block         = concatenated_block->clone();
   this->_payload_block->_start = this->_payload_block->_start + offset;
 }
 
@@ -1758,11 +1758,11 @@ QUICRetryPacketR::QUICRetryPacketR(UDPConnection *udp_con, IpEndpoint from, IpEn
     len += b->size();
   }
 
-  Ptr<IOBufferBlock> concatinated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  concatinated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
-  concatinated_block->fill(len);
+  Ptr<IOBufferBlock> concatenated_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+  concatenated_block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
+  concatenated_block->fill(len);
 
-  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatinated_block->start());
+  uint8_t *raw_buf = reinterpret_cast<uint8_t *>(concatenated_block->start());
 
   size_t copied_len = 0;
   for (auto b = blocks; b; b = b->next) {
@@ -1788,10 +1788,10 @@ QUICRetryPacketR::QUICRetryPacketR(UDPConnection *udp_con, IpEndpoint from, IpEn
   // Retry Integrity Tag
   memcpy(this->_integrity_tag, raw_buf + offset, QUICRetryIntegrityTag::LEN);
 
-  this->_header_block                    = concatinated_block->clone();
+  this->_header_block                    = concatenated_block->clone();
   this->_header_block->_end              = this->_header_block->_start + offset;
   this->_header_block->next              = nullptr;
-  this->_payload_block                   = concatinated_block->clone();
+  this->_payload_block                   = concatenated_block->clone();
   this->_payload_block->_start           = this->_payload_block->_start + offset;
   this->_payload_block_without_tag       = this->_payload_block->clone();
   this->_payload_block_without_tag->_end = this->_payload_block_without_tag->_end - QUICRetryIntegrityTag::LEN;

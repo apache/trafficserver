@@ -526,7 +526,7 @@ void
 QUICNetVConnection::destroy(EThread *t)
 {
   QUICConDebug("Destroy connection");
-  /*  TODO: Uncmment these blocks after refactoring read / write process
+  /*  TODO: Uncomment these blocks after refactoring read / write process
     if (from_accept_thread) {
       quicNetVCAllocator.free(this);
     } else {
@@ -806,7 +806,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
         // Don't make this error, and discard the packet.
         // Because:
         // - Attacker can terminate connections
-        // - It could be just an errora on lower layer
+        // - It could be just an error on lower layer
         error = nullptr;
       } else if (result == QUICPacketCreationResult::SUCCESS || result == QUICPacketCreationResult::UNSUPPORTED) {
         error = this->_state_handshake_process_packet(*packet);
@@ -1291,7 +1291,7 @@ QUICNetVConnection::_state_connection_established_process_protected_packet(const
     }
   }
 
-  // For Connection Migration excercise
+  // For Connection Migration exercise
   if (this->netvc_context == NET_VCONNECTION_OUT && this->_quic_config->cm_exercise_enabled()) {
     this->_state_connection_established_initiate_connection_migration();
   }
@@ -1314,7 +1314,7 @@ QUICNetVConnection::_state_connection_established_receive_packet()
       // Don't make this error, and discard the packet.
       // Because:
       // - Attacker can terminate connections
-      // - It could be just an errora on lower layer
+      // - It could be just an error on lower layer
       continue;
     } else if (result == QUICPacketCreationResult::NO_PACKET) {
       return error;
@@ -1400,7 +1400,7 @@ QUICNetVConnection::_state_draining_receive_packet()
  * 1. Check congestion window
  * 2. Allocate buffer for UDP Payload
  * 3. Generate QUIC Packet
- * 4. Store data to the paylaod
+ * 4. Store data to the payload
  * 5. Send UDP Packet
  */
 QUICConnectionErrorUPtr
@@ -1758,7 +1758,7 @@ QUICNetVConnection::_build_packet(uint8_t *packet_buf, QUICEncryptionLevel level
     size_t token_len      = 0;
 
     if (this->netvc_context == NET_VCONNECTION_OUT) {
-      // TODO: Add a case of using token which is advertized by NEW_TOKEN frame
+      // TODO: Add a case of using token which is advertised by NEW_TOKEN frame
       if (this->_av_token) {
         token     = ats_unique_malloc(this->_av_token_len);
         token_len = this->_av_token_len;
@@ -2301,7 +2301,7 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
 }
 
 /**
- * Connection Migration Excercise from client
+ * Connection Migration Exercise from client
  */
 QUICConnectionErrorUPtr
 QUICNetVConnection::_state_connection_established_initiate_connection_migration()

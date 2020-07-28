@@ -75,7 +75,7 @@ QUICTLS::_msg_cb(int write_p, int version, int content_type, const void *buf, si
 }
 
 /**
-   This is very inspired from writting keylog format of ngtcp2's examples
+   This is very inspired from writing keylog format of ngtcp2's examples
    https://github.com/ngtcp2/ngtcp2/blob/894ed23c970d61eede74f69d9178090af63fdf70/examples/keylog.cc
  */
 static void

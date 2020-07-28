@@ -322,7 +322,7 @@ QUICLossDetector::_set_loss_detection_timer()
 
   // Don't arm the alarm if there are no packets with retransmittable data in flight.
   // -- MODIFIED CODE --
-  // In psuedocode, `bytes_in_flight` is used, but we're tracking "retransmittable data in flight" by `_ack_eliciting_outstanding`
+  // In pseudocode, `bytes_in_flight` is used, but we're tracking "retransmittable data in flight" by `_ack_eliciting_outstanding`
   if (this->_ack_eliciting_outstanding == 0) {
     if (this->_loss_detection_timer) {
       this->_loss_detection_alarm_at = 0;

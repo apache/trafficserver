@@ -28,7 +28,7 @@
 #include "QUICTransportParameters.h"
 
 /**
- * @brief Abstruct QUIC Application Class
+ * @brief Abstract QUIC Application Class
  * @detail Every quic application must inherits this class
  */
 class QUICVersionNegotiator

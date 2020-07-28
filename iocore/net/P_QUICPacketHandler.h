@@ -53,7 +53,7 @@ protected:
   QUICConnection *_check_stateless_reset(const uint8_t *buf, size_t buf_len);
 
   // FIXME Remove this
-  // QUICPacketHandler could be a continuation, but NetAccept is a contination too.
+  // QUICPacketHandler could be a continuation, but NetAccept is a continuation too.
   virtual Continuation *_get_continuation() = 0;
 
   Event *_collector_event                       = nullptr;
@@ -65,7 +65,7 @@ protected:
 };
 
 /*
- * @class QUICPacketHanderIn
+ * @class QUICPacketHandlerIn
  * @brief QUIC Packet Handler for incoming connections
  */
 class QUICPacketHandlerIn : public NetAccept, public QUICPacketHandler
@@ -97,7 +97,7 @@ private:
 };
 
 /*
- * @class QUICPacketHanderOut
+ * @class QUICPacketHandlerOut
  * @brief QUIC Packet Handler for outgoing connections
  */
 class QUICPacketHandlerOut : public Continuation, public QUICPacketHandler

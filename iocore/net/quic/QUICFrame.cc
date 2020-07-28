@@ -33,7 +33,7 @@
 #define LEFT_SPACE(pos) ((size_t)(buf + len - pos))
 #define FRAME_SIZE(pos) (pos - buf)
 
-// the pos will auto move forward . return true if the data vaild
+// the pos will auto move forward . return true if the data valid
 static bool
 read_varint(uint8_t *&pos, size_t len, uint64_t &field, size_t &field_len)
 {
@@ -3072,10 +3072,10 @@ QUICFrameFactory::create_stop_sending_frame(uint8_t *buf, QUICStreamId stream_id
 
 QUICNewConnectionIdFrame *
 QUICFrameFactory::create_new_connection_id_frame(uint8_t *buf, uint64_t sequence, uint64_t retire_prior_to,
-                                                 QUICConnectionId connectoin_id, QUICStatelessResetToken stateless_reset_token,
+                                                 QUICConnectionId connection_id, QUICStatelessResetToken stateless_reset_token,
                                                  QUICFrameId id, QUICFrameGenerator *owner)
 {
-  new (buf) QUICNewConnectionIdFrame(sequence, retire_prior_to, connectoin_id, stateless_reset_token, id, owner);
+  new (buf) QUICNewConnectionIdFrame(sequence, retire_prior_to, connection_id, stateless_reset_token, id, owner);
   return reinterpret_cast<QUICNewConnectionIdFrame *>(buf);
 }
 

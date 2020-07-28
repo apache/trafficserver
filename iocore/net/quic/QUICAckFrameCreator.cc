@@ -182,7 +182,7 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
     this->_latest_packet_received_time = Thread::get_hrtime();
   }
 
-  // unorder packet should send ack immediately to accellerate the recovery
+  // unorder packet should send ack immediately to accelerate the recovery
   if (this->_expect_next != packet_number) {
     this->_should_send = true;
   }
