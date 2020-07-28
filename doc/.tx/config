@@ -1677,11 +1677,6 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSReturnCode.e
 source_file = _build/locale/pot/developer-guide/api/types/TSReturnCode.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--api--types--TSSDKVersion_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSSDKVersion.en.po
-source_file = _build/locale/pot/developer-guide/api/types/TSSDKVersion.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.developer-guide--api--types--TSServerSessionSharingMatchType_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSServerSessionSharingMatchType.en.po
 source_file = _build/locale/pot/developer-guide/api/types/TSServerSessionSharingMatchType.en.pot
