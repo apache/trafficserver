@@ -23,7 +23,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
-#undef std // FIXME: remove dependancy on the STL
+
 #include <map>
 
 #include "URL.h"
