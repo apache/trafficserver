@@ -37,17 +37,14 @@
 #include <cstdio>
 #include <bitset>
 #include <map>
-
-#ifdef HAVE_CTYPE_H
 #include <cctype>
-#endif
+#include <string_view>
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_resolver.h"
 #include "tscore/IpMap.h"
 #include "tscore/Regex.h"
-#include "string_view"
 #include "tscore/BufferWriter.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"

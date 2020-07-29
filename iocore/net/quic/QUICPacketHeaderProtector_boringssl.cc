@@ -23,7 +23,7 @@
 
 #include "QUICPacketHeaderProtector.h"
 
-#include "openssl/chacha.h"
+#include <openssl/chacha.h>
 
 bool
 QUICPacketHeaderProtector::_generate_mask(uint8_t *mask, const uint8_t *sample, const uint8_t *key, const EVP_CIPHER *cipher) const
