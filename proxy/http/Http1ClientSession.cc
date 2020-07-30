@@ -261,12 +261,8 @@ Http1ClientSession::do_io_close(int alerrno)
   } else {
     HttpSsnDebug("[%" PRId64 "] session closed", con_id);
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
-    if (read_state != HCS_ACTIVE_READER) {
-      // donot double decrement
-      HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
-    }
-    read_state    = HCS_CLOSED;
-    conn_decrease = false;
+    read_state = HCS_CLOSED;
+
     // Can go ahead and close the netvc now, but keeping around the session object
     // until all the transactions are closed
     if (_vc) {
