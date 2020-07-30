@@ -51,7 +51,8 @@ ts.Disk.remap_config.AddLine(
 ts.Setup.CopyAs('check_threads.py', Test.RunDirectory)
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --proxy http://127.0.0.1:{0} http://www.example.com -H "Proxy-Connection: Keep-Alive" --verbose'.format(ts.Variables.port)
+tr.Processes.Default.Command = 'curl --proxy http://127.0.0.1:{0} http://www.example.com -H "Proxy-Connection: Keep-Alive" --verbose'.format(
+    ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server)

@@ -62,7 +62,8 @@ tr.StillRunningAfter = server
 tr.Processes.Default.Command = 'curl -v -k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/preaccept-1.gold"
-tr.Processes.Default.Streams.All = Testers.ExcludesExpression("TLSv1.3 (IN), TLS handshake, Finished (20):", "Should not negotiate a TLSv1.3 connection")
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
+    "TLSv1.3 (IN), TLS handshake, Finished (20):", "Should not negotiate a TLSv1.3 connection")
 
 ts.Streams.stderr = "gold/ts-preaccept-1.gold"
 

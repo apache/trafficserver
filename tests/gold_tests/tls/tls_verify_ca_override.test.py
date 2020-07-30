@@ -22,8 +22,10 @@ Test tls server  certificate verification options. Exercise conf_remap for ca bu
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True)
-server1 = Test.MakeOriginServer("server1", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
-server2 = Test.MakeOriginServer("server2", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed2-foo.pem".format(Test.RunDirectory)})
+server1 = Test.MakeOriginServer("server1", ssl=True, options={
+                                "--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
+server2 = Test.MakeOriginServer("server2", ssl=True, options={
+                                "--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed2-foo.pem".format(Test.RunDirectory)})
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 request_bad_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -47,16 +49,20 @@ ts.addSSLfile("ssl/signer2.pem")
 ts.addSSLfile("ssl/signer2.key")
 
 ts.Disk.remap_config.AddLine(
-    'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server1.Variables.SSL_Port, ts.Variables.SSLDir, "signer.pem")
+    'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(
+        server1.Variables.SSL_Port, ts.Variables.SSLDir, "signer.pem")
 )
 ts.Disk.remap_config.AddLine(
-    'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server1.Variables.SSL_Port, ts.Variables.SSLDir, "signer2.pem")
+    'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(
+        server1.Variables.SSL_Port, ts.Variables.SSLDir, "signer2.pem")
 )
 ts.Disk.remap_config.AddLine(
-    'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server2.Variables.SSL_Port, ts.Variables.SSLDir, "signer2.pem")
+    'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(
+        server2.Variables.SSL_Port, ts.Variables.SSLDir, "signer2.pem")
 )
 ts.Disk.remap_config.AddLine(
-    'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(server2.Variables.SSL_Port, ts.Variables.SSLDir, "signer.pem")
+    'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.CA.cert.filename={1}/{2}'.format(
+        server2.Variables.SSL_Port, ts.Variables.SSLDir, "signer.pem")
 )
 
 ts.Disk.ssl_multicert_config.AddLine(

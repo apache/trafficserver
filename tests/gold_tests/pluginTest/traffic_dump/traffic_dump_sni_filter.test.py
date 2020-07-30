@@ -89,12 +89,12 @@ ts.Disk.plugin_config.AddLine(
 
 # Set up trafficserver expectations.
 ts.Streams.stderr += Testers.ContainsExpression(
-        "Filtering to only dump connections with SNI: {}".format(sni_filter),
-        "Verify filtering for the expected SNI.")
+    "Filtering to only dump connections with SNI: {}".format(sni_filter),
+    "Verify filtering for the expected SNI.")
 
 ts.Streams.stderr += Testers.ContainsExpression(
-        "Ignore HTTPS session with non-filtered SNI: dave",
-        "Verify that the non-desired SNI session was filtered out.")
+    "Ignore HTTPS session with non-filtered SNI: dave",
+    "Verify that the non-desired SNI session was filtered out.")
 
 # Set up the json replay file expectations.
 replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")
@@ -120,8 +120,8 @@ tr = Test.AddTestRun("Verify dumping of a session with the filtered SNI")
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = \
-        ('curl --http2 --tls-max 1.2 -k -H"Host: bob" --resolve "bob:{0}:127.0.0.1" '
-         '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://bob:{0}'.format(ts.Variables.ssl_port))
+    ('curl --http2 --tls-max 1.2 -k -H"Host: bob" --resolve "bob:{0}:127.0.0.1" '
+     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://bob:{0}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200_sni_bob.gold"
 tr.StillRunningAfter = server
@@ -134,8 +134,8 @@ session_1_tls_features = 'sni:bob,proxy-verify-mode:7,proxy-provided-cert:true'
 # Execute the second transaction with an SNI of dave.
 tr = Test.AddTestRun("Verify that a session of a different SNI is not dumped.")
 tr.Processes.Default.Command = \
-        ('curl --tls-max 1.2 -k -H"Host: dave" --resolve "dave:{0}:127.0.0.1" '
-         '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://dave:{0}'.format(ts.Variables.ssl_port))
+    ('curl --tls-max 1.2 -k -H"Host: dave" --resolve "dave:{0}:127.0.0.1" '
+     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://dave:{0}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200_sni_dave.gold"
 tr.StillRunningAfter = server
@@ -144,8 +144,8 @@ tr.StillRunningAfter = ts
 # Execute the third transaction without any SNI.
 tr = Test.AddTestRun("Verify that a session of a non-existent SNI is not dumped.")
 tr.Processes.Default.Command = \
-        ('curl --tls-max 1.2 -k -H"Host: bob"'
-         '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://127.0.0.1:{0}'.format(ts.Variables.ssl_port))
+    ('curl --tls-max 1.2 -k -H"Host: bob"'
+     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://127.0.0.1:{0}'.format(ts.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/200_bob_no_sni.gold"
 tr.StillRunningAfter = server
@@ -156,11 +156,11 @@ tr = Test.AddTestRun("Verify the json content of the first session")
 verify_replay = "verify_replay.py"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}" --client-tls-features "{4}"'.format(
-        verify_replay,
-        os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
-        replay_file_session_1,
-        session_1_protocols,
-        session_1_tls_features)
+    verify_replay,
+    os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
+    replay_file_session_1,
+    session_1_protocols,
+    session_1_tls_features)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

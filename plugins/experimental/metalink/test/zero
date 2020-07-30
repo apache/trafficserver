@@ -16,11 +16,11 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-print '''1..1 zero
-# The proxy doesn't crash if the Content-Length is zero'''
-
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
+
+print '''1..1 zero
+# The proxy doesn't crash if the Content-Length is zero'''
 
 
 def callback():

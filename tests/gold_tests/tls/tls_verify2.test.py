@@ -22,8 +22,10 @@ Test tls server certificate verification options
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-server_foo = Test.MakeOriginServer("server_foo", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
-server_bar = Test.MakeOriginServer("server_bar", ssl=True, options = {"--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
+server_foo = Test.MakeOriginServer("server_foo", ssl=True, options={
+                                   "--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
+server_bar = Test.MakeOriginServer("server_bar", ssl=True, options={
+                                   "--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -77,23 +79,23 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.sni_yaml.AddLine(
-  'sni:')
+    'sni:')
 ts.Disk.sni_yaml.AddLine(
-  '- fqdn: bar.com')
+    '- fqdn: bar.com')
 ts.Disk.sni_yaml.AddLine(
-  '  verify_server_policy: PERMISSIVE')
+    '  verify_server_policy: PERMISSIVE')
 ts.Disk.sni_yaml.AddLine(
-  '  verify_server_properties: SIGNATURE')
+    '  verify_server_properties: SIGNATURE')
 ts.Disk.sni_yaml.AddLine(
-  '- fqdn: bad_bar.com')
+    '- fqdn: bad_bar.com')
 ts.Disk.sni_yaml.AddLine(
-  '  verify_server_policy: PERMISSIVE')
+    '  verify_server_policy: PERMISSIVE')
 ts.Disk.sni_yaml.AddLine(
-  '  verify_server_properties: SIGNATURE')
+    '  verify_server_properties: SIGNATURE')
 ts.Disk.sni_yaml.AddLine(
-  '- fqdn: random.com')
+    '- fqdn: random.com')
 ts.Disk.sni_yaml.AddLine(
-  '  verify_server_policy: DISABLED')
+    '  verify_server_policy: DISABLED')
 
 tr = Test.AddTestRun("default-enforce")
 tr.Setup.Copy("ssl/signed-foo.key")
@@ -147,9 +149,14 @@ tr6.StillRunningAfter = ts
 
 
 # No name checking for the sig-only permissive override for bad_bar
-ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: SNI \(bad_bar.com\) not in certificate", "bad_bar name checked should be skipped.")
-ts.Disk.diags_log.Content = Testers.ExcludesExpression("WARNING: SNI \(foo.com\) not in certificate", "foo name checked should be skipped.")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+    "WARNING: SNI \(bad_bar.com\) not in certificate", "bad_bar name checked should be skipped.")
+ts.Disk.diags_log.Content = Testers.ExcludesExpression(
+    "WARNING: SNI \(foo.com\) not in certificate", "foo name checked should be skipped.")
 # No checking for the self-signed on random.com.  No messages
-ts.Disk.diags_log.Content += Testers.ExcludesExpression("WARNING: Core server certificate verification failed for \(random.com\)", "signature check for random.com should be skipped")
-ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: Core server certificate verification failed for \(random2.com\)", "signature check for random.com should fail'")
-ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(bad_foo.com\) not in certificate", "bad_foo name checked should be checked.")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+    "WARNING: Core server certificate verification failed for \(random.com\)", "signature check for random.com should be skipped")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    "WARNING: Core server certificate verification failed for \(random2.com\)", "signature check for random.com should fail'")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    "WARNING: SNI \(bad_foo.com\) not in certificate", "bad_foo name checked should be checked.")

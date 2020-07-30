@@ -23,6 +23,7 @@ A simple tool to decode http2 frames for 0-rtt testing.
 import hpack
 import sys
 
+
 class Http2FrameDefs:
 
     RESERVE_BIT_MASK = 0x7fffffff
@@ -200,6 +201,7 @@ class Http2Frame:
     def __str__(self):
         return self.print()
 
+
 class Decoder:
     def read_frame_header(self, data):
         frame = Http2Frame(
@@ -226,6 +228,7 @@ class Decoder:
                 temp_data = temp_data[9 + frame.length:]
         return frames
 
+
 def main():
     # input file is output from openssl s_client.
     # sample command to get this output:
@@ -242,8 +245,8 @@ def main():
     data = b''
     for line in lines:
         if line.startswith(bytes('SSL_connect:', 'utf-8')) or \
-            line.startswith(bytes('SSL3 alert', 'utf-8')) or \
-            bytes('Can\'t use SSL_get_servername', 'utf-8') in line:
+                line.startswith(bytes('SSL3 alert', 'utf-8')) or \
+                bytes('Can\'t use SSL_get_servername', 'utf-8') in line:
             continue
         data += line
 
@@ -252,6 +255,7 @@ def main():
     for frame in frames:
         print(frame)
     exit(0)
+
 
 if __name__ == "__main__":
     main()

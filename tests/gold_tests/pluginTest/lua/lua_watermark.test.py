@@ -49,7 +49,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'ts_lua'
 })
 
-#Test for watermark debug output
+# Test for watermark debug output
 ts.Streams.All = Testers.ContainsExpression("WMbytes\(31337\)", "Upstream watermark should be properly set")
 
 # These are needed for 8.x only since Lua errors go to diags in 8.x, newer versions go to stdout

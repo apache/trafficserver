@@ -22,8 +22,10 @@ Test tls server certificate verification options
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-server_foo = Test.MakeOriginServer("server_foo", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
-server_bar = Test.MakeOriginServer("server_bar", ssl=True, options = {"--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
+server_foo = Test.MakeOriginServer("server_foo", ssl=True, options={
+                                   "--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
+server_bar = Test.MakeOriginServer("server_bar", ssl=True, options={
+                                   "--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -75,13 +77,13 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.sni_yaml.AddLines([
-  'sni:',
-  '- fqdn: bar.com',
-  '  verify_server_policy: ENFORCED',
-  '  verify_server_properties: ALL',
-  '- fqdn: bad_bar.com',
-  '  verify_server_policy: ENFORCED',
-  '  verify_server_properties: ALL'
+    'sni:',
+    '- fqdn: bar.com',
+    '  verify_server_policy: ENFORCED',
+    '  verify_server_properties: ALL',
+    '- fqdn: bad_bar.com',
+    '  verify_server_policy: ENFORCED',
+    '  verify_server_properties: ALL'
 ])
 
 tr = Test.AddTestRun("Permissive-Test")
@@ -122,5 +124,7 @@ tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
 
 # Over riding the built in ERROR check since we expect tr3 to fail
-ts.Disk.diags_log.Content = Testers.ContainsExpression("WARNING: SNI \(bad_bar.com\) not in certificate. Action=Terminate", "Make sure bad_bar name checked failed.")
-ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: SNI \(random.com\) not in certificate. Action=Continue ", "Permissive failure for random")
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    "WARNING: SNI \(bad_bar.com\) not in certificate. Action=Terminate", "Make sure bad_bar name checked failed.")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    "WARNING: SNI \(random.com\) not in certificate. Action=Continue ", "Permissive failure for random")

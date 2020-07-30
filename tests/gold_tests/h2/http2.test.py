@@ -50,14 +50,16 @@ server.addResponse("sessionlog.json",
 # For Test Case 6 - /postchunked
 post_body = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
 server.addResponse("sessionlog.jason",
-                   {"headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": post_body},
+                   {"headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                       "timestamp": "1469733493.993", "body": post_body},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
 
 # For Test Case 7 - /bigpostchunked
 # Make a post body that will be split across at least two frames
 big_post_body = "0123456789" * 131070
 server.addResponse("sessionlog.jason",
-                   {"headers": "POST /bigpostchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": big_post_body},
+                   {"headers": "POST /bigpostchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                       "timestamp": "1469733493.993", "body": big_post_body},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
 
 big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
@@ -85,7 +87,8 @@ ts.addSSLfile("ssl/server.key")
 
 ts.Setup.CopyAs('rules/huge_resp_hdrs.conf', Test.RunDirectory)
 ts.Disk.remap_config.AddLine(
-    'map /huge_resp_hdrs http://127.0.0.1:{0}/huge_resp_hdrs @plugin=header_rewrite.so @pparam={1}/huge_resp_hdrs.conf '.format(server.Variables.Port, Test.RunDirectory)
+    'map /huge_resp_hdrs http://127.0.0.1:{0}/huge_resp_hdrs @plugin=header_rewrite.so @pparam={1}/huge_resp_hdrs.conf '.format(
+        server.Variables.Port, Test.RunDirectory)
 )
 
 ts.Disk.remap_config.AddLine(
@@ -159,7 +162,8 @@ tr.StillRunningAfter = server
 # While HTTP/2 does not support Tranfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format(post_body, ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format(
+    post_body, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
@@ -168,7 +172,8 @@ tr.StillRunningAfter = server
 # While HTTP/2 does not support Tranfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server

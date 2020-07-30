@@ -63,7 +63,7 @@ ts.Disk.records_config.update({
 
 })
 ts.Disk.logging_yaml.AddLines(
-'''
+    '''
 logging:
   formats:
     - name: access

@@ -44,7 +44,7 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
-                                'ssntxnorder_verify.so'), ts)
+                                    'ssntxnorder_verify.so'), ts)
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
@@ -72,9 +72,9 @@ tr = Test.AddTestRun()
 # Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
 # On Fedora 28/29, it seems that curl will occaisionally timeout after a couple seconds and return exitcode 2
 # Examinig the packet capture shows that Traffic Server dutifully sends the response
-ps = tr.SpawnCommands(cmdstr=cmd,  count=numberOfRequests, retcode=Any(0,2))
+ps = tr.SpawnCommands(cmdstr=cmd,  count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = Any(0,2)
+tr.Processes.Default.ReturnCode = Any(0, 2)
 
 # Execution order is: ts/server, ps(curl cmds), Default Process.
 tr.Processes.Default.StartBefore(
@@ -87,7 +87,7 @@ tr.StillRunningAfter = ts
 
 # Signal that all the curl processes have completed
 tr = Test.AddTestRun("Curl Done")
-tr.DelayStart = 2 # Delaying a couple seconds to make sure the global continuation's lock contention resolves.
+tr.DelayStart = 2  # Delaying a couple seconds to make sure the global continuation's lock contention resolves.
 tr.Processes.Default.Command = "traffic_ctl plugin msg done done"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
@@ -96,14 +96,17 @@ tr.StillRunningAfter = ts
 # Parking this as a ready tester on a meaningless process
 # To stall the test runs that check for the stats until the
 # stats have propagated and are ready to read.
-def make_done_stat_ready(tsenv):
-  def done_stat_ready(process, hasRunFor, **kw):
-    retval = subprocess.run("traffic_ctl metric get ssntxnorder_verify.test.done > done  2> /dev/null", shell=True, env=tsenv)
-    if retval.returncode == 0:
-      retval = subprocess.run("grep 1 done > /dev/null", shell = True, env=tsenv)
-    return retval.returncode == 0
 
-  return done_stat_ready
+
+def make_done_stat_ready(tsenv):
+    def done_stat_ready(process, hasRunFor, **kw):
+        retval = subprocess.run("traffic_ctl metric get ssntxnorder_verify.test.done > done  2> /dev/null", shell=True, env=tsenv)
+        if retval.returncode == 0:
+            retval = subprocess.run("grep 1 done > /dev/null", shell=True, env=tsenv)
+        return retval.returncode == 0
+
+    return done_stat_ready
+
 
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun("Check Ssn order errors")
@@ -152,4 +155,3 @@ tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "ssntxnorder_verify.txn.start {}".format(numberOfRequests), 'should be the number of transactions we made')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-

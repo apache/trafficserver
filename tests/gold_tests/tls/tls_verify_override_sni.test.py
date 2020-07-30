@@ -24,8 +24,10 @@ Test tls server certificate verification options. Exercise conf_remap
 ts = Test.MakeATSProcess("ts", select_ports=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 
-server_foo = Test.MakeOriginServer("server_foo", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory), "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-bar.pem".format(Test.RunDirectory), clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
-server_bar = Test.MakeOriginServer("server_bar", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory), "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-bar.pem".format(Test.RunDirectory), clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+server_foo = Test.MakeOriginServer("server_foo", ssl=True, options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(
+    Test.RunDirectory), "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-bar.pem".format(Test.RunDirectory), clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+server_bar = Test.MakeOriginServer("server_bar", ssl=True, options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(
+    Test.RunDirectory), "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-bar.pem".format(Test.RunDirectory), clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
 
 dns = Test.MakeDNServer("dns")
 
@@ -87,10 +89,10 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.sni_yaml.AddLines([
-  'sni:',
-  '- fqdn: bar.com',
-  '  client_cert: "{0}/signed-foo.pem"'.format(ts.Variables.SSLDir),
-  '  client_key: "{0}/signed-foo.key"'.format(ts.Variables.SSLDir),
+    'sni:',
+    '- fqdn: bar.com',
+    '  client_cert: "{0}/signed-foo.pem"'.format(ts.Variables.SSLDir),
+    '  client_key: "{0}/signed-foo.key"'.format(ts.Variables.SSLDir),
 ])
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
@@ -129,6 +131,7 @@ tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 
 
 # Over riding the built in ERROR check since we expect some cases to fail
-ts.Disk.diags_log.Content = Testers.ContainsExpression("WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=bar.com", "Warning for mismatch name not enforcing")
-ts.Disk.diags_log.Content += Testers.ContainsExpression(" WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com", "Warning for enforcing mismatch")
-
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    "WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=bar.com", "Warning for mismatch name not enforcing")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    " WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com", "Warning for enforcing mismatch")

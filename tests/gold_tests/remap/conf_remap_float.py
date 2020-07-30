@@ -28,7 +28,8 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
 # Add dummy remap rule
 ts.Disk.remap_config.AddLine(
-    'map http://cdn.example.com/ http://origin.example.com/ @plugin=conf_remap.so @pparam={file}'.format(file=os.path.join(ts.RunDirectory, 'ts/config/delain.config'))
+    'map http://cdn.example.com/ http://origin.example.com/ @plugin=conf_remap.so @pparam={file}'.format(
+        file=os.path.join(ts.RunDirectory, 'ts/config/delain.config'))
 )
 
 ts.Disk.delain_config.AddLine(

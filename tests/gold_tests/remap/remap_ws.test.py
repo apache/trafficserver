@@ -53,7 +53,8 @@ ts.Disk.ssl_multicert_config.AddLine(
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
-tr.Processes.Default.Command = 'curl --max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k https://www.example.com:{0}/chat'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl --max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k https://www.example.com:{0}/chat'.format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 28
 tr.Processes.Default.Streams.stderr = "gold/remap-ws-upgrade.gold"
 tr.StillRunningAfter = server
@@ -61,7 +62,8 @@ tr.StillRunningAfter = ts
 
 # ws mapping
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k http://www.example.com:{0}/chat'.format(ts.Variables.port)
+tr.Processes.Default.Command = 'curl --max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" -H "Sec-WebSocket-Version: 13" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k http://www.example.com:{0}/chat'.format(
+    ts.Variables.port)
 tr.Processes.Default.ReturnCode = 28
 tr.Processes.Default.Streams.stderr = "gold/remap-ws-upgrade.gold"
 tr.StillRunningAfter = server
@@ -69,7 +71,8 @@ tr.StillRunningAfter = ts
 
 # Missing required headers (should result in 400)
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k http://www.example.com:{0}/chat'.format(ts.Variables.port)
+tr.Processes.Default.Command = 'curl --max-time 2 -v -s -q -H "Connection: Upgrade" -H "Upgrade: websocket" --http1.1 --resolve www.example.com:{0}:127.0.0.1 -k http://www.example.com:{0}/chat'.format(
+    ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-ws-upgrade-400.gold"
 tr.StillRunningAfter = server

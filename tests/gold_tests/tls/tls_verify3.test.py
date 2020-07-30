@@ -22,8 +22,10 @@ Test tls server certificate verification options
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-server_foo = Test.MakeOriginServer("server_foo", ssl=True, options = {"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
-server_bar = Test.MakeOriginServer("server_bar", ssl=True, options = {"--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
+server_foo = Test.MakeOriginServer("server_foo", ssl=True, options={
+                                   "--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
+server_bar = Test.MakeOriginServer("server_bar", ssl=True, options={
+                                   "--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -53,7 +55,7 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port, ts.Variables.ssl_port))
 ts.Disk.remap_config.AddLine(
-    'map https://bob.bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port,ts.Variables.ssl_port))
+    'map https://bob.bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port, ts.Variables.ssl_port))
 ts.Disk.remap_config.AddLine(
     'map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
 
@@ -77,15 +79,15 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.sni_yaml.AddLines([
-  'sni:',
-  '- fqdn: bob.bar.com',
-  '  verify_server_policy: ENFORCED',
-  '  verify_server_properties: ALL',
-  '- fqdn: bob.*.com',
-  '  verify_server_policy: ENFORCED',
-  '  verify_server_properties: SIGNATURE',
-  "- fqdn: '*bar.com'",
-  '  verify_server_policy: DISABLED',
+    'sni:',
+    '- fqdn: bob.bar.com',
+    '  verify_server_policy: ENFORCED',
+    '  verify_server_properties: ALL',
+    '- fqdn: bob.*.com',
+    '  verify_server_policy: ENFORCED',
+    '  verify_server_properties: SIGNATURE',
+    "- fqdn: '*bar.com'",
+    '  verify_server_policy: DISABLED',
 ])
 
 tr = Test.AddTestRun("foo.com Permissive-Test")
@@ -104,7 +106,8 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr = Test.AddTestRun("my.foo.com Permissive-Test log failure")
-tr.Processes.Default.Command = "curl -v -k --resolve 'my.foo.com:{0}:127.0.0.1' https://my.foo.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v -k --resolve 'my.foo.com:{0}:127.0.0.1' https://my.foo.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -112,21 +115,24 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Conn
 
 
 tr2 = Test.AddTestRun("bob.bar.com Override-enforcing-Test")
-tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/".format(
+    ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr3 = Test.AddTestRun("bob.foo.com override-enforcing-name-test")
-tr3.Processes.Default.Command = "curl -v -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}/".format(ts.Variables.ssl_port)
+tr3.Processes.Default.Command = "curl -v -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}/".format(
+    ts.Variables.ssl_port)
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should not fail")
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
 
 tr3 = Test.AddTestRun("random.bar.com override-no-test")
-tr3.Processes.Default.Command = "curl -v -k --resolve 'random.bar.com:{0}:127.0.0.1' https://random.bar.com:{0}".format(ts.Variables.ssl_port)
+tr3.Processes.Default.Command = "curl -v -k --resolve 'random.bar.com:{0}:127.0.0.1' https://random.bar.com:{0}".format(
+    ts.Variables.ssl_port)
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should not fail")
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
@@ -134,5 +140,7 @@ tr3.StillRunningAfter = ts
 
 
 # Over riding the built in ERROR check since we expect tr3 to fail
-ts.Disk.diags_log.Content = Testers.ContainsExpression("WARNING: SNI \(bob.bar.com\) not in certificate", "Make sure bob.bar name checked failed.")
-ts.Disk.diags_log.Content += Testers.ContainsExpression("WARNING: Core server certificate verification failed for \(my.foo.com\). Action=Continue", "Make sure default permissive action takes")
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    "WARNING: SNI \(bob.bar.com\) not in certificate", "Make sure bob.bar name checked failed.")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    "WARNING: Core server certificate verification failed for \(my.foo.com\). Action=Continue", "Make sure default permissive action takes")

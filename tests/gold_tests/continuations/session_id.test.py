@@ -96,5 +96,5 @@ tr.Processes.Default.ReturnCode = Any(0, 2)
 # them. The test plugin prints an error to this log if it sees duplicate ids.
 # The following is to verify that we encountered the expected ids.
 ts.Streams.stderr += Testers.ContainsExpression(
-        "session id: 199",
-        "Verify the various session ids were found.")
+    "session id: 199",
+    "Verify the various session ids were found.")
