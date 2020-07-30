@@ -531,7 +531,7 @@ SplitDNSRecord::UpdateMatch(SplitDNSResult *result, RequestData * /* rdata ATS_U
     SplitDNSRecord::Print()
    -------------------------------------------------------------- */
 void
-SplitDNSRecord::Print()
+SplitDNSRecord::Print() const
 {
   for (int i = 0; i < m_dnsSrvr_cnt; i++) {
     char ab[INET6_ADDRPORTSTRLEN];

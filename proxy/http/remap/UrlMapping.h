@@ -92,7 +92,7 @@ public:
     return _plugin_inst_list.size();
   }
 
-  void Print();
+  void Print() const;
 
   int from_path_len = 0;
   URL fromURL;

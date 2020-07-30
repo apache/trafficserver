@@ -53,7 +53,7 @@ CacheHostMatcher::~CacheHostMatcher()
 //  Debugging Method
 //
 void
-CacheHostMatcher::Print()
+CacheHostMatcher::Print() const
 {
   printf("\tHost/Domain Matcher with %d elements\n", num_el);
   host_lookup->Print(PrintFunc);
@@ -96,7 +96,7 @@ CacheHostMatcher::AllocateSpace(int num_entries)
 //    arg hostname
 //
 void
-CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result)
+CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result) const
 {
   void *opaque_ptr;
   CacheHostRecord *data_ptr;
@@ -111,6 +111,7 @@ CacheHostMatcher::Match(const char *rdata, int rlen, CacheHostResult *result)
   if (rlen == 0) {
     return;
   }
+
   char *data = static_cast<char *>(ats_malloc(rlen + 1));
   memcpy(data, rdata, rlen);
   *(data + rlen) = '\0';
@@ -208,7 +209,7 @@ CacheHostTable::~CacheHostTable()
 //   Debugging method
 //
 void
-CacheHostTable::Print()
+CacheHostTable::Print() const
 {
   printf("Control Matcher Table: %s\n", matcher_name);
   if (hostMatch != nullptr) {
@@ -222,7 +223,7 @@ CacheHostTable::Print()
 //   Queries each table for the Result*
 //
 void
-CacheHostTable::Match(const char *rdata, int rlen, CacheHostResult *result)
+CacheHostTable::Match(const char *rdata, int rlen, CacheHostResult *result) const
 {
   hostMatch->Match(rdata, rlen, result);
 }
@@ -272,6 +273,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     }
     return 0;
   }
+
   // First get the number of entries
   tmp = bufTok.iterFirst(&i_state);
   while (tmp != nullptr) {
@@ -587,7 +589,7 @@ CacheHostRecord::UpdateMatch(CacheHostResult *r, char * /* rd ATS_UNUSED */)
 }
 
 void
-CacheHostRecord::Print()
+CacheHostRecord::Print() const
 {
 }
 

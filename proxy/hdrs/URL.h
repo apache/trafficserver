@@ -238,19 +238,21 @@ public:
   // Note that URL::destroy() is inherited from HdrHeapSDKHandle.
   void nuke_proxy_stuff();
 
-  int print(char *buf, int bufsize, int *bufindex, int *dumpoffset, bool normalized = false);
+  int print(char *buf, int bufsize, int *bufindex, int *dumpoffset, bool normalized = false) const;
 
-  int length_get();
+  int length_get() const;
+
   void clear_string_ref();
-  char *string_get(Arena *arena, int *length = nullptr, bool normalized = false);
-  char *string_get_ref(int *length = nullptr, bool normalized = false);
-  char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr);
+
+  char *string_get(Arena *arena, int *length = nullptr, bool normalized = false) const;
+  char *string_get_ref(int *length = nullptr, bool normalized = false) const;
+  char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr) const;
   void hash_get(CryptoHash *hash, cache_generation_t generation = -1) const;
-  void host_hash_get(CryptoHash *hash);
+  void host_hash_get(CryptoHash *hash) const;
 
   const char *scheme_get(int *length);
   const std::string_view scheme_get();
-  int scheme_get_wksidx();
+  int scheme_get_wksidx() const;
   void scheme_set(const char *value, int length);
 
   const char *user_get(int *length);
@@ -259,8 +261,9 @@ public:
   void password_set(const char *value, int length);
   const char *host_get(int *length);
   void host_set(const char *value, int length);
-  int port_get();
-  int port_get_raw();
+
+  int port_get() const;
+  int port_get_raw() const;
   void port_set(int port);
 
   const char *path_get(int *length);
@@ -372,7 +375,7 @@ URL::nuke_proxy_stuff()
   -------------------------------------------------------------------------*/
 
 inline int
-URL::print(char *buf, int bufsize, int *bufindex, int *dumpoffset, bool normalized)
+URL::print(char *buf, int bufsize, int *bufindex, int *dumpoffset, bool normalized) const
 {
   ink_assert(valid());
   return url_print(m_url_impl, buf, bufsize, bufindex, dumpoffset, normalized);
@@ -382,7 +385,7 @@ URL::print(char *buf, int bufsize, int *bufindex, int *dumpoffset, bool normaliz
   -------------------------------------------------------------------------*/
 
 inline int
-URL::length_get()
+URL::length_get() const
 {
   ink_assert(valid());
   return url_length_get(m_url_impl);
@@ -392,14 +395,14 @@ URL::length_get()
   -------------------------------------------------------------------------*/
 
 inline char *
-URL::string_get(Arena *arena_or_null_for_malloc, int *length, bool normalized)
+URL::string_get(Arena *arena_or_null_for_malloc, int *length, bool normalized) const
 {
   ink_assert(valid());
   return url_string_get(m_url_impl, arena_or_null_for_malloc, length, m_heap, normalized);
 }
 
 inline char *
-URL::string_get_ref(int *length, bool normalized)
+URL::string_get_ref(int *length, bool normalized) const
 {
   ink_assert(valid());
   return url_string_get_ref(m_heap, m_url_impl, length, normalized);
@@ -416,7 +419,7 @@ URL::clear_string_ref()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 inline char *
-URL::string_get_buf(char *dstbuf, int dsbuf_size, int *length)
+URL::string_get_buf(char *dstbuf, int dsbuf_size, int *length) const
 {
   ink_assert(valid());
   return url_string_get_buf(m_url_impl, dstbuf, dsbuf_size, length);
@@ -436,7 +439,7 @@ URL::hash_get(CryptoHash *hash, cache_generation_t generation) const
   -------------------------------------------------------------------------*/
 
 inline void
-URL::host_hash_get(CryptoHash *hash)
+URL::host_hash_get(CryptoHash *hash) const
 {
   ink_assert(valid());
   url_host_CryptoHash_get(m_url_impl, hash);
@@ -467,7 +470,7 @@ URL::scheme_get(int *length)
 }
 
 inline int
-URL::scheme_get_wksidx()
+URL::scheme_get_wksidx() const
 {
   ink_assert(valid());
   return (m_url_impl->m_scheme_wks_idx);
@@ -551,7 +554,7 @@ URL::host_set(const char *value, int length)
   -------------------------------------------------------------------------*/
 
 inline int
-URL::port_get()
+URL::port_get() const
 {
   ink_assert(valid());
   return url_canonicalize_port(m_url_impl->m_url_type, m_url_impl->m_port);
@@ -561,7 +564,7 @@ URL::port_get()
   -------------------------------------------------------------------------*/
 
 inline int
-URL::port_get_raw()
+URL::port_get_raw() const
 {
   ink_assert(valid());
   return m_url_impl->m_port;

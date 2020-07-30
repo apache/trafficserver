@@ -129,8 +129,9 @@ public:
   bool Match(std::string_view host, void **opaque_ptr);
   bool MatchFirst(std::string_view host, HostLookupState *s, void **opaque_ptr);
   bool MatchNext(HostLookupState *s, void **opaque_ptr);
-  void Print(PrintFunc const &f);
-  void Print();
+
+  void Print(PrintFunc const &f) const;
+  void Print() const;
 
   LeafArray *
   get_leaf_array()
@@ -147,7 +148,9 @@ private:
   HostBranch *InsertBranch(HostBranch *insert_in, std::string_view level_data);
   HostBranch *FindNextLevel(HostBranch *from, std::string_view level_data, bool bNotProcess = false);
   bool MatchArray(HostLookupState *s, void **opaque_ptr, LeafIndices &array, bool host_done);
-  void PrintHostBranch(HostBranch *hb, PrintFunc const &f);
+
+  void PrintHostBranch(const HostBranch *hb, PrintFunc const &f) const;
+
   HostBranch root;          // The top of the search tree
   LeafArray leaf_array;     // array of all leaves in tree
   std::string matcher_name; // Used for Debug/Warning/Error messages
