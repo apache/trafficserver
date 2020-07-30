@@ -55,7 +55,7 @@ private:
   bool _check_credit() const;
 
   // Appendix B.  Congestion Control Pseudocode
-  bool _in_congestion_recovery(ink_hrtime sent_time);
+  bool _in_congestion_recovery(ink_hrtime sent_time) const;
   void _congestion_event(ink_hrtime sent_time);
   bool _in_persistent_congestion(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &lost_packets,
                                  const QUICSentPacketInfoUPtr &largest_lost_packet);

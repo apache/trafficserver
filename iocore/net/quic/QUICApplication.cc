@@ -115,7 +115,7 @@ QUICStreamIO::consume(int64_t len)
 }
 
 bool
-QUICStreamIO::is_read_done()
+QUICStreamIO::is_read_done() const
 {
   return this->_read_vio->ntodo() == 0;
 }

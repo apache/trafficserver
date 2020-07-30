@@ -37,7 +37,7 @@ QUICRateAnalyzer::update(QUICOffset offset)
 }
 
 uint64_t
-QUICRateAnalyzer::expect_recv_bytes(ink_hrtime time)
+QUICRateAnalyzer::expect_recv_bytes(ink_hrtime time) const
 {
   return static_cast<uint64_t>(time * this->_rate);
 }

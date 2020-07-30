@@ -38,7 +38,7 @@ public:
 
   void enqueue(UDPPacket *packet);
   QUICPacketUPtr dequeue(uint8_t *packet_buf, QUICPacketCreationResult &result);
-  uint32_t size();
+  uint32_t size() const;
   void reset();
 
 private:
