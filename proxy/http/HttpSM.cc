@@ -4938,6 +4938,12 @@ HttpSM::do_http_server_open(bool raw)
     }
   }
 
+  // Check for self loop.
+  if (HttpTransact::will_this_request_self_loop(&t_state)) {
+    call_transact_and_set_next_state(HttpTransact::SelfLoop);
+    return;
+  }
+
   // If this is not a raw connection, we try to get a session from the
   //  shared session pool.  Raw connections are for SSLs tunnel and
   //  require a new connection
