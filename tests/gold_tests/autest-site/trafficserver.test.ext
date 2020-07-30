@@ -29,7 +29,7 @@ def make_id(s):
 
 
 def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
-                   enable_tls=False, enable_cache=True):
+                   enable_tls=False, enable_cache=True, enable_quic=False):
     #####################################
     # common locations
 
@@ -304,15 +304,23 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
             'proxy.config.http.cache.http': 0
         })
 
+    if enable_quic:
+        p.Disk.records_config.update({
+            'proxy.config.udp.threads': 1,
+        })
+
     # The following message was added so that tests and users can know when
     # Traffic Server is ready to both receive and optimize traffic.
     p.Ready = When.FileContains(p.Disk.diags_log.AbsPath, "NOTE: Traffic Server is fully initialized")
 
     if select_ports:
         # default config
-        port_str = "{port} {v6_port}:ipv6 ".format(port=p.Variables.port, v6_port=p.Variables.portv6)
+        port_str = "{port} {v6_port}:ipv6".format(port=p.Variables.port, v6_port=p.Variables.portv6)
         if enable_tls:
-            port_str += "{ssl_port}:ssl {ssl_portv6}:ssl:ipv6".format(
+            port_str += " {ssl_port}:ssl {ssl_portv6}:ssl:ipv6".format(
+                ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6)
+        if enable_quic:
+            port_str += " {ssl_port}:quic {ssl_portv6}:quic:ipv6".format(
                 ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6)
         #p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
         p.Disk.records_config.update({
