@@ -279,7 +279,9 @@ ps.Streams.stderr = "gold/bb.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
 tr.StillRunningAfter = ts
 
-# 6 Test - Request reference slice via slice plugin, with instructions to fetch new 2nd slice -- this will send the old header, but abort and refetch it
+# 6 Test - Request reference slice via slice plugin, with instructions to
+# fetch new 2nd slice -- this will send the old header, but abort and
+# refetch it
 tr = Test.AddTestRun("Request 2nd slice (expect abort)")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://slice/reference -r 3- -H "uuid: etagnew-0" -w "SENT: \'%{size_download}\'"'

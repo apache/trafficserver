@@ -22,10 +22,14 @@ Test tls server certificate verification options
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-server_foo = Test.MakeOriginServer("server_foo", ssl=True, options={
-                                   "--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
-server_bar = Test.MakeOriginServer("server_bar", ssl=True, options={
-                                   "--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
+server_foo = Test.MakeOriginServer("server_foo",
+                                   ssl=True,
+                                   options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory),
+                                            "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
+server_bar = Test.MakeOriginServer("server_bar",
+                                   ssl=True,
+                                   options={"--key": "{0}/signed-bar.key".format(Test.RunDirectory),
+                                            "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}

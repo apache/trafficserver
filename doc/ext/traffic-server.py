@@ -170,7 +170,19 @@ def metrictypes(typename):
 
 
 def metricunits(unitname):
-    return directives.choice(unitname.lower(), ('ratio', 'percent', 'kbits', 'mbits', 'bytes', 'kbytes', 'mbytes', 'nanoseconds', 'microseconds', 'milliseconds', 'seconds'))
+    return directives.choice(
+        unitname.lower(),
+        ('ratio',
+         'percent',
+         'kbits',
+         'mbits',
+         'bytes',
+         'kbytes',
+         'mbytes',
+         'nanoseconds',
+         'microseconds',
+         'milliseconds',
+         'seconds'))
 
 
 class TSStat(std.Target):

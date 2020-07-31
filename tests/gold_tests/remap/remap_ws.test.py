@@ -28,8 +28,9 @@ server = Test.MakeOriginServer("server")
 testName = "Test WebSocket Remaps"
 request_header = {"headers": "GET /chat HTTP/1.1\r\nHost: www.example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
                   "body": None}
-response_header = {"headers": "HTTP/1.1 101 OK\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n",
-                   "body": None}
+response_header = {
+    "headers": "HTTP/1.1 101 OK\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n",
+    "body": None}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.addSSLfile("ssl/server.pem")

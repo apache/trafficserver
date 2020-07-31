@@ -51,12 +51,10 @@ ts.Disk.records_config.update({
 
 ts.Disk.remap_config.AddLine(
     'map http://testDNS.com http://test.ipv4.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;ipv4;client'.format(
-        server.Variables.Port)
-)
+        server.Variables.Port))
 ts.Disk.remap_config.AddLine(
     'map http://testDNS2.com http://test.ipv6.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;only'.format(
-        server_v6.Variables.Port)
-)
+        server_v6.Variables.Port))
 
 
 dns.addRecords(records={"test.ipv4.only.com.": ["127.0.0.1"]})

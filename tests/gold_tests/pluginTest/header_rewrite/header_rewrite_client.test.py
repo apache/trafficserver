@@ -41,12 +41,10 @@ ts.Setup.CopyAs('rules/rule_client.conf', Test.RunDirectory)
 
 ts.Disk.remap_config.AddLine(
     'map http://www.example.com/from_path/ https://127.0.0.1:{0}/to_path/ @plugin=header_rewrite.so @pparam={1}/rule_client.conf'.format(
-        server.Variables.Port, Test.RunDirectory)
-)
+        server.Variables.Port, Test.RunDirectory))
 ts.Disk.remap_config.AddLine(
     'map http://www.example.com:8080/from_path/ https://127.0.0.1:{0}/to_path/ @plugin=header_rewrite.so @pparam={1}/rule_client.conf'.format(
-        server.Variables.Port, Test.RunDirectory)
-)
+        server.Variables.Port, Test.RunDirectory))
 
 # call localhost straight
 tr = Test.AddTestRun()

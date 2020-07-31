@@ -40,8 +40,11 @@ post_body_file.close()
 # For Test Case 0
 microserver.addResponse("sessionlog.json",
                         {"headers": "POST /post HTTP/1.1\r\nHost: www.example.com\r\nTrailer: foo\r\n\r\n",
-                            "timestamp": "1469733493.993", "body": post_body},
-                        {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
+                         "timestamp": "1469733493.993",
+                         "body": post_body},
+                        {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
+                            "timestamp": "1469733493.993",
+                            "body": ""})
 
 # ----
 # Setup ATS

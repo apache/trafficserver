@@ -166,7 +166,7 @@ logging:
   logs:
     - filename: test_deletion
       format: long
-'''.format(prefix="0123456789"*500).split("\n")
+'''.format(prefix="0123456789" * 500).split("\n")
 )
 
 # Verify that each log type was registered for auto-deletion.
@@ -214,7 +214,7 @@ logging:
     - filename: test_deletion
       rolling_min_count: 1
       format: long
-'''.format(prefix="0123456789"*500).split("\n")
+'''.format(prefix="0123456789" * 500).split("\n")
 )
 
 # Verify that each log type was registered for auto-deletion.
@@ -305,7 +305,7 @@ logging:
     - filename: test_high_priority_deletion
       rolling_min_count: 1
       format: long
-'''.format(prefix="0123456789"*500).split("\n")
+'''.format(prefix="0123456789" * 500).split("\n")
 )
 
 # Verify that each log type was registered for auto-deletion.
@@ -401,7 +401,7 @@ logging:
     - filename: test_deletion
       rolling_min_count: 1
       format: long
-'''.format(prefix="0123456789"*500).split("\n")
+'''.format(prefix="0123456789" * 500).split("\n")
 )
 
 # Verify that each log type was registered for auto-deletion.
@@ -458,7 +458,7 @@ logging:
   logs:
     - filename: test_deletion
       format: long
-'''.format(prefix="0123456789"*500).split("\n")
+'''.format(prefix="0123456789" * 500).split("\n")
 )
 
 # Verify that trim happened for the rolled file.

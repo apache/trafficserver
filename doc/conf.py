@@ -102,7 +102,7 @@ copyright = u'{}, dev@trafficserver.apache.org'.format(date.today().year)
 
 
 contents = open('../configure.ac').read()
-match = re.compile('m4_define\(\[TS_VERSION_S],\[(.*?)]\)').search(contents)
+match = re.compile(r'm4_define\(\[TS_VERSION_S],\[(.*?)]\)').search(contents)
 
 # The full version, including alpha/beta/rc tags.
 release = match.group(1)
@@ -137,7 +137,7 @@ else:
         import sphinx_rtd_theme
         html_theme = 'sphinx_rtd_theme'
         html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-    except:
+    except Exception:
         pass
 # End of HACK
 

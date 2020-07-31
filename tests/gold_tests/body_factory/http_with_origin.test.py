@@ -99,7 +99,7 @@ trget304.StillRunningBefore = server
 trget304.StillRunningAfter = ts
 trget304.StillRunningAfter = server
 
-cmd_tpl = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/' | sed 's;ApacheTrafficServer\/[^ ]*;VERSION;'"
+cmd_tpl = r"python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/' | sed 's;ApacheTrafficServer\/[^ ]*;VERSION;'"
 trget304.Processes.Default.Command = cmd_tpl.format(ts.Variables.port, 'data/{0}_get_304.txt'.format(HOST))
 trget304.Processes.Default.TimeOut = 5  # seconds
 trget304.Processes.Default.ReturnCode = 0

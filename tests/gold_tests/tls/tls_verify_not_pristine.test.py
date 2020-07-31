@@ -22,8 +22,10 @@ Test tls server certificate verification without a pristine host header
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
-server_foo = Test.MakeOriginServer("server_foo", ssl=True, options={
-                                   "--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
+server_foo = Test.MakeOriginServer("server_foo",
+                                   ssl=True,
+                                   options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory),
+                                            "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
 server = Test.MakeOriginServer("server", ssl=True)
 dns = Test.MakeDNServer("dns")
 

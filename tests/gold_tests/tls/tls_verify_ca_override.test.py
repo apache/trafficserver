@@ -22,10 +22,14 @@ Test tls server  certificate verification options. Exercise conf_remap for ca bu
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True)
-server1 = Test.MakeOriginServer("server1", ssl=True, options={
-                                "--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
-server2 = Test.MakeOriginServer("server2", ssl=True, options={
-                                "--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed2-foo.pem".format(Test.RunDirectory)})
+server1 = Test.MakeOriginServer("server1",
+                                ssl=True,
+                                options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory),
+                                         "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)})
+server2 = Test.MakeOriginServer("server2",
+                                ssl=True,
+                                options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory),
+                                         "--cert": "{0}/signed2-foo.pem".format(Test.RunDirectory)})
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 request_bad_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}

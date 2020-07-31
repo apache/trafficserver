@@ -33,34 +33,52 @@ server = Test.MakeOriginServer("server")
 
 # For Test Case 1 & 5 - /
 server.addResponse("sessionlog.json",
-                   {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
+                   {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": ""})
 
 # For Test Case 2 - /bigfile
 # Add info for the large H2 download test
 server.addResponse("sessionlog.json",
-                   {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 191414\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
+                   {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 191414\r\n\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": ""})
 
 # For Test Case 3 - /test2
 server.addResponse("sessionlog.json",
-                   {"headers": "GET /test2 HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
+                   {"headers": "GET /test2 HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": ""})
 
 # For Test Case 6 - /postchunked
 post_body = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
 server.addResponse("sessionlog.jason",
                    {"headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                       "timestamp": "1469733493.993", "body": post_body},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
+                    "timestamp": "1469733493.993",
+                    "body": post_body},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": "0123456789"})
 
 # For Test Case 7 - /bigpostchunked
 # Make a post body that will be split across at least two frames
 big_post_body = "0123456789" * 131070
 server.addResponse("sessionlog.jason",
                    {"headers": "POST /bigpostchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                       "timestamp": "1469733493.993", "body": big_post_body},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
+                    "timestamp": "1469733493.993",
+                    "body": big_post_body},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": "0123456789"})
 
 big_post_body_file = open(os.path.join(Test.RunDirectory, "big_post_body"), "w")
 big_post_body_file.write(big_post_body)
@@ -68,13 +86,21 @@ big_post_body_file.close()
 
 # For Test Case 8 - /huge_resp_hdrs
 server.addResponse("sessionlog.json",
-                   {"headers": "GET /huge_resp_hdrs HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 6\r\n\r\n", "timestamp": "1469733493.993", "body": "200 OK"})
+                   {"headers": "GET /huge_resp_hdrs HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 6\r\n\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": "200 OK"})
 
 # For Test Case 9 - /status/204
 server.addResponse("sessionlog.json",
-                   {"headers": "GET /status/204 HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
-                   {"headers": "HTTP/1.1 204 No Content\r\nServer: microserver\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""})
+                   {"headers": "GET /status/204 HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""},
+                   {"headers": "HTTP/1.1 204 No Content\r\nServer: microserver\r\nConnection: close\r\n\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": ""})
 
 # ----
 # Setup ATS
@@ -103,7 +129,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'http',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.verify.server':  0,
+    'proxy.config.ssl.client.verify.server': 0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.http2.active_timeout_in': 3,
     'proxy.config.http2.max_concurrent_streams_in': 65535,

@@ -64,7 +64,7 @@ tr.StillRunningAfter = server
 
 # 2 Test - Gather output
 tr = Test.AddTestRun("analyze stats")
-tr.Processes.Default.Command = 'traffic_ctl metric match \.\*remap_stats\*'
+tr.Processes.Default.Command = r'traffic_ctl metric match \.\*remap_stats\*'
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5

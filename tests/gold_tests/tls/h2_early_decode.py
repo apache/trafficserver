@@ -232,7 +232,10 @@ class Decoder:
 def main():
     # input file is output from openssl s_client.
     # sample command to get this output:
-    # openssl s_client -bind 127.0.0.1:61991 -connect 127.0.0.1:61992 -tls1_3 -quiet -sess_out /home/duke/Dev/ats-test/sess.dat -sess_in /home/duke/Dev/ats-test/sess.dat -early_data ./gold_tests/tls/early2.txt >! _sandbox/tls_0rtt_server/early2_out.txt 2>&1
+    # openssl s_client -bind 127.0.0.1:61991 -connect 127.0.0.1:61992 -tls1_3
+    # -quiet -sess_out /home/duke/Dev/ats-test/sess.dat -sess_in
+    # /home/duke/Dev/ats-test/sess.dat -early_data ./gold_tests/tls/early2.txt
+    # >! _sandbox/tls_0rtt_server/early2_out.txt 2>&1
 
     if len(sys.argv) < 2:
         print('Error: No input file to decode.')

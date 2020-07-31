@@ -118,6 +118,8 @@ autopep8:
 		-j 0 \
 		--exclude $(top_srcdir)/lib/yamlcpp \
 		--max-line-length 132 \
+		--aggressive \
+		--aggressive \
 		-r $(top_srcdir)
 
 #

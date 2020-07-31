@@ -154,7 +154,7 @@ def _setup_port_queue(amount=1000):
             ).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
-    except:
+    except Exception:
         host.WriteWarning("Unable to call sysctrl!\n Tests may fail because of bad port selection!")
         return
 

@@ -132,7 +132,7 @@ tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername 
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_rsa_string,  "Should select RSA cert", reflags=re.S | re.M)
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_rsa_string, "Should select RSA cert", reflags=re.S | re.M)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
 
 # Should receive a RSA cert

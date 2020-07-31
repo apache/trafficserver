@@ -111,14 +111,14 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
     if config not in trafficservers:
         trafficservers[config] = Test.MakeATSProcess('ts_{0}'.format(normConfig), enable_cache=False)
         trafficservers[config].Disk.records_config.update({
-            'proxy.config.diags.debug.enabled':               1,
-            'proxy.config.diags.debug.tags':                  'http|dns|redirect',
-            'proxy.config.http.number_of_redirections':       1,
-            'proxy.config.dns.nameservers':                   '127.0.0.1:{0}'.format(dns.Variables.Port),
-            'proxy.config.dns.resolv_conf':                   'NULL',
-            'proxy.config.url_remap.remap_required':          0,
-            'proxy.config.http.redirect.actions':             config,
-            'proxy.config.http.connect_attempts_timeout':     5,
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'http|dns|redirect',
+            'proxy.config.http.number_of_redirections': 1,
+            'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
+            'proxy.config.dns.resolv_conf': 'NULL',
+            'proxy.config.url_remap.remap_required': 0,
+            'proxy.config.http.redirect.actions': config,
+            'proxy.config.http.connect_attempts_timeout': 5,
             'proxy.config.http.connect_attempts_max_retries': 0,
         })
         tr.Processes.Default.StartBefore(trafficservers[config])
@@ -168,9 +168,9 @@ class AddressE(Enum):
     '''
     Classes of addresses are mapped to example addresses.
     '''
-    Private = ('10.0.0.1',    '[fc00::1]')
+    Private = ('10.0.0.1', '[fc00::1]')
     Loopback = (['127.1.2.3'])  # [::1] is ommitted here because it is likely overwritten by Self, and there are no others in IPv6.
-    Multicast = ('224.1.2.3',   '[ff42::]')
+    Multicast = ('224.1.2.3', '[ff42::]')
     Linklocal = ('169.254.0.1', '[fe80::]')
     Routable = ('72.30.35.10', '[2001:4998:58:1836::10]')  # Do not Follow redirects to these in an automated test.
     Self = ipv4addrs | ipv6addrs  # Addresses of this host.
@@ -190,41 +190,41 @@ class ActionE(Enum):
 scenarios = [
     {
         # Follow to loopback, but alternately reject/return others.
-        AddressE.Private:   ActionE.Reject,
-        AddressE.Loopback:  ActionE.Follow,
+        AddressE.Private: ActionE.Reject,
+        AddressE.Loopback: ActionE.Follow,
         AddressE.Multicast: ActionE.Reject,
         AddressE.Linklocal: ActionE.Return,
-        AddressE.Routable:  ActionE.Reject,
-        AddressE.Self:      ActionE.Return,
-        AddressE.Default:   ActionE.Reject,
+        AddressE.Routable: ActionE.Reject,
+        AddressE.Self: ActionE.Return,
+        AddressE.Default: ActionE.Reject,
     },
 
     {
         # Follow to loopback, but alternately reject/return others, flipped from the previous scenario.
-        AddressE.Private:   ActionE.Return,
-        AddressE.Loopback:  ActionE.Follow,
+        AddressE.Private: ActionE.Return,
+        AddressE.Loopback: ActionE.Follow,
         AddressE.Multicast: ActionE.Return,
         AddressE.Linklocal: ActionE.Reject,
-        AddressE.Routable:  ActionE.Return,
-        AddressE.Self:      ActionE.Reject,
-        AddressE.Default:   ActionE.Return,
+        AddressE.Routable: ActionE.Return,
+        AddressE.Self: ActionE.Reject,
+        AddressE.Default: ActionE.Return,
     },
 
     {
         # Return loopback, but reject everything else.
-        AddressE.Loopback:  ActionE.Return,
-        AddressE.Default:   ActionE.Reject,
+        AddressE.Loopback: ActionE.Return,
+        AddressE.Default: ActionE.Reject,
     },
 
     {
         # Reject loopback, but return everything else.
-        AddressE.Loopback:  ActionE.Reject,
-        AddressE.Default:   ActionE.Return,
+        AddressE.Loopback: ActionE.Reject,
+        AddressE.Default: ActionE.Return,
     },
 
     {
         # Return everything.
-        AddressE.Default:   ActionE.Return,
+        AddressE.Default: ActionE.Return,
     },
 ]
 

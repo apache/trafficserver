@@ -345,7 +345,7 @@ tr = Test.AddTestRun("non cache_key_url request")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str)
 ps.ReturnCode = 0
-ps.Streams.stdout.Content = Testers.ExcludesExpression("X-ParentSelection-Key",  "parent select key shouldn't show up")
+ps.Streams.stdout.Content = Testers.ExcludesExpression("X-ParentSelection-Key", "parent select key shouldn't show up")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 

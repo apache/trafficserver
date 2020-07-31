@@ -65,7 +65,7 @@ def main():
         key_index = args.key_index[0]
         print("args key_index " + str(key_index))
     else:
-        key_index = random.randint(0, len(keys)-1)
+        key_index = random.randint(0, len(keys) - 1)
         print("randomizing key index")
 
     print("Using key_index " + str(key_index))

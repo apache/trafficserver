@@ -56,8 +56,10 @@ response_header_4 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", 
 
 server.addResponse("sessionfile.log", request_header_4, response_header_4)
 
-request_header_5 = {"headers": "GET /eleventh/magic;matrix=4/eleventh;matrix=2?query=true HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                    "timestamp": "1469733493.993", "body": ""}
+request_header_5 = {
+    "headers": "GET /eleventh/magic;matrix=4/eleventh;matrix=2?query=true HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""}
 response_header_5 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 server.addResponse("sessionfile.log", request_header_5, response_header_5)

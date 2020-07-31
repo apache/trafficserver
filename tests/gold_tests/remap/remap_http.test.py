@@ -69,8 +69,7 @@ ts.Disk.remap_config.AddLine(
 
 ts.Disk.remap_config.AddLine(
     'map http://www.testexample.com http://127.0.0.1:{0} @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1'.format(
-        server2.Variables.Port)
-)
+        server2.Variables.Port))
 
 dns.addRecords(records={"audrey.hepburn.com.": ["127.0.0.1"]})
 dns.addRecords(records={"whatever.com.": ["127.0.0.1"]})
