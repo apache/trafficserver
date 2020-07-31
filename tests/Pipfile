@@ -24,7 +24,7 @@ autopep8 = "*"
 pyflakes = "*"
 
 [packages]
-autest = "==1.8.0"
+autest = "==1.8.1"
 traffic-replay = "*" # this should install TRLib, MicroServer, MicroDNS, Traffic-Replay
 hyper = "*"
 dnslib = "*"
