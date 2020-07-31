@@ -30,12 +30,12 @@
  ****************************************************************************/
 #pragma once
 
+#include <vector>
+#include <strings.h>
+
 #include "ProxyConfig.h"
 #include "P_SNIActionPerformer.h"
 #include "tscore/MatcherUtils.h"
-#include "openssl/ossl_typ.h"
-#include <vector>
-#include <strings.h>
 #include "YamlSNIConfig.h"
 
 // Properties for the next hop server

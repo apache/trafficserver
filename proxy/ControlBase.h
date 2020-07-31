@@ -31,8 +31,9 @@
 
 #pragma once
 
+#include <vector>
+
 #include "tscore/ink_platform.h"
-#include "vector"
 
 class HttpRequestData;
 class Tokenizer;

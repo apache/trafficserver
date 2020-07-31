@@ -25,7 +25,7 @@
 
 #include <ts/ts.h>
 #include "tscore/ink_config.h"
-#include "openssl/evp.h"
+#include <openssl/evp.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
