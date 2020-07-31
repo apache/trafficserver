@@ -130,7 +130,7 @@ QUICTLS::handshake(QUICHandshakeMsgs **out, const QUICHandshakeMsgs *in)
       return this->_process_post_handshake_messages(*out, in);
     }
 
-    return 0;
+    return 1;
   }
 
   return this->_handshake(out, in);
