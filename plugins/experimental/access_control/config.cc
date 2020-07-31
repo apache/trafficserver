@@ -261,14 +261,14 @@ AccessControlConfig::init(int argc, char *argv[])
       _useRedirects = ::isTrue(optarg);
     } break;
     case 'o': /* include-uri-paths-file */
-      if (!loadMultiPatternsFromFile(optarg, /* blocklist = */ false)) {
+      if (!loadMultiPatternsFromFile(optarg, /* denylist = */ false)) {
         AccessControlError("failed to load uri-path multi-pattern allow-list '%s'", optarg);
         status = false;
       }
       break;
     case 'p': /* exclude-uri-paths-file */
-      if (!loadMultiPatternsFromFile(optarg, /* blocklist = */ true)) {
-        AccessControlError("failed to load uri-path multi-pattern block-list '%s'", optarg);
+      if (!loadMultiPatternsFromFile(optarg, /* denylist = */ true)) {
+        AccessControlError("failed to load uri-path multi-pattern deny-list '%s'", optarg);
         status = false;
       }
       break;
@@ -297,11 +297,11 @@ AccessControlConfig::init(int argc, char *argv[])
 /**
  * @brief a helper function which loads the classifier from files.
  * @param filename file name
- * @param blocklist true - load as a blocklist of patterns, false - allow-list of patterns
+ * @param denylist true - load as a denylist of patterns, false - allow-list of patterns
  * @return true if successful, false otherwise.
  */
 bool
-AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool blocklist)
+AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool denylist)
 {
   if (filename.empty()) {
     AccessControlError("filename cannot be empty");
@@ -322,7 +322,7 @@ AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool bloc
 
   /* Have the multiplattern be named as same as the filename, would be used only for debugging. */
   MultiPattern *multiPattern;
-  if (blocklist) {
+  if (denylist) {
     multiPattern = new NonMatchingMultiPattern(filename);
     AccessControlDebug("NonMatchingMultiPattern('%s')", filename.c_str());
   } else {
@@ -355,8 +355,8 @@ AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool bloc
     p = new Pattern();
 
     if (nullptr != p && p->init(regex)) {
-      if (blocklist) {
-        AccessControlDebug("Added pattern '%s' to block list uri-path multi-pattern '%s'", regex.c_str(), filename.c_str());
+      if (denylist) {
+        AccessControlDebug("Added pattern '%s' to deny list uri-path multi-pattern '%s'", regex.c_str(), filename.c_str());
         multiPattern->add(p);
       } else {
         AccessControlDebug("Added pattern '%s' to allow list uri-path multi-pattern '%s'", regex.c_str(), filename.c_str());

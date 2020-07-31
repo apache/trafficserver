@@ -207,7 +207,7 @@ public:
     }
   }
 
-  std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>>
+  const std::unordered_map<uint16_t, std::pair<const uint8_t *, uint16_t>> &
   additional_tp() const override
   {
     return this->_additional_tp;
@@ -868,6 +868,10 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
     break;
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    // Start Immediate Close
+    this->_handle_active_timeout();
+    break;
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
@@ -904,6 +908,10 @@ QUICNetVConnection::state_connection_established(int event, Event *data)
     // Start Immediate Close because of Idle Timeout
     this->_handle_idle_timeout();
     break;
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    // Start Immediate Close
+    this->_handle_active_timeout();
+    break;
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
   }
@@ -936,6 +944,9 @@ QUICNetVConnection::state_connection_closing(int event, Event *data)
     break;
   case QUIC_EVENT_STATELESS_RESET:
     break;
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    // Do nothing because closing is in progress
+    break;
   case QUIC_EVENT_ACK_PERIODIC:
   default:
     QUICConDebug("Unexpected event: %s (%d)", QUICDebugNames::quic_event(event), event);
@@ -965,6 +976,9 @@ QUICNetVConnection::state_connection_draining(int event, Event *data)
     this->_switch_to_close_state();
     break;
   case QUIC_EVENT_STATELESS_RESET:
+    break;
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    // Do nothing because closing is in progress
     break;
   case QUIC_EVENT_ACK_PERIODIC:
   default:
@@ -2254,6 +2268,12 @@ QUICNetVConnection::_handle_idle_timeout()
   this->_switch_to_draining_state(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Idle Timeout"));
 
   // TODO: signal VC_EVENT_ACTIVE_TIMEOUT/VC_EVENT_INACTIVITY_TIMEOUT to application
+}
+
+void
+QUICNetVConnection::_handle_active_timeout()
+{
+  this->close_quic_connection(std::make_unique<QUICConnectionError>(QUICTransErrorCode::NO_ERROR, "Active Timeout"));
 }
 
 void

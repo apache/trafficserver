@@ -122,8 +122,8 @@ Cache key structure and related plugin parameters
 
 * ``User-Agent`` classification
     * ``--ua-allowlist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if matched ``<classname>`` is added it to the key.
-    * ``--ua-blocklist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if **not** matched ``<classname>`` is added it to the key.
-    * Multiple ``--ua-allowlist`` and ``--ua-blocklist`` can be used and the result will be defined by their order in the plugin configuration.
+    * ``--ua-denylist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if **not** matched ``<classname>`` is added it to the key.
+    * Multiple ``--ua-allowlist`` and ``--ua-denylist`` can be used and the result will be defined by their order in the plugin configuration.
 * ``User-Agent`` regex capturing and replacement
     * ``--ua-capture=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from the ``User-Agent`` header based on ``<capture_definition>`` (see below) and are added to the `cache key`.
 * If any ``User-Agent`` classification and regex capturing and replacement plugin parameters are used together they are added to the `cache key` in the order shown in the diagram.
@@ -179,10 +179,10 @@ Cache key structure and related plugin parameters
 ^^^^^^^^^^^^^^^
 
 * If no query related plugin parameters are used, the query string is included in the `cache key`.
-* ``--exclude-params`` (default: empty list) - comma-separated list of query params to be black-listed in the `cache key`. If the list is empty then no black-list is applied (no query parameters will be excluded from the `cache key`). The exclude list overrides the include list.
-* ``--include-params`` (default: empty list) - comma-separated list of query params to be white-listed in the `cache key`. If the list is empty then no white-list is applied (all query parameters will be included in the `cache key`).
-* ``--include-match-params`` (default: empty list) - regular expression matching query parameter names which will be white-listed in the `cache key`.
-* ``--exclude-match-params`` (default: empty list) - regular expression matching query parameter names which will be black-listed in the `cache key`.
+* ``--exclude-params`` (default: empty list) - comma-separated list of query params to be excluded in the `cache key`. If the list is empty then no exlusions are applied (no query parameters will be excluded from the `cache key`). The exclude list overrides the include list.
+* ``--include-params`` (default: empty list) - comma-separated list of query params to be allow-listed in the `cache key`. If the list is empty then no allow-list is applied (all query parameters will be included in the `cache key`).
+* ``--include-match-params`` (default: empty list) - regular expression matching query parameter names which will be allowed in the `cache key`.
+* ``--exclude-match-params`` (default: empty list) - regular expression matching query parameter names which will be excluded in the `cache key`.
 * ``--remove-all-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, default: ``false``) - if equals ``true`` then all query parameters are removed (the whole query string) and all other URI query parameter related settings (if used) will have no effect.
 * ``--sort-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, default: ``false``) - if equals ``true`` then all query parameters are sorted in an increasing case-sensitive order
 
@@ -377,7 +377,7 @@ The following will make sure only query parameters ``a`` and ``c`` will be used 
 
 If the URI has the following query string ``c=1&a=1&b=2&x=1&k=1&u=1&y=1`` the `cache key` will use ``c=1&a=1``
 
-White-list + black-list certain parameters using multiple parameters in the same remap rule.
+Include and exclude certain parameters using multiple parameters in the same remap rule.
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameters in the remap rule: ::
 
@@ -390,7 +390,7 @@ If the plugin is used with the following plugin parameters in the remap rule: ::
 
 and if the URI has the following query string ``c=1&a=1&b=2&x=1&k=1&u=1&y=1`` the `cache key` will use ``c=1&b=1``
 
-White-list + black-list certain parameters using multiple parameters in the same remap rule and regular expressions (PCRE).
+Include and exclude certain parameters using multiple parameters in the same remap rule and regular expressions (PCRE).
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameters in the remap rule: ::
 
@@ -570,7 +570,7 @@ If the plugin is used with the following plugin parameter::
 
 then ``Mozilla/5.0_AppleWebKit/537.75.14`` will be used when constructing the key.
 
-User-Agent white-list classifier
+User-Agent allow-list classifier
 """"""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameter::
 
@@ -585,12 +585,12 @@ and if ``browser_agents.config`` contains: ::
 
 then ``browser`` will be used when constructing the key.
 
-User-Agent black-list classifier
+User-Agent deny-list classifier
 """"""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameter::
 
   @plugin=cachekey.so \
-      @pparam=--ua-blacklist=browser:tool_agents.config
+      @pparam=--ua-denylist=browser:tool_agents.config
 
 and if ``tool_agents.config`` contains: ::
 

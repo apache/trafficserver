@@ -17,20 +17,20 @@
 
 .. include:: ../../../../common.defs
 
-.. _developer-plugins-examples-blacklist-code:
+.. _developer-plugins-examples-denylist-code:
 
 Sample Source Code
 ******************
 
-.. _blacklist-1.c:
+.. _denylist-1.c:
 
-blacklist_1.c
+denylist_1.c
 -------------
 
-The sample blacklisting plugin included in the Traffic Server SDK is
-``blacklist_1.c``. This plugin checks every incoming HTTP client request
-against a list of blacklisted web sites. If the client requests a
-blacklisted site, then the plugin returns an ``Access forbidden``
+The sample denylisting plugin included in the Traffic Server SDK is
+``denylist_1.c``. This plugin checks every incoming HTTP client request
+against a list of web sites. If the client requests a
+listed site, then the plugin returns an ``Access forbidden``
 message to the client.
 
 This plugin illustrates:
@@ -43,5 +43,5 @@ This plugin illustrates:
 
 -  How to use the plugin configuration management interface
 
-.. literalinclude:: ../../../../../example/plugins/c-api/blacklist_1/blacklist_1.c
+.. literalinclude:: ../../../../../example/plugins/c-api/denylist_1/denylist_1.c
    :language: c

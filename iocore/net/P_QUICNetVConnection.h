@@ -364,6 +364,7 @@ private:
 
   void _handle_periodic_ack_event();
   void _handle_idle_timeout();
+  void _handle_active_timeout();
 
   QUICConnectionErrorUPtr _handle_frame(const QUICNewConnectionIdFrame &frame);
 

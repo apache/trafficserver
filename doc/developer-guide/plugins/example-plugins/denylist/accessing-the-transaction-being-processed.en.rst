@@ -17,7 +17,7 @@
 
 .. include:: ../../../../common.defs
 
-.. _developer-plugins-blacklist-access-process-txn:
+.. _developer-plugins-denylist-access-process-txn:
 
 Accessing the Transaction Being Processed
 *****************************************
@@ -38,12 +38,12 @@ The key here is that if the event is an HTTP transaction event, then the
 data passed to the continuation's handler is of type ``TSHttpTxn`` (a
 data type that represents HTTP transactions). Your plugin can then do
 things with the transaction. Here's how it looks in the code for the
-Blacklist plugin's handler:
+Denylist plugin's handler:
 
 .. code-block:: c
 
    static int
-   blacklist_plugin (TSCont contp, TSEvent event, void *edata)
+   denylist_plugin (TSCont contp, TSEvent event, void *edata)
    {
       TSHttpTxn txnp = (TSHttpTxn) edata;
       switch (event) {
@@ -60,5 +60,5 @@ Blacklist plugin's handler:
    }
 
 For example: when the origin server DNS lookup event is sent,
-``blacklist_plugin`` can call ``handle_dns``\ and pass ``txnp`` as an
+``denylist_plugin`` can call ``handle_dns``\ and pass ``txnp`` as an
 argument.
