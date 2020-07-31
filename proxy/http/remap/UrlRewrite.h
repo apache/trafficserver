@@ -81,7 +81,7 @@ public:
   mapping_type Remap_redirect(HTTPHdr *request_header, URL *redirect_url);
   bool ReverseMap(HTTPHdr *response_header);
   void SetReverseFlag(int flag);
-  void Print();
+  void Print() const;
 
   // The UrlRewrite object is-a RefCountObj, but this is a convenience to make it clear that we
   // don't delete() these objects directly, but via the release() method only.
@@ -145,7 +145,7 @@ public:
   };
 
   void PerformACLFiltering(HttpTransact::State *s, url_mapping *mapping);
-  void PrintStore(MappingsStore &store);
+  void PrintStore(const MappingsStore &store) const;
 
   void
   DestroyStore(MappingsStore &store)

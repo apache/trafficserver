@@ -136,7 +136,9 @@ public:
   Result Init(matcher_line *line_info);
   bool DefaultInit(char *val);
   void UpdateMatch(ParentResult *result, RequestData *rdata);
-  void Print();
+
+  void Print() const;
+
   pRecord *parents           = nullptr;
   pRecord *secondary_parents = nullptr;
   int num_parents            = 0;

@@ -694,10 +694,8 @@ ControlBase::clear()
   _mods.clear();
 }
 
-// static const modifier_el default_el = { MOD_INVALID, NULL };
-
 void
-ControlBase::Print()
+ControlBase::Print() const
 {
   int n = _mods.size();
 

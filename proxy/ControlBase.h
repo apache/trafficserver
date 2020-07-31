@@ -74,10 +74,13 @@ public:
 
   ControlBase();
   ~ControlBase();
+
   const char *ProcessModifiers(matcher_line *line_info);
   bool CheckModifiers(HttpRequestData *request_data);
   bool CheckForMatch(HttpRequestData *request_data, int last_number);
-  void Print();
+
+  void Print() const;
+
   int line_num = 0;
   Modifier *findModOfType(Modifier::Type t) const;
 

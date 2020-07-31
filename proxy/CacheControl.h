@@ -63,7 +63,7 @@ class CacheControlResult
 {
 public:
   inkcoreapi CacheControlResult();
-  void Print();
+  void Print() const;
 
   // Data for external use
   //
@@ -109,7 +109,7 @@ public:
   int cache_responses_to_cookies = -1;
   Result Init(matcher_line *line_info);
   inkcoreapi void UpdateMatch(CacheControlResult *result, RequestData *rdata);
-  void Print();
+  void Print() const;
 };
 
 inline CacheControlRecord::CacheControlRecord() : ControlBase() {}

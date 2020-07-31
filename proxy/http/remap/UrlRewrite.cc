@@ -140,7 +140,7 @@ UrlRewrite::_destroyTable(std::unique_ptr<URLTable> &h_table)
 
 /** Debugging Method. */
 void
-UrlRewrite::Print()
+UrlRewrite::Print() const
 {
   printf("URL Rewrite table with %d entries\n", num_rules_forward + num_rules_reverse + num_rules_redirect_temporary +
                                                   num_rules_redirect_permanent + num_rules_forward_with_recv_port);
@@ -168,7 +168,7 @@ UrlRewrite::Print()
 
 /** Debugging method. */
 void
-UrlRewrite::PrintStore(MappingsStore &store)
+UrlRewrite::PrintStore(const MappingsStore &store) const
 {
   if (store.hash_lookup) {
     for (auto &it : *store.hash_lookup) {

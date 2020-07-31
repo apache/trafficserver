@@ -143,7 +143,7 @@ public:
   };
 
   unsigned count() const;
-  void Print(); // Debugging print out
+  void Print() const;
 
   inkcoreapi const char *iterFirst(tok_iter_state *state);
   inkcoreapi const char *iterNext(tok_iter_state *state);

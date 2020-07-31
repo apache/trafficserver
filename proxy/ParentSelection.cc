@@ -300,10 +300,6 @@ ParentConfig::reconfigure()
   Note("%s finished loading", ts::filename::PARENT);
 }
 
-// void ParentConfig::print
-//
-//   Debugging function
-//
 void
 ParentConfig::print()
 {
@@ -862,7 +858,7 @@ ParentRecord::~ParentRecord()
 }
 
 void
-ParentRecord::Print()
+ParentRecord::Print() const
 {
   printf("\t\t");
   for (int i = 0; i < num_parents; i++) {
