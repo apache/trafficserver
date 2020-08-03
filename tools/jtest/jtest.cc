@@ -446,7 +446,7 @@ FD::close()
 
 #define MAX_FILE_ARGUMENTS 100
 
-typedef struct {
+struct InkWebURLComponents {
   char sche[MAX_URL_LEN + 1];
   char host[MAX_URL_LEN + 1];
   char port[MAX_URL_LEN + 1];
@@ -466,7 +466,7 @@ typedef struct {
   int rel_url;
   int leading_slash;
   int is_path_name;
-} InkWebURLComponents;
+};
 
 static int ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len);
 
