@@ -44,19 +44,18 @@
 /* TSCacheWrite() and TSVConnWrite() data: Write the digest to the
  * cache and store the request URL at that key */
 
-typedef struct {
+struct WriteData {
   TSHttpTxn txnp;
 
   TSCacheKey key;
 
   TSVConn connp;
   TSIOBuffer cache_bufp;
-
-} WriteData;
+};
 
 /* TSTransformCreate() data: Compute the SHA-256 digest of the content */
 
-using TransformData = struct {
+struct TransformData {
   TSHttpTxn txnp;
 
   /* Null transformation */
@@ -70,7 +69,7 @@ using TransformData = struct {
 /* TSCacheRead() and TSVConnRead() data: Check the Location and Digest
  * headers */
 
-using SendData = struct {
+struct SendData {
   TSHttpTxn txnp;
 
   TSMBuffer resp_bufp;
