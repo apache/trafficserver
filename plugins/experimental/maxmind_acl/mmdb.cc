@@ -117,7 +117,7 @@ Acl::init(char const *filename)
 ///////////////////////////////////////////////////////////////////////////////
 // Parse the deny list country codes and IPs
 bool
-Acl::loaddeny(YAML::Node denyNode)
+Acl::loaddeny(const YAML::Node &denyNode)
 {
   if (!denyNode) {
     TSDebug(PLUGIN_NAME, "No Deny rules set");
@@ -197,7 +197,7 @@ Acl::loaddeny(YAML::Node denyNode)
 
 // Parse the allow list country codes and IPs
 bool
-Acl::loadallow(YAML::Node allowNode)
+Acl::loadallow(const YAML::Node &allowNode)
 {
   if (!allowNode) {
     TSDebug(PLUGIN_NAME, "No Allow rules set");
@@ -277,7 +277,7 @@ Acl::loadallow(YAML::Node allowNode)
 }
 
 void
-Acl::parseregex(YAML::Node regex, bool allow)
+Acl::parseregex(const YAML::Node &regex, bool allow)
 {
   try {
     if (!regex.IsNull()) {
@@ -321,7 +321,7 @@ Acl::parseregex(YAML::Node regex, bool allow)
 }
 
 void
-Acl::loadhtml(YAML::Node htmlNode)
+Acl::loadhtml(const YAML::Node &htmlNode)
 {
   std::string htmlname, htmlloc;
   std::ifstream f;
@@ -357,7 +357,7 @@ Acl::loadhtml(YAML::Node htmlNode)
 ///////////////////////////////////////////////////////////////////////////////
 // Load the maxmind database from the config parameter
 bool
-Acl::loaddb(YAML::Node dbNode)
+Acl::loaddb(const YAML::Node &dbNode)
 {
   std::string dbloc, dbname;
 
@@ -490,7 +490,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len)
 {
   bool ret     = false;
   bool allow   = default_allow;
-  char *output = NULL;
+  char *output = nullptr;
   output       = (char *)malloc((sizeof(char) * entry_data->data_size));
   strncpy(output, entry_data->utf8_string, entry_data->data_size);
   TSDebug(PLUGIN_NAME, "This IP Country Code: %s", output);

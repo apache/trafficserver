@@ -25,10 +25,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
-#include <string.h>
+#include <cstring>
 #include <openssl/ssl.h>
 #include <fcntl.h>
 #include <netinet/tcp.h>
@@ -38,7 +38,7 @@
 #include <openssl/err.h>
 #include <sys/time.h>
 #include <sys/select.h>
-#include <errno.h>
+#include <cerrno>
 
 char req_buf[10000];
 char post_buf[1000];
@@ -47,7 +47,7 @@ SSL_CTX *svr_ctx;
 int connect_delay;
 int ttfb_delay;
 
-pthread_mutex_t *mutex_buf = NULL;
+pthread_mutex_t *mutex_buf = nullptr;
 
 struct thread_info {
   struct addrinfo *result, *rp;
@@ -80,7 +80,7 @@ run_session(void *arg)
 {
   int sfd  = (intptr_t)arg;
   SSL *ssl = SSL_new(svr_ctx);
-  if (ssl == NULL) {
+  if (ssl == nullptr) {
     fprintf(stderr, "Failed to create ssl\n");
     return nullptr;
   }
@@ -138,7 +138,7 @@ run_session(void *arg)
   }
   close(sfd);
 
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -169,14 +169,14 @@ main(int argc, char *argv[])
   serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   serv_addr.sin_port        = htons(listen_port);
 
-  bind(listenfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+  bind(listenfd, reinterpret_cast<struct sockaddr *>(&serv_addr), sizeof(serv_addr));
 
   SSL_load_error_strings();
   SSL_library_init();
 
-  mutex_buf = (pthread_mutex_t *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
+  mutex_buf = static_cast<pthread_mutex_t *>(OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t)));
   for (int i = 0; i < CRYPTO_num_locks(); i++) {
-    pthread_mutex_init(&mutex_buf[i], NULL);
+    pthread_mutex_init(&mutex_buf[i], nullptr);
   }
 
   CRYPTO_set_locking_callback(SSL_locking_callback);
@@ -199,7 +199,7 @@ main(int argc, char *argv[])
   listen(listenfd, 10);
 
   for (;;) {
-    sfd = accept(listenfd, (struct sockaddr *)NULL, NULL);
+    sfd = accept(listenfd, (struct sockaddr *)nullptr, nullptr);
     if (sfd <= 0) {
       // Failure
       printf("Listen failure\n");
@@ -210,7 +210,7 @@ main(int argc, char *argv[])
 
     // Spawn off new thread
     pthread_t thread_id;
-    pthread_create(&thread_id, NULL, run_session, (void *)((intptr_t)sfd));
+    pthread_create(&thread_id, nullptr, run_session, (void *)(static_cast<intptr_t>(sfd)));
   }
 
   exit(0);

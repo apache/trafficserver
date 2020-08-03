@@ -26,12 +26,12 @@
  *   System must be built with jemalloc to be useful
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include <ts/ts.h>
-#include <string.h>
-#include <errno.h>
+#include <cstring>
+#include <cerrno>
 #include <tscore/ink_config.h>
 #if TS_HAS_JEMALLOC
 #include <jemalloc/jemalloc.h>
@@ -45,7 +45,7 @@ CallbackHandler(TSCont cont, TSEvent id, void *data)
   (void)cont; // make compiler shut up about unused variable.
 
   if (id == TS_EVENT_LIFECYCLE_MSG) {
-    TSPluginMsg *msg = (TSPluginMsg *)data;
+    TSPluginMsg *msg = static_cast<TSPluginMsg *>(data);
     TSDebug(PLUGIN_NAME, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
     if (strcmp(PLUGIN_NAME, msg->tag) == 0) { // Message is for us
 #if TS_HAS_JEMALLOC
@@ -96,7 +96,7 @@ TSPluginInit(int argc, const char *argv[])
     goto Lerror;
   }
 
-  cb = TSContCreate(CallbackHandler, NULL);
+  cb = TSContCreate(CallbackHandler, nullptr);
 
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, cb);
 

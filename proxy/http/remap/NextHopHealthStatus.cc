@@ -30,8 +30,7 @@
 void
 NextHopHealthStatus::insert(std::vector<std::shared_ptr<HostRecord>> &hosts)
 {
-  for (uint32_t ii = 0; ii < hosts.size(); ii++) {
-    std::shared_ptr<HostRecord> h = hosts[ii];
+  for (auto h : hosts) {
     for (auto protocol = h->protocols.begin(); protocol != h->protocols.end(); ++protocol) {
       const std::string host_port = h->getHostPort((*protocol)->port);
       host_map.emplace(std::make_pair(host_port, h));

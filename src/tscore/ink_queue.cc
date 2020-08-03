@@ -227,9 +227,10 @@ freelist_new(InkFreeList *f)
       for (i = 0; i < f->chunk_size; i++) {
         char *a = (static_cast<char *>(FREELIST_POINTER(item))) + i * f->type_size;
 #ifdef DEADBEEF
-        const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
-        for (int j = 0; j < (int)f->type_size; j++)
+        const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
+        for (int j = 0; j < static_cast<int>(f->type_size); j++) {
           a[j] = str[j % 4];
+        }
 #endif
         freelist_free(f, a);
       }
@@ -240,12 +241,15 @@ freelist_new(InkFreeList *f)
 
 #ifdef SANITY
       if (result) {
-        if (FREELIST_POINTER(item) == TO_PTR(FREELIST_POINTER(next)))
+        if (FREELIST_POINTER(item) == TO_PTR(FREELIST_POINTER(next))) {
           ink_abort("ink_freelist_new: loop detected");
-        if (((uintptr_t)(TO_PTR(FREELIST_POINTER(next)))) & 3)
+        }
+        if (((uintptr_t)(TO_PTR(FREELIST_POINTER(next)))) & 3) {
           ink_abort("ink_freelist_new: bad list");
-        if (TO_PTR(FREELIST_POINTER(next)))
-          fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(next));
+        }
+        if (TO_PTR(FREELIST_POINTER(next))) {
+          fake_global_for_ink_queue = *static_cast<int *>(TO_PTR(FREELIST_POINTER(next)));
+        }
       }
 #endif /* SANITY */
     }
@@ -291,23 +295,27 @@ freelist_free(InkFreeList *f, void *item)
 
 #ifdef DEADBEEF
   {
-    static const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
+    static const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
 
     // set the entire item to DEADBEEF
-    for (int j = 0; j < (int)f->type_size; j++)
-      ((char *)item)[j] = str[j % 4];
+    for (int j = 0; j < static_cast<int>(f->type_size); j++) {
+      (static_cast<char *>(item))[j] = str[j % 4];
+    }
   }
 #endif /* DEADBEEF */
 
   while (!result) {
     INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
-    if (TO_PTR(FREELIST_POINTER(h)) == item)
+    if (TO_PTR(FREELIST_POINTER(h)) == item) {
       ink_abort("ink_freelist_free: trying to free item twice");
-    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
+    }
+    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3) {
       ink_abort("ink_freelist_free: bad list");
-    if (TO_PTR(FREELIST_POINTER(h)))
-      fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
+    }
+    if (TO_PTR(FREELIST_POINTER(h))) {
+      fake_global_for_ink_queue = *static_cast<int *>(TO_PTR(FREELIST_POINTER(h)));
+    }
 #endif /* SANITY */
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
@@ -347,13 +355,14 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
 
 #ifdef DEADBEEF
   {
-    static const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
+    static const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
 
     // set the entire item to DEADBEEF;
     void *temp = head;
     for (size_t i = 0; i < num_item; i++) {
-      for (int j = sizeof(void *); j < (int)f->type_size; j++)
-        ((char *)temp)[j] = str[j % 4];
+      for (int j = sizeof(void *); j < static_cast<int>(f->type_size); j++) {
+        (static_cast<char *>(temp))[j] = str[j % 4];
+      }
       *ADDRESS_OF_NEXT(temp, 0) = FROM_PTR(*ADDRESS_OF_NEXT(temp, 0));
       temp                      = TO_PTR(*ADDRESS_OF_NEXT(temp, 0));
     }
@@ -363,12 +372,15 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
   while (!result) {
     INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
-    if (TO_PTR(FREELIST_POINTER(h)) == head)
+    if (TO_PTR(FREELIST_POINTER(h)) == head) {
       ink_abort("ink_freelist_free: trying to free item twice");
-    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
+    }
+    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3) {
       ink_abort("ink_freelist_free: bad list");
-    if (TO_PTR(FREELIST_POINTER(h)))
-      fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
+    }
+    if (TO_PTR(FREELIST_POINTER(h))) {
+      fake_global_for_ink_queue = *static_cast<int *>(TO_PTR(FREELIST_POINTER(h)));
+    }
 #endif /* SANITY */
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));

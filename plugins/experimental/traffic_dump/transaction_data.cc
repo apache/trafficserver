@@ -280,7 +280,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     // The uuid is a header field for each message in the transaction. Use the
     // "all" node to apply to each message.
     std::string_view name = "uuid";
-    txnData->txn_json += ",\"all\":{\"headers\":{\"fields\":[" + json_entry_array(name, uuid_view);
+    txnData->txn_json += R"(,"all":{"headers":{"fields":[)" + json_entry_array(name, uuid_view);
     txnData->txn_json += "]}}";
     break;
   }

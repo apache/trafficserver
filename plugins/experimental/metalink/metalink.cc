@@ -56,7 +56,7 @@ typedef struct {
 
 /* TSTransformCreate() data: Compute the SHA-256 digest of the content */
 
-typedef struct {
+using TransformData = struct {
   TSHttpTxn txnp;
 
   /* Null transformation */
@@ -65,13 +65,12 @@ typedef struct {
 
   /* Message digest handle */
   SHA256_CTX c;
-
-} TransformData;
+};
 
 /* TSCacheRead() and TSVConnRead() data: Check the Location and Digest
  * headers */
 
-typedef struct {
+using SendData = struct {
   TSHttpTxn txnp;
 
   TSMBuffer resp_bufp;
@@ -95,8 +94,7 @@ typedef struct {
 
   const char *value;
   int64_t length;
-
-} SendData;
+};
 
 /* Implement TS_HTTP_READ_RESPONSE_HDR_HOOK to implement a null
  * transformation */

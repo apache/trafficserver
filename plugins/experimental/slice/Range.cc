@@ -156,7 +156,7 @@ int64_t
 Range::lastBlockFor(int64_t const blocksize) const
 {
   if (0 < blocksize && isValid()) {
-    return std::max((int64_t)0, (m_end - 1) / blocksize);
+    return std::max(static_cast<int64_t>(0), (m_end - 1) / blocksize);
   } else {
     return -1;
   }

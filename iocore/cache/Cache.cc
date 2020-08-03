@@ -2772,7 +2772,7 @@ cplist_reconfigure()
         int64_t space_in_blks = 0;
         if (0 == tot_forced_space_in_blks) {
           // Calculate the space as percentage of total space in blocks.
-          space_in_blks = static_cast<int64_t>(((double)(config_vol->percent / percent_remaining)) * tot_space_in_blks);
+          space_in_blks = static_cast<int64_t>(((config_vol->percent / percent_remaining)) * tot_space_in_blks);
         } else {
           // Forced volumes take all disk space, so no percentage calculations here.
           space_in_blks = tot_forced_space_in_blks;

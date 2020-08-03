@@ -17,8 +17,8 @@
  */
 
 #include <cstring>
-#include <stdlib.h> // for abort
-#include <ts/ts.h>  // for debug
+#include <cstdlib> // for abort
+#include <ts/ts.h> // for debug
 
 // debug messages viewable by setting 'proxy.config.diags.debug.tags'
 // in 'records.config'

@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <cstring>
 #include <string>
 #include <string_view>
