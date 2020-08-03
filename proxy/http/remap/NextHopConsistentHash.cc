@@ -35,7 +35,7 @@ constexpr std::string_view hash_key_path_fragment = "path+fragment";
 constexpr std::string_view hash_key_cache         = "cache_key";
 
 static HostRecord *
-chash_lookup(std::shared_ptr<ATSConsistentHash> ring, uint64_t hash_key, ATSConsistentHashIter *iter, bool *wrapped,
+chash_lookup(const std::shared_ptr<ATSConsistentHash> &ring, uint64_t hash_key, ATSConsistentHashIter *iter, bool *wrapped,
              ATSHash64Sip24 *hash, bool *hash_init, bool *mapWrapped, uint64_t sm_id)
 {
   HostRecord *host_rec = nullptr;

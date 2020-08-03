@@ -177,7 +177,7 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
       this->_collector_event = this_ethread()->schedule_every(this->_closed_con_collector, HRTIME_MSECONDS(100));
     }
 
-    Queue<UDPPacket> *queue = (Queue<UDPPacket> *)data;
+    Queue<UDPPacket> *queue = static_cast<Queue<UDPPacket> *>(data);
     UDPPacket *packet_r;
     while ((packet_r = queue->dequeue())) {
       this->_recv_packet(event, packet_r);
@@ -191,7 +191,7 @@ QUICPacketHandlerIn::acceptEvent(int event, void *data)
   if (((long)data) == -ECONNABORTED) {
   }
 
-  ink_abort("QUIC accept received fatal error: errno = %d", -((int)(intptr_t)data));
+  ink_abort("QUIC accept received fatal error: errno = %d", -(static_cast<int>((intptr_t)data)));
   return EVENT_CONT;
   return 0;
 }
@@ -386,7 +386,7 @@ QUICPacketHandler::send_packet(const QUICPacket &packet, QUICNetVConnection *vc,
 }
 
 void
-QUICPacketHandler::send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload)
+QUICPacketHandler::send_packet(QUICNetVConnection *vc, const Ptr<IOBufferBlock> &udp_payload)
 {
   this->_send_packet(vc->get_udp_con(), vc->con.addr, udp_payload);
 }
@@ -493,7 +493,7 @@ QUICPacketHandlerIn::_send_invalid_token_error(const uint8_t *initial_packet, ui
   QUICConnectionId scid;
   scid.randomize();
   uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
-  QUICPacketUPtr cc_packet = pf.create_initial_packet(packet_buf, scid_in_initial, scid, 0, block, block_len, 0, 0, 1);
+  QUICPacketUPtr cc_packet = pf.create_initial_packet(packet_buf, scid_in_initial, scid, 0, block, block_len, false, false, true);
 
   this->_send_packet(*cc_packet, connection, from, 0, &php, scid_in_initial);
 }
@@ -521,7 +521,7 @@ QUICPacketHandlerOut::event_handler(int event, Event *data)
     return EVENT_CONT;
   }
   case NET_EVENT_DATAGRAM_READ_READY: {
-    Queue<UDPPacket> *queue = (Queue<UDPPacket> *)data;
+    Queue<UDPPacket> *queue = reinterpret_cast<Queue<UDPPacket> *>(data);
     UDPPacket *packet_r;
     while ((packet_r = queue->dequeue())) {
       this->_recv_packet(event, packet_r);

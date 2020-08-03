@@ -617,8 +617,8 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
 
   editset_t edits;
 
-  for (rule_p r = contdata->rules.begin(); r != contdata->rules.end(); ++r) {
-    r->apply(buf, buflen, edits);
+  for (const auto &rule : contdata->rules) {
+    rule.apply(buf, buflen, edits);
   }
 
   for (edit_p p = edits.begin(); p != edits.end(); ++p) {
@@ -767,13 +767,13 @@ streamedit_setup(TSCont contp, TSEvent event, void *edata)
   assert((event == TS_EVENT_HTTP_READ_RESPONSE_HDR) || (event == TS_EVENT_HTTP_READ_REQUEST_HDR));
 
   /* make a new list comprising those rules that are in scope */
-  for (rule_p r = rules_in->begin(); r != rules_in->end(); ++r) {
-    if (r->in_scope(txn)) {
+  for (const auto &r : *rules_in) {
+    if (r.in_scope(txn)) {
       if (contdata == nullptr) {
         contdata = new contdata_t();
       }
-      contdata->rules.push_back(*r);
-      contdata->set_cont_size(r->cont_size());
+      contdata->rules.push_back(r);
+      contdata->set_cont_size(r.cont_size());
     }
   }
 

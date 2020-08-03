@@ -336,10 +336,10 @@ struct hash_fnv32 {
   }
 };
 
-using LruStack = std::list<UrlStats>;
-typedef std::unordered_map<const char *, OriginStats *, hash_fnv32, eqstr> OriginStorage;
-typedef std::unordered_set<const char *, hash_fnv32, eqstr> OriginSet;
-typedef std::unordered_map<const char *, LruStack::iterator, hash_fnv32, eqstr> LruHash;
+using LruStack      = std::list<UrlStats>;
+using OriginStorage = std::unordered_map<const char *, OriginStats *, hash_fnv32, eqstr>;
+using OriginSet     = std::unordered_set<const char *, hash_fnv32, eqstr>;
+using LruHash       = std::unordered_map<const char *, LruStack::iterator, hash_fnv32, eqstr>;
 
 // Resize a hash-based container.
 template <class T, class N>
@@ -1998,7 +1998,7 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
 }
 
 // Little "helpers" for the vector we use to sort the Origins.
-typedef pair<const char *, OriginStats *> OriginPair;
+using OriginPair = pair<const char *, OriginStats *>;
 inline bool
 operator<(const OriginPair &a, const OriginPair &b)
 {

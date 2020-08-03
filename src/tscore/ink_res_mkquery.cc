@@ -516,8 +516,7 @@ ats_host_res_from(int family, HostResPreferenceOrder const &order)
   bool v4 = false, v6 = false;
   HostResPreference client = AF_INET6 == family ? HOST_RES_PREFER_IPV6 : HOST_RES_PREFER_IPV4;
 
-  for (int i = 0; i < N_HOST_RES_PREFERENCE_ORDER; ++i) {
-    HostResPreference p = order[i];
+  for (auto p : order) {
     if (HOST_RES_PREFER_CLIENT == p) {
       p = client; // CLIENT -> actual value
     }

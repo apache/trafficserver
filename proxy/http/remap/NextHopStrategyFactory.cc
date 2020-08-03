@@ -24,7 +24,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <fstream>
-#include <string.h>
+#include <cstring>
 
 #include "NextHopStrategyFactory.h"
 #include "NextHopConsistentHash.h"
@@ -65,15 +65,15 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file)
       }
     }
     // loop through the strategies document.
-    for (unsigned int i = 0; i < strategies.size(); ++i) {
-      YAML::Node strategy = strategies[i];
+    for (auto &&strategie : strategies) {
+      YAML::Node strategy = strategie;
       auto name           = strategy["strategy"].as<std::string>();
       auto policy         = strategy["policy"];
       if (!policy) {
         NH_Error("No policy is defined for the strategy named '%s', this strategy will be ignored.", name.c_str());
         continue;
       }
-      auto policy_value        = policy.Scalar();
+      const auto &policy_value = policy.Scalar();
       NHPolicyType policy_type = NH_UNDEFINED;
 
       if (policy_value == consistent_hash) {
@@ -175,7 +175,7 @@ NextHopStrategyFactory::strategyInstance(const char *name)
  * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's begining.
  */
 void
-NextHopStrategyFactory::loadConfigFile(const std::string fileName, std::stringstream &doc,
+NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::stringstream &doc,
                                        std::unordered_set<std::string> &include_once)
 {
   const char *sep = " \t";
@@ -214,8 +214,8 @@ NextHopStrategyFactory::loadConfigFile(const std::string fileName, std::stringst
       std::sort(files.begin(), files.end(),
                 [](const std::string_view lhs, const std::string_view rhs) { return lhs.compare(rhs) < 0; });
 
-      for (uint32_t i = 0; i < files.size(); i++) {
-        std::ifstream file(fileName + "/" + files[i].data());
+      for (auto &i : files) {
+        std::ifstream file(fileName + "/" + i.data());
         if (file.is_open()) {
           while (std::getline(file, line)) {
             if (line[0] == '#') {
@@ -225,7 +225,7 @@ NextHopStrategyFactory::loadConfigFile(const std::string fileName, std::stringst
           }
           file.close();
         } else {
-          throw std::invalid_argument("Unable to open and read '" + fileName + "/" + files[i].data() + "'");
+          throw std::invalid_argument("Unable to open and read '" + fileName + "/" + i.data() + "'");
         }
       }
     }

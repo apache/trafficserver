@@ -799,8 +799,9 @@ load_config_file(config_holder_t *config_holder)
       TSContScheduleOnPool(free_cont, FREE_TMOUT, TS_THREAD_POOL_TASK);
     }
   }
-  if (fh)
+  if (fh) {
     TSfclose(fh);
+  }
   return;
 }
 

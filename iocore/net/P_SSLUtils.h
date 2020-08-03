@@ -85,12 +85,12 @@ public:
 protected:
   const SSLConfigParams *_params;
 
-  bool _store_single_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams sslMultCertSettings, shared_SSL_CTX ctx,
+  bool _store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings, shared_SSL_CTX ctx,
                              std::set<std::string> &names);
 
 private:
   virtual const char *_debug_tag() const;
-  bool _store_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams ssl_multi_cert_params);
+  bool _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &ssl_multi_cert_params);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
 };
 

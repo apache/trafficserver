@@ -174,9 +174,9 @@ LRUPolicy::stats_add(const char *remap_id)
     return false;
   }
 
-  for (int ii = 0; ii < 8; ii++) {
-    std::string_view name = std::get<0>(stats[ii]);
-    int *id               = std::get<1>(stats[ii]);
+  for (const auto &stat : stats) {
+    std::string_view name = std::get<0>(stat);
+    int *id               = std::get<1>(stat);
     if ((*(id) = create_stat(name, remap_identifier)) == TS_ERROR) {
       return false;
     }

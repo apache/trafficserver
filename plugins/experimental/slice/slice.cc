@@ -58,7 +58,7 @@ read_request(TSHttpTxn txnp, Config *const config)
     if (!header.hasKey(SLICER_MIME_FIELD_INFO, SLICER_MIME_LEN_INFO)) {
       // check if any previous plugin has monkeyed with the transaction status
       TSHttpStatus const txnstat = TSHttpTxnStatusGet(txnp);
-      if (0 != (int)txnstat) {
+      if (0 != static_cast<int>(txnstat)) {
         DEBUG_LOG("txn status change detected (%d), skipping plugin\n", (int)txnstat);
         return false;
       }

@@ -113,7 +113,7 @@ WSBuffer::read_buffered_message(std::string &message, int &code)
     if (avail < 4 + mask_len) { // 2 + 2 + length bytes + mask.
       return false;
     }
-    msg_len = ntohs(*(uint16_t *)(ws_buf_.data() + 2));
+    msg_len = ntohs(*reinterpret_cast<uint16_t *>(ws_buf_.data() + 2));
     pos     = 4;
   } else if (msg_len == WS_64BIT_LEN) {
     if (avail < 10 + mask_len) { // 2 + 8 length bytes + mask.

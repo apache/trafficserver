@@ -193,7 +193,7 @@ ThreadAffinityInitializer::set_affinity(int, Event *)
     hwloc_obj_t obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, t->id % obj_count);
 #if HWLOC_API_VERSION >= 0x00010100
     int cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
-    char *cpu_mask   = (char *)alloca(cpu_mask_len);
+    char *cpu_mask   = static_cast<char *>(alloca(cpu_mask_len));
     hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
     Debug("iocore_thread", "EThread: %p %s: %d CPU Mask: %s\n", t, obj_name, obj->logical_index, cpu_mask);
 #else

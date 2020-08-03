@@ -42,7 +42,7 @@ public:
   ~QUICPacketHandler();
 
   void send_packet(const QUICPacket &packet, QUICNetVConnection *vc, const QUICPacketHeaderProtector &pn_protector);
-  void send_packet(QUICNetVConnection *vc, Ptr<IOBufferBlock> udp_payload);
+  void send_packet(QUICNetVConnection *vc, const Ptr<IOBufferBlock> &udp_payload);
 
   void close_connection(QUICNetVConnection *conn);
 

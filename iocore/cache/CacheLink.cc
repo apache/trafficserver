@@ -42,7 +42,7 @@ Cache::link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheF
 
   c->buf = new_IOBufferData(BUFFER_SIZE_INDEX_512);
 #ifdef DEBUG
-  Doc *doc = (Doc *)c->buf->data();
+  Doc *doc = reinterpret_cast<Doc *>(c->buf->data());
   memcpy(doc->data(), to, sizeof(*to)); // doublecheck
 #endif
 
