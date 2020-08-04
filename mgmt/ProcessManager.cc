@@ -82,11 +82,12 @@ read_management_message(int sockfd, MgmtMessageHdr **msg)
 }
 
 void
-ProcessManager::start(std::function<void()> const &cb)
+ProcessManager::start(std::function<TSThread()> const &cb_init, std::function<void(TSThread)> const &cb_destroy)
 {
   Debug("pmgmt", "starting process manager");
 
-  init = cb;
+  init    = cb_init;
+  destroy = cb_destroy;
 
   ink_release_assert(running == 0);
   ink_atomic_increment(&running, 1);
@@ -153,7 +154,7 @@ ProcessManager::processManagerThread(void *arg)
   }
 
   if (pmgmt->init) {
-    pmgmt->init();
+    pmgmt->managerThread = pmgmt->init();
   }
 
   // Start pumping messages between the local process and the process
@@ -176,6 +177,11 @@ ProcessManager::processManagerThread(void *arg)
     if (ret < 0 && pmgmt->running && !TSSystemState::is_event_system_shut_down()) {
       Alert("exiting with write error from process manager: %s", strerror(-ret));
     }
+  }
+
+  if (pmgmt->destroy && pmgmt->managerThread != nullptr) {
+    pmgmt->destroy(pmgmt->managerThread);
+    pmgmt->managerThread = nullptr;
   }
 
   return ret;
