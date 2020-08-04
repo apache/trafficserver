@@ -50,7 +50,7 @@ QUICPathValidator::ValidationJob::consume_challenge()
 }
 
 bool
-QUICPathValidator::is_validating(const QUICPath &path)
+QUICPathValidator::is_validating(const QUICPath &path) const
 {
   if (auto j = this->_jobs.find(path); j != this->_jobs.end()) {
     return j->second.is_validating();
@@ -60,7 +60,7 @@ QUICPathValidator::is_validating(const QUICPath &path)
 }
 
 bool
-QUICPathValidator::is_validated(const QUICPath &path)
+QUICPathValidator::is_validated(const QUICPath &path) const
 {
   if (auto j = this->_jobs.find(path); j != this->_jobs.end()) {
     return j->second.is_validated();
@@ -82,13 +82,13 @@ QUICPathValidator::validate(const QUICPath &path)
 }
 
 bool
-QUICPathValidator::ValidationJob::is_validating()
+QUICPathValidator::ValidationJob::is_validating() const
 {
   return this->_state == ValidationState::VALIDATING;
 }
 
 bool
-QUICPathValidator::ValidationJob::is_validated()
+QUICPathValidator::ValidationJob::is_validated() const
 {
   return this->_state == ValidationState::VALIDATED;
 }

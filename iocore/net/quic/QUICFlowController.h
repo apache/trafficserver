@@ -33,7 +33,7 @@ class QUICRateAnalyzer
 {
 public:
   void update(QUICOffset offset);
-  uint64_t expect_recv_bytes(ink_hrtime time);
+  uint64_t expect_recv_bytes(ink_hrtime time) const;
 
 private:
   double _rate           = 0.0;

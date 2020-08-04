@@ -1397,7 +1397,7 @@ QPACK::DynamicTable::unref_entry(uint16_t index)
 }
 
 uint16_t
-QPACK::DynamicTable::largest_index()
+QPACK::DynamicTable::largest_index() const
 {
   return this->_entries_inserted;
 }
@@ -1802,7 +1802,8 @@ QPACK::DynamicTableStorage::~DynamicTableStorage()
 }
 
 void
-QPACK::DynamicTableStorage::read(uint16_t offset, const char **name, uint16_t name_len, const char **value, uint16_t value_len)
+QPACK::DynamicTableStorage::read(uint16_t offset, const char **name, uint16_t name_len, const char **value,
+                                 uint16_t value_len) const
 {
   *name  = reinterpret_cast<const char *>(this->_data + offset);
   *value = reinterpret_cast<const char *>(this->_data + offset + name_len);

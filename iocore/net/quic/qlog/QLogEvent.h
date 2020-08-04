@@ -75,7 +75,7 @@ struct PacketHeader {
 
   // Note: short vs long header is implicit through PacketType
   void
-  encode(YAML::Node &node)
+  encode(YAML::Node &node) const
   {
     node["packet_number"]  = packet_number;
     node["packet_size"]    = packet_size;
@@ -90,7 +90,7 @@ struct PacketHeader {
 
 #define SET_FUNC(cla, field, type) \
 public:                            \
-  cla &set_##field(type v)         \
+  cla &set_##field(const type &v)  \
   {                                \
     this->_##field = v;            \
     return *this;                  \
@@ -173,7 +173,8 @@ namespace Connectivity
   class ConnectionStarted : public ConnectivityEvent
   {
   public:
-    ConnectionStarted(std::string version, std::string sip, std::string dip, int sport, int dport, std::string protocol = "QUIC")
+    ConnectionStarted(const std::string &version, const std::string &sip, const std::string &dip, int sport, int dport,
+                      const std::string &protocol = "QUIC")
     {
       set_ip_version(version);
       set_protocol(protocol);
@@ -211,7 +212,7 @@ namespace Connectivity
   class ConnectionIdUpdated : public ConnectivityEvent
   {
   public:
-    ConnectionIdUpdated(std::string old, std::string n, bool peer = false)
+    ConnectionIdUpdated(const std::string &old, const std::string &n, bool peer = false)
     {
       if (peer) {
         set_dst_old(old);
@@ -345,7 +346,7 @@ namespace Security
       tls,
     };
 
-    KeyEvent(KeyType ty, std::string n, int generation, Triggered triggered = Triggered::unknown)
+    KeyEvent(KeyType ty, const std::string &n, int generation, Triggered triggered = Triggered::unknown)
     {
       set_key_type(ty);
       set_new(n);
@@ -388,7 +389,7 @@ namespace Security
   class KeyUpdated : public KeyEvent
   {
   public:
-    KeyUpdated(KeyType ty, std::string n, int generation, Triggered triggered = KeyEvent::Triggered::unknown)
+    KeyUpdated(KeyType ty, const std::string &n, int generation, Triggered triggered = KeyEvent::Triggered::unknown)
       : KeyEvent(ty, n, generation, triggered)
     {
     }
@@ -403,7 +404,7 @@ namespace Security
   class KeyRetired : public KeyEvent
   {
   public:
-    KeyRetired(KeyType ty, std::string n, int generation, Triggered triggered = KeyEvent::Triggered::unknown)
+    KeyRetired(KeyType ty, const std::string &n, int generation, Triggered triggered = KeyEvent::Triggered::unknown)
       : KeyEvent(ty, n, generation, triggered)
     {
     }
@@ -495,7 +496,7 @@ namespace Transport
       cc_bandwidth_probe,   // needed for some CCs to figure out bandwidth allocations when there are no normal sends
     };
 
-    PacketEvent(PacketType type, PacketHeader h, Triggered tr = Triggered::unknown)
+    PacketEvent(const PacketType &type, PacketHeader h, Triggered tr = Triggered::unknown)
     {
       set_packet_type(type).set_header(h).set_trigger(tr);
     }
@@ -543,7 +544,7 @@ namespace Transport
   class PacketSent : public PacketEvent
   {
   public:
-    PacketSent(PacketType type, PacketHeader h, Triggered tr = Triggered::unknown) : PacketEvent(type, h, tr) {}
+    PacketSent(const PacketType &type, const PacketHeader &h, Triggered tr = Triggered::unknown) : PacketEvent(type, h, tr) {}
     std::string
     event() const override
     {
@@ -554,7 +555,7 @@ namespace Transport
   class PacketReceived : public PacketEvent
   {
   public:
-    PacketReceived(PacketType type, PacketHeader h, Triggered tr = Triggered::unknown) : PacketEvent(type, h, tr) {}
+    PacketReceived(const PacketType &type, const PacketHeader &h, Triggered tr = Triggered::unknown) : PacketEvent(type, h, tr) {}
     std::string
     event() const override
     {

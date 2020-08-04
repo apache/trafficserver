@@ -44,7 +44,7 @@ public:
     ~QUICAckFrameCreator();
 
     void push_back(QUICPacketNumber packet_number, size_t size, bool ack_only);
-    size_t size();
+    size_t size() const;
     void clear();
     void sort();
     void forget(QUICPacketNumber largest_acknowledged);
@@ -58,8 +58,8 @@ public:
     // refresh state when frame lost
     void refresh_state();
 
-    QUICPacketNumber largest_ack_number();
-    ink_hrtime largest_ack_received_time();
+    QUICPacketNumber largest_ack_number() const;
+    ink_hrtime largest_ack_received_time() const;
 
   private:
     uint64_t _calculate_delay();

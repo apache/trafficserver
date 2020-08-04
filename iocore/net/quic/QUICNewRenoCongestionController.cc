@@ -63,7 +63,7 @@ QUICNewRenoCongestionController::on_packet_sent(size_t bytes_sent)
 }
 
 bool
-QUICNewRenoCongestionController::_in_congestion_recovery(ink_hrtime sent_time)
+QUICNewRenoCongestionController::_in_congestion_recovery(ink_hrtime sent_time) const
 {
   return sent_time <= this->_congestion_recovery_start_time;
 }

@@ -171,7 +171,7 @@ namespace Frame
   };
 
   struct MaxDataFrame : public QLogFrame {
-    MaxDataFrame(const QUICMaxDataFrame &frame) : QLogFrame(frame.type()) { maximum = std::to_string(frame.maximum_data()); }
+    MaxDataFrame(const QUICMaxDataFrame &frame) : QLogFrame(frame.type()), maximum(std::to_string(frame.maximum_data())) {}
 
     void encode(YAML::Node &) override;
     std::string maximum;
@@ -234,9 +234,9 @@ namespace Frame
   };
 
   struct NewConnectionIDFrame : public QLogFrame {
-    NewConnectionIDFrame(const QUICNewConnectionIdFrame &frame) : QLogFrame(frame.type())
+    NewConnectionIDFrame(const QUICNewConnectionIdFrame &frame)
+      : QLogFrame(frame.type()), sequence_number(std::to_string(frame.sequence()))
     {
-      sequence_number       = std::to_string(frame.sequence());
       retire_prior_to       = std::to_string(frame.retire_prior_to());
       connection_id         = frame.connection_id().hex();
       stateless_reset_token = QUICBase::to_hex(frame.stateless_reset_token().buf(), QUICStatelessResetToken::LEN);
@@ -249,37 +249,37 @@ namespace Frame
   };
 
   struct RetireConnectionIDFrame : public QLogFrame {
-    RetireConnectionIDFrame(const QUICRetireConnectionIdFrame &frame) : QLogFrame(frame.type())
+    RetireConnectionIDFrame(const QUICRetireConnectionIdFrame &frame)
+      : QLogFrame(frame.type()), sequence_number(std::to_string(frame.seq_num()))
     {
-      sequence_number = std::to_string(frame.seq_num());
     }
     void encode(YAML::Node &) override;
     std::string sequence_number;
   };
 
   struct PathChallengeFrame : public QLogFrame {
-    PathChallengeFrame(const QUICPathChallengeFrame &frame) : QLogFrame(frame.type())
+    PathChallengeFrame(const QUICPathChallengeFrame &frame)
+      : QLogFrame(frame.type()), data(QUICBase::to_hex(frame.data(), QUICPathChallengeFrame::DATA_LEN))
     {
-      data = QUICBase::to_hex(frame.data(), QUICPathChallengeFrame::DATA_LEN);
     }
     void encode(YAML::Node &) override;
     std::string data;
   };
 
   struct PathResponseFrame : public QLogFrame {
-    PathResponseFrame(const QUICPathResponseFrame &frame) : QLogFrame(frame.type())
+    PathResponseFrame(const QUICPathResponseFrame &frame)
+      : QLogFrame(frame.type()), data(QUICBase::to_hex(frame.data(), QUICPathChallengeFrame::DATA_LEN))
     {
-      data = QUICBase::to_hex(frame.data(), QUICPathChallengeFrame::DATA_LEN);
     }
     void encode(YAML::Node &) override;
     std::string data;
   };
 
   struct ConnectionCloseFrame : public QLogFrame {
-    ConnectionCloseFrame(const QUICConnectionCloseFrame &frame, bool app = false) : QLogFrame(frame.type())
+    ConnectionCloseFrame(const QUICConnectionCloseFrame &frame, bool app = false)
+      : QLogFrame(frame.type()), error_space(app ? "application" : "transport")
     {
-      error_space = app ? "application" : "transport";
-      error_code  = frame.error_code();
+      error_code = frame.error_code();
       // FIXME
       raw_error_code = error_code;
       reason         = frame.reason_phrase();
