@@ -118,7 +118,7 @@ QUICLossDetector::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame
 }
 
 QUICPacketNumber
-QUICLossDetector::largest_acked_packet_number(QUICPacketNumberSpace pn_space)
+QUICLossDetector::largest_acked_packet_number(QUICPacketNumberSpace pn_space) const
 {
   int index = static_cast<int>(pn_space);
   return this->_largest_acked_packet[index];
@@ -252,7 +252,7 @@ QUICLossDetector::_on_ack_received(const QUICAckFrame &ack_frame, QUICPacketNumb
 
   // If the largest acknowledged is newly acked and
   //  ack-eliciting, update the RTT.
-  auto &largest_acked = newly_acked_packets[0];
+  const auto &largest_acked = newly_acked_packets[0];
   if (largest_acked->packet_number == ack_frame.largest_acknowledged() && this->_include_ack_eliciting(newly_acked_packets)) {
     ink_hrtime latest_rtt = Thread::get_hrtime() - largest_acked->time_sent;
     // _latest_rtt is nanosecond but ack_frame.ack_delay is microsecond and scaled
@@ -372,7 +372,7 @@ QUICLossDetector::_get_pto_time_and_space(QUICPacketNumberSpace &space)
 }
 
 bool
-QUICLossDetector::_peer_completed_address_validation()
+QUICLossDetector::_peer_completed_address_validation() const
 {
   return this->_context.connection_info()->is_address_validation_completed();
 }
@@ -592,12 +592,12 @@ QUICLossDetector::_send_one_ack_eliciting_padded_initial_packet()
 // ===== Functions below are helper functions =====
 
 void
-QUICLossDetector::_retransmit_lost_packet(QUICSentPacketInfo &packet_info)
+QUICLossDetector::_retransmit_lost_packet(const QUICSentPacketInfo &packet_info)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
   QUICLDDebug("Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet_info.type), packet_info.packet_number);
-  for (QUICSentPacketInfo::FrameInfo &frame_info : packet_info.frames) {
+  for (const QUICSentPacketInfo::FrameInfo &frame_info : packet_info.frames) {
     auto reactor = frame_info.generated_by();
     if (reactor == nullptr) {
       continue;

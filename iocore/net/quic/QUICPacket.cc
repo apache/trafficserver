@@ -333,8 +333,8 @@ QUICPacketR::read_essential_info(Ptr<IOBufferBlock> block, QUICPacketType &type,
 //
 // QUICLongHeaderPacket
 //
-QUICLongHeaderPacket::QUICLongHeaderPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, bool ack_eliciting,
-                                           bool probing, bool crypto)
+QUICLongHeaderPacket::QUICLongHeaderPacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid,
+                                           bool ack_eliciting, bool probing, bool crypto)
   : QUICPacket(ack_eliciting, probing), _version(version), _dcid(dcid), _scid(scid), _is_crypto_packet(crypto)
 {
 }
@@ -567,7 +567,7 @@ QUICLongHeaderPacketR::packet_number_offset(size_t &pn_offset, const uint8_t *pa
 //
 // QUICShortHeaderPacket
 //
-QUICShortHeaderPacket::QUICShortHeaderPacket(QUICConnectionId dcid, QUICPacketNumber packet_number,
+QUICShortHeaderPacket::QUICShortHeaderPacket(const QUICConnectionId &dcid, QUICPacketNumber packet_number,
                                              QUICPacketNumber base_packet_number, QUICKeyPhase key_phase, bool ack_eliciting,
                                              bool probing)
   : QUICPacket(ack_eliciting, probing), _dcid(dcid), _packet_number(packet_number), _key_phase(key_phase)
@@ -883,7 +883,8 @@ QUICStatelessResetPacketR::destination_cid() const
 //
 // QUICVersionNegotiationPacket
 //
-QUICVersionNegotiationPacket::QUICVersionNegotiationPacket(QUICConnectionId dcid, QUICConnectionId scid,
+
+QUICVersionNegotiationPacket::QUICVersionNegotiationPacket(const QUICConnectionId &dcid, const QUICConnectionId &scid,
                                                            const QUICVersion versions[], int nversions,
                                                            QUICVersion version_in_initial)
   : QUICLongHeaderPacket(0, dcid, scid, false, false, false),
@@ -1080,9 +1081,9 @@ QUICVersionNegotiationPacketR::nversions() const
 //
 // QUICInitialPacket
 //
-QUICInitialPacket::QUICInitialPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, size_t token_len,
-                                     ats_unique_buf token, size_t length, QUICPacketNumber packet_number, bool ack_eliciting,
-                                     bool probing, bool crypto)
+QUICInitialPacket::QUICInitialPacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid,
+                                     size_t token_len, ats_unique_buf token, size_t length, QUICPacketNumber packet_number,
+                                     bool ack_eliciting, bool probing, bool crypto)
   : QUICLongHeaderPacket(version, dcid, scid, ack_eliciting, probing, crypto),
     _token_len(token_len),
     _token(std::move(token)),
@@ -1318,7 +1319,7 @@ QUICInitialPacketR::token_length(size_t &token_length, uint8_t &field_len, size_
 //
 // QUICZeroRttPacket
 //
-QUICZeroRttPacket::QUICZeroRttPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, size_t length,
+QUICZeroRttPacket::QUICZeroRttPacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid, size_t length,
                                      QUICPacketNumber packet_number, bool ack_eliciting, bool probing)
   : QUICLongHeaderPacket(version, dcid, scid, ack_eliciting, probing, false), _packet_number(packet_number)
 {
@@ -1497,8 +1498,9 @@ QUICZeroRttPacketR::attach_payload(Ptr<IOBufferBlock> payload, bool unprotected)
 //
 // QUICHandshakePacket
 //
-QUICHandshakePacket::QUICHandshakePacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, size_t length,
-                                         QUICPacketNumber packet_number, bool ack_eliciting, bool probing, bool crypto)
+QUICHandshakePacket::QUICHandshakePacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid,
+                                         size_t length, QUICPacketNumber packet_number, bool ack_eliciting, bool probing,
+                                         bool crypto)
   : QUICLongHeaderPacket(version, dcid, scid, ack_eliciting, probing, crypto), _packet_number(packet_number)
 {
 }
@@ -1676,7 +1678,8 @@ QUICHandshakePacketR::attach_payload(Ptr<IOBufferBlock> payload, bool unprotecte
 //
 // QUICRetryPacket
 //
-QUICRetryPacket::QUICRetryPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, QUICRetryToken &token)
+QUICRetryPacket::QUICRetryPacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid,
+                                 QUICRetryToken &token)
   : QUICLongHeaderPacket(version, dcid, scid, false, false, false), _token(token)
 {
 }
@@ -1841,7 +1844,7 @@ QUICRetryPacketR::token() const
 }
 
 bool
-QUICRetryPacketR::has_valid_tag(QUICConnectionId &odcid) const
+QUICRetryPacketR::has_valid_tag(const QUICConnectionId &odcid) const
 {
   uint8_t tag_computed[QUICRetryIntegrityTag::LEN];
   QUICRetryIntegrityTag::compute(tag_computed, this->version(), odcid, this->_header_block, this->_payload_block_without_tag);

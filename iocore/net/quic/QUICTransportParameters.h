@@ -61,7 +61,7 @@ public:
   }
 
   bool
-  operator==(uint16_t &x) const
+  operator==(const uint16_t &x) const
   {
     return this->_id == x;
   }

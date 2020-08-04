@@ -62,7 +62,7 @@ public:
   // OnPacketNumberSpaceDiscarded is on Congestion Control section but having it here makes more sense because most processes are
   // for LD.
   void on_packet_number_space_discarded(QUICPacketNumberSpace pn_space);
-  QUICPacketNumber largest_acked_packet_number(QUICPacketNumberSpace pn_space);
+  QUICPacketNumber largest_acked_packet_number(QUICPacketNumberSpace pn_space) const;
   void update_ack_delay_exponent(uint8_t ack_delay_exponent);
   void reset();
 
@@ -109,11 +109,11 @@ private:
   std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> _detect_and_remove_lost_packets(QUICPacketNumberSpace pn_space);
   void _set_loss_detection_timer();
   void _on_loss_detection_timeout();
-  void _retransmit_lost_packet(QUICSentPacketInfo &packet_info);
+  void _retransmit_lost_packet(const QUICSentPacketInfo &packet_info);
 
   ink_hrtime _get_loss_time_and_space(QUICPacketNumberSpace &space);
   ink_hrtime _get_pto_time_and_space(QUICPacketNumberSpace &space);
-  bool _peer_completed_address_validation();
+  bool _peer_completed_address_validation() const;
 
   std::vector<QUICSentPacketInfoUPtr> _detect_and_remove_acked_packets(const QUICAckFrame &ack_frame,
                                                                        QUICPacketNumberSpace pn_space);

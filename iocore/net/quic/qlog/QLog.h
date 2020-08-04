@@ -46,9 +46,13 @@ public:
     VantagePointType flow = VantagePointType::unknown;
   };
 
-  Trace(std::string odcid, std::string title = "", std::string desc = "") : _reference_time(Thread::get_hrtime()), _odcid(odcid) {}
+  Trace(const std::string &odcid, const std::string &title = "", const std::string &desc = "")
+    : _reference_time(Thread::get_hrtime()), _odcid(odcid)
+  {
+  }
 
-  Trace(const VantagePoint &vp, std::string odcid, std::string title = "", std::string desc = "") : Trace(odcid, title, desc)
+  Trace(const VantagePoint &vp, const std::string &odcid, const std::string &title = "", const std::string &desc = "")
+    : Trace(odcid, title, desc)
   {
     set_vantage_point(vp);
   }
@@ -71,7 +75,7 @@ public:
   }
 
   void
-  set_vantage_point(const VantagePoint vp)
+  set_vantage_point(const VantagePoint &vp)
   {
     this->_vp = vp;
   }
@@ -107,10 +111,13 @@ class QLog
 public:
   static constexpr char QLOG_VERSION[] = "draft-01";
 
-  QLog(std::string title = "", std::string desc = "", std::string ver = QLOG_VERSION) : _title(title), _desc(desc), _ver(ver) {}
+  QLog(const std::string &title = "", const std::string &desc = "", const std::string &ver = QLOG_VERSION)
+    : _title(title), _desc(desc), _ver(ver)
+  {
+  }
 
   Trace &
-  new_trace(Trace::VantagePoint vp, std::string odcid, std::string title = "", std::string desc = "")
+  new_trace(Trace::VantagePoint vp, const std::string &odcid, const std::string &title = "", const std::string &desc = "")
   {
     this->_traces.push_back(std::make_unique<Trace>(vp, odcid, title, desc));
     return *this->_traces.back().get();
@@ -133,7 +140,7 @@ public:
     return *this->_traces.back().get();
   }
 
-  void dump(std::string dir);
+  void dump(const std::string &dir);
 
 private:
   std::string _title;

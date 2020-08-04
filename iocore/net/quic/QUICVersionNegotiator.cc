@@ -25,7 +25,7 @@
 #include "QUICTransportParameters.h"
 
 QUICVersionNegotiationStatus
-QUICVersionNegotiator::status()
+QUICVersionNegotiator::status() const
 {
   return this->_status;
 }
@@ -70,13 +70,13 @@ QUICVersionNegotiator::negotiate(const QUICPacket &packet)
 }
 
 QUICVersionNegotiationStatus
-QUICVersionNegotiator::validate()
+QUICVersionNegotiator::validate() const
 {
   return this->_status;
 }
 
 QUICVersion
-QUICVersionNegotiator::negotiated_version()
+QUICVersionNegotiator::negotiated_version() const
 {
   return this->_negotiated_version;
 }

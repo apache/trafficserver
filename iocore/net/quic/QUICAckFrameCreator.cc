@@ -209,7 +209,7 @@ QUICAckFrameManager::QUICAckFrameCreator::push_back(QUICPacketNumber packet_numb
 }
 
 size_t
-QUICAckFrameManager::QUICAckFrameCreator::size()
+QUICAckFrameManager::QUICAckFrameCreator::size() const
 {
   return this->_packet_numbers.size();
 }
@@ -227,13 +227,13 @@ QUICAckFrameManager::QUICAckFrameCreator::clear()
 }
 
 QUICPacketNumber
-QUICAckFrameManager::QUICAckFrameCreator::largest_ack_number()
+QUICAckFrameManager::QUICAckFrameCreator::largest_ack_number() const
 {
   return this->_largest_ack_number;
 }
 
 ink_hrtime
-QUICAckFrameManager::QUICAckFrameCreator::largest_ack_received_time()
+QUICAckFrameManager::QUICAckFrameCreator::largest_ack_received_time() const
 {
   return this->_largest_ack_received_time;
 }

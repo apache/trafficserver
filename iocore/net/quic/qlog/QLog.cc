@@ -74,7 +74,7 @@ Trace::encode(YAML::Node &node)
 }
 
 void
-QLog::dump(std::string dir)
+QLog::dump(const std::string &dir)
 {
   YAML::Node root;
   root["qlog_version"] = this->_ver;
