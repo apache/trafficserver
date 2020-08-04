@@ -977,6 +977,7 @@ Changes with Apache Traffic Server 9.0.0
   #6869 - Customize Max IOBuffer Size
   #6872 - Track thread changes during origin connect and cache open write
   #6873 - Metrics for origin close
+  #6880 - Add new API / TSPluginDSOReloadEnable to override  DSO remap dynamic reload.
   #6884 - microserver error handling: SSLError check and debug.
   #6889 - Improve client_vc tracking
   #6891 - Make h2spec test more resiliant by extending timeout
@@ -1007,6 +1008,7 @@ Changes with Apache Traffic Server 9.0.0
   #6968 - RateLimiting and Connection Config changes
   #6969 - Update docs for some DNS config settings
   #6977 - Preserve cert name through ssl vc migration
+  #6980 - Add maxmind acl plugin
   #6984 - Fix out of source tree builds for QUIC
   #6994 - Adds null check
   #7000 - Add QUIC draft-27 support
@@ -1015,6 +1017,17 @@ Changes with Apache Traffic Server 9.0.0
   #7007 - Updates to thread scale factor
   #7008 - slice plugin: fix throttle not work
   #7012 - Remove incorrect assert in inactivity timeout handling
+  #7014 - Add memory_profile plugin
+  #7022 - Fix up autest - Should fix autest on 9.0.x
   #7031 - Fix code to eliminate warning and enable feature
+  #7034 - Move to denylists and allowlists
   #7035 - Add a null check to avoid crashing
   #7036 - Add virtual destructor to QUICTPConfig.
+  #7040 - Remove deprecated verify.server for 9.0
+  #7048 - Fixes spelling in docs
+  #7050 - Fixed CLIENT-URL to use the pristine client URL
+  #7056 - Fix proxy.process.http.current_client_connections
+  #7057 - Quote out lists of servers and domains in splitdns.config example
+  #7059 - Fix a crash on active timeout on QUIC connections
+  #7060 - Document proxy.config.http.cache.post_method.
+  #7061 - Don't make an error on receiving retransmitted handshake data
