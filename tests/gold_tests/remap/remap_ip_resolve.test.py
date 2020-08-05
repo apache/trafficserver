@@ -50,15 +50,15 @@ ts.Disk.records_config.update({
 
 
 ts.Disk.remap_config.AddLine(
-    'map http://testDNS.com http://test.ipv4.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;ipv4;client'.format(server.Variables.Port)
-)
+    'map http://testDNS.com http://test.ipv4.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;ipv4;client'.format(
+        server.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map http://testDNS2.com http://test.ipv6.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;only'.format(server_v6.Variables.Port)
-)
+    'map http://testDNS2.com http://test.ipv6.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;only'.format(
+        server_v6.Variables.Port))
 
 
 dns.addRecords(records={"test.ipv4.only.com.": ["127.0.0.1"]})
-dns.addRecords(records={"test.ipv6.only.com": ["127.0.0.1","::1"]})
+dns.addRecords(records={"test.ipv6.only.com": ["127.0.0.1", "::1"]})
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://testDNS.com" --verbose'.format(ts.Variables.port)
@@ -67,7 +67,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr = "gold/remap-DNS-200.gold"
-tr.StillRunningAfter=server
+tr.StillRunningAfter = server
 
 
 tr = Test.AddTestRun()
@@ -75,5 +75,4 @@ tr.Processes.Default.Command = 'curl  --proxy 127.0.0.1:{0} "http://testDNS2.com
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_v6)
 tr.Processes.Default.Streams.stderr = "gold/remap-DNS-ipv6-200.gold"
-tr.StillRunningAfter=server_v6
-
+tr.StillRunningAfter = server_v6

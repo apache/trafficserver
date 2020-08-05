@@ -39,7 +39,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'ssl_hook_test',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.verify.server':  0,
+    'proxy.config.ssl.client.verify.server': 0,
     'proxy.config.ssl.TLSv1_3': 0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
 })
@@ -62,14 +62,17 @@ tr.StillRunningAfter = server
 tr.Processes.Default.Command = 'curl -v -k -H \'host:example.com:{0}\' https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/preaccept-1.gold"
-tr.Processes.Default.Streams.All = Testers.ExcludesExpression("TLSv1.3 (IN), TLS handshake, Finished (20):", "Should not negotiate a TLSv1.3 connection")
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
+    "TLSv1.3 (IN), TLS handshake, Finished (20):", "Should not negotiate a TLSv1.3 connection")
 
 ts.Streams.stderr = "gold/ts-preaccept-1.gold"
 
 # the preaccept may get triggered twice because the test framework creates a TCP connection before handing off to traffic_server
 preacceptstring = "Pre accept callback 0"
 ts.Streams.All = Testers.ContainsExpression(
-    "\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(preacceptstring), "Pre accept message appears only once or twice", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(preacceptstring),
+    "Pre accept message appears only once or twice",
+    reflags=re.S | re.M)
 
 tr.Processes.Default.TimeOut = 15
 tr.TimeOut = 15

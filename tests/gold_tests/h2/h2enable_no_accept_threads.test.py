@@ -56,11 +56,11 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.sni_yaml.AddLines([
-  'sni:',
-  '- fqdn: bar.com',
-  '  http2: on',
-  '- fqdn: bob.*.com',
-  '  http2: on',
+    'sni:',
+    '- fqdn: bar.com',
+    '  http2: on',
+    '- fqdn: bob.*.com',
+    '  http2: on',
 ])
 
 tr = Test.AddTestRun("Do-not-Negotiate-h2")
@@ -86,7 +86,8 @@ tr2.Processes.Default.Streams.All += Testers.ContainsExpression("Using HTTP2", "
 tr2.TimeOut = 5
 
 tr2 = Test.AddTestRun("Do negotiate h2")
-tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(
+    ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 5

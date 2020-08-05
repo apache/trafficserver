@@ -58,30 +58,33 @@ ts.Disk.records_config.update({
 })
 
 # Check that Session-ID is the same on every connection
-def checkSession(ev) :
-  retval = False
-  f = open(openssl_output, 'r')
-  err = "Session ids match"
-  if not f:
-    err = "Failed to open {0}".format(openssl_output)
-    return (retval, "Check that session ids match", err)
 
-  content = f.read()
-  match = re.findall('Session-ID: ([0-9A-F]+)', content)
 
-  if match:
-    if all(i == j for i, j in zip(match, match[1:])):
-      err = "{0} reused successfully {1} times".format(match[0], len(match))
-      retval = True
+def checkSession(ev):
+    retval = False
+    f = open(openssl_output, 'r')
+    err = "Session ids match"
+    if not f:
+        err = "Failed to open {0}".format(openssl_output)
+        return (retval, "Check that session ids match", err)
+
+    content = f.read()
+    match = re.findall('Session-ID: ([0-9A-F]+)', content)
+
+    if match:
+        if all(i == j for i, j in zip(match, match[1:])):
+            err = "{0} reused successfully {1} times".format(match[0], len(match))
+            retval = True
+        else:
+            err = "Session is not being reused as expected"
     else:
-      err = "Session is not being reused as expected"
-  else:
-    err = "Didn't find session id"
-  return (retval, "Check that session ids match", err)
+        err = "Didn't find session id"
+    return (retval, "Check that session ids match", err)
 
 
 tr = Test.AddTestRun("OpenSSL s_client -reconnect")
-tr.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -reconnect'.format(ts.Variables.ssl_port)
+tr.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -reconnect'.format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)

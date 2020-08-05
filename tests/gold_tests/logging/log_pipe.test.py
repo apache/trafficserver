@@ -39,7 +39,7 @@ def get_ts(logging_config):
     ts.Disk.records_config.update({
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'log-file',
-        })
+    })
 
     # Since we're only verifying logs and not traffic, we don't need an origin
     # server. The following will simply deny the requests and emit a log
@@ -59,7 +59,7 @@ def get_ts(logging_config):
 tr = Test.AddTestRun()
 pipe_name = "default_pipe_size.pipe"
 ts = get_ts(
-        '''
+    '''
 logging:
   formats:
     - name: custom
@@ -115,7 +115,7 @@ pipe_name = "change_pipe_size.pipe"
 # increase the size.
 pipe_size = 75000
 ts = get_ts(
-        '''
+    '''
 logging:
   formats:
     - name: custom
@@ -156,8 +156,8 @@ ts.Streams.All += Testers.ContainsExpression(
 buffer_verifier = "pipe_buffer_is_larger_than.py"
 tr.Setup.Copy(buffer_verifier)
 verify_buffer_size = tr.Processes.Process(
-        "verify_buffer_size",
-        "python3 {} {} {}".format(buffer_verifier, pipe_path, pipe_size))
+    "verify_buffer_size",
+    "python3 {} {} {}".format(buffer_verifier, pipe_path, pipe_size))
 verify_buffer_size.Return = 0
 verify_buffer_size.Streams.All += Testers.ContainsExpression(
     "Success",

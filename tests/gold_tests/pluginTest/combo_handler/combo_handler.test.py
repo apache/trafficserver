@@ -30,6 +30,8 @@ Test.SkipUnless(
 # the file, and return the file name.
 #
 _data_file__file_count = 0
+
+
 def data_file(data):
     global _data_file__file_count
     file_path = Test.RunDirectory + "/tcp_client_in_{}".format(_data_file__file_count)
@@ -40,36 +42,43 @@ def data_file(data):
 
 # Function to return command (string) to run tcp_client.py tool.  'host' 'port', and 'file_path' are the parameters to tcp_client.
 #
+
+
 def tcp_client_cmd(host, port, file_path):
     return "python3 {}/tcp_client.py {} {} {}".format(Test.Variables.AtsTestToolsDir, host, port, file_path)
 
 # Function to return command (string) to run tcp_client.py tool.  'host' and 'port' are the first two parameters to tcp_client.
 # 'data' is the data to put in the data file input to tcp_client.
 #
+
+
 def tcp_client(host, port, data):
     return tcp_client_cmd(host, port, data_file(data))
 
+
 server = Test.MakeOriginServer("server")
+
 
 def add_server_obj(content_type, path):
     request_header = {
         "headers": "GET " + path + " HTTP/1.1\r\n" +
-            "Host: just.any.thing\r\n\r\n",
+        "Host: just.any.thing\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": ""
     }
     response_header = {
         "headers": "HTTP/1.1 200 OK\r\n" +
-            "Connection: close\r\n" +
-            'Etag: "359670651"\r\n' +
-            "Cache-Control: public, max-age=31536000\r\n" +
-            "Accept-Ranges: bytes\r\n" +
-            "Content-Type: " + content_type + "\r\n" +
-            "\r\n",
+        "Connection: close\r\n" +
+        'Etag: "359670651"\r\n' +
+        "Cache-Control: public, max-age=31536000\r\n" +
+        "Accept-Ranges: bytes\r\n" +
+        "Content-Type: " + content_type + "\r\n" +
+        "\r\n",
         "timestamp": "1469733493.993",
         "body": "Content for " + path + "\n"
     }
     server.addResponse("sessionfile.log", request_header, response_header)
+
 
 add_server_obj("text/css ; charset=utf-8", "/obj1")
 add_server_obj("text/javascript", "/sub/obj2")
@@ -110,22 +119,22 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client("127.0.0.1", ts.Variables.port,
-    "GET /admin/v1/combo?obj1&sub:obj2&obj3 HTTP/1.1\n" +
-    "Host: xyz\n" +
-    "Connection: close\n" +
-    "\n"
-)
+                                          "GET /admin/v1/combo?obj1&sub:obj2&obj3 HTTP/1.1\n" +
+                                          "Host: xyz\n" +
+                                          "Connection: close\n" +
+                                          "\n"
+                                          )
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/1-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr1.gold"
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client("127.0.0.1", ts.Variables.port,
-    "GET /admin/v1/combo?obj1&sub:obj2&obj4 HTTP/1.1\n" +
-    "Host: xyz\n" +
-    "Connection: close\n" +
-    "\n"
-)
+                                          "GET /admin/v1/combo?obj1&sub:obj2&obj4 HTTP/1.1\n" +
+                                          "Host: xyz\n" +
+                                          "Connection: close\n" +
+                                          "\n"
+                                          )
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/2-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr2.gold"

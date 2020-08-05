@@ -16,12 +16,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+import re
+
 Test.Summary = '''
 Test ATS offering both RSA and EC certificates
 '''
-
-import os
-import re
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
@@ -76,19 +76,19 @@ foo_ec_string = ""
 foo_rsa_string = ""
 san_ec_string = ""
 san_rsa_string = ""
-with open(os.path.join(Test.TestDirectory,'ssl', 'signed-foo-ec.pem'), 'r') as myfile:
+with open(os.path.join(Test.TestDirectory, 'ssl', 'signed-foo-ec.pem'), 'r') as myfile:
     file_string = myfile.read()
     cert_end = file_string.find("END CERTIFICATE-----")
     foo_ec_string = re.escape(file_string[0:cert_end])
-with open(os.path.join(Test.TestDirectory,'ssl', 'signed-foo.pem'), 'r') as myfile:
+with open(os.path.join(Test.TestDirectory, 'ssl', 'signed-foo.pem'), 'r') as myfile:
     file_string = myfile.read()
     cert_end = file_string.find("END CERTIFICATE-----")
     foo_rsa_string = re.escape(file_string[0:cert_end])
-with open(os.path.join(Test.TestDirectory,'ssl', 'signed-san-ec.pem'), 'r') as myfile:
+with open(os.path.join(Test.TestDirectory, 'ssl', 'signed-san-ec.pem'), 'r') as myfile:
     file_string = myfile.read()
     cert_end = file_string.find("END CERTIFICATE-----")
     san_ec_string = re.escape(file_string[0:cert_end])
-with open(os.path.join(Test.TestDirectory,'ssl', 'signed-san.pem'), 'r') as myfile:
+with open(os.path.join(Test.TestDirectory, 'ssl', 'signed-san.pem'), 'r') as myfile:
     file_string = myfile.read()
     cert_end = file_string.find("END CERTIFICATE-----")
     san_rsa_string = re.escape(file_string[0:cert_end])
@@ -96,56 +96,61 @@ with open(os.path.join(Test.TestDirectory,'ssl', 'signed-san.pem'), 'r') as myfi
 # Should receive a EC cert since ATS cipher list prefers EC
 tr = Test.AddTestRun("Default for foo should return EC cert")
 tr.Setup.Copy("ssl/signer.pem")
-tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername foo.com -connect 127.0.0.1:{0}".format(ts.Variables.ssl_port, foo_ec_string)
+tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername foo.com -connect 127.0.0.1:{0}".format(
+    ts.Variables.ssl_port, foo_ec_string)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.All += Testers.ContainsExpression(foo_ec_string, "Should select EC cert",reflags=re.S | re.M)
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(foo_ec_string, "Should select EC cert", reflags=re.S | re.M)
 
 # Should receive a RSA cert
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername foo.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername foo.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.All += Testers.ContainsExpression(foo_rsa_string, "Should select RSA cert",reflags=re.S | re.M)
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(foo_rsa_string, "Should select RSA cert", reflags=re.S | re.M)
 
 # Should receive a EC cert
 tr = Test.AddTestRun("Default for two.com should return EC cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername two.com -connect 127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername two.com -connect 127.0.0.1:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_ec_string, "Should select EC cert", reflags=re.S | re.M)
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN");
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
 
 # Should receive a RSA cert
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername two.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(ts.Variables.ssl_port)
-tr.ReturnCode = 0
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_rsa_string,  "Should select RSA cert", reflags=re.S | re.M)
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN");
-
-# Should receive a RSA cert
-tr = Test.AddTestRun("rsa.com only in rsa cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername rsa.com -connect 127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername two.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_rsa_string, "Should select RSA cert", reflags=re.S | re.M)
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN");
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
+
+# Should receive a RSA cert
+tr = Test.AddTestRun("rsa.com only in rsa cert")
+tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername rsa.com -connect 127.0.0.1:{0}".format(
+    ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_rsa_string, "Should select RSA cert", reflags=re.S | re.M)
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")
 
 # Should receive a EC cert
 tr = Test.AddTestRun("ec.com only in ec cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername ec.com -connect 127.0.0.1:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername ec.com -connect 127.0.0.1:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_ec_string, "Should select EC cert", reflags=re.S | re.M)
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN");
-
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN = group.com", "Should select a group SAN")

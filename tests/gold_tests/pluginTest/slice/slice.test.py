@@ -20,7 +20,7 @@ Test.Summary = '''
 Basic slice plugin test
 '''
 
-## Test description:
+# Test description:
 # Preload the cache with the entire asset to be range requested.
 # Reload remap rule with slice plugin
 # Request content through the slice plugin
@@ -38,20 +38,20 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
 # default root
 request_header_chk = {"headers":
-  "GET / HTTP/1.1\r\n" +
-  "Host: www.example.com\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": "",
-}
+                      "GET / HTTP/1.1\r\n" +
+                      "Host: www.example.com\r\n" +
+                      "\r\n",
+                      "timestamp": "1469733493.993",
+                      "body": "",
+                      }
 
 response_header_chk = {"headers":
-  "HTTP/1.1 200 OK\r\n" +
-  "Connection: close\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": "",
-}
+                       "HTTP/1.1 200 OK\r\n" +
+                       "Connection: close\r\n" +
+                       "\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": "",
+                       }
 
 server.addResponse("sessionlog.json", request_header_chk, response_header_chk)
 
@@ -59,22 +59,22 @@ server.addResponse("sessionlog.json", request_header_chk, response_header_chk)
 body = "lets go surfin now"
 
 request_header = {"headers":
-  "GET /path HTTP/1.1\r\n" +
-  "Host: www.example.com\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": "",
-}
+                  "GET /path HTTP/1.1\r\n" +
+                  "Host: www.example.com\r\n" +
+                  "\r\n",
+                  "timestamp": "1469733493.993",
+                  "body": "",
+                  }
 
 response_header = {"headers":
-  "HTTP/1.1 200 OK\r\n" +
-  "Connection: close\r\n" +
-  'Etag: "path"\r\n' +
-  "Cache-Control: max-age=500\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": body,
-}
+                   "HTTP/1.1 200 OK\r\n" +
+                   "Connection: close\r\n" +
+                   'Etag: "path"\r\n' +
+                   "Cache-Control: max-age=500\r\n" +
+                   "\r\n",
+                   "timestamp": "1469733493.993",
+                   "body": body,
+                   }
 
 server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -88,12 +88,12 @@ ts.Disk.remap_config.AddLine(
 
 # minimal configuration
 ts.Disk.records_config.update({
-  'proxy.config.diags.debug.enabled': 1,
-  'proxy.config.diags.debug.tags': 'slice',
-  'proxy.config.http.cache.http': 1,
-  'proxy.config.http.wait_for_cache': 1,
-  'proxy.config.http.insert_age_in_response': 0,
-  'proxy.config.http.response_via_str': 3,
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'slice',
+    'proxy.config.http.cache.http': 1,
+    'proxy.config.http.wait_for_cache': 1,
+    'proxy.config.http.insert_age_in_response': 0,
+    'proxy.config.http.response_via_str': 3,
 })
 
 # 0 Test - Prefetch entire asset into cache
@@ -112,7 +112,7 @@ block_bytes = 7
 tr = Test.AddTestRun("Load Slice plugin")
 remap_config_path = ts.Disk.remap_config.Name
 tr.Disk.File(remap_config_path, typename="ats:config").AddLines([
-  'map / http://127.0.0.1:{}'.format(server.Variables.Port) +
+    'map / http://127.0.0.1:{}'.format(server.Variables.Port) +
     ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(block_bytes)
 ])
 

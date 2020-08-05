@@ -62,33 +62,37 @@ ts.Disk.records_config.update({
 # bar.com should terminate.
 # empty SNI should tunnel to server_bar
 ts.Disk.sni_yaml.AddLines([
-  'sni:',
-  '- fqdn: foo.com',
-  '  valid_tls_versions_in: [ TLSv1, TLSv1_1 ]'
+    'sni:',
+    '- fqdn: foo.com',
+    '  valid_tls_versions_in: [ TLSv1, TLSv1_1 ]'
 ])
 
 # Target foo.com for TLSv1_2.  Should fail
 tr = Test.AddTestRun("foo.com TLSv1_2")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = "curl -v --tls-max 1.2 --tlsv1.2 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 --tlsv1.2 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 
 # Target foo.com for TLSv1.  Should succeed
 tr = Test.AddTestRun("foo.com TLSv1")
-tr.Processes.Default.Command = "curl -v --tls-max 1.0 --tlsv1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v --tls-max 1.0 --tlsv1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 
 # Target bar.com for TLSv1.  Should fail
 tr = Test.AddTestRun("bar.com TLSv1")
-tr.Processes.Default.Command = "curl -v --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 
 # Target bar.com for TLSv1_2.  Should succeed
 tr = Test.AddTestRun("bar.com TLSv1_2")
-tr.Processes.Default.Command = "curl -v --tls-max 1.2 --tlsv1.2 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v --tls-max 1.2 --tlsv1.2 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts

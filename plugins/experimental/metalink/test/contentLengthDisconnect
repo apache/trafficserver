@@ -16,12 +16,12 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
+from twisted.internet import error, protocol, reactor, tcp
+from twisted.web import http
+
 print '''1..2 contentLengthDisconnect
 # The proxy closes the client connection if the origin disconnects
 # prematurely'''
-
-from twisted.internet import error, protocol, reactor, tcp
-from twisted.web import http
 
 
 def callback():

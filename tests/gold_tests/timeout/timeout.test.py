@@ -38,5 +38,6 @@ tr = Test.AddTestRun("tr")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
 tr.Processes.Default.StartBefore(dns)
-tr.Processes.Default.Command = 'curl -i -x http://127.0.0.1:{0} http://127.0.0.1:{1}/file'.format(ts.Variables.port, server.Variables.Port)
+tr.Processes.Default.Command = 'curl -i -x http://127.0.0.1:{0} http://127.0.0.1:{1}/file'.format(
+    ts.Variables.port, server.Variables.Port)
 tr.Processes.Default.Streams.stdout = "timeout.gold"

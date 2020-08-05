@@ -21,7 +21,7 @@ Test.Summary = '''
 Test regex_remap
 '''
 
-## Test description:
+# Test description:
 # Load up cache, ensure fresh
 # Create regex reval rule, config reload:
 #  ensure item is staled only once.
@@ -76,7 +76,7 @@ ts.Disk.records_config.update({
 tr = Test.AddTestRun("smoke test")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-creq=replay_txns[0]['client-request']
+creq = replay_txns[0]['client-request']
 tr.Processes.Default.Command = curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + creq["url"]
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
@@ -84,9 +84,11 @@ tr.StillRunningAfter = ts
 
 # Crash test.
 tr = Test.AddTestRun("crash test")
-creq=replay_txns[1]['client-request']
-tr.Processes.Default.Command = curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"])
+creq = replay_txns[1]['client-request']
+tr.Processes.Default.Command = curl_and_args + \
+    '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"])
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
-ts.Disk.diags_log.Content = Testers.ContainsExpression('ERROR: .regex_remap. Bad regular expression result -21', "Resource limit exceeded")
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    'ERROR: .regex_remap. Bad regular expression result -21', "Resource limit exceeded")
 tr.StillRunningAfter = ts

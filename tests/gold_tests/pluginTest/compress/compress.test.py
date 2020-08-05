@@ -32,12 +32,14 @@ Test.SkipUnless(
 
 server = Test.MakeOriginServer("server", options={'--load': '{}/compress_observer.py'.format(Test.TestDirectory)})
 
+
 def repeat(str, count):
     result = ""
     while count > 0:
         result += str
         count -= 1
     return result
+
 
 # Need a fairly big body, otherwise the plugin will refuse to compress
 body = repeat("lets go surfin now everybodys learnin how\n", 24)
@@ -61,6 +63,7 @@ for i in range(3):
     }
     server.addResponse("sessionfile.log", request_header, response_header)
 
+
 def curl(ts, idx, encodingList):
     return (
         "curl --verbose --proxy http://127.0.0.1:{}".format(ts.Variables.port) +
@@ -68,6 +71,7 @@ def curl(ts, idx, encodingList):
         " --header 'Accept-Encoding: {0}' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
         " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log"
     )
+
 
 waitForServer = True
 

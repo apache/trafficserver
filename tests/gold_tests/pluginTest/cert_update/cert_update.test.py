@@ -22,8 +22,8 @@ Test cert_update plugin.
 '''
 
 Test.SkipUnless(
-    Condition.HasProgram("openssl","Openssl need to be installed on system for this test to work")
-    )
+    Condition.HasProgram("openssl", "Openssl need to be installed on system for this test to work")
+)
 
 # Set up origin server
 server = Test.MakeOriginServer("server")
@@ -108,7 +108,8 @@ ts.StillRunningAfter = server
 # Client-Cert-Pre
 # s_server should see client (Traffic Server) as alice.com
 tr = Test.AddTestRun("Client-Cert-Pre")
-s_server = tr.Processes.Process("s_server", "openssl s_server -www -key {0}/server1.pem -cert {0}/server1.pem -accept 12345 -Verify 1 -msg".format(ts.Variables.SSLDir))
+s_server = tr.Processes.Process(
+    "s_server", "openssl s_server -www -key {0}/server1.pem -cert {0}/server1.pem -accept 12345 -Verify 1 -msg".format(ts.Variables.SSLDir))
 s_server.Ready = When.PortReady(12345)
 tr.Command = 'curl --verbose --insecure --header "Host: foo.com" https://localhost:{}'.format(ts.Variables.ssl_port)
 tr.Processes.Default.StartBefore(s_server)
@@ -120,15 +121,16 @@ ts.StillRunningAfter = server
 tr = Test.AddTestRun("Client-Cert-Update")
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = (
-    'mv {0}/client2.pem {0}/client1.pem && {1}/traffic_ctl plugin msg cert_update.client {0}/client1.pem'.format(ts.Variables.SSLDir, ts.Variables.BINDIR)
-)
+    'mv {0}/client2.pem {0}/client1.pem && {1}/traffic_ctl plugin msg cert_update.client {0}/client1.pem'.format(
+        ts.Variables.SSLDir, ts.Variables.BINDIR))
 ts.Streams.all = "gold/update.gold"
 ts.StillRunningAfter = server
 
 # Client-Cert-After
 # after use traffic_ctl to update client cert, s_server should see client (Traffic Server) as bob.com
 tr = Test.AddTestRun("Client-Cert-After")
-s_server = tr.Processes.Process("s_server", "openssl s_server -www -key {0}/server1.pem -cert {0}/server1.pem -accept 12345 -Verify 1 -msg".format(ts.Variables.SSLDir))
+s_server = tr.Processes.Process(
+    "s_server", "openssl s_server -www -key {0}/server1.pem -cert {0}/server1.pem -accept 12345 -Verify 1 -msg".format(ts.Variables.SSLDir))
 s_server.Ready = When.PortReady(12345)
 tr.Processes.Default.Env = ts.Env
 # Move client2.pem to replace client1.pem since cert path matters in client context mapping

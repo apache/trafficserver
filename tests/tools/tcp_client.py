@@ -22,6 +22,7 @@ import socket
 import sys
 import time
 
+
 def tcp_client(host, port, data, closeDelaySeconds=0):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
@@ -52,12 +53,13 @@ to further writes. This is useful to simulate the sending of partial data.
 
 
 def main(argv):
-    parser = argparse.ArgumentParser(description=DESCRIPTION,\
-            formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description=DESCRIPTION,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('host', help='the target host')
     parser.add_argument('port', type=int, help='the target port')
     parser.add_argument('file', help='the file with content to be sent')
-    parser.add_argument('--delay-after-send', metavar='SECONDS', type=int, help='after send, delay in seconds before half-close', default=0 )
+    parser.add_argument('--delay-after-send', metavar='SECONDS', type=int,
+                        help='after send, delay in seconds before half-close', default=0)
     args = parser.parse_args()
 
     data = ''

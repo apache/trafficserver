@@ -46,13 +46,18 @@ ts.addSSLfile("../remap/ssl/server.pem")
 ts.addSSLfile("../remap/ssl/server.key")
 
 ts.Variables.ssl_port = 4443
-ts.Disk.records_config.update({
-    'proxy.config.http.insert_request_via_str': 4,
-    'proxy.config.http.insert_response_via_str': 4,
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': 'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.http.insert_request_via_str': 4,
+        'proxy.config.http.insert_response_via_str': 4,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(
+            ts.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(
+            ts.Variables.SSLDir),
+        'proxy.config.http.server_ports': 'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'.format(
+            ts.Variables.port,
+            ts.Variables.ssl_port),
+    })
 
 ts.Disk.remap_config.AddLine(
     'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
