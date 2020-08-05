@@ -37,8 +37,8 @@ public:
     : _cinfo(info), _on_validation_callback(callback)
   {
   }
-  bool is_validating(const QUICPath &path);
-  bool is_validated(const QUICPath &path);
+  bool is_validating(const QUICPath &path) const;
+  bool is_validated(const QUICPath &path) const;
   void validate(const QUICPath &path);
 
   // QUICFrameHandler
@@ -62,8 +62,8 @@ private:
   public:
     ValidationJob(){};
     ~ValidationJob(){};
-    bool is_validating();
-    bool is_validated();
+    bool is_validating() const;
+    bool is_validated() const;
     void start();
     bool validate_response(const uint8_t *data);
     bool has_more_challenges() const;
