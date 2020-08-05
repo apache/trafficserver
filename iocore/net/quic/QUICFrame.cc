@@ -895,7 +895,7 @@ QUICAckFrame::AckBlockSection::first_ack_block() const
 }
 
 void
-QUICAckFrame::AckBlockSection::add_ack_block(AckBlock block)
+QUICAckFrame::AckBlockSection::add_ack_block(const AckBlock &block)
 {
   this->_ack_blocks.push_back(block);
 }
@@ -2960,7 +2960,8 @@ QUICFrameFactory::create_connection_close_frame(uint8_t *buf, uint16_t error_cod
 }
 
 QUICConnectionCloseFrame *
-QUICFrameFactory::create_connection_close_frame(uint8_t *buf, QUICConnectionError &error, QUICFrameId id, QUICFrameGenerator *owner)
+QUICFrameFactory::create_connection_close_frame(uint8_t *buf, const QUICConnectionError &error, QUICFrameId id,
+                                                QUICFrameGenerator *owner)
 {
   ink_assert(error.cls == QUICErrorClass::TRANSPORT);
   if (error.msg) {

@@ -186,7 +186,7 @@ QUICPacketReceiveQueue::dequeue(uint8_t *packet_buf, QUICPacketCreationResult &r
 }
 
 uint32_t
-QUICPacketReceiveQueue::size()
+QUICPacketReceiveQueue::size() const
 {
   return this->_queue.size;
 }

@@ -36,7 +36,7 @@ struct QUICFrameInformation {
 };
 
 struct QUICFrameInformationDeleter {
-  void operator()(QUICFrameInformation *p);
+  void operator()(QUICFrameInformation *p) const;
 };
 
 using QUICFrameInformationUPtr = std::unique_ptr<QUICFrameInformation, QUICFrameInformationDeleter>;
@@ -90,7 +90,7 @@ private:
 extern ClassAllocator<QUICFrameInformation> quicFrameInformationAllocator;
 
 inline void
-QUICFrameInformationDeleter::operator()(QUICFrameInformation *p)
+QUICFrameInformationDeleter::operator()(QUICFrameInformation *p) const
 {
   quicFrameInformationAllocator.free(p);
 }

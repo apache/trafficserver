@@ -236,7 +236,7 @@ public:
     size_t size() const;
     Ptr<IOBufferBlock> to_io_buffer_block(size_t limit) const;
     uint64_t first_ack_block() const;
-    void add_ack_block(const AckBlock block);
+    void add_ack_block(const AckBlock &block);
     const_iterator begin() const;
     const_iterator end() const;
     bool has_protected() const;
@@ -802,7 +802,7 @@ public:
                                                                  const char *reason_phrase = nullptr, QUICFrameId id = 0,
                                                                  QUICFrameGenerator *owner = nullptr);
 
-  static QUICConnectionCloseFrame *create_connection_close_frame(uint8_t *buf, QUICConnectionError &error, QUICFrameId id = 0,
+  static QUICConnectionCloseFrame *create_connection_close_frame(uint8_t *buf, const QUICConnectionError &error, QUICFrameId id = 0,
                                                                  QUICFrameGenerator *owner = nullptr);
 
   /*

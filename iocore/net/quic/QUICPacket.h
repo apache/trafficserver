@@ -168,8 +168,8 @@ public:
   /**
    * For sending packet
    */
-  QUICLongHeaderPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, bool ack_eliciting, bool probing,
-                       bool crypto);
+  QUICLongHeaderPacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid, bool ack_eliciting,
+                       bool probing, bool crypto);
 
   QUICConnectionId source_cid() const;
 
@@ -226,7 +226,7 @@ public:
   /**
    * For sending packet
    */
-  QUICShortHeaderPacket(QUICConnectionId dcid, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
+  QUICShortHeaderPacket(const QUICConnectionId &dcid, QUICPacketNumber packet_number, QUICPacketNumber base_packet_number,
                         QUICKeyPhase key_phase, bool ack_eliciting, bool probing);
 
   QUICPacketType type() const override;
@@ -367,8 +367,9 @@ public:
   /**
    * For sending packet
    */
-  QUICInitialPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, size_t token_len, ats_unique_buf token,
-                    size_t length, QUICPacketNumber packet_number, bool ack_eliciting, bool probing, bool crypto);
+  QUICInitialPacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid, size_t token_len,
+                    ats_unique_buf token, size_t length, QUICPacketNumber packet_number, bool ack_eliciting, bool probing,
+                    bool crypto);
 
   QUICPacketType type() const override;
   QUICPacketNumber packet_number() const override;
@@ -423,7 +424,7 @@ public:
   /**
    * For sending packet
    */
-  QUICZeroRttPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, size_t length,
+  QUICZeroRttPacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid, size_t length,
                     QUICPacketNumber packet_number, bool ack_eliciting, bool probing);
 
   QUICPacketType type() const override;
@@ -465,7 +466,7 @@ public:
   /**
    * For sending packet
    */
-  QUICHandshakePacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, size_t length,
+  QUICHandshakePacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid, size_t length,
                       QUICPacketNumber packet_number, bool ack_eliciting, bool probing, bool crypto);
 
   QUICPacketType type() const override;
@@ -507,7 +508,7 @@ public:
   /**
    * For sending packet
    */
-  QUICRetryPacket(QUICVersion version, QUICConnectionId dcid, QUICConnectionId scid, QUICRetryToken &token);
+  QUICRetryPacket(QUICVersion version, const QUICConnectionId &dcid, const QUICConnectionId &scid, QUICRetryToken &token);
 
   QUICPacketType type() const override;
   QUICPacketNumber packet_number() const override;
@@ -541,7 +542,7 @@ public:
   QUICPacketNumber packet_number() const override;
 
   const QUICAddressValidationToken &token() const;
-  bool has_valid_tag(QUICConnectionId &odcid) const;
+  bool has_valid_tag(const QUICConnectionId &odcid) const;
 
 private:
   QUICAddressValidationToken *_token = nullptr;

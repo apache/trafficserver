@@ -118,7 +118,7 @@ QUICLossDetector::handle_frame(QUICEncryptionLevel level, const QUICFrame &frame
 }
 
 QUICPacketNumber
-QUICLossDetector::largest_acked_packet_number(QUICPacketNumberSpace pn_space)
+QUICLossDetector::largest_acked_packet_number(QUICPacketNumberSpace pn_space) const
 {
   int index = static_cast<int>(pn_space);
   return this->_largest_acked_packet[index];
@@ -522,12 +522,12 @@ QUICLossDetector::_send_one_padded_packets()
 // ===== Functions below are helper functions =====
 
 void
-QUICLossDetector::_retransmit_lost_packet(QUICPacketInfo &packet_info)
+QUICLossDetector::_retransmit_lost_packet(const QUICPacketInfo &packet_info)
 {
   SCOPED_MUTEX_LOCK(lock, this->_loss_detection_mutex, this_ethread());
 
   QUICLDDebug("Retransmit %s packet #%" PRIu64, QUICDebugNames::packet_type(packet_info.type), packet_info.packet_number);
-  for (QUICFrameInfo &frame_info : packet_info.frames) {
+  for (const QUICFrameInfo &frame_info : packet_info.frames) {
     auto reactor = frame_info.generated_by();
     if (reactor == nullptr) {
       continue;

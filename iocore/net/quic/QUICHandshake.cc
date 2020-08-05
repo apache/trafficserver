@@ -207,20 +207,20 @@ QUICHandshake::has_remote_tp() const
 }
 
 QUICVersion
-QUICHandshake::negotiated_version()
+QUICHandshake::negotiated_version() const
 {
   return this->_version_negotiator->negotiated_version();
 }
 
 // Similar to SSLNetVConnection::getSSLCipherSuite()
 const char *
-QUICHandshake::negotiated_cipher_suite()
+QUICHandshake::negotiated_cipher_suite() const
 {
   return this->_hs_protocol->negotiated_cipher_suite();
 }
 
 void
-QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *len)
+QUICHandshake::negotiated_application_name(const uint8_t **name, unsigned int *len) const
 {
   this->_hs_protocol->negotiated_application_name(name, len);
 }

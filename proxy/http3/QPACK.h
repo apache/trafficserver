@@ -112,7 +112,7 @@ private:
   public:
     DynamicTableStorage(uint16_t size);
     ~DynamicTableStorage();
-    void read(uint16_t offset, const char **name, uint16_t name_len, const char **value, uint16_t value_len);
+    void read(uint16_t offset, const char **name, uint16_t name_len, const char **value, uint16_t value_len) const;
     uint16_t write(const char *name, uint16_t name_len, const char *value, uint16_t value_len);
     void erase(uint16_t name_len, uint16_t value_len);
 
@@ -139,7 +139,7 @@ private:
     void update_size(uint16_t max_size);
     void ref_entry(uint16_t index);
     void unref_entry(uint16_t index);
-    uint16_t largest_index();
+    uint16_t largest_index() const;
 
   private:
     uint16_t _available        = 0;
@@ -169,7 +169,7 @@ private:
     }
 
     uint16_t
-    largest_reference()
+    largest_reference() const
     {
       return this->_largest_reference;
     }
@@ -187,19 +187,19 @@ private:
     }
 
     uint64_t
-    stream_id()
+    stream_id() const
     {
       return this->_stream_id;
     }
 
     const uint8_t *
-    header_block()
+    header_block() const
     {
       return this->_header_block;
     }
 
     size_t
-    header_block_len()
+    header_block_len() const
     {
       return this->_header_block_len;
     }
