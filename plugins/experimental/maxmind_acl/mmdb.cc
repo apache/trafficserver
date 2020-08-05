@@ -68,7 +68,7 @@ Acl::init(char const *filename)
       }
 #endif
   } catch (const YAML::Exception &e) {
-    TSError("YAML::Exception %s when parsing YAML config file %s for maxmind", e.what(), configloc.c_str());
+    TSError("[%s] YAML::Exception %s when parsing YAML config file %s for maxmind", PLUGIN_NAME, e.what(), configloc.c_str());
     return status;
   }
 
@@ -152,7 +152,7 @@ Acl::loaddeny(YAML::Node denyNode)
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug("YAML::Exception %s when parsing YAML config file country code deny list for maxmind", e.what());
+    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file country code deny list for maxmind", e.what());
     return false;
   }
 
@@ -175,7 +175,7 @@ Acl::loaddeny(YAML::Node denyNode)
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug("YAML::Exception %s when parsing YAML config file ip deny list for maxmind", e.what());
+    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file ip deny list for maxmind", e.what());
     return false;
   }
 
@@ -233,7 +233,7 @@ Acl::loadallow(YAML::Node allowNode)
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug("YAML::Exception %s when parsing YAML config file country code allow list for maxmind", e.what());
+    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file country code allow list for maxmind", e.what());
     return false;
   }
 
@@ -256,7 +256,7 @@ Acl::loadallow(YAML::Node allowNode)
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug("YAML::Exception %s when parsing YAML config file ip allow list for maxmind", e.what());
+    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file ip allow list for maxmind", e.what());
     return false;
   }
 
@@ -315,7 +315,7 @@ Acl::parseregex(YAML::Node regex, bool allow)
       }
     }
   } catch (const YAML::Exception &e) {
-    TSDebug("YAML::Exception %s when parsing YAML config file regex allow list for maxmind", e.what());
+    TSDebug(PLUGIN_NAME, "YAML::Exception %s when parsing YAML config file regex allow list for maxmind", e.what());
     return;
   }
 }
@@ -537,7 +537,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len)
 // UNKNOWN_IP if it does not exist in either, this is then used to determine
 //  action based on the default allow action
 ipstate
-Acl::eval_ip(const sockaddr *sock)
+Acl::eval_ip(const sockaddr *sock) const
 {
 #if 0
   for (auto &spot : allow_ip_map) {
