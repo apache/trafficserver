@@ -104,5 +104,5 @@ protected:
   void loadhtml(YAML::Node htmlNode);
   bool eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len);
   void parseregex(YAML::Node regex, bool allow);
-  ipstate eval_ip(const sockaddr *sock);
+  ipstate eval_ip(const sockaddr *sock) const;
 };
