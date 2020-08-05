@@ -177,7 +177,7 @@ with corresponding HTTP response codes and customizable files.
    ``timeout#inactivity``
 
 ``Content Length Required``
-   ``400``
+   ``411``
    Could not process this request because ``Content-Length`` was not specified.
    ``request#no_content_length``
 
