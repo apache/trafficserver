@@ -598,8 +598,6 @@ typedef enum {
   AFTER_BODY,
 } TSFetchWakeUpOptions;
 
-#ifndef _HTTP_PROXY_API_ENUMS_H_
-#define _HTTP_PROXY_API_ENUMS_H_
 /// Values for per server outbound connection tracking group definition.
 /// See proxy.config.http.per_server.match
 typedef enum {
@@ -608,7 +606,6 @@ typedef enum {
   TS_SERVER_OUTBOUND_MATCH_HOST,
   TS_SERVER_OUTBOUND_MATCH_BOTH
 } TSOutboundConnectionMatchType;
-#endif
 
 /* librecords types */
 
