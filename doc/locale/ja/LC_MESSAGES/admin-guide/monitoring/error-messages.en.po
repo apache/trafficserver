@@ -405,10 +405,10 @@ msgstr ""
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:185
 msgid ""
-"``400`` Could not process this request because ``Content-Length`` was not "
+"``411`` Could not process this request because ``Content-Length`` was not "
 "specified. ``request#no_content_length``"
 msgstr ""
-"``400`` Could not process this request because ``Content-Length`` was not "
+"``411`` Could not process this request because ``Content-Length`` was not "
 "specified. (``Content-Length`` が指定されなかったためリクエストを処理できま"
 "せんでした。) ``request#no_content_length``"
 
