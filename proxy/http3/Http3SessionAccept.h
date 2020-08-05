@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#ifndef __HTTP_QUIC_SESSION_ACCEPT_H__
-#define __HTTP_QUIC_SESSION_ACCEPT_H__
+#pragma once
 
 #include "tscore/ink_platform.h"
 #include "I_Net.h"
@@ -53,5 +52,3 @@ private:
 
   HttpSessionAccept::Options options;
 };
-
-#endif // __HTTP_QUIC_SESSION_ACCEPT_H__

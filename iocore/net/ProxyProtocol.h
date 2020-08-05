@@ -23,8 +23,7 @@
   limitations under the License.
  */
 
-#ifndef ProxyProtocol_H_
-#define ProxyProtocol_H_
+#pragma once
 
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
@@ -51,5 +50,3 @@ const size_t PROXY_V2_CONNECTION_HEADER_LEN_MIN = 16;
 
 const size_t PROXY_V1_CONNECTION_HEADER_LEN_MAX = 108;
 const size_t PROXY_V2_CONNECTION_HEADER_LEN_MAX = 16;
-
-#endif /* ProxyProtocol_H_ */

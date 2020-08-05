@@ -21,9 +21,6 @@
   limitations under the License.
  */
 
-#ifndef tsmemcache_h
-#define tsmemcache_h
-
 #include "I_EventSystem.h"
 #include "I_Net.h"
 #include "I_Cache.h"
@@ -241,5 +238,3 @@ xatoull(char *s, char *e)
   }
   return n;
 }
-
-#endif

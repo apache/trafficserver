@@ -16,7 +16,7 @@
   limitations under the License.
 */
 
-//#pragma once
+#pragma once
 
 #include <cstdio>
 #include <cstring>
