@@ -27,15 +27,15 @@ F_GETPIPE_SZ = 1032  # Linux 2.6.35+
 
 def parse_args():
     parser = parser = argparse.ArgumentParser(
-            description='Verify that a FIFO has a buffer of at least a certain size')
+        description='Verify that a FIFO has a buffer of at least a certain size')
 
     parser.add_argument(
-            'pipe_name',
-            help='The pipe name upon which to verify the size is large enough.')
+        'pipe_name',
+        help='The pipe name upon which to verify the size is large enough.')
 
     parser.add_argument(
-            'minimum_buffer_size',
-            help='The minimu buffer size for the pipe to expect.')
+        'minimum_buffer_size',
+        help='The minimu buffer size for the pipe to expect.')
 
     return parser.parse_args()
 

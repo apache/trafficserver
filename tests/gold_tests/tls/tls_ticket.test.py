@@ -72,7 +72,8 @@ ts2.Disk.records_config.update({
 
 tr = Test.AddTestRun("Create ticket")
 tr.Setup.Copy('file.ticket')
-tr.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out ticket.out'.format(ts.Variables.ssl_port)
+tr.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out ticket.out'.format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -80,33 +81,37 @@ path1 = tr.Processes.Default.Streams.stdout.AbsPath
 tr.StillRunningAfter = server
 
 # Pull out session created in tr to test for session id in tr2
-def checkSession(ev) :
-  retval = False
-  f1 = open(path1, 'r')
-  f2 = open(path2, 'r')
-  err = "Session ids match"
-  if not f1 or not f2:
-    err = "Failed to open {0} or {1}".format(path1, path2)
+
+
+def checkSession(ev):
+    retval = False
+    f1 = open(path1, 'r')
+    f2 = open(path2, 'r')
+    err = "Session ids match"
+    if not f1 or not f2:
+        err = "Failed to open {0} or {1}".format(path1, path2)
+        return (retval, "Check that session ids match", err)
+
+    f1Content = f1.read()
+    f2Content = f2.read()
+    match1 = re.findall('Session-ID: ([0-9A-F]+)', f1Content)
+    match2 = re.findall('Session-ID: ([0-9A-F]+)', f2Content)
+
+    if match1 and match2:
+        if match1[0] == match2[0]:
+            err = "{0} and {1} do match".format(match1[0], match2[0])
+            retval = True
+        else:
+            err = "{0} and {1} do not match".format(match1[0], match2[0])
+    else:
+        err = "Didn't find session id"
     return (retval, "Check that session ids match", err)
 
-  f1Content = f1.read()
-  f2Content = f2.read()
-  match1 = re.findall('Session-ID: ([0-9A-F]+)', f1Content)
-  match2 = re.findall('Session-ID: ([0-9A-F]+)', f2Content)
-
-  if match1 and match2:
-    if match1[0] == match2[0]:
-      err = "{0} and {1} do match".format(match1[0], match2[0])
-      retval = True
-    else:
-      err = "{0} and {1} do not match".format(match1[0], match2[0])
-  else:
-    err = "Didn't find session id"
-  return (retval, "Check that session ids match", err)
 
 tr2 = Test.AddTestRun("Test ticket")
 tr2.Setup.Copy('file.ticket')
-tr2.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in ticket.out'.format(ts2.Variables.ssl_port)
+tr2.Command = 'echo -e "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in ticket.out'.format(
+    ts2.Variables.ssl_port)
 tr2.Processes.Default.StartBefore(Test.Processes.ts2)
 tr2.ReturnCode = 0
 path2 = tr2.Processes.Default.Streams.stdout.AbsPath

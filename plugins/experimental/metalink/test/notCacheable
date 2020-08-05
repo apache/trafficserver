@@ -16,11 +16,11 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-print '''1..1 notCacheable
-# The digest of a file that wasn't cacheable doesn't crash the proxy'''
-
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
+
+print '''1..1 notCacheable
+# The digest of a file that wasn't cacheable doesn't crash the proxy'''
 
 
 def callback():

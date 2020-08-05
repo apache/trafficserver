@@ -19,8 +19,10 @@ For compress gold test, observer for micro-server.
 
 log = open('compress_userver.log', 'w')
 
+
 def observe(headers):
     log.write("{}\n".format(headers['X-Ats-Compress-Test']))
     log.flush()
+
 
 Hooks.register(Hooks.ReadRequestHook, observe)

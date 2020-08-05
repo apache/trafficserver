@@ -21,7 +21,7 @@ Test xdebug plugin X-Remap, Probe and fwd headers
 server = Test.MakeOriginServer("server", options={'--load': (Test.TestDirectory + '/x_remap-observer.py')})
 
 request_header = {
-    "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
+    "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
@@ -54,6 +54,7 @@ tr.Processes.Default.Command = "cp {}/tcp_client.py {}/tcp_client.py".format(
     Test.Variables.AtsTestToolsDir, Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
 
+
 def sendMsg(msgFile):
 
     tr = Test.AddTestRun()
@@ -64,6 +65,7 @@ def sendMsg(msgFile):
             server.Variables.Port, Test.RunDirectory)
     )
     tr.Processes.Default.ReturnCode = 0
+
 
 sendMsg('none')
 sendMsg('one')

@@ -102,7 +102,7 @@ def _get_available_port(queue):
     if queue.qsize() == 0:
         host.WriteWarning("Port queue is empty.")
         raise PortQueueSelectionError(
-                "Could not get a valid port because the queue is empty")
+            "Could not get a valid port because the queue is empty")
 
     port = queue.get()
     while PortOpen(port):
@@ -112,7 +112,7 @@ def _get_available_port(queue):
         if queue.qsize() == 0:
             host.WriteWarning("Port queue is empty.")
             raise PortQueueSelectionError(
-                    "Could not get a valid port because the queue is empty")
+                "Could not get a valid port because the queue is empty")
         port = queue.get()
     return port
 
@@ -154,7 +154,7 @@ def _setup_port_queue(amount=1000):
             ).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
-    except:
+    except Exception:
         host.WriteWarning("Unable to call sysctrl!\n Tests may fail because of bad port selection!")
         return
 
@@ -228,22 +228,22 @@ def get_port(obj, name):
         try:
             port = _get_available_port(g_ports)
             host.WriteVerbose(
-                    "get_port",
-                    "Using port from port queue: {}".format(port))
+                "get_port",
+                "Using port from port queue: {}".format(port))
             # setup clean up step to recycle the port
             obj.Setup.Lambda(func_cleanup=lambda: g_ports.put(
                 port), description="recycling port")
         except PortQueueSelectionError:
             port = _get_port_by_bind()
             host.WriteVerbose(
-                    "get_port",
-                    "Queue was drained. Using port from a bound socket: {}".format(port))
+                "get_port",
+                "Queue was drained. Using port from a bound socket: {}".format(port))
     else:
         # Since the queue could not be populated, use a port via bind.
         port = _get_port_by_bind()
         host.WriteVerbose(
-                "get_port",
-                "Queue is empty. Using port from a bound socket: {}".format(port))
+            "get_port",
+            "Queue is empty. Using port from a bound socket: {}".format(port))
 
     # Assign to the named variable.
     obj.Variables[name] = port

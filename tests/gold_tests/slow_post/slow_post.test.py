@@ -37,8 +37,10 @@ class SlowPostAttack:
         response_header = {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
                            "timestamp": "1469733493.993", "body": ""}
         self._server.addResponse("sessionlog.json", request_header, response_header)
-        request_header2 = {"headers": "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\nHost: www.example.com\r\nConnection: keep-alive\r\n\r\n",
-                           "timestamp": "1469733493.993", "body": "a\r\na\r\na\r\n\r\n"}
+        request_header2 = {
+            "headers": "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\nHost: www.example.com\r\nConnection: keep-alive\r\n\r\n",
+            "timestamp": "1469733493.993",
+            "body": "a\r\na\r\na\r\n\r\n"}
         response_header2 = {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
                             "timestamp": "1469733493.993", "body": ""}
         self._server.addResponse("sessionlog.json", request_header2, response_header2)

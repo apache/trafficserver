@@ -19,6 +19,7 @@ Extract the protocol information from the Accept-Encoding headers and store it i
 
 log = open('normalize_ae.log', 'w')
 
+
 def observe(headers):
 
     seen = False
@@ -35,5 +36,6 @@ def observe(headers):
 
     log.write("-\n")
     log.flush()
+
 
 Hooks.register(Hooks.ReadRequestHook, observe)

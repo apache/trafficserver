@@ -44,7 +44,7 @@ def escape(name):
     Partial reimplementation in Python of Doxygen escapeCharsInString()
     """
 
-    return name.replace('_', '__').replace(':', '_1').replace('/', '_2').replace('<', '_3').replace('>', '_4').replace('*', '_5').replace('&', '_6').replace('|', '_7').replace('.', '_8').replace('!', '_9').replace(',', '_00').replace(' ', '_01').replace('{', '_02').replace('}', '_03').replace('?', '_04').replace('^', '_05').replace('%', '_06').replace('(', '_07').replace(')', '_08').replace('+', '_09').replace('=', '_0A').replace('$', '_0B').replace('\\', '_0C')
+    return name.replace('_', '__').replace(':', '_1').replace('/', '_2').replace('<', '_3').replace('>', '_4').replace('*', '_5').replace('&', '_6').replace('|', '_7').replace('.', '_8').replace('!', '_9').replace(',', '_00').replace(' ', '_01').replace('{', '_02').replace('}', '_03').replace('?', '_04').replace('^', '_05').replace('%', '_06').replace('(', '_07').replace(')', '_08').replace('+', '_09').replace('=', '_0A').replace('$', '_0B').replace('\\', '_0C')  # nopep8
 
 
 class doctree_resolved:
@@ -66,7 +66,9 @@ class doctree_resolved:
 
             # Style the links
             raw = nodes.raw(
-                '', '<style> .rst-content dl dt .headerlink { display: inline-block } .rst-content dl dt .headerlink:after { visibility: hidden } .rst-content dl dt .viewcode-link { color: #2980b9; float: right; font-size: inherit; font-weight: normal } .rst-content dl dt:hover .headerlink:after { visibility: visible } </style>', format='html')
+                '',
+                '<style> .rst-content dl dt .headerlink { display: inline-block } .rst-content dl dt .headerlink:after { visibility: hidden } .rst-content dl dt .viewcode-link { color: #2980b9; float: right; font-size: inherit; font-weight: normal } .rst-content dl dt:hover .headerlink:after { visibility: visible } </style>',
+                format='html')
             doctree.insert(0, raw)
 
     def traverse(self, node, owner):
@@ -108,7 +110,8 @@ class doctree_resolved:
                             cache[filename] = etree.parse('xml/' + filename)
 
                         # An enumvalue has no location
-                        memberdef, = cache[filename].xpath('descendant::compounddef[compoundname[text() = $name]]', name=name) or cache[filename].xpath(
+                        memberdef, = cache[filename].xpath(
+                            'descendant::compounddef[compoundname[text() = $name]]', name=name) or cache[filename].xpath(
                             'descendant::memberdef[name[text() = $name] | enumvalue[name[text() = $name]]]', name=name)
 
                         # Append the link after the object's signature.

@@ -39,8 +39,12 @@ ts.Setup.RunCommand("tsxs -o async_engine.so async_engine.c")
 
 # Add info the origin server responses
 server.addResponse("sessionlog.json",
-                   {"headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n", "timestamp": "1469733493.993", "body": "ok"})
+                   {"headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": "ok"})
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
@@ -91,7 +95,7 @@ tr.Processes.Default.Command = "curl -k -v -H uuid:basic -H host:example.com  ht
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/(2|1\.1) 200", "Request succeeds")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(r"HTTP/(2|1\.1) 200", "Request succeeds")
 tr.StillRunningAfter = server
 
 ts.Streams.All += Testers.ContainsExpression("Send signal to ", "The Async engine triggers")

@@ -54,7 +54,7 @@ if (ccid[0] != ccid[1] and
     ccid[3] != ccid[4] and
     ccid[4] == ccid[5] and
     ctid[4] != ctid[5] and
-    ccid[5] != ccid[6]):
+        ccid[5] != ccid[6]):
     exit(code=0)
 
 # Failure exit if report was not valid.

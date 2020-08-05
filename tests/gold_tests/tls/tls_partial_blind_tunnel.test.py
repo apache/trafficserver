@@ -51,13 +51,14 @@ ts.Disk.records_config.update({
 
 # foo.com should terminate. and reconnect via TLS upstream to bar.com
 ts.Disk.sni_yaml.AddLines([
-  "sni:",
-  "- fqdn: 'foo.com'",
-  "  partial_blind_route: 'localhost:{0}'".format(server_bar.Variables.SSL_Port),
-  ])
+    "sni:",
+    "- fqdn: 'foo.com'",
+    "  partial_blind_route: 'localhost:{0}'".format(server_bar.Variables.SSL_Port),
+])
 
 tr = Test.AddTestRun("Partial Blind Route")
-tr.Processes.Default.Command = "curl --http1.1 -v --resolve 'foo.com:{0}:127.0.0.1' -k https://foo.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl --http1.1 -v --resolve 'foo.com:{0}:127.0.0.1' -k https://foo.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_bar)
 tr.Processes.Default.StartBefore(Test.Processes.ts)

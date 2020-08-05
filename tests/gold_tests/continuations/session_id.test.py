@@ -67,7 +67,7 @@ numberOfRequests = 100
 # is set in SpawnCommands.  On Fedora 28/29, it seems that curl will
 # occaisionally timeout after a couple seconds and return exitcode 2 Examinig
 # the packet capture shows that Traffic Server dutifully sends the response
-ps = tr.SpawnCommands(cmdstr=cmd,  count=numberOfRequests, retcode=Any(0, 2))
+ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 tr.Processes.Default.StartBefore(
@@ -84,7 +84,7 @@ tr.StillRunningAfter = server
 #
 tr = Test.AddTestRun("Perform HTTP/2 transactions")
 cmd = 'curl -v -k --http2 -H "host:example.com" https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
-ps = tr.SpawnCommands(cmdstr=cmd,  count=numberOfRequests, retcode=Any(0, 2))
+ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
 
@@ -96,5 +96,5 @@ tr.Processes.Default.ReturnCode = Any(0, 2)
 # them. The test plugin prints an error to this log if it sees duplicate ids.
 # The following is to verify that we encountered the expected ids.
 ts.Streams.stderr += Testers.ContainsExpression(
-        "session id: 199",
-        "Verify the various session ids were found.")
+    "session id: 199",
+    "Verify the various session ids were found.")

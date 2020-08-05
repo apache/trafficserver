@@ -19,6 +19,7 @@ Extract the protocol information from the FORWARDED headers and store it in a lo
 
 log = open('x_remap.log', 'w')
 
+
 def observe(headers):
     seen = False
 
@@ -31,5 +32,6 @@ def observe(headers):
         log.write("X_DEBUG MISSING\n")
     log.write("-\n")
     log.flush()
+
 
 Hooks.register(Hooks.ReadRequestHook, observe)
