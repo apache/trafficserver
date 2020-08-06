@@ -1031,3 +1031,8 @@ Changes with Apache Traffic Server 9.0.0
   #7059 - Fix a crash on active timeout on QUIC connections
   #7060 - Document proxy.config.http.cache.post_method.
   #7061 - Don't make an error on receiving retransmitted handshake data
+  #7069 - Move the direct self loop check later to HttpSM::do_http_server_open
+  #7081 - Updated release notes for 9.0.0 to have new QUIC 27 version
+  #7084 - const-ify quic/http3 code
+  #7085 - Fixes build warnings in maxmind_acl
+  #7087 - Fix eval_ip compile - missing const.
