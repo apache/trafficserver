@@ -117,20 +117,23 @@ Http1Transaction::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http1Transaction::set_active_timeout(ink_hrtime timeout_in)
 {
-  if (_proxy_ssn)
+  if (_proxy_ssn) {
     _proxy_ssn->set_active_timeout(timeout_in);
+  }
 }
 void
 Http1Transaction::set_inactivity_timeout(ink_hrtime timeout_in)
 {
-  if (_proxy_ssn)
+  if (_proxy_ssn) {
     _proxy_ssn->set_inactivity_timeout(timeout_in);
+  }
 }
 void
 Http1Transaction::cancel_inactivity_timeout()
 {
-  if (_proxy_ssn)
+  if (_proxy_ssn) {
     _proxy_ssn->cancel_inactivity_timeout();
+  }
 }
 //
 int

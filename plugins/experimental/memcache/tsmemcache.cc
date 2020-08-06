@@ -375,8 +375,9 @@ MC::write_binary_response(const void *d, int hlen, int keylen, int dlen)
     if (dlen) {
       MCDebug("tsmemcache", "response dlen %d\n", dlen);
       wbuf->write(d, dlen);
-    } else
+    } else {
       MCDebug("tsmemcache", "no response\n");
+    }
   }
   return writer->read_avail();
 }

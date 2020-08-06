@@ -142,8 +142,9 @@ spawn_same_session_send(void *arg)
     ret = select(sfd + 1, &reads, &writes, NULL, NULL);
     if (FD_ISSET(sfd, &reads) || FD_ISSET(sfd, &writes)) {
       ret = write_ret = SSL_write(ssl, req_buf, strlen(req_buf));
-      if (write_ret > 0)
+      if (write_ret > 0) {
         post_write_ret = SSL_write(ssl, post_buf, sizeof(post_buf));
+      }
     }
   }
 
@@ -198,10 +199,11 @@ spawn_same_session_send(void *arg)
       read_bytes = SSL_read(ssl, input_buf, sizeof(input_buf));
     }
   }
-  if (read_bytes > 0 && read_bytes < 1024)
+  if (read_bytes > 0 && read_bytes < 1024) {
     input_buf[read_bytes] = '\0';
-  else
+  } else {
     input_buf[1023] = '\0';
+  }
   // printf("total_bytes=%d Received bytes=%d handshake writes=%d handshake reads=%d\n", total_read, read_bytes, write_count,
   // read_count);
 
@@ -264,10 +266,12 @@ main(int argc, char *argv[])
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
     sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-    if (sfd == -1)
+    if (sfd == -1) {
       continue;
-    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
+    }
+    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
       break; /* Success */
+    }
 
     close(sfd);
   }
@@ -320,10 +324,11 @@ main(int argc, char *argv[])
 
   char input_buf[1024];
   int read_bytes = SSL_read(ssl, input_buf, sizeof(input_buf));
-  if (read_bytes > 0 && read_bytes < 1024)
+  if (read_bytes > 0 && read_bytes < 1024) {
     input_buf[read_bytes] = '\0';
-  else
+  } else {
     input_buf[1023] = '\0';
+  }
   // printf("Received %d bytes %s\n", read_bytes, input_buf);
   SSL_SESSION *session = SSL_get_session(ssl);
   close(sfd);

@@ -31,7 +31,7 @@
 #include <openssl/x509v3.h>
 #include <openssl/asn1.h>
 #include <strings.h>
-#include <string.h>
+#include <cstring>
 #include <string>
 #include <map>
 
@@ -41,7 +41,7 @@
 std::map<std::string, int> good_names;
 
 bool
-check_name(std::string name)
+check_name(const std::string &name)
 {
   auto entry = good_names.find(name);
   return entry != good_names.end();
@@ -75,7 +75,7 @@ check_names(X509 *cert)
   }
   if (!retval) {
     // Check the subjectAltNanes (if present)
-    GENERAL_NAMES *names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr);
+    GENERAL_NAMES *names = static_cast<GENERAL_NAMES *>(X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
     if (names) {
       unsigned count = sk_GENERAL_NAME_num(names);
       for (unsigned i = 0; i < count && !retval; ++i) {
@@ -167,7 +167,7 @@ setup_callbacks(int count)
   TSDebug(PN, "Setup callbacks count=%d", count);
   for (i = 0; i < count; i++) {
     cb = TSContCreate(&CB_client_verify, TSMutexCreate());
-    TSContDataSet(cb, (void *)(intptr_t)i);
+    TSContDataSet(cb, (void *)static_cast<intptr_t>(i));
     TSHttpHookAdd(TS_SSL_VERIFY_CLIENT_HOOK, cb);
   }
   return;

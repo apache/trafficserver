@@ -290,8 +290,9 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     // Add data to buffer and signal continuation.
     buf.writer()->fill(r);
 #ifdef DEBUG
-    if (buf.writer()->write_avail() <= 0)
+    if (buf.writer()->write_avail() <= 0) {
       Debug("iocore_net", "read_from_net, read buffer full");
+    }
 #endif
     s->vio.ndone += r;
     net_activity(vc, thread);

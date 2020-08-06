@@ -1393,7 +1393,7 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
    Do NOT call SSL_CTX_set_* functions from here. SSL_CTX should be set up by SSLMultiCertConfigLoader::init_server_ssl_ctx().
  */
 bool
-SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams sslMultCertSettings)
+SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings)
 {
   bool retval = true;
   std::vector<X509 *> cert_list;
@@ -1454,7 +1454,7 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
 }
 
 bool
-SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams sslMultCertSettings,
+SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings,
                                                 shared_SSL_CTX ctx, std::set<std::string> &names)
 {
   bool inserted                        = false;
