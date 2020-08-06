@@ -30,13 +30,6 @@
 
 #pragma once
 
-/*
-#include "P_DNS.h"
-#include "I_SplitDNS.h"
-#include "I_Lock.h"
-#include "ControlBase.h"
-#include "ControlMatcher.h"
-*/
 #include "ProxyConfig.h"
 
 /* ---------------------------
@@ -200,7 +193,7 @@ public:
   const char *ProcessDefDomain(char *val);
 
   void UpdateMatch(SplitDNSResult *result, RequestData *rdata);
-  void Print();
+  void Print() const;
 
   DNSServer m_servers;
   int m_dnsSrvr_cnt      = 0;

@@ -24,7 +24,7 @@ Test.SkipIf(Condition.true("Test cannot deterministically wait until the stats a
 server = Test.MakeOriginServer("server")
 
 request_header = {
-    "headers": "GET /argh HTTP/1.1\r\nHost: one\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
+    "headers": "GET /argh HTTP/1.1\r\nHost: one\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
@@ -41,9 +41,9 @@ ts.Disk.remap_config.AddLine(
 )
 
 ts.Disk.records_config.update({
-  'proxy.config.http.transaction_active_timeout_out': 2,
-  'proxy.config.http.transaction_no_activity_timeout_out': 2,
-  'proxy.config.http.connect_attempts_timeout': 2,
+    'proxy.config.http.transaction_active_timeout_out': 2,
+    'proxy.config.http.transaction_no_activity_timeout_out': 2,
+    'proxy.config.http.connect_attempts_timeout': 2,
 })
 
 # 0 Test - Curl host One
@@ -64,12 +64,13 @@ tr.StillRunningAfter = server
 
 # 2 Test - Gather output
 tr = Test.AddTestRun("analyze stats")
-tr.Processes.Default.Command = 'traffic_ctl metric match \.\*remap_stats\*'
+tr.Processes.Default.Command = r'traffic_ctl metric match \.\*remap_stats\*'
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
 tr.DelayStart = 15
 tr.TimeOut = 5
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("plugin.remap_stats.one.status_2xx 1", "expected 2xx on first remap")
-tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("plugin.remap_stats.two.status_4xx 1", "expected 4xx on second remap")
-
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+    "plugin.remap_stats.one.status_2xx 1", "expected 2xx on first remap")
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    "plugin.remap_stats.two.status_4xx 1", "expected 4xx on second remap")

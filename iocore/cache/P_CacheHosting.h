@@ -37,8 +37,10 @@ struct Cache;
 struct CacheHostRecord {
   int Init(CacheType typ);
   int Init(matcher_line *line_info, CacheType typ);
+
   void UpdateMatch(CacheHostResult *r, char *rd);
-  void Print();
+  void Print() const;
+
   ~CacheHostRecord()
   {
     ats_free(vols);
@@ -72,10 +74,11 @@ public:
   CacheHostMatcher(const char *name, CacheType typ);
   ~CacheHostMatcher();
 
-  void Match(const char *rdata, int rlen, CacheHostResult *result);
   void AllocateSpace(int num_entries);
   void NewEntry(matcher_line *line_info);
-  void Print();
+
+  void Match(const char *rdata, int rlen, CacheHostResult *result) const;
+  void Print() const;
 
   int
   getNumElements() const
@@ -109,10 +112,12 @@ public:
   //  object is
   CacheHostTable(Cache *c, CacheType typ);
   ~CacheHostTable();
+
   int BuildTable(const char *config_file_path);
   int BuildTableFromString(const char *config_file_path, char *str);
-  void Match(const char *rdata, int rlen, CacheHostResult *result);
-  void Print();
+
+  void Match(const char *rdata, int rlen, CacheHostResult *result) const;
+  void Print() const;
 
   int
   getEntryCount() const

@@ -10,7 +10,7 @@
         {
             "label": "Configure",
             "type": "shell",
-            "command": "./configure --prefix=${workspaceFolder}/target --enable-ccache --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror ${env:ATS_VSCODE_CONFIGURE}",
+            "command": "mkdir ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}; cd ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}; ${workspaceFolder}/configure --prefix=${workspaceFolder}/target --enable-ccache --enable-experimental-plugins --enable-example-plugins --enable-test-tools --enable-debug --enable-werror ${env:ATS_VSCODE_CONFIGURE}",
             "dependsOrder": "sequence",
             "dependsOn": ["Autoreconf"],
             "problemMatcher": []
@@ -18,7 +18,7 @@
         {
             "label": "Build",
             "type": "shell",
-            "command": "make -j 16",
+            "command": "make -j 16 -C ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}",
             "problemMatcher": [
                 "$gcc"
             ],
@@ -30,15 +30,15 @@
         {
             "label": "Install",
             "type": "shell",
-            "command": "make -j 16 install",
+            "command": "make -j 16 install -C ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}",
             "problemMatcher": [
                 "$gcc"
-            ]
+            ],
         },
         {
             "label": "Test",
             "type": "shell",
-            "command": "make -j 8 test",
+            "command": "make -j 8 test -C ${workspaceFolder}/${env:ATS_VSCODE_BUILDDIR}",
             "problemMatcher": [
                 "$gcc"
             ],
@@ -54,7 +54,7 @@
             "problemMatcher": [
                 "$gcc"
             ]
-        }
+        },
         {
             "label": "Dump Enviroment Variables",
             "command": "env",

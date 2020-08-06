@@ -21,7 +21,8 @@
   limitations under the License.
  */
 
-#include "algorithm"
+#include <algorithm>
+
 #include "tscore/ink_assert.h"
 #include "tscore/ink_defs.h"
 #include "QUICAltConnectionManager.h"

@@ -2367,7 +2367,9 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
       con.setRemote(&(p.from().sa));
       this->con.move(con);
       this->set_remote_addr();
-      this->_udp_con = p.udp_con();
+      this->_udp_con        = p.udp_con();
+      this->_packet_handler = static_cast<QUICPacketHandlerIn *>(
+        static_cast<NetAccept *>(static_cast<UnixUDPConnection *>(this->_udp_con)->continuation));
 
       QUICPath new_path = {p.to(), p.from()};
       this->_validate_new_path(new_path);
@@ -2384,11 +2386,13 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
         con.setRemote(&(p.from().sa));
         this->con.move(con);
         this->set_remote_addr();
-        this->_udp_con = p.udp_con();
+        this->_udp_con        = p.udp_con();
+        this->_packet_handler = static_cast<QUICPacketHandlerIn *>(
+          static_cast<NetAccept *>(static_cast<UnixUDPConnection *>(this->_udp_con)->continuation));
 
         this->_update_peer_cid(this->_alt_con_manager->migrate_to_alt_cid());
 
-        QUICPath new_path = {this->local_addr, con.addr};
+        QUICPath new_path = {p.to(), p.from()};
         this->_validate_new_path(new_path);
       }
     } else {

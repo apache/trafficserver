@@ -31,7 +31,8 @@ request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "tim
 request_random_header = {"headers": "GET / HTTP/1.1\r\nHost: random.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_foo_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "ok foo"}
 response_bar_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "ok bar"}
-response_random_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "ok random"}
+response_random_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                          "timestamp": "1469733493.993", "body": "ok random"}
 server_foo.addResponse("sessionlog_foo.json", request_foo_header, response_foo_header)
 server_bar.addResponse("sessionlog_bar.json", request_bar_header, response_bar_header)
 server_random.addResponse("sessionlog_random.json", request_random_header, response_random_header)
@@ -69,14 +70,14 @@ ts.Disk.records_config.update({
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
 ts.Disk.sni_yaml.AddLines([
-  "sni:",
-  "- fqdn: 'foo.com'",
-  "  tunnel_route: 'localhost:{0}'".format(server_foo.Variables.SSL_Port),
-  "- fqdn: 'bar.com'",
-  "  forward_route: 'localhost:{0}'".format(server_bar.Variables.Port),
-  "- fqdn: ''",  #default case
-  "  forward_route: 'localhost:{0}'".format(server_random.Variables.Port),
-  ])
+    "sni:",
+    "- fqdn: 'foo.com'",
+    "  tunnel_route: 'localhost:{0}'".format(server_foo.Variables.SSL_Port),
+    "- fqdn: 'bar.com'",
+    "  forward_route: 'localhost:{0}'".format(server_bar.Variables.Port),
+    "- fqdn: ''",  # default case
+    "  forward_route: 'localhost:{0}'".format(server_random.Variables.Port),
+])
 
 tr = Test.AddTestRun("Tunnel-test")
 tr.Processes.Default.Command = "curl -v  --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port)
@@ -87,18 +88,21 @@ tr.Processes.Default.StartBefore(server_random)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ok foo", "Body is expected")
 
 tr2 = Test.AddTestRun("Forward-test")
-tr2.Processes.Default.Command = "curl -v --http1.1  -H 'host:bar.com' --resolve 'bar.com:{0}:127.0.0.1' -k https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr2.Processes.Default.Command = "curl -v --http1.1  -H 'host:bar.com' --resolve 'bar.com:{0}:127.0.0.1' -k https://bar.com:{0}".format(
+    ts.Variables.ssl_port)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server_bar
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
+tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Should TLS terminate on Traffic Server")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("ok bar", "Body is expected")
@@ -109,7 +113,8 @@ tr3.ReturnCode = 0
 tr3.StillRunningAfter = server_random
 tr3.StillRunningAfter = ts
 tr3.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-tr3.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Should not try to remap on Traffic Server")
+tr3.Processes.Default.Streams.All += Testers.ExcludesExpression(
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Should TLS terminate on Traffic Server")
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("ok random", "Body is expected")

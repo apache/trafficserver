@@ -31,7 +31,7 @@ from docutils.parsers import rst
 from docutils.parsers.rst import directives
 from sphinx.domains import Domain, ObjType, std
 from sphinx.roles import XRefRole
-from sphinx.locale import  _
+from sphinx.locale import _
 import sphinx
 
 import os
@@ -47,6 +47,7 @@ try:
 except NameError:
     def is_string_type(s):
         return isinstance(s, str)
+
 
 class TSConfVar(std.Target):
     """
@@ -169,7 +170,19 @@ def metrictypes(typename):
 
 
 def metricunits(unitname):
-    return directives.choice(unitname.lower(), ('ratio', 'percent', 'kbits', 'mbits', 'bytes', 'kbytes', 'mbytes', 'nanoseconds', 'microseconds', 'milliseconds', 'seconds'))
+    return directives.choice(
+        unitname.lower(),
+        ('ratio',
+         'percent',
+         'kbits',
+         'mbits',
+         'bytes',
+         'kbytes',
+         'mbytes',
+         'nanoseconds',
+         'microseconds',
+         'milliseconds',
+         'seconds'))
 
 
 class TSStat(std.Target):
@@ -376,7 +389,7 @@ class TrafficServerDomain(Domain):
 
 # get the branch this documentation is building for in X.X.x form
 REPO_ROOT = os.path.join(os.path.dirname(os.path.dirname(
-        os.environ['DOCUTILSCONFIG'])))
+    os.environ['DOCUTILSCONFIG'])))
 CONFIGURE_AC = os.path.join(REPO_ROOT, 'configure.ac')
 with open(CONFIGURE_AC, 'r') as f:
     contents = f.read()

@@ -147,7 +147,7 @@ public:
 
   explicit IpAllow(const char *config_var);
 
-  void Print();
+  void Print() const;
 
   static ACL match(sockaddr const *ip, match_key_t key);
   static ACL match(IpEndpoint const *ip, match_key_t key);
@@ -187,7 +187,8 @@ private:
   static const Record ALLOW_ALL_RECORD; ///< Static record that allows all access.
   static bool accept_check_p;           ///< @c true if deny all can be enforced during accept.
 
-  void PrintMap(IpMap *map);
+  void PrintMap(const IpMap *map) const;
+
   int BuildTable();
   int ATSBuildTable(const std::string &);
   int YAMLBuildTable(const std::string &);

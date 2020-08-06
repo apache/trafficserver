@@ -84,7 +84,7 @@ url_mapping::~url_mapping()
 }
 
 void
-url_mapping::Print()
+url_mapping::Print() const
 {
   char from_url_buf[131072], to_url_buf[131072];
 

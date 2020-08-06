@@ -184,7 +184,7 @@ getCacheControl(CacheControlResult *result, HttpRequestData *rdata, const Overri
 //  Debugging Method
 //
 void
-CacheControlResult::Print()
+CacheControlResult::Print() const
 {
   printf("\t reval: %d, never-cache: %d, pin: %d, ignore-c: %d ignore-s: %d\n", revalidate_after, never_cache, pin_in_cache_for,
          ignore_client_no_cache, ignore_server_no_cache);
@@ -195,7 +195,7 @@ CacheControlResult::Print()
 //  Debugging Method
 //
 void
-CacheControlRecord::Print()
+CacheControlRecord::Print() const
 {
   switch (this->directive) {
   case CC_REVALIDATE_AFTER:

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-/***************************************/
 #include "tscore/ink_platform.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ink_assert.h"
@@ -334,11 +333,11 @@ Tokenizer::iterNext(tok_iter_state *state)
 }
 
 void
-Tokenizer::Print()
+Tokenizer::Print() const
 {
-  tok_node *cur_node = &start_node;
-  int node_index     = 0;
-  int count          = 0;
+  const tok_node *cur_node = &start_node;
+  int node_index           = 0;
+  int count                = 0;
 
   while (cur_node != nullptr) {
     if (cur_node->el[node_index] != nullptr) {

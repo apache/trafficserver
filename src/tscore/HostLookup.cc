@@ -587,13 +587,13 @@ HostBranch::~HostBranch()
 HostLookup::HostLookup(string_view name) : matcher_name(name) {}
 
 void
-HostLookup::Print()
+HostLookup::Print() const
 {
   Print([](void *) -> void {});
 }
 
 void
-HostLookup::Print(PrintFunc const &f)
+HostLookup::Print(PrintFunc const &f) const
 {
   PrintHostBranch(&root, f);
 }
@@ -605,7 +605,7 @@ HostLookup::Print(PrintFunc const &f)
 //     and print out each element
 //
 void
-HostLookup::PrintHostBranch(HostBranch *hb, PrintFunc const &f)
+HostLookup::PrintHostBranch(const HostBranch *hb, PrintFunc const &f) const
 {
   for (auto curIndex : hb->leaf_indices) {
     auto &leaf{leaf_array[curIndex]};

@@ -38,7 +38,7 @@
 #include <string>
 #include "tscore/ink_memory.h"
 #include "tscore/ink_inet.h"
-#include "openssl/evp.h"
+#include <openssl/evp.h>
 
 using QUICPacketNumber = uint64_t;
 using QUICVersion      = uint32_t;

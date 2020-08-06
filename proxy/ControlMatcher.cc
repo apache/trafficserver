@@ -105,7 +105,7 @@ template <class Data, class MatchResult> HostMatcher<Data, MatchResult>::~HostMa
 //
 template <class Data, class MatchResult>
 void
-HostMatcher<Data, MatchResult>::Print()
+HostMatcher<Data, MatchResult>::Print() const
 {
   printf("\tHost/Domain Matcher with %d elements\n", num_el);
   host_lookup->Print(PrintFunc);
@@ -150,7 +150,7 @@ HostMatcher<Data, MatchResult>::AllocateSpace(int num_entries)
 //
 template <class Data, class MatchResult>
 void
-HostMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
+HostMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
   void *opaque_ptr;
   Data *data_ptr;
@@ -256,7 +256,7 @@ template <class Data, class MatchResult> UrlMatcher<Data, MatchResult>::~UrlMatc
 //
 template <class Data, class MatchResult>
 void
-UrlMatcher<Data, MatchResult>::Print()
+UrlMatcher<Data, MatchResult>::Print() const
 {
   printf("\tUrl Matcher with %d elements\n", num_el);
   for (int i = 0; i < num_el; i++) {
@@ -335,7 +335,7 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 //
 template <class Data, class MatchResult>
 void
-UrlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
+UrlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
   char *url_str;
 
@@ -383,13 +383,13 @@ template <class Data, class MatchResult> RegexMatcher<Data, MatchResult>::~Regex
 }
 
 //
-// void RegexMatcher<Data,MatchResult>::Print()
+// void RegexMatcher<Data,MatchResult>::Print() const
 //
 //   Debugging function
 //
 template <class Data, class MatchResult>
 void
-RegexMatcher<Data, MatchResult>::Print()
+RegexMatcher<Data, MatchResult>::Print() const
 {
   printf("\tRegex Matcher with %d elements\n", num_el);
   for (int i = 0; i < num_el; i++) {
@@ -482,7 +482,7 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 //
 template <class Data, class MatchResult>
 void
-RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
+RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
   char *url_str;
   int r;
@@ -535,7 +535,7 @@ HostRegexMatcher<Data, MatchResult>::HostRegexMatcher(const char *name, const ch
 //
 template <class Data, class MatchResult>
 void
-HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
+HostRegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
   const char *url_str;
   int r;
@@ -649,7 +649,7 @@ IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 //
 template <class Data, class MatchResult>
 void
-IpMatcher<Data, MatchResult>::Match(sockaddr const *addr, RequestData *rdata, MatchResult *result)
+IpMatcher<Data, MatchResult>::Match(sockaddr const *addr, RequestData *rdata, MatchResult *result) const
 {
   void *raw;
   if (ip_map.contains(addr, &raw)) {
@@ -661,7 +661,7 @@ IpMatcher<Data, MatchResult>::Match(sockaddr const *addr, RequestData *rdata, Ma
 
 template <class Data, class MatchResult>
 void
-IpMatcher<Data, MatchResult>::Print()
+IpMatcher<Data, MatchResult>::Print() const
 {
   printf("\tIp Matcher with %d elements, %zu ranges.\n", num_el, ip_map.count());
   for (IpMap::iterator spot(ip_map.begin()), limit(ip_map.end()); spot != limit; ++spot) {
@@ -718,7 +718,7 @@ template <class Data, class MatchResult> ControlMatcher<Data, MatchResult>::~Con
 //
 template <class Data, class MatchResult>
 void
-ControlMatcher<Data, MatchResult>::Print()
+ControlMatcher<Data, MatchResult>::Print() const
 {
   printf("Control Matcher Table: %s\n", matcher_name);
   if (hostMatch != nullptr) {
@@ -739,13 +739,13 @@ ControlMatcher<Data, MatchResult>::Print()
 }
 
 // void ControlMatcher<Data, MatchResult>::Match(RequestData* rdata
-//                                          MatchResult* result)
+//                                          MatchResult* result) const
 //
 //   Queries each table for the MatchResult*
 //
 template <class Data, class MatchResult>
 void
-ControlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result)
+ControlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) const
 {
   if (hostMatch != nullptr) {
     hostMatch->Match(rdata, result);

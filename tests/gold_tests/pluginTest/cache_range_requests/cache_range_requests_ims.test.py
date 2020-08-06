@@ -22,7 +22,7 @@ Test.Summary = '''
 cache_range_requests X-CRR-IMS plugin test
 '''
 
-## Test description:
+# Test description:
 # Preload the cache with the entire asset to be range requested.
 # Reload remap rule with cache_range_requests plugin
 # Request content through the cache_range_requests plugin
@@ -42,21 +42,21 @@ server = Test.MakeOriginServer("server")
 
 # default root
 req_chk = {"headers":
-  "GET / HTTP/1.1\r\n" +
-  "Host: www.example.com\r\n" +
-  "uuid: none\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": ""
-}
+           "GET / HTTP/1.1\r\n" +
+           "Host: www.example.com\r\n" +
+           "uuid: none\r\n" +
+           "\r\n",
+           "timestamp": "1469733493.993",
+           "body": ""
+           }
 
 res_chk = {"headers":
-  "HTTP/1.1 200 OK\r\n" +
-  "Connection: close\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": ""
-}
+           "HTTP/1.1 200 OK\r\n" +
+           "Connection: close\r\n" +
+           "\r\n",
+           "timestamp": "1469733493.993",
+           "body": ""
+           }
 
 server.addResponse("sessionlog.json", req_chk, res_chk)
 
@@ -64,32 +64,32 @@ body = "lets go surfin now"
 bodylen = len(body)
 
 req_full = {"headers":
-  "GET /path HTTP/1.1\r\n" +
-  "Host: www.example.com\r\n" +
-  "Accept: */*\r\n" +
-  "Range: bytes=0-\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": ""
-}
+            "GET /path HTTP/1.1\r\n" +
+            "Host: www.example.com\r\n" +
+            "Accept: */*\r\n" +
+            "Range: bytes=0-\r\n" +
+            "\r\n",
+            "timestamp": "1469733493.993",
+            "body": ""
+            }
 
 res_full = {"headers":
-  "HTTP/1.1 206 Partial Content\r\n" +
-  "Accept-Ranges: bytes\r\n" +
-  "Cache-Control: max-age=500\r\n" +
-  "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) +
-  "Connection: close\r\n" +
-  'Etag: "772102f4-56f4bc1e6d417"\r\n' +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": body
-}
+            "HTTP/1.1 206 Partial Content\r\n" +
+            "Accept-Ranges: bytes\r\n" +
+            "Cache-Control: max-age=500\r\n" +
+            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) +
+            "Connection: close\r\n" +
+            'Etag: "772102f4-56f4bc1e6d417"\r\n' +
+            "\r\n",
+            "timestamp": "1469733493.993",
+            "body": body
+            }
 
 server.addResponse("sessionlog.json", req_full, res_full)
 
 # cache range requests plugin remap
 ts.Disk.remap_config.AddLine(
-  'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
+    'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
     ' @plugin=cache_range_requests.so @pparam=--consider-ims',
 )
 
@@ -98,8 +98,8 @@ ts.Disk.plugin_config.AddLine('xdebug.so')
 
 # minimal configuration
 ts.Disk.records_config.update({
-  'proxy.config.diags.debug.enabled': 1,
-  'proxy.config.diags.debug.tags': 'cache_range_requests',
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'cache_range_requests',
 })
 
 curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
@@ -116,7 +116,7 @@ tr.StillRunningAfter = ts
 
 
 # set up the IMS date field (go in the future) RFC 2616
-futuretime = time.time() + 100 # seconds
+futuretime = time.time() + 100  # seconds
 futurestr = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(futuretime))
 
 # test inner range

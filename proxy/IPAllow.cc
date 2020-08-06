@@ -196,7 +196,7 @@ IpAllow::match(sockaddr const *ip, match_key_t key)
 IpAllow::IpAllow(const char *config_var) : config_file(ats_scoped_str(RecConfigReadConfigPath(config_var)).get()) {}
 
 void
-IpAllow::PrintMap(IpMap *map)
+IpAllow::PrintMap(const IpMap *map) const
 {
   std::ostringstream s;
   s << map->count() << " ACL entries.";
@@ -243,7 +243,7 @@ IpAllow::PrintMap(IpMap *map)
 }
 
 void
-IpAllow::Print()
+IpAllow::Print() const
 {
   Debug("ip-allow", "Printing src map");
   PrintMap(&_src_map);
