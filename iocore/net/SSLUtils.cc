@@ -105,7 +105,6 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
 }
 #endif
 
-
 // Callback function for verifying client certificate
 static int
 ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
@@ -208,7 +207,6 @@ private:
   int _fd;
   struct termios _initialAttr;
 };
-
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #define ssl_malloc(size, file, line) ssl_malloc(size)
