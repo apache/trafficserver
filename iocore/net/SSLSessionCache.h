@@ -21,16 +21,14 @@
 
 #pragma once
 
-#include "tscore/List.h"
-#include "tscore/ink_mutex.h"
-#include "P_EventSystem.h"
-#include "records/I_RecProcess.h"
-#include "tscore/ink_platform.h"
-#include "P_SSLUtils.h"
-#include "ts/apidefs.h"
 #include <openssl/ssl.h>
 
-#define SSL_MAX_SESSION_SIZE 256
+#include "tscore/List.h"
+#include "tscore/ink_mutex.h"
+#include "tscore/ink_platform.h"
+#include "P_EventSystem.h"
+#include "P_SSLUtils.h"
+#include "ts/apidefs.h"
 
 struct ssl_session_cache_exdata {
   ssl_curve_id curve = 0;

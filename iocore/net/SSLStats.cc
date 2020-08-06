@@ -25,8 +25,8 @@
 
 #include <openssl/err.h>
 
+#include "SSLCertConfigLoader.h"
 #include "P_SSLConfig.h"
-#include "P_SSLUtils.h"
 
 RecRawStatBlock *ssl_rsb = nullptr;
 std::unordered_map<std::string, intptr_t> cipher_map;
