@@ -846,6 +846,16 @@ HttpTransact::Forbidden(State *s)
 }
 
 void
+HttpTransact::SelfLoop(State *s)
+{
+  TxnDebug("http_trans", "[Loop]"
+                         "Request will selfloop.");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Direct self loop detected", "request#cycle_detected");
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+}
+
+void
 HttpTransact::TooEarly(State *s)
 {
   TxnDebug("http_trans", "[TooEarly]"
@@ -1854,17 +1864,6 @@ HttpTransact::OSDNSLookup(State *s)
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Bad Destination Address", "request#syntax_error");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-  }
-
-  // detect whether we are about to self loop. the client may have
-  // specified the proxy as the origin server (badness).
-  // Check if this procedure is already done - YTS Team, yamsat
-  if (!s->request_will_not_selfloop) {
-    if (will_this_request_self_loop(s)) {
-      TxnDebug("http_trans", "[OSDNSLookup] request will selfloop - bailing out");
-      SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-    }
   }
 
   if (!s->dns_info.lookup_success) {
@@ -6640,7 +6639,6 @@ HttpTransact::will_this_request_self_loop(State *s)
       via_field = via_field->m_next_dup;
     }
   }
-  s->request_will_not_selfloop = true;
   return false;
 }
 
