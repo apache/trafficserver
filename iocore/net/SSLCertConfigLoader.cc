@@ -21,6 +21,7 @@
 
 #include "SSLCertConfigLoader.h"
 
+#include "tscpp/util/TextView.h"
 #include "tscore/ink_platform.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/I_Layout.h"
@@ -56,9 +57,11 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <yaml-cpp/yaml.h>
+
 using namespace std::literals;
 
-// ssl_multicert.config field names:
+// ssl_multicert.config field names
 static constexpr std::string_view SSL_IP_TAG("dest_ip"sv);
 static constexpr std::string_view SSL_CERT_TAG("ssl_cert_name"sv);
 static constexpr std::string_view SSL_PRIVATE_KEY_TAG("ssl_key_name"sv);
@@ -70,8 +73,20 @@ static constexpr std::string_view SSL_SESSION_TICKET_ENABLED("ssl_ticket_enabled
 static constexpr std::string_view SSL_SESSION_TICKET_NUMBER("ssl_ticket_number"sv);
 static constexpr std::string_view SSL_KEY_DIALOG("ssl_key_dialog"sv);
 static constexpr std::string_view SSL_SERVERNAME("dest_fqdn"sv);
+
+// certificates.yaml field names
+static constexpr auto YAML_TAG_ROOT("certificates");
+static constexpr std::string_view CERTIFICATE_NAME_TAG("cert_filename"sv);
+static constexpr std::string_view CERTIFICATE_PRIVATE_KEY_TAG("key_filename"sv);
+static constexpr std::string_view CERTIFICATE_OCSP_RESPONSE_TAG("ocsp_filename"sv);
+static constexpr std::string_view CERTIFICATE_CA_TAG("ca_filename"sv);
+static constexpr std::string_view CERTIFICATE_TICKET_ENABLED("tickets_enabled"sv);
+static constexpr std::string_view CERTIFICATE_TICKET_NUMBER("tickets_count"sv);
+static constexpr std::string_view CERTIFICATE_KEY_DIALOG("key_dialog"sv);
+
 static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 
+// Remove this when drop OpenSSL 1.0.2 support
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
 #define evp_md_func EVP_sha1()
@@ -87,7 +102,6 @@ SSL_CTX_add_extra_chain_cert_bio(SSL_CTX *ctx, BIO *bio)
 
   for (;;) {
     cert = PEM_read_bio_X509_AUX(bio, nullptr, nullptr, nullptr);
-
     if (!cert) {
       // No more the certificates in this file.
       break;
@@ -736,7 +750,6 @@ ssl_private_key_validate_exec(const char *cmdLine)
   return bReturn;
 }
 
-
 SSL_CTX *
 SSLMultiCertConfigLoader::default_server_ssl_ctx()
 {
@@ -1343,21 +1356,127 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
   return true;
 }
 
+static bool
+ssl_extract_certificate(const YAML::Node &node, SSLMultiCertConfigParams *sslMultCertSettings)
+{
+  for (auto const &v : node) {
+    std::string label = v.first.as<std::string>();
+
+    if (label == SSL_IP_TAG) {
+      std::string value = v.second.as<std::string>();
+
+      sslMultCertSettings->addr = ats_strdup(value.c_str());
+    } else if (label == CERTIFICATE_NAME_TAG) {
+      std::string value = v.second.as<std::string>();
+
+      sslMultCertSettings->cert = ats_strdup(value.c_str());
+    } else if (label == CERTIFICATE_PRIVATE_KEY_TAG) {
+      std::string value = v.second.as<std::string>();
+
+      sslMultCertSettings->key = ats_strdup(value.c_str());
+    } else if (label == CERTIFICATE_CA_TAG) {
+      std::string value = v.second.as<std::string>();
+
+      sslMultCertSettings->ca = ats_strdup(value.c_str());
+    } else if (label == CERTIFICATE_OCSP_RESPONSE_TAG) {
+      std::string value = v.second.as<std::string>();
+
+      sslMultCertSettings->ocsp_response = ats_strdup(value.c_str());
+    } else if (label == CERTIFICATE_TICKET_ENABLED) {
+      sslMultCertSettings->session_ticket_enabled = v.second.as<bool>();
+    } else if (label == CERTIFICATE_TICKET_NUMBER) {
+      sslMultCertSettings->session_ticket_number = v.second.as<int>();
+    } else if (label == CERTIFICATE_KEY_DIALOG) {
+      std::string value = v.second.as<std::string>();
+
+      sslMultCertSettings->dialog = ats_strdup(value.c_str());
+    } else if (label == SSL_SERVERNAME) {
+      std::string value = v.second.as<std::string>();
+
+      sslMultCertSettings->servername = ats_strdup(value.c_str());
+    } else if (label == SSL_ACTION_TAG) {
+      std::string value = v.second.as<std::string>();
+
+      if (value == SSL_ACTION_TUNNEL_TAG) {
+        sslMultCertSettings->opt = SSLCertContextOption::OPT_TUNNEL;
+      } else {
+        Error("Unrecognized action for %s", SSL_ACTION_TAG.data());
+        return false;
+      }
+    }
+  }
+
+  // TS-4679:  It is ok to be missing the cert.  At least if the action is set to tunnel
+  if (sslMultCertSettings->cert) {
+    SimpleTokenizer cert_tok(sslMultCertSettings->cert, SSL_CERT_SEPARATE_DELIM);
+    const char *first_cert = cert_tok.getNext();
+    if (first_cert) {
+      sslMultCertSettings->first_cert = ats_strdup(first_cert);
+    }
+  }
+
+  return true;
+}
+
+bool
+SSLMultiCertConfigLoader::_loadYAML(SSLCertLookup *lookup, const std::string &contents)
+{
+  Note("%s as YAML ...", ts::filename::SSL_MULTICERT);
+  YAML::Node config{YAML::Load(contents)};
+
+  if (config.IsNull()) {
+    Warning("malformed %s file; config is empty?", ts::filename::SSL_MULTICERT);
+    return false;
+  }
+
+  if (!config.IsMap()) {
+    Error("malformed %s file; expected a map", ts::filename::SPLITDNS);
+    return false;
+  }
+
+  if (!config[YAML_TAG_ROOT]) {
+    Error("malformed %s file; expected a toplevel '%s' node", ts::filename::SPLITDNS, std::string(YAML_TAG_ROOT).c_str());
+    return false;
+  }
+
+  config = config[YAML_TAG_ROOT];
+
+  if (!config.IsSequence()) {
+    Error("malformed %s file; expected a toplevel sequence/array", ts::filename::SSL_MULTICERT);
+    return false;
+  }
+
+  for (auto const &node : config) {
+    shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
+
+    if (!node.IsMap()) {
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s malformed entry(not a map) at line %d", __func__,
+                       _params->configFilePath, node.Mark().line);
+      continue;
+    }
+
+    if (ssl_extract_certificate(node, sslMultiCertSettings.get())) {
+      // There must be a certificate specified unless the tunnel action is set
+      if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
+        this->_store_ssl_ctx(lookup, sslMultiCertSettings);
+      } else {
+        Warning("Invalid certificate specification or no tunnel action set at line %d", node.Mark().line);
+      }
+    }
+  }
+  return true;
+}
+
 bool
 SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 {
   const SSLConfigParams *params = this->_params;
 
-  char *tok_state   = nullptr;
-  char *line        = nullptr;
-  unsigned line_num = 0;
-  matcher_line line_info;
-
-  const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
-
   Note("%s loading ...", ts::filename::SSL_MULTICERT);
 
   std::error_code ec;
+
+  ts::file::path config_file{ts::file::path{params->configFilePath}};
   std::string content{ts::file::load(ts::file::path{params->configFilePath}, ec)};
   if (ec) {
     switch (ec.value()) {
@@ -1376,37 +1495,57 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-  line = tokLine(content.data(), &tok_state);
-  while (line != nullptr) {
-    line_num++;
-
-    // Skip all blank spaces at beginning of line.
-    while (*line && isspace(*line)) {
-      line++;
+  // If it's a .yaml, treat as YAML
+  if (ts::TextView{config_file.view()}.take_suffix_at('.') == "yaml") {
+    try {
+      if (!this->_loadYAML(lookup, content)) {
+        return false;
+      }
+    } catch (std::exception &ex) {
+      Error("Exception when parsing %s: %s", config_file.c_str(), ex.what());
+      return false;
     }
 
-    if (*line != '\0' && *line != '#') {
-      shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
-      const char *errPtr;
+  } else {
+    // legacy ssl_multicert.config parsing
+    const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
 
-      errPtr = parseConfigLine(line, &line_info, &sslCertTags);
-      Debug("ssl", "currently parsing %s", line);
-      if (errPtr != nullptr) {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s", __func__, params->configFilePath,
-                         line_num, errPtr);
-      } else {
-        if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
-          // There must be a certificate specified unless the tunnel action is set
-          if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
-            this->_store_ssl_ctx(lookup, sslMultiCertSettings);
-          } else {
-            Warning("No ssl_cert_name specified and no tunnel action set");
+    unsigned line_num = 0;
+    matcher_line line_info;
+
+    char *tok_state = nullptr;
+    char *line      = tokLine(content.data(), &tok_state);
+    while (line != nullptr) {
+      line_num++;
+
+      // Skip all blank spaces at beginning of line.
+      while (*line && isspace(*line)) {
+        line++;
+      }
+
+      if (*line != '\0' && *line != '#') {
+        shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
+        const char *errPtr;
+
+        errPtr = parseConfigLine(line, &line_info, &sslCertTags);
+        Debug("ssl", "currently parsing %s", line);
+        if (errPtr != nullptr) {
+          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s", __func__, params->configFilePath,
+                           line_num, errPtr);
+        } else {
+          if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
+            // There must be a certificate specified unless the tunnel action is set
+            if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
+              this->_store_ssl_ctx(lookup, sslMultiCertSettings);
+            } else {
+              Warning("No ssl_cert_name specified and no tunnel action set");
+            }
           }
         }
       }
-    }
 
-    line = tokLine(nullptr, &tok_state);
+      line = tokLine(nullptr, &tok_state);
+    }
   }
 
   // We *must* have a default context even if it can't possibly work. The default context is used to
@@ -1423,7 +1562,6 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 
   return true;
 }
-
 
 /**
  * Process the config to pull out the list of file names, and process the certs to get the list
@@ -1758,7 +1896,7 @@ fail:
 const char *
 SSLMultiCertConfigLoader::_debug_tag() const
 {
-  return "ssl";
+  return "ssl_certconfig";
 }
 
 /**

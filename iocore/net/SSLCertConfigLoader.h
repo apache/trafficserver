@@ -46,6 +46,7 @@ public:
   struct CertLoadData {
     std::vector<std::string> cert_names_list, key_list, ca_list, ocsp_list;
   };
+
   SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
   virtual ~SSLMultiCertConfigLoader(){};
 
@@ -75,6 +76,7 @@ protected:
                              std::set<std::string> &names);
 
 private:
+  bool _loadYAML(SSLCertLookup *lookup, const std::string &contents);
   virtual const char *_debug_tag() const;
   bool _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &ssl_multi_cert_params);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
