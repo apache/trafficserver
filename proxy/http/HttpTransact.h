@@ -687,7 +687,6 @@ public:
     bool force_dns                        = false;
     MgmtByte cache_open_write_fail_action = 0;
     bool is_revalidation_necessary        = false; // Added to check if revalidation is necessary - YTS Team, yamsat
-    bool request_will_not_selfloop        = false; // To determine if process done - YTS Team, yamsat
     ConnectionAttributes client_info;
     ConnectionAttributes parent_info;
     ConnectionAttributes server_info;
@@ -944,6 +943,7 @@ public:
   static void BadRequest(State *s);
   static void Forbidden(State *s);
   static void TooEarly(State *s);
+  static void SelfLoop(State *s);
   static void PostActiveTimeoutResponse(State *s);
   static void PostInactiveTimeoutResponse(State *s);
   static void DecideCacheLookup(State *s);
