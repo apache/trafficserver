@@ -35,7 +35,7 @@
 #include "Config.h"
 #include "redis_auth.h"
 #include "ssl_utils.h"
-#include <inttypes.h>
+#include <cinttypes>
 #include <condition_variable>
 
 std::mutex q_mutex;
@@ -93,8 +93,8 @@ RedisPublisher::RedisPublisher(const std::string &conf)
           m_redisPublishTries, m_redisConnectTries, m_redisRetryDelay, m_maxQueuedMessages);
 
   TSDebug(PLUGIN, "RedisPublisher::RedisPublisher: Redis Publish endpoints are as follows:");
-  for (std::vector<RedisEndpoint>::iterator it = m_redisEndpoints.begin(); it != m_redisEndpoints.end(); ++it) {
-    simple_pool *pool = simple_pool::create(it->m_hostname, it->m_port, m_poolRedisConnectTimeout);
+  for (auto &m_redisEndpoint : m_redisEndpoints) {
+    simple_pool *pool = simple_pool::create(m_redisEndpoint.m_hostname, m_redisEndpoint.m_port, m_poolRedisConnectTimeout);
     pools.push_back(pool);
   }
 
@@ -125,7 +125,7 @@ RedisPublisher::setup_connection(const RedisEndpoint &re)
 {
   uint64_t my_id = 0;
   if (TSIsDebugTagSet(PLUGIN)) {
-    my_id = (uint64_t)pthread_self();
+    my_id = static_cast<uint64_t>(pthread_self());
     TSDebug(PLUGIN, "RedisPublisher::setup_connection: Called by threadId: %" PRIx64, my_id);
   }
 
@@ -175,7 +175,7 @@ RedisPublisher::send_publish(RedisContextPtr &ctx, const RedisEndpoint &re, cons
 {
   uint64_t my_id = 0;
   if (TSIsDebugTagSet(PLUGIN)) {
-    my_id = (uint64_t)pthread_self();
+    my_id = static_cast<uint64_t>(pthread_self());
     TSDebug(PLUGIN, "RedisPublisher::send_publish: Called by threadId: %" PRIx64, my_id);
   }
 
@@ -266,7 +266,7 @@ RedisPublisher::runWorker()
 
       if (current_message.cleanup) {
         if (TSIsDebugTagSet(PLUGIN)) {
-          auto my_id = (uint64_t)pthread_self();
+          auto my_id = static_cast<uint64_t>(pthread_self());
           TSDebug(PLUGIN, "RedisPublisher::runWorker: threadId: %" PRIx64 " received the cleanup message. Exiting!", my_id);
         }
         break;
@@ -360,7 +360,7 @@ std::string
 RedisPublisher::get_session(const std::string &channel)
 {
   if (TSIsDebugTagSet(PLUGIN)) {
-    auto my_id = (uint64_t)pthread_self();
+    auto my_id = static_cast<uint64_t>(pthread_self());
     TSDebug(PLUGIN, "RedisPublisher::get_session: Called by threadId: %" PRIx64, my_id);
   }
 
@@ -396,7 +396,7 @@ redisReply *
 RedisPublisher::set_session(const Message &msg)
 {
   if (TSIsDebugTagSet(PLUGIN)) {
-    auto my_id = (uint64_t)pthread_self();
+    auto my_id = static_cast<uint64_t>(pthread_self());
     TSDebug(PLUGIN, "RedisPublisher::set_session: Called by threadId: %" PRIx64, my_id);
   }
 

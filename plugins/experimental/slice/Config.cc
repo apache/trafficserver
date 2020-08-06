@@ -150,7 +150,7 @@ Config::fromArgs(int const argc, char const *const argv[])
       const char *errptr;
       int erroffset;
       m_regexstr = optarg;
-      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, NULL);
+      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
       if (nullptr == m_regex) {
         ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
       } else {
@@ -168,7 +168,7 @@ Config::fromArgs(int const argc, char const *const argv[])
       const char *errptr;
       int erroffset;
       m_regexstr = optarg;
-      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, NULL);
+      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
       if (nullptr == m_regex) {
         ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
       } else {
@@ -264,12 +264,12 @@ Config::matchesRegex(char const *const url, int const urllen) const
 
   switch (m_regex_type) {
   case Exclude: {
-    if (0 <= pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, NULL, 0)) {
+    if (0 <= pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, nullptr, 0)) {
       matches = false;
     }
   } break;
   case Include: {
-    if (pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, NULL, 0) < 0) {
+    if (pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, nullptr, 0) < 0) {
       matches = false;
     }
   } break;

@@ -168,8 +168,9 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
   int i;
 
 #ifdef DEBUG
-  if (statp->options & INK_RES_DEBUG)
+  if (statp->options & INK_RES_DEBUG) {
     printf(";; res_setoptions(\"%s\", \"%s\")...\n", options, source);
+  }
 #endif
   while (*cp) {
     /* skip leading and inner runs of spaces */
@@ -185,8 +186,9 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
         statp->ndots = INK_RES_MAXNDOTS;
       }
 #ifdef DEBUG
-      if (statp->options & INK_RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG) {
         printf(";;\tndots=%d\n", statp->ndots);
+      }
 #endif
     } else if (!strncmp(cp, "timeout:", sizeof("timeout:") - 1)) {
       i = atoi(cp + sizeof("timeout:") - 1);
@@ -196,8 +198,9 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
         statp->retrans = INK_RES_MAXRETRANS;
       }
 #ifdef DEBUG
-      if (statp->options & INK_RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG) {
         printf(";;\ttimeout=%d\n", statp->retrans);
+      }
 #endif
 #ifdef SOLARIS2
     } else if (!strncmp(cp, "retrans:", sizeof("retrans:") - 1)) {
@@ -223,8 +226,9 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
         statp->retry = INK_RES_MAXRETRY;
       }
 #ifdef DEBUG
-      if (statp->options & INK_RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG) {
         printf(";;\tattempts=%d\n", statp->retry);
+      }
 #endif
     } else if (!strncmp(cp, "debug", sizeof("debug") - 1)) {
 #ifdef DEBUG
@@ -568,8 +572,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 #ifdef DEBUG
     if (statp->options & INK_RES_DEBUG) {
       printf(";; res_init()... default dnsrch list:\n");
-      for (pp = statp->dnsrch; *pp; pp++)
+      for (pp = statp->dnsrch; *pp; pp++) {
         printf(";;\t%s\n", *pp);
+      }
       printf(";;\t..END..\n");
     }
 #endif

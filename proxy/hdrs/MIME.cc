@@ -630,8 +630,9 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
         if (field->m_next_dup) {
           bool found = false;
           for (blk = &(mh->m_first_fblock); blk != nullptr; blk = blk->m_next) {
-            const char *addr = (const char *)(field->m_next_dup);
-            if ((addr >= (const char *)(blk)) && (addr < (const char *)(blk) + sizeof(MIMEFieldBlockImpl))) {
+            const char *addr = reinterpret_cast<const char *>(field->m_next_dup);
+            if ((addr >= reinterpret_cast<const char *>(blk)) &&
+                (addr < reinterpret_cast<const char *>(blk) + sizeof(MIMEFieldBlockImpl))) {
               found = true;
               break;
             }
@@ -1664,8 +1665,8 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
       if (prev_block != nullptr) {
         if (fblock->m_freetop == MIME_FIELD_BLOCK_SLOTS && fblock->contains(field)) {
           // Check if fields in all slots are deleted
-          for (int i = 0; i < MIME_FIELD_BLOCK_SLOTS; ++i) {
-            if (fblock->m_field_slots[i].m_readiness != MIME_FIELD_SLOT_READINESS_DELETED) {
+          for (auto &m_field_slot : fblock->m_field_slots) {
+            if (m_field_slot.m_readiness != MIME_FIELD_SLOT_READINESS_DELETED) {
               can_destroy_block = false;
               break;
             }

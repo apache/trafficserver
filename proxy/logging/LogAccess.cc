@@ -354,7 +354,7 @@ LogAccess::marshal_str(char *dest, const char *source, int padded_len)
   // bytes to avoid UMR errors when the buffer is written.
   //
   size_t real_len = (::strlen(source) + 1);
-  while ((int)real_len < padded_len) {
+  while (static_cast<int>(real_len) < padded_len) {
     dest[real_len] = '$';
     real_len++;
   }

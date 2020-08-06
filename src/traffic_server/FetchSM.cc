@@ -389,7 +389,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
 
   if (header_done == 0 && read_done > 0) {
     int bytes_used = 0;
-    header_done    = 1;
+    header_done    = true;
     if (client_response_hdr.parse_resp(&http_parser, reader, &bytes_used, 0) == PARSE_RESULT_DONE) {
       if ((bytes_used > 0) && (bytes_used <= read_avail)) {
         memcpy(info, buf, bytes_used);
