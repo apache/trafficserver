@@ -22,22 +22,12 @@
 #pragma once
 
 #define OPENSSL_THREAD_DEFINES
-
-// BoringSSL does not have this include file
-#ifndef OPENSSL_IS_BORINGSSL
-#include <openssl/opensslconf.h>
-#endif
 #include <openssl/ssl.h>
 
-#include "tscore/ink_config.h"
 #include "tscore/Diags.h"
-#include "records/I_RecCore.h"
-#include "P_SSLCertLookup.h"
-
-#include <set>
-#include <map>
 
 struct SSLConfigParams;
+struct SSLMultiCertConfigParams;
 class SSLNetVConnection;
 
 typedef int ssl_error_t;
@@ -50,49 +40,6 @@ typedef uint16_t ssl_curve_id;
 
 // Return the SSL Curve ID associated to the specified SSL connection
 ssl_curve_id SSLGetCurveNID(SSL *ssl);
-
-/**
-    @brief Load SSL certificates from ssl_multicert.config and setup SSLCertLookup for SSLCertificateConfig
- */
-class SSLMultiCertConfigLoader
-{
-public:
-  struct CertLoadData {
-    std::vector<std::string> cert_names_list, key_list, ca_list, ocsp_list;
-  };
-  SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
-  virtual ~SSLMultiCertConfigLoader(){};
-
-  bool load(SSLCertLookup *lookup);
-
-  virtual SSL_CTX *default_server_ssl_ctx();
-  virtual SSL_CTX *init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings,
-                                       std::set<std::string> &names);
-
-  static bool load_certs(SSL_CTX *ctx, CertLoadData const &data, const SSLConfigParams *params,
-                         const SSLMultiCertConfigParams *sslMultCertSettings);
-  bool load_certs_and_cross_reference_names(std::vector<X509 *> &cert_list, CertLoadData &data, const SSLConfigParams *params,
-                                            const SSLMultiCertConfigParams *sslMultCertSettings,
-                                            std::set<std::string> &common_names,
-                                            std::unordered_map<int, std::set<std::string>> &unique_names);
-  static bool set_session_id_context(SSL_CTX *ctx, const SSLConfigParams *params,
-                                     const SSLMultiCertConfigParams *sslMultCertSettings);
-
-  static bool index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const char *sni_name);
-  static int check_server_cert_now(X509 *cert, const char *certname);
-  static void clear_pw_references(SSL_CTX *ssl_ctx);
-
-protected:
-  const SSLConfigParams *_params;
-
-  bool _store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings, shared_SSL_CTX ctx,
-                             std::set<std::string> &names);
-
-private:
-  virtual const char *_debug_tag() const;
-  bool _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &ssl_multi_cert_params);
-  virtual void _set_handshake_callbacks(SSL_CTX *ctx);
-};
 
 // Create a new SSL server context fully configured (cert and keys are optional).
 // Used by TS API (TSSslServerContextCreate and TSSslServerCertUpdate)

@@ -19,14 +19,14 @@
   limitations under the License.
  */
 
+#include "P_SSLClientUtils.h"
+
 #include "tscore/ink_config.h"
-#include "records/I_RecHttp.h"
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
 #include "tscore/X509HostnameValidator.h"
 
 #include "P_Net.h"
-#include "P_SSLClientUtils.h"
 #include "YamlSNIConfig.h"
 #include "SSLDiags.h"
 
