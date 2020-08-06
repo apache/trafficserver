@@ -74,6 +74,8 @@ libproxy_a_SOURCES = \
 	ProxyTransaction.h \
 	ReverseProxy.cc \
 	ReverseProxy.h \
+	SocksServer.cc \
+	SocksServer.h \
 	StatPages.cc \
 	StatPages.h \
 	Transform.cc \

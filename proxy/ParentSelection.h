@@ -438,37 +438,3 @@ public:
 
 // Helper Functions
 ParentRecord *createDefaultParent(char *val);
-
-// Unit Test Functions
-void show_result(ParentResult *aParentResult);
-void br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip = nullptr); // short for build request
-int verify(ParentResult *r, ParentResultType e, const char *h, int p);
-
-/*
-  For supporting multiple Socks servers, we essentially use the
-  ParentSelection infrastructure. Only the initialization is different.
-  If needed, we will have to implement most of the functions in
-  ParentSection.cc for Socks as well. For right now we will just use
-  ParentSelection
-
-  All the members in ParentConfig are static. Right now
-  we will duplicate the code for these static functions.
-*/
-struct SocksServerConfig {
-  static void startup();
-  static void reconfigure();
-  static void print();
-
-  static ParentConfigParams *
-  acquire()
-  {
-    return (ParentConfigParams *)configProcessor.get(SocksServerConfig::m_id);
-  }
-  static void
-  release(ParentConfigParams *params)
-  {
-    configProcessor.release(SocksServerConfig::m_id, params);
-  }
-
-  static int m_id;
-};
