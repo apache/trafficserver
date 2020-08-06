@@ -24,13 +24,12 @@
 /*
   Socks.cc
 
-
-
-  This file contains the Socks client functionality. Previously this code was
-  duplicated in UnixNet.cc and NTNetProcessor.cc
+  This file contains the Socks client functionality. Previously, this code was
+  duplicated in UnixNet.cc
 */
 
 #include "P_Net.h"
+#include "SocksServer.h"
 #include "tscore/I_Layout.h"
 #include "tscore/ink_sock.h"
 #include "tscore/InkErrno.h"
