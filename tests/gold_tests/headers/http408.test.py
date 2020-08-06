@@ -39,7 +39,7 @@ ts.Disk.remap_config.AddLine(
     'map http://{0} http://127.0.0.1:{1}'.format(HTTP_408_HOST, server.Variables.Port)
 )
 
-TIMEOUT=2
+TIMEOUT = 2
 ts.Disk.records_config.update({
     'proxy.config.http.transaction_no_activity_timeout_in': TIMEOUT,
 })
@@ -51,7 +51,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = 'python3 tcp_client.py 127.0.0.1 {0} {1} --delay-after-send {2}'\
-        .format(ts.Variables.port, 'data/{0}.txt'.format(HTTP_408_HOST), TIMEOUT + 2)
+    .format(ts.Variables.port, 'data/{0}.txt'.format(HTTP_408_HOST), TIMEOUT + 2)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = "http408.gold"

@@ -379,21 +379,25 @@ Http3Transaction::state_stream_open(int event, void *edata)
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     this->_process_read_vio();
     this->_data_handler->finalize();
+    // always signal regardless of progress
     this->_signal_read_event();
     this->_stream_io->read_reenable();
     break;
   case VC_EVENT_WRITE_READY:
-  case VC_EVENT_WRITE_COMPLETE: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
-    int64_t len = this->_process_write_vio();
     // if no progress, don't need to signal
-    if (len > 0) {
+    if (this->_process_write_vio() > 0) {
       this->_signal_write_event();
     }
     this->_stream_io->write_reenable();
-
     break;
-  }
+  case VC_EVENT_WRITE_COMPLETE:
+    Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+    this->_process_write_vio();
+    // always signal regardless of progress
+    this->_signal_write_event();
+    this->_stream_io->write_reenable();
+    break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:

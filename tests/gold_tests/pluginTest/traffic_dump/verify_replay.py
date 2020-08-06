@@ -197,11 +197,7 @@ def verify_tls_features(expected_tls_features, found_tls_features):
             print("Could not find tls feature in the replay file: {}".format(expected_key))
             return False
         value_matches = False
-        if type(found_value) == str:
-            value_matches = found_value == expected_value
-        elif type(found_value) == int:
-            value_matches = found_value == int(expected_value)
-        elif type(found_value) == bool:
+        if isinstance(found_value, bool) or (found_value in ('true', 'false')):
             if expected_value.lower() == "false":
                 expected_value = False
             elif expected_value.lower() == "true":
@@ -209,7 +205,16 @@ def verify_tls_features(expected_tls_features, found_tls_features):
             else:
                 raise ValueError("Cannot convert expected value to a boolean: {}, found: {}".format(
                     expected_value, found_value))
+            if found_value == 'true':
+                found_value = True
+            elif found_value == 'false':
+                found_value = False
             value_matches = found_value == bool(expected_value)
+
+        elif isinstance(found_value, str):
+            value_matches = found_value == expected_value
+        elif isinstance(found_value, int):
+            value_matches = found_value == int(expected_value)
         else:
             raise ValueError("Cannot determine type of found value: {}".format(
                 found_value))

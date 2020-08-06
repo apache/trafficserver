@@ -43,6 +43,7 @@ TEMPLATE = json.loads('{"meta": {"version":"1.0"},"sessions":[]}')
 class PostProcessError(Exception):
     ''' Base class for post processing errors.
     '''
+
     def __init__(self, message=None):
         self.message = message
 

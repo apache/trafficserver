@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef _CKREMAP_HASH_H_
-#define _CKREMAP_HASH_H_
+#pragma once
 
 #include <stddef.h> // NOLINT(modernize-deprecated-headers)
 #include <sys/types.h>
@@ -50,5 +49,3 @@ uint32_t hash_fnv32_buckets(const char *buf, size_t len, uint32_t num_buckets);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _CKREMAP_HASH_H_ */

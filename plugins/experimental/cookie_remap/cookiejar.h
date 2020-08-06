@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef CKREMAP_COOKIEJAR_H_
-#define CKREMAP_COOKIEJAR_H_
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -58,5 +57,3 @@ private:
 
   unordered_map<string, CookieVal> m_jar;
 };
-
-#endif // CKREMAP_COOKIEJAR_H_

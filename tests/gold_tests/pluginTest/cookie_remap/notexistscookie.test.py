@@ -31,7 +31,8 @@ ts = Test.MakeATSProcess("ts")
 # second server is run during second test
 server = Test.MakeOriginServer("server", ip='127.0.0.10')
 
-request_header = {"headers": "GET /cookiedoesntexist HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET /cookiedoesntexist HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                  "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
@@ -39,7 +40,8 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionfile.log", request_header, response_header)
 
 server2 = Test.MakeOriginServer("server2", ip='127.0.0.11')
-request_header2 = {"headers": "GET /cookieexists HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header2 = {"headers": "GET /cookieexists HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                   "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
 response_header2 = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
@@ -59,7 +61,7 @@ ts.Disk.records_config.update({
 config1 = config1.replace("$PORT", str(server.Variables.Port))
 config1 = config1.replace("$ALTPORT", str(server2.Variables.Port))
 
-ts.Disk.File(ts.Variables.CONFIGDIR +"/notexistsconfig.txt", exists=False, id="config1")
+ts.Disk.File(ts.Variables.CONFIGDIR + "/notexistsconfig.txt", exists=False, id="config1")
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(

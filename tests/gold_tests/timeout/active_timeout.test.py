@@ -53,10 +53,10 @@ tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Command = 'curl -i  http://127.0.0.1:{0}/file'.format(ts.Variables.port)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Activity Timeout", "Request should fail with active timeout")
 
-tr2= Test.AddTestRun("tr")
+tr2 = Test.AddTestRun("tr")
 tr2.Processes.Default.Command = 'curl -k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port)
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Activity Timeout", "Request should fail with active timeout")
 
-tr3= Test.AddTestRun("tr")
+tr3 = Test.AddTestRun("tr")
 tr3.Processes.Default.Command = 'curl -k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port)
 tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Activity Timeout", "Request should fail with active timeout")

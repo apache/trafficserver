@@ -16,8 +16,7 @@
   limitations under the License.
 */
 
-#ifndef CKREMAP_IV_H
-#define CKREMAP_IV_H
+#pragma once
 
 #include <sys/types.h>
 
@@ -142,5 +141,3 @@ int get_stripped(const char *in, ssize_t in_len, char *out, int *out_len, unsign
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* CKREMAP_IV_H */

@@ -38,7 +38,7 @@ def makerequest(port, active_timeout):
         response = conn.get_response(req_id)
         req_id = conn.request('GET', '/')
         response = conn.get_response(req_id)
-    except:
+    except Exception:
         print('CONNECTION_TIMEOUT')
         return
 

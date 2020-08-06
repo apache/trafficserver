@@ -16,12 +16,12 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
+from twisted.internet import error, protocol, reactor, tcp
+from twisted.web import http
+
 print '''1..1 pipeliningDisconnect
 # The proxy doesn't crash if INKVConnInternal::do_io_close() gets
 # called after a message is already complete'''
-
-from twisted.internet import error, protocol, reactor, tcp
-from twisted.web import http
 
 
 def callback():

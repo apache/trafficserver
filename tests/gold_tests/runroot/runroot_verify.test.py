@@ -28,14 +28,14 @@ logdir = Test.Variables["LOGDIR"]
 
 if bindir.startswith(prefix):
     # get the bin directory based on removing the common prefix
-    binsuffix = bindir[len(prefix)+1:]
+    binsuffix = bindir[len(prefix) + 1:]
 else:
     # given a custom setup this might work.. or it might not
     binsuffix = bindir
 
 if logdir.startswith(prefix):
     # get the bin directory based on removing the common prefix
-    logsuffix = bindir[len(prefix)+1:]
+    logsuffix = bindir[len(prefix) + 1:]
 else:
     # given a custom setup this might work.. or it might not
     logsuffix = logdir

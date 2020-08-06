@@ -103,7 +103,7 @@ private:
   ink_hrtime _congestion_recovery_start_time = 0;
   uint32_t _ssthresh                         = UINT32_MAX;
 
-  bool _in_congestion_recovery(ink_hrtime sent_time);
+  bool _in_congestion_recovery(ink_hrtime sent_time) const;
 
   QUICContext &_context;
 };
@@ -120,7 +120,7 @@ public:
   std::vector<QUICFrameType> interests() override;
   virtual QUICConnectionErrorUPtr handle_frame(QUICEncryptionLevel level, const QUICFrame &frame) override;
   void on_packet_sent(QUICPacketInfoUPtr packet_info, bool in_flight = true);
-  QUICPacketNumber largest_acked_packet_number(QUICPacketNumberSpace pn_space);
+  QUICPacketNumber largest_acked_packet_number(QUICPacketNumberSpace pn_space) const;
   void update_ack_delay_exponent(uint8_t ack_delay_exponent);
   void reset();
 
@@ -164,7 +164,7 @@ private:
   void _detect_lost_packets(QUICPacketNumberSpace pn_space);
   void _set_loss_detection_timer();
   void _on_loss_detection_timeout();
-  void _retransmit_lost_packet(QUICPacketInfo &packet_info);
+  void _retransmit_lost_packet(const QUICPacketInfo &packet_info);
 
   ink_hrtime _get_earliest_loss_time(QUICPacketNumberSpace &pn_space);
 

@@ -140,7 +140,8 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter += ts
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 GET)')
-tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(ts.Variables.ssl_port, 'h1', 'get', Test.RunDirectory)
+tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(
+    ts.Variables.ssl_port, 'h1', 'get', Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
@@ -148,7 +149,8 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter += ts
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 POST)')
-tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(ts.Variables.ssl_port, 'h1', 'post', Test.RunDirectory)
+tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(
+    ts.Variables.ssl_port, 'h1', 'post', Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('HTTP/1.1 425 Too Early', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
@@ -157,7 +159,8 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter += ts
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 GET)')
-tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(ts.Variables.ssl_port, 'h2', 'get', Test.RunDirectory)
+tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(
+    ts.Variables.ssl_port, 'h2', 'get', Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted', '')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
@@ -165,7 +168,8 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter += ts
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 POST)')
-tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(ts.Variables.ssl_port, 'h2', 'post', Test.RunDirectory)
+tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(
+    ts.Variables.ssl_port, 'h2', 'post', Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(':status 425', 'Only safe methods are allowed')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
@@ -174,7 +178,8 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter += ts
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 Multiplex)')
-tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(ts.Variables.ssl_port, 'h2', 'multi1', Test.RunDirectory)
+tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(
+    ts.Variables.ssl_port, 'h2', 'multi1', Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted multi_1', '')
 tr.Processes.Default.Streams.All += Testers.ContainsExpression('early data accepted multi_2', '')
@@ -184,7 +189,8 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter += ts
 
 tr = Test.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 Multiplex with POST)')
-tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(ts.Variables.ssl_port, 'h2', 'multi2', Test.RunDirectory)
+tr.Processes.Default.Command = 'python3 test-0rtt-s_client.py {0} {1} {2} {3}'.format(
+    ts.Variables.ssl_port, 'h2', 'multi2', Test.RunDirectory)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted multi_1', '')
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(':status 425', 'Only safe methods are allowed')
