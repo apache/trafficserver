@@ -101,13 +101,13 @@ A number of file objects are defined to help with adding values to a given confi
 ##### config files
  * records.config
  * cache.config
- * congestion.config
  * hosting.config
- * ip_allow.config
+ * ip_allow.yaml
  * logging.yaml
  * parent.config
  * plugin.config
  * remap.config
+ * sni.yaml
  * socks.config
  * splitdns.config
  * ssl_multicert.config
