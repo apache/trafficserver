@@ -103,6 +103,6 @@ protected:
   bool loaddeny(const YAML::Node &denyNode);
   void loadhtml(const YAML::Node &htmlNode);
   bool eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len);
-  void parseregex(const YAML::Node regex, bool allow);
+  void parseregex(const YAML::Node &regex, bool allow);
   ipstate eval_ip(const sockaddr *sock) const;
 };
