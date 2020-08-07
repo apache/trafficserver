@@ -26,6 +26,9 @@
 #include "tscore/IpMap.h"
 #include "tscore/IpMapConf.h"
 #include "tscore/ink_memory.h"
+#include "tscore/ink_inet.h"
+
+#include <yaml-cpp/yaml.h>
 
 static size_t const ERR_STRING_LEN = 256;
 static size_t const MAX_LINE_SIZE  = 2048;
@@ -183,5 +186,26 @@ Load_IpMap_From_File(IpMap *map, FILE *f, const char *key_str)
       }
     }
   }
+  return nullptr;
+}
+
+// expects a sequence of IPs or IP Ranges
+char *
+Load_IpMap_From_YAMLNode(IpMap *map, const YAML::Node &node)
+{
+  // First hardcode 127.0.0.1 into the table
+  map->mark(INADDR_LOOPBACK);
+
+  for (const auto n : node) {
+    IpAddr min, max;
+    if (0 == ats_ip_range_parse(n.Scalar(), min, max)) {
+      map->fill(min, max);
+    } else {
+      char *error_str = static_cast<char *>(ats_malloc(ERR_STRING_LEN));
+      snprintf(error_str, ERR_STRING_LEN, "Invalid input at %d", n.Mark().line);
+      return error_str;
+    }
+  }
+
   return nullptr;
 }

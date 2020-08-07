@@ -24,6 +24,7 @@
 #pragma once
 
 #include "I_SessionAccept.h"
+#include "tscore/IpMap.h"
 
 struct ProtocolProbeSessionAcceptEnums {
   /// Enumeration for related groups of protocols.

@@ -22,6 +22,7 @@
  */
 
 #pragma once
+
 #include "P_EventSystem.h"
 #include "I_Socks.h"
 
@@ -63,12 +64,12 @@ struct socks_conf_struct {
 #endif
 
   socks_conf_struct()
-
   {
 #if !defined(SOCKS_WITH_TS)
     memset(&server_addr, 0, sizeof(server_addr));
 #endif
   }
+  void print();
 };
 
 extern struct socks_conf_struct *g_socks_conf_stuff;
@@ -77,9 +78,6 @@ void start_SocksProxy(int port);
 
 int loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff);
 
-// umm.. the following typedef should take _its own_ type as one of the args
-// not possible with C
-// Right now just use a generic fn ptr and hide casting in an inline fn.
 typedef int (*SocksAuthHandler)(int event, unsigned char *buf, void (**h_ptr)(void));
 
 TS_INLINE int

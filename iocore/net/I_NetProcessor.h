@@ -24,7 +24,6 @@
 
 #pragma once
 
-#include "tscore/IpMap.h"
 #include "I_EventSystem.h"
 #include "I_Socks.h"
 struct socks_conf_struct;

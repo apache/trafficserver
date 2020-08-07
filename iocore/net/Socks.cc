@@ -1,6 +1,7 @@
 /** @file
 
-  A brief file description
+  This file contains the Socks client functionality. Previously, this code was
+  duplicated in UnixNet.cc
 
   @section license License
 
@@ -21,19 +22,27 @@
   limitations under the License.
  */
 
-/*
-  Socks.cc
-
-  This file contains the Socks client functionality. Previously, this code was
-  duplicated in UnixNet.cc
-*/
-
 #include "P_Net.h"
+
+#include <yaml-cpp/yaml.h>
+
 #include "SocksServer.h"
+#include "tscpp/util/TextView.h"
 #include "tscore/I_Layout.h"
 #include "tscore/ink_sock.h"
 #include "tscore/InkErrno.h"
 #include "tscore/IpMapConf.h"
+#include "tscore/ts_file.h"
+#include "tscore/Filenames.h"
+#include "tscore/BufferWriter.h"
+
+static constexpr char YAML_TAG_ROOT[]           = "socks";
+static constexpr char YAML_TAG_SKIP_IP_RANGES[] = "skip_ip_ranges";
+static constexpr char YAML_TAG_AUTH[]           = "auth";
+static constexpr char YAML_TAG_USERNAME[]       = "username";
+static constexpr char YAML_TAG_PASSWORD[]       = "password";
+
+static constexpr char filenameConfigVar[] = "proxy.config.socks.socks_config_file";
 
 socks_conf_struct *g_socks_conf_stuff = nullptr;
 
@@ -293,12 +302,11 @@ SocksEntry::mainEvent(int event, void *data)
     buf->fill(n_bytes);
 
     if (!timeout) {
-      /* timeout would be already set when we come here from StartEvent() */
+      // timeout would be already set when we come here from StartEvent()
       timeout = this_ethread()->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->socks_timeout));
     }
 
     netVConnection->do_io_write(this, n_bytes, reader, false);
-    // Debug("Socks", "Sent the request to the SOCKS server");
 
     ret = EVENT_CONT;
     break;
@@ -453,13 +461,86 @@ SocksEntry::mainEvent(int event, void *data)
   return ret;
 }
 
+// Returns 0 if successful, error string otherwise
+bool
+Load_From_YAML(socks_conf_struct *socks_conf, const std::string &contents)
+{
+  YAML::Node config{YAML::Load(contents)};
+
+  if (config.IsNull()) {
+    Warning("malformed %s file; config is empty?", ts::filename::SOCKS);
+    return true;
+  }
+
+  if (!config.IsMap()) {
+    Error("malformed %s file; expected a map", ts::filename::SOCKS);
+    return false;
+  }
+
+  if (!config[YAML_TAG_ROOT]) {
+    Error("malformed %s file; expected a toplevel '%s' node", ts::filename::SOCKS, YAML_TAG_ROOT);
+    return false;
+  }
+
+  config = config[YAML_TAG_ROOT];
+
+  if (config[YAML_TAG_SKIP_IP_RANGES]) {
+    const auto ranges = config[YAML_TAG_SKIP_IP_RANGES];
+    if (!ranges.IsSequence()) {
+      std::cout << ranges << std::endl;
+      Error("malformed %s file; expected a sequence/array of '%s'", ts::filename::SOCKS, YAML_TAG_SKIP_IP_RANGES);
+      return false;
+    }
+
+    char *errMsg = Load_IpMap_From_YAMLNode(&socks_conf->ip_map, ranges);
+    if (errMsg != nullptr) {
+      Error("malformed %s file at line %d: %s", ts::filename::SOCKS, config.Mark().line, errMsg);
+      ats_free(errMsg);
+      return false;
+    }
+  }
+
+#ifdef SOCKS_WITH_TS
+  if (config[YAML_TAG_AUTH]) {
+    const auto auth      = config[YAML_TAG_AUTH];
+    std::string username = auth[YAML_TAG_USERNAME].as<std::string>();
+    std::string password = auth[YAML_TAG_PASSWORD].as<std::string>();
+
+    if (username.empty() || password.empty()) {
+      Error("Need to set both '%s' and '%s'", YAML_TAG_USERNAME, YAML_TAG_PASSWORD);
+      return false;
+    }
+
+    int len1 = username.length();
+    int len2 = password.length();
+
+    Debug("Socks", "Read username(%s) and password(%s) from config file", username.c_str(), password.c_str());
+
+    socks_conf->user_name_n_passwd_len = len1 + len2 + 2;
+
+    char *ptr = static_cast<char *>(ats_malloc(socks_conf->user_name_n_passwd_len));
+    ptr[0]    = len1;
+    memcpy(&ptr[1], username.c_str(), len1);
+    ptr[len1 + 1] = len2;
+    memcpy(&ptr[len1 + 2], password.c_str(), len2);
+
+    socks_conf->user_name_n_passwd = ptr;
+  }
+#endif
+
+  return true;
+}
+
 void
 loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
 {
   int socks_config_fd = -1;
   ats_scoped_str config_pathname;
 #ifdef SOCKS_WITH_TS
-  char *tmp;
+  bool yaml = false;
+  std::error_code ec;
+  std::string config_content;
+  ts::file::path config_file;
 #endif
 
   socks_conf_stuff->accept_enabled = 0; // initialize it INKqa08593
@@ -497,40 +578,59 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   SocksServerConfig::startup();
 #endif
 
-  config_pathname = RecConfigReadConfigPath("proxy.config.socks.socks_config_file");
-  Debug("Socks", "Socks Config File: %s", (const char *)config_pathname);
+  config_pathname = RecConfigReadConfigPath(filenameConfigVar);
+  Debug("Socks", "Socks Config File: %s", static_cast<const char *>(config_pathname));
 
   if (!config_pathname) {
-    Error("SOCKS Config: could not read config file name. SOCKS Turned off");
+    Error("SOCKS Config: could not read config file name; SOCKS Enabled");
     goto error;
   }
 
   socks_config_fd = ::open(config_pathname, O_RDONLY);
 
   if (socks_config_fd < 0) {
-    Error("SOCKS Config: could not open config file '%s'. SOCKS Turned off", (const char *)config_pathname);
+    Error("SOCKS Config: could not open config file '%s'; SOCKS Disabled", static_cast<const char *>(config_pathname));
     goto error;
   }
-#ifdef SOCKS_WITH_TS
-  tmp = Load_IpMap_From_File(&socks_conf_stuff->ip_map, socks_config_fd, "no_socks");
 
-  if (tmp) {
-    Error("SOCKS Config: Error while reading ip_range: %s.", tmp);
-    ats_free(tmp);
-    goto error;
+#ifdef SOCKS_WITH_TS
+  config_file = config_pathname.get();
+
+  config_content = ts::file::load(config_file, ec);
+
+  if (ec.value() == 0) {
+    if (ts::TextView{config_file.view()}.take_suffix_at('.') == "yaml") {
+      yaml = true;
+      if (!Load_From_YAML(socks_conf_stuff, config_content)) {
+        goto error;
+      }
+    } else {
+      char *err = Load_IpMap_From_File(&socks_conf_stuff->ip_map, socks_config_fd, "no_socks");
+      if (err) {
+        Error("SOCKS Config: Error while reading ip_range: %s", err);
+        ats_free(err);
+        goto error;
+      }
+    }
   }
+
 #endif
 
-  if (loadSocksAuthInfo(socks_config_fd, socks_conf_stuff) != 0) {
+  // loading of auth info from YAML config occurs in Load_From_YAML above
+  if (!yaml && loadSocksAuthInfo(socks_config_fd, socks_conf_stuff) != 0) {
     Error("SOCKS Config: Error while reading Socks auth info");
     goto error;
   }
-  Debug("Socks", "Socks Turned on");
+
+  Debug("Socks", "Socks Enabled");
   ::close(socks_config_fd);
 
+  if (is_debug_tag_set("Socks")) {
+    socks_conf_stuff->print();
+  }
   return;
-error:
 
+error:
   socks_conf_stuff->socks_needed   = 0;
   socks_conf_stuff->accept_enabled = 0;
   if (socks_config_fd >= 0) {
@@ -547,7 +647,7 @@ loadSocksAuthInfo(int fd, socks_conf_struct *socks_stuff)
   char passwd[256]    = {0};
 
   if (lseek(fd, 0, SEEK_SET) < 0) {
-    Warning("Can not seek on Socks configuration file\n");
+    Warning("Can not seek on Socks configuration file");
     return -1;
   }
 
@@ -707,4 +807,18 @@ socks5PasswdAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     break;
   }
   return ret;
+}
+
+void
+socks_conf_struct::print()
+{
+  ts::LocalBufferWriter<10 * 1024> bw;
+  bw << this->ip_map;
+  printf("  skip_ip_ranges: %.*s\n", static_cast<int>(bw.size()), bw.data());
+  int username_len = this->user_name_n_passwd[0];
+  int password_len = this->user_name_n_passwd[username_len + 1];
+
+  printf("  username len: %d\n", username_len);
+  printf("  password len: %d\n", password_len);
+  printf("  username and password: %s\n", this->user_name_n_passwd);
 }

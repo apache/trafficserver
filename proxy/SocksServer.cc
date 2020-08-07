@@ -25,8 +25,18 @@
 
 #include "ParentSelection.h"
 #include "tscore/Filenames.h"
+#include "tscore/ts_file.h"
+
+#include <yaml-cpp/yaml.h>
+
+static constexpr auto YAML_TAG_ROOT("socks");
+static constexpr auto YAML_TAG_DESTINATIONS("destinations");
+
+static constexpr auto modulePrefix      = "[Socks Server Selection]";
+static constexpr auto filenameConfigVar = "proxy.config.socks.socks_config_file";
 
 int SocksServerConfig::m_id = 0;
+
 static Ptr<ProxyMutex> socks_server_reconfig_mutex;
 void
 SocksServerConfig::startup()
@@ -66,6 +76,45 @@ setup_socks_servers(ParentRecord *rec_arr, int len)
   return 0;
 }
 
+static P_table *
+buildTable(const std::string &contents)
+{
+  Note("%s as YAML ...", ts::filename::SOCKS);
+  YAML::Node config{YAML::Load(contents)};
+
+  if (config.IsNull()) {
+    Warning("malformed %s file; config is empty?", ts::filename::SOCKS);
+
+    return nullptr;
+  }
+
+  if (!config.IsMap()) {
+    Error("malformed %s file; expected a map", ts::filename::SOCKS);
+    return nullptr;
+  }
+
+  if (!config[YAML_TAG_ROOT]) {
+    Error("malformed %s file; expected a toplevel '%s' node", ts::filename::SOCKS, std::string(YAML_TAG_ROOT).c_str());
+    return nullptr;
+  }
+
+  config = config[YAML_TAG_ROOT];
+
+  if (!config[YAML_TAG_DESTINATIONS]) {
+    Error("malformed %s file; expected '%s' node", ts::filename::SOCKS, std::string(YAML_TAG_DESTINATIONS).c_str());
+    return nullptr;
+  }
+
+  config = config[YAML_TAG_DESTINATIONS];
+
+  if (!config.IsSequence()) {
+    Error("malformed %s file; expected a toplevel sequence/array", ts::filename::SOCKS);
+    return nullptr;
+  }
+
+  return new P_table(filenameConfigVar, modulePrefix, config);
+}
+
 void
 SocksServerConfig::reconfigure()
 {
@@ -75,10 +124,24 @@ SocksServerConfig::reconfigure()
   int retry_time    = 30;
   int fail_threshold;
 
+  ats_scoped_str path(RecConfigReadConfigPath(filenameConfigVar, ts::filename::SOCKS));
+
   ParentConfigParams *params = nullptr;
 
-  // Allocate parent table
-  P_table *pTable = new P_table("proxy.config.socks.socks_config_file", "[Socks Server Selection]", &socks_server_tags);
+  ts::file::path config_file{path};
+
+  std::error_code ec;
+  std::string content{ts::file::load(config_file, ec)};
+
+  P_table *pTable = nullptr;
+  if (ec.value() == 0) {
+    // If it's a .yaml, treat as YAML
+    if (ts::TextView{config_file.view()}.take_suffix_at('.') == "yaml") {
+      pTable = buildTable(content);
+    } else {
+      pTable = new P_table(filenameConfigVar, modulePrefix, &socks_server_tags);
+    }
+  }
 
   params = new ParentConfigParams(pTable);
   ink_assert(params != nullptr);
@@ -105,7 +168,7 @@ SocksServerConfig::reconfigure()
 
   m_id = configProcessor.set(m_id, params);
 
-  if (is_debug_tag_set("socks")) {
+  if (is_debug_tag_set("Socks")) {
     SocksServerConfig::print();
   }
 
