@@ -106,8 +106,9 @@ ssl_ticket_enabled=1|0 (optional)
   OpenSSL should be upgraded to version 0.9.8f or higher. This
   option must be set to `0` to disable session ticket support.
 
-ticket_key_name=FILENAME (optional) [**REMOVED in 7.1.x and 8.0**]
-   Ticket key should be set in records.config via :ts:cv:`proxy.config.ssl.server.ticket_key.filename`
+ssl_ticket_number=INTEGER (optional)
+  Specifies the number of TLSv1.3 session tickets that are issued.
+  This defaults to 2 (the OpenSSL default)
 
 ssl_key_dialog=builtin|"exec:/path/to/program [args]" (optional)
   Method used to provide a pass phrase for encrypted private keys.  If the
