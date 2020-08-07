@@ -28,12 +28,14 @@
    Description:
    SNI based Configuration in ATS
  ****************************************************************************/
+
 #pragma once
 
 #include "I_EventSystem.h"
 #include <vector>
 #include "P_SSLNextProtocolAccept.h"
 #include "tscore/ink_inet.h"
+#include "tscore/IpMap.h"
 
 class ActionItem
 {

@@ -32,6 +32,8 @@
 #include "I_Machine.h"
 #include "tscore/Filenames.h"
 
+#include <yaml-cpp/yaml.h>
+
 #define MAX_SIMPLE_RETRIES 5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
 
@@ -47,6 +49,8 @@ static const char *file_var      = "proxy.config.http.parent_proxy.file";
 static const char *default_var   = "proxy.config.http.parent_proxies";
 static const char *retry_var     = "proxy.config.http.parent_proxy.retry_time";
 static const char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
+
+static constexpr char YAML_TAG_IP[] = "ip";
 
 //
 //  Config Callback Prototypes
@@ -833,10 +837,87 @@ ParentRecord::Init(matcher_line *line_info)
   return Result::ok();
 }
 
+// NOTE: This is hardwired for socks.yaml support. parent YAML support is done in other classes
 Result
 ParentRecord::Init(const YAML::Node &node)
 {
-  return Result::failure("not implemented");
+  char parent_buf[16384] = {0};
+  ParentRR_t round_robin = P_NO_ROUND_ROBIN;
+  RecInt rec_self_detect = 2;
+
+  this->scheme = nullptr;
+
+  if (RecGetRecordInt("proxy.config.http.parent_proxy.self_detect", &rec_self_detect) == REC_ERR_OKAY) {
+    self_detect = static_cast<int>(rec_self_detect);
+  }
+
+  // Now look for the directive.
+  for (auto const &v : node) {
+    std::string label = v.first.as<std::string>();
+
+    if (v.second.IsNull()) {
+      Debug("control", "Skipping null value for key '%s'", label.c_str());
+      continue;
+    }
+
+    if (label == "round_roubin") {
+      std::string val = v.second.as<std::string>();
+
+      if (val == "strict") {
+        round_robin = P_STRICT_ROUND_ROBIN;
+      } else if (val == "disabled") {
+        round_robin = P_NO_ROUND_ROBIN;
+      } else if (val == "consistent_hash") {
+        round_robin = P_CONSISTENT_HASH;
+      } else if (val == "latched") {
+        round_robin = P_LATCHED_ROUND_ROBIN;
+      } else {
+        return Result::failure("%s Invalid 'round_robin' value '%s' specified at line %d", modulePrefix, val.c_str(),
+                               v.Mark().line);
+      }
+    } else if (label == "parent" || label == "primary_parent") {
+      std::string val;
+      if (v.second.IsSequence()) {
+        std::stringstream ss;
+        for (const auto &p : v.second) {
+          ss << p.as<std::string>();
+          ss << ";";
+        }
+        val = ss.str();
+      } else {
+        val = v.second.as<std::string>();
+      }
+
+      PreProcessParents(val.c_str(), node.Mark().line, parent_buf, sizeof(parent_buf) - 1);
+      const char *errPtr = ProcessParents(parent_buf, true);
+      if (errPtr != nullptr) {
+        return Result::failure("%s %s at line %d", modulePrefix, errPtr, node.Mark().line);
+      }
+    }
+  }
+
+  switch (round_robin) {
+    // ParentRecord.round_robin defaults to P_NO_ROUND_ROBIN when round_robin
+    // is not set in parent.config.  Therefore ParentRoundRobin is the default
+    // strategy.  If setting go_direct to true, there should be no parent list
+    // in parent.config and ParentRoundRobin::lookup will set parent_result->r
+    // to PARENT_DIRECT.
+  case P_NO_ROUND_ROBIN:
+  case P_STRICT_ROUND_ROBIN:
+  case P_HASH_ROUND_ROBIN:
+  case P_LATCHED_ROUND_ROBIN:
+    Debug("parent_select", "allocating ParentRoundRobin() lookup strategy.");
+    selection_strategy = new ParentRoundRobin(this, round_robin);
+    break;
+  case P_CONSISTENT_HASH:
+    Debug("parent_select", "allocating ParentConsistentHash() lookup strategy.");
+    selection_strategy = new ParentConsistentHash(this);
+    break;
+  default:
+    ink_release_assert(0);
+  }
+
+  return Result::ok();
 }
 
 // void ParentRecord::UpdateMatch(ParentResult* result, RequestData* rdata);
@@ -1786,4 +1867,52 @@ show_result(ParentResult *p)
     // PARENT_AGENT
     break;
   }
+}
+
+// Walks the YAML::Node and builds the records array from it
+//
+// NOTE: This is hardwired for socks.yaml support. parent YAML support is done in other classes
+template <>
+int
+ControlMatcher<ParentRecord, ParentResult>::BuildTable(const YAML::Node &in)
+{
+  YAML::Node validNodes;
+  bool alarmAlready = false;
+  std::map<std::string_view, int> typeCounts;
+  int destIPCount = 0;
+
+  for (auto const &node : in) {
+    if (node[YAML_TAG_TYPE] && node[YAML_TAG_TYPE].Scalar() == YAML_TAG_IP) {
+      destIPCount++;
+      validNodes.push_back(node);
+    }
+  }
+
+  // Make we have something to do before going on
+  if (validNodes.size() == 0) {
+    return 0;
+  }
+
+  if ((flags & ALLOW_IP_TABLE) && destIPCount > 0) {
+    Debug("matcher", "ip count=%d", destIPCount);
+
+    ipMatch = new IpMatcher<ParentRecord, ParentResult>(matcher_name, config_file_path);
+    ipMatch->AllocateSpace(destIPCount);
+  }
+
+  // Traverse the valid nodes and build the records table
+  for (auto const &node : validNodes) {
+    Result error = ipMatch->NewEntry(node);
+
+    // Check to see if there was an error in creating the NewEntry
+    if (error.failed()) {
+      SignalError(error.message(), alarmAlready);
+    }
+  }
+
+  if (is_debug_tag_set("parent_config") || is_debug_tag_set("Socks")) {
+    Print();
+  }
+
+  return validNodes.size();
 }

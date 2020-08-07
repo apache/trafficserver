@@ -738,6 +738,7 @@ IpMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
 //
 // void IpMatcherData,MatchResult>::Match(in_addr_t addr, RequestData* rdata, MatchResult* result)
 //
+// NOTE: This is hardwired for socks.yaml support. parent YAML support is done in other classes
 template <class Data, class MatchResult>
 Result
 IpMatcher<Data, MatchResult>::NewEntry(const YAML::Node &node)
@@ -831,6 +832,7 @@ ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const ch
   }
 }
 
+// NOTE: This is hardwired for socks.yaml support. parent YAML support is done in other classes
 template <class Data, class MatchResult>
 ControlMatcher<Data, MatchResult>::ControlMatcher(const char *file_var, const char *matcherName, const YAML::Node &node,
                                                   int flags_in)
@@ -1195,8 +1197,6 @@ ControlMatcher<Data, MatchResult>::BuildTable(const YAML::Node &in)
     case 1: // host
     case 2: // domain
       if (flags & ALLOW_HOST_TABLE) {
-        //        Debug("matcher", "host_regex count=%d", count);
-
         error = hostMatch->NewEntry(node);
       }
       break;
