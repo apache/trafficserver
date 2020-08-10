@@ -214,14 +214,15 @@ NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp)
 }
 
 bool
-NextHopSelectionStrategy::responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code) {
-  return this->resp_codes.contains(static_cast<HTTPStatus>(response_code)) &&
-    current_retry_attempts < this->max_simple_retries &&
-    current_retry_attempts < this->num_parents;
+NextHopSelectionStrategy::responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code)
+{
+  return this->resp_codes.contains(static_cast<HTTPStatus>(response_code)) && current_retry_attempts < this->max_simple_retries &&
+         current_retry_attempts < this->num_parents;
 }
 
 bool
-NextHopSelectionStrategy::onFailureMarkParentDown(TSHttpStatus response_code) {
+NextHopSelectionStrategy::onFailureMarkParentDown(TSHttpStatus response_code)
+{
   return static_cast<int>(response_code) >= 500 && static_cast<int>(response_code) <= 599;
 }
 

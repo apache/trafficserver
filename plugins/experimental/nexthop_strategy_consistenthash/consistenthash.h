@@ -35,6 +35,7 @@ class NextHopConsistentHash : public NextHopSelectionStrategy
 {
   std::vector<std::shared_ptr<ATSConsistentHash>> rings;
   uint64_t getHashKey(uint64_t sm_id, TSMBuffer reqp, TSMLoc url, TSMLoc parent_selection_url, ATSHash64 *h);
+
 public:
   const uint32_t LineNumberPlaceholder = 99999;
 

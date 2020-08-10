@@ -36,7 +36,7 @@ struct TSParentResult {
   bool retry;
   TSParentResultType result;
   bool chash_init[TS_MAX_GROUP_RINGS] = {false};
-  TSHostStatus first_choice_status = TSHostStatus::TS_HOST_STATUS_INIT;
+  TSHostStatus first_choice_status    = TSHostStatus::TS_HOST_STATUS_INIT;
   int line_number;
   uint32_t last_parent;
   uint32_t start_parent;

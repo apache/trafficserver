@@ -2613,7 +2613,7 @@ tsapi TSReturnCode TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriori
 /*
  * Returns whether hostname is this machine, as used for parent and remap self-detection.
  */
-bool TSHostnameIsSelf(const char* hostname);
+bool TSHostnameIsSelf(const char *hostname);
 
 /*
  * Gets the status of hostname in the outparam status, and the status reason in the outparam reason.
@@ -2621,7 +2621,7 @@ bool TSHostnameIsSelf(const char* hostname);
  * If either outparam is null, it will not be set and no error will be returned.
  * Returns whether the hostname was a parent and existed in the HostStatus.
  */
-bool TSHostStatusGet(const char *hostname, TSHostStatus* status, unsigned int *reason);
+bool TSHostStatusGet(const char *hostname, TSHostStatus *status, unsigned int *reason);
 
 /*
  * Sets the status of hostname in status, down_time, and reason.
@@ -2634,12 +2634,12 @@ struct TSParentResult;
 /*
  * Gets the Transaction Parent Result pointer.
  */
-void TSHttpTxnParentResultGet(TSHttpTxn txnp, struct TSParentResult* result);
+void TSHttpTxnParentResultGet(TSHttpTxn txnp, struct TSParentResult *result);
 
 /*
-* Sets the Transaction Parent Result pointer.
-*/
-void TSHttpTxnParentResultSet(TSHttpTxn txnp, struct TSParentResult* result);
+ * Sets the Transaction Parent Result pointer.
+ */
+void TSHttpTxnParentResultSet(TSHttpTxn txnp, struct TSParentResult *result);
 
 #ifdef __cplusplus
 }

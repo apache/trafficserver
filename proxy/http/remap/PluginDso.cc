@@ -287,7 +287,7 @@ PluginDso::instanceCount()
 fs::path
 PluginDso::configPath() const
 {
-	return _configPath;
+  return _configPath;
 }
 
 bool

@@ -48,7 +48,7 @@ public:
   ~NextHopConsistentHash();
   bool Init(const YAML::Node &n);
   void findNextHop(TSHttpTxn txnp, time_t now = 0) override;
-//private:
+  // private:
   std::vector<std::shared_ptr<ATSConsistentHash>> rings;
   uint64_t getHashKey(uint64_t sm_id, HttpRequestData *hrdata, ATSHash64 *h);
 };

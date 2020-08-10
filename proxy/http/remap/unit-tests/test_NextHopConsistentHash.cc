@@ -53,7 +53,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
     // load the configuration strtegies.
     std::shared_ptr<TSNextHopSelectionStrategy> strategy;
     NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
-    strategy = nhf.strategyInstance("consistent-hash-1");
+    strategy                   = nhf.strategyInstance("consistent-hash-1");
     NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
     REQUIRE(ptr != nullptr);
 
@@ -194,7 +194,7 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
   {
     std::shared_ptr<TSNextHopSelectionStrategy> strategy;
     NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
-    strategy = nhf.strategyInstance("consistent-hash-1");
+    strategy                   = nhf.strategyInstance("consistent-hash-1");
     NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
     REQUIRE(ptr != nullptr);
 
@@ -298,7 +298,7 @@ SCENARIO("Testing NextHop ignore_self_detect false", "[NextHopConsistentHash]")
     // load the configuration strtegies.
     std::shared_ptr<TSNextHopSelectionStrategy> strategy;
     NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
-    strategy = nhf.strategyInstance("ignore-self-detect-false");
+    strategy                   = nhf.strategyInstance("ignore-self-detect-false");
     NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
     REQUIRE(ptr != nullptr);
 
@@ -350,7 +350,7 @@ SCENARIO("Testing NextHop ignore_self_detect true", "[NextHopConsistentHash]")
     // load the configuration strtegies.
     std::shared_ptr<TSNextHopSelectionStrategy> strategy;
     NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
-    strategy = nhf.strategyInstance("ignore-self-detect-true");
+    strategy                   = nhf.strategyInstance("ignore-self-detect-true");
     NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
     REQUIRE(ptr != nullptr);
 
@@ -402,7 +402,7 @@ SCENARIO("Testing NextHopConsistentHash same host different port markdown", "[Ne
     // load the configuration strtegies.
     std::shared_ptr<TSNextHopSelectionStrategy> strategy;
     NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
-    strategy = nhf.strategyInstance("same-host-different-port");
+    strategy                   = nhf.strategyInstance("same-host-different-port");
     NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
     REQUIRE(ptr != nullptr);
 
@@ -472,7 +472,7 @@ SCENARIO("Testing NextHopConsistentHash hash_string override", "[NextHopConsiste
     // load the configuration strtegies.
     std::shared_ptr<TSNextHopSelectionStrategy> strategy;
     NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
-    strategy = nhf.strategyInstance("hash-string-override");
+    strategy                   = nhf.strategyInstance("hash-string-override");
     NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
     REQUIRE(ptr != nullptr);
 
@@ -533,7 +533,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
   {
     std::shared_ptr<TSNextHopSelectionStrategy> strategy;
     NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/consistent-hash-tests.yaml");
-    strategy = nhf.strategyInstance("consistent-hash-2");
+    strategy                   = nhf.strategyInstance("consistent-hash-2");
     NextHopConsistentHash *ptr = static_cast<NextHopConsistentHash *>(strategy.get());
     REQUIRE(ptr != nullptr);
 

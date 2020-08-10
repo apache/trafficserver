@@ -9911,16 +9911,16 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
 }
 
 bool
-TSHostnameIsSelf(const char* hostname)
+TSHostnameIsSelf(const char *hostname)
 {
   return Machine::instance()->is_self(hostname);
 }
 
 bool
-TSHostStatusGet(const char *hostname, TSHostStatus* status, unsigned int *reason)
+TSHostStatusGet(const char *hostname, TSHostStatus *status, unsigned int *reason)
 {
   HostStatRec *hst = HostStatus::instance().getHostStatus(hostname);
-  if (hst ==  nullptr)  {
+  if (hst == nullptr) {
     return false;
   }
   if (status != nullptr) {
@@ -9939,21 +9939,20 @@ TSHostStatusSet(const char *hostname, TSHostStatus status, const unsigned int do
 }
 
 void
-TSHttpTxnParentResultGet(TSHttpTxn txnp, TSParentResult* result)
+TSHttpTxnParentResultGet(TSHttpTxn txnp, TSParentResult *result)
 {
-  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  HttpSM *sm              = reinterpret_cast<HttpSM *>(txnp);
   ParentResult *sm_result = &sm->t_state.parent_result;
   sm_result->copyTo(result);
 }
 
 void
-TSHttpTxnParentResultSet(TSHttpTxn txnp, TSParentResult* result)
+TSHttpTxnParentResultSet(TSHttpTxn txnp, TSParentResult *result)
 {
-  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  HttpSM *sm              = reinterpret_cast<HttpSM *>(txnp);
   ParentResult *sm_result = &sm->t_state.parent_result;
   sm_result->copyFrom(result);
 }
-
 
 namespace
 {

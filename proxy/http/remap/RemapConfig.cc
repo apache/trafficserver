@@ -1310,7 +1310,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         continue; // TODO error?
       }
       std::shared_ptr<TSNextHopSelectionStrategy> strategy = pluginInst->getStrategy();
-      const std::string pluginName = pluginInst->name();
+      const std::string pluginName                         = pluginInst->name();
       if (strategy != nullptr) {
         Debug("remap_plugin", "Remap plugin got strategy '%s'", pluginName.c_str());
         bti->rewrite->strategyFactory->addStrategy(pluginName, strategy); // will log an error if the name already exists

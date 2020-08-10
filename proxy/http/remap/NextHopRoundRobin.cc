@@ -28,8 +28,7 @@
 #include "NextHopRoundRobin.h"
 
 NextHopRoundRobin::NextHopRoundRobin(const std::string_view &name, const NHPolicyType &policy)
-  : NextHopSelectionStrategy(name)
-  , policy_type(policy)
+  : NextHopSelectionStrategy(name), policy_type(policy)
 {
   NH_Debug(NH_DEBUG_TAG, "Using a selection strategy of type %s", policy_strings[policy]);
 }
@@ -69,8 +68,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, time_t now)
 
   if (firstcall) {
     result->line_number = NextHopRoundRobin::LineNumberPlaceholder;
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] first call , cur_grp_index: %d, cur_hst_index: %d", sm_id, cur_grp_index,
-             cur_hst_index);
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] first call , cur_grp_index: %d, cur_hst_index: %d", sm_id, cur_grp_index, cur_hst_index);
     switch (policy_type) {
     case NH_FIRST_LIVE:
       result->start_parent = cur_hst_index = 0;
@@ -101,8 +99,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, time_t now)
     cur_host = host_groups[cur_grp_index][cur_hst_index];
     NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] first call, cur_grp_index: %d, cur_hst_index: %d", sm_id, cur_grp_index, cur_hst_index);
   } else {
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next call, cur_grp_index: %d, cur_hst_index: %d", sm_id, cur_grp_index,
-             cur_hst_index);
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next call, cur_grp_index: %d, cur_hst_index: %d", sm_id, cur_grp_index, cur_hst_index);
     // Move to next parent due to failure
     latched_index = cur_hst_index = (result->last_parent + 1) % hst_size;
     cur_host                      = host_groups[cur_grp_index][cur_hst_index];

@@ -109,6 +109,7 @@ public:
 
   /* Used by strategies on initialization, to add plugin-defined strategies for use by remaps */
   std::shared_ptr<TSNextHopSelectionStrategy> initStrategy(void *ih);
+
 protected:
   /* Utility to be used only with unit testing */
   std::string missingRequiredSymbolError(const std::string &pluginName, const char *required, const char *requiring = nullptr);

@@ -186,7 +186,7 @@ struct HostRecord : ATSConsistentHashNode {
   }
 
   static std::string
-  makeHostPort(const std::string& hostname, const int port)
+  makeHostPort(const std::string &hostname, const int port)
   {
     return hostname + ":" + std::to_string(port);
   }
@@ -213,13 +213,14 @@ public:
   virtual bool onFailureMarkParentDown(TSHttpStatus response_code);
   virtual bool goDirect();
   virtual bool parentIsProxy();
+
 protected:
   std::string strategy_name;
-  bool go_direct           = true;
-  bool parent_is_proxy     = true;
-  bool ignore_self_detect  = false;
-  NHSchemeType scheme      = NH_SCHEME_NONE;
-  NHRingMode ring_mode     = NH_ALTERNATE_RING;
+  bool go_direct          = true;
+  bool parent_is_proxy    = true;
+  bool ignore_self_detect = false;
+  NHSchemeType scheme     = NH_SCHEME_NONE;
+  NHRingMode ring_mode    = NH_ALTERNATE_RING;
   ResponseCodes resp_codes;
   HealthChecks health_checks;
   NextHopHealthStatus passive_health;

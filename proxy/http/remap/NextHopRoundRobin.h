@@ -40,8 +40,8 @@ public:
     return NextHopSelectionStrategy::Init(n);
   }
   void findNextHop(TSHttpTxn txnp, time_t now = 0) override;
-//private:
+  // private:
   std::mutex _mutex;
-  uint32_t latched_index = 0;
+  uint32_t latched_index   = 0;
   NHPolicyType policy_type = NH_UNDEFINED;
 };

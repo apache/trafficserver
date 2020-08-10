@@ -43,7 +43,7 @@ public:
   NextHopStrategyFactory(const char *file);
   ~NextHopStrategyFactory();
   std::shared_ptr<TSNextHopSelectionStrategy> strategyInstance(const char *name);
-  bool addStrategy(const std::string& name, std::shared_ptr<TSNextHopSelectionStrategy> strategy);
+  bool addStrategy(const std::string &name, std::shared_ptr<TSNextHopSelectionStrategy> strategy);
 
   bool strategies_loaded;
 

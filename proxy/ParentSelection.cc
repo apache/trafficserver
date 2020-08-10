@@ -1890,17 +1890,17 @@ void
 ParentResult::copyFrom(TSParentResult *r)
 {
   this->hostname = r->hostname;
-  this->port = r->port;
-  this->retry = r->retry;
-  this->result = r->result;
-  memcpy(this->chash_init, r->chash_init, TS_MAX_GROUP_RINGS*sizeof(bool));
+  this->port     = r->port;
+  this->retry    = r->retry;
+  this->result   = r->result;
+  memcpy(this->chash_init, r->chash_init, TS_MAX_GROUP_RINGS * sizeof(bool));
   this->first_choice_status = r->first_choice_status;
-  this->line_number = r->line_number;
-  this->last_parent = r->last_parent;
-  this->start_parent = r->start_parent;
-  this->last_group = r->last_group;
-  this->wrap_around = r->wrap_around;
-  memcpy(this->mapWrapped, r->mapWrapped, 2*sizeof(bool));
+  this->line_number         = r->line_number;
+  this->last_parent         = r->last_parent;
+  this->start_parent        = r->start_parent;
+  this->last_group          = r->last_group;
+  this->wrap_around         = r->wrap_around;
+  memcpy(this->mapWrapped, r->mapWrapped, 2 * sizeof(bool));
   this->last_lookup = r->last_lookup;
   for (int i = 0; i < TS_MAX_GROUP_RINGS; ++i) {
     this->chashIter[i] = r->chashIter[i];
@@ -1911,17 +1911,17 @@ void
 ParentResult::copyTo(TSParentResult *r)
 {
   r->hostname = this->hostname;
-  r->port = this->port;
-  r->retry = this->retry;
-  r->result = this->result;
-  memcpy(r->chash_init, this->chash_init, TS_MAX_GROUP_RINGS*sizeof(bool));
+  r->port     = this->port;
+  r->retry    = this->retry;
+  r->result   = this->result;
+  memcpy(r->chash_init, this->chash_init, TS_MAX_GROUP_RINGS * sizeof(bool));
   r->first_choice_status = this->first_choice_status;
-  r->line_number = this->line_number;
-  r->last_parent = this->last_parent;
-  r->start_parent = this->start_parent;
-  r->last_group = this->last_group;
-  r->wrap_around = this->wrap_around;
-  memcpy(r->mapWrapped, this->mapWrapped, 2*sizeof(bool));
+  r->line_number         = this->line_number;
+  r->last_parent         = this->last_parent;
+  r->start_parent        = this->start_parent;
+  r->last_group          = this->last_group;
+  r->wrap_around         = this->wrap_around;
+  memcpy(r->mapWrapped, this->mapWrapped, 2 * sizeof(bool));
   r->last_lookup = this->last_lookup;
   for (int i = 0; i < TS_MAX_GROUP_RINGS; ++i) {
     r->chashIter[i] = this->chashIter[i];

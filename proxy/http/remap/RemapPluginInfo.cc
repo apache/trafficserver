@@ -274,7 +274,8 @@ RemapPluginInfo::indicatePostReload(TSRemapReloadStatus reloadStatus)
 }
 
 /* Initialize strategy (optional). */
-std::shared_ptr<TSNextHopSelectionStrategy> RemapPluginInfo::initStrategy(void *ih)
+std::shared_ptr<TSNextHopSelectionStrategy>
+RemapPluginInfo::initStrategy(void *ih)
 {
   if (!init_strategy_cb) {
     PluginDebug(_tag, "plugin '%s' has no init_strategy_cb, returning nullptr", _configPath.c_str());
@@ -296,7 +297,6 @@ std::shared_ptr<TSNextHopSelectionStrategy> RemapPluginInfo::initStrategy(void *
   PluginDebug(_tag, "plugin '%s' has init_strategy_cb, returning strategy", _configPath.c_str());
   return std::shared_ptr<TSNextHopSelectionStrategy>(strategy_raw);
 }
-
 
 inline void
 RemapPluginInfo::setPluginContext()

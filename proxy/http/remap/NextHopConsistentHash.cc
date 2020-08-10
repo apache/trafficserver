@@ -56,9 +56,7 @@ chash_lookup(const std::shared_ptr<ATSConsistentHash> &ring, uint64_t hash_key, 
   return host_rec;
 }
 
-NextHopConsistentHash::NextHopConsistentHash(const std::string_view name)
-  : NextHopSelectionStrategy(name)
-{}
+NextHopConsistentHash::NextHopConsistentHash(const std::string_view name) : NextHopSelectionStrategy(name) {}
 
 NextHopConsistentHash::~NextHopConsistentHash()
 {
@@ -406,7 +404,8 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
     result->hostname = nullptr;
     result->port     = 0;
     result->retry    = false;
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result->result: %s set hostname null port 0 retry false", sm_id, ParentResultStr[result->result]);
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result->result: %s set hostname null port 0 retry false", sm_id,
+             ParentResultStr[result->result]);
   }
 
   return;

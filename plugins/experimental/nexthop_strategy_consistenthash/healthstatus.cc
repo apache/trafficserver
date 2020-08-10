@@ -48,7 +48,7 @@ NextHopHealthStatus::insert(std::vector<std::shared_ptr<HostRecord>> &hosts)
 {
   for (uint32_t ii = 0; ii < hosts.size(); ii++) {
     std::shared_ptr<HostRecord> h = hosts[ii];
-    for(auto protocol = h->protocols.begin(); protocol != h->protocols.end(); ++protocol) {
+    for (auto protocol = h->protocols.begin(); protocol != h->protocols.end(); ++protocol) {
       const std::string host_port = h->getHostPort((*protocol)->port);
       host_map.emplace(std::make_pair(host_port, h));
       NH_Debug(NH_DEBUG_TAG, "inserting %s into host_map", host_port.c_str());
@@ -63,17 +63,17 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txnp, const char *hostname, const int
   TSParentResult result_obj;
   TSParentResult *result = &result_obj;
   TSHttpTxnParentResultGet(txnp, result);
-  const int64_t sm_id    = TSHttpTxnIdGet(txnp);
+  const int64_t sm_id = TSHttpTxnIdGet(txnp);
 
   int64_t fail_threshold; //  = sm->t_state.txn_conf->parent_fail_threshold;
   if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD, &fail_threshold) != TS_SUCCESS) {
-     NH_Error("markNextHop failed to get parent_fail_threshold, cannot mark next hop");
+    NH_Error("markNextHop failed to get parent_fail_threshold, cannot mark next hop");
     return;
   }
 
   int64_t retry_time; //      = sm->t_state.txn_conf->parent_retry_time;
   if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME, &retry_time) != TS_SUCCESS) {
-     NH_Error("markNextHop failed to get parent_retry_time, cannot mark next hop");
+    NH_Error("markNextHop failed to get parent_retry_time, cannot mark next hop");
     return;
   }
 
@@ -89,7 +89,7 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txnp, const char *hostname, const int
   }
 
   const std::string host_port = HostRecord::makeHostPort(hostname, port);
-  auto iter = host_map.find(host_port);
+  auto iter                   = host_map.find(host_port);
   if (iter == host_map.end()) {
     NH_Debug(NH_DEBUG_TAG, "[%" PRId64 "] no host named %s found in host_map", sm_id, host_port.c_str());
     return;

@@ -196,7 +196,8 @@ markParentDown(HttpTransact::State *s)
   url_mapping *mp = s->url_map.getMapping();
 
   if (mp && mp->strategy) {
-    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port, NH_MARK_DOWN);
+    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
+                                     s->parent_result.port, NH_MARK_DOWN);
   } else if (s->parent_params) {
     return s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
   }
@@ -209,7 +210,8 @@ markParentUp(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
-    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port, NH_MARK_UP);
+    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
+                                     s->parent_result.port, NH_MARK_UP);
   } else if (s->parent_params) {
     return s->parent_params->markParentUp(&s->parent_result);
   }

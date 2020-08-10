@@ -47,7 +47,8 @@ void loadConfigFile(const std::string fileName, std::stringstream &doc, std::uno
 
 // createStrategy creates and initializes a Consistent Hash strategy from the given YAML node.
 // Caller takes ownership of the returned pointer, and must call delete on it.
-TSNextHopSelectionStrategy* createStrategy(const std::string &name, const YAML::Node &node)
+TSNextHopSelectionStrategy *
+createStrategy(const std::string &name, const YAML::Node &node)
 {
   NextHopConsistentHash *st = new NextHopConsistentHash(name);
   if (!st->Init(node)) {
@@ -58,7 +59,8 @@ TSNextHopSelectionStrategy* createStrategy(const std::string &name, const YAML::
 
 // createStrategyFromFile creates a Consistent Hash strategy from the given config file.
 // Caller takes ownership of the returned pointer, and must call delete on it.
-TSNextHopSelectionStrategy* createStrategyFromFile(const char *file, const char *strategyName)
+TSNextHopSelectionStrategy *
+createStrategyFromFile(const char *file, const char *strategyName)
 {
   NH_Debug(NH_DEBUG_TAG, "plugin createStrategyFromFile file '%s' strategy '%s'", file, strategyName);
 
@@ -80,7 +82,7 @@ TSNextHopSelectionStrategy* createStrategyFromFile(const char *file, const char 
     config = YAML::Load(doc);
     if (config.IsNull()) {
       NH_Note("No NextHop strategy configs were loaded.");
-        return nullptr;
+      return nullptr;
     }
 
     strategies = config["strategies"];
@@ -95,14 +97,15 @@ TSNextHopSelectionStrategy* createStrategyFromFile(const char *file, const char 
       if (name != strategyName) {
         continue;
       }
-      auto policy         = strategy["policy"];
+      auto policy = strategy["policy"];
       if (!policy) {
         NH_Error("No policy is defined for the strategy named '%s', this strategy will be ignored.", name.c_str());
         continue;
       }
-      auto policy_value        = policy.Scalar();
+      auto policy_value = policy.Scalar();
       if (policy_value != consistent_hash) {
-        NH_Error("Strategy named '%s' has unsupported policy '%s', this strategy will be ignored.", strategyName, policy_value.c_str());
+        NH_Error("Strategy named '%s' has unsupported policy '%s', this strategy will be ignored.", strategyName,
+                 policy_value.c_str());
         return nullptr;
       }
       return createStrategy(name, strategy);

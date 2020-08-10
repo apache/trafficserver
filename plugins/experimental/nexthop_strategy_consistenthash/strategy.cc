@@ -163,7 +163,7 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
       if (groups_node.Type() != YAML::NodeType::Sequence) {
         throw std::invalid_argument("Invalid groups definition, expected a sequence, '" + strategy_name + "' cannot be loaded.");
       } else {
-        uint32_t grp_size  = groups_node.size();
+        uint32_t grp_size = groups_node.size();
         if (grp_size > TS_MAX_GROUP_RINGS) {
           NH_Note("the groups list exceeds the maximum of %d for the strategy '%s'. Only the first %d groups will be configured.",
                   TS_MAX_GROUP_RINGS, strategy_name.c_str(), TS_MAX_GROUP_RINGS);
@@ -189,7 +189,8 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
               if (TSHostnameIsSelf(host_rec->hostname.c_str())) {
-                TSHostStatusSet(host_rec->hostname.c_str(), TSHostStatus::TS_HOST_STATUS_DOWN, 0, (unsigned int)TS_HOST_STATUS_SELF_DETECT);
+                TSHostStatusSet(host_rec->hostname.c_str(), TSHostStatus::TS_HOST_STATUS_DOWN, 0,
+                                (unsigned int)TS_HOST_STATUS_SELF_DETECT);
               }
               hosts_inner.push_back(std::move(host_rec));
               num_parents++;
@@ -235,14 +236,15 @@ NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp)
 }
 
 bool
-NextHopSelectionStrategy::responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code) {
-  return this->resp_codes.contains(response_code) &&
-    current_retry_attempts < this->max_simple_retries &&
-    current_retry_attempts < this->num_parents;
+NextHopSelectionStrategy::responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code)
+{
+  return this->resp_codes.contains(response_code) && current_retry_attempts < this->max_simple_retries &&
+         current_retry_attempts < this->num_parents;
 }
 
 bool
-NextHopSelectionStrategy::onFailureMarkParentDown(TSHttpStatus response_code) {
+NextHopSelectionStrategy::onFailureMarkParentDown(TSHttpStatus response_code)
+{
   return static_cast<int>(response_code) >= 500 && static_cast<int>(response_code) <= 599;
 }
 

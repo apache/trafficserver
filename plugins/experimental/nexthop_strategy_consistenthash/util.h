@@ -24,12 +24,14 @@
 // The parent may be TS_NULL_MLOC.
 // If mloc is set to TS_NULL_MLOC or never allocated, it will not be freed.
 struct ScopedFreeMLoc {
-  ScopedFreeMLoc(TSMBuffer *_buf, TSMLoc _parent, TSMLoc *_mloc) : mloc(_mloc), parent(_parent), buf(_buf) {};
-  ~ScopedFreeMLoc(){
+  ScopedFreeMLoc(TSMBuffer *_buf, TSMLoc _parent, TSMLoc *_mloc) : mloc(_mloc), parent(_parent), buf(_buf){};
+  ~ScopedFreeMLoc()
+  {
     if (*mloc != TS_NULL_MLOC) {
       TSHandleMLocRelease(*buf, parent, *mloc);
     }
   };
+
 private:
   TSMLoc *mloc;
   TSMLoc parent;
@@ -39,17 +41,16 @@ private:
 // StrVal is a string as returned by TSUrlStringGet and other TS API functions.
 // Zeroes on initialization.
 struct StrVal {
-  StrVal() : ptr(nullptr), len(0) {};
+  StrVal() : ptr(nullptr), len(0){};
   char *ptr;
   int len;
 };
 
 // ScopedFreeStrVal frees the ptr in the given Strval when it goes out of scope.
 struct ScopedFreeStrVal {
-  ScopedFreeStrVal(StrVal *_strval) : strval(_strval) {};
-  ~ScopedFreeStrVal(){
-    TSfree(strval->ptr);
-  };
+  ScopedFreeStrVal(StrVal *_strval) : strval(_strval){};
+  ~ScopedFreeStrVal() { TSfree(strval->ptr); };
+
 private:
   StrVal *strval;
 };

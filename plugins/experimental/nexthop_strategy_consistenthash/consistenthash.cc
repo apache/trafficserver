@@ -72,9 +72,7 @@ chash_lookup(std::shared_ptr<ATSConsistentHash> ring, uint64_t hash_key, ATSCons
   return host_rec;
 }
 
-NextHopConsistentHash::NextHopConsistentHash(const std::string_view name)
-  : NextHopSelectionStrategy(name)
-{}
+NextHopConsistentHash::NextHopConsistentHash(const std::string_view name) : NextHopSelectionStrategy(name) {}
 
 NextHopConsistentHash::~NextHopConsistentHash()
 {
@@ -146,7 +144,7 @@ NextHopConsistentHash::Init(const YAML::Node &n)
 uint64_t
 NextHopConsistentHash::getHashKey(uint64_t sm_id, TSMBuffer reqp, TSMLoc url, TSMLoc parent_selection_url, ATSHash64 *h)
 {
-  int len = 0;
+  int len                    = 0;
   const char *url_string_ref = nullptr;
 
   // calculate a hash using the selected config.
@@ -224,7 +222,9 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, TSMBuffer reqp, TSMLoc url, TS
   return h->get();
 }
 
-static void setParentResultErr(TSHttpTxn txnp, TSParentResult *result) {
+static void
+setParentResultErr(TSHttpTxn txnp, TSParentResult *result)
+{
   result->hostname = nullptr;
   result->port     = 0;
   result->retry    = false;
@@ -240,7 +240,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
   TSParentResult *result = &result_obj;
   TSHttpTxnParentResultGet(txnp, result);
 
-  int64_t sm_id  = TSHttpTxnIdGet(txnp);
+  int64_t sm_id = TSHttpTxnIdGet(txnp);
 
   TSMBuffer reqp; // TODO verify doesn't need freed
 
@@ -281,10 +281,10 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
     return;
   }
 
-  time_t _now                  = now;
-  bool firstcall               = false;
-  bool nextHopRetry            = false;
-  bool wrapped                 = false;
+  time_t _now       = now;
+  bool firstcall    = false;
+  bool nextHopRetry = false;
+  bool wrapped      = false;
   std::vector<bool> wrap_around(groups, false);
   uint32_t cur_ring = 0; // there is a hash ring for each host group
   uint64_t hash_key = 0;
@@ -343,7 +343,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
       pRec = host_groups[hostRec->group_index][hostRec->host_index];
       if (firstcall) {
         TSHostStatus hostStatus;
-        const bool hostExists = pRec ? TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, nullptr) : false;
+        const bool hostExists       = pRec ? TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, nullptr) : false;
         result->first_choice_status = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
         break;
       }
@@ -361,7 +361,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
   TSHostStatus hostStatus;
   unsigned int hostReasons;
   const bool hostExists = pRec ? TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, &hostReasons) : false;
-  host_stat = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
+  host_stat             = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
   // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
   // ignore the down status and mark it as avaialble
   if ((pRec && ignore_self_detect) && (hostExists && hostStatus == TS_HOST_STATUS_DOWN)) {
@@ -404,12 +404,12 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
       wrap_around[cur_ring] = wrapped;
       lookups++;
       if (hostRec) {
-        pRec      = host_groups[hostRec->group_index][hostRec->host_index];
+        pRec = host_groups[hostRec->group_index][hostRec->host_index];
 
         TSHostStatus hostStatus;
         unsigned int hostReasons;
         const bool hostExists = pRec ? TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, &hostReasons) : false;
-        host_stat = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
+        host_stat             = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
 
         // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
         // ignore the down status and mark it as avaialble
@@ -475,7 +475,8 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
     result->hostname = nullptr;
     result->port     = 0;
     result->retry    = false;
-    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result->result: %s set hostname null port 0 retry false", sm_id, ParentResultStr[result->result]);
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result->result: %s set hostname null port 0 retry false", sm_id,
+             ParentResultStr[result->result]);
   }
 
   TSHttpTxnParentResultSet(txnp, result);

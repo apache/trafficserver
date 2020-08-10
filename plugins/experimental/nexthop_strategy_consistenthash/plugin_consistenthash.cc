@@ -117,11 +117,11 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
     NH_Error("too many arguments, %d, only expected config file argument. Ignoring the rest!", argc);
   }
 
-  const char* config_file_path = argv[2];
+  const char *config_file_path = argv[2];
 
   NH_Debug(NH_DEBUG_TAG, "%s TSRemapInitStrategy called with path '%s'", PLUGIN_NAME, config_file_path);
 
-  TSNextHopSelectionStrategy* strategy = createStrategyFromFile(config_file_path, PLUGIN_NAME);
+  TSNextHopSelectionStrategy *strategy = createStrategyFromFile(config_file_path, PLUGIN_NAME);
   if (strategy == nullptr) {
     NH_Debug(NH_DEBUG_TAG, "%s failed to create strategy.", PLUGIN_NAME);
     *ih = nullptr;

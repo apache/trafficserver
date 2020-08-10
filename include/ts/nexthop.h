@@ -35,15 +35,15 @@ enum NHCmd { NH_MARK_UP, NH_MARK_DOWN };
 class TSNextHopSelectionStrategy
 {
 public:
-  TSNextHopSelectionStrategy() {};
-  virtual ~TSNextHopSelectionStrategy() {};
+  TSNextHopSelectionStrategy(){};
+  virtual ~TSNextHopSelectionStrategy(){};
 
-  virtual void findNextHop(TSHttpTxn txnp, time_t now = 0) = 0;
+  virtual void findNextHop(TSHttpTxn txnp, time_t now = 0)                                                                 = 0;
   virtual void markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, const time_t now = 0) = 0;
-  virtual bool nextHopExists(TSHttpTxn txnp) = 0;
-  virtual bool responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code) = 0;
-  virtual bool onFailureMarkParentDown(TSHttpStatus response_code) = 0;
+  virtual bool nextHopExists(TSHttpTxn txnp)                                                                               = 0;
+  virtual bool responseIsRetryable(unsigned int current_retry_attempts, TSHttpStatus response_code)                        = 0;
+  virtual bool onFailureMarkParentDown(TSHttpStatus response_code)                                                         = 0;
 
-  virtual bool goDirect() = 0;
+  virtual bool goDirect()      = 0;
   virtual bool parentIsProxy() = 0;
 };
