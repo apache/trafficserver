@@ -1188,6 +1188,9 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
     return EVENT_ERROR;
   }
 
+  // reset stale read triggered on keep alive connection to prevent getting into read ready list
+  this->read.triggered = 0;
+
   if (h->startIO(this) < 0) {
     Debug("iocore_net", "populate : Failed to add to epoll list");
     return EVENT_ERROR;
