@@ -21,8 +21,10 @@ test -z "${ATS_MAKE}" && ATS_MAKE="make"
 test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 
 # Skip if nothing in doc has changed
+INCLUDE_FILES=$(for i in $(git grep literalinclude doc/ | awk '{print $3}'); do basename $i; done | sort -u | paste -sd\|)
+echo $INCLUDE_FILES
 if [ ! -z "$ghprbActualCommit" ]; then
-    git diff ${ghprbActualCommit}^...${ghprbActualCommit} --name-only | egrep -E '^doc/' > /dev/null
+    git diff ${ghprbActualCommit}^...${ghprbActualCommit} --name-only | egrep -E "(^doc/|$INCLUDE_FILES)" > /dev/null
     if [ $? = 1 ]; then
         echo "No relevant files changed, skipping run"
         exit 0
