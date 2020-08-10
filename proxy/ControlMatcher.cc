@@ -500,10 +500,10 @@ RegexMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result) 
   if (url_str == nullptr) {
     url_str = ats_strdup("");
   }
+
   // INKqa12980
   // The function unescapifyStr() is already called in
   // HttpRequestData::get_string(); therefore, no need to call again here.
-  // unescapifyStr(url_str);
 
   for (int i = 0; i < num_el; i++) {
     r = pcre_exec(re_array[i], nullptr, url_str, strlen(url_str), 0, 0, nullptr, 0);
@@ -796,6 +796,7 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
     // We have an empty file
     return 0;
   }
+
   // First get the number of entries
   tmp = bufTok.iterFirst(&i_state);
   while (tmp != nullptr) {
@@ -912,8 +913,7 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf)
         Result::failure("%s discarding %s entry with unknown type at line %d", matcher_name, config_file_path, current->line_num);
     }
 
-    // Check to see if there was an error in creating
-    //   the NewEntry
+    // Check to see if there was an error in creating the NewEntry
     if (error.failed()) {
       SignalError(error.message(), alarmAlready);
     }
@@ -954,30 +954,6 @@ ControlMatcher<Data, MatchResult>::BuildTable()
 
 /****************************************************************
  *    TEMPLATE INSTANTIATIONS GO HERE
- *
- *  We have to explicitly instantiate the templates so that
- *   everything works on with dec ccx, sun CC, and g++
- *
- *  Details on the different comipilers:
- *
- *  dec ccx: Does not seem to instantiate anything automatically
- *         so it needs all templates manually instantiated
- *
- *  sun CC: Automatic instantiation works but since we make
- *         use of the templates in other files, instantiation
- *         only occurs when those files are compiled, breaking
- *         the dependency system.  Explict instantiation
- *         in this file causes the templates to be reinstantiated
- *         when this file changes.
- *
- *         Also, does not give error messages about template
- *           compilation problems.  Requires the -verbose=template
- *           flage to error messages
- *
- *  g++: Requires instantiation to occur in the same file as the
- *         the implementation.  Instantiating ControlMatcher
- *         automatically instatiatiates the other templates since
- *         ControlMatcher makes use of them
  *
  ****************************************************************/
 

@@ -29,67 +29,6 @@
 
 ConfigProcessor configProcessor;
 
-void *
-config_int_cb(void *data, void *value)
-{
-  *static_cast<int *>(data) = *static_cast<int64_t *>(value);
-  return nullptr;
-}
-
-void *
-config_float_cb(void *data, void *value)
-{
-  *static_cast<float *>(data) = *static_cast<float *>(value);
-  return nullptr;
-}
-
-void *
-config_long_long_cb(void *data, void *value)
-{
-  *static_cast<int64_t *>(data) = *static_cast<int64_t *>(value);
-  return nullptr;
-}
-
-/////////////////////////////////////////////////////////////
-//
-//  config_string_alloc_cb()
-//
-//  configuration callback function. The function is called
-//  by the manager when a string configuration variable
-//  changed. It allocates new memory for the new data.
-//  the old variable is scheduled to be freed using
-//  ConfigFreerContinuation which will free the memory
-//  used for this variable after long time, assuming that
-//  during all this time all the users of this memory will
-//  disappear.
-/////////////////////////////////////////////////////////////
-void *
-config_string_alloc_cb(void *data, void *value)
-{
-  char *_ss        = static_cast<char *>(value);
-  char *_new_value = nullptr;
-
-#if defined(DEBUG_CONFIG_STRING_UPDATE)
-  printf("config callback [new, old] = [%s : %s]\n", (_ss) ? (_ss) : (""), (*(char **)data) ? (*(char **)data) : (""));
-#endif
-
-  if (_ss) {
-    int len    = strlen(_ss);
-    _new_value = static_cast<char *>(ats_malloc(len + 1));
-    memcpy(_new_value, _ss, len + 1);
-  }
-
-  char *_temp2                = *static_cast<char **>(data);
-  *static_cast<char **>(data) = _new_value;
-
-  // free old data
-  if (_temp2 != nullptr) {
-    new_Freer(_temp2, HRTIME_DAY);
-  }
-
-  return nullptr;
-}
-
 class ConfigInfoReleaser : public Continuation
 {
 public:
