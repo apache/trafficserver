@@ -336,25 +336,13 @@ public:
     return reMatch;
   }
 
-  UrlMatcher<Data, MatchResult> *
-  getUrlMatcher()
-  {
-    return urlMatch;
-  }
-
   IpMatcher<Data, MatchResult> *
   getIPMatcher()
   {
     return ipMatch;
   }
 
-  HostRegexMatcher<Data, MatchResult> *
-  getHrMatcher()
-  {
-    return hrMatch;
-  }
-
-  // private:
+  // private
   RegexMatcher<Data, MatchResult> *reMatch;
   UrlMatcher<Data, MatchResult> *urlMatch;
   HostMatcher<Data, MatchResult> *hostMatch;
