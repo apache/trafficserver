@@ -557,15 +557,22 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
 
     Debug("http_match", "matching Content-type; '%s/%s' with Accept value '%s/%s'\n", c_type, c_subtype, a_type, a_subtype);
 
-    // Is there a wildcard in the type or subtype?
-    if (is_asterisk(a_type) && content_type_webp == false) {
-      wildcard_type_present = true;
-      wildcard_type_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
-    } else if (is_asterisk(a_subtype) && (strcasecmp(a_type, c_type) == 0) && content_type_webp == false) {
-      wildcard_subtype_present = true;
-      wildcard_subtype_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
-    } else {
-      // No wildcard. Do explicit matching of accept and content values.
+    bool wildcard_found = true;
+    // Only do wildcard checks if the content type is not image/webp
+    if (content_type_webp == false) {
+      // Is there a wildcard in the type or subtype?
+      if (is_asterisk(a_type)) {
+        wildcard_type_present = true;
+        wildcard_type_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
+      } else if (is_asterisk(a_subtype) && (strcasecmp(a_type, c_type) == 0)) {
+        wildcard_subtype_present = true;
+        wildcard_subtype_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
+      } else {
+        wildcard_found = false;
+      }
+    }
+    if (content_type_webp == true || wildcard_found == false) {
+      // No wildcard or the content type is image/webp. Do explicit matching of accept and content values.
       if (do_content_types_match(a_type, a_subtype, c_type, c_subtype)) {
         float tq;
         tq = HttpCompat::find_Q_param_in_strlist(&a_param_list);
