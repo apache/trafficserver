@@ -28,11 +28,11 @@ experimental_access_control_access_control_la_SOURCES = \
 check_PROGRAMS +=  experimental/access_control/test_access_control
 
 experimental_access_control_test_access_control_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DACCESS_CONTROL_UNIT_TEST
-experimental_access_control_test_access_control_LDADD = $(OPENSSL_LIBS)
+experimental_access_control_test_access_control_LDADD = $(OPENSSL_LIBS) $(top_builddir)/src/tscore/libtscore.la
+
 experimental_access_control_test_access_control_SOURCES = \
     experimental/access_control/unit_tests/test_access_control.cc \
     experimental/access_control/unit_tests/test_utils.cc \
     experimental/access_control/access_control.cc \
     experimental/access_control/common.cc \
     experimental/access_control/utils.cc
-

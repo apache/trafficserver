@@ -30,8 +30,6 @@
 
 #define MAX_MSGDIGEST_BUFFER_SIZE EVP_MAX_MD_SIZE
 
-bool parseStrLong(const char *s, size_t len, long &val);
-
 /* ******* Encoding/Decoding functions ******* */
 
 size_t hexEncode(const char *in, size_t inLen, char *out, size_t outLen);

@@ -358,7 +358,7 @@ static const std::map<String, String> _digestAlgosMap = createStaticDigestAlgoMa
  * @param hf Hash Function (HF) [optional]
  * @param secret secret
  * @param message input message
- * @param messageLen input message lenght
+ * @param messageLen input message length
  * @param buffer output buffer for storing the message digest
  * @param len output buffer length
  * @return number of characters actually written to the output buffer.
@@ -437,7 +437,7 @@ accessTokenStatusToString(const AccessTokenStatus &state)
     s = "INVALID_FIELD_VALUE";
     break;
   case INVALID_VERSION:
-    s = "UNSUPORTED_VERSION";
+    s = "UNSUPPORTED_VERSION";
     break;
   case INVALID_SECRET:
     s = "NO_SECRET_SPECIFIED";
@@ -461,7 +461,7 @@ accessTokenStatusToString(const AccessTokenStatus &state)
     s = "INVALID_KEYID";
     break;
   case INVALID_HASH_FUNCTION:
-    s = "UNSUPORTED_HASH_FUNCTION";
+    s = "UNSUPPORTED_HASH_FUNCTION";
     break;
   default:
     s = "";
