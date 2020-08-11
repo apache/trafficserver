@@ -115,13 +115,13 @@ A number of file objects are also defined to help test TrafficServer. Files that
 - diags.log
 - records.config
 - cache.config
-- congestion.config
 - hosting.config
 - ip_allow.yaml
 - logging.yaml
 - parent.config
 - plugin.config
 - remap.config
+- sni.yaml
 - socks.config
 - splitdns.config
 - ssl_multicert.config

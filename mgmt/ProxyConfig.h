@@ -30,12 +30,6 @@
 
 class ProxyMutex;
 
-void *config_int_cb(void *data, void *value);
-void *config_long_long_cb(void *data, void *value);
-void *config_float_cb(void *data, void *value);
-void *config_string511_cb(void *data, void *value);
-void *config_string_alloc_cb(void *data, void *value);
-
 //
 // Macros that spin waiting for the data to be bound
 //

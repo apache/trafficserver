@@ -514,7 +514,6 @@ loadSocksConfiguration(socks_conf_struct *socks_conf_stuff)
   }
 #ifdef SOCKS_WITH_TS
   tmp = Load_IpMap_From_File(&socks_conf_stuff->ip_map, socks_config_fd, "no_socks");
-  //  tmp = socks_conf_stuff->ip_range.read_table_from_file(socks_config_fd, "no_socks");
 
   if (tmp) {
     Error("SOCKS Config: Error while reading ip_range: %s.", tmp);

@@ -446,7 +446,7 @@ Now let us send the same request again and since the object is in cache we get `
   x-cache: hit-fresh
 
 
-The previous activity should result in the following log (as defined in ``logging.config``)
+The previous activity should result in the following log (as defined in ``logging.yaml``)
 
 .. code-block:: bash
 

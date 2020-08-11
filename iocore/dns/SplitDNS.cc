@@ -219,7 +219,6 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
 
   result->m_rec         = nullptr;
   result->m_line_number = 0xffffffff;
-  result->m_wrap_around = false;
 
   /* ---------------------------
      the 'alleged' fast path ...
