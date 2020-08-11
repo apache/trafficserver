@@ -40,10 +40,6 @@ const int CC_UNSET_TIME = -1;
 
 #define CACHE_CONTROL_TIMEOUT (HRTIME_HOUR * 1)
 
-//   Use 10 second time for purify testing under low
-//     load to verify memory allocation
-//#define CACHE_CONTROL_TIMEOUT            (HRTIME_SECOND*10)
-
 enum CacheControlType {
   CC_INVALID = 0,
   CC_REVALIDATE_AFTER,

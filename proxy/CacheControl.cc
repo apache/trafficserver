@@ -28,23 +28,27 @@
  *
  ****************************************************************************/
 
-#include <sys/types.h>
+#include "CacheControl.h"
 
+#include <sys/types.h>
+#include <yaml-cpp/yaml.h>
+
+#include "tscpp/util/TextView.h"
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
-#include "CacheControl.h"
+#include "tscore/Regex.h"
+#include "tscore/ts_file.h"
+
 #include "ControlMatcher.h"
 #include "Main.h"
 #include "P_EventSystem.h"
-#include "ProxyConfig.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
-#include "P_Cache.h"
-#include "tscore/Regex.h"
 
-static const char modulePrefix[] = "[CacheControl]";
+static constexpr char modulePrefix[]  = "[CacheControl]";
+static constexpr char YAML_TAG_ROOT[] = "cache_override";
 
-#define TWEAK_CACHE_RESPONSES_TO_COOKIES "cache-responses-to-cookies"
+static constexpr char TWEAK_CACHE_RESPONSES_TO_COOKIES[] = "cache-responses-to-cookies";
 
 static const char *CC_directive_str[CC_NUM_TYPES] = {
   "INVALID",
@@ -56,7 +60,7 @@ static const char *CC_directive_str[CC_NUM_TYPES] = {
   "IGNORE_SERVER_NO_CACHE",
   "PIN_IN_CACHE",
   "TTL_IN_CACHE"
-  // "CACHE_AUTH_CONTENT"
+  //
 };
 
 typedef ControlMatcher<CacheControlRecord, CacheControlResult> CC_table;
@@ -126,34 +130,91 @@ ip_rule_in_CacheControlTable()
   return (CacheControlTable->ipMatch ? true : false);
 }
 
+CC_table *
+buildTableYAML(const std::string &contents)
+{
+  Note("%s as YAML ...", ts::filename::CACHE);
+  YAML::Node config{YAML::Load(contents)};
+
+  if (config.IsNull()) {
+    Warning("malformed %s file; config is empty?", ts::filename::CACHE);
+
+    return nullptr;
+  }
+
+  if (!config.IsMap()) {
+    Error("malformed %s file; expected a map", ts::filename::CACHE);
+    return nullptr;
+  }
+
+  if (!config[YAML_TAG_ROOT]) {
+    Error("malformed %s file; expected a toplevel '%s' node", ts::filename::CACHE, std::string(YAML_TAG_ROOT).c_str());
+    return nullptr;
+  }
+
+  config = config[YAML_TAG_ROOT];
+
+  if (!config.IsSequence()) {
+    Error("malformed %s file; expected a toplevel sequence/array", ts::filename::CACHE);
+    return nullptr;
+  }
+
+  return new CC_table("proxy.config.cache.control.filename", modulePrefix, config);
+}
+
+CC_table *
+buildTable()
+{
+  ats_scoped_str path(RecConfigReadConfigPath("proxy.config.cache.control.filename", ts::filename::CACHE));
+
+  Note("%s loading ...", ts::filename::CACHE);
+
+  ts::file::path config_file{path};
+
+  std::error_code ec;
+  std::string content{ts::file::load(config_file, ec)};
+
+  CC_table *table = nullptr;
+  if (ec.value() == 0) {
+    // If it's a .yaml, treat as YAML
+    if (ts::TextView{config_file.view()}.take_suffix_at('.') == "yaml") {
+      table = buildTableYAML(content);
+    } else {
+      table = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
+    }
+  }
+
+  Note("%s finished loading", ts::filename::CACHE);
+
+  return table;
+}
+
 void
 initCacheControl()
 {
   ink_assert(CacheControlTable == nullptr);
+
   reconfig_mutex    = new_ProxyMutex();
-  CacheControlTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
+  CacheControlTable = buildTable();
+
   REC_RegisterConfigUpdateFunc("proxy.config.cache.control.filename", cacheControlFile_CB, nullptr);
 }
 
 // void reloadCacheControl()
 //
-//  Called when the cache.conf file changes.  Since it called
+//  Called when the cache config (cache.config or cache.yaml) file changes.  Since it called
 //   infrequently, we do the load of new file as blocking I/O and
 //   lock acquire is also blocking
 //
 void
 reloadCacheControl()
 {
-  Note("%s loading ...", ts::filename::CACHE);
-
-  CC_table *newTable;
-
-  Debug("cache_control", "%s updated, reloading", ts::filename::CACHE);
   eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CACHE);
-  newTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
-  ink_atomic_swap(&CacheControlTable, newTable);
 
-  Note("%s finished loading", ts::filename::CACHE);
+  CC_table *newTable = buildTable();
+  ink_assert(newTable != nullptr);
+
+  ink_atomic_swap(&CacheControlTable, newTable);
 }
 
 void
@@ -220,7 +281,7 @@ CacheControlRecord::Print() const
     break;
   }
   if (cache_responses_to_cookies >= 0) {
-    printf("\t\t  - " TWEAK_CACHE_RESPONSES_TO_COOKIES ":%d\n", cache_responses_to_cookies);
+    printf("\t\t  - %s:%d\n", TWEAK_CACHE_RESPONSES_TO_COOKIES, cache_responses_to_cookies);
   }
   ControlBase::Print();
 }
@@ -258,7 +319,7 @@ CacheControlRecord::Init(matcher_line *line_info)
       char *ptr = nullptr;
       int v     = strtol(val, &ptr, 0);
       if (!ptr || v < 0 || v > 4) {
-        return Result::failure("Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES " must be an integer in the range 0..4");
+        return Result::failure("Value for '%s' must be an integer in the range 0..4", TWEAK_CACHE_RESPONSES_TO_COOKIES);
       } else {
         cache_responses_to_cookies = v;
       }
@@ -349,7 +410,86 @@ CacheControlRecord::Init(matcher_line *line_info)
 Result
 CacheControlRecord::Init(const YAML::Node &node)
 {
-  return Result::failure("not implemented");
+  bool d_found = false;
+  if (node[TWEAK_CACHE_RESPONSES_TO_COOKIES]) {
+    auto val = node[TWEAK_CACHE_RESPONSES_TO_COOKIES];
+
+    cache_responses_to_cookies = val.as<int>();
+  }
+
+  // Now look for the directive.
+  for (auto const &v : node) {
+    std::string label = v.first.as<std::string>();
+
+    if (!v.second.IsScalar()) {
+      continue;
+    }
+
+    if (v.second.IsNull()) {
+      Debug("control", "Skipping null value for key '%s'", label.c_str());
+      continue;
+    }
+
+    std::string val = v.second.as<std::string>();
+
+    if (label == "action") {
+      if (val == "never-cache") {
+        directive = CC_NEVER_CACHE;
+        d_found   = true;
+      } else if (val == "standard-cache") {
+        directive = CC_STANDARD_CACHE;
+        d_found   = true;
+      } else if (val == "ignore-no-cache") {
+        directive = CC_IGNORE_NO_CACHE;
+        d_found   = true;
+      } else if (val == "ignore-client-no-cache") {
+        directive = CC_IGNORE_CLIENT_NO_CACHE;
+        d_found   = true;
+      } else if (val == "ignore-server-no-cache") {
+        directive = CC_IGNORE_SERVER_NO_CACHE;
+        d_found   = true;
+      } else {
+        return Result::failure("%s Invalid action at line %d in %s", modulePrefix, line_num, ts::filename::CACHE);
+      }
+    } else {
+      if (label == "revalidate") {
+        directive = CC_REVALIDATE_AFTER;
+        d_found   = true;
+      } else if (label == "pin-in-cache") {
+        directive = CC_PIN_IN_CACHE;
+        d_found   = true;
+      } else if (label == "ttl-in-cache") {
+        directive = CC_TTL_IN_CACHE;
+        d_found   = true;
+      }
+
+      // Process the time argument for the remaining directives
+      if (d_found) {
+        int time_in;
+        char *cvalue    = ats_strdup(val.c_str());
+        const char *tmp = processDurationString(cvalue, &time_in);
+        ats_free(cvalue);
+
+        if (tmp == nullptr) {
+          this->time_arg = time_in;
+        } else {
+          return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, node.Mark().line, ts::filename::CACHE);
+        }
+      }
+    }
+  }
+
+  if (!d_found) {
+    return Result::failure("%s No directive in %s at line %d", modulePrefix, ts::filename::CACHE, node.Mark().line);
+  }
+
+  // process any modifiers to the directive, if they exist
+  const char *tmp = this->ProcessModifiers(node);
+  if (tmp != nullptr) {
+    return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, node.Mark().line, ts::filename::CACHE);
+  }
+
+  return Result::ok();
 }
 
 // void CacheControlRecord::UpdateMatch(CacheControlResult* result, RequestData* rdata)
@@ -442,7 +582,7 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
   if (match == true) {
     char crtc_debug[80];
     if (result->cache_responses_to_cookies >= 0) {
-      snprintf(crtc_debug, sizeof(crtc_debug), " [" TWEAK_CACHE_RESPONSES_TO_COOKIES "=%d]", result->cache_responses_to_cookies);
+      snprintf(crtc_debug, sizeof(crtc_debug), " [%s=%d]", TWEAK_CACHE_RESPONSES_TO_COOKIES, result->cache_responses_to_cookies);
     } else {
       crtc_debug[0] = 0;
     }

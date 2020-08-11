@@ -1,0 +1,82 @@
+#
+# cache_override.yaml
+#
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache_override.en.html
+#
+# The purpose of this file is to alter caching parameters of
+#   specific objects or sets of objects
+#
+# Lines may include any number of the secondary specifiers but
+#    secondary specifiers may not be duplicated on the same line
+#
+#   Secondary specifiers are
+#     port=
+#     scheme=
+#     prefix=
+#     suffix=
+#     method=
+#     time=
+#     src_ip=
+#     internal={true,false}
+#
+# Each line must include exactly one cache directive
+#   Cache directives are
+#     action=never-cache
+#     action=ignore-no-cache          (client & server no cache)
+#     action=ignore-client-no-cache   (only client no cache)
+#     action=ignore-server-no-cache   (only server no cache)
+#     pin-in-cache=<time>
+#     revalidate=<time>
+#     ttl-in-cache=<time>             (force caching and expire after <time>)
+#
+# Each line may also contain various "tweaks" which adjust caching parameters.
+#   Tweaks are
+#     cache-responses-to-cookies=<value>
+#       - Change the style of caching with regard to cookies. This effectively
+#         overrides the configuration parameter
+#           proxy.config.http.cache.cache_responses_to_cookies
+#         and uses the same values with the same semantics. The override happens
+#         only for requests that match.
+#
+# Examples:
+#
+#  Revalidate all http objects from www.example.com after 2 hours
+#    dest_domain=www.example.com   scheme=http  revalidate=2h
+#cache_override:
+#    # dest_domain=example.com suffix=js revalidate=1d
+#    - type: domain
+#      dest: example.com
+#      suffix: js
+#      revalidate: 1d
+#    # dest_domain=example.com prefix=foo suffix=js revalidate=7d
+#    - dest: example.com
+#      type: domain
+#      prefix: foo
+#      suffix: js
+#      revalidate: 7d
+#    - dest: mydomain.com
+#      type: domain
+#      revalidate: 1h
+#    # dest_domain=mydomain.com suffix=gif revalidate=6h
+#    - dest: mydomain.com
+#      type: domain
+#      suffix: gif
+#      revalidate: 6h
+#    # dest_domain=mydomain.com suffix=jpeg revalidate=6h
+#    - dest: mydomain.com
+#      type: domain
+#      suffix: jpeg
+#      revalidate: 6h
+#    # Force a specific regex to be in cache between 7-11pm of the server’s time for 26 hours.
+#    # url_regex=example.com/articles/popular.* time=19:00-23:00 ttl-in-cache=1d2h
+#    - dest: example.com/articles/popular.*
+#      type: regex
+#      time: 19:00-23:00
+#      ttl-in-cache: 1d2h
+#      #      action: ignore-client-no-cache   #(only client no cache)
+#    # Prevent objects from being evicted from cache:
+#    # url_regex=example.com/game/.* pin-in-cache=1h
+#    - dest: example.com/game/.*
+#      type: regex
+#      pin-in-cache: 1h
