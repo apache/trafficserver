@@ -526,6 +526,12 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
   // Parse the type and subtype of the Content-Type field.
   HttpCompat::parse_mime_type(c_param->str, c_type, c_subtype, sizeof(c_type), sizeof(c_subtype));
 
+  // Special case for webp because Safari is has Accept: */*, but doesn't support webp
+  bool content_type_webp = false;
+  if (strcasecmp("webp", c_subtype) && strcasecmp("image", c_type)) {
+    content_type_webp = true;
+  }
+
   // Now loop over Accept field values.
   // TODO: Should we check the return value (count) from this?
   accept_field->value_get_comma_list(&a_values_list);
@@ -549,14 +555,13 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
     char a_type[32], a_subtype[32];
     HttpCompat::parse_mime_type(a_param->str, a_type, a_subtype, sizeof(a_type), sizeof(a_subtype));
 
-    //      printf("matching Content-type; '%s/%s' with Accept value '%s/%s'\n",
-    //             c_type,c_subtype,a_type,a_subtype);
+    Debug("http_match", "matching Content-type; '%s/%s' with Accept value '%s/%s'\n", c_type, c_subtype, a_type, a_subtype);
 
     // Is there a wildcard in the type or subtype?
-    if (is_asterisk(a_type)) {
+    if (is_asterisk(a_type) && content_type_webp == false) {
       wildcard_type_present = true;
       wildcard_type_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
-    } else if (is_asterisk(a_subtype) && (strcasecmp(a_type, c_type) == 0)) {
+    } else if (is_asterisk(a_subtype) && (strcasecmp(a_type, c_type) == 0) && content_type_webp == false) {
       wildcard_subtype_present = true;
       wildcard_subtype_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
     } else {
