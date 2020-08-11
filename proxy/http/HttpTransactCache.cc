@@ -486,13 +486,6 @@ HttpTransactCache::calculate_quality_of_match(const OverridableHttpConfigParams 
   @return quality (-1: no match, 0..1: poor..good).
 
 */
-static inline bool
-do_content_types_match(char *type1, char *subtype1, char *type2, char *subtype2)
-{
-  return ((is_asterisk(type1) || is_empty(type1) || (strcasecmp(type1, type2) == 0)) &&
-          (is_asterisk(subtype1) || is_empty(subtype1) || (strcasecmp(subtype1, subtype2) == 0)));
-}
-
 float
 HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MIMEField *content_field)
 {
@@ -527,10 +520,7 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
   HttpCompat::parse_mime_type(c_param->str, c_type, c_subtype, sizeof(c_type), sizeof(c_subtype));
 
   // Special case for webp because Safari is has Accept: */*, but doesn't support webp
-  bool content_type_webp = false;
-  if (strcasecmp("webp", c_subtype) && strcasecmp("image", c_type)) {
-    content_type_webp = true;
-  }
+  bool content_type_webp = ((strcasecmp("webp", c_subtype) == 0) && (strcasecmp("image", c_type) == 0));
 
   // Now loop over Accept field values.
   // TODO: Should we check the return value (count) from this?
@@ -573,7 +563,7 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
     }
     if (content_type_webp == true || wildcard_found == false) {
       // No wildcard or the content type is image/webp. Do explicit matching of accept and content values.
-      if (do_content_types_match(a_type, a_subtype, c_type, c_subtype)) {
+      if ((strcasecmp(a_type, c_type) == 0) && (strcasecmp(a_subtype, c_subtype) == 0)) {
         float tq;
         tq = HttpCompat::find_Q_param_in_strlist(&a_param_list);
         q  = (tq > q ? tq : q);
@@ -594,6 +584,7 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
   if ((q == -1.0) && (wildcard_type_present == true)) {
     q = wildcard_type_q;
   }
+
   return (q);
 }
 
