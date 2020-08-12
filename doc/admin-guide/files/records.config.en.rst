@@ -4098,7 +4098,7 @@ removed in the future without prior notice.
    This is just for debugging. Do not change it from the default value unless
    you really understand what this is.
 
-.. ts:cv:: CONFIG proxy.config.quic.congestion_control.minimum_window_scale INT 2400
+.. ts:cv:: CONFIG proxy.config.quic.congestion_control.minimum_window INT 2400
    :reloadable:
 
    This is just for debugging. Do not change it from the default value unless
