@@ -22,19 +22,26 @@
  */
 
 #include <tscore/Diags.h>
-#include <QUICLossDetector.h>
+#include <QUICCongestionController.h>
+#include <QUICNewRenoCongestionController.h>
 
 #define QUICCCDebug(fmt, ...)                                                                                               \
   Debug("quic_cc",                                                                                                          \
         "[%s] "                                                                                                             \
-        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra: %" PRIu32 " " fmt,                             \
+        "window:%" PRIu32 " in-flight:%" PRIu32 " ssthresh:%" PRIu32 " extra:%" PRIu32 " " fmt,                             \
+        this->_context.connection_info()->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
+        this->_extra_packets_count, ##__VA_ARGS__)
+#define QUICCCVDebug(fmt, ...)                                                                                              \
+  Debug("v_quic_cc",                                                                                                        \
+        "[%s] "                                                                                                             \
+        "window:%" PRIu32 " in-flight:%" PRIu32 " ssthresh:%" PRIu32 " extra:%" PRIu32 " " fmt,                             \
         this->_context.connection_info()->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
         this->_extra_packets_count, ##__VA_ARGS__)
 
 #define QUICCCError(fmt, ...)                                                                                               \
   Error("quic_cc",                                                                                                          \
         "[%s] "                                                                                                             \
-        "window: %" PRIu32 " bytes: %" PRIu32 " ssthresh: %" PRIu32 " extra %" PRIu32 " " fmt,                              \
+        "window:%" PRIu32 " in-flight:%" PRIu32 " ssthresh:%" PRIu32 " extra:%" PRIu32 " " fmt,                             \
         this->_context.connection_info()->cids().data(), this->_congestion_window, this->_bytes_in_flight, this->_ssthresh, \
         this->_extra_packets_count, ##__VA_ARGS__)
 
@@ -42,7 +49,6 @@ QUICNewRenoCongestionController::QUICNewRenoCongestionController(QUICContext &co
   : _cc_mutex(new_ProxyMutex()), _context(context)
 {
   auto &cc_config                          = context.cc_config();
-  this->_k_max_datagram_size               = cc_config.max_datagram_size();
   this->_k_initial_window                  = cc_config.initial_window();
   this->_k_minimum_window                  = cc_config.minimum_window();
   this->_k_loss_reduction_factor           = cc_config.loss_reduction_factor();
@@ -69,46 +75,42 @@ QUICNewRenoCongestionController::_in_congestion_recovery(ink_hrtime sent_time) c
 }
 
 bool
-QUICNewRenoCongestionController::is_app_limited()
+QUICNewRenoCongestionController::_is_app_or_flow_control_limited()
 {
   // FIXME : don't known how does app worked here
   return false;
 }
 
 void
-QUICNewRenoCongestionController::on_packet_acked(const QUICPacketInfo &acked_packet)
+QUICNewRenoCongestionController::_maybe_send_one_packet()
 {
-  // Remove from bytes_in_flight.
-  SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
-  this->_bytes_in_flight -= acked_packet.sent_bytes;
-  if (this->_in_congestion_recovery(acked_packet.time_sent)) {
-    // Do not increase congestion window in recovery period.
-    return;
-  }
-
-  if (this->is_app_limited()) {
-    // Do not increase congestion_window if application
-    // limited.
-    return;
-  }
-
-  if (this->_congestion_window < this->_ssthresh) {
-    // Slow start.
-    this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED, QUICCongestionController::State::SLOW_START);
-    this->_congestion_window += acked_packet.sent_bytes;
-    QUICCCDebug("slow start window changed");
-  } else {
-    // Congestion avoidance.
-    this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED,
-                           QUICCongestionController::State::CONGESTION_AVOIDANCE);
-    this->_congestion_window += this->_k_max_datagram_size * acked_packet.sent_bytes / this->_congestion_window;
-    QUICCCDebug("Congestion avoidance window changed");
-  }
+  // TODO Implement _maybe_send_one_packet
 }
 
-// additional code
-// the original one is:
-//   CongestionEvent(sent_time):
+bool
+QUICNewRenoCongestionController::_are_all_packets_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &lost_packets,
+                                                       const QUICSentPacketInfoUPtr &largest_lost_packet, ink_hrtime period) const
+{
+  // check whether packets are continuous. return true if all continuous packets are in period
+  QUICPacketNumber next_expected = UINT64_MAX;
+  for (auto &it : lost_packets) {
+    if (it.second->time_sent >= largest_lost_packet->time_sent - period) {
+      if (next_expected == UINT64_MAX) {
+        next_expected = it.second->packet_number + 1;
+        continue;
+      }
+
+      if (next_expected != it.second->packet_number) {
+        return false;
+      }
+
+      next_expected = it.second->packet_number + 1;
+    }
+  }
+
+  return next_expected == UINT64_MAX ? false : true;
+}
+
 void
 QUICNewRenoCongestionController::_congestion_event(ink_hrtime sent_time)
 {
@@ -122,54 +124,82 @@ QUICNewRenoCongestionController::_congestion_event(ink_hrtime sent_time)
     this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED, QUICCongestionController::State::RECOVERY);
     this->_context.trigger(QUICContext::CallbackEvent::METRICS_UPDATE, this->_congestion_window, this->_bytes_in_flight,
                            this->_ssthresh);
+    // A packet can be sent to speed up loss recovery.
+    this->_maybe_send_one_packet();
   }
 }
 
-// additional code
-// the original one is:
-//   ProcessECN(ack):
 void
-QUICNewRenoCongestionController::process_ecn(const QUICPacketInfo &acked_largest_packet,
-                                             const QUICAckFrame::EcnSection *ecn_section)
+QUICNewRenoCongestionController::process_ecn(const QUICAckFrame &ack_frame, QUICPacketNumberSpace pn_space,
+                                             ink_hrtime largest_acked_time_sent)
 {
   // If the ECN-CE counter reported by the peer has increased,
   // this could be a new congestion event.
-  if (ecn_section->ecn_ce_count() > this->_ecn_ce_counter) {
-    this->_ecn_ce_counter = ecn_section->ecn_ce_count();
+  if (ack_frame.ecn_section()->ecn_ce_count() > this->_ecn_ce_counters[static_cast<int>(pn_space)]) {
+    this->_ecn_ce_counters[static_cast<int>(pn_space)] = ack_frame.ecn_section()->ecn_ce_count();
     // Start a new congestion event if the last acknowledged
     // packet was sent after the start of the previous
     // recovery epoch.
-    this->_congestion_event(acked_largest_packet.time_sent);
+    this->_congestion_event(largest_acked_time_sent);
   }
 }
 
 bool
-QUICNewRenoCongestionController::_in_persistent_congestion(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets,
-                                                           QUICPacketInfo *largest_lost_packet)
+QUICNewRenoCongestionController::_in_persistent_congestion(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &lost_packets,
+                                                           const QUICSentPacketInfoUPtr &largest_lost_packet)
 {
-  ink_hrtime period = this->_context.rtt_provider()->congestion_period(this->_k_persistent_congestion_threshold);
-  // Determine if all packets in the window before the
-  // newest lost packet, including the edges, are marked
-  // lost
-  return this->_in_window_lost(lost_packets, largest_lost_packet, period);
+  ink_hrtime congestion_period = this->_context.rtt_provider()->congestion_period(this->_k_persistent_congestion_threshold);
+  // Determine if all packets in the time period before the
+  // largest newly lost packet, including the edges, are
+  // marked lost
+  return this->_are_all_packets_lost(lost_packets, largest_lost_packet, congestion_period);
+}
+
+void
+QUICNewRenoCongestionController::on_packets_acked(const std::vector<QUICSentPacketInfoUPtr> &packets)
+{
+  SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
+
+  for (auto &packet : packets) {
+    // Remove from bytes_in_flight.
+    this->_bytes_in_flight -= packet->sent_bytes;
+    if (this->_in_congestion_recovery(packet->time_sent)) {
+      // Do not increase congestion window in recovery period.
+      continue;
+    }
+    if (this->_is_app_or_flow_control_limited()) {
+      // Do not increase congestion_window if application
+      // limited or flow control limited.
+      continue;
+    }
+    if (this->_congestion_window < this->_ssthresh) {
+      // Slow start.
+      this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED, QUICCongestionController::State::SLOW_START);
+      this->_congestion_window += packet->sent_bytes;
+      QUICCCVDebug("slow start window changed");
+      continue;
+    }
+    // Congestion avoidance.
+    this->_context.trigger(QUICContext::CallbackEvent::CONGESTION_STATE_CHANGED,
+                           QUICCongestionController::State::CONGESTION_AVOIDANCE);
+    this->_congestion_window += this->_max_datagram_size * static_cast<double>(packet->sent_bytes) / this->_congestion_window;
+    QUICCCVDebug("Congestion avoidance window changed");
+  }
 }
 
 // additional code
 // the original one is:
 //   OnPacketsLost(lost_packets):
 void
-QUICNewRenoCongestionController::on_packets_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets)
+QUICNewRenoCongestionController::on_packets_lost(const std::map<QUICPacketNumber, QUICSentPacketInfoUPtr> &lost_packets)
 {
-  if (lost_packets.empty()) {
-    return;
-  }
-
   SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
+
   // Remove lost packets from bytes_in_flight.
   for (auto &lost_packet : lost_packets) {
     this->_bytes_in_flight -= lost_packet.second->sent_bytes;
   }
-  QUICPacketInfo *largest_lost_packet = lost_packets.rbegin()->second;
+  const auto &largest_lost_packet = lost_packets.rbegin()->second;
   this->_congestion_event(largest_lost_packet->time_sent);
 
   // Collapse congestion window if persistent congestion
@@ -178,8 +208,14 @@ QUICNewRenoCongestionController::on_packets_lost(const std::map<QUICPacketNumber
   }
 }
 
+void
+QUICNewRenoCongestionController::on_packet_number_space_discarded(size_t bytes_in_flight)
+{
+  this->_bytes_in_flight -= bytes_in_flight;
+}
+
 bool
-QUICNewRenoCongestionController::check_credit() const
+QUICNewRenoCongestionController::_check_credit() const
 {
   if (this->_bytes_in_flight >= this->_congestion_window) {
     QUICCCDebug("Congestion control pending");
@@ -195,7 +231,7 @@ QUICNewRenoCongestionController::credit() const
     return UINT32_MAX;
   }
 
-  if (this->check_credit()) {
+  if (this->_check_credit()) {
     return this->_congestion_window - this->_bytes_in_flight;
   } else {
     return 0;
@@ -226,34 +262,13 @@ QUICNewRenoCongestionController::reset()
 {
   SCOPED_MUTEX_LOCK(lock, this->_cc_mutex, this_ethread());
 
-  this->_bytes_in_flight                = 0;
   this->_congestion_window              = this->_k_initial_window;
+  this->_bytes_in_flight                = 0;
   this->_congestion_recovery_start_time = 0;
   this->_ssthresh                       = UINT32_MAX;
-}
-
-bool
-QUICNewRenoCongestionController::_in_window_lost(const std::map<QUICPacketNumber, QUICPacketInfo *> &lost_packets,
-                                                 QUICPacketInfo *largest_lost_packet, ink_hrtime period) const
-{
-  // check whether packets are continuous. return true if all continuous packets are in period
-  QUICPacketNumber next_expected = UINT64_MAX;
-  for (auto &it : lost_packets) {
-    if (it.second->time_sent >= largest_lost_packet->time_sent - period) {
-      if (next_expected == UINT64_MAX) {
-        next_expected = it.second->packet_number + 1;
-        continue;
-      }
-
-      if (next_expected != it.second->packet_number) {
-        return false;
-      }
-
-      next_expected = it.second->packet_number + 1;
-    }
+  for (int i = 0; i < QUIC_N_PACKET_SPACES; ++i) {
+    this->_ecn_ce_counters[i] = 0;
   }
-
-  return next_expected == UINT64_MAX ? false : true;
 }
 
 void

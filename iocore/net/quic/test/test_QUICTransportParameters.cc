@@ -44,13 +44,13 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
       0x05, 0x67,             // value
     };
 
-    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
+    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(params_in_ch.is_valid());
 
     uint16_t len        = 0;
     const uint8_t *data = nullptr;
 
-    data = params_in_ch.getAsBytes(QUICTransportParameterId::ORIGINAL_CONNECTION_ID, len);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::ORIGINAL_DESTINATION_CONNECTION_ID, len);
     CHECK(len == 4);
     CHECK(memcmp(data, "\x11\x22\x33\x44", 4) == 0);
 
@@ -62,7 +62,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
     CHECK(len == 2);
     CHECK(memcmp(data, "\x0a\x0b", 2) == 0);
 
-    data = params_in_ch.getAsBytes(QUICTransportParameterId::MAX_PACKET_SIZE, len);
+    data = params_in_ch.getAsBytes(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, len);
     CHECK(len == 2);
     CHECK(memcmp(data, "\x05\x67", 2) == 0);
 
@@ -82,7 +82,7 @@ TEST_CASE("QUICTransportParametersInClientHello_read", "[quic]")
       0x12, 0x34, 0x56, 0x78, // value
     };
 
-    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf));
+    QUICTransportParametersInClientHello params_in_ch(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(!params_in_ch.is_valid());
   }
 }
@@ -111,7 +111,7 @@ TEST_CASE("QUICTransportParametersInClientHello_write", "[quic]")
   params_in_ch.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, max_stream_data);
 
   uint16_t max_packet_size = 0x1bcd;
-  params_in_ch.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
+  params_in_ch.set(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, max_packet_size);
 
   uint8_t stateless_reset_token[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                                        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77};
@@ -142,7 +142,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
       0x91, 0x22, 0x33, 0x44, // value
     };
 
-    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
+    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(params_in_ee.is_valid());
 
     uint16_t len        = 0;
@@ -183,7 +183,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
       0x00,                   // length of value
     };
 
-    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
+    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(params_in_ee.is_valid());
 
     uint16_t len        = 0;
@@ -215,7 +215,7 @@ TEST_CASE("QUICTransportParametersInEncryptedExtensions_read", "[quic]")
       0x12, 0x34, 0x56, 0x78, // value
     };
 
-    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf));
+    QUICTransportParametersInEncryptedExtensions params_in_ee(buf, sizeof(buf), QUIC_SUPPORTED_VERSIONS[0]);
     CHECK(!params_in_ee.is_valid());
   }
 }
@@ -242,10 +242,8 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     params_in_ee.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, max_stream_data);
 
     uint16_t max_packet_size = 0x1bcd;
-    params_in_ee.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
+    params_in_ee.set(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, max_packet_size);
 
-    params_in_ee.add_version(0x01020304);
-    params_in_ee.add_version(0x05060708);
     params_in_ee.store(buf, &len);
     CHECK(len == 10);
     CHECK(memcmp(buf, expected, len) == 0);
@@ -273,11 +271,9 @@ TEST_CASE("QUICTransportParametersEncryptedExtensions_write", "[quic]")
     params_in_ee.set(QUICTransportParameterId::INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, max_stream_data);
 
     uint16_t max_packet_size = 0x1bcd;
-    params_in_ee.set(QUICTransportParameterId::MAX_PACKET_SIZE, max_packet_size);
+    params_in_ee.set(QUICTransportParameterId::MAX_UDP_PAYLOAD_SIZE, max_packet_size);
     params_in_ee.set(QUICTransportParameterId::DISABLE_ACTIVE_MIGRATION, nullptr, 0);
 
-    params_in_ee.add_version(0x01020304);
-    params_in_ee.add_version(0x05060708);
     params_in_ee.store(buf, &len);
     CHECK(len == 12);
     CHECK(memcmp(buf, expected, len) == 0);

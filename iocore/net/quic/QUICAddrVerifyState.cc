@@ -48,7 +48,7 @@ QUICAddrVerifyState::consume(uint32_t windows)
 }
 
 uint32_t
-QUICAddrVerifyState::windows()
+QUICAddrVerifyState::windows() const
 {
   return this->_windows;
 }

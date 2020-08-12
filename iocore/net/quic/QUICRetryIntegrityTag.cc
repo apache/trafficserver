@@ -24,7 +24,8 @@
 #include "QUICRetryIntegrityTag.h"
 
 bool
-QUICRetryIntegrityTag::compute(uint8_t *out, QUICConnectionId odcid, Ptr<IOBufferBlock> header, Ptr<IOBufferBlock> payload)
+QUICRetryIntegrityTag::compute(uint8_t *out, QUICVersion version, QUICConnectionId odcid, Ptr<IOBufferBlock> header,
+                               Ptr<IOBufferBlock> payload)
 {
   EVP_CIPHER_CTX *aead_ctx;
 
@@ -37,7 +38,23 @@ QUICRetryIntegrityTag::compute(uint8_t *out, QUICConnectionId odcid, Ptr<IOBuffe
   if (!EVP_CIPHER_CTX_ctrl(aead_ctx, EVP_CTRL_AEAD_SET_IVLEN, 12, nullptr)) {
     return false;
   }
-  if (!EVP_EncryptInit_ex(aead_ctx, nullptr, nullptr, KEY_FOR_RETRY_INTEGRITY_TAG, NONCE_FOR_RETRY_INTEGRITY_TAG)) {
+  const uint8_t *key;
+  const uint8_t *nonce;
+  switch (version) {
+  case 0xff00001d: // Draft-29
+    key   = KEY_FOR_RETRY_INTEGRITY_TAG;
+    nonce = NONCE_FOR_RETRY_INTEGRITY_TAG;
+    break;
+  case 0xff00001b: // Draft-27
+    key   = KEY_FOR_RETRY_INTEGRITY_TAG_D27;
+    nonce = NONCE_FOR_RETRY_INTEGRITY_TAG_D27;
+    break;
+  default:
+    key   = KEY_FOR_RETRY_INTEGRITY_TAG;
+    nonce = NONCE_FOR_RETRY_INTEGRITY_TAG;
+    break;
+  }
+  if (!EVP_EncryptInit_ex(aead_ctx, nullptr, nullptr, key, nonce)) {
     return false;
   }
 

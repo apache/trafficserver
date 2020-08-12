@@ -24,9 +24,11 @@
 #include "QUICFrameDispatcher.h"
 #include "QUICDebugNames.h"
 
-static constexpr char tag[] = "quic_net";
+static constexpr char tag[]   = "quic_net";
+static constexpr char v_tag[] = "v_quic_net";
 
 #define QUICDebug(fmt, ...) Debug(tag, "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
+#define QUICVDebug(fmt, ...) Debug(v_tag, "[%s] " fmt, this->_info->cids().data(), ##__VA_ARGS__)
 
 //
 // Frame Dispatcher
@@ -70,10 +72,10 @@ QUICFrameDispatcher::receive_frames(QUICContext &ctx, QUICEncryptionLevel level,
       is_flow_controlled = true;
     }
 
-    if (is_debug_tag_set(tag) && type != QUICFrameType::PADDING) {
+    if (is_debug_tag_set(v_tag) && type != QUICFrameType::PADDING) {
       char msg[1024];
       frame.debug_msg(msg, sizeof(msg));
-      QUICDebug("[RX] | %s", msg);
+      QUICVDebug("[RX] | %s", msg);
     }
 
     if (type != QUICFrameType::PADDING && type != QUICFrameType::ACK) {

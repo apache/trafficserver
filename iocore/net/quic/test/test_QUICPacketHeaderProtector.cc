@@ -26,6 +26,8 @@
 #include "QUICPacketProtectionKeyInfo.h"
 #include "QUICPacketHeaderProtector.h"
 #include "QUICTLS.h"
+#include "QUICGlobals.h"
+#include "Mock.h"
 
 struct PollCont;
 #include "P_UDPConnection.h"
@@ -87,8 +89,10 @@ TEST_CASE("QUICPacketHeaderProtector")
     QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
     QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
 
-    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
-    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
+    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
 
     QUICPacketHeaderProtector client_ph_protector(pp_key_info_client);
     QUICPacketHeaderProtector server_ph_protector(pp_key_info_server);
@@ -121,8 +125,12 @@ TEST_CASE("QUICPacketHeaderProtector")
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
     NetVCOptions netvc_options;
+    MockQUICConnection mock_client_connection;
+    MockQUICConnection mock_server_connection;
     QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
     QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
+    SSL_set_ex_data(static_cast<QUICTLS *>(client)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_client_connection);
+    SSL_set_ex_data(static_cast<QUICTLS *>(server)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_server_connection);
 
     auto client_tp = std::make_shared<QUICTransportParametersInClientHello>();
     auto server_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
@@ -131,8 +139,10 @@ TEST_CASE("QUICPacketHeaderProtector")
     client->set_local_transport_parameters(client_tp);
     server->set_local_transport_parameters(server_tp);
 
-    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
-    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
+    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
 
     QUICPacketHeaderProtector client_ph_protector(pp_key_info_client);
     QUICPacketHeaderProtector server_ph_protector(pp_key_info_server);

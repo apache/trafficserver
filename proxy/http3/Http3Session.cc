@@ -29,7 +29,14 @@
 //
 // HQSession
 //
-HQSession ::~HQSession()
+HQSession::HQSession(NetVConnection *vc) : ProxySession(vc)
+{
+  auto app_name = static_cast<QUICNetVConnection *>(vc)->negotiated_application_name();
+  memcpy(this->_protocol_string, app_name.data(), std::min(app_name.length(), sizeof(this->_protocol_string)));
+  this->_protocol_string[app_name.length()] = '\0';
+}
+
+HQSession::~HQSession()
 {
   for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
     delete t;
@@ -42,6 +49,25 @@ HQSession::add_transaction(HQTransaction *trans)
   this->_transaction_list.enqueue(trans);
 
   return;
+}
+
+const char *
+HQSession::get_protocol_string() const
+{
+  return this->_protocol_string;
+}
+
+int
+HQSession::populate_protocol(std::string_view *result, int size) const
+{
+  int retval = 0;
+  if (size > retval) {
+    result[retval++] = this->get_protocol_string();
+    if (size > retval) {
+      retval += super::populate_protocol(result + retval, size - retval);
+    }
+  }
+  return retval;
 }
 
 HQTransaction *
@@ -143,25 +169,6 @@ Http3Session::~Http3Session()
   delete this->_remote_qpack;
 }
 
-const char *
-Http3Session::get_protocol_string() const
-{
-  return IP_PROTO_TAG_HTTP_3.data();
-}
-
-int
-Http3Session::populate_protocol(std::string_view *result, int size) const
-{
-  int retval = 0;
-  if (size > retval) {
-    result[retval++] = IP_PROTO_TAG_HTTP_3;
-    if (size > retval) {
-      retval += super::populate_protocol(result + retval, size - retval);
-    }
-  }
-  return retval;
-}
-
 void
 Http3Session::increment_current_active_client_connections_stat()
 {
@@ -192,25 +199,6 @@ Http3Session::remote_qpack()
 Http09Session::~Http09Session()
 {
   this->_vc = nullptr;
-}
-
-const char *
-Http09Session::get_protocol_string() const
-{
-  return IP_PROTO_TAG_HTTP_QUIC.data();
-}
-
-int
-Http09Session::populate_protocol(std::string_view *result, int size) const
-{
-  int retval = 0;
-  if (size > retval) {
-    result[retval++] = IP_PROTO_TAG_HTTP_QUIC;
-    if (size > retval) {
-      retval += super::populate_protocol(result + retval, size - retval);
-    }
-  }
-  return retval;
 }
 
 void

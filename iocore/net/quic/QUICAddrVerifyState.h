@@ -34,7 +34,7 @@ public:
   void fill(uint32_t windows);
   void consume(uint32_t windows);
   void set_addr_verifed();
-  uint32_t windows();
+  uint32_t windows() const;
   bool is_verified() const;
 
 private:
