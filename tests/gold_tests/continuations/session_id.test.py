@@ -39,7 +39,8 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=True, enabl
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-Test.PrepareTestPlugin(os.path.join(Test.TestDirectory, 'plugins', '.libs', 'session_id_verify.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsBuildGoldTestsDir,
+                                    'continuations', 'plugins', '.libs', 'session_id_verify.so'), ts)
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
