@@ -112,15 +112,7 @@ rat:
 	java -jar $(top_srcdir)/ci/apache-rat-0.13-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
 
 autopep8:
-	@autopep8 \
-		--ignore-local-config \
-		-i \
-		-j 0 \
-		--exclude $(top_srcdir)/lib/yamlcpp \
-		--max-line-length 132 \
-		--aggressive \
-		--aggressive \
-		-r $(top_srcdir)
+	@$(top_srcdir)/tools/autopep8.sh $(top_srcdir)
 
 #
 # These are rules to make clang-format easy and fast to run. Run it with e.g.
