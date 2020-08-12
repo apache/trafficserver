@@ -215,6 +215,9 @@ TEST_CASE("Base64: modified encode / decode with '+', '/' and various paddings",
     char decodedMessage[encodedMessageEstimatedLen];
     size_t decodedMessageLen =
       cryptoModifiedBase64Decode(encodedMessage, encodedMessageLen, decodedMessage, decodedMessageEstimatedLen);
+    CAPTURE(i);
+    CAPTURE(decoded[i]);
+    CAPTURE(std::string(decodedMessage));
     CHECK(strlen(decoded[i]) == decodedMessageLen);
     CHECK(0 == strncmp(decodedMessage, message, messageLen));
   }
