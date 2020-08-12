@@ -11,6 +11,6 @@
 < Date: ``
 < Age: ``
 < Connection: keep-alive
-< Via: http/1.1 traffic_server (ApacheTrafficServer/`` [uScHs f p eN:t cCHp s ])
+< Via: http/1.1 `` (ApacheTrafficServer/`` [uScHs f p eN:t cCHp s ])
 < Server: ATS/``
 ``
