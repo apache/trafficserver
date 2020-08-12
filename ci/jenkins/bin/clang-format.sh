@@ -23,6 +23,9 @@ autoreconf -if && ./configure
 ${ATS_MAKE} -j clang-format
 [ "0" != "$?" ] && exit -1
 
+${ATS_MAKE} autopep8
+[ "0" != "$?" ] && exit 1
+
 git diff --exit-code
 [ "0" != "$?" ] && exit -1
 

@@ -58,10 +58,13 @@ are a few simple rules to follow:
 8. Make sure you run **clang-format** before making the _PR_. This is easiest
    done with e.g. "make clang-format", which works on OSX and Linux.
 
-9. When making backports, make sure you mark the _PR_ for the appropriate
+9. Make sure you run **autopep8** before making the _PR_. This is easiest
+   done with e.g. "make autopep8".
+
+10. When making backports, make sure you mark the _PR_ for the appropriate
    Github branch (e.g. **6.2.x**).
 
-10. If you are making backports to an LTS branch, remember that the job of
+11. If you are making backports to an LTS branch, remember that the job of
    merging such a _PR_ is the duty of the release manager.
 
 
