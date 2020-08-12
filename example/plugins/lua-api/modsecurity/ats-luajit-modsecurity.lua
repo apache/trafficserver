@@ -29,8 +29,8 @@ msc.msc_set_connector_info(mst, "ModSecurity-ats")
 function __init__(argtb)
   if (#argtb) < 1 then
     ts.error("No ModSecurity Conf is given")
-    return -1 
-  end  
+    return -1
+  end
 
   msc_config.rulesfile = argtb[1]	
   ts.debug("ModSecurity Conf file is " .. msc_config.rulesfile)
@@ -38,12 +38,12 @@ function __init__(argtb)
   msc_config.rules = msc.msc_create_rules_set()
   local error = ffi.new("const char *[1]")
   local result = msc.msc_rules_add_file(msc_config.rules, msc_config.rulesfile, error)
-  if(result < 0) then 
-    ts.error("Problems loading the rules: ".. ffi.string(error[0]))  
+  if(result < 0) then
+    ts.error("Problems loading the rules: ".. ffi.string(error[0]))
     msc.msc_rules_cleanup(msc_config.rules)
     msc_config.rules = nil
     return -1
-  end  
+  end
 
 end
 
@@ -59,9 +59,9 @@ function __reload__()
 
     msc.msc_rules_cleanup(newrules)
     newrules = nil
-  else 
+  else
     -- TODO: we are not doing clean up on the old rules and thus leaking resources here
-    msc_config.rules = newrules  
+    msc_config.rules = newrules
   end
 
 end
@@ -82,9 +82,9 @@ function do_global_read_request()
   -- processing for the uri information
   local uri = ts.client_request.get_uri()
   local query_params = ts.client_request.get_uri_args() or ''
-  if (query_params ~= '') then 
+  if (query_params ~= '') then
     uri = uri .. '?' .. query_params
-  end 
+  end
   msc.msc_process_uri(txn, uri, ts.client_request.get_method(), ts.client_request.get_version())
 
   -- processing for the request headers
@@ -115,16 +115,16 @@ function do_global_read_request()
     ts.ctx['url'] = ffi.string(iv.url)
     ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
     C.free(iv.url)
-  end 
+  end
 
   -- intervention is needed if status is not 200
-  if (iv.status ~= 200) then 
+  if (iv.status ~= 200) then
     ts.http.set_resp(iv.status)
     msc.msc_process_logging(txn)
     msc.msc_transaction_cleanup(txn)
     ts.debug("done with setting custom response")
     return 0
-  end  
+  end
 
   -- storing modsecurity object in context
   ts.ctx["mst"] = txn
@@ -140,7 +140,7 @@ end
 function read_response()
   -- retriving modsecurity object
   local txn = ts.ctx["mst"]
-  
+
   if(txn == nil) then
     ts.error("no transaction object")
     return 0
@@ -153,7 +153,7 @@ function read_response()
   end
   msc.msc_process_response_headers(txn, ts.server_response.get_status(), "HTTP/"..ts.server_response.get_version())
   msc.msc_process_response_body(txn)
-  ts.debug("done with processing response")  
+  ts.debug("done with processing response")
 
   -- determine if intervention is needed
   local iv = ffi.new("ModSecurityIntervention")
@@ -174,20 +174,20 @@ function read_response()
   if(iv.url ~= nil) then
     ts.ctx['url'] = ffi.string(iv.url)
     C.free(iv.url)
-  end  
+  end
 
   -- intervention needed when status is not 200
   ts.ctx['status'] = nil
   if (iv.status ~= 200) then
     ts.ctx['status'] = iv.status
-  end 
+  end
 
   -- response needs to be modified?
   if(ts.ctx['url'] ~= '' or ts.ctx['status'] ~= nil) then
     ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
-  end 
-  
-  -- we need to return -1 for lua to reset response body with an error body  
+  end
+
+  -- we need to return -1 for lua to reset response body with an error body
   if(ts.ctx['status'] ~= nil) then
     ts.ctx["mst"] = nil
     msc.msc_process_logging(txn)
@@ -201,15 +201,15 @@ function read_response()
   msc.msc_process_logging(txn)
   msc.msc_transaction_cleanup(txn)
   ts.debug("done with cleaning up context")
-  
+
   return 0
 end
 
--- function run when sending response to client 
+-- function run when sending response to client
 function send_response()
   -- retrieve intervention url and add it as "Location" header on response to client
   local location = ts.ctx['url']
-  if (location ~= '') then 
+  if (location ~= '') then
     ts.debug('location: ' .. location)
     ts.client_response.header['Location'] = location
   end
@@ -218,5 +218,5 @@ function send_response()
   local status = ts.ctx['status']
   if (status ~= nil) then
     ts.client_response.set_error_resp(status, 'Contents Reset by ModSecurity\n')
-  end 
+  end
 end

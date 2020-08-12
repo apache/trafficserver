@@ -3,10 +3,10 @@ Integrating ATS with ModSecurity V3 using LuaJIT and FFI
 
 Opensource WAF for [Apache Traffic Server](http://trafficserver.apache.org/).
 
-Requirement 
+Requirement
 ====
- - ModSecurity v3.0.4 
- - ATS 8.0.8 
+ - ModSecurity v3.0.4
+ - ATS 8.0.8
 
 How to Use
 ====
@@ -22,7 +22,7 @@ tslua.so --enable-reload /usr/local/var/lua/ats-luajit-modsecurity.lua /usr/loca
 
 Contents/Rules inside example.conf
 ====
- - deny any request with query parameter of `testparam=test2` with a 403 status response 
+ - deny any request with query parameter of `testparam=test2` with a 403 status response
  - return any request with query parameter of `testparam=test1` with 301 redirect response to https://www.yahoo.com/
  - override any response with header `test` equal to `1` with a 403 status response
  - override any response with header `test` equal to `2` with a 301 redirect response to https://www.yahoo.com/
@@ -38,17 +38,17 @@ Working with CRS
 
 ```
 tslua.so --enable-reload /usr/local/var/lua/ats-luajit-modsecurity.lua /usr/local/var/modsecurity/owasp.conf
-``` 
+```
 
  - The following example curl command against your server should get a status 403 Forbidden response
- 
- ```
- curl -v -H "User-Agent: Nikto" 'http://<your server>/'
- ```
+
+```
+curl -v -H "User-Agent: Nikto" 'http://<your server>/'
+```
 
 Extra Notes with CRS
 ====
- - Please check out this [link](https://github.com/SpiderLabs/ModSecurity/issues/1734) for performance related information 
+ - Please check out this [link](https://github.com/SpiderLabs/ModSecurity/issues/1734) for performance related information
  - To turn on debugging, you can uncomment the following inside `owasp.conf`
 
 ```
@@ -57,7 +57,7 @@ SecDebugLogLevel 9
 ```
 
 - Rule ID 910100 in REQUEST-910-IP-REPUTATION.conf in `rules` directory requires GeoIP and have to be commented out if you do not built the modsecurity library with it.
-- We use `SecRuleRemoveById` inside `owasp.conf` to remove rules checking for request and response body. This trick can be used to remove other rules that does not apply well in some situations. 
+- We use `SecRuleRemoveById` inside `owasp.conf` to remove rules checking for request and response body. This trick can be used to remove other rules that does not apply well in some situations
 
 
 TODOs/Limitations
@@ -67,4 +67,4 @@ TODOs/Limitations
  - How does this work with the lua engine inside ModSecurity V3?
  - Unit Test using busted framework
  - More functional testing needed
- - Performance testing - impact to latency and capacity 
+ - Performance testing - impact to latency and capacity
