@@ -75,7 +75,7 @@ contentLengthFrom(HttpHeader const &header)
     // ensure null termination
     constr[conlen] = '\0';
     char *endptr   = nullptr;
-    bytes          = std::max((int64_t)0, (int64_t)strtoll(constr, &endptr, 10));
+    bytes          = std::max(static_cast<int64_t>(0), static_cast<int64_t>(strtoll(constr, &endptr, 10)));
   }
 
   return bytes;

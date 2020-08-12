@@ -1090,7 +1090,7 @@ QUICNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, un
   if (this->getNPN(&npnptr, &npnsize)) {
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
     // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
-    if (SSL_select_next_proto((unsigned char **)out, outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
+    if (SSL_select_next_proto(const_cast<unsigned char **>(out), outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
       Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
       return SSL_TLSEXT_ERR_OK;
     }
@@ -1828,7 +1828,7 @@ QUICNetVConnection::_recv_and_ack(const QUICPacketR &packet, bool *has_non_probi
 }
 
 QUICPacketUPtr
-QUICNetVConnection::_build_packet(uint8_t *packet_buf, QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block,
+QUICNetVConnection::_build_packet(uint8_t *packet_buf, QUICEncryptionLevel level, const Ptr<IOBufferBlock> &parent_block,
                                   bool ack_eliciting, bool probing, bool crypto)
 {
   QUICPacketType type   = QUICTypeUtil::packet_type(level);
@@ -2329,7 +2329,7 @@ QUICNetVConnection::_rerandomize_original_cid()
 }
 
 QUICHandshakeProtocol *
-QUICNetVConnection::_setup_handshake_protocol(shared_SSL_CTX ctx)
+QUICNetVConnection::_setup_handshake_protocol(const shared_SSL_CTX &ctx)
 {
   // Initialize handshake protocol specific stuff
   // For QUICv1 TLS is the only option

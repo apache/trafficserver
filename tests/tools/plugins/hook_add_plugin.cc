@@ -57,7 +57,7 @@ transactionHandler(TSCont continuation, TSEvent event, void *d)
 int
 sessionHandler(TSCont continuation, TSEvent event, void *d)
 {
-  TSHttpTxn txnp = (TSHttpTxn)d;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(d);
   TSCont txn_contp;
 
   switch (event) {

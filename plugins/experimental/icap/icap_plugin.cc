@@ -215,8 +215,8 @@ handle_invalid_icap_behavior(TSCont contp, TransformData *data, const char *msg)
 {
   if (data->icap_vc) {
     TSVConnAbort(data->icap_vc, 1);
-    data->icap_vc  = NULL;
-    data->icap_vio = NULL;
+    data->icap_vc  = nullptr;
+    data->icap_vio = nullptr;
   }
   TSStatIntIncrement(total_icap_invalid, 1);
   TSDebug(PLUGIN_NAME, "\n%s\n", data->icap_header.c_str());
@@ -256,8 +256,9 @@ handle_invalid_icap_behavior(TSCont contp, TransformData *data, const char *msg)
 static int
 handle_icap_headers(TSCont contp, TransformData *data)
 {
-  int64_t pos                  = data->icap_header.find("\r\n");
-  std::string icap_status_line = pos != (int64_t)std::string::npos ? data->icap_header.substr(0, pos) : data->icap_header;
+  int64_t pos = data->icap_header.find("\r\n");
+  std::string icap_status_line =
+    pos != static_cast<int64_t>(std::string::npos) ? data->icap_header.substr(0, pos) : data->icap_header;
   /* Check icap header to determine whether the scan passed or not */
   if (data->icap_header.find("X-Infection-Found") != std::string::npos ||
       data->icap_header.find("X-Violations-Found") != std::string::npos) {
@@ -286,14 +287,15 @@ static void
 handle_icap_http_header(TransformData *data)
 {
   // TSDebug(PLUGIN_NAME, "Handling http header");
-  int64_t pos                  = data->http_header.find("\r\n");
-  std::string http_status_line = pos != (int64_t)std::string::npos ? data->http_header.substr(0, pos) : data->http_header;
+  int64_t pos = data->http_header.find("\r\n");
+  std::string http_status_line =
+    pos != static_cast<int64_t>(std::string::npos) ? data->http_header.substr(0, pos) : data->http_header;
   /* find content length from header if any */
   std::smatch sm;
   std::regex e("(Content-Length: )([[:digit:]]+)");
   regex_search(data->http_header, sm, e);
   if (sm.size()) {
-    data->icap_reply_content_length = std::stoll(sm[2].str().c_str(), NULL, 10);
+    data->icap_reply_content_length = std::stoll(sm[2].str().c_str(), nullptr, 10);
   }
   /* Replace header with the returned header from icap server */
   TSMBuffer bufp;
@@ -357,7 +359,7 @@ handle_read_http_body(TSCont contp, TransformData *data)
           int64_t pos          = sm.position(0);
           int64_t token_length = sm[0].length();
 
-          data->http_body_chunk_length = std::stoi(sm[2].str().c_str(), NULL, 16);
+          data->http_body_chunk_length = std::stoi(sm[2].str().c_str(), nullptr, 16);
           data->http_body_total_length_written += data->http_body_chunk_length;
           TSIOBufferReaderConsume(data->icap_resp_reader, pos + token_length - consumed);
           break;
@@ -367,8 +369,9 @@ handle_read_http_body(TSCont contp, TransformData *data)
         consumed += data_len;
         blk = TSIOBufferBlockNext(blk);
       }
-      if (blk == nullptr)
+      if (blk == nullptr) {
         return 0;
+      }
     }
 
     /* Write the chunk to downstream */
@@ -388,12 +391,12 @@ handle_read_http_body(TSCont contp, TransformData *data)
     /* If no more data is to be read for now. Check for eos to determine whether data is incomplete. */
     if (data->eos_detected) {
       TSVConnAbort(data->icap_vc, 1);
-      data->icap_vc  = NULL;
-      data->icap_vio = NULL;
+      data->icap_vc  = nullptr;
+      data->icap_vio = nullptr;
 
       TSVConnAbort(data->output_vc, 1);
-      data->output_vc  = NULL;
-      data->output_vio = NULL;
+      data->output_vc  = nullptr;
+      data->output_vio = nullptr;
       return 0;
     }
   }
@@ -420,12 +423,13 @@ transform_destroy(TSCont contp)
 {
   TransformData *data;
 
-  data = (TransformData *)TSContDataGet(contp);
+  data = static_cast<TransformData *>(TSContDataGet(contp));
 
-  if (data != NULL)
+  if (data != nullptr) {
     delete data;
-  else
+  } else {
     TSError("[%s] Unable to get Continuation's Data. TSContDataGet returns NULL", PLUGIN_NAME);
+  }
 
   TSContDestroy(contp);
 }
@@ -449,7 +453,7 @@ transform_connect(TSCont contp, TransformData *data)
     TSError("[%s] Invalid address: %s", PLUGIN_NAME, server_ip.c_str());
     return 0;
   }
-  action = TSNetConnect(contp, (struct sockaddr const *)&ip_addr);
+  action = TSNetConnect(contp, reinterpret_cast<struct sockaddr const *>(&ip_addr));
 
   if (!TSActionDone(action)) {
     data->pending_action = action;
@@ -478,7 +482,7 @@ transform_read_icap_header(TSCont contp, TransformData *data)
   data->icap_resp_buf    = TSIOBufferCreate();
   data->icap_resp_reader = TSIOBufferReaderAlloc(data->icap_resp_buf);
 
-  if (data->icap_resp_reader != NULL) {
+  if (data->icap_resp_reader != nullptr) {
     data->icap_vio = TSVConnRead(data->icap_vc, contp, data->icap_resp_buf, INT64_MAX);
   } else {
     TSError("[%s] Error in Allocating a Reader to output buffer. TSIOBufferReaderAlloc returns NULL", PLUGIN_NAME);
@@ -493,7 +497,7 @@ transform_read_http_header(TSCont contp, TransformData *data)
   data->state = State::READ_HTTP_HEADER;
 
   if (TSIOBufferReaderAvail(data->icap_resp_reader)) {
-    transform_read_http_header_event(contp, data, TS_EVENT_VCONN_READ_READY, NULL);
+    transform_read_http_header_event(contp, data, TS_EVENT_VCONN_READ_READY, nullptr);
   }
 
   return 0;
@@ -506,7 +510,7 @@ transform_read_http_body(TSCont contp, TransformData *data)
 
   data->output_buf    = TSIOBufferCreate();
   data->output_reader = TSIOBufferReaderAlloc(data->output_buf);
-  data->output_vc     = TSTransformOutputVConnGet((TSVConn)contp);
+  data->output_vc     = TSTransformOutputVConnGet(static_cast<TSVConn>(contp));
   // data->output_vio = TSVConnWrite(data->output_vc, contp, data->output_reader, INT64_MAX);
   if (data->icap_reply_content_length) {
     data->output_vio = TSVConnWrite(data->output_vc, contp, data->output_reader, data->icap_reply_content_length);
@@ -656,15 +660,15 @@ transform_send_error_msg(TSCont contp, TransformData *data)
   data->state         = State::SEND_ERROR_MSG;
   data->output_buf    = TSIOBufferCreate();
   data->output_reader = TSIOBufferReaderAlloc(data->output_buf);
-  data->output_vc     = TSTransformOutputVConnGet((TSVConn)contp);
+  data->output_vc     = TSTransformOutputVConnGet(static_cast<TSVConn>(contp));
 
   TSIOBufferWrite(data->output_buf, data->err_msg.c_str(), data->err_msg.size());
 
-  if (data->output_vc == NULL) {
+  if (data->output_vc == nullptr) {
     TSError("[%s] TSTransformOutputVConnGet returns NULL", PLUGIN_NAME);
   } else {
     data->output_vio = TSVConnWrite(data->output_vc, contp, data->output_reader, TSIOBufferReaderAvail(data->output_reader));
-    if (data->output_vio == NULL) {
+    if (data->output_vio == nullptr) {
       TSError("[%s] TSVConnWrite returns NULL", PLUGIN_NAME);
     }
   }
@@ -682,13 +686,13 @@ transform_bypass(TSCont contp, TransformData *data)
   data->state         = State::BYPASS;
   data->output_buf    = TSIOBufferCreate();
   data->output_reader = TSIOBufferReaderAlloc(data->output_buf);
-  data->output_vc     = TSTransformOutputVConnGet((TSVConn)contp);
+  data->output_vc     = TSTransformOutputVConnGet(static_cast<TSVConn>(contp));
 
-  if (data->output_vc == NULL) {
+  if (data->output_vc == nullptr) {
     TSError("[%s] TSTransformOutputVConnGet returns NULL", PLUGIN_NAME);
   } else {
     data->output_vio = TSVConnWrite(data->output_vc, contp, data->output_reader, 0);
-    if (data->output_vio == NULL) {
+    if (data->output_vio == nullptr) {
       TSError("[%s] TSVConnWrite returns NULL", PLUGIN_NAME);
     }
   }
@@ -727,13 +731,13 @@ transform_send_os_resp(TSCont contp, TransformData *data)
   data->state         = State::SEND_OS_RESP;
   data->output_buf    = TSIOBufferCreate();
   data->output_reader = TSIOBufferReaderAlloc(data->output_buf);
-  data->output_vc     = TSTransformOutputVConnGet((TSVConn)contp);
+  data->output_vc     = TSTransformOutputVConnGet(static_cast<TSVConn>(contp));
 
-  if (data->output_vc == NULL) {
+  if (data->output_vc == nullptr) {
     TSError("[%s] TSTransformOutputVConnGet returns NULL", PLUGIN_NAME);
   } else {
     data->output_vio = TSVConnWrite(data->output_vc, contp, data->os_resp_reader, TSIOBufferReaderAvail(data->os_resp_reader));
-    if (data->output_vio == NULL) {
+    if (data->output_vio == nullptr) {
       TSError("[%s] TSVConnWrite returns NULL", PLUGIN_NAME);
     }
   }
@@ -746,12 +750,12 @@ transform_connect_event(TSCont contp, TransformData *data, TSEvent event, void *
 {
   switch (event) {
   case TS_EVENT_NET_CONNECT:
-    data->pending_action = NULL;
-    data->icap_vc        = (TSVConn)edata;
+    data->pending_action = nullptr;
+    data->icap_vc        = static_cast<TSVConn>(edata);
     return handle_write_header(contp, data);
   case TS_EVENT_NET_CONNECT_FAILED:
     TSStatIntIncrement(icap_conn_failed, 1);
-    data->pending_action = NULL;
+    data->pending_action = nullptr;
     return handle_invalid_icap_behavior(contp, data, "Cannot connect to ICAP scanner.");
   default:
     break;
@@ -821,7 +825,7 @@ transform_read_icap_header_event(TSCont contp, TransformData *data, TSEvent even
 
     while (read_nbytes > 0) {
       TSIOBufferBlock blk = TSIOBufferReaderStart(reader);
-      char *buf           = (char *)TSIOBufferBlockReadStart(blk, reader, &avail);
+      char *buf           = const_cast<char *>(TSIOBufferBlockReadStart(blk, reader, &avail));
       int64_t read_ndone  = (avail >= read_nbytes) ? read_nbytes : avail;
       int64_t consume     = read_ndone;
       std::string chunk   = std::string(buf, read_ndone);
@@ -832,22 +836,24 @@ transform_read_icap_header_event(TSCont contp, TransformData *data, TSEvent even
       int64_t pos          = data->icap_header.find("\r\n\r\n");
       int64_t token_length = std::string("\r\n\r\n").size();
 
-      if (pos != (int64_t)std::string::npos) {
+      if (pos != static_cast<int64_t>(std::string::npos)) {
         data->icap_header.resize(pos);
         consume = pos + token_length - consumed;
         TSIOBufferReaderConsume(reader, consume);
-        if (handle_icap_headers(contp, data))
+        if (handle_icap_headers(contp, data)) {
           return transform_send_os_resp(contp, data);
-        else
+        } else {
           return transform_read_http_header(contp, data);
+        }
       }
 
       if (read_ndone > 0) {
         read_nbytes -= consume;
         TSIOBufferReaderConsume(reader, consume);
         consumed += consume;
-      } else
+      } else {
         break;
+      }
     }
     break;
   }
@@ -876,7 +882,7 @@ transform_read_http_header_event(TSCont contp, TransformData *data, TSEvent even
 
     while (read_nbytes > 0) {
       TSIOBufferBlock blk = TSIOBufferReaderStart(reader);
-      char *buf           = (char *)TSIOBufferBlockReadStart(blk, reader, &avail);
+      char *buf           = const_cast<char *>(TSIOBufferBlockReadStart(blk, reader, &avail));
       int64_t read_ndone  = (avail >= read_nbytes) ? read_nbytes : avail;
       int64_t consume     = read_ndone;
       std::string chunk   = std::string(buf, read_ndone);
@@ -886,7 +892,7 @@ transform_read_http_header_event(TSCont contp, TransformData *data, TSEvent even
       int64_t pos          = data->http_header.find("\r\n\r\n");
       int64_t token_length = std::string("\r\n").size();
 
-      if (pos != (int64_t)std::string::npos) {
+      if (pos != static_cast<int64_t>(std::string::npos)) {
         data->http_header.resize(pos);
         consume = pos + token_length - consumed;
         TSIOBufferReaderConsume(reader, consume);
@@ -898,8 +904,9 @@ transform_read_http_header_event(TSCont contp, TransformData *data, TSEvent even
         read_nbytes -= consume;
         TSIOBufferReaderConsume(reader, consume);
         consumed += consume;
-      } else
+      } else {
         break;
+      }
     }
 
     if (read_nbytes <= 0) {
@@ -920,12 +927,12 @@ transform_read_http_body_event(TSCont contp, TransformData *data, TSEvent event,
   switch (event) {
   case TS_EVENT_ERROR:
     TSVConnAbort(data->icap_vc, 1);
-    data->icap_vc  = NULL;
-    data->icap_vio = NULL;
+    data->icap_vc  = nullptr;
+    data->icap_vio = nullptr;
 
     TSVConnAbort(data->output_vc, 1);
-    data->output_vc  = NULL;
-    data->output_vio = NULL;
+    data->output_vc  = nullptr;
+    data->output_vio = nullptr;
     break;
   case TS_EVENT_VCONN_EOS:
     TSVConnShutdown(data->icap_vc, 1, 0);
@@ -1061,8 +1068,8 @@ transform_handler(TSCont contp, TSEvent event, void *edata)
   } else {
     TransformData *data;
 
-    data = (TransformData *)TSContDataGet(contp);
-    if (data == NULL) {
+    data = static_cast<TransformData *>(TSContDataGet(contp));
+    if (data == nullptr) {
       TSError("[%s] Didn't get Continuation's Data, ignoring event", PLUGIN_NAME);
       return 0;
     }
@@ -1159,7 +1166,7 @@ server_response_ok(TSHttpTxn txnp)
 static int
 transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -1235,6 +1242,6 @@ TSPluginInit(int argc, const char *argv[])
   TSStatIntSet(icap_response_err, 0);
   TSStatIntSet(total_icap_invalid, 0);
 
-  cont = TSContCreate(transform_plugin, NULL);
+  cont = TSContCreate(transform_plugin, nullptr);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
 }

@@ -48,7 +48,7 @@ CB_server_verify(TSCont cont, TSEvent event, void *edata)
   // Is this a good name or not?
   TSEvent reenable_event = TS_EVENT_CONTINUE;
   TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
-  SSL *ssl               = (SSL *)sslobj;
+  SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
   const char *sni_name   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (sni_name) {
     std::string sni_string(sni_name);
@@ -100,7 +100,7 @@ setup_callbacks(int count)
   TSDebug(PN, "Setup callbacks count=%d", count);
   for (i = 0; i < count; i++) {
     cb = TSContCreate(&CB_server_verify, TSMutexCreate());
-    TSContDataSet(cb, (void *)(intptr_t)i);
+    TSContDataSet(cb, (void *)static_cast<intptr_t>(i));
     TSHttpHookAdd(TS_SSL_VERIFY_SERVER_HOOK, cb);
   }
   return;

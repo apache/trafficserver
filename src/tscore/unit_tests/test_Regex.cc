@@ -28,15 +28,15 @@
 #include "tscore/Regex.h"
 #include "catch.hpp"
 
-typedef struct {
+struct subject_match_t {
   std::string_view subject;
   bool match;
-} subject_match_t;
+};
 
-typedef struct {
+struct test_t {
   std::string_view regex;
   std::array<subject_match_t, 4> tests;
-} test_t;
+};
 
 std::array<test_t, 2> test_data{{{{"^foo"}, {{{{"foo"}, true}, {{"bar"}, false}, {{"foobar"}, true}, {{"foobarbaz"}, true}}}},
                                  {{"foo$"}, {{{{"foo"}, true}, {{"bar"}, false}, {{"foobar"}, false}, {{"foobarbaz"}, false}}}}}};

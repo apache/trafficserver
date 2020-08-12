@@ -152,7 +152,7 @@ using get_tls_description_f = std::function<std::string()>;
  * @return The description of the protocol stack.
  */
 std::string
-get_protocol_stack_helper(get_protocol_stack_f get_protocol_stack, get_tls_description_f get_tls_node)
+get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_stack, const get_tls_description_f &get_tls_node)
 {
   std::ostringstream protocol_description;
   protocol_description << R"("protocol":[)";
@@ -399,7 +399,7 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
     if (!sni_filter.empty()) {
       TSVConn ssn_vc           = TSHttpSsnClientVConnGet(ssnp);
       TSSslConnection ssl_conn = TSVConnSslConnectionGet(ssn_vc);
-      SSL *ssl_obj             = (SSL *)ssl_conn;
+      SSL *ssl_obj             = reinterpret_cast<SSL *>(ssl_conn);
       if (ssl_obj == nullptr) {
         TSDebug(debug_tag, "global_session_handler(): Ignore non-HTTPS session %" PRId64 "...", id);
         break;

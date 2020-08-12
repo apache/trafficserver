@@ -23,7 +23,7 @@
 
 #include <ts/ts.h>
 #include <string>
-#include <string.h>
+#include <cstring>
 
 constexpr auto plugin_name = "test_log_interface";
 
@@ -40,7 +40,7 @@ is_get_request(TSHttpTxn transaction)
   }
   int method_len     = 0;
   const char *method = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
-  if (method_len != (int)strlen(TS_HTTP_METHOD_GET) || strncasecmp(method, TS_HTTP_METHOD_GET, method_len) != 0) {
+  if (method_len != static_cast<int>(strlen(TS_HTTP_METHOD_GET)) || strncasecmp(method, TS_HTTP_METHOD_GET, method_len) != 0) {
     TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
     return false;
   }
@@ -52,7 +52,7 @@ int
 global_handler(TSCont continuation, TSEvent event, void *data)
 {
   TSHttpSsn session     = static_cast<TSHttpSsn>(data);
-  TSHttpTxn transaction = (TSHttpTxn)data;
+  TSHttpTxn transaction = static_cast<TSHttpTxn>(data);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:

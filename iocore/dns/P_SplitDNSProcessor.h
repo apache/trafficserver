@@ -65,16 +65,9 @@ struct SplitDNSResult {
      ------------ */
   DNSResultType r = DNS_SRVR_UNDEFINED;
 
-  DNSServer *get_dns_record();
-  int get_dns_srvr_count();
-
-  /* ------------
-     private
-     ------------ */
   int m_line_number = 0;
 
   SplitDNSRecord *m_rec = nullptr;
-  bool m_wrap_around    = false;
 };
 
 /* --------------------------------------------------------------

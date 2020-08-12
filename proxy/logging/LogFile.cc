@@ -197,7 +197,7 @@ LogFile::open_file()
 #ifdef F_GETPIPE_SZ
     // adjust pipe size if necessary
     if (m_pipe_buffer_size) {
-      long pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
+      long pipe_size = static_cast<long>(fcntl(m_fd, F_GETPIPE_SZ));
       if (pipe_size == -1) {
         Error("Get pipe size failed for pipe %s: %s", m_name, strerror(errno));
       } else {
@@ -209,7 +209,7 @@ LogFile::open_file()
         Error("Set pipe size failed for pipe %s to size %d: %s", m_name, m_pipe_buffer_size, strerror(errno));
       }
 
-      pipe_size = (long)fcntl(m_fd, F_GETPIPE_SZ);
+      pipe_size = static_cast<long>(fcntl(m_fd, F_GETPIPE_SZ));
       if (pipe_size == -1) {
         Error("Get pipe size after setting it failed for pipe %s: %s", m_name, strerror(errno));
       } else {

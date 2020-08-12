@@ -90,7 +90,7 @@
 using TxnHandler = int (*)(TSCont, TSEvent, void *);
 
 /* Server transaction structure */
-typedef struct {
+struct ServerTxn {
   TSVConn vconn;
 
   TSVIO read_vio;
@@ -106,24 +106,24 @@ typedef struct {
 
   TxnHandler current_handler;
   unsigned int magic;
-} ServerTxn;
+};
 
 /* Server structure */
-typedef struct {
+struct SocketServer {
   int accept_port;
   TSAction accept_action;
   TSCont accept_cont;
   unsigned int magic;
-} SocketServer;
+};
 
-typedef enum {
+enum RequestStatus {
   REQUEST_SUCCESS,
   REQUEST_INPROGRESS,
   REQUEST_FAILURE,
-} RequestStatus;
+};
 
 /* Client structure */
-typedef struct {
+struct ClientTxn {
   TSVConn vconn;
 
   TSVIO read_vio;
@@ -148,7 +148,7 @@ typedef struct {
   TxnHandler current_handler;
 
   unsigned int magic;
-} ClientTxn;
+};
 
 //////////////////////////////////////////////////////////////////////////////
 // DECLARATIONS
@@ -1597,7 +1597,7 @@ int *SDK_Cache_pstatus;
 static char content[OBJECT_SIZE];
 static int read_counter = 0;
 
-typedef struct {
+struct CacheVConnStruct {
   TSIOBuffer bufp;
   TSIOBuffer out_bufp;
   TSIOBufferReader readerp;
@@ -1609,7 +1609,7 @@ typedef struct {
   TSVIO write_vio;
 
   TSCacheKey key;
-} CacheVConnStruct;
+};
 
 int
 cache_handler(TSCont contp, TSEvent event, void *data)
@@ -2527,10 +2527,10 @@ static RegressionTest *SDK_ContData_test;
 static int *SDK_ContData_pstatus;
 
 // this is specific for this test
-typedef struct {
+struct MyData {
   int data1;
   int data2;
-} MyData;
+};
 
 int
 cont_data_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
@@ -3038,7 +3038,7 @@ REGRESSION_TEST(SDK_API_TSContSchedule)(RegressionTest *test, int /* atype ATS_U
 
 #define HTTP_HOOK_TEST_REQUEST_ID 1
 
-typedef struct {
+struct SocketTest {
   RegressionTest *regtest;
   int *pstatus;
   SocketServer *os;
@@ -3058,7 +3058,7 @@ typedef struct {
   bool test_client_protocol_stack_contains;
 
   unsigned int magic;
-} SocketTest;
+};
 
 // This func is called by us from mytest_handler to test TSHttpTxnClientIPGet
 static int
@@ -6292,13 +6292,13 @@ REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSE
 //////////////////////////////////////////////
 #define LOG_TEST_PATTERN "SDK team rocks"
 
-typedef struct {
+struct LogTestData {
   RegressionTest *test;
   int *pstatus;
   char *fullpath_logname;
   unsigned long magic;
   TSTextLogObject log;
-} LogTestData;
+};
 
 static int
 log_test_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
@@ -6527,19 +6527,19 @@ REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED
     }                                                                                                                  \
   }
 
-typedef enum {
+enum ORIG_TSParseResult {
   ORIG_TS_PARSE_ERROR = -1,
   ORIG_TS_PARSE_DONE  = 0,
   ORIG_TS_PARSE_CONT  = 1,
-} ORIG_TSParseResult;
+};
 
-typedef enum {
+enum ORIG_TSHttpType {
   ORIG_TS_HTTP_TYPE_UNKNOWN,
   ORIG_TS_HTTP_TYPE_REQUEST,
   ORIG_TS_HTTP_TYPE_RESPONSE,
-} ORIG_TSHttpType;
+};
 
-typedef enum {
+enum ORIG_TSHttpStatus {
   ORIG_TS_HTTP_STATUS_NONE = 0,
 
   ORIG_TS_HTTP_STATUS_CONTINUE           = 100,
@@ -6584,9 +6584,9 @@ typedef enum {
   ORIG_TS_HTTP_STATUS_SERVICE_UNAVAILABLE   = 503,
   ORIG_TS_HTTP_STATUS_GATEWAY_TIMEOUT       = 504,
   ORIG_TS_HTTP_STATUS_HTTPVER_NOT_SUPPORTED = 505
-} ORIG_TSHttpStatus;
+};
 
-typedef enum {
+enum ORIG_TSHttpHookID {
   ORIG_TS_HTTP_READ_REQUEST_HDR_HOOK,
   ORIG_TS_HTTP_OS_DNS_HOOK,
   ORIG_TS_HTTP_SEND_REQUEST_HDR_HOOK,
@@ -6618,9 +6618,9 @@ typedef enum {
   ORIG_TS_SSL_LAST_HOOK = ORIG_TS_VCONN_OUTBOUND_CLOSE_HOOK,
   ORIG_TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK,
   ORIG_TS_HTTP_LAST_HOOK
-} ORIG_TSHttpHookID;
+};
 
-typedef enum {
+enum ORIG_TSEvent {
   ORIG_TS_EVENT_NONE      = 0,
   ORIG_TS_EVENT_IMMEDIATE = 1,
   ORIG_TS_EVENT_TIMEOUT   = 2,
@@ -6671,44 +6671,44 @@ typedef enum {
   ORIG_TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE = 60015,
 
   ORIG_TS_EVENT_MGMT_UPDATE = 60300
-} ORIG_TSEvent;
+};
 
-typedef enum {
+enum ORIG_TSCacheLookupResult {
   ORIG_TS_CACHE_LOOKUP_MISS,
   ORIG_TS_CACHE_LOOKUP_HIT_STALE,
   ORIG_TS_CACHE_LOOKUP_HIT_FRESH,
-} ORIG_TSCacheLookupResult;
+};
 
-typedef enum {
+enum ORIG_TSCacheDataType {
   ORIG_TS_CACHE_DATA_TYPE_NONE,
   ORIG_TS_CACHE_DATA_TYPE_HTTP,
   ORIG_TS_CACHE_DATA_TYPE_OTHER,
-} ORIG_TSCacheDataType;
+};
 
-typedef enum {
+enum ORIG_TSCacheError {
   ORIG_TS_CACHE_ERROR_NO_DOC    = -20400,
   ORIG_TS_CACHE_ERROR_DOC_BUSY  = -20401,
   ORIG_TS_CACHE_ERROR_NOT_READY = -20407
-} ORIG_TSCacheError;
+};
 
-typedef enum {
+enum ORIG_TSCacheScanResult {
   ORIG_TS_CACHE_SCAN_RESULT_DONE     = 0,
   ORIG_TS_CACHE_SCAN_RESULT_CONTINUE = 1,
   ORIG_TS_CACHE_SCAN_RESULT_DELETE   = 10,
   ORIG_TS_CACHE_SCAN_RESULT_DELETE_ALL_ALTERNATES,
   ORIG_TS_CACHE_SCAN_RESULT_UPDATE,
   ORIG_TS_CACHE_SCAN_RESULT_RETRY
-} ORIG_TSCacheScanResult;
+};
 
-typedef enum {
+enum ORIG_TSVConnCloseFlags {
   ORIG_TS_VC_CLOSE_ABORT  = -1,
   ORIG_TS_VC_CLOSE_NORMAL = 1,
-} ORIG_TSVConnCloseFlags;
+};
 
-typedef enum {
+enum ORIG_TSReturnCode {
   ORIG_TS_ERROR   = -1,
   ORIG_TS_SUCCESS = 0,
-} ORIG_TSReturnCode;
+};
 
 REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
@@ -6868,7 +6868,7 @@ REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSE
 //                    TSHttpTxnParentProxySet
 //////////////////////////////////////////////
 
-typedef struct {
+struct ContData {
   RegressionTest *test;
   int *pstatus;
   SocketServer *os;
@@ -6881,7 +6881,7 @@ typedef struct {
   int test_passed_txn_error_body_set;
   bool test_passed_Parent_Proxy;
   int magic;
-} ContData;
+};
 
 static int
 checkHttpTxnParentProxy(ContData *data, TSHttpTxn txnp)
@@ -7347,7 +7347,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Success)(RegressionTest *te
 //                    TSHttpTxnCacheLookupStatusGet
 /////////////////////////////////////////////////////
 
-typedef struct {
+struct CacheTestData {
   RegressionTest *test;
   int *pstatus;
   SocketServer *os;
@@ -7359,7 +7359,7 @@ typedef struct {
   bool test_passed_txn_cache_lookup_status;
   bool first_time;
   int magic;
-} CacheTestData;
+};
 
 static int
 cache_hook_handler(TSCont contp, TSEvent event, void *edata)
@@ -7566,7 +7566,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnCache)(RegressionTest *test, int /* aty
 
 /** Append Transform Data Structure Ends **/
 
-typedef struct {
+struct TransformTestData {
   RegressionTest *test;
   int *pstatus;
   SocketServer *os;
@@ -7582,7 +7582,7 @@ typedef struct {
   bool test_passed_transform_create;
   int req_no;
   uint32_t magic;
-} TransformTestData;
+};
 
 /** Append Transform Data Structure **/
 struct AppendTransformTestData {
@@ -8101,7 +8101,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform)(RegressionTest *test, int /*
 //                    TSHttpTxnCachedRespGet
 //////////////////////////////////////////////
 
-typedef struct {
+struct AltInfoTestData {
   RegressionTest *test;
   int *pstatus;
   SocketServer *os;
@@ -8118,7 +8118,7 @@ typedef struct {
   bool run_at_least_once;
   bool first_time;
   int magic;
-} AltInfoTestData;
+};
 
 static int
 altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
@@ -8336,7 +8336,7 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo)(RegressionTest *test, int /* atyp
 #define TEST_CASE_CONNECT_ID1 9  // TSHttpTxnIntercept
 #define TEST_CASE_CONNECT_ID2 10 // TSHttpTxnServerIntercept
 
-typedef struct {
+struct ConnectTestData {
   RegressionTest *test;
   int *pstatus;
   int test_case;
@@ -8345,7 +8345,7 @@ typedef struct {
   ClientTxn *browser;
   char *request;
   unsigned long magic;
-} ConnectTestData;
+};
 
 static int
 cont_test_handler(TSCont contp, TSEvent event, void *edata)

@@ -662,8 +662,8 @@ initialize_process_manager()
   pmgmt = new ProcessManager(remote_management_flag);
 
   // Lifecycle callbacks can potentially be invoked from this thread, so force thread initialization
-  // to make the TS API work. Use a lambda to avoid dealing with compiler dependent casting issues.
-  pmgmt->start([]() -> void { TSThreadInit(); });
+  // to make the TS API work.
+  pmgmt->start(TSThreadInit, TSThreadDestroy);
 
   RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);
   pmgmt->reconfigure();

@@ -108,8 +108,8 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
           NH_Error("Error in the response_codes definition for the strategy named '%s', skipping response_codes.",
                    strategy_name.c_str());
         } else {
-          for (unsigned int k = 0; k < resp_codes_node.size(); ++k) {
-            auto code = resp_codes_node[k].as<int>();
+          for (auto &&k : resp_codes_node) {
+            auto code = k.as<int>();
             if (code > 300 && code < 599) {
               resp_codes.add(code);
             } else {
@@ -208,8 +208,8 @@ NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp, void *ih)
   int64_t sm_id = sm->sm_id;
 
   for (uint32_t gg = 0; gg < groups; gg++) {
-    for (uint32_t hh = 0; hh < host_groups[gg].size(); hh++) {
-      HostRecord *p = host_groups[gg][hh].get();
+    for (auto &hh : host_groups[gg]) {
+      HostRecord *p = hh.get();
       if (p->available) {
         NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] found available next hop %s", sm_id, p->hostname.c_str());
         return true;
@@ -262,9 +262,9 @@ template <> struct convert<HostRecord> {
     if (proto.Type() != YAML::NodeType::Sequence) {
       throw std::invalid_argument("Invalid host protocol definition, expected a sequence.");
     } else {
-      for (unsigned int ii = 0; ii < proto.size(); ii++) {
-        YAML::Node protocol_node       = proto[ii];
-        std::shared_ptr<NHProtocol> pr = std::make_shared<NHProtocol>(protocol_node.as<NHProtocol>());
+      for (auto &&ii : proto) {
+        const YAML::Node &protocol_node = ii;
+        std::shared_ptr<NHProtocol> pr  = std::make_shared<NHProtocol>(protocol_node.as<NHProtocol>());
         nh.protocols.push_back(std::move(pr));
       }
     }

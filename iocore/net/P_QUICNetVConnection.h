@@ -321,7 +321,7 @@ private:
   QUICPacketUPtr _packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel level, uint64_t max_packet_size,
                                    std::vector<QUICSentPacketInfo::FrameInfo> &frames);
   void _packetize_closing_frame();
-  QUICPacketUPtr _build_packet(uint8_t *packet_buf, QUICEncryptionLevel level, Ptr<IOBufferBlock> parent_block,
+  QUICPacketUPtr _build_packet(uint8_t *packet_buf, QUICEncryptionLevel level, const Ptr<IOBufferBlock> &parent_block,
                                bool retransmittable, bool probing, bool crypto);
 
   QUICConnectionErrorUPtr _recv_and_ack(const QUICPacketR &packet, bool *has_non_probing_frame = nullptr);
@@ -373,7 +373,7 @@ private:
   void _update_local_cid(const QUICConnectionId &new_cid);
   void _rerandomize_original_cid();
 
-  QUICHandshakeProtocol *_setup_handshake_protocol(shared_SSL_CTX ctx);
+  QUICHandshakeProtocol *_setup_handshake_protocol(const shared_SSL_CTX &ctx);
 
   QUICPacketUPtr _the_final_packet = QUICPacketFactory::create_null_packet();
   uint8_t _final_packet_buf[QUICPacket::MAX_INSTANCE_SIZE];

@@ -66,7 +66,7 @@ ink_inet_addr(const char *s)
   uint32_t base = 10;
 
   if (nullptr == s) {
-    return htonl((uint32_t)-1);
+    return htonl(static_cast<uint32_t>(-1));
   }
 
   while (n < 4) {
@@ -105,7 +105,7 @@ ink_inet_addr(const char *s)
   }
 
   if (*pc && !ParseRules::is_wslfcr(*pc)) {
-    return htonl((uint32_t)-1);
+    return htonl(static_cast<uint32_t>(-1));
   }
 
   switch (n) {
@@ -113,21 +113,21 @@ ink_inet_addr(const char *s)
     return htonl(u[0]);
   case 2:
     if (u[0] > 0xff || u[1] > 0xffffff) {
-      return htonl((uint32_t)-1);
+      return htonl(static_cast<uint32_t>(-1));
     }
     return htonl((u[0] << 24) | u[1]);
   case 3:
     if (u[0] > 0xff || u[1] > 0xff || u[2] > 0xffff) {
-      return htonl((uint32_t)-1);
+      return htonl(static_cast<uint32_t>(-1));
     }
     return htonl((u[0] << 24) | (u[1] << 16) | u[2]);
   case 4:
     if (u[0] > 0xff || u[1] > 0xff || u[2] > 0xff || u[3] > 0xff) {
-      return htonl((uint32_t)-1);
+      return htonl(static_cast<uint32_t>(-1));
     }
     return htonl((u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3]);
   }
-  return htonl((uint32_t)-1);
+  return htonl(static_cast<uint32_t>(-1));
 }
 
 const char *

@@ -25,10 +25,10 @@
 #include <iostream>
 #include <set>
 #include <sstream>
-#include <stdlib.h>   // for abort
-#include <ts/ts.h>    // for debug
-#include <inttypes.h> // for PRIu64
-#include <string.h>
+#include <cstdlib>   // for abort
+#include <ts/ts.h>   // for debug
+#include <cinttypes> // for PRIu64
+#include <cstring>
 
 // debug messages viewable by setting 'proxy.config.diags.debug.tags'
 // in 'records.config'
@@ -95,7 +95,7 @@ static const char ctl_dump[] = "dump";      // output active ssn/txn tables cmd
         - SSN ID
 */
 static void
-dump_tables(void)
+dump_tables()
 {
   TSDebug(DEBUG_TAG_HOOK, "Dumping active session and transaction tables.");
   std::stringstream dump("");
@@ -106,8 +106,8 @@ dump_tables(void)
     dump << "No active sessions could be found." << std::endl;
   } else {
     // Output for every active session
-    for (std::set<TSHttpSsn>::iterator it = started_ssns.begin(); it != started_ssns.end(); ++it) {
-      dump << "Session --> ID: " << *it << std::endl;
+    for (auto started_ssn : started_ssns) {
+      dump << "Session --> ID: " << started_ssn << std::endl;
     }
   }
 
@@ -115,8 +115,8 @@ dump_tables(void)
     dump << "No active transactions could be found." << std::endl;
   } else {
     // Output for every active transaction
-    for (std::set<started_txn, txn_compare>::iterator it = started_txns.begin(); it != started_txns.end(); ++it) {
-      dump << "Transaction --> ID: " << it->id << " ; Enclosing SSN ID: " << it->ssnp << " ;" << std::endl;
+    for (const auto &it : started_txns) {
+      dump << "Transaction --> ID: " << it.id << " ; Enclosing SSN ID: " << it.ssnp << " ;" << std::endl;
     }
   }
   dump << std::string(100, '+') << std::endl;

@@ -436,9 +436,6 @@ public:
 
 // Helper Functions
 ParentRecord *createDefaultParent(char *val);
-void reloadDefaultParent(char *val);
-void reloadParentFile();
-int parentSelection_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
 
 // Unit Test Functions
 void show_result(ParentResult *aParentResult);

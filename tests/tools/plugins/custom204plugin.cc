@@ -22,7 +22,7 @@
  */
 
 #include "ts/ts.h"
-#include "string.h"
+#include <cstring>
 
 #define PLUGIN_NAME "custom204plugintest"
 
@@ -42,7 +42,7 @@ local_handler(TSCont contp, TSEvent event, void *edata)
                     "This response was sent via the custom204plugin via a call to TSHttpTxnErrorBodySet.\n"
                     "<HR>\n"
                     "</BODY>";
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
   TSMBuffer bufp = nullptr;
   TSMLoc hdr_loc = nullptr;
   TSMLoc url_loc = nullptr;
@@ -116,7 +116,7 @@ done:
 static int
 global_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp   = (TSHttpTxn)edata;
+  TSHttpTxn txnp   = static_cast<TSHttpTxn>(edata);
   TSCont txn_contp = nullptr;
 
   switch (event) {

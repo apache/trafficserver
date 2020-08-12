@@ -85,10 +85,12 @@ main(int argc, char *argv[])
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
     sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-    if (sfd == -1)
+    if (sfd == -1) {
       continue;
-    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
+    }
+    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
       break; /* Success */
+    }
 
     close(sfd);
   }

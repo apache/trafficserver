@@ -129,7 +129,7 @@ create_lua_vms()
       ts_lua_max_state_count = TS_LUA_MAX_STATE_COUNT;
     } else {
       ts_lua_max_state_count = (int)mgmt_state;
-      TSDebug(TS_LUA_DEBUG_TAG, "[%s] found %s: [%d]", __FUNCTION__, ts_lua_mgmt_state_str, (int)ts_lua_max_state_count);
+      TSDebug(TS_LUA_DEBUG_TAG, "[%s] found %s: [%d]", __FUNCTION__, ts_lua_mgmt_state_str, ts_lua_max_state_count);
     }
 
     if (ts_lua_max_state_count < 1) {

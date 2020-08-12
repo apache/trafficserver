@@ -110,7 +110,7 @@ get_effective_host(TSHttpTxn txn)
 int
 handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
+  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
   config_t *config;
   void *txnd;
 
