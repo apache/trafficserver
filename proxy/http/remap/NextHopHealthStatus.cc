@@ -60,7 +60,7 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
   if (status == NH_MARK_UP) {
     ink_assert(result.retry == true);
   }
-  if (result.result != PARENT_SPECIFIED) {
+  if (result.result != TS_PARENT_SPECIFIED) {
     return;
   }
 

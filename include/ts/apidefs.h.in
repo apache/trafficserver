@@ -1336,13 +1336,13 @@ typedef enum {
 // size as well, group size is one to one with the number of rings
 #define TS_MAX_GROUP_RINGS 5
 
-enum TSParentResultType {
-  PARENT_UNDEFINED,
-  PARENT_DIRECT,
-  PARENT_SPECIFIED,
-  PARENT_AGENT,
-  PARENT_FAIL,
-};
+typedef enum {
+  TS_PARENT_UNDEFINED,
+  TS_PARENT_DIRECT,
+  TS_PARENT_SPECIFIED,
+  TS_PARENT_AGENT,
+  TS_PARENT_FAIL,
+} TSParentResultType;
 
 /* --------------------------------------------------------------------------
    Interface for the UUID APIs. https://www.ietf.org/rfc/rfc4122.txt. */

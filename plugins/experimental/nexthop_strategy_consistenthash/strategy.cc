@@ -188,7 +188,7 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
               std::shared_ptr<HostRecord> host_rec = std::make_shared<HostRecord>(hosts_list[hst].as<HostRecord>());
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
-              if (TSHostnameIsSelf(host_rec->hostname.c_str())) {
+              if (TSHostnameIsSelf(host_rec->hostname.c_str()) == TS_SUCCESS) {
                 TSHostStatusSet(host_rec->hostname.c_str(), TSHostStatus::TS_HOST_STATUS_DOWN, 0,
                                 (unsigned int)TS_HOST_STATUS_SELF_DETECT);
               }

@@ -294,7 +294,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
   std::shared_ptr<HostRecord> pRec = nullptr;
   TSHostStatus host_stat           = TSHostStatus::TS_HOST_STATUS_INIT;
 
-  if (result->line_number == -1 && result->result == PARENT_UNDEFINED) {
+  if (result->line_number == -1 && result->result == TS_PARENT_UNDEFINED) {
     firstcall = true;
   }
 
@@ -343,7 +343,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
       pRec = host_groups[hostRec->group_index][hostRec->host_index];
       if (firstcall) {
         TSHostStatus hostStatus;
-        const bool hostExists       = pRec ? TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, nullptr) : false;
+        const bool hostExists       = pRec ? (TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, nullptr) == TS_SUCCESS) : false;
         result->first_choice_status = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
         break;
       }
@@ -360,7 +360,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
 
   TSHostStatus hostStatus;
   unsigned int hostReasons;
-  const bool hostExists = pRec ? TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, &hostReasons) : false;
+  const bool hostExists = pRec ? (TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, &hostReasons) == TS_SUCCESS) : false;
   host_stat             = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
   // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
   // ignore the down status and mark it as avaialble
@@ -380,7 +380,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
           result->last_parent = pRec->host_index;
           result->last_lookup = pRec->group_index;
           result->retry       = nextHopRetry;
-          result->result      = PARENT_SPECIFIED;
+          result->result      = TS_PARENT_SPECIFIED;
           NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next hop %s is now retryable, marked it available.", sm_id, pRec->hostname.c_str());
           break;
         }
@@ -408,7 +408,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
 
         TSHostStatus hostStatus;
         unsigned int hostReasons;
-        const bool hostExists = pRec ? TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, &hostReasons) : false;
+        const bool hostExists = pRec ? (TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, &hostReasons) == TS_SUCCESS) : false;
         host_stat             = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
 
         // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
@@ -448,7 +448,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
   // ----------------------------------------------------------------------------------------------------
 
   if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available || result->retry)) {
-    result->result      = PARENT_SPECIFIED;
+    result->result      = TS_PARENT_SPECIFIED;
     result->hostname    = pRec->hostname.c_str();
     result->last_parent = pRec->host_index;
     result->last_lookup = result->last_group = cur_ring;
@@ -468,9 +468,9 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
              result->hostname, result->port);
   } else {
     if (go_direct == true) {
-      result->result = PARENT_DIRECT;
+      result->result = TS_PARENT_DIRECT;
     } else {
-      result->result = PARENT_FAIL;
+      result->result = TS_PARENT_FAIL;
     }
     result->hostname = nullptr;
     result->port     = 0;

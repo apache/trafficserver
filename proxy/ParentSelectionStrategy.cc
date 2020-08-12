@@ -32,8 +32,8 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
 
   //  Make sure that we are being called back with with a
   //   result structure with a parent
-  ink_assert(result->result == PARENT_SPECIFIED);
-  if (result->result != PARENT_SPECIFIED) {
+  ink_assert(result->result == TS_PARENT_SPECIFIED);
+  if (result->result != TS_PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover
@@ -104,8 +104,8 @@ ParentSelectionStrategy::markParentUp(ParentResult *result)
   //  Make sure that we are being called back with with a
   //   result structure with a parent that is being retried
   ink_release_assert(result->retry == true);
-  ink_assert(result->result == PARENT_SPECIFIED);
-  if (result->result != PARENT_SPECIFIED) {
+  ink_assert(result->result == TS_PARENT_SPECIFIED);
+  if (result->result != TS_PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover

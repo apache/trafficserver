@@ -62,7 +62,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, time_t now)
   HostStatus &pStatus    = HostStatus::instance();
   TSHostStatus host_stat = TSHostStatus::TS_HOST_STATUS_UP;
 
-  if (result->line_number != -1 && result->result != PARENT_UNDEFINED) {
+  if (result->line_number != -1 && result->result != TS_PARENT_UNDEFINED) {
     firstcall = false;
   }
 
@@ -108,9 +108,9 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, time_t now)
     if (static_cast<unsigned int>(cur_hst_index) == result->start_parent) {
       // We've wrapped around so bypass if we can
       if (go_direct == true) {
-        result->result = PARENT_DIRECT;
+        result->result = TS_PARENT_DIRECT;
       } else {
-        result->result = PARENT_FAIL;
+        result->result = TS_PARENT_FAIL;
       }
       result->hostname    = nullptr;
       result->port        = 0;
@@ -168,7 +168,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, time_t now)
     // The selected host is available or retryable, return the search result.
     if (parentUp == true && host_stat != TS_HOST_STATUS_DOWN) {
       NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] status for %s: %s", sm_id, cur_host->hostname.c_str(), HostStatusNames[host_stat]);
-      result->result      = PARENT_SPECIFIED;
+      result->result      = TS_PARENT_SPECIFIED;
       result->hostname    = cur_host->hostname.c_str();
       result->port        = cur_host->getPort(scheme);
       result->last_parent = cur_hst_index;
@@ -217,9 +217,9 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, time_t now)
   } while (!wrapped);
 
   if (go_direct == true) {
-    result->result = PARENT_DIRECT;
+    result->result = TS_PARENT_DIRECT;
   } else {
-    result->result = PARENT_FAIL;
+    result->result = TS_PARENT_FAIL;
   }
 
   result->hostname = nullptr;

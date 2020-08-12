@@ -9910,18 +9910,22 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
   return TS_ERROR;
 }
 
-bool
+TSReturnCode
 TSHostnameIsSelf(const char *hostname)
 {
-  return Machine::instance()->is_self(hostname);
+  const bool isSelf = Machine::instance()->is_self(hostname);
+  if (isSelf) {
+    return TS_SUCCESS;
+  }
+  return TS_ERROR;
 }
 
-bool
+TSReturnCode
 TSHostStatusGet(const char *hostname, TSHostStatus *status, unsigned int *reason)
 {
   HostStatRec *hst = HostStatus::instance().getHostStatus(hostname);
   if (hst == nullptr) {
-    return false;
+    return TS_ERROR;
   }
   if (status != nullptr) {
     *status = hst->status;
@@ -9929,7 +9933,7 @@ TSHostStatusGet(const char *hostname, TSHostStatus *status, unsigned int *reason
   if (reason != nullptr) {
     *reason = hst->reasons;
   }
-  return true;
+  return TS_SUCCESS;
 }
 
 void

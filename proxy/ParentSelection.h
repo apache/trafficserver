@@ -180,7 +180,7 @@ struct ParentResult {
   {
     ink_zero(*this);
     line_number   = -1;
-    result        = PARENT_UNDEFINED;
+    result        = TS_PARENT_UNDEFINED;
     mapWrapped[0] = false;
     mapWrapped[1] = false;
   }
@@ -199,7 +199,7 @@ struct ParentResult {
       // If we don't have a result, we either haven't done a parent
       // lookup yet (PARENT_UNDEFINED), or the lookup didn't match
       // anything (PARENT_DIRECT).
-      ink_assert(result == PARENT_UNDEFINED || result == PARENT_DIRECT);
+      ink_assert(result == TS_PARENT_UNDEFINED || result == TS_PARENT_DIRECT);
       return false;
     }
 
@@ -267,7 +267,7 @@ struct ParentResult {
       return false;
     } else {
       // Caller should check for a valid result beforehand.
-      ink_assert(result != PARENT_UNDEFINED);
+      ink_assert(result != TS_PARENT_UNDEFINED);
       ink_assert(is_some());
       return rec->bypass_ok();
     }

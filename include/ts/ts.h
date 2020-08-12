@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include <string.h>
 #include <ts/apidefs.h>
 
 #ifdef __cplusplus
@@ -2611,35 +2610,36 @@ tsapi TSReturnCode TSHttpTxnClientStreamIdGet(TSHttpTxn txnp, uint64_t *stream_i
 tsapi TSReturnCode TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority);
 
 /*
- * Returns whether hostname is this machine, as used for parent and remap self-detection.
+ * Returns TS_SUCCESS if hostname is this machine, as used for parent and remap self-detection.
+ * Returns TS_ERROR if hostname is not this machine.
  */
-bool TSHostnameIsSelf(const char *hostname);
+tsapi TSReturnCode TSHostnameIsSelf(const char *hostname);
 
 /*
  * Gets the status of hostname in the outparam status, and the status reason in the outparam reason.
  * The reason is a logical-and combination of the reasons in TSHostStatusReason.
  * If either outparam is null, it will not be set and no error will be returned.
- * Returns whether the hostname was a parent and existed in the HostStatus.
+ * Returns TS_SUCCESS if the hostname was a parent and existed in the HostStatus, else TS_ERROR.
  */
-bool TSHostStatusGet(const char *hostname, TSHostStatus *status, unsigned int *reason);
+tsapi TSReturnCode TSHostStatusGet(const char *hostname, TSHostStatus *status, unsigned int *reason);
 
 /*
  * Sets the status of hostname in status, down_time, and reason.
  * The reason is a logical-and combination of the reasons in TSHostStatusReason.
  */
-void TSHostStatusSet(const char *hostname, TSHostStatus status, const unsigned int down_time, const unsigned int reason);
+tsapi void TSHostStatusSet(const char *hostname, TSHostStatus status, const unsigned int down_time, const unsigned int reason);
 
 struct TSParentResult;
 
 /*
  * Gets the Transaction Parent Result pointer.
  */
-void TSHttpTxnParentResultGet(TSHttpTxn txnp, struct TSParentResult *result);
+tsapi void TSHttpTxnParentResultGet(TSHttpTxn txnp, struct TSParentResult *result);
 
 /*
  * Sets the Transaction Parent Result pointer.
  */
-void TSHttpTxnParentResultSet(TSHttpTxn txnp, struct TSParentResult *result);
+tsapi void TSHttpTxnParentResultSet(TSHttpTxn txnp, struct TSParentResult *result);
 
 #ifdef __cplusplus
 }

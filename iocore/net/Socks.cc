@@ -90,7 +90,7 @@ SocksEntry::findServer()
 
 #ifdef SOCKS_WITH_TS
   if (nattempts == 1) {
-    ink_assert(server_result.result == PARENT_UNDEFINED);
+    ink_assert(server_result.result == TS_PARENT_UNDEFINED);
     server_params->findParent(&req_data, &server_result, fail_threshold, retry_time);
   } else {
     socks_conf_struct *conf = netProcessor.socks_conf_stuff;
@@ -101,14 +101,14 @@ SocksEntry::findServer()
     server_params->markParentDown(&server_result, fail_threshold, retry_time);
 
     if (nattempts > conf->connection_attempts) {
-      server_result.result = PARENT_FAIL;
+      server_result.result = TS_PARENT_FAIL;
     } else {
       server_params->nextParent(&req_data, &server_result, fail_threshold, retry_time);
     }
   }
 
   switch (server_result.result) {
-  case PARENT_SPECIFIED:
+  case TS_PARENT_SPECIFIED:
     // Original was inet_addr, but should hostnames work?
     // ats_ip_pton only supports numeric (because other clients
     // explicitly want to avoid hostname lookups).
@@ -122,8 +122,8 @@ SocksEntry::findServer()
   default:
     ink_assert(!"Unexpected event");
   // fallthrough
-  case PARENT_DIRECT:
-  case PARENT_FAIL:
+  case TS_PARENT_DIRECT:
+  case TS_PARENT_FAIL:
     memset(&server_addr, 0, sizeof(server_addr));
   }
 #else
