@@ -3104,15 +3104,3 @@ QUICFrameFactory::create_handshake_done_frame(uint8_t *buf, QUICFrameId id, QUIC
   new (buf) QUICHandshakeDoneFrame(id, owner);
   return reinterpret_cast<QUICHandshakeDoneFrame *>(buf);
 }
-
-QUICFrameId
-QUICFrameInfo::id() const
-{
-  return this->_id;
-}
-
-QUICFrameGenerator *
-QUICFrameInfo::generated_by() const
-{
-  return this->_generator;
-}

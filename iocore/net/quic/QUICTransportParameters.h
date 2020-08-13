@@ -34,10 +34,10 @@ class QUICTransportParameterId
 {
 public:
   enum {
-    ORIGINAL_CONNECTION_ID,
+    ORIGINAL_DESTINATION_CONNECTION_ID,
     MAX_IDLE_TIMEOUT,
     STATELESS_RESET_TOKEN,
-    MAX_PACKET_SIZE,
+    MAX_UDP_PAYLOAD_SIZE,
     INITIAL_MAX_DATA,
     INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
     INITIAL_MAX_STREAM_DATA_BIDI_REMOTE,
@@ -49,6 +49,8 @@ public:
     DISABLE_ACTIVE_MIGRATION,
     PREFERRED_ADDRESS,
     ACTIVE_CONNECTION_ID_LIMIT,
+    INITIAL_SOURCE_CONNECTION_ID,
+    RETRY_SOURCE_CONNECTION_ID,
   };
 
   explicit operator bool() const { return true; }
@@ -75,7 +77,7 @@ private:
 class QUICTransportParameters
 {
 public:
-  QUICTransportParameters(const uint8_t *buf, size_t len);
+  QUICTransportParameters(const uint8_t *buf, size_t len, QUICVersion version);
   virtual ~QUICTransportParameters();
 
   bool is_valid() const;
@@ -104,11 +106,11 @@ protected:
   };
 
   QUICTransportParameters(){};
-  void _load(const uint8_t *buf, size_t len);
+  void _load(const uint8_t *buf, size_t len, QUICVersion version);
   bool _valid = false;
 
   virtual std::ptrdiff_t _parameters_offset(const uint8_t *buf) const = 0;
-  virtual int _validate_parameters() const;
+  virtual int _validate_parameters(QUICVersion version) const;
   void _print() const;
 
   std::map<QUICTransportParameterId, Value *> _parameters;
@@ -118,11 +120,11 @@ class QUICTransportParametersInClientHello : public QUICTransportParameters
 {
 public:
   QUICTransportParametersInClientHello() : QUICTransportParameters(){};
-  QUICTransportParametersInClientHello(const uint8_t *buf, size_t len);
+  QUICTransportParametersInClientHello(const uint8_t *buf, size_t len, QUICVersion version);
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
-  int _validate_parameters() const override;
+  int _validate_parameters(QUICVersion version) const override;
 
 private:
 };
@@ -131,15 +133,11 @@ class QUICTransportParametersInEncryptedExtensions : public QUICTransportParamet
 {
 public:
   QUICTransportParametersInEncryptedExtensions() : QUICTransportParameters(){};
-  QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len);
-  void add_version(QUICVersion version);
+  QUICTransportParametersInEncryptedExtensions(const uint8_t *buf, size_t len, QUICVersion version);
 
 protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
-  int _validate_parameters() const override;
-
-  uint8_t _n_versions        = 0;
-  QUICVersion _versions[256] = {};
+  int _validate_parameters(QUICVersion version) const override;
 };
 
 class QUICTransportParametersHandler

@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "QUICTypes.h"
 #include "QUICConnection.h"
 #include "QUICConfig.h"
 #include "QUICEvents.h"
@@ -54,7 +55,7 @@ public:
   // callback on packet send event
   virtual void packet_send_callback(QUICCallbackContext &, const QUICPacket &p){};
   // callback on packet lost event
-  virtual void packet_lost_callback(QUICCallbackContext &, const QUICPacketInfo &p){};
+  virtual void packet_lost_callback(QUICCallbackContext &, const QUICSentPacketInfo &p){};
   // callback on packet receive event
   virtual void packet_recv_callback(QUICCallbackContext &, const QUICPacket &p){};
   // callback on packet acked event
@@ -128,7 +129,7 @@ public:
   }
 
   void
-  trigger(CallbackEvent e, const QUICPacketInfo &p)
+  trigger(CallbackEvent e, const QUICSentPacketInfo &p)
   {
     QUICCallbackContext ctx;
     for (auto &&it : this->_callbacks) {

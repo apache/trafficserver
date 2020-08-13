@@ -44,9 +44,11 @@ class QUICPacketFactory
 {
 public:
   static QUICPacketUPtr create_null_packet();
-  static QUICPacketUPtr create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid);
+  static QUICPacketUPtr create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid,
+                                                          QUICVersion version_in_version);
   static QUICPacketUPtr create_stateless_reset_packet(QUICStatelessResetToken stateless_reset_token, size_t maximum_size);
-  static QUICPacketUPtr create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, QUICRetryToken &token);
+  static QUICPacketUPtr create_retry_packet(QUICVersion version, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                            QUICRetryToken &token);
 
   QUICPacketFactory(const QUICPacketProtectionKeyInfo &pp_key_info) : _pp_key_info(pp_key_info), _pp_protector(pp_key_info) {}
 

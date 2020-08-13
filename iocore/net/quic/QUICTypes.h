@@ -44,8 +44,7 @@ using QUICPacketNumber = uint64_t;
 using QUICVersion      = uint32_t;
 using QUICStreamId     = uint64_t;
 using QUICOffset       = uint64_t;
-
-static constexpr uint8_t kPacketNumberSpace = 3;
+using QUICFrameId      = uint64_t;
 
 // TODO: Update version number
 // Note: Prefix for drafts (0xff000000) + draft number
@@ -53,9 +52,11 @@ static constexpr uint8_t kPacketNumberSpace = 3;
 // Note: Fix QUIC_ALPN_PROTO_LIST in QUICConfig.cc
 // Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
+  0xff00001d,
   0xff00001b,
 };
-constexpr QUICVersion QUIC_EXERCISE_VERSION = 0x1a2a3a4a;
+constexpr QUICVersion QUIC_EXERCISE_VERSION1 = 0x1a2a3a4a;
+constexpr QUICVersion QUIC_EXERCISE_VERSION2 = 0x5a6a7a8a;
 
 enum class QUICEncryptionLevel {
   NONE      = -1,
@@ -75,13 +76,10 @@ constexpr QUICEncryptionLevel QUIC_ENCRYPTION_LEVELS[] = {
   QUICEncryptionLevel::ONE_RTT,
 };
 
-// introduce by draft-19 kPacketNumberSpace
-enum class QUICPacketNumberSpace {
-  None            = -1,
-  Initial         = 0,
-  Handshake       = 1,
-  ApplicationData = 2,
-};
+// kPacketNumberSpace on Recovery A.2.Constants of Interest
+enum class QUICPacketNumberSpace : int { INITIAL, HANDSHAKE, APPLICATION_DATA, N_SPACES };
+// For conveniece (this removes neccesity of static_cast)
+constexpr int QUIC_N_PACKET_SPACES = static_cast<int>(QUICPacketNumberSpace::N_SPACES);
 
 // Divide to QUICPacketType and QUICPacketLongHeaderType ?
 enum class QUICPacketType : uint8_t {
@@ -154,7 +152,7 @@ enum class QUICErrorClass {
 enum class QUICTransErrorCode : uint64_t {
   NO_ERROR = 0x00,
   INTERNAL_ERROR,
-  SERVER_BUSY,
+  CONNECTION_REFUSED,
   FLOW_CONTROL_ERROR,
   STREAM_LIMIT_ERROR,
   STREAM_STATE_ERROR,
@@ -164,8 +162,9 @@ enum class QUICTransErrorCode : uint64_t {
   CONNECTION_ID_LIMIT_ERROR,
   PROTOCOL_VIOLATION,
   INVALID_TOKEN,
-  CRYPTO_BUFFER_EXCEEDED = 0x0D,
-  CRYPTO_ERROR           = 0x0100, // 0x100 - 0x1FF
+  APPLICATION_ERROR,
+  CRYPTO_BUFFER_EXCEEDED,
+  CRYPTO_ERROR = 0x0100, // 0x100 - 0x1FF
 };
 
 // Application Protocol Error Codes defined in application
@@ -381,7 +380,7 @@ class QUICRetryToken : public QUICAddressValidationToken
 {
 public:
   QUICRetryToken(const uint8_t *buf, size_t len) : QUICAddressValidationToken(buf, len) {}
-  QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid);
+  QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid, QUICConnectionId scid);
 
   bool
   operator==(const QUICRetryToken &x) const
@@ -395,9 +394,7 @@ public:
   bool is_valid(const IpEndpoint &src) const;
 
   const QUICConnectionId original_dcid() const;
-
-private:
-  QUICConnectionId _original_dcid;
+  const QUICConnectionId scid() const;
 };
 
 class QUICPreferredAddress
@@ -551,11 +548,52 @@ class QUICCCConfig
 {
 public:
   virtual ~QUICCCConfig() {}
-  virtual uint32_t max_datagram_size() const               = 0;
   virtual uint32_t initial_window() const                  = 0;
   virtual uint32_t minimum_window() const                  = 0;
   virtual float loss_reduction_factor() const              = 0;
   virtual uint32_t persistent_congestion_threshold() const = 0;
+};
+
+class QUICFrameGenerator;
+
+struct QUICSentPacketInfo {
+  class FrameInfo
+  {
+  public:
+    FrameInfo(QUICFrameId id, QUICFrameGenerator *generator) : _id(id), _generator(generator) {}
+
+    QUICFrameId id() const;
+    QUICFrameGenerator *generated_by() const;
+
+  private:
+    QUICFrameId _id = 0;
+    QUICFrameGenerator *_generator;
+  };
+
+  // Recovery A.1.1.  Sent Packet Fields
+  QUICPacketNumber packet_number;
+  bool ack_eliciting;
+  bool in_flight;
+  size_t sent_bytes;
+  ink_hrtime time_sent;
+
+  // Additional fields
+  QUICPacketType type;
+  std::vector<FrameInfo> frames;
+  QUICPacketNumberSpace pn_space;
+  // End of additional fields
+};
+
+using QUICSentPacketInfoUPtr = std::unique_ptr<QUICSentPacketInfo>;
+
+class QUICRTTProvider
+{
+public:
+  virtual ink_hrtime smoothed_rtt() const = 0;
+  virtual ink_hrtime rttvar() const       = 0;
+  virtual ink_hrtime latest_rtt() const   = 0;
+
+  virtual ink_hrtime congestion_period(uint32_t threshold) const = 0;
 };
 
 // TODO: move version independent functions to QUICInvariants

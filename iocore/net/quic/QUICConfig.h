@@ -146,9 +146,8 @@ private:
   ink_hrtime _ld_initial_rtt    = HRTIME_MSECONDS(500);
 
   // [draft-11 recovery] 4.7.1.  Constants of interest
-  uint32_t _cc_max_datagram_size               = 1200;
-  uint32_t _cc_initial_window_scale            = 10; // Actual initial window size is this value multiplied by the _cc_default_mss
-  uint32_t _cc_minimum_window_scale            = 2;  // Actual minimum window size is this value multiplied by the _cc_default_mss
+  uint32_t _cc_initial_window                  = 1200 * 10;
+  uint32_t _cc_minimum_window                  = 1200 * 2;
   float _cc_loss_reduction_factor              = 0.5;
   uint32_t _cc_persistent_congestion_threshold = 3;
 };

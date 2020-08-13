@@ -47,7 +47,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
     0x40, 0x10 // value
   };
   std::shared_ptr<QUICTransportParameters> local_tp =
-    std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf));
+    std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf), QUIC_SUPPORTED_VERSIONS[0]);
 
   uint8_t remote_tp_buf[] = {
     0x08,      // parameter id - initial_max_streams_bidi
@@ -55,7 +55,7 @@ TEST_CASE("QUICStreamManager_NewStream", "[quic]")
     0x40, 0x10 // value
   };
   std::shared_ptr<QUICTransportParameters> remote_tp =
-    std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf));
+    std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf), QUIC_SUPPORTED_VERSIONS[0]);
 
   sm.init_flow_control_params(local_tp, remote_tp);
 
@@ -139,7 +139,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
     0xbf, 0xff, 0xff, 0xff // value
   };
   std::shared_ptr<QUICTransportParameters> local_tp =
-    std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf));
+    std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf), QUIC_SUPPORTED_VERSIONS[0]);
 
   uint8_t remote_tp_buf[] = {
     0x08,                  // parameter id - initial_max_streams_bidi
@@ -150,7 +150,7 @@ TEST_CASE("QUICStreamManager_total_offset_received", "[quic]")
     0xbf, 0xff, 0xff, 0xff // value
   };
   std::shared_ptr<QUICTransportParameters> remote_tp =
-    std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf));
+    std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf), QUIC_SUPPORTED_VERSIONS[0]);
 
   sm.init_flow_control_params(local_tp, remote_tp);
 
@@ -194,7 +194,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
     0xbf, 0xff, 0xff, 0xff // value
   };
   std::shared_ptr<QUICTransportParameters> local_tp =
-    std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf));
+    std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf), QUIC_SUPPORTED_VERSIONS[0]);
 
   uint8_t remote_tp_buf[] = {
     0x08,                  // parameter id - initial_max_streams_bidi
@@ -205,7 +205,7 @@ TEST_CASE("QUICStreamManager_total_offset_sent", "[quic]")
     0xbf, 0xff, 0xff, 0xff // value
   };
   std::shared_ptr<QUICTransportParameters> remote_tp =
-    std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf));
+    std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf), QUIC_SUPPORTED_VERSIONS[0]);
 
   sm.init_flow_control_params(local_tp, remote_tp);
 
@@ -262,7 +262,7 @@ TEST_CASE("QUICStreamManager_max_streams", "[quic]")
     0x03, // value
   };
   std::shared_ptr<QUICTransportParameters> local_tp =
-    std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf));
+    std::make_shared<QUICTransportParametersInEncryptedExtensions>(local_tp_buf, sizeof(local_tp_buf), QUIC_SUPPORTED_VERSIONS[0]);
 
   uint8_t remote_tp_buf[] = {
     0x08, // parameter id - initial_max_streams_bidi
@@ -273,7 +273,7 @@ TEST_CASE("QUICStreamManager_max_streams", "[quic]")
     0x03, // value
   };
   std::shared_ptr<QUICTransportParameters> remote_tp =
-    std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf));
+    std::make_shared<QUICTransportParametersInClientHello>(remote_tp_buf, sizeof(remote_tp_buf), QUIC_SUPPORTED_VERSIONS[0]);
 
   sm.init_flow_control_params(local_tp, remote_tp);
 

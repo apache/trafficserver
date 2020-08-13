@@ -33,12 +33,6 @@ public:
   QUICCCConfigQCP(const QUICConfigParams *params) : _params(params) {}
 
   uint32_t
-  max_datagram_size() const override
-  {
-    return this->_params->cc_max_datagram_size();
-  }
-
-  uint32_t
   initial_window() const override
   {
     return this->_params->cc_initial_window();
