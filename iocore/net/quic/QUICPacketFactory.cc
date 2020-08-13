@@ -197,10 +197,11 @@ QUICPacketFactory::create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoin
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid)
+QUICPacketFactory::create_version_negotiation_packet(QUICConnectionId dcid, QUICConnectionId scid, QUICVersion version_in_initial)
 {
-  return QUICPacketUPtr(new QUICVersionNegotiationPacket(dcid, scid, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS)),
-                        &QUICPacketDeleter::delete_packet_new);
+  return QUICPacketUPtr(
+    new QUICVersionNegotiationPacket(dcid, scid, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS), version_in_initial),
+    &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr
@@ -228,10 +229,10 @@ QUICPacketFactory::create_initial_packet(uint8_t *packet_buf, QUICConnectionId d
 }
 
 QUICPacketUPtr
-QUICPacketFactory::create_retry_packet(QUICConnectionId destination_cid, QUICConnectionId source_cid, QUICRetryToken &token)
+QUICPacketFactory::create_retry_packet(QUICVersion version, QUICConnectionId destination_cid, QUICConnectionId source_cid,
+                                       QUICRetryToken &token)
 {
-  return QUICPacketUPtr(new QUICRetryPacket(QUIC_SUPPORTED_VERSIONS[0], destination_cid, source_cid, token),
-                        &QUICPacketDeleter::delete_packet_new);
+  return QUICPacketUPtr(new QUICRetryPacket(version, destination_cid, source_cid, token), &QUICPacketDeleter::delete_packet_new);
 }
 
 QUICPacketUPtr
@@ -329,7 +330,7 @@ QUICPacketFactory::is_ready_to_create_protected_packet()
 void
 QUICPacketFactory::reset()
 {
-  for (auto i = 0; i < kPacketNumberSpace; i++) {
+  for (auto i = 0; i < QUIC_N_PACKET_SPACES; i++) {
     this->_packet_number_generator[i].reset();
   }
 }

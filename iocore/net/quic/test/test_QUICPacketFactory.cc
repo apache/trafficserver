@@ -37,7 +37,7 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
   QUICConnectionId dcid(raw_dcid, 8);
   QUICConnectionId scid(raw_scid, 8);
 
-  QUICPacketUPtr packet = factory.create_version_negotiation_packet(scid, dcid);
+  QUICPacketUPtr packet = factory.create_version_negotiation_packet(scid, dcid, QUIC_EXERCISE_VERSION1);
   REQUIRE(packet != nullptr);
 
   QUICVersionNegotiationPacket &vn_packet = static_cast<QUICVersionNegotiationPacket &>(*packet);
@@ -56,8 +56,9 @@ TEST_CASE("QUICPacketFactory_Create_VersionNegotiationPacket", "[quic]")
     0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Destination Connection ID
     0x08,                                           // SCID Len
     0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Source Connection ID
+    0xff, 0x00, 0x00, 0x1d,                         // Supported Version
     0xff, 0x00, 0x00, 0x1b,                         // Supported Version
-    0x1a, 0x2a, 0x3a, 0x4a,                         // Exercise Version
+    0x5a, 0x6a, 0x7a, 0x8a,                         // Exercise Version
   };
   uint8_t buf[1024] = {0};
   size_t buf_len;
@@ -75,9 +76,9 @@ TEST_CASE("QUICPacketFactory_Create_Retry", "[quic]")
   uint8_t raw[] = {0xaa, 0xbb, 0xcc, 0xdd};
   QUICRetryToken token(raw, 4);
 
-  QUICPacketUPtr packet =
-    factory.create_retry_packet(QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
-                                QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4), token);
+  QUICPacketUPtr packet = factory.create_retry_packet(
+    QUIC_SUPPORTED_VERSIONS[0], QUICConnectionId(reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04"), 4),
+    QUICConnectionId(reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14"), 4), token);
 
   REQUIRE(packet != nullptr);
 

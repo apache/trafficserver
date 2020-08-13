@@ -24,6 +24,7 @@
 #include "catch.hpp"
 
 #include "quic/QUICVersionNegotiator.h"
+#include "quic/QUICPacketFactory.h"
 #include "quic/QUICPacketProtectionKeyInfo.h"
 #include "quic/QUICPacketFactory.h"
 #include "quic/Mock.h"
@@ -41,7 +42,7 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
   dummy_payload->alloc(iobuffer_size_to_index(dummy_payload_len, BUFFER_SIZE_INDEX_32K));
   dummy_payload->fill(dummy_payload_len);
 
-  SECTION("Normal case")
+  SECTION("Match")
   {
     // Check initial state
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
@@ -60,13 +61,13 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
   }
 
-  SECTION("Negotiation case")
+  SECTION("Unmatch")
   {
     // Check initial state
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // Negotiate version
-    packet_factory.set_version(QUIC_SUPPORTED_VERSIONS[0]);
+    packet_factory.set_version(0xff000001);
     uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr initial_packet =
       packet_factory.create_initial_packet(packet_buf, {}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true);
@@ -76,16 +77,16 @@ TEST_CASE("QUICVersionNegotiator - Server Side", "[quic]")
     blocks->next = initial_packet->payload_block();
     QUICInitialPacketR received_initial_packet(nullptr, {}, {}, blocks, 0);
     vn.negotiate(received_initial_packet);
-    CHECK(vn.status() == QUICVersionNegotiationStatus::NEGOTIATED);
+    CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
   }
 
-  SECTION("Downgrade case")
+  SECTION("Exercise")
   {
     // Check initial state
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // Negotiate version
-    packet_factory.set_version(QUIC_EXERCISE_VERSION);
+    packet_factory.set_version(QUIC_EXERCISE_VERSION1);
     uint8_t packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr initial_packet =
       packet_factory.create_initial_packet(packet_buf, {}, {}, 0, std::move(dummy_payload), dummy_payload_len, true, false, true);
@@ -125,7 +126,7 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
     CHECK(vn.status() == QUICVersionNegotiationStatus::NOT_NEGOTIATED);
 
     // Negotiate version
-    packet_factory.set_version(QUIC_EXERCISE_VERSION);
+    packet_factory.set_version(QUIC_EXERCISE_VERSION1);
     uint8_t initial_packet_buf[QUICPacket::MAX_INSTANCE_SIZE];
     QUICPacketUPtr packet = packet_factory.create_initial_packet(initial_packet_buf, {}, {}, 0, std::move(dummy_payload),
                                                                  dummy_payload_len, true, false, true);
@@ -133,8 +134,8 @@ TEST_CASE("QUICVersionNegotiator - Client Side", "[quic]")
     QUICInitialPacket &initial_packet = static_cast<QUICInitialPacket &>(*packet);
 
     // Server send VN packet based on Initial packet
-    QUICPacketUPtr vn_packet =
-      packet_factory.create_version_negotiation_packet(initial_packet.source_cid(), initial_packet.destination_cid());
+    QUICPacketUPtr vn_packet = packet_factory.create_version_negotiation_packet(
+      initial_packet.source_cid(), initial_packet.destination_cid(), QUIC_EXERCISE_VERSION1);
     REQUIRE(vn_packet != nullptr);
 
     auto blocks  = vn_packet->header_block();

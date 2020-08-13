@@ -142,7 +142,7 @@ TESTS = $(check_PROGRAMS)
 
 test_CPPFLAGS = \
   $(AM_CPPFLAGS) \
-  -I$(abs_top_srcdir)/tests/include
+  -I$(abs_top_srcdir)/tests/include -O0
 
 test_LDADD = \
   libquic.a \

@@ -38,39 +38,45 @@ SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
    These are also used for NPN setup.
 */
 
-const char *const TS_ALPN_PROTOCOL_HTTP_0_9  = IP_PROTO_TAG_HTTP_0_9.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_0  = IP_PROTO_TAG_HTTP_1_0.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_1_1  = IP_PROTO_TAG_HTTP_1_1.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_2_0  = IP_PROTO_TAG_HTTP_2_0.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_3    = IP_PROTO_TAG_HTTP_3.data();
-const char *const TS_ALPN_PROTOCOL_HTTP_QUIC = IP_PROTO_TAG_HTTP_QUIC.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_0_9      = IP_PROTO_TAG_HTTP_0_9.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_0      = IP_PROTO_TAG_HTTP_1_0.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_1_1      = IP_PROTO_TAG_HTTP_1_1.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_2_0      = IP_PROTO_TAG_HTTP_2_0.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_3        = IP_PROTO_TAG_HTTP_3.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_QUIC     = IP_PROTO_TAG_HTTP_QUIC.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_3_D27    = IP_PROTO_TAG_HTTP_3_D27.data();
+const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D27 = IP_PROTO_TAG_HTTP_QUIC_D27.data();
 
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
 
-const char *const TS_PROTO_TAG_HTTP_1_0  = TS_ALPN_PROTOCOL_HTTP_1_0;
-const char *const TS_PROTO_TAG_HTTP_1_1  = TS_ALPN_PROTOCOL_HTTP_1_1;
-const char *const TS_PROTO_TAG_HTTP_2_0  = TS_ALPN_PROTOCOL_HTTP_2_0;
-const char *const TS_PROTO_TAG_HTTP_3    = TS_ALPN_PROTOCOL_HTTP_3;
-const char *const TS_PROTO_TAG_HTTP_QUIC = TS_ALPN_PROTOCOL_HTTP_QUIC;
-const char *const TS_PROTO_TAG_TLS_1_3   = IP_PROTO_TAG_TLS_1_3.data();
-const char *const TS_PROTO_TAG_TLS_1_2   = IP_PROTO_TAG_TLS_1_2.data();
-const char *const TS_PROTO_TAG_TLS_1_1   = IP_PROTO_TAG_TLS_1_1.data();
-const char *const TS_PROTO_TAG_TLS_1_0   = IP_PROTO_TAG_TLS_1_0.data();
-const char *const TS_PROTO_TAG_TCP       = IP_PROTO_TAG_TCP.data();
-const char *const TS_PROTO_TAG_UDP       = IP_PROTO_TAG_UDP.data();
-const char *const TS_PROTO_TAG_IPV4      = IP_PROTO_TAG_IPV4.data();
-const char *const TS_PROTO_TAG_IPV6      = IP_PROTO_TAG_IPV6.data();
+const char *const TS_PROTO_TAG_HTTP_1_0      = TS_ALPN_PROTOCOL_HTTP_1_0;
+const char *const TS_PROTO_TAG_HTTP_1_1      = TS_ALPN_PROTOCOL_HTTP_1_1;
+const char *const TS_PROTO_TAG_HTTP_2_0      = TS_ALPN_PROTOCOL_HTTP_2_0;
+const char *const TS_PROTO_TAG_HTTP_3        = TS_ALPN_PROTOCOL_HTTP_3;
+const char *const TS_PROTO_TAG_HTTP_QUIC     = TS_ALPN_PROTOCOL_HTTP_QUIC;
+const char *const TS_PROTO_TAG_HTTP_3_D27    = TS_ALPN_PROTOCOL_HTTP_3_D27;
+const char *const TS_PROTO_TAG_HTTP_QUIC_D27 = TS_ALPN_PROTOCOL_HTTP_QUIC_D27;
+const char *const TS_PROTO_TAG_TLS_1_3       = IP_PROTO_TAG_TLS_1_3.data();
+const char *const TS_PROTO_TAG_TLS_1_2       = IP_PROTO_TAG_TLS_1_2.data();
+const char *const TS_PROTO_TAG_TLS_1_1       = IP_PROTO_TAG_TLS_1_1.data();
+const char *const TS_PROTO_TAG_TLS_1_0       = IP_PROTO_TAG_TLS_1_0.data();
+const char *const TS_PROTO_TAG_TCP           = IP_PROTO_TAG_TCP.data();
+const char *const TS_PROTO_TAG_UDP           = IP_PROTO_TAG_UDP.data();
+const char *const TS_PROTO_TAG_IPV4          = IP_PROTO_TAG_IPV4.data();
+const char *const TS_PROTO_TAG_IPV6          = IP_PROTO_TAG_IPV6.data();
 
 std::unordered_set<std::string_view> TSProtoTags;
 
 // Precomputed indices for ease of use.
-int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9  = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0  = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1  = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0  = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_3    = SessionProtocolNameRegistry::INVALID;
-int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9      = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0      = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1      = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0      = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_3        = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC     = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_3_D27    = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D27 = SessionProtocolNameRegistry::INVALID;
 
 // Predefined protocol sets for ease of use.
 SessionProtocolSet HTTP_PROTOCOL_SET;
@@ -705,12 +711,15 @@ void
 ts_session_protocol_well_known_name_indices_init()
 {
   // register all the well known protocols and get the indices set.
-  TS_ALPN_PROTOCOL_INDEX_HTTP_0_9  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_0_9});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_1_0  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_0});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_1_1  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_1});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_2_0  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_2_0});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_3    = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_3});
-  TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_QUIC});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_0_9   = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_0_9});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_0   = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_0});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_1   = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_1_1});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_2_0   = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_2_0});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_3     = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_3});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_3_D27 = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_3_D27});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_QUIC});
+  TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D27 =
+    globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_QUIC_D27});
 
   // Now do the predefined protocol sets.
   HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_0_9);
@@ -724,6 +733,8 @@ ts_session_protocol_well_known_name_indices_init()
 
   DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_3);
   DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC);
+  DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_3_D27);
+  DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D27);
 
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
 
@@ -732,6 +743,8 @@ ts_session_protocol_well_known_name_indices_init()
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_2_0);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_3);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_QUIC);
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_3_D27);
+  TSProtoTags.insert(TS_PROTO_TAG_HTTP_QUIC_D27);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_3);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_2);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_1);

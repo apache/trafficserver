@@ -73,7 +73,7 @@ public:
   };
 
   void
-  packet_lost_callback(QUICCallbackContext &, const QUICPacketInfo &packet) override
+  packet_lost_callback(QUICCallbackContext &, const QUICSentPacketInfo &packet) override
   {
     auto qe = std::make_unique<Recovery::PacketLost>(PacketTypeToName(packet.type), packet.packet_number);
     this->_log.last_trace().push_event(std::move(qe));

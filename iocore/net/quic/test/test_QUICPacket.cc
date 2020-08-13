@@ -44,7 +44,7 @@ TEST_CASE("Receiving Packet", "[quic]")
       0x08,                                           // SCID Len
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x00, 0x00, 0x00, 0x08,                         // Supported Version 1
-      0x00, 0x00, 0x00, 0x09,                         // Supported Version 1
+      0x00, 0x00, 0x00, 0x09,                         // Supported Version 2
     };
     Ptr<IOBufferBlock> input_ibb = make_ptr<IOBufferBlock>(new_IOBufferBlock());
     input_ibb->set_internal(static_cast<void *>(input), sizeof(input), BUFFER_SIZE_NOT_ALLOCATED);
@@ -255,8 +255,8 @@ TEST_CASE("Sending Packet", "[quic]")
 
   SECTION("RETRY Packet (store)")
   {
-    uint8_t buf[64] = {0};
-    size_t len      = 0;
+    uint8_t buf[128] = {0};
+    size_t len       = 0;
 
     const uint8_t expected[] = {
       0xf0,                                           // Long header, Type: RETRY
@@ -267,11 +267,13 @@ TEST_CASE("Sending Packet", "[quic]")
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // Source Connection ID
       0x01, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Retry Token
       0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, //
-      0x10, 0x11, 0x12, 0x13, 0x14, 0xf0, 0xf1, 0xf2, //
+      0x10, 0x11, 0x12, 0x13, 0x14, 0x08, 0x01, 0x02, //
+      0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x08, 0x11, //
+      0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,       //
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Retry Integrity Tag
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
-    QUICRetryToken token(expected + 23, 24);
+    QUICRetryToken token(expected + 23, 39);
 
     QUICRetryPacket packet(0x11223344, {reinterpret_cast<const uint8_t *>("\x01\x02\x03\x04\x05\x06\x07\x08"), 8},
                            {reinterpret_cast<const uint8_t *>("\x11\x12\x13\x14\x15\x16\x17\x18"), 8}, token);
@@ -284,6 +286,21 @@ TEST_CASE("Sending Packet", "[quic]")
     packet.store(buf, &len);
     CHECK(len == packet.size());
     CHECK(memcmp(buf, expected, sizeof(expected) - 16) == 0);
+  }
+
+  SECTION("VersionNegotiation Packet")
+  {
+    QUICConnectionId dummy;
+    QUICVersionNegotiationPacket vn1(dummy, dummy, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS),
+                                     QUIC_EXERCISE_VERSION1);
+    for (auto i = 0; i < vn1.nversions(); ++i) {
+      REQUIRE(vn1.versions()[i] != QUIC_EXERCISE_VERSION1);
+    }
+    QUICVersionNegotiationPacket vn2(dummy, dummy, QUIC_SUPPORTED_VERSIONS, countof(QUIC_SUPPORTED_VERSIONS),
+                                     QUIC_EXERCISE_VERSION2);
+    for (auto i = 0; i < vn2.nversions(); ++i) {
+      REQUIRE(vn2.versions()[i] != QUIC_EXERCISE_VERSION2);
+    }
   }
 }
 

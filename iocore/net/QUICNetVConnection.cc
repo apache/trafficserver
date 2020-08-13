@@ -37,6 +37,8 @@
 #include "QUICMultiCertConfigLoader.h"
 #include "QUICTLS.h"
 
+#include "QUICNewRenoCongestionController.h"
+
 #include "QUICStats.h"
 #include "QUICGlobals.h"
 #include "QUICDebugNames.h"
@@ -57,6 +59,7 @@ static constexpr uint8_t QUANTUM_TEST_VALUE[1200] = {'Q'};
 #define QUICConVVVDebug(fmt, ...) Debug("vvv_quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 #define QUICFCDebug(fmt, ...) Debug("quic_flow_ctrl", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
+#define QUICFCVDebug(fmt, ...) Debug("v_quic_flow_ctrl", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__)
 
 #define QUICError(fmt, ...)                                           \
   Debug("quic_net", "[%s] " fmt, this->cids().data(), ##__VA_ARGS__); \
@@ -236,37 +239,44 @@ QUICNetVConnection::~QUICNetVConnection()
 // XXX This might be called on ET_UDP thread
 // Initialize QUICNetVC for out going connection (NET_VCONNECTION_OUT)
 void
-QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
+QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
                          QUICPacketHandler *packet_handler, QUICResetTokenTable *rtable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
+  this->_initial_version             = version;
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
   this->_peer_quic_connection_id     = peer_cid;
   this->_original_quic_connection_id = original_cid;
   this->_rtable                      = rtable;
   this->_quic_connection_id.randomize();
+  this->_initial_source_connection_id = this->_quic_connection_id;
 
   this->_update_cids();
 
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
     QUICConDebug("dcid=%s scid=%s", this->_peer_quic_connection_id.hex().c_str(), this->_quic_connection_id.hex().c_str());
   }
+
+  this->_init_submodules();
 }
 
 // Initialize QUICNetVC for in coming connection (NET_VCONNECTION_IN)
 void
-QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
-                         UDPConnection *udp_con, QUICPacketHandler *packet_handler, QUICResetTokenTable *rtable,
-                         QUICConnectionTable *ctable)
+QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
+                         QUICConnectionId retry_cid, UDPConnection *udp_con, QUICPacketHandler *packet_handler,
+                         QUICResetTokenTable *rtable, QUICConnectionTable *ctable)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
+  this->_initial_version             = version;
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
   this->_peer_quic_connection_id     = peer_cid;
   this->_original_quic_connection_id = original_cid;
   this->_first_quic_connection_id    = first_cid;
+  this->_retry_source_connection_id  = retry_cid;
   this->_quic_connection_id.randomize();
+  this->_initial_source_connection_id = this->_quic_connection_id;
 
   if (ctable) {
     this->_ctable = ctable;
@@ -280,6 +290,30 @@ QUICNetVConnection::init(QUICConnectionId peer_cid, QUICConnectionId original_ci
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
     QUICConDebug("dcid=%s scid=%s", this->_peer_quic_connection_id.hex().c_str(), this->_quic_connection_id.hex().c_str());
   }
+
+  this->_init_submodules();
+}
+
+void
+QUICNetVConnection::_init_submodules()
+{
+  this->_pinger                = new QUICPinger();
+  this->_padder                = new QUICPadder(this->netvc_context);
+  this->_path_validator        = new QUICPathValidator(*this, [this](bool succeeded) {
+    if (succeeded) {
+      this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
+      // FIXME This is a kind of workaround for connection migration.
+      // This PING make peer to send an ACK frame so that ATS can detect packet loss.
+      // It would be better if QUICLossDetector could detect the loss in another way.
+      this->ping();
+    }
+  });
+  this->_path_manager          = new QUICPathManagerImpl(*this, *this->_path_validator);
+  this->_context               = std::make_unique<QUICContext>(&this->_rtt_measure, this, &this->_pp_key_info, this->_path_manager);
+  this->_congestion_controller = new QUICNewRenoCongestionController(*_context);
+  this->_rtt_measure.init(this->_context->ld_config());
+  this->_loss_detector =
+    new QUICLossDetector(*_context, this->_congestion_controller, &this->_rtt_measure, this->_pinger, this->_padder);
 }
 
 bool
@@ -379,17 +413,6 @@ void
 QUICNetVConnection::start()
 {
   ink_release_assert(this->thread != nullptr);
-  this->_path_validator = new QUICPathValidator(*this, [this](bool succeeded) {
-    if (succeeded) {
-      this->_alt_con_manager->drop_cid(this->_peer_old_quic_connection_id);
-      // FIXME This is a kind of workaround for connection migration.
-      // This PING make peer to send an ACK frame so that ATS can detect packet loss.
-      // It would be better if QUICLossDetector could detect the loss in another way.
-      this->ping();
-    }
-  });
-  this->_path_manager   = new QUICPathManagerImpl(*this, *this->_path_validator);
-  this->_context        = std::make_unique<QUICContext>(&this->_rtt_measure, this, &this->_pp_key_info, this->_path_manager);
   this->_five_tuple.update(this->local_addr, this->remote_addr, SOCK_DGRAM);
   QUICPath trusted_path = {{}, {}};
   // Version 0x00000001 uses stream 0 for cryptographic handshake with TLS 1.3, but newer version may not
@@ -398,10 +421,10 @@ QUICNetVConnection::start()
 
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::SERVER);
     this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_in());
-    this->_reset_token = QUICStatelessResetToken(this->_quic_connection_id, this->_quic_config->instance_id());
-    this->_hs_protocol = this->_setup_handshake_protocol(server_cert->ssl_default);
-    this->_handshake_handler =
-      new QUICHandshake(this, this->_hs_protocol, this->_reset_token, this->_quic_config->stateless_retry());
+    this->_reset_token       = QUICStatelessResetToken(this->_quic_connection_id, this->_quic_config->instance_id());
+    this->_hs_protocol       = this->_setup_handshake_protocol(server_cert->ssl_default);
+    this->_handshake_handler = new QUICHandshake(this->_initial_version, this, this->_hs_protocol, this->_reset_token,
+                                                 this->_quic_config->stateless_retry());
     this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_in());
     this->_schedule_ack_manager_periodic(this->_quic_config->max_ack_delay_in());
   } else {
@@ -413,7 +436,7 @@ QUICNetVConnection::start()
     this->_pp_key_info.set_context(QUICPacketProtectionKeyInfo::Context::CLIENT);
     this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(this->_quic_config->client_ssl_ctx());
-    this->_handshake_handler = new QUICHandshake(this, this->_hs_protocol);
+    this->_handshake_handler = new QUICHandshake(this->_initial_version, this, this->_hs_protocol);
     this->_handshake_handler->start(tp_config, &this->_packet_factory, this->_quic_config->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
     this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_out());
@@ -426,12 +449,6 @@ QUICNetVConnection::start()
   this->_frame_dispatcher = new QUICFrameDispatcher(this);
 
   // Create frame handlers
-  this->_pinger = new QUICPinger();
-  this->_padder = new QUICPadder(this->netvc_context);
-  this->_rtt_measure.init(this->_context->ld_config());
-  this->_congestion_controller = new QUICNewRenoCongestionController(*_context);
-  this->_loss_detector =
-    new QUICLossDetector(*_context, this->_congestion_controller, &this->_rtt_measure, this->_pinger, this->_padder);
   this->_frame_dispatcher->add_handler(this->_loss_detector);
 
   this->_remote_flow_controller = new QUICRemoteConnectionFlowController(UINT64_MAX);
@@ -597,6 +614,18 @@ QUICNetVConnection::first_connection_id() const
 }
 
 QUICConnectionId
+QUICNetVConnection::retry_source_connection_id() const
+{
+  return this->_retry_source_connection_id;
+}
+
+QUICConnectionId
+QUICNetVConnection::initial_source_connection_id() const
+{
+  return this->_initial_source_connection_id;
+}
+
+QUICConnectionId
 QUICNetVConnection::connection_id() const
 {
   return this->_quic_connection_id;
@@ -671,6 +700,7 @@ void
 QUICNetVConnection::handle_received_packet(UDPPacket *packet)
 {
   this->_packet_recv_queue.enqueue(packet);
+  this->_loss_detector->on_datagram_received();
 }
 
 void
@@ -1077,12 +1107,56 @@ QUICNetVConnection::is_closed() const
   return this->handler == reinterpret_cast<NetVConnHandler>(&QUICNetVConnection::state_connection_closed);
 }
 
+bool
+QUICNetVConnection::is_at_anti_amplification_limit() const
+{
+  return !this->_verified_state.is_verified() || this->_verified_state.windows() == 0;
+}
+
+bool
+QUICNetVConnection::is_address_validation_completed() const
+{
+  return this->_verified_state.is_verified();
+}
+
+bool
+QUICNetVConnection::is_handshake_completed() const
+{
+  return this->_handshake_completed;
+}
+
+bool
+QUICNetVConnection::has_keys_for(QUICPacketNumberSpace space) const
+{
+  switch (space) {
+  case QUICPacketNumberSpace::INITIAL:
+    return this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL) &&
+           this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::INITIAL);
+  case QUICPacketNumberSpace::HANDSHAKE:
+    return this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::HANDSHAKE) &&
+           this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::HANDSHAKE);
+  case QUICPacketNumberSpace::APPLICATION_DATA:
+    return (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::PHASE_0) &&
+            this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_0)) ||
+           (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::PHASE_1) &&
+            this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::PHASE_1));
+  default:
+    return false;
+  }
+}
+
 QUICPacketNumber
 QUICNetVConnection::_largest_acked_packet_number(QUICEncryptionLevel level) const
 {
   auto index = QUICTypeUtil::pn_space(level);
 
   return this->_loss_detector->largest_acked_packet_number(index);
+}
+
+QUICVersion
+QUICNetVConnection::negotiated_version() const
+{
+  return this->_handshake_handler->negotiated_version();
 }
 
 std::string_view
@@ -1114,6 +1188,7 @@ QUICNetVConnection::_state_handshake_process_packet(const QUICPacket &packet)
     error = this->_state_handshake_process_handshake_packet(static_cast<const QUICHandshakePacketR &>(packet));
     if (this->_pp_key_info.is_decryption_key_available(QUICKeyPhase::INITIAL) && this->netvc_context == NET_VCONNECTION_IN) {
       this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
+      this->_loss_detector->on_packet_number_space_discarded(QUICPacketNumberSpace::INITIAL);
       this->_minimum_encryption_level = QUICEncryptionLevel::HANDSHAKE;
     }
     break;
@@ -1208,6 +1283,8 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICInitialPac
       this->_frame_dispatcher->add_handler(this->_alt_con_manager);
     }
 
+    this->_handshake_handler->update(packet);
+
     // on client side, _handshake_handler is already started. Just process packet like _state_handshake_process_handshake_packet()
     error = this->_recv_and_ack(packet);
   }
@@ -1246,6 +1323,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(const QUICRetryPacketR
 
   // discard all transport state
   this->_handshake_handler->reset();
+  this->_handshake_handler->update(packet);
   this->_packet_factory.reset();
   this->_loss_detector->reset();
 
@@ -1254,7 +1332,7 @@ QUICNetVConnection::_state_handshake_process_retry_packet(const QUICRetryPacketR
 
   // Initialize Key Materials with peer CID. Because peer CID is DCID of (second) INITIAL packet from client which reply to RETRY
   // packet from server
-  this->_hs_protocol->initialize_key_materials(this->_peer_quic_connection_id);
+  this->_hs_protocol->initialize_key_materials(this->_peer_quic_connection_id, packet.version());
 
   // start handshake over
   this->_handshake_handler->do_handshake();
@@ -1447,8 +1525,8 @@ QUICNetVConnection::_state_common_send_packet()
         max_packet_size = std::min(max_packet_size, this->_verified_state.windows());
       }
 
-      QUICPacketInfoUPtr packet_info = std::make_unique<QUICPacketInfo>();
-      QUICPacketUPtr packet          = this->_packetize_frames(packet_buf, level, max_packet_size, packet_info->frames);
+      QUICSentPacketInfoUPtr packet_info = std::make_unique<QUICSentPacketInfo>();
+      QUICPacketUPtr packet              = this->_packetize_frames(packet_buf, level, max_packet_size, packet_info->frames);
 
       if (packet) {
         // trigger callback
@@ -1457,12 +1535,7 @@ QUICNetVConnection::_state_common_send_packet()
         packet_info->packet_number = packet->packet_number();
         packet_info->time_sent     = Thread::get_hrtime();
         packet_info->ack_eliciting = packet->is_ack_eliciting();
-        if (packet->type() == QUICPacketType::PROTECTED) {
-          packet_info->is_crypto_packet = false;
-        } else {
-          packet_info->is_crypto_packet = static_cast<QUICLongHeaderPacket &>(*packet).is_crypto_packet();
-        }
-        packet_info->in_flight = true;
+        packet_info->in_flight     = true;
         if (packet_info->ack_eliciting) {
           packet_info->sent_bytes = packet->size();
         } else {
@@ -1488,12 +1561,13 @@ QUICNetVConnection::_state_common_send_packet()
           ink_assert(!"failed to protect buffer");
         }
 
-        QUICConDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
-                     len);
+        QUICConVDebug("[TX] %s packet #%" PRIu64 " size=%zu", QUICDebugNames::packet_type(packet->type()), packet->packet_number(),
+                      len);
 
         if (this->_pp_key_info.is_encryption_key_available(QUICKeyPhase::INITIAL) && packet->type() == QUICPacketType::HANDSHAKE &&
             this->netvc_context == NET_VCONNECTION_OUT) {
           this->_pp_key_info.drop_keys(QUICKeyPhase::INITIAL);
+          this->_loss_detector->on_packet_number_space_discarded(QUICPacketNumberSpace::INITIAL);
           this->_minimum_encryption_level = QUICEncryptionLevel::HANDSHAKE;
         }
 
@@ -1542,7 +1616,7 @@ QUICNetVConnection::_state_closing_send_packet()
 
 Ptr<IOBufferBlock>
 QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_added, uint64_t &max_frame_size, QUICFrame &frame,
-                                 std::vector<QUICFrameInfo> &frames)
+                                 std::vector<QUICSentPacketInfo::FrameInfo> &frames)
 {
   Ptr<IOBufferBlock> new_block = frame.to_io_buffer_block(max_frame_size);
 
@@ -1565,7 +1639,7 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
   if (is_debug_tag_set(QUIC_DEBUG_TAG.data())) {
     char msg[1024];
     frame.debug_msg(msg, sizeof(msg));
-    QUICConDebug("[TX] | %s", msg);
+    QUICConVDebug("[TX] | %s", msg);
   }
 
   frames.emplace_back(frame.id(), frame.generated_by());
@@ -1578,7 +1652,7 @@ QUICNetVConnection::_store_frame(Ptr<IOBufferBlock> parent_block, size_t &size_a
 
 QUICPacketUPtr
 QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel level, uint64_t max_packet_size,
-                                      std::vector<QUICFrameInfo> &frames)
+                                      std::vector<QUICSentPacketInfo::FrameInfo> &frames)
 {
   QUICPacketUPtr packet = QUICPacketFactory::create_null_packet();
   if (max_packet_size <= MAX_PACKET_OVERHEAD) {
@@ -1634,8 +1708,8 @@ QUICNetVConnection::_packetize_frames(uint8_t *packet_buf, QUICEncryptionLevel l
         probing |= frame->is_probing_frame();
         if (frame->is_flow_controlled()) {
           int ret = this->_remote_flow_controller->update(this->_stream_manager->total_offset_sent());
-          QUICFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
-                      this->_remote_flow_controller->current_limit());
+          QUICFCVDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller->current_offset(),
+                       this->_remote_flow_controller->current_limit());
           ink_assert(ret == 0);
         }
         last_block = this->_store_frame(last_block, size_added, max_frame_size, *frame, frames);
@@ -1690,7 +1764,7 @@ QUICNetVConnection::_packetize_closing_frame()
 
   size_t size_added       = 0;
   uint64_t max_frame_size = static_cast<uint64_t>(max_size);
-  std::vector<QUICFrameInfo> frames;
+  std::vector<QUICSentPacketInfo::FrameInfo> frames;
   Ptr<IOBufferBlock> first_block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
   Ptr<IOBufferBlock> last_block  = first_block;
   first_block->alloc(iobuffer_size_to_index(0, BUFFER_SIZE_INDEX_32K));
@@ -1736,16 +1810,16 @@ QUICNetVConnection::_recv_and_ack(const QUICPacketR &packet, bool *has_non_probi
 
   if (is_flow_controlled) {
     int ret = this->_local_flow_controller->update(this->_stream_manager->total_offset_received());
-    QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
-                this->_local_flow_controller->current_limit());
+    QUICFCVDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
+                 this->_local_flow_controller->current_limit());
 
     if (ret != 0) {
       return std::make_unique<QUICConnectionError>(QUICTransErrorCode::FLOW_CONTROL_ERROR);
     }
 
     this->_local_flow_controller->forward_limit(this->_stream_manager->total_reordered_bytes() + this->_flow_control_buffer_size);
-    QUICFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
-                this->_local_flow_controller->current_limit());
+    QUICFCVDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller->current_offset(),
+                 this->_local_flow_controller->current_limit());
   }
 
   this->_ack_frame_manager.update(level, packet_num, size, ack_only);
@@ -1890,11 +1964,11 @@ QUICNetVConnection::_dequeue_recv_packet(uint8_t *packet_buf, QUICPacketCreation
     switch (packet->type()) {
     case QUICPacketType::VERSION_NEGOTIATION:
     case QUICPacketType::RETRY:
-      QUICConDebug("[RX] %s packet size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
+      QUICConVDebug("[RX] %s packet size=%u", QUICDebugNames::packet_type(packet->type()), packet->size());
       break;
     default:
-      QUICConDebug("[RX] %s packet #%" PRIu64 " size=%u header_len=%u payload_len=%u", QUICDebugNames::packet_type(packet->type()),
-                   packet->packet_number(), packet->size(), packet->header_size(), packet->payload_length());
+      QUICConVDebug("[RX] %s packet #%" PRIu64 " size=%u header_len=%u payload_len=%u", QUICDebugNames::packet_type(packet->type()),
+                    packet->packet_number(), packet->size(), packet->header_size(), packet->payload_length());
       break;
     }
     break;
@@ -2022,10 +2096,13 @@ QUICNetVConnection::_complete_handshake_if_possible()
   this->_init_flow_control_params(this->_handshake_handler->local_transport_parameters(),
                                   this->_handshake_handler->remote_transport_parameters());
 
-  // PN space doesn't matter but seems like this is the way to pick the LossDetector for 0-RTT and Short packet
   uint64_t ack_delay_exponent =
     this->_handshake_handler->remote_transport_parameters()->getAsUInt(QUICTransportParameterId::ACK_DELAY_EXPONENT);
   this->_loss_detector->update_ack_delay_exponent(ack_delay_exponent);
+
+  uint64_t max_ack_delay =
+    this->_handshake_handler->remote_transport_parameters()->getAsUInt(QUICTransportParameterId::MAX_ACK_DELAY);
+  this->_rtt_measure.set_max_ack_delay(max_ack_delay);
 
   const uint8_t *reset_token;
   uint16_t reset_token_len;
@@ -2036,6 +2113,8 @@ QUICNetVConnection::_complete_handshake_if_possible()
   }
 
   this->_start_application();
+
+  this->_handshake_completed = true;
 
   return 0;
 }

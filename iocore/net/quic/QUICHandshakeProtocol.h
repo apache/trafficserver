@@ -47,7 +47,7 @@ public:
   virtual void reset()                                                                    = 0;
   virtual bool is_handshake_finished() const                                              = 0;
   virtual bool is_ready_to_derive() const                                                 = 0;
-  virtual int initialize_key_materials(QUICConnectionId cid)                              = 0;
+  virtual int initialize_key_materials(QUICConnectionId cid, QUICVersion)                 = 0;
   virtual const char *negotiated_cipher_suite() const                                     = 0;
   virtual void negotiated_application_name(const uint8_t **name, unsigned int *len) const = 0;
 

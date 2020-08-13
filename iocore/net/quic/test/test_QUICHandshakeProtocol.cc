@@ -33,11 +33,12 @@
 
 #include <openssl/ssl.h>
 
-// #include "Mock.h"
 #include "QUICPacketHeaderProtector.h"
 #include "QUICPacketPayloadProtector.h"
 #include "QUICPacketProtectionKeyInfo.h"
 #include "QUICTLS.h"
+#include "QUICGlobals.h"
+#include "Mock.h"
 
 // XXX For NetVCOptions::reset
 struct PollCont;
@@ -107,8 +108,12 @@ TEST_CASE("QUICHandshakeProtocol")
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
     NetVCOptions netvc_options;
+    MockQUICConnection mock_client_connection;
+    MockQUICConnection mock_server_connection;
     QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
     QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
+    SSL_set_ex_data(static_cast<QUICTLS *>(client)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_client_connection);
+    SSL_set_ex_data(static_cast<QUICTLS *>(server)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_server_connection);
     QUICPacketPayloadProtector ppp_client(pp_key_info_client);
     QUICPacketPayloadProtector ppp_server(pp_key_info_server);
 
@@ -119,8 +124,10 @@ TEST_CASE("QUICHandshakeProtocol")
     client->set_local_transport_parameters(client_tp);
     server->set_local_transport_parameters(server_tp);
 
-    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
-    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
+    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
 
     // CH
     QUICHandshakeMsgs msg0;
@@ -232,8 +239,12 @@ TEST_CASE("QUICHandshakeProtocol")
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
     NetVCOptions netvc_options;
+    MockQUICConnection mock_client_connection;
+    MockQUICConnection mock_server_connection;
     QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
     QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
+    SSL_set_ex_data(static_cast<QUICTLS *>(client)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_client_connection);
+    SSL_set_ex_data(static_cast<QUICTLS *>(server)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_server_connection);
     QUICPacketPayloadProtector ppp_client(pp_key_info_client);
     QUICPacketPayloadProtector ppp_server(pp_key_info_server);
 
@@ -244,8 +255,10 @@ TEST_CASE("QUICHandshakeProtocol")
     client->set_local_transport_parameters(client_tp);
     server->set_local_transport_parameters(server_tp);
 
-    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
-    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
+    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
 
     // CH
     QUICHandshakeMsgs msg0;
@@ -369,7 +382,8 @@ TEST_CASE("QUICHandshakeProtocol")
     QUICPacketProtectionKeyInfo pp_key_info_server;
     NetVCOptions netvc_options;
     QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
-    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
 
     // Malformed CH (finished)
     uint8_t msg1_buf[] = {0x14, 0x00, 0x00, 0x30, 0x35, 0xb9, 0x82, 0x9d, 0xb9, 0x14, 0x70, 0x03, 0x60,
@@ -401,8 +415,12 @@ TEST_CASE("QUICHandshakeProtocol")
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
     NetVCOptions netvc_options;
+    MockQUICConnection mock_client_connection;
+    MockQUICConnection mock_server_connection;
     QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
     QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
+    SSL_set_ex_data(static_cast<QUICTLS *>(client)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_client_connection);
+    SSL_set_ex_data(static_cast<QUICTLS *>(server)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_server_connection);
 
     auto client_tp = std::make_shared<QUICTransportParametersInClientHello>();
     auto server_tp = std::make_shared<QUICTransportParametersInEncryptedExtensions>();
@@ -411,8 +429,10 @@ TEST_CASE("QUICHandshakeProtocol")
     client->set_local_transport_parameters(client_tp);
     server->set_local_transport_parameters(server_tp);
 
-    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
-    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8}));
+    CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
+    CHECK(server->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
+                                           QUIC_SUPPORTED_VERSIONS[0]));
 
     // # Start Handshake
 

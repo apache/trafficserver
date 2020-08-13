@@ -71,7 +71,7 @@ public:
   void reset() override;
   bool is_handshake_finished() const override;
   bool is_ready_to_derive() const override;
-  int initialize_key_materials(QUICConnectionId cid) override;
+  int initialize_key_materials(QUICConnectionId cid, QUICVersion version) override;
   void update_negotiated_cipher();
   void update_key_materials_for_read(QUICEncryptionLevel level, const uint8_t *secret, size_t secret_len);
   void update_key_materials_for_write(QUICEncryptionLevel level, const uint8_t *secret, size_t secret_len);
