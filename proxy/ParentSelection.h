@@ -37,7 +37,7 @@
 #include "tscore/ConsistentHash.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ink_apidefs.h"
-#include "ts/parentresult.h"
+#include "tscpp/api/parentresult.h"
 #include "HostStatus.h"
 
 #include <algorithm>

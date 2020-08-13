@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/nexthop.h"
+#include "tscpp/api/nexthop.h"
 #include "tscore/ink_platform.h"
 
 #include <strings.h>

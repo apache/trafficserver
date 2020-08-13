@@ -23,7 +23,7 @@
 #include <string>
 #include <unordered_map>
 #include <time.h>
-#include "ts/nexthop.h"
+#include "tscpp/api/nexthop.h"
 
 struct HostRecord;
 

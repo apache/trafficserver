@@ -74,7 +74,7 @@
 #include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
-#include "ts/parentresult.h"
+#include "tscpp/api/parentresult.h"
 
 #include "ts/ts.h"
 

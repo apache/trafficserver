@@ -24,11 +24,7 @@
 #include "ts/apidefs.h"
 #include "tscore/ConsistentHash.h"
 
-// Needed by core. Disabling the warning for plugins
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-static const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
-#pragma GCC diagnostic pop
+extern const char *ParentResultStr[];
 
 struct TSParentResult {
   const char *hostname;

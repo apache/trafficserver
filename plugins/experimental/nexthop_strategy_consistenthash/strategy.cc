@@ -40,8 +40,8 @@
 #include "tscore/ink_assert.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
-#include "ts/nexthop.h"
-#include "ts/parentresult.h"
+#include "tscpp/api/nexthop.h"
+#include "tscpp/api/parentresult.h"
 
 //
 // NextHopSelectionStrategy.cc

@@ -29,7 +29,7 @@
 #include <yaml-cpp/yaml.h>
 #include "tscore/ConsistentHash.h"
 #include "ts/ts.h"
-#include "ts/nexthop.h"
+#include "tscpp/api/nexthop.h"
 #include "ts/remap.h"
 #include "healthstatus.h"
 

@@ -20,7 +20,7 @@
 
 #include <string>
 #include <yaml-cpp/yaml.h>
-#include "ts/nexthop.h"
+#include "tscpp/api/nexthop.h"
 
 TSNextHopSelectionStrategy *createStrategyFromFile(const char *file, const char *strategyName);
 TSNextHopSelectionStrategy *createStrategy(const std::string &name, const YAML::Node &node);

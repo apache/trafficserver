@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ts/nexthop.h"
+#include "tscpp/api/nexthop.h"
 #include "ParentSelection.h"
 
 #ifndef _NH_UNIT_TESTS_
