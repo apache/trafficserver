@@ -35,3 +35,7 @@ if AuTestVersion() < autest_version:
 Settings.path_argument(["--ats-bin"],
                        required=True,
                        help="A user provided directory to ATS bin")
+
+Settings.path_argument(["--build-root"],
+                       required=False,
+                       help="The location of the build root for out of source builds")

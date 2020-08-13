@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Test tls
 '''
@@ -26,7 +28,7 @@ server = Test.MakeOriginServer("server")
 
 # ssl-post is built via `make`. Here we copy the built binary down to the test
 # directory so that the test runs in this file can use it.
-Test.Setup.Copy('ssl-post')
+Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'tls', 'ssl-post'))
 
 requestLocation = "test2"
 reHost = "www.example.com"
