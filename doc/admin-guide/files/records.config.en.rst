@@ -975,8 +975,14 @@ mptcp
 
 .. note::
 
-   Server sessions to different ports never match even if the FQDN and IP
+   Server sessions to different upstream ports never match even if the FQDN and IP
    address match.
+
+.. note::
+
+   :ts:cv:`Upstream session tracking <proxy.config.http.per_server.connection.max>` uses a similar
+   set of options for matching sessions, but is :ts:cv:`set independently
+   <proxy.config.http.per_server.connection.match>` from session sharing.
 
 .. ts:cv:: CONFIG proxy.config.http.server_session_sharing.pool STRING thread
 
@@ -1503,6 +1509,11 @@ Origin Server Connect Attempts
       Group by IP address, port, and host name. Each distinct combination is a group.
 
    To disable upstream server grouping, set :ts:cv:`proxy.config.http.per_server.connection.max` to ``0``.
+
+.. note::
+
+   This setting is independent of the :ts:cv:`setting for upstream session sharing matching
+   <proxy.config.http.server_session_sharing.match>`.
 
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_size INT 0
    :reloadable:
