@@ -372,8 +372,6 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   char *buffer;
   const char *pType = context->txn_conf->body_factory_template_base;
   const char *set;
-  HttpBodyTemplate *t = nullptr;
-  HttpBodySet *body_set;
   char template_base[PATH_NAME_MAX];
 
   if (set_return) {
@@ -409,6 +407,9 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   if (set_return) {
     *set_return = set;
   }
+
+  HttpBodyTemplate *t   = nullptr;
+  HttpBodySet *body_set = nullptr;
   if (pType != nullptr && 0 != *pType && 0 != strncmp(pType, "NONE", 4)) {
     sprintf(template_base, "%s_%s", pType, type);
     t = find_template(set, template_base, &body_set);
