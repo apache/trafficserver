@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Test chunked encoding processing
 '''
@@ -94,7 +96,7 @@ ts.Disk.ssl_multicert_config.AddLine(
 
 # smuggle-client is built via `make`. Here we copy the built binary down to the
 # test directory so that the test runs in this file can use it.
-Test.Setup.Copy('smuggle-client')
+Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'chunked_encoding', 'smuggle-client'))
 
 # HTTP1.1 GET: www.example.com
 tr = Test.AddTestRun()

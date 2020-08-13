@@ -17,12 +17,22 @@
 #  limitations under the License.
 
 import json
-import subprocess
+import os
+from os.path import dirname
 import pprint
+import subprocess
 
 if Arguments.ats_bin is not None:
     # Add environment variables
     ENV['ATS_BIN'] = Arguments.ats_bin
+
+if Arguments.build_root is not None:
+    ENV['BUILD_ROOT'] = Arguments.build_root
+else:
+    # Assume the build root is the same directory tree as the test location.
+    ENV['BUILD_ROOT'] = dirname(dirname(dirname(AutestSitePath)))
+
+host.WriteVerbose(['ats'], "Test build root: {}:".format(ENV['BUILD_ROOT']))
 
 if ENV['ATS_BIN'] is not None:
     # Add variables for Tests
@@ -78,9 +88,12 @@ if ENV['ATS_BIN'] is not None:
                 host.WriteError("tsxs is broken. Aborting tests", show_stack=False)
     host.WriteVerbose(['ats'], "Traffic server build flags:\n", pprint.pformat(out))
     Variables.update(out)
-Variables.AtsExampleDir = os.path.join(AutestSitePath, '../../../example')
-Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '../../tools')
-Variables.AtsTestPluginsDir = os.path.join(AutestSitePath, '../../tools/plugins/.libs')
+
+Variables.AtsExampleDir = os.path.join(AutestSitePath, '..', '..', '..', 'example')
+Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '..', '..', 'tools')
+Variables.BuildRoot = ENV['BUILD_ROOT']
+Variables.AtsTestPluginsDir = os.path.join(Variables.BuildRoot, 'tests', 'tools', 'plugins', '.libs')
+Variables.AtsBuildGoldTestsDir = os.path.join(Variables.BuildRoot, 'tests', 'gold_tests')
 
 # modify delay times as we always have to kill Trafficserver
 # no need to wait
