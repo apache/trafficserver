@@ -30,6 +30,8 @@
 #include "HttpSM.h"
 #include "nexthop_test_stubs.h"
 
+const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
+
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
 void
 HttpSM::cleanup()

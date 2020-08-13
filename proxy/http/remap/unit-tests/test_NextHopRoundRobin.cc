@@ -138,7 +138,7 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
         build_request(10009, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp);
-        CHECK(result->result == TSParentResultType::PARENT_DIRECT);
+        CHECK(result->result == TSParentResultType::TS_PARENT_DIRECT);
 
         // check that nextHopExists() returns false when all parents are down.
         CHECK(strategy->nextHopExists(txnp) == false);
@@ -150,14 +150,14 @@ SCENARIO("Testing NextHopRoundRobin class, using policy 'rr-strict'", "[NextHopR
         build_request(10010, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp, now);
-        REQUIRE(result->result == TSParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == TSParentResultType::TS_PARENT_SPECIFIED);
         CHECK(strcmp(result->hostname, "p2.foo.com") == 0);
 
         // tenth request, p1 should now be retried.
         build_request(10011, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
         strategy->findNextHop(txnp, now);
-        REQUIRE(result->result == TSParentResultType::PARENT_SPECIFIED);
+        REQUIRE(result->result == TSParentResultType::TS_PARENT_SPECIFIED);
         CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
       }
       br_destroy(sm);
