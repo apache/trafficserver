@@ -365,6 +365,7 @@ Http2Stream::do_io_close(int /* flags */)
       h2_proxy_ssn->connection_state.send_data_frames(this);
     }
 
+    _clear_timers();
     clear_io_events();
 
     // Wait until transaction_done is called from HttpSM to signal that the TXN_CLOSE hook has been executed
@@ -430,6 +431,7 @@ Http2Stream::initiating_close()
     // TXN_CLOSE has been sent
     // _proxy_ssn = NULL;
 
+    _clear_timers();
     clear_io_events();
 
     // This should result in do_io_close or release being called.  That will schedule the final
@@ -813,6 +815,7 @@ Http2Stream::destroy()
   if (header_blocks) {
     ats_free(header_blocks);
   }
+  _clear_timers();
   clear_io_events();
   http_parser_clear(&http_parser);
 

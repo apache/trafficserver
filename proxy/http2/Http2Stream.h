@@ -150,6 +150,7 @@ private:
   bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   void send_response_body(bool call_update);
+  void _clear_timers();
 
   /**
    * Check if this thread is the right thread to process events for this
@@ -320,4 +321,11 @@ inline MIOBuffer *
 Http2Stream::read_vio_writer() const
 {
   return this->read_vio.get_writer();
+}
+
+inline void
+Http2Stream::_clear_timers()
+{
+  _timeout.cancel_active_timeout();
+  _timeout.cancel_inactive_timeout();
 }
