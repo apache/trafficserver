@@ -20,15 +20,15 @@
 python3 - << _END_
 import sys
 
-if sys.version_info.major < 3 or sys.version_info.minor < 5:
+if sys.version_info.major < 3 or sys.version_info.minor < 6:
     exit(1)
 _END_
 
 if [ $? = 1 ]; then
-    echo "Python 3.5 or newer is not installed/enabled."
+    echo "Python 3.6 or newer is not installed/enabled."
     return
 else
-    echo "Python 3.5 or newer detected!"
+    echo "Python 3.6 or newer detected!"
 fi
 
 # check for python development header -- for autest
