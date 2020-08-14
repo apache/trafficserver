@@ -44,7 +44,7 @@ To run autest manually, the recommended way is to follow these steps:
 
 AuTest and the relevant tools can be install manually instead of using the wrapper script. By doing this, it is often easier to debug issues with the testing system, or the tests. There are two ways this can be done.
 1. Run the bootstrap script then source the path with a "source ./env-test/bin/activate" command. At this point autest command should run without the wrapper script
-2. Make sure you install python 3.5 or better on your system. From there install these python packages ( ie pip install ):
+2. Make sure you install python 3.6 or better on your system. From there install these python packages ( ie pip install ):
   - hyper
   - git+https://bitbucket.org/autestsuite/reusable-gold-testing-system.git
   - [traffic-replay](https://bitbucket.org/autestsuite/trafficreplay/src/master/) (This will automatically install [MicroDNS](https://bitbucket.org/autestsuite/microdns/src/master/), [MicroServer](https://bitbucket.org/autestsuite/microserver/src/master/), [TrafficReplayLibrary](https://bitbucket.org/autestsuite/trafficreplaylibrary/src/master/), and dnslib as part of the dependencies.)
@@ -53,7 +53,7 @@ AuTest and the relevant tools can be install manually instead of using the wrapp
 When writing for the AuTest system please refer to the current [Online Documentation](https://autestsuite.bitbucket.io/) for general use of the system. To use CurlHeader tester for testing output of curl, please refer to [CurlHeader README](gold_tests/autest-site/readme.md)
 
 ## Documentation of AuTest extension for ATS.
-Autest allows for the creation of extensions to help specialize and simplify test writing for a given application domain. Minus API addition the extension code will check that python 3.5 or better is used. There is also a new command line argumented added specifically for Trafficserver:
+Autest allows for the creation of extensions to help specialize and simplify test writing for a given application domain. Minus API addition the extension code will check that python 3.6 or better is used. There is also a new command line argumented added specifically for Trafficserver:
 
 --ats-bin < path to bin directory >
 
