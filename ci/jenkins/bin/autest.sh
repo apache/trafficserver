@@ -105,7 +105,11 @@ set +x
 echo -n "=======>>>>  Started on "
 date
 
-./tests/autest.sh --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin" $AUTEST_DEBUG $AUTEST_VERBOSE
+AUTEST="/usr/bin/autest"
+[ ! -x ${AUTEST} ] && AUTEST="/usr/local/bin/autest"
+set -x
+
+${AUTEST} -D ./tests/gold_tests --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin" $AUTEST_DEBUG $AUTEST_VERBOSE
 status=$?
 
 set +x
