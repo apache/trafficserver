@@ -74,5 +74,5 @@ ts.Streams.All = Testers.ContainsExpression(
     "Pre accept message appears only once or twice",
     reflags=re.S | re.M)
 
-tr.Processes.Default.TimeOut = 5
-tr.TimeOut = 5
+tr.Processes.Default.TimeOut = 15
+tr.TimeOut = 15
