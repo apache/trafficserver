@@ -18,16 +18,24 @@
 
 import sys
 
-if sys.version_info < (3, 5, 0):
+if sys.version_info < (3, 6, 0):
     host.WriteError(
-        "You need python 3.5 or later to run these tests\n", show_stack=False)
+        "You need python 3.6 or later to run these tests\n", show_stack=False)
 
-autest_version = "1.7.2"
+autest_version = "1.8.1"
 if AuTestVersion() < autest_version:
     host.WriteError(
-        "Tests need AuTest version {ver} or better\n Please update AuTest:\n  pip install --upgrade autest\n".format(ver=autest_version), show_stack=False)
+        "Tests need AuTest version {needed_version} or better, found version {found_version}\n"
+            "Please update AuTest:\n  pip install --upgrade autest\n".format(
+            needed_version=autest_version,
+            found_version=AuTestVersion()),
+        show_stack=False)
 
 
 Settings.path_argument(["--ats-bin"],
                        required=True,
                        help="A user provided directory to ATS bin")
+
+Settings.path_argument(["--build-root"],
+                       required=False,
+                       help="The location of the build root for out of source builds")

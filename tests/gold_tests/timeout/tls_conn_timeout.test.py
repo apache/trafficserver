@@ -16,11 +16,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = 'Testing ATS TLS handshake timeout'
 
 ts = Test.MakeATSProcess("ts")
 
-Test.Setup.Copy('ssl-delay-server')
+Test.Setup.Copy(os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'timeout', 'ssl-delay-server'))
 
 Test.ContinueOnFail = True
 Test.GetTcpPort("block_connect_port")

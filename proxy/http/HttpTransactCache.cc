@@ -486,13 +486,6 @@ HttpTransactCache::calculate_quality_of_match(const OverridableHttpConfigParams 
   @return quality (-1: no match, 0..1: poor..good).
 
 */
-static inline bool
-do_content_types_match(char *type1, char *subtype1, char *type2, char *subtype2)
-{
-  return ((is_asterisk(type1) || is_empty(type1) || (strcasecmp(type1, type2) == 0)) &&
-          (is_asterisk(subtype1) || is_empty(subtype1) || (strcasecmp(subtype1, subtype2) == 0)));
-}
-
 float
 HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MIMEField *content_field)
 {
@@ -526,6 +519,9 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
   // Parse the type and subtype of the Content-Type field.
   HttpCompat::parse_mime_type(c_param->str, c_type, c_subtype, sizeof(c_type), sizeof(c_subtype));
 
+  // Special case for webp because Safari is has Accept: */*, but doesn't support webp
+  bool content_type_webp = ((strcasecmp("webp", c_subtype) == 0) && (strcasecmp("image", c_type) == 0));
+
   // Now loop over Accept field values.
   // TODO: Should we check the return value (count) from this?
   accept_field->value_get_comma_list(&a_values_list);
@@ -549,19 +545,25 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
     char a_type[32], a_subtype[32];
     HttpCompat::parse_mime_type(a_param->str, a_type, a_subtype, sizeof(a_type), sizeof(a_subtype));
 
-    //      printf("matching Content-type; '%s/%s' with Accept value '%s/%s'\n",
-    //             c_type,c_subtype,a_type,a_subtype);
+    Debug("http_match", "matching Content-type; '%s/%s' with Accept value '%s/%s'\n", c_type, c_subtype, a_type, a_subtype);
 
-    // Is there a wildcard in the type or subtype?
-    if (is_asterisk(a_type)) {
-      wildcard_type_present = true;
-      wildcard_type_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
-    } else if (is_asterisk(a_subtype) && (strcasecmp(a_type, c_type) == 0)) {
-      wildcard_subtype_present = true;
-      wildcard_subtype_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
-    } else {
-      // No wildcard. Do explicit matching of accept and content values.
-      if (do_content_types_match(a_type, a_subtype, c_type, c_subtype)) {
+    bool wildcard_found = true;
+    // Only do wildcard checks if the content type is not image/webp
+    if (content_type_webp == false) {
+      // Is there a wildcard in the type or subtype?
+      if (is_asterisk(a_type)) {
+        wildcard_type_present = true;
+        wildcard_type_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
+      } else if (is_asterisk(a_subtype) && (strcasecmp(a_type, c_type) == 0)) {
+        wildcard_subtype_present = true;
+        wildcard_subtype_q       = HttpCompat::find_Q_param_in_strlist(&a_param_list);
+      } else {
+        wildcard_found = false;
+      }
+    }
+    if (content_type_webp == true || wildcard_found == false) {
+      // No wildcard or the content type is image/webp. Do explicit matching of accept and content values.
+      if ((strcasecmp(a_type, c_type) == 0) && (strcasecmp(a_subtype, c_subtype) == 0)) {
         float tq;
         tq = HttpCompat::find_Q_param_in_strlist(&a_param_list);
         q  = (tq > q ? tq : q);
@@ -582,6 +584,7 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
   if ((q == -1.0) && (wildcard_type_present == true)) {
     q = wildcard_type_q;
   }
+
   return (q);
 }
 
@@ -1309,7 +1312,8 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-Match: must match strongly //
   if (request->presence(MIME_PRESENCE_IF_MATCH)) {
-    int raw_etags_len, comma_sep_tag_list_len;
+    int raw_etags_len              = 0;
+    int comma_sep_tag_list_len     = 0;
     const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
     const char *comma_sep_tag_list = nullptr;
 
