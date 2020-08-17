@@ -146,6 +146,10 @@ QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t
   // RESET_STREAM
   if (this->_reset_reason && !this->_is_reset_sent) {
     frame = QUICFrameFactory::create_rst_stream_frame(buf, *this->_reset_reason, this->_issue_frame_id(), this);
+    if (frame->size() > maximum_frame_size) {
+      frame->~QUICFrame();
+      return nullptr;
+    }
     this->_records_rst_stream_frame(level, *static_cast<QUICRstStreamFrame *>(frame));
     this->_state.update_with_sending_frame(*frame);
     this->_is_reset_sent = true;
@@ -542,6 +546,10 @@ QUICReceiveStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
   if (this->_stop_sending_reason && !this->_is_stop_sending_sent) {
     frame =
       QUICFrameFactory::create_stop_sending_frame(buf, this->id(), this->_stop_sending_reason->code, this->_issue_frame_id(), this);
+    if (frame->size() > maximum_frame_size) {
+      frame->~QUICFrame();
+      return nullptr;
+    }
     this->_records_stop_sending_frame(level, *static_cast<QUICStopSendingFrame *>(frame));
     this->_state.update_with_sending_frame(*frame);
     this->_is_stop_sending_sent = true;
@@ -550,6 +558,7 @@ QUICReceiveStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
 
   // MAX_STREAM_DATA
   frame = this->_local_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
+  // maximum_frame_size should be checked in QUICFlowController
   return frame;
 }
 

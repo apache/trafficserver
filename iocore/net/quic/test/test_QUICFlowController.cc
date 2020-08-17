@@ -216,6 +216,41 @@ TEST_CASE("QUICFlowController_Remote_Connection_ZERO_Credit", "[quic]")
   CHECK(ret == 0);
 }
 
+TEST_CASE("QUICFlowController_Remote_Connection_Insufficient_maximum_frame_size", "[quic]")
+{
+  int ret = 0;
+  uint8_t frame_buf[QUICFrame::MAX_INSTANCE_SIZE];
+  QUICRemoteConnectionFlowController fc(1024);
+
+  // Check initial state
+  CHECK(fc.current_offset() == 0);
+  CHECK(fc.current_limit() == 1024);
+
+  // Zero credit
+  ret = fc.update(1024);
+  CHECK(fc.current_offset() == 1024);
+  CHECK(fc.current_limit() == 1024);
+  CHECK(ret == 0);
+
+  CHECK(fc.will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, true, 0));
+  // if there're anything to send
+  QUICFrame *frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 0, 0, 0);
+  CHECK(frame == nullptr);
+  frame = fc.generate_frame(frame_buf, QUICEncryptionLevel::ONE_RTT, 0, 1024, 0, 0);
+  CHECK(frame);
+  CHECK(frame->type() == QUICFrameType::DATA_BLOCKED);
+
+  // MAX_STREAM_DATA
+  fc.forward_limit(2048);
+  CHECK(fc.current_offset() == 1024);
+  CHECK(fc.current_limit() == 2048);
+
+  ret = fc.update(1280);
+  CHECK(fc.current_offset() == 1280);
+  CHECK(fc.current_limit() == 2048);
+  CHECK(ret == 0);
+}
+
 TEST_CASE("QUICFlowController_Local_Stream", "[quic]")
 {
   int ret = 0;

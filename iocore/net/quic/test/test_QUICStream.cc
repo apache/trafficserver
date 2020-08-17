@@ -413,6 +413,48 @@ TEST_CASE("QUICBidiStream", "[quic]")
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::STOP_SENDING);
   }
+
+  SECTION("Insufficient max_frame_size")
+  {
+    MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+    IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
+    QUICRTTMeasure rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+    QUICFrame *frame          = nullptr;
+
+    // STOP_SENDING
+    std::unique_ptr<QUICBidirectionalStream> stream1(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    MockContinuation mock_cont1(stream1->mutex);
+    stream1->do_io_write(&mock_cont1, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock1, stream1->mutex, this_ethread());
+    stream1->stop_sending(QUICStreamErrorUPtr(new QUICStreamError(stream1.get(), QUIC_APP_ERROR_CODE_STOPPING)));
+    frame = stream1->generate_frame(frame_buf, level, 4096, 0, 0, 0);
+    CHECK(frame == nullptr);
+
+    // RESET_STREAM
+    std::unique_ptr<QUICBidirectionalStream> stream2(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    MockContinuation mock_cont2(stream2->mutex);
+    stream2->do_io_write(&mock_cont2, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock2, stream2->mutex, this_ethread());
+    stream2->reset(QUICStreamErrorUPtr(new QUICStreamError(stream2.get(), QUIC_APP_ERROR_CODE_STOPPING)));
+    frame = stream2->generate_frame(frame_buf, level, 4096, 0, 0, 0);
+    CHECK(frame == nullptr);
+
+    // STREAM
+    std::unique_ptr<QUICBidirectionalStream> stream3(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
+    MockContinuation mock_cont3(stream3->mutex);
+    stream3->do_io_write(&mock_cont3, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock3, stream3->mutex, this_ethread());
+    const char data[] = "this is a test data";
+    write_buffer->write(data, sizeof(data));
+    stream3->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    frame = stream3->generate_frame(frame_buf, level, 4096, 0, 0, 0);
+    CHECK(frame == nullptr);
+  }
 }
 
 TEST_CASE("QUIC receive only stream", "[quic]")
@@ -610,6 +652,22 @@ TEST_CASE("QUIC receive only stream", "[quic]")
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::STOP_SENDING);
+  }
+
+  SECTION("Insufficient max_frame_size")
+  {
+    QUICRTTMeasure rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+    QUICFrame *frame          = nullptr;
+
+    // STOP_SENDING
+    std::unique_ptr<QUICReceiveStream> stream1(new QUICReceiveStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX));
+    MockContinuation mock_cont1(stream1->mutex);
+    SCOPED_MUTEX_LOCK(lock1, stream1->mutex, this_ethread());
+    stream1->stop_sending(QUICStreamErrorUPtr(new QUICStreamError(stream1.get(), QUIC_APP_ERROR_CODE_STOPPING)));
+    frame = stream1->generate_frame(frame_buf, level, 4096, 0, 0, 0);
+    CHECK(frame == nullptr);
   }
 }
 
@@ -834,5 +892,34 @@ TEST_CASE("QUIC send only stream", "[quic]")
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     REQUIRE(frame);
     CHECK(frame->type() == QUICFrameType::RESET_STREAM);
+  }
+
+  SECTION("Insufficient max_frame_size")
+  {
+    MIOBuffer *write_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+    IOBufferReader *write_buffer_reader = write_buffer->alloc_reader();
+    MockQUICConnectionInfoProvider cinfo_provider;
+    QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
+    QUICFrame *frame          = nullptr;
+
+    // RESET_STREAM
+    std::unique_ptr<QUICSendStream> stream2(new QUICSendStream(&cinfo_provider, stream_id, UINT64_MAX));
+    MockContinuation mock_cont2(stream2->mutex);
+    stream2->do_io_write(&mock_cont2, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock2, stream2->mutex, this_ethread());
+    stream2->reset(QUICStreamErrorUPtr(new QUICStreamError(stream2.get(), QUIC_APP_ERROR_CODE_STOPPING)));
+    frame = stream2->generate_frame(frame_buf, level, 4096, 0, 0, 0);
+    CHECK(frame == nullptr);
+
+    // STREAM
+    std::unique_ptr<QUICSendStream> stream3(new QUICSendStream(&cinfo_provider, stream_id, UINT64_MAX));
+    MockContinuation mock_cont3(stream3->mutex);
+    stream3->do_io_write(&mock_cont3, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock3, stream3->mutex, this_ethread());
+    const char data[] = "this is a test data";
+    write_buffer->write(data, sizeof(data));
+    stream3->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    frame = stream3->generate_frame(frame_buf, level, 4096, 0, 0, 0);
+    CHECK(frame == nullptr);
   }
 }
