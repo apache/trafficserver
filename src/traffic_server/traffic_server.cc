@@ -132,7 +132,6 @@ static void mgmt_storage_device_cmd_callback(int cmd, std::string_view const &ar
 static void mgmt_lifecycle_msg_callback(ts::MemSpan<void>);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 static void load_ssl_file_callback(const char *ssl_file);
-static void load_remap_file_callback(const char *remap_file);
 static void task_threads_started_callback();
 
 // We need these two to be accessible somewhere else now
@@ -1898,7 +1897,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #endif
 
   // setup callback for tracking remap included files
-  load_remap_file_cb = load_remap_file_callback;
+  load_remap_file_cb = load_config_file_callback;
 
   // We need to do this early so we can initialize the Machine
   // singleton, which depends on configuration values loaded in this.
@@ -2273,10 +2272,10 @@ load_ssl_file_callback(const char *ssl_file)
   pmgmt->signalConfigFileChild(ts::filename::SSL_MULTICERT, ssl_file);
 }
 
-static void
-load_remap_file_callback(const char *remap_file)
+void
+load_config_file_callback(const char *parent_file, const char *remap_file)
 {
-  pmgmt->signalConfigFileChild(ts::filename::REMAP, remap_file);
+  pmgmt->signalConfigFileChild(parent_file, remap_file);
 }
 
 static void

@@ -32,6 +32,7 @@
 #include "tscore/ink_file.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ts_file.h"
+#include "tscore/Filenames.h"
 #include "IPAllow.h"
 #include "PluginFactory.h"
 
@@ -299,7 +300,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
   if (success) {
     // register the included file with the management subsystem so that we can correctly
     // reload them when they change
-    load_remap_file_cb(path);
+    load_remap_file_cb(ts::filename::REMAP, path);
   } else {
     snprintf(errbuf, errbufsize, "failed to parse included file %s", path);
     return (const char *)errbuf;

@@ -76,6 +76,6 @@ unsigned long remap_check_option(const char **argv, int argc, unsigned long find
 
 bool remap_parse_config(const char *path, UrlRewrite *rewrite);
 
-typedef void (*load_remap_file_func)(const char *);
+typedef void (*load_remap_file_func)(const char *, const char *);
 
 extern load_remap_file_func load_remap_file_cb;
