@@ -273,7 +273,7 @@ msgid "chi"
 msgstr "chi"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:124
-msgid "The IP address of the client’s host machine."
+msgid "The IP address of the client's host machine."
 msgstr "クライアントのホストマシンの IP アドレス"
 
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:125

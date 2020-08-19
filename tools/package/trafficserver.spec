@@ -21,7 +21,7 @@
 %define _hardened_build 1
 %endif
 
-# This can be overriden via command line option, e.g.  --define “release 12"
+# This can be overriden via command line option, e.g.  --define "release 12"
 %{!?release: %define release 1}
 
 Summary:	Apache Traffic Server, a reverse, forward and transparent HTTP proxy cache

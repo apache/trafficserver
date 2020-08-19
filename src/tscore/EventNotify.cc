@@ -66,7 +66,7 @@ EventNotify::signal()
 #ifdef HAVE_EVENTFD
   uint64_t value = 1;
   //
-  // If the addition would cause the counter’s value of eventfd
+  // If the addition would cause the counter's value of eventfd
   // to exceed the maximum, write() will fail with the errno EAGAIN,
   // which is acceptable as the receiver will be notified eventually.
   //

@@ -145,8 +145,8 @@ union head_p {
  */
 /* Detect which shift is implemented by the simple expression ((~0 >> 1) < 0):
  *
- * If the shift is `logical’ the highest order bit of the left side of the comparison is 0 so the result is positive.
- * If the shift is `arithmetic’ the highest order bit of the left side is 1 so the result is negative.
+ * If the shift is 'logical' the highest order bit of the left side of the comparison is 0 so the result is positive.
+ * If the shift is 'arithmetic' the highest order bit of the left side is 1 so the result is negative.
  */
 #if ((~0 >> 1) < 0)
 /* the shift is `arithmetic' */

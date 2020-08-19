@@ -40,13 +40,13 @@ QUICReceiveStreamStateMachine::is_allowed_to_send(QUICFrameType type) const
   }
 
   QUICReceiveStreamState state = this->get();
-  // The receiver only sends MAX_STREAM_DATA in the “Recv” state.
+  // The receiver only sends MAX_STREAM_DATA in the "Recv" state.
   if (type == QUICFrameType::MAX_STREAM_DATA && state == QUICReceiveStreamState::Recv) {
     return true;
   }
 
-  // A receiver can send STOP_SENDING in any state where it has not received a RESET_STREAM frame; that is states other than “Reset
-  // Recvd” or “Reset Read”.
+  // A receiver can send STOP_SENDING in any state where it has not received a RESET_STREAM frame; that is states other than "Reset
+  // Recvd" or "Reset Read".
   if (type == QUICFrameType::STOP_SENDING && state != QUICReceiveStreamState::ResetRecvd &&
       state != QUICReceiveStreamState::ResetRead) {
     return true;
@@ -143,8 +143,8 @@ QUICReceiveStreamStateMachine::update_on_eos()
 void
 QUICReceiveStreamStateMachine::update(const QUICSendStreamState state)
 {
-  // The receiving part of a stream enters the “Recv” state when the sending part of a bidirectional stream initiated by the
-  // endpoint (type 0 for a client, type 1 for a server) enters the “Ready” state.
+  // The receiving part of a stream enters the "Recv" state when the sending part of a bidirectional stream initiated by the
+  // endpoint (type 0 for a client, type 1 for a server) enters the "Ready" state.
   switch (this->get()) {
   case QUICReceiveStreamState::Init:
     if (state == QUICSendStreamState::Ready) {
@@ -187,12 +187,12 @@ QUICSendStreamStateMachine::is_allowed_to_send(QUICFrameType type) const
       return true;
     }
     break;
-  // A sender MUST NOT send any of these frames from a terminal state (“Data Recvd” or “Reset Recvd”).
+  // A sender MUST NOT send any of these frames from a terminal state ("Data Recvd" or "Reset Recvd").
   case QUICSendStreamState::DataRecvd:
   case QUICSendStreamState::ResetRecvd:
     break;
   // A sender MUST NOT send STREAM or STREAM_DATA_BLOCKED after sending a RESET_STREAM; that is, in the terminal states and in the
-  // “Reset Sent” state.
+  // "Reset Sent" state.
   case QUICSendStreamState::ResetSent:
     if (type == QUICFrameType::RESET_STREAM) {
       return true;
@@ -306,8 +306,8 @@ QUICSendStreamStateMachine::update_on_ack()
 void
 QUICSendStreamStateMachine::update(const QUICReceiveStreamState state)
 {
-  // The sending part of a bidirectional stream initiated by a peer (type 0 for a server, type 1 for a client) enters the “Ready”
-  // state then immediately transitions to the “Send” state if the receiving part enters the “Recv” state (Section 3.2).
+  // The sending part of a bidirectional stream initiated by a peer (type 0 for a server, type 1 for a client) enters the "Ready"
+  // state then immediately transitions to the "Send" state if the receiving part enters the "Recv" state (Section 3.2).
   switch (this->get()) {
   case QUICSendStreamState::Ready:
     if (state == QUICReceiveStreamState::Recv) {
@@ -372,8 +372,8 @@ QUICBidirectionalStreamStateMachine::get() const
 void
 QUICBidirectionalStreamStateMachine::update_with_sending_frame(const QUICFrame &frame)
 {
-  // The receiving part of a stream enters the “Recv” state when the sending part of a bidirectional stream initiated by the
-  // endpoint (type 0 for a client, type 1 for a server) enters the “Ready” state.
+  // The receiving part of a stream enters the "Recv" state when the sending part of a bidirectional stream initiated by the
+  // endpoint (type 0 for a client, type 1 for a server) enters the "Ready" state.
   this->_send_stream_state.update_with_sending_frame(frame);
   // PS: It should not happen because we initialize the send side and read side together. And the SendState has the default state
   // "Ready". But to obey the specs, we do this as follow.
@@ -386,8 +386,8 @@ QUICBidirectionalStreamStateMachine::update_with_sending_frame(const QUICFrame &
 void
 QUICBidirectionalStreamStateMachine::update_with_receiving_frame(const QUICFrame &frame)
 {
-  // The sending part of a bidirectional stream initiated by a peer (type 0 for a server, type 1 for a client) enters the “Ready”
-  // state then immediately transitions to the “Send” state if the receiving part enters the “Recv” state (Section 3.2).
+  // The sending part of a bidirectional stream initiated by a peer (type 0 for a server, type 1 for a client) enters the "Ready"
+  // state then immediately transitions to the "Send" state if the receiving part enters the "Recv" state (Section 3.2).
   this->_recv_stream_state.update_with_receiving_frame(frame);
   if (this->_send_stream_state.get() == QUICSendStreamState::Ready &&
       this->_recv_stream_state.get() == QUICReceiveStreamState::Recv) {

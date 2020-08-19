@@ -1932,7 +1932,7 @@ Cache Control
 
    Forces the use of a specific hardware sector size, e.g. 4096, for all disks.
 
-   SSDs and "advanced format” drives claim a sector size of 512; however, it is safe to force a higher
+   SSDs and "advanced format" drives claim a sector size of 512; however, it is safe to force a higher
    size than the hardware supports natively as we count atomicity in 512 byte increments.
 
    4096-sized drives formatted for Windows will have partitions aligned on 63 512-byte sector boundaries,
