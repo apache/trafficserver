@@ -1141,6 +1141,22 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
   SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
 }
 
+void
+setClientCertCACerts(SSL *ssl, X509_STORE *ca_certs)
+{
+#if defined(SSL_set1_verify_cert_store)
+
+  // It is necessasry to use set1 and not set0 here.  SSL_free() calls ssl_cert_free(), which calls
+  // X509_STORE_free() on the ca_certs store.  Hard to see how set0 could ever actually be useful, in
+  // what scenario would SSL objects never be freed?
+  //
+  SSL_set1_verify_cert_store(ssl, ca_certs);
+
+#else
+  ink_assert(!"Configuration checking should prevent reaching this code");
+#endif
+}
+
 /**
    Initialize SSL_CTX for server
    This is public function because of used by SSLCreateServerContext.

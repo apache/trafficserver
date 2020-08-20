@@ -69,7 +69,7 @@ SNIConfigParams::loadSNIConfig()
       ai->actions.push_back(std::make_unique<ControlH2>(item.offer_h2.value()));
     }
     if (item.verify_client_level != 255) {
-      ai->actions.push_back(std::make_unique<VerifyClient>(item.verify_client_level));
+      ai->actions.push_back(std::make_unique<VerifyClient>(item.verify_client_level, item.verify_client_ca_certs.release()));
     }
     if (item.host_sni_policy != 255) {
       ai->actions.push_back(std::make_unique<HostSniPolicy>(item.host_sni_policy));
