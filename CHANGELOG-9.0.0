@@ -979,6 +979,7 @@ Changes with Apache Traffic Server 9.0.0
   #6873 - Metrics for origin close
   #6880 - Add new API / TSPluginDSOReloadEnable to override  DSO remap dynamic reload.
   #6884 - microserver error handling: SSLError check and debug.
+  #6888 - AuTest: port selection improvements.
   #6889 - Improve client_vc tracking
   #6891 - Make h2spec test more resiliant by extending timeout
   #6892 - Fix compiler issue with ICC 19.1
@@ -1009,6 +1010,7 @@ Changes with Apache Traffic Server 9.0.0
   #6969 - Update docs for some DNS config settings
   #6977 - Preserve cert name through ssl vc migration
   #6980 - Add maxmind acl plugin
+  #6981 - Update autest to version 1.8.0
   #6984 - Fix out of source tree builds for QUIC
   #6994 - Adds null check
   #7000 - Add QUIC draft-27 support
@@ -1024,6 +1026,7 @@ Changes with Apache Traffic Server 9.0.0
   #7035 - Add a null check to avoid crashing
   #7036 - Add virtual destructor to QUICTPConfig.
   #7040 - Remove deprecated verify.server for 9.0
+  #7046 - Fixes spelling H3-related code
   #7048 - Fixes spelling in docs
   #7050 - Fixed CLIENT-URL to use the pristine client URL
   #7056 - Fix proxy.process.http.current_client_connections
@@ -1032,6 +1035,7 @@ Changes with Apache Traffic Server 9.0.0
   #7060 - Document proxy.config.http.cache.post_method.
   #7061 - Don't make an error on receiving retransmitted handshake data
   #7062 - Signal WRITE_COMPLETE regardless of transmission progress
+  #7065 - Updating to AuTest 1.8.1.
   #7069 - Move the direct self loop check later to HttpSM::do_http_server_open
   #7074 - Add TS_USE_QUIC to traffic_layout info
   #7080 - Fix a crash on connection migration to the advertised preferred address
@@ -1043,3 +1047,10 @@ Changes with Apache Traffic Server 9.0.0
   #7087 - Fix eval_ip compile - missing const.
   #7089 - Converts files to #pragma once
   #7091 - Adds description for ssl_ticket_number in ssl_multicert docs
+  #7095 - Refresh proxy protocol diagram
+  #7098 - Remove more deadcode
+  #7104 - Don't send image/webp responses from cache to broswers that don't support it
+  #7110 - Add QUIC draft-29 support
+  #7113 - Updating our autest suite to require Python3.6
+  #7118 - Backing out my update of our jenkin's autest file.
+  #7122 - Make tls_hooks tests more likely to pass particularly for 9.0.x branch
