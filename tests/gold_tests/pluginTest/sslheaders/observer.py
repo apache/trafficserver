@@ -19,13 +19,15 @@ Extract ssl-* headers and store in a log file for later verification.
 
 log = open('sslheaders.log', 'w')
 
+
 def observe(headers):
 
     for h in headers.items():
         if h[0].lower().startswith('ssl-'):
 
-            log.write(h[0] + ": " + h[1] + "\n");
+            log.write(h[0] + ": " + h[1] + "\n")
     log.write("-\n")
     log.flush()
+
 
 Hooks.register(Hooks.ReadRequestHook, observe)

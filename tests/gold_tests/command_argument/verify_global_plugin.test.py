@@ -99,7 +99,7 @@ tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*unable to find TSPluginInit function in",
     "Should warn about the need for the TSPluginInit symbol")
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR",
-    "ERROR: .*unable to find TSPluginInit function in")
+                                                       "ERROR: .*unable to find TSPluginInit function in")
 
 
 """
@@ -122,7 +122,7 @@ tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*unable to find TSPluginInit function in",
     "Should warn about the need for the TSPluginInit symbol")
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR",
-    "ERROR: .*unable to find TSPluginInit function in")
+                                                       "ERROR: .*unable to find TSPluginInit function in")
 
 
 """
@@ -195,4 +195,4 @@ tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*: undefined symbol: .*foo.*",
     "Should warn about the need for the TSPluginInit symbol")
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR",
-    "ERROR: .*: undefined symbol: .*foo.*")
+                                                       "ERROR: .*: undefined symbol: .*foo.*")

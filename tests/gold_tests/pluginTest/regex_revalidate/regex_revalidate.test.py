@@ -22,7 +22,7 @@ Test.Summary = '''
 Test a basic regex_revalidate
 '''
 
-## Test description:
+# Test description:
 # Load up cache, ensure fresh
 # Create regex reval rule, config reload:
 #  ensure item is staled only once.
@@ -44,80 +44,80 @@ server = Test.MakeOriginServer("server")
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
-#**testname is required**
+# **testname is required**
 #testName = "regex_reval"
 
 # default root
 request_header_0 = {"headers":
-    "GET / HTTP/1.1\r\n" +
-    "Host: www.example.com\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "",
-}
+                    "GET / HTTP/1.1\r\n" +
+                    "Host: www.example.com\r\n" +
+                    "\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": "",
+                    }
 
 response_header_0 = {"headers":
-    "HTTP/1.1 200 OK\r\n" +
-    "Connection: close\r\n" +
-    "Cache-Control: max-age=300\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "xxx",
-}
+                     "HTTP/1.1 200 OK\r\n" +
+                     "Connection: close\r\n" +
+                     "Cache-Control: max-age=300\r\n" +
+                     "\r\n",
+                     "timestamp": "1469733493.993",
+                     "body": "xxx",
+                     }
 
 # cache item path1
 request_header_1 = {"headers":
-    "GET /path1 HTTP/1.1\r\n" +
-    "Host: www.example.com\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""
-}
+                    "GET /path1 HTTP/1.1\r\n" +
+                    "Host: www.example.com\r\n" +
+                    "\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""
+                    }
 response_header_1 = {"headers":
-    "HTTP/1.1 200 OK\r\n" +
-    "Connection: close\r\n" +
-    'Etag: "path1"\r\n' +
-    "Cache-Control: max-age=600,public\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "abc"
-}
+                     "HTTP/1.1 200 OK\r\n" +
+                     "Connection: close\r\n" +
+                     'Etag: "path1"\r\n' +
+                     "Cache-Control: max-age=600,public\r\n" +
+                     "\r\n",
+                     "timestamp": "1469733493.993",
+                     "body": "abc"
+                     }
 
 # cache item path1a
 request_header_2 = {"headers":
-    "GET /path1a HTTP/1.1\r\n" +
-    "Host: www.example.com\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""
-}
+                    "GET /path1a HTTP/1.1\r\n" +
+                    "Host: www.example.com\r\n" +
+                    "\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""
+                    }
 response_header_2 = {"headers":
-    "HTTP/1.1 200 OK\r\n" +
-    "Connection: close\r\n" +
-    'Etag: "path1a"\r\n' +
-    "Cache-Control: max-age=600,public\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "cde"
-}
+                     "HTTP/1.1 200 OK\r\n" +
+                     "Connection: close\r\n" +
+                     'Etag: "path1a"\r\n' +
+                     "Cache-Control: max-age=600,public\r\n" +
+                     "\r\n",
+                     "timestamp": "1469733493.993",
+                     "body": "cde"
+                     }
 
 # cache item path2a
 request_header_3 = {"headers":
-    "GET /path2a HTTP/1.1\r\n" +
-    "Host: www.example.com\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""
-}
+                    "GET /path2a HTTP/1.1\r\n" +
+                    "Host: www.example.com\r\n" +
+                    "\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""
+                    }
 response_header_3 = {"headers":
-    "HTTP/1.1 200 OK\r\n" +
-    "Connection: close\r\n" +
-    'Etag: "path2a"\r\n' +
-    "Cache-Control: max-age=900,public\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "efg"
-}
+                     "HTTP/1.1 200 OK\r\n" +
+                     "Connection: close\r\n" +
+                     'Etag: "path2a"\r\n' +
+                     "Cache-Control: max-age=900,public\r\n" +
+                     "\r\n",
+                     "timestamp": "1469733493.993",
+                     "body": "efg"
+                     }
 
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
 server.addResponse("sessionlog.json", request_header_1, response_header_1)
@@ -148,7 +148,7 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'regex_revalidate',
-#    'proxy.config.diags.debug.enabled': 0,
+    #    'proxy.config.diags.debug.enabled': 0,
     'proxy.config.http.cache.http': 1,
     'proxy.config.http.wait_for_cache': 1,
     'proxy.config.http.insert_age_in_response': 0,

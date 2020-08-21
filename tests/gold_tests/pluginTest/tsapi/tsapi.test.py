@@ -29,8 +29,8 @@ Test.Env["OUTPUT_FILE"] = Test.RunDirectory + "/log.txt"
 server = Test.MakeOriginServer("server")
 
 request_header = {
-    "headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "112233" }
+    "headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "112233"}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)

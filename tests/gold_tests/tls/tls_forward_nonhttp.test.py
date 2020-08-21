@@ -49,10 +49,10 @@ ts.Disk.records_config.update({
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
 ts.Disk.sni_yaml.AddLines([
-  "sni:",
-  "- fqdn: bar.com",
-  "  forward_route: localhost:4444"
-  ])
+    "sni:",
+    "- fqdn: bar.com",
+    "  forward_route: localhost:4444"
+])
 
 tr = Test.AddTestRun("forward-non-http")
 tr.Setup.Copy("test-nc-s_client.sh")
@@ -61,5 +61,5 @@ tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 testout_path = os.path.join(Test.RunDirectory, "test.out")
-tr.Disk.File(testout_path, id = "testout")
+tr.Disk.File(testout_path, id="testout")
 tr.Processes.Default.Streams.All += Testers.IncludesExpression("This is a reply", "s_client should get response")

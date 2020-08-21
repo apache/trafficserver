@@ -68,7 +68,7 @@ def get_dependencies(program):
                     ])):
                 continue
 
-        if re.sub('\s+', '', dependency):
+        if re.sub(r'\s+', '', dependency):
             yield dependency
 
 

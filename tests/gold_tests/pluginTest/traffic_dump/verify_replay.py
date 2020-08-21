@@ -140,12 +140,10 @@ def verify_sensitive_fields_not_dumped(replay_json, sensitive_fields):
 
 
 def verify_client_protocols(replay_json, expected_protocol_features):
-    expected_protocols_list = expected_protocol_features.split(',')
-    expected_protocols_list.sort()
+    expected_protocols_list = sorted(expected_protocol_features.split(','))
     try:
         protocol_node = replay_json['sessions'][0]['protocol']
-        protocol_list = protocol_node.copy()
-        protocol_list.sort()
+        protocol_list = sorted(protocol_node.copy())
         if protocol_list == expected_protocols_list:
             return True
         else:

@@ -16,9 +16,6 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-print '''1..1 http09
-# The proxy doesn't crash on an HTTP/0.9 response'''
-
 # http://www.w3.org/Protocols/HTTP/AsImplemented
 #
 # The proxy crashes only after the response is complete.  It closes
@@ -31,6 +28,9 @@ print '''1..1 http09
 
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
+
+print '''1..1 http09
+# The proxy doesn't crash on an HTTP/0.9 response'''
 
 
 def callback():

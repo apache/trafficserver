@@ -27,6 +27,14 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from sphinx.writers import manpage
+from docutils.transforms import frontmatter
+from docutils.utils import unescape
+from docutils.utils import punctuation_chars
+from docutils.parsers.rst import states
+from docutils import nodes
+import re
+from manpages import man_pages
 import sys
 import os
 from datetime import date
@@ -39,7 +47,6 @@ from sphinx import version_info
 sys.path.insert(0, os.path.abspath('ext'))
 sys.path.insert(0, os.path.abspath('.'))
 
-from manpages import man_pages
 
 # -- General configuration -----------------------------------------------------
 
@@ -58,7 +65,7 @@ extensions = [
 
 # Contains values that are dependent on configure.ac.
 LOCAL_CONFIG = 'ext/local-config.py'
-with open(LOCAL_CONFIG) as f :
+with open(LOCAL_CONFIG) as f:
     exec(compile(f.read(), LOCAL_CONFIG, 'exec'))
 
 if version_info >= (1, 4):
@@ -96,10 +103,9 @@ copyright = u'{}, dev@trafficserver.apache.org'.format(date.today().year)
 # work identically when building with Autotools (e.g. $ make html)
 # and without (e.g. on Read the Docs)
 
-import re
 
 contents = open('../configure.ac').read()
-match = re.compile('m4_define\(\[TS_VERSION_S],\[(.*?)]\)').search(contents)
+match = re.compile(r'm4_define\(\[TS_VERSION_S],\[(.*?)]\)').search(contents)
 
 # The full version, including alpha/beta/rc tags.
 release = match.group(1)
@@ -134,7 +140,7 @@ else:
         import sphinx_rtd_theme
         html_theme = 'sphinx_rtd_theme'
         html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-    except:
+    except BaseException:
         pass
 # End of HACK
 
@@ -169,22 +175,15 @@ pygments_style = 'default'
 #modindex_common_prefix = []
 
 nitpicky = True
-nitpick_ignore = [ ('c:type', 'int64_t')
-                 , ('c:type', 'bool')
-                 , ('c:type', 'sockaddr')
-                 , ('cpp:identifier', 'T') # template arg
-                 , ('cpp:identifier', 'F') # template arg
-                 , ('cpp:identifier', 'Args') # variadic template arg
-                 , ('cpp:identifier', 'Rest') # variadic template arg
-                 ]
+nitpick_ignore = [('c:type', 'int64_t'), ('c:type', 'bool'), ('c:type', 'sockaddr'), ('cpp:identifier', 'T')  # template arg
+                  , ('cpp:identifier', 'F')  # template arg
+                  , ('cpp:identifier', 'Args')  # variadic template arg
+                  , ('cpp:identifier', 'Rest')  # variadic template arg
+                  ]
 
 # Autolink issue references.
 # See Customizing the Parser in the docutils.parsers.rst module.
 
-from docutils import nodes
-from docutils.parsers.rst import states
-from docutils.utils import punctuation_chars
-from docutils.utils import unescape
 
 # Customize parser.inliner in the only way that Sphinx supports.
 # docutils.parsers.rst.Parser takes an instance of states.Inliner or a
@@ -337,13 +336,13 @@ htmlhelp_basename = 'ApacheTrafficServerdoc'
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
-    #'papersize': 'letterpaper',
+    # 'papersize': 'letterpaper',
 
     # The font size ('10pt', '11pt' or '12pt').
-    #'pointsize': '10pt',
+    # 'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
-    #'preamble': '',
+    # 'preamble': '',
 }
 
 if 'latex_a4' in tags:
@@ -390,8 +389,6 @@ latex_documents = [
 # documents and includes the same brief description in both the HTML
 # and manual page outputs.
 
-from docutils.transforms import frontmatter
-from sphinx.writers import manpage
 
 # Override ManualPageWriter and ManualPageTranslator in the only way
 # that Sphinx supports
@@ -507,4 +504,4 @@ mathjax_path = 'https://docs.trafficserver.apache.org/__RTD/MathJax.js'
 # Enabling marking bit fields as 'bitfield_N`.
 # Currently parameterized fields don't work. When they do, we should change to
 # 'bitfield(N)'.
-cpp_id_attributes = [ 'bitfield_1', 'bitfield_3', 'bitfield_24' ]
+cpp_id_attributes = ['bitfield_1', 'bitfield_3', 'bitfield_24']

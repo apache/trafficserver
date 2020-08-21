@@ -16,15 +16,15 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-print '''1..1 longer
-# The proxy doesn't choke if the origin sends more content than it
-# advertised'''
-
 # Unlike the contentLength test, don't stop the reactor at the end of
 # the headers.  Give the proxy time to choke.
 
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
+
+print '''1..1 longer
+# The proxy doesn't choke if the origin sends more content than it
+# advertised'''
 
 
 def callback():

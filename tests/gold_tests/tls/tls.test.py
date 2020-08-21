@@ -25,7 +25,7 @@ ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
 # build test code
-tr=Test.Build(target='ssl-post',sources=['ssl-post.c'])
+tr = Test.Build(target='ssl-post', sources=['ssl-post.c'])
 tr.Setup.Copy('ssl-post.c')
 
 requestLocation = "test2"
@@ -48,8 +48,12 @@ for i in range(0, 1000):
 
 # Add info the origin server responses
 server.addResponse("sessionlog.json",
-                   {"headers": header_string, "timestamp": "1469733493.993", "body": post_body},
-                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n", "timestamp": "1469733493.993", "body": "ok"})
+                   {"headers": header_string,
+                    "timestamp": "1469733493.993",
+                    "body": post_body},
+                   {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": "ok"})
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
@@ -62,12 +66,8 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
-ts.Disk.records_config.update({
-    'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
-})
+ts.Disk.records_config.update({'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir), 'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir), 'proxy.config.exec_thread.autoconfig.scale': 1.0, 'proxy.config.ssl.server.cipher_suite':
+                               'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2', })
 
 tr = Test.AddTestRun("Run-Test")
 tr.Command = './ssl-post 127.0.0.1 40 {0} {1}'.format(header_count, ts.Variables.ssl_port)

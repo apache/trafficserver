@@ -47,6 +47,7 @@ except NameError:
     def is_string_type(s):
         return isinstance(s, str)
 
+
 class TSConfVar(std.Target):
     """
     Description of a traffic server configuration variable.
@@ -168,7 +169,19 @@ def metrictypes(typename):
 
 
 def metricunits(unitname):
-    return directives.choice(unitname.lower(), ('ratio', 'percent', 'kbits', 'mbits', 'bytes', 'kbytes', 'mbytes', 'nanoseconds', 'microseconds', 'milliseconds', 'seconds'))
+    return directives.choice(
+        unitname.lower(),
+        ('ratio',
+         'percent',
+         'kbits',
+         'mbits',
+         'bytes',
+         'kbytes',
+         'mbytes',
+         'nanoseconds',
+         'microseconds',
+         'milliseconds',
+         'seconds'))
 
 
 class TSStat(std.Target):

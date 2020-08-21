@@ -29,13 +29,13 @@ server = Test.MakeOriginServer("server", ssl=True)
 
 testName = ""
 request = {
-        "headers":
+    "headers":
         "GET /get HTTP/1.1\r\n"
         "Host: www.example.com:80\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": ""}
 response = {
-        "headers":
+    "headers":
         "HTTP/1.1 200 OK\r\n"
         "Content-Length: 3\r\n"
         "Connection: close\r\n\r\n",
@@ -47,13 +47,13 @@ server.addResponse("sessionlog.json", request, response)
 # bug in ip_allow and they are sent through, have them return a 200 OK. This
 # will fail the match with the gold file which expects a 403.
 request = {
-        "headers":
+    "headers":
         "CONNECT www.example.com:80/connect HTTP/1.1\r\n"
         "Host: www.example.com:80\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": ""}
 response = {
-        "headers":
+    "headers":
         "HTTP/1.1 200 OK\r\n"
         "Content-Length: 3\r\n"
         "Connection: close\r\n\r\n",
@@ -61,13 +61,13 @@ response = {
         "1469733493.993", "body": "xxx"}
 server.addResponse("sessionlog.json", request, response)
 request = {
-        "headers":
+    "headers":
         "PUSH www.example.com:80/h2_push HTTP/2\r\n"
         "Host: www.example.com:80\r\n\r\n",
         "timestamp": "1469733493.993",
         "body": ""}
 response = {
-        "headers":
+    "headers":
         "HTTP/2 200 OK\r\n"
         "Content-Length: 3\r\n"
         "Connection: close\r\n\r\n",
@@ -90,7 +90,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.http.cache.http': 0,
-    'proxy.config.ssl.client.verify.server':  0,
+    'proxy.config.ssl.client.verify.server': 0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.http2.active_timeout_in': 3,
     'proxy.config.http2.max_concurrent_streams_in': 65535,
@@ -120,7 +120,7 @@ ts.Disk.remap_config.AddLine(
 
 # Note that CONNECT is not in the allowed list.
 ts.Disk.ip_allow_yaml.AddLines(
-     '''ip_allow:
+    '''ip_allow:
   - apply: in
     ip_addrs: 0/0
     action: allow
@@ -134,11 +134,11 @@ ts.Disk.ip_allow_yaml.AddLines(
 )
 
 ts.Streams.stderr += Testers.ContainsExpression(
-        "Line 1 denial for 'CONNECT' from 127.0.0.1",
-        "The CONNECT request should be denied by ip_allow")
+    "Line 1 denial for 'CONNECT' from 127.0.0.1",
+    "The CONNECT request should be denied by ip_allow")
 ts.Streams.stderr += Testers.ContainsExpression(
-        "Line 1 denial for 'PUSH' from 127.0.0.1",
-        "The PUSH request should be denied by ip_allow")
+    "Line 1 denial for 'PUSH' from 127.0.0.1",
+    "The PUSH request should be denied by ip_allow")
 
 #
 # TEST 1: Perform a GET request. Should be allowed because GET is in the allowlist.

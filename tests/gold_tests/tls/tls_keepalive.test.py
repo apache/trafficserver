@@ -55,7 +55,7 @@ ts.Disk.remap_config.AddLine(
 )
 
 ts.Disk.logging_yaml.AddLines(
-'''
+    '''
 logging:
   formats:
     - name: testformat
@@ -74,25 +74,29 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'curl -k -v --http1.1  -H \'host:example.com:{0}\' https://127.0.0.1:{0} https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -k -v --http1.1  -H \'host:example.com:{0}\' https://127.0.0.1:{0} https://127.0.0.1:{0}'.format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Test two HTTP/1.1 requests over two TLS connections")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'curl -k -v --http1.1  -H \'host:example.com:{0}\' https://127.0.0.1:{0}; curl -k -v --http1.1 -H \'host:example.com:{0}\'  https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -k -v --http1.1  -H \'host:example.com:{0}\' https://127.0.0.1:{0}; curl -k -v --http1.1 -H \'host:example.com:{0}\'  https://127.0.0.1:{0}'.format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Test two HTTP/2 requests over one TLS connection")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'curl -k -v --http2  -H \'host:example.com:{0}\' https://127.0.0.1:{0} https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -k -v --http2  -H \'host:example.com:{0}\' https://127.0.0.1:{0} https://127.0.0.1:{0}'.format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Test two HTTP/2 requests over two TLS connections")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'curl -k -v --http2  -H \'host:example.com:{0}\' https://127.0.0.1:{0}; curl -k -v --http1.1 -H \'host:example.com:{0}\'  https://127.0.0.1:{0}'.format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = 'curl -k -v --http2  -H \'host:example.com:{0}\' https://127.0.0.1:{0}; curl -k -v --http1.1 -H \'host:example.com:{0}\'  https://127.0.0.1:{0}'.format(
+    ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
 # Just a check to flush out the traffic log until we have a clean shutdown for traffic_server

@@ -16,11 +16,11 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
+from twisted.web import http
+from twisted.internet import error, protocol, reactor, tcp
+
 print '''1..1 chunkedEncoding
 # The proxy forwards the final chunk at the end of a chunked response'''
-
-from twisted.internet import error, protocol, reactor, tcp
-from twisted.web import http
 
 
 def callback():

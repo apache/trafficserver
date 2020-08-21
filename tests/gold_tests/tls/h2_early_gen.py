@@ -57,10 +57,12 @@ HEADERS_FLAG_END_PRIORITY = 0x20
 
 CURRENT_SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
+
 def encode_payload(data):
     encoder = hpack.Encoder()
     data_encoded = encoder.encode(data)
     return data_encoded
+
 
 def make_frame(frame_length, frame_type, frame_flags, frame_stream_id, frame_payload):
     frame_length = bytes.fromhex('{0:06x}'.format(frame_length))
@@ -75,6 +77,7 @@ def make_frame(frame_length, frame_type, frame_flags, frame_stream_id, frame_pay
 
     return frame
 
+
 def make_settins_frame(ack=False, empty=False):
     payload = ''
     if not ack and not empty:
@@ -84,27 +87,29 @@ def make_settins_frame(ack=False, empty=False):
     payload = bytes.fromhex(payload)
 
     frame = make_frame(
-        frame_length = len(payload),
-        frame_type = TYPE_SETTINGS_FRAME,
-        frame_flags = 1 if ack else 0,
-        frame_stream_id = 0,
-        frame_payload = payload
+        frame_length=len(payload),
+        frame_type=TYPE_SETTINGS_FRAME,
+        frame_flags=1 if ack else 0,
+        frame_stream_id=0,
+        frame_payload=payload
     )
 
     return frame
+
 
 def make_window_update_frame():
     payload = '{0:08x}'.format(RESERVED_BIT_MASK & 1073676289)
     payload = bytes.fromhex(payload)
 
     frame = make_frame(
-        frame_length = len(payload),
-        frame_type = TYPE_WINDOW_UPDATE_FRAME,
-        frame_flags = 0,
-        frame_stream_id = 0,
-        frame_payload = payload
+        frame_length=len(payload),
+        frame_type=TYPE_WINDOW_UPDATE_FRAME,
+        frame_flags=0,
+        frame_stream_id=0,
+        frame_payload=payload
     )
     return frame
+
 
 def make_headers_frame(method, path='', stream_id=0x01):
     headers = []
@@ -131,14 +136,15 @@ def make_headers_frame(method, path='', stream_id=0x01):
     headers_encoded = encode_payload(headers)
 
     frame = make_frame(
-        frame_length = len(headers_encoded),
-        frame_type = TYPE_HEADERS_FRAME,
-        frame_flags = HEADERS_FLAG_END_STREAM | HEADERS_FLAG_END_HEADERS,
-        frame_stream_id = stream_id,
-        frame_payload = headers_encoded
+        frame_length=len(headers_encoded),
+        frame_type=TYPE_HEADERS_FRAME,
+        frame_flags=HEADERS_FLAG_END_STREAM | HEADERS_FLAG_END_HEADERS,
+        frame_stream_id=stream_id,
+        frame_payload=headers_encoded
     )
 
     return frame
+
 
 def make_h2_req(test):
     h2_req = H2_PREFACE
@@ -171,15 +177,18 @@ def make_h2_req(test):
         pass
     return h2_req
 
+
 def write_to_file(data, file_name):
     with open(file_name, 'wb') as out_file:
         out_file.write(data)
     return
 
+
 def main():
     test = sys.argv[1]
     write_to_file(make_h2_req(test), os.path.join(CURRENT_SCRIPT_PATH, 'early_h2_{0}.txt'.format(test)))
     exit(0)
+
 
 if __name__ == '__main__':
     main()
