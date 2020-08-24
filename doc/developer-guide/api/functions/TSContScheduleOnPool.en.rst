@@ -89,7 +89,7 @@ schedules "contp" on thread "A", and assigns thread "A" as the affinity thread f
 The reason behind this choice is that we are trying to keep things simple such that lock contention
 problems happens less. And for the most part, there is no point of scheduling the same thing on several
 different threads of the same type, because there is no parallelism between them (a thread will have to
-wait for the previous thread to finish, either because locking or the nature of the job it’s handling is
+wait for the previous thread to finish, either because locking or the nature of the job it's handling is
 serialized since its on the same continuation).
 
 Scenario 3 (has thread affinity info, different types of threads)
@@ -106,7 +106,7 @@ be the affinity thread for "contp" already, the system will NOT overwrite that i
 
 Most of the time, a continuation will be scheduled on one type of threads, and rarely gets scheduled on
 a different type. But when that happens, we want it to return to the thread it was previously on, so it
-won’t have any lock contention problems. And that’s also why "thread_affinity" is not a hashmap of thread
+won't have any lock contention problems. And that's also why "thread_affinity" is not a hashmap of thread
 types and thread pointers.
 
 Scenario 4 (has thread affinity info, same types of threads)

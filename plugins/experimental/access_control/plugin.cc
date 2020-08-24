@@ -385,7 +385,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
 
               /* Secure   - instructs the UA to include the cookie in an HTTP request only if the request is transmitted over
                *            a secure channel, typically HTTP over Transport Layer Security (TLS)
-               * HttpOnly - instructs the UA to omit the cookie when providing access to cookies via “non-HTTP” APIs such as a web
+               * HttpOnly - instructs the UA to omit the cookie when providing access to cookies via "non-HTTP" APIs such as a web
                *            browser API that exposes cookies to scripts */
               cookieValue.append("path=/; Secure; HttpOnly");
 

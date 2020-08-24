@@ -16,7 +16,7 @@ New Issues process replacing old Jira
 1. If there is an issue/feature, an existing Jira Ticket, and no code, then
    create a Github _Issue_.  Copy the relevant information into the Github
    _Issue_ and request the Jira Ticket to be closed. Hopefully this use case
-   won’t happen very often.
+   won't happen very often.
 
 2. If there is an issue/feature and no code, then create a Github _Issue_.
    When there is code later, create a Github Pull Request and reference the

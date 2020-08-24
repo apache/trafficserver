@@ -59,7 +59,7 @@ Service group attributes include
 
 *  id - The security group ID.  It must match the service group ID that has been defined on the associated WCCP router.  This is the true service group identifier from the WCCP perspective.
 
-* type – This defines the type of service group either “STANDARD” or “DYNAMIC”.  There is one standard defined service group, HTTP with the id of 0.  The 4/2001 RFC indicates that id’s 0-50 are reserved for well known service groups.  But more recent 8/2012 RFC indicates that values 0 through 254 are valid service id’s for dynamic services.  To avoid differences with older WCCP routers, you probably want to  avoid dynamic service ID’s 0 through 50.
+* type – This defines the type of service group either "STANDARD" or "DYNAMIC".  There is one standard defined service group, HTTP with the id of 0.  The 4/2001 RFC indicates that id's 0-50 are reserved for well known service groups.  But more recent 8/2012 RFC indicates that values 0 through 254 are valid service id's for dynamic services.  To avoid differences with older WCCP routers, you probably want to avoid dynamic service ID's 0 through 50.
 
 * priority – This is a value from 0 to 255.  The higher number is a higher priority.  Well known (STANDARD) services are set to a value of 240.  If there are multiple service groups that could match a given packet, the higher priority service group is applied. RFC  For example, you have service group 100 defined for packets with destination port 80, and service group 101 defined for packets with source port 1024.  For a packet with destination port set to 80 and source port set to 1024, the priorities of the service groups would need to be compared to determine which service group applies.
 
@@ -80,5 +80,5 @@ Service group attributes include
 
 * routers – This is the list of router addresses the WCCP client communicates with.  The WCCP protocols allows for multiple WCCP routers to be involved in a service group.  The multiple router scenario has at most been lightly tested in the Traffic Server implementation.
 
-* proc-name – This attribute is only used by traffic_wccp.  It is not used in the traffic_server WCCP support.  This is the path to a process’ PID file.  The service group is advertised to the WCCP router if the process identified in the PID file is currently operational.
+* proc-name – This attribute is only used by traffic_wccp.  It is not used in the traffic_server WCCP support.  This is the path to a process' PID file.  The service group is advertised to the WCCP router if the process identified in the PID file is currently operational.
 
