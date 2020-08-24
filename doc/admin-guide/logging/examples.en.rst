@@ -183,7 +183,7 @@ No. Field    Description
              of milliseconds between the time the client established the
              connection with |TS| and the time |TS| sent the last byte of
              the response back to the client.
-3   chi      The IP address of the client’s host machine.
+3   chi      The IP address of the client's host machine.
 4   crc/pssc The cache result code; how the cache responded to the request:
              ``HIT``, ``MISS``, and so on. Cache result codes are described
              in :ref:`admin-logging-cache-results`. The

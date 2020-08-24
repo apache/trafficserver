@@ -1099,7 +1099,7 @@ Add Cache Control Headers Based on Origin Path
 ----------------------------------------------
 
 This rule adds cache control headers to CDN responses based matching the origin
-path.  One provides a max age and the other provides a “no-cache” statement to
+path.  One provides a max age and the other provides a "no-cache" statement to
 two different file paths. ::
 
    cond %{SEND_RESPONSE_HDR_HOOK}

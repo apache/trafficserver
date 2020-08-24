@@ -72,7 +72,7 @@ is stale or expired).
    Parent caching
 
 If the request is a cache miss on the parent, then the parent retrieves the
-content from the origin server (or from another cache, depending on the parent’s
+content from the origin server (or from another cache, depending on the parent's
 configuration). The parent caches the content and then sends a copy to Traffic
 Server (its child), where it is cached and served to the client.
 

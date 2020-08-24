@@ -101,11 +101,11 @@ LogBuffer
 ---------
 
 The ``LogBuffer`` class is designed to provide a thread-safe mechanism
-to buffer/store log entries before they’re flushed. To reduce system call
+to buffer/store log entries before they're flushed. To reduce system call
 overhead, ``LogBuffer``\ s are designed to avoid heavy-weight mutexes in
 favor of using lightweight atomics built on top of compare-and-swap
 operations. When a caller wants to write into a ``LogBuffer``, the
-caller “checks out” a segment of the buffer to write into. ``LogBuffer``
+caller "checks out" a segment of the buffer to write into. ``LogBuffer``
 makes sure that no two callers are served overlapping segments. To
 illustrate this point, consider this diagram of a buffer:
 
@@ -136,9 +136,9 @@ illustrate this point, consider this diagram of a buffer:
               |                                |
               +--------------------------------+
 
-In this manner, since no two threads are writing in the other’s segment,
+In this manner, since no two threads are writing in the other's segment,
 we avoid race conditions during the actual logging. This also makes
-LogBuffer’s critical section extremely small. In fact, the only time we
+LogBuffer's critical section extremely small. In fact, the only time we
 need to enter a critical section is when we do the book keeping to keep
 track of which segments are checked out. Despite this, it's not unusual
 to see between 5% and 20% of total processor time spent inside ``LogBuffer``
