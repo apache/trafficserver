@@ -447,7 +447,10 @@ QUICLossDetector::_on_loss_detection_timeout()
     this->_get_pto_time_and_space(pns);
     this->_send_one_or_two_ack_eliciting_packet(pns);
   } else {
-    ink_assert(this->_is_client_without_one_rtt_key());
+    // This assertion is on draft-29 but not correct
+    // Keep it as a comment for now to not add it back
+    // ink_assert(this->_is_client_without_one_rtt_key());
+
     // Client sends an anti-deadlock packet: Initial is padded
     // to earn more anti-amplification credit,
     // a Handshake packet proves address ownership.
