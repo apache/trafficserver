@@ -78,7 +78,6 @@ libquic_a_SOURCES = \
   QUICPacketProtectionKeyInfo.cc \
   QUICTLS.cc \
   $(QUICTLS_impl) \
-  QUICKeyGenerator.cc \
   $(QUICKeyGenerator_impl) \
   QUICKeyGenerator.cc \
   QUICHKDF.cc \

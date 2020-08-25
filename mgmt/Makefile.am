@@ -65,8 +65,6 @@ libmgmt_lm_la_SOURCES = \
 	LocalManager.h \
 	ConfigManager.cc \
 	ConfigManager.h \
-	DerivativeMetrics.cc \
-	DerivativeMetrics.h \
 	WebMgmtUtils.cc \
 	WebMgmtUtils.h
 

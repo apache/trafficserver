@@ -45,5 +45,5 @@ dist_bodyfactory_DATA = \
 	timeout\#inactivity \
 	transcoding\#unsupported \
 	urlrouting\#no_mapping \
-        request\#uri_len_too_long
+	request\#uri_len_too_long
 
