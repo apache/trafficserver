@@ -365,6 +365,7 @@ SSLConfigParams::initialize()
             verify_server);
     verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
   }
+  ats_free(verify_server);
 
   REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.properties");
   if (strcmp(verify_server, "SIGNATURE") == 0) {
