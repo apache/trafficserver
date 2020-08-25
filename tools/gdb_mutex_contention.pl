@@ -60,6 +60,7 @@ sub usage() {
 
   # Grab the binary from the running pid
   my $binary = `ps --pid $pid -o command -h`;
+  $binary = (split(' ', $binary))[0];
   chomp $binary;
 
   # Print out what we are going to run gdb on
