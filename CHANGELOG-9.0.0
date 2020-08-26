@@ -1053,4 +1053,13 @@ Changes with Apache Traffic Server 9.0.0
   #7110 - Add QUIC draft-29 support
   #7113 - Updating our autest suite to require Python3.6
   #7118 - Backing out my update of our jenkin's autest file.
+  #7120 - Check VIO availability before checking whether the VIO has data
   #7122 - Make tls_hooks tests more likely to pass particularly for 9.0.x branch
+  #7123 - Accept NAT rebinding on a QUIC connection
+  #7124 - Update and run the autopep8 make target
+  #7125 - SSLConfig mem leak fix
+  #7126 - Replaces "smart" quotes with ASCII equivalents
+  #7128 - Protect TSActionCancel from null INKContInternal actions
+  #7129 - Comment out a wrong assertion in QUIC Loss Detection logic
+  #7137 - Removes duplicated listing of files in same Makefile target
+  #7140 - Fixes garbled logs when using %<vbn> log tag
