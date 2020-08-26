@@ -2350,12 +2350,6 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
   QUICConnectionId dcid         = p.destination_cid();
 
   if (this->netvc_context == NET_VCONNECTION_IN) {
-    if (!this->_alt_con_manager->is_ready_to_migrate()) {
-      // TODO: Should endpoint send connection error when remote endpoint doesn't send NEW_CONNECTION_ID frames before initiating
-      // connection migration ?
-      QUICConDebug("Ignore connection migration - remote endpoint initiated CM before sending NEW_CONNECTION_ID frames");
-      return error;
-    }
     QUICConDebug("Connection migration is initiated by remote");
   }
 
@@ -2376,6 +2370,11 @@ QUICNetVConnection::_state_connection_established_migrate_connection(const QUICP
     }
   } else {
     QUICConDebug("Different CID");
+    if (!this->_alt_con_manager->is_ready_to_migrate()) {
+      QUICConDebug("Ignore connection migration - remote endpoint initiated CM before sending NEW_CONNECTION_ID frames");
+      return error;
+    }
+
     if (this->_alt_con_manager->migrate_to(dcid, this->_reset_token)) {
       // DCID of received packet is local cid
       this->_update_local_cid(dcid);
