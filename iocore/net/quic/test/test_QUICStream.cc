@@ -836,3 +836,22 @@ TEST_CASE("QUIC send only stream", "[quic]")
     CHECK(frame->type() == QUICFrameType::RESET_STREAM);
   }
 }
+
+TEST_CASE("will_generate_frame", "[quic]")
+{
+  SECTION("Return false if a stream has not initialized for IO")
+  {
+    QUICRTTMeasure rtt_provider;
+    MockQUICConnectionInfoProvider cinfo_provider;
+
+    std::unique_ptr<QUICBidirectionalStream> stream_bidi(
+      new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, 0, 1024, 1024));
+    CHECK(stream_bidi->will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, 0) == false);
+
+    std::unique_ptr<QUICSendStream> stream_uni1(new QUICSendStream(&cinfo_provider, 2, 1024));
+    CHECK(stream_uni1->will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, 0) == false);
+
+    std::unique_ptr<QUICReceiveStream> stream_uni2(new QUICReceiveStream(&rtt_provider, &cinfo_provider, 3, 1024));
+    CHECK(stream_uni2->will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, 0) == false);
+  }
+}
