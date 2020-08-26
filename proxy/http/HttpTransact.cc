@@ -866,6 +866,15 @@ HttpTransact::TooEarly(State *s)
 }
 
 void
+HttpTransact::OriginDead(State *s)
+{
+  TxnDebug("http_trans", "origin server is marked down");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+}
+
+void
 HttpTransact::HandleBlindTunnel(State *s)
 {
   URL u;
@@ -3775,6 +3784,8 @@ HttpTransact::handle_response_from_server(State *s)
       // server not yet negative cached - use default number of retries
       max_connect_retries = s->txn_conf->connect_attempts_max_retries;
     }
+
+    TxnDebug("http_trans", "max_connect_retries: %d s->current.attempts: %d", max_connect_retries, s->current.attempts);
 
     if (is_request_retryable(s) && s->current.attempts < max_connect_retries) {
       // If this is a round robin DNS entry & we're tried configured
