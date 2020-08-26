@@ -6820,11 +6820,20 @@ TSActionCancel(TSAction actionp)
   Action *thisaction;
   INKContInternal *i;
 
+  // Nothing to cancel
+  if (actionp == nullptr) {
+    return;
+  }
+
   /* This is a hack. Should be handled in ink_types */
   if ((uintptr_t)actionp & 0x1) {
     thisaction = (Action *)((uintptr_t)actionp - 1);
-    i          = (INKContInternal *)thisaction->continuation;
-    i->handle_event_count(EVENT_IMMEDIATE);
+    if (thisaction) {
+      i = (INKContInternal *)thisaction->continuation;
+      i->handle_event_count(EVENT_IMMEDIATE);
+    } else { // The action pointer for an INKContInternal was effectively null, just go away
+      return;
+    }
   } else {
     thisaction = (Action *)actionp;
   }
