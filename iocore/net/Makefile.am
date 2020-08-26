@@ -86,7 +86,7 @@ test_UDPNet_SOURCES = \
 	test_I_UDPNet.cc
 
 libinknet_a_SOURCES = \
-        ALPNSupport.cc \
+	ALPNSupport.cc \
 	BIO_fastopen.cc \
 	BIO_fastopen.h \
 	Connection.cc \
@@ -103,7 +103,7 @@ libinknet_a_SOURCES = \
 	YamlSNIConfig.cc \
 	Net.cc \
 	NetVConnection.cc \
-        P_ALPNSupport.h \
+	P_ALPNSupport.h \
 	P_SNIActionPerformer.h \
 	P_CompletionUtil.h \
 	P_Connection.h \
@@ -122,7 +122,6 @@ libinknet_a_SOURCES = \
 	P_SSLUtils.h \
 	P_SSLClientUtils.h \
 	P_OCSPStapling.h \
-	P_Socks.h \
 	P_UDPConnection.h \
 	P_UDPIOEvent.h \
 	P_UDPNet.h \
@@ -153,7 +152,6 @@ libinknet_a_SOURCES = \
 	SSLSessionTicket.cc \
 	SSLUtils.cc \
 	OCSPStapling.cc \
-	Socks.cc \
 	TLSSessionResumptionSupport.cc \
 	UDPIOEvent.cc \
 	UnixConnection.cc \
