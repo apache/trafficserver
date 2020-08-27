@@ -133,7 +133,7 @@ In the ``TS_CACHE_OPEN_READ`` handler:
 .. code-block:: c
 
     cache_vconnp = (TSVConn) data;
-        TSVConnCacheObjectSizeGet (cache_vconnp, &content_length);
+        content_length = TSVConnCacheObjectSizeGet (cache_vconnp);
         cache_vio = TSVConnRead (cache_vconn, contp, cache_bufp, content_length);
 
 In the ``TS_EVENT_VCONN_READ_READY`` handler:
