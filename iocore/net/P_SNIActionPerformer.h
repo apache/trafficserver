@@ -193,17 +193,21 @@ private:
 class VerifyClient : public ActionItem
 {
   uint8_t mode;
+  X509_STORE *ca_certs; // owning pointer.
 
 public:
-  VerifyClient(const char *param) : mode(atoi(param)) {}
-  VerifyClient(uint8_t param) : mode(param) {}
-  ~VerifyClient() override {}
+  VerifyClient(uint8_t param, X509_STORE *st = nullptr) : mode(param), ca_certs(st) {}
+  VerifyClient(const char *param, X509_STORE *st = nullptr) : VerifyClient(atoi(param), st) {}
+  ~VerifyClient() override;
   int
   SNIAction(Continuation *cont, const Context &ctx) const override
   {
     auto ssl_vc = dynamic_cast<SSLNetVConnection *>(cont);
     Debug("ssl_sni", "action verify param %d", this->mode);
     setClientCertLevel(ssl_vc->ssl, this->mode);
+    if (ca_certs) {
+      setClientCertCACerts(ssl_vc->ssl, ca_certs);
+    }
     return SSL_TLSEXT_ERR_OK;
   }
   bool
@@ -212,6 +216,10 @@ public:
     // This action is triggered by a SNI if it was set
     return true;
   }
+
+  // No copying or moving.
+  VerifyClient(VerifyClient const &) = delete;
+  VerifyClient &operator=(VerifyClient const &) = delete;
 };
 
 class HostSniPolicy : public ActionItem

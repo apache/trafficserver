@@ -69,10 +69,21 @@ verify_server_properties  One of the values :code:`NONE`, :code:`SIGNATURE`, :co
 verify_client             One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
                           If ``NONE`` is specified, |TS| requests no certificate.  If ``MODERATE`` is specified
                           |TS| will verify a certificate that is presented by the client, but it will not
-                          fail the TLS handshake if new certificate is presented.  If ``STRICT`` is specified
+                          fail the TLS handshake if no certificate is presented.  If ``STRICT`` is specified
                           the client must resent a certificate during the TLS handshake.
 
                           By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
+
+verify_client_ca_certs    Specifies an alternate set of certificate authority certs to use to verify the
+                          client cert.  The value must be either a file path, or a nested set of key /
+                          value pairs.  If the value is a file path, it must specify a file containing the
+                          CA certs.  Otherwise, there should be up to two nested pairs.  The possible keys
+                          are ``file`` and ``dir``.  The value for ``file`` must be a file path for a file
+                          containing CA certs.  The value for ``dir`` must be a file path for an OpenSSL
+                          X509 hashed directory containing CA certs.  If a given file path does not being
+                          with ``/`` , it must be relative to the |TS| configuration directory.
+                          ``verify_client_ca_certs`` can only be used with capbilities provided by
+                          OpenSSL 1.0.2 or later.
 
 host_sni_policy           One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
