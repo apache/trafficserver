@@ -451,7 +451,7 @@ update_cache_control_information_from_config(HttpTransact::State *s)
   }
 }
 
-inline bool
+bool
 HttpTransact::is_server_negative_cached(State *s)
 {
   if (s->host_db_info.app.http_data.last_failure != 0 &&
