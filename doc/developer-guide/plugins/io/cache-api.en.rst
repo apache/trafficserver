@@ -115,7 +115,7 @@ Example
 In the example below, suppose there is a cache hit and the cache returns
 a vconnection that enables you to read the document from cache. To do
 this, you need to prepare a buffer (``cache_bufp``) to hold the
-document; meanwhile, use ``TSVConnCachedObjectSizeGet`` to find out the
+document; meanwhile, use ``TSVConnCacheObjectSizeGet`` to find out the
 actual size of the document (``content_length``). Then, issue
 ``TSVConnRead`` to read the document with the total data length required
 as ``content_length``. Assume the following data:
@@ -133,7 +133,7 @@ In the ``TS_CACHE_OPEN_READ`` handler:
 .. code-block:: c
 
     cache_vconnp = (TSVConn) data;
-        TSVConnCachedObjectSizeGet (cache_vconnp, &content_length);
+        content_length = TSVConnCacheObjectSizeGet (cache_vconnp);
         cache_vio = TSVConnRead (cache_vconn, contp, cache_bufp, content_length);
 
 In the ``TS_EVENT_VCONN_READ_READY`` handler:
