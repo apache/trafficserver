@@ -48,7 +48,7 @@ bool
 PromotionConfig::factory(int argc, char *argv[])
 {
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "psbhe", longopt, nullptr);
+    int opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
 
     if (opt == -1) {
       break;
