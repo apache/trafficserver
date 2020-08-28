@@ -129,6 +129,7 @@ QUICFlowController::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint
         *(reinterpret_cast<QUICOffset *>(info->data)) = this->_limit;
         this->_records_frame(frame->id(), std::move(info));
       } else {
+        frame->~QUICFrame();
         frame = nullptr;
       }
     }
