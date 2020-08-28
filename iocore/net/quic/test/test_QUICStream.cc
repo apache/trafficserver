@@ -843,15 +843,19 @@ TEST_CASE("will_generate_frame", "[quic]")
   {
     QUICRTTMeasure rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
+    uint8_t buf[128];
 
     std::unique_ptr<QUICBidirectionalStream> stream_bidi(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, 0, 1024, 1024));
     CHECK(stream_bidi->will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, 0) == false);
+    CHECK(stream_bidi->generate_frame(buf, QUICEncryptionLevel::ONE_RTT, 1024, 1024, 0, 0) == nullptr);
 
     std::unique_ptr<QUICSendStream> stream_uni1(new QUICSendStream(&cinfo_provider, 2, 1024));
     CHECK(stream_uni1->will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, 0) == false);
+    CHECK(stream_uni1->generate_frame(buf, QUICEncryptionLevel::ONE_RTT, 1024, 1024, 0, 0) == nullptr);
 
     std::unique_ptr<QUICReceiveStream> stream_uni2(new QUICReceiveStream(&rtt_provider, &cinfo_provider, 3, 1024));
     CHECK(stream_uni2->will_generate_frame(QUICEncryptionLevel::ONE_RTT, 0, false, 0) == false);
+    CHECK(stream_uni2->generate_frame(buf, QUICEncryptionLevel::ONE_RTT, 1024, 1024, 0, 0) == nullptr);
   }
 }
