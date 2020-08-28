@@ -188,6 +188,8 @@ SSLInitializeStatistics()
                      (int)ssl_error_read_eos, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_ssl", RECD_COUNTER, RECP_PERSISTENT, (int)ssl_error_ssl,
                      RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_async", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_error_async, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_sni_name_set_failure", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_sni_name_set_failure, RecRawStatSyncCount);
 

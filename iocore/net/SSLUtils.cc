@@ -918,6 +918,7 @@ SSLMultiCertConfigLoader::default_server_ssl_ctx()
 static bool
 SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::string &completeServerCertPath, const char *keyPath)
 {
+  EVP_PKEY *pkey = nullptr;
 #ifndef OPENSSL_IS_BORINGSSL
   ENGINE *e = ENGINE_get_default_RSA();
   if (e != nullptr) {
@@ -927,36 +928,40 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::str
     } else {
       argkey = Layout::get()->relative_to(params->serverKeyPathOnly, keyPath);
     }
-    if (!SSL_CTX_use_PrivateKey(ctx, ENGINE_load_private_key(e, argkey, nullptr, nullptr))) {
-      SSLError("failed to load server private key from engine");
+    pkey = ENGINE_load_private_key(e, argkey.get(), nullptr, nullptr);
+    if (pkey) {
+      if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
+        SSLError("failed to load server private key from engine");
+      }
     }
+  }
 #else
   ENGINE *e = nullptr;
-  if (false) {
 #endif
-  } else if (!keyPath || keyPath[0] == '\0') {
-    // assume private key is contained in cert obtained from multicert file.
-    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath.c_str(), SSL_FILETYPE_PEM)) {
-      SSLError("failed to load server private key from %s", completeServerCertPath.c_str());
+  if (pkey == nullptr) {
+    if (!keyPath || keyPath[0] == '\0') {
+      // assume private key is contained in cert obtained from multicert file.
+      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath.c_str(), SSL_FILETYPE_PEM)) {
+        SSLError("failed to load server private key from %s", completeServerCertPath.c_str());
+        return false;
+      }
+    } else if (params->serverKeyPathOnly != nullptr) {
+      ats_scoped_str completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
+      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
+        SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
+        return false;
+      }
+      if (SSLConfigParams::load_ssl_file_cb) {
+        SSLConfigParams::load_ssl_file_cb(completeServerKeyPath);
+      }
+    } else {
+      SSLError("empty SSL private key path in %s", ts::filename::RECORDS);
       return false;
     }
-  } else if (params->serverKeyPathOnly != nullptr) {
-    ats_scoped_str completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
-    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
+    if (!SSL_CTX_check_private_key(ctx)) {
+      SSLError("server private key does not match the certificate public key");
       return false;
     }
-    if (SSLConfigParams::load_ssl_file_cb) {
-      SSLConfigParams::load_ssl_file_cb(completeServerKeyPath);
-    }
-  } else {
-    SSLError("empty SSL private key path in %s", ts::filename::RECORDS);
-    return false;
-  }
-
-  if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
-    SSLError("server private key does not match the certificate public key");
-    return false;
   }
 
   return true;
