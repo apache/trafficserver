@@ -1586,6 +1586,10 @@ HostDBContinuation::set_check_pending_dns()
 {
   Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
   this->setThreadAffinity(this_ethread());
+  if (q.in(this)) {
+    Warning("Skip the insertion of the same continuation to pending dns");
+    return false;
+  }
   HostDBContinuation *c = q.head;
   for (; c; c = static_cast<HostDBContinuation *>(c->link.next)) {
     if (hash.hash == c->hash.hash) {
