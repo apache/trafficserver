@@ -52,7 +52,9 @@ struct Channel {
       int64_t const avail = TSIOBufferReaderAvail(m_reader);
       TSIOBufferReaderConsume(m_reader, avail);
       consumed = avail;
-      TSVIONDoneSet(m_vio, TSVIONDoneGet(m_vio) + consumed);
+      if (nullptr != m_vio) {
+        TSVIONDoneSet(m_vio, TSVIONDoneGet(m_vio) + consumed);
+      }
     }
 
     return consumed;
