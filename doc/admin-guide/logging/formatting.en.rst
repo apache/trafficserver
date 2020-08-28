@@ -564,7 +564,8 @@ were in effect for a given event.
 ===== ===================== ===================================================
 Field Source                Description
 ===== ===================== ===================================================
-cqhv  Client Request        Client request HTTP version.
+cqhv  Client Request        Client request HTTP version. Deprecated since 9.0.
+                            Use ``cqpv`` instead.
 cqpv  Client Request        Client request protocol and version.
 csshv Cached Proxy Response Origin server's HTTP version from cached version of
                             the document in |TS| proxy cache.
