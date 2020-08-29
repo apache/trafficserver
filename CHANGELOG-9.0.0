@@ -1054,6 +1054,7 @@ Changes with Apache Traffic Server 9.0.0
   #7113 - Updating our autest suite to require Python3.6
   #7118 - Backing out my update of our jenkin's autest file.
   #7120 - Check VIO availability before checking whether the VIO has data
+  #7121 - Don't return QUIC frame if the size exceeds maximum frame size
   #7122 - Make tls_hooks tests more likely to pass particularly for 9.0.x branch
   #7123 - Accept NAT rebinding on a QUIC connection
   #7124 - Update and run the autopep8 make target
@@ -1062,4 +1063,6 @@ Changes with Apache Traffic Server 9.0.0
   #7128 - Protect TSActionCancel from null INKContInternal actions
   #7129 - Comment out a wrong assertion in QUIC Loss Detection logic
   #7137 - Removes duplicated listing of files in same Makefile target
+  #7138 - Remove useless shortopt
   #7140 - Fixes garbled logs when using %<vbn> log tag
+  #7145 - Check VIO availability before acquiring a lock for it
