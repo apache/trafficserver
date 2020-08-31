@@ -932,11 +932,10 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::str
     if (pkey) {
       if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
         SSLError("failed to load server private key from engine");
+        return false;
       }
     }
   }
-#else
-  ENGINE *e = nullptr;
 #endif
   if (pkey == nullptr) {
     if (!keyPath || keyPath[0] == '\0') {

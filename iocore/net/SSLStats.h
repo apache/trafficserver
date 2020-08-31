@@ -90,7 +90,6 @@ enum SSL_Stats {
   ssl_error_syscall,
   ssl_error_read_eos,
   ssl_error_ssl,
-  ssl_error_async,
   ssl_sni_name_set_failure,
   ssl_total_attempts_handshake_count_out_stat,
   ssl_total_success_handshake_count_out_stat,
