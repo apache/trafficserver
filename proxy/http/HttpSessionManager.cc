@@ -127,7 +127,7 @@ ServerSessionPool::validate_cert(HttpSM *sm, NetVConnection *netvc)
   // a new connection.
   //
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
-    const char *session_cert       = netvc->options.ssl_client_cert_name;
+    const char *session_cert       = netvc->options.ssl_client_cert_name.get();
     std::string_view proposed_cert = sm->get_outbound_cert();
     Debug("http_ss", "validate_cert proposed_cert=%.*s, cert=%s", static_cast<int>(proposed_cert.size()), proposed_cert.data(),
           session_cert);

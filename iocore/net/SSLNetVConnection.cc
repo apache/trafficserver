@@ -1068,7 +1068,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
       // First Look to see if there are override parameters
       if (options.ssl_client_cert_name) {
-        std::string certFilePath = Layout::get()->relative_to(params->clientCertPathOnly, options.ssl_client_cert_name);
+        std::string certFilePath = Layout::get()->relative_to(params->clientCertPathOnly, options.ssl_client_cert_name.get());
         std::string keyFilePath;
         if (options.ssl_client_private_key_name) {
           keyFilePath = Layout::get()->relative_to(params->clientKeyPathOnly, options.ssl_client_private_key_name);
