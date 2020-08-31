@@ -83,6 +83,11 @@ SSL/TLS
 .. ts:stat:: global proxy.process.ssl.ssl_error_syscall integer
    :type: counter
 
+.. ts:stat:: global proxy.process.ssl.ssl_error_async integer
+   :type: counter
+
+   Track the number of times openssl async jobs paused.
+
 .. ts:stat:: global proxy.process.ssl.ssl_session_cache_eviction integer
    :type: counter
 
