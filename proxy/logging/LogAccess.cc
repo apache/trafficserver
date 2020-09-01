@@ -1220,7 +1220,7 @@ LogAccess::marshal_cache_lookup_url_canon(char *buf)
 int
 LogAccess::marshal_version_build_number(char *buf)
 {
-  int len = sizeof(appVersionInfo.BldNumStr);
+  int len = LogAccess::strlen(appVersionInfo.BldNumStr);
   if (buf) {
     marshal_str(buf, appVersionInfo.BldNumStr, len);
   }
