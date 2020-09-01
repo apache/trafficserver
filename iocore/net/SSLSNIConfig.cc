@@ -64,8 +64,10 @@ SNIConfigParams::loadSNIConfig()
     auto wildcard = w_Matcher.match(servername);
 
     // set SNI based actions to be called in the ssl_servername_only callback
-    auto ai1 = new DisableH2();
-    aiVec->push_back(ai1);
+    if (item.disable_h2) {
+      aiVec->push_back(new DisableH2);
+    }
+
     auto ai2 = new VerifyClient(item.verify_client_level);
     aiVec->push_back(ai2);
     if (wildcard) {
