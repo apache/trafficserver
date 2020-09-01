@@ -406,7 +406,9 @@ OperatorSetRedirect::exec(const Resources &res) const
     const char *end   = value.size() + start;
     if (remap) {
       // Set new location.
-      TSUrlParse(bufp, url_loc, &start, end);
+      if (TS_PARSE_ERROR == TSUrlParse(bufp, url_loc, &start, end)) {
+        TSDebug(PLUGIN_NAME, "Could not set Location field value to: %s", value.c_str());
+      }
       // Set the new status.
       TSHttpTxnStatusSet(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
       const_cast<Resources &>(res).changed_url = true;

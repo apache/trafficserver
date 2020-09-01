@@ -398,8 +398,8 @@ tsapi int TSUrlLengthGet(TSMBuffer bufp, TSMLoc offset);
     string in the parameter length. This is the same length that
     TSUrlLengthGet() returns. The returned string is allocated by a
     call to TSmalloc(). It should be freed by a call to TSfree().
-    The length parameter must present, providing storage for the URL
-    string length value.
+    The length parameter must be present, providing storage for the
+    URL string length value.
     Note: To get the effective URL from a request, use the alternative
           TSHttpTxnEffectiveUrlStringGet or
           TSHttpHdrEffectiveUrlBufGet APIs.

@@ -290,10 +290,11 @@ url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, Hdr
 {
   url_nuke_proxy_stuff(d_url);
 
-  d_url->m_ptr_path     = s_url->m_ptr_path;
-  d_url->m_ptr_params   = s_url->m_ptr_params;
-  d_url->m_ptr_query    = s_url->m_ptr_query;
-  d_url->m_ptr_fragment = s_url->m_ptr_fragment;
+  d_url->m_ptr_path      = s_url->m_ptr_path;
+  d_url->m_path_is_empty = s_url->m_path_is_empty;
+  d_url->m_ptr_params    = s_url->m_ptr_params;
+  d_url->m_ptr_query     = s_url->m_ptr_query;
+  d_url->m_ptr_fragment  = s_url->m_ptr_fragment;
   url_clear_string_ref(d_url);
 
   d_url->m_len_path     = s_url->m_len_path;
@@ -827,9 +828,13 @@ url_length_get(URLImpl *url)
   }
 
   if (url->m_ptr_path) {
-    length += url->m_len_path + 1; // +1 for /
-  } else {
-    length += 1; // +1 for /
+    length += url->m_len_path;
+  }
+
+  if (!url->m_path_is_empty) {
+    // m_ptr_path does not contain the initial "/" and thus m_len_path does not
+    // count it. We account for it here.
+    length += 1; // +1 for "/"
   }
 
   if (url->m_ptr_params && url->m_len_params > 0) {
@@ -1185,25 +1190,29 @@ url_is_strictly_compliant(const char *start, const char *end)
 using namespace UrlImpl;
 
 ParseResult
-url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, bool strict_uri_parsing)
+url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, bool strict_uri_parsing,
+          bool verify_host_characters)
 {
   if (strict_uri_parsing && !url_is_strictly_compliant(*start, end)) {
     return PARSE_RESULT_ERROR;
   }
 
   ParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
-  return PARSE_RESULT_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p) : zret;
+  return PARSE_RESULT_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p, verify_host_characters) : zret;
 }
 
 ParseResult
-url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p)
+url_parse_regex(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p)
 {
   ParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
-  return PARSE_RESULT_CONT == zret ? url_parse_http_no_path_component_breakdown(heap, url, start, end, copy_strings_p) : zret;
+  return PARSE_RESULT_CONT == zret ? url_parse_http_regex(heap, url, start, end, copy_strings_p) : zret;
 }
 
 /**
   Parse internet URL.
+
+  After this function completes, start will point to the first character after the
+  host or @a end if there are not characters after it.
 
   @verbatim
   [://][user[:password]@]host[:port]
@@ -1219,7 +1228,8 @@ url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **
 */
 
 ParseResult
-url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *end, bool copy_strings_p)
+url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *end, bool copy_strings_p,
+                   bool verify_host_characters)
 {
   const char *cur = *start;
   const char *base;              // Base for host/port field.
@@ -1296,8 +1306,14 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
       bracket = cur; // location and flag.
       ++cur;
       break;
-    case '/':    // we're done with this phase.
-      end = cur; // cause loop exit
+    // RFC 3986, section 3.2:
+    // The authority component is ...  terminated by the next slash ("/"),
+    // question mark ("?"), or number sign ("#") character, or by the end of
+    // the URI.
+    case '/':
+    case '?':
+    case '#':
+      end = cur; // We're done parsing authority, cause loop exit.
       break;
     default:
       ++cur;
@@ -1324,7 +1340,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     }
   }
   if (host._size) {
-    if (validate_host_name(std::string_view(host._ptr, host._size))) {
+    if (!verify_host_characters || validate_host_name(std::string_view(host._ptr, host._size))) {
       url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
     } else {
       return PARSE_RESULT_ERROR;
@@ -1339,9 +1355,6 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
     }
     url_port_set(heap, url, port._ptr, port._size, copy_strings_p);
   }
-  if ('/' == *cur) {
-    ++cur; // must do this after filling in host/port.
-  }
   *start = cur;
   return PARSE_RESULT_DONE;
 }
@@ -1352,7 +1365,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
 // empties params/query/fragment component
 
 ParseResult
-url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings)
+url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings, bool verify_host_characters)
 {
   ParseResult err;
   const char *cur;
@@ -1366,18 +1379,28 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
   const char *fragment_end   = nullptr;
   char mask;
 
-  err = url_parse_internet(heap, url, start, end, copy_strings);
+  err = url_parse_internet(heap, url, start, end, copy_strings, verify_host_characters);
   if (err < 0) {
     return err;
   }
 
   cur = *start;
+  if (url->m_ptr_host == nullptr && ((end - cur) >= 2) && '/' == *cur && '/' == *(cur + 1)) {
+    // RFC 3986 section-3.3:
+    // If a URI does not contain an authority component, then the path cannot
+    // begin with two slash characters ("//").
+    return PARSE_RESULT_ERROR;
+  }
+  bool nothing_after_host = false;
   if (*start == end) {
+    nothing_after_host = true;
     goto done;
   }
 
-  path_start = cur;
-  mask       = ';' & '?' & '#';
+  if (*cur == '/') {
+    path_start = cur;
+  }
+  mask = ';' & '?' & '#';
 parse_path2:
   if ((*cur & mask) == mask) {
     if (*cur == ';') {
@@ -1431,10 +1454,42 @@ parse_fragment1:
 
 done:
   if (path_start) {
+    // There was an explicit path set with '/'.
     if (!path_end) {
       path_end = cur;
     }
+    if (path_start == path_end) {
+      url->m_path_is_empty = true;
+    } else {
+      url->m_path_is_empty = false;
+      // Per RFC 3986 section 3, the query string does not contain the initial
+      // '?' nor does the fragment contain the initial '#'. The path however
+      // does contain the initial '/' and a path can be empty, containing no
+      // characters at all, not even the initial '/'. Our path_get interface,
+      // however, has long not behaved accordingly, returning only the
+      // characters after the first '/'. This does not allow users to tell
+      // whether the path was absolutely empty. Further, callers have to
+      // account for the missing first '/' character themselves, either in URL
+      // length calculations or when piecing together their own URL. There are
+      // various examples of this in core and in the plugins shipped with Traffic
+      // Server.
+      //
+      // Correcting this behavior by having path_get return the entire path,
+      // (inclusive of any first '/') and an empty string if there were no
+      // characters specified in the path would break existing functionality,
+      // including various plugins that expect this behavior. Rather than
+      // correcting this behavior, therefore, we maintain the current
+      // functionality but add state to determine whether the path was
+      // absolutely empty so we can reconstruct such URLs.
+      ++path_start;
+    }
     url_path_set(heap, url, path_start, path_end - path_start, copy_strings);
+  } else if (!nothing_after_host) {
+    // There was no path set via '/': it is absolutely empty. However, if there
+    // is no path, query, or fragment after the host, we by convention add a
+    // slash after the authority.  Users of URL expect this behavior. Thus the
+    // nothing_after_host check.
+    url->m_path_is_empty = true;
   }
   if (params_start) {
     if (!params_end) {
@@ -1443,12 +1498,14 @@ done:
     url_params_set(heap, url, params_start, params_end - params_start, copy_strings);
   }
   if (query_start) {
+    // There was a query string marked by '?'.
     if (!query_end) {
       query_end = cur;
     }
     url_query_set(heap, url, query_start, query_end - query_start, copy_strings);
   }
   if (fragment_start) {
+    // There was a fragment string marked by '#'.
     if (!fragment_end) {
       fragment_end = cur;
     }
@@ -1460,7 +1517,7 @@ done:
 }
 
 ParseResult
-url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings)
+url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings)
 {
   const char *cur = *start;
   const char *host_end;
@@ -1572,8 +1629,9 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     }
   }
 
-  TRY(mime_mem_print("/", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-
+  if (!url->m_path_is_empty) {
+    TRY(mime_mem_print("/", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+  }
   if (url->m_ptr_path) {
     TRY(mime_mem_print(url->m_ptr_path, url->m_len_path, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }

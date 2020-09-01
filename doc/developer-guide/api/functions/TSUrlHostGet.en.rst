@@ -51,7 +51,7 @@ and retrieve or modify parts of URLs, such as their host, port or scheme
 information.
 
 :func:`TSUrlSchemeGet`, :func:`TSUrlUserGet`, :func:`TSUrlPasswordGet`,
-:func:`TSUrlHostGet`, :func:`TSUrlHttpParamsGet`, :func:`TSUrlHttpQueryGet`
+:func:`TSUrlHostGet`, :func:`TSUrlPathGet`, :func:`TSUrlHttpParamsGet`, :func:`TSUrlHttpQueryGet`
 and :func:`TSUrlHttpFragmentGet` each retrieve an internal pointer to the
 specified portion of the URL from the marshall buffer :arg:`bufp`. The length
 of the returned string is placed in :arg:`length` and a pointer to the URL
