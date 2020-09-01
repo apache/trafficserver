@@ -1086,12 +1086,13 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     }
 
     new_mapping->fromURL.create(nullptr);
-    rparse = new_mapping->fromURL.parse_no_path_component_breakdown(tmp, length);
+    rparse = new_mapping->fromURL.parse_regex(tmp, length);
 
     map_from_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_RESULT_DONE) {
-      errStr = "malformed From URL";
+      snprintf(errStrBuf, sizeof(errStrBuf), "malformed From URL: %.*s", length, tmp);
+      errStr = errStrBuf;
       goto MAP_ERROR;
     }
 
@@ -1101,11 +1102,12 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     tmp          = map_to;
 
     new_mapping->toURL.create(nullptr);
-    rparse                   = new_mapping->toURL.parse_no_path_component_breakdown(tmp, length);
+    rparse                   = new_mapping->toURL.parse_no_host_check(std::string_view(tmp, length));
     map_to_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_RESULT_DONE) {
-      errStr = "malformed To URL";
+      snprintf(errStrBuf, sizeof(errStrBuf), "malformed To URL: %.*s", length, tmp);
+      errStr = errStrBuf;
       goto MAP_ERROR;
     }
 

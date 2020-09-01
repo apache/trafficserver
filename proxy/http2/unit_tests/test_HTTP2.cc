@@ -64,7 +64,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
       MIMEField *f = hdr_1.field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
-      CHECK(v.compare("GET") == 0);
+      CHECK(v == "GET");
     }
 
     // :scheme
@@ -72,7 +72,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
       MIMEField *f = hdr_1.field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
-      CHECK(v.compare("https") == 0);
+      CHECK(v == "https");
     }
 
     // :authority
@@ -80,7 +80,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
       MIMEField *f = hdr_1.field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
-      CHECK(v.compare("trafficserver.apache.org") == 0);
+      CHECK(v == "trafficserver.apache.org");
     }
 
     // :path
@@ -88,7 +88,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
       MIMEField *f = hdr_1.field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
-      CHECK(v.compare("/index.html") == 0);
+      CHECK(v == "/index.html");
     }
 
     // convert to HTTP/1.1
@@ -138,7 +138,7 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
       MIMEField *f = hdr_1.field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS);
       REQUIRE(f != nullptr);
       std::string_view v = f->value_get();
-      CHECK(v.compare("200") == 0);
+      CHECK(v == "200");
     }
 
     // no connection header

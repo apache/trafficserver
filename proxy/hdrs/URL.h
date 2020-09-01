@@ -74,7 +74,9 @@ struct URLImpl : public HdrHeapObjImpl {
   // 6 bytes
 
   uint32_t m_clean : 1;
-  // 8 bytes + 1 bit, will result in padding
+  /// Whether the URI had an absolutely empty path, not even an initial '/'.
+  uint32_t m_path_is_empty : 1;
+  // 8 bytes + 2 bits, will result in padding
 
   // Marshaling Functions
   int marshal(MarshalXlate *str_xlate, int num_xlate);
@@ -194,14 +196,19 @@ void url_params_set(HdrHeap *heap, URLImpl *url, const char *value, int length, 
 void url_query_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 void url_fragment_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 
+constexpr bool USE_STRICT_URI_PARSING = true;
+
 ParseResult url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings,
-                      bool strict_uri_parsing = false);
-ParseResult url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
-                                                  bool copy_strings);
-ParseResult url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
-ParseResult url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
-ParseResult url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
-                                                       bool copy_strings);
+                      bool strict_uri_parsing = false, bool verify_host_characters = true);
+
+constexpr bool COPY_STRINGS = true;
+
+ParseResult url_parse_regex(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
+ParseResult url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings,
+                               bool verify_host_characters);
+ParseResult url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings,
+                           bool verify_host_characters);
+ParseResult url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
 
 char *url_unescapify(Arena *arena, const char *str, int length);
 
@@ -276,15 +283,48 @@ public:
   const char *fragment_get(int *length);
   void fragment_set(const char *value, int length);
 
+  /**
+   * Parse the given URL string and populate URL state with the parts.
+   *
+   * @param[in] url The URL to parse.
+   *
+   * @return PARSE_RESULT_DONE if parsing was successful, PARSE_RESULT_ERROR
+   * otherwise.
+   */
+  ParseResult parse(std::string_view url);
+
+  /** Same as parse() but do not verify that the host has proper FQDN
+   * characters.
+   *
+   * This is useful for RemapConfig To targets which have "$[0-9]" references
+   * in their host names which will later be substituted for other text.
+   */
+  ParseResult parse_no_host_check(std::string_view url);
+
   ParseResult parse(const char **start, const char *end);
   ParseResult parse(const char *str, int length);
-  ParseResult parse_no_path_component_breakdown(const char *str, int length);
+
+  /** Perform more simplified parsing that is resilient to receiving regular
+   * expressions.
+   *
+   * This simply looks for the first '/' in a URL and considers that the end of
+   * the authority and the beginning of the rest of the URL. This allows for
+   * the '?' character in an authority as a part of a regex without it being
+   * considered a query parameter and, thus, avoids confusing the parser.
+   *
+   * This is only used in RemapConfig and may have no other uses.
+   */
+  ParseResult parse_regex(std::string_view url);
+  ParseResult parse_regex(const char *str, int length);
 
 public:
   static char *unescapify(Arena *arena, const char *str, int length);
   // No gratuitous copies!
   URL(const URL &u) = delete;
   URL &operator=(const URL &u) = delete;
+
+private:
+  static constexpr bool VERIFY_HOST_CHARACTERS = true;
 };
 
 /*-------------------------------------------------------------------------
@@ -687,10 +727,35 @@ URL::fragment_set(const char *value, int length)
 
  */
 inline ParseResult
+URL::parse(std::string_view url)
+{
+  return this->parse(url.data(), static_cast<int>(url.size()));
+}
+
+/**
+  Parser doesn't clear URL first, so if you parse over a non-clear URL,
+  the resulting URL may contain some of the previous data.
+
+ */
+inline ParseResult
+URL::parse_no_host_check(std::string_view url)
+{
+  ink_assert(valid());
+  const char *start = url.data();
+  const char *end   = url.data() + url.length();
+  return url_parse(m_heap, m_url_impl, &start, end, COPY_STRINGS, !USE_STRICT_URI_PARSING, !VERIFY_HOST_CHARACTERS);
+}
+
+/**
+  Parser doesn't clear URL first, so if you parse over a non-clear URL,
+  the resulting URL may contain some of the previous data.
+
+ */
+inline ParseResult
 URL::parse(const char **start, const char *end)
 {
   ink_assert(valid());
-  return url_parse(m_heap, m_url_impl, start, end, true);
+  return url_parse(m_heap, m_url_impl, start, end, COPY_STRINGS);
 }
 
 /**
@@ -713,13 +778,26 @@ URL::parse(const char *str, int length)
 
  */
 inline ParseResult
-URL::parse_no_path_component_breakdown(const char *str, int length)
+URL::parse_regex(std::string_view url)
+{
+  ink_assert(valid());
+  const char *str = url.data();
+  return url_parse_regex(m_heap, m_url_impl, &str, str + url.length(), COPY_STRINGS);
+}
+
+/**
+  Parser doesn't clear URL first, so if you parse over a non-clear URL,
+  the resulting URL may contain some of the previous data.
+
+ */
+inline ParseResult
+URL::parse_regex(const char *str, int length)
 {
   ink_assert(valid());
   if (length < 0)
     length = (int)strlen(str);
   ink_assert(valid());
-  return url_parse_no_path_component_breakdown(m_heap, m_url_impl, &str, str + length, true);
+  return url_parse_regex(m_heap, m_url_impl, &str, str + length, COPY_STRINGS);
 }
 
 /*-------------------------------------------------------------------------
