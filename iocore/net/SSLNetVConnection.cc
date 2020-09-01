@@ -1364,6 +1364,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
 #if TS_USE_TLS_ASYNC
   case SSL_ERROR_WANT_ASYNC:
+    SSL_INCREMENT_DYN_STAT(ssl_error_async);
     return SSL_WAIT_FOR_ASYNC;
 #endif
 
