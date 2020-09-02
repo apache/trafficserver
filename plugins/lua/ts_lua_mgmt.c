@@ -101,6 +101,7 @@ ts_lua_mgmt_get_string(lua_State *L)
   name = luaL_checklstring(L, 1, &name_len);
   if (TS_SUCCESS == TSMgmtStringGet(name, &str_val)) {
     lua_pushstring(L, str_val);
+    TSfree(str_val);
     return 1;
   }
 
