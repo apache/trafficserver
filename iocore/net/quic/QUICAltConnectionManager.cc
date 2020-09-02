@@ -135,18 +135,15 @@ QUICAltConnectionManager::_init_alt_connection_ids()
   this->_need_advertise = true;
 }
 
-bool
+void
 QUICAltConnectionManager::_update_alt_connection_id(uint64_t chosen_seq_num)
 {
   for (int i = 0; i < this->_remote_active_cid_limit; ++i) {
     if (this->_alt_quic_connection_ids_local[i].seq_num == chosen_seq_num) {
       this->_alt_quic_connection_ids_local[i] = this->_generate_next_alt_con_info();
       this->_need_advertise                   = true;
-      return true;
     }
   }
-
-  return false;
 }
 
 QUICConnectionErrorUPtr
@@ -184,9 +181,11 @@ QUICAltConnectionManager::_retire_remote_connection_id(const QUICRetireConnectio
 {
   QUICConnectionErrorUPtr error = nullptr;
 
-  if (!this->_update_alt_connection_id(frame.seq_num())) {
+  if (frame.seq_num() > this->_alt_quic_connection_id_seq_num) {
     error = std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION, "received unused sequence number",
                                                   QUICFrameType::RETIRE_CONNECTION_ID);
+  } else {
+    this->_update_alt_connection_id(frame.seq_num());
   }
   return error;
 }
