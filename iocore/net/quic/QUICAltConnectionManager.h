@@ -110,7 +110,7 @@ private:
 
   AltConnectionInfo _generate_next_alt_con_info();
   void _init_alt_connection_ids();
-  bool _update_alt_connection_id(uint64_t chosen_seq_num);
+  void _update_alt_connection_id(uint64_t chosen_seq_num);
 
   void _records_new_connection_id_frame(QUICEncryptionLevel level, const QUICNewConnectionIdFrame &frame);
   void _records_retire_connection_id_frame(QUICEncryptionLevel, const QUICRetireConnectionIdFrame &frame);
