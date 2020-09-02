@@ -32,11 +32,13 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/http/remap \
 	-I$(abs_top_srcdir)/proxy/hdrs \
 	-I$(abs_top_srcdir)/proxy/shared \
+	-I$(abs_top_srcdir)/mgmt2 \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@ \
 	@BORINGOCSP_INCLUDES@
+	@YAMLCPP_INCLUDES@
 
 traffic_server_traffic_server_LDFLAGS = \
 	$(AM_LDFLAGS) \
@@ -82,6 +84,10 @@ traffic_server_traffic_server_LDADD = \
 	$(top_builddir)/iocore/net/libinknet.a \
 	$(top_builddir)/lib/records/librecords_p.a \
 	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/mgmt2/rpc/libjsonrpc_server.la \
+	$(top_builddir)/mgmt2/rpc/libjsonrpc_protocol.la \
+	$(top_builddir)/mgmt2/config/libconfigmanager.la \
+	$(top_builddir)/mgmt2/rpc/librpcpublichandlers.la \
 	@HWLOC_LIBS@ \
 	@LIBPCRE@ \
 	@LIBRESOLV@ \
