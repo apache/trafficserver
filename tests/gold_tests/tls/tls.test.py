@@ -24,9 +24,9 @@ Test tls
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
-# build test code
-tr = Test.Build(target='ssl-post', sources=['ssl-post.c'])
-tr.Setup.Copy('ssl-post.c')
+# ssl-post is built via `make`. Here we copy the built binary down to the test
+# directory so that the test runs in this file can use it.
+Test.Setup.Copy('ssl-post')
 
 requestLocation = "test2"
 reHost = "www.example.com"

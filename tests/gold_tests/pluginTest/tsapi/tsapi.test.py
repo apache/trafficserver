@@ -14,6 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
+
 Test.Summary = '''
 Test TS API.
 '''
@@ -59,7 +62,7 @@ ts.Disk.remap_config.AddLine(
     "map https://myhost.test:{0}  http://127.0.0.1:{0}".format(server.Variables.Port)
 )
 
-Test.PreparePlugin(Test.Variables.AtsTestToolsDir + '/plugins/test_tsapi.cc', ts)
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_tsapi.so'), ts)
 
 tr = Test.AddTestRun()
 # Probe server port to check if ready.

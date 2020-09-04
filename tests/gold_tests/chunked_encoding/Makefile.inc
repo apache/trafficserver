@@ -14,19 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-
-
-Test.Summary = '''
-Execute plugin with cppapi tests.
-'''
-
-ts = Test.MakeATSProcess("ts")
-
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_cppapi.so'), ts)
-
-tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = "echo run test_cppapi plugin"
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.StillRunningAfter = ts
+noinst_PROGRAMS += gold_tests/chunked_encoding/smuggle-client
+gold_tests_chunked_encoding_smuggle_client_SOURCES = gold_tests/chunked_encoding/smuggle-client.c
+gold_tests_chunked_encoding_smuggle_client_LDADD = -lssl

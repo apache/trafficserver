@@ -14,6 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
+
 Test.Summary = '''
 Test adding hooks
 '''
@@ -36,7 +39,7 @@ ts.Disk.records_config.update({
     'proxy.config.url_remap.remap_required': 0,
 })
 
-Test.PreparePlugin(Test.Variables.AtsTestToolsDir + '/plugins/hook_add_plugin.cc', ts)
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'hook_add_plugin.so'), ts)
 
 ts.Disk.remap_config.AddLine(
     "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)

@@ -67,7 +67,7 @@ logging:
 '''.split("\n")
 )
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir, 'plugins', 'ssl_hook_test.cc'), ts, '-preaccept=1')
+Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-preaccept=1')
 
 tr = Test.AddTestRun("Test two HTTP/1.1 requests over one TLS connection")
 tr.Processes.Default.StartBefore(server)

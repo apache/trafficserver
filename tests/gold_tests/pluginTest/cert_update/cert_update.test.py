@@ -17,6 +17,9 @@ Test the cert_update plugin.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
+
 Test.Summary = '''
 Test cert_update plugin.
 '''
@@ -73,7 +76,7 @@ ts.Disk.sni_yaml.AddLines([
 ])
 
 # Set up plugin
-Test.PreparePlugin(Test.Variables.AtsExampleDir + '/plugins/c-api/cert_update/cert_update.cc', ts)
+Test.PreparePlugin(os.path.join(Test.Variables.AtsExampleDir, 'plugins', 'c-api', '.libs', 'cert_update.so'), ts)
 
 # Server-Cert-Pre
 # curl should see that Traffic Server presents bar.com cert from alice

@@ -194,6 +194,8 @@ RELEASE
 # autest
 tests/env-test/
 tests/Pipfile.lock
+tests/gold_tests/chunked_encoding/smuggle-client
+tests/gold_tests/tls/ssl-post
 
 iocore/cache/test_*
 iocore/cache/test/var/trafficserver/cache.db
