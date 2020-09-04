@@ -50,7 +50,7 @@ function main() {
   pip install -q "pycodestyle==${PYCODESTYLE_TAG}"
   pip install -q "autopep8==${AUTOPEP8_VERSION}"
 
-  ver=$(autopep8 --version)
+  ver=$(autopep8 --version 2>&1)
   if [ "$ver" != "$VERSION" ]
   then
       echo "Wrong version of autopep8!"
