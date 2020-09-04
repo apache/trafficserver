@@ -1587,7 +1587,8 @@ HostDBContinuation::set_check_pending_dns()
   Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
   this->setThreadAffinity(this_ethread());
   if (q.in(this)) {
-    Warning("Skip the insertion of the same continuation to pending dns");
+    HOSTDB_INCREMENT_DYN_STAT(hostdb_insert_duplicate_to_pending_dns_stat);
+    Debug("hostdb", "Skip the insertion of the same continuation to pending dns");
     return false;
   }
   HostDBContinuation *c = q.head;
@@ -2158,6 +2159,9 @@ ink_hostdb_init(ts::ModuleVersion v)
 
   RecRegisterRawStat(hostdb_rsb, RECT_PROCESS, "proxy.process.hostdb.re_dns_on_reload", RECD_INT, RECP_PERSISTENT,
                      (int)hostdb_re_dns_on_reload_stat, RecRawStatSyncSum);
+
+  RecRegisterRawStat(hostdb_rsb, RECT_PROCESS, "proxy.process.hostdb.insert_duplicate_to_pending_dns", RECD_INT, RECP_PERSISTENT,
+                     (int)hostdb_insert_duplicate_to_pending_dns_stat, RecRawStatSyncSum);
 
   ts_host_res_global_init();
 }
