@@ -752,6 +752,7 @@ Changes with Apache Traffic Server 9.0.0
   #6193 - Fixes various crashers loading/reloading parent.config
   #6197 - Fix problems with "Probe" option for X-Debug MIME header field.
   #6198 - Move logging before session could be freed
+  #6200 - Cleanup: Remove useless UDPConnection function
   #6201 - ssl_session_reuse optimization to check if diags is on
   #6203 - Fix the relative path for template_sets_dir to be install directory
   #6204 - Lua plugin fix: Account for null in output from TSUrlPercentDecode.
@@ -864,6 +865,7 @@ Changes with Apache Traffic Server 9.0.0
   #6519 - Adds support for configure option --enable-yaml-headers
   #6523 - Removes noisy log statement from xdebug
   #6524 - Require 1.1.1 as minimum openssl lib version for tls_check_dual_cert_selection Au test.
+  #6530 - Convert Mime and URL unit tests in proxy/hdrs to Catch.
   #6532 - Add FetchSM support to dechunking in non-streaming mode with new TS API TSFetchFlagSet
   #6538 - Adds partial_blind_route sni action
   #6542 - Rework stats over http so that it supports both a config file and the original path parameter
@@ -894,6 +896,7 @@ Changes with Apache Traffic Server 9.0.0
   #6618 - Fix missing virtual destructor for PluginUserArgsMixin.
   #6628 - Use default rwlock attributes on initialize
   #6632 - Fixes a bug where the nexthop markNextHop method to mark a host down is not called.
+  #6635 - Optimize HTTPHdr conversion of HTTP/1.1 to HTTP/2
   #6642 - Fixes crash loading combined(cert+key) certs
   #6645 - Traffic Dump: Adding an SNI filtering option.
   #6650 - Extendible asan simple
@@ -1052,7 +1055,9 @@ Changes with Apache Traffic Server 9.0.0
   #7104 - Don't send image/webp responses from cache to broswers that don't support it
   #7110 - Add QUIC draft-29 support
   #7113 - Updating our autest suite to require Python3.6
+  #7117 - Fix #7116, skip the insertion of the same continuation to pending dns
   #7118 - Backing out my update of our jenkin's autest file.
+  #7119 - URL::parse fixes for empty paths
   #7120 - Check VIO availability before checking whether the VIO has data
   #7121 - Don't return QUIC frame if the size exceeds maximum frame size
   #7122 - Make tls_hooks tests more likely to pass particularly for 9.0.x branch
@@ -1062,7 +1067,16 @@ Changes with Apache Traffic Server 9.0.0
   #7126 - Replaces "smart" quotes with ASCII equivalents
   #7128 - Protect TSActionCancel from null INKContInternal actions
   #7129 - Comment out a wrong assertion in QUIC Loss Detection logic
+  #7131 - Don't make an error on duplicated RETIRE_CONNECTION frames
+  #7135 - Replace ACTION_RESULT_NONE with nullptr
   #7137 - Removes duplicated listing of files in same Makefile target
   #7138 - Remove useless shortopt
   #7140 - Fixes garbled logs when using %<vbn> log tag
+  #7143 - Deprecate cqhv field
+  #7144 - Fix typo in cache docs
   #7145 - Check VIO availability before acquiring a lock for it
+  #7147 - slice: check if vio is still valid before calling TSVIODone* on shutdown
+  #7148 - Fix stale pointer due to SSL config reload
+  #7155 - PluginFactory - Remove unused code.
+  #7157 - rc: fixes systemd unit file stopping
+  #7160 - Fix memory leaks in multiplexer plugin
