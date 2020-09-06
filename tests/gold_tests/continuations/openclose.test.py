@@ -35,7 +35,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: oc.test\r\n\r\n",
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
                                 'ssntxnorder_verify.so'), ts)
 
 # add response to the server dictionary

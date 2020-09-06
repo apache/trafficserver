@@ -65,7 +65,7 @@ ts.Disk.sni_yaml.AddLine(
 ts.Disk.sni_yaml.AddLine(
     '  verify_server_policy: PERMISSIVE')
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_verify_test.so'), ts, '-count=2 -bad=random.com -bad=bar.com')
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_verify_test.so'), ts, '-count=2 -bad=random.com -bad=bar.com')
 
 tr = Test.AddTestRun("request good name")
 tr.Processes.Default.StartBefore(server)

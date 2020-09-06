@@ -17,7 +17,7 @@ Test the cert_update plugin.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
+import ports
 
 
 Test.Summary = '''
@@ -25,7 +25,8 @@ Test cert_update plugin.
 '''
 
 Test.SkipUnless(
-    Condition.HasProgram("openssl", "Openssl need to be installed on system for this test to work")
+    Condition.HasProgram("openssl", "Openssl need to be installed on system for this test to work"),
+    Condition.PluginExists('cert_update.so')
 )
 
 # Set up origin server
@@ -76,7 +77,7 @@ ts.Disk.sni_yaml.AddLines([
 ])
 
 # Set up plugin
-Test.PreparePlugin(os.path.join(Test.Variables.AtsExampleDir, 'plugins', 'c-api', '.libs', 'cert_update.so'), ts)
+Test.PrepareInstalledPlugin('cert_update.so', ts)
 
 # Server-Cert-Pre
 # curl should see that Traffic Server presents bar.com cert from alice

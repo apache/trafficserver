@@ -55,7 +55,7 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_hooks.so'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_hooks.so'), ts)
 
 ts.Disk.remap_config.AddLine(
     "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)
