@@ -1040,6 +1040,7 @@ Changes with Apache Traffic Server 9.0.0
   #7062 - Signal WRITE_COMPLETE regardless of transmission progress
   #7065 - Updating to AuTest 1.8.1.
   #7069 - Move the direct self loop check later to HttpSM::do_http_server_open
+  #7071 - Adding autopep8 as a pre-commit hook.
   #7074 - Add TS_USE_QUIC to traffic_layout info
   #7080 - Fix a crash on connection migration to the advertised preferred address
   #7081 - Updated release notes for 9.0.0 to have new QUIC 27 version
@@ -1079,4 +1080,8 @@ Changes with Apache Traffic Server 9.0.0
   #7148 - Fix stale pointer due to SSL config reload
   #7155 - PluginFactory - Remove unused code.
   #7157 - rc: fixes systemd unit file stopping
+  #7159 - MicroDNS Extension: handle different 'default' types
   #7160 - Fix memory leaks in multiplexer plugin
+  #7161 - Traffic Dump documentation for post_process.py
+  #7165 - Build test C/C++ files with Automake. (#6945)
+  #7168 - Fix #7167, make pep8 failure
