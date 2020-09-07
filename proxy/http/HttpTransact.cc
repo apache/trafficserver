@@ -7734,12 +7734,6 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   HttpTransactHeaders::add_global_user_agent_header_to_request(s->txn_conf, outgoing_request);
   handle_request_keep_alive_headers(s, outgoing_version, outgoing_request);
 
-  // handle_conditional_headers appears to be obsolete.  Nothing happens
-  // unless s->cache_info.action == HttpTransact::CACHE_DO_UPDATE.  In that
-  // case an assert will go off.  The functionality of this method
-  // (e.g., setting the if-modfied-since header occurs in issue_revalidate
-  // HttpTransactHeaders::handle_conditional_headers(&s->cache_info, outgoing_request);
-
   if (s->next_hop_scheme < 0) {
     s->next_hop_scheme = URL_WKSIDX_HTTP;
   }
