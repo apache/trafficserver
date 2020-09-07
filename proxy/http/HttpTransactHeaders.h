@@ -64,10 +64,6 @@ public:
   static int write_hdr_protocol_stack(char *hdr_string, size_t len, ProtocolStackDetail pSDetail, std::string_view *proto_buf,
                                       int n_proto, char separator = ' ');
 
-  // Removing handle_conditional_headers.  Functionality appears to be elsewhere (issue_revalidate)
-  // and the only condition when it does anything causes an assert to go
-  // off
-  // static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
   static void insert_warning_header(HttpConfigParams *http_config_param, HTTPHdr *header, HTTPWarningCode code,
                                     const char *warn_text = nullptr, int warn_text_len = 0);
   static void insert_time_and_age_headers_in_response(ink_time_t request_sent_time, ink_time_t response_received_time,
