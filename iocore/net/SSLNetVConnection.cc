@@ -1199,6 +1199,12 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
       // Is this the first read?
       if (!this->handShakeReader->is_read_avail_more_than(0) && !this->handShakeHolder->is_read_avail_more_than(0)) {
+#if TS_USE_TLS_ASYNC
+        if (SSLConfigParams::async_handshake_enabled) {
+          SSL_set_mode(ssl, SSL_MODE_ASYNC);
+        }
+#endif
+
         Debug("ssl", "%p first read\n", this);
         // Read from socket to fill in the BIO buffer with the
         // raw handshake data before calling the ssl accept calls.
@@ -1224,42 +1230,30 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     } // Still data in the BIO
   }
 
-#if TS_USE_TLS_ASYNC
-  if (SSLConfigParams::async_handshake_enabled) {
-    SSL_set_mode(ssl, SSL_MODE_ASYNC);
-  }
-#endif
   ssl_error_t ssl_error = SSLAccept(ssl);
 #if TS_USE_TLS_ASYNC
   if (ssl_error == SSL_ERROR_WANT_ASYNC) {
-    size_t numfds;
-    OSSL_ASYNC_FD *waitfds;
-    // Set up the epoll entry for the signalling
-    if (SSL_get_all_async_fds(ssl, nullptr, &numfds) && numfds > 0) {
-      // Allocate space for the waitfd on the stack, should only be one most all of the time
-      waitfds = reinterpret_cast<OSSL_ASYNC_FD *>(alloca(sizeof(OSSL_ASYNC_FD) * numfds));
-      if (SSL_get_all_async_fds(ssl, waitfds, &numfds) && numfds > 0) {
-        // Temporarily disable regular net
-        this->read.triggered  = false;
-        this->write.triggered = false;
-        this->ep.stop(); // Modify used in read_disable doesn't work for edge triggered epol
-        // Have to have the read NetState enabled because we are using it for the signal vc
-        read.enabled       = true;
-        PollDescriptor *pd = get_PollDescriptor(this_ethread());
-        this->ep.start(pd, waitfds[0], static_cast<NetEvent *>(this), EVENTIO_READ);
-        this->ep.type = EVENTIO_READWRITE_VC;
+    // Do we need to set up the async eventfd?  Or is it already registered?
+    if (async_ep.fd < 0) {
+      size_t numfds;
+      OSSL_ASYNC_FD *waitfds;
+      // Set up the epoll entry for the signalling
+      if (SSL_get_all_async_fds(ssl, nullptr, &numfds) && numfds > 0) {
+        // Allocate space for the waitfd on the stack, should only be one most all of the time
+        waitfds = reinterpret_cast<OSSL_ASYNC_FD *>(alloca(sizeof(OSSL_ASYNC_FD) * numfds));
+        if (SSL_get_all_async_fds(ssl, waitfds, &numfds) && numfds > 0) {
+          this->read.triggered  = false;
+          this->write.triggered = false;
+          // Have to have the read NetState enabled because we are using it for the signal vc
+          read.enabled       = true;
+          PollDescriptor *pd = get_PollDescriptor(this_ethread());
+          this->async_ep.start(pd, waitfds[0], static_cast<NetEvent *>(this), EVENTIO_READ);
+          this->async_ep.type = EVENTIO_READWRITE_VC;
+        }
       }
     }
   } else if (SSLConfigParams::async_handshake_enabled) {
-    // Clean up the epoll entry for signalling
-    SSL_clear_mode(ssl, SSL_MODE_ASYNC);
-    this->ep.stop();
-    // Reactivate the socket, ready to rock
-    PollDescriptor *pd = get_PollDescriptor(this_ethread());
-    this->ep.start(
-      pd, this,
-      EVENTIO_READ |
-        EVENTIO_WRITE); // Again we must muck with the eventloop directly because of limits with these methods and edge trigger
+    // Make sure the net fd read vio is in the right state
     if (ssl_error == SSL_ERROR_WANT_READ) {
       this->reenable(&read.vio);
       this->read.triggered = 1;
@@ -1327,7 +1321,14 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         Debug("ssl", "client did not select a next protocol");
       }
     }
-
+#if TS_USE_TLS_ASYNC
+    if (SSLConfigParams::async_handshake_enabled) {
+      SSL_clear_mode(ssl, SSL_MODE_ASYNC);
+      if (async_ep.fd >= 0) {
+        async_ep.stop();
+      }
+    }
+#endif
     return EVENT_DONE;
 
   case SSL_ERROR_WANT_CONNECT:

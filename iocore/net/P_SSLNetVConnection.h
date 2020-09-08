@@ -519,6 +519,8 @@ private:
 
   // Null-terminated string, or nullptr if there is no SNI server name.
   std::unique_ptr<char[]> _serverName;
+
+  EventIO async_ep{};
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
