@@ -69,6 +69,7 @@
 #include <iosfwd>
 #include <sstream>
 #include <deque>
+#include <system_error>
 #include "NumericType.h"
 #include "IntrusivePtr.h"
 
@@ -138,6 +139,10 @@ public:
   Errata(Message const &msg ///< Message to push
   );
 
+  /// Constructor with @a id and @a std::error_code
+  Errata(std::error_code const &ec, ///< Standard error code.
+         Id id = 0                  ///< Message id
+  );
   /// Move constructor.
   Errata(self &&that);
   /// Move constructor from @c Message.
@@ -570,6 +575,11 @@ struct RvBase {
   RvBase(Errata const &s ///< Status to copy
   );
 
+  /** Construct with specific status.
+   */
+  RvBase(Errata &&s ///< Status to move
+  );
+
   //! Test the return value for success.
   bool isOK() const;
 
@@ -624,6 +634,7 @@ template <typename R> struct Rv : public RvBase {
      Errata const &s  ///< A pre-existing status object
   );
 
+  Rv(Errata &&errata);
   /** User conversion to the result type.
 
       This makes it easy to use the function normally or to pass the
@@ -815,6 +826,10 @@ inline Errata::Errata(Message &&msg)
 {
   this->push(std::move(msg));
 }
+inline Errata::Errata(std::error_code const &ec, Id id)
+{
+  this->push(id, ec.value(), ec.message());
+}
 
 inline Errata::operator bool() const
 {
@@ -859,6 +874,16 @@ auto
 Errata::push(Id id, Code code, Args const &... args) -> self &
 {
   this->push(Message(id, code, args...));
+  return *this;
+}
+
+inline Errata &
+Errata::push(Errata const &err)
+{
+  for (auto const &e : err) {
+    this->push(e.m_id, e.m_code, e.m_text);
+    // e.m_errata??
+  }
   return *this;
 }
 
@@ -939,6 +964,7 @@ Errata::const_iterator::operator--()
 
 inline RvBase::RvBase() {}
 inline RvBase::RvBase(Errata const &errata) : _errata(errata) {}
+inline RvBase::RvBase(Errata &&errata) : _errata(std::move(errata)) {}
 inline bool
 RvBase::isOK() const
 {
@@ -958,6 +984,7 @@ RvBase::doNotLog()
 template <typename T> Rv<T>::Rv() : _result() {}
 template <typename T> Rv<T>::Rv(Result const &r) : _result(r) {}
 template <typename T> Rv<T>::Rv(Result const &r, Errata const &errata) : super(errata), _result(r) {}
+template <typename T> Rv<T>::Rv(Errata &&errata) : super(std::move(errata)) {}
 template <typename T> Rv<T>::operator Result const &() const
 {
   return _result;
