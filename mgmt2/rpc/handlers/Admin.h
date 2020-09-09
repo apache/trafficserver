@@ -59,10 +59,13 @@ register_admin_jsonrpc_handlers()
   // plugin
   using namespace rpc::handlers::plugins;
   rpc::JsonRpc::instance().add_handler("admin_plugin_send_basic_msg", &plugin_send_basic_msg);
+
   // server
   using namespace rpc::handlers::server;
   rpc::JsonRpc::instance().add_handler("admin_server_start_drain", &server_start_drain);
   rpc::JsonRpc::instance().add_handler("admin_server_stop_drain", &server_stop_drain);
+  rpc::JsonRpc::instance().add_notification_handler("admin_server_shutdown", &server_shutdown);
+  rpc::JsonRpc::instance().add_notification_handler("admin_server_restart", &server_shutdown);
 
   // storage
   using namespace rpc::handlers::storage;

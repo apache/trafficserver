@@ -111,4 +111,10 @@ server_stop_drain(std::string_view const &id, [[maybe_unused]] YAML::Node const 
 
   return resp;
 }
+
+void
+server_shutdown(YAML::Node const &)
+{
+  sync_cache_dir_on_shutdown();
+}
 } // namespace rpc::handlers::server
