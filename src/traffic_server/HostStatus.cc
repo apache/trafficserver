@@ -25,7 +25,7 @@
 
 #include "tscore/BufferWriter.h"
 #include "rpc/jsonrpc/JsonRpc.h"
-#include "rpc/handlers/common/ErrorId.h"
+#include "rpc/handlers/common/ErrorUtils.h"
 
 ts::Rv<YAML::Node> server_set_status(std::string_view const &id, YAML::Node const &params);
 
@@ -536,12 +536,11 @@ server_set_status(std::string_view const &id, YAML::Node const &params)
         hs.setHostStatus(name.c_str(), cmdInfo.type, cmdInfo.time, cmdInfo.reasonType);
       }
     } else {
-      // TODO: move error ids to a generic place.
-      resp.errata().push(err::to_integral(err::ID::Server), 1, "Invalid input parameters");
+      resp.errata().push(err::make_errata(err::Codes::SERVER, "Invalid input parameters, null"));
     }
   } catch (std::exception const &ex) {
     Debug("rpc.handler.server.status", "Got an error HostCmdInfo decoding: %s", ex.what());
-    resp.errata().push(err::to_integral(err::ID::Server), 1, "Error found during host status set");
+    resp.errata().push(err::make_errata(err::Codes::SERVER, "Error found during host status set: {}", ex.what()));
   }
   return resp;
 }

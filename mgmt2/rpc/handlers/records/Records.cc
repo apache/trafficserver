@@ -24,7 +24,6 @@
 #include <string_view>
 
 #include "handlers/common/RecordsUtils.h"
-#include "handlers/common/ErrorId.h"
 
 #include "tscore/BufferWriter.h"
 #include "records/I_RecCore.h"
@@ -33,13 +32,13 @@
 
 namespace rpc::handlers::records
 {
-static constexpr auto ERROR_ID = rpc::handlers::errors::ID::Records;
+namespace err = rpc::handlers::errors;
+
 ts::Rv<YAML::Node>
 get_records(std::string_view const &id, YAML::Node const &params)
 {
   using namespace rpc::handlers::records::utils;
   ts::Rv<YAML::Node> resp;
-  std::error_code ec;
 
   auto check = [](RecT rec_type, std::error_code &ec) { return true; };
 
@@ -48,15 +47,11 @@ get_records(std::string_view const &id, YAML::Node const &params)
     auto &&[node, error]   = get_yaml_record(recordName, check);
 
     if (error) {
-      ec = error;
-      break;
+      resp.errata().push(err::make_errata(error));
+      continue;
     }
 
     resp.result().push_back(std::move(node));
-  }
-
-  if (ec) {
-    push_error(ERROR_ID, ec, resp.errata());
   }
 
   return resp;

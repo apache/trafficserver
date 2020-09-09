@@ -20,13 +20,13 @@
 
 #include "Metrics.h"
 #include "rpc/handlers/common/RecordsUtils.h"
-#include "rpc/handlers/common/ErrorId.h"
 
 namespace rpc::handlers::metrics
 {
 static unsigned STATS_RECORD_TYPES = RECT_PROCESS | RECT_PLUGIN | RECT_NODE;
 static constexpr auto logTag{"rpc.metric"};
-static constexpr auto ERROR_ID = rpc::handlers::errors::ID::Metrics;
+
+namespace err = rpc::handlers::errors;
 
 ts::Rv<YAML::Node>
 get_metric_records(std::string_view const &id, YAML::Node const &params)
@@ -44,20 +44,17 @@ get_metric_records(std::string_view const &id, YAML::Node const &params)
     }
     return true;
   };
+
   for (auto &&element : params) {
     auto const &recordName = element.as<std::string>();
     auto &&[node, error]   = get_yaml_record(recordName, check);
 
     if (error) {
-      ec = error;
-      break;
+      resp.errata().push(err::make_errata(error));
+      continue;
     }
 
     resp.result().push_back(std::move(node));
-  }
-
-  if (ec) {
-    push_error(ERROR_ID, ec, resp.errata());
   }
 
   return resp;
@@ -69,7 +66,6 @@ get_metric_records_regex(std::string_view const &id, YAML::Node const &params)
   using namespace rpc::handlers::records::utils;
 
   ts::Rv<YAML::Node> resp;
-  std::error_code ec;
 
   for (auto &&element : params) {
     auto const &recordName = element.as<std::string>();
@@ -77,17 +73,13 @@ get_metric_records_regex(std::string_view const &id, YAML::Node const &params)
     auto &&[node, error] = get_yaml_record_regex(recordName, STATS_RECORD_TYPES);
 
     if (error) {
-      ec = error;
-      break;
+      resp.errata().push(err::make_errata(error));
+      continue;
     }
     // node may have more than one.
     for (auto &&n : node) {
       resp.result().push_back(std::move(n));
     }
-  }
-
-  if (ec) {
-    push_error(ERROR_ID, ec, resp.errata());
   }
 
   return resp;
@@ -101,7 +93,7 @@ clear_all_metrics(std::string_view const &id, YAML::Node const &params)
   Debug(logTag, "Cleaning metrics.");
   if (RecResetStatRecord(RECT_NULL, true) != REC_ERR_OKAY) {
     Debug(logTag, "Error while cleaning the stats.");
-    push_error(ERROR_ID, {rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR}, resp.errata());
+    return err::make_errata({rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR});
   }
 
   return resp;
@@ -119,7 +111,8 @@ clear_metrics(std::string_view const &id, YAML::Node const &params)
       if (RecResetStatRecord(name.data()) != REC_ERR_OKAY) {
         // This could be due the fact that the record is already cleared or the metric does not have any significant
         // value.
-        push_error(ERROR_ID, {rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR}, resp.errata());
+        std::error_code ec{rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR};
+        resp.errata().push(err::make_errata(ec));
       }
     }
   }

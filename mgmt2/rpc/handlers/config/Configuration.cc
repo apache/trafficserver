@@ -29,12 +29,15 @@
 #include "config/FileManager.h"
 
 #include "rpc/handlers/common/RecordsUtils.h"
-#include "rpc/handlers/common/ErrorId.h"
 
-namespace rpc::handlers::config
+namespace
 {
-using NameValuePair = std::pair<std::string, std::string>;
-} // namespace rpc::handlers::config
+/// key value pair from each element passed in the set command.
+struct SetRecordCmdInfo {
+  std::string name;
+  std::string value;
+};
+} // namespace
 namespace rpc::handlers::config::field_names
 {
 static constexpr auto RECORD_NAME{"record_name"};
@@ -44,30 +47,25 @@ static constexpr auto RECORD_VALUE{"record_value"};
 namespace YAML
 {
 namespace config = rpc::handlers::config;
-template <> struct convert<config::NameValuePair> {
+template <> struct convert<SetRecordCmdInfo> {
   static bool
-  decode(Node const &node, config::NameValuePair &info)
+  decode(Node const &node, SetRecordCmdInfo &info)
   {
     using namespace config::field_names;
-    try {
-      if (node[RECORD_NAME] && node[RECORD_VALUE]) {
-        info.first  = node[RECORD_NAME].as<std::string>();
-        info.second = node[RECORD_VALUE].as<std::string>();
-        return true;
-      }
-    } catch (YAML::Exception const &ex) {
-      // ignore, just let it fail(return false)
-      // TODO: we may need to find a way to let this error travel higher up
+    if (!node[RECORD_NAME] || !node[RECORD_VALUE]) {
+      return false;
     }
-    return false;
+
+    info.name  = node[RECORD_NAME].as<std::string>();
+    info.value = node[RECORD_VALUE].as<std::string>();
+    return true;
   }
 };
 } // namespace YAML
 
 namespace rpc::handlers::config
 {
-static unsigned configRecType  = RECT_CONFIG | RECT_LOCAL;
-static constexpr auto ERROR_ID = rpc::handlers::errors::ID::Configuration;
+static unsigned configRecType = RECT_CONFIG | RECT_LOCAL;
 
 namespace err   = rpc::handlers::errors;
 namespace utils = rpc::handlers::records::utils;
@@ -77,7 +75,6 @@ get_config_records(std::string_view const &id, YAML::Node const &params)
 {
   using namespace rpc::handlers::records::utils;
   ts::Rv<YAML::Node> resp;
-  std::error_code ec;
 
   auto check = [](RecT rec_type, std::error_code &ec) {
     if (!REC_TYPE_IS_CONFIG(rec_type)) {
@@ -93,15 +90,11 @@ get_config_records(std::string_view const &id, YAML::Node const &params)
     auto &&[node, error]   = get_yaml_record(recordName, check);
 
     if (error) {
-      ec = error;
-      break;
+      resp.errata().push(err::make_errata(error));
+      continue;
     }
 
     resp.result().push_back(std::move(node));
-  }
-
-  if (ec) {
-    push_error(ERROR_ID, ec, resp.errata());
   }
 
   return resp;
@@ -112,23 +105,19 @@ get_config_records_regex(std::string_view const &id, YAML::Node const &params)
 {
   using namespace rpc::handlers::records::utils;
   ts::Rv<YAML::Node> resp;
-  std::error_code ec;
+
   for (auto &&element : params) {
     auto const &recordName = element.as<std::string>();
     auto &&[node, error]   = get_yaml_record_regex(recordName, configRecType);
 
     if (error) {
-      ec = error;
-      break;
+      resp.errata().push(err::make_errata(error));
+      continue;
     }
     // node may have more than one.
     for (auto &&n : node) {
       resp.result().push_back(std::move(n));
     }
-  }
-
-  if (ec) {
-    push_error(ERROR_ID, ec, resp.errata());
   }
 
   return resp;
@@ -144,8 +133,7 @@ get_all_config_records(std::string_view const &id, [[maybe_unused]] YAML::Node c
   auto &&[node, error] = get_yaml_record_regex(all, configRecType);
 
   if (error) {
-    push_error(ERROR_ID, error, resp.errata());
-    return resp;
+    return err::make_errata(error);
   }
 
   resp.result() = std::move(node);
@@ -156,32 +144,32 @@ namespace
 {
   template <typename T>
   bool
-  set_data_type(std::string const &name, std::string const &value)
+  set_data_type(SetRecordCmdInfo const &info)
   {
     if constexpr (std::is_same_v<T, float>) {
       T val;
       try {
-        val = std::stof(value.data());
+        val = std::stof(info.value.data());
       } catch (std::exception const &ex) {
         return false;
       }
       // set the value
-      if (RecSetRecordFloat(name.c_str(), val, REC_SOURCE_DEFAULT) != REC_ERR_OKAY) {
+      if (RecSetRecordFloat(info.name.c_str(), val, REC_SOURCE_DEFAULT) != REC_ERR_OKAY) {
         return false;
       }
     } else if constexpr (std::is_same_v<T, int>) {
       T val;
       try {
-        val = std::stoi(value.data());
+        val = std::stoi(info.value.data());
       } catch (std::exception const &ex) {
         return false;
       }
       // set the value
-      if (RecSetRecordInt(name.c_str(), val, REC_SOURCE_DEFAULT) != REC_ERR_OKAY) {
+      if (RecSetRecordInt(info.name.c_str(), val, REC_SOURCE_DEFAULT) != REC_ERR_OKAY) {
         return false;
       }
     } else if constexpr (std::is_same_v<T, std::string>) {
-      if (RecSetRecordString(name.c_str(), const_cast<char *>(value.c_str()), REC_SOURCE_DEFAULT) != REC_ERR_OKAY) {
+      if (RecSetRecordString(info.name.c_str(), const_cast<char *>(info.value.c_str()), REC_SOURCE_DEFAULT) != REC_ERR_OKAY) {
         return false;
       }
     }
@@ -195,20 +183,17 @@ ts::Rv<YAML::Node>
 set_config_records(std::string_view const &id, YAML::Node const &params)
 {
   ts::Rv<YAML::Node> resp;
-  std::error_code ec;
 
   // we need the type and the udpate type for now.
   using LookupContext = std::tuple<RecDataT, RecUpdateT, RecCheckT, const char *>;
 
   for (auto const &kv : params) {
-    std::string name, value;
+    SetRecordCmdInfo info;
     try {
-      auto nvPair = kv.as<NameValuePair>();
-      name        = nvPair.first;
-      value       = nvPair.second;
+      info = kv.as<SetRecordCmdInfo>();
     } catch (YAML::Exception const &ex) {
-      ec = err::RecordError::GENERAL_ERROR;
-      break;
+      resp.errata().push(err::make_errata({err::RecordError::RECORD_NOT_FOUND}));
+      continue;
     }
 
     LookupContext recordCtx;
@@ -216,7 +201,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
     // Get record info first. We will respond with the update status, so we
     // save it.
     const auto ret = RecLookupRecord(
-      name.c_str(),
+      info.name.c_str(),
       [](const RecRecord *record, void *data) {
         auto &[dataType, updateType, checkType, pattern] = *static_cast<LookupContext *>(data);
         if (REC_TYPE_IS_CONFIG(record->rec_type)) {
@@ -232,50 +217,47 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 
     // make sure if exist. If not, we stop it and do not keep forward.
     if (ret != REC_ERR_OKAY) {
-      ec = err::RecordError::RECORD_NOT_FOUND;
-      break;
+      resp.errata().push(err::make_errata({err::RecordError::RECORD_NOT_FOUND}));
+      continue;
     }
 
     // now set the value.
     auto const &[dataType, updateType, checkType, pattern] = recordCtx;
 
     // run the check only if we have something to check against it.
-    if (pattern != nullptr && utils::recordValidityCheck(value, checkType, pattern) == false) {
-      ec = err::RecordError::VALIDITY_CHECK_ERROR;
-      break;
+    if (pattern != nullptr && utils::recordValidityCheck(info.value, checkType, pattern) == false) {
+      resp.errata().push(err::make_errata({err::RecordError::VALIDITY_CHECK_ERROR}));
+      continue;
     }
 
     bool set_ok{false};
     switch (dataType) {
     case RECD_INT:
     case RECD_COUNTER:
-      set_ok = set_data_type<int>(name, value);
+      set_ok = set_data_type<int>(info);
       break;
     case RECD_FLOAT:
-      set_ok = set_data_type<float>(name, value);
+      set_ok = set_data_type<float>(info);
       break;
     case RECD_STRING:
-      set_ok = set_data_type<std::string>(name, value);
+      set_ok = set_data_type<std::string>(info);
       break;
     default:
       // null?
       ;
     }
 
-    if (!set_ok) {
-      ec = err::RecordError::GENERAL_ERROR;
+    if (set_ok) {
+      // Set the response.
+      auto &result = resp.result();
+
+      result["record_name"]   = info.name;
+      result["new_value"]     = info.value;
+      result["update_status"] = updateType;
+    } else {
+      resp.errata().push(err::make_errata({err::RecordError::GENERAL_ERROR}));
+      continue;
     }
-
-    // Set the response.
-    auto &result = resp.result();
-
-    result["record_name"]   = name;
-    result["new_value"]     = value;
-    result["update_status"] = updateType;
-  }
-
-  if (ec) {
-    push_error(ERROR_ID, ec, resp.errata());
   }
 
   return resp;
@@ -285,10 +267,10 @@ ts::Rv<YAML::Node>
 reload_config(std::string_view const &id, YAML::Node const &params)
 {
   ts::Rv<YAML::Node> resp;
-  auto err = FileManager::instance().rereadConfig();
+
   // if there is any error, report it back.
-  if (err.size() > 0) {
-    resp.errata() = std::move(err);
+  if (auto err = FileManager::instance().rereadConfig(); err) {
+    return err;
   }
 
   // If any callback was register(TSMgmtUpdateRegister) for config notifications, then it will be eventually notify.

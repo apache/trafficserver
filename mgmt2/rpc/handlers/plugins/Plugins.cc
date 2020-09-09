@@ -19,11 +19,13 @@
 */
 
 #include "Plugins.h"
+#include "rpc/handlers/common/ErrorUtils.h"
 
 #include "InkAPIInternal.h"
 
 namespace
 {
+static constexpr auto logTag{"rpc.plugins"};
 struct PluginMsgInfo {
   std::string data;
   std::string tag;
@@ -48,6 +50,8 @@ template <> struct convert<PluginMsgInfo> {
 
 namespace rpc::handlers::plugins
 {
+namespace err = rpc::handlers::errors;
+
 ts::Rv<YAML::Node>
 plugin_send_basic_msg(std::string_view const &id, YAML::Node const &params)
 {
@@ -69,10 +73,8 @@ plugin_send_basic_msg(std::string_view const &id, YAML::Node const &params)
       hook = hook->next();
     }
   } catch (std::exception const &ex) {
-    Debug("", "Invalid params %s", ex.what());
-
-    resp.errata().push(1, 1, "Invalid incoming data");
-    return resp;
+    Debug(logTag, "Invalid params %s", ex.what());
+    resp = err::make_errata(err::Codes::PLUGIN, "Error parsing the incoming data: {}", ex.what());
   }
 
   return resp;

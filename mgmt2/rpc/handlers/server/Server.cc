@@ -22,7 +22,7 @@
 
 #include "P_Cache.h"
 #include <tscore/TSSystemState.h>
-#include "rpc/handlers/common/ErrorId.h"
+#include "rpc/handlers/common/ErrorUtils.h"
 #include "rpc/handlers/common/Utils.h"
 
 namespace rpc::handlers::server
@@ -58,8 +58,7 @@ template <> struct convert<rpc::handlers::server::DrainInfo> {
 
 namespace rpc::handlers::server
 {
-namespace err                  = rpc::handlers::errors;
-static constexpr auto ERROR_ID = err::ID::Server;
+namespace err = rpc::handlers::errors;
 
 static bool
 is_server_draining()
@@ -91,13 +90,11 @@ server_start_drain(std::string_view const &id, YAML::Node const &params)
     if (!is_server_draining()) {
       set_server_drain(true);
     } else {
-      resp.errata().push(err::to_integral(ERROR_ID), 1, "Server already draining.");
+      resp.errata().push(err::make_errata(err::Codes::SERVER, "Server already draining."));
     }
   } catch (std::exception const &ex) {
     Debug("rpc.handler.server", "Got an error DrainInfo decoding: %s", ex.what());
-    std::string text;
-    ts::bwprint(text, "Error found during server drain: {}", ex.what());
-    resp.errata().push(err::to_integral(ERROR_ID), 1, text);
+    resp.errata().push(err::make_errata(err::Codes::SERVER, "Error found during server drain: {}", ex.what()));
   }
   return resp;
 }
@@ -109,7 +106,7 @@ server_stop_drain(std::string_view const &id, [[maybe_unused]] YAML::Node const 
   if (is_server_draining()) {
     set_server_drain(false);
   } else {
-    resp.errata().push(err::to_integral(ERROR_ID), 1, "Server is not draining.");
+    resp.errata().push(err::make_errata(err::Codes::SERVER, "Server is not draining."));
   }
 
   return resp;

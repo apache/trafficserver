@@ -20,7 +20,7 @@
 
 #include "Storage.h"
 #include "tscore/BufferWriter.h"
-#include "rpc/handlers/common/ErrorId.h"
+#include "rpc/handlers/common/ErrorUtils.h"
 #include "P_Cache.h"
 
 namespace rpc::handlers::storage::field_names
@@ -56,8 +56,7 @@ template <> struct convert<CacheDisk> {
 
 namespace rpc::handlers::storage
 {
-namespace err                  = rpc::handlers::errors;
-static constexpr auto ERROR_ID = err::ID::Storage;
+namespace err = rpc::handlers::errors;
 
 ts::Rv<YAML::Node>
 set_storage_offline(std::string_view const &id, YAML::Node const &params)
@@ -77,9 +76,7 @@ set_storage_offline(std::string_view const &id, YAML::Node const &params)
       n["has_online_storage_left"] = ret ? "true" : "false";
       resp.result().push_back(std::move(n));
     } else {
-      std::string text;
-      ts::bwprint(text, "Passed device:'{}' does not match any defined storage", device);
-      resp.errata().push(err::to_integral(ERROR_ID), 1, text);
+      resp.errata().push(err::make_errata(err::Codes::STORAGE, "Passed device:'{}' does not match any defined storage", device));
     }
   }
   return resp;
@@ -97,9 +94,7 @@ get_storage_status(std::string_view const &id, YAML::Node const &params)
     if (d) {
       resp.result().push_back(*d);
     } else {
-      std::string text;
-      ts::bwprint(text, "Passed device:'{}' does not match any defined storage", device);
-      resp.errata().push(err::to_integral(ERROR_ID), 1, text);
+      resp.errata().push(err::make_errata(err::Codes::STORAGE, "Passed device:'{}' does not match any defined storage", device));
     }
   }
   return resp;

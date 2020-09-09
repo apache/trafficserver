@@ -23,6 +23,7 @@
 #include <tuple>
 
 #include "rpc/handlers/common/convert.h"
+#include "rpc/handlers/common/ErrorUtils.h"
 
 #include "records/I_RecCore.h"
 #include "records/P_RecCore.h"
@@ -34,7 +35,7 @@
 namespace rpc::handlers::errors
 {
 enum class RecordError {
-  RECORD_NOT_FOUND = 100,
+  RECORD_NOT_FOUND = Codes::RECORD,
   RECORD_NOT_CONFIG,
   RECORD_NOT_METRIC,
   INVALID_RECORD_NAME,
