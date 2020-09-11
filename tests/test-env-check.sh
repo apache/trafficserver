@@ -42,10 +42,15 @@ fi
 
 # check for pipenv
 pipenv --version &> /dev/null
-if [ $? = 0 ]; then
+if [ $? -eq 0 ]; then
     echo "pipenv detected!"
-    pipenv install
-    # pipenv shell
+    pipenv --venv &> /dev/null
+    if [ $? -ne 0 ]; then
+        echo "Installing a new virtual environment via pipenv"
+        pipenv install
+    else
+        echo "Using the pre-existing virtual environment."
+    fi
 else
     echo "pipenv is not installed/enabled. "
 fi
