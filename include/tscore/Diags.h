@@ -290,13 +290,13 @@ extern inkcoreapi Diags *diags;
     diags->error(level, &loc, fmt, ##__VA_ARGS__); \
   } while (0)
 
-#define Status(...) DiagsError(DL_Status, __VA_ARGS__)
-#define Note(...) DiagsError(DL_Note, __VA_ARGS__)
-#define Warning(...) DiagsError(DL_Warning, __VA_ARGS__)
-#define Error(...) DiagsError(DL_Error, __VA_ARGS__)
-#define Fatal(...) DiagsError(DL_Fatal, __VA_ARGS__)
-#define Alert(...) DiagsError(DL_Alert, __VA_ARGS__)
-#define Emergency(...) DiagsError(DL_Emergency, __VA_ARGS__)
+#define Status(...) DiagsError(DL_Status, __VA_ARGS__)       // Log information
+#define Note(...) DiagsError(DL_Note, __VA_ARGS__)           // Log significant information
+#define Warning(...) DiagsError(DL_Warning, __VA_ARGS__)     // Log concerning information
+#define Error(...) DiagsError(DL_Error, __VA_ARGS__)         // Log operational failure, fail CI
+#define Fatal(...) DiagsError(DL_Fatal, __VA_ARGS__)         // Log recoverable crash, fail CI, exit & allow restart
+#define Alert(...) DiagsError(DL_Alert, __VA_ARGS__)         // Log recoverable crash, fail CI, exit & restart, Ops attention
+#define Emergency(...) DiagsError(DL_Emergency, __VA_ARGS__) // Log unrecoverable crash, fail CI, exit, Ops attention
 
 #define DiagsErrorV(level, fmt, ap)                  \
   do {                                               \

@@ -272,11 +272,18 @@ tsapi char *TSfgets(TSFile filep, char *buf, size_t length);
     @param fmt printf format description.
     @param ... argument for the printf format description.
 
-*/
-tsapi void TSError(const char *fmt, ...) TS_PRINTFLIKE(1, 2);
+    Note: Your log monitoring (e.g. Splunk) needs to alert Ops of log
+    messages that contain ' ALERT: ' or ' EMERGENCY: ', these require
+    immediate attention.
 
-tsapi void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2);
-tsapi void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2);
+*/
+tsapi void TSStatus(const char *fmt, ...) TS_PRINTFLIKE(1, 2);    // Log information
+tsapi void TSNote(const char *fmt, ...) TS_PRINTFLIKE(1, 2);      // Log significant information
+tsapi void TSWarning(const char *fmt, ...) TS_PRINTFLIKE(1, 2);   // Log concerning information
+tsapi void TSError(const char *fmt, ...) TS_PRINTFLIKE(1, 2);     // Log operational failure, fail CI
+tsapi void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2);     // Log recoverable crash, fail CI, exit & restart
+tsapi void TSAlert(const char *fmt, ...) TS_PRINTFLIKE(1, 2);     // Log recoverable crash, fail CI, exit & restart, Ops attention
+tsapi void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2); // Log unrecoverable crash, fail CI, exit, Ops attention
 
 /* --------------------------------------------------------------------------
    Assertions */
