@@ -514,7 +514,6 @@ NetHandler::waitForActivity(ink_hrtime timeout)
                 get_ev_events(pd, x), ne->read.enabled, ne->closed, read_ready_list.in(ne));
         }
       }
-      ne = epd->data.ne;
       if (get_ev_events(pd, x) & (EVENTIO_WRITE | EVENTIO_ERROR)) {
         ne->write.triggered = 1;
         if (!write_ready_list.in(ne)) {
