@@ -702,12 +702,6 @@ public:
     //  able to defer some work in building the request
     TransactFunc_t pending_work = nullptr;
 
-    // Sandbox of Variables
-    StateMachineAction_t cdn_saved_next_action        = SM_ACTION_UNDEFINED;
-    void (*cdn_saved_transact_return_point)(State *s) = nullptr;
-    bool cdn_remap_complete                           = false;
-    bool first_dns_lookup                             = true;
-
     HttpRequestData request_data;
     ParentConfigParams *parent_params                           = nullptr;
     std::shared_ptr<NextHopSelectionStrategy> next_hop_strategy = nullptr;

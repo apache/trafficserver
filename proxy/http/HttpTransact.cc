@@ -757,15 +757,15 @@ how_to_open_connection(HttpTransact::State *s)
     break;
   }
 
-  s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
+  HttpTransact::StateMachineAction_t connect_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
 
   // Setting up a direct CONNECT tunnel enters OriginServerRawOpen. We always do that if we
   // are not forwarding CONNECT and are not going to a parent proxy.
   if (s->method == HTTP_WKSIDX_CONNECT) {
     if (s->txn_conf->forward_connect_method == 1 || s->parent_result.result == PARENT_SPECIFIED) {
-      s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
+      connect_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
     } else {
-      s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN;
+      connect_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN;
     }
   }
 
@@ -774,9 +774,7 @@ how_to_open_connection(HttpTransact::State *s)
     HttpTransactHeaders::convert_request(s->current.server->http_version, &s->hdr_info.server_request);
   }
 
-  ink_assert(s->cdn_saved_next_action == HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN ||
-             s->cdn_saved_next_action == HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN);
-  return s->cdn_saved_next_action;
+  return connect_next_action;
 }
 
 /*****************************************************************************
@@ -2020,19 +2018,8 @@ HttpTransact::OSDNSLookup(State *s)
   // After SM_ACTION_DNS_LOOKUP, goto the saved action/state ORIGIN_SERVER_(RAW_)OPEN.
   // Should we skip the StartAccessControl()? why?
 
-  if (s->cdn_remap_complete) {
-    TxnDebug("cdn", "This is a late DNS lookup.  We are going to the OS, "
-                    "not to HandleFiltering.");
-
-    ink_assert(s->cdn_saved_next_action == SM_ACTION_ORIGIN_SERVER_OPEN ||
-               s->cdn_saved_next_action == SM_ACTION_ORIGIN_SERVER_RAW_OPEN);
-    TxnDebug("cdn", "outgoing version -- (pre  conversion) %d", s->hdr_info.server_request.m_http->m_version);
-    (&s->hdr_info.server_request)->version_set(HTTPVersion(1, 1));
-    HttpTransactHeaders::convert_request(s->current.server->http_version, &s->hdr_info.server_request);
-    TxnDebug("cdn", "outgoing version -- (post conversion) %d", s->hdr_info.server_request.m_http->m_version);
-    TRANSACT_RETURN(s->cdn_saved_next_action, nullptr);
-  } else if (DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT == s->dns_info.os_addr_style ||
-             DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB == s->dns_info.os_addr_style) {
+  if (DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT == s->dns_info.os_addr_style ||
+      DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB == s->dns_info.os_addr_style) {
     // we've come back after already trying the server to get a better address
     // and finished with all backtracking - return to trying the server.
     TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
