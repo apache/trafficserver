@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <sstream>
+
 #include "transaction_data.h"
 #include "global_variables.h"
 #include "json_utils.h"
@@ -78,6 +80,11 @@ TransactionData::get_sensitive_field_description()
   return sensitive_fields_string;
 }
 
+TransactionData::TransactionData(TSHttpTxn txnp, std::string_view http_version_from_client_stack)
+  : _txnp{txnp}, _http_version_from_client_stack{http_version_from_client_stack}
+{
+}
+
 bool
 TransactionData::init(sensitive_fields_t &&new_fields)
 {
@@ -116,7 +123,7 @@ TransactionData::write_content_node(int64_t num_body_bytes)
 }
 
 std::string
-TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_loc)
+TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_loc, std::string_view http_version)
 {
   std::string result;
   int len        = 0;
@@ -124,10 +131,14 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
   TSMLoc url_loc = nullptr;
 
   // 1. "version"
-  // Note that we print this for both requests and responses, so the first
-  // element in each has to start with a comma.
-  int version = TSHttpHdrVersionGet(buffer, hdr_loc);
-  result += R"("version":")" + std::to_string(TS_HTTP_MAJOR(version)) + "." + std::to_string(TS_HTTP_MINOR(version)) + '"';
+  result += R"("version":")";
+  if (http_version.empty()) {
+    int version = TSHttpHdrVersionGet(buffer, hdr_loc);
+    result += std::to_string(TS_HTTP_MAJOR(version)) + "." + std::to_string(TS_HTTP_MINOR(version));
+  } else {
+    result += http_version;
+  }
+  result += R"(",)";
 
   // Log scheme+method+request-target or status+reason based on header type
   if (TSHttpHdrTypeGet(buffer, hdr_loc) == TS_HTTP_TYPE_REQUEST) {
@@ -135,7 +146,7 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
     // 2. "scheme":
     cp = TSUrlSchemeGet(buffer, url_loc, &len);
     TSDebug(debug_tag, "write_message_node(): found scheme %.*s ", len, cp);
-    result += "," + traffic_dump::json_entry("scheme", cp, len);
+    result += traffic_dump::json_entry("scheme", cp, len);
 
     // 3. "method":(string)
     cp = TSHttpHdrMethodGet(buffer, hdr_loc, &len);
@@ -159,15 +170,15 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
     }
 
     TSDebug(debug_tag, "write_message_node(): found host target %.*s", static_cast<int>(url_string.size()), url_string.data());
-    result += "," + traffic_dump::json_entry("url", url_string);
+    result += ',' + traffic_dump::json_entry("url", url_string);
     TSfree(url);
     TSHandleMLocRelease(buffer, hdr_loc, url_loc);
   } else {
     // 2. "status":(string)
-    result += R"(,"status":)" + std::to_string(TSHttpHdrStatusGet(buffer, hdr_loc));
+    result += R"("status":)" + std::to_string(TSHttpHdrStatusGet(buffer, hdr_loc));
     // 3. "reason":(string)
     cp = TSHttpHdrReasonGet(buffer, hdr_loc, &len);
-    result += "," + traffic_dump::json_entry("reason", cp, len);
+    result += ',' + traffic_dump::json_entry("reason", cp, len);
   }
 
   // "headers": [[name(string), value(string)]]
@@ -197,9 +208,9 @@ TransactionData::write_message_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_lo
 }
 
 std::string
-TransactionData::write_message_node(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t num_body_bytes)
+TransactionData::write_message_node(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t num_body_bytes, std::string_view http_version)
 {
-  std::string result = write_message_node_no_content(buffer, hdr_loc);
+  std::string result = write_message_node_no_content(buffer, hdr_loc, http_version);
   result += write_content_node(num_body_bytes);
   return result + "}";
 }
@@ -237,6 +248,64 @@ TransactionData::init_helper()
   return true;
 }
 
+void
+TransactionData::write_client_request_node_no_content(TSMBuffer &buffer, TSMLoc &hdr_loc)
+{
+  std::ostringstream client_request_node;
+  client_request_node << R"(,"client-request":{)";
+
+  auto const http_version = _http_version_from_client_stack;
+  if (http_version == "2") {
+    client_request_node << R"("http2":{)";
+
+    uint64_t stream_id;
+    TSAssert(TS_SUCCESS == TSHttpTxnClientStreamIdGet(_txnp, &stream_id));
+    client_request_node << R"("stream-id":)" << std::to_string(stream_id);
+
+    TSHttp2Priority priority;
+    memset(&priority, 0, sizeof(priority));
+    TSAssert(TS_SUCCESS == TSHttpTxnClientStreamPriorityGet(_txnp, reinterpret_cast<TSHttpPriority *>(&priority)));
+    TSAssert(HTTP_PRIORITY_TYPE_HTTP_2 == priority.priority_type);
+    // Http2Stream uses -1 as an indication that no priority was set.
+    if (priority.stream_dependency != -1) {
+      client_request_node << R"(,"priority":{)";
+      client_request_node << R"("stream-depenency":)" << std::to_string(priority.stream_dependency);
+      client_request_node << R"(,"weight":)" << std::to_string(priority.weight);
+      client_request_node << "}";
+    }
+
+    client_request_node << "},";
+  }
+
+  // We don't have an accurate view of the body size until TXN_CLOSE so we hold
+  // off on writing the content:size node until then.
+  client_request_node << write_message_node_no_content(buffer, hdr_loc, http_version);
+  _txn_json += client_request_node.str();
+}
+
+void
+TransactionData::write_proxy_request_node(TSMBuffer &buffer, TSMLoc &hdr_loc)
+{
+  std::ostringstream proxy_request_node;
+  proxy_request_node << R"(,"proxy-request":{)";
+  proxy_request_node << _server_protocol_description + ",";
+  proxy_request_node << write_message_node(buffer, hdr_loc, TSHttpTxnServerReqBodyBytesGet(_txnp));
+  _txn_json += proxy_request_node.str();
+}
+
+void
+TransactionData::write_server_response_node(TSMBuffer &buffer, TSMLoc &hdr_loc)
+{
+  _txn_json += R"(,"server-response":{)" + write_message_node(buffer, hdr_loc, TSHttpTxnServerRespBodyBytesGet(_txnp));
+}
+
+void
+TransactionData::write_proxy_response_node(TSMBuffer &buffer, TSMLoc &hdr_loc)
+{
+  _txn_json += R"(,"proxy-response":{)" +
+               write_message_node(buffer, hdr_loc, TSHttpTxnClientRespBodyBytesGet(_txnp), _http_version_from_client_stack);
+}
+
 // Transaction handler: writes headers to the log file using AIO
 int
 TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *edata)
@@ -262,7 +331,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     // session may fire interleaved in HTTP/2. Thus, in order to get
     // non-garbled JSON content, we accumulate the data for an entire
     // transaction and write that atomically once the transaction is completed.
-    TransactionData *txnData = new TransactionData;
+    TransactionData *txnData = new TransactionData(txnp, ssnData->get_http_version_in_client_stack());
     TSUserArgSet(txnp, transaction_arg_index, txnData);
     // Get UUID
     char uuid[TS_CRUUID_STRING_LEN + 1];
@@ -270,18 +339,18 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     std::string_view uuid_view{uuid, strnlen(uuid, TS_CRUUID_STRING_LEN)};
 
     // Generate per transaction json records
-    txnData->txn_json += "{";
+    txnData->_txn_json += "{";
     // "connection-time":(number)
     TSHRTime start_time;
     TSHttpTxnMilestoneGet(txnp, TS_MILESTONE_UA_BEGIN, &start_time);
-    txnData->txn_json += "\"connection-time\":" + std::to_string(start_time);
+    txnData->_txn_json += "\"connection-time\":" + std::to_string(start_time);
 
     // "uuid":(string)
     // The uuid is a header field for each message in the transaction. Use the
     // "all" node to apply to each message.
     std::string_view name = "uuid";
-    txnData->txn_json += R"(,"all":{"headers":{"fields":[)" + json_entry_array(name, uuid_view);
-    txnData->txn_json += "]}}";
+    txnData->_txn_json += R"(,"all":{"headers":{"fields":[)" + json_entry_array(name, uuid_view);
+    txnData->_txn_json += "]}}";
     break;
   }
 
@@ -304,7 +373,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
       TSDebug(debug_tag, "Found client request");
       // We don't have an accurate view of the body size until TXN_CLOSE so we hold
       // off on writing the content:size node until then.
-      txnData->txn_json += R"(,"client-request":{)" + txnData->write_message_node_no_content(buffer, hdr_loc);
+      txnData->write_client_request_node_no_content(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
@@ -317,7 +386,7 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
       TSError("[%s] No transaction data found for the header hook we registered for.", traffic_dump::debug_tag);
       break;
     }
-    txnData->server_protocol_description = ssnData->get_server_protocol_description(txnp);
+    txnData->_server_protocol_description = ssnData->get_server_protocol_description(txnp);
     break;
   }
 
@@ -331,34 +400,33 @@ TransactionData::global_transaction_handler(TSCont contp, TSEvent event, void *e
     TSMBuffer buffer;
     TSMLoc hdr_loc;
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &buffer, &hdr_loc)) {
-      txnData->txn_json += txnData->write_content_node(TSHttpTxnClientReqBodyBytesGet(txnp)) + "}";
+      // The node was started above in TS_EVENT_HTTP_READ_REQUEST_HDR. Here we
+      // just have to finish it off by writing the content node.
+      txnData->_txn_json += txnData->write_content_node(TSHttpTxnClientReqBodyBytesGet(txnp)) + "}";
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnServerReqGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(debug_tag, "Found proxy request");
-      txnData->txn_json += R"(,"proxy-request":{)" + txnData->server_protocol_description + "," +
-                           txnData->write_message_node(buffer, hdr_loc, TSHttpTxnServerReqBodyBytesGet(txnp));
+      txnData->write_proxy_request_node(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(debug_tag, "Found server response");
-      txnData->txn_json +=
-        R"(,"server-response":{)" + txnData->write_message_node(buffer, hdr_loc, TSHttpTxnServerRespBodyBytesGet(txnp));
+      txnData->write_server_response_node(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
     if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &buffer, &hdr_loc)) {
       TSDebug(debug_tag, "Found proxy response");
-      txnData->txn_json +=
-        R"(,"proxy-response":{)" + txnData->write_message_node(buffer, hdr_loc, TSHttpTxnClientRespBodyBytesGet(txnp));
+      txnData->write_proxy_response_node(buffer, hdr_loc);
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr_loc);
       buffer = nullptr;
     }
 
-    txnData->txn_json += "}";
-    ssnData->write_transaction_to_disk(txnData->txn_json);
+    txnData->_txn_json += "}";
+    ssnData->write_transaction_to_disk(txnData->_txn_json);
     delete txnData;
     break;
   }
