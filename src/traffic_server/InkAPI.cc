@@ -398,6 +398,37 @@ static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle")
 // API error logging
 //
 ////////////////////////////////////////////////////////////////////
+
+void
+TSStatus(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  StatusV(fmt, args);
+  va_end(args);
+}
+
+void
+TSNote(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  NoteV(fmt, args);
+  va_end(args);
+}
+
+void
+TSWarning(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  WarningV(fmt, args);
+  va_end(args);
+}
+
 void
 TSError(const char *fmt, ...)
 {
@@ -408,23 +439,33 @@ TSError(const char *fmt, ...)
   va_end(args);
 }
 
-tsapi void
-TSEmergency(const char *fmt, ...)
-{
-  va_list args;
-
-  va_start(args, fmt);
-  EmergencyV(fmt, args);
-  va_end(args);
-}
-
-tsapi void
+void
 TSFatal(const char *fmt, ...)
 {
   va_list args;
 
   va_start(args, fmt);
   FatalV(fmt, args);
+  va_end(args);
+}
+
+void
+TSAlert(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  AlertV(fmt, args);
+  va_end(args);
+}
+
+void
+TSEmergency(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  EmergencyV(fmt, args);
   va_end(args);
 }
 
