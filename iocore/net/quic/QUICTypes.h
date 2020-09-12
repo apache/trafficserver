@@ -589,6 +589,7 @@ using QUICSentPacketInfoUPtr = std::unique_ptr<QUICSentPacketInfo>;
 class QUICRTTProvider
 {
 public:
+  virtual ~QUICRTTProvider() {} // required - class has virtual methods.
   virtual ink_hrtime smoothed_rtt() const = 0;
   virtual ink_hrtime rttvar() const       = 0;
   virtual ink_hrtime latest_rtt() const   = 0;
