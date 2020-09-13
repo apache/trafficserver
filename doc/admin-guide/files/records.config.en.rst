@@ -3621,23 +3621,35 @@ Client-Related Configuration
 .. ts:cv:: CONFIG proxy.config.ssl.client.sni_policy STRING NULL
    :overridable:
 
-   Indicate how the SNI value for the TLS connection to the origin is selected.  By default it is
-   `host` which means the host header field value is used for the SNI.  If `remap` is specified, the
-   remapped origin name is used for the SNI value.  If `verify_with_name_source` is specified, the
-   SNI will be the host header value and the name to check in the server certificate will be the
-   remap header value.
+   Indicate how the SNI value for the TLS connection to the origin is selected.
+
+   ``host``
+      This is the default. The value of the ``Host`` field in the proxy request is used.
+
+   ``remap``
+      The remapped upstream name is used.
+
+   ``verify_with_name_source``
+      The value of the ``Host`` field in the proxy request is used. In addition, if the names in the
+      server certificate of the upstream are checked, they are checked against the remapped upstream
+      name, not the SNI.
+
+   ``@...``
+      If the policy starts with the ``@`` character, it is treated as a literal, less the leading
+      ``@``. E.g. if the policy is "@apache.org" the SNI will be "apache.org".
+
    We have two names that could be used in the transaction host header and the SNI value to the
    origin. These could be the host header from the client or the remap host name. Unless you have
    pristine host header enabled, these are likely the same values.
-   If sni_policy = host, both the sni and the host header to origin will be the same.
-   If sni_policy = remap, the sni value with be the remap host name and the host header will be the
-   host header from the client.
-   In addition, We may want to set the SNI and host headers the same (makes some common web servers
-   happy), but the certificate served by the origin may have a name that corresponds to the remap
-   name. So instead of using the SNI name for the name check, we may want to use the remap name.
-   So if sni_policy = verify_with_name_source, the sni will be the host header value and the name to
-   check in the server certificate will be the remap header value.
+   If sni_policy = ``host``, both the sni and the value of the ``Host`` field to origin will be the
+   same. If sni_policy = ``remap``, the sni value will be the remap host name and the host header
+   will be the host header from the client.
 
+   In addition, We may want to set the SNI and host headers the same (makes some common web servers
+   happy), but the server certificate for the upstream may have a name that corresponds to the remap
+   name. So instead of using the SNI name for the name check, we may want to use the remap name. So
+   if sni_policy = ``verify_with_name_source``, the sni will be the host header value and the name
+   to check in the server certificate will be the remap header value.
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.TLSv1 INT 0
 
