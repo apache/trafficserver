@@ -34,10 +34,28 @@ using namespace std::literals;
 
 TEST_CASE("TextView Constructor", "[libts][TextView]")
 {
-  static std::string base = "Evil Dave Rulez!";
+  static const char *delain = "Best Band";
+  static std::string base   = "Evil Dave Rulez!";
   TextView tv(base);
+  TextView alpha{delain, TextView::npos};
+  TextView bravo{delain, 9};
   TextView b{base.data(), base.size()};
   TextView c{std::string_view(base)};
+
+  tv.assign(base);
+  REQUIRE(0 == strcmp(tv, base));
+  REQUIRE(0 == strcmp(b, c));
+  REQUIRE(0 == strcmp(tv, b));
+  REQUIRE(strlen(delain) == alpha.size());
+  REQUIRE(0 == strcmp(alpha, bravo));
+
+  static const char *null = nullptr;
+  TextView null1{nullptr};
+  TextView null2{null, 0};
+  TextView null3{null, TextView::npos};
+  REQUIRE(null1.empty() == true);
+  REQUIRE(null2.empty() == true);
+  REQUIRE(null3.empty() == true);
 }
 
 TEST_CASE("TextView Operations", "[libts][TextView]")
