@@ -27,6 +27,8 @@
 #include <cctype>
 #include <sstream>
 
+static_assert(size_t(-1) == std::string_view::npos, "TextView assumes -1 is the same as npos");
+
 int
 memcmp(std::string_view const &lhs, std::string_view const &rhs)
 {
