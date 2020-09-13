@@ -26,7 +26,7 @@ autest_version = "1.8.1"
 if AuTestVersion() < autest_version:
     host.WriteError(
         "Tests need AuTest version {needed_version} or better, found version {found_version}\n"
-            "Please update AuTest:\n  pip install --upgrade autest\n".format(
+        "Please update AuTest:\n  pip install --upgrade autest\n".format(
             needed_version=autest_version,
             found_version=AuTestVersion()),
         show_stack=False)

@@ -88,7 +88,7 @@ def addTransactionToSession(txn, JFile):
 
     # hard coding only 1 session per file
     # since for the purpose of testing, we don't need multiple sessions in a file
-    if jsondata == None:
+    if jsondata is None:
         jsondata = {}
         jsondata["sessions"] = []
 
@@ -172,7 +172,19 @@ def uServerUpAndRunning(serverHost, port, isSsl, isIPv6, request, clientcert='',
 AddWhenFunction(uServerUpAndRunning)
 
 
-def MakeOriginServer(obj, name, port=None, s_port=None, ip='INADDR_LOOPBACK', delay=None, ssl=False, lookup_key=DEFAULT_LOOKUP_KEY, clientcert='', clientkey='', both=False, options={}):
+def MakeOriginServer(
+        obj,
+        name,
+        port=None,
+        s_port=None,
+        ip='INADDR_LOOPBACK',
+        delay=None,
+        ssl=False,
+        lookup_key=DEFAULT_LOOKUP_KEY,
+        clientcert='',
+        clientkey='',
+        both=False,
+        options={}):
     data_dir = os.path.join(obj.RunDirectory, name)
     p = obj.Processes.Process(name)
 
@@ -236,7 +248,14 @@ def MakeOriginServer(obj, name, port=None, s_port=None, ip='INADDR_LOOPBACK', de
         "options": {"skipHooks": None}
     })
 
-    p.Ready = When.uServerUpAndRunning(ipaddr, s_port if ssl else port, ssl, IPConstants.isIPv6(ip), healthcheck_request["headers"], clientcert=clientcert, clientkey=clientkey)
+    p.Ready = When.uServerUpAndRunning(
+        ipaddr,
+        s_port if ssl else port,
+        ssl,
+        IPConstants.isIPv6(ip),
+        healthcheck_request["headers"],
+        clientcert=clientcert,
+        clientkey=clientkey)
     p.ReturnCode = Any(None, 0)
 
     return p
