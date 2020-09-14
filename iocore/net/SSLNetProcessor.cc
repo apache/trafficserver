@@ -78,7 +78,10 @@ SSLNetProcessor::start(int, size_t stacksize)
 #if TS_USE_TLS_OCSP
   if (SSLConfigParams::ssl_ocsp_enabled) {
     // Call the update initially to get things populated
+    Note("Initial OCSP refresh started");
     ocsp_update();
+    Note("Initial OCSP refresh finished");
+
     EventType ET_OCSP = eventProcessor.spawn_event_threads("ET_OCSP", 1, stacksize);
     eventProcessor.schedule_every(new OCSPContinuation(), HRTIME_SECONDS(SSLConfigParams::ssl_ocsp_update_period), ET_OCSP);
   }
