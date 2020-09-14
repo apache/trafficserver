@@ -59,6 +59,20 @@ function main() {
   fi
 
   DIR=${@:-.}
+
+  # Only run autopep8 on tracked files. This saves time and possibly avoids
+  # formatting files the user doesn't want formatted.
+  tmp_dir=$(mktemp -d -t tracked-git-files.XXXXXXXXXX)
+  files=${tmp_dir}/git_files.txt
+  files_filtered=${tmp_dir}/git_files_filtered.txt
+  git ls-tree -r HEAD --name-only ${DIR} | grep -vE "lib/yamlcpp" > ${files}
+  # Add to the above any newly added staged files.
+  git diff --cached --name-only --diff-filter=A >> ${files}
+  # Keep this list of Python extensions the same with the list of
+  # extensions searched for in the tools/git/pre-commit hook.
+  grep -E '\.py$|\.cli.ext$|\.test.ext$' ${files} > ${files_filtered}
+
+  echo "Running autopep8. This may take a minute."
   autopep8 \
       --ignore-local-config \
       -i \
@@ -67,8 +81,21 @@ function main() {
       --max-line-length 132 \
       --aggressive \
       --aggressive \
-      --verbose \
-      -r ${DIR}
+      $(cat ${files_filtered})
+  # The above will not catch the Python files in the metalink tests because
+  # they do not have extensions.
+  autopep8 \
+      --ignore-local-config \
+      -i \
+      -j 0 \
+      --exclude "${DIR}/lib/yamlcpp" \
+      --max-line-length 132 \
+      --aggressive \
+      --aggressive \
+      --recursive \
+      plugins/experimental/metalink/test
+  echo "autopep8 completed."
+  rm -rf ${tmp_dir}
   deactivate
 }
 

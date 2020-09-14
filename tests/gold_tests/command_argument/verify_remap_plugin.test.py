@@ -99,7 +99,7 @@ tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*missing required function TSRemapInit",
     "Should warn about the need for the TSRemapInit symbol")
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR",
-    "ERROR: .*missing required function TSRemapInit")
+                                                       "ERROR: .*missing required function TSRemapInit")
 
 
 """
@@ -122,7 +122,7 @@ tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
     "ERROR: .*missing required function TSRemapInit",
     "Should warn about the need for the TSRemapInit symbol")
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR",
-    "ERROR: .*missing required function TSRemapInit")
+                                                       "ERROR: .*missing required function TSRemapInit")
 
 
 """

@@ -22,6 +22,7 @@ import hosts.output as host
 
 import re
 
+
 class CurlHeader(Tester):
     def __init__(self,
                  value,
@@ -38,13 +39,13 @@ class CurlHeader(Tester):
                 stack=host.getCurrentStack(1)
             )
 
-        ops = ("equal","equal_re")
+        ops = ("equal", "equal_re")
         gold_dict = value
 
         headers = tuple(gold_dict.keys())
         if description is None:
-            description = 'Checking that all {} headers exist and have matching values: {}'.format(len(headers), \
-                ', '.join(headers) if len(headers) <= 10 else ', '.join(headers[0:10]) + ', etc.')
+            description = 'Checking that all {} headers exist and have matching values: {}'.format(
+                len(headers), ', '.join(headers) if len(headers) <= 10 else ', '.join(headers[0:10]) + ', etc.')
 
         # sanity check for input dictionary format
         for header, target in gold_dict.items():
@@ -54,34 +55,30 @@ class CurlHeader(Tester):
                     stack=self._stack
                 )
 
-            if target == None or isinstance(target, str):
+            if target is None or isinstance(target, str):
                 continue
             elif isinstance(target, dict):
                 for op, pos_val in target.items():
                     if op not in ops:
                         host.WriteError(
-                            'CurlHeader Input: Unsupported operation \'{}\' for value at header \'{}\'. The available operations are: {}.'.format(op, header, ', '.join(ops)),
-                            stack=self._stack
-                        )
-                    elif pos_val == None or isinstance(pos_val, str):
+                            'CurlHeader Input: Unsupported operation \'{}\' for value at header \'{}\'. The available operations are: {}.'.format(
+                                op, header, ', '.join(ops)), stack=self._stack)
+                    elif pos_val is None or isinstance(pos_val, str):
                         continue
                     elif isinstance(pos_val, list):
                         for str_ in pos_val:
-                            if not isinstance(str_, str) and str_ != None:
+                            if not isinstance(str_, str) and str_ is not None:
                                 host.WriteError(
-                                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string or None.'.format(str_, str_.__class__.__name__, header),
-                                    stack=self._stack
-                                )
+                                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string or None.'.format(
+                                        str_, str_.__class__.__name__, header), stack=self._stack)
                     else:
                         host.WriteError(
-                            'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string, a list or None for possible curl values.'.format(pos_val, pos_val.__class__.__name__, header),
-                            stack=self._stack
-                        )
+                            'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string, a list or None for possible curl values.'.format(
+                                pos_val, pos_val.__class__.__name__, header), stack=self._stack)
             else:
                 host.WriteError(
-                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide either a string, a dictionary or None.'.format(target, target.__class__.__name__, header),
-                    stack=self._stack
-                )
+                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide either a string, a dictionary or None.'.format(
+                        target, target.__class__.__name__, header), stack=self._stack)
 
         super(CurlHeader, self).__init__(
             value=value,
@@ -120,16 +117,16 @@ class CurlHeader(Tester):
                 val_dict[vals[0].lower()] = ': '.join(vals[1:])
 
         # generate a gold dictionary with lowercase header
-        gold_dict = {k.lower() : v for k, v in gold_dict.items()}
+        gold_dict = {k.lower(): v for k, v in gold_dict.items()}
 
         p_flag = 1
         reason = ''
 
         for header in gold_dict.keys():
             v = val_dict.get(header)
-            if v != None:
+            if v is not None:
                 res = self.match(gold_dict, header, v)
-                if res == None:
+                if res is None:
                     continue
                 else:
                     reason += 'In field: {} \n'.format(header) + res
@@ -165,7 +162,7 @@ class CurlHeader(Tester):
     def match(self, gold_dictionary, header, val_value):
         target = gold_dictionary[header]
 
-        if target == None:
+        if target is None:
             return None
         elif isinstance(target, str):
             # if given a string, check for an exact match
@@ -175,21 +172,21 @@ class CurlHeader(Tester):
         elif isinstance(target, dict):
             # if given a dict, check for valid operations indicated by the keys
             for op, pos_val in target.items():
-                if pos_val == None:
+                if pos_val is None:
                     return None
                 elif isinstance(pos_val, list):
                     # print('Need to provide a list of possible values.')
                     # continue
                     if op == 'equal':
                         for str_ in pos_val:
-                            if val_value == str_ or str_ == None:
+                            if val_value == str_ or str_ is None:
                                 return None
                         # return 'No matching strings in the list.'
                     elif op == 'equal_re':
                         for regex in pos_val:
-                            if regex == None:
+                            if regex is None:
                                 return None
-                            elif re.fullmatch(regex, val_value) != None:
+                            elif re.fullmatch(regex, val_value) is not None:
                                 return None
 
                 elif isinstance(pos_val, str):
@@ -199,17 +196,18 @@ class CurlHeader(Tester):
                             # else 'Not an exact match.\nExpected : {}\nActual   : {}'.format(pos_val, val_value)
 
                     elif op == 'equal_re':
-                        if re.fullmatch(pos_val, val_value) != None:
+                        if re.fullmatch(pos_val, val_value) is not None:
                             return None
 
             ret = ''
-            ops = {'equal' : 'Any of the following strings: ',
-                   'equal_re' : 'Any of the following regular expression: '}
+            ops = {'equal': 'Any of the following strings: ',
+                   'equal_re': 'Any of the following regular expression: '}
 
             for op, pos_val in target.items():
                 ret += '    {}: \'{}\'\n'.format(ops[op], '\', \''.join(pos_val)) if isinstance(pos_val, list) \
                     else '    {}: \'{}\'\n'.format(ops[op], pos_val)
 
             return 'Value \'{}\' matches none of: \n{}'.format(val_value, ret.strip('\n'))
+
 
 AddTester(CurlHeader)

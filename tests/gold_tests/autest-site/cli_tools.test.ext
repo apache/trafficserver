@@ -31,19 +31,19 @@ Tools to help with TestRun commands
 #
 # Note that by default, the Default Process is created in this function.
 
-def spawn_commands(self, cmdstr, count, retcode = 0, use_default=True):
-    ret=[]
+def spawn_commands(self, cmdstr, count, retcode=0, use_default=True):
+    ret = []
 
     if use_default:
         count = int(count) - 1
-    for cnt in range(0,count):
+    for cnt in range(0, count):
         ret.append(
             self.Processes.Process(
                 name="cmdline-{num}".format(num=cnt),
-                cmdstr = cmdstr,
-                returncode = retcode
-                )
+                cmdstr=cmdstr,
+                returncode=retcode
             )
+        )
     if use_default:
         self.Processes.Default.Command = cmdstr
         self.Processes.Default.ReturnCode = retcode
@@ -51,5 +51,6 @@ def spawn_commands(self, cmdstr, count, retcode = 0, use_default=True):
             *ret
         )
     return ret
+
 
 ExtendTestRun(spawn_commands, name="SpawnCommands")
