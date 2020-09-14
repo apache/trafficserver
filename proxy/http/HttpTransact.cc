@@ -762,9 +762,7 @@ how_to_open_connection(HttpTransact::State *s)
   // Setting up a direct CONNECT tunnel enters OriginServerRawOpen. We always do that if we
   // are not forwarding CONNECT and are not going to a parent proxy.
   if (s->method == HTTP_WKSIDX_CONNECT) {
-    if (s->txn_conf->forward_connect_method == 1 || s->parent_result.result == PARENT_SPECIFIED) {
-      connect_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
-    } else {
+    if (s->txn_conf->forward_connect_method != 1 && s->parent_result.result != PARENT_SPECIFIED) {
       connect_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN;
     }
   }
