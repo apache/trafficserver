@@ -336,9 +336,11 @@ query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeo
 
   OCSP_REQ_CTX_free(ctx);
 
-  if (rv) {
+  if (rv == 1) {
     return resp;
   }
+
+  Error("failed to connect to OCSP server; host=%s path=%s", host, path);
 
   return nullptr;
 }
@@ -358,7 +360,7 @@ process_responder(OCSP_REQUEST *req, char *host, char *path, char *port, int req
 
   BIO_set_nbio(cbio, 1);
   if (BIO_do_connect(cbio) <= 0 && !BIO_should_retry(cbio)) {
-    Debug("ssl_ocsp", "process_responder: failed to connect to OCSP response server. host=%s port=%s path=%s", host, port, path);
+    Debug("ssl_ocsp", "process_responder: failed to connect to OCSP server; host=%s port=%s path=%s", host, port, path);
     goto end;
   }
   resp = query_responder(cbio, host, path, req, req_timeout);
@@ -377,15 +379,17 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
   OCSP_REQUEST *req = nullptr;
   OCSP_CERTID *id   = nullptr;
   char *host = nullptr, *port = nullptr, *path = nullptr;
-  int ssl_flag    = 0;
-  int req_timeout = -1;
+  int ssl_flag        = 0;
+  int response_status = 0;
 
-  Debug("ssl_ocsp", "stapling_refresh_response: querying responder");
   *prsp = nullptr;
 
   if (!OCSP_parse_url(cinf->uri, &host, &port, &path, &ssl_flag)) {
+    Debug("ssl_ocsp", "stapling_refresh_response: OCSP_parse_url failed; uri=%s", cinf->uri);
     goto err;
   }
+
+  Debug("ssl_ocsp", "stapling_refresh_response: querying responder; host=%s port=%s path=%s", host, port, path);
 
   req = OCSP_REQUEST_new();
   if (!req) {
@@ -399,19 +403,18 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
     goto err;
   }
 
-  req_timeout = SSLConfigParams::ssl_ocsp_request_timeout;
-  *prsp       = process_responder(req, host, path, port, req_timeout);
-
+  *prsp = process_responder(req, host, path, port, SSLConfigParams::ssl_ocsp_request_timeout);
   if (*prsp == nullptr) {
     goto done;
   }
 
-  if (OCSP_response_status(*prsp) == OCSP_RESPONSE_STATUS_SUCCESSFUL) {
+  response_status = OCSP_response_status(*prsp);
+  if (response_status == OCSP_RESPONSE_STATUS_SUCCESSFUL) {
     Debug("ssl_ocsp", "stapling_refresh_response: query response received");
     stapling_check_response(cinf, *prsp);
   } else {
-    // TODO: We should log the actual openssl error
-    Error("stapling_refresh_response: responder error");
+    Error("stapling_refresh_response: responder response error; host=%s port=%s path=%s response_status=%d", host, port, path,
+          response_status);
   }
 
   if (!stapling_cache_response(*prsp, cinf)) {
