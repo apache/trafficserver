@@ -62,6 +62,8 @@ git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/yaml
 	*.cc | *.c | *.h | *.h.in)
 	    ${FORMAT} "$file" | diff -u "$file" - >> "$clang_patch_file"
 	    ;;
+        # Keep this list of Python extensions the same with the list of
+        # extensions searched for in the toosl/autopep8.sh script.
         *.py | *.cli.ext | *.test.ext)
             autopep8 \
                 --ignore-local-config \
