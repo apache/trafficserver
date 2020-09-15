@@ -23,22 +23,43 @@
 
 #pragma once
 
-#include "Http3FrameGenerator.h"
-#include "Http3Frame.h"
+#include "QUICStream.h"
 
-class Http3Transaction;
-class VIO;
-
-class Http3DataFramer : public Http3FrameGenerator
+class QUICStreamAdapter
 {
 public:
-  Http3DataFramer(Http3Transaction *transaction, VIO *source);
+  QUICStreamAdapter(QUICStream &stream) : _stream(stream) {}
+  virtual ~QUICStreamAdapter() = default;
 
-  // Http3FrameGenerator
-  Http3FrameUPtr generate_frame() override;
-  bool is_done() const override;
+  QUICStream &
+  stream()
+  {
+    return _stream;
+  }
 
-private:
-  Http3Transaction *_transaction = nullptr;
-  VIO *_source_vio               = nullptr;
+  virtual int64_t write(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin) = 0;
+  Ptr<IOBufferBlock> read(size_t len);
+  virtual bool is_eos()         = 0;
+  virtual uint64_t unread_len() = 0;
+  virtual uint64_t read_len()   = 0;
+  virtual uint64_t total_len()  = 0;
+
+  /**
+   * Tell the application that there is data to read
+   */
+  virtual void encourge_read() = 0;
+
+  /**
+   * Tell the application that there is some space to write data
+   */
+  virtual void encourge_write() = 0;
+
+  /**
+   * Tell the application that there is no more data to read
+   */
+  virtual void notify_eos() = 0;
+
+protected:
+  virtual Ptr<IOBufferBlock> _read(size_t len) = 0;
+  QUICStream &_stream;
 };

@@ -25,6 +25,7 @@
 
 #include "quic/QUICBidirectionalStream.h"
 #include "quic/QUICUnidirectionalStream.h"
+#include "quic/QUICStreamVCAdapter.h"
 #include "quic/Mock.h"
 
 TEST_CASE("QUICBidiStream", "[quic]")
@@ -88,7 +89,9 @@ TEST_CASE("QUICBidiStream", "[quic]")
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICBidirectionalStream> stream(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, 1024, 1024));
-    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    adapter.do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(frame_1);
     stream->recv(frame_2);
@@ -116,7 +119,9 @@ TEST_CASE("QUICBidiStream", "[quic]")
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICBidirectionalStream> stream(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
-    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    adapter.do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(frame_8);
     stream->recv(frame_7);
@@ -144,7 +149,9 @@ TEST_CASE("QUICBidiStream", "[quic]")
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICBidirectionalStream> stream(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
-    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    adapter.do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(frame_8);
     stream->recv(frame_7);
@@ -175,7 +182,9 @@ TEST_CASE("QUICBidiStream", "[quic]")
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICBidirectionalStream> stream(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, 4096, 4096));
-    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    adapter.do_io_read(nullptr, INT64_MAX, read_buffer);
 
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
     block->alloc(BUFFER_SIZE_INDEX_32K);
@@ -216,11 +225,13 @@ TEST_CASE("QUICBidiStream", "[quic]")
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICBidirectionalStream> stream(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, 4096, 4096));
-    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    SCOPED_MUTEX_LOCK(lock, adapter.mutex, this_ethread());
 
-    MockContinuation mock_cont(stream->mutex);
-    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
-    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+    MockContinuation mock_cont(adapter.mutex);
+    adapter.do_io_read(nullptr, INT64_MAX, read_buffer);
+    adapter.do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 
@@ -228,28 +239,28 @@ TEST_CASE("QUICBidiStream", "[quic]")
     QUICFrame *frame      = nullptr;
 
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
@@ -257,7 +268,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
 
     // This should not send a frame because of flow control
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame);
@@ -268,7 +279,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5120));
 
     // This should send a frame
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
@@ -279,13 +290,13 @@ TEST_CASE("QUICBidiStream", "[quic]")
 
     // This should send a frame
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
 
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM_DATA_BLOCKED);
@@ -293,7 +304,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
     // Update window
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 6144));
 
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
@@ -312,10 +323,12 @@ TEST_CASE("QUICBidiStream", "[quic]")
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICBidirectionalStream> stream(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
-    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    SCOPED_MUTEX_LOCK(lock, adapter.mutex, this_ethread());
 
-    MockContinuation mock_cont(stream->mutex);
-    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+    MockContinuation mock_cont(adapter.mutex);
+    adapter.do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     const char data1[]        = "this is a test data";
@@ -327,7 +340,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
 
     // Write data1
     write_buffer->write(data1, sizeof(data1));
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     // Generate STREAM frame
     frame  = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     frame1 = static_cast<QUICStreamFrame *>(frame);
@@ -339,7 +352,7 @@ TEST_CASE("QUICBidiStream", "[quic]")
 
     // Write data2
     write_buffer->write(data2, sizeof(data2));
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     // Lost the frame
     stream->on_frame_lost(frame->id());
     // Regenerate a frame
@@ -361,10 +374,12 @@ TEST_CASE("QUICBidiStream", "[quic]")
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICBidirectionalStream> stream(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
-    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    SCOPED_MUTEX_LOCK(lock, adapter.mutex, this_ethread());
 
-    MockContinuation mock_cont(stream->mutex);
-    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+    MockContinuation mock_cont(adapter.mutex);
+    adapter.do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     QUICFrame *frame          = nullptr;
@@ -392,10 +407,12 @@ TEST_CASE("QUICBidiStream", "[quic]")
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICBidirectionalStream> stream(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
-    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    SCOPED_MUTEX_LOCK(lock, adapter.mutex, this_ethread());
 
-    MockContinuation mock_cont(stream->mutex);
-    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+    MockContinuation mock_cont(adapter.mutex);
+    adapter.do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     QUICFrame *frame          = nullptr;
@@ -426,9 +443,11 @@ TEST_CASE("QUICBidiStream", "[quic]")
     // STOP_SENDING
     std::unique_ptr<QUICBidirectionalStream> stream1(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
-    MockContinuation mock_cont1(stream1->mutex);
-    stream1->do_io_write(&mock_cont1, INT64_MAX, write_buffer_reader);
-    SCOPED_MUTEX_LOCK(lock1, stream1->mutex, this_ethread());
+    QUICStreamVCAdapter adapter1(*stream1);
+    stream1->set_io_adapter(&adapter1);
+    MockContinuation mock_cont1(adapter1.mutex);
+    adapter1.do_io_write(&mock_cont1, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock1, adapter1.mutex, this_ethread());
     stream1->stop_sending(QUICStreamErrorUPtr(new QUICStreamError(stream1.get(), QUIC_APP_ERROR_CODE_STOPPING)));
     frame = stream1->generate_frame(frame_buf, level, 4096, 0, 0, 0);
     CHECK(frame == nullptr);
@@ -436,9 +455,11 @@ TEST_CASE("QUICBidiStream", "[quic]")
     // RESET_STREAM
     std::unique_ptr<QUICBidirectionalStream> stream2(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
-    MockContinuation mock_cont2(stream2->mutex);
-    stream2->do_io_write(&mock_cont2, INT64_MAX, write_buffer_reader);
-    SCOPED_MUTEX_LOCK(lock2, stream2->mutex, this_ethread());
+    QUICStreamVCAdapter adapter2(*stream2);
+    stream2->set_io_adapter(&adapter2);
+    MockContinuation mock_cont2(adapter2.mutex);
+    adapter2.do_io_write(&mock_cont2, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock2, adapter2.mutex, this_ethread());
     stream2->reset(QUICStreamErrorUPtr(new QUICStreamError(stream2.get(), QUIC_APP_ERROR_CODE_STOPPING)));
     frame = stream2->generate_frame(frame_buf, level, 4096, 0, 0, 0);
     CHECK(frame == nullptr);
@@ -446,12 +467,14 @@ TEST_CASE("QUICBidiStream", "[quic]")
     // STREAM
     std::unique_ptr<QUICBidirectionalStream> stream3(
       new QUICBidirectionalStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX, UINT64_MAX));
-    MockContinuation mock_cont3(stream3->mutex);
-    stream3->do_io_write(&mock_cont3, INT64_MAX, write_buffer_reader);
-    SCOPED_MUTEX_LOCK(lock3, stream3->mutex, this_ethread());
+    QUICStreamVCAdapter adapter3(*stream3);
+    stream3->set_io_adapter(&adapter3);
+    MockContinuation mock_cont3(adapter3.mutex);
+    adapter3.do_io_write(&mock_cont3, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock3, adapter3.mutex, this_ethread());
     const char data[] = "this is a test data";
     write_buffer->write(data, sizeof(data));
-    stream3->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter3.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     frame = stream3->generate_frame(frame_buf, level, 4096, 0, 0, 0);
     CHECK(frame == nullptr);
   }
@@ -517,7 +540,9 @@ TEST_CASE("QUIC receive only stream", "[quic]")
     QUICRTTMeasure rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICReceiveStream> stream(new QUICReceiveStream(&rtt_provider, &cinfo_provider, stream_id, 1024));
-    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    adapter.do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(frame_1);
     stream->recv(frame_2);
@@ -544,7 +569,9 @@ TEST_CASE("QUIC receive only stream", "[quic]")
     QUICRTTMeasure rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICReceiveStream> stream(new QUICReceiveStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX));
-    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    adapter.do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(frame_8);
     stream->recv(frame_7);
@@ -571,7 +598,9 @@ TEST_CASE("QUIC receive only stream", "[quic]")
     QUICRTTMeasure rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICReceiveStream> stream(new QUICReceiveStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX));
-    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    adapter.do_io_read(nullptr, INT64_MAX, read_buffer);
 
     stream->recv(frame_8);
     stream->recv(frame_7);
@@ -601,7 +630,9 @@ TEST_CASE("QUIC receive only stream", "[quic]")
     QUICRTTMeasure rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICReceiveStream> stream(new QUICReceiveStream(&rtt_provider, &cinfo_provider, stream_id, 4096));
-    stream->do_io_read(nullptr, INT64_MAX, read_buffer);
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    adapter.do_io_read(nullptr, INT64_MAX, read_buffer);
 
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
     block->alloc(BUFFER_SIZE_INDEX_32K);
@@ -635,7 +666,9 @@ TEST_CASE("QUIC receive only stream", "[quic]")
     QUICRTTMeasure rtt_provider;
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICReceiveStream> stream(new QUICReceiveStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX));
-    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    SCOPED_MUTEX_LOCK(lock, adapter.mutex, this_ethread());
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     QUICFrame *frame          = nullptr;
@@ -663,8 +696,10 @@ TEST_CASE("QUIC receive only stream", "[quic]")
 
     // STOP_SENDING
     std::unique_ptr<QUICReceiveStream> stream1(new QUICReceiveStream(&rtt_provider, &cinfo_provider, stream_id, UINT64_MAX));
-    MockContinuation mock_cont1(stream1->mutex);
-    SCOPED_MUTEX_LOCK(lock1, stream1->mutex, this_ethread());
+    QUICStreamVCAdapter adapter1(*stream1);
+    stream1->set_io_adapter(&adapter1);
+    MockContinuation mock_cont1(adapter1.mutex);
+    SCOPED_MUTEX_LOCK(lock1, adapter1.mutex, this_ethread());
     stream1->stop_sending(QUICStreamErrorUPtr(new QUICStreamError(stream1.get(), QUIC_APP_ERROR_CODE_STOPPING)));
     frame = stream1->generate_frame(frame_buf, level, 4096, 0, 0, 0);
     CHECK(frame == nullptr);
@@ -732,10 +767,12 @@ TEST_CASE("QUIC send only stream", "[quic]")
 
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICSendStream> stream(new QUICSendStream(&cinfo_provider, stream_id, 4096));
-    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    SCOPED_MUTEX_LOCK(lock, adapter.mutex, this_ethread());
 
-    MockContinuation mock_cont(stream->mutex);
-    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+    MockContinuation mock_cont(adapter.mutex);
+    adapter.do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
 
@@ -743,28 +780,28 @@ TEST_CASE("QUIC send only stream", "[quic]")
     QUICFrame *frame      = nullptr;
 
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == false);
 
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
@@ -772,7 +809,7 @@ TEST_CASE("QUIC send only stream", "[quic]")
 
     // This should not send a frame because of flow control
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame);
@@ -783,7 +820,7 @@ TEST_CASE("QUIC send only stream", "[quic]")
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 5120));
 
     // This should send a frame
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
@@ -794,13 +831,13 @@ TEST_CASE("QUIC send only stream", "[quic]")
 
     // This should send a frame
     write_buffer->write(data, 1024);
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
 
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM_DATA_BLOCKED);
@@ -808,7 +845,7 @@ TEST_CASE("QUIC send only stream", "[quic]")
     // Update window
     stream->recv(*std::make_shared<QUICMaxStreamDataFrame>(stream_id, 6144));
 
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     CHECK(stream->will_generate_frame(level, 0, false, 0) == true);
     frame = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     CHECK(frame->type() == QUICFrameType::STREAM);
@@ -825,10 +862,12 @@ TEST_CASE("QUIC send only stream", "[quic]")
 
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICSendStream> stream(new QUICSendStream(&cinfo_provider, stream_id, UINT64_MAX));
-    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    SCOPED_MUTEX_LOCK(lock, adapter.mutex, this_ethread());
 
-    MockContinuation mock_cont(stream->mutex);
-    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+    MockContinuation mock_cont(adapter.mutex);
+    adapter.do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     const char data1[]        = "this is a test data";
@@ -840,7 +879,7 @@ TEST_CASE("QUIC send only stream", "[quic]")
 
     // Write data1
     write_buffer->write(data1, sizeof(data1));
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     // Generate STREAM frame
     frame  = stream->generate_frame(frame_buf, level, 4096, 4096, 0, 0);
     frame1 = static_cast<QUICStreamFrame *>(frame);
@@ -852,7 +891,7 @@ TEST_CASE("QUIC send only stream", "[quic]")
 
     // Write data2
     write_buffer->write(data2, sizeof(data2));
-    stream->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     // Lost the frame
     stream->on_frame_lost(frame->id());
     // Regenerate a frame
@@ -872,10 +911,12 @@ TEST_CASE("QUIC send only stream", "[quic]")
 
     MockQUICConnectionInfoProvider cinfo_provider;
     std::unique_ptr<QUICSendStream> stream(new QUICSendStream(&cinfo_provider, stream_id, UINT64_MAX));
-    SCOPED_MUTEX_LOCK(lock, stream->mutex, this_ethread());
+    QUICStreamVCAdapter adapter(*stream);
+    stream->set_io_adapter(&adapter);
+    SCOPED_MUTEX_LOCK(lock, adapter.mutex, this_ethread());
 
-    MockContinuation mock_cont(stream->mutex);
-    stream->do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
+    MockContinuation mock_cont(adapter.mutex);
+    adapter.do_io_write(&mock_cont, INT64_MAX, write_buffer_reader);
 
     QUICEncryptionLevel level = QUICEncryptionLevel::ONE_RTT;
     QUICFrame *frame          = nullptr;
@@ -904,21 +945,25 @@ TEST_CASE("QUIC send only stream", "[quic]")
 
     // RESET_STREAM
     std::unique_ptr<QUICSendStream> stream2(new QUICSendStream(&cinfo_provider, stream_id, UINT64_MAX));
-    MockContinuation mock_cont2(stream2->mutex);
-    stream2->do_io_write(&mock_cont2, INT64_MAX, write_buffer_reader);
-    SCOPED_MUTEX_LOCK(lock2, stream2->mutex, this_ethread());
+    QUICStreamVCAdapter adapter2(*stream2);
+    stream2->set_io_adapter(&adapter2);
+    MockContinuation mock_cont2(adapter2.mutex);
+    adapter2.do_io_write(&mock_cont2, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock2, adapter2.mutex, this_ethread());
     stream2->reset(QUICStreamErrorUPtr(new QUICStreamError(stream2.get(), QUIC_APP_ERROR_CODE_STOPPING)));
     frame = stream2->generate_frame(frame_buf, level, 4096, 0, 0, 0);
     CHECK(frame == nullptr);
 
     // STREAM
     std::unique_ptr<QUICSendStream> stream3(new QUICSendStream(&cinfo_provider, stream_id, UINT64_MAX));
-    MockContinuation mock_cont3(stream3->mutex);
-    stream3->do_io_write(&mock_cont3, INT64_MAX, write_buffer_reader);
-    SCOPED_MUTEX_LOCK(lock3, stream3->mutex, this_ethread());
+    QUICStreamVCAdapter adapter3(*stream3);
+    stream3->set_io_adapter(&adapter3);
+    MockContinuation mock_cont3(adapter3.mutex);
+    adapter3.do_io_write(&mock_cont3, INT64_MAX, write_buffer_reader);
+    SCOPED_MUTEX_LOCK(lock3, adapter3.mutex, this_ethread());
     const char data[] = "this is a test data";
     write_buffer->write(data, sizeof(data));
-    stream3->handleEvent(VC_EVENT_WRITE_READY, nullptr);
+    adapter3.handleEvent(VC_EVENT_WRITE_READY, nullptr);
     frame = stream3->generate_frame(frame_buf, level, 4096, 0, 0, 0);
     CHECK(frame == nullptr);
   }

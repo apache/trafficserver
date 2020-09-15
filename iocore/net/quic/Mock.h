@@ -36,6 +36,7 @@
 #include "QUICPinger.h"
 #include "QUICPadder.h"
 #include "QUICHandshakeProtocol.h"
+#include "QUICStreamAdapter.h"
 
 class MockQUICContext;
 
@@ -731,6 +732,76 @@ private:
   MockQUICCongestionController _cc;
 };
 
+class MockQUICStreamAdapter : public QUICStreamAdapter
+{
+public:
+  MockQUICStreamAdapter(QUICStream &stream) : QUICStreamAdapter(stream) {}
+
+  void
+  write_to_stream(const uint8_t *buf, size_t len)
+  {
+    this->_total_sending_data_len += len;
+    this->_sending_data_len += len;
+  }
+
+  int64_t
+  write(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin) override
+  {
+    this->_total_receiving_data_len += data_length;
+    this->_receiving_data_len += data_length;
+    return data_length;
+  }
+  bool
+  is_eos() override
+  {
+    return false;
+  }
+  uint64_t
+  unread_len() override
+  {
+    return this->_sending_data_len;
+  }
+  uint64_t
+  read_len() override
+  {
+    return 0;
+  }
+  uint64_t
+  total_len() override
+  {
+    return this->_total_sending_data_len;
+  }
+  void
+  encourge_read() override
+  {
+  }
+  void
+  encourge_write() override
+  {
+  }
+  void
+  notify_eos() override
+  {
+  }
+
+protected:
+  Ptr<IOBufferBlock>
+  _read(size_t len) override
+  {
+    this->_sending_data_len -= len;
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
+    block->alloc(iobuffer_size_to_index(len, BUFFER_SIZE_INDEX_32K));
+    block->fill(len);
+    return block;
+  }
+
+private:
+  size_t _sending_data_len         = 0;
+  size_t _total_sending_data_len   = 0;
+  size_t _receiving_data_len       = 0;
+  size_t _total_receiving_data_len = 0;
+};
+
 class MockQUICApplication : public QUICApplication
 {
 public:
@@ -740,20 +811,29 @@ public:
   main_event_handler(int event, Event *data)
   {
     if (event == 12345) {
-      QUICStreamIO *stream_io = static_cast<QUICStreamIO *>(data->cookie);
-      stream_io->write_reenable();
     }
     return EVENT_CONT;
   }
 
   void
+  on_new_stream(QUICStream &stream) override
+  {
+    auto ite                   = this->_streams.emplace(stream.id(), stream);
+    QUICStreamAdapter &adapter = ite.first->second;
+    stream.set_io_adapter(&adapter);
+  }
+
+  void
   send(const uint8_t *data, size_t size, QUICStreamId stream_id)
   {
-    QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
-    stream_io->write(data, size);
+    auto ite      = this->_streams.find(stream_id);
+    auto &adapter = ite->second;
+    adapter.write_to_stream(data, size);
 
-    eventProcessor.schedule_imm(this, ET_CALL, 12345, stream_io);
+    // eventProcessor.schedule_imm(this, ET_CALL, 12345, adapter);
   }
+
+  std::unordered_map<QUICStreamId, MockQUICStreamAdapter> _streams;
 };
 
 class MockQUICPacketR : public QUICPacketR

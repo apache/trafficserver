@@ -87,17 +87,14 @@ QUICConnectionErrorUPtr
 QUICStreamManager::create_stream(QUICStreamId stream_id)
 {
   // TODO: check stream_id
-  QUICConnectionErrorUPtr error    = nullptr;
-  QUICStreamVConnection *stream_vc = this->_find_or_create_stream_vc(stream_id);
-  if (!stream_vc) {
+  QUICConnectionErrorUPtr error = nullptr;
+  QUICStream *stream            = this->_find_or_create_stream(stream_id);
+  if (!stream) {
     return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
 
   QUICApplication *application = this->_app_map->get(stream_id);
-
-  if (!application->is_stream_set(stream_vc)) {
-    application->set_stream(stream_vc);
-  }
+  application->on_new_stream(*stream);
 
   return error;
 }
@@ -129,7 +126,7 @@ QUICStreamManager::create_bidi_stream(QUICStreamId &new_stream_id)
 void
 QUICStreamManager::reset_stream(QUICStreamId stream_id, QUICStreamErrorUPtr error)
 {
-  auto stream = this->_find_stream_vc(stream_id);
+  auto stream = this->_find_stream(stream_id);
   stream->reset(std::move(error));
 }
 
@@ -170,7 +167,7 @@ QUICStreamManager::handle_frame(QUICEncryptionLevel level, const QUICFrame &fram
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICMaxStreamDataFrame &frame)
 {
-  QUICStreamVConnection *stream = this->_find_or_create_stream_vc(frame.stream_id());
+  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -181,7 +178,7 @@ QUICStreamManager::_handle_frame(const QUICMaxStreamDataFrame &frame)
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICStreamDataBlockedFrame &frame)
 {
-  QUICStreamVConnection *stream = this->_find_or_create_stream_vc(frame.stream_id());
+  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -192,24 +189,18 @@ QUICStreamManager::_handle_frame(const QUICStreamDataBlockedFrame &frame)
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICStreamFrame &frame)
 {
-  QUICStreamVConnection *stream = this->_find_or_create_stream_vc(frame.stream_id());
-  if (!stream) {
+  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
+  if (stream) {
+    return stream->recv(frame);
+  } else {
     return std::make_unique<QUICConnectionError>(QUICTransErrorCode::STREAM_LIMIT_ERROR);
   }
-
-  QUICApplication *application = this->_app_map->get(frame.stream_id());
-
-  if (application && !application->is_stream_set(stream)) {
-    application->set_stream(stream);
-  }
-
-  return stream->recv(frame);
 }
 
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICRstStreamFrame &frame)
 {
-  QUICStream *stream = this->_find_or_create_stream_vc(frame.stream_id());
+  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -220,7 +211,7 @@ QUICStreamManager::_handle_frame(const QUICRstStreamFrame &frame)
 QUICConnectionErrorUPtr
 QUICStreamManager::_handle_frame(const QUICStopSendingFrame &frame)
 {
-  QUICStream *stream = this->_find_or_create_stream_vc(frame.stream_id());
+  QUICStream *stream = this->_find_or_create_stream(frame.stream_id());
   if (stream) {
     return stream->recv(frame);
   } else {
@@ -240,10 +231,10 @@ QUICStreamManager::_handle_frame(const QUICMaxStreamsFrame &frame)
   return nullptr;
 }
 
-QUICStreamVConnection *
-QUICStreamManager::_find_stream_vc(QUICStreamId id)
+QUICStream *
+QUICStreamManager::_find_stream(QUICStreamId id)
 {
-  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     if (s->id() == id) {
       return s;
     }
@@ -251,10 +242,10 @@ QUICStreamManager::_find_stream_vc(QUICStreamId id)
   return nullptr;
 }
 
-QUICStreamVConnection *
-QUICStreamManager::_find_or_create_stream_vc(QUICStreamId stream_id)
+QUICStream *
+QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 {
-  QUICStreamVConnection *stream = this->_find_stream_vc(stream_id);
+  QUICStream *stream = this->_find_stream(stream_id);
   if (!stream) {
     if (!this->_local_tp) {
       return nullptr;
@@ -347,6 +338,9 @@ QUICStreamManager::_find_or_create_stream_vc(QUICStreamId stream_id)
     stream = this->_stream_factory.create(stream_id, local_max_stream_data, remote_max_stream_data);
     ink_assert(stream != nullptr);
     this->stream_list.push(stream);
+
+    QUICApplication *application = this->_app_map->get(stream_id);
+    application->on_new_stream(*stream);
   }
 
   return stream;
@@ -358,7 +352,7 @@ QUICStreamManager::total_reordered_bytes() const
   uint64_t total_bytes = 0;
 
   // FIXME Iterating all (open + closed) streams is expensive
-  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     total_bytes += s->reordered_bytes();
   }
   return total_bytes;
@@ -370,7 +364,7 @@ QUICStreamManager::total_offset_received() const
   uint64_t total_offset_received = 0;
 
   // FIXME Iterating all (open + closed) streams is expensive
-  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     total_offset_received += s->largest_offset_received();
   }
   return total_offset_received;
@@ -393,7 +387,7 @@ uint32_t
 QUICStreamManager::stream_count() const
 {
   uint32_t count = 0;
-  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     ++count;
   }
   return count;
@@ -422,7 +416,7 @@ QUICStreamManager::will_generate_frame(QUICEncryptionLevel level, size_t current
     return false;
   }
 
-  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     if (s->will_generate_frame(level, current_packet_size, ack_eliciting, seq_num)) {
       return true;
     }
@@ -447,7 +441,7 @@ QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
   }
 
   // FIXME We should pick a stream based on priority
-  for (QUICStreamVConnection *s = this->stream_list.head; s; s = s->link.next) {
+  for (QUICStream *s = this->stream_list.head; s; s = s->link.next) {
     frame = s->generate_frame(buf, level, connection_credit, maximum_frame_size, current_packet_size, seq_num);
     if (frame) {
       break;

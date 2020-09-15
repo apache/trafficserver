@@ -32,7 +32,6 @@
 #include "Http3HeaderFramer.h"
 #include "Http3DataFramer.h"
 #include "HttpSM.h"
-#include "HTTP2.h"
 
 #define Http3TransDebug(fmt, ...)                                                                                            \
   Debug("http3_trans", "[%s] [%" PRIx32 "] " fmt,                                                                            \
@@ -57,7 +56,7 @@
 //
 // HQTransaction
 //
-HQTransaction::HQTransaction(HQSession *session, QUICStreamIO *stream_io) : super(), _stream_io(stream_io)
+HQTransaction::HQTransaction(HQSession *session, QUICStreamVCAdapter::IOInfo &info) : super(), _info(info)
 {
   this->mutex   = new_ProxyMutex();
   this->_thread = this_ethread();
@@ -65,21 +64,9 @@ HQTransaction::HQTransaction(HQSession *session, QUICStreamIO *stream_io) : supe
   this->set_proxy_ssn(session);
 
   this->_reader = this->_read_vio_buf.alloc_reader();
-
-  HTTPType http_type = HTTP_TYPE_UNKNOWN;
-  if (this->direction() == NET_VCONNECTION_OUT) {
-    http_type = HTTP_TYPE_RESPONSE;
-  } else {
-    http_type = HTTP_TYPE_REQUEST;
-  }
-
-  this->_header.create(http_type);
 }
 
-HQTransaction::~HQTransaction()
-{
-  this->_header.destroy();
-}
+HQTransaction::~HQTransaction() {}
 
 void
 HQTransaction::set_active_timeout(ink_hrtime timeout_in)
@@ -203,14 +190,14 @@ HQTransaction::reenable(VIO *vio)
 {
   if (vio->op == VIO::READ) {
     int64_t len = this->_process_read_vio();
-    this->_stream_io->read_reenable();
+    this->_info.read_vio->reenable();
 
     if (len > 0) {
       this->_signal_read_event();
     }
   } else if (vio->op == VIO::WRITE) {
     int64_t len = this->_process_write_vio();
-    this->_stream_io->write_reenable();
+    this->_info.write_vio->reenable();
 
     if (len > 0) {
       this->_signal_write_event();
@@ -234,7 +221,7 @@ HQTransaction::transaction_done()
 int
 HQTransaction::get_transaction_id() const
 {
-  return this->_stream_io->stream_id();
+  return this->_info.adapter.stream().id();
 }
 
 void
@@ -320,17 +307,24 @@ HQTransaction::_signal_write_event()
 //
 // Http3Transaction
 //
-Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamIO *stream_io) : super(session, stream_io)
+Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info) : super(session, info)
 {
   static_cast<HQSession *>(this->_proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
+  QUICStreamId stream_id = this->_info.adapter.stream().id();
 
-  this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_io->stream_id());
+  this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_id);
   this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
   this->_frame_collector.add_generator(this->_header_framer);
   this->_frame_collector.add_generator(this->_data_framer);
   // this->_frame_collector.add_generator(this->_push_controller);
 
-  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_header, session->remote_qpack(), this, stream_io->stream_id());
+  HTTPType http_type = HTTP_TYPE_UNKNOWN;
+  if (this->direction() == NET_VCONNECTION_OUT) {
+    http_type = HTTP_TYPE_RESPONSE;
+  } else {
+    http_type = HTTP_TYPE_REQUEST;
+  }
+  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_read_vio, http_type, session->remote_qpack(), stream_id);
   this->_data_handler   = new Http3StreamDataVIOAdaptor(&this->_read_vio);
 
   this->_frame_dispatcher.add_handler(this->_header_handler);
@@ -373,15 +367,20 @@ Http3Transaction::state_stream_open(int event, void *edata)
     if (this->_process_read_vio() > 0) {
       this->_signal_read_event();
     }
-    this->_stream_io->read_reenable();
+    this->_info.read_vio->reenable();
     break;
   case VC_EVENT_READ_COMPLETE:
+    if (!this->_header_handler->is_complete()) {
+      // Delay processing READ_COMPLETE
+      this_ethread()->schedule_imm(this, VC_EVENT_READ_COMPLETE);
+      break;
+    }
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     this->_process_read_vio();
     this->_data_handler->finalize();
     // always signal regardless of progress
     this->_signal_read_event();
-    this->_stream_io->read_reenable();
+    this->_info.read_vio->reenable();
     break;
   case VC_EVENT_WRITE_READY:
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
@@ -389,34 +388,20 @@ Http3Transaction::state_stream_open(int event, void *edata)
     if (this->_process_write_vio() > 0) {
       this->_signal_write_event();
     }
-    this->_stream_io->write_reenable();
+    this->_info.write_vio->reenable();
     break;
   case VC_EVENT_WRITE_COMPLETE:
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     this->_process_write_vio();
     // always signal regardless of progress
     this->_signal_write_event();
-    this->_stream_io->write_reenable();
+    this->_info.write_vio->reenable();
     break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
-    break;
-  }
-  case QPACK_EVENT_DECODE_COMPLETE: {
-    Http3TransVDebug("%s (%d)", "QPACK_EVENT_DECODE_COMPLETE", event);
-    int res = this->_on_qpack_decode_complete();
-    if (res) {
-      // If READ_READY event is scheduled, should it be canceled?
-      this->_signal_read_event();
-    }
-    break;
-  }
-  case QPACK_EVENT_DECODE_FAILED: {
-    Http3TransVDebug("%s (%d)", "QPACK_EVENT_DECODE_FAILED", event);
-    // FIXME: handle error
     break;
   }
   default:
@@ -495,7 +480,7 @@ Http3Transaction::_process_read_vio()
   SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
 
   uint64_t nread = 0;
-  this->_frame_dispatcher.on_read_ready(*this->_stream_io, nread);
+  this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), *this->_info.read_vio->get_reader(), nread);
   return nread;
 }
 
@@ -518,95 +503,21 @@ Http3Transaction::_process_write_vio()
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
   size_t nwritten = 0;
-  this->_frame_collector.on_write_ready(this->_stream_io, nwritten);
+  bool all_done   = false;
+  this->_frame_collector.on_write_ready(this->_info.adapter.stream().id(), *this->_info.write_vio->get_writer(), nwritten,
+                                        all_done);
+  this->_info.write_vio->nbytes += nwritten;
+  if (all_done) {
+    this->_info.write_vio->done();
+  }
 
   return nwritten;
-}
-
-// Constant strings for pseudo headers
-const char *HTTP3_VALUE_SCHEME    = ":scheme";
-const char *HTTP3_VALUE_AUTHORITY = ":authority";
-
-const unsigned HTTP3_LEN_SCHEME    = countof(":scheme") - 1;
-const unsigned HTTP3_LEN_AUTHORITY = countof(":authority") - 1;
-
-ParseResult
-Http3Transaction::_convert_header_from_3_to_1_1(HTTPHdr *hdrs)
-{
-  // TODO: do HTTP/3 specific convert, if there
-
-  if (http_hdr_type_get(hdrs->m_http) == HTTP_TYPE_REQUEST) {
-    // Dirty hack to bypass checks
-    MIMEField *field;
-    if ((field = hdrs->field_find(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME)) == nullptr) {
-      char value_s[]          = "https";
-      MIMEField *scheme_field = hdrs->field_create(HTTP3_VALUE_SCHEME, HTTP3_LEN_SCHEME);
-      scheme_field->value_set(hdrs->m_heap, hdrs->m_mime, value_s, sizeof(value_s) - 1);
-      hdrs->field_attach(scheme_field);
-    }
-
-    if ((field = hdrs->field_find(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY)) == nullptr) {
-      char value_a[]             = "localhost";
-      MIMEField *authority_field = hdrs->field_create(HTTP3_VALUE_AUTHORITY, HTTP3_LEN_AUTHORITY);
-      authority_field->value_set(hdrs->m_heap, hdrs->m_mime, value_a, sizeof(value_a) - 1);
-      hdrs->field_attach(authority_field);
-    }
-  }
-
-  return http2_convert_header_from_2_to_1_1(hdrs);
-}
-
-int
-Http3Transaction::_on_qpack_decode_complete()
-{
-  ParseResult res = this->_convert_header_from_3_to_1_1(&this->_header);
-  if (res == PARSE_RESULT_ERROR) {
-    Http3TransDebug("PARSE_RESULT_ERROR");
-    return -1;
-  }
-
-  // FIXME: response header might be delayed from first response body because of callback from QPACK
-  // Workaround fix for mixed response header and body
-  if (http_hdr_type_get(this->_header.m_http) == HTTP_TYPE_RESPONSE) {
-    return 0;
-  }
-
-  SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
-  MIOBuffer *writer = this->_read_vio.get_writer();
-
-  // TODO: Http2Stream::send_request has same logic. It originally comes from HttpSM::write_header_into_buffer.
-  // a). Make HttpSM::write_header_into_buffer static
-  //   or
-  // b). Add interface to HTTPHdr to dump data
-  //   or
-  // c). Add interface to HttpSM to handle HTTPHdr directly
-  int bufindex;
-  int dumpoffset = 0;
-  int done, tmp;
-  IOBufferBlock *block;
-  do {
-    bufindex = 0;
-    tmp      = dumpoffset;
-    block    = writer->get_current_block();
-    if (!block) {
-      writer->add_block();
-      block = writer->get_current_block();
-    }
-    done = this->_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
-    dumpoffset += bufindex;
-    writer->fill(bufindex);
-    if (!done) {
-      writer->add_block();
-    }
-  } while (!done);
-
-  return 1;
 }
 
 //
 // Http09Transaction
 //
-Http09Transaction::Http09Transaction(Http09Session *session, QUICStreamIO *stream_io) : super(session, stream_io)
+Http09Transaction::Http09Transaction(Http09Session *session, QUICStreamVCAdapter::IOInfo &info) : super(session, info)
 {
   static_cast<HQSession *>(this->_proxy_ssn)->add_transaction(static_cast<HQTransaction *>(this));
 
@@ -644,7 +555,7 @@ Http09Transaction::state_stream_open(int event, void *edata)
     if (len > 0) {
       this->_signal_read_event();
     }
-    this->_stream_io->read_reenable();
+    this->_info.read_vio->reenable();
 
     break;
   }
@@ -654,7 +565,7 @@ Http09Transaction::state_stream_open(int event, void *edata)
     if (len > 0) {
       this->_signal_write_event();
     }
-    this->_stream_io->write_reenable();
+    this->_info.write_vio->reenable();
 
     break;
   }
@@ -727,13 +638,15 @@ Http09Transaction::_process_read_vio()
   }
 
   SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
+  IOBufferReader *reader = this->_info.read_vio->get_reader();
 
   // Nuke this block when we drop 0.9 support
   if (!this->_protocol_detected) {
     uint8_t start[3];
-    if (this->_stream_io->peek(start, 3) < 3) {
+    if (!reader->is_read_avail_more_than(3)) {
       return 0;
     }
+    reader->memcpy(start, 3);
     // If the first two bit are 0 and 1, the 3rd byte is type field.
     // Because there is no type value larger than 0x20, we can assume that the
     // request is HTTP/0.9 if the value is larger than 0x20.
@@ -746,16 +659,14 @@ Http09Transaction::_process_read_vio()
   if (this->_legacy_request) {
     uint64_t nread    = 0;
     MIOBuffer *writer = this->_read_vio.get_writer();
-
     // Nuke this branch when we drop 0.9 support
     if (!this->_client_req_header_complete) {
       uint8_t buf[4096];
-      int len = this->_stream_io->peek(buf, 4096);
+      int len = reader->read(buf, 4096);
       // Check client request is complete or not
       if (len < 2 || buf[len - 1] != '\n') {
         return 0;
       }
-      this->_stream_io->consume(len);
       nread += len;
       this->_client_req_header_complete = true;
 
@@ -772,7 +683,7 @@ Http09Transaction::_process_read_vio()
     } else {
       uint8_t buf[4096];
       int len;
-      while ((len = this->_stream_io->read(buf, 4096)) > 0) {
+      while ((len = reader->read(buf, 4096)) > 0) {
         nread += len;
         writer->write(buf, len);
       }
@@ -786,7 +697,7 @@ Http09Transaction::_process_read_vio()
     int len;
     uint64_t nread = 0;
 
-    while ((len = this->_stream_io->read(buf, 4096)) > 0) {
+    while ((len = reader->read(buf, 4096)) > 0) {
       nread += len;
     }
 
@@ -817,6 +728,9 @@ Http09Transaction::_process_write_vio()
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
   IOBufferReader *reader = this->_write_vio.get_reader();
+  if (!reader) {
+    return 0;
+  }
 
   if (this->_legacy_request) {
     // This branch is for HTTP/0.9
@@ -837,7 +751,7 @@ Http09Transaction::_process_write_vio()
 
     while (total_written < bytes_avail) {
       int64_t data_len      = reader->block_read_avail();
-      int64_t bytes_written = this->_stream_io->write(reader, data_len);
+      int64_t bytes_written = this->_info.write_vio->get_writer()->write(reader, data_len);
       if (bytes_written <= 0) {
         break;
       }
@@ -851,7 +765,7 @@ Http09Transaction::_process_write_vio()
     // is CHUNK_READ_DONE and set FIN flag
     if (this->_write_vio.ntodo() == 0) {
       // The size of respons to client
-      this->_stream_io->write_done();
+      this->_info.write_vio->done();
     }
 
     return total_written;

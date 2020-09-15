@@ -23,9 +23,12 @@
 
 #pragma once
 
+#include <map>
+
 #include "IPAllow.h"
 
 #include "QUICApplication.h"
+#include "QUICStreamVCAdapter.h"
 
 #include "HttpSessionAccept.h"
 
@@ -48,6 +51,8 @@ public:
   Http3App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
   virtual ~Http3App();
 
+  void on_new_stream(QUICStream &stream) override;
+
   virtual void start();
   virtual int main_event_handler(int event, Event *data);
 
@@ -58,15 +63,17 @@ public:
 protected:
   Http3Session *_ssn = nullptr;
 
-private:
-  void _handle_uni_stream_on_read_ready(int event, QUICStreamIO *stream_io);
-  void _handle_uni_stream_on_write_ready(int event, QUICStreamIO *stream_io);
-  void _handle_uni_stream_on_eos(int event, QUICStreamIO *stream_io);
-  void _handle_bidi_stream_on_read_ready(int event, QUICStreamIO *stream_io);
-  void _handle_bidi_stream_on_write_ready(int event, QUICStreamIO *stream_io);
-  void _handle_bidi_stream_on_eos(int event, QUICStreamIO *stream_io);
+  std::unordered_map<QUICStreamId, QUICStreamVCAdapter::IOInfo> _streams;
 
-  void _set_qpack_stream(Http3StreamType type, QUICStreamIO *stream_io);
+private:
+  void _handle_uni_stream_on_read_ready(int event, VIO *vio);
+  void _handle_uni_stream_on_write_ready(int event, VIO *vio);
+  void _handle_uni_stream_on_eos(int event, VIO *vio);
+  void _handle_bidi_stream_on_read_ready(int event, VIO *vio);
+  void _handle_bidi_stream_on_write_ready(int event, VIO *vio);
+  void _handle_bidi_stream_on_eos(int event, VIO *vio);
+
+  void _set_qpack_stream(Http3StreamType type, QUICStreamVCAdapter *adapter);
 
   Http3FrameHandler *_settings_handler  = nullptr;
   Http3FrameGenerator *_settings_framer = nullptr;
@@ -74,11 +81,10 @@ private:
   Http3FrameDispatcher _control_stream_dispatcher;
   Http3FrameCollector _control_stream_collector;
 
-  QUICStreamIO *_remote_control_stream;
-  QUICStreamIO *_local_control_stream;
-
   std::map<QUICStreamId, Http3StreamType> _remote_uni_stream_map;
   std::map<QUICStreamId, Http3StreamType> _local_uni_stream_map;
+
+  bool _is_control_stream_initialized = false;
 };
 
 class Http3SettingsHandler : public Http3FrameHandler
@@ -101,7 +107,7 @@ public:
   Http3SettingsFramer(NetVConnectionContext_t context) : _context(context){};
 
   // Http3FrameGenerator
-  Http3FrameUPtr generate_frame(uint16_t max_size) override;
+  Http3FrameUPtr generate_frame() override;
   bool is_done() const override;
 
 private:

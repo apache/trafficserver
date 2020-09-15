@@ -76,16 +76,18 @@ public:
   void
   write(const uint8_t *buf, size_t buf_len, QUICOffset offset, bool last)
   {
-    this->_write_to_read_vio(offset, buf, buf_len, last);
-    this->_signal_read_event();
+    this->_adapter->write(offset, buf, buf_len, last);
+    this->_adapter->encourge_read();
   }
 
   size_t
   read(uint8_t *buf, size_t buf_len)
   {
-    this->_signal_write_event();
-    IOBufferReader *reader = this->_write_vio.get_reader();
-    return reader->read(buf, buf_len);
+    this->_adapter->encourge_read();
+    auto ibb = this->_adapter->read(buf_len);
+    IOBufferReader reader;
+    reader.block = ibb;
+    return reader.read(buf, buf_len);
   }
 };
 
@@ -296,9 +298,11 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
   QUICApplicationDriver driver;
   QPACK *qpack                   = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
   TestQUICStream *encoder_stream = new TestQUICStream(0);
-  TestQUICStream *decoder_stream = new TestQUICStream(9999);
-  qpack->set_stream(encoder_stream);
-  qpack->set_stream(decoder_stream);
+  TestQUICStream *decoder_stream = new TestQUICStream(10);
+  qpack->on_new_stream(*encoder_stream);
+  qpack->on_new_stream(*decoder_stream);
+  qpack->set_encoder_stream(encoder_stream->id());
+  qpack->set_decoder_stream(decoder_stream->id());
 
   uint64_t stream_id                  = 1;
   MIOBuffer *header_block             = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
@@ -355,7 +359,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs, int am
   QUICApplicationDriver driver;
   QPACK *qpack                   = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
   TestQUICStream *encoder_stream = new TestQUICStream(0);
-  qpack->set_stream(encoder_stream);
+  qpack->on_new_stream(*encoder_stream);
 
   int offset     = 0;
   uint8_t *block = nullptr;

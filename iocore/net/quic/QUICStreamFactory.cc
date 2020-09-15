@@ -30,10 +30,10 @@ ClassAllocator<QUICBidirectionalStream> quicBidiStreamAllocator("quicBidiStreamA
 ClassAllocator<QUICSendStream> quicSendStreamAllocator("quicSendStreamAllocator");
 ClassAllocator<QUICReceiveStream> quicReceiveStreamAllocator("quicReceiveStreamAllocator");
 
-QUICStreamVConnection *
+QUICStream *
 QUICStreamFactory::create(QUICStreamId sid, uint64_t local_max_stream_data, uint64_t remote_max_stream_data)
 {
-  QUICStreamVConnection *stream = nullptr;
+  QUICStream *stream = nullptr;
   switch (QUICTypeUtil::detect_stream_direction(sid, this->_info->direction())) {
   case QUICStreamDirection::BIDIRECTIONAL:
     // TODO Free the stream somewhere
@@ -60,13 +60,13 @@ QUICStreamFactory::create(QUICStreamId sid, uint64_t local_max_stream_data, uint
 }
 
 void
-QUICStreamFactory::delete_stream(QUICStreamVConnection *stream)
+QUICStreamFactory::delete_stream(QUICStream *stream)
 {
   if (!stream) {
     return;
   }
 
-  stream->~QUICStreamVConnection();
+  stream->~QUICStream();
   switch (stream->direction()) {
   case QUICStreamDirection::BIDIRECTIONAL:
     THREAD_FREE(static_cast<QUICBidirectionalStream *>(stream), quicBidiStreamAllocator, this_thread());

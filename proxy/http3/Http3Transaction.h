@@ -25,6 +25,7 @@
 
 #include "I_VConnection.h"
 #include "ProxyTransaction.h"
+#include "quic/QUICStreamVCAdapter.h"
 #include "Http3FrameDispatcher.h"
 #include "Http3FrameCollector.h"
 
@@ -34,6 +35,7 @@ class Http09Session;
 class Http3Session;
 class Http3HeaderFramer;
 class Http3DataFramer;
+class Http3HeaderVIOAdaptor;
 class Http3StreamDataVIOAdaptor;
 
 class HQTransaction : public ProxyTransaction
@@ -41,7 +43,7 @@ class HQTransaction : public ProxyTransaction
 public:
   using super = ProxyTransaction;
 
-  HQTransaction(HQSession *session, QUICStreamIO *stream_io);
+  HQTransaction(HQSession *session, QUICStreamVCAdapter::IOInfo &info);
   virtual ~HQTransaction();
 
   // Implement ProxyClienTransaction interface
@@ -79,15 +81,13 @@ protected:
   EThread *_thread           = nullptr;
   Event *_cross_thread_event = nullptr;
 
-  MIOBuffer _read_vio_buf  = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
-  QUICStreamIO *_stream_io = nullptr;
+  MIOBuffer _read_vio_buf = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+  QUICStreamVCAdapter::IOInfo &_info;
 
   VIO _read_vio;
   VIO _write_vio;
   Event *_read_event  = nullptr;
   Event *_write_event = nullptr;
-
-  HTTPHdr _header; ///< HTTP header buffer for decoding
 };
 
 class Http3Transaction : public HQTransaction
@@ -95,7 +95,7 @@ class Http3Transaction : public HQTransaction
 public:
   using super = HQTransaction;
 
-  Http3Transaction(Http3Session *session, QUICStreamIO *stream_io);
+  Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info);
   ~Http3Transaction();
 
   int state_stream_open(int event, void *data) override;
@@ -110,15 +110,12 @@ private:
   int64_t _process_read_vio() override;
   int64_t _process_write_vio() override;
 
-  ParseResult _convert_header_from_3_to_1_1(HTTPHdr *hdr);
-  int _on_qpack_decode_complete();
-
   // These are for HTTP/3
   Http3FrameDispatcher _frame_dispatcher;
   Http3FrameCollector _frame_collector;
   Http3FrameGenerator *_header_framer      = nullptr;
   Http3FrameGenerator *_data_framer        = nullptr;
-  Http3FrameHandler *_header_handler       = nullptr;
+  Http3HeaderVIOAdaptor *_header_handler   = nullptr;
   Http3StreamDataVIOAdaptor *_data_handler = nullptr;
 };
 
@@ -130,7 +127,7 @@ class Http09Transaction : public HQTransaction
 public:
   using super = HQTransaction;
 
-  Http09Transaction(Http09Session *session, QUICStreamIO *stream_io);
+  Http09Transaction(Http09Session *session, QUICStreamVCAdapter::IOInfo &info);
   ~Http09Transaction();
 
   int state_stream_open(int event, void *data) override;

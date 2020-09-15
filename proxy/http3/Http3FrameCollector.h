@@ -28,10 +28,12 @@
 #include "Http3FrameGenerator.h"
 #include <vector>
 
+class QUICStreamVCAdapter;
+
 class Http3FrameCollector
 {
 public:
-  Http3ErrorUPtr on_write_ready(QUICStreamIO *stream_io, size_t &nread);
+  Http3ErrorUPtr on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, size_t &nread, bool &all_done);
 
   void add_generator(Http3FrameGenerator *generator);
 
