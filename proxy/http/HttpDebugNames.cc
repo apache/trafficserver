@@ -27,7 +27,6 @@
 #include "HttpTunnel.h"
 #include "Transform.h"
 #include "HttpSM.h"
-#include "HttpUpdateSM.h"
 #include <ts/apidefs.h>
 #include <I_Event.h>
 
@@ -230,22 +229,6 @@ HttpDebugNames::get_event_name(int event)
   case HTTP_API_ERROR:
     static_assert(static_cast<int>(HTTP_API_ERROR) == static_cast<int>(TS_EVENT_HTTP_ERROR));
     return "HTTP_API_ERROR/TS_EVENT_HTTP_ERROR";
-
-  ///////////////////////////////
-  //  Scheduled Update Events
-  ///////////////////////////////
-  case HTTP_SCH_UPDATE_EVENT_WRITTEN:
-    return "HTTP_SCH_UPDATE_EVENT_WRITTEN";
-  case HTTP_SCH_UPDATE_EVENT_UPDATED:
-    return "HTTP_SCH_UPDATE_EVENT_UPDATED";
-  case HTTP_SCH_UPDATE_EVENT_DELETED:
-    return "HTTP_SCH_UPDATE_EVENT_DELETED";
-  case HTTP_SCH_UPDATE_EVENT_NOT_CACHED:
-    return "HTTP_SCH_UPDATE_EVENT_NOT_CACHED";
-  case HTTP_SCH_UPDATE_EVENT_ERROR:
-    return "HTTP_SCH_UPDATE_EVENT_ERROR";
-  case HTTP_SCH_UPDATE_EVENT_NO_ACTION:
-    return "HTTP_SCH_UPDATE_EVENT_NO_ACTION";
 
   case TS_EVENT_NET_ACCEPT_FAILED:
     return "TS_EVENT_NET_ACCEPT_FAILED";

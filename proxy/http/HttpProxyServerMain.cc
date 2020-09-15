@@ -27,7 +27,6 @@
 #include "HttpSessionAccept.h"
 #include "ReverseProxy.h"
 #include "HttpSessionManager.h"
-#include "HttpUpdateSM.h"
 #ifdef USE_HTTP_DEBUG_LISTS
 #include "Http1ClientSession.h"
 #endif
@@ -359,12 +358,6 @@ start_HttpProxyServer()
     // XXX although we make a good pretence here, I don't believe that NetProcessor::main_accept() ever actually returns
     // NULL. It would be useful to be able to detect errors and spew them here though.
   }
-
-#if TS_HAS_TESTS
-  if (is_action_tag_set("http_update_test")) {
-    init_http_update_test();
-  }
-#endif
 
   // Set up stat page for http connection count
   statPagesManager.register_http("connection_count", register_ShowConnectionCount);
