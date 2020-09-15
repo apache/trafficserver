@@ -1666,7 +1666,7 @@ msgid ""
 msgstr ""
 "最後に :ts:cv:`proxy.config.http.cache.fuzz.min_time` は小さい TTL と大きい "
 "TTL で再確認の確率を評価する時間が異なることを許容します。TTL の小さなオブ"
-"ジェクトは ``fuzz.min_time`` 付近で “再確認のサイコロを転がす” ことを始めま"
+"ジェクトは ``fuzz.min_time`` 付近で "再確認のサイコロを転がす" ことを始めま"
 "す。一方、大きな TTL のオブジェクトは ``fuzz.time`` 付近で始めるでしょう。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:849

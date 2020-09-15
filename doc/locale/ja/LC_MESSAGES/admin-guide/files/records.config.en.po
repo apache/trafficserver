@@ -2750,7 +2750,7 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:1664
 msgid ""
-"SSDs and \"advanced format” drives claim a sector size of 512; however, it "
+"SSDs and \"advanced format" drives claim a sector size of 512; however, it "
 "is safe to force a higher size than the hardware supports natively as we "
 "count atomicity in 512 byte increments."
 msgstr ""

@@ -181,7 +181,7 @@ Action *
 UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
 {
   if (TSSystemState::is_event_system_shut_down()) {
-    return ACTION_RESULT_NONE;
+    return nullptr;
   }
   EThread *t             = eventProcessor.assign_affinity_by_type(cont, opt->etype);
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);

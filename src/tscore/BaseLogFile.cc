@@ -361,6 +361,8 @@ BaseLogFile::close_file()
     ret       = fclose(m_fp);
     m_fp      = nullptr;
     m_is_init = false;
+    delete m_meta_info;
+    m_meta_info = nullptr;
   }
   return ret;
 }

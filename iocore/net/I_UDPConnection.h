@@ -73,7 +73,7 @@ public:
      <br>
      cont->handleEvent(NET_EVENT_DATAGRAM_READ_READY, Queue&lt;UDPPacketInternal&gt; *) on incoming packets.
 
-     @return Action* Always returns ACTION_RESULT_NONE.  Can't be
+     @return Action* Always returns nullptr.  Can't be
      cancelled via this Action.
      @param c continuation to be called back
    */

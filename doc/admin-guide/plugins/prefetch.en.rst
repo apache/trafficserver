@@ -88,7 +88,7 @@ It is worth mentioning that a small percentage of the requests did not follow a 
 
 * All POPs were seeded periodically except for POP #1 and the plugin was deployed in the following order: POP #0, #1, #2, #3 and then to the rest at once.
 * POP #0 was the first plugin deployment and was used to tune its configuration for better results.
-* POP #1 was a "testing ground" for the “worst case” (no seeding at all, imperfect conditions like low traffic and poorer connectivity to origin) and relying only on the Prefetch plugin.
+* POP #1 was a "testing ground" for the "worst case" (no seeding at all, imperfect conditions like low traffic and poorer connectivity to origin) and relying only on the Prefetch plugin.
 * POP #2 and POP #3 experienced seeding problems (at times it reached ~60%, not shown here).
 
 
@@ -231,7 +231,7 @@ Plugin parameters
 * ``--api-header`` - the header used by the plugin internally, also used to mark a prefetch request to the next tier in dual-tier usage.
 * ``--fetch-policy`` - fetch policy
   - ``simple`` - this policy just makes sure there are no same concurrent prefetches triggered (default and always used in combination with any other policy)
-  - ``lru:n`` - this policy uses LRU to identify “hot” objects and triggers prefetch if the object is not found. `n` is the size of the LRU
+  - ``lru:n`` - this policy uses LRU to identify "hot" objects and triggers prefetch if the object is not found. `n` is the size of the LRU
 * ``--fetch-count`` - how many objects to be prefetched.
 * ``--fetch-path-pattern`` - regex/capture pattern that would transform the **incoming** into the **next object** path.
 * ``--fetch-max`` - maximum concurrent fetches allowed, this would allow to throttle the prefetch activity if necessary

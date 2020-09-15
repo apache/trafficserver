@@ -548,7 +548,9 @@ static inline void
 read_disable(NetHandler *nh, NetEvent *ne)
 {
   if (!ne->write.enabled) {
-    ne->set_inactivity_timeout(0);
+    // Clear the next scheduled inactivity time, but don't clear inactivity_timeout_in,
+    // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
+    ne->next_inactivity_timeout_at = 0;
     Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at, ne);
   }
   ne->read.enabled = 0;
@@ -569,7 +571,9 @@ static inline void
 write_disable(NetHandler *nh, NetEvent *ne)
 {
   if (!ne->read.enabled) {
-    ne->set_inactivity_timeout(0);
+    // Clear the next scheduled inactivity time, but don't clear inactivity_timeout_in,
+    // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
+    ne->next_inactivity_timeout_at = 0;
     Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at, ne);
   }
   ne->write.enabled = 0;

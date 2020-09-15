@@ -140,6 +140,7 @@ enum HostDB_Stats {
   hostdb_ttl_stat,         // D average TTL
   hostdb_ttl_expires_stat, // D == TTL Expires
   hostdb_re_dns_on_reload_stat,
+  hostdb_insert_duplicate_to_pending_dns_stat,
   HostDB_Stat_Count
 };
 

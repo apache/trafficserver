@@ -62,5 +62,5 @@ tr.Processes.Default.ReturnCode = 0
 
 ts.Streams.stderr = "gold/ts-close-out-close.gold"
 
-tr.Processes.Default.TimeOut = 5
-tr.TimeOut = 5
+tr.Processes.Default.TimeOut = 15
+tr.TimeOut = 15

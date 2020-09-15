@@ -115,12 +115,12 @@ Read-While-Writer (RWW), Stale-While-Revalidate (SWR) etc each very effective
 dealing with a majority of the use cases that can result in the
 Thundering herd problem.
 
-For a large scale Video Streaming scenario, there’s a combination of a
+For a large scale Video Streaming scenario, there's a combination of a
 large number of revalidations (e.g. media playlists) and cache misses
-(e.g. media segments) that occur for the same file. Traffic Server’s
+(e.g. media segments) that occur for the same file. Traffic Server's
 RWW works great in collapsing the concurrent requests in such a scenario,
 however, as described in :ref:`admin-configuration-reducing-origin-requests`,
-Traffic Server’s implementation of RWW has a significant limitation, which
+Traffic Server's implementation of RWW has a significant limitation, which
 restricts its ability to invoke RWW only when the response headers are
 already received. This means that any number of concurrent requests for
 the same file that are received before the response headers arrive are
@@ -143,7 +143,7 @@ the Other hand, if the lookup is successful, meaning, the dirent
 exists for the generated cache key, Traffic Server tries to obtain
 a read lock on the cache object to be able to serve it from the cache.
 If the read lock is not successful (possibly, due to the fact that
-the object’s being written to at that same instant and the response
+the object's being written to at that same instant and the response
 headers are not in the cache yet), Traffic Server then moves to the
 next step of trying to obtain an exclusive write lock. If the write
 lock is already held exclusively by another request (transaction), the

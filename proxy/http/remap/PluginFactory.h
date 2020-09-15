@@ -118,12 +118,5 @@ protected:
   std::error_code _ec;
   bool _preventiveCleaning = true;
 
-  // Hold the full path for global plugins not taking part of the dynamic reloading.
-  struct DisableReloadPluginInfo {
-    fs::path fullPath;
-  };
-
-  std::forward_list<DisableReloadPluginInfo> optoutPlugins;
-
   static constexpr const char *const _tag = "plugin_factory"; /** @brief log tag used by this class */
 };

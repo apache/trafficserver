@@ -82,6 +82,9 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOO
         jsondata = {'mappings': []}
 
         if default:
+            if isinstance(default, str):
+                # MicroDNS expects 'otherwise' to be a sequence.
+                default = [default]
             jsondata['otherwise'] = default
 
         with open(filepath, 'w') as f:

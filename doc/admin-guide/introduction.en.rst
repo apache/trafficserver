@@ -28,7 +28,7 @@ to and from all parts of the world. Information is free, abundant, and
 accessible. Unfortunately, global data networking can also be a
 nightmare for IT professionals as they struggle with overloaded servers
 and congested networks. It can be challenging to consistently and
-reliably accommodate society’s growing data demands.
+reliably accommodate society's growing data demands.
 
 |TS| is a high-performance web proxy cache that improves
 network efficiency and performance by caching frequently-accessed
@@ -58,10 +58,10 @@ content as those requests travel to the destined web server (origin
 server). If |TS| contains the requested content, then it
 serves the content directly. If the requested content is not available
 from cache, then |TS| acts as a proxy: it obtains the content
-from the origin server on the user’s behalf and also keeps a copy to
+from the origin server on the user's behalf and also keeps a copy to
 satisfy future requests.
 
-|TS| provides explicit proxy caching, in which the user’s
+|TS| provides explicit proxy caching, in which the user's
 client software must be configured to send requests directly to Traffic
 Server. Explicit proxy caching is described in the :ref:`explicit-proxy-caching`
 chapter.
@@ -75,7 +75,7 @@ section.
 -----------------------
 
 As a reverse proxy, |TS| is configured to be the origin server
-to which the user is trying to connect (typically, the origin server’s
+to which the user is trying to connect (typically, the origin server's
 advertised hostname resolves to |TS|, which acts as the real
 origin server). The reverse proxy feature is also called server
 acceleration. Reverse proxy is described in more detail in

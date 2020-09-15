@@ -118,6 +118,8 @@ DoRemap(const Instance &i, TSHttpTxn t)
     CHECK(TSMimeHdrFieldValueStringSet(buffer, location, field, -1, "original", 8));
 
     CHECK(TSMimeHdrFieldAppend(buffer, location, field));
+
+    CHECK(TSHandleMLocRelease(buffer, location, field));
   }
 
   Requests requests;

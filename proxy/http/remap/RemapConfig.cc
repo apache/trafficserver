@@ -32,6 +32,7 @@
 #include "tscore/ink_file.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ts_file.h"
+#include "tscore/Filenames.h"
 #include "IPAllow.h"
 #include "PluginFactory.h"
 
@@ -299,7 +300,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
   if (success) {
     // register the included file with the management subsystem so that we can correctly
     // reload them when they change
-    load_remap_file_cb(path);
+    load_remap_file_cb(ts::filename::REMAP, path);
   } else {
     snprintf(errbuf, errbufsize, "failed to parse included file %s", path);
     return (const char *)errbuf;
@@ -1086,12 +1087,13 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     }
 
     new_mapping->fromURL.create(nullptr);
-    rparse = new_mapping->fromURL.parse_no_path_component_breakdown(tmp, length);
+    rparse = new_mapping->fromURL.parse_regex(tmp, length);
 
     map_from_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_RESULT_DONE) {
-      errStr = "malformed From URL";
+      snprintf(errStrBuf, sizeof(errStrBuf), "malformed From URL: %.*s", length, tmp);
+      errStr = errStrBuf;
       goto MAP_ERROR;
     }
 
@@ -1101,11 +1103,12 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     tmp          = map_to;
 
     new_mapping->toURL.create(nullptr);
-    rparse                   = new_mapping->toURL.parse_no_path_component_breakdown(tmp, length);
+    rparse                   = new_mapping->toURL.parse_no_host_check(std::string_view(tmp, length));
     map_to_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_RESULT_DONE) {
-      errStr = "malformed To URL";
+      snprintf(errStrBuf, sizeof(errStrBuf), "malformed To URL: %.*s", length, tmp);
+      errStr = errStrBuf;
       goto MAP_ERROR;
     }
 

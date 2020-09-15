@@ -98,7 +98,7 @@ UDPConnection::recv(Continuation *c)
   p->continuation = c;
   ink_assert(c != nullptr);
   mutex = c->mutex;
-  return ACTION_RESULT_NONE;
+  return nullptr;
 }
 
 TS_INLINE UDPConnection *

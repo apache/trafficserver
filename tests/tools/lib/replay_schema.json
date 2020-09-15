@@ -188,7 +188,33 @@
         "version": {
           "description": "HTTP version",
           "type": "string",
-          "enum": ["0.9", "1.0", "1.1", "2.0"]
+          "enum": ["0.9", "1.0", "1.1", "2", "3"]
+        },
+        "http2": {
+          "description": "A description of the HTTP/2 properties",
+          "type": "object",
+          "required": [ "stream-id" ],
+          "properties": {
+            "stream-id": {
+              "description": "The HTTP/2 stream identifier.",
+              "type": "integer"
+            },
+            "priority": {
+              "description": "A description of the HTTP/2 properties",
+              "type": "object",
+              "required": [ "stream-dependency", "weight" ],
+              "properties": {
+                "stream-dependency": {
+                  "description": "The stream this stream depends upon.",
+                  "type": "integer"
+                },
+                "weight": {
+                  "description": "The priority weight assigned to the stream dependency.",
+                  "type": "integer"
+                }
+              }
+            }
+          }
         },
         "scheme": {
           "description": "HTTP scheme (request).",
@@ -225,7 +251,7 @@
         "version": {
           "description": "HTTP version",
           "type": "string",
-          "enum": ["0.9", "1.0", "1.1", "2.0"]
+          "enum": ["0.9", "1.0", "1.1", "2", "3"]
         },
         "status": {
           "description": "Status code.",

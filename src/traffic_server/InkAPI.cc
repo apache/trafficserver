@@ -398,6 +398,37 @@ static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle")
 // API error logging
 //
 ////////////////////////////////////////////////////////////////////
+
+void
+TSStatus(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  StatusV(fmt, args);
+  va_end(args);
+}
+
+void
+TSNote(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  NoteV(fmt, args);
+  va_end(args);
+}
+
+void
+TSWarning(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  WarningV(fmt, args);
+  va_end(args);
+}
+
 void
 TSError(const char *fmt, ...)
 {
@@ -408,23 +439,33 @@ TSError(const char *fmt, ...)
   va_end(args);
 }
 
-tsapi void
-TSEmergency(const char *fmt, ...)
-{
-  va_list args;
-
-  va_start(args, fmt);
-  EmergencyV(fmt, args);
-  va_end(args);
-}
-
-tsapi void
+void
 TSFatal(const char *fmt, ...)
 {
   va_list args;
 
   va_start(args, fmt);
   FatalV(fmt, args);
+  va_end(args);
+}
+
+void
+TSAlert(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  AlertV(fmt, args);
+  va_end(args);
+}
+
+void
+TSEmergency(const char *fmt, ...)
+{
+  va_list args;
+
+  va_start(args, fmt);
+  EmergencyV(fmt, args);
   va_end(args);
 }
 
@@ -5814,14 +5855,12 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the mark on an active server session
-  if (nullptr != sm->ua_txn) {
-    Http1ServerSession *ssn = sm->ua_txn->get_server_session();
-    if (nullptr != ssn) {
-      NetVConnection *vc = ssn->get_netvc();
-      if (vc != nullptr) {
-        vc->options.packet_mark = (uint32_t)mark;
-        vc->apply_options();
-      }
+  Http1ServerSession *ssn = sm->get_server_session();
+  if (nullptr != ssn) {
+    NetVConnection *vc = ssn->get_netvc();
+    if (vc != nullptr) {
+      vc->options.packet_mark = (uint32_t)mark;
+      vc->apply_options();
     }
   }
 
@@ -5856,14 +5895,12 @@ TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the tos on an active server session
-  if (nullptr != sm->ua_txn) {
-    Http1ServerSession *ssn = sm->ua_txn->get_server_session();
-    if (nullptr != ssn) {
-      NetVConnection *vc = ssn->get_netvc();
-      if (vc != nullptr) {
-        vc->options.packet_tos = (uint32_t)tos;
-        vc->apply_options();
-      }
+  Http1ServerSession *ssn = sm->get_server_session();
+  if (nullptr != ssn) {
+    NetVConnection *vc = ssn->get_netvc();
+    if (vc != nullptr) {
+      vc->options.packet_tos = (uint32_t)tos;
+      vc->apply_options();
     }
   }
 
@@ -5898,14 +5935,12 @@ TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the tos on an active server session
-  if (nullptr != sm->ua_txn) {
-    Http1ServerSession *ssn = sm->ua_txn->get_server_session();
-    if (nullptr != ssn) {
-      NetVConnection *vc = ssn->get_netvc();
-      if (vc != nullptr) {
-        vc->options.packet_tos = (uint32_t)dscp << 2;
-        vc->apply_options();
-      }
+  Http1ServerSession *ssn = sm->get_server_session();
+  if (nullptr != ssn) {
+    NetVConnection *vc = ssn->get_netvc();
+    if (vc != nullptr) {
+      vc->options.packet_tos = (uint32_t)dscp << 2;
+      vc->apply_options();
     }
   }
 
@@ -6820,11 +6855,20 @@ TSActionCancel(TSAction actionp)
   Action *thisaction;
   INKContInternal *i;
 
+  // Nothing to cancel
+  if (actionp == nullptr) {
+    return;
+  }
+
   /* This is a hack. Should be handled in ink_types */
   if ((uintptr_t)actionp & 0x1) {
     thisaction = (Action *)((uintptr_t)actionp - 1);
-    i          = (INKContInternal *)thisaction->continuation;
-    i->handle_event_count(EVENT_IMMEDIATE);
+    if (thisaction) {
+      i = (INKContInternal *)thisaction->continuation;
+      i->handle_event_count(EVENT_IMMEDIATE);
+    } else { // The action pointer for an INKContInternal was effectively null, just go away
+      return;
+    }
   } else {
     thisaction = (Action *)actionp;
   }
@@ -7780,6 +7824,16 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
   return TS_SUCCESS;
 }
 
+extern void load_config_file_callback(const char *parent, const char *remap_file);
+
+/* Config file name setting */
+TSReturnCode
+TSMgmtConfigFileAdd(const char *parent, const char *fileName)
+{
+  load_config_file_callback(parent, fileName);
+  return TS_SUCCESS;
+}
+
 TSReturnCode
 TSCacheUrlSet(TSHttpTxn txnp, const char *url, int length)
 {
@@ -8086,6 +8140,43 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
   ua_session->add_url_to_pushed_table(url, url_len);
 
   url_obj.destroy();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnClientStreamIdGet(TSHttpTxn txnp, uint64_t *stream_id)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(stream_id != nullptr);
+
+  auto *sm     = reinterpret_cast<HttpSM *>(txnp);
+  auto *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
+  if (stream == nullptr) {
+    return TS_ERROR;
+  }
+  *stream_id = stream->get_id();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority)
+{
+  static_assert(sizeof(TSHttpPriority) >= sizeof(TSHttp2Priority),
+                "TSHttpPriorityType is incorrectly smaller than TSHttp2Priority.");
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(priority != nullptr);
+
+  auto *sm     = reinterpret_cast<HttpSM *>(txnp);
+  auto *stream = dynamic_cast<Http2Stream *>(sm->ua_txn);
+  if (stream == nullptr) {
+    return TS_ERROR;
+  }
+
+  auto *priority_out              = reinterpret_cast<TSHttp2Priority *>(priority);
+  priority_out->priority_type     = HTTP_PRIORITY_TYPE_HTTP_2;
+  priority_out->stream_dependency = stream->get_transaction_priority_dependence();
+  priority_out->weight            = stream->get_transaction_priority_weight();
+
   return TS_SUCCESS;
 }
 

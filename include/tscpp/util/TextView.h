@@ -115,19 +115,36 @@ public:
   /// Default constructor (empty buffer).
   constexpr TextView();
 
-  /** Construct explicitly with a pointer and size.
+  /** Construct from pointer and size.
+   *
+   * @param ptr String for the view.
+   * @param n Length of string at @a ptr.
+   *
+   * If @a n is @c npos then @a ptr is presumed to be a C string and the length is computed from it.
+   * In this case, if @a ptr is @c nullptr the length is zero, otherwise the length is that returned
+   * by @c strlen(ptr).
+   *
+   * @note - @c strlen can't be called in a @a constexpr value therefore @a n must not be @c npos
+   * in any @c constexpr definition.
    */
-  constexpr TextView(const char *ptr, ///< Pointer to buffer.
-                     size_t n         ///< Size of buffer.
-  );
+  constexpr TextView(const char *ptr, size_t n);
 
   /** Construct explicitly with a pointer and size.
-      If @a n is negative it is treated as 0.
-      @internal Overload for convenience, otherwise get "narrow conversion" errors.
+   *
+   * @param ptr String.
+   * @param n Length
+   *
+   * If @a n is negative then @a ptr is presumed to be a C string the length is computed.
+   * In this case, if @a ptr is  @c nullptr the length is zero, otherwise the length is that returned
+   * by @c strlen(ptr).
+   *
+   * @note - @c strlen can't be called in a @a constexpr value therefore @a n must not be negative
+   * in any @c constexpr definition.
+   *
+   * @internal This is also useful for cases where the integral type is already signed, to avoid
+   * having to cast.
    */
-  constexpr TextView(const char *ptr, ///< Pointer to buffer.
-                     int n            ///< Size of buffer.
-  );
+  constexpr TextView(const char *ptr, int n);
 
   /** Construct from a half open range of two pointers.
       @note The byte at @start is in the view but the byte at @a end is not.
@@ -595,8 +612,8 @@ svto_radix(ts::TextView &src)
 
 // === TextView Implementation ===
 inline constexpr TextView::TextView() {}
-inline constexpr TextView::TextView(const char *ptr, size_t n) : super_type(ptr, n) {}
-inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? 0 : n) {}
+inline constexpr TextView::TextView(const char *ptr, size_t n) : super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n) {}
+inline constexpr TextView::TextView(const char *ptr, int n) : super_type(ptr, n < 0 ? (ptr ? ::strlen(ptr) : 0) : n) {}
 inline constexpr TextView::TextView(const char *start, const char *end) : super_type(start, end - start) {}
 inline constexpr TextView::TextView(std::nullptr_t) : super_type(nullptr, 0) {}
 inline TextView::TextView(std::string const &str) : super_type(str) {}
@@ -694,7 +711,7 @@ TextView::assign(const std::string &s)
 inline TextView &
 TextView::assign(char const *ptr, size_t n)
 {
-  *this = super_type(ptr, n);
+  *this = super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n);
   return *this;
 }
 
@@ -1204,6 +1221,26 @@ TextView::stream_write(Stream &os, const TextView &b) const
 // Provide an instantiation for @c std::ostream as it's likely this is the only one ever used.
 extern template std::ostream &TextView::stream_write(std::ostream &, const TextView &) const;
 
+/** User literals for TextView.
+ *
+ * - _tv : TextView
+ * - _sv : std::string_view
+ */
+namespace literals
+{
+  /** Literal constructor for @c ts::TextView.
+   *
+   * @param s The source string.
+   * @param n Size of the source string.
+   * @return A @c string_view
+   *
+   * @internal This is provided because the STL one does not support @c constexpr which seems
+   * rather bizarre to me, but there it is. Update: this depends on the version of the compiler,
+   * so hopefully someday this can be removed.
+   */
+  constexpr ts::TextView operator"" _tv(const char *s, size_t n) { return {s, n}; }
+} // namespace literals
+
 } // namespace ts
 
 namespace std
@@ -1226,8 +1263,10 @@ template <> struct iterator_traits<ts::TextView> {
 } // namespace std
 
 // @c constexpr literal constructor for @c std::string_view
-// For unknown reasons, this enables creating @c constexpr constructs using @c std::string_view while the standard
-// one (""sv) does not.
+//
+// For unknown reasons, this enables creating @c constexpr constructs using @c std::string_view while the
+// standard one (""sv) does not.
+//
 // I couldn't think of any better place to put this, so it's here. At least @c TextView is strongly related
 // to @c std::string_view.
 constexpr std::string_view operator"" _sv(const char *s, size_t n)

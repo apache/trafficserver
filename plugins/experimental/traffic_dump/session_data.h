@@ -26,6 +26,7 @@
 #include <atomic>
 #include <cstdlib>
 #include <mutex>
+#include <string>
 #include <string_view>
 
 #include "ts/ts.h"
@@ -66,6 +67,9 @@ private:
   ts::file::path log_name;
   /// Whether the first transaction in this session has been written.
   bool has_written_first_transaction = false;
+  /// The HTTP version specified in the client protocol stack, or empty string
+  /// if it was not specified.
+  std::string http_version_in_client_stack;
 
   TSCont aio_cont = nullptr; /// AIO continuation callback
   TSCont txn_cont = nullptr; /// Transaction continuation callback
@@ -141,7 +145,7 @@ public:
    * @return A JSON description of the server protocol stack for the
    * transaction.
    */
-  static std::string get_server_protocol_description(TSHttpTxn txnp);
+  std::string get_server_protocol_description(TSHttpTxn txnp);
 
   /** Write the string to the session's dump file.
    *
@@ -161,6 +165,19 @@ public:
    */
   int write_transaction_to_disk(std::string_view content);
 
+  /** The HTTP version specified in the client-side protocol stack.
+   *
+   * The client protocol stack is obtained at session negotiation, before HTTP
+   * traffic is passed. So it may contain stack information if it was
+   * negotiated in the TLS handshake, as is often the case with HTTP/2, but it
+   * may not. This function returns whether the protocol stack contained HTTP
+   * information or not.
+   *
+   * @return The HTTP version in the client stack or empty string if it was not
+   * specified.
+   */
+  std::string get_http_version_in_client_stack() const;
+
 private:
   /** Write the string to the session's dump file.
    *
@@ -173,13 +190,30 @@ private:
    */
   int write_to_disk_no_lock(std::string_view content);
 
+  using get_protocol_stack_f  = std::function<TSReturnCode(int, const char **, int *)>;
+  using get_tls_description_f = std::function<std::string()>;
+
+  /** Create the protocol stack for a session.
+   *
+   * This function encapsulates the logic common between the client-side and
+   * server-side logic for populating a protocol stack.
+   *
+   * @param[in] get_protocol_stack The function to use to populate a protocol
+   * stack.
+   *
+   * @return The description of the protocol stack and True if the stack
+   * contained an HTTP description, false otherwise.
+   */
+  std::string get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_stack, const get_tls_description_f &get_tls_node);
+
   /** Get the JSON string that describes the client session stack.
    *
    * @param[in] ssnp The reference to the client session.
    *
-   * @return A JSON description of the client protocol stack.
+   * @return A description of the client protocol stack and True if the stack
+   * contained an HTTP description, false otherwise.
    */
-  static std::string get_client_protocol_description(TSHttpSsn ssnp);
+  std::string get_client_protocol_description(TSHttpSsn ssnp);
 
   /** The handler callback for when async IO is done. Used for cleanup. */
   static int session_aio_handler(TSCont contp, TSEvent event, void *edata);

@@ -46,7 +46,7 @@ if ENV['ATS_BIN'] is not None:
         hint = ''
         if os.path.isfile(os.path.join(ENV['ATS_BIN'], 'bin', 'traffic_layout')):
             hint = "\nDid you mean '--ats-bin {}'?".\
-                format(os.path.join(ENV['ATS_BIN'],'bin'))
+                format(os.path.join(ENV['ATS_BIN'], 'bin'))
         host.WriteError("traffic_layout is not found. Aborting tests - Bad build or install.{}".format(hint), show_stack=False)
     try:
         out = subprocess.check_output([traffic_layout, "--json"])

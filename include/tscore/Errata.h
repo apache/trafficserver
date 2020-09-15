@@ -728,8 +728,8 @@ MakeRv(R const &r,     ///< The function result
 /* ----------------------------------------------------------------------- */
 // Inline methods.
 inline Errata::Message::Message(std::string const &text) : m_text(text) {}
-inline Errata::Message::Message(Id id, std::string const &text) : m_text(text) {}
-inline Errata::Message::Message(Id id, Code code, std::string const &text) : m_text(text) {}
+inline Errata::Message::Message(Id id, std::string const &text) : m_id(id), m_text(text) {}
+inline Errata::Message::Message(Id id, Code code, std::string const &text) : m_id(id), m_code(code), m_text(text) {}
 template <typename... Args>
 Errata::Message::Message(Id id, Code code, Args const &... text) : m_id(id), m_code(code), m_text(stringify(text...))
 {

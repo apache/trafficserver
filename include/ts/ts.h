@@ -272,11 +272,18 @@ tsapi char *TSfgets(TSFile filep, char *buf, size_t length);
     @param fmt printf format description.
     @param ... argument for the printf format description.
 
-*/
-tsapi void TSError(const char *fmt, ...) TS_PRINTFLIKE(1, 2);
+    Note: Your log monitoring (e.g. Splunk) needs to alert Ops of log
+    messages that contain ' ALERT: ' or ' EMERGENCY: ', these require
+    immediate attention.
 
-tsapi void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2);
-tsapi void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2);
+*/
+tsapi void TSStatus(const char *fmt, ...) TS_PRINTFLIKE(1, 2);    // Log information
+tsapi void TSNote(const char *fmt, ...) TS_PRINTFLIKE(1, 2);      // Log significant information
+tsapi void TSWarning(const char *fmt, ...) TS_PRINTFLIKE(1, 2);   // Log concerning information
+tsapi void TSError(const char *fmt, ...) TS_PRINTFLIKE(1, 2);     // Log operational failure, fail CI
+tsapi void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2);     // Log recoverable crash, fail CI, exit & restart
+tsapi void TSAlert(const char *fmt, ...) TS_PRINTFLIKE(1, 2);     // Log recoverable crash, fail CI, exit & restart, Ops attention
+tsapi void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2); // Log unrecoverable crash, fail CI, exit, Ops attention
 
 /* --------------------------------------------------------------------------
    Assertions */
@@ -398,8 +405,8 @@ tsapi int TSUrlLengthGet(TSMBuffer bufp, TSMLoc offset);
     string in the parameter length. This is the same length that
     TSUrlLengthGet() returns. The returned string is allocated by a
     call to TSmalloc(). It should be freed by a call to TSfree().
-    The length parameter must present, providing storage for the URL
-    string length value.
+    The length parameter must be present, providing storage for the
+    URL string length value.
     Note: To get the effective URL from a request, use the alternative
           TSHttpTxnEffectiveUrlStringGet or
           TSHttpHdrEffectiveUrlBufGet APIs.
@@ -1201,6 +1208,7 @@ tsapi TSReturnCode TSMgmtCounterGet(const char *var_name, TSMgmtCounter *result)
 tsapi TSReturnCode TSMgmtFloatGet(const char *var_name, TSMgmtFloat *result);
 tsapi TSReturnCode TSMgmtStringGet(const char *var_name, TSMgmtString *result);
 tsapi TSReturnCode TSMgmtSourceGet(const char *var_name, TSMgmtSource *source);
+tsapi TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 /* --------------------------------------------------------------------------
    Continuations */
 tsapi TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp);
@@ -2572,6 +2580,32 @@ tsapi TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
  * @param url_len the length of the URL string.
  */
 tsapi TSReturnCode TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
+
+/** Retrieve the client side stream id for the stream of which the
+ * provided transaction is a part.
+ *
+ * @param[in] txnp The Transaction for which the stream id should be retrieved.
+ * @param[out] stream_id The stream id for this transaction.
+ *
+ * @return TS_ERROR if a stream id cannot be retrieved for the given
+ * transaction given its protocol. For instance, if txnp is an HTTP/1.1
+ * transaction, then a TS_ERROR will be returned because HTTP/1.1 does not
+ * implement streams.
+ */
+tsapi TSReturnCode TSHttpTxnClientStreamIdGet(TSHttpTxn txnp, uint64_t *stream_id);
+
+/** Retrieve the client side priority for the stream of which the
+ * provided transaction is a part.
+ *
+ * @param[in] txnp The Transaction for which the stream id should be retrieved.
+ * @param[out] priority The priority for the stream in this transaction.
+ *
+ * @return TS_ERROR if a priority cannot be retrieved for the given
+ * transaction given its protocol. For instance, if txnp is an HTTP/1.1
+ * transaction, then a TS_ERROR will be returned because HTTP/1.1 does not
+ * implement stream priorities.
+ */
+tsapi TSReturnCode TSHttpTxnClientStreamPriorityGet(TSHttpTxn txnp, TSHttpPriority *priority);
 
 #ifdef __cplusplus
 }

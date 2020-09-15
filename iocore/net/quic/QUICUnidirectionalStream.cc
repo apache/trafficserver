@@ -127,15 +127,19 @@ QUICSendStream::state_stream_closed(int event, void *data)
 bool
 QUICSendStream::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
-  return !this->is_retransmited_frame_queue_empty() || this->_write_vio.get_reader()->is_read_avail_more_than(0);
+  if (!this->is_retransmited_frame_queue_empty()) {
+    return true;
+  }
+  if (this->_write_vio.op != VIO::NONE && this->_write_vio.get_reader()->is_read_avail_more_than(0)) {
+    return true;
+  }
+  return false;
 }
 
 QUICFrame *
 QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
                                size_t current_packet_size, uint32_t seq_num)
 {
-  SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
-
   QUICFrame *frame = this->create_retransmitted_frame(buf, level, maximum_frame_size, this->_issue_frame_id(), this);
   if (frame != nullptr) {
     ink_assert(frame->type() == QUICFrameType::STREAM);
@@ -146,98 +150,102 @@ QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t
   // RESET_STREAM
   if (this->_reset_reason && !this->_is_reset_sent) {
     frame = QUICFrameFactory::create_rst_stream_frame(buf, *this->_reset_reason, this->_issue_frame_id(), this);
+    if (frame->size() > maximum_frame_size) {
+      frame->~QUICFrame();
+      return nullptr;
+    }
     this->_records_rst_stream_frame(level, *static_cast<QUICRstStreamFrame *>(frame));
     this->_state.update_with_sending_frame(*frame);
     this->_is_reset_sent = true;
     return frame;
   }
 
-  if (!this->_state.is_allowed_to_send(QUICFrameType::STREAM)) {
-    return frame;
-  }
+  if (this->_write_vio.op != VIO::NONE && this->_state.is_allowed_to_send(QUICFrameType::STREAM)) {
+    SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
 
-  uint64_t maximum_data_size = 0;
-  if (maximum_frame_size <= MAX_STREAM_FRAME_OVERHEAD) {
-    return frame;
-  }
-  maximum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
+    uint64_t maximum_data_size = 0;
+    if (maximum_frame_size <= MAX_STREAM_FRAME_OVERHEAD) {
+      return frame;
+    }
+    maximum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
 
-  bool pure_fin = false;
-  bool fin      = false;
-  if ((this->_write_vio.nbytes != 0 || this->_write_vio.nbytes != INT64_MAX) &&
-      this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset)) {
-    // Pure FIN stream should be sent regardless status of remote flow controller, because the length is zero.
-    pure_fin = true;
-    fin      = true;
-  }
+    bool pure_fin = false;
+    bool fin      = false;
+    if ((this->_write_vio.nbytes != 0 || this->_write_vio.nbytes != INT64_MAX) &&
+        this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset)) {
+      // Pure FIN stream should be sent regardless status of remote flow controller, because the length is zero.
+      pure_fin = true;
+      fin      = true;
+    }
 
-  uint64_t len           = 0;
-  IOBufferReader *reader = this->_write_vio.get_reader();
-  if (!pure_fin) {
-    uint64_t data_len = reader->block_read_avail();
-    if (data_len == 0) {
+    uint64_t len           = 0;
+    IOBufferReader *reader = this->_write_vio.get_reader();
+    if (!pure_fin) {
+      uint64_t data_len = reader->block_read_avail();
+      if (data_len == 0) {
+        return frame;
+      }
+
+      // Check Connection/Stream level credit only if the generating STREAM frame is not pure fin
+      uint64_t stream_credit = this->_remote_flow_controller.credit();
+      if (stream_credit == 0) {
+        // STREAM_DATA_BLOCKED
+        frame =
+          this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
+        return frame;
+      }
+
+      if (connection_credit == 0) {
+        // BLOCKED - BLOCKED frame will be sent by connection level remote flow controller
+        return frame;
+      }
+
+      len = std::min(data_len, std::min(maximum_data_size, std::min(stream_credit, connection_credit)));
+
+      // data_len, maximum_data_size, stream_credit and connection_credit are already checked they're larger than 0
+      ink_assert(len != 0);
+
+      if (this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset + len)) {
+        fin = true;
+      }
+    }
+
+    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(reader->get_current_block()->clone());
+    block->consume(reader->start_offset);
+    block->_end = std::min(block->start() + len, block->_buf_end);
+    ink_assert(static_cast<uint64_t>(block->read_avail()) == len);
+
+    // STREAM - Pure FIN or data length is lager than 0
+    // FIXME has_length_flag and has_offset_flag should be configurable
+    frame = QUICFrameFactory::create_stream_frame(buf, block, this->_id, this->_send_offset, fin, true, true,
+                                                  this->_issue_frame_id(), this);
+    if (!this->_state.is_allowed_to_send(*frame)) {
+      QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
       return frame;
     }
 
-    // Check Connection/Stream level credit only if the generating STREAM frame is not pure fin
-    uint64_t stream_credit = this->_remote_flow_controller.credit();
-    if (stream_credit == 0) {
-      // STREAM_DATA_BLOCKED
-      frame =
-        this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
-      return frame;
+    if (!pure_fin) {
+      int ret = this->_remote_flow_controller.update(this->_send_offset + len);
+      // We cannot cancel sending the frame after updating the flow controller
+
+      // Calling update always success, because len is always less than stream_credit
+      ink_assert(ret == 0);
+
+      QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
+                        this->_remote_flow_controller.current_limit());
+      if (this->_remote_flow_controller.current_offset() == this->_remote_flow_controller.current_limit()) {
+        QUICStreamDebug("Flow Controller will block sending a STREAM frame");
+      }
+
+      reader->consume(len);
+      this->_send_offset += len;
+      this->_write_vio.ndone += len;
     }
+    this->_records_stream_frame(level, *static_cast<QUICStreamFrame *>(frame));
 
-    if (connection_credit == 0) {
-      // BLOCKED - BLOCKED frame will be sent by connection level remote flow controller
-      return frame;
-    }
-
-    len = std::min(data_len, std::min(maximum_data_size, std::min(stream_credit, connection_credit)));
-
-    // data_len, maximum_data_size, stream_credit and connection_credit are already checked they're larger than 0
-    ink_assert(len != 0);
-
-    if (this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset + len)) {
-      fin = true;
-    }
+    this->_signal_write_event();
+    this->_state.update_with_sending_frame(*frame);
   }
-
-  Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(reader->get_current_block()->clone());
-  block->consume(reader->start_offset);
-  block->_end = std::min(block->start() + len, block->_buf_end);
-  ink_assert(static_cast<uint64_t>(block->read_avail()) == len);
-
-  // STREAM - Pure FIN or data length is lager than 0
-  // FIXME has_length_flag and has_offset_flag should be configurable
-  frame = QUICFrameFactory::create_stream_frame(buf, block, this->_id, this->_send_offset, fin, true, true, this->_issue_frame_id(),
-                                                this);
-  if (!this->_state.is_allowed_to_send(*frame)) {
-    QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
-    return frame;
-  }
-
-  if (!pure_fin) {
-    int ret = this->_remote_flow_controller.update(this->_send_offset + len);
-    // We cannot cancel sending the frame after updating the flow controller
-
-    // Calling update always success, because len is always less than stream_credit
-    ink_assert(ret == 0);
-
-    QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
-                      this->_remote_flow_controller.current_limit());
-    if (this->_remote_flow_controller.current_offset() == this->_remote_flow_controller.current_limit()) {
-      QUICStreamDebug("Flow Controller will block sending a STREAM frame");
-    }
-
-    reader->consume(len);
-    this->_send_offset += len;
-    this->_write_vio.ndone += len;
-  }
-  this->_records_stream_frame(level, *static_cast<QUICStreamFrame *>(frame));
-
-  this->_signal_write_event();
-  this->_state.update_with_sending_frame(*frame);
 
   return frame;
 }
@@ -529,8 +537,13 @@ QUICReceiveStream::is_cancelled() const
 bool
 QUICReceiveStream::will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num)
 {
-  return this->_local_flow_controller.will_generate_frame(level, current_packet_size, ack_eliciting, seq_num) ||
-         (this->_stop_sending_reason != nullptr && this->_is_stop_sending_sent == false);
+  if (this->_local_flow_controller.will_generate_frame(level, current_packet_size, ack_eliciting, seq_num)) {
+    return true;
+  }
+  if (this->_stop_sending_reason != nullptr && this->_is_stop_sending_sent == false) {
+    return true;
+  }
+  return false;
 }
 
 QUICFrame *
@@ -542,6 +555,10 @@ QUICReceiveStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
   if (this->_stop_sending_reason && !this->_is_stop_sending_sent) {
     frame =
       QUICFrameFactory::create_stop_sending_frame(buf, this->id(), this->_stop_sending_reason->code, this->_issue_frame_id(), this);
+    if (frame->size() > maximum_frame_size) {
+      frame->~QUICFrame();
+      return nullptr;
+    }
     this->_records_stop_sending_frame(level, *static_cast<QUICStopSendingFrame *>(frame));
     this->_state.update_with_sending_frame(*frame);
     this->_is_stop_sending_sent = true;
@@ -550,6 +567,7 @@ QUICReceiveStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
 
   // MAX_STREAM_DATA
   frame = this->_local_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
+  // maximum_frame_size should be checked in QUICFlowController
   return frame;
 }
 

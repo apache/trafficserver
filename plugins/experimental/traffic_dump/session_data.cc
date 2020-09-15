@@ -46,27 +46,32 @@ char const constexpr *const json_closing = "]}]}";
 /**
  * A mapping from IP_PROTO_TAG to the string describing the JSON protocol node.
  */
-std::unordered_map<std::string, std::string> tag_to_node = {
-  {std::string(IP_PROTO_TAG_IPV4), R"("name":"ip","version":"4")"},
-  {std::string(IP_PROTO_TAG_IPV6), R"("name":"ip","version":"6")"},
+std::unordered_map<std::string_view, std::string> tag_to_node = {
+  {IP_PROTO_TAG_IPV4, R"("name":"ip","version":"4")"},
+  {IP_PROTO_TAG_IPV6, R"("name":"ip","version":"6")"},
 
-  {std::string(IP_PROTO_TAG_TCP), R"("name":"tcp")"},
-  {std::string(IP_PROTO_TAG_UDP), R"("name":"udp")"},
+  {IP_PROTO_TAG_TCP, R"("name":"tcp")"},
+  {IP_PROTO_TAG_UDP, R"("name":"udp")"},
 
-  {std::string(IP_PROTO_TAG_QUIC), R"("name:":"quic")"},
+  {IP_PROTO_TAG_QUIC, R"("name:":"quic")"},
 
-  {std::string(IP_PROTO_TAG_TLS_1_0), R"("name":"tls","version":"1.0")"},
-  {std::string(IP_PROTO_TAG_TLS_1_1), R"("name":"tls","version":"1.1")"},
-  {std::string(IP_PROTO_TAG_TLS_1_2), R"("name":"tls","version":"1.2")"},
-  {std::string(IP_PROTO_TAG_TLS_1_3), R"("name":"tls","version":"1.3")"},
+  {IP_PROTO_TAG_TLS_1_0, R"("name":"tls","version":"1.0")"},
+  {IP_PROTO_TAG_TLS_1_1, R"("name":"tls","version":"1.1")"},
+  {IP_PROTO_TAG_TLS_1_2, R"("name":"tls","version":"1.2")"},
+  {IP_PROTO_TAG_TLS_1_3, R"("name":"tls","version":"1.3")"},
 
-  {std::string(IP_PROTO_TAG_HTTP_0_9), R"("name":"http","version":"0.9")"},
-  {std::string(IP_PROTO_TAG_HTTP_1_0), R"("name":"http","version":"1.0")"},
-  {std::string(IP_PROTO_TAG_HTTP_1_1), R"("name":"http","version":"1.1")"},
-  {std::string(IP_PROTO_TAG_HTTP_2_0), R"("name":"http","version":"2")"},
+  {IP_PROTO_TAG_HTTP_0_9, R"("name":"http","version":"0.9")"},
+  {IP_PROTO_TAG_HTTP_1_0, R"("name":"http","version":"1.0")"},
+  {IP_PROTO_TAG_HTTP_1_1, R"("name":"http","version":"1.1")"},
+  {IP_PROTO_TAG_HTTP_2_0, R"("name":"http","version":"2")"},
 
-  {std::string(IP_PROTO_TAG_HTTP_QUIC), R"("name":"http","version":"0.9")"},
-  {std::string(IP_PROTO_TAG_HTTP_3), R"("name":"http","version":"3")"},
+  {IP_PROTO_TAG_HTTP_QUIC, R"("name":"http","version":"0.9")"},
+  {IP_PROTO_TAG_HTTP_3, R"("name":"http","version":"3")"},
+};
+
+std::unordered_map<std::string_view, std::string> http_tag_to_version = {
+  {IP_PROTO_TAG_HTTP_0_9, "0.9"}, {IP_PROTO_TAG_HTTP_1_0, "1.0"},  {IP_PROTO_TAG_HTTP_1_1, "1.1"},
+  {IP_PROTO_TAG_HTTP_2_0, "2"},   {IP_PROTO_TAG_HTTP_QUIC, "0.9"}, {IP_PROTO_TAG_HTTP_3, "3"},
 };
 
 /** Create a TLS characteristics node.
@@ -137,53 +142,6 @@ get_server_tls_description(TSHttpTxn txnp)
   TSVConn server_ssn_vc = TSHttpTxnServerVConnGet(txnp);
   return get_tls_description_helper(server_ssn_vc);
 }
-
-using get_protocol_stack_f  = std::function<TSReturnCode(int, const char **, int *)>;
-using get_tls_description_f = std::function<std::string()>;
-
-/** Create the protocol stack for a session.
- *
- * This function encapsulates the logic common between the client-side and
- * server-side logic for populating a protocol stack.
- *
- * @param[in] get_protocol_stack The function to use to populate a protocol
- * stack.
- *
- * @return The description of the protocol stack.
- */
-std::string
-get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_stack, const get_tls_description_f &get_tls_node)
-{
-  std::ostringstream protocol_description;
-  protocol_description << R"("protocol":[)";
-  char const *protocol[10];
-  int count = -1;
-  TSAssert(TS_SUCCESS == get_protocol_stack(10, protocol, &count));
-  bool is_first_printed_protocol = true;
-  for (int i = 0; i < count; ++i) {
-    std::string_view protocol_string(protocol[i]);
-    if (!is_first_printed_protocol) {
-      protocol_description << ",";
-    }
-    is_first_printed_protocol = false;
-    if (protocol_string.find("tls") != std::string::npos) {
-      protocol_description << '{' << get_tls_node() << '}';
-    } else {
-      auto search = tag_to_node.find(std::string(protocol_string));
-      if (search == tag_to_node.end()) {
-        // If the tag from get_protocol_stack is not in our list, then our
-        // tag_to_node has not been updated with the new tag. Update tag_to_node.
-        TSError("[%s] Missing tag node description: '%.*s'", traffic_dump::debug_tag, static_cast<int>(protocol_string.length()),
-                protocol_string.data());
-        protocol_description << R"({"name":")" << protocol_string << R"("})";
-      } else {
-        protocol_description << '{' << search->second << '}';
-      }
-    }
-  }
-  protocol_description << "]"; // Close the "protocol" sequence.
-  return protocol_description.str();
-}
 } // namespace
 
 namespace traffic_dump
@@ -252,6 +210,46 @@ SessionData::init(std::string_view log_directory, int64_t max_disk_usage, int64_
   SessionData::sni_filter = sni_filter;
   TSDebug(debug_tag, "Filtering to only dump connections with SNI: %s", SessionData::sni_filter.c_str());
   return true;
+}
+
+std::string
+SessionData::get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_stack, const get_tls_description_f &get_tls_node)
+{
+  std::ostringstream protocol_description;
+  protocol_description << R"("protocol":[)";
+  char const *protocol[10];
+  int count = -1;
+  TSAssert(TS_SUCCESS == get_protocol_stack(10, protocol, &count));
+  bool is_first_printed_protocol = true;
+  for (int i = 0; i < count; ++i) {
+    std::string_view protocol_string(protocol[i]);
+    if (!is_first_printed_protocol) {
+      protocol_description << ",";
+    }
+    is_first_printed_protocol = false;
+    if (protocol_string.find("tls") != std::string::npos) {
+      protocol_description << '{' << get_tls_node() << '}';
+    } else {
+      auto search = tag_to_node.find(std::string(protocol_string));
+      if (search == tag_to_node.end()) {
+        // If the tag from get_protocol_stack is not in our list, then our
+        // tag_to_node has not been updated with the new tag. Update tag_to_node.
+        TSError("[%s] Missing tag node description: '%.*s'", traffic_dump::debug_tag, static_cast<int>(protocol_string.length()),
+                protocol_string.data());
+        protocol_description << R"({"name":")" << protocol_string << R"("})";
+      } else {
+        protocol_description << '{' << search->second << '}';
+      }
+
+      // See whether an HTTP version is provided. If so, record it.
+      auto const it = http_tag_to_version.find(std::string(protocol_string));
+      if (it != http_tag_to_version.end()) {
+        this->http_version_in_client_stack = it->second;
+      }
+    }
+  }
+  protocol_description << "]"; // Close the "protocol" sequence.
+  return protocol_description.str();
 }
 
 std::string
@@ -340,6 +338,12 @@ SessionData::write_transaction_to_disk(std::string_view content)
     has_written_first_transaction = true;
   }
   return result;
+}
+
+std::string
+SessionData::get_http_version_in_client_stack() const
+{
+  return http_version_in_client_stack;
 }
 
 int
@@ -437,8 +441,7 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
 
     // "protocol":
     // This is the protocol stack for the client side of the session.
-    std::string protocol_description = get_client_protocol_description(ssnp);
-
+    std::string protocol_description = ssnData->get_client_protocol_description(ssnp);
     std::string beginning = R"({"meta":{"version":"1.0"},"sessions":[{)" + protocol_description + R"(,"connection-time":)" +
                             std::to_string(start.count()) + R"(,"transactions":[)";
 

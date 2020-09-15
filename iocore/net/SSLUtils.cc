@@ -918,6 +918,7 @@ SSLMultiCertConfigLoader::default_server_ssl_ctx()
 static bool
 SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::string &completeServerCertPath, const char *keyPath)
 {
+  EVP_PKEY *pkey = nullptr;
 #ifndef OPENSSL_IS_BORINGSSL
   ENGINE *e = ENGINE_get_default_RSA();
   if (e != nullptr) {
@@ -927,36 +928,39 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const std::str
     } else {
       argkey = Layout::get()->relative_to(params->serverKeyPathOnly, keyPath);
     }
-    if (!SSL_CTX_use_PrivateKey(ctx, ENGINE_load_private_key(e, argkey, nullptr, nullptr))) {
-      SSLError("failed to load server private key from engine");
+    pkey = ENGINE_load_private_key(e, argkey.get(), nullptr, nullptr);
+    if (pkey) {
+      if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
+        SSLError("failed to load server private key from engine");
+        return false;
+      }
     }
-#else
-  ENGINE *e = nullptr;
-  if (false) {
-#endif
-  } else if (!keyPath || keyPath[0] == '\0') {
-    // assume private key is contained in cert obtained from multicert file.
-    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath.c_str(), SSL_FILETYPE_PEM)) {
-      SSLError("failed to load server private key from %s", completeServerCertPath.c_str());
-      return false;
-    }
-  } else if (params->serverKeyPathOnly != nullptr) {
-    ats_scoped_str completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
-    if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
-      SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
-      return false;
-    }
-    if (SSLConfigParams::load_ssl_file_cb) {
-      SSLConfigParams::load_ssl_file_cb(completeServerKeyPath);
-    }
-  } else {
-    SSLError("empty SSL private key path in %s", ts::filename::RECORDS);
-    return false;
   }
-
-  if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
-    SSLError("server private key does not match the certificate public key");
-    return false;
+#endif
+  if (pkey == nullptr) {
+    if (!keyPath || keyPath[0] == '\0') {
+      // assume private key is contained in cert obtained from multicert file.
+      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath.c_str(), SSL_FILETYPE_PEM)) {
+        SSLError("failed to load server private key from %s", completeServerCertPath.c_str());
+        return false;
+      }
+    } else if (params->serverKeyPathOnly != nullptr) {
+      ats_scoped_str completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
+      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
+        SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
+        return false;
+      }
+      if (SSLConfigParams::load_ssl_file_cb) {
+        SSLConfigParams::load_ssl_file_cb(completeServerKeyPath);
+      }
+    } else {
+      SSLError("empty SSL private key path in %s", ts::filename::RECORDS);
+      return false;
+    }
+    if (!SSL_CTX_check_private_key(ctx)) {
+      SSLError("server private key does not match the certificate public key");
+      return false;
+    }
   }
 
   return true;
@@ -1139,6 +1143,22 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
   Debug("ssl", "setting cert level to %d", server_verify_client);
   SSL_set_verify(ssl, server_verify_client, ssl_verify_client_callback);
   SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
+}
+
+void
+setClientCertCACerts(SSL *ssl, X509_STORE *ca_certs)
+{
+#if defined(SSL_set1_verify_cert_store)
+
+  // It is necessasry to use set1 and not set0 here.  SSL_free() calls ssl_cert_free(), which calls
+  // X509_STORE_free() on the ca_certs store.  Hard to see how set0 could ever actually be useful, in
+  // what scenario would SSL objects never be freed?
+  //
+  SSL_set1_verify_cert_store(ssl, ca_certs);
+
+#else
+  ink_assert(!"Configuration checking should prevent reaching this code");
+#endif
 }
 
 /**

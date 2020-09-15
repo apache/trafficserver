@@ -254,6 +254,20 @@ def verify_server_tls_features(replay_json, expected_tls_features):
     return True
 
 
+def verify_client_http_version(replay_json, expected_client_http_version):
+    try:
+        found_version = replay_json['sessions'][0]['transactions'][0]['client-request']['version']
+    except KeyError:
+        print("Could not find client-request:version node in the replay file.")
+        return False
+
+    if expected_client_http_version != found_version:
+        print('Expected client version of "{}", but found "{}"'.format(
+            expected_client_http_version, found_version))
+        return False
+    return True
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("schema_file",
@@ -278,6 +292,8 @@ def parse_args():
                         help="The TLS values to expect for the client connection.")
     parser.add_argument("--server-tls-features",
                         help="The TLS values to expect for the server connection.")
+    parser.add_argument("--client-http-version",
+                        help="The client HTTP version to expect")
     return parser.parse_args()
 
 
@@ -321,6 +337,9 @@ def main():
         return 1
 
     if args.server_tls_features and not verify_server_tls_features(replay_json, args.server_tls_features):
+        return 1
+
+    if args.client_http_version and not verify_client_http_version(replay_json, args.client_http_version):
         return 1
 
     return 0

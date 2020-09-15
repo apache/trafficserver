@@ -44,7 +44,6 @@ librecords_COMMON = \
 	P_RecCore.h \
 	P_RecDefs.h \
 	P_RecFile.h \
-	P_RecFile.h \
 	P_RecMessage.h \
 	P_RecUtils.h \
 	RecConfigParse.cc \

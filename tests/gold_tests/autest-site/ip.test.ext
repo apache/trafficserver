@@ -27,11 +27,14 @@ from ports import get_port
 # For each argument, a port will be reserved, and its number will be assigned to the new variable for the
 # argument.
 #
+
+
 def get_tcp_port(obj, *newVariables):
     for v in newVariables:
         if not isinstance(v, str):
             raise TypeError("all function arguments must be strings")
         get_port(obj, v)
+
 
 #AddTestEntityMember(get_tcp_port, name="GetTcpPort")
 ExtendTest(get_tcp_port, name="GetTcpPort")
