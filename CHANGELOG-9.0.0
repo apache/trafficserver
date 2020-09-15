@@ -1069,6 +1069,7 @@ Changes with Apache Traffic Server 9.0.0
   #7128 - Protect TSActionCancel from null INKContInternal actions
   #7129 - Comment out a wrong assertion in QUIC Loss Detection logic
   #7131 - Don't make an error on duplicated RETIRE_CONNECTION frames
+  #7134 - Do not lose original inactivity timeout on disable
   #7135 - Replace ACTION_RESULT_NONE with nullptr
   #7137 - Removes duplicated listing of files in same Makefile target
   #7138 - Remove useless shortopt
@@ -1083,5 +1084,12 @@ Changes with Apache Traffic Server 9.0.0
   #7159 - MicroDNS Extension: handle different 'default' types
   #7160 - Fix memory leaks in multiplexer plugin
   #7161 - Traffic Dump documentation for post_process.py
+  #7162 - Removes references to non-existent function handle_conditional_headers
   #7165 - Build test C/C++ files with Automake. (#6945)
+  #7166 - Fix #7164 Changing Warning to Debug and creating a stat
   #7168 - Fix #7167, make pep8 failure
+  #7169 - AuTest: Properly handle experimental plugins. (#6971)
+  #7172 - Fix leaks in BaseLogFiles.cc
+  #7178 - AuTest: Reuse venv if it exists already
+  #7181 - TS_API for Note,Status,Warning,Alert,Fatal
+  #7183 - Emits log when OCSP fails to connect to server
