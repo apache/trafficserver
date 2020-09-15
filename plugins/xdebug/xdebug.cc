@@ -706,6 +706,13 @@ TSPluginInit(int argc, const char *argv[])
   }
   xDebugHeader.len = strlen(xDebugHeader.str);
 
+  // Make xDebugHeader available to other plugins, as a C-style string.
+  //
+  int idx = -1;
+  TSReleaseAssert(TSUserArgIndexReserve(TS_USER_ARGS_GLB, "XDebugHeader", "XDebug header name", &idx) == TS_SUCCESS);
+  TSReleaseAssert(idx >= 0);
+  TSUserArgSet(nullptr, idx, const_cast<char *>(xDebugHeader.str));
+
   AuxDataMgr::init("xdebug");
 
   // Setup the global hook
