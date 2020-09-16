@@ -1,0 +1,13 @@
+``
+> GET /``
+> Host: www.example.com``
+> User-Agent: curl/``
+``
+< HTTP/1.1 200 OK
+< X-Foo: 123, 456
+< Content-Length: 3
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< Server: ATS/``
+``
