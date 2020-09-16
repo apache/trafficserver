@@ -28,6 +28,7 @@
 #include "Show.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ink_apidefs.h"
+#include "tscore/Regression.h"
 
 #include <utility>
 #include <vector>

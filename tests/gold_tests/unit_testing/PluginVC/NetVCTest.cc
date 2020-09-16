@@ -29,14 +29,15 @@
        Unit test for infrastructure for VConnections implementing the
          NetVConnection interface
 
-
-
-
  ****************************************************************************/
 
-#include "P_Net.h"
-#include "P_NetVCTest.h"
+#include <P_Net.h>
 
+#include "NetVCTest.h"
+#include "../unit_testing.h"
+
+namespace Au_UT
+{
 // Each test requires two definition entries.  One for the passive
 //   side of the connection and one for the active side
 //
@@ -87,31 +88,29 @@ NetVCTest::~NetVCTest()
 {
   mutex = nullptr;
 
-  if (read_buffer) {
-    Debug(debug_tag, "Freeing read MIOBuffer with %d blocks on %s", read_buffer->max_block_count(),
-          (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
-    free_MIOBuffer(read_buffer);
-    read_buffer = nullptr;
-  }
-
   if (write_buffer) {
-    Debug(debug_tag, "Freeing write MIOBuffer with %d blocks on %s", write_buffer->max_block_count(),
-          (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+    TSDebug(Debug_tag, "Freeing write MIOBuffer with %d blocks on %s", write_buffer->max_block_count(),
+            (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
     free_MIOBuffer(write_buffer);
     write_buffer = nullptr;
+  }
+
+  if (read_buffer) {
+    TSDebug(Debug_tag, "Freeing read MIOBuffer with %d blocks on %s", read_buffer->max_block_count(),
+            (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+    free_MIOBuffer(read_buffer);
+    read_buffer = nullptr;
   }
 }
 
 void
-NetVCTest::init_test(NetVcTestType_t c_type, NetTestDriver *driver_arg, NetVConnection *nvc, RegressionTest *robj,
-                     NVC_test_def *my_def, const char *module_name_arg, const char *debug_tag_arg)
+NetVCTest::init_test(NetVcTestType_t c_type, NetTestDriver *driver_arg, NetVConnection *nvc, NVC_test_def *my_def,
+                     const char *module_name_arg)
 {
   test_cont_type = c_type;
   driver         = driver_arg;
   test_vc        = nvc;
-  regress        = robj;
   module_name    = module_name_arg;
-  debug_tag      = debug_tag_arg;
 
   bytes_to_send = my_def->bytes_to_send;
   bytes_to_read = my_def->bytes_to_read;
@@ -145,16 +144,16 @@ NetVCTest::start_test()
   reader_for_rbuf = read_buffer->alloc_reader();
   reader_for_wbuf = write_buffer->alloc_reader();
 
-  if (nbytes_read > 0) {
-    read_vio = test_vc->do_io_read(this, nbytes_read, read_buffer);
-  } else {
-    read_done = true;
-  }
-
   if (nbytes_write > 0) {
     write_vio = test_vc->do_io_write(this, nbytes_write, reader_for_wbuf);
   } else {
     write_done = true;
+  }
+
+  if (nbytes_read > 0) {
+    read_vio = test_vc->do_io_read(this, nbytes_read, read_buffer);
+  } else {
+    read_done = true;
   }
 }
 
@@ -208,7 +207,7 @@ NetVCTest::consume_and_check_bytes(IOBufferReader *r, uint8_t *seed)
       }
     }
 
-    Debug(debug_tag, "consume_&_check: read %d, to_read %d", actual_bytes_read, bytes_to_read);
+    TSDebug(Debug_tag, "consume_&_check: read %d, to_read %d", actual_bytes_read, bytes_to_read);
     r->consume(b_consumed);
   }
 
@@ -254,7 +253,7 @@ NetVCTest::read_finished()
 void
 NetVCTest::record_error(const char *msg)
 {
-  rprintf(regress, "  %s test: %s failed : %s : on %s\n", module_name, test_name, msg,
+  TSDebug(Debug_tag, "NetVCTest:  %s test: %s failed : %s : on %s\n", module_name, test_name, msg,
           (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
   ink_atomic_increment(&driver->errors, 1);
 
@@ -272,7 +271,7 @@ NetVCTest::finished()
 void
 NetVCTest::write_handler(int event)
 {
-  Debug(debug_tag, "write_handler received event %d on %s", event, (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+  TSDebug(Debug_tag, "write_handler received event %d on %s", event, (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
 
   switch (event) {
   case VC_EVENT_WRITE_READY:
@@ -305,7 +304,7 @@ NetVCTest::write_handler(int event)
 void
 NetVCTest::read_handler(int event)
 {
-  Debug(debug_tag, "read_handler received event %d on %s", event, (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+  TSDebug(Debug_tag, "read_handler received event %d on %s", event, (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -366,6 +365,4 @@ NetVCTest::main_handler(int event, void *data)
   return 0;
 }
 
-NetTestDriver::NetTestDriver() : Continuation(nullptr) {}
-
-NetTestDriver::~NetTestDriver() {}
+} // end namespace Au_UT

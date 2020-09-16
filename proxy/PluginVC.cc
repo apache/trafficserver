@@ -74,7 +74,6 @@
 #include "PluginVC.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
-#include "tscore/Regression.h"
 
 #define PVC_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
 #define PVC_DEFAULT_MAX_BYTES 32768
@@ -1276,13 +1275,23 @@ PluginVCCore::set_plugin_tag(const char *tag)
   passive_vc.plugin_tag = active_vc.plugin_tag = tag;
 }
 
+#if !defined(INCLUDE_CONVERTED_TO_AU_TEST)
+#define INCLUDE_CONVERTED_TO_AU_TEST 1
+#endif
+
 /*************************************************************
  *
  *   REGRESSION TEST STUFF
  *
  **************************************************************/
 
-#if TS_HAS_TESTS
+#if TS_HAS_TESTS && INCLUDE_CONVERTED_TO_AU_TEST
+
+#include "P_NetVCTest.h"
+#include "tscore/Regression.h"
+
+// Note that, if this test is deleted, then P_NetVCTest.h and NetVCTest.cc in iocore/net can also be removed.
+
 class PVCTestDriver : public NetTestDriver
 {
 public:

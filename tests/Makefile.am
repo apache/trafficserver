@@ -24,6 +24,16 @@ SUBDIRS =
 
 AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
 
+AM_CPPFLAGS += \
+  -I$(abs_top_srcdir)/iocore/dns \
+  -I$(abs_top_srcdir)/iocore/eventsystem \
+  -I$(abs_top_srcdir)/iocore/hostdb \
+  -I$(abs_top_srcdir)/iocore/net \
+  -I$(abs_top_srcdir)/mgmt \
+  -I$(abs_top_srcdir)/mgmt/utils \
+  -I$(abs_top_srcdir)/proxy \
+  -I$(abs_top_srcdir)/proxy/hdrs
+
 # Automake is pretty draconian about not creating shared object (.so) files for
 # non-installed files. However we do not want to install our test plugins so
 # we prefix them with noinst_.  The following -rpath argument coerces the
@@ -34,6 +44,7 @@ include gold_tests/continuations/plugins/Makefile.inc
 include gold_tests/chunked_encoding/Makefile.inc
 include gold_tests/timeout/Makefile.inc
 include gold_tests/tls/Makefile.inc
+include gold_tests/unit_testing/Makefile.inc
 include tools/plugins/Makefile.inc
 
 TESTS = $(check_PROGRAMS)
