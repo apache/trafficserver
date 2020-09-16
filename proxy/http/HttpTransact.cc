@@ -7861,6 +7861,14 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
               ink_assert(field != nullptr);
               value = field->value_get(&len);
               outgoing_response->value_append(fields[i].name, fields[i].len, value, len, false);
+              if (field->has_dups()) {
+                field = field->m_next_dup;
+                while (field) {
+                  value = field->value_get(&len);
+                  outgoing_response->value_append(fields[i].name, fields[i].len, value, len, true);
+                  field = field->m_next_dup;
+                }
+              }
             }
           }
         }
