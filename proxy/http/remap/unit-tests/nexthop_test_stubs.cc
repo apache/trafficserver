@@ -47,11 +47,6 @@ void
 HttpSM::set_next_state()
 {
 }
-int
-HttpSM::kill_this_async_hook(int event, void *data)
-{
-  return 0;
-}
 
 HttpVCTable::HttpVCTable(HttpSM *smp)
 {

@@ -464,16 +464,7 @@ HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
     HttpSMList[bucket].sm_list.remove(this);
   }
 
-  return this->kill_this_async_hook(EVENT_NONE, nullptr);
-}
-
-int
-HttpSM::kill_this_async_hook(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
-{
-  // In the base HttpSM, we don't have anything to
-  //   do here.  subclasses can override this function
-  //   to do their own asynchronous cleanup
-  // So We're now ready to finish off the state machine
+  // We're now ready to finish off the state machine
   terminate_sm         = true;
   kill_this_async_done = true;
 
