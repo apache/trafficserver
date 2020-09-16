@@ -33,7 +33,7 @@ request_header = {
     "timestamp": "1469733493.993",
     "body": ""}
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nX-Foo : 123\r\nX-Foo: 456\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nFoo : 123\r\nFoo: 456\r\n",
     "timestamp": "1469733493.993",
     "body": "xxx"}
 server.addResponse("sessionlog.json", request_header, response_header)
