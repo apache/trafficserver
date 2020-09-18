@@ -369,7 +369,7 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
   if (len == 0) { // all failed
     result = &info(current++ % good);
   } else if (weight == 0) { // srv weight is 0
-    result = &info(current++ % len);
+    result = infos[current++ % len];
   } else {
     uint32_t xx = rand->random() % weight;
     for (i = 0; i < len - 1 && xx >= infos[i]->data.srv.srv_weight; ++i)
