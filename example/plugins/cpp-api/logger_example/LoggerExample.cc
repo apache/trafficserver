@@ -33,7 +33,7 @@ using std::string;
 
 namespace
 {
-Logger log;
+Logger logger;
 GlobalPlugin *plugin;
 } // namespace
 
@@ -61,7 +61,7 @@ public:
   void
   handleReadRequestHeadersPostRemap(Transaction &transaction) override
   {
-    LOG_DEBUG(log,
+    LOG_DEBUG(logger,
               "handleReadRequestHeadersPostRemap.\n"
               "\tRequest URL: %s\n"
               "\tRequest Path: %s\n"
@@ -74,23 +74,23 @@ public:
     // Next, to demonstrate how you can change logging levels:
     if (transaction.getClientRequest().getUrl().getPath() == "change_log_level") {
       if (transaction.getClientRequest().getUrl().getQuery().find("level=debug") != string::npos) {
-        log.setLogLevel(Logger::LOG_LEVEL_DEBUG);
-        LOG_DEBUG(log, "Changed log level to DEBUG");
+        logger.setLogLevel(Logger::LOG_LEVEL_DEBUG);
+        LOG_DEBUG(logger, "Changed log level to DEBUG");
       } else if (transaction.getClientRequest().getUrl().getQuery().find("level=info") != string::npos) {
-        log.setLogLevel(Logger::LOG_LEVEL_INFO);
-        LOG_INFO(log, "Changed log level to INFO");
+        logger.setLogLevel(Logger::LOG_LEVEL_INFO);
+        LOG_INFO(logger, "Changed log level to INFO");
       } else if (transaction.getClientRequest().getUrl().getQuery().find("level=error") != string::npos) {
-        log.setLogLevel(Logger::LOG_LEVEL_ERROR);
-        LOG_ERROR(log, "Changed log level to ERROR");
+        logger.setLogLevel(Logger::LOG_LEVEL_ERROR);
+        LOG_ERROR(logger, "Changed log level to ERROR");
       }
     }
 
     // One drawback to using the Traffic Server Text Loggers is that you're limited in the size of the log
     // lines, this limit is now set at 8kb for atscppapi, but this limit might be removed in the future.
-    LOG_INFO(log, "This message will be dropped (see error.log) because it's just too big: %s", big_buffer_14kb_);
+    LOG_INFO(logger, "This message will be dropped (see error.log) because it's just too big: %s", big_buffer_14kb_);
 
     // This should work though:
-    LOG_INFO(log, "%s", big_buffer_6kb_);
+    LOG_INFO(logger, "%s", big_buffer_6kb_);
 
     transaction.resume();
   }
@@ -119,24 +119,24 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
   // The fifth argument is to enable log rolling, this is enabled by default.
   // The sixth argument is the frequency in which we will roll the logs, 300 seconds is very low,
   //  the default for this argument is 3600.
-  log.init("logger_example", true, true, Logger::LOG_LEVEL_DEBUG, true, 300);
+  logger.init("logger_example", true, true, Logger::LOG_LEVEL_DEBUG, true, 300);
 
   // Now that we've initialized a logger we can do all kinds of fun things on it:
-  log.setRollingEnabled(true);        // already done via log.init, just an example.
-  log.setRollingIntervalSeconds(300); // already done via log.init
+  logger.setRollingEnabled(true);        // already done via log.init, just an example.
+  logger.setRollingIntervalSeconds(300); // already done via log.init
 
   // You have two ways to log to a logger, you can log directly on the object itself:
-  log.logInfo("Hello World from: %s", argv[0]);
+  logger.logInfo("Hello World from: %s", argv[0]);
 
   // Alternatively you can take advantage of the super helper macros for logging
   // that will include the file, function, and line number automatically as part
   // of the log message:
-  LOG_INFO(log, "Hello World with more info from: %s", argv[0]);
+  LOG_INFO(logger, "Hello World with more info from: %s", argv[0]);
 
   // This will hurt performance, but it's an option that's always available to you
   // to force flush the logs. Otherwise TrafficServer will flush the logs around
   // once every second. You should really avoid flushing the log unless it's really necessary.
-  log.flush();
+  logger.flush();
 
   plugin = new GlobalHookPlugin();
 }
