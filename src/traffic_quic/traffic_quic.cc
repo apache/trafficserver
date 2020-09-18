@@ -301,12 +301,6 @@ HttpSM::handle_api_return()
   ink_abort("do not call stub");
 }
 
-int
-HttpSM::kill_this_async_hook(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
-{
-  return EVENT_DONE;
-}
-
 void
 HttpSM::attach_client_session(ProxyTransaction *, IOBufferReader *)
 {

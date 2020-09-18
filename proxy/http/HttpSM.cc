@@ -464,16 +464,7 @@ HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
     HttpSMList[bucket].sm_list.remove(this);
   }
 
-  return this->kill_this_async_hook(EVENT_NONE, nullptr);
-}
-
-int
-HttpSM::kill_this_async_hook(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
-{
-  // In the base HttpSM, we don't have anything to
-  //   do here.  subclasses can override this function
-  //   to do their own asynchronous cleanup
-  // So We're now ready to finish off the state machine
+  // We're now ready to finish off the state machine
   terminate_sm         = true;
   kill_this_async_done = true;
 
@@ -4820,17 +4811,21 @@ HttpSM::get_outbound_cert() const
 std::string_view
 HttpSM::get_outbound_sni() const
 {
-  const char *sni_name = nullptr;
-  size_t len           = 0;
-  if (t_state.txn_conf->ssl_client_sni_policy == nullptr || !strcmp(t_state.txn_conf->ssl_client_sni_policy, "host")) {
+  using namespace ts::literals;
+  ts::TextView zret;
+  ts::TextView policy{t_state.txn_conf->ssl_client_sni_policy, ts::TextView::npos};
+  if (policy.empty() || !strcmp(policy, "host"_tv)) {
     // By default the host header field value is used for the SNI.
-    sni_name = t_state.hdr_info.server_request.host_get(reinterpret_cast<int *>(&len));
+    int len;
+    char const *ptr = t_state.hdr_info.server_request.host_get(&len);
+    zret.assign(ptr, len);
+  } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
+    zret = policy.remove_prefix(1);
   } else {
     // If other is specified, like "remap" and "verify_with_name_source", the remapped origin name is used for the SNI value
-    len      = strlen(t_state.server_info.name);
-    sni_name = t_state.server_info.name;
+    zret.assign(t_state.server_info.name, ts::TextView::npos);
   }
-  return std::string_view(sni_name, len);
+  return zret;
 }
 
 //////////////////////////////////////////////////////////////////////////
