@@ -26,6 +26,10 @@ static int ts_lua_debug(lua_State *L);
 static int ts_lua_error(lua_State *L);
 static int ts_lua_emergency(lua_State *L);
 static int ts_lua_fatal(lua_State *L);
+static int ts_lua_status(lua_State *L);
+static int ts_lua_note(lua_State *L);
+static int ts_lua_warning(lua_State *L);
+static int ts_lua_alert(lua_State *L);
 static int ts_lua_sleep(lua_State *L);
 static int ts_lua_host_lookup(lua_State *L);
 static int ts_lua_schedule(lua_State *L);
@@ -73,6 +77,22 @@ ts_lua_inject_misc_api(lua_State *L)
   /* ts.fatal(...) */
   lua_pushcfunction(L, ts_lua_fatal);
   lua_setfield(L, -2, "fatal");
+
+  /* ts.status(...) */
+  lua_pushcfunction(L, ts_lua_status);
+  lua_setfield(L, -2, "status");
+
+  /* ts.note(...) */
+  lua_pushcfunction(L, ts_lua_note);
+  lua_setfield(L, -2, "note");
+
+  /* ts.warning(...) */
+  lua_pushcfunction(L, ts_lua_warning);
+  lua_setfield(L, -2, "warning");
+
+  /* ts.alert(...) */
+  lua_pushcfunction(L, ts_lua_alert);
+  lua_setfield(L, -2, "alert");
 
   /* ts.sleep(...) */
   lua_pushcfunction(L, ts_lua_sleep);
@@ -192,6 +212,50 @@ ts_lua_fatal(lua_State *L)
 
   msg = luaL_checklstring(L, 1, &len);
   TSFatal("%.*s", (int)len, msg);
+  return 0;
+}
+
+static int
+ts_lua_status(lua_State *L)
+{
+  const char *msg;
+  size_t len = 0;
+
+  msg = luaL_checklstring(L, 1, &len);
+  TSStatus("%.*s", (int)len, msg);
+  return 0;
+}
+
+static int
+ts_lua_note(lua_State *L)
+{
+  const char *msg;
+  size_t len = 0;
+
+  msg = luaL_checklstring(L, 1, &len);
+  TSNote("%.*s", (int)len, msg);
+  return 0;
+}
+
+static int
+ts_lua_warning(lua_State *L)
+{
+  const char *msg;
+  size_t len = 0;
+
+  msg = luaL_checklstring(L, 1, &len);
+  TSWarning("%.*s", (int)len, msg);
+  return 0;
+}
+
+static int
+ts_lua_alert(lua_State *L)
+{
+  const char *msg;
+  size_t len = 0;
+
+  msg = luaL_checklstring(L, 1, &len);
+  TSAlert("%.*s", (int)len, msg);
   return 0;
 }
 

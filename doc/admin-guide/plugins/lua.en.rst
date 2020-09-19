@@ -299,6 +299,46 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.status
+---------
+**syntax:** *ts.status(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log as status
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.note
+-------
+**syntax:** *ts.note(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log as note
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.warning
+----------
+**syntax:** *ts.warning(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log as warning
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.alert
+--------
+**syntax:** *ts.alert(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log as alert
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 TS Basic Internal Information
 -----------------------------
 **syntax:** *ts.get_install_dir()*
