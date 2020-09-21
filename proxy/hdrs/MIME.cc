@@ -2574,12 +2574,14 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // whitespace between a header field-name and colon with a response code
     // of 400 (Bad Request).
     // A proxy MUST remove any such whitespace from a response message before
-    // fowarding the message downstream.
+    // forwarding the message downstream.
+    bool raw_print_field = true;
     if (is_ws(field_name.back())) {
       if (!remove_ws_from_field_name) {
         return PARSE_RESULT_ERROR;
       }
       field_name.rtrim_if(&ParseRules::is_ws);
+      raw_print_field = false;
     }
 
     // find value first
@@ -2615,7 +2617,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     MIMEField *field = mime_field_create(heap, mh);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name.data(), field_name.size(), field_value.data(),
-                              field_value.size(), true, parsed.size(), false);
+                              field_value.size(), raw_print_field, parsed.size(), false);
     mime_hdr_field_attach(mh, field, 1, nullptr);
   }
 }
