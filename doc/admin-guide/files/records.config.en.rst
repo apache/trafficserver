@@ -537,10 +537,10 @@ Local Manager
    process as, which also has the effect of setting ownership of configuration
    and log files.
 
-   As of version 2.1.1 if the user_id is prefixed with pound character (``#``)
+   If the user_id is prefixed with pound character (``#``),
    the remainder of the string is considered to be a
    `numeric user identifier <http://en.wikipedia.org/wiki/User_identifier>`_.
-   If the value is set to ``#-1`` |TS| will not change the user during startup.
+   If the value is set to ``#-1``, |TS| will not change the user during startup.
 
    .. important::
 

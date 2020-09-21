@@ -1,6 +1,6 @@
 /** @file
 
-  Static HIt Content Serving
+  Static Hit Content Serving
 
   @section license License
 
