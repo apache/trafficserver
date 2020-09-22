@@ -1590,13 +1590,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     // Once it's full, a new entry get inputted into try_server_names round-
     // robin style every 50 success dns response.
 
-    // TODO: Why do we do strlen(e->qname) ? That should be available in
-    // e->qname_len, no ?
     if (local_num_entries >= DEFAULT_NUM_TRY_SERVER) {
       if ((attempt_num_entries % 50) == 0) {
         try_servers = (try_servers + 1) % countof(try_server_names);
         ink_strlcpy(try_server_names[try_servers], e->qname, MAXDNAME);
-        memset(&try_server_names[try_servers][strlen(e->qname)], 0, 1);
         attempt_num_entries = 0;
       }
       ++attempt_num_entries;
@@ -1604,7 +1601,6 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       // fill up try_server_names for try_primary_named
       try_servers = local_num_entries++;
       ink_strlcpy(try_server_names[try_servers], e->qname, MAXDNAME);
-      memset(&try_server_names[try_servers][strlen(e->qname)], 0, 1);
     }
 
     /* added for SRV support [ebalsa]
