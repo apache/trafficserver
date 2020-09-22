@@ -1093,3 +1093,5 @@ Changes with Apache Traffic Server 9.0.0
   #7178 - AuTest: Reuse venv if it exists already
   #7181 - TS_API for Note,Status,Warning,Alert,Fatal
   #7183 - Emits log when OCSP fails to connect to server
+  #7193 - Make custom xdebug HTTP header name available to other plugins.
+  #7202 - Strip whitespaces after field-name and before the colon in headers from the origin
