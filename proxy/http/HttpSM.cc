@@ -2976,7 +2976,13 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_server, event);
 
-  milestones[TS_MILESTONE_SERVER_CLOSE] = Thread::get_hrtime();
+  // An intercept handler may not set TS_MILESTONE_SERVER_CONNECT
+  // by default. Therefore we only set TS_MILESTONE_SERVER_CLOSE if
+  // TS_MILESTONE_SERVER_CONNECT is set (non-zero), lest certain time
+  // statistics are calculated from epoch time.
+  if (0 != milestones[TS_MILESTONE_SERVER_CONNECT]) {
+    milestones[TS_MILESTONE_SERVER_CLOSE] = Thread::get_hrtime();
+  }
 
   bool close_connection = false;
 
