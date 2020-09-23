@@ -287,7 +287,7 @@ public:
   }
 
   /// acl record - cache IpAllow::match() call
-  
+
   const AclRecord *
   get_acl_record()
   {
@@ -303,7 +303,7 @@ public:
   {
     this->acl_record = acl_record;
   }
-  
+
   /// Local address for outbound connection.
   IpAddr outbound_ip4;
   /// Local address for outbound connection.
@@ -325,7 +325,7 @@ protected:
   // XXX Consider using a bitwise flags variable for the following flags, so
   // that we can make the best use of internal alignment padding.
   const AclRecord *acl_record = nullptr;
-  
+
   // Session specific debug flag.
   bool debug_on   = false;
   bool hooks_on   = true;
