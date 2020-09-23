@@ -147,7 +147,7 @@ public:
   const AclRecord *
   get_acl_record() const
   {
-    return parent ? parent->acl_record : nullptr;
+    return parent ? parent->get_acl_record() : nullptr;
   }
 
   // Indicate we are done with this transaction
