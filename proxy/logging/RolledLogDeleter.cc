@@ -64,6 +64,10 @@ LogDeletingInfo::LogDeletingInfo(std::string_view _logname, int _min_count)
 void
 RolledLogDeleter::register_log_type_for_deletion(std::string_view log_type, int rolling_min_count)
 {
+  if (deleting_info.find(log_type) != deleting_info.end()) {
+    // Already registered.
+    return;
+  }
   auto deletingInfo     = std::make_unique<LogDeletingInfo>(log_type, rolling_min_count);
   auto *deletingInfoPtr = deletingInfo.get();
 

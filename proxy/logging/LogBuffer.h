@@ -30,6 +30,7 @@
 #include "LogAccess.h"
 
 class LogObject;
+class LogConfig;
 class LogBufferIterator;
 
 #define LOG_SEGMENT_COOKIE 0xaceface
@@ -129,7 +130,8 @@ public:
     LB_BUFFER_TOO_SMALL
   };
 
-  LogBuffer(LogObject *owner, size_t size, size_t buf_align = LB_DEFAULT_ALIGN, size_t write_align = INK_MIN_ALIGN);
+  LogBuffer(const LogConfig *cfg, LogObject *owner, size_t size, size_t buf_align = LB_DEFAULT_ALIGN,
+            size_t write_align = INK_MIN_ALIGN);
   LogBuffer(LogObject *owner, LogBufferHeader *header);
   ~LogBuffer();
 
@@ -232,7 +234,7 @@ public:
 
 private:
   // private functions
-  size_t _add_buffer_header();
+  size_t _add_buffer_header(const LogConfig *cfg);
   unsigned add_header_str(const char *str, char *buf_ptr, unsigned buf_len);
   void freeLogBuffer();
 
