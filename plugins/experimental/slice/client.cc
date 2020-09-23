@@ -140,22 +140,20 @@ handle_client_resp(TSCont contp, TSEvent event, Data *const data)
     } break;
 
     case BlockState::Pending: {
-      bool start_next_block = true;
+      // throttle
+      TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
+      int64_t const output_done = TSVIONDoneGet(output_vio);
+      int64_t const output_sent = data->m_bytessent;
+      int64_t const threshout   = data->m_config->m_blockbytes;
+      int64_t const buffered    = output_sent - output_done;
 
-      if (data->m_config->m_throttle) {
-        TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
-        int64_t const output_done = TSVIONDoneGet(output_vio);
-        int64_t const output_sent = data->m_bytessent;
-        int64_t const threshout   = data->m_config->m_blockbytes;
-
-        if (threshout < (output_sent - output_done)) {
-          start_next_block = false;
-          DEBUG_LOG("%p handle_client_resp: throttling %" PRId64, data, (output_sent - output_done));
-        }
-
-        if (start_next_block) {
-          DEBUG_LOG("Starting next block request");
-          request_block(contp, data);
+      if (threshout < buffered) {
+        DEBUG_LOG("%p handle_client_resp: throttling %" PRId64, data, buffered);
+      } else {
+        DEBUG_LOG("Starting next block request");
+        if (!request_block(contp, data)) {
+          data->m_blockstate = BlockState::Fail;
+          return;
         }
       }
     } break;
