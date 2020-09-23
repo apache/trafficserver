@@ -1020,6 +1020,7 @@ public:
   static bool will_this_request_self_loop(State *s);
   static bool is_request_likely_cacheable(State *s, HTTPHdr *request);
   static bool is_cache_hit(CacheLookupResult_t r);
+  static bool is_fresh_cache_hit(CacheLookupResult_t r);
 
   static void build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_request, HTTPVersion outgoing_version);
   static void build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing_response, HTTPVersion outgoing_version,
