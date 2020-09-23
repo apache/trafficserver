@@ -517,6 +517,40 @@ Diags::config_roll_outputlog(RollingEnabledValues re, int ri, int rs)
 }
 
 /*
+ * Update diags_log to use the underlying file on disk.
+ *
+ * This function will replace the current BaseLogFile object with a new one, as
+ * each BaseLogFile object logically represents one file on disk. It can be
+ * used when we want to re-open the log file if the initial one was moved.
+ *
+ * Note that, however, cross process race conditions may still exist,
+ * especially with the metafile, and further work with flock() for fcntl() may
+ * still need to be done.
+ *
+ * Returns true if the log was reseated, false otherwise.
+ */
+bool
+Diags::reseat_diagslog()
+{
+  if (diags_log == nullptr || !diags_log->is_init()) {
+    return false;
+  }
+  fflush(diags_log->m_fp);
+  char *oldname = ats_strdup(diags_log->get_name());
+  log_log_trace("in %s for diags.log, oldname=%s\n", __func__, oldname);
+  BaseLogFile *n = new BaseLogFile(oldname);
+  if (setup_diagslog(n)) {
+    BaseLogFile *old_diags = diags_log;
+    lock();
+    diags_log = n;
+    unlock();
+    delete old_diags;
+  }
+  ats_free(oldname);
+  return true;
+}
+
+/*
  * Checks diags_log 's underlying file on disk and see if it needs to be rolled,
  * and does so if necessary.
  *

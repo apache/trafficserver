@@ -1242,6 +1242,22 @@ LogObjectManager::roll_files(long time_now)
 }
 
 void
+LogObjectManager::reopen_moved_log_files()
+{
+  for (auto &_object : this->_objects) {
+    _object->m_logFile->reopen_if_moved();
+  }
+
+  ACQUIRE_API_MUTEX("A LogObjectManager::reopen_moved_log_files");
+
+  for (auto &_APIobject : this->_APIobjects) {
+    _APIobject->m_logFile->reopen_if_moved();
+  }
+
+  RELEASE_API_MUTEX("R LogObjectManager::reopen_moved_log_files");
+}
+
+void
 LogObjectManager::display(FILE *str)
 {
   for (unsigned i = 0; i < this->_objects.size(); i++) {

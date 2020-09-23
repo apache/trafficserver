@@ -61,6 +61,13 @@ public:
   bool trim_rolled(size_t rolling_max_count);
   int roll(long interval_start, long interval_end, bool reopen_after_rolling = false);
 
+  /** Check whether the file at the log's filename exists and, if not, close
+   * the current file descriptor and reopen it.
+   *
+   * @return True if the file was re-opened, false otherwise.
+   */
+  bool reopen_if_moved();
+
   const char *
   get_name() const
   {

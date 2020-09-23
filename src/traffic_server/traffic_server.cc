@@ -281,10 +281,16 @@ public:
       signal_received[SIGUSR2] = false;
 
       Debug("log", "received SIGUSR2, reloading traffic.out");
-
       // reload output logfile (file is usually called traffic.out)
       diags->set_std_output(StdStream::STDOUT, bind_stdout);
       diags->set_std_output(StdStream::STDERR, bind_stderr);
+      if (diags->reseat_diagslog()) {
+        Note("Reseated %s", DIAGS_LOG_FILENAME);
+      } else {
+        Note("Could not reseat %s", DIAGS_LOG_FILENAME);
+      }
+      // Reload any of the other moved log files (such as the ones in logging.yaml).
+      Log::reopen_moved_log_files();
     }
 
     if (signal_received[SIGTERM] || signal_received[SIGINT]) {

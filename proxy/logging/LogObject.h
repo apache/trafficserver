@@ -388,6 +388,7 @@ public:
   void check_buffer_expiration(long time_now);
 
   unsigned roll_files(long time_now);
+  void reopen_moved_log_files();
 
   int log(LogAccess *lad);
   void display(FILE *str = stdout);
