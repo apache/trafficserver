@@ -8092,7 +8092,7 @@ inline bool
 HttpSM::is_redirect_required()
 {
   bool redirect_required = (enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections) &&
-                            !HttpTransact::is_cache_hit(t_state.cache_lookup_result));
+                            !HttpTransact::is_fresh_cache_hit(t_state.cache_lookup_result));
 
   SMDebug("http_redirect", "is_redirect_required %u", redirect_required);
 

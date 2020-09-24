@@ -7699,9 +7699,15 @@ HttpTransact::is_request_likely_cacheable(State *s, HTTPHdr *request)
 }
 
 bool
+HttpTransact::is_fresh_cache_hit(CacheLookupResult_t r)
+{
+  return (r == CACHE_LOOKUP_HIT_FRESH || r == CACHE_LOOKUP_HIT_WARNING);
+}
+
+bool
 HttpTransact::is_cache_hit(CacheLookupResult_t r)
 {
-  return (r == CACHE_LOOKUP_HIT_FRESH || r == CACHE_LOOKUP_HIT_WARNING || r == CACHE_LOOKUP_HIT_STALE);
+  return (is_fresh_cache_hit(r) || r == CACHE_LOOKUP_HIT_STALE);
 }
 
 void
