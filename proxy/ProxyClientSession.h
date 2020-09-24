@@ -36,7 +36,6 @@
 #define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
 
 class ProxyClientTransaction;
-struct AclRecord;
 
 enum class ProxyErrorClass {
   NONE,
@@ -284,9 +283,6 @@ public:
     NetVConnection *netvc = get_netvc();
     return netvc ? netvc->get_local_addr() : nullptr;
   }
-
-  /// acl record - cache IpAllow::match() call
-  const AclRecord *acl_record = nullptr;
 
   /// Local address for outbound connection.
   IpAddr outbound_ip4;

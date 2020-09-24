@@ -54,7 +54,6 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
   }
 
   Http2ClientSession *new_session = THREAD_ALLOC_INIT(http2ClientSessionAllocator, this_ethread());
-  new_session->acl_record         = session_acl_record;
   new_session->host_res_style     = ats_host_res_from(client_ip->sa_family, options.host_res_preference);
   new_session->outbound_ip4       = options.outbound_ip4;
   new_session->outbound_ip6       = options.outbound_ip6;

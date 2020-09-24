@@ -144,12 +144,6 @@ public:
     host_res_style = style;
   }
 
-  const AclRecord *
-  get_acl_record() const
-  {
-    return parent ? parent->acl_record : nullptr;
-  }
-
   // Indicate we are done with this transaction
   virtual void release(IOBufferReader *r);
 
