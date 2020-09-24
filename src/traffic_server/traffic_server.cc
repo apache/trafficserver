@@ -104,9 +104,11 @@ extern "C" int plock(int);
 #include "P_SSLSNI.h"
 #include "P_SSLClientUtils.h"
 // JSON RPC protocol and server only includes.
+
+#include "RPCPubHandlers.h"
+
 #include "rpc/jsonrpc/JsonRpc.h"
 #include "rpc/server/RpcServer.h"
-#include "rpc/handlers/Admin.h"
 
 #include "config/FileManager.h"
 

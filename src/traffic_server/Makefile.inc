@@ -55,6 +55,8 @@ traffic_server_traffic_server_SOURCES = \
 	traffic_server/InkAPI.cc \
 	traffic_server/InkIOCoreAPI.cc \
 	traffic_server/SocksProxy.cc \
+	traffic_server/RPCPubHandlers.cc \
+	traffic_server/RPCPubHandlers.h \
 	shared/overridable_txn_vars.cc \
 	traffic_server/traffic_server.cc
 

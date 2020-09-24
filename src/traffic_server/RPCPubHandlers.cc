@@ -18,7 +18,6 @@
   limitations under the License.
 */
 
-#pragma once
 #include "rpc/jsonrpc/JsonRpc.h"
 
 // Admin API Implementation headers.
