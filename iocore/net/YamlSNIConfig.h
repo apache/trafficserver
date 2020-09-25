@@ -47,9 +47,6 @@ TSDECL(http2);
 TSDECL(host_sni_policy);
 #undef TSDECL
 
-// Predeclare OpenSSL X509 store struct.
-struct x509_store_st;
-
 const int start = 0;
 struct YamlSNIConfig {
   enum class Action {
@@ -73,17 +70,12 @@ struct YamlSNIConfig {
 
   YamlSNIConfig() {}
 
-  struct X509StoreDeleter {
-    void operator()(x509_store_st *);
-  };
-
-  using X509UniqPtr = std::unique_ptr<x509_store_st, X509StoreDeleter>;
-
   struct Item {
     std::string fqdn;
     std::optional<bool> offer_h2; // Has no value by default, so do not initialize!
     uint8_t verify_client_level = 255;
-    X509UniqPtr verify_client_ca_certs;
+    std::string verify_client_ca_file;
+    std::string verify_client_ca_dir;
     uint8_t host_sni_policy = 255;
     std::string tunnel_destination;
     bool tunnel_decrypt               = false;

@@ -924,6 +924,7 @@ void
 SSLNetVConnection::clear()
 {
   _serverName.reset();
+  _ca_cert_file.reset();
 
   if (ssl != nullptr) {
     SSL_free(ssl);
@@ -1919,5 +1920,22 @@ SSLNetVConnection::set_server_name(std::string_view name)
     std::memcpy(n, name.data(), name.size());
     n[name.size()] = '\0';
     _serverName.reset(n);
+  }
+}
+
+void
+SSLNetVConnection::set_ca_cert_file(std::string_view file, std::string_view dir)
+{
+  if (file.size()) {
+    char *n = new char[file.size() + 1];
+    std::memcpy(n, file.data(), file.size());
+    n[file.size()] = '\0';
+    _ca_cert_file.reset(n);
+  }
+  if (dir.size()) {
+    char *n = new char[dir.size() + 1];
+    std::memcpy(n, dir.data(), dir.size());
+    n[dir.size()] = '\0';
+    _ca_cert_dir.reset(n);
   }
 }
