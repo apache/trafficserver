@@ -63,7 +63,6 @@
  */
 
 #pragma once
-
 #include <memory>
 #include <string>
 #include <iosfwd>
@@ -140,8 +139,7 @@ public:
   );
 
   /// Constructor with @a id and @a std::error_code
-  Errata(std::error_code const &ec, ///< Standard error code.
-         Id id = 0                  ///< Message id
+  Errata(std::error_code const &ec ///< Standard error code.
   );
   /// Move constructor.
   Errata(self &&that);
@@ -826,9 +824,10 @@ inline Errata::Errata(Message &&msg)
 {
   this->push(std::move(msg));
 }
-inline Errata::Errata(std::error_code const &ec, Id id)
+inline Errata::Errata(std::error_code const &ec)
 {
-  this->push(id, ec.value(), ec.message());
+  this->push(ec.default_error_condition().value(), // we use the classification from the error_condition.
+             ec.value(), ec.message());
 }
 
 inline Errata::operator bool() const

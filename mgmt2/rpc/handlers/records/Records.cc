@@ -47,7 +47,7 @@ get_records(std::string_view const &id, YAML::Node const &params)
     auto &&[node, error]   = get_yaml_record(recordName, check);
 
     if (error) {
-      resp.errata().push(err::make_errata(error));
+      resp.errata().push(error);
       continue;
     }
 

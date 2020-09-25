@@ -90,7 +90,7 @@ get_config_records(std::string_view const &id, YAML::Node const &params)
     auto &&[node, error]   = get_yaml_record(recordName, check);
 
     if (error) {
-      resp.errata().push(err::make_errata(error));
+      resp.errata().push(error);
       continue;
     }
 
@@ -111,7 +111,7 @@ get_config_records_regex(std::string_view const &id, YAML::Node const &params)
     auto &&[node, error]   = get_yaml_record_regex(recordName, configRecType);
 
     if (error) {
-      resp.errata().push(err::make_errata(error));
+      resp.errata().push(error);
       continue;
     }
     // node may have more than one.
@@ -133,7 +133,7 @@ get_all_config_records(std::string_view const &id, [[maybe_unused]] YAML::Node c
   auto &&[node, error] = get_yaml_record_regex(all, configRecType);
 
   if (error) {
-    return err::make_errata(error);
+    return {error};
   }
 
   resp.result() = std::move(node);
@@ -192,7 +192,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
     try {
       info = kv.as<SetRecordCmdInfo>();
     } catch (YAML::Exception const &ex) {
-      resp.errata().push(err::make_errata({err::RecordError::RECORD_NOT_FOUND}));
+      resp.errata().push({err::RecordError::RECORD_NOT_FOUND});
       continue;
     }
 
@@ -217,7 +217,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 
     // make sure if exist. If not, we stop it and do not keep forward.
     if (ret != REC_ERR_OKAY) {
-      resp.errata().push(err::make_errata({err::RecordError::RECORD_NOT_FOUND}));
+      resp.errata().push({err::RecordError::RECORD_NOT_FOUND});
       continue;
     }
 
@@ -226,7 +226,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
 
     // run the check only if we have something to check against it.
     if (pattern != nullptr && utils::recordValidityCheck(info.value, checkType, pattern) == false) {
-      resp.errata().push(err::make_errata({err::RecordError::VALIDITY_CHECK_ERROR}));
+      resp.errata().push({err::RecordError::VALIDITY_CHECK_ERROR});
       continue;
     }
 
@@ -255,7 +255,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
       result["new_value"]     = info.value;
       result["update_status"] = updateType;
     } else {
-      resp.errata().push(err::make_errata({err::RecordError::GENERAL_ERROR}));
+      resp.errata().push({err::RecordError::GENERAL_ERROR});
       continue;
     }
   }

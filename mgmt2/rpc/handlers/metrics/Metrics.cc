@@ -50,7 +50,7 @@ get_metric_records(std::string_view const &id, YAML::Node const &params)
     auto &&[node, error]   = get_yaml_record(recordName, check);
 
     if (error) {
-      resp.errata().push(err::make_errata(error));
+      resp.errata().push(error);
       continue;
     }
 
@@ -73,7 +73,7 @@ get_metric_records_regex(std::string_view const &id, YAML::Node const &params)
     auto &&[node, error] = get_yaml_record_regex(recordName, STATS_RECORD_TYPES);
 
     if (error) {
-      resp.errata().push(err::make_errata(error));
+      resp.errata().push(error);
       continue;
     }
     // node may have more than one.
@@ -93,7 +93,7 @@ clear_all_metrics(std::string_view const &id, YAML::Node const &params)
   Debug(logTag, "Cleaning metrics.");
   if (RecResetStatRecord(RECT_NULL, true) != REC_ERR_OKAY) {
     Debug(logTag, "Error while cleaning the stats.");
-    return err::make_errata({rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR});
+    return ts::Errata{rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR};
   }
 
   return resp;
@@ -112,7 +112,7 @@ clear_metrics(std::string_view const &id, YAML::Node const &params)
         // This could be due the fact that the record is already cleared or the metric does not have any significant
         // value.
         std::error_code ec{rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR};
-        resp.errata().push(err::make_errata(ec));
+        resp.errata().push(ec);
       }
     }
   }

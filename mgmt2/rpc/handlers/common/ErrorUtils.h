@@ -49,12 +49,6 @@ enum Codes : unsigned int {
 
 static constexpr int ERRATA_DEFAULT_ID{1};
 
-static inline ts::Errata
-make_errata(std::error_code const &ec)
-{
-  return ts::Errata{}.push(ERRATA_DEFAULT_ID, ec.value(), ec.message());
-}
-
 template <typename... Args>
 static inline ts::Errata
 make_errata(int code, std::string_view fmt, Args &&... args)
