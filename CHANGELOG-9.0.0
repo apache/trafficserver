@@ -687,6 +687,7 @@ Changes with Apache Traffic Server 9.0.0
   #6011 - clang-analyzer: Add a null check
   #6013 - Add basic SystemTap markers support
   #6016 - Fix host type in host matcher.
+  #6019 - Minor cleanup of proxy/logging/Log.h .
   #6024 - Make proxy.config.http.request_buffer_enabled configurable and bug fix
   #6025 - Remove remnants of obsolete remap thread.
   #6026 - Remove obsolete 4-2-0-fixup
