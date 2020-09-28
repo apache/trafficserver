@@ -34,7 +34,7 @@ class CopyATSConfig(SetupItem):
         process = self.process if self.process else self
         try:
             ts_dir = process.Env['TS_ROOT']
-        except:
+        except BaseException:
             if self.process:
                 raise SetupError(
                     'TS_ROOT is not defined. Cannot copy ats config file without location to copy to.'

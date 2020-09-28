@@ -66,7 +66,7 @@ ts.Disk.records_config.update({
 
 # add plugin to assist with test metrics
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
-                                 'continuations_verify.so'), ts)
+                                    'continuations_verify.so'), ts)
 
 comparator_command = '''
 if test "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -f 2`" -eq "`traffic_ctl metric get continuations_verify.{0}.close.2 | cut -d ' ' -f 2`" ; then\

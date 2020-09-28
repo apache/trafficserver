@@ -63,7 +63,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
     p = obj.Processes.Process(name, command)
     #p_debug = obj.Processes.Process("port-debug", "ss --listen --tcp --process")
     #p_debug.Env['PATH'] = "/usr/sbin" + os.pathsep + p.ComposeEnv()['PATH']
-    #p.StartBefore(p_debug)
+    # p.StartBefore(p_debug)
     # we want to have a few directories more fixed
     # this helps with debugging as location are common
     # we do this by overiding locations from the "layout"
@@ -289,7 +289,8 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True, enabl
         port_str = "{port} {v6_port}:ipv6 ".format(port=p.Variables.port, v6_port=p.Variables.portv6)
 
         if enable_tls:
-            port_str += "{ssl_port}:ssl {ssl_portv6}:ssl:ipv6".format(ssl_port=p.Variables.ssl_port,ssl_portv6=p.Variables.ssl_portv6)
+            port_str += "{ssl_port}:ssl {ssl_portv6}:ssl:ipv6".format(
+                ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6)
 
         p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
 
