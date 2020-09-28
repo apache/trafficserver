@@ -153,7 +153,7 @@ Changes with Apache Traffic Server 9.0.0
   #4567 - Cleanup: Update Version support to be actual C++ code.
   #4570 - MIME: Add string_view based overload for value_get.
   #4573 - access_control: reduced some log errs to debug
-  #4576 -  Add Session and SSL hooks to test_hooks Au test.
+  #4576 - Add Session and SSL hooks to test_hooks Au test.
   #4579 - traffic_ctl: Refactor and convert traffic_ctl to use ArgParser
   #4580 - Make double_h2 reliably wait for stats to be ready
   #4585 - Runroot: make runroot_handler support both ink_args and ArgParser
@@ -207,7 +207,7 @@ Changes with Apache Traffic Server 9.0.0
   #4738 - Fix typo in HdrHeap
   #4746 - Optimize: tighten the logic of the PluginVC::process_read/write_side()
   #4748 - Tries to enforce .git installation of pre-commit
-  #4749 -  Add more information about event data to 'hook add' API function documentation.
+  #4749 - Add more information about event data to 'hook add' API function documentation.
   #4760 - Updated STATUS with all known releases
   #4764 - Adds logging around various config file loads
   #4765 - Cleanup: Make _next_round_robin uint64_t
@@ -427,7 +427,7 @@ Changes with Apache Traffic Server 9.0.0
   #5351 - cppcheck: fixes issues in example/
   #5353 - Remove log collation
   #5355 - Revert TS-374 to avoid deadlocks
-  #5362 -  fix 3939 collision
+  #5362 - Fix 3939 collision
   #5365 - cppcheck:  fix comparison issues found in plugins
   #5366 - Adds assert, albeit not needed, makes CA happy
   #5368 - Don't use the object after tests finishes and object is deleted
@@ -1090,8 +1090,14 @@ Changes with Apache Traffic Server 9.0.0
   #7168 - Fix #7167, make pep8 failure
   #7169 - AuTest: Properly handle experimental plugins. (#6971)
   #7172 - Fix leaks in BaseLogFiles.cc
+  #7173 - Adds new plugin: statichit
   #7178 - AuTest: Reuse venv if it exists already
   #7181 - TS_API for Note,Status,Warning,Alert,Fatal
   #7183 - Emits log when OCSP fails to connect to server
+  #7186 - autopep8: avoid running on non-committed files.
   #7193 - Make custom xdebug HTTP header name available to other plugins.
+  #7199 - Rename ambiguous log variable
   #7202 - Strip whitespaces after field-name and before the colon in headers from the origin
+  #7210 - Docs cleanup
+  #7213 - Follow redirection responses when refreshing stale cache objects.
+  #7215 - Log config reload: use new config for initialization
