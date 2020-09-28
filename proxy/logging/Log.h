@@ -182,6 +182,11 @@ public:
 
   // public data members
   static LogObject *error_log;
+  /** The latest fully initialized LogConfig.
+   *
+   * This is the safe, fully initialed LogConfig object to query against when
+   * performing logging operations.
+   */
   static LogConfig *config;
   static LogFieldList global_field_list;
   static std::unordered_map<std::string, LogField *> field_symbol_hash;

@@ -88,7 +88,7 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
   LogObject
   -------------------------------------------------------------------------*/
 
-LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
+LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
                      int rolling_offset_hr, int rolling_size_mb, bool auto_created, int rolling_max_count, int rolling_min_count,
                      bool reopen_after_rolling, int pipe_buffer_size)
@@ -121,18 +121,18 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
   // compute_signature is a static function
   m_signature = compute_signature(m_format, m_basename, m_flags);
 
-  m_logFile = new LogFile(m_filename, header, file_format, m_signature, Log::config->ascii_buffer_size, Log::config->max_line_size,
-                          m_pipe_buffer_size);
+  m_logFile =
+    new LogFile(m_filename, header, file_format, m_signature, cfg->ascii_buffer_size, cfg->max_line_size, m_pipe_buffer_size);
 
   if (m_reopen_after_rolling) {
     m_logFile->open_file();
   }
 
-  LogBuffer *b = new LogBuffer(this, Log::config->log_buffer_size);
+  LogBuffer *b = new LogBuffer(cfg, this, cfg->log_buffer_size);
   ink_assert(b);
   SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
-  _setup_rolling(rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
+  _setup_rolling(cfg, rolling_enabled, rolling_interval_sec, rolling_offset_hr, rolling_size_mb);
 
   Debug("log-config", "exiting LogObject constructor, filename=%s this=%p", m_filename, this);
 }
@@ -176,7 +176,7 @@ LogObject::LogObject(LogObject &rhs)
 
   // copy gets a fresh log buffer
   //
-  LogBuffer *b = new LogBuffer(this, Log::config->log_buffer_size);
+  LogBuffer *b = new LogBuffer(Log::config, this, Log::config->log_buffer_size);
   ink_assert(b);
   SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
 
@@ -396,7 +396,7 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
     case LogBuffer::LB_FULL_ACTIVE_WRITERS:
     case LogBuffer::LB_FULL_NO_WRITERS:
       // no more room in current buffer, create a new one
-      new_buffer = new LogBuffer(this, Log::config->log_buffer_size);
+      new_buffer = new LogBuffer(Log::config, this, Log::config->log_buffer_size);
 
       // swap the new buffer for the old one
       INK_WRITE_MEMORY_BARRIER;
@@ -629,8 +629,8 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
 }
 
 void
-LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr,
-                          int rolling_size_mb)
+LogObject::_setup_rolling(LogConfig *cfg, Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec,
+                          int rolling_offset_hr, int rolling_size_mb)
 {
   if (!LogRollingEnabledIsValid(static_cast<int>(rolling_enabled))) {
     m_rolling_enabled      = Log::NO_ROLLING;
@@ -689,7 +689,7 @@ LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling
         m_rolling_size_mb = rolling_size_mb;
       }
     }
-    Log::config->register_rolled_log_auto_delete(m_basename, m_min_rolled);
+    cfg->register_rolled_log_auto_delete(m_basename, m_min_rolled);
     m_rolling_enabled = rolling_enabled;
   }
 }
@@ -793,9 +793,9 @@ TextLogObject::TextLogObject(const char *name, const char *log_dir, bool timesta
                              Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
                              int rolling_offset_hr, int rolling_size_mb, int rolling_max_count, int rolling_min_count,
                              bool reopen_after_rolling)
-  : LogObject(TextLogObject::textfmt, log_dir, name, LOG_FILE_ASCII, header, rolling_enabled, flush_threads, rolling_interval_sec,
-              rolling_offset_hr, rolling_size_mb, /* auto_created */ false, rolling_max_count, rolling_min_count,
-              reopen_after_rolling)
+  : LogObject(Log::config, TextLogObject::textfmt, log_dir, name, LOG_FILE_ASCII, header, rolling_enabled, flush_threads,
+              rolling_interval_sec, rolling_offset_hr, rolling_size_mb, /* auto_created */ false, rolling_max_count,
+              rolling_min_count, reopen_after_rolling)
 {
   if (timestamps) {
     this->set_fmt_timestamps();
@@ -1326,7 +1326,7 @@ MakeTestLogObject(const char *name)
     tmpdir = "/tmp";
   }
 
-  return new LogObject(&format, tmpdir, name, LOG_FILE_ASCII /* file_format */, name /* header */,
+  return new LogObject(Log::config, &format, tmpdir, name, LOG_FILE_ASCII /* file_format */, name /* header */,
                        Log::ROLL_ON_TIME_ONLY /* rolling_enabled */, 1 /* flush_threads */);
 }
 
