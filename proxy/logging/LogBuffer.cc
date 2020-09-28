@@ -102,7 +102,7 @@ LogBufferHeader::log_filename()
   return addr;
 }
 
-LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t write_align)
+LogBuffer::LogBuffer(const LogConfig *cfg, LogObject *owner, size_t size, size_t buf_align, size_t write_align)
   : m_size(size), m_buf_align(buf_align), m_write_align(write_align), m_owner(owner), m_references(0)
 {
   size_t hdr_size;
@@ -111,8 +111,8 @@ LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t wri
   //
   int64_t alloc_size = size + buf_align;
 
-  if (alloc_size <= BUFFER_SIZE_FOR_INDEX(Log::config->logbuffer_max_iobuf_index)) {
-    m_buffer_fast_allocator_size = buffer_size_to_index(alloc_size, Log::config->logbuffer_max_iobuf_index);
+  if (alloc_size <= BUFFER_SIZE_FOR_INDEX(cfg->logbuffer_max_iobuf_index)) {
+    m_buffer_fast_allocator_size = buffer_size_to_index(alloc_size, cfg->logbuffer_max_iobuf_index);
     m_unaligned_buffer           = static_cast<char *>(ioBufAllocator[m_buffer_fast_allocator_size].alloc_void());
   } else {
     m_buffer_fast_allocator_size = -1;
@@ -121,7 +121,7 @@ LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t wri
   m_buffer = static_cast<char *>(align_pointer_forward(m_unaligned_buffer, buf_align));
 
   // add the header
-  hdr_size = _add_buffer_header();
+  hdr_size = _add_buffer_header(cfg);
 
   // initialize buffer state
   m_state.s.offset = hdr_size;
@@ -129,7 +129,7 @@ LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t wri
   // update the buffer id (m_id gets the old value)
   m_id = static_cast<uint32_t>(ink_atomic_increment(&M_ID, 1));
 
-  m_expiration_time = LogUtils::timestamp() + Log::config->max_secs_per_buffer;
+  m_expiration_time = LogUtils::timestamp() + cfg->max_secs_per_buffer;
 
   Debug("log-logbuffer", "[%p] Created buffer %u for %s at address %p, size %d", this_ethread(), m_id, m_owner->get_base_filename(),
         m_buffer, (int)size);
@@ -345,7 +345,7 @@ LogBuffer::add_header_str(const char *str, char *buf_ptr, unsigned buf_len)
 }
 
 size_t
-LogBuffer::_add_buffer_header()
+LogBuffer::_add_buffer_header(const LogConfig *cfg)
 {
   size_t header_len;
 
@@ -392,9 +392,9 @@ LogBuffer::_add_buffer_header()
     m_header->fmt_printf_offset = header_len;
     header_len += add_header_str(fmt->printf_str(), &m_buffer[header_len], m_size - header_len);
   }
-  if (Log::config->hostname) {
+  if (cfg->hostname) {
     m_header->src_hostname_offset = header_len;
-    header_len += add_header_str(Log::config->hostname, &m_buffer[header_len], m_size - header_len);
+    header_len += add_header_str(cfg->hostname, &m_buffer[header_len], m_size - header_len);
   }
   if (m_owner->get_base_filename()) {
     m_header->log_filename_offset = header_len;

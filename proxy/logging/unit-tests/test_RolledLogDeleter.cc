@@ -42,7 +42,7 @@ verify_there_are_no_candidates(RolledLogDeleter &deleter)
 void
 verify_rolled_log_behavior(RolledLogDeleter &deleter, fs::path rolled_log1, fs::path rolled_log2, fs::path rolled_log3)
 {
-  SECTION("Verify we can add a single rolled files")
+  SECTION("Verify we can add a single rolled file")
   {
     constexpr int64_t file_size    = 100;
     constexpr time_t last_modified = 30;
@@ -65,7 +65,7 @@ verify_rolled_log_behavior(RolledLogDeleter &deleter, fs::path rolled_log1, fs::
     constexpr time_t oldest_timestamp   = 30;
     constexpr time_t youngest_timestamp = 60;
 
-    // Intentionally insert them out of order (that is the first one to delete
+    // Intentionally insert them out of order (that is, the first one to delete
     // is the second added).
     REQUIRE(deleter.consider_for_candidacy(rolled_log2.string(), file_size, youngest_timestamp));
     REQUIRE(deleter.consider_for_candidacy(rolled_log1.string(), file_size, oldest_timestamp));
