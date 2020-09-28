@@ -589,10 +589,6 @@ CacheProcessor::start_internal(int flags)
   fix                  = !!(flags & PROCESSOR_FIX);
   check                = (flags & PROCESSOR_CHECK) != 0;
   start_done           = 0;
-  Span *sd;
-  char **paths;
-  int *fds;
-  int *sector_sizes;
 
   /* read the config file and create the data structures corresponding
      to the file */
@@ -600,11 +596,11 @@ CacheProcessor::start_internal(int flags)
   gdisks  = static_cast<CacheDisk **>(ats_malloc(gndisks * sizeof(CacheDisk *)));
 
   // Temporaries to carry values between loops
-  paths = static_cast<char **>(alloca(sizeof(char *) * gndisks));
+  char **paths = static_cast<char **>(alloca(sizeof(char *) * gndisks));
   memset(paths, 0, sizeof(char *) * gndisks);
-  fds = static_cast<int *>(alloca(sizeof(int) * gndisks));
+  int *fds = static_cast<int *>(alloca(sizeof(int) * gndisks));
   memset(fds, 0, sizeof(int) * gndisks);
-  sector_sizes = static_cast<int *>(alloca(sizeof(int) * gndisks));
+  int *sector_sizes = static_cast<int *>(alloca(sizeof(int) * gndisks));
   memset(sector_sizes, 0, sizeof(int) * gndisks);
   Span **sds = static_cast<Span **>(alloca(sizeof(Span *) * gndisks));
   memset(sds, 0, sizeof(Span *) * gndisks);
@@ -618,7 +614,7 @@ CacheProcessor::start_internal(int flags)
    create CacheDisk objects for each span in the configuration file and store in gdisks
    */
   for (unsigned i = 0; i < theCacheStore.n_disks; i++) {
-    sd       = theCacheStore.disk[i];
+    Span *sd = theCacheStore.disk[i];
     int opts = DEFAULT_CACHE_OPTIONS;
 
     if (!paths[gndisks]) {
@@ -737,7 +733,7 @@ CacheProcessor::start_internal(int flags)
 
   // If we got here, we have enough disks to proceed
   for (int j = 0; j < gndisks; j++) {
-    sd = sds[j];
+    Span *sd = sds[j];
     ink_release_assert(sds[j] != nullptr); // Defeat clang-analyzer
     off_t skip     = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
     int64_t blocks = sd->blocks - (skip >> STORE_BLOCK_SHIFT);
