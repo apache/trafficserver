@@ -118,7 +118,7 @@ CONFIG proxy.config.http.cache.heuristic_lm_factor FLOAT 0.10
 ##############################################################################
 CONFIG proxy.config.net.connections_throttle INT 30000
 CONFIG proxy.config.net.max_connections_in INT 30000
-CONFIG proxy.config.net.max_connections_active_in INT 10000
+CONFIG proxy.config.net.max_requests_in INT 0
 
 ##############################################################################
 # RAM and disk cache configurations. Docs:
