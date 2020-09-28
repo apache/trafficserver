@@ -737,7 +737,8 @@ CacheProcessor::start_internal(int flags)
 
   // If we got here, we have enough disks to proceed
   for (int j = 0; j < gndisks; j++) {
-    sd             = sds[j];
+    sd = sds[j];
+    ink_release_assert(sds[j] != nullptr); // Defeat clang-analyzer
     off_t skip     = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
     int64_t blocks = sd->blocks - (skip >> STORE_BLOCK_SHIFT);
 #if AIO_MODE == AIO_MODE_NATIVE
