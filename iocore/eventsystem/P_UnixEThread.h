@@ -79,7 +79,10 @@ TS_INLINE Event *
 EThread::schedule(Event *e)
 {
   e->ethread = this;
-  ink_assert(tt == REGULAR);
+  if (tt != REGULAR) {
+    ink_assert(tt == DEDICATED);
+    return eventProcessor.schedule(e, ET_CALL);
+  }
   if (e->continuation->mutex) {
     e->mutex = e->continuation->mutex;
   } else {
