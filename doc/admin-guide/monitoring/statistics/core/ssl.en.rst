@@ -74,9 +74,6 @@ SSL/TLS
    The number of SSL connections to origin servers which were terminated due to
    unsupported SSL/TLS protocol versions, since statistics collection began.
 
-.. ts:stat:: global proxy.process.ssl.ssl_error_read_eos integer
-   :type: counter
-
 .. ts:stat:: global proxy.process.ssl.ssl_error_ssl integer
    :type: counter
 
@@ -229,4 +226,3 @@ SSL/TLS
 
    Incoming client SSL connections terminated due to an unsupported or disabled
    version of SSL/TLS, since statistics collection began.
-

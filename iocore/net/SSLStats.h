@@ -88,7 +88,6 @@ enum SSL_Stats {
 
   /* error stats */
   ssl_error_syscall,
-  ssl_error_read_eos,
   ssl_error_ssl,
   ssl_error_async,
   ssl_sni_name_set_failure,
