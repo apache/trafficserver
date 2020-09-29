@@ -1099,7 +1099,7 @@ INKContInternal::destroy()
     // action is needed.
     //
     if (p) {
-      p->schedule_imm(this);
+      p->schedule_imm_local(this);
     }
   }
 }
