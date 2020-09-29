@@ -58,7 +58,7 @@ class LocalUnixSocket : public BaseTransportInterface
     struct yamlparser;
     using MessageParserLogic = yamlparser;
 
-    /// Peer's socket.
+    /// @param fd Peer's socket.
     Client(int fd);
     /// Destructor will close the socket(if opened);
     ~Client();
@@ -104,16 +104,19 @@ public:
     return _summary;
   }
 
-private:
+protected: // unit test access
   struct Config {
     static constexpr auto SOCK_PATH_NAME_KEY_STR{"sock_path_name"};
     static constexpr auto LOCK_PATH_NAME_KEY_STR{"lock_path_name"};
     static constexpr auto BACKLOG_KEY_STR{"backlog"};
     static constexpr auto MAX_RETRY_ON_TR_ERROR_KEY_STR{"max_retry_on_transient_errors"};
 
+    static constexpr auto DEFAULT_SOCK_NAME{"/tmp/jsonrpc20.sock"};
+    static constexpr auto DEFAULT_LOCK_NAME{"/tmp/jsonrpc20.lock"};
+
     // Review this names
-    std::string sockPathName{"/tmp/jsonrpc20.sock"};
-    std::string lockPathName{"/tmp/jsonrpc20.lock"};
+    std::string sockPathName{DEFAULT_SOCK_NAME};
+    std::string lockPathName{DEFAULT_LOCK_NAME};
 
     int backlog{5};
     int maxRetriesOnTransientErrors{64};
@@ -121,6 +124,8 @@ private:
 
   friend struct YAML::convert<rpc::transport::LocalUnixSocket::Config>;
   Config _conf;
+
+private:
   // TODO: 1000 what? add units.
   bool wait_for_new_client(int timeout = 1000) const;
   bool check_for_transient_errors() const;

@@ -151,7 +151,7 @@ FileManager::getConfigObj(const char *fileName, ConfigManager **rbPtr)
 ts::Errata
 FileManager::fileChanged(std::string_view const &fileName, std::string_view const &configName)
 {
-  Debug("filemanager", "filename changed %s", fileName.data());
+  Debug("filemanager", "file changed %s", fileName.data());
   ts::Errata ret;
 
   std::lock_guard<std::mutex> guard(_callbacksMutex);

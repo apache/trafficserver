@@ -28,6 +28,8 @@
 #include "rpc/handlers/server/Server.h"
 #include "rpc/handlers/plugins/Plugins.h"
 
+#include "RpcAdminPubHandlers.h"
+
 namespace rpc::admin
 {
 void

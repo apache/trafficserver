@@ -88,7 +88,9 @@ libjsonrpc_server_COMMON = \
 	server/TransportBase.cc \
 	server/TransportBase.h \
 	server/LocalUnixSocket.cc \
-	server/LocalUnixSocket.h
+	server/LocalUnixSocket.h \
+	config/JsonRpcConfig.cc \
+	config/JsonRpcConfig.h
 
 libjsonrpc_server_la_SOURCES = \
 	$(libjsonrpc_server_COMMON)

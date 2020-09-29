@@ -29,13 +29,16 @@
 #include <thread>
 #include <future>
 #include <chrono>
+#include <fstream>
 
 #include <tscore/BufferWriter.h>
+#include <tscore/ts_file.h>
 
 #include "rpc/jsonrpc/JsonRpc.h"
 #include "rpc/server/RpcServer.h"
-#include "rpc/common/JsonRpcApi.h"
+#include "rpc/server/LocalUnixSocket.h"
 
+#include "rpc/common/JsonRpcApi.h"
 #include "LocalSocketClient.h"
 
 #include "I_EventSystem.h"
@@ -43,6 +46,9 @@
 #include "diags.i"
 
 static const std::string sockPath{"/tmp/jsonrpc20_test.sock"};
+static const std::string lockPath{"/tmp/jsonrpc20_test.lock"};
+static constexpr int default_backlog{5};
+static constexpr int default_maxRetriesOnTransientErrors{64};
 
 struct RpcServerTestListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
@@ -67,7 +73,7 @@ struct RpcServerTestListener : Catch::TestEventListenerBase {
 
     auto serverConfig = rpc::config::RPCConfig{};
 
-    auto confStr{R"({transport_type": 1, "transport_config": {"lock_path_name": "/tmp/jsonrpc20_test.lock", "sock_path_name": ")" +
+    auto confStr{R"({"transport_type": 1, "transport_config": {"lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" +
                  sockPath + R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
 
     YAML::Node configNode = YAML::Load(confStr);
@@ -200,7 +206,7 @@ TEST_CASE("Basic message sending to a running server", "[socket]")
 TEST_CASE("Sending a message bigger than the internal server's buffer.", "[buffer][error]")
 {
   REQUIRE(rpc::JsonRpc::instance().add_handler("do_nothing", &do_nothing));
-  std::cout << "Paso aca\n";
+
   SECTION("The Server message buffer size same as socket buffer")
   {
     const int S{64000};
@@ -210,7 +216,7 @@ TEST_CASE("Sending a message bigger than the internal server's buffer.", "[buffe
     REQUIRE(resp.empty());
     REQUIRE(rpc_client.is_connected() == false);
   }
-  std::cout << "Paso aca\n";
+
   REQUIRE(rpc::JsonRpc::instance().remove_handler("do_nothing"));
 }
 
@@ -246,4 +252,167 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
     REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "chunk-parts-3"})");
   }
   REQUIRE(rpc::JsonRpc::instance().remove_handler("do_nothing"));
+}
+
+// Enable toggle
+TEST_CASE("Test rpc enable toggle feature - default enabled.", "[default values]")
+{
+  auto serverConfig = rpc::config::RPCConfig{};
+  REQUIRE(serverConfig.is_enabled() == true);
+}
+
+TEST_CASE("Test rpc enable toggle feature. Enabled by configuration", "[rpc][enabled]")
+{
+  auto serverConfig = rpc::config::RPCConfig{};
+
+  auto confStr{R"({rpc_enabled": true})"};
+
+  YAML::Node configNode = YAML::Load(confStr);
+  serverConfig.load(configNode);
+  REQUIRE(serverConfig.is_enabled() == true);
+}
+
+TEST_CASE("Test rpc  enable toggle feature. Disabled by configuration", "[rpc][disabled]")
+{
+  auto serverConfig = rpc::config::RPCConfig{};
+
+  auto confStr{R"({"rpc_enabled": false})"};
+
+  YAML::Node configNode = YAML::Load(confStr);
+  serverConfig.load(configNode);
+  REQUIRE(serverConfig.is_enabled() == false);
+}
+
+TEST_CASE("Test rpc server configuration with invalid transport type", "[rpc][transport]")
+{
+  auto serverConfig = rpc::config::RPCConfig{};
+
+  auto confStr{R"({"transport_type": 2})"};
+
+  YAML::Node configNode = YAML::Load(confStr);
+  serverConfig.load(configNode);
+
+  REQUIRE_THROWS([&]() { auto server = std::make_unique<rpc::RpcServer>(serverConfig); }());
+}
+
+// TEST UDS Transport configuration
+namespace
+{
+namespace trp = rpc::transport;
+// This class is defined to get access to the protected config object inside the LocalUnixSocket class.
+struct TestTransport : public trp::LocalUnixSocket {
+  ts::Errata
+  configure(YAML::Node const &params) override
+  {
+    return trp::LocalUnixSocket::configure(params);
+  }
+  void
+  run() override
+  {
+  }
+  ts::Errata
+  init() override
+  {
+    return trp::LocalUnixSocket::init();
+  }
+  bool
+  stop() override
+  {
+    return true;
+  }
+  std::string_view
+  name() const override
+  {
+    return "TestTransport";
+  }
+  trp::LocalUnixSocket::Config const &
+  get_conf() const
+  {
+    return _conf;
+  }
+
+  static std::string_view
+  default_sock_name()
+  {
+    return trp::LocalUnixSocket::Config::DEFAULT_SOCK_NAME;
+  }
+
+  static std::string_view
+  default_lock_name()
+  {
+    return trp::LocalUnixSocket::Config::DEFAULT_LOCK_NAME;
+  }
+};
+} // namespace
+
+TEST_CASE("Test configuration parsing. Transport values", "[string]")
+{
+  auto serverConfig = rpc::config::RPCConfig{};
+
+  const auto confStr{R"({"transport_type": 1, "transport_config": {"lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" +
+                     sockPath + R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
+
+  YAML::Node configNode = YAML::Load(confStr);
+  serverConfig.load(configNode);
+
+  REQUIRE(serverConfig.get_transport_type() == rpc::config::RPCConfig::TransportType::UNIX_DOMAIN_SOCKET);
+
+  auto transport  = std::make_unique<TestTransport>();
+  auto const &ret = transport->configure(serverConfig.get_transport_config_params());
+  REQUIRE(ret);
+  REQUIRE(transport->get_conf().backlog == default_backlog);
+  REQUIRE(transport->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
+  REQUIRE(transport->get_conf().sockPathName == sockPath);
+  REQUIRE(transport->get_conf().lockPathName == lockPath);
+}
+
+TEST_CASE("Test configuration parsing from a file. UDS Transport", "[file]")
+{
+  namespace fs = ts::file;
+
+  fs::path sandboxDir = fs::temp_directory_path();
+  fs::path configPath = sandboxDir / "jsonrpc.yaml";
+
+  // define here to later compare.
+  std::string sockPathName{configPath.string() + "jsonrpc20_test2.sock"};
+  std::string lockPathName{configPath.string() + "jsonrpc20_test2.lock"};
+
+  auto confStr{R"({"transport_type": 1, "transport_config": {"lock_path_name": ")" + lockPathName + R"(", "sock_path_name": ")" +
+               sockPathName + R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
+
+  // write the config.
+  std::ofstream ofs(configPath.string(), std::ofstream::out);
+  // Yes, we write json into the yaml, remember, YAML is a superset of JSON, yaml parser can handle this.
+  ofs << confStr;
+  ofs.close();
+
+  auto serverConfig = rpc::config::RPCConfig{};
+  // on any error reading the file, default values will be used.
+  serverConfig.load_from_file(configPath.view());
+
+  REQUIRE(serverConfig.get_transport_type() == rpc::config::RPCConfig::TransportType::UNIX_DOMAIN_SOCKET);
+
+  auto transport  = std::make_unique<TestTransport>();
+  auto const &ret = transport->configure(serverConfig.get_transport_config_params());
+  REQUIRE(ret);
+  REQUIRE(transport->get_conf().backlog == 5);
+  REQUIRE(transport->get_conf().maxRetriesOnTransientErrors == 64);
+  REQUIRE(transport->get_conf().sockPathName == sockPathName);
+  REQUIRE(transport->get_conf().lockPathName == lockPathName);
+
+  std::error_code ec;
+  REQUIRE(fs::remove(sandboxDir, ec));
+}
+
+TEST_CASE("Test configuration parsing. UDS Transport with default values", "[default values]")
+{
+  auto serverConfig = rpc::config::RPCConfig{};
+
+  auto transport  = std::make_unique<TestTransport>();
+  auto const &ret = transport->configure(serverConfig.get_transport_config_params());
+  REQUIRE(ret);
+  REQUIRE(transport->get_conf().backlog == default_backlog);
+  REQUIRE(transport->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
+  REQUIRE(transport->get_conf().sockPathName == TestTransport::default_sock_name());
+  REQUIRE(transport->get_conf().lockPathName == TestTransport::default_lock_name());
 }

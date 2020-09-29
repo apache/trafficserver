@@ -28,7 +28,7 @@ namespace rpc
 static const auto logTag{"rpc"};
 RpcServer::RpcServer(config::RPCConfig const &conf)
 {
-  switch (conf.get_configured_type()) {
+  switch (conf.get_transport_type()) {
   case config::RPCConfig::TransportType::UNIX_DOMAIN_SOCKET: {
     _transport      = std::make_unique<transport::LocalUnixSocket>();
     auto const &ret = _transport->configure(conf.get_transport_config_params());
@@ -37,19 +37,25 @@ RpcServer::RpcServer(config::RPCConfig const &conf)
     }
   } break;
   default:;
-    // in case we need another transport.
+    throw std::runtime_error("Unsupported transport type.");
   };
 
   assert(_transport != nullptr);
 
   // TODO: handle this properly.
   if (auto error = _transport->init(); error.size() > 0) {
-    Error("We couldn't initialize the transport logic. %s", error.top().text().c_str());
+    throw std::runtime_error(error.top().text().c_str());
   }
 }
 
+std::string_view
+RpcServer::selected_transport_name() const noexcept
+{
+  return _transport->name();
+}
+
 void
-RpcServer::join_thread()
+RpcServer::join_thread() noexcept
 {
   if (running_thread.joinable()) {
     try {

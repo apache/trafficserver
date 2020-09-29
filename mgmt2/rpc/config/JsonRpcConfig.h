@@ -19,55 +19,75 @@
 */
 #pragma once
 
-#include <string>
 #include <string_view>
-#include <variant>
 
 #include "yaml-cpp/yaml.h"
 
-#include "tscore/Diags.h"
-
 namespace rpc::config
 {
+///
+/// @brief This class holds and parse all the configuration needed to run the JSONRPC server, transport implementation
+/// can use this class to feed their own configuration, though it's not mandatory as their API @see
+/// BaseTransportInterface::configure uses a YAML::Node this class can be used on top of it and parse the "transport_config" from a
+/// wider file.
+///
+/// The configuration is divided into two
+/// sections:
+/// a) General RPC configuration:
+///   "transport_type" Defines the transport that should be used by the server. @see TransportType
+///   "rpc_enabled" Used to set the toggle to disable or enable the whole server.
+///
+/// b) Transport Configuration.
+///   "transport_config"
+///   This is defined by the specific transport, each transport can define and implement their own configuration flags. @see
+///   LocalUnixSocket::Config for an example
+///
+/// Example configuration:
+///
+///     transport_type: 1
+///     rpc_enabled: true
+///     transport_config:
+///       lock_path_name: "/tmp/conf_jsonrp"
+///       sock_path_name: "/tmp/conf_jsonrpc.sock"
+///       backlog: 5
+///       max_retry_on_transient_errors: 64
+///
+/// All transport section should use a root node name "transport_config", @c RPCConfig will return the full node when requested @see
+/// get_transport_config_param, then it's up to the transport implementation to parse it.
+/// @note By default Unix Domain Socket will be used as a transport.
+/// @note By default the enable/disable toggle will set to Enabled.
+/// @note By default a transport_config node will be Null.
 class RPCConfig
 {
 public:
-  enum class TransportType { UNIX_DOMAIN_SOCKET = 0 };
+  enum class TransportType { UNIX_DOMAIN_SOCKET = 1 };
 
   RPCConfig() = default;
 
-  void
-  load(YAML::Node const &params)
-  {
-    try {
-      // TODO: do it properly. default values for now.
-      if (auto n = params["transport_type"]) {
-        _selectedTransportType = static_cast<TransportType>(n.as<int>());
-      }
+  /// @brief Get the configured specifics for a particular tansport, all nodes under "transport_config" will be return here.
+  //  it's up to the caller to know how to parse this.
+  /// @return A YAML::Node that contains the passed configuration.
+  YAML::Node get_transport_config_params() const;
 
-      if (auto n = params["transport_config"]) {
-        _transportConfig = params["transport_config"];
-      }
+  /// @brief Function that returns the configured transport type.
+  /// @return a transport type, TransportType::UNIX_DOMAIN_SOCKET by default.
+  TransportType get_transport_type() const;
 
-    } catch (YAML::Exception const &ex) {
-      Warning("We found an issue when reading the parameter: %s . Using defaults", ex.what());
-    }
-  }
+  /// @brief Checks if the server was configured to be enabled or disabled. The server should be explicitly disabled by
+  ///        configuration as it is enabled by default.
+  /// @return true if enable, false if set disabled.
+  bool is_enabled() const;
 
-  YAML::Node
-  get_transport_config_params() const
-  {
-    return _transportConfig;
-  }
+  /// @brief Load the configuration from the content of a file. If the file does not exist, the default values will be used.
+  void load_from_file(std::string_view filePath);
 
-  TransportType
-  get_configured_type() const
-  {
-    return _selectedTransportType;
-  }
+  /// @brief Load configuration from a YAML::Node. This can be used to expose it as public rrc handler.
+  void load(YAML::Node const &params);
 
 private:
-  YAML::Node _transportConfig;
-  TransportType _selectedTransportType{TransportType::UNIX_DOMAIN_SOCKET};
+  YAML::Node _transportConfig; //!< "transport_config" section of the configuration file.
+  TransportType _selectedTransportType{
+    TransportType::UNIX_DOMAIN_SOCKET}; //!< The selected (by configuration) transport type. 1 by default.
+  bool _rpcEnabled{true};               //!< holds the configuration toogle value for "rpc_enable" node. Enabled by default.
 };
 } // namespace rpc::config

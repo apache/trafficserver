@@ -35,19 +35,40 @@ namespace transport
   struct BaseTransportInterface;
 }
 
+///
+/// @brief RPC Server implementation for the JSONRPC Logic. This class holds a transport which implements @see
+/// BaseTransportInterface
+/// Objects of this class can start @see thread_start , stop @see stop the server at any? time. More than one instance of this
+/// class can be created as long as they use different transport configuration.
 class RpcServer
 {
 public:
   RpcServer() = default;
+  ///
+  /// @brief Construct a new Rpc Server object
+  ///        This function have one main goal, select the transport type base on the configuration and  initialize it.
+  ///
+  /// @throw std::runtime_error if:
+  ///        1 - It the configured transport isn't valid for the server to create it, then an exception will be thrown.
+  ///        2 - The transport layer cannot be initialized.
+  /// @param conf the configuration object.
+  ///
   RpcServer(config::RPCConfig const &conf);
 
+  /// @brief The destructor will join the thread.
   ~RpcServer();
+
+  /// @brief Thread function that runs the transport.
   void thread_start();
+  /// @brief Function to stop the transport and join the thread to finish.
   void stop();
-  bool is_running() const;
+  /// @brief Returns a descriptive name that was set by the transport. Check @see BaseTransportInterface
+  std::string_view selected_transport_name() const noexcept;
 
 private:
-  void join_thread();
+  /// @brief This function join the thread.
+  void join_thread() noexcept;
+
   std::thread running_thread;
   std::unique_ptr<transport::BaseTransportInterface> _transport;
 };
