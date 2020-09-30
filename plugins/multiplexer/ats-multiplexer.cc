@@ -31,6 +31,8 @@
 #include "original-request.h"
 #include "post.h"
 
+#include <regex>
+
 #ifndef PLUGIN_TAG
 #error Please define a PLUGIN_TAG before including this file.
 #endif
@@ -39,6 +41,7 @@
 const size_t DEFAULT_TIMEOUT = 1000000000000;
 
 Statistics statistics;
+bool skip_post_put = false;
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *, char *, int)
@@ -77,8 +80,18 @@ TSRemapNewInstance(int argc, char **argv, void **i, char *, int)
   Instance *instance = new Instance;
 
   if (argc > 2) {
-    std::copy(argv + 2, argv + argc, std::back_inserter(instance->origins));
+    std::copy_if(argv + 2, argv + argc, std::back_inserter(instance->origins), [&] (std::string s) {
+        std::regex srgx("proxy\\.config\\.multiplexer\\.skip\\_post\\_put=(\\d)");
+        std::smatch matches;
+        if (std::regex_search(s, matches, srgx)) {
+            if (matches[1].str() == "1") {
+                skip_post_put = true;
+            }
+            return false;
+        }
+        return true; });
   }
+  TSDebug(PLUGIN_TAG, "skip_post_put is %s", (skip_post_put ? "true" : "false"));
 
   *i = static_cast<void *>(instance);
 
@@ -131,6 +144,12 @@ DoRemap(const Instance &i, TSHttpTxn t)
 
   TSDebug(PLUGIN_TAG, "Method is %s.", std::string(method, length).c_str());
 
+  if (skip_post_put &&
+      ((length == TS_HTTP_LEN_POST && memcmp(TS_HTTP_METHOD_POST, method, TS_HTTP_LEN_POST) == 0) ||
+       (length == TS_HTTP_LEN_PUT && memcmp(TS_HTTP_METHOD_PUT, method, TS_HTTP_LEN_PUT) == 0))) {
+    TSHandleMLocRelease(buffer, TS_NULL_MLOC, location);
+  } else {
+
   if (length == TS_HTTP_LEN_POST && memcmp(TS_HTTP_METHOD_POST, method, TS_HTTP_LEN_POST) == 0) {
     const TSVConn vconnection = TSTransformCreate(handlePost, t);
     assert(vconnection != nullptr);
@@ -144,6 +163,8 @@ DoRemap(const Instance &i, TSHttpTxn t)
   TSHandleMLocRelease(buffer, TS_NULL_MLOC, location);
 
   TSStatIntIncrement(statistics.requests, 1);
+
+  }
 }
 
 TSRemapStatus
