@@ -1430,7 +1430,7 @@ Origin Server Connect Attempts
    :reloadable:
    :overridable:
 
-   Maximum number of connection retries |TS| can make while an origin is marked dead.  Typically this value is smaller than
+   Maximum number of connection attempts |TS| can make while an origin is marked dead per request.  Typically this value is smaller than
    `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the dead origin.
    The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
 

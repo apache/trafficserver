@@ -4896,6 +4896,12 @@ HttpSM::do_http_server_open(bool raw)
       call_transact_and_set_next_state(HttpTransact::Forbidden);
       return;
     }
+
+    if (HttpTransact::is_server_negative_cached(&t_state) == true &&
+        t_state.txn_conf->connect_attempts_max_retries_dead_server <= 0) {
+      call_transact_and_set_next_state(HttpTransact::OriginDead);
+      return;
+    }
   }
 
   // Check for self loop.
