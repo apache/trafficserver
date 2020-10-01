@@ -18,6 +18,7 @@ Tests that plugins may break HTTP by sending 204 respose bodies
 #  limitations under the License.
 
 import os
+import sys
 
 Test.Summary = '''
 Tests that plugins may break HTTP by sending 204 respose bodies
@@ -31,9 +32,7 @@ CUSTOM_PLUGIN_204_HOST = 'www.customplugin204.test'
 regex_remap_conf_file = "maps.reg"
 
 ts.Disk.remap_config.AddLine(
-    'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host'
-    .format(CUSTOM_PLUGIN_204_HOST, server.Variables.Port,
-            regex_remap_conf_file)
+    f'map http://{CUSTOM_PLUGIN_204_HOST} http://127.0.0.1:{server.Variables.Port} @plugin=regex_remap.so @pparam={regex_remap_conf_file} @pparam=no-query-string @pparam=host'
 )
 ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine('//.*/ http://donotcare.test @status=204')
 
@@ -46,8 +45,7 @@ tr = Test.AddTestRun("Test domain {0}".format(CUSTOM_PLUGIN_204_HOST))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 
-tr.Processes.Default.Command = "python3 tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/'".\
-    format(ts.Variables.port, 'data/{0}_get.txt'.format(CUSTOM_PLUGIN_204_HOST))
+tr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{CUSTOM_PLUGIN_204_HOST}_get.txt"
 tr.Processes.Default.TimeOut = 5  # seconds
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http-204-custom-plugin.gold"

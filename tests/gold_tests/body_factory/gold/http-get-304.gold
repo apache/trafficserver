@@ -1,4 +1,4 @@
 HTTP/1.1 304 Not Modified
 ``
-Warning: 199 VERSION Proxy received unexpected 304 response; content may be stale
+Warning: 199 `` Proxy received unexpected 304 response; content may be stale
 ``
