@@ -6450,8 +6450,14 @@ HttpTransact::process_quick_http_filter(State *s, int method)
   }
 
   if (s->state_machine->ua_txn) {
-    const AclRecord *acl_record = s->state_machine->ua_txn->get_acl_record();
-    bool deny_request           = (acl_record == nullptr);
+    const AclRecord *acl_record = nullptr;
+    if (s->backdoor_request) {
+      acl_record = IpAllow::AllMethodAcl();
+    } else {
+      acl_record = SessionAccept::testIpAllowPolicy(s->client_info.src_addr);
+    }
+
+    bool deny_request = (acl_record == nullptr);
     if (acl_record && (acl_record->_method_mask != AclRecord::ALL_METHOD_MASK)) {
       if (method != -1) {
         deny_request = !acl_record->isMethodAllowed(method);
