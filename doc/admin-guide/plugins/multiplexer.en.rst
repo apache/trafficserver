@@ -60,7 +60,7 @@ Example remap.config::
     map http://www.example.com/a http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com
     map http://www.example.com/b http://www.example.com/ @plugin=multiplexer.so @pparam=host2.example.com
     map http://www.example.com/c http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com
-    map http://www.example.com/c http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com @pparam=proxy.config.multiplexer.skip_post_put=1
+    map http://www.example.com/d http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com @pparam=proxy.config.multiplexer.skip_post_put=1
 
 
 Implementation
