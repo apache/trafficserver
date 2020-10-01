@@ -2717,7 +2717,7 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
     tunnel.reset();
     // When the ua completed sending it's data we must have
     //  removed it from the tunnel
-    ink_release_assert(ua_entry->in_tunnel == false);
+    ua_entry->in_tunnel     = false;
     server_entry->in_tunnel = false;
 
     break;

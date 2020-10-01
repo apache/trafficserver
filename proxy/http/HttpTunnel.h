@@ -396,8 +396,11 @@ HttpTunnel::is_tunnel_alive() const
 {
   bool tunnel_alive = false;
 
+  // Really a tunnel is only alive as long as there are consumers
+  // to consume.  Or if there are no consumer (e.g. tunneling into a buffer)
+  // an alive producer may count
   for (const auto &producer : producers) {
-    if (producer.alive == true) {
+    if (producer.alive == true && producer.consumer_list.head == nullptr) {
       tunnel_alive = true;
       break;
     }
@@ -483,7 +486,7 @@ HttpTunnel::get_consumer(VIO *vio)
 {
   if (vio) {
     for (int i = 0; i < MAX_CONSUMERS; i++) {
-      if (consumers[i].alive && (consumers[i].write_vio == vio || consumers[i].vc == vio->vc_server)) {
+      if (consumers[i].alive && consumers[i].write_vio == vio) {
         return consumers + i;
       }
     }

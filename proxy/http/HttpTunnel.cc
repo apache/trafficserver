@@ -1612,6 +1612,7 @@ HttpTunnel::main_handler(int event, void *data)
       ink_assert(c->write_vio == (VIO *)data || c->vc == ((VIO *)data)->vc_server);
       sm_callback = consumer_handler(event, c);
     } else {
+      // Presumably a delayed event we can ignore now
       internal_error(); // do nothing
     }
   }
