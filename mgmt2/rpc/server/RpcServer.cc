@@ -28,30 +28,30 @@ namespace rpc
 static const auto logTag{"rpc"};
 RpcServer::RpcServer(config::RPCConfig const &conf)
 {
-  switch (conf.get_transport_type()) {
-  case config::RPCConfig::TransportType::UNIX_DOMAIN_SOCKET: {
-    _transport      = std::make_unique<transport::LocalUnixSocket>();
-    auto const &ret = _transport->configure(conf.get_transport_config_params());
+  switch (conf.get_comm_type()) {
+  case config::RPCConfig::CommType::UDS: {
+    _socketImpl     = std::make_unique<comm::LocalUnixSocket>();
+    auto const &ret = _socketImpl->configure(conf.get_comm_config_params());
     if (ret) {
-      Warning("Unable to configure the transport: %s", ret.top().text().c_str());
+      Warning("Unable to configure the socket impl: %s", ret.top().text().c_str());
     }
   } break;
   default:;
-    throw std::runtime_error("Unsupported transport type.");
+    throw std::runtime_error("Unsupported communication type.");
   };
 
-  assert(_transport != nullptr);
+  assert(_socketImpl != nullptr);
 
   // TODO: handle this properly.
-  if (auto error = _transport->init(); error.size() > 0) {
+  if (auto error = _socketImpl->init(); error.size() > 0) {
     throw std::runtime_error(error.top().text().c_str());
   }
 }
 
 std::string_view
-RpcServer::selected_transport_name() const noexcept
+RpcServer::selected_comm_name() const noexcept
 {
-  return _transport->name();
+  return _socketImpl->name();
 }
 
 void
@@ -74,15 +74,15 @@ RpcServer::~RpcServer()
 void
 RpcServer::thread_start()
 {
-  Debug(logTag, "Starting RPC Server on: %s", _transport->name().data());
-  running_thread = std::thread([&]() { _transport->run(); });
+  Debug(logTag, "Starting RPC Server on: %s", _socketImpl->name().data());
+  running_thread = std::thread([&]() { _socketImpl->run(); });
 }
 
 void
 RpcServer::stop()
 {
-  _transport->stop();
+  _socketImpl->stop();
   this->join_thread();
-  Debug(logTag, "Stopping RPC server on: %s", _transport->name().data());
+  Debug(logTag, "Stopping RPC server on: %s", _socketImpl->name().data());
 }
 } // namespace rpc

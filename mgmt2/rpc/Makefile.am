@@ -85,8 +85,8 @@ test_jsonrpc_LDADD = \
 libjsonrpc_server_COMMON = \
 	server/RpcServer.cc \
 	server/RpcServer.h \
-	server/TransportBase.cc \
-	server/TransportBase.h \
+	server/CommBase.cc \
+	server/CommBase.h \
 	server/LocalUnixSocket.cc \
 	server/LocalUnixSocket.h \
 	config/JsonRpcConfig.cc \

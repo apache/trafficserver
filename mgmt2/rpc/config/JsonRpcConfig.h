@@ -26,52 +26,52 @@
 namespace rpc::config
 {
 ///
-/// @brief This class holds and parse all the configuration needed to run the JSONRPC server, transport implementation
+/// @brief This class holds and parse all the configuration needed to run the JSONRPC server, communication implementation
 /// can use this class to feed their own configuration, though it's not mandatory as their API @see
-/// BaseTransportInterface::configure uses a YAML::Node this class can be used on top of it and parse the "transport_config" from a
+/// BaseCommInterface::configure uses a YAML::Node this class can be used on top of it and parse the "comm_config" from a
 /// wider file.
 ///
 /// The configuration is divided into two
 /// sections:
 /// a) General RPC configuration:
-///   "transport_type" Defines the transport that should be used by the server. @see TransportType
+///   "communication_type" Defines the communication that should be used by the server. @see Commype
 ///   "rpc_enabled" Used to set the toggle to disable or enable the whole server.
 ///
-/// b) Transport Configuration.
-///   "transport_config"
-///   This is defined by the specific transport, each transport can define and implement their own configuration flags. @see
+/// b) Comm specfics Configuration.
+///   "comm_config"
+///   This is defined by the specific communication, each communication can define and implement their own configuration flags. @see
 ///   LocalUnixSocket::Config for an example
 ///
 /// Example configuration:
 ///
-///     transport_type: 1
+///     comm_type: 1
 ///     rpc_enabled: true
-///     transport_config:
+///     comm_config:
 ///       lock_path_name: "/tmp/conf_jsonrp"
 ///       sock_path_name: "/tmp/conf_jsonrpc.sock"
 ///       backlog: 5
 ///       max_retry_on_transient_errors: 64
 ///
-/// All transport section should use a root node name "transport_config", @c RPCConfig will return the full node when requested @see
-/// get_transport_config_param, then it's up to the transport implementation to parse it.
-/// @note By default Unix Domain Socket will be used as a transport.
+/// All communication section should use a root node name "comm_config", @c RPCConfig will return the full node when requested @see
+/// get_comm_config_param, then it's up to the communication implementation to parse it.
+/// @note By default Unix Domain Socket will be used as a communication.
 /// @note By default the enable/disable toggle will set to Enabled.
-/// @note By default a transport_config node will be Null.
+/// @note By default a comm_config node will be Null.
 class RPCConfig
 {
 public:
-  enum class TransportType { UNIX_DOMAIN_SOCKET = 1 };
+  enum class CommType { UDS = 1 };
 
   RPCConfig() = default;
 
-  /// @brief Get the configured specifics for a particular tansport, all nodes under "transport_config" will be return here.
+  /// @brief Get the configured specifics for a particular tansport, all nodes under "comm_config" will be return here.
   //  it's up to the caller to know how to parse this.
   /// @return A YAML::Node that contains the passed configuration.
-  YAML::Node get_transport_config_params() const;
+  YAML::Node get_comm_config_params() const;
 
-  /// @brief Function that returns the configured transport type.
-  /// @return a transport type, TransportType::UNIX_DOMAIN_SOCKET by default.
-  TransportType get_transport_type() const;
+  /// @brief Function that returns the configured communication type.
+  /// @return a communication type, CommType::UDS by default.
+  CommType get_comm_type() const;
 
   /// @brief Checks if the server was configured to be enabled or disabled. The server should be explicitly disabled by
   ///        configuration as it is enabled by default.
@@ -85,9 +85,8 @@ public:
   void load(YAML::Node const &params);
 
 private:
-  YAML::Node _transportConfig; //!< "transport_config" section of the configuration file.
-  TransportType _selectedTransportType{
-    TransportType::UNIX_DOMAIN_SOCKET}; //!< The selected (by configuration) transport type. 1 by default.
-  bool _rpcEnabled{true};               //!< holds the configuration toogle value for "rpc_enable" node. Enabled by default.
+  YAML::Node _commConfig;                    //!< "comm_config" section of the configuration file.
+  CommType _selectedCommType{CommType::UDS}; //!< The selected (by configuration) communication type. 1 by default.
+  bool _rpcEnabled{true};                    //!< holds the configuration toggle value for "rpc_enable" node. Enabled by default.
 };
 } // namespace rpc::config

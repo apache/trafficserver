@@ -31,9 +31,9 @@
 namespace
 {
 static constexpr auto DEFAULT_FILE_NAME{"proxy.config.jsonrpc.filename"};
-static constexpr auto TRANSPORT_TYPE_KEY_NAME{"transport_type"};
+static constexpr auto COMM_TYPE_KEY_NAME{"comm_type"};
 static constexpr auto RPC_ENABLED_KEY_NAME{"rpc_enabled"};
-static constexpr auto TRANSPORT_CONFIG_KEY_NAME{"transport_config"};
+static constexpr auto COMM_CONFIG_KEY_NAME{"comm_config"};
 } // namespace
 namespace rpc::config
 {
@@ -41,10 +41,10 @@ void
 RPCConfig::load(YAML::Node const &params)
 {
   try {
-    if (auto n = params[TRANSPORT_TYPE_KEY_NAME]) {
-      _selectedTransportType = static_cast<TransportType>(n.as<int>());
+    if (auto n = params[COMM_TYPE_KEY_NAME]) {
+      _selectedCommType = static_cast<CommType>(n.as<int>());
     } else {
-      Warning("%s not present, using default", TRANSPORT_TYPE_KEY_NAME);
+      Warning("%s not present, using default", COMM_TYPE_KEY_NAME);
     }
 
     if (auto n = params[RPC_ENABLED_KEY_NAME]) {
@@ -53,10 +53,10 @@ RPCConfig::load(YAML::Node const &params)
       Warning("%s not present, using default", RPC_ENABLED_KEY_NAME);
     }
 
-    if (auto n = params[TRANSPORT_CONFIG_KEY_NAME]) {
-      _transportConfig = n;
+    if (auto n = params[COMM_CONFIG_KEY_NAME]) {
+      _commConfig = n;
     } else {
-      Warning("%s not present.", TRANSPORT_CONFIG_KEY_NAME);
+      Warning("%s not present.", COMM_CONFIG_KEY_NAME);
     }
 
   } catch (YAML::Exception const &ex) {
@@ -65,15 +65,15 @@ RPCConfig::load(YAML::Node const &params)
 }
 
 YAML::Node
-RPCConfig::get_transport_config_params() const
+RPCConfig::get_comm_config_params() const
 {
-  return _transportConfig;
+  return _commConfig;
 }
 
-RPCConfig::TransportType
-RPCConfig::get_transport_type() const
+RPCConfig::CommType
+RPCConfig::get_comm_type() const
 {
-  return _selectedTransportType;
+  return _selectedCommType;
 }
 
 bool

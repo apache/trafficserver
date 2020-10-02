@@ -30,21 +30,21 @@
 #include "tscpp/util/MemSpan.h"
 #include "tscore/BufferWriter.h"
 
-#include "rpc/server/TransportBase.h"
+#include "rpc/server/CommBase.h"
 #include "rpc/config/JsonRpcConfig.h"
 
-namespace rpc::transport
+namespace rpc::comm
 {
 ///
 /// @brief Unix Domain Socket implementation that deals with the JSON RPC call handling mechanism.
 ///
 /// Very basic and straight forward implementation of an unix socket domain. The implementation
-/// follows the \link BaseTransportInterface.
+/// follows the \link BaseCommInterface.
 ///
 /// Message completion is checked base on the \link MessageParserLigic implementation. As we are not using any
 /// user defined protocol more than the defined json, we keep reading till we find a well-formed json or the buffer if full.
 ///
-class LocalUnixSocket : public BaseTransportInterface
+class LocalUnixSocket : public BaseCommInterface
 {
   static constexpr std::string_view _summary{"Local Socket"};
 
@@ -122,7 +122,7 @@ protected: // unit test access
     int maxRetriesOnTransientErrors{64};
   };
 
-  friend struct YAML::convert<rpc::transport::LocalUnixSocket::Config>;
+  friend struct YAML::convert<rpc::comm::LocalUnixSocket::Config>;
   Config _conf;
 
 private:
@@ -140,4 +140,4 @@ private:
   struct sockaddr_un _serverAddr;
   int _socket;
 };
-} // namespace rpc::transport
+} // namespace rpc::comm

@@ -73,8 +73,8 @@ struct RpcServerTestListener : Catch::TestEventListenerBase {
 
     auto serverConfig = rpc::config::RPCConfig{};
 
-    auto confStr{R"({"transport_type": 1, "transport_config": {"lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" +
-                 sockPath + R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
+    auto confStr{R"({"comm_type": 1, "comm_config": {"lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
+                 R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
 
     YAML::Node configNode = YAML::Load(confStr);
     serverConfig.load(configNode);
@@ -283,11 +283,11 @@ TEST_CASE("Test rpc  enable toggle feature. Disabled by configuration", "[rpc][d
   REQUIRE(serverConfig.is_enabled() == false);
 }
 
-TEST_CASE("Test rpc server configuration with invalid transport type", "[rpc][transport]")
+TEST_CASE("Test rpc server configuration with invalid communication type", "[rpc][socket]")
 {
   auto serverConfig = rpc::config::RPCConfig{};
 
-  auto confStr{R"({"transport_type": 2})"};
+  auto confStr{R"({"comm_type": 2})"};
 
   YAML::Node configNode = YAML::Load(confStr);
   serverConfig.load(configNode);
@@ -295,12 +295,12 @@ TEST_CASE("Test rpc server configuration with invalid transport type", "[rpc][tr
   REQUIRE_THROWS([&]() { auto server = std::make_unique<rpc::RpcServer>(serverConfig); }());
 }
 
-// TEST UDS Transport configuration
+// TEST UDS Server configuration
 namespace
 {
-namespace trp = rpc::transport;
+namespace trp = rpc::comm;
 // This class is defined to get access to the protected config object inside the LocalUnixSocket class.
-struct TestTransport : public trp::LocalUnixSocket {
+struct LocalSocketTest : public trp::LocalUnixSocket {
   ts::Errata
   configure(YAML::Node const &params) override
   {
@@ -323,7 +323,7 @@ struct TestTransport : public trp::LocalUnixSocket {
   std::string_view
   name() const override
   {
-    return "TestTransport";
+    return "LocalSocketTest";
   }
   trp::LocalUnixSocket::Config const &
   get_conf() const
@@ -345,28 +345,28 @@ struct TestTransport : public trp::LocalUnixSocket {
 };
 } // namespace
 
-TEST_CASE("Test configuration parsing. Transport values", "[string]")
+TEST_CASE("Test configuration parsing. UDS values", "[string]")
 {
   auto serverConfig = rpc::config::RPCConfig{};
 
-  const auto confStr{R"({"transport_type": 1, "transport_config": {"lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" +
-                     sockPath + R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
+  const auto confStr{R"({"comm_type": 1, "comm_config": {"lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
+                     R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
 
   YAML::Node configNode = YAML::Load(confStr);
   serverConfig.load(configNode);
 
-  REQUIRE(serverConfig.get_transport_type() == rpc::config::RPCConfig::TransportType::UNIX_DOMAIN_SOCKET);
+  REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UDS);
 
-  auto transport  = std::make_unique<TestTransport>();
-  auto const &ret = transport->configure(serverConfig.get_transport_config_params());
+  auto socket     = std::make_unique<LocalSocketTest>();
+  auto const &ret = socket->configure(serverConfig.get_comm_config_params());
   REQUIRE(ret);
-  REQUIRE(transport->get_conf().backlog == default_backlog);
-  REQUIRE(transport->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
-  REQUIRE(transport->get_conf().sockPathName == sockPath);
-  REQUIRE(transport->get_conf().lockPathName == lockPath);
+  REQUIRE(socket->get_conf().backlog == default_backlog);
+  REQUIRE(socket->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
+  REQUIRE(socket->get_conf().sockPathName == sockPath);
+  REQUIRE(socket->get_conf().lockPathName == lockPath);
 }
 
-TEST_CASE("Test configuration parsing from a file. UDS Transport", "[file]")
+TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
 {
   namespace fs = ts::file;
 
@@ -377,7 +377,7 @@ TEST_CASE("Test configuration parsing from a file. UDS Transport", "[file]")
   std::string sockPathName{configPath.string() + "jsonrpc20_test2.sock"};
   std::string lockPathName{configPath.string() + "jsonrpc20_test2.lock"};
 
-  auto confStr{R"({"transport_type": 1, "transport_config": {"lock_path_name": ")" + lockPathName + R"(", "sock_path_name": ")" +
+  auto confStr{R"({"comm_type": 1, "comm_config": {"lock_path_name": ")" + lockPathName + R"(", "sock_path_name": ")" +
                sockPathName + R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
 
   // write the config.
@@ -390,29 +390,29 @@ TEST_CASE("Test configuration parsing from a file. UDS Transport", "[file]")
   // on any error reading the file, default values will be used.
   serverConfig.load_from_file(configPath.view());
 
-  REQUIRE(serverConfig.get_transport_type() == rpc::config::RPCConfig::TransportType::UNIX_DOMAIN_SOCKET);
+  REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UDS);
 
-  auto transport  = std::make_unique<TestTransport>();
-  auto const &ret = transport->configure(serverConfig.get_transport_config_params());
+  auto socket     = std::make_unique<LocalSocketTest>();
+  auto const &ret = socket->configure(serverConfig.get_comm_config_params());
   REQUIRE(ret);
-  REQUIRE(transport->get_conf().backlog == 5);
-  REQUIRE(transport->get_conf().maxRetriesOnTransientErrors == 64);
-  REQUIRE(transport->get_conf().sockPathName == sockPathName);
-  REQUIRE(transport->get_conf().lockPathName == lockPathName);
+  REQUIRE(socket->get_conf().backlog == 5);
+  REQUIRE(socket->get_conf().maxRetriesOnTransientErrors == 64);
+  REQUIRE(socket->get_conf().sockPathName == sockPathName);
+  REQUIRE(socket->get_conf().lockPathName == lockPathName);
 
   std::error_code ec;
   REQUIRE(fs::remove(sandboxDir, ec));
 }
 
-TEST_CASE("Test configuration parsing. UDS Transport with default values", "[default values]")
+TEST_CASE("Test configuration parsing. UDS socket with default values", "[default values]")
 {
   auto serverConfig = rpc::config::RPCConfig{};
 
-  auto transport  = std::make_unique<TestTransport>();
-  auto const &ret = transport->configure(serverConfig.get_transport_config_params());
+  auto socket     = std::make_unique<LocalSocketTest>();
+  auto const &ret = socket->configure(serverConfig.get_comm_config_params());
   REQUIRE(ret);
-  REQUIRE(transport->get_conf().backlog == default_backlog);
-  REQUIRE(transport->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
-  REQUIRE(transport->get_conf().sockPathName == TestTransport::default_sock_name());
-  REQUIRE(transport->get_conf().lockPathName == TestTransport::default_lock_name());
+  REQUIRE(socket->get_conf().backlog == default_backlog);
+  REQUIRE(socket->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
+  REQUIRE(socket->get_conf().sockPathName == LocalSocketTest::default_sock_name());
+  REQUIRE(socket->get_conf().lockPathName == LocalSocketTest::default_lock_name());
 }

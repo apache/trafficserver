@@ -25,10 +25,10 @@
 
 #include "rpc/config/JsonRpcConfig.h"
 
-namespace rpc::transport
+namespace rpc::comm
 {
-struct BaseTransportInterface {
-  virtual ~BaseTransportInterface() {}
+struct BaseCommInterface {
+  virtual ~BaseCommInterface() {}
   virtual ts::Errata configure(YAML::Node const &params) = 0;
   virtual void run()                                     = 0;
   virtual ts::Errata init()                              = 0;
@@ -37,11 +37,11 @@ struct BaseTransportInterface {
 };
 
 enum class InternalError { MAX_TRANSIENT_ERRORS_HANDLED = 1, POLLIN_ERROR, PARTIAL_READ, FULL_BUFFER };
-std::error_code make_error_code(rpc::transport::InternalError e);
+std::error_code make_error_code(rpc::comm::InternalError e);
 
-} // namespace rpc::transport
+} // namespace rpc::comm
 namespace std
 {
-template <> struct is_error_code_enum<rpc::transport::InternalError> : true_type {
+template <> struct is_error_code_enum<rpc::comm::InternalError> : true_type {
 };
 } // namespace std

@@ -30,14 +30,14 @@
 
 namespace rpc
 {
-namespace transport
+namespace comm
 {
-  struct BaseTransportInterface;
+  struct BaseCommInterface;
 }
 
 ///
 /// @brief RPC Server implementation for the JSONRPC Logic. This class holds a transport which implements @see
-/// BaseTransportInterface
+/// BaseCommInterface
 /// Objects of this class can start @see thread_start , stop @see stop the server at any? time. More than one instance of this
 /// class can be created as long as they use different transport configuration.
 class RpcServer
@@ -62,15 +62,15 @@ public:
   void thread_start();
   /// @brief Function to stop the transport and join the thread to finish.
   void stop();
-  /// @brief Returns a descriptive name that was set by the transport. Check @see BaseTransportInterface
-  std::string_view selected_transport_name() const noexcept;
+  /// @brief Returns a descriptive name that was set by the transport. Check @see BaseCommInterface
+  std::string_view selected_comm_name() const noexcept;
 
 private:
   /// @brief This function join the thread.
   void join_thread() noexcept;
 
   std::thread running_thread;
-  std::unique_ptr<transport::BaseTransportInterface> _transport;
+  std::unique_ptr<comm::BaseCommInterface> _socketImpl;
 };
 } // namespace rpc
 

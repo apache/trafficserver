@@ -743,7 +743,7 @@ initialize_jsonrpc_server()
   try {
     jsonrpcServer = new rpc::RpcServer{serverConfig};
     jsonrpcServer->thread_start();
-    Note("JSONRPC Enabled. RPC Server started, transport set to %s", jsonrpcServer->selected_transport_name().data());
+    Note("JSONRPC Enabled. RPC Server started, communication type set to %s", jsonrpcServer->selected_comm_name().data());
   } catch (std::exception const &ex) {
     Warning("Something happened while starting the JSONRPC Server: %s", ex.what());
   }

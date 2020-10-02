@@ -17,53 +17,54 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "TransportBase.h"
+#include "CommBase.h"
 
 namespace
 {
-struct TransportInternalErrorCategory : std::error_category {
+struct CommInternalErrorCategory : std::error_category {
   const char *name() const noexcept override;
   std::string message(int ev) const override;
 };
 
 const char *
-TransportInternalErrorCategory::name() const noexcept
+CommInternalErrorCategory::name() const noexcept
 {
-  return "transport_internal_error_category";
+  return "comm_internal_error_category";
 }
 
 std::string
-TransportInternalErrorCategory::message(int ev) const
+CommInternalErrorCategory::message(int ev) const
 {
-  switch (static_cast<rpc::transport::InternalError>(ev)) {
-  case rpc::transport::InternalError::MAX_TRANSIENT_ERRORS_HANDLED:
+  switch (static_cast<rpc::comm::InternalError>(ev)) {
+  case rpc::comm::InternalError::MAX_TRANSIENT_ERRORS_HANDLED:
     return {"We've reach the maximun attempt on transient errors."};
-  case rpc::transport::InternalError::POLLIN_ERROR:
+  case rpc::comm::InternalError::POLLIN_ERROR:
     return {"We haven't got a POLLIN flag back while waiting"};
-  case rpc::transport::InternalError::PARTIAL_READ:
+  case rpc::comm::InternalError::PARTIAL_READ:
     return {"No more data to be read, but the buffer contains some invalid? data."};
-  case rpc::transport::InternalError::FULL_BUFFER:
+  case rpc::comm::InternalError::FULL_BUFFER:
     return {"Buffer's full."};
   default:
-    return "Internal Transport impl error" + std::to_string(ev);
+    return "Internal Communication Error" + std::to_string(ev);
   }
 }
 
-const TransportInternalErrorCategory &
-get_transport_internal_error_category()
+// TODO: Make this available in the header if needed.
+const CommInternalErrorCategory &
+get_comm_internal_error_category()
 {
-  static TransportInternalErrorCategory transportInternalErrorCategory;
-  return transportInternalErrorCategory;
+  static CommInternalErrorCategory commInternalErrorCategory;
+  return commInternalErrorCategory;
 }
 
 } // anonymous namespace
 
-namespace rpc::transport
+namespace rpc::comm
 {
 std::error_code
-make_error_code(rpc::transport::InternalError e)
+make_error_code(rpc::comm::InternalError e)
 {
-  return {static_cast<int>(e), get_transport_internal_error_category()};
+  return {static_cast<int>(e), get_comm_internal_error_category()};
 }
 
-} // namespace rpc::transport
+} // namespace rpc::comm

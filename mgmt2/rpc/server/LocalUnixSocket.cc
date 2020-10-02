@@ -42,7 +42,7 @@
 #include "rpc/jsonrpc/JsonRpc.h"
 #include "rpc/server/LocalUnixSocket.h"
 
-namespace rpc::transport
+namespace rpc::comm
 {
 static constexpr auto logTag = "rpc.net";
 
@@ -317,7 +317,7 @@ namespace detail
     }
   };
 
-  template <> struct MessageParser<rpc::transport::LocalUnixSocket::Client::yamlparser> {
+  template <> struct MessageParser<rpc::comm::LocalUnixSocket::Client::yamlparser> {
     static bool
     is_complete(std::string const &view)
     {
@@ -456,12 +456,12 @@ LocalUnixSocket::Client::write(std::string const &data) const
   return true;
 }
 
-} // namespace rpc::transport
+} // namespace rpc::comm
 
 namespace YAML
 {
-template <> struct convert<rpc::transport::LocalUnixSocket::Config> {
-  using config = rpc::transport::LocalUnixSocket::Config;
+template <> struct convert<rpc::comm::LocalUnixSocket::Config> {
+  using config = rpc::comm::LocalUnixSocket::Config;
 
   static bool
   decode(const Node &node, config &rhs)
