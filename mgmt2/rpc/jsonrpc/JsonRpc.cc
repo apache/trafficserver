@@ -169,7 +169,7 @@ make_error_response(jsonrpc::RpcRequestInfo const &req, std::error_code const &e
     resp.id = req.id;
   }
 
-  resp.rpcError = std::make_optional<jsonrpc::RpcError>(ec.value(), ec.message());
+  resp.rpcError = ec; // std::make_optional<jsonrpc::RpcError>(ec.value(), ec.message());
 
   return resp;
 }
@@ -179,7 +179,8 @@ make_error_response(std::error_code const &ec)
 {
   jsonrpc::RpcResponseInfo resp;
 
-  resp.rpcError = std::make_optional<jsonrpc::RpcError>(ec.value(), ec.message());
+  resp.rpcError = ec;
+  // std::make_optional<jsonrpc::RpcError>(ec.value(), ec.message());
   return resp;
 }
 
@@ -191,7 +192,7 @@ JsonRpc::handle_call(std::string_view request)
   std::error_code ec;
   try {
     // let's decode all the incoming messages into our own types.
-    jsonrpc::RpcRequest const &msg = Decoder::extract(request, ec);
+    jsonrpc::RpcRequest const &msg = Decoder::decode(request, ec);
 
     // If any error happened within the request, they will be kept inside each
     // particular request, as they would need to be converted back in a proper error response.

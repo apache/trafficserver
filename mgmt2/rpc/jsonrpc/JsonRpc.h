@@ -32,16 +32,24 @@
 
 namespace rpc
 {
+// forward
 namespace jsonrpc
 {
   class yamlcpp_json_decoder;
   class yamlcpp_json_encoder;
 } // namespace jsonrpc
+
+///
+/// @brief JSONRPC registration and JSONRPC invocation logic  https://www.jsonrpc.org/specification
+/// doc TBC
 class JsonRpc
 {
-  using NotificationList = std::vector<jsonrpc::NotificationHandler>;
+  using NotificationHandler = std::function<void(const YAML::Node &)>;
+  using MethodHandler       = std::function<ts::Rv<YAML::Node>(std::string_view const &, const YAML::Node &)>;
 
 private:
+  /// @note In case we want to change the codecs and use another library, we just need to follow the same signatures @see
+  /// yamlcpp_json_decoder and @see yamlcpp_json_encoder.
   // We use the yamlcpp library by default.
   using Decoder = jsonrpc::yamlcpp_json_decoder;
   using Encoder = jsonrpc::yamlcpp_json_encoder;
