@@ -75,18 +75,6 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
 
     # set root for this test
     p.Env['TS_ROOT'] = ts_dir
-
-    # Explicitly create a runroot.yaml in the sandbox so that any other
-    # runroot.yaml files don't confuse the test Traffic Server processes as to
-    # where their Runroot should be. For the test, the user specified a sandbox
-    # so that should be used as the Runroot.
-    traffic_layout = os.path.join(p.Variables.BINDIR, 'traffic_layout')
-    autest_runroot_yaml = os.path.join(AUTEST_SITE_PATH, 'autest_runroot_layout.yml')
-    p.Setup.RunCommand(
-        'TS_ROOT={} {} init --force --copy-style soft --path {} '
-        '--layout={}'.format(
-            p.Variables.PREFIX, traffic_layout, ts_dir, autest_runroot_yaml))
-
     p.Setup.MakeDir(ts_dir)
 
     # set bin location
@@ -94,6 +82,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     p.Env['PROXY_CONFIG_BIN_PATH'] = bin_dir
     bin_path = os.path.join(ts_dir, bin_dir)
     p.Env['PATH'] = bin_path + os.pathsep + p.ComposeEnv()['PATH']
+    p.Setup.Copy(p.Variables.BINDIR, bin_path, CopyLogic.SoftFiles)
 
     # setup config directory
 
@@ -136,6 +125,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     #########################################################
     # create subdirectories that need to exist (but are empty)
     # log directory has to be created with correct permissions
+    p.Setup.MakeDir(log_dir)  # log directory has to be created
     p.Setup.Chown(log_dir, "nobody", "nobody", ignore=True)
     # covers ubuntu's unprivileged group
     p.Setup.Chown(log_dir, "nobody", "nogroup", ignore=True)
@@ -152,6 +142,7 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     p.Variables.RUNTIMEDIR = runtime_dir
     p.Variables.LOCALSTATEDIR = runtime_dir
 
+    p.Setup.MakeDir(runtime_dir)
     p.Setup.Chown(runtime_dir, "nobody", "nobody", ignore=True)
     # covers ubuntu's unprivileged group
     p.Setup.Chown(runtime_dir, "nobody", "nogroup", ignore=True)
