@@ -442,9 +442,9 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
         int64_t const output_sent = data->m_bytessent;
         int64_t const threshout   = data->m_config->m_blockbytes;
 
-        if (threshout < (output_done - output_sent)) {
+        if (threshout < (output_sent - output_done)) {
           start_next_block = false;
-          DEBUG_LOG("%p handle_server_resp: throttling %" PRId64, data, (output_done - output_sent));
+          DEBUG_LOG("%p handle_server_resp: throttling %" PRId64, data, (output_sent - output_done));
         }
       }
 
