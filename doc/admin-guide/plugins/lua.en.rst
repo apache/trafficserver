@@ -299,6 +299,46 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.status
+---------
+**syntax:** *ts.status(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log as status
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.note
+-------
+**syntax:** *ts.note(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log as note
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.warning
+----------
+**syntax:** *ts.warning(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log as warning
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.alert
+--------
+**syntax:** *ts.alert(MESSAGE)*
+
+**context:** global
+
+**description**: Log the MESSAGE to error.log as alert
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 TS Basic Internal Information
 -----------------------------
 **syntax:** *ts.get_install_dir()*
@@ -2762,6 +2802,28 @@ Here is an example:
 
     function do_global_read_request()
         local stack = {ts.http.get_client_protocol_stack()}
+        for k,v in pairs(stack) do
+          ts.debug(v)
+        end
+        return 0
+    end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.get_server_protocol_stack
+---------------------------------
+**syntax:** *ts.http.get_server_protocol_stack()*
+
+**context:** do_global_read_response or later
+
+**description:** This function can be used to get server protocol stack information
+
+Here is an example:
+
+::
+
+    function do_global_read_response()
+        local stack = {ts.http.get_server_protocol_stack()}
         for k,v in pairs(stack) do
           ts.debug(v)
         end
