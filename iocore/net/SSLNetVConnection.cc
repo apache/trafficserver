@@ -925,6 +925,7 @@ SSLNetVConnection::clear()
 {
   _serverName.reset();
   _ca_cert_file.reset();
+  _ca_cert_dir.reset();
 
   if (ssl != nullptr) {
     SSL_free(ssl);
