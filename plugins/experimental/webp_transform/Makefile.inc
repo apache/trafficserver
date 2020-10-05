@@ -15,18 +15,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-experimental_webp_transform_WebpTransform_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBMAGICKCPP_CFLAGS)
-experimental_webp_transform_WebpTransform_la_CXXFLAGS = $(AM_CXXFLAGS)
+experimental_webp_transform_webp_transform_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBMAGICKCPP_CFLAGS)
+experimental_webp_transform_webp_transform_la_CXXFLAGS = $(AM_CXXFLAGS)
 
-pkglib_LTLIBRARIES += experimental/webp_transform/WebpTransform.la
+pkglib_LTLIBRARIES += experimental/webp_transform/webp_transform.la
 
-experimental_webp_transform_WebpTransform_la_SOURCES = \
+experimental_webp_transform_webp_transform_la_SOURCES = \
   experimental/webp_transform/ImageTransform.cc
 
-experimental_webp_transform_WebpTransform_la_LDFLAGS = \
+experimental_webp_transform_webp_transform_la_LDFLAGS = \
   $(AM_LDFLAGS) \
   -L$(top_builddir)/src/tscpp/api
 
-experimental_webp_transform_WebpTransform_la_LIBADD = \
+experimental_webp_transform_webp_transform_la_LIBADD = \
   -ltscppapi \
   $(LIBMAGICKCPP_LIBS)

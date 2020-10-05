@@ -80,20 +80,29 @@ public:
     std::string input_data = _img.str();
     Blob input_blob(input_data.data(), input_data.length());
     Image image;
-    image.read(input_blob);
 
-    Blob output_blob;
-    if (_image_type == TransformImageType::webp) {
-      stat_convert_to_webp.increment(1);
-      TSDebug(TAG, "Transforming jpeg or png to webp");
-      image.magick("WEBP");
-    } else {
-      stat_convert_to_jpeg.increment(1);
-      TSDebug(TAG, "Transforming wepb to jpeg");
-      image.magick("JPEG");
+    try {
+      image.read(input_blob);
+
+      Blob output_blob;
+      if (_image_type == TransformImageType::webp) {
+        stat_convert_to_webp.increment(1);
+        TSDebug(TAG, "Transforming jpeg or png to webp");
+        image.magick("WEBP");
+      } else {
+        stat_convert_to_jpeg.increment(1);
+        TSDebug(TAG, "Transforming wepb to jpeg");
+        image.magick("JPEG");
+      }
+      image.write(&output_blob);
+      produce(std::string_view(reinterpret_cast<const char *>(output_blob.data()), output_blob.length()));
+    } catch (Magick::Warning &warning) {
+      TSError("ImageMagick++ warning: %s", warning.what());
+      produce(std::string_view(reinterpret_cast<const char *>(input_blob.data()), input_blob.length()));
+    } catch (Magick::Error &error) {
+      TSError("ImageMagick++ error: %s", error.what());
+      produce(std::string_view(reinterpret_cast<const char *>(input_blob.data()), input_blob.length()));
     }
-    image.write(&output_blob);
-    produce(std::string_view(reinterpret_cast<const char *>(output_blob.data()), output_blob.length()));
 
     setOutputComplete();
   }
