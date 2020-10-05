@@ -4991,9 +4991,9 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
       continue;
     }
     /////////////////////////////////////
-    // dont cache content-length field //
+    // dont cache content-length field  and transfer encoding //
     /////////////////////////////////////
-    if (name == MIME_FIELD_CONTENT_LENGTH) {
+    if (name == MIME_FIELD_CONTENT_LENGTH || name == MIME_FIELD_TRANSFER_ENCODING) {
       continue;
     }
     /////////////////////////////////////
