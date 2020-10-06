@@ -100,7 +100,8 @@ public:
       TSError("ImageMagick++ warning: %s", warning.what());
       produce(std::string_view(reinterpret_cast<const char *>(input_blob.data()), input_blob.length()));
     } catch (Magick::Error &error) {
-      TSError("ImageMagick++ error: %s", error.what());
+      TSError("ImageMagick++ error: %s _image_type: %d input_data.length(): %zd", error.what(), (int)_image_type,
+              input_data.length());
       produce(std::string_view(reinterpret_cast<const char *>(input_blob.data()), input_blob.length()));
     }
 
