@@ -64,14 +64,6 @@ YamlSNIConfig::loader(const char *cfgFilename)
 }
 
 void
-YamlSNIConfig::X509StoreDeleter::operator()(X509_STORE *store)
-{
-  if (store) {
-    X509_STORE_free(store);
-  }
-}
-
-void
 YamlSNIConfig::Item::EnableProtocol(YamlSNIConfig::TLSProtocol proto)
 {
   if (proto <= YamlSNIConfig::TLSProtocol::TLS_MAX) {
@@ -98,12 +90,7 @@ YamlSNIConfig::Item::EnableProtocol(YamlSNIConfig::TLSProtocol proto)
   }
 }
 
-VerifyClient::~VerifyClient()
-{
-  if (ca_certs) {
-    X509_STORE_free(ca_certs);
-  }
-}
+VerifyClient::~VerifyClient() {}
 
 TsEnumDescriptor LEVEL_DESCRIPTOR         = {{{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}};
 TsEnumDescriptor POLICY_DESCRIPTOR        = {{{"DISABLED", 0}, {"PERMISSIVE", 1}, {"ENFORCED", 2}}};
@@ -207,11 +194,8 @@ template <> struct convert<YamlSNIConfig::Item> {
       if (!dir.empty() && (dir[0] != '/')) {
         dir = RecConfigReadConfigDir() + '/' + dir;
       }
-      YamlSNIConfig::X509UniqPtr ctx{X509_STORE_new()};
-      if (!X509_STORE_load_locations(ctx.get(), file.empty() ? nullptr : file.c_str(), dir.empty() ? nullptr : dir.c_str())) {
-        throw YAML::ParserException(n.Mark(), "cannot load CA certs in file=" + file + " dir=" + dir);
-      }
-      item.verify_client_ca_certs.reset(ctx.release());
+      item.verify_client_ca_file = file;
+      item.verify_client_ca_dir  = dir;
 #endif
     }
 

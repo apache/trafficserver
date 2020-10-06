@@ -467,6 +467,19 @@ public:
     sent_cert = send_the_cert;
   }
 
+  void set_ca_cert_file(std::string_view file, std::string_view dir);
+
+  const char *
+  get_ca_cert_file()
+  {
+    return _ca_cert_file.get();
+  }
+  const char *
+  get_ca_cert_dir()
+  {
+    return _ca_cert_dir.get();
+  }
+
 protected:
   const IpEndpoint &
   _getLocalEndpoint() override
@@ -519,6 +532,8 @@ private:
 
   // Null-terminated string, or nullptr if there is no SNI server name.
   std::unique_ptr<char[]> _serverName;
+  std::unique_ptr<char[]> _ca_cert_file;
+  std::unique_ptr<char[]> _ca_cert_dir;
 
   EventIO async_ep{};
 };
