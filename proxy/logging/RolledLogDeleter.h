@@ -24,7 +24,7 @@
 #pragma once
 
 #include <cstdint>
-#include <list>
+#include <deque>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -202,13 +202,26 @@ public:
   void clear_candidates();
 
 private:
+  /** Sort all the assembled candidates for each LogDeletingInfo.
+   *
+   * After any additions to the @a deleting_info, this should be called before
+   * calling @a take_next_candidate_to_delete because the latter depends upon
+   * the candidate entries being sorted.
+   */
+  void sort_candidates();
+
+private:
   /** The owning references to the set of LogDeletingInfo added to the below
    * hash map. */
-  std::list<std::unique_ptr<LogDeletingInfo>> deletingInfoList;
+  std::deque<std::unique_ptr<LogDeletingInfo>> deletingInfoList;
 
   /** The set of candidates for deletion keyed by log_type. */
   IntrusiveHashMap<LogDeletingInfoDescriptor> deleting_info;
 
   /** The number of tracked candidates. */
   size_t num_candidates = 0;
+
+  /** Whether the candidates require sorting due to an addition to the
+   * deleting_info. */
+  bool candidates_require_sorting = true;
 };
