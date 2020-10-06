@@ -1079,7 +1079,6 @@ Changes with Apache Traffic Server 9.0.0
   #7143 - Deprecate cqhv field
   #7144 - Fix typo in cache docs
   #7145 - Check VIO availability before acquiring a lock for it
-  #7147 - slice: check if vio is still valid before calling TSVIODone* on shutdown
   #7148 - Fix stale pointer due to SSL config reload
   #7155 - PluginFactory - Remove unused code.
   #7157 - rc: fixes systemd unit file stopping
