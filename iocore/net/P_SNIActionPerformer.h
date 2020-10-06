@@ -193,11 +193,12 @@ private:
 class VerifyClient : public ActionItem
 {
   uint8_t mode;
-  X509_STORE *ca_certs; // owning pointer.
+  std::string ca_file;
+  std::string ca_dir;
 
 public:
-  VerifyClient(uint8_t param, X509_STORE *st = nullptr) : mode(param), ca_certs(st) {}
-  VerifyClient(const char *param, X509_STORE *st = nullptr) : VerifyClient(atoi(param), st) {}
+  VerifyClient(uint8_t param, std::string_view file, std::string_view dir) : mode(param), ca_file(file), ca_dir(dir) {}
+  VerifyClient(const char *param, std::string_view file, std::string_view dir) : VerifyClient(atoi(param), file, dir) {}
   ~VerifyClient() override;
   int
   SNIAction(Continuation *cont, const Context &ctx) const override
@@ -205,9 +206,9 @@ public:
     auto ssl_vc = dynamic_cast<SSLNetVConnection *>(cont);
     Debug("ssl_sni", "action verify param %d", this->mode);
     setClientCertLevel(ssl_vc->ssl, this->mode);
-    if (ca_certs) {
-      setClientCertCACerts(ssl_vc->ssl, ca_certs);
-    }
+    ssl_vc->set_ca_cert_file(ca_file, ca_dir);
+    setClientCertCACerts(ssl_vc->ssl, ssl_vc->get_ca_cert_file(), ssl_vc->get_ca_cert_dir());
+
     return SSL_TLSEXT_ERR_OK;
   }
   bool

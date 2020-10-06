@@ -300,6 +300,8 @@ set_context_cert(SSL *ssl)
     // Reset the ticket callback if needed
     SSL_CTX_set_tlsext_ticket_key_cb(ctx.get(), ssl_callback_session_ticket);
 #endif
+    // After replacing the SSL_CTX, make sure the overriden ca_cert_file is still set
+    setClientCertCACerts(ssl, netvc->get_ca_cert_file(), netvc->get_ca_cert_dir());
   } else {
     found = false;
   }
@@ -1146,19 +1148,25 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
 }
 
 void
-setClientCertCACerts(SSL *ssl, X509_STORE *ca_certs)
+setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
 {
+  if ((file != nullptr && file[0] != '\0') || (dir != nullptr && dir[0] != '\0')) {
 #if defined(SSL_set1_verify_cert_store)
+    // The set0 version will take ownership of the X509_STORE object
+    X509_STORE *ctx = X509_STORE_new();
+    if (X509_STORE_load_locations(ctx, file && file[0] != '\0' ? file : nullptr, dir && dir[0] != '\0' ? dir : nullptr)) {
+      SSL_set0_verify_cert_store(ssl, ctx);
+    }
 
-  // It is necessasry to use set1 and not set0 here.  SSL_free() calls ssl_cert_free(), which calls
-  // X509_STORE_free() on the ca_certs store.  Hard to see how set0 could ever actually be useful, in
-  // what scenario would SSL objects never be freed?
-  //
-  SSL_set1_verify_cert_store(ssl, ca_certs);
-
+    // SSL_set_client_CA_list takes ownership of the STACK_OF(X509) structure
+    // So we load it each time to pass into the SSL object
+    if (file != nullptr && file[0] != '\0') {
+      SSL_set_client_CA_list(ssl, SSL_load_client_CA_file(file));
+    }
 #else
-  ink_assert(!"Configuration checking should prevent reaching this code");
+    ink_assert(!"Configuration checking should prevent reaching this code");
 #endif
+  }
 }
 
 /**

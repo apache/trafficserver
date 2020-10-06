@@ -48,6 +48,9 @@ ts.Disk.records_config.update({
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
+    'ssl_cert_name={0}/bbb-signed.pem ssl_key_name={0}/bbb-signed.key'.format(Test.TestDirectory + "/ssl")
+)
+ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
@@ -59,6 +62,9 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.sni_yaml.AddLines([
     'sni:',
     '- fqdn: bbb.com',
+    '  verify_client: STRICT',
+    '  verify_client_ca_certs: bbb-ca.pem',
+    '- fqdn: bbb-signed',
     '  verify_client: STRICT',
     '  verify_client_ca_certs: bbb-ca.pem',
     '- fqdn: ccc.com',
@@ -85,8 +91,8 @@ tr = Test.AddTestRun()
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = (
-    "curl -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb.com:{0}:127.0.0.1'" +
-    " https://bbb.com:{0}/xyz"
+    "curl -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb-signed:{0}:127.0.0.1'" +
+    " https://bbb-signed:{0}/xyz"
 ).format(ts.Variables.ssl_port, Test.TestDirectory + "/ssl/bbb-signed")
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
