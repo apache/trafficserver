@@ -31,8 +31,6 @@
 #include "original-request.h"
 #include "post.h"
 
-#include <regex>
-
 #ifndef PLUGIN_TAG
 #error Please define a PLUGIN_TAG before including this file.
 #endif
@@ -41,7 +39,6 @@
 const size_t DEFAULT_TIMEOUT = 1000000000000;
 
 Statistics statistics;
-bool skip_post_put = false;
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *, char *, int)
@@ -77,16 +74,13 @@ TSReturnCode
 TSRemapNewInstance(int argc, char **argv, void **i, char *, int)
 {
   assert(i != nullptr);
-  Instance *instance = new Instance;
+  Instance *instance    = new Instance;
+  instance->skipPostPut = false;
 
   if (argc > 2) {
     std::copy_if(argv + 2, argv + argc, std::back_inserter(instance->origins), [&](std::string s) {
-      std::regex srgx("proxy\\.config\\.multiplexer\\.skip\\_post\\_put=(\\d)");
-      std::smatch matches;
-      if (std::regex_search(s, matches, srgx)) {
-        if (matches[1].str() == "1") {
-          skip_post_put = true;
-        }
+      if (s == "proxy.config.multiplexer.skip_post_put=1") {
+        instance->skipPostPut = true;
         return false;
       }
       return true;
@@ -123,23 +117,6 @@ DoRemap(const Instance &i, TSHttpTxn t)
   assert(buffer != nullptr);
   assert(location != nullptr);
 
-  {
-    TSMLoc field;
-
-    CHECK(TSMimeHdrFieldCreateNamed(buffer, location, "X-Multiplexer", 13, &field));
-    assert(field != nullptr);
-
-    CHECK(TSMimeHdrFieldValueStringSet(buffer, location, field, -1, "original", 8));
-
-    CHECK(TSMimeHdrFieldAppend(buffer, location, field));
-
-    CHECK(TSHandleMLocRelease(buffer, location, field));
-  }
-
-  Requests requests;
-  generateRequests(i.origins, buffer, location, requests);
-  assert(requests.size() == i.origins.size());
-
   int length;
   const char *const method = TSHttpHdrMethodGet(buffer, location, &length);
 
@@ -149,6 +126,23 @@ DoRemap(const Instance &i, TSHttpTxn t)
                         (length == TS_HTTP_LEN_PUT && memcmp(TS_HTTP_METHOD_PUT, method, TS_HTTP_LEN_PUT) == 0))) {
     TSHandleMLocRelease(buffer, TS_NULL_MLOC, location);
   } else {
+    {
+      TSMLoc field;
+
+      CHECK(TSMimeHdrFieldCreateNamed(buffer, location, "X-Multiplexer", 13, &field));
+      assert(field != nullptr);
+
+      CHECK(TSMimeHdrFieldValueStringSet(buffer, location, field, -1, "original", 8));
+
+      CHECK(TSMimeHdrFieldAppend(buffer, location, field));
+
+      CHECK(TSHandleMLocRelease(buffer, location, field));
+    }
+
+    Requests requests;
+    generateRequests(i.origins, buffer, location, requests);
+    assert(requests.size() == i.origins.size());
+
     if (length == TS_HTTP_LEN_POST && memcmp(TS_HTTP_METHOD_POST, method, TS_HTTP_LEN_POST) == 0) {
       const TSVConn vconnection = TSTransformCreate(handlePost, t);
       assert(vconnection != nullptr);
