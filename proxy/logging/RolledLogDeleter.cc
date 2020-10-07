@@ -73,6 +73,7 @@ RolledLogDeleter::register_log_type_for_deletion(std::string_view log_type, int 
 
   deletingInfoList.push_back(std::move(deletingInfo));
   deleting_info.insert(deletingInfoPtr);
+  candidates_require_sorting = true;
 }
 
 bool
@@ -86,12 +87,20 @@ RolledLogDeleter::consider_for_candidacy(std::string_view log_path, int64_t file
   auto &candidates = iter->candidates;
   candidates.push_back(std::make_unique<LogDeleteCandidate>(log_path, file_size, modification_time));
   ++num_candidates;
-
-  std::sort(
-    candidates.begin(), candidates.end(),
-    [](std::unique_ptr<LogDeleteCandidate> const &a, std::unique_ptr<LogDeleteCandidate> const &b) { return a->mtime > b->mtime; });
-
+  candidates_require_sorting = true;
   return true;
+}
+
+void
+RolledLogDeleter::sort_candidates()
+{
+  deleting_info.apply([](LogDeletingInfo &info) {
+    std::sort(info.candidates.begin(), info.candidates.end(),
+              [](std::unique_ptr<LogDeleteCandidate> const &a, std::unique_ptr<LogDeleteCandidate> const &b) {
+                return a->mtime > b->mtime;
+              });
+  });
+  candidates_require_sorting = false;
 }
 
 std::unique_ptr<LogDeleteCandidate>
@@ -99,6 +108,9 @@ RolledLogDeleter::take_next_candidate_to_delete()
 {
   if (!has_candidates()) {
     return nullptr;
+  }
+  if (candidates_require_sorting) {
+    sort_candidates();
   }
   // Select the highest priority type (diags.log, traffic.out, etc.) from which
   // to select a candidate.
