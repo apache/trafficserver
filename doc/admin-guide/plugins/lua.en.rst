@@ -2810,6 +2810,28 @@ Here is an example:
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.http.get_server_protocol_stack
+---------------------------------
+**syntax:** *ts.http.get_server_protocol_stack()*
+
+**context:** do_global_read_response or later
+
+**description:** This function can be used to get server protocol stack information
+
+Here is an example:
+
+::
+
+    function do_global_read_response()
+        local stack = {ts.http.get_server_protocol_stack()}
+        for k,v in pairs(stack) do
+          ts.debug(v)
+        end
+        return 0
+    end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.http.server_push
 -------------------
 **syntax:** *ts.http.server_push()*
