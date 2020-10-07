@@ -33,15 +33,16 @@ TEST_CASE("error page selection test", "[http]")
     const char *content_charset;
   };
 
-  std::array<Sets, 9> sets = {{{"default", "en", "iso-8859-1"},
-                               {"en-cockney", "en-cockney", "iso-8859-1"},
-                               {"en0", "en", "iso-8859-1"},
-                               {"en-us", "en-us", "us-ascii"},
-                               {"en1", "en", "unicode"},
-                               {"en-cockney-slang", "en-cockney-slang", "iso-8859-1"},
-                               {"ko0", "ko", "iso-8859-1"},
-                               {"ko1", "ko", "iso-2022-kr"},
-                               {"jp", "jp", "shift-jis"}}};
+  std::array<Sets, 10> sets = {{{"default", "en", "iso-8859-1"},
+                                {"en-cockney", "en-cockney", "iso-8859-1"},
+                                {"en0", "en", "iso-8859-1"},
+                                {"en-us", "en-us", "us-ascii"},
+                                {"en1", "en", "unicode"},
+                                {"en-cockney-slang", "en-cockney-slang", "iso-8859-1"},
+                                {"ko0", "ko", "iso-8859-1"},
+                                {"ko1", "ko", "iso-2022-kr"},
+                                {"jp", "jp", "shift-jis"},
+                                {"es", "es", "unicode"}}};
 
   struct Tests {
     const char *accept_language;
@@ -52,31 +53,33 @@ TEST_CASE("error page selection test", "[http]")
     int expected_I;
   };
 
-  std::array<Tests, 24> tests = {{
+  std::array<Tests, 26> tests = {{
     {nullptr, nullptr, "default", 1, 0, INT_MAX},
-    {"en", nullptr, "en1", 1, 2, 1},
-    {"ko", nullptr, "ko0", 1, 2, 1},
+    {"en", "iso-8859-1", "en0", 1, 2, 1},
+    {"en", "unicode", "en1", 1, 2, 1},
+    {"ko", "iso-8859-1", "ko0", 1, 2, 1},
+    {"ko", "iso-2022-kr", "ko1", 1, 2, 1},
     {"en-us", nullptr, "en-us", 1, 5, 1},
     {"en-US", nullptr, "en-us", 1, 5, 1},
-    {"en,ko", nullptr, "en1", 1, 2, 1},
-    {"ko,en", nullptr, "ko0", 1, 2, 1},
-    {"en;q=0.7,ko", nullptr, "ko0", 1, 2, 2},
-    {"en;q=.7,ko", nullptr, "ko0", 1, 2, 2},
-    {"en;q=.7,ko;q=.7", nullptr, "en1", 0.7, 2, 1},
-    {"en;q=.7,ko;q=.701", nullptr, "ko0", 0.701, 2, 2},
-    {"en;q=.7  ,  ko;q=.701", nullptr, "ko0", 0.701, 2, 2},
-    {"en  ;  q=.7  ,  ko  ;  ;  ;  ; q=.701", nullptr, "ko0", 0.701, 2, 2},
-    {"en,ko;q=.7", nullptr, "en1", 1, 2, 1},
-    {"en;q=1,ko;q=.7", nullptr, "en1", 1, 2, 1},
-    {"en;;;q=1,ko;q=.7", nullptr, "en1", 1, 2, 1},
-    {"en;;;q=1,,,,ko;q=.7", nullptr, "en1", 1, 2, 1},
-    {"en;;;q=.7,,,,ko;q=.7", nullptr, "en1", 0.7, 2, 1},
-    {"en;;;q=.699,,,,ko;q=.7", nullptr, "ko0", 0.7, 2, 5},
-    {"en;q=0,ko;q=1", nullptr, "ko0", 1, 2, 2},
-    {"en;q=0, ko;q=1", nullptr, "ko0", 1, 2, 2},
-    {"en;q=0,ko;q=.5", nullptr, "ko0", 0.5, 2, 2},
-    {"en;q=0, ko;q=.5", nullptr, "ko0", 0.5, 2, 2},
-    {"en;q=000000000.00000000000000000000,ko;q=1.0000000000000000000", nullptr, "ko0", 1, 2, 2},
+    {"jp,es", nullptr, "jp", 1, 2, 1},
+    {"es,jp", nullptr, "es", 1, 2, 1},
+    {"jp;q=0.7,es", nullptr, "es", 1, 2, 2},
+    {"jp;q=.7,es", nullptr, "es", 1, 2, 2},
+    {"jp;q=.7,es;q=.7", nullptr, "jp", 0.7, 2, 1},
+    {"jp;q=.7,es;q=.701", nullptr, "es", 0.701, 2, 2},
+    {"jp;q=.7  ,  es;q=.701", nullptr, "es", 0.701, 2, 2},
+    {"jp  ;  q=.7  ,  es  ;  ;  ;  ; q=.701", nullptr, "es", 0.701, 2, 2},
+    {"jp,es;q=.7", nullptr, "jp", 1, 2, 1},
+    {"jp;q=1,es;q=.7", nullptr, "jp", 1, 2, 1},
+    {"jp;;;q=1,es;q=.7", nullptr, "jp", 1, 2, 1},
+    {"jp;;;q=1,,,,es;q=.7", nullptr, "jp", 1, 2, 1},
+    {"jp;;;q=.7,,,,es;q=.7", nullptr, "jp", 0.7, 2, 1},
+    {"jp;;;q=.699,,,,es;q=.7", nullptr, "es", 0.7, 2, 5},
+    {"jp;q=0,es;q=1", nullptr, "es", 1, 2, 2},
+    {"jp;q=0, es;q=1", nullptr, "es", 1, 2, 2},
+    {"jp;q=0,es;q=.5", nullptr, "es", 0.5, 2, 2},
+    {"jp;q=0, es;q=.5", nullptr, "es", 0.5, 2, 2},
+    {"jp;q=000000000.00000000000000000000,es;q=1.0000000000000000000", nullptr, "es", 1, 2, 2},
   }};
 
   // (1) build fake hash table of sets
