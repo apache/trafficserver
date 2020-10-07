@@ -38,9 +38,6 @@ checkers="-enable-checker alpha.unix.cstring.BufferOverlap \
 test -z "${ATS_MAKE}" && ATS_MAKE="make"
 test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 
-# Check to see if this is a Github PR build (so not a github branch per-se)
-test "${JOB_NAME#*-github}" != "${JOB_NAME}" && ATS_BRANCH="github"
-
 # Where to store the results, special case for the CI
 output="/tmp"
 
@@ -103,6 +100,3 @@ fi
 if [ -x "/admin/bin/clean-clang.sh" ]; then
     /admin/bin/clean-clang.sh
 fi
-
-# Exit with the scan-build exit code (thanks to --status-bugs)
-exit $status
