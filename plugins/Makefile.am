@@ -117,7 +117,7 @@ endif
 
 endif
 
-TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(top_srcdir)/plugins/suppression.txt
 
 TESTS = $(check_PROGRAMS)
 
