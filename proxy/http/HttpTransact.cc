@@ -4971,6 +4971,8 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
   // Set-Cookie should not be put in the cache to prevent
   //  sending person A's cookie to person B
   cache_info->response_get()->field_delete(MIME_FIELD_SET_COOKIE, MIME_LEN_SET_COOKIE);
+  // Transfer Encoding header shouldn't be cached as it is hop by hop header
+  cache_info->response_get()->field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
   cache_info->request_get()->field_delete(MIME_FIELD_VIA, MIME_LEN_VIA);
   // server 200 Ok for Range request
   cache_info->request_get()->field_delete(MIME_FIELD_RANGE, MIME_LEN_RANGE);
