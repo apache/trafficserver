@@ -4861,12 +4861,7 @@ HttpSM::do_http_server_open(bool raw)
              t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
 
   ink_assert(pending_action == nullptr);
-
-  if (false == t_state.api_server_addr_set) {
-    ink_assert(t_state.current.server->dst_addr.host_order_port() > 0);
-  } else {
-    ink_assert(t_state.current.server->dst_addr.port() != 0); // verify the plugin set it to something.
-  }
+  ink_assert(t_state.current.server->dst_addr.port() != 0);
 
   char addrbuf[INET6_ADDRPORTSTRLEN];
   SMDebug("http", "[%" PRId64 "] open connection to %s: %s", sm_id, t_state.current.server->name,
