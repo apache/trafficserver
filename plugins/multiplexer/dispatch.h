@@ -63,6 +63,7 @@ typedef std::vector<Request> Requests;
 
 struct Instance {
   Origins origins;
+  bool skipPostPut;
 };
 
 extern size_t timeout;
