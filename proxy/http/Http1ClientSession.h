@@ -60,7 +60,7 @@ public:
   void destroy() override;
   void free() override;
 
-  void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true) override;
+  bool attach_server_session(Http1ServerSession *ssession, bool transaction_done = true) override;
 
   // Implement VConnection interface.
   void do_io_close(int lerrno = -1) override;

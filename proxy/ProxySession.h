@@ -89,7 +89,7 @@ public:
   // Virtual Methods
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) = 0;
   virtual void start()                                                                          = 0;
-  virtual void attach_server_session(Http1ServerSession *ssession, bool transaction_done = true);
+  virtual bool attach_server_session(Http1ServerSession *ssession, bool transaction_done = true);
 
   virtual void release(ProxyTransaction *trans) = 0;
 

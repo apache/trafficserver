@@ -3143,10 +3143,14 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     // server session to so the next ka request can use it.  Server sessions will
     // be placed into the shared pool if the next incoming request is for a different
     // origin server
+    bool release_origin_connection = true;
     if (t_state.txn_conf->attach_server_session_to_client == 1 && ua_txn && t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
       Debug("http", "attaching server session to the client");
-      ua_txn->attach_server_session(server_session);
-    } else {
+      if (ua_txn->attach_server_session(server_session)) {
+        release_origin_connection = false;
+      }
+    }
+    if (release_origin_connection) {
       // Release the session back into the shared session pool
       server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->keep_alive_no_activity_timeout_out));
       server_session->release();
