@@ -47,6 +47,11 @@ export TODAY=$(/bin/date +'%m%d%Y')
 # Extract the current branch (default to master). ToDo: Can we do this better ?
 ATS_BRANCH=master
 
+# Make sure to leave these, for the HTTP cache tests
+test "${JOB_NAME#*-5.3.x}" != "${JOB_NAME}" && ATS_BRANCH=5.3.x
+test "${JOB_NAME#*-6.2.x}" != "${JOB_NAME}" && ATS_BRANCH=6.2.x
+
+# These should be maintained and cleaned up as needed.
 test "${JOB_NAME#*-7.1.x}" != "${JOB_NAME}" && ATS_BRANCH=7.1.x
 test "${JOB_NAME#*-8.0.x}" != "${JOB_NAME}" && ATS_BRANCH=8.0.x
 test "${JOB_NAME#*-8.1.x}" != "${JOB_NAME}" && ATS_BRANCH=8.1.x
@@ -58,6 +63,9 @@ test "${JOB_NAME#*-10.0.x}" != "${JOB_NAME}" && ATS_BRANCH=10.0.x
 test "${JOB_NAME#*-10.1.x}" != "${JOB_NAME}" && ATS_BRANCH=10.1.x
 test "${JOB_NAME#*-10.2.x}" != "${JOB_NAME}" && ATS_BRANCH=10.2.x
 test "${JOB_NAME#*-10.3.x}" != "${JOB_NAME}" && ATS_BRANCH=10.3.x
+
+# Special case for the full build of clang analyzer
+test "${JOB_NAME}" == "clang-analyzer-full" && ATS_BRANCH=FULL
 
 export ATS_BRANCH
 echo "Branch is $ATS_BRANCH"
