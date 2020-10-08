@@ -86,7 +86,7 @@ TSRemapNewInstance(int argc, char **argv, void **i, char *, int)
       return true;
     });
   }
-  TSDebug(PLUGIN_TAG, "skip_post_put is %s", (skip_post_put ? "true" : "false"));
+  TSDebug(PLUGIN_TAG, "skipPostPut is %s", (instance->skipPostPut ? "true" : "false"));
 
   *i = static_cast<void *>(instance);
 
@@ -122,7 +122,7 @@ DoRemap(const Instance &i, TSHttpTxn t)
 
   TSDebug(PLUGIN_TAG, "Method is %s.", std::string(method, length).c_str());
 
-  if (skip_post_put && ((length == TS_HTTP_LEN_POST && memcmp(TS_HTTP_METHOD_POST, method, TS_HTTP_LEN_POST) == 0) ||
+  if (i.skipPostPut && ((length == TS_HTTP_LEN_POST && memcmp(TS_HTTP_METHOD_POST, method, TS_HTTP_LEN_POST) == 0) ||
                         (length == TS_HTTP_LEN_PUT && memcmp(TS_HTTP_METHOD_PUT, method, TS_HTTP_LEN_PUT) == 0))) {
     TSHandleMLocRelease(buffer, TS_NULL_MLOC, location);
   } else {
