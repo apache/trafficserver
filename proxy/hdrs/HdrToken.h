@@ -85,12 +85,6 @@ enum HdrTokenInfoFlags {
   HTIF_PROXYAUTH = 1 << 3
 };
 
-#define MIME_FLAGS_NONE HTIF_NONE
-#define MIME_FLAGS_COMMAS HTIF_COMMAS
-#define MIME_FLAGS_MULTVALS HTIF_MULTVALS
-#define MIME_FLAGS_HOPBYHOP HTIF_HOPBYHOP
-#define MIME_FLAGS_PROXYAUTH HTIF_PROXYAUTH
-
 extern DFA *hdrtoken_strs_dfa;
 extern int hdrtoken_num_wks;
 

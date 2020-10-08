@@ -62,7 +62,7 @@ HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
   if (!hdrtoken_is_wks(field_name)) {
     return (false);
   }
-  if ((hdrtoken_wks_to_flags(field_name) & MIME_FLAGS_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE)) {
+  if ((hdrtoken_wks_to_flags(field_name) & HTIF_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE)) {
     return (true);
   } else {
     return (false);
@@ -228,9 +228,9 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
 
     int field_flags = hdrtoken_index_to_flags(field->m_wks_idx);
 
-    if (field_flags & MIME_FLAGS_HOPBYHOP) {
+    if (field_flags & HTIF_HOPBYHOP) {
       // Delete header if not in special proxy_auth retention mode
-      if ((!retain_proxy_auth_hdrs) || (!(field_flags & MIME_FLAGS_PROXYAUTH))) {
+      if ((!retain_proxy_auth_hdrs) || (!(field_flags & HTIF_PROXYAUTH))) {
         new_hdr->field_delete(field);
       }
     } else if (field->m_wks_idx == MIME_WKSIDX_DATE) {
