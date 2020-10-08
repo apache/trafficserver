@@ -2350,9 +2350,32 @@ URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSet
 }
 
 const char *
-TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
+TSUrlRawSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::scheme_get);
+}
+
+const char *
+TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
+{
+  char const *data = TSUrlRawSchemeGet(bufp, obj, length);
+  if (data && *length) {
+    return data;
+  }
+  switch (reinterpret_cast<URLImpl *>(obj)->m_url_type) {
+  case URL_TYPE_HTTP:
+    data    = URL_SCHEME_HTTP;
+    *length = URL_LEN_HTTP;
+    break;
+  case URL_TYPE_HTTPS:
+    data    = URL_SCHEME_HTTPS;
+    *length = URL_LEN_HTTPS;
+    break;
+  default:
+    *length = 0;
+    data    = nullptr;
+  }
+  return data;
 }
 
 TSReturnCode
