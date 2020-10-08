@@ -1107,6 +1107,9 @@ Changes with Apache Traffic Server 9.0.0
   #7215 - Log config reload: use new config for initialization
   #7218 - Stop crash on disk failure
   #7219 - Ensure that ca override does not get lost
+  #7222 - Running autopep8 on the 9.0.x branch.
   #7224 - Fix renamed setting in default config
   #7225 - Increment ssl_error_syscall only if not EOF
+  #7238 - Supporting out of source builds for AuTests.
   #7243 - RolledLogDeleter: do not sort on each candidate consideration.
+  #7252 - Remove some useless defines, which just obfuscates code
