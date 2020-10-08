@@ -667,6 +667,7 @@ Changes with Apache Traffic Server 9.0.0
   #5952 - Fix code to avoid HostDBContinuation use after free
   #5955 - Fix debug output for global_user_agent_header.
   #5956 - Turn on certificate verification, in permissive mode for now
+  #5958 - Convert old sni configuration file in lua to yaml
   #5959 - Clear api set bit to avoid crash in following redirect.
   #5962 - Removed hardcoded sni.yaml configuration filename in logs
   #5964 - Fix a build issue on enabling FIPS
@@ -1069,6 +1070,7 @@ Changes with Apache Traffic Server 9.0.0
   #7126 - Replaces "smart" quotes with ASCII equivalents
   #7128 - Protect TSActionCancel from null INKContInternal actions
   #7129 - Comment out a wrong assertion in QUIC Loss Detection logic
+  #7130 - Allow override of CA certs for cert from client based on SNI server name sent by client.
   #7131 - Don't make an error on duplicated RETIRE_CONNECTION frames
   #7134 - Do not lose original inactivity timeout on disable
   #7135 - Replace ACTION_RESULT_NONE with nullptr
@@ -1080,6 +1082,7 @@ Changes with Apache Traffic Server 9.0.0
   #7144 - Fix typo in cache docs
   #7145 - Check VIO availability before acquiring a lock for it
   #7148 - Fix stale pointer due to SSL config reload
+  #7150 - Additions to enable loading qat_engine
   #7155 - PluginFactory - Remove unused code.
   #7157 - rc: fixes systemd unit file stopping
   #7159 - MicroDNS Extension: handle different 'default' types
@@ -1102,5 +1105,8 @@ Changes with Apache Traffic Server 9.0.0
   #7210 - Docs cleanup
   #7213 - Follow redirection responses when refreshing stale cache objects.
   #7215 - Log config reload: use new config for initialization
+  #7218 - Stop crash on disk failure
+  #7219 - Ensure that ca override does not get lost
   #7224 - Fix renamed setting in default config
   #7225 - Increment ssl_error_syscall only if not EOF
+  #7243 - RolledLogDeleter: do not sort on each candidate consideration.
