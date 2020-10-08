@@ -7119,12 +7119,31 @@ HttpTransact::get_max_age(HTTPHdr *response)
   int max_age      = -1;
   uint32_t cc_mask = response->get_cooked_cc_mask();
 
+  bool max_age_is_present = false;
   if (cc_mask & MIME_COOKED_MASK_CC_S_MAXAGE) {
     // Precedence to s-maxage
-    max_age = static_cast<int>(response->get_cooked_cc_s_maxage());
+    max_age            = static_cast<int>(response->get_cooked_cc_s_maxage());
+    max_age_is_present = true;
   } else if (cc_mask & MIME_COOKED_MASK_CC_MAX_AGE) {
     // If s-maxage isn't set, try max-age
-    max_age = static_cast<int>(response->get_cooked_cc_max_age());
+    max_age            = static_cast<int>(response->get_cooked_cc_max_age());
+    max_age_is_present = true;
+  }
+
+  // Negative max-age values:
+  //
+  // Per RFC 7234, section-1.2.1, max-age values should be a non-negative
+  // value. If it is negative, therefore, the value is invalid.  Per RFC 7234,
+  // section-4.2.1, invalid freshness specifications should be considered
+  // stale.
+  //
+  // Negative return values from this function are used to indicate that the
+  // max-age value was not present, resulting in a default value likely being
+  // used. If the max-age is negative, therefore, we return 0 to indicate to
+  // the caller that the max-age directive was present and indicates that the
+  // object should be considered stale.
+  if (max_age_is_present && max_age < 0) {
+    max_age = 0;
   }
 
   return max_age;
