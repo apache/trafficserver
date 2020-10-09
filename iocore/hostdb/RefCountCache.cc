@@ -41,14 +41,13 @@ RefCountCacheHashEntry::dealloc(RefCountCacheHashEntry *e)
 RefCountCacheHeader::RefCountCacheHeader(ts::VersionNumber object_version) : object_version(object_version){};
 
 bool
-RefCountCacheHeader::operator==(const RefCountCacheHeader other) const
+RefCountCacheHeader::operator==(RefCountCacheHeader const &that) const
 {
-  return this->magic == other.magic && this->version == other.version;
+  return this->magic == that.magic && this->version == that.version;
 }
 
 bool
-RefCountCacheHeader::compatible(RefCountCacheHeader *other) const
+RefCountCacheHeader::compatible(RefCountCacheHeader *that) const
 {
-  return (this->magic == other->magic && this->version._major == other->version._major &&
-          this->object_version._major == other->version._major);
+  return this->magic == that->magic && this->version == that->version && this->object_version == that->version;
 };
