@@ -70,7 +70,10 @@ public:
       }
 
       // set a default inactivity timeout if one is not set
-      if (ne->next_inactivity_timeout_at == 0 && nh.config.default_inactivity_timeout > 0) {
+      // The event `EVENT_INACTIVITY_TIMEOUT` only be triggered if a read
+      // or write I/O operation was set by `do_io_read()` or `do_io_write()`.
+      if (ne->next_inactivity_timeout_at == 0 && nh.config.default_inactivity_timeout > 0 &&
+          (ne->read.enabled || ne->write.enabled)) {
         Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", ne,
               nh.config.default_inactivity_timeout);
         ne->set_default_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
