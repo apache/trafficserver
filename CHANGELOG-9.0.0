@@ -1113,3 +1113,5 @@ Changes with Apache Traffic Server 9.0.0
   #7238 - Supporting out of source builds for AuTests.
   #7243 - RolledLogDeleter: do not sort on each candidate consideration.
   #7252 - Remove some useless defines, which just obfuscates code
+  #7260 - Treat objects with negative max-age CC directives as stale.
+  #7266 - Allow initial // in request targets.
