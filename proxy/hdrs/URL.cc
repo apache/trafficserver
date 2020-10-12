@@ -1384,13 +1384,7 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
     return err;
   }
 
-  cur = *start;
-  if (url->m_ptr_host == nullptr && ((end - cur) >= 2) && '/' == *cur && '/' == *(cur + 1)) {
-    // RFC 3986 section-3.3:
-    // If a URI does not contain an authority component, then the path cannot
-    // begin with two slash characters ("//").
-    return PARSE_RESULT_ERROR;
-  }
+  cur                     = *start;
   bool nothing_after_host = false;
   if (*start == end) {
     nothing_after_host = true;
