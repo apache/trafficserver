@@ -56,6 +56,10 @@ distro_packages = {
     "CentOS": [
         "install epel-release",
         "install rh-python36-python-virtualenv"
+    ],
+    "CentOS-8": [
+        "install epel-release",
+        "install python3-virtualenv"
     ]
 }
 
@@ -168,7 +172,7 @@ def gen_package_cmds(packages):
 
 
 extra = ''
-if distro() == 'RHEL' or distro() == 'CentOS':
+if distro() == 'RHEL' or (distro() == 'CentOS' and distro_version() < 8):
     extra = ". /opt/rh/rh-python36/enable ;"
 
 
@@ -214,8 +218,17 @@ def main():
     # do we know of packages to install for the given platform
     dist = distro()
     cmds = []
+
+    # if centos 8 we must set crypto to legacy to allow tlsv1.0 tests
     if dist:
-        cmds = gen_package_cmds(distro_packages[dist])
+        if distro() == 'CentOS' and distro_version() > 7:
+            cmds += ["sudo update-crypto-policies --set LEGACY"]
+
+    if dist:
+        if distro() == 'CentOS' and distro_version() > 7:
+            cmds += gen_package_cmds(distro_packages['CentOS-8'])
+        else:
+            cmds += gen_package_cmds(distro_packages[dist])
 
     # test to see if we should use a certain version of pip
     path_to_pip = None
