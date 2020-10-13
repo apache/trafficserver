@@ -44,9 +44,6 @@ namespace Stats
       for (int i = 0; i < Stats::MAX_STAT_ENUM; ++i) {
         // FIXME doesn't return a value.
         g_system->create(i);
-        /*      if (!g_system->create(i)) {
-                Utils::ERROR_LOG("[%s] Unable to create stat [%s]", __FUNCTION__, Stats::STAT_NAMES[i]);
-              }*/
       }
     }
   }
@@ -58,12 +55,6 @@ namespace Stats
     if (g_system) {
       // FIXME doesn't return a value.
       g_system->increment(st, step);
-      /*
-          if (!g_system->increment(st, step)) {
-            Utils::ERROR_LOG("[%s] Unable to increment stat [%s] by step [%d]", __FUNCTION__, step,
-                             Stats::STAT_NAMES[st]);
-          }
-      */
     }
   }
 } // namespace Stats
