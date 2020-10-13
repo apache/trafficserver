@@ -337,7 +337,7 @@ TSPluginInit(int argc, const char *argv[])
   const char *filename = "tcpinfo";
   TSCont cont;
   unsigned int hooks                = 0;
-  unsigned int rolling_enabled      = 1;
+  int rolling_enabled               = -1;
   unsigned int rolling_interval_sec = 86400;
   unsigned int rolling_offset_hr    = 0;
   unsigned int rolling_size         = 1024;
@@ -379,7 +379,8 @@ TSPluginInit(int argc, const char *argv[])
     case 'e':
       i = strtoul(optarg, &endptr, 10);
       if (*endptr != '\0' || i > 3) {
-        TSError("[tcpinfo] invalid rolling-enabled argument, '%s', using default of %d", optarg, rolling_enabled);
+        TSError("[tcpinfo] invalid rolling-enabled argument, '%s', using the system's proxy.config.log.rolling_enabled value",
+                optarg);
       } else {
         rolling_enabled = i;
       }
@@ -424,20 +425,26 @@ init:
   TSDebug("tcpinfo", "sample: %d", config->sample);
   TSDebug("tcpinfo", "log filename: %s", filename);
   TSDebug("tcpinfo", "log_level: %u", config->log_level);
+  TSDebug("tcpinfo", "rolling_enabled: %d", rolling_enabled);
   TSDebug("tcpinfo", "hook mask: 0x%x", hooks);
 
   if (TSTextLogObjectCreate(filename, TS_LOG_MODE_ADD_TIMESTAMP, &config->log) != TS_SUCCESS) {
     TSError("[tcpinfo] failed to create log file '%s'", filename);
     return;
   }
-  if (TSTextLogObjectRollingEnabledSet(config->log, rolling_enabled) != TS_SUCCESS) {
-    TSError("[tcpinfo] failed to enable log file rolling to: '%d'", rolling_enabled);
-    return;
+  if (rolling_enabled == -1) {
+    // The user either did not provide a value or the value they provided was
+    // invalid.
+    TSDebug("tcpinfo", "Using system default value of proxy.config.log.rolling_enabled ");
   } else {
-    TSTextLogObjectRollingIntervalSecSet(config->log, rolling_interval_sec);
-    TSTextLogObjectRollingOffsetHrSet(config->log, rolling_offset_hr);
-    TSTextLogObjectRollingSizeMbSet(config->log, rolling_size);
+    if (TSTextLogObjectRollingEnabledSet(config->log, rolling_enabled) != TS_SUCCESS) {
+      TSError("[tcpinfo] failed to enable log file rolling to: '%d'", rolling_enabled);
+      return;
+    }
   }
+  TSTextLogObjectRollingIntervalSecSet(config->log, rolling_interval_sec);
+  TSTextLogObjectRollingOffsetHrSet(config->log, rolling_offset_hr);
+  TSTextLogObjectRollingSizeMbSet(config->log, rolling_size);
 
   TSTextLogObjectHeaderSet(config->log, tcpi_headers[config->log_level - 1]);
 
