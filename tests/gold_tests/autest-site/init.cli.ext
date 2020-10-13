@@ -39,3 +39,7 @@ Settings.path_argument(["--ats-bin"],
 Settings.path_argument(["--build-root"],
                        required=False,
                        help="The location of the build root for out of source builds")
+
+Settings.path_argument(["--proxy-verifier-bin"],
+                       required=False,
+                       help="A location for system proxy-verifier binaries to test with.")

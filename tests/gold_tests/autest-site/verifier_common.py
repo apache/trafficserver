@@ -1,6 +1,6 @@
-#!/bin/bash
-# vim: sw=4:ts=4:softtabstop=4:ai:et
-
+'''
+Common utilities for the Proxy Verifier extensions.
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,13 +17,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-./prepare_proxy_verifier.sh
-pushd $(dirname $0) > /dev/null
-export PYTHONPATH=$(pwd):$PYTHONPATH
-./test-env-check.sh
-# this is for rhel or centos systems
-echo "Environment config finished. Running AuTest..."
-pipenv run autest -D gold_tests "$@"
-ret=$?
-popd > /dev/null
-exit $ret
+
+def create_address_argument(ports):
+    """
+    >>> create_address_argument([8080, 8081])
+    '"127.0.0.1:8080,127.0.0.1:8081"'
+    """
+    is_first = True
+    argument = '"'
+    for port in ports:
+        if is_first:
+            is_first = False
+        else:
+            argument += ','
+        argument += "127.0.0.1:{}".format(port)
+    argument += '"'
+    return argument

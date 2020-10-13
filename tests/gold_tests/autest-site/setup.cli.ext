@@ -21,6 +21,10 @@ import os
 from os.path import dirname
 import pprint
 import subprocess
+import shutil
+
+test_root = dirname(dirname(AutestSitePath))
+repo_root = dirname(test_root)
 
 if Arguments.ats_bin is not None:
     # Add environment variables
@@ -30,9 +34,39 @@ if Arguments.build_root is not None:
     ENV['BUILD_ROOT'] = Arguments.build_root
 else:
     # Assume the build root is the same directory tree as the test location.
-    ENV['BUILD_ROOT'] = dirname(dirname(dirname(AutestSitePath)))
+    ENV['BUILD_ROOT'] = repo_root
 
 host.WriteVerbose(['ats'], "Test build root: {}:".format(ENV['BUILD_ROOT']))
+
+if Arguments.proxy_verifier_bin is not None:
+    ENV['VERIFIER_BIN'] = Arguments.proxy_verifier_bin
+    host.WriteVerbose(
+        ['ats'],
+        "Expecting Proxy Verifier to be in user-supplied bin path: ",
+        ENV['VERIFIER_BIN'])
+else:
+    # No Verifier bin path was specified. First see if a Proxy Verifier was
+    # unpacked as a part of preparing for this test.
+    unpack_bin = os.path.join(test_root, 'proxy-verifier', 'unpack', 'bin')
+    if os.path.exists(os.path.join(unpack_bin, 'verifier-client')):
+        ENV['VERIFIER_BIN'] = unpack_bin
+        host.WriteVerbose(
+            ['ats'],
+            "Using locally unpacked Proxy Verifier: ",
+            ENV['VERIFIER_BIN'])
+    else:
+        # Finally check the PATH.
+        path_search = shutil.which('verifier-client')
+        if path_search is not None:
+            ENV['VERIFIER_BIN'] = dirname(path_search)
+            host.WriteVerbose(
+                ['ats'],
+                "Using Proxy Verifier found in PATH: ",
+                ENV['VERIFIER_BIN'])
+        else:
+            prepare_proxy_verifier_path = os.path.join(test_root, "prepare_proxy_verifier.sh")
+            host.WriteError("Could not find Proxy Verifier binaries. "
+                            "Try running: ", prepare_proxy_verifier_path)
 
 if ENV['ATS_BIN'] is not None:
     # Add variables for Tests
@@ -91,6 +125,7 @@ if ENV['ATS_BIN'] is not None:
 
 Variables.AtsExampleDir = os.path.join(AutestSitePath, '..', '..', '..', 'example')
 Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '..', '..', 'tools')
+Variables.VerifierBinPath = ENV['VERIFIER_BIN']
 Variables.BuildRoot = ENV['BUILD_ROOT']
 Variables.AtsTestPluginsDir = os.path.join(Variables.BuildRoot, 'tests', 'tools', 'plugins', '.libs')
 Variables.AtsBuildGoldTestsDir = os.path.join(Variables.BuildRoot, 'tests', 'gold_tests')
