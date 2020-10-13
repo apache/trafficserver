@@ -32,7 +32,7 @@ ProxyTransaction::ProxyTransaction() : VConnection(nullptr) {}
 void
 ProxyTransaction::new_transaction(bool from_early_data)
 {
-  ink_assert(_sm == nullptr);
+  ink_release_assert(_sm == nullptr);
 
   // Defensive programming, make sure nothing persists across
   // connection re-use
@@ -63,11 +63,6 @@ ProxyTransaction::release(IOBufferReader *r)
                _sm ? _sm->sm_id : 0);
 
   this->decrement_client_transactions_stat();
-
-  // Pass along the release to the session
-  if (_proxy_ssn) {
-    _proxy_ssn->release(this);
-  }
 }
 
 void

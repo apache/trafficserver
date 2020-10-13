@@ -395,8 +395,19 @@ Http1ClientSession::release(ProxyTransaction *trans)
 {
   ink_assert(read_state == HCS_ACTIVE_READER || read_state == HCS_INIT);
 
-  // Timeout events should be delivered to the session
-  this->do_io_write(this, 0, nullptr);
+  // When release is called from start() to read the first transaction, get_sm()
+  // will return null.
+  HttpSM *sm = trans->get_sm();
+  if (sm) {
+    MgmtInt ka_in = trans->get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_in;
+    set_inactivity_timeout(HRTIME_SECONDS(ka_in));
+
+    this->clear_session_active();
+    this->ssn_last_txn_time = Thread::get_hrtime();
+
+    // Timeout events should be delivered to the session
+    this->do_io_write(this, 0, nullptr);
+  }
 
   // Check to see there is remaining data in the
   //  buffer.  If there is, spin up a new state

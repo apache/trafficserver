@@ -49,6 +49,7 @@ Http2Stream::init(Http2StreamId sid, ssize_t initial_rwnd)
 {
   this->mark_milestone(Http2StreamMilestone::OPEN);
 
+  this->_sm          = nullptr;
   this->_id          = sid;
   this->_thread      = this_ethread();
   this->_client_rwnd = initial_rwnd;
@@ -346,7 +347,6 @@ void
 Http2Stream::do_io_close(int /* flags */)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  super::release(nullptr);
 
   if (!closed) {
     REMEMBER(NO_EVENT, this->reentrancy_count);
@@ -754,6 +754,7 @@ Http2Stream::destroy()
   ink_release_assert(this->closed);
   ink_release_assert(reentrancy_count == 0);
 
+  super::release(nullptr); // Decrememt the current counts
   uint64_t cid = 0;
 
   // Safe to initiate SSN_CLOSE if this is the last stream
@@ -894,10 +895,10 @@ Http2Stream::clear_io_events()
   }
 }
 
+//  release and do_io_close are the same for the HTTP/2 protocol
 void
 Http2Stream::release(IOBufferReader *r)
 {
-  super::release(r);
   this->do_io_close();
 }
 
