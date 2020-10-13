@@ -3663,7 +3663,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     // do not shut down the client read
     if (enable_redirection) {
       if (ua_producer->vc_type == HT_STATIC && event != VC_EVENT_ERROR && event != VC_EVENT_EOS) {
-        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
+        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
         // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
       } else {
         if (ua_producer->vc_type == HT_STATIC && t_state.redirect_info.redirect_in_process) {
@@ -3671,7 +3671,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
         }
       }
     } else {
-      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
+      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
       // we should not shutdown read side of the client here to prevent sending a reset
       // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
     } // end of added logic

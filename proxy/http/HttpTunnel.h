@@ -396,11 +396,8 @@ HttpTunnel::is_tunnel_alive() const
 {
   bool tunnel_alive = false;
 
-  // Really a tunnel is only alive as long as there are consumers
-  // to consume.  Or if there are no consumer (e.g. tunneling into a buffer)
-  // an alive producer may count
   for (const auto &producer : producers) {
-    if (producer.alive == true && producer.consumer_list.head == nullptr) {
+    if (producer.alive == true) {
       tunnel_alive = true;
       break;
     }
