@@ -388,13 +388,6 @@ Variables::_parseCookieString(const char *str, int str_len)
 void
 Variables::_parseUserAgentString(const char * /* str ATS_UNUSED */, int /* str_len ATS_UNUSED */)
 {
-  /*
-  string user_agent_str(str, str_len); // need NULL-terminated version
-  // TODO - code was here
-  char version_buf[64];
-  // TODO - code was here
-  _insert(_dict_data[HTTP_USER_AGENT], VERSION_STRING, version_buf);
-  */
 }
 
 void
