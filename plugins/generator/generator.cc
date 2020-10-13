@@ -284,17 +284,26 @@ GeneratorGetRequestHeader(GeneratorHttpHeader &request, const char *field_name, 
   return default_value;
 }
 
-static void
+static TSReturnCode
 GeneratorWriteResponseHeader(GeneratorRequest *grq, TSCont contp)
 {
   GeneratorHttpHeader response;
 
   VDEBUG("writing response header");
 
-  TSReleaseAssert(TSHttpHdrTypeSet(response.buffer, response.header, TS_HTTP_TYPE_RESPONSE) == TS_SUCCESS);
-  TSReleaseAssert(TSHttpHdrVersionSet(response.buffer, response.header, TS_HTTP_VERSION(1, 1)) == TS_SUCCESS);
+  if (TSHttpHdrTypeSet(response.buffer, response.header, TS_HTTP_TYPE_RESPONSE) != TS_SUCCESS) {
+    VERROR("failed to set type");
+    return TS_ERROR;
+  }
+  if (TSHttpHdrVersionSet(response.buffer, response.header, TS_HTTP_VERSION(1, 1)) != TS_SUCCESS) {
+    VERROR("failed to set HTTP version");
+    return TS_ERROR;
+  }
+  if (TSHttpHdrStatusSet(response.buffer, response.header, TS_HTTP_STATUS_OK) != TS_SUCCESS) {
+    VERROR("failed to set HTTP status");
+    return TS_ERROR;
+  }
 
-  TSReleaseAssert(TSHttpHdrStatusSet(response.buffer, response.header, TS_HTTP_STATUS_OK) == TS_SUCCESS);
   TSHttpHdrReasonSet(response.buffer, response.header, TSHttpHdrReasonLookup(TS_HTTP_STATUS_OK), -1);
 
   // Set the Content-Length header.
@@ -320,6 +329,8 @@ GeneratorWriteResponseHeader(GeneratorRequest *grq, TSCont contp)
   TSVIOReenable(grq->writeio.vio);
 
   TSStatIntIncrement(StatCountBytes, hdrlen);
+
+  return TS_SUCCESS;
 }
 
 static bool
@@ -346,8 +357,16 @@ GeneratorParseRequest(GeneratorRequest *grq)
   grq->maxage = GeneratorGetRequestHeader(grq->rqheader, "Generator-MaxAge", lengthof("Generator-MaxAge"), grq->maxage);
 
   // Next, parse our parameters out of the URL.
-  TSReleaseAssert(TSHttpHdrUrlGet(grq->rqheader.buffer, grq->rqheader.header, &url) == TS_SUCCESS);
-  TSReleaseAssert(path = TSUrlPathGet(grq->rqheader.buffer, url, &pathsz));
+  if (TSHttpHdrUrlGet(grq->rqheader.buffer, grq->rqheader.header, &url) != TS_SUCCESS) {
+    VERROR("failed to get URI handle");
+    return false;
+  }
+
+  path = TSUrlPathGet(grq->rqheader.buffer, url, &pathsz);
+  if (!path) {
+    VDEBUG("empty path");
+    return false;
+  }
 
   VDEBUG("requested path is %.*s", pathsz, path);
 
@@ -504,7 +523,10 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
           return TS_EVENT_NONE;
         }
 
-        GeneratorWriteResponseHeader(cdata.grq, contp);
+        if (GeneratorWriteResponseHeader(cdata.grq, contp) != TS_SUCCESS) {
+          VERROR("failure writing response");
+          return TS_EVENT_ERROR;
+        }
         return TS_EVENT_NONE;
 
       case TS_PARSE_CONT:
@@ -580,7 +602,10 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
     // Our response delay expired, so write the headers now, which
     // will also trigger the read+write event flow.
     argument_type cdata = TSContDataGet(contp);
-    GeneratorWriteResponseHeader(cdata.grq, contp);
+    if (GeneratorWriteResponseHeader(cdata.grq, contp) != TS_SUCCESS) {
+      VERROR("failure writing response");
+      return TS_EVENT_ERROR;
+    }
     return TS_EVENT_NONE;
   }
 
@@ -623,8 +648,14 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
     TSMLoc url_loc;
     TSMLoc hdr_loc;
 
-    TSReleaseAssert(TSHttpTxnClientReqGet(arg.txn, &recp, &hdr_loc) == TS_SUCCESS);
-    TSReleaseAssert(TSHttpHdrUrlGet(recp, hdr_loc, &url_loc) == TS_SUCCESS);
+    if (TSHttpTxnClientReqGet(arg.txn, &recp, &hdr_loc) != TS_SUCCESS) {
+      VERROR("failed to get client request handle");
+      break;
+    }
+    if (TSHttpHdrUrlGet(recp, hdr_loc, &url_loc) != TS_SUCCESS) {
+      VERROR("failed to get URI handle");
+      break;
+    }
     CheckCacheable(arg.txn, url_loc, recp);
     TSHandleMLocRelease(recp, hdr_loc, url_loc);
     TSHandleMLocRelease(recp, TS_NULL_MLOC, hdr_loc);
@@ -634,8 +665,7 @@ GeneratorTxnHook(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
     int status;
 
-    TSReleaseAssert(TSHttpTxnCacheLookupStatusGet(arg.txn, &status) == TS_SUCCESS);
-    if (status != TS_CACHE_LOOKUP_HIT_FRESH) {
+    if (TSHttpTxnCacheLookupStatusGet(arg.txn, &status) == TS_SUCCESS && status != TS_CACHE_LOOKUP_HIT_FRESH) {
       // This transaction is going to be a cache miss, so intercept it.
       VDEBUG("intercepting origin server request for txn=%p", arg.txn);
       TSHttpTxnServerIntercept(TSContCreate(GeneratorInterceptHook, TSMutexCreate()), arg.txn);

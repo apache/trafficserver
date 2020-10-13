@@ -234,16 +234,25 @@ HeaderFieldStringSet(const StaticHitHttpHeader &http, const char *field_name, in
   TSHandleMLocRelease(http.buffer, http.header, field);
 }
 
-static void
+static TSReturnCode
 WriteResponseHeader(StaticHitRequest *trq, TSCont contp, TSHttpStatus status)
 {
   StaticHitHttpHeader response;
 
   VDEBUG("writing response header");
 
-  TSReleaseAssert(TSHttpHdrTypeSet(response.buffer, response.header, TS_HTTP_TYPE_RESPONSE) == TS_SUCCESS);
-  TSReleaseAssert(TSHttpHdrVersionSet(response.buffer, response.header, TS_HTTP_VERSION(1, 1)) == TS_SUCCESS);
-  TSReleaseAssert(TSHttpHdrStatusSet(response.buffer, response.header, status) == TS_SUCCESS);
+  if (TSHttpHdrTypeSet(response.buffer, response.header, TS_HTTP_TYPE_RESPONSE) != TS_SUCCESS) {
+    VERROR("failed to set type");
+    return TS_ERROR;
+  }
+  if (TSHttpHdrVersionSet(response.buffer, response.header, TS_HTTP_VERSION(1, 1)) != TS_SUCCESS) {
+    VERROR("failed to set HTTP version");
+    return TS_ERROR;
+  }
+  if (TSHttpHdrStatusSet(response.buffer, response.header, status) != TS_SUCCESS) {
+    VERROR("failed to set HTTP status");
+    return TS_ERROR;
+  }
 
   TSHttpHdrReasonSet(response.buffer, response.header, TSHttpHdrReasonLookup(status), -1);
 
@@ -275,6 +284,8 @@ WriteResponseHeader(StaticHitRequest *trq, TSCont contp, TSHttpStatus status)
   TSVIOReenable(trq->writeio.vio);
 
   TSStatIntIncrement(StatCountBytes, hdrlen);
+
+  return TS_SUCCESS;
 }
 
 static bool
@@ -384,7 +395,11 @@ StaticHitInterceptHook(TSCont contp, TSEvent event, void *edata)
         cdata.trq->writeio.write(TSVIOVConnGet(arg.vio), contp);
         TSVIONBytesSet(cdata.trq->writeio.vio, 0);
 
-        WriteResponseHeader(cdata.trq, contp, status);
+        if (WriteResponseHeader(cdata.trq, contp, status) != TS_SUCCESS) {
+          VERROR("failure writing response");
+          return TS_EVENT_ERROR;
+        }
+
         return TS_EVENT_NONE;
 
       case TS_PARSE_CONT:
@@ -496,7 +511,10 @@ StaticHitTxnHook(TSCont contp, TSEvent event, void *edata)
     TSMLoc hdr_loc;
     const char *method;
 
-    TSReleaseAssert(TSHttpTxnCacheLookupStatusGet(arg.txn, &status) == TS_SUCCESS);
+    if (TSHttpTxnCacheLookupStatusGet(arg.txn, &status) != TS_SUCCESS) {
+      VERROR("failed to get client request handle");
+      goto done;
+    }
 
     if (TSHttpTxnClientReqGet(arg.txn, &bufp, &hdr_loc) != TS_SUCCESS) {
       VERROR("Couldn't retrieve client request header");
