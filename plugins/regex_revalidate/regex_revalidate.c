@@ -504,7 +504,6 @@ TSPluginInit(int argc, const char *argv[])
       break;
     case 'l':
       if (TS_SUCCESS == TSTextLogObjectCreate(optarg, TS_LOG_MODE_ADD_TIMESTAMP, &pstate->log)) {
-        TSTextLogObjectRollingEnabledSet(pstate->log, 1);
         TSTextLogObjectRollingIntervalSecSet(pstate->log, LOG_ROLL_INTERVAL);
         TSTextLogObjectRollingOffsetHrSet(pstate->log, LOG_ROLL_OFFSET);
       }
