@@ -198,6 +198,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.diags.debug.tags", RECD_STRING, "http|dns", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.diags.debug.throttling_interval_msec", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.diags.debug.client_ip", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.diags.action.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -1037,6 +1039,8 @@ static const RecordElement RecordsConfig[] =
   ,
   // How often periodic tasks get executed in the Log.cc infrastructure
   {RECT_CONFIG, "proxy.config.log.periodic_tasks_interval", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.log.throttling_interval_msec", RECD_INT, "60000", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
   ,
 
   //##############################################################################

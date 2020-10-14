@@ -547,9 +547,9 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
   buffer = _checkout_write(&offset, bytes_needed);
 
   if (!buffer) {
-    Note("Skipping the current log entry for %s because its size (%zu) exceeds "
-         "the maximum payload space in a log buffer",
-         m_basename, bytes_needed);
+    SiteThrottledNote("Skipping the current log entry for %s because its size (%zu) exceeds "
+                      "the maximum payload space in a log buffer",
+                      m_basename, bytes_needed);
     return Log::FAIL;
   }
   //
