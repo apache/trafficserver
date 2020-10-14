@@ -57,11 +57,16 @@ RPCRecordErrorCategory::message(int ev) const
     return {"Error reading the record."};
   case rpc::handlers::errors::RecordError::RECORD_WRITE_ERROR:
     return {"We could not write the record."};
+  case rpc::handlers::errors::RecordError::REQUESTED_TYPE_MISMATCH:
+    return {"Found record does not match the requested type"};
+  case rpc::handlers::errors::RecordError::INVALID_INCOMING_DATA:
+    return {"Invalid request data provided"};
   default:
     return "Record error error " + std::to_string(ev);
   }
 }
 
+// Make this available if need to compare against different categories.
 const RPCRecordErrorCategory &
 get_record_error_category()
 {
@@ -80,7 +85,7 @@ make_error_code(rpc::handlers::errors::RecordError e)
 }
 } // namespace rpc::handlers::errors
 
-namespace rpc::handlers::records::utils
+namespace
 {
 struct Context {
   using CbType = std::function<bool(RecT, std::error_code &)>;
@@ -89,6 +94,10 @@ struct Context {
   // regex do not need to set the callback.
   CbType checkCb;
 };
+} // namespace
+
+namespace rpc::handlers::records::utils
+{
 void static get_record_impl(std::string_view name, Context &ctx)
 {
   auto yamlConverter = [](const RecRecord *record, void *data) {
@@ -100,9 +109,10 @@ void static get_record_impl(std::string_view name, Context &ctx)
     }
 
     if (!ctx.checkCb(record->rec_type, ctx.ec)) {
+      // error_code in the callback will be set.
       return;
     }
-    // convert it.
+
     try {
       ctx.yaml = *record;
     } catch (std::exception const &ex) {
@@ -114,52 +124,21 @@ void static get_record_impl(std::string_view name, Context &ctx)
   const auto ret = RecLookupRecord(name.data(), yamlConverter, &ctx);
 
   if (ctx.ec) {
+    // This will be set if the invocation of the callback inside the context have something to report, in this case
+    // we give this priority of tracking the error back to the caller.
     return;
   }
 
   if (ret != REC_ERR_OKAY) {
-    // append
-    Error("We couldn't get the record %s", name.data());
     ctx.ec = rpc::handlers::errors::RecordError::RECORD_NOT_FOUND;
     return;
   }
 }
 
-std::tuple<YAML::Node, std::error_code>
-get_yaml_record(std::string_view name, ValidateRecType check)
+void static get_record_regex_impl(std::string_view regex, unsigned recType, Context &ctx)
 {
-  Context ctx;
-
-  ctx.checkCb = check; //[](RecT rec_type, std::error_code &ec) -> bool { return true; };
-
-  // send this back.
-  get_record_impl(name, ctx);
-
-  return {ctx.yaml, ctx.ec};
-}
-
-std::tuple<YAML::Node, std::error_code>
-get_config_yaml_record(std::string_view name)
-{
-  Context ctx;
-
-  ctx.checkCb = [](RecT rec_type, std::error_code &ec) -> bool {
-    if (!REC_TYPE_IS_CONFIG(rec_type)) {
-      // we have an issue
-      ec = rpc::handlers::errors::RecordError::GENERAL_ERROR;
-      return false;
-    }
-    return true;
-  };
-
-  // send this back.
-  get_record_impl(name, ctx);
-
-  return {ctx.yaml, ctx.ec};
-}
-
-void static get_record_regex_impl(std::string_view name, unsigned recType, Context &ctx)
-{
+  // In this case, where we lookup base on a regex, the only validation we need is base on the recType and the ability to be
+  // converted to a Yaml Node.
   auto yamlConverter = [](const RecRecord *record, void *data) {
     auto &ctx = *static_cast<Context *>(data);
 
@@ -168,7 +147,7 @@ void static get_record_regex_impl(std::string_view name, unsigned recType, Conte
     }
 
     YAML::Node recordYaml;
-    // convert it.
+
     try {
       recordYaml = *record;
     } catch (std::exception const &ex) {
@@ -180,30 +159,47 @@ void static get_record_regex_impl(std::string_view name, unsigned recType, Conte
     ctx.yaml.push_back(recordYaml);
   };
 
-  const auto ret = RecLookupMatchingRecords(recType, name.data(), yamlConverter, &ctx);
+  const auto ret = RecLookupMatchingRecords(recType, regex.data(), yamlConverter, &ctx);
+  // if the passed regex didn't match, it will not report any error. We will only get errors when converting
+  // the record into yaml(so far).
   if (ctx.ec) {
     return;
   }
 
   if (ret != REC_ERR_OKAY) {
-    // append
-    Error("We couldn't get the records that match '%s'", name.data());
     ctx.ec = rpc::handlers::errors::RecordError::GENERAL_ERROR;
     return;
   }
 }
 
+// This two functions may look similar but they are not. First runs the validation in a different way.
 std::tuple<YAML::Node, std::error_code>
 get_yaml_record_regex(std::string_view name, unsigned recType)
 {
   Context ctx;
 
+  // librecord API will use the recType to validate the type.
   get_record_regex_impl(name, recType, ctx);
 
   return {ctx.yaml, ctx.ec};
 }
 
-// Basic functions to helps setting a record value properly. All this functions were originally in the WebMgmtUtils.
+std::tuple<YAML::Node, std::error_code>
+get_yaml_record(std::string_view name, ValidateRecType check)
+{
+  Context ctx;
+
+  // Set the validation callback.
+  ctx.checkCb = check;
+
+  // librecords wil use the callback we provide in the ctx.checkCb to run the validation.
+  get_record_impl(name, ctx);
+
+  return {ctx.yaml, ctx.ec};
+}
+
+// Basic functions to help setting a record value properly. All this functionality is originally from WebMgmtUtils.
+// TODO: we can work out something different.
 namespace
 { // anonymous namespace
   bool

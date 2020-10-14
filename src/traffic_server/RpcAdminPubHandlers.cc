@@ -23,7 +23,6 @@
 // Admin API Implementation headers.
 #include "rpc/handlers/config/Configuration.h"
 #include "rpc/handlers/records/Records.h"
-#include "rpc/handlers/metrics/Metrics.h"
 #include "rpc/handlers/storage/Storage.h"
 #include "rpc/handlers/server/Server.h"
 #include "rpc/handlers/plugins/Plugins.h"
@@ -39,23 +38,14 @@ register_admin_jsonrpc_handlers()
 
   // Config
   using namespace rpc::handlers::config;
-  rpc::JsonRpc::instance().add_handler("admin_config_get_records", &get_config_records);
-  rpc::JsonRpc::instance().add_handler("admin_config_get_records_regex", &get_config_records_regex);
-  rpc::JsonRpc::instance().add_handler("admin_config_get_all_records", &get_all_config_records);
   rpc::JsonRpc::instance().add_handler("admin_config_set_records", &set_config_records);
   rpc::JsonRpc::instance().add_handler("admin_config_reload", &reload_config);
 
+  // Records
   using namespace rpc::handlers::records;
-  rpc::JsonRpc::instance().add_handler("admin_record_get_records_info", &get_records);
-
-  // Metrics
-  using namespace rpc::handlers::metrics;
-  rpc::JsonRpc::instance().add_handler("admin_metric_get_records", &get_metric_records);
-  rpc::JsonRpc::instance().add_handler("admin_metric_get_records_regex", &get_metric_records_regex);
-  rpc::JsonRpc::instance().add_handler("admin_metric_get_all_records", &clear_all_metrics);
-  rpc::JsonRpc::instance().add_handler("admin_metric_clear", &clear_metrics);
-
-  // host
+  rpc::JsonRpc::instance().add_handler("admin_lookup_records", &lookup_records);
+  rpc::JsonRpc::instance().add_handler("admin_clear_all_metrics_records", &clear_all_metrics_records);
+  rpc::JsonRpc::instance().add_handler("admin_clear_metrics_records", &clear_metrics_records);
 
   // plugin
   using namespace rpc::handlers::plugins;

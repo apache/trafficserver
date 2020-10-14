@@ -246,6 +246,21 @@ class yamlcpp_json_encoder
     encode_error({jsonrpc::error::RpcErrorCode::ExecutionError}, errata, json);
   }
 
+  static void
+  encode_error_from_callee(ts::Errata const &errata, YAML::Emitter &json)
+  {
+    if (!errata.isOK()) {
+      json << YAML::Key << "errors";
+      json << YAML::BeginSeq;
+      for (auto const &err : errata) {
+        json << YAML::BeginMap;
+        json << YAML::Key << "code" << YAML::Value << err.getCode();
+        json << YAML::Key << "message" << YAML::Value << err.text();
+        json << YAML::EndMap;
+      }
+      json << YAML::EndSeq;
+    }
+  }
   ///
   /// @brief Function to encode a single response(no batch) into an emitter.
   ///

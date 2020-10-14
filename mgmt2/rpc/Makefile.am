@@ -133,20 +133,18 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/
 
 librpcpublichandlers_COMMON = \
+	handlers/common/RecordsUtils.cc \
+	handlers/common/RecordsUtils.h \
 	handlers/config/Configuration.cc \
 	handlers/config/Configuration.h \
 	handlers/records/Records.cc \
 	handlers/records/Records.h \
-	handlers/metrics/Metrics.cc \
-	handlers/metrics/Metrics.h \
 	handlers/storage/Storage.h \
 	handlers/storage/Storage.cc \
 	handlers/server/Server.h \
 	handlers/server/Server.cc \
 	handlers/plugins/Plugins.h \
 	handlers/plugins/Plugins.cc \
-	handlers/common/RecordsUtils.cc \
-	handlers/common/RecordsUtils.h \
 	handlers/Admin.h \
 	$(top_builddir)/src/shared/overridable_txn_vars.cc
 

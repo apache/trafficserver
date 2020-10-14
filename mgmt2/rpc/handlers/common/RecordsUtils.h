@@ -41,8 +41,9 @@ enum class RecordError {
   INVALID_RECORD_NAME,
   VALIDITY_CHECK_ERROR,
   GENERAL_ERROR,
-  RECORD_WRITE_ERROR
-
+  RECORD_WRITE_ERROR,
+  REQUESTED_TYPE_MISMATCH,
+  INVALID_INCOMING_DATA
 };
 std::error_code make_error_code(rpc::handlers::errors::RecordError e);
 } // namespace rpc::handlers::errors
@@ -58,10 +59,35 @@ namespace rpc::handlers::records::utils
 {
 using ValidateRecType = std::function<bool(RecT, std::error_code &)>;
 
+///
+/// @brief Get a Record as a YAML node
+///
+/// @param name The record name that is being requested.
+/// @param check A function @see ValidateRecType that will be used to validate that the record we want meets the expected
+/// criteria. ie: record type. Check @c RecLookupRecord API to see how it's called.
+/// @return std::tuple<YAML::Node, std::error_code>
+///
 std::tuple<YAML::Node, std::error_code> get_yaml_record(std::string_view name, ValidateRecType check);
-std::tuple<YAML::Node, std::error_code> get_config_yaml_record(std::string_view name);
-std::tuple<YAML::Node, std::error_code> get_yaml_record_regex(std::string_view name, unsigned recType);
 
-// Basic functions to helps setting a configuration record value properly. All this functions were originally in the WebMgmtUtils.
-bool recordValidityCheck(std::string_view value, RecCheckT checkType, std::string_view pattern);
+///
+/// @brief Get a Record as a YAML node using regex as name.
+///
+/// @param regex The regex that will be used to lookup records.
+/// @param recType The record type we want to match againts the retrieved records. This could be either a single value or a bitwise
+/// value.
+/// @return std::tuple<YAML::Node, std::error_code>
+///
+std::tuple<YAML::Node, std::error_code> get_yaml_record_regex(std::string_view regex, unsigned recType);
+
+///
+/// @brief Runs a validity check base on the type and the pattern.
+///
+/// @param value Value where the validity check should be applied.
+/// @param checkType The type of the value.
+/// @param pattern  The pattern.
+/// @return true if the validity was ok, false otherwise.
+///
+bool recordValidityCheck(std::string_view value, RecCheckT checkType,
+                         std::string_view pattern); // code originally from WebMgmtUtils
+
 } // namespace rpc::handlers::records::utils

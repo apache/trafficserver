@@ -29,92 +29,147 @@
 
 #include "shared/overridable_txn_vars.h"
 
-namespace record::field_names
-{
-static constexpr auto Name{"name"};
-static constexpr auto RecordType{"record_type"};
-static constexpr auto Version{"version"};
-static constexpr auto RSB{"raw_stat_block"};
-static constexpr auto Order{"order"};
-static constexpr auto Access{"access"};
-static constexpr auto UpdateStatus{"update_status"};
-static constexpr auto UpdateType{"update_type"};
-static constexpr auto CheckType{"checktype"};
-static constexpr auto Source{"source"};
-static constexpr auto SyntaxCheck{"syntax_check"};
-static constexpr auto RecordClass{"record_class"};
-static constexpr auto Overridable{"overridable"};
-static constexpr auto DataType{"data_type"};
-static constexpr auto CurrentValue{"current_value"};
-static constexpr auto DefaultValue{"default_value"};
+#include "RecordsUtils.h"
 
-} // namespace record::field_names
+///
+/// @brief Namespace to group all the names used for key access to the yaml lookup nodes.
+///
+///
+namespace
+{
+static constexpr auto NAME{"record_name"};
+static constexpr auto RECORD_TYPE{"record_type"};
+static constexpr auto RECORD_VERSION{"version"};
+static constexpr auto RSB{"raw_stat_block"};
+static constexpr auto ORDER{"order"};
+static constexpr auto ACCESS_TYPE{"access_type"};
+static constexpr auto UPDATE_STATUS{"update_status"};
+static constexpr auto UPDATE_TYPE{"update_type"};
+static constexpr auto CHECK_TYPE{"checktype"};
+static constexpr auto SOURCE{"source"};
+static constexpr auto CHECK_EXPR{"check_expr"};
+static constexpr auto CLASS{"record_class"};
+static constexpr auto OVERRIDABLE{"overridable"};
+static constexpr auto DATA_TYPE{"data_type"};
+static constexpr auto CURRENT_VALUE{"current_value"};
+static constexpr auto DEFAULT_VALUE{"default_value"};
+static constexpr auto CONFIG_META{"config_meta"};
+static constexpr auto STAT_META{"stat_meta"};
+
+static constexpr auto PERSIST_TYPE{"persist_type"};
+
+} // namespace
 
 namespace YAML
 {
+///
+/// @brief specialize convert template class for RecPersistT
+///
+template <> struct convert<RecPersistT> {
+  static Node
+  encode(const RecPersistT &type)
+  {
+    return Node{static_cast<int>(type)};
+  }
+};
+
+///
+/// @brief specialize convert template class for RecConfigMeta
+///
+template <> struct convert<RecConfigMeta> {
+  static Node
+  encode(const RecConfigMeta &configMeta)
+  {
+    Node node;
+    // TODO: do we really want each specific encode implementation for each enum type?
+    node[ACCESS_TYPE]   = static_cast<int>(configMeta.access_type);
+    node[UPDATE_STATUS] = static_cast<int>(configMeta.update_required);
+    node[UPDATE_TYPE]   = static_cast<int>(configMeta.update_type);
+    node[CHECK_TYPE]    = static_cast<int>(configMeta.check_type);
+    node[SOURCE]        = static_cast<int>(configMeta.source);
+    node[CHECK_EXPR]    = configMeta.check_expr ? configMeta.check_expr : "null";
+
+    return node;
+  }
+};
+
+///
+/// @brief specialize convert template class for RecStatMeta
+///
+template <> struct convert<RecStatMeta> {
+  static Node
+  encode(const RecStatMeta &statMeta)
+  {
+    // TODO. just make sure that we know which data should be included here.
+    Node node;
+    node[PERSIST_TYPE] = statMeta.persist_type;
+    return node;
+  }
+};
+
+///
+/// @brief specialize convert template class for RecRecord
+///
 template <> struct convert<RecRecord> {
   static Node
   encode(const RecRecord &record)
   {
-    namespace field = record::field_names;
     Node node;
     try {
-      node[field::Name]         = record.name ? record.name : "null";
-      node[field::RecordType]   = static_cast<int>(record.data_type);
-      node[field::Version]      = record.version;
-      node[field::RSB]          = record.rsb_id;
-      node[field::Order]        = record.order;
-      node[field::Access]       = static_cast<int>(record.config_meta.access_type);
-      node[field::UpdateStatus] = static_cast<int>(record.config_meta.update_required);
-      node[field::UpdateType]   = record.config_meta.update_type;
-      node[field::CheckType]    = static_cast<int>(record.config_meta.check_type);
-      node[field::Source]       = static_cast<int>(record.config_meta.source);
-      node[field::SyntaxCheck]  = record.config_meta.check_expr ? record.config_meta.check_expr : "null";
-      node[field::RecordClass]  = static_cast<int>(record.rec_type);
+      node[NAME]           = record.name ? record.name : "null";
+      node[RECORD_TYPE]    = static_cast<int>(record.data_type);
+      node[RECORD_VERSION] = record.version;
+      node[RSB]            = record.rsb_id;
+      node[ORDER]          = record.order;
+
+      if (REC_TYPE_IS_CONFIG(record.rec_type)) {
+        node[CONFIG_META] = record.config_meta;
+      } else if (REC_TYPE_IS_STAT(record.rec_type)) {
+        node[STAT_META] = record.stat_meta;
+      }
+
+      node[CLASS] = static_cast<int>(record.rec_type);
 
       if (record.name) {
-        const auto it            = ts::Overridable_Txn_Vars.find(record.name);
-        node[field::Overridable] = (it == ts::Overridable_Txn_Vars.end()) ? "false" : "true";
+        const auto it     = ts::Overridable_Txn_Vars.find(record.name);
+        node[OVERRIDABLE] = (it == ts::Overridable_Txn_Vars.end()) ? "false" : "true";
       }
 
       switch (record.data_type) {
       case RECD_INT:
-        node[field::DataType]     = "INT";
-        node[field::CurrentValue] = record.data.rec_int;
-        node[field::DefaultValue] = record.data_default.rec_int;
+        node[DATA_TYPE]     = "INT";
+        node[CURRENT_VALUE] = record.data.rec_int;
+        node[DEFAULT_VALUE] = record.data_default.rec_int;
         break;
       case RECD_FLOAT:
-        node[field::DataType]     = "FLOAT";
-        node[field::CurrentValue] = record.data.rec_float;
-        node[field::DefaultValue] = record.data_default.rec_float;
+        node[DATA_TYPE]     = "FLOAT";
+        node[CURRENT_VALUE] = record.data.rec_float;
+        node[DEFAULT_VALUE] = record.data_default.rec_float;
         break;
       case RECD_STRING:
-        node[field::DataType]     = "STRING";
-        node[field::CurrentValue] = record.data.rec_string ? record.data.rec_string : "null";
-        node[field::DefaultValue] = record.data_default.rec_string ? record.data_default.rec_string : "null";
+        node[DATA_TYPE]     = "STRING";
+        node[CURRENT_VALUE] = record.data.rec_string ? record.data.rec_string : "null";
+        node[DEFAULT_VALUE] = record.data_default.rec_string ? record.data_default.rec_string : "null";
         break;
       case RECD_COUNTER:
-        node[field::DataType]     = "COUNTER";
-        node[field::CurrentValue] = record.data.rec_counter;
-        node[field::DefaultValue] = record.data_default.rec_counter;
+        node[DATA_TYPE]     = "COUNTER";
+        node[CURRENT_VALUE] = record.data.rec_counter;
+        node[DEFAULT_VALUE] = record.data_default.rec_counter;
         break;
       default:
         // this is an error, internal we should flag it
         break;
       }
     } catch (std::exception const &e) {
-      return node;
+      // we create an empty map node, we do not want to have a null. revisit this.
+      YAML::NodeType::value kind = YAML::NodeType::Map;
+      node                       = YAML::Node{kind};
     }
 
-    return node;
+    Node yrecord;
+    yrecord["record"] = node;
+    return yrecord;
   }
 };
 
-template <> struct convert<RecUpdateT> {
-  static Node
-  encode(const RecUpdateT &type)
-  {
-    return Node{static_cast<int>(type)};
-  }
-};
 } // namespace YAML

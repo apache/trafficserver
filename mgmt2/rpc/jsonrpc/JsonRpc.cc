@@ -77,9 +77,11 @@ JsonRpc::Dispatcher::invoke_handler(jsonrpc::RpcRequestInfo const &request) cons
 
   try {
     auto const &rv = handler(*request.id, request.params);
+
     if (rv.isOK()) {
       response.callResult.result = rv.result();
     } else {
+      // if we have some errors to log, then include it.
       response.callResult.errata = rv.errata();
     }
   } catch (std::exception const &e) {

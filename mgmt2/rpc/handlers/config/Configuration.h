@@ -24,10 +24,6 @@
 
 namespace rpc::handlers::config
 {
-ts::Rv<YAML::Node> get_all_config_records(std::string_view const &id, YAML::Node const &params);
-ts::Rv<YAML::Node> get_config_records_regex(std::string_view const &id, YAML::Node const &params);
-ts::Rv<YAML::Node> get_config_records(std::string_view const &id, YAML::Node const &params);
-
 ts::Rv<YAML::Node> set_config_records(std::string_view const &id, YAML::Node const &params);
 ts::Rv<YAML::Node> reload_config(std::string_view const &id, YAML::Node const &params);
 
