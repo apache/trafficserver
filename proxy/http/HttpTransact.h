@@ -274,15 +274,6 @@ public:
     FRESHNESS_STALE      // Stale, don't use
   };
 
-  enum HostNameExpansionError_t {
-    RETRY_EXPANDED_NAME,
-    EXPANSION_FAILED,
-    EXPANSION_NOT_ALLOWED,
-    DNS_ATTEMPTS_EXHAUSTED,
-    NO_PARENT_PROXY_EXPANSION,
-    TOTAL_HOST_NAME_EXPANSION_TYPES
-  };
-
   enum HttpTransactMagic_t {
     HTTP_TRANSACT_MAGIC_ALIVE     = 0x00001234,
     HTTP_TRANSACT_MAGIC_DEAD      = 0xDEAD1234,
@@ -601,7 +592,6 @@ public:
   } CurrentInfo;
 
   typedef struct _DNSLookupInfo {
-    int attempts = 0;
     /** Origin server address source selection.
 
         If config says to use CTA (client target addr) state is
@@ -1017,7 +1007,6 @@ public:
   static bool is_response_valid(State *s, HTTPHdr *incoming_response);
 
   static void process_quick_http_filter(State *s, int method);
-  static HostNameExpansionError_t try_to_expand_host_name(State *s);
   static bool will_this_request_self_loop(State *s);
   static bool is_request_likely_cacheable(State *s, HTTPHdr *request);
   static bool is_cache_hit(CacheLookupResult_t r);
