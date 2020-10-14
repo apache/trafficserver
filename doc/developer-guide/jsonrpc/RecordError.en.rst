@@ -17,15 +17,38 @@
 
 .. include:: ../../common.defs
 
-.. _developer-core-architecture:
+.. highlight:: cpp
+.. default-domain:: cpp
 
-Core Architecture
-*****************
+.. _jsonrpc-record-errors:
 
-.. toctree::
-   :maxdepth: 1
+JSONRPC Record Errors
+*********************
 
-   heap.en
-   rpc.en
-   url_rewrite_architecture.en.rst
-   jsonrpc.en
+.. class:: RecordError
+
+   .. enumerator:: RECORD_NOT_FOUND = 2000
+
+      Record not found.
+   
+   .. enumerator:: RECORD_NOT_CONFIG = 2001
+   
+      Record is not a configuration type.
+   
+   .. enumerator:: RECORD_NOT_METRIC = 2002
+   
+      Record is not a metric type.
+  
+   .. enumerator:: INVALID_RECORD_NAME = 2003
+      
+      Invalid Record Name.
+  
+   .. enumerator:: VALIDITY_CHECK_ERROR = 2004
+   
+      Validity check failed.
+  
+   .. enumerator:: GENERAL_ERROR = 2005
+      
+      Error reading the record.
+  
+  .. enumerator:: RECORD_WRITE_ERROR = 2006

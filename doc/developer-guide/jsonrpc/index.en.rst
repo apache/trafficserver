@@ -17,15 +17,10 @@
 
 .. include:: ../../common.defs
 
-.. _developer-core-architecture:
+.. _developer-guide-jsonrpc:
 
-Core Architecture
-*****************
+JSONRPC
+*******
 
 .. toctree::
-   :maxdepth: 1
-
-   heap.en
-   rpc.en
-   url_rewrite_architecture.en.rst
-   jsonrpc.en
+    RecordError.en

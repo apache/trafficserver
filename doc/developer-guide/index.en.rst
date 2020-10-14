@@ -58,3 +58,4 @@ duplicate bugs is encouraged, but not required.
    design-documents/index.en
    layout/index.en
    testing/index.en
+   jsonrpc/index.en
