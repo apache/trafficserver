@@ -384,6 +384,10 @@ Http2Stream::transaction_done()
     cross_thread_event = nullptr;
   }
 
+  if (_sm) {
+    super::release(nullptr); // Decrememt the current counts
+  }
+
   if (!closed) {
     do_io_close(); // Make sure we've been closed.  If we didn't close the _proxy_ssn session better still be open
   }
@@ -754,7 +758,6 @@ Http2Stream::destroy()
   ink_release_assert(this->closed);
   ink_release_assert(reentrancy_count == 0);
 
-  super::release(nullptr); // Decrememt the current counts
   uint64_t cid = 0;
 
   // Safe to initiate SSN_CLOSE if this is the last stream
