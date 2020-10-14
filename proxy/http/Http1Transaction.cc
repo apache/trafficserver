@@ -39,7 +39,8 @@ Http1Transaction::destroy() // todo make ~Http1Transaction()
 void
 Http1Transaction::transaction_done()
 {
-  super_type::release(_reader);
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  super_type::transaction_done();
   if (_proxy_ssn) {
     static_cast<Http1ClientSession *>(_proxy_ssn)->release_transaction();
   }

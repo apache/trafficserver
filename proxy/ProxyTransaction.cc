@@ -57,15 +57,6 @@ ProxyTransaction::new_transaction(bool from_early_data)
 }
 
 void
-ProxyTransaction::release(IOBufferReader *r)
-{
-  HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", _proxy_ssn ? _proxy_ssn->connection_id() : 0,
-               _sm ? _sm->sm_id : 0);
-
-  this->decrement_client_transactions_stat();
-}
-
-void
 ProxyTransaction::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
   _proxy_ssn->attach_server_session(ssession, transaction_done);
@@ -191,4 +182,11 @@ int
 ProxyTransaction::get_transaction_priority_dependence() const
 {
   return 0;
+}
+
+void
+ProxyTransaction::transaction_done()
+{
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  this->decrement_client_transactions_stat();
 }

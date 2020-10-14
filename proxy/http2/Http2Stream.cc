@@ -379,13 +379,10 @@ void
 Http2Stream::transaction_done()
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  super::transaction_done();
   if (cross_thread_event) {
     cross_thread_event->cancel();
     cross_thread_event = nullptr;
-  }
-
-  if (_sm) {
-    super::release(nullptr); // Decrememt the current counts
   }
 
   if (!closed) {
