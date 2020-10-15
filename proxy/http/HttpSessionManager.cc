@@ -373,19 +373,19 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
 
   // Otherwise, check the thread pool first
   if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_THREAD || this->get_hybrid_limit() != 0) {
-    retval = acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_THREAD);
+    retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_THREAD);
   }
 
   //  If you didn't get a match, and the global pool is an option go there.
   if (retval != HSM_DONE && (TS_SERVER_SESSION_SHARING_POOL_GLOBAL == this->get_pool_type())) {
-    retval = acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_GLOBAL);
+    retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_GLOBAL);
   }
   return retval;
 }
 
 HSMresult_t
-HttpSessionManager::acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
-                                    TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type)
+HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
+                                     TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type)
 {
   Http1ServerSession *to_return = nullptr;
   HSMresult_t retval            = HSM_NOT_FOUND;

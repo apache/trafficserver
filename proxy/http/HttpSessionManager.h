@@ -140,8 +140,8 @@ private:
   /// Global pool, used if not per thread pools.
   /// @internal We delay creating this because the session manager is created during global statics init.
   ServerSessionPool *m_g_pool = nullptr;
-  HSMresult_t acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
-                              TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type);
+  HSMresult_t _acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
+                               TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type);
   int m_hybrid_limit                         = 0;
   TSServerSessionSharingPoolType m_pool_type = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 };
