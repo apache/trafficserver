@@ -48,6 +48,7 @@ Http2Stream::init(Http2StreamId sid, ssize_t initial_rwnd)
 {
   this->mark_milestone(Http2StreamMilestone::OPEN);
 
+  this->_sm          = nullptr;
   this->_id          = sid;
   this->_thread      = this_ethread();
   this->_client_rwnd = initial_rwnd;
@@ -354,7 +355,6 @@ void
 Http2Stream::do_io_close(int /* flags */)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  super::release(nullptr);
 
   if (!closed) {
     REMEMBER(NO_EVENT, this->reentrancy_count);
@@ -387,6 +387,7 @@ void
 Http2Stream::transaction_done()
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  super::transaction_done();
   if (cross_thread_event) {
     cross_thread_event->cancel();
     cross_thread_event = nullptr;
@@ -935,10 +936,10 @@ Http2Stream::clear_io_events()
   }
 }
 
+//  release and do_io_close are the same for the HTTP/2 protocol
 void
 Http2Stream::release(IOBufferReader *r)
 {
-  super::release(r);
   this->do_io_close();
 }
 
