@@ -1,0 +1,12 @@
+``
+[``] recv HEADERS frame <length=``, flags=0x04, stream_id=1>
+``
+[``] recv GOAWAY frame <length=8, flags=0x00, stream_id=0>
+          (last_stream_id=2147483647, error_code=NO_ERROR(0x00), opaque_data(0)=[])
+``
+[``] recv GOAWAY frame <length=8, flags=0x00, stream_id=0>
+          (last_stream_id=1, error_code=NO_ERROR(0x00), opaque_data(0)=[])
+``
+[``] recv DATA frame <length=0, flags=0x01, stream_id=1>
+          ; END_STREAM
+``
