@@ -25,4 +25,4 @@
 #     verify_client: MODERATE
 #   - fqdn: two.com
 #     tunnel_route: two.com
-#     ip_allow = '10.0.0.1-10.0.0.255'
+#     ip_allow: '10.0.0.1-10.0.0.255'
