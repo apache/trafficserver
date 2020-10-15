@@ -372,12 +372,14 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
   }
 
   // Otherwise, check the thread pool first
-  if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_THREAD || this->get_hybrid_limit() != 0) {
+  if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_THREAD ||
+      this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_HYBRID) {
     retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_THREAD);
   }
 
   //  If you didn't get a match, and the global pool is an option go there.
-  if (retval != HSM_DONE && (TS_SERVER_SESSION_SHARING_POOL_GLOBAL == this->get_pool_type())) {
+  if (retval != HSM_DONE && (TS_SERVER_SESSION_SHARING_POOL_GLOBAL == this->get_pool_type() ||
+                             TS_SERVER_SESSION_SHARING_POOL_HYBRID == this->get_pool_type())) {
     retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_GLOBAL);
   }
   return retval;
@@ -464,8 +466,7 @@ HttpSessionManager::release_session(Http1ServerSession *to_release)
   MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
   if (lock.is_locked()) {
     pool->releaseSession(to_release);
-  } else if (to_release->sharing_pool == TS_SERVER_SESSION_SHARING_POOL_GLOBAL &&
-             (m_hybrid_limit < 0 || ethread->server_session_pool->count() < m_hybrid_limit)) {
+  } else if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_HYBRID) {
     // Try again with the thread pool
     to_release->sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
     return release_session(to_release);

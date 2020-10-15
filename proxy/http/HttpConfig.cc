@@ -165,7 +165,8 @@ http_config_enum_mask_read(const char *name, MgmtByte &value)
 
 static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolStrings[] = {
   {TS_SERVER_SESSION_SHARING_POOL_GLOBAL, "global"},
-  {TS_SERVER_SESSION_SHARING_POOL_THREAD, "thread"}};
+  {TS_SERVER_SESSION_SHARING_POOL_THREAD, "thread"},
+  {TS_SERVER_SESSION_SHARING_POOL_HYBRID, "hybrid"}};
 
 int HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
@@ -1154,10 +1155,6 @@ HttpConfig::startup()
   http_config_enum_mask_read("proxy.config.http.server_session_sharing.match", c.oride.server_session_sharing_match);
   HttpEstablishStaticConfigStringAlloc(c.oride.server_session_sharing_match_str, "proxy.config.http.server_session_sharing.match");
   http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.server_session_sharing_pool);
-  HttpEstablishStaticConfigByte(c.server_session_sharing_pool_hybrid_limit,
-                                "proxy.config.http.server_session_sharing.pool_hybrid_limit");
-
-  httpSessionManager.set_hybrid_limit(c.server_session_sharing_pool_hybrid_limit);
   httpSessionManager.set_pool_type(c.server_session_sharing_pool);
 
   RecRegisterConfigUpdateCb("proxy.config.http.insert_forwarded", &http_insert_forwarded_cb, &c);
@@ -1456,12 +1453,11 @@ HttpConfig::reconfigure()
     params->oride.flow_high_water_mark = params->oride.flow_low_water_mark = 0;
   }
 
-  params->oride.server_session_sharing_match       = m_master.oride.server_session_sharing_match;
-  params->oride.server_session_sharing_match_str   = ats_strdup(m_master.oride.server_session_sharing_match_str);
-  params->oride.server_min_keep_alive_conns        = m_master.oride.server_min_keep_alive_conns;
-  params->server_session_sharing_pool              = m_master.server_session_sharing_pool;
-  params->server_session_sharing_pool_hybrid_limit = m_master.server_session_sharing_pool_hybrid_limit;
-  params->oride.keep_alive_post_out                = m_master.oride.keep_alive_post_out;
+  params->oride.server_session_sharing_match     = m_master.oride.server_session_sharing_match;
+  params->oride.server_session_sharing_match_str = ats_strdup(m_master.oride.server_session_sharing_match_str);
+  params->oride.server_min_keep_alive_conns      = m_master.oride.server_min_keep_alive_conns;
+  params->server_session_sharing_pool            = m_master.server_session_sharing_pool;
+  params->oride.keep_alive_post_out              = m_master.oride.keep_alive_post_out;
 
   params->oride.keep_alive_no_activity_timeout_in   = m_master.oride.keep_alive_no_activity_timeout_in;
   params->oride.keep_alive_no_activity_timeout_out  = m_master.oride.keep_alive_no_activity_timeout_out;

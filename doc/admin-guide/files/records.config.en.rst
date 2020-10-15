@@ -994,23 +994,19 @@ mptcp
    ========== =================================================================
    ``global`` Re-use sessions from a global pool of all server sessions.
    ``thread`` Re-use sessions from a per-thread pool.
+   ``hybrid`` Try to work as a global pool, but release server sessions to the
+              per-thread pool if there is lock contention on the global pool.
    ========== =================================================================
 
-.. ts:cv:: CONFIG proxy.config.http.server_session_sharing.pool_hybrid_limit INT 0
 
    Setting :ts:cv:`proxy.config.http.server_session_sharing.pool` to global can reduce
    the number of connections to origin for some traffic loads.  However, if many
    execute threads are active, the thread contention on the global pool can reduce the
-   lifetime of connections to origin and reduce effective origin connection reuse. The
-   :ts:cv:`proxy.config.http.server_session_sharing.pool_hybrid_limit` setting lets you
-   enable a hybrid pool mode using both global and per thread pools.  If hybrid mode
-   is enabled, sessons are returned to the local thread pool if the global pool lock is
-   not acquired rather than just closing the origin connection as is the case in standard
-   global mode.
+   lifetime of connections to origin and reduce effective origin connection reuse.
 
-   Setting it to 0, disables hybrid mode.  Setting it to -1, enables hybrid
-   mode with no limit on the size of the thread local pool.  Any other number enables hybrid
-   mode but sets a limit on the size of each thread's pool.
+   For a hybrid pool, the operation starts as the global pool, but sessons are returned
+   to the local thread pool if the global pool lock is not acquired rather than just
+   closing the origin connection as is the case in standard global mode.
 
 .. ts:cv:: CONFIG proxy.config.http.attach_server_session_to_client INT 0
    :overridable:

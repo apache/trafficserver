@@ -807,8 +807,7 @@ public:
   MgmtByte disallow_post_100_continue = 0;
   MgmtByte keepalive_internal_vc      = 0;
 
-  MgmtByte server_session_sharing_pool              = TS_SERVER_SESSION_SHARING_POOL_THREAD;
-  MgmtByte server_session_sharing_pool_hybrid_limit = 0;
+  MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 
   OutboundConnTrack::GlobalConfig outbound_conntrack;
 
