@@ -200,9 +200,10 @@ ProxySession::connection_id() const
   return con_id;
 }
 
-void
+bool
 ProxySession::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
+  return false;
 }
 
 Http1ServerSession *
