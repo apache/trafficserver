@@ -38,6 +38,7 @@ public:
   static void initialize();
   static TLSSessionResumptionSupport *getInstance(SSL *ssl);
   static void bind(SSL *ssl, TLSSessionResumptionSupport *srs);
+  static void unbind(SSL *ssl);
 
   int processSessionTicket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                            int enc);

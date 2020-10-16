@@ -385,7 +385,10 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
       // Seems like ua_entry->read_vio->disable(); should work, but that was
       // not sufficient to stop the state machine from processing IO events until the
       // TXN_START hooks had completed
-      ua_entry->read_vio = ua_entry->vc->do_io_read(nullptr, 0, nullptr);
+      // Preserve the current read cont and mutex
+      NetVConnection *netvc = ((ProxyTransaction *)ua_entry->vc)->get_netvc();
+      ink_assert(netvc != nullptr);
+      ua_entry->read_vio = ua_entry->vc->do_io_read(netvc->read_vio_cont(), 0, nullptr);
     }
     return EVENT_CONT;
   }
@@ -540,7 +543,8 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
-  ua_entry->read_vio  = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
+  //  hold onto enabling read until setup_client_read_request_header
+  ua_entry->read_vio  = client_vc->do_io_read(this, 0, nullptr);
   ua_entry->write_vio = client_vc->do_io_write(this, 0, nullptr);
 
   /////////////////////////
@@ -6077,7 +6081,8 @@ HttpSM::attach_server_session(Http1ServerSession *s)
   // first tunnel instead of the producer of the second tunnel.
   // The real read is setup in setup_server_read_response_header()
   //
-  server_entry->read_vio = server_session->do_io_read(this, 0, server_session->read_buffer);
+  // Keep the read disabled until setup_server_read_response_header
+  server_entry->read_vio = server_session->do_io_read(this, 0, nullptr);
 
   // Transfer control of the write side as well
   server_entry->write_vio = server_session->do_io_write(this, 0, nullptr);

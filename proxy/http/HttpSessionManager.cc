@@ -369,12 +369,9 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     to_return = nullptr;
   }
 
-  // TS-3797 Adding another scope so the pool lock is dropped after it is removed from the pool and
-  // potentially moved to the current thread.  At the end of this scope, either the original
-  // pool selected VC is on the current thread or its content has been moved to a new VC on the
-  // current thread and the original has been deleted. This should adequately cover TS-3266 so we
-  // don't have to continue to hold the pool thread while we initialize the server session in the
-  // client session
+  // Extend the mutex window until the acquired Server session is attached
+  // to the SM. Releasing the mutex before that results in race conditions
+  // due to a potential parallel network read on the VC with no mutex guarding
   {
     // Now check to see if we have a connection in our shared connection pool
     EThread *ethread = this_ethread();
@@ -395,6 +392,10 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
         if (to_return) {
           UnixNetVConnection *server_vc = dynamic_cast<UnixNetVConnection *>(to_return->get_netvc());
           if (server_vc) {
+            // Disable i/o on this vc now, but, hold onto the g_pool cont
+            // and the mutex to stop any stray events from getting in
+            server_vc->do_io_read(m_g_pool, 0, nullptr);
+            server_vc->do_io_write(m_g_pool, 0, nullptr);
             UnixNetVConnection *new_vc = server_vc->migrateToCurrentThread(sm, ethread);
             // The VC moved, free up the original one
             if (new_vc != server_vc) {
@@ -420,14 +421,14 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     } else { // Didn't get the lock.  to_return is still NULL
       retval = HSM_RETRY;
     }
-  }
 
-  if (to_return) {
-    Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->con_id);
-    to_return->state = HSS_ACTIVE;
-    // the attach_server_session will issue the do_io_read under the sm lock
-    sm->attach_server_session(to_return);
-    retval = HSM_DONE;
+    if (to_return) {
+      Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->con_id);
+      to_return->state = HSS_ACTIVE;
+      // the attach_server_session will issue the do_io_read under the sm lock
+      sm->attach_server_session(to_return);
+      retval = HSM_DONE;
+    }
   }
   return retval;
 }

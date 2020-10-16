@@ -212,7 +212,6 @@ make_ssl_connection(SSL_CTX *ctx, SSLNetVConnection *netvc)
     }
 
     SSLNetVCAttach(ssl, netvc);
-    TLSSessionResumptionSupport::bind(ssl, netvc);
   }
 
   return ssl;
@@ -1820,7 +1819,6 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 
   sslHandshakeStatus = SSL_HANDSHAKE_DONE;
   SSLNetVCAttach(this->ssl, this);
-  TLSSessionResumptionSupport::bind(this->ssl, this);
   return EVENT_DONE;
 }
 

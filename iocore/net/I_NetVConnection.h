@@ -387,6 +387,12 @@ public:
   */
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override = 0;
 
+  virtual Continuation *
+  read_vio_cont()
+  {
+    return nullptr;
+  }
+
   /**
     Initiates write. Thread-safe, may be called when not handling
     an event from the NetVConnection, or the NetVConnection creation
@@ -423,6 +429,11 @@ public:
   */
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override = 0;
 
+  virtual Continuation *
+  write_vio_cont()
+  {
+    return nullptr;
+  }
   /**
     Closes the vconnection. A state machine MUST call do_io_close()
     when it has finished with a VConnection. do_io_close() indicates

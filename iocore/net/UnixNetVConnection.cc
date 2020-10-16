@@ -79,9 +79,12 @@ static inline int
 read_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
-  if (vc->read.vio.cont) {
+  if (vc->read.vio.cont && vc->read.vio.mutex == vc->read.vio.cont->mutex) {
     vc->read.vio.cont->handleEvent(event, &vc->read.vio);
   } else {
+    if (vc->read.vio.cont) {
+      Note("read_signal_and_update: mutexes are different? vc=%p, event=%d", vc, event);
+    }
     switch (event) {
     case VC_EVENT_EOS:
     case VC_EVENT_ERROR:
@@ -111,9 +114,12 @@ static inline int
 write_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
-  if (vc->write.vio.cont) {
+  if (vc->write.vio.cont && vc->write.vio.mutex == vc->write.vio.cont->mutex) {
     vc->write.vio.cont->handleEvent(event, &vc->write.vio);
   } else {
+    if (vc->write.vio.cont) {
+      Note("write_signal_and_update: mutexes are different? vc=%p, event=%d", vc, event);
+    }
     switch (event) {
     case VC_EVENT_EOS:
     case VC_EVENT_ERROR:
@@ -628,19 +634,46 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
   return &write.vio;
 }
 
+Continuation *
+UnixNetVConnection::read_vio_cont()
+{
+  return read.vio.cont;
+}
+
+Continuation *
+UnixNetVConnection::write_vio_cont()
+{
+  return write.vio.cont;
+}
+
 void
 UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 {
   // FIXME: the nh must not nullptr.
   ink_assert(nh);
 
-  read.enabled  = 0;
-  write.enabled = 0;
-  read.vio.buffer.clear();
+  // mark it closed first
+  if (alerrno == -1) {
+    closed = 1;
+  } else {
+    closed = -1;
+  }
+  read.enabled    = 0;
+  write.enabled   = 0;
   read.vio.nbytes = 0;
   read.vio.op     = VIO::NONE;
   read.vio.cont   = nullptr;
-  write.vio.buffer.clear();
+
+  if (netvc_context == NET_VCONNECTION_OUT) {
+    // do not clear the iobufs yet to guard
+    // against race condition with session pool closing
+    Debug("iocore_net", "delay vio buffer clear to protect against  race for vc %p", this);
+  } else {
+    // may be okay to delay for all VCs?
+    read.vio.buffer.clear();
+    write.vio.buffer.clear();
+  }
+
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
   write.vio.cont   = nullptr;
@@ -651,11 +684,6 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1) {
     this->lerrno = alerrno;
-  }
-  if (alerrno == -1) {
-    closed = 1;
-  } else {
-    closed = -1;
   }
 
   if (close_inline) {
@@ -1316,6 +1344,10 @@ UnixNetVConnection::clear()
   read.vio.vc_server  = nullptr;
   write.vio.vc_server = nullptr;
   options.reset();
+  if (netvc_context == NET_VCONNECTION_OUT) {
+    read.vio.buffer.clear();
+    write.vio.buffer.clear();
+  }
   closed        = 0;
   netvc_context = NET_VCONNECTION_UNSET;
   ink_assert(!read.ready_link.prev && !read.ready_link.next);
