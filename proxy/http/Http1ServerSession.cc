@@ -185,9 +185,10 @@ Http1ServerSession::release()
     return;
   }
 
-  // Make sure the vios for the current SM are cleared
-  server_vc->do_io_read(nullptr, 0, nullptr);
-  server_vc->do_io_write(nullptr, 0, nullptr);
+  // do not change the read/write cont and mutex yet
+  // release_session() will either swap them with the
+  // pool continuation with a valid read buffer or if
+  // it fails, do_io_close() will clear the cont anyway
 
   HSMresult_t r = httpSessionManager.release_session(this);
 
