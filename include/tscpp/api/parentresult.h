@@ -23,12 +23,13 @@
 
 #include "ts/apidefs.h"
 #include "tscore/ConsistentHash.h"
+#include <netinet/in.h>
 
 extern const char *ParentResultStr[];
 
 struct TSParentResult {
   const char *hostname;
-  int port;
+  in_port_t port;
   bool retry;
   TSParentResultType result;
   bool chash_init[TS_MAX_GROUP_RINGS] = {false};
