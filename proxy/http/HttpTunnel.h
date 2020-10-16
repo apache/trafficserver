@@ -483,7 +483,7 @@ HttpTunnel::get_consumer(VIO *vio)
 {
   if (vio) {
     for (int i = 0; i < MAX_CONSUMERS; i++) {
-      if (consumers[i].alive && (consumers[i].write_vio == vio || consumers[i].vc == vio->vc_server)) {
+      if (consumers[i].alive && consumers[i].write_vio == vio) {
         return consumers + i;
       }
     }

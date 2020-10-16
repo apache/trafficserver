@@ -2687,7 +2687,7 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
     tunnel.reset();
     // When the ua completed sending it's data we must have
     //  removed it from the tunnel
-    ink_release_assert(ua_entry->in_tunnel == false);
+    ua_entry->in_tunnel     = false;
     server_entry->in_tunnel = false;
 
     break;
@@ -3635,7 +3635,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     // do not shut down the client read
     if (enable_redirection) {
       if (ua_producer->vc_type == HT_STATIC && event != VC_EVENT_ERROR && event != VC_EVENT_EOS) {
-        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
+        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
         // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
         t_state.client_info.pipeline_possible = false;
       } else {
@@ -3644,7 +3644,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
         }
       }
     } else {
-      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
+      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
       // we should not shutdown read side of the client here to prevent sending a reset
       // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
       t_state.client_info.pipeline_possible = false;

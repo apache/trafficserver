@@ -1332,6 +1332,9 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     if (c->producer && c->producer->handler_state == 0) {
       if (event == VC_EVENT_WRITE_COMPLETE) {
         c->producer->handler_state = HTTP_SM_POST_SUCCESS;
+        // If the consumer completed, presumably the producer successfully read and is done
+        c->producer->read_success = true;
+        c->producer->alive        = false;
       } else if (c->vc_type == HT_HTTP_SERVER) {
         c->producer->handler_state = HTTP_SM_POST_UA_FAIL;
       } else if (c->vc_type == HT_HTTP_CLIENT) {
@@ -1614,6 +1617,7 @@ HttpTunnel::main_handler(int event, void *data)
       ink_assert(c->write_vio == (VIO *)data || c->vc == ((VIO *)data)->vc_server);
       sm_callback = consumer_handler(event, c);
     } else {
+      // Presumably a delayed event we can ignore now
       internal_error(); // do nothing
     }
   }
