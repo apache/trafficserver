@@ -9913,11 +9913,7 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
 TSReturnCode
 TSHostnameIsSelf(const char *hostname)
 {
-  const bool isSelf = Machine::instance()->is_self(hostname);
-  if (isSelf) {
-    return TS_SUCCESS;
-  }
-  return TS_ERROR;
+	return Machine::instance()->is_self(hostname) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
