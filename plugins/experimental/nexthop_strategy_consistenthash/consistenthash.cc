@@ -64,7 +64,7 @@ chash_lookup(std::shared_ptr<ATSConsistentHash> ring, uint64_t hash_key, ATSCons
     host_rec = static_cast<HostRecord *>(ring->lookup(nullptr, iter, wrapped, hash));
   }
   bool wrap_around = *wrapped;
-  *wrapped         = (*mapWrapped && *wrapped) ? true : false;
+  *wrapped         = *mapWrapped && *wrapped;
   if (!*mapWrapped && wrap_around) {
     *mapWrapped = true;
   }
