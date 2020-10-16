@@ -212,9 +212,10 @@ public:
     return con_id;
   }
 
-  virtual void
+  virtual bool
   attach_server_session(HttpServerSession *ssession, bool transaction_done = true)
   {
+    return false;
   }
 
   virtual HttpServerSession *

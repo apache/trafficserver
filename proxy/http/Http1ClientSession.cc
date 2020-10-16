@@ -508,7 +508,7 @@ Http1ClientSession::new_transaction()
   trans.new_transaction();
 }
 
-void
+bool
 Http1ClientSession::attach_server_session(HttpServerSession *ssession, bool transaction_done)
 {
   if (ssession) {
@@ -546,6 +546,7 @@ Http1ClientSession::attach_server_session(HttpServerSession *ssession, bool tran
     bound_ss     = nullptr;
     slave_ka_vio = nullptr;
   }
+  return true;
 }
 
 void

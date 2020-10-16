@@ -72,10 +72,10 @@ ProxyClientTransaction::release(IOBufferReader *r)
   }
 }
 
-void
+bool
 ProxyClientTransaction::attach_server_session(HttpServerSession *ssession, bool transaction_done)
 {
-  parent->attach_server_session(ssession, transaction_done);
+  return parent->attach_server_session(ssession, transaction_done);
 }
 
 void
