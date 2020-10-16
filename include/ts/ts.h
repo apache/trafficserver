@@ -2617,7 +2617,7 @@ tsapi TSReturnCode TSHostnameIsSelf(const char *hostname);
 
 /*
  * Gets the status of hostname in the outparam status, and the status reason in the outparam reason.
- * The reason is a logical-and combination of the reasons in TSHostStatusReason.
+ * The reason is a logical-or combination of the reasons in TSHostStatusReason.
  * If either outparam is null, it will not be set and no error will be returned.
  * Returns TS_SUCCESS if the hostname was a parent and existed in the HostStatus, else TS_ERROR.
  */
@@ -2625,7 +2625,7 @@ tsapi TSReturnCode TSHostStatusGet(const char *hostname, TSHostStatus *status, u
 
 /*
  * Sets the status of hostname in status, down_time, and reason.
- * The reason is a logical-and combination of the reasons in TSHostStatusReason.
+ * The reason is a logical-or combination of the reasons in TSHostStatusReason.
  */
 tsapi void TSHostStatusSet(const char *hostname, TSHostStatus status, const unsigned int down_time, const unsigned int reason);
 
