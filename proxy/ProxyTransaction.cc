@@ -56,10 +56,10 @@ ProxyTransaction::new_transaction(bool from_early_data)
   _sm->attach_client_session(this, _reader);
 }
 
-void
+bool
 ProxyTransaction::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
-  _proxy_ssn->attach_server_session(ssession, transaction_done);
+  return _proxy_ssn->attach_server_session(ssession, transaction_done);
 }
 
 void

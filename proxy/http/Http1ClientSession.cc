@@ -460,7 +460,7 @@ Http1ClientSession::new_transaction()
   trans.new_transaction(read_from_early_data > 0 ? true : false);
 }
 
-void
+bool
 Http1ClientSession::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
   if (ssession) {
@@ -499,6 +499,7 @@ Http1ClientSession::attach_server_session(Http1ServerSession *ssession, bool tra
     bound_ss     = nullptr;
     slave_ka_vio = nullptr;
   }
+  return true;
 }
 
 void

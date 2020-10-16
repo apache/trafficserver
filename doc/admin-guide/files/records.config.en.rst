@@ -999,7 +999,9 @@ mptcp
 .. ts:cv:: CONFIG proxy.config.http.attach_server_session_to_client INT 0
    :overridable:
 
-   Control the re-use of an server session by a user agent (client) session.
+   Control the re-use of an server session by a user agent (client) session. Currently only applies to user
+   agents using HTTP/1.0 or HTTP/1.1. For other HTTP versions, the origin connection is always returned to the
+   session sharing pool or closed.
 
    If a user agent performs more than one HTTP transaction on its connection to |TS| a server session must be
    obtained for the second (and subsequent) transaction as for the first. This settings affects how that server session
