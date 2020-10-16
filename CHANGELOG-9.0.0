@@ -644,7 +644,6 @@ Changes with Apache Traffic Server 9.0.0
   #5863 - pipe buffer size for log.pipe should be configurable
   #5864 - ProxyTxn refactor: moved host_res_style to t_state.dns_info
   #5867 - PR#5867: Explain how to use open_con().
-  #5868 - Update HttpTransact.cc
   #5869 - ProxyTxn: removed restart_immediate
   #5870 - Fix bad limit in poll loop.  jtest -c1 now works again.
   #5879 - Weak mutex locking macros
@@ -1113,5 +1112,10 @@ Changes with Apache Traffic Server 9.0.0
   #7238 - Supporting out of source builds for AuTests.
   #7243 - RolledLogDeleter: do not sort on each candidate consideration.
   #7252 - Remove some useless defines, which just obfuscates code
+  #7258 - Fix proxy.process.http.current_client_transactions
   #7260 - Treat objects with negative max-age CC directives as stale.
   #7266 - Allow initial // in request targets.
+  #7269 - gracefully handle TSReleaseAsserts in statichit and generator plugins
+  #7274 - Introduce proxy-verifier to AuTests
+  #7275 - Respecting default rolling_enabled value in plugins.
+  #7278 - 7096: Synchronize Server Session Management and Network I/O
