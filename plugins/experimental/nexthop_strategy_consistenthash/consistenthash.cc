@@ -134,7 +134,7 @@ NextHopConsistentHash::Init(const YAML::Node &n)
                p->hostname.c_str(), strategy_name.c_str());
     }
     hash.clear();
-    rings.push_back(std::move(hash_ring));
+    rings.push_back(hash_ring);
   }
   return true;
 }
