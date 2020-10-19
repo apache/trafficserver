@@ -20,13 +20,15 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include <algorithm>
 #include "HostStatus.h"
 #include "ProcessManager.h"
 
 inline void
-getStatName(std::string &stat_name, const char *name)
+getStatName(std::string &stat_name, const std::string_view name)
 {
-  stat_name = stat_prefix + name;
+  stat_name.clear();
+  stat_name.append(stat_prefix).append(name);
 }
 
 static void
@@ -195,7 +197,7 @@ handle_record_read(const RecRecord *rec, void *edata)
     // 1st move the pointer past the stat prefix.
     s += stat_prefix.length();
     hostname = s;
-    hs.createHostStat(hostname.c_str(), rec->data.rec_string);
+    hs.createHostStat(hostname, rec->data.rec_string);
     HostStatRec h(rec->data.rec_string);
     hs.loadRecord(hostname, h);
   }
@@ -226,13 +228,13 @@ HostStatus::loadHostStatusFromStats()
 }
 
 void
-HostStatus::loadRecord(std::string &name, HostStatRec &h)
+HostStatus::loadRecord(std::string_view name, HostStatRec &h)
 {
   HostStatRec *host_stat = nullptr;
-  Debug("host_statuses", "loading host status record for %s", name.c_str());
+  Debug("host_statuses", "loading host status record for %.*s", int(name.size()), name.data());
   ink_rwlock_wrlock(&host_status_rwlock);
   {
-    if (auto it = hosts_statuses.find(name.c_str()); it != hosts_statuses.end()) {
+    if (auto it = hosts_statuses.find(name); it != hosts_statuses.end()) {
       host_stat = it->second;
     } else {
       host_stat  = static_cast<HostStatRec *>(ats_malloc(sizeof(HostStatRec)));
@@ -246,7 +248,7 @@ HostStatus::loadRecord(std::string &name, HostStatRec &h)
 }
 
 void
-HostStatus::setHostStatus(const char *name, TSHostStatus status, const unsigned int down_time, const unsigned int reason)
+HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, const unsigned int down_time, const unsigned int reason)
 {
   std::string stat_name;
   char buf[1024] = {0};
@@ -272,7 +274,7 @@ HostStatus::setHostStatus(const char *name, TSHostStatus status, const unsigned 
       hosts_statuses.emplace(name, host_stat);
     }
     if (reason & Reason::ACTIVE) {
-      Debug("host_statuses", "for host %s set status: %s, Reason:ACTIVE", name, HostStatusNames[status]);
+      Debug("host_statuses", "for host %.*s set status: %s, Reason:ACTIVE", int(name.size()), name.data(), HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->active_marked_down = time(0);
         host_stat->active_down_time   = down_time;
@@ -286,7 +288,7 @@ HostStatus::setHostStatus(const char *name, TSHostStatus status, const unsigned 
       }
     }
     if (reason & Reason::LOCAL) {
-      Debug("host_statuses", "for host %s set status: %s, Reason:LOCAL", name, HostStatusNames[status]);
+      Debug("host_statuses", "for host %.*s set status: %s, Reason:LOCAL", int(name.size()), name.data(), HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->local_marked_down = time(0);
         host_stat->local_down_time   = down_time;
@@ -300,7 +302,7 @@ HostStatus::setHostStatus(const char *name, TSHostStatus status, const unsigned 
       }
     }
     if (reason & Reason::MANUAL) {
-      Debug("host_statuses", "for host %s set status: %s, Reason:MANUAL", name, HostStatusNames[status]);
+      Debug("host_statuses", "for host %.*s set status: %s, Reason:MANUAL", int(name.size()), name.data(), HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->manual_marked_down = time(0);
         host_stat->manual_down_time   = down_time;
@@ -314,7 +316,7 @@ HostStatus::setHostStatus(const char *name, TSHostStatus status, const unsigned 
       }
     }
     if (reason & Reason::SELF_DETECT) {
-      Debug("host_statuses", "for host %s set status: %s, Reason:SELF_DETECT", name, HostStatusNames[status]);
+      Debug("host_statuses", "for host %.*s set status: %s, Reason:SELF_DETECT", int(name.size()), name.data(), HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->self_detect_marked_down = time(0);
         host_stat->reasons |= Reason::SELF_DETECT;
@@ -343,23 +345,23 @@ HostStatus::setHostStatus(const char *name, TSHostStatus status, const unsigned 
     status_rec << *host_stat;
     RecSetRecordString(stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), REC_SOURCE_EXPLICIT, true);
     if (status == TSHostStatus::TS_HOST_STATUS_UP) {
-      Debug("host_statuses", "set status up for name: %s, status: %d, stat_name: %s", name, status, stat_name.c_str());
+      Debug("host_statuses", "set status up for name: %.*s, status: %d, stat_name: %s", int(name.size()), name.data(), status, stat_name.c_str());
     } else {
-      Debug("host_statuses", "set status down for name: %s, status: %d, stat_name: %s", name, status, stat_name.c_str());
+      Debug("host_statuses", "set status down for name: %.*s, status: %d, stat_name: %s", int(name.size()), name.data(), status, stat_name.c_str());
     }
   }
-  Debug("host_statuses", "name: %s, status: %d", name, status);
+  Debug("host_statuses", "name: %.*s, status: %d", int(name.size()), name.data(), status);
 
   // log it.
   if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
-    Note("Host %s has been marked down, down_time: %d - %s.", name, down_time, down_time == 0 ? "indefinitely." : "seconds.");
+    Note("Host %.*s has been marked down, down_time: %d - %s.", int(name.size()), name.data(), down_time, down_time == 0 ? "indefinitely." : "seconds.");
   } else {
-    Note("Host %s has been marked up.", name);
+    Note("Host %.*s has been marked up.", int(name.size()), name.data());
   }
 }
 
 HostStatRec *
-HostStatus::getHostStatus(const char *name)
+HostStatus::getHostStatus(const std::string_view name)
 {
   HostStatRec *_status = nullptr;
   time_t now           = time(0);
@@ -381,7 +383,7 @@ HostStatus::getHostStatus(const char *name)
     unsigned int reasons = _status->reasons;
     if ((_status->reasons & Reason::ACTIVE) && _status->active_down_time > 0) {
       if ((_status->active_down_time + _status->active_marked_down) < now) {
-        Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", name, now,
+        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(), now,
               _status->active_down_time, _status->active_marked_down, Reason::ACTIVE_REASON);
         setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, 0, Reason::ACTIVE);
         reasons ^= Reason::ACTIVE;
@@ -389,7 +391,7 @@ HostStatus::getHostStatus(const char *name)
     }
     if ((_status->reasons & Reason::LOCAL) && _status->local_down_time > 0) {
       if ((_status->local_down_time + _status->local_marked_down) < now) {
-        Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", name, now,
+        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(), now,
               _status->local_down_time, _status->local_marked_down, Reason::LOCAL_REASON);
         setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, 0, Reason::LOCAL);
         reasons ^= Reason::LOCAL;
@@ -397,7 +399,7 @@ HostStatus::getHostStatus(const char *name)
     }
     if ((_status->reasons & Reason::MANUAL) && _status->manual_down_time > 0) {
       if ((_status->manual_down_time + _status->manual_marked_down) < now) {
-        Debug("host_statuses", "name: %s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", name, now,
+        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(), now,
               _status->manual_down_time, _status->manual_marked_down, Reason::MANUAL_REASON);
         setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, 0, Reason::MANUAL);
         reasons ^= Reason::MANUAL;
@@ -410,7 +412,7 @@ HostStatus::getHostStatus(const char *name)
 }
 
 void
-HostStatus::createHostStat(const char *name, const char *data)
+HostStatus::createHostStat(const std::string_view name, const char *data)
 {
   char buf[1024] = {0};
   HostStatRec r;
@@ -431,7 +433,7 @@ HostStatus::createHostStat(const char *name, const char *data)
 }
 
 RecErrT
-HostStatus::getHostStat(std::string &stat_name, char *buf, unsigned int buf_len)
+HostStatus::getHostStat(const std::string &stat_name, char *buf, unsigned int buf_len)
 {
   return RecGetRecordString(stat_name.c_str(), buf, buf_len, true);
 }

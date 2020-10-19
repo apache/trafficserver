@@ -343,7 +343,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
       pRec = host_groups[hostRec->group_index][hostRec->host_index];
       if (firstcall) {
         TSHostStatus hostStatus;
-        const bool hostExists       = pRec ? (TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, nullptr) == TS_SUCCESS) : false;
+        const bool hostExists       = pRec ? (TSHostStatusGet(pRec->hostname.c_str(), pRec->hostname.size(), &hostStatus, nullptr) == TS_SUCCESS) : false;
         result->first_choice_status = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
         break;
       }
@@ -360,7 +360,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
 
   TSHostStatus hostStatus;
   unsigned int hostReasons;
-  const bool hostExists = pRec ? (TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, &hostReasons) == TS_SUCCESS) : false;
+  const bool hostExists = pRec ? (TSHostStatusGet(pRec->hostname.c_str(), pRec->hostname.size(), &hostStatus, &hostReasons) == TS_SUCCESS) : false;
   host_stat             = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
   // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
   // ignore the down status and mark it as avaialble
@@ -408,7 +408,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, time_t now)
 
         TSHostStatus hostStatus;
         unsigned int hostReasons;
-        const bool hostExists = pRec ? (TSHostStatusGet(pRec->hostname.c_str(), &hostStatus, &hostReasons) == TS_SUCCESS) : false;
+        const bool hostExists = pRec ? (TSHostStatusGet(pRec->hostname.c_str(), pRec->hostname.size(),&hostStatus, &hostReasons) == TS_SUCCESS) : false;
         host_stat             = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
 
         // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason

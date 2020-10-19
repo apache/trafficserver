@@ -9917,9 +9917,9 @@ TSHostnameIsSelf(const char *hostname)
 }
 
 TSReturnCode
-TSHostStatusGet(const char *hostname, TSHostStatus *status, unsigned int *reason)
+TSHostStatusGet(const char *hostname, const size_t hostname_len, TSHostStatus *status, unsigned int *reason)
 {
-  HostStatRec *hst = HostStatus::instance().getHostStatus(hostname);
+  HostStatRec *hst = HostStatus::instance().getHostStatus(std::string_view(hostname, hostname_len));
   if (hst == nullptr) {
     return TS_ERROR;
   }
@@ -9933,9 +9933,9 @@ TSHostStatusGet(const char *hostname, TSHostStatus *status, unsigned int *reason
 }
 
 void
-TSHostStatusSet(const char *hostname, TSHostStatus status, const unsigned int down_time, const unsigned int reason)
+TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time, const unsigned int reason)
 {
-  HostStatus::instance().setHostStatus(hostname, status, down_time, reason);
+  HostStatus::instance().setHostStatus(std::string_view(hostname, hostname_len), status, down_time, reason);
 }
 
 void

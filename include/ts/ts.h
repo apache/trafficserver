@@ -2621,13 +2621,13 @@ tsapi TSReturnCode TSHostnameIsSelf(const char *hostname);
  * If either outparam is null, it will not be set and no error will be returned.
  * Returns TS_SUCCESS if the hostname was a parent and existed in the HostStatus, else TS_ERROR.
  */
-tsapi TSReturnCode TSHostStatusGet(const char *hostname, TSHostStatus *status, unsigned int *reason);
+tsapi TSReturnCode TSHostStatusGet(const char *hostname, const size_t hostname_len, TSHostStatus *status, unsigned int *reason);
 
 /*
  * Sets the status of hostname in status, down_time, and reason.
  * The reason is a logical-or combination of the reasons in TSHostStatusReason.
  */
-tsapi void TSHostStatusSet(const char *hostname, TSHostStatus status, const unsigned int down_time, const unsigned int reason);
+tsapi void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time, const unsigned int reason);
 
 struct TSParentResult;
 

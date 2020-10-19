@@ -189,7 +189,7 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
               if (TSHostnameIsSelf(host_rec->hostname.c_str()) == TS_SUCCESS) {
-                TSHostStatusSet(host_rec->hostname.c_str(), TSHostStatus::TS_HOST_STATUS_DOWN, 0,
+                TSHostStatusSet(host_rec->hostname.c_str(), host_rec->hostname.size(), TSHostStatus::TS_HOST_STATUS_DOWN, 0,
                                 (unsigned int)TS_HOST_STATUS_SELF_DETECT);
               }
               hosts_inner.push_back(std::move(host_rec));

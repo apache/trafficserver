@@ -183,12 +183,12 @@ struct HostStatus {
     static HostStatus instance;
     return instance;
   }
-  void setHostStatus(const char *name, const TSHostStatus status, const unsigned int down_time, const unsigned int reason);
-  HostStatRec *getHostStatus(const char *name);
-  void createHostStat(const char *name, const char *data = nullptr);
+  void setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time, const unsigned int reason);
+  HostStatRec *getHostStatus(const std::string_view name);
+  void createHostStat(const std::string_view name, const char *data = nullptr);
   void loadHostStatusFromStats();
-  void loadRecord(std::string &name, HostStatRec &h);
-  RecErrT getHostStat(std::string &stat_name, char *buf, unsigned int buf_len);
+  void loadRecord(const std::string_view name, HostStatRec &h);
+  RecErrT getHostStat(const std::string &stat_name, char *buf, unsigned int buf_len);
 
 private:
   HostStatus();
@@ -196,7 +196,7 @@ private:
   HostStatus &operator=(HostStatus const &) = delete;
 
   // next hop status, key is hostname or ip string, data is HostStatRec
-  std::unordered_map<std::string, HostStatRec *> hosts_statuses;
+  std::map<std::string, HostStatRec *, std::less<>> hosts_statuses;
 
   ink_rwlock host_status_rwlock;
 };
