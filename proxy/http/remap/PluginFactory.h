@@ -54,8 +54,8 @@ public:
   TSRemapStatus doRemap(TSHttpTxn rh, TSRemapRequestInfo *rri);
   void osResponse(TSHttpTxn rh, int os_response_type);
 
-  /* Gets the Strategy if the plugin has a TSRemapInitStrategy function. Returns a nullptr if not. */
-  std::shared_ptr<TSNextHopSelectionStrategy> getStrategy();
+  /* Initialize the Strategy if the plugin has a TSRemapInitStrategy function. Returns a nullptr if not. */
+  std::shared_ptr<TSNextHopSelectionStrategy> initStrategy();
   /* Gets the name of the plugin.
      Lifetime: this. The returned string_view must not be used after the RemapPluginInst is deallocated. */
   std::string_view name() const;

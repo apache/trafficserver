@@ -1309,7 +1309,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       if (pluginInst == nullptr) {
         continue; // TODO error?
       }
-      std::shared_ptr<TSNextHopSelectionStrategy> strategy = pluginInst->getStrategy();
+      std::shared_ptr<TSNextHopSelectionStrategy> strategy = pluginInst->initStrategy();
       const std::string_view pluginName                    = pluginInst->name();
       if (strategy != nullptr) {
         Debug("remap_plugin", "Remap plugin got strategy '%.*s'", int(pluginName.size()), pluginName.data());

@@ -77,7 +77,7 @@ RemapPluginInst::doRemap(TSHttpTxn rh, TSRemapRequestInfo *rri)
 }
 
 std::shared_ptr<TSNextHopSelectionStrategy>
-RemapPluginInst::getStrategy()
+RemapPluginInst::initStrategy()
 {
   return _plugin.initStrategy(this->_instance);
 }
