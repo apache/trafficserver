@@ -82,10 +82,10 @@ RemapPluginInst::getStrategy()
   return _plugin.initStrategy(this->_instance);
 }
 
-std::string
+std::string_view
 RemapPluginInst::name() const
 {
-  return _plugin.configPath().string();
+  return _plugin.configPath().view();
 }
 
 void

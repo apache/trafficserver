@@ -166,13 +166,13 @@ NextHopStrategyFactory::strategyInstance(const char *name)
  * Designed for plugins which want to dynamically add strategies.
  */
 bool
-NextHopStrategyFactory::addStrategy(const std::string &name, std::shared_ptr<TSNextHopSelectionStrategy> strategy)
+NextHopStrategyFactory::addStrategy(const std::string_view name, std::shared_ptr<TSNextHopSelectionStrategy> strategy)
 {
   if (_strategies.find(name) != _strategies.end()) {
-    NH_Error("failed to add strategy '%s' because a strategy with that name already exists", name.c_str());
+    NH_Error("failed to add strategy '%.*s' because a strategy with that name already exists", int(name.size()), name.data());
     return false;
   }
-  _strategies[name] = strategy;
+  _strategies.emplace(name, strategy);
   strategies_loaded = true;
   return true;
 }

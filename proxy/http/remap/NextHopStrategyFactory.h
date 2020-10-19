@@ -43,7 +43,7 @@ public:
   NextHopStrategyFactory(const char *file);
   ~NextHopStrategyFactory();
   std::shared_ptr<TSNextHopSelectionStrategy> strategyInstance(const char *name);
-  bool addStrategy(const std::string &name, std::shared_ptr<TSNextHopSelectionStrategy> strategy);
+  bool addStrategy(const std::string_view name, std::shared_ptr<TSNextHopSelectionStrategy> strategy);
 
   bool strategies_loaded;
 
@@ -52,5 +52,5 @@ private:
   void loadConfigFile(const std::string &file, std::stringstream &doc, std::unordered_set<std::string> &include_once);
   void createStrategy(const std::string &name, const NHPolicyType policy_type, const YAML::Node &node);
   void createStrategyPlugin(const std::string &name, const YAML::Node &node);
-  std::unordered_map<std::string, std::shared_ptr<TSNextHopSelectionStrategy>> _strategies;
+  std::map<std::string, std::shared_ptr<TSNextHopSelectionStrategy>, std::less<>> _strategies;
 };
