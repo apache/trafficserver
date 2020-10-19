@@ -1580,7 +1580,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
                    _client_rwnd, stream->client_rwnd(), payload_length);
 
   Http2DataFrame data(stream->get_id(), flags, resp_reader, payload_length);
-  this->ua_session->xmit(data);
+  this->ua_session->xmit(data, flags & HTTP2_FLAGS_DATA_END_STREAM);
 
   stream->update_sent_count(payload_length);
 

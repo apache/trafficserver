@@ -163,6 +163,7 @@ Http2ClientSession::free()
 
   free_MIOBuffer(this->read_buffer);
   free_MIOBuffer(this->write_buffer);
+  free_MIOBuffer(this->_send_frame_buffer);
   THREAD_FREE(this, http2ClientSessionAllocator, this_ethread());
 }
 
@@ -176,6 +177,9 @@ Http2ClientSession::start()
 
   VIO *read_vio = this->do_io_read(this, INT64_MAX, this->read_buffer);
   write_vio     = this->do_io_write(this, INT64_MAX, this->sm_writer);
+
+  this->_send_frame_buffer        = new_MIOBuffer(BUFFER_SIZE_INDEX_1M);
+  this->_send_frame_buffer_reader = this->_send_frame_buffer->alloc_reader();
 
   this->connection_state.init();
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_INIT, this);
@@ -299,13 +303,28 @@ Http2ClientSession::set_half_close_local_flag(bool flag)
 }
 
 int64_t
-Http2ClientSession::xmit(const Http2TxFrame &frame)
+Http2ClientSession::xmit(const Http2TxFrame &frame, bool flush)
 {
-  int64_t len = frame.write_to(this->write_buffer);
+  int64_t len = 0;
 
-  if (len > 0) {
-    total_write_len += len;
-    write_reenable();
+  this->_send_frame_buffer_used_size += frame.write_to(this->_send_frame_buffer);
+
+  if (!flush) {
+    if (this->_send_frame_buffer_used_size >= (512 * 1024)) {
+      flush = true;
+    }
+  }
+
+  if (flush) {
+    len = this->write_buffer->write(this->_send_frame_buffer_reader);
+    this->_send_frame_buffer_reader->consume(len);
+    _send_frame_buffer_used_size -= len;
+    ink_release_assert(_send_frame_buffer_used_size == 0);
+
+    if (len > 0) {
+      total_write_len += len;
+      write_reenable();
+    }
   }
 
   return len;
