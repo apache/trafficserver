@@ -346,7 +346,8 @@ public:
   */
   Event *start_event = nullptr;
 
-  ServerSessionPool *server_session_pool = nullptr;
+  ServerSessionPool *server_session_pool    = nullptr;
+  ServerSessionPool *server_session_pool_gc = nullptr;
 
   /** Default handler used until it is overridden.
 

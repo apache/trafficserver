@@ -37,6 +37,8 @@
 #include "HttpConnectionCount.h"
 #include "HttpProxyAPIEnums.h"
 
+#define EHTTPSESSIONCLOSE 1111
+
 class HttpSM;
 class MIOBuffer;
 class IOBufferReader;
@@ -66,7 +68,7 @@ public:
   ////////////////////
   // Methods
   void new_connection(NetVConnection *new_vc);
-  void release();
+  void release(bool to_pool = true);
   void destroy();
 
   // VConnection Methods
@@ -109,6 +111,8 @@ public:
   // Sessions become if authentication headers
   //  are sent over them
   bool private_session = false;
+
+  bool close_received = false;
 
   // Copy of the owning SM's server session sharing settings
   TSServerSessionSharingMatchMask sharing_match = TS_SERVER_SESSION_SHARING_MATCH_MASK_NONE;

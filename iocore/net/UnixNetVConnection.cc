@@ -194,6 +194,14 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   ProxyMutex *mutex = thread->mutex.get();
   int64_t r         = 0;
 
+  // Grab the VC server_idle_pool_mutex as the shared pool mutex first
+  // has more contention
+  MUTEX_TRY_LOCK(pool_lock, vc->server_idle_pool_mutex, thread);
+  if (!pool_lock.is_locked()) {
+    read_reschedule(nh, vc);
+    return;
+  }
+
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
   if (!lock.is_locked()) {
@@ -1344,6 +1352,7 @@ UnixNetVConnection::clear()
   read.vio.vc_server  = nullptr;
   write.vio.vc_server = nullptr;
   options.reset();
+  server_idle_pool_mutex.clear();
   if (netvc_context == NET_VCONNECTION_OUT) {
     read.vio.buffer.clear();
     write.vio.buffer.clear();

@@ -338,6 +338,8 @@ UnixNetProcessor::allocate_vc(EThread *t)
     }
   }
 
+  vc->server_idle_pool_mutex = new_ProxyMutex();
+
   return vc;
 }
 

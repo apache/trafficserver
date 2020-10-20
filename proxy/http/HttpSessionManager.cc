@@ -40,16 +40,18 @@
 void
 initialize_thread_for_http_sessions(EThread *thread)
 {
-  thread->server_session_pool = new ServerSessionPool;
+  thread->server_session_pool    = new ServerSessionPool;
+  thread->server_session_pool_gc = new ServerSessionPool;
 }
 
 HttpSessionManager httpSessionManager;
 
-ServerSessionPool::ServerSessionPool() : Continuation(new_ProxyMutex()), m_ip_pool(1023), m_fqdn_pool(1023)
+ServerSessionPool::ServerSessionPool() : Continuation(new_ProxyMutex()), m_ip_pool(1023), m_fqdn_pool(1023), m_ip_pool_gc(1023)
 {
   SET_HANDLER(&ServerSessionPool::eventHandler);
   m_ip_pool.set_expansion_policy(IPTable::MANUAL);
   m_fqdn_pool.set_expansion_policy(FQDNTable::MANUAL);
+  m_ip_pool_gc.set_expansion_policy(IPTable::MANUAL);
 }
 
 void
@@ -57,7 +59,7 @@ ServerSessionPool::purge()
 {
   // @c do_io_close can free the instance which clears the intrusive links and breaks the iterator.
   // Therefore @c do_io_close is called on a post-incremented iterator.
-  m_ip_pool.apply([](Http1ServerSession *ssn) -> void { ssn->do_io_close(); });
+  m_ip_pool.apply([](Http1ServerSession *ssn) -> void { ssn->do_io_close(EHTTPSESSIONCLOSE); });
   m_ip_pool.clear();
   m_fqdn_pool.clear();
 }
@@ -196,7 +198,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
 }
 
 void
-ServerSessionPool::releaseSession(Http1ServerSession *ss)
+ServerSessionPool::releaseSession(Http1ServerSession *ss, bool to_pool)
 {
   ss->state = HSS_KA_SHARED;
   // Now we need to issue a read on the connection to detect
@@ -211,14 +213,44 @@ ServerSessionPool::releaseSession(Http1ServerSession *ss)
   // we probably don't need the active timeout set, but will leave it for now
   ss->get_netvc()->set_inactivity_timeout(ss->get_netvc()->get_inactivity_timeout());
   ss->get_netvc()->set_active_timeout(ss->get_netvc()->get_active_timeout());
-  // put it in the pools.
-  m_ip_pool.insert(ss);
-  m_fqdn_pool.insert(ss);
 
-  Debug("http_ss",
-        "[%" PRId64 "] [release session] "
-        "session placed into shared pool",
-        ss->con_id);
+  if (to_pool) {
+    // put it in the pools.
+    m_ip_pool.insert(ss);
+    m_fqdn_pool.insert(ss);
+
+    Debug("http_ss",
+          "[%" PRId64 "] [release session] "
+          "session placed into shared pool",
+          ss->con_id);
+  } else {
+    Debug("http_ss", "Server vc %p released, but not into pool", ss->get_netvc());
+    // set a really low (in)active timeouts to
+    // close the session via eventHandler
+    ss->get_netvc()->set_inactivity_timeout(1);
+    ss->get_netvc()->set_active_timeout(1);
+    m_ip_pool_gc.insert(ss);
+  }
+}
+
+void
+ServerSessionPool::cleanupSession(Http1ServerSession *s, int event, bool from_shared_pool)
+{
+  // We've found our server session. Remove it from
+  //   our lists and close it down
+  Debug("http_ss", "[%" PRId64 "] [session_pool] session %p received io notice [%s]", s->con_id, s,
+        HttpDebugNames::get_event_name(event));
+  ink_assert(s->state == HSS_KA_SHARED);
+  // Out of the pool! Now!
+  if (from_shared_pool) {
+    m_ip_pool.erase(s);
+    m_fqdn_pool.erase(s);
+  } else {
+    m_ip_pool_gc.erase(s);
+  }
+  // Drop connection on this end.
+  s->do_io_close(EHTTPSESSIONCLOSE);
+  return;
 }
 
 //   Called from the NetProcessor to let us know that a
@@ -243,8 +275,9 @@ ServerSessionPool::eventHandler(int event, void *data)
     break;
 
   default:
-    ink_release_assert(0);
-    return 0;
+    net_vc = static_cast<NetVConnection *>((static_cast<VIO *>(data))->vc_server);
+    Warning("ServerSessionPool::eventHandler vc %p unexpected event %d", net_vc, event);
+    break;
   }
 
   sockaddr const *addr                 = net_vc->get_remote_addr();
@@ -274,18 +307,34 @@ ServerSessionPool::eventHandler(int event, void *data)
         }
       }
 
-      // We've found our server session. Remove it from
-      //   our lists and close it down
-      Debug("http_ss", "[%" PRId64 "] [session_pool] session %p received io notice [%s]", s->con_id, s,
-            HttpDebugNames::get_event_name(event));
-      ink_assert(s->state == HSS_KA_SHARED);
-      // Out of the pool! Now!
-      m_ip_pool.erase(spot);
-      m_fqdn_pool.erase(s);
-      // Drop connection on this end.
-      s->do_io_close();
+      // net_read_io and eventHandler call back should be on the same
+      // thread in general, so this mutex lock is likely a recursive noop
+      // TODO use this mutex instead of global shared mutex during global session
+      // migrate logic after acquireSession()
+      MUTEX_TRY_LOCK(pool_lock, s->get_netvc()->get_server_idle_pool_mutex(), this_ethread());
+      if (!pool_lock.is_locked()) {
+        Warning("session pool handler event and read event race, defer action, vc %p", s->get_netvc());
+        return 0;
+      }
+      cleanupSession(s, event);
       found = true;
       break;
+    }
+  }
+
+  if (!found) {
+    // look for the VC in gc pool to clean up
+    for (auto spot = m_ip_pool_gc.find(addr); spot != m_ip_pool_gc.end() && spot->_ip_link.equal(addr, spot); ++spot) {
+      if ((s = spot)->get_netvc() == net_vc) {
+        MUTEX_TRY_LOCK(pool_lock, s->get_netvc()->get_server_idle_pool_mutex(), this_ethread());
+        if (!pool_lock.is_locked()) {
+          Warning("gc pool handler event and read event race, defer action, vc %p", s->get_netvc());
+          return 0;
+        }
+        cleanupSession(s, event, false);
+        found = true;
+        break;
+      }
     }
   }
 
@@ -435,20 +484,31 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
 }
 
 HSMresult_t
-HttpSessionManager::release_session(Http1ServerSession *to_release)
+HttpSessionManager::release_session(Http1ServerSession *to_release, bool to_pool)
 {
   EThread *ethread = this_ethread();
   ServerSessionPool *pool =
     TS_SERVER_SESSION_SHARING_POOL_THREAD == to_release->sharing_pool ? ethread->server_session_pool : m_g_pool;
   bool released_p = true;
 
-  // The per thread lock looks like it should not be needed but if it's not locked the close checking I/O op will crash.
-  MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
-  if (lock.is_locked()) {
-    pool->releaseSession(to_release);
+  if (!to_pool) {
+    pool = ethread->server_session_pool_gc;
+    MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
+    pool->releaseSession(to_release, false);
   } else {
-    Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
-    released_p = false;
+    // The per thread lock looks like it should not be needed but if it's not locked the close checking I/O op will crash.
+    MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
+    released_p = lock.is_locked();
+    if (!released_p) {
+      // could not get the pool lock, put it in the gc_pool
+      // for cleaning up via eventHandler callback
+      Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
+      pool = ethread->server_session_pool_gc;
+      MUTEX_TRY_LOCK(lock, pool->mutex, ethread);
+      pool->releaseSession(to_release, false);
+    } else {
+      pool->releaseSession(to_release);
+    }
   }
 
   return released_p ? HSM_DONE : HSM_RETRY;

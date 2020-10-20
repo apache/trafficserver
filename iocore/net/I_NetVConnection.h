@@ -908,6 +908,14 @@ public:
     return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::DST));
   };
 
+  Ptr<ProxyMutex> &
+  get_server_idle_pool_mutex()
+  {
+    return server_idle_pool_mutex;
+  }
+
+  Ptr<ProxyMutex> server_idle_pool_mutex;
+
   struct ProxyProtocol {
     ProxyProtocolVersion proxy_protocol_version = ProxyProtocolVersion::UNDEFINED;
     uint16_t ip_family;

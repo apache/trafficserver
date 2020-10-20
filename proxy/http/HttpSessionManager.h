@@ -67,6 +67,7 @@ public:
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_cert(HttpSM *sm, NetVConnection *netvc);
+  void cleanupSession(Http1ServerSession *s, int event, bool from_shared_pool = true);
 
 protected:
   using IPTable   = IntrusiveHashMap<Http1ServerSession::IPLinkage>;
@@ -89,7 +90,7 @@ public:
                              HttpSM *sm, Http1ServerSession *&server_session);
   /** Release a session to to pool.
    */
-  void releaseSession(Http1ServerSession *ss);
+  void releaseSession(Http1ServerSession *ss, bool to_pool = true);
 
   /// Close all sessions and then clear the table.
   void purge();
@@ -98,6 +99,7 @@ public:
   // Note that each server session is stored in both pools.
   IPTable m_ip_pool;
   FQDNTable m_fqdn_pool;
+  IPTable m_ip_pool_gc;
 };
 
 class HttpSessionManager
@@ -106,7 +108,7 @@ public:
   HttpSessionManager() {}
   ~HttpSessionManager() {}
   HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, ProxyTransaction *ua_txn, HttpSM *sm);
-  HSMresult_t release_session(Http1ServerSession *to_release);
+  HSMresult_t release_session(Http1ServerSession *to_release, bool to_pool = true);
   void purge_keepalives();
   void init();
   int main_handler(int event, void *data);

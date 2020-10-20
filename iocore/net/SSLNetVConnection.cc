@@ -518,6 +518,14 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     return;
   }
 
+  // Grab the VC server_idle_pool_mutex as the shared pool mutex first
+  // has more contention
+  MUTEX_TRY_LOCK(pool_lock, this->server_idle_pool_mutex, lthread);
+  if (!pool_lock.is_locked()) {
+    readReschedule(nh);
+    return;
+  }
+
   MUTEX_TRY_LOCK(lock, s->vio.mutex, lthread);
   if (!lock.is_locked()) {
     readReschedule(nh);

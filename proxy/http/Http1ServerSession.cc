@@ -117,36 +117,56 @@ Http1ServerSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http1ServerSession::do_io_close(int alerrno)
 {
-  ts::LocalBufferWriter<256> w;
-  bool debug_p = is_debug_tag_set("http_ss");
+  if (!close_received) {
+    // protect against duplicate count decrements
+    close_received = true;
 
-  if (state == HSS_ACTIVE) {
-    HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
-    this->server_trans_stat--;
-  }
+    ts::LocalBufferWriter<256> w;
+    bool debug_p = is_debug_tag_set("http_ss");
 
-  if (debug_p) {
-    w.print("[{}] session close: nevtc {:x}", con_id, server_vc);
-  }
+    if (state == HSS_ACTIVE) {
+      HTTP_DECREMENT_DYN_STAT(http_current_server_transactions_stat);
+      this->server_trans_stat--;
+    }
 
-  HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
-  HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
+    if (debug_p) {
+      w.print("[{}] session close: nevtc {:x}", con_id, server_vc);
+    }
 
-  // Update upstream connection tracking data if present.
-  if (conn_track_group) {
-    if (conn_track_group->_count >= 0) {
-      auto n = (conn_track_group->_count)--;
-      if (debug_p) {
-        w.print(" conn track group ({}) count {}", conn_track_group->_key, n);
+    HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
+    HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
+
+    // Update upstream connection tracking data if present.
+    if (conn_track_group) {
+      if (conn_track_group->_count >= 0) {
+        auto n = (conn_track_group->_count)--;
+        if (debug_p) {
+          w.print(" conn track group ({}) count {}", conn_track_group->_key, n);
+        }
+      } else {
+        // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
+        Error("[http_ss] [%" PRId64 "] number of connections should be greater than or equal to zero: %u", con_id,
+              conn_track_group->_count.load());
       }
-    } else {
-      // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
-      Error("[http_ss] [%" PRId64 "] number of connections should be greater than or equal to zero: %u", con_id,
-            conn_track_group->_count.load());
+    }
+    if (debug_p) {
+      Debug("http_ss", "%.*s", static_cast<int>(w.size()), w.data());
     }
   }
-  if (debug_p) {
-    Debug("http_ss", "%.*s", static_cast<int>(w.size()), w.data());
+
+  // No need to defer close for private sessions
+  if (alerrno != EHTTPSESSIONCLOSE && !private_session) {
+    bool connEstablished = true;
+    if (server_vc) {
+      SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(server_vc);
+      if (ssl_vc && !ssl_vc->getSSLHandShakeComplete()) {
+        connEstablished = false;
+      }
+      if (connEstablished) {
+        this->release(false);
+        return;
+      }
+    }
   }
 
   if (server_vc) {
@@ -171,7 +191,7 @@ Http1ServerSession::reenable(VIO *vio)
 //   Releases the session for K-A reuse
 //
 void
-Http1ServerSession::release()
+Http1ServerSession::release(bool to_pool)
 {
   Debug("http_ss", "Releasing session, private_session=%d, sharing_match=%d", private_session, sharing_match);
   // Set our state to KA for stat issues
@@ -180,8 +200,13 @@ Http1ServerSession::release()
   server_vc->control_flags.set_flags(0);
 
   // Private sessions are never released back to the shared pool
-  if (private_session || sharing_match == 0) {
-    this->do_io_close();
+  if (!to_pool || private_session || sharing_match == 0) {
+    // Hold onto the server session in a gc_pool
+    // to handle any stray read events. The session
+    // will be cleaned up via the ServerSessionPool::eventHandler
+    // no need to lock the pool since we are not
+    // releasing the session back to the shared pool
+    httpSessionManager.release_session(this, false);
     return;
   }
 
@@ -194,9 +219,7 @@ Http1ServerSession::release()
 
   if (r == HSM_RETRY) {
     // Session could not be put in the session manager
-    //  due to lock contention
-    // FIX:  should retry instead of closing
-    this->do_io_close();
+    // due to lock contention
     HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_pool_lock_contention);
   } else {
     // The session was successfully put into the session
