@@ -315,14 +315,20 @@ Http2ClientSession::xmit(const Http2TxFrame &frame, bool flush)
   }
 
   if (flush) {
-    if (this->_pending_sending_data_size > 0) {
-      total_write_len += this->_pending_sending_data_size;
-      this->_pending_sending_data_size = 0;
-      write_reenable();
-    }
+    this->flush();
   }
 
   return len;
+}
+
+void
+Http2ClientSession::flush()
+{
+  if (this->_pending_sending_data_size > 0) {
+    total_write_len += this->_pending_sending_data_size;
+    this->_pending_sending_data_size = 0;
+    write_reenable();
+  }
 }
 
 int
