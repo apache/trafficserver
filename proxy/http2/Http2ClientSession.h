@@ -183,9 +183,7 @@ private:
   Event *_reenable_event = nullptr;
   int _n_frame_read      = 0;
 
-  MIOBuffer *_send_frame_buffer             = nullptr;
-  IOBufferReader *_send_frame_buffer_reader = nullptr;
-  uint32_t _send_frame_buffer_used_size     = 0;
+  uint32_t _pending_sending_data_size = 0;
 
   int64_t read_from_early_data   = 0;
   bool cur_frame_from_early_data = false;

@@ -163,7 +163,6 @@ Http2ClientSession::free()
 
   free_MIOBuffer(this->read_buffer);
   free_MIOBuffer(this->write_buffer);
-  free_MIOBuffer(this->_send_frame_buffer);
   THREAD_FREE(this, http2ClientSessionAllocator, this_ethread());
 }
 
@@ -177,9 +176,6 @@ Http2ClientSession::start()
 
   VIO *read_vio = this->do_io_read(this, INT64_MAX, this->read_buffer);
   write_vio     = this->do_io_write(this, INT64_MAX, this->sm_writer);
-
-  this->_send_frame_buffer        = new_MIOBuffer(BUFFER_SIZE_INDEX_1M);
-  this->_send_frame_buffer_reader = this->_send_frame_buffer->alloc_reader();
 
   this->connection_state.init();
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_INIT, this);
@@ -221,8 +217,8 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->read_buffer->water_mark = connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE);
   this->_reader                 = reader ? reader : this->read_buffer->alloc_reader();
 
-  // Set write buffer size to max size of TLS record (16KB)
-  this->write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_16K);
+  // This block size is the buffer size that we pass to SSLWriteBuffer
+  this->write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_1M);
   this->sm_writer    = this->write_buffer->alloc_reader();
 
   this->_handle_if_ssl(new_vc);
@@ -305,24 +301,23 @@ Http2ClientSession::set_half_close_local_flag(bool flag)
 int64_t
 Http2ClientSession::xmit(const Http2TxFrame &frame, bool flush)
 {
-  int64_t len = 0;
+  int64_t len = frame.write_to(this->write_buffer);
+  this->_pending_sending_data_size += len;
 
-  this->_send_frame_buffer_used_size += frame.write_to(this->_send_frame_buffer);
-
+  // Force flush for some cases
   if (!flush) {
-    if (this->_send_frame_buffer_used_size >= (512 * 1024)) {
+    // Flush if we already use half of the buffer to avoid adding a new block to the chain.
+    // A frame size can be 16MB at maximum so blocks can be added, but that's fine.
+    if (this->_pending_sending_data_size >= (512 * 1024)) {
       flush = true;
     }
+    // We may want to flush if the last flush was over 200 ms ago.
   }
 
   if (flush) {
-    len = this->write_buffer->write(this->_send_frame_buffer_reader);
-    this->_send_frame_buffer_reader->consume(len);
-    _send_frame_buffer_used_size -= len;
-    ink_release_assert(_send_frame_buffer_used_size == 0);
-
-    if (len > 0) {
-      total_write_len += len;
+    if (this->_pending_sending_data_size > 0) {
+      total_write_len += this->_pending_sending_data_size;
+      this->_pending_sending_data_size = 0;
       write_reenable();
     }
   }
