@@ -60,24 +60,6 @@ enum class Http2SsnMilestone {
 
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
-// To support Upgrade: h2c
-struct Http2UpgradeContext {
-  Http2UpgradeContext() {}
-  ~Http2UpgradeContext()
-  {
-    if (req_header) {
-      req_header->clear();
-      delete req_header;
-    }
-  }
-
-  // Modified request header
-  HTTPHdr *req_header = nullptr;
-
-  // Decoded HTTP2-Settings Header Field
-  Http2ConnectionSettings client_settings;
-};
-
 class Http2ClientSession : public ProxySession
 {
 public:
@@ -115,7 +97,6 @@ public:
   void decrement_current_active_client_connections_stat() override;
 
   void set_upgrade_context(HTTPHdr *h);
-  const Http2UpgradeContext &get_upgrade_context() const;
   void set_dying_event(int event);
   int get_dying_event() const;
   bool ready_to_free() const;
@@ -168,9 +149,6 @@ private:
   History<HISTORY_DEFAULT_SIZE> _history;
   Milestones<Http2SsnMilestone, static_cast<size_t>(Http2SsnMilestone::LAST_ENTRY)> _milestones;
 
-  // For Upgrade: h2c
-  Http2UpgradeContext upgrade_context;
-
   VIO *write_vio                 = nullptr;
   int dying_event                = 0;
   bool kill_me                   = false;
@@ -191,12 +169,6 @@ extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
 
 ///////////////////////////////////////////////
 // INLINE
-
-inline const Http2UpgradeContext &
-Http2ClientSession::get_upgrade_context() const
-{
-  return upgrade_context;
-}
 
 inline bool
 Http2ClientSession::ready_to_free() const
