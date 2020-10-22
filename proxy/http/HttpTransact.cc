@@ -465,6 +465,7 @@ HttpTransact::is_server_negative_cached(State *s)
     //   down to 2*down_server_timeout
     if (s->client_request_time + s->txn_conf->down_server_timeout < s->host_db_info.app.http_data.last_failure) {
       s->host_db_info.app.http_data.last_failure = 0;
+      s->host_db_info.app.http_data.fail_count   = 0;
       ink_assert(!"extreme clock skew");
       return true;
     }
