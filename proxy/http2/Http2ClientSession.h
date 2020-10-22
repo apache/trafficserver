@@ -162,6 +162,7 @@ private:
   MIOBuffer *write_buffer        = nullptr;
   IOBufferReader *sm_writer      = nullptr;
   Http2FrameHeader current_hdr   = {0, 0, 0, 0};
+  uint32_t _write_threshold      = 0;
 
   IpEndpoint cached_client_addr;
   IpEndpoint cached_local_addr;

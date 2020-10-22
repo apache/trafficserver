@@ -218,8 +218,9 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->_reader                 = reader ? reader : this->read_buffer->alloc_reader();
 
   // This block size is the buffer size that we pass to SSLWriteBuffer
-  this->write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_1M);
-  this->sm_writer    = this->write_buffer->alloc_reader();
+  this->write_buffer     = new_MIOBuffer(Http2::write_buffer_block_size_index);
+  this->sm_writer        = this->write_buffer->alloc_reader();
+  this->_write_threshold = index_to_buffer_size(Http2::write_buffer_block_size_index) * Http2::write_threshold;
 
   this->_handle_if_ssl(new_vc);
 
@@ -308,7 +309,7 @@ Http2ClientSession::xmit(const Http2TxFrame &frame, bool flush)
   if (!flush) {
     // Flush if we already use half of the buffer to avoid adding a new block to the chain.
     // A frame size can be 16MB at maximum so blocks can be added, but that's fine.
-    if (this->_pending_sending_data_size >= (512 * 1024)) {
+    if (this->_pending_sending_data_size >= this->_write_threshold) {
       flush = true;
     }
     // We may want to flush if the last flush was over 200 ms ago.

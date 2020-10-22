@@ -403,6 +403,8 @@ public:
   static uint32_t con_slow_log_threshold;
   static uint32_t stream_slow_log_threshold;
   static uint32_t header_table_size_limit;
+  static uint32_t write_buffer_block_size_index;
+  static float write_threshold;
 
   static void init();
 };
