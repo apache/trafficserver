@@ -1016,6 +1016,7 @@ Changes with Apache Traffic Server 9.0.0
   #6980 - Add maxmind acl plugin
   #6981 - Update autest to version 1.8.0
   #6984 - Fix out of source tree builds for QUIC
+  #6988 - Fix a build issue with BoringSSL
   #6994 - Adds null check
   #7000 - Add QUIC draft-27 support
   #7004 - Fixed core when sending back a redirect and having an invalid server response
@@ -1109,13 +1110,17 @@ Changes with Apache Traffic Server 9.0.0
   #7222 - Running autopep8 on the 9.0.x branch.
   #7224 - Fix renamed setting in default config
   #7225 - Increment ssl_error_syscall only if not EOF
+  #7237 - Fix bad HTTP/2 post client causing stuck HttpSM
   #7238 - Supporting out of source builds for AuTests.
   #7243 - RolledLogDeleter: do not sort on each candidate consideration.
   #7252 - Remove some useless defines, which just obfuscates code
   #7258 - Fix proxy.process.http.current_client_transactions
   #7260 - Treat objects with negative max-age CC directives as stale.
+  #7261 - Sticky server does not work with H2 client
+  #7263 - HostDB: Fix cache data version checking to use full version, not only major version.
   #7266 - Allow initial // in request targets.
   #7269 - gracefully handle TSReleaseAsserts in statichit and generator plugins
   #7274 - Introduce proxy-verifier to AuTests
   #7275 - Respecting default rolling_enabled value in plugins.
   #7278 - 7096: Synchronize Server Session Management and Network I/O
+  #7293 - sphinx for 9.x has to be 2.0.1
