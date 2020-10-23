@@ -4923,7 +4923,7 @@ TSHttpTxnServerVConnGet(TSHttpTxn txnp)
 class TSHttpSsnCallback : public Continuation
 {
 public:
-  TSHttpSsnCallback(ProxySession *cs, TSEvent event) : Continuation(cs->mutex), m_cs(cs), m_event(event)
+  TSHttpSsnCallback(ProxySession *cs, Ptr<ProxyMutex> m, TSEvent event) : Continuation(m), m_cs(cs), m_event(event)
   {
     SET_HANDLER(&TSHttpSsnCallback::event_handler);
   }
@@ -4931,8 +4931,18 @@ public:
   int
   event_handler(int, void *)
   {
-    m_cs->handleEvent((int)m_event, nullptr);
-    delete this;
+    // The current continuation is associated with the nethandler mutex.
+    // We need to hold the nethandler mutex because the later Session logic may
+    // activate the nethandler add_to_queue logic
+    // Need to make sure we have the ProxySession mutex as well.
+    EThread *eth = this_ethread();
+    MUTEX_TRY_LOCK(trylock, m_cs->mutex, eth);
+    if (!trylock.is_locked()) {
+      eth->schedule_imm(this);
+    } else {
+      m_cs->handleEvent((int)m_event, nullptr);
+      delete this;
+    }
     return 0;
   }
 
@@ -4951,13 +4961,25 @@ TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
 
   // If this function is being executed on a thread created by the API
   // which is DEDICATED, the continuation needs to be called back on a
-  // REGULAR thread.
-  if (eth->tt != REGULAR) {
-    eventProcessor.schedule_imm(new TSHttpSsnCallback(cs, event), ET_NET);
+  // REGULAR thread. Specially an ET_NET thread
+  if (!eth->is_event_type(ET_NET)) {
+    EThread *affinity_thread = cs->getThreadAffinity();
+    if (affinity_thread && affinity_thread->is_event_type(ET_NET)) {
+      NetHandler *nh = get_NetHandler(affinity_thread);
+      affinity_thread->schedule_imm(new TSHttpSsnCallback(cs, nh->mutex, event), ET_NET);
+    } else {
+      eventProcessor.schedule_imm(new TSHttpSsnCallback(cs, cs->mutex, event), ET_NET);
+    }
   } else {
     MUTEX_TRY_LOCK(trylock, cs->mutex, eth);
     if (!trylock.is_locked()) {
-      eventProcessor.schedule_imm(new TSHttpSsnCallback(cs, event), ET_NET);
+      EThread *affinity_thread = cs->getThreadAffinity();
+      if (affinity_thread && affinity_thread->is_event_type(ET_NET)) {
+        NetHandler *nh = get_NetHandler(affinity_thread);
+        affinity_thread->schedule_imm(new TSHttpSsnCallback(cs, nh->mutex, event), ET_NET);
+      } else {
+        eventProcessor.schedule_imm(new TSHttpSsnCallback(cs, cs->mutex, event), ET_NET);
+      }
     } else {
       cs->handleEvent((int)event, nullptr);
     }
