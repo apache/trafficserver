@@ -174,6 +174,10 @@ struct NetVCOptions {
   static uint32_t const SOCK_OPT_LINGER_ON = 4;
   /// Value for TCP Fast open @c sockopt_flags
   static uint32_t const SOCK_OPT_TCP_FAST_OPEN = 8;
+  /// Value for SO_MARK @c sockopt_flags
+  static uint32_t const SOCK_OPT_PACKET_MARK = 16;
+  /// Value for IP_TOS @c sockopt_flags
+  static uint32_t const SOCK_OPT_PACKET_TOS = 32;
 
   uint32_t packet_mark;
   uint32_t packet_tos;
