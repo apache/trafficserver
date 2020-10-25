@@ -218,9 +218,10 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->_reader                 = reader ? reader : this->read_buffer->alloc_reader();
 
   // This block size is the buffer size that we pass to SSLWriteBuffer
-  this->write_buffer     = new_MIOBuffer(Http2::write_buffer_block_size_index);
-  this->sm_writer        = this->write_buffer->alloc_reader();
-  this->_write_threshold = index_to_buffer_size(Http2::write_buffer_block_size_index) * Http2::write_threshold;
+  auto buffer_block_size_index = iobuffer_size_to_index(Http2::write_buffer_block_size, MAX_BUFFER_SIZE_INDEX);
+  this->write_buffer           = new_MIOBuffer(buffer_block_size_index);
+  this->sm_writer              = this->write_buffer->alloc_reader();
+  this->_write_threshold       = index_to_buffer_size(buffer_block_size_index) * Http2::write_threshold;
 
   this->_handle_if_ssl(new_vc);
 
