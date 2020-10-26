@@ -4273,6 +4273,8 @@ Sockets
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
         TCP_FASTOPEN (8)
+        PACKET_MARK (16)
+        PACKET_TOS (32)
 
 .. note::
 
@@ -4305,6 +4307,8 @@ Sockets
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
         TCP_FASTOPEN (8)
+        PACKET_MARK (16)
+        PACKET_TOS (32)
 
 .. note::
 
