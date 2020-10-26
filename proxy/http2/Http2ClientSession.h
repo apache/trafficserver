@@ -164,7 +164,7 @@ private:
   Http2FrameHeader current_hdr        = {0, 0, 0, 0};
   uint32_t _write_size_threshold      = 0;
   uint32_t _write_time_threshold      = 100;
-  ink_hrtime _write_buffer_last_flash = 0;
+  ink_hrtime _write_buffer_last_flush = 0;
 
   IpEndpoint cached_client_addr;
   IpEndpoint cached_local_addr;

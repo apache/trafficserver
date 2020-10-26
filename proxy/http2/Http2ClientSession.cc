@@ -327,7 +327,7 @@ Http2ClientSession::flush()
   if (this->_pending_sending_data_size > 0) {
     total_write_len += this->_pending_sending_data_size;
     this->_pending_sending_data_size = 0;
-    this->_write_buffer_last_flash   = Thread::get_hrtime();
+    this->_write_buffer_last_flush   = Thread::get_hrtime();
     write_reenable();
   }
 }
@@ -376,7 +376,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     this->connection_state.restart_streams();
-    if ((Thread::get_hrtime() >= this->_write_buffer_last_flash + HRTIME_MSECONDS(this->_write_time_threshold))) {
+    if ((Thread::get_hrtime() >= this->_write_buffer_last_flush + HRTIME_MSECONDS(this->_write_time_threshold))) {
       this->flush();
     }
     retval = 0;
