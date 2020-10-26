@@ -221,7 +221,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   auto buffer_block_size_index = iobuffer_size_to_index(Http2::write_buffer_block_size, MAX_BUFFER_SIZE_INDEX);
   this->write_buffer           = new_MIOBuffer(buffer_block_size_index);
   this->sm_writer              = this->write_buffer->alloc_reader();
-  this->_write_threshold       = index_to_buffer_size(buffer_block_size_index) * Http2::write_threshold;
+  this->_write_size_threshold  = index_to_buffer_size(buffer_block_size_index) * Http2::write_size_threshold;
 
   this->_handle_if_ssl(new_vc);
 
@@ -305,15 +305,13 @@ Http2ClientSession::xmit(const Http2TxFrame &frame, bool flush)
 {
   int64_t len = frame.write_to(this->write_buffer);
   this->_pending_sending_data_size += len;
-
   // Force flush for some cases
   if (!flush) {
     // Flush if we already use half of the buffer to avoid adding a new block to the chain.
     // A frame size can be 16MB at maximum so blocks can be added, but that's fine.
-    if (this->_pending_sending_data_size >= this->_write_threshold) {
+    if (this->_pending_sending_data_size >= this->_write_size_threshold) {
       flush = true;
     }
-    // We may want to flush if the last flush was over 200 ms ago.
   }
 
   if (flush) {
@@ -329,6 +327,7 @@ Http2ClientSession::flush()
   if (this->_pending_sending_data_size > 0) {
     total_write_len += this->_pending_sending_data_size;
     this->_pending_sending_data_size = 0;
+    this->_write_buffer_last_flash   = Thread::get_hrtime();
     write_reenable();
   }
 }
@@ -377,7 +376,9 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     this->connection_state.restart_streams();
-
+    if ((Thread::get_hrtime() >= this->_write_buffer_last_flash + HRTIME_MSECONDS(this->_write_time_threshold))) {
+      this->flush();
+    }
     retval = 0;
     break;
 

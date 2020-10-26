@@ -155,14 +155,16 @@ private:
 
   bool _should_do_something_else();
 
-  int64_t total_write_len        = 0;
-  SessionHandler session_handler = nullptr;
-  MIOBuffer *read_buffer         = nullptr;
-  IOBufferReader *_reader        = nullptr;
-  MIOBuffer *write_buffer        = nullptr;
-  IOBufferReader *sm_writer      = nullptr;
-  Http2FrameHeader current_hdr   = {0, 0, 0, 0};
-  uint32_t _write_threshold      = 0;
+  int64_t total_write_len             = 0;
+  SessionHandler session_handler      = nullptr;
+  MIOBuffer *read_buffer              = nullptr;
+  IOBufferReader *_reader             = nullptr;
+  MIOBuffer *write_buffer             = nullptr;
+  IOBufferReader *sm_writer           = nullptr;
+  Http2FrameHeader current_hdr        = {0, 0, 0, 0};
+  uint32_t _write_size_threshold      = 0;
+  uint32_t _write_time_threshold      = 100;
+  ink_hrtime _write_buffer_last_flash = 0;
 
   IpEndpoint cached_client_addr;
   IpEndpoint cached_local_addr;

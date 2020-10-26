@@ -806,7 +806,8 @@ uint32_t Http2::con_slow_log_threshold         = 0;
 uint32_t Http2::stream_slow_log_threshold      = 0;
 uint32_t Http2::header_table_size_limit        = 65536;
 uint32_t Http2::write_buffer_block_size        = 262144;
-float Http2::write_threshold                   = 0.5;
+float Http2::write_size_threshold              = 0.5;
+uint32_t Http2::write_time_threshold           = 100;
 
 void
 Http2::init()
@@ -835,7 +836,8 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
   REC_EstablishStaticConfigInt32U(header_table_size_limit, "proxy.config.http2.header_table_size_limit");
   REC_EstablishStaticConfigInt32U(write_buffer_block_size, "proxy.config.http2.write_buffer_block_size");
-  REC_EstablishStaticConfigFloat(write_threshold, "proxy.config.http2.write_threshold");
+  REC_EstablishStaticConfigFloat(write_size_threshold, "proxy.config.http2.write_size_threshold");
+  REC_EstablishStaticConfigInt32U(write_time_threshold, "proxy.config.http2.write_time_threshold");
 
   // If any settings is broken, ATS should not start
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams_in}));
