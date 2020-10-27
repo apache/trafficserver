@@ -226,45 +226,6 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   do_api_callout(TS_HTTP_SSN_START_HOOK);
 }
 
-void
-Http2ClientSession::set_upgrade_context(HTTPHdr *h)
-{
-  upgrade_context.req_header = new HTTPHdr();
-  upgrade_context.req_header->copy(h);
-
-  MIMEField *settings = upgrade_context.req_header->field_find(MIME_FIELD_HTTP2_SETTINGS, MIME_LEN_HTTP2_SETTINGS);
-  ink_release_assert(settings != nullptr);
-  int svlen;
-  const char *sv = settings->value_get(&svlen);
-
-  if (sv && svlen > 0) {
-    // Maybe size of data decoded by Base64URL is lower than size of encoded data.
-    unsigned char out_buf[svlen];
-    size_t decoded_len;
-    ats_base64_decode(sv, svlen, out_buf, svlen, &decoded_len);
-    for (size_t nbytes = 0; nbytes < decoded_len; nbytes += HTTP2_SETTINGS_PARAMETER_LEN) {
-      Http2SettingsParameter param;
-      if (!http2_parse_settings_parameter(make_iovec(out_buf + nbytes, HTTP2_SETTINGS_PARAMETER_LEN), param) ||
-          !http2_settings_parameter_is_valid(param)) {
-        // TODO ignore incoming invalid parameters and send suitable SETTINGS
-        // frame.
-      }
-      upgrade_context.client_settings.set(static_cast<Http2SettingsIdentifier>(param.id), param.value);
-    }
-  }
-
-  // Such intermediaries SHOULD also remove other connection-
-  // specific header fields, such as Keep-Alive, Proxy-Connection,
-  // Transfer-Encoding and Upgrade, even if they are not nominated by
-  // Connection.
-  upgrade_context.req_header->field_delete(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-  upgrade_context.req_header->field_delete(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE);
-  upgrade_context.req_header->field_delete(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
-  upgrade_context.req_header->field_delete(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
-  upgrade_context.req_header->field_delete(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE);
-  upgrade_context.req_header->field_delete(MIME_FIELD_HTTP2_SETTINGS, MIME_LEN_HTTP2_SETTINGS);
-}
-
 // XXX Currently, we don't have a half-closed state, but we will need to
 // implement that. After we send a GOAWAY, there
 // are scenarios where we would like to complete the outstanding streams.

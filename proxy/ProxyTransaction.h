@@ -73,7 +73,6 @@ public:
   virtual bool is_chunked_encoding_supported() const;
 
   virtual void set_proxy_ssn(ProxySession *set_proxy_ssn);
-  virtual void set_h2c_upgrade_flag();
 
   /// Non-Virtual Methods
   //

@@ -1230,9 +1230,12 @@ HttpTransact::handle_upgrade_request(State *s)
       } else {
         TxnDebug("http_trans_upgrade", "Unable to upgrade connection to websockets, invalid headers (RFC 6455).");
       }
+    } else if (s->upgrade_token_wks == MIME_VALUE_H2C) {
+      // We need to recognize h2c to not handle it as an error.
+      // We just ignore the Upgrade header and respond to the request as though the Upgrade header field were absent.
+      s->is_upgrade_request = false;
+      return false;
     }
-
-    // TODO accept h2c token to start HTTP/2 session after TS-3498 is fixed
   } else {
     TxnDebug("http_trans_upgrade", "Transaction requested upgrade for unknown protocol: %s", upgrade_hdr_val);
   }

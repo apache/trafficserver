@@ -167,11 +167,6 @@ ProxyTransaction::set_outbound_transparent(bool flag)
   upstream_outbound_options.f_outbound_transparent = flag;
 }
 
-void
-ProxyTransaction::set_h2c_upgrade_flag()
-{
-}
-
 int
 ProxyTransaction::get_transaction_priority_weight() const
 {
