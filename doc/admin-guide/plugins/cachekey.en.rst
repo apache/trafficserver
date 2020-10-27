@@ -201,6 +201,27 @@ Cache key elements separator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 * ``--separator=<string>`` - the `cache key` is constructed by extracting elements from HTTP URI and headers or by using the UA classifiers and they are appended during the key construction and separated by ``/`` (by default). This options allows to override the default separator to any string (including an empty string).
 
+percent encoding
+^^^^^^^^^^^^^^^^
+* ``--percent-encode=`` (default: true) - by default the cachekey percent encodes the cache key as it is built.  This disables that encoding.  Useful only for the cache_range_requests plugin compatibility.
+
+cache_range_requests plugin cachekey compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* ``--crr-compat-range`` (default: don't apply) - if a range header exists this appends the range header in way that is compatible with the cache_range_requests plugin.  This option should be used if the cache_range_requests plugin is already deployed without cachekey and a new remap rule needs to share cache keys with it. The following lines produce equivalent cache keys:
+
+::
+
+  $ cat remap.config
+  map http://crr/ http://parent/ \
+    @plugin=cache_range_requests.so
+  map http://cachekey_crr/ http://parent/ \
+    @plugin=cachekey.so \
+      @pparam=--canonical-prefix \
+      @pparam=--static-prefix=http://parent \
+      @pparam=--crr-compat-range \
+      @pparam=--percent-encode=false \
+    @plugin=cache_range_requests.so \
+      @pparam=--no-modify-cachekey
 
 How to run the plugin
 =====================

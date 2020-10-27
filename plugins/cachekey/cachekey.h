@@ -50,7 +50,7 @@
 class CacheKey
 {
 public:
-  CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType urlType, CacheKeyKeyType targetUrlType,
+  CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType urlType, CacheKeyKeyType targetUrlType, bool percentEncode,
            TSRemapRequestInfo *rri = nullptr);
   ~CacheKey();
 
@@ -66,6 +66,7 @@ public:
   void appendCookies(const ConfigCookies &config);
   void appendUaCaptures(Pattern &config);
   bool appendUaClass(Classifier &classifier);
+  bool setCompatRangeHeader();
   bool finalize() const;
 
   // noncopyable
@@ -91,4 +92,5 @@ private:
   String _separator;                    /**< @brief a separator used to separate the cache key elements extracted from the URI */
   CacheKeyUriType _uriType = REMAP;     /**< @brief the URI type used as a cachekey base: pristine, remap, etc. */
   CacheKeyKeyType _keyType = CACHE_KEY; /**< @brief the target URI type: cache key, parent selection, etc. */
+  bool _percentEncode      = true;      /**< @brief percent encode the cache key? */
 };

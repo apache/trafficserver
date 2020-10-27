@@ -42,7 +42,7 @@ setCacheKey(TSHttpTxn txn, Configs *config, TSRemapRequestInfo *rri = nullptr)
 
   for (auto type : keyTypes) {
     /* Initial cache key facility from the requested URL. */
-    CacheKey cachekey(txn, config->getSeparator(), config->getUriType(), type, rri);
+    CacheKey cachekey(txn, config->getSeparator(), config->getUriType(), type, config->percentEncode(), rri);
 
     /* Append custom prefix or the host:port */
     if (!config->prefixToBeRemoved()) {
@@ -66,6 +66,12 @@ setCacheKey(TSHttpTxn txn, Configs *config, TSRemapRequestInfo *rri = nullptr)
     }
     /* Append query parameters to the cache key. */
     cachekey.appendQuery(config->_query);
+
+    /* Append cache_range_requests compatible range request. */
+    CacheKeyDebug("Setting the compat range header");
+    if (config->useCompatRangeHeader()) {
+      cachekey.setCompatRangeHeader();
+    }
 
     /* Set the cache key */
     cachekey.finalize();

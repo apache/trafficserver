@@ -240,8 +240,9 @@ getCanonicalUrl(TSMBuffer buf, TSMLoc url, bool canonicalPrefix, bool provideDef
  * @param uriType type of the URI used to create the cachekey ("remap" or "pristine")
  * @param rri remap request info
  */
-CacheKey::CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType uriType, CacheKeyKeyType keyType, TSRemapRequestInfo *rri)
-  : _txn(txn), _separator(std::move(separator)), _uriType(uriType), _keyType(keyType)
+CacheKey::CacheKey(TSHttpTxn txn, String separator, CacheKeyUriType uriType, CacheKeyKeyType keyType, bool percentEncode,
+                   TSRemapRequestInfo *rri)
+  : _txn(txn), _separator(std::move(separator)), _uriType(uriType), _keyType(keyType), _percentEncode(percentEncode)
 {
   _key.reserve(512);
 
@@ -331,7 +332,11 @@ void
 CacheKey::append(const String &s)
 {
   _key.append(_separator);
-  ::appendEncoded(_key, s.data(), s.size());
+  if (_percentEncode) {
+    ::appendEncoded(_key, s.data(), s.size());
+  } else {
+    _key.append(s.data(), s.size());
+  }
 }
 
 void
@@ -340,7 +345,7 @@ CacheKey::append(const String &s, bool useSeparator)
   if (useSeparator) {
     append(s);
   } else {
-    _key.append(s);
+    _key.append(s.data(), s.size());
   }
 }
 
@@ -352,7 +357,11 @@ void
 CacheKey::append(const char *s)
 {
   _key.append(_separator);
-  ::appendEncoded(_key, s, strlen(s));
+  if (_percentEncode) {
+    ::appendEncoded(_key, s, strlen(s));
+  } else {
+    _key.append(s, strlen(s));
+  }
 }
 
 /**
@@ -364,7 +373,11 @@ void
 CacheKey::append(const char *s, unsigned n)
 {
   _key.append(_separator);
-  ::appendEncoded(_key, s, n);
+  if (_percentEncode) {
+    ::appendEncoded(_key, s, n);
+  } else {
+    _key.append(s, n);
+  }
 }
 
 /**
@@ -733,6 +746,35 @@ CacheKey::appendUaClass(Classifier &classifier)
     append(classname);
   } else {
     /* @todo: TBD do we need a default class name to be added to the key? */
+  }
+
+  return matched;
+}
+
+/**
+ * @brief Set the range cache key header using a cache_range_requests compatible header.
+ * @return true if header successful, false if no match was found.
+ */
+bool
+CacheKey::setCompatRangeHeader()
+{
+  CacheKeyDebug("setCompatRangeHeader");
+  bool matched       = false;
+  TSMLoc const field = TSMimeHdrFieldFind(_buf, _hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+
+  if (field != TS_NULL_MLOC) {
+    int len                 = 0;
+    char const *const value = TSMimeHdrFieldValueStringGet(_buf, _hdrs, field, 0, &len);
+
+    if (0 < len) {
+      CacheKeyDebug("found range header");
+      matched = true;
+      String addto;
+      addto.append("-").append(value, len);
+      append(addto, false);
+    }
+
+    TSHandleMLocRelease(_buf, _hdrs, field);
   }
 
   return matched;

@@ -165,17 +165,27 @@ public:
   /**
    * @brief Tells the caller if the prefix is to be removed (not processed at all).
    */
-  bool prefixToBeRemoved();
+  bool prefixToBeRemoved() const;
 
   /**
    * @brief Tells the caller if the path is to be removed (not processed at all).
    */
-  bool pathToBeRemoved();
+  bool pathToBeRemoved() const;
 
   /**
    * @brief keep URI scheme and authority elements.
    */
-  bool canonicalPrefix();
+  bool canonicalPrefix() const;
+
+  /**
+   * @brief Cache_range_requests compatible Range header key.
+   */
+  bool useCompatRangeHeader() const;
+
+  /**
+   * @brief Percent encode the cache key?
+   */
+  bool percentEncode() const;
 
   /**
    * @brief set the cache key elements separator string.
@@ -185,7 +195,7 @@ public:
   /**
    * @brief get the cache key elements separator string.
    */
-  const String &getSeparator();
+  const String &getSeparator() const;
 
   /**
    * @brief sets the URI Type.
@@ -200,12 +210,12 @@ public:
   /**
    * @brief get URI type.
    */
-  CacheKeyUriType getUriType();
+  CacheKeyUriType getUriType() const;
 
   /**
    * @brief get target URI type.
    */
-  CacheKeyKeyTypeSet &getKeyType();
+  const CacheKeyKeyTypeSet &getKeyType() const;
 
   /* Make the following members public to avoid unnecessary accessors */
   ConfigQuery _query;        /**< @brief query parameter related configuration */
@@ -231,6 +241,8 @@ private:
   bool _prefixToBeRemoved  = false; /**< @brief instructs the prefix (i.e. host:port) not to added to the cache key */
   bool _pathToBeRemoved    = false; /**< @brief instructs the path not to added to the cache key */
   bool _canonicalPrefix    = false; /**< @brief keep the URI scheme and authority element used as input to transforming into key */
+  bool _crrCompatRange     = false; /**< @brief add cache_range_requests compatible range header */
+  bool _percentEncode      = true;  /**< @brief percent encode key (true by default) */
   String _separator        = "/";   /**< @brief a separator used to separate the cache key elements extracted from the URI */
   CacheKeyUriType _uriType = REMAP; /**< @brief shows which URI the cache key will be based on */
   CacheKeyKeyTypeSet _keyTypes;     /**< @brief target URI to be modified, cache key or paren selection */

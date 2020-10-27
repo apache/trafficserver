@@ -161,6 +161,10 @@ incorrectly *WILL* result in cache poisoning.
 generated in the logs and the cache_range_requests plugin will disable
 transaction caching in order to avoid cache poisoning.
 
+*NOTE* Since the ATS plugin api only allows the cache key to be set once
+per transaction it is preferred to use the cachekey.so plugin in conjunction
+with the cache_range_requests plugin.
+
 Configuration examples
 ======================
 

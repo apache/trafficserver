@@ -399,6 +399,8 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     {const_cast<char *>("key-type"), optional_argument, nullptr, 'u'},
     {const_cast<char *>("capture-header"), optional_argument, nullptr, 'v'},
     {const_cast<char *>("canonical-prefix"), optional_argument, nullptr, 'w'},
+    {const_cast<char *>("crr-compat-range"), optional_argument, nullptr, 'x'},
+    {const_cast<char *>("percent-encode"), optional_argument, nullptr, 'y'},
     /* reserve 'z' for 'config' files */
     {nullptr, 0, nullptr, 0},
   };
@@ -513,6 +515,16 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     case 'w': /* canonical-prefix */
       _canonicalPrefix = isTrue(optarg);
       break;
+    case 'x': /* crr-range */
+      _crrCompatRange = isTrue(optarg);
+      if (_crrCompatRange) {
+        CacheKeyDebug("Adding cache_range_requests compatible range header to key");
+      }
+      break;
+    case 'y': /* percent-encode */
+      _percentEncode = isTrue(optarg);
+    default:
+      break;
     }
   }
 
@@ -537,21 +549,33 @@ Configs::finalize()
 }
 
 bool
-Configs::prefixToBeRemoved()
+Configs::prefixToBeRemoved() const
 {
   return _prefixToBeRemoved;
 }
 
 bool
-Configs::pathToBeRemoved()
+Configs::pathToBeRemoved() const
 {
   return _pathToBeRemoved;
 }
 
 bool
-Configs::canonicalPrefix()
+Configs::canonicalPrefix() const
 {
   return _canonicalPrefix;
+}
+
+bool
+Configs::useCompatRangeHeader() const
+{
+  return _crrCompatRange;
+}
+
+bool
+Configs::percentEncode() const
+{
+  return _percentEncode;
 }
 
 void
@@ -563,7 +587,7 @@ Configs::setSeparator(const char *arg)
 }
 
 const String &
-Configs::getSeparator()
+Configs::getSeparator() const
 {
   return _separator;
 }
@@ -610,13 +634,13 @@ Configs::setKeyType(const char *arg)
 }
 
 CacheKeyUriType
-Configs::getUriType()
+Configs::getUriType() const
 {
   return _uriType;
 }
 
-CacheKeyKeyTypeSet &
-Configs::getKeyType()
+const CacheKeyKeyTypeSet &
+Configs::getKeyType() const
 {
   return _keyTypes;
 }
