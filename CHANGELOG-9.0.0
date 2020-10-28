@@ -1123,4 +1123,7 @@ Changes with Apache Traffic Server 9.0.0
   #7274 - Introduce proxy-verifier to AuTests
   #7275 - Respecting default rolling_enabled value in plugins.
   #7278 - 7096: Synchronize Server Session Management and Network I/O
+  #7282 - Reduce the number of write operation on H2
   #7293 - sphinx for 9.x has to be 2.0.1
+  #7294 - Make double Au test more reliable.
+  #7299 - Adds a shell script to help build the H3 toolchains
