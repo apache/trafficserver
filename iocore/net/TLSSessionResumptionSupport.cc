@@ -75,6 +75,12 @@ TLSSessionResumptionSupport::bind(SSL *ssl, TLSSessionResumptionSupport *srs)
   SSL_set_ex_data(ssl, _ex_data_index, srs);
 }
 
+void
+TLSSessionResumptionSupport::unbind(SSL *ssl)
+{
+  SSL_set_ex_data(ssl, _ex_data_index, nullptr);
+}
+
 int
 TLSSessionResumptionSupport::processSessionTicket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx,
                                                   HMAC_CTX *hctx, int enc)

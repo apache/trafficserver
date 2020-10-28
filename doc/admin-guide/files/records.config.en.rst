@@ -537,10 +537,10 @@ Local Manager
    process as, which also has the effect of setting ownership of configuration
    and log files.
 
-   As of version 2.1.1 if the user_id is prefixed with pound character (``#``)
+   If the user_id is prefixed with pound character (``#``),
    the remainder of the string is considered to be a
    `numeric user identifier <http://en.wikipedia.org/wiki/User_identifier>`_.
-   If the value is set to ``#-1`` |TS| will not change the user during startup.
+   If the value is set to ``#-1``, |TS| will not change the user during startup.
 
    .. important::
 
@@ -999,7 +999,9 @@ mptcp
 .. ts:cv:: CONFIG proxy.config.http.attach_server_session_to_client INT 0
    :overridable:
 
-   Control the re-use of an server session by a user agent (client) session.
+   Control the re-use of an server session by a user agent (client) session. Currently only applies to user
+   agents using HTTP/1.0 or HTTP/1.1. For other HTTP versions, the origin connection is always returned to the
+   session sharing pool or closed.
 
    If a user agent performs more than one HTTP transaction on its connection to |TS| a server session must be
    obtained for the second (and subsequent) transaction as for the first. This settings affects how that server session
@@ -1452,7 +1454,7 @@ Origin Server Connect Attempts
    :reloadable:
    :overridable:
 
-   Maximum number of connection retries |TS| can make while an origin is marked dead.  Typically this value is smaller than
+   Maximum number of connection attempts |TS| can make while an origin is marked dead per request.  Typically this value is smaller than
    `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the dead origin.
    The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
 
@@ -4271,6 +4273,8 @@ Sockets
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
         TCP_FASTOPEN (8)
+        PACKET_MARK (16)
+        PACKET_TOS (32)
 
 .. note::
 
@@ -4303,6 +4307,8 @@ Sockets
         SO_KEEPALIVE (2)
         SO_LINGER (4) - with a timeout of 0 seconds
         TCP_FASTOPEN (8)
+        PACKET_MARK (16)
+        PACKET_TOS (32)
 
 .. note::
 

@@ -95,7 +95,6 @@ HQTransaction::cancel_inactivity_timeout()
 void
 HQTransaction::release(IOBufferReader *r)
 {
-  super::release(r);
   this->do_io_close();
   this->_sm = nullptr;
 }
@@ -215,6 +214,7 @@ void
 HQTransaction::transaction_done()
 {
   // TODO: start closing transaction
+  super::transaction_done();
   return;
 }
 

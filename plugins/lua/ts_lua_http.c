@@ -85,6 +85,7 @@ static int ts_lua_http_resp_cache_transformed(lua_State *L);
 static int ts_lua_http_resp_cache_untransformed(lua_State *L);
 
 static int ts_lua_http_get_client_protocol_stack(lua_State *L);
+static int ts_lua_http_get_server_protocol_stack(lua_State *L);
 static int ts_lua_http_server_push(lua_State *L);
 static int ts_lua_http_is_websocket(lua_State *L);
 static int ts_lua_http_get_plugin_tag(lua_State *L);
@@ -217,6 +218,9 @@ ts_lua_inject_http_misc_api(lua_State *L)
 {
   lua_pushcfunction(L, ts_lua_http_get_client_protocol_stack);
   lua_setfield(L, -2, "get_client_protocol_stack");
+
+  lua_pushcfunction(L, ts_lua_http_get_server_protocol_stack);
+  lua_setfield(L, -2, "get_server_protocol_stack");
 
   lua_pushcfunction(L, ts_lua_http_server_push);
   lua_setfield(L, -2, "server_push");
@@ -647,6 +651,23 @@ ts_lua_http_get_client_protocol_stack(lua_State *L)
   GET_HTTP_CONTEXT(http_ctx, L);
 
   TSHttpTxnClientProtocolStackGet(http_ctx->txnp, 10, results, &count);
+  for (int i = 0; i < count; i++) {
+    lua_pushstring(L, results[i]);
+  }
+
+  return count;
+}
+
+static int
+ts_lua_http_get_server_protocol_stack(lua_State *L)
+{
+  char const *results[10];
+  int count = 0;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TSHttpTxnServerProtocolStackGet(http_ctx->txnp, 10, results, &count);
   for (int i = 0; i < count; i++) {
     lua_pushstring(L, results[i]);
   }

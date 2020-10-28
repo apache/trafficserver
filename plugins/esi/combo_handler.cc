@@ -572,18 +572,6 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
   creq.defaultBucket = string(host, host_len);
   defaultBucketFound = true;
 
-  /*
-  for(int i = 0 ; i < host_len; i++)
-    {
-      if (host[i] == '.')
-        {
-          creq.defaultBucket = string(host, i);
-          defaultBucketFound = true;
-          break;
-        }
-    }
-  */
-
   TSHandleMLocRelease(bufp, hdr_obj, field_loc);
 
   LOG_DEBUG("defaultBucket: %s", creq.defaultBucket.data());

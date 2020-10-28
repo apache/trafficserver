@@ -466,7 +466,7 @@ hdrtoken_init()
       prefix.wks_info.name   = nullptr;             // default, can override later
       prefix.wks_info.slotid = MIME_SLOTID_NONE;    // default, can override later
       prefix.wks_info.mask   = TOK_64_CONST(0);     // default, can override later
-      prefix.wks_info.flags  = MIME_FLAGS_MULTVALS; // default, can override later
+      prefix.wks_info.flags  = HTIF_MULTVALS;       // default, can override later
 
       int sstr_len = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
 

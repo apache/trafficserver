@@ -1,4 +1,5 @@
 #!/bin/bash
+# vim: sw=4:ts=4:softtabstop=4:ai:et
 
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,9 +17,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+./prepare_proxy_verifier.sh
 pushd $(dirname $0) > /dev/null
 export PYTHONPATH=$(pwd):$PYTHONPATH
-./test-env-check.sh;
+./test-env-check.sh
 # this is for rhel or centos systems
 echo "Environment config finished. Running AuTest..."
 pipenv run autest -D gold_tests "$@"

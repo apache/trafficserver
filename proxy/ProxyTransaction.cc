@@ -32,7 +32,7 @@ ProxyTransaction::ProxyTransaction() : VConnection(nullptr) {}
 void
 ProxyTransaction::new_transaction(bool from_early_data)
 {
-  ink_assert(_sm == nullptr);
+  ink_release_assert(_sm == nullptr);
 
   // Defensive programming, make sure nothing persists across
   // connection re-use
@@ -56,24 +56,10 @@ ProxyTransaction::new_transaction(bool from_early_data)
   _sm->attach_client_session(this, _reader);
 }
 
-void
-ProxyTransaction::release(IOBufferReader *r)
-{
-  HttpTxnDebug("[%" PRId64 "] session released by sm [%" PRId64 "]", _proxy_ssn ? _proxy_ssn->connection_id() : 0,
-               _sm ? _sm->sm_id : 0);
-
-  this->decrement_client_transactions_stat();
-
-  // Pass along the release to the session
-  if (_proxy_ssn) {
-    _proxy_ssn->release(this);
-  }
-}
-
-void
+bool
 ProxyTransaction::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
 {
-  _proxy_ssn->attach_server_session(ssession, transaction_done);
+  return _proxy_ssn->attach_server_session(ssession, transaction_done);
 }
 
 void
@@ -181,11 +167,6 @@ ProxyTransaction::set_outbound_transparent(bool flag)
   upstream_outbound_options.f_outbound_transparent = flag;
 }
 
-void
-ProxyTransaction::set_h2c_upgrade_flag()
-{
-}
-
 int
 ProxyTransaction::get_transaction_priority_weight() const
 {
@@ -196,4 +177,11 @@ int
 ProxyTransaction::get_transaction_priority_dependence() const
 {
   return 0;
+}
+
+void
+ProxyTransaction::transaction_done()
+{
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  this->decrement_client_transactions_stat();
 }

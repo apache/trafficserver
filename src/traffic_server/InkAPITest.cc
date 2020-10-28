@@ -6441,6 +6441,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
 //                     TSMgmtFloatGet
 //                     TSMgmtIntGet
 //                     TSMgmtStringGet
+//                     TSMgmtDataTypeGet
 //////////////////////////////////////////////
 
 REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
@@ -6500,6 +6501,21 @@ REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED
     err = 1;
   } else {
     SDK_RPRINT(test, "TSMgmtStringGet", "TestCase1.4", TC_PASS, "ok");
+  }
+
+  {
+    TSRecordDataType result;
+    auto ret = TSMgmtDataTypeGet(CONFIG_PARAM_STRING_NAME, &result);
+    if (ret != TS_SUCCESS) {
+      SDK_RPRINT(test, "TSMgmtDataTypeGet", "TestCase1.5", TC_FAIL, "can not get value of param %s", CONFIG_PARAM_STRING_NAME);
+      err = 1;
+    } else if (result != TSRecordDataType::TS_RECORDDATATYPE_STRING) {
+      SDK_RPRINT(test, "TSMgmtDataTypeGet", "TestCase1.5", TC_FAIL, "can not get right type for %s - %d", CONFIG_PARAM_STRING_NAME,
+                 result);
+      err = 1;
+    } else {
+      SDK_RPRINT(test, "TSMgmtDataTypeGet", "TestCase1.5", TC_PASS, "ok");
+    }
   }
 
   if (err) {

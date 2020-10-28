@@ -1,1 +1,8 @@
 leak:CRYPTO_malloc
+leak:CRYPTO_zalloc
+leak:asn1_enc_save
+leak:c2i_ASN1_BIT_STRING
+leak:ASN1_STRING_set
+leak:BUF_MEM_grow
+leak:x509_name_canon
+leak:asn1_primitive_new

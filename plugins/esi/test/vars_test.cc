@@ -20,6 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+
 #include <cstdio>
 #include <iostream>
 #include <cassert>
@@ -136,13 +137,6 @@ main()
                                  "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.6) "
                                  "Gecko/20091201 Firefox/3.5.6 (.NETgecko CLR 3.5.30729)",
                                  -1));
-
-    /*
-    assert(esi_vars.getValue("HTTP_USER_AGENT{vendor}") == "Gecko");
-    assert(esi_vars.getValue("HTTP_USER_AGENT{platform}") == "windows_xp");
-    assert(esi_vars.getValue("HTTP_USER_AGENT{version}") == "1.9");
-    assert(esi_vars.getValue("HTTP_USER_AGENT{blah}") == "");
-    */
 
     assert(esi_vars.getValue("HTTP_ACCEPT_LANGUAGE{ka-in}") == "true");
 

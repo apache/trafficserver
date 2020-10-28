@@ -95,8 +95,8 @@ assigned to a stripe (and in turn to a cache volume) automatically based on a
 hash of the URI used to retrieve the object from the :term:`origin server`. It
 is possible to configure this to a limited extent in :file:`hosting.config`,
 which supports content from specific hosts or domain to be stored on specific
-cache volumes. As of version 4.0.1 it is also possible to control which cache
-spans (and hence, which cache stripes) are contained in a specific cache volume.
+cache volumes. It's also possible to control which cache spans (and hence,
+which cache stripes) are contained in a specific cache volume.
 
 The layout and structure of the cache spans, the cache volumes, and the cache
 stripes that compose them are derived entirely from :file:`storage.config` and

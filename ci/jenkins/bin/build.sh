@@ -28,9 +28,14 @@ CCACHE="--enable-ccache"
 # When to enable -Werror
 WERROR="--enable-werror"
 
+# Optional settings
+ASAN=""
+[ "1" == "$enable_asan" ] && ASAN="--enable-asan"
+
 echo "DEBUG: $DEBUG"
 echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
+echo "ASAN: $ASAN"
 
 # Change to the build area (this is previously setup in extract.sh)
 cd "${ATS_BUILD_BASEDIR}/build"
@@ -46,7 +51,8 @@ set -x
     --with-user=jenkins \
     ${CCACHE} \
     ${WERROR} \
-    ${DEBUG}
+    ${DEBUG} \
+    ${ASAN}
 
 echo
 echo -n "Main build started at " && date

@@ -93,10 +93,10 @@ public:
   // BINARY: log is written in binary format (rather than ascii)
   // WRITES_TO_PIPE: object writes to a named pipe rather than to a file
 
-  LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format, const char *header,
-            Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec = 0, int rolling_offset_hr = 0,
-            int rolling_size_mb = 0, bool auto_created = false, int rolling_max_count = 0, int rolling_min_count = 0,
-            bool reopen_after_rolling = false, int pipe_buffer_size = 0);
+  LogObject(LogConfig *cfg, const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
+            const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec = 0,
+            int rolling_offset_hr = 0, int rolling_size_mb = 0, bool auto_created = false, int rolling_max_count = 0,
+            int rolling_min_count = 0, bool reopen_after_rolling = false, int pipe_buffer_size = 0);
   LogObject(LogObject &);
   ~LogObject() override;
 
@@ -193,25 +193,25 @@ public:
   inline void
   set_rolling_enabled(Log::RollingEnabledValues rolling_enabled)
   {
-    _setup_rolling(rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
+    _setup_rolling(Log::config, rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
   }
 
   inline void
   set_rolling_interval_sec(int rolling_interval_sec)
   {
-    _setup_rolling(m_rolling_enabled, rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
+    _setup_rolling(Log::config, m_rolling_enabled, rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
   }
 
   inline void
   set_rolling_offset_hr(int rolling_offset_hr)
   {
-    _setup_rolling(m_rolling_enabled, m_rolling_interval_sec, rolling_offset_hr, m_rolling_size_mb);
+    _setup_rolling(Log::config, m_rolling_enabled, m_rolling_interval_sec, rolling_offset_hr, m_rolling_size_mb);
   }
 
   inline void
   set_rolling_size_mb(int rolling_size_mb)
   {
-    _setup_rolling(m_rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, rolling_size_mb);
+    _setup_rolling(Log::config, m_rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, rolling_size_mb);
   }
 
   inline bool
@@ -290,7 +290,7 @@ private:
   int m_pipe_buffer_size;
 
   void generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format);
-  void _setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr,
+  void _setup_rolling(LogConfig *cfg, Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr,
                       int rolling_size_mb);
   unsigned _roll_files(long interval_start, long interval_end);
 
@@ -388,6 +388,7 @@ public:
   void check_buffer_expiration(long time_now);
 
   unsigned roll_files(long time_now);
+  void reopen_moved_log_files();
 
   int log(LogAccess *lad);
   void display(FILE *str = stdout);

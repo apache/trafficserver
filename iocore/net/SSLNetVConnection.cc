@@ -212,7 +212,6 @@ make_ssl_connection(SSL_CTX *ctx, SSLNetVConnection *netvc)
     }
 
     SSLNetVCAttach(ssl, netvc);
-    TLSSessionResumptionSupport::bind(ssl, netvc);
   }
 
   return ssl;
@@ -306,15 +305,14 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       Debug("ssl.error", "SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
       break;
     case SSL_ERROR_SYSCALL:
-      SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
       if (nread != 0) {
         // not EOF
+        SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
         event = SSL_READ_ERROR;
         ret   = errno;
         Debug("ssl.error", "SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
       } else {
         // then EOF observed, treat it as EOS
-        // Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, EOF observed violating SSL protocol");
         event = SSL_READ_EOS;
       }
       break;
@@ -924,6 +922,8 @@ void
 SSLNetVConnection::clear()
 {
   _serverName.reset();
+  _ca_cert_file.reset();
+  _ca_cert_dir.reset();
 
   if (ssl != nullptr) {
     SSL_free(ssl);
@@ -1820,7 +1820,6 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 
   sslHandshakeStatus = SSL_HANDSHAKE_DONE;
   SSLNetVCAttach(this->ssl, this);
-  TLSSessionResumptionSupport::bind(this->ssl, this);
   return EVENT_DONE;
 }
 
@@ -1919,5 +1918,22 @@ SSLNetVConnection::set_server_name(std::string_view name)
     std::memcpy(n, name.data(), name.size());
     n[name.size()] = '\0';
     _serverName.reset(n);
+  }
+}
+
+void
+SSLNetVConnection::set_ca_cert_file(std::string_view file, std::string_view dir)
+{
+  if (file.size()) {
+    char *n = new char[file.size() + 1];
+    std::memcpy(n, file.data(), file.size());
+    n[file.size()] = '\0';
+    _ca_cert_file.reset(n);
+  }
+  if (dir.size()) {
+    char *n = new char[dir.size() + 1];
+    std::memcpy(n, dir.data(), dir.size());
+    n[dir.size()] = '\0';
+    _ca_cert_dir.reset(n);
   }
 }

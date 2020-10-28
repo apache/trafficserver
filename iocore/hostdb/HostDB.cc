@@ -64,6 +64,10 @@ int hostdb_sync_frequency                          = 0;
 int hostdb_disable_reverse_lookup                  = 0;
 int hostdb_max_iobuf_index                         = BUFFER_SIZE_INDEX_32K;
 
+// Verify the generic storage is sufficient to cover all alternate members.
+static_assert(sizeof(HostDBApplicationInfo::allotment) == sizeof(HostDBApplicationInfo),
+              "Generic storage for HostDBApplicationInfo is smaller than the union storage.");
+
 ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
 
 // Static configuration information

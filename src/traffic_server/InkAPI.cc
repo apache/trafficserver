@@ -4536,6 +4536,12 @@ TSMgmtSourceGet(const char *var_name, TSMgmtSource *source)
   return REC_ERR_OKAY == RecGetRecordSource(var_name, reinterpret_cast<RecSourceT *>(source)) ? TS_SUCCESS : TS_ERROR;
 }
 
+TSReturnCode
+TSMgmtDataTypeGet(const char *var_name, TSRecordDataType *result)
+{
+  return REC_ERR_OKAY == RecGetRecordDataType(var_name, reinterpret_cast<RecDataT *>(result)) ? TS_SUCCESS : TS_ERROR;
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // Continuations

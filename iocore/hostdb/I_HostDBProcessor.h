@@ -83,42 +83,43 @@ makeHostHash(const char *string)
 // Types
 //
 
-//
-// This structure contains the host information required by
-// the application.  Except for the initial fields it
-// is treated as opaque by the database.
-//
-
+/** Host information metadata used by various parts of HostDB.
+ * It is stored as generic data in the cache.
+ *
+ * As a @c union only one of the members is valid, Which one depends on context data in the
+ * @c HostDBInfo. This data is written literally to disk therefore if any change is made,
+ * the @c object_version for the cache must be updated by modifying @c HostDBInfo::version.
+ *
+ * @see HostDBInfo::version
+ */
 union HostDBApplicationInfo {
+  /// Generic storage. This is verified to be the size of the union.
   struct application_data_allotment {
     unsigned int application1;
     unsigned int application2;
   } allotment;
 
+  enum HttpVersion : uint8_t {
+    HTTP_VERSION_UNDEFINED = 0,
+    HTTP_VERSION_09        = 1,
+    HTTP_VERSION_10        = 2,
+    HTTP_VERSION_11        = 3,
+  };
+
   //////////////////////////////////////////////////////////
   // http server attributes in the host database          //
   //                                                      //
-  // http_version       - one of HttpVersion_t            //
-  // keep_alive_timeout - in seconds. (up to 63 seconds). //
+  // http_version       - one of HttpVersion              //
   // last_failure       - UNIX time for the last time     //
   //                      we tried the server & failed    //
   // fail_count         - Number of times we tried and    //
   //                       and failed to contact the host //
   //////////////////////////////////////////////////////////
   struct http_server_attr {
-    unsigned int http_version : 3;
-    unsigned int keepalive_timeout : 6;
-    unsigned int fail_count : 8;
-    unsigned int unused1 : 8;
-    unsigned int last_failure : 32;
+    uint32_t last_failure;
+    HttpVersion http_version;
+    uint8_t fail_count;
   } http_data;
-
-  enum HttpVersion_t {
-    HTTP_VERSION_UNDEFINED = 0,
-    HTTP_VERSION_09        = 1,
-    HTTP_VERSION_10        = 2,
-    HTTP_VERSION_11        = 3,
-  };
 
   struct application_data_rr {
     unsigned int offset;
@@ -161,11 +162,15 @@ struct HostDBInfo : public RefCountObj {
     ioBufAllocator[_iobuffer_index].free_void((void *)(this));
   }
 
-  // return a version number-- so we can manage compatibility with the marshal/unmarshal
+  /// Effectively the @c object_version for cache data.
+  /// This is used to indicate incompatible changes in the binary layout of HostDB records.
+  /// It must be updated if any such change is made, even if it is functionally equivalent.
   static ts::VersionNumber
   version()
   {
-    return ts::VersionNumber(1, 0);
+    /// - 1.0 Initial version.
+    /// - 1.1 tweak HostDBApplicationInfo::http_data.
+    return ts::VersionNumber(1, 1);
   }
 
   static HostDBInfo *

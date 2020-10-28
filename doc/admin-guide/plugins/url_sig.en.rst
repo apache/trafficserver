@@ -384,3 +384,20 @@ Example
     { [data not shown]
     * Connection #0 to host localhost left intact
 
+
+Replay test support
+===================
+
+To assist in log replay an option is available in the config file which
+will ignore the expiration date.  This allows all url_sig tests to
+pass the expiration date.
+
+The config file option to enable this is::
+
+    ignore_expiry = true
+
+Once updated, touch `remap.config` then issue a
+:option:`traffic_ctl config reload` to make the settings active.
+
+Do NOT deploy this to production as it will disable valid checks
+on signed urls!

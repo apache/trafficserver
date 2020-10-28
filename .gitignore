@@ -193,6 +193,7 @@ RELEASE
 
 # autest
 tests/env-test/
+tests/proxy-verifier
 tests/Pipfile.lock
 tests/gold_tests/chunked_encoding/smuggle-client
 tests/gold_tests/tls/ssl-post

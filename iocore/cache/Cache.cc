@@ -589,12 +589,21 @@ CacheProcessor::start_internal(int flags)
   fix                  = !!(flags & PROCESSOR_FIX);
   check                = (flags & PROCESSOR_CHECK) != 0;
   start_done           = 0;
-  Span *sd;
 
   /* read the config file and create the data structures corresponding
      to the file */
   gndisks = theCacheStore.n_disks;
   gdisks  = static_cast<CacheDisk **>(ats_malloc(gndisks * sizeof(CacheDisk *)));
+
+  // Temporaries to carry values between loops
+  char **paths = static_cast<char **>(alloca(sizeof(char *) * gndisks));
+  memset(paths, 0, sizeof(char *) * gndisks);
+  int *fds = static_cast<int *>(alloca(sizeof(int) * gndisks));
+  memset(fds, 0, sizeof(int) * gndisks);
+  int *sector_sizes = static_cast<int *>(alloca(sizeof(int) * gndisks));
+  memset(sector_sizes, 0, sizeof(int) * gndisks);
+  Span **sds = static_cast<Span **>(alloca(sizeof(Span *) * gndisks));
+  memset(sds, 0, sizeof(Span *) * gndisks);
 
   gndisks = 0;
   ink_aio_set_callback(new AIO_Callback_handler());
@@ -605,13 +614,15 @@ CacheProcessor::start_internal(int flags)
    create CacheDisk objects for each span in the configuration file and store in gdisks
    */
   for (unsigned i = 0; i < theCacheStore.n_disks; i++) {
-    sd = theCacheStore.disk[i];
-    char path[PATH_NAME_MAX];
+    Span *sd = theCacheStore.disk[i];
     int opts = DEFAULT_CACHE_OPTIONS;
 
-    ink_strlcpy(path, sd->pathname, sizeof(path));
+    if (!paths[gndisks]) {
+      paths[gndisks] = static_cast<char *>(alloca(PATH_NAME_MAX));
+    }
+    ink_strlcpy(paths[gndisks], sd->pathname, PATH_NAME_MAX);
     if (!sd->file_pathname) {
-      ink_strlcat(path, "/cache.db", sizeof(path));
+      ink_strlcat(paths[gndisks], "/cache.db", PATH_NAME_MAX);
       opts |= O_CREAT;
     }
 
@@ -626,11 +637,11 @@ CacheProcessor::start_internal(int flags)
       opts |= O_RDONLY;
     }
 
-    int fd         = open(path, opts, 0644);
+    int fd         = open(paths[gndisks], opts, 0644);
     int64_t blocks = sd->blocks;
 
     if (fd < 0 && (opts & O_CREAT)) { // Try without O_DIRECT if this is a file on filesystem, e.g. tmpfs.
-      fd = open(path, DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
+      fd = open(paths[gndisks], DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
     }
 
     if (fd >= 0) {
@@ -638,17 +649,17 @@ CacheProcessor::start_internal(int flags)
       if (!sd->file_pathname) {
         if (!check) {
           if (ftruncate(fd, blocks * STORE_BLOCK_SIZE) < 0) {
-            Warning("unable to truncate cache file '%s' to %" PRId64 " blocks", path, blocks);
+            Warning("unable to truncate cache file '%s' to %" PRId64 " blocks", paths[gndisks], blocks);
             diskok = false;
           }
         } else { // read-only mode checks
           struct stat sbuf;
           if (-1 == fstat(fd, &sbuf)) {
-            fprintf(stderr, "Failed to stat cache file for directory %s\n", path);
+            fprintf(stderr, "Failed to stat cache file for directory %s\n", paths[gndisks]);
             diskok = false;
           } else if (blocks != sbuf.st_size / STORE_BLOCK_SIZE) {
-            fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64 "\n", path, sbuf.st_size,
-                    blocks * static_cast<int64_t>(STORE_BLOCK_SIZE));
+            fprintf(stderr, "Cache file for directory %s is %" PRId64 " bytes, expected %" PRId64 "\n", paths[gndisks],
+                    sbuf.st_size, blocks * static_cast<int64_t>(STORE_BLOCK_SIZE));
             diskok = false;
           }
         }
@@ -676,24 +687,17 @@ CacheProcessor::start_internal(int flags)
           Note("resetting hardware sector size from %d to %d", sector_size, STORE_BLOCK_SIZE);
           sector_size = STORE_BLOCK_SIZE;
         }
-
-        off_t skip = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
-        blocks     = blocks - (skip >> STORE_BLOCK_SHIFT);
-#if AIO_MODE == AIO_MODE_NATIVE
-        eventProcessor.schedule_imm(new DiskInit(gdisks[gndisks], path, blocks, skip, sector_size, fd, clear));
-#else
-        gdisks[gndisks]->open(path, blocks, skip, sector_size, fd, clear);
-#endif
-
-        Debug("cache_hosting", "Disk: %d:%s, blocks: %" PRId64 "", gndisks, path, blocks);
-        fd = -1;
+        sector_sizes[gndisks] = sector_size;
+        fds[gndisks]          = fd;
+        sds[gndisks]          = sd;
+        fd                    = -1;
         gndisks++;
       }
     } else {
       if (errno == EINVAL) {
-        Warning("cache unable to open '%s': It must be placed on a file system that supports direct I/O.", path);
+        Warning("cache unable to open '%s': It must be placed on a file system that supports direct I/O.", paths[gndisks]);
       } else {
-        Warning("cache unable to open '%s': %s", path, strerror(errno));
+        Warning("cache unable to open '%s': %s", paths[gndisks], strerror(errno));
       }
     }
     if (fd >= 0) {
@@ -701,6 +705,8 @@ CacheProcessor::start_internal(int flags)
     }
   }
 
+  // Before we kick off asynchronous operations, make sure sufficient disks are available and we don't just shutdown
+  // Exiting with background threads in operation will likely cause a seg fault
   start_done = 1;
 
   if (gndisks == 0) {
@@ -711,7 +717,7 @@ CacheProcessor::start_internal(int flags)
     }
 
     if (this->waitForCache() > 1) {
-      Fatal("Cache initialization failed - no disks available but cache required");
+      Emergency("Cache initialization failed - no disks available but cache required");
     } else {
       Warning("unable to open cache disk(s): Cache Disabled\n");
       return -1; // pointless, AFAICT this is ignored.
@@ -721,8 +727,23 @@ CacheProcessor::start_internal(int flags)
     if (cb_after_init) {
       cb_after_init();
     }
-    Fatal("Cache initialization failed - only %d out of %d disks were valid and all were required.", gndisks,
-          theCacheStore.n_disks_in_config);
+    Emergency("Cache initialization failed - only %d out of %d disks were valid and all were required.", gndisks,
+              theCacheStore.n_disks_in_config);
+  }
+
+  // If we got here, we have enough disks to proceed
+  for (int j = 0; j < gndisks; j++) {
+    Span *sd = sds[j];
+    ink_release_assert(sds[j] != nullptr); // Defeat clang-analyzer
+    off_t skip     = ROUND_TO_STORE_BLOCK((sd->offset < START_POS ? START_POS + sd->alignment : sd->offset));
+    int64_t blocks = sd->blocks - (skip >> STORE_BLOCK_SHIFT);
+#if AIO_MODE == AIO_MODE_NATIVE
+    eventProcessor.schedule_imm(new DiskInit(gdisks[j], paths[j], blocks, skip, sector_sizes[j], fds[j], clear));
+#else
+    gdisks[j]->open(paths[j], blocks, skip, sector_sizes[j], fds[j], clear);
+#endif
+
+    Debug("cache_hosting", "Disk: %d:%s, blocks: %" PRId64 "", gndisks, paths[j], blocks);
   }
 
   return 0;

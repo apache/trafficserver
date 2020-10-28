@@ -373,8 +373,8 @@ public:
   ts::VersionNumber object_version; // version passed in of whatever it is we are caching
 
   RefCountCacheHeader(ts::VersionNumber object_version = ts::VersionNumber());
-  bool operator==(const RefCountCacheHeader other) const;
-  bool compatible(RefCountCacheHeader *other) const;
+  bool operator==(RefCountCacheHeader const &that) const;
+  bool compatible(RefCountCacheHeader *that) const;
 };
 
 // RefCountCache is a ref-counted key->value map to store classes that inherit from RefCountObj.

@@ -64,7 +64,8 @@ TEST_CASE("ParseRulesStrictURI", "[proxy][parseuri]")
   const struct {
     const char *const uri;
     bool valid;
-  } http_strict_uri_parsing_test_case[] = {{"/home", true},
+  } http_strict_uri_parsing_test_case[] = {{"//index.html", true},
+                                           {"/home", true},
                                            {"/path/data?key=value#id", true},
                                            {"/ABCDEFGHIJKLMNOPQRSTUVWXYZ", true},
                                            {"/abcdefghijklmnopqrstuvwxyz", true},
@@ -109,6 +110,22 @@ constexpr bool VERIFY_HOST_CHARACTERS = true;
 // clang-format off
 std::vector<url_parse_test_case> url_parse_test_cases = {
   {
+    "/index.html",
+    "/index.html",
+    VERIFY_HOST_CHARACTERS,
+    "/index.html",
+    IS_VALID,
+    IS_VALID
+  },
+  {
+    "//index.html",
+    "//index.html",
+    VERIFY_HOST_CHARACTERS,
+    "//index.html",
+    IS_VALID,
+    IS_VALID
+  },
+  {
     // The following scheme-only URI is technically valid per the spec, but we
     // have historically returned this as invalid and I'm not comfortable
     // changing it in case something depends upon this behavior. Besides, a
@@ -131,13 +148,13 @@ std::vector<url_parse_test_case> url_parse_test_cases = {
   },
   {
     // RFC 3986 section-3: When authority is not present, the path cannot begin
-    // with two slash characters ("//"). The parse_regex, though, is more
-    // forgiving.
+    // with two slash characters ("//"). We have historically allowed this,
+    // however, and will continue to do so.
     "https:////",
-    "",
+    "https:////",
     VERIFY_HOST_CHARACTERS,
     "https:////",
-    !IS_VALID,
+    IS_VALID,
     IS_VALID
   },
   {

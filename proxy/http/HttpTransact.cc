@@ -451,7 +451,7 @@ update_cache_control_information_from_config(HttpTransact::State *s)
   }
 }
 
-inline bool
+bool
 HttpTransact::is_server_negative_cached(State *s)
 {
   if (s->host_db_info.app.http_data.last_failure != 0 &&
@@ -862,6 +862,15 @@ HttpTransact::TooEarly(State *s)
 }
 
 void
+HttpTransact::OriginDead(State *s)
+{
+  TxnDebug("http_trans", "origin server is marked down");
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+}
+
+void
 HttpTransact::HandleBlindTunnel(State *s)
 {
   URL u;
@@ -1221,9 +1230,12 @@ HttpTransact::handle_upgrade_request(State *s)
       } else {
         TxnDebug("http_trans_upgrade", "Unable to upgrade connection to websockets, invalid headers (RFC 6455).");
       }
+    } else if (s->upgrade_token_wks == MIME_VALUE_H2C) {
+      // We need to recognize h2c to not handle it as an error.
+      // We just ignore the Upgrade header and respond to the request as though the Upgrade header field were absent.
+      s->is_upgrade_request = false;
+      return false;
     }
-
-    // TODO accept h2c token to start HTTP/2 session after TS-3498 is fixed
   } else {
     TxnDebug("http_trans_upgrade", "Transaction requested upgrade for unknown protocol: %s", upgrade_hdr_val);
   }
@@ -3755,11 +3767,13 @@ HttpTransact::handle_response_from_server(State *s)
     }
 
     if (is_server_negative_cached(s)) {
-      max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server;
+      max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server - 1;
     } else {
       // server not yet negative cached - use default number of retries
       max_connect_retries = s->txn_conf->connect_attempts_max_retries;
     }
+
+    TxnDebug("http_trans", "max_connect_retries: %d s->current.attempts: %d", max_connect_retries, s->current.attempts);
 
     if (is_request_retryable(s) && s->current.attempts < max_connect_retries) {
       // If this is a round robin DNS entry & we're tried configured
@@ -4994,9 +5008,9 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
       continue;
     }
     /////////////////////////////////////
-    // dont cache content-length field //
+    // dont cache content-length field  and transfer encoding //
     /////////////////////////////////////
-    if (name == MIME_FIELD_CONTENT_LENGTH) {
+    if (name == MIME_FIELD_CONTENT_LENGTH || name == MIME_FIELD_TRANSFER_ENCODING) {
       continue;
     }
     /////////////////////////////////////
@@ -7108,12 +7122,31 @@ HttpTransact::get_max_age(HTTPHdr *response)
   int max_age      = -1;
   uint32_t cc_mask = response->get_cooked_cc_mask();
 
+  bool max_age_is_present = false;
   if (cc_mask & MIME_COOKED_MASK_CC_S_MAXAGE) {
     // Precedence to s-maxage
-    max_age = static_cast<int>(response->get_cooked_cc_s_maxage());
+    max_age            = static_cast<int>(response->get_cooked_cc_s_maxage());
+    max_age_is_present = true;
   } else if (cc_mask & MIME_COOKED_MASK_CC_MAX_AGE) {
     // If s-maxage isn't set, try max-age
-    max_age = static_cast<int>(response->get_cooked_cc_max_age());
+    max_age            = static_cast<int>(response->get_cooked_cc_max_age());
+    max_age_is_present = true;
+  }
+
+  // Negative max-age values:
+  //
+  // Per RFC 7234, section-1.2.1, max-age values should be a non-negative
+  // value. If it is negative, therefore, the value is invalid.  Per RFC 7234,
+  // section-4.2.1, invalid freshness specifications should be considered
+  // stale.
+  //
+  // Negative return values from this function are used to indicate that the
+  // max-age value was not present, resulting in a default value likely being
+  // used. If the max-age is negative, therefore, we return 0 to indicate to
+  // the caller that the max-age directive was present and indicates that the
+  // object should be considered stale.
+  if (max_age_is_present && max_age < 0) {
+    max_age = 0;
   }
 
   return max_age;
@@ -7631,9 +7664,15 @@ HttpTransact::is_request_likely_cacheable(State *s, HTTPHdr *request)
 }
 
 bool
+HttpTransact::is_fresh_cache_hit(CacheLookupResult_t r)
+{
+  return (r == CACHE_LOOKUP_HIT_FRESH || r == CACHE_LOOKUP_HIT_WARNING);
+}
+
+bool
 HttpTransact::is_cache_hit(CacheLookupResult_t r)
 {
-  return (r == CACHE_LOOKUP_HIT_FRESH || r == CACHE_LOOKUP_HIT_WARNING || r == CACHE_LOOKUP_HIT_STALE);
+  return (is_fresh_cache_hit(r) || r == CACHE_LOOKUP_HIT_STALE);
 }
 
 void
@@ -7846,6 +7885,14 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
               ink_assert(field != nullptr);
               value = field->value_get(&len);
               outgoing_response->value_append(fields[i].name, fields[i].len, value, len, false);
+              if (field->has_dups()) {
+                field = field->m_next_dup;
+                while (field) {
+                  value = field->value_get(&len);
+                  outgoing_response->value_append(fields[i].name, fields[i].len, value, len, true);
+                  field = field->m_next_dup;
+                }
+              }
             }
           }
         }

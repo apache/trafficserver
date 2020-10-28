@@ -99,8 +99,8 @@ make_alias_map(Ptr<LogFieldAliasTable> &table)
 void
 Log::change_configuration()
 {
-  LogConfig *prev       = Log::config;
-  LogConfig *new_config = nullptr;
+  LogConfig *prev_config = Log::config;
+  LogConfig *new_config  = nullptr;
 
   Debug("log-config", "Changing configuration ...");
 
@@ -111,10 +111,10 @@ Log::change_configuration()
   // grab the _APImutex so we can transfer the api objects to
   // the new config
   //
-  ink_mutex_acquire(prev->log_object_manager._APImutex);
+  ink_mutex_acquire(prev_config->log_object_manager._APImutex);
   Debug("log-api-mutex", "Log::change_configuration acquired api mutex");
 
-  new_config->init(Log::config);
+  new_config->init(prev_config);
 
   // Make the new LogConfig active.
   ink_atomic_swap(&Log::config, new_config);
@@ -125,7 +125,7 @@ Log::change_configuration()
   // this happens, then the new TextLogObject will be immediately lost. Traffic
   // Server would crash the next time the plugin referenced the freed object.
 
-  ink_mutex_release(prev->log_object_manager._APImutex);
+  ink_mutex_release(prev_config->log_object_manager._APImutex);
   Debug("log-api-mutex", "Log::change_configuration released api mutex");
 
   // Register the new config in the config processor; the old one will now be scheduled for a
@@ -135,9 +135,15 @@ Log::change_configuration()
 
   // If we replaced the logging configuration, flush any log
   // objects that weren't transferred to the new config ...
-  prev->log_object_manager.flush_all_objects();
+  prev_config->log_object_manager.flush_all_objects();
 
   Debug("log-config", "... new configuration in place");
+}
+
+void
+Log::reopen_moved_log_files()
+{
+  Log::config->log_object_manager.reopen_moved_log_files();
 }
 
 /*-------------------------------------------------------------------------
@@ -1065,10 +1071,11 @@ Log::init_when_enabled()
     // setup global scrap object
     //
     global_scrap_format = MakeTextLogFormat();
-    global_scrap_object = new LogObject(
-      global_scrap_format, Log::config->logfile_dir, "scrapfile.log", LOG_FILE_BINARY, nullptr, Log::config->rolling_enabled,
-      Log::config->preproc_threads, Log::config->rolling_interval_sec, Log::config->rolling_offset_hr, Log::config->rolling_size_mb,
-      /* auto create */ false, Log::config->rolling_max_count, Log::config->rolling_min_count);
+    global_scrap_object =
+      new LogObject(Log::config, global_scrap_format, Log::config->logfile_dir, "scrapfile.log", LOG_FILE_BINARY, nullptr,
+                    Log::config->rolling_enabled, Log::config->preproc_threads, Log::config->rolling_interval_sec,
+                    Log::config->rolling_offset_hr, Log::config->rolling_size_mb,
+                    /* auto create */ false, Log::config->rolling_max_count, Log::config->rolling_min_count);
 
     // create the flush thread
     create_threads();

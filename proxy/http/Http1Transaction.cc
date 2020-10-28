@@ -28,22 +28,6 @@
 void
 Http1Transaction::release(IOBufferReader *r)
 {
-  // Must set this inactivity count here rather than in the session because the state machine
-  // is not available then
-  MgmtInt ka_in = _sm->t_state.txn_conf->keep_alive_no_activity_timeout_in;
-  set_inactivity_timeout(HRTIME_SECONDS(ka_in));
-
-  _proxy_ssn->clear_session_active();
-  _proxy_ssn->ssn_last_txn_time = Thread::get_hrtime();
-
-  // Make sure that the state machine is returning
-  //  correct buffer reader
-  ink_assert(r == _reader);
-  if (r != _reader) {
-    this->do_io_close();
-  } else {
-    super_type::release(r);
-  }
 }
 
 void
@@ -55,6 +39,8 @@ Http1Transaction::destroy() // todo make ~Http1Transaction()
 void
 Http1Transaction::transaction_done()
 {
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  super_type::transaction_done();
   if (_proxy_ssn) {
     static_cast<Http1ClientSession *>(_proxy_ssn)->release_transaction();
   }

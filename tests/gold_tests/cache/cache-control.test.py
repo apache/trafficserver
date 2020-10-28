@@ -106,3 +106,27 @@ tr.Processes.Default.Command = "printf 'GET /no_cache_control HTTP/1.1\r\n''Cach
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/cache_no_cache.gold"
 tr.StillRunningAfter = ts
+
+#
+# Verify correct handling of various max-age directives in both clients and
+# responses.
+#
+ts = Test.MakeATSProcess("ts-for-proxy-verifier")
+replay_file = "replay/cache-control-max-age.replay.yaml"
+server = Test.MakeVerifierServerProcess("proxy-verifier-server", replay_file)
+ts.Disk.records_config.update({
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'http',
+    'proxy.config.http.insert_age_in_response': 0,
+
+    # Disable ignoring max-age in the client request so we can test that
+    # behavior too.
+    'proxy.config.http.cache.ignore_client_cc_max_age': 0,
+})
+ts.Disk.remap_config.AddLine(
+    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
+)
+tr = Test.AddTestRun("Verify correct max-age cache-control behavior.")
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(ts)
+tr.AddVerifierClientProcess("proxy-verifier-client", replay_file, http_ports=[ts.Variables.port])

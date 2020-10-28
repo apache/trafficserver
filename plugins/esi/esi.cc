@@ -510,7 +510,6 @@ ContData::~ContData()
 static int
 removeCacheHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
 {
-  // TSDebug(DEBUG_TAG, "[%s] event: %d", __FUNCTION__, (int)event);
   TSContDestroy(contp);
   // just ignore cache remove message
   return 0;
@@ -1339,13 +1338,6 @@ isCacheObjTransformable(TSHttpTxn txnp, bool *intercept_header, bool *head_only)
     return false;
   }
   if (obj_status == TS_CACHE_LOOKUP_HIT_FRESH) {
-    /*
-    time_t respTime;
-    if (TSHttpTxnCachedRespTimeGet(txnp, &respTime) == TS_SUCCESS) {
-      TSError("[%s] RespTime; %d", __FUNCTION__, (int)respTime);
-    }
-    */
-
     TSDebug(DEBUG_TAG, "[%s] doc found in cache, will add transformation", __FUNCTION__);
     return isTxnTransformable(txnp, true, intercept_header, head_only);
   }

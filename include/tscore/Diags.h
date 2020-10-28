@@ -219,6 +219,7 @@ public:
   bool setup_diagslog(BaseLogFile *blf);
   void config_roll_diagslog(RollingEnabledValues re, int ri, int rs);
   void config_roll_outputlog(RollingEnabledValues re, int ri, int rs);
+  bool reseat_diagslog();
   bool should_roll_diagslog();
   bool should_roll_outputlog();
 

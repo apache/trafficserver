@@ -433,7 +433,10 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
       // Seems like ua_entry->read_vio->disable(); should work, but that was
       // not sufficient to stop the state machine from processing IO events until the
       // TXN_START hooks had completed
-      ua_entry->read_vio = ua_entry->vc->do_io_read(nullptr, 0, nullptr);
+      // Preserve the current read cont and mutex
+      NetVConnection *netvc = ((ProxyTransaction *)ua_entry->vc)->get_netvc();
+      ink_assert(netvc != nullptr);
+      ua_entry->read_vio = ua_entry->vc->do_io_read(netvc->read_vio_cont(), 0, nullptr);
     }
     return EVENT_CONT;
   }
@@ -577,7 +580,8 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   //  this hook maybe asynchronous, we need to disable IO on
   //  client but set the continuation to be the state machine
   //  so if we get an timeout events the sm handles them
-  ua_entry->read_vio  = client_vc->do_io_read(this, 0, buffer_reader->mbuf);
+  //  hold onto enabling read until setup_client_read_request_header
+  ua_entry->read_vio  = client_vc->do_io_read(this, 0, nullptr);
   ua_entry->write_vio = client_vc->do_io_write(this, 0, nullptr);
 
   /////////////////////////
@@ -2717,7 +2721,7 @@ HttpSM::tunnel_handler_post_or_put(HttpTunnelProducer *p)
     tunnel.reset();
     // When the ua completed sending it's data we must have
     //  removed it from the tunnel
-    ink_release_assert(ua_entry->in_tunnel == false);
+    ua_entry->in_tunnel     = false;
     server_entry->in_tunnel = false;
 
     break;
@@ -3143,10 +3147,14 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     // server session to so the next ka request can use it.  Server sessions will
     // be placed into the shared pool if the next incoming request is for a different
     // origin server
+    bool release_origin_connection = true;
     if (t_state.txn_conf->attach_server_session_to_client == 1 && ua_txn && t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
       Debug("http", "attaching server session to the client");
-      ua_txn->attach_server_session(server_session);
-    } else {
+      if (ua_txn->attach_server_session(server_session)) {
+        release_origin_connection = false;
+      }
+    }
+    if (release_origin_connection) {
       // Release the session back into the shared session pool
       server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->keep_alive_no_activity_timeout_out));
       server_session->release();
@@ -3368,6 +3376,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   } else {
     ink_assert(ua_buffer_reader != nullptr);
     ua_txn->release(ua_buffer_reader);
+    ua_txn->get_proxy_ssn()->release(ua_txn);
     ua_buffer_reader = nullptr;
     // ua_txn       = NULL;
   }
@@ -3663,7 +3672,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     // do not shut down the client read
     if (enable_redirection) {
       if (ua_producer->vc_type == HT_STATIC && event != VC_EVENT_ERROR && event != VC_EVENT_EOS) {
-        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
+        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
         // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
       } else {
         if (ua_producer->vc_type == HT_STATIC && t_state.redirect_info.redirect_in_process) {
@@ -3671,7 +3680,7 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
         }
       }
     } else {
-      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
+      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
       // we should not shutdown read side of the client here to prevent sending a reset
       // ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
     } // end of added logic
@@ -4861,12 +4870,7 @@ HttpSM::do_http_server_open(bool raw)
              t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
 
   ink_assert(pending_action == nullptr);
-
-  if (false == t_state.api_server_addr_set) {
-    ink_assert(t_state.current.server->dst_addr.host_order_port() > 0);
-  } else {
-    ink_assert(t_state.current.server->dst_addr.port() != 0); // verify the plugin set it to something.
-  }
+  ink_assert(t_state.current.server->dst_addr.port() != 0);
 
   char addrbuf[INET6_ADDRPORTSTRLEN];
   SMDebug("http", "[%" PRId64 "] open connection to %s: %s", sm_id, t_state.current.server->name,
@@ -4929,6 +4933,12 @@ HttpSM::do_http_server_open(bool raw)
       }
       t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries; // prevent any more retries with this IP
       call_transact_and_set_next_state(HttpTransact::Forbidden);
+      return;
+    }
+
+    if (HttpTransact::is_server_negative_cached(&t_state) == true &&
+        t_state.txn_conf->connect_attempts_max_retries_dead_server <= 0) {
+      call_transact_and_set_next_state(HttpTransact::OriginDead);
       return;
     }
   }
@@ -6106,7 +6116,8 @@ HttpSM::attach_server_session(Http1ServerSession *s)
   // first tunnel instead of the producer of the second tunnel.
   // The real read is setup in setup_server_read_response_header()
   //
-  server_entry->read_vio = server_session->do_io_read(this, 0, server_session->read_buffer);
+  // Keep the read disabled until setup_server_read_response_header
+  server_entry->read_vio = server_session->do_io_read(this, 0, nullptr);
 
   // Transfer control of the write side as well
   server_entry->write_vio = server_session->do_io_write(this, 0, nullptr);
@@ -8101,7 +8112,7 @@ inline bool
 HttpSM::is_redirect_required()
 {
   bool redirect_required = (enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections) &&
-                            !HttpTransact::is_cache_hit(t_state.cache_lookup_result));
+                            !HttpTransact::is_fresh_cache_hit(t_state.cache_lookup_result));
 
   SMDebug("http_redirect", "is_redirect_required %u", redirect_required);
 

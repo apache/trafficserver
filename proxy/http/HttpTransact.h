@@ -682,10 +682,10 @@ public:
     DNSLookupInfo dns_info;
     RedirectInfo redirect_info;
     OutboundConnTrack::TxnState outbound_conn_track_state;
-    unsigned int updated_server_version   = HostDBApplicationInfo::HTTP_VERSION_UNDEFINED;
-    bool force_dns                        = false;
-    MgmtByte cache_open_write_fail_action = 0;
-    bool is_revalidation_necessary        = false; // Added to check if revalidation is necessary - YTS Team, yamsat
+    HostDBApplicationInfo::HttpVersion updated_server_version = HostDBApplicationInfo::HTTP_VERSION_UNDEFINED;
+    bool force_dns                                            = false;
+    MgmtByte cache_open_write_fail_action                     = 0;
+    bool is_revalidation_necessary = false; // Added to check if revalidation is necessary - YTS Team, yamsat
     ConnectionAttributes client_info;
     ConnectionAttributes parent_info;
     ConnectionAttributes server_info;
@@ -931,8 +931,9 @@ public:
   static void HandleRequestAuthorized(State *s);
   static void BadRequest(State *s);
   static void Forbidden(State *s);
-  static void TooEarly(State *s);
   static void SelfLoop(State *s);
+  static void TooEarly(State *s);
+  static void OriginDead(State *s);
   static void PostActiveTimeoutResponse(State *s);
   static void PostInactiveTimeoutResponse(State *s);
   static void DecideCacheLookup(State *s);
@@ -1020,6 +1021,7 @@ public:
   static bool will_this_request_self_loop(State *s);
   static bool is_request_likely_cacheable(State *s, HTTPHdr *request);
   static bool is_cache_hit(CacheLookupResult_t r);
+  static bool is_fresh_cache_hit(CacheLookupResult_t r);
 
   static void build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_request, HTTPVersion outgoing_version);
   static void build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing_response, HTTPVersion outgoing_version,

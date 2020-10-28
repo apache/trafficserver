@@ -174,6 +174,10 @@ struct NetVCOptions {
   static uint32_t const SOCK_OPT_LINGER_ON = 4;
   /// Value for TCP Fast open @c sockopt_flags
   static uint32_t const SOCK_OPT_TCP_FAST_OPEN = 8;
+  /// Value for SO_MARK @c sockopt_flags
+  static uint32_t const SOCK_OPT_PACKET_MARK = 16;
+  /// Value for IP_TOS @c sockopt_flags
+  static uint32_t const SOCK_OPT_PACKET_TOS = 32;
 
   uint32_t packet_mark;
   uint32_t packet_tos;
@@ -387,6 +391,12 @@ public:
   */
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override = 0;
 
+  virtual Continuation *
+  read_vio_cont()
+  {
+    return nullptr;
+  }
+
   /**
     Initiates write. Thread-safe, may be called when not handling
     an event from the NetVConnection, or the NetVConnection creation
@@ -423,6 +433,11 @@ public:
   */
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override = 0;
 
+  virtual Continuation *
+  write_vio_cont()
+  {
+    return nullptr;
+  }
   /**
     Closes the vconnection. A state machine MUST call do_io_close()
     when it has finished with a VConnection. do_io_close() indicates

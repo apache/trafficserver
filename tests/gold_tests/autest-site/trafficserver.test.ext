@@ -193,6 +193,11 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     p.Disk.diags_log.Content += Testers.ExcludesExpression(
         "FATAL:", "diags.log should not contain errors")
 
+    if command == "traffic_manager":
+        fname = "manager.log"
+        tmpname = os.path.join(log_dir, fname)
+        p.Disk.File(tmpname, id=make_id(fname))
+
     # config files
     def MakeConfigFile(self, fname):
         tmpname = os.path.join(config_dir, fname)

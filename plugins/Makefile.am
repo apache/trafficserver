@@ -83,6 +83,7 @@ include experimental/redo_cache_lookup/Makefile.inc
 include experimental/remap_stats/Makefile.inc
 include experimental/slice/Makefile.inc
 include experimental/sslheaders/Makefile.inc
+include experimental/statichit/Makefile.inc
 include experimental/stream_editor/Makefile.inc
 include experimental/system_stats/Makefile.inc
 include experimental/traffic_dump/Makefile.inc
@@ -116,7 +117,7 @@ endif
 
 endif
 
-TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(top_srcdir)/plugins/suppression.txt
 
 TESTS = $(check_PROGRAMS)
 

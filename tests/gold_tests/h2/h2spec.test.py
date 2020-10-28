@@ -60,8 +60,8 @@ ts.Disk.records_config.update({
 # Test Cases
 # ----
 
-# Known broken tests are left out (http2/6.4. and http2/6.9.)
-h2spec_targets = "http2/1 http2/2 http2/3 http2/4 http2/5 http2/6.1 http2/6.2 http2/6.3 http2/6.5 http2/6.6 http2/6.7 http2/6.8 http2/7 http2/8 hpack"
+# In case you need to disable some of the tests, you can specify sections like http2/6.4.
+h2spec_targets = "http2/1 http2/2 http2/3 http2/4 http2/5 http2/6 http2/7 http2/8 hpack"
 
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = 'h2spec {0} -t -k --timeout 10 -p {1}'.format(h2spec_targets, ts.Variables.ssl_port)

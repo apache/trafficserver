@@ -470,3 +470,63 @@ test.tr.Processes.Default.Command = test.get_command_to_rotate_thrice()
 test.tr.Processes.Default.ReturnCode = 0
 test.tr.StillRunningAfter = test.ts
 test.tr.StillRunningAfter = test.server
+
+#
+# Test 8: Verify log deletion happens after a config reload.
+#
+test = TestLogRetention(twelve_meg_log_space,
+                        "Verify log rotation and deletion after a config reload.")
+
+test.ts.Disk.logging_yaml.AddLines(
+    '''
+logging:
+  formats:
+    - name: long
+      format: "{prefix}: %<sssc>"
+  logs:
+    - filename: test_deletion
+      format: long
+'''.format(prefix="0123456789" * 500).split("\n")
+)
+
+# Verify that the plugin's logs and other core logs were registered for deletion.
+test.ts.Streams.stderr = Testers.ContainsExpression(
+    "Registering rotated log deletion for test_deletion.log with min roll count 0",
+    "Verify test_deletion.log auto-delete configuration")
+test.ts.Streams.stderr += Testers.ContainsExpression(
+    "Registering rotated log deletion for error.log with min roll count 0",
+    "Verify error.log auto-delete configuration")
+test.ts.Streams.stderr += Testers.ContainsExpression(
+    "Registering rotated log deletion for traffic.out with min roll count 0",
+    "Verify traffic.out auto-delete configuration")
+test.ts.Streams.stderr += Testers.ContainsExpression(
+    "Registering rotated log deletion for diags.log with min roll count 0",
+    "Verify diags.log auto-delete configuration")
+test.ts.Streams.stderr += Testers.ContainsExpression(
+    "Registering rotated log deletion for manager.log with min roll count 0",
+    "Verify manager.log auto-delete configuration")
+# Verify test_deletion was rotated and deleted.
+test.ts.Streams.stderr += Testers.ContainsExpression(
+    "The rolled logfile.*test_deletion.log_.*was auto-deleted.*bytes were reclaimed",
+    "Verify that space was reclaimed")
+
+# Touch logging.yaml so the config reload applies to logging objects.
+test.tr.Processes.Default.Command = "touch " + test.ts.Disk.logging_yaml.AbsRunTimePath
+test.tr.Processes.Default.ReturnCode = 0
+test.tr.StillRunningAfter = test.ts
+test.tr.StillRunningAfter = test.server
+
+tr = Test.AddTestRun("Perform a config reload")
+tr.Processes.Default.Command = "traffic_ctl config reload"
+tr.Processes.Default.Env = test.ts.Env
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.TimeOut = 5
+tr.TimeOut = 5
+tr.StillRunningAfter = test.ts
+tr.StillRunningAfter = test.server
+
+tr = Test.AddTestRun("Get the log to rotate.")
+tr.Processes.Default.Command = test.get_command_to_rotate_once()
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = test.ts
+tr.StillRunningAfter = test.server

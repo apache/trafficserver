@@ -24,7 +24,8 @@
 
 |Name| is a remap plug-in that allows a request to be multiplexed one or more times and sent to
 different remap entries. Both headers and body (in case of POST or PUT methods, only) are copied
-into the new requests.
+into the new requests. Optionally POST/PUT requests can be skipped via
+``pparam=proxy.config.multiplexer.skip_post_put=1``.
 
 Description
 ===========
@@ -59,6 +60,7 @@ Example remap.config::
     map http://www.example.com/a http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com
     map http://www.example.com/b http://www.example.com/ @plugin=multiplexer.so @pparam=host2.example.com
     map http://www.example.com/c http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com
+    map http://www.example.com/d http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com @pparam=proxy.config.multiplexer.skip_post_put=1
 
 
 Implementation
