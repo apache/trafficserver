@@ -1546,6 +1546,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
       Http2StreamDebug(this->ua_session, stream->get_id(), "No window");
+      this->ua_session->flush();
       return Http2SendDataFrameResult::NO_WINDOW;
     }
 
@@ -1563,6 +1564,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
   if (!stream->is_write_vio_done() && payload_length == 0) {
     Http2StreamDebug(this->ua_session, stream->get_id(), "No payload");
+    this->ua_session->flush();
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
@@ -1579,7 +1581,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
                    _client_rwnd, stream->client_rwnd(), payload_length);
 
   Http2DataFrame data(stream->get_id(), flags, resp_reader, payload_length);
-  this->ua_session->xmit(data);
+  this->ua_session->xmit(data, flags & HTTP2_FLAGS_DATA_END_STREAM);
 
   stream->update_sent_count(payload_length);
 

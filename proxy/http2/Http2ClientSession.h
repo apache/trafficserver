@@ -101,7 +101,8 @@ public:
 
   // more methods
   void write_reenable();
-  int64_t xmit(const Http2TxFrame &frame);
+  int64_t xmit(const Http2TxFrame &frame, bool flush = true);
+  void flush();
 
   ////////////////////
   // Accessors
@@ -154,13 +155,16 @@ private:
 
   bool _should_do_something_else();
 
-  int64_t total_write_len        = 0;
-  SessionHandler session_handler = nullptr;
-  MIOBuffer *read_buffer         = nullptr;
-  IOBufferReader *_reader        = nullptr;
-  MIOBuffer *write_buffer        = nullptr;
-  IOBufferReader *sm_writer      = nullptr;
-  Http2FrameHeader current_hdr   = {0, 0, 0, 0};
+  int64_t total_write_len             = 0;
+  SessionHandler session_handler      = nullptr;
+  MIOBuffer *read_buffer              = nullptr;
+  IOBufferReader *_reader             = nullptr;
+  MIOBuffer *write_buffer             = nullptr;
+  IOBufferReader *sm_writer           = nullptr;
+  Http2FrameHeader current_hdr        = {0, 0, 0, 0};
+  uint32_t _write_size_threshold      = 0;
+  uint32_t _write_time_threshold      = 100;
+  ink_hrtime _write_buffer_last_flush = 0;
 
   IpEndpoint cached_client_addr;
   IpEndpoint cached_local_addr;
@@ -182,6 +186,8 @@ private:
 
   Event *_reenable_event = nullptr;
   int _n_frame_read      = 0;
+
+  uint32_t _pending_sending_data_size = 0;
 
   int64_t read_from_early_data   = 0;
   bool cur_frame_from_early_data = false;

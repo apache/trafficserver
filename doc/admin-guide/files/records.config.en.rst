@@ -3850,6 +3850,27 @@ HTTP/2 Configuration
    Clients that send smaller window increments lower than this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
 
+.. ts:cv:: CONFIG proxy.config.http2.write_buffer_block_size INT 262144
+   :reloadable:
+
+   Specifies the size of a buffer block that is used for buffering outgoing
+   HTTP/2 frames. The size will be rounded up based on power of 2.
+
+.. ts:cv:: CONFIG proxy.config.http2.write_size_threshold FLOAT 0.5
+   :reloadable:
+
+   Specifies the size threshold for triggering write operation for sending HTTP/2
+   frames. The default value is 0.5 and it measn write operation is going to be
+   triggered when half or more of the buffer is occupied.
+
+.. ts:cv:: CONFIG proxy.config.http2.write_time_threshold INT 100
+   :reloadable:
+   :units: milliseconds
+
+   Specifies the time threshold for triggering write operation for sending HTTP/2
+   frames. Write operation will be triggered at least once every this configured
+   number of millisecond regardless of pending data size.
+
 HTTP/3 Configuration
 ====================
 
