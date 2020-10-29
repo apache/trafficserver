@@ -76,6 +76,7 @@ The following settings are simply gone, and have no purpose:
 
 * `proxy.config.config_dir` (see PROXY_CONFIG_CONFIG_DIR environment variable)
 * `proxy.config.cache.storage_filename` (see next section as well)
+* `proxy.config.http.server_tcp_init_cwnd` (see Solaris section below)
 
 Deprecated records.config settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -171,4 +172,5 @@ Platform specific
 -----------------
 
 Solaris is no longer a supported platform, but the code is still there. However, it's unlikely to work, and unless someone takes on
-ownership of this Platform, it will be removed from the source in ATS v10.0.0. For more details, see issue #5553.
+ownership of this Platform, it will be removed from the source in ATS v10.0.0. For more details, see issue #5553. With Solaris no
+longer supported, we also eliminated `proxy.config.http.server_tcp_init_cwnd`, which has no purpose on all other platforms.

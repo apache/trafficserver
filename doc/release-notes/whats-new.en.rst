@@ -54,6 +54,22 @@ Command line tools
 * The :program:`traffic_server` program now has two new maintenance commands: ``verify_global_plugin`` and ``verify_remap_plugin``.
   These commands load a plugin's shared object file and verify it meets minimal global or remap plugin API requirements.
 
+New configurations
+------------------
+
+Some new configurations were added, on existing features.
+
+HTTP/2
+~~~~~~
+
+The following new configurations are available to rate limit some potentially abusive clients.
+
+* :ts:cv:`proxy.config.http2.max_settings_per_frame`
+* :ts:cv:`proxy.config.http2.max_settings_per_minute`
+
+
+HTTP/2 settings
+
 Incompatible records.config settings
 ------------------------------------
 
