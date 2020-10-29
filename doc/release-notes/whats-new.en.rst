@@ -33,7 +33,7 @@ New Features
 
 This version of ATS has a number of new features (details below), but we're particularly excited about the following features:
 
-* Experimental QUIC support (draft 27).
+* Experimental QUIC support (draft 27 and 29).
 * TLS v1.3 0RTT support.
 
 PROXY protocol
