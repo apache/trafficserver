@@ -77,6 +77,14 @@ The following settings are simply gone, and have no purpose:
 * `proxy.config.config_dir` (see PROXY_CONFIG_CONFIG_DIR environment variable)
 * `proxy.config.cache.storage_filename` (see next section as well)
 * `proxy.config.http.server_tcp_init_cwnd` (see Solaris section below)
+* `proxy.config.http.parent_proxy_routing_enable` (implicit by use of :file:`parent.config`)
+
+All the `Vary` related configuration overrides were eliminated, prefer to set this via the origin server,
+or modify the `Vary` header on server responses instead.
+
+* `proxy.config.http.cache.vary_default_text`
+* `proxy.config.http.cache.vary_default_images`
+* `proxy.config.http.cache.vary_default_other`
 
 Deprecated records.config settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,6 +103,17 @@ The following configurations still exist, and functions, but are considered depr
   * ``proxy.config.cache.hosting_filename``
   * ``proxy.config.cache.volume_filename``
   * ``proxy.config.dns.splitdns.filename``
+
+Settings with new defaults
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following settings have changed from being `on` by default, to being off:
+
+* :ts:cv:`proxy.config.ssl.TLSv1`
+* :ts:cv:`proxy.config.ssl.TLSv1_1`
+* :ts:cv:`proxy.config.ssl.client.TLSv1`
+* :ts:cv:`proxy.config.ssl.client.TLSv1_1`
+
 
 Metrics
 -------

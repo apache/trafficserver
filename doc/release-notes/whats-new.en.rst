@@ -67,6 +67,12 @@ The following new configurations are available to rate limit some potentially ab
 * :ts:cv:`proxy.config.http2.max_settings_per_frame`
 * :ts:cv:`proxy.config.http2.max_settings_per_minute`
 
+Parent Selection
+~~~~~~~~~~~~~~~~
+
+A new directive, `ignore_self_detect`, is added to the :file:`parent.config` format. This allows you to parent proxy to
+sibling proxies, without creating loops.
+
 
 HTTP/2 settings
 
@@ -93,6 +99,8 @@ These are all gone, and replaced with the following set of configurations:
 * :ts:cv:`proxy.config.http.per_server.connection.queue_size`
 * :ts:cv:`proxy.config.http.per_server.connection.queue_delay`
 * :ts:cv:`proxy.config.http.per_server.connection.min`
+
+
 
 Logging and Metrics
 -------------------
@@ -142,3 +150,10 @@ There is a new API for redoing a cache lookup, typically after a URL change, or 
 .. code-block:: c
 
     TSReturnCode TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
+
+New APIs for TLS client context retrievals were added:
+
+.. code-block:: c
+
+    TSReturnCode TSSslClientContextsNamesGet(int n, const char **result, int *actual);
+    TSSslContext TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths);
