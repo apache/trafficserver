@@ -45,8 +45,8 @@ In addition, a new file for TLS handshake negotiation configuration is added:
 
 * :file:`sni.yaml` (this was for a while named ssl_server_name.config in Github)
 
-records.config Configuration Settings
--------------------------------------
+Configuration Settings: records.config
+--------------------------------------
 
 These are the changes that are most likely to cause problems during an upgrade. Take special care making sure you have updated your
 configurations accordingly.
@@ -101,10 +101,10 @@ Metrics
 Renamed or modified metrics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`proxy.process.http2.current_client_sessions` is renamed to be `proxy.process.http2.current_client_connections`
+`proxy.process.http2.current_client_sessions` is renamed to be :ts:stat:`proxy.process.http2.current_client_connections`
 
-`proxy.process.http.current_client_transactions` used to record both the number current of HTTP/1.1 and HTTP/2 requests.  Now it only records
-the number current of HTTP/1.1 client requests.  Please use `proxy.process.http2.current_client_streams` to get the number of current HTTP/2
+:ts:stat:`proxy.process.http.current_client_transactions` used to record both the number current of HTTP/1.1 and HTTP/2 requests.  Now it only records
+the number current of HTTP/1.1 client requests.  Please use :ts:stat:`proxy.process.http2.current_client_streams` to get the number of current HTTP/2
 client requests.
 
 Deprecated or Removed Features
@@ -143,8 +143,8 @@ in a remap rule would get the pristine URL, and subsequent plugins would get the
 receive the remapped URL. If you are using a plugin that modifies the cache key, e.g. :ref:`admin-plugins-cachekey`, if it was
 evaluated first in a remap rule, the behavior (input) changes, and therefore, cache keys can change!
 
-The old ``v23`` cache is no longer supported, which means caches created with ATS v2.x will no longer be possible to load with ATS
-v9.0.0 or later. We feel that this is an unlikely scenario, but if you do run into this, clearing the cache is required.
+Caches created with ATS v2.x are incompatible and can't be loading into ATS v9.0.0 or later. We feel that this is an unlikely scenario,
+but if you do run into this, clearing the cache is required.
 
 Plugins
 -------
@@ -152,17 +152,19 @@ Plugins
 The following plugins have changes that might require you to change
 configurations.
 
-header_rewrite
+Header Rewrite
 ~~~~~~~~~~~~~~
 
 * The `%{PATH}` directive is now removed, and instead you want to use `%{CLIENT-URL:PATH}`. This was done to unify the behavior of
   these operators, rather than having this one-off directive.
 
-`header-rewrite-expansion` was removed and replaced with `header-rewrite-concatenations`
+* `header-rewrite-expansion` was removed and replaced with `header-rewrite-concatenations`
 
 Library Dependencies
 --------------------
 TCL is no longer required to build ATS.
+
+The minium OpenSSL version to build ATS is now 1.0.2.
 
 Platform specific
 -----------------
