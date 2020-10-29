@@ -113,6 +113,7 @@ Deprecated or Removed Features
 The following features, configurations and plugins are either removed or deprecated in this version of ATS. Deprecated features
 should be avoided, with the expectation that they will be removed in the next major release of ATS.
 
+Removed the log collation feature along with its configuration settings (`proxy.local.log.collation*`).
 
 API Changes
 -----------
