@@ -41,12 +41,12 @@ We are moving configurations over to YAML, and thus far, the following configura
 * :file:`logging.yaml` (*was* `logging.config` or `logging.lua`)
 * :file:`ip_allow.yaml` (*was* `ip_allow.config`)
 
-In addition, a new file for TLS handhsake negotiation configuration is added:
+In addition, a new file for TLS handshake negotiation configuration is added:
 
 * :file:`sni.yaml` (this was for a while named ssl_server_name.config in Github)
 
-New records.config settings
-----------------------------
+records.config Configuration Settings
+-------------------------------------
 
 These are the changes that are most likely to cause problems during an upgrade. Take special care making sure you have updated your
 configurations accordingly.
@@ -70,7 +70,7 @@ These are all gone, and replaced with the following set of configurations:
 * :ts:cv:`proxy.config.http.per_server.connection.min`
 
 Removed records.config settings
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following settings are simply gone, and have no purpose:
 
@@ -78,7 +78,7 @@ The following settings are simply gone, and have no purpose:
 * `proxy.config.cache.storage_filename` (see next section as well)
 
 Deprecated records.config settings
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following configurations still exist, and functions, but are considered deprecated and will be removed in a future release. We
 **strongly** encourage you to avoid using any of these:
@@ -94,6 +94,18 @@ The following configurations still exist, and functions, but are considered depr
   * ``proxy.config.cache.hosting_filename``
   * ``proxy.config.cache.volume_filename``
   * ``proxy.config.dns.splitdns.filename``
+
+Metrics
+-------
+
+Renamed or modified metrics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`proxy.process.http2.current_client_sessions` is renamed to be `proxy.process.http2.current_client_connections`
+
+`proxy.process.http.current_client_transactions` used to record both the number current of HTTP/1.1 and HTTP/2 requests.  Now it only records
+the number current of HTTP/1.1 client requests.  Please use `proxy.process.http2.current_client_streams` to get the number of current HTTP/2
+client requests.
 
 Deprecated or Removed Features
 ------------------------------
@@ -145,6 +157,12 @@ header_rewrite
 
 * The `%{PATH}` directive is now removed, and instead you want to use `%{CLIENT-URL:PATH}`. This was done to unify the behavior of
   these operators, rather than having this one-off directive.
+
+`header-rewrite-expansion` was removed and replaced with `header-rewrite-concatenations`
+
+Library Dependencies
+--------------------
+TCL is no longer required to build ATS.
 
 Platform specific
 -----------------
