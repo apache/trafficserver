@@ -1762,6 +1762,8 @@ HttpSM::state_http_server_open(int event, void *data)
     }
     return 0;
 
+  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     // Update the time out to the regular connection timeout.
@@ -1782,6 +1784,7 @@ HttpSM::state_http_server_open(int event, void *data)
     }
     break;
   case VC_EVENT_ERROR:
+  case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case NET_EVENT_OPEN_FAILED:
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
