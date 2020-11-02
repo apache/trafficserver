@@ -21,8 +21,12 @@
   limitations under the License.
  */
 #include <ts/ts.h>
+#include <string.h>
 
 #define PLUGIN_TAG "test"
+
+// Number of seconds to reschedule to a task thread and delay
+int DelayStart = 0;
 
 int
 transactionHandler(TSCont continuation, TSEvent event, void *d)
@@ -79,6 +83,12 @@ sessionHandler(TSCont continuation, TSEvent event, void *d)
     return 0;
   } break;
 
+  case TS_EVENT_TIMEOUT: { // The schedule case, reenable the session continuation
+    TSDebug(PLUGIN_TAG, " -- sessionHandler :: TS_EVENT_TIMEOUT");
+    TSHttpSsn session = static_cast<TSHttpSsn>(TSContDataGet(continuation));
+    TSHttpSsnReenable(session, TS_EVENT_HTTP_CONTINUE);
+    return 0;
+  }
   default:
     TSAssert(!"Unexpected event");
     break;
@@ -91,10 +101,8 @@ sessionHandler(TSCont continuation, TSEvent event, void *d)
 int
 globalHandler(TSCont continuation, TSEvent event, void *data)
 {
-  TSHttpSsn session = static_cast<TSHttpSsn>(data);
-
-  switch (event) {
-  case TS_EVENT_HTTP_SSN_START: {
+  if (event == TS_EVENT_HTTP_SSN_START) {
+    TSHttpSsn session = static_cast<TSHttpSsn>(data);
     TSDebug(PLUGIN_TAG, " -- globalHandler :: TS_EVENT_HTTP_SSN_START");
     TSCont cont = TSContCreate(sessionHandler, TSMutexCreate());
 
@@ -102,13 +110,14 @@ globalHandler(TSCont continuation, TSEvent event, void *data)
     TSHttpSsnHookAdd(session, TS_HTTP_SSN_CLOSE_HOOK, cont);
 
     TSDebug(PLUGIN_TAG, "New session, cont is %p", cont);
-  } break;
 
-  default:
-    return 0;
+    if (DelayStart == 0) {
+      TSHttpSsnReenable(session, TS_EVENT_HTTP_CONTINUE);
+    } else {
+      TSContDataSet(cont, session);
+      TSContScheduleOnPool(cont, 500, TS_THREAD_POOL_TASK);
+    }
   }
-
-  TSHttpSsnReenable(session, TS_EVENT_HTTP_CONTINUE);
 
   return 0;
 }
@@ -134,7 +143,13 @@ TSPluginInit(int argc, const char **argv)
     return;
   }
 
-  TSCont continuation = TSContCreate(globalHandler, nullptr);
+  if (argc >= 2) {
+    TSDebug(PLUGIN_TAG, "Argument %s", argv[1]);
+    if (strcmp(argv[1], "-delay") == 0) {
+      DelayStart = 1;
+    }
+  }
+  TSCont continuation = TSContCreate(globalHandler, TSMutexCreate());
 
   TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, continuation);
 }
