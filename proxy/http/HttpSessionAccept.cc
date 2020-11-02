@@ -54,6 +54,8 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   new_session->accept_options = static_cast<Options *>(this);
   new_session->acl            = std::move(acl);
 
+  // Pin session to current ET_NET thread
+  new_session->setThreadAffinity(this_ethread());
   new_session->new_connection(netvc, iobuf, reader);
 
   new_session->trans.upstream_outbound_options = *new_session->accept_options;
