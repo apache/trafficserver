@@ -188,16 +188,16 @@ public:
     /* Optional parameters, issue warning if v2 parameters are used with v4 and vice-versa (wrong parameters are ignored anyways) */
     if (2 == _version) {
       if (_v4includeHeaders_modified && !_v4includeHeaders.empty()) {
-        TSError("[%s] headers are not being signed with AWS auth v2, included headers parameter ignored", PLUGIN_NAME);
+        TSDebug("[%s] headers are not being signed with AWS auth v2, included headers parameter ignored", PLUGIN_NAME);
       }
       if (_v4excludeHeaders_modified && !_v4excludeHeaders.empty()) {
-        TSError("[%s] headers are not being signed with AWS auth v2, excluded headers parameter ignored", PLUGIN_NAME);
+        TSDebug("[%s] headers are not being signed with AWS auth v2, excluded headers parameter ignored", PLUGIN_NAME);
       }
       if (_region_map_modified && !_region_map.empty()) {
-        TSError("[%s] region map is not used with AWS auth v2, parameter ignored", PLUGIN_NAME);
+        TSDebug("[%s] region map is not used with AWS auth v2, parameter ignored", PLUGIN_NAME);
       }
       if (nullptr != _token || _token_len > 0) {
-        TSError("[%s] session token support with AWS auth v2 is not implemented, parameter ignored", PLUGIN_NAME);
+        TSDebug("[%s] session token support with AWS auth v2 is not implemented, parameter ignored", PLUGIN_NAME);
       }
     } else {
       /* 4 == _version */
