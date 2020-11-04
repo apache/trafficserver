@@ -2627,7 +2627,8 @@ tsapi TSReturnCode TSHostStatusGet(const char *hostname, const size_t hostname_l
  * Sets the status of hostname in status, down_time, and reason.
  * The reason is a logical-or combination of the reasons in TSHostStatusReason.
  */
-tsapi void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time, const unsigned int reason);
+tsapi void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
+                           const unsigned int reason);
 
 struct TSParentResult;
 

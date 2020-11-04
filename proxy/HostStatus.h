@@ -183,7 +183,8 @@ struct HostStatus {
     static HostStatus instance;
     return instance;
   }
-  void setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time, const unsigned int reason);
+  void setHostStatus(const std::string_view name, const TSHostStatus status, const unsigned int down_time,
+                     const unsigned int reason);
   HostStatRec *getHostStatus(const std::string_view name);
   void createHostStat(const std::string_view name, const char *data = nullptr);
   void loadHostStatusFromStats();

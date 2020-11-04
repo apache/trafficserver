@@ -316,7 +316,8 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       }
     }
     if (reason & Reason::SELF_DETECT) {
-      Debug("host_statuses", "for host %.*s set status: %s, Reason:SELF_DETECT", int(name.size()), name.data(), HostStatusNames[status]);
+      Debug("host_statuses", "for host %.*s set status: %s, Reason:SELF_DETECT", int(name.size()), name.data(),
+            HostStatusNames[status]);
       if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
         host_stat->self_detect_marked_down = time(0);
         host_stat->reasons |= Reason::SELF_DETECT;
@@ -345,16 +346,19 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
     status_rec << *host_stat;
     RecSetRecordString(stat_name.c_str(), const_cast<char *>(status_rec.str().c_str()), REC_SOURCE_EXPLICIT, true);
     if (status == TSHostStatus::TS_HOST_STATUS_UP) {
-      Debug("host_statuses", "set status up for name: %.*s, status: %d, stat_name: %s", int(name.size()), name.data(), status, stat_name.c_str());
+      Debug("host_statuses", "set status up for name: %.*s, status: %d, stat_name: %s", int(name.size()), name.data(), status,
+            stat_name.c_str());
     } else {
-      Debug("host_statuses", "set status down for name: %.*s, status: %d, stat_name: %s", int(name.size()), name.data(), status, stat_name.c_str());
+      Debug("host_statuses", "set status down for name: %.*s, status: %d, stat_name: %s", int(name.size()), name.data(), status,
+            stat_name.c_str());
     }
   }
   Debug("host_statuses", "name: %.*s, status: %d", int(name.size()), name.data(), status);
 
   // log it.
   if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
-    Note("Host %.*s has been marked down, down_time: %d - %s.", int(name.size()), name.data(), down_time, down_time == 0 ? "indefinitely." : "seconds.");
+    Note("Host %.*s has been marked down, down_time: %d - %s.", int(name.size()), name.data(), down_time,
+         down_time == 0 ? "indefinitely." : "seconds.");
   } else {
     Note("Host %.*s has been marked up.", int(name.size()), name.data());
   }
@@ -383,24 +387,24 @@ HostStatus::getHostStatus(const std::string_view name)
     unsigned int reasons = _status->reasons;
     if ((_status->reasons & Reason::ACTIVE) && _status->active_down_time > 0) {
       if ((_status->active_down_time + _status->active_marked_down) < now) {
-        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(), now,
-              _status->active_down_time, _status->active_marked_down, Reason::ACTIVE_REASON);
+        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(),
+              now, _status->active_down_time, _status->active_marked_down, Reason::ACTIVE_REASON);
         setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, 0, Reason::ACTIVE);
         reasons ^= Reason::ACTIVE;
       }
     }
     if ((_status->reasons & Reason::LOCAL) && _status->local_down_time > 0) {
       if ((_status->local_down_time + _status->local_marked_down) < now) {
-        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(), now,
-              _status->local_down_time, _status->local_marked_down, Reason::LOCAL_REASON);
+        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(),
+              now, _status->local_down_time, _status->local_marked_down, Reason::LOCAL_REASON);
         setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, 0, Reason::LOCAL);
         reasons ^= Reason::LOCAL;
       }
     }
     if ((_status->reasons & Reason::MANUAL) && _status->manual_down_time > 0) {
       if ((_status->manual_down_time + _status->manual_marked_down) < now) {
-        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(), now,
-              _status->manual_down_time, _status->manual_marked_down, Reason::MANUAL_REASON);
+        Debug("host_statuses", "name: %.*s, now: %ld, down_time: %d, marked_down: %ld, reason: %s", int(name.size()), name.data(),
+              now, _status->manual_down_time, _status->manual_marked_down, Reason::MANUAL_REASON);
         setHostStatus(name, TSHostStatus::TS_HOST_STATUS_UP, 0, Reason::MANUAL);
         reasons ^= Reason::MANUAL;
       }

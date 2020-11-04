@@ -9913,7 +9913,7 @@ TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length)
 TSReturnCode
 TSHostnameIsSelf(const char *hostname)
 {
-	return Machine::instance()->is_self(hostname) ? TS_SUCCESS : TS_ERROR;
+  return Machine::instance()->is_self(hostname) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
@@ -9933,7 +9933,8 @@ TSHostStatusGet(const char *hostname, const size_t hostname_len, TSHostStatus *s
 }
 
 void
-TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time, const unsigned int reason)
+TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
+                const unsigned int reason)
 {
   HostStatus::instance().setHostStatus(std::string_view(hostname, hostname_len), status, down_time, reason);
 }
