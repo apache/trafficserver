@@ -39,7 +39,6 @@
 #include <sstream>
 #include <pcre.h>
 
-static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 static constexpr int OVECSIZE{30};
 
 const NextHopProperty *
@@ -191,14 +190,14 @@ SNIConfigParams::~SNIConfigParams()
 void
 SNIConfig::startup()
 {
-  sniConfigUpdate = new ConfigUpdateHandler<SNIConfig>();
-  sniConfigUpdate->attach("proxy.config.ssl.servername.filename");
+  sslClientUpdate->attach("proxy.config.ssl.servername.filename");
   reconfigure();
 }
 
 void
 SNIConfig::reconfigure()
 {
+  Debug("ssl", "Reload SNI file");
   SNIConfigParams *params = new SNIConfigParams;
 
   params->Initialize();
