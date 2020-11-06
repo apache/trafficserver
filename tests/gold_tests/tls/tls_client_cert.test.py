@@ -301,7 +301,7 @@ tr4fail.Processes.Default.ReturnCode = 0
 tr4fail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
 tr = Test.AddTestRun("Wait for the access log to write out")
-tr.Processes.Default.StartBefore(server4, ready=When.FileExists(ts.Disk.squid_log))
+tr.Processes.Default.StartBefore(server4, ready=When.FileContains(ts.Disk.squid_log.Name, 'https', 12))
 tr.StillRunningAfter = ts
 tr.Processes.Default.Command = 'echo "log file exists"'
 tr.Processes.Default.ReturnCode = 0
