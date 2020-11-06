@@ -54,6 +54,7 @@ typedef enum {
 typedef enum {
   TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
   TS_SERVER_SESSION_SHARING_POOL_THREAD,
+  TS_SERVER_SESSION_SHARING_POOL_HYBRID
 } TSServerSessionSharingPoolType;
 
 // This is use to signal apidefs.h to not define these again.
