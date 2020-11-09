@@ -20,6 +20,7 @@
 
 #include "slice.h"
 
+#include <cinttypes>
 #include <cstdlib>
 #include <cstring>
 
@@ -54,18 +55,20 @@ HttpHeader::setStatus(TSHttpStatus const newstatus)
 }
 
 char *
-HttpHeader ::urlString(int *const urllen) const
+HttpHeader::urlString(int *const urllen) const
 {
   char *urlstr = nullptr;
   TSAssert(nullptr != urllen);
 
   TSMLoc locurl            = nullptr;
   TSReturnCode const rcode = TSHttpHdrUrlGet(m_buffer, m_lochdr, &locurl);
-  if (TS_SUCCESS == rcode && nullptr != locurl) {
-    urlstr = TSUrlStringGet(m_buffer, locurl, urllen);
+  if (nullptr != locurl) {
+    if (TS_SUCCESS == rcode) {
+      urlstr = TSUrlStringGet(m_buffer, locurl, urllen);
+    } else {
+      *urllen = 0;
+    }
     TSHandleMLocRelease(m_buffer, m_lochdr, locurl);
-  } else {
-    *urllen = 0;
   }
 
   return urlstr;
@@ -229,81 +232,90 @@ HttpHeader::setKeyVal(char const *const keystr, int const keylen, char const *co
   return status;
 }
 
+bool
+HttpHeader::timeForKey(char const *const keystr, int const keylen, time_t *const timeval) const
+{
+  TSAssert(nullptr != timeval);
+
+  if (!isValid()) {
+    *timeval = 0;
+    return false;
+  }
+
+  bool status = false;
+
+  TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
+
+  if (nullptr != locfield) {
+    *timeval = TSMimeHdrFieldValueDateGet(m_buffer, m_lochdr, locfield);
+    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
+  } else {
+    *timeval = 0;
+  }
+
+  return status;
+}
+
+bool
+HttpHeader::setKeyTime(char const *const keystr, int const keylen, time_t const timeval)
+{
+  if (!isValid()) {
+    return false;
+  }
+
+  bool status(false);
+
+  TSMLoc locfield(TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen));
+
+  if (nullptr == locfield) {
+    DEBUG_LOG("Creating header %.*s", keylen, keystr);
+    TSMimeHdrFieldCreateNamed(m_buffer, m_lochdr, keystr, keylen, &locfield);
+  }
+
+  if (nullptr != locfield) {
+    if (TS_SUCCESS == TSMimeHdrFieldValueDateSet(m_buffer, m_lochdr, locfield, timeval)) {
+      if (TS_SUCCESS == TSMimeHdrFieldAppend(m_buffer, m_lochdr, locfield)) {
+        status = true;
+        DEBUG_LOG("Set header %.*s to %jd", keylen, keystr, static_cast<intmax_t>(timeval));
+      }
+    }
+    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
+  }
+
+  return status;
+}
+
 std::string
 HttpHeader::toString() const
 {
   std::string res;
 
-  if (!isValid()) {
-    return "<null>";
-  }
+  if (isValid()) {
+    TSIOBuffer const iobufp = TSIOBufferCreate();
+    TSHttpHdrPrint(m_buffer, m_lochdr, iobufp);
+    TSIOBufferReader const reader = TSIOBufferReaderAlloc(iobufp);
 
-  TSHttpType const htype(type());
+    if (nullptr != reader) {
+      TSIOBufferBlock block = TSIOBufferReaderStart(reader);
+      bool done             = false;
+      while (!done && nullptr != block) {
+        int64_t avail        = 0;
+        char const *blockptr = TSIOBufferBlockReadStart(block, reader, &avail);
+        if (0 < avail) {
+          res.append(blockptr, avail);
+        }
+        block = TSIOBufferBlockNext(block);
+      }
 
-  switch (htype) {
-  case TS_HTTP_TYPE_REQUEST: {
-    res.append(method());
-
-    int urllen         = 0;
-    char *const urlstr = urlString(&urllen);
-    if (nullptr != urlstr) {
-      res.append(" ");
-      res.append(urlstr, urllen);
-      TSfree(urlstr);
-    } else {
-      res.append(" UnknownURL");
+      TSIOBufferReaderFree(reader);
     }
 
-    res.append(" HTTP/unparsed");
-  } break;
-
-  case TS_HTTP_TYPE_RESPONSE: {
-    char bufstr[1024];
-    /*
-    int const version = TSHttpHdrVersionGet(m_buffer, m_lochdr);
-    snprintf(bufstr, 1023, "%d ", version);
-    res.append(bufstr);
-    */
-    res.append("HTTP/unparsed");
-
-    int const status = TSHttpHdrStatusGet(m_buffer, m_lochdr);
-    snprintf(bufstr, 1023, " %d ", status);
-    res.append(bufstr);
-
-    int reasonlen             = 0;
-    char const *const hreason = reason(&reasonlen);
-
-    res.append(hreason, reasonlen);
-  } break;
-
-  default:
-  case TS_HTTP_TYPE_UNKNOWN:
-    res.append("UNKNOWN");
-    break;
+    TSIOBufferDestroy(iobufp);
   }
 
-  res.append("\r\n");
-
-  int const numhdrs = TSMimeHdrFieldsCount(m_buffer, m_lochdr);
-
-  for (int indexhdr = 0; indexhdr < numhdrs; ++indexhdr) {
-    TSMLoc const locfield = TSMimeHdrFieldGet(m_buffer, m_lochdr, indexhdr);
-
-    int keylen               = 0;
-    char const *const keystr = TSMimeHdrFieldNameGet(m_buffer, m_lochdr, locfield, &keylen);
-
-    res.append(keystr, keylen);
-    res.append(": ");
-    int vallen               = 0;
-    char const *const valstr = TSMimeHdrFieldValueStringGet(m_buffer, m_lochdr, locfield, -1, &vallen);
-
-    res.append(valstr, vallen);
-    res.append("\r\n");
-
-    TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
+  if (res.empty()) {
+    res = "<null>";
   }
-
-  res.append("\r\n");
 
   return res;
 }

@@ -20,7 +20,7 @@ Test.Summary = '''
 Basic slice plugin test
 '''
 
-## Test description:
+# Test description:
 # Preload the cache with the entire asset to be range requested.
 # Reload remap rule with slice plugin
 # Request content through the slice plugin
@@ -34,150 +34,151 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server")
 
 # default root
 request_header_chk = {"headers":
-  "GET / HTTP/1.1\r\n" +
-  "Host: www.example.com\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": "",
-}
+                      "GET / HTTP/1.1\r\n" +
+                      "Host: ats\r\n" +
+                      "\r\n",
+                      "timestamp": "1469733493.993",
+                      "body": "",
+                      }
 
 response_header_chk = {"headers":
-  "HTTP/1.1 200 OK\r\n" +
-  "Connection: close\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": "",
-}
+                       "HTTP/1.1 200 OK\r\n" +
+                       "Connection: close\r\n" +
+                       "\r\n",
+                       "timestamp": "1469733493.993",
+                       "body": "",
+                       }
 
 server.addResponse("sessionlog.json", request_header_chk, response_header_chk)
 
-#block_bytes = 7
+block_bytes = 7
 body = "lets go surfin now"
 
 request_header = {"headers":
-  "GET /path HTTP/1.1\r\n" +
-  "Host: www.example.com\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": "",
-}
+                  "GET /path HTTP/1.1\r\n" +
+                  "Host: origin\r\n" +
+                  "\r\n",
+                  "timestamp": "1469733493.993",
+                  "body": "",
+                  }
 
 response_header = {"headers":
-  "HTTP/1.1 200 OK\r\n" +
-  "Connection: close\r\n" +
-  'Etag: "path"\r\n' +
-  "Cache-Control: max-age=500\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": body,
-}
+                   "HTTP/1.1 200 OK\r\n" +
+                   "Connection: close\r\n" +
+                   'Etag: "path"\r\n' +
+                   "Cache-Control: max-age=500\r\n" +
+                   "\r\n",
+                   "timestamp": "1469733493.993",
+                   "body": body,
+                   }
 
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Setup.CopyAs('curlsort.sh', Test.RunDirectory)
-curl_and_args = 'sh curlsort.sh -H "Host: www.example.com"'
+curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port)
 
 # set up whole asset fetch into cache
-ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{}'.format(server.Variables.Port)
-)
+ts.Disk.remap_config.AddLines([
+    'map http://preload/ http://127.0.0.1:{}'.format(server.Variables.Port),
+    'map http://slice/ http://127.0.0.1:{}'.format(server.Variables.Port) +
+    ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(block_bytes)
+])
 
-# minimal configuration
 ts.Disk.records_config.update({
-  'proxy.config.diags.debug.enabled': 1,
-  'proxy.config.diags.debug.tags': 'slice',
-  'proxy.config.http.cache.http': 1,
-  'proxy.config.http.wait_for_cache': 1,
-  'proxy.config.http.insert_age_in_response': 0,
-  'proxy.config.http.response_via_str': 3,
+    'proxy.config.http.wait_for_cache': 1,
+    'proxy.config.http.cache.http': 1,
+    'proxy.config.diags.debug.enabled': 0,
+    'proxy.config.diags.debug.tags': 'slice',
 })
 
 # 0 Test - Prefetch entire asset into cache
 tr = Test.AddTestRun("Fetch first slice range")
-tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/slice_200.stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/slice_200.stderr.gold"
+ps = tr.Processes.Default
+ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
+ps.StartBefore(Test.Processes.ts)
+ps.Command = curl_and_args + ' http://preload/path'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/slice_200.stderr.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
 tr.StillRunningAfter = ts
 
-block_bytes = 7
-
-# 1 - Reconfigure remap.config with slice plugin
-tr = Test.AddTestRun("Load Slice plugin")
-remap_config_path = ts.Disk.remap_config.Name
-tr.Disk.File(remap_config_path, typename="ats:config").AddLines([
-  'map / http://127.0.0.1:{}'.format(server.Variables.Port) +
-    ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(block_bytes)
-])
-
-tr.StillRunningAfter = ts
-tr.StillRunningAfter = server
-tr.Processes.Default.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.TimeOut = 5
-tr.TimeOut = 5
-
-# 2 Test - First complete slice
+# 1 Test - First complete slice
 tr = Test.AddTestRun("Fetch first slice range")
-tr.DelayStart = 5
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path'.format(ts.Variables.port) + ' -r 0-6'
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/slice_first.stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/slice_first.stderr.gold"
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/path' + ' -r 0-6'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/slice_first.stderr.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-6/18", "mismatch byte content response")
 tr.StillRunningAfter = ts
 
-# 3 Test - Last slice auto
+# 2 Test - Last slice auto
 tr = Test.AddTestRun("Last slice -- 14-")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path'.format(ts.Variables.port) + ' -r 14-'
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/slice_last.stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/slice_last.stderr.gold"
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/path' + ' -r 14-'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/slice_last.stderr.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 14-17/18", "mismatch byte content response")
 tr.StillRunningAfter = ts
 
-# 4 Test - Last slice exact
+# 3 Test - Last slice exact
 tr = Test.AddTestRun("Last slice 14-17")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path'.format(ts.Variables.port) + ' -r 14-17'
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/slice_last.stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/slice_last.stderr.gold"
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/path' + ' -r 14-17'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/slice_last.stderr.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 14-17/18", "mismatch byte content response")
 tr.StillRunningAfter = ts
 
-# 5 Test - Last slice truncated
+# 4 Test - Last slice truncated
 tr = Test.AddTestRun("Last truncated slice 14-20")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path'.format(ts.Variables.port) + ' -r 14-20'
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/slice_last.stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/slice_last.stderr.gold"
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/path' + ' -r 14-20'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/slice_last.stderr.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 14-17/18", "mismatch byte content response")
 tr.StillRunningAfter = ts
 
-# 6 Test - Whole asset via slices
+# 5 Test - Whole asset via slices
 tr = Test.AddTestRun("Whole asset via slices")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/slice_200.stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/slice_200.stderr.gold"
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/path'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/slice_200.stderr.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
 tr.StillRunningAfter = ts
 
-# 7 Test - Whole asset via range
+# 6 Test - Whole asset via range
 tr = Test.AddTestRun("Whole asset via range")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path'.format(ts.Variables.port) + ' -r 0-'
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/slice_206.stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/slice_206.stderr.gold"
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/path' + ' -r 0-'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/slice_206.stderr.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-17/18", "mismatch byte content response")
 tr.StillRunningAfter = ts
 
-# 8 Test - Non aligned slice request
+# 7 Test - Non aligned slice request
 tr = Test.AddTestRun("Non aligned slice request")
-tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path'.format(ts.Variables.port) + ' -r 5-16'
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/slice_mid.stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/slice_mid.stderr.gold"
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/path' + ' -r 5-16'
+ps.ReturnCode = 0
+ps.Streams.stderr = "gold/slice_mid.stderr.gold"
+ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
+ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 5-16/18", "mismatch byte content response")
+tr.StillRunningAfter = ts
+
+# 8 Test - special case, begin inside last slice block but outside asset len
+tr = Test.AddTestRun("Invalid end range request, 416")
+beg = len(body) + 1
+end = beg + block_bytes
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/path' + ' -r {}-{}'.format(beg, end)
+ps.Streams.stdout.Content = Testers.ContainsExpression("416 Requested Range Not Satisfiable", "expected 416 response")
 tr.StillRunningAfter = ts

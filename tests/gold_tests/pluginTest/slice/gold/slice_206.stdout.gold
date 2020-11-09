@@ -1,9 +1,0 @@
-``
-Cache-Control: ``
-Connection: ``
-Content-Length: 18
-Content-Range: bytes 0-17/18
-Date: ``
-Etag: "path"
-HTTP/1.1 206 Partial Content
-Server: ``
