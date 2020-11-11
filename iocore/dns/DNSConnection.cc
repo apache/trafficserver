@@ -77,6 +77,8 @@ DNSConnection::close()
 void
 DNSConnection::trigger()
 {
+  SCOPED_MUTEX_LOCK(lock, handler->mutex, this_ethread());
+
   handler->triggered.enqueue(this);
 
   // Since the periodic check is removed, we need to call
