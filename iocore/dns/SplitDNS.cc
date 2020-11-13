@@ -222,7 +222,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
   /* ---------------------------
      the 'alleged' fast path ...
      --------------------------- */
-  if (m_bEnableFastPath) {
+  if (m_bEnableFastPath && m_pxLeafArray) {
     SplitDNSRecord *data_ptr = nullptr;
     char *pHost              = const_cast<char *>(rdata->get_host());
     if (nullptr == pHost) {
@@ -230,30 +230,28 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
       return;
     }
 
-    int len        = strlen(pHost);
-    HostLeaf *pxHL = static_cast<HostLeaf *>(m_pxLeafArray);
-    for (int i = 0; i < m_numEle; i++) {
-      if (nullptr == pxHL) {
-        break;
-      }
+    int len = strlen(pHost);
+    int n   = std::min(static_cast<size_t>(m_numEle), m_pxLeafArray->size());
+    for (int i = 0; i < n; i++) {
+      const HostLeaf &pxHL = m_pxLeafArray->at(i);
 
-      if (false == pxHL[i].isNot && static_cast<int>(pxHL[i].match.size()) > len) {
+      if (false == pxHL.isNot && static_cast<int>(pxHL.match.size()) > len) {
         continue;
       }
 
-      int idx            = len - pxHL[i].match.size();
+      int idx            = len - pxHL.match.size();
       char *pH           = &pHost[idx];
-      const char *pMatch = pxHL[i].match.data();
+      const char *pMatch = pxHL.match.data();
       char cNot          = *pMatch;
 
       if ('!' == cNot) {
         pMatch++;
       }
 
-      int res = memcmp(pH, pMatch, pxHL[i].match.size());
+      int res = memcmp(pH, pMatch, pxHL.match.size());
 
       if ((0 != res && '!' == cNot) || (0 == res && '!' != cNot)) {
-        data_ptr = static_cast<SplitDNSRecord *>(pxHL[i].opaque_data);
+        data_ptr = static_cast<SplitDNSRecord *>(pxHL.opaque_data);
         data_ptr->UpdateMatch(result, rdata);
         break;
       }
