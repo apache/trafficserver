@@ -910,7 +910,7 @@ public:
       internal_msg_buffer_size = 0;
     }
 
-    NetVConnection::ProxyProtocol pp_info;
+    ProxyProtocol pp_info;
 
   private:
     // Make this a raw byte array, so it will be accessed through the my_txn_conf() member function.

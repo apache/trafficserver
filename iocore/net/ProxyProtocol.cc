@@ -21,87 +21,39 @@
  *  limitations under the License.
  */
 
-#include "tscore/ink_assert.h"
-#include "tscpp/util/TextView.h"
 #include "ProxyProtocol.h"
+
+#include "I_EventSystem.h"
 #include "I_NetVConnection.h"
 
-bool
-ssl_has_proxy_v1(NetVConnection *sslvc, char *buffer, int64_t *bytes_r)
+#include "tscore/ink_assert.h"
+#include "tscpp/util/TextView.h"
+
+namespace
 {
-  ts::TextView tv;
+using namespace std::literals;
 
-  tv.assign(buffer, *bytes_r);
+constexpr ts::TextView PPv1_CONNECTION_PREFACE = "PROXY"sv;
+constexpr ts::TextView PPv2_CONNECTION_PREFACE = "\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A\x02"sv;
 
-  // Client must send at least 15 bytes to get a reasonable match.
-  if (tv.size() < PROXY_V1_CONNECTION_HEADER_LEN_MIN) {
-    Debug("proxyprotocol_v1", "ssl_has_proxy_v1: not enough recv'd");
-    return false;
-  }
+constexpr size_t PPv1_CONNECTION_HEADER_LEN_MIN = 15;
+constexpr size_t PPv2_CONNECTION_HEADER_LEN_MIN = 16;
 
-  // if we don't have the PROXY preface, we don't have a ProxyV1 header
-  if (0 != memcmp(PROXY_V1_CONNECTION_PREFACE, buffer, PROXY_V1_CONNECTION_PREFACE_LEN)) {
-    Debug("proxyprotocol_v1", "ssl_has_proxy_v1: failed the memcmp(%s, %s, %lu)", PROXY_V1_CONNECTION_PREFACE, buffer,
-          PROXY_V1_CONNECTION_PREFACE_LEN);
-    return false;
-  }
+/**
+   PROXY Protocol v1 Parser
 
+   @return read length
+ */
+size_t
+proxy_protocol_v1_parse(ProxyProtocol *pp_info, ts::TextView hdr)
+{
   //  Find the terminating newline
-  ts::TextView::size_type pos = tv.find('\n');
-  if (pos == tv.npos) {
+  ts::TextView::size_type pos = hdr.find('\n');
+  if (pos == hdr.npos) {
     Debug("proxyprotocol_v1", "ssl_has_proxy_v1: newline not found");
-    return false;
+    return 0;
   }
 
-  // Parse the TextView before moving the bytes in the buffer
-  if (!proxy_protov1_parse(sslvc, tv)) {
-    *bytes_r = -EAGAIN;
-    return false;
-  }
-  *bytes_r -= pos + 1;
-  if (*bytes_r <= 0) {
-    *bytes_r = -EAGAIN;
-  } else {
-    Debug("ssl", "Moving %" PRId64 " characters remaining in the buffer from %p to %p", *bytes_r, buffer + pos + 1, buffer);
-    memmove(buffer, buffer + pos + 1, *bytes_r);
-  }
-  return true;
-}
-
-bool
-http_has_proxy_v1(IOBufferReader *reader, NetVConnection *netvc)
-{
-  char buf[PROXY_V1_CONNECTION_HEADER_LEN_MAX + 1];
-  ts::TextView tv;
-
-  tv.assign(buf, reader->memcpy(buf, sizeof(buf), 0));
-
-  // Client must send at least 15 bytes to get a reasonable match.
-  if (tv.size() < PROXY_V1_CONNECTION_HEADER_LEN_MIN) {
-    return false;
-  }
-
-  if (0 != memcmp(PROXY_V1_CONNECTION_PREFACE, buf, PROXY_V1_CONNECTION_PREFACE_LEN)) {
-    return false;
-  }
-
-  // Find the terminating LF, which should already be in the buffer.
-  ts::TextView::size_type pos = tv.find('\n');
-  if (pos == tv.npos) { // not found, it's not a proxy protocol header.
-    return false;
-  }
-  reader->consume(pos + 1); // clear out the header.
-
-  // Now that we know we have a valid PROXY V1 preface, let's parse the
-  // remainder of the header
-
-  return proxy_protov1_parse(netvc, tv);
-}
-
-bool
-proxy_protov1_parse(NetVConnection *netvc, ts::TextView hdr)
-{
-  static const std::string_view PREFACE{PROXY_V1_CONNECTION_PREFACE, PROXY_V1_CONNECTION_PREFACE_LEN};
   ts::TextView token;
   in_port_t port;
 
@@ -109,17 +61,17 @@ proxy_protov1_parse(NetVConnection *netvc, ts::TextView hdr)
 
   // The header should begin with the PROXY preface
   token = hdr.split_prefix_at(' ');
-  if (0 == token.size() || token != PREFACE) {
+  if (0 == token.size() || token != PPv1_CONNECTION_PREFACE) {
     Debug("proxyprotocol_v1", "proxy_protov1_parse: header [%.*s] does not start with preface [%.*s]", static_cast<int>(hdr.size()),
-          hdr.data(), static_cast<int>(PREFACE.size()), PREFACE.data());
-    return false;
+          hdr.data(), static_cast<int>(PPv1_CONNECTION_PREFACE.size()), PPv1_CONNECTION_PREFACE.data());
+    return 0;
   }
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = PREFACE", static_cast<int>(token.size()), token.data());
 
   // The INET protocol family - TCP4, TCP6 or UNKNOWN
   token = hdr.split_prefix_at(' ');
   if (0 == token.size()) {
-    return false;
+    return 0;
   }
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = INET Family", static_cast<int>(token.size()), token.data());
 
@@ -127,53 +79,88 @@ proxy_protov1_parse(NetVConnection *netvc, ts::TextView hdr)
   // - 255.255.255.255 or ffff:f...f:ffff ffff:f...f:fff
   token = hdr.split_prefix_at(' ');
   if (0 == token.size()) {
-    return false;
+    return 0;
   }
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Source Address", static_cast<int>(token.size()), token.data());
-  if (0 != netvc->set_proxy_protocol_src_addr(token)) {
-    return false;
+  if (0 != ats_ip_pton(token, &pp_info->src_addr)) {
+    return 0;
   }
 
   // Next is the layer3 destination address
   // - 255.255.255.255 or ffff:f...f:ffff ffff:f...f:fff
   token = hdr.split_prefix_at(' ');
   if (0 == token.size()) {
-    return false;
+    return 0;
   }
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Destination Address", static_cast<int>(token.size()), token.data());
-  if (0 != netvc->set_proxy_protocol_dst_addr(token)) {
-    return false;
+  if (0 != ats_ip_pton(token, &pp_info->dst_addr)) {
+    return 0;
   }
 
   // Next is the TCP source port represented as a decimal number in the range of [0..65535] inclusive.
   token = hdr.split_prefix_at(' ');
   if (0 == token.size()) {
-    return false;
+    return 0;
   }
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Source Port", static_cast<int>(token.size()), token.data());
 
   if (0 == (port = ts::svtoi(token))) {
     Debug("proxyprotocol_v1", "proxy_protov1_parse: src port [%d] token [%.*s] failed to parse", port,
           static_cast<int>(token.size()), token.data());
-    return false;
+    return 0;
   }
-  netvc->set_proxy_protocol_src_port(port);
+  pp_info->src_addr.port() = htons(port);
 
   // Next is the TCP destination port represented as a decimal number in the range of [0..65535] inclusive.
   // Final trailer is CR LF so split at CR.
   token = hdr.split_prefix_at('\r');
   if (0 == token.size()) {
-    return false;
+    return 0;
   }
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Destination Port", static_cast<int>(token.size()), token.data());
   if (0 == (port = ts::svtoi(token))) {
     Debug("proxyprotocol_v1", "proxy_protov1_parse: dst port [%d] token [%.*s] failed to parse", port,
           static_cast<int>(token.size()), token.data());
-    return false;
+    return 0;
   }
-  netvc->set_proxy_protocol_dst_port(port);
+  pp_info->dst_addr.port() = htons(port);
 
-  netvc->set_proxy_protocol_version(NetVConnection::ProxyProtocolVersion::V1);
+  pp_info->version = ProxyProtocolVersion::V1;
 
-  return true;
+  return pos + 1;
+}
+
+/**
+   PROXY Protocol v2 Parser
+
+   @return read length
+ */
+size_t
+proxy_protocol_v2_parse(ProxyProtocol * /*pp_info*/, ts::TextView /*hdr*/)
+{
+  return 0;
+}
+} // namespace
+
+/**
+   PROXY Protocol Parser
+ */
+size_t
+proxy_protocol_parse(ProxyProtocol *pp_info, ts::TextView tv)
+{
+  size_t len = 0;
+
+  // Parse the TextView before moving the bytes in the buffer
+  if (tv.size() >= PPv1_CONNECTION_HEADER_LEN_MIN && PPv1_CONNECTION_PREFACE.isPrefixOf(tv)) {
+    // Client must send at least 15 bytes to get a reasonable match.
+    len = proxy_protocol_v1_parse(pp_info, tv);
+  } else if (tv.size() >= PPv2_CONNECTION_HEADER_LEN_MIN && PPv2_CONNECTION_PREFACE.isPrefixOf(tv)) {
+    len = proxy_protocol_v2_parse(pp_info, tv);
+  } else {
+    // if we don't have the PROXY preface, we don't have a ProxyProtocol header
+    // TODO: print hexdump of buffer safely
+    Debug("proxyprotocol", "failed to find ProxyProtocol preface");
+  }
+
+  return len;
 }

@@ -23,6 +23,8 @@
  */
 #pragma once
 
+#include "ProxyProtocol.h"
+
 #include <string_view>
 #include <optional>
 
@@ -814,116 +816,45 @@ public:
   NetVConnection(const NetVConnection &) = delete;
   NetVConnection &operator=(const NetVConnection &) = delete;
 
-  enum class ProxyProtocolVersion {
-    UNDEFINED,
-    V1,
-    V2,
-  };
-
-  enum class ProxyProtocolData {
-    UNDEFINED,
-    SRC,
-    DST,
-  };
-
-  int
-  set_proxy_protocol_addr(const ProxyProtocolData src_or_dst, ts::TextView &ip_addr_str)
-  {
-    int ret = -1;
-
-    if (src_or_dst == ProxyProtocolData::SRC) {
-      ret = ats_ip_pton(ip_addr_str, &pp_info.src_addr);
-    } else {
-      ret = ats_ip_pton(ip_addr_str, &pp_info.dst_addr);
-    }
-    return ret;
-  }
-
-  int
-  set_proxy_protocol_src_addr(ts::TextView src)
-  {
-    return set_proxy_protocol_addr(ProxyProtocolData::SRC, src);
-  }
-
-  int
-  set_proxy_protocol_dst_addr(ts::TextView src)
-  {
-    return set_proxy_protocol_addr(ProxyProtocolData::DST, src);
-  }
-
-  int
-  set_proxy_protocol_port(const ProxyProtocolData src_or_dst, in_port_t port)
-  {
-    if (src_or_dst == ProxyProtocolData::SRC) {
-      pp_info.src_addr.port() = htons(port);
-    } else {
-      pp_info.dst_addr.port() = htons(port);
-    }
-    return port;
-  }
-
-  int
-  set_proxy_protocol_src_port(in_port_t port)
-  {
-    return set_proxy_protocol_port(ProxyProtocolData::SRC, port);
-  }
-
-  int
-  set_proxy_protocol_dst_port(in_port_t port)
-  {
-    return set_proxy_protocol_port(ProxyProtocolData::DST, port);
-  }
-
-  void
-  set_proxy_protocol_version(const ProxyProtocolVersion ver)
-  {
-    pp_info.proxy_protocol_version = ver;
-  }
-
   ProxyProtocolVersion
-  get_proxy_protocol_version()
+  get_proxy_protocol_version() const
   {
-    return pp_info.proxy_protocol_version;
+    return pp_info.version;
   }
 
   sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData) const;
 
   sockaddr const *
-  get_proxy_protocol_src_addr()
+  get_proxy_protocol_src_addr() const
   {
     return get_proxy_protocol_addr(ProxyProtocolData::SRC);
   }
 
   uint16_t
-  get_proxy_protocol_src_port()
+  get_proxy_protocol_src_port() const
   {
     return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::SRC));
   }
 
   sockaddr const *
-  get_proxy_protocol_dst_addr()
+  get_proxy_protocol_dst_addr() const
   {
     return get_proxy_protocol_addr(ProxyProtocolData::DST);
   }
 
   uint16_t
-  get_proxy_protocol_dst_port()
+  get_proxy_protocol_dst_port() const
   {
     return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::DST));
   };
 
-  struct ProxyProtocol {
-    ProxyProtocolVersion proxy_protocol_version = ProxyProtocolVersion::UNDEFINED;
-    uint16_t ip_family;
-    IpEndpoint src_addr;
-    IpEndpoint dst_addr;
-  };
-
-  ProxyProtocol pp_info;
+  bool has_proxy_protocol(IOBufferReader *);
+  bool has_proxy_protocol(char *, int64_t *);
 
 protected:
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
+  ProxyProtocol pp_info;
 
   bool got_local_addr  = false;
   bool got_remote_addr = false;

@@ -405,7 +405,7 @@ SSLNetVConnection::read_raw_data()
   IpMap *pp_ipmap;
   pp_ipmap = SSLConfigParams::proxy_protocol_ipmap;
 
-  if (this->get_is_proxy_protocol()) {
+  if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
     Debug("proxyprotocol", "proxy protocol is enabled on this port");
     if (pp_ipmap->count() > 0) {
       Debug("proxyprotocol", "proxy protocol has a configured allowlist of trusted IPs - checking");
@@ -430,8 +430,8 @@ SSLNetVConnection::read_raw_data()
                              "proxy protocol is enabled on this port - processing all connections");
     }
 
-    if (ssl_has_proxy_v1(this, buffer, &r)) {
-      Debug("proxyprotocol", "ssl has proxy_v1 header");
+    if (this->has_proxy_protocol(buffer, &r)) {
+      Debug("proxyprotocol", "ssl has proxy protocol header");
       set_remote_addr(get_proxy_protocol_src_addr());
     } else {
       Debug("proxyprotocol", "proxy protocol was enabled, but required header was not present in the "
