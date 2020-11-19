@@ -104,20 +104,15 @@ response_url_remap(HTTPHdr *response_header, UrlRewrite *table)
 //
 
 /** Used to read the remap.config file after the manager signals a change. */
-struct UR_UpdateContinuation;
-using UR_UpdContHandler = int (UR_UpdateContinuation::*)(int, void *);
 struct UR_UpdateContinuation : public Continuation {
   int
   file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    (void)reloadUrlRewrite();
+    static_cast<void>(reloadUrlRewrite());
     delete this;
     return EVENT_DONE;
   }
-  UR_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m)
-  {
-    SET_HANDLER((UR_UpdContHandler)&UR_UpdateContinuation::file_update_handler);
-  }
+  UR_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m) { SET_HANDLER(&UR_UpdateContinuation::file_update_handler); }
 };
 
 bool
