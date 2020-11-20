@@ -28,9 +28,12 @@ Test.ContinueOnFail = True
 Test.GetTcpPort("blocked_upstream_port")
 Test.GetTcpPort("upstream_port")
 
+server4 = Test.MakeOriginServer("server4")
+
 ts.Disk.records_config.update({
     'proxy.config.url_remap.remap_required': 1,
     'proxy.config.http.connect_attempts_timeout': 2,
+    'proxy.config.http.post_connect_attempts_timeout': 2,
     'proxy.config.http.connect_attempts_max_retries': 0,
     'proxy.config.http.transaction_no_activity_timeout_out': 5,
     'proxy.config.diags.debug.enabled': 0,
@@ -39,6 +42,20 @@ ts.Disk.records_config.update({
 
 ts.Disk.remap_config.AddLine('map /blocked http://10.1.1.1:{0}'.format(Test.Variables.blocked_upstream_port))
 ts.Disk.remap_config.AddLine('map /not-blocked http://10.1.1.1:{0}'.format(Test.Variables.upstream_port))
+
+ts.Disk.logging_yaml.AddLines(
+    '''
+logging:
+  formats:
+    - name: testformat
+      format: '%<pssc> %<cquc> %<pscert> %<cscert>'
+  logs:
+    - mode: ascii
+      format: testformat
+      filename: squid
+'''.split("\n")
+)
+
 
 # Set up the network name space.  Requires privilege
 tr = Test.AddTestRun("tr-ns-setup")
@@ -57,6 +74,13 @@ tr.Processes.Default.TimeOut = 4
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")
 
+tr = Test.AddTestRun("tr-blocking-post")
+tr.Processes.Default.Command = 'curl -d "stuff" -i http://127.0.0.1:{0}/blocked {0}'.format(ts.Variables.port)
+tr.Processes.Default.TimeOut = 4
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")
+
+
 #  Should not catch the connect timeout.  Even though the first bytes are not sent until after the 2 second connect timeout
 #  But before the no-activity timeout
 tr = Test.AddTestRun("tr-delayed")
@@ -71,3 +95,9 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 200", "C
 tr = Test.AddTestRun("tr-cleanup")
 tr.Processes.Default.Command = 'sudo ip netns del testserver; sudo ip link del veth0 type veth peer name veth1'
 tr.Processes.Default.TimeOut = 4
+
+tr = Test.AddTestRun("Wait for the access log to write out")
+tr.Processes.Default.StartBefore(server4, ready=When.FileExists(ts.Disk.squid_log))
+tr.StillRunningAfter = ts
+tr.Processes.Default.Command = 'echo "log file exists"'
+tr.Processes.Default.ReturnCode = 0
