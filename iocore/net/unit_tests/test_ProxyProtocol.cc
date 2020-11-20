@@ -124,13 +124,16 @@ TEST_CASE("PROXY Protocol v1 Parser", "[ProxyProtocol][ProxyProtocolv1]")
 
 TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
 {
-  SECTION("TCP over IPv4")
+  IpEndpoint src_addr;
+  IpEndpoint dst_addr;
+
+  SECTION("TCP over IPv4 without TLVs")
   {
     uint8_t raw_data[] = {
-      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< sig
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
       0x55, 0x49, 0x54, 0x0A,                         ///<
-      0x02,                                           ///< ver_vmd
-      0x11,                                           ///< fam
+      0x21,                                           ///< version & command
+      0x11,                                           ///< protocol & family
       0x00, 0x0C,                                     ///< len
       0xC0, 0x00, 0x02, 0x01,                         ///< src_addr
       0xC6, 0x33, 0x64, 0x01,                         ///< dst_addr
@@ -141,7 +144,286 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
     ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
 
     ProxyProtocol pp_info;
-    // TODO: add test when implemented. Just checking this doesn't crash for now
+    REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
+
+    REQUIRE(ats_ip_pton("192.0.2.1:50000", src_addr) == 0);
+    REQUIRE(ats_ip_pton("198.51.100.1:443", dst_addr) == 0);
+
+    CHECK(pp_info.version == ProxyProtocolVersion::V2);
+    CHECK(pp_info.ip_family == AF_INET);
+    CHECK(pp_info.src_addr == src_addr);
+    CHECK(pp_info.dst_addr == dst_addr);
+  }
+
+  SECTION("TCP over IPv6 without TLVs")
+  {
+    uint8_t raw_data[] = {
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+      0x55, 0x49, 0x54, 0x0A,                         ///<
+      0x21,                                           ///< version & command
+      0x21,                                           ///< protocol & family
+      0x00, 0x24,                                     ///< len
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0xC3, 0x50,                                     ///< src_port
+      0x01, 0xBB,                                     ///< dst_port
+    };
+
+    ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+    ProxyProtocol pp_info;
+    REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
+
+    REQUIRE(ats_ip_pton("[2001:db8:0:1::]:50000", src_addr) == 0);
+    REQUIRE(ats_ip_pton("[2001:db8:0:2::]:443", dst_addr) == 0);
+
+    CHECK(pp_info.version == ProxyProtocolVersion::V2);
+    CHECK(pp_info.ip_family == AF_INET6);
+    CHECK(pp_info.src_addr == src_addr);
+    CHECK(pp_info.dst_addr == dst_addr);
+  }
+
+  SECTION("LOCAL command - health check")
+  {
+    uint8_t raw_data[] = {
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+      0x55, 0x49, 0x54, 0x0A,                         ///<
+      0x20,                                           ///< version & command
+      0x00,                                           ///< protocol & family
+      0x00, 0x24,                                     ///< len
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0xC3, 0x50,                                     ///< src_port
+      0x01, 0xBB,                                     ///< dst_port
+    };
+
+    ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+    ProxyProtocol pp_info;
+    REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
+
+    CHECK(pp_info.version == ProxyProtocolVersion::V2);
+    CHECK(pp_info.ip_family == AF_UNSPEC);
+  }
+
+  SECTION("UNSPEC - unknownun/specified/unsupported transport protocol & address family")
+  {
+    uint8_t raw_data[] = {
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+      0x55, 0x49, 0x54, 0x0A,                         ///<
+      0x21,                                           ///< version & command
+      0x00,                                           ///< protocol & family
+      0x00, 0x24,                                     ///< len
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0xC3, 0x50,                                     ///< src_port
+      0x01, 0xBB,                                     ///< dst_port
+    };
+
+    ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+    ProxyProtocol pp_info;
     REQUIRE(proxy_protocol_parse(&pp_info, tv) == 0);
+
+    CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
+    CHECK(pp_info.ip_family == AF_UNSPEC);
+  }
+
+  // TLVs are not supported yet. Checking TLVs are skipped as expected for now.
+  SECTION("TLVs")
+  {
+    uint8_t raw_data[] = {
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+      0x55, 0x49, 0x54, 0x0A,                         ///<
+      0x21,                                           ///< version & command
+      0x11,                                           ///< protocol & family
+      0x00, 0x11,                                     ///< len
+      0xC0, 0x00, 0x02, 0x01,                         ///< src_addr
+      0xC6, 0x33, 0x64, 0x01,                         ///< dst_addr
+      0xC3, 0x50,                                     ///< src_port
+      0x01, 0xBB,                                     ///< dst_port
+      0x01, 0x00, 0x02, 0x68, 0x32,                   /// PP2_TYPE_ALPN (h2)
+    };
+
+    ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+    ProxyProtocol pp_info;
+    REQUIRE(proxy_protocol_parse(&pp_info, tv) == tv.size());
+
+    REQUIRE(ats_ip_pton("192.0.2.1:50000", src_addr) == 0);
+    REQUIRE(ats_ip_pton("198.51.100.1:443", dst_addr) == 0);
+
+    CHECK(pp_info.version == ProxyProtocolVersion::V2);
+    CHECK(pp_info.ip_family == AF_INET);
+    CHECK(pp_info.src_addr == src_addr);
+    CHECK(pp_info.dst_addr == dst_addr);
+  }
+
+  SECTION("Malformed Headers")
+  {
+    ProxyProtocol pp_info;
+
+    SECTION("invalid preface")
+    {
+      uint8_t raw_data[] = {
+        0xDE, 0xAD, 0xBE, 0xEF, 0xDE, 0xAD, 0xBE, 0xEF, ///< preface
+        0xDE, 0xAD, 0xBE, 0xEF,                         ///<
+        0x21,                                           ///< version & command
+        0x21,                                           ///< protocol & family
+        0x00, 0x24,                                     ///< len
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0xC3, 0x50,                                     ///< src_port
+        0x01, 0xBB,                                     ///< dst_port
+      };
+
+      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+      CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
+      CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
+      CHECK(pp_info.ip_family == AF_UNSPEC);
+    }
+
+    SECTION("unsupported version & command")
+    {
+      uint8_t raw_data[] = {
+        0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+        0x55, 0x49, 0x54, 0x0A,                         ///<
+        0xFF,                                           ///< version & command
+        0x21,                                           ///< protocol & family
+        0x00, 0x24,                                     ///< len
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0xC3, 0x50,                                     ///< src_port
+        0x01, 0xBB,                                     ///< dst_port
+      };
+
+      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+      CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
+      CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
+      CHECK(pp_info.ip_family == AF_UNSPEC);
+    }
+
+    SECTION("unsupported protocol & family")
+    {
+      uint8_t raw_data[] = {
+        0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+        0x55, 0x49, 0x54, 0x0A,                         ///<
+        0x21,                                           ///< version & command
+        0xFF,                                           ///< protocol & family
+        0x00, 0x24,                                     ///< len
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0xC3, 0x50,                                     ///< src_port
+        0x01, 0xBB,                                     ///< dst_port
+      };
+
+      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+      CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
+      CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
+      CHECK(pp_info.ip_family == AF_UNSPEC);
+    }
+
+    SECTION("invalid len value - too long")
+    {
+      uint8_t raw_data[] = {
+        0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+        0x55, 0x49, 0x54, 0x0A,                         ///<
+        0x21,                                           ///< version & command
+        0x21,                                           ///< protocol & family
+        0x00, 0x25,                                     ///< len
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0xC3, 0x50,                                     ///< src_port
+        0x01, 0xBB,                                     ///< dst_port
+      };
+
+      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+      CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
+      CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
+      CHECK(pp_info.ip_family == AF_UNSPEC);
+    }
+
+    SECTION("invalid len - actual buffer is shorter than the value")
+    {
+      uint8_t raw_data[] = {
+        0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+        0x55, 0x49, 0x54, 0x0A,                         ///<
+        0x21,                                           ///< version & command
+        0x21,                                           ///< protocol & family
+        0x00, 0x24,                                     ///< len
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+        0xC3, 0x50,                                     ///< src_port
+        0x01,                                           ///< dst_port
+      };
+
+      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+      CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
+      CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
+      CHECK(pp_info.ip_family == AF_UNSPEC);
+    }
+
+    SECTION("invalid len - too short for INET")
+    {
+      uint8_t raw_data[] = {
+        0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+        0x55, 0x49, 0x54, 0x0A,                         ///<
+        0x21,                                           ///< version & command
+        0x11,                                           ///< protocol & family
+        0x00, 0x0C,                                     ///< len
+        0xC0, 0x00,                                     ///< src_addr
+        0xC6, 0x33,                                     ///< dst_addr
+        0xC3, 0x50,                                     ///< src_port
+        0x01, 0xBB,                                     ///< dst_port
+      };
+
+      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+      CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
+      CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
+      CHECK(pp_info.ip_family == AF_UNSPEC);
+    }
+
+    SECTION("invalid len - too short for INET6")
+    {
+      uint8_t raw_data[] = {
+        0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< preface
+        0x55, 0x49, 0x54, 0x0A,                         ///<
+        0x21,                                           ///< version & command
+        0x21,                                           ///< protocol & family
+        0x00, 0x24,                                     ///< len
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+        0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+        0xC3, 0x50,                                     ///< src_port
+        0x01, 0xBB,                                     ///< dst_port
+      };
+
+      ts::TextView tv(reinterpret_cast<char *>(raw_data), sizeof(raw_data));
+
+      CHECK(proxy_protocol_parse(&pp_info, tv) == 0);
+      CHECK(pp_info.version == ProxyProtocolVersion::UNDEFINED);
+      CHECK(pp_info.ip_family == AF_UNSPEC);
+    }
   }
 }

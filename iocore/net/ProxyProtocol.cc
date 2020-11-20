@@ -34,14 +34,56 @@ namespace
 using namespace std::literals;
 
 constexpr ts::TextView PPv1_CONNECTION_PREFACE = "PROXY"sv;
-constexpr ts::TextView PPv2_CONNECTION_PREFACE = "\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A\x02"sv;
+constexpr ts::TextView PPv2_CONNECTION_PREFACE = "\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A"sv;
 
 constexpr size_t PPv1_CONNECTION_HEADER_LEN_MIN = 15;
-constexpr size_t PPv2_CONNECTION_HEADER_LEN_MIN = 16;
 
 constexpr ts::TextView PPv1_PROTO_UNKNOWN = "UNKNOWN"sv;
 constexpr ts::TextView PPv1_PROTO_TCP4    = "TCP4"sv;
 constexpr ts::TextView PPv1_PROTO_TCP6    = "TCP6"sv;
+
+constexpr uint8_t PPv2_CMD_LOCAL = 0x20;
+constexpr uint8_t PPv2_CMD_PROXY = 0x21;
+
+constexpr uint8_t PPv2_PROTO_UNSPEC        = 0x00;
+constexpr uint8_t PPv2_PROTO_TCP4          = 0x11;
+constexpr uint8_t PPv2_PROTO_UDP4          = 0x12;
+constexpr uint8_t PPv2_PROTO_TCP6          = 0x21;
+constexpr uint8_t PPv2_PROTO_UDP6          = 0x22;
+constexpr uint8_t PPv2_PROTO_UNIX_STREAM   = 0x31;
+constexpr uint8_t PPv2_PROTO_UNIX_DATAGRAM = 0x32;
+
+constexpr uint16_t PPv2_ADDR_LEN_INET  = 4 + 4 + 2 + 2;
+constexpr uint16_t PPv2_ADDR_LEN_INET6 = 16 + 16 + 2 + 2;
+// constexpr uint16_t PPv2_ADDR_LEN_UNIX  = 108 + 108;
+
+struct PPv2Hdr {
+  uint8_t sig[12]; ///< preface
+  uint8_t ver_cmd; ///< protocol version and command
+  uint8_t fam;     ///< protocol family and transport
+  uint16_t len;    ///< number of following bytes part of the header
+  union {
+    // for TCP/UDP over IPv4, len = 12 (PPv2_ADDR_LEN_INET)
+    struct {
+      uint32_t src_addr;
+      uint32_t dst_addr;
+      uint16_t src_port;
+      uint16_t dst_port;
+    } ip4;
+    // for TCP/UDP over IPv6, len = 36 (PPv2_ADDR_LEN_INET6)
+    struct {
+      uint8_t src_addr[16];
+      uint8_t dst_addr[16];
+      uint16_t src_port;
+      uint16_t dst_port;
+    } ip6;
+    // for AF_UNIX sockets, len = 216 (PPv2_ADDR_LEN_UNIX)
+    struct {
+      uint8_t src_addr[108];
+      uint8_t dst_addr[108];
+    } unix;
+  } addr;
+};
 
 /**
    PROXY Protocol v1 Parser
@@ -166,13 +208,100 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, ts::TextView hdr)
 /**
    PROXY Protocol v2 Parser
 
+   TODO: TLVs Support
+
    @return read length
  */
 size_t
-proxy_protocol_v2_parse(ProxyProtocol * /*pp_info*/, ts::TextView /*hdr*/)
+proxy_protocol_v2_parse(ProxyProtocol *pp_info, const ts::TextView &msg)
 {
+  ink_release_assert(msg.size() >= PPv2_CONNECTION_HEADER_LEN);
+
+  const PPv2Hdr *hdr_v2 = reinterpret_cast<const PPv2Hdr *>(msg.data());
+
+  // Assuming PREFACE check is done
+
+  // length check
+  const uint16_t len     = ntohs(hdr_v2->len);
+  const size_t total_len = PPv2_CONNECTION_HEADER_LEN + len;
+
+  if (msg.size() < total_len) {
+    return 0;
+  }
+
+  // protocol version and command
+  switch (hdr_v2->ver_cmd) {
+  case PPv2_CMD_LOCAL: {
+    // protocol byte should be UNSPEC (\x00) with LOCAL command
+    if (hdr_v2->fam != PPv2_PROTO_UNSPEC) {
+      return 0;
+    }
+
+    pp_info->version   = ProxyProtocolVersion::V2;
+    pp_info->ip_family = AF_UNSPEC;
+
+    return total_len;
+  }
+  case PPv2_CMD_PROXY: {
+    switch (hdr_v2->fam) {
+    case PPv2_PROTO_TCP4: {
+      if (len < PPv2_ADDR_LEN_INET) {
+        return 0;
+      }
+
+      IpAddr src_addr(reinterpret_cast<in_addr_t>(hdr_v2->addr.ip4.src_addr));
+      pp_info->src_addr.assign(src_addr, hdr_v2->addr.ip4.src_port);
+
+      IpAddr dst_addr(reinterpret_cast<in_addr_t>(hdr_v2->addr.ip4.dst_addr));
+      pp_info->dst_addr.assign(dst_addr, hdr_v2->addr.ip4.dst_port);
+
+      pp_info->version   = ProxyProtocolVersion::V2;
+      pp_info->ip_family = AF_INET;
+
+      break;
+    }
+    case PPv2_PROTO_TCP6: {
+      if (len < PPv2_ADDR_LEN_INET6) {
+        return 0;
+      }
+
+      IpAddr src_addr(reinterpret_cast<in6_addr const &>(hdr_v2->addr.ip6.src_addr));
+      pp_info->src_addr.assign(src_addr, hdr_v2->addr.ip6.src_port);
+
+      IpAddr dst_addr(reinterpret_cast<in6_addr const &>(hdr_v2->addr.ip6.dst_addr));
+      pp_info->dst_addr.assign(dst_addr, hdr_v2->addr.ip6.dst_port);
+
+      pp_info->version   = ProxyProtocolVersion::V2;
+      pp_info->ip_family = AF_INET6;
+
+      break;
+    }
+    case PPv2_PROTO_UDP4:
+      [[fallthrough]];
+    case PPv2_PROTO_UDP6:
+      [[fallthrough]];
+    case PPv2_PROTO_UNIX_STREAM:
+      [[fallthrough]];
+    case PPv2_PROTO_UNIX_DATAGRAM:
+      [[fallthrough]];
+    case PPv2_PROTO_UNSPEC:
+      [[fallthrough]];
+    default:
+      // unsupported
+      return 0;
+    }
+
+    // TODO: Parse TLVs
+
+    return total_len;
+  }
+  default:
+    break;
+  }
+
   return 0;
 }
+
 } // namespace
 
 /**
@@ -187,7 +316,7 @@ proxy_protocol_parse(ProxyProtocol *pp_info, ts::TextView tv)
   if (tv.size() >= PPv1_CONNECTION_HEADER_LEN_MIN && PPv1_CONNECTION_PREFACE.isPrefixOf(tv)) {
     // Client must send at least 15 bytes to get a reasonable match.
     len = proxy_protocol_v1_parse(pp_info, tv);
-  } else if (tv.size() >= PPv2_CONNECTION_HEADER_LEN_MIN && PPv2_CONNECTION_PREFACE.isPrefixOf(tv)) {
+  } else if (tv.size() >= PPv2_CONNECTION_HEADER_LEN && PPv2_CONNECTION_PREFACE.isPrefixOf(tv)) {
     len = proxy_protocol_v2_parse(pp_info, tv);
   } else {
     // if we don't have the PROXY preface, we don't have a ProxyProtocol header
