@@ -652,12 +652,6 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   // FIXME: the nh must not nullptr.
   ink_assert(nh);
 
-  // mark it closed first
-  if (alerrno == -1) {
-    closed = 1;
-  } else {
-    closed = -1;
-  }
   read.enabled    = 0;
   write.enabled   = 0;
   read.vio.nbytes = 0;
@@ -684,6 +678,14 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1) {
     this->lerrno = alerrno;
+  }
+
+  // Must mark for closed last in case this is a
+  // cross thread migration scenario.
+  if (alerrno == -1) {
+    closed = 1;
+  } else {
+    closed = -1;
   }
 
   if (close_inline) {
