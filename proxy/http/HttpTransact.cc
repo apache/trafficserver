@@ -482,11 +482,10 @@ update_current_info(HttpTransact::CurrentInfo *into, HttpTransact::ConnectionAtt
 }
 
 inline static void
-update_dns_info(HttpTransact::DNSLookupInfo *dns, HttpTransact::CurrentInfo *from, int attempts, Arena * /* arena ATS_UNUSED */)
+update_dns_info(HttpTransact::DNSLookupInfo *dns, HttpTransact::CurrentInfo *from)
 {
   dns->looking_up  = from->request_to;
   dns->lookup_name = from->server->name;
-  dns->attempts    = attempts;
 }
 
 inline static HTTPHdr *
@@ -607,7 +606,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
   case PARENT_SPECIFIED:
     s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
     update_current_info(&s->current, &s->parent_info, HttpTransact::PARENT_PROXY, (s->current.attempts)++);
-    update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
+    update_dns_info(&s->dns_info, &s->current);
     ink_assert(s->dns_info.looking_up == HttpTransact::PARENT_PROXY);
     s->next_hop_scheme = URL_WKSIDX_HTTP;
 
@@ -628,7 +627,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
   /* fall through */
   default:
     update_current_info(&s->current, &s->server_info, HttpTransact::ORIGIN_SERVER, (s->current.attempts)++);
-    update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
+    update_dns_info(&s->dns_info, &s->current);
     ink_assert(s->dns_info.looking_up == HttpTransact::ORIGIN_SERVER);
     s->next_hop_scheme = s->scheme;
     return HttpTransact::ORIGIN_SERVER;
@@ -1718,9 +1717,7 @@ HttpTransact::HandleApiErrorJump(State *s)
 void
 HttpTransact::PPDNSLookup(State *s)
 {
-  ++s->dns_info.attempts;
-
-  TxnDebug("http_trans", "[HttpTransact::PPDNSLookup] This was attempt %d", s->dns_info.attempts);
+  TxnDebug("http_trans", "[HttpTransact::PPDNSLookup]");
 
   ink_assert(s->dns_info.looking_up == PARENT_PROXY);
   if (!s->dns_info.lookup_success) {
@@ -1836,8 +1833,7 @@ HttpTransact::ReDNSRoundRobin(State *s)
 // Details    :
 //
 // normally called after Start. may be called more than once, however,
-// if the dns lookup fails. this may be if the client does not specify
-// the full hostname (e.g. just cnn, instead of www.cnn.com), or because
+// if the dns lookup fails. this may be because
 // it was not possible to resolve the name after several attempts.
 //
 // the next action depends. since this function is normally called after
@@ -1859,12 +1855,9 @@ HttpTransact::ReDNSRoundRobin(State *s)
 void
 HttpTransact::OSDNSLookup(State *s)
 {
-  static const int max_dns_lookups = 3;
-
   ink_assert(s->dns_info.looking_up == ORIGIN_SERVER);
 
-  TxnDebug("http_trans", "[HttpTransact::OSDNSLookup] This was attempt %d", s->dns_info.attempts);
-  ++s->dns_info.attempts;
+  TxnDebug("http_trans", "[HttpTransact::OSDNSLookup]");
 
   // It's never valid to connect *to* INADDR_ANY, so let's reject the request now.
   if (ats_is_ip_any(s->host_db_info.ip())) {
@@ -1875,55 +1868,30 @@ HttpTransact::OSDNSLookup(State *s)
   }
 
   if (!s->dns_info.lookup_success) {
-    // maybe the name can be expanded (e.g cnn -> www.cnn.com)
-    HostNameExpansionError_t host_name_expansion = try_to_expand_host_name(s);
+    if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
+      /*
+       *  Transparent case: We tried to connect to client target address, failed and tried to use a different addr
+       *  No HostDB data, just keep on with the CTA.
+       */
+      s->dns_info.lookup_success = true;
+      s->dns_info.os_addr_style  = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
+      TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful, using client target address");
+    } else {
+      TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
 
-    switch (host_name_expansion) {
-    case RETRY_EXPANDED_NAME:
-      // expansion successful, do a dns lookup on expanded name
-      HTTP_RELEASE_ASSERT(s->dns_info.attempts < max_dns_lookups);
-      return CallOSDNSLookup(s);
-      break;
-    case EXPANSION_NOT_ALLOWED:
-    case EXPANSION_FAILED:
-    case DNS_ATTEMPTS_EXHAUSTED:
-      if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
-        /*
-         *  We tried to connect to client target address, failed and tried to use a different addr
-         *  No HostDB data, just keep on with the CTA.
-         */
-        s->dns_info.lookup_success = true;
-        s->dns_info.os_addr_style  = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
-        TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful, using client target address");
-      } else {
-        if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
-          // config file doesn't allow automatic expansion of host names
-          TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
-        } else if (host_name_expansion == EXPANSION_FAILED) {
-          // not able to expand the hostname. dns lookup failed
-          TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
-        } else if (host_name_expansion == DNS_ATTEMPTS_EXHAUSTED) {
-          // retry attempts exhausted --- can't find dns entry for this host name
-          HTTP_RELEASE_ASSERT(s->dns_info.attempts >= max_dns_lookups);
-          TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
-        }
-        // output the DNS failure error message
-        SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-        build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
-        // s->cache_info.action = CACHE_DO_NO_ACTION;
-        TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-      }
-      break;
-    default:
-      ink_assert(!("try_to_expand_hostname returned an unsupported code"));
-      break;
+      // output the DNS failure error message
+      SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
+      TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     }
     return;
   }
-  // ok, so the dns lookup succeeded
+
+  // The dns lookup succeeded
   ink_assert(s->dns_info.lookup_success);
   TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup successful");
 
+  // For the transparent case, nail down the kind of address we are really using
   if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
     // We've backed off from a client supplied address and found some
     // HostDB addresses. We use those if they're different from the CTA.
@@ -2002,25 +1970,6 @@ HttpTransact::OSDNSLookup(State *s)
     }
   }
 
-  // so the dns lookup was a success, but the lookup succeeded on
-  // a hostname which was expanded by the traffic server. we should
-  // not automatically forward the request to this expanded hostname.
-  // return a response to the client with the expanded host name
-  // and a tasty little blurb explaining what happened.
-
-  // if a DNS lookup succeeded on a user-defined
-  // hostname expansion, forward the request to the expanded hostname.
-  // On the other hand, if the lookup succeeded on a www.<hostname>.com
-  // expansion, return a 302 response.
-  // [amc] Also don't redirect if we backed off using HostDB instead of CTA.
-  if (s->dns_info.attempts == max_dns_lookups && s->dns_info.looking_up == ORIGIN_SERVER &&
-      DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT != s->dns_info.os_addr_style) {
-    TxnDebug("http_trans", "[OSDNSLookup] DNS name resolution on expansion");
-    TxnDebug("http_seq", "[OSDNSLookup] DNS name resolution on expansion - returning");
-    build_redirect_response(s);
-    // s->cache_info.action = CACHE_DO_NO_ACTION;
-    TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, nullptr);
-  }
   // everything succeeded with the DNS lookup so do an API callout
   //   that allows for filtering.  We'll do traffic_server internal
   //   filtering after API filtering
@@ -2862,7 +2811,6 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
   if (send_revalidate) {
     TxnDebug("http_trans", "CacheOpenRead --- HIT-STALE");
-    s->dns_info.attempts = 0;
 
     TxnDebug("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
                          "Revalidate document with server");
@@ -3855,7 +3803,7 @@ HttpTransact::delete_server_rr_entry(State *s, int max_retries)
   ink_assert(s->current.server->had_connect_fail());
   ink_assert(s->current.request_to == ORIGIN_SERVER);
   ink_assert(s->current.server == &s->server_info);
-  update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
+  update_dns_info(&s->dns_info, &s->current);
   s->current.attempts++;
   TxnDebug("http_trans", "[delete_server_rr_entry] attempts now: %d, max: %d", s->current.attempts, max_retries);
   TRANSACT_RETURN(SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN, ReDNSRoundRobin);
@@ -5789,7 +5737,6 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   // the host ip for reverse proxy.          //
   /////////////////////////////////////////////
   s->dns_info.looking_up  = ORIGIN_SERVER;
-  s->dns_info.attempts    = 0;
   s->dns_info.lookup_name = s->server_info.name;
 }
 
@@ -6564,28 +6511,6 @@ HttpTransact::process_quick_http_filter(State *s, int method)
       }
       s->client_connection_enabled = false;
     }
-  }
-}
-
-HttpTransact::HostNameExpansionError_t
-HttpTransact::try_to_expand_host_name(State *s)
-{
-  HTTP_RELEASE_ASSERT(!s->dns_info.lookup_success);
-
-  if (s->dns_info.looking_up == ORIGIN_SERVER) {
-    return EXPANSION_NOT_ALLOWED;
-  } else {
-    //////////////////////////////////////////////////////
-    // we looked up dns of parent proxy, but it failed, //
-    // try lookup of origin server name.                //
-    //////////////////////////////////////////////////////
-    ink_assert(s->dns_info.looking_up == PARENT_PROXY);
-
-    s->dns_info.lookup_name = s->server_info.name;
-    s->dns_info.looking_up  = ORIGIN_SERVER;
-    s->dns_info.attempts    = 0;
-
-    return RETRY_EXPANDED_NAME;
   }
 }
 
