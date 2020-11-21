@@ -521,8 +521,7 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           }
           if (dir_overwrite(&doc->first_key, vol, &dir, &overwrite_dir)) {
             int64_t o = dir_offset(&overwrite_dir), n = dir_offset(&dir);
-            vol->ram_cache->fixup(&doc->first_key, static_cast<uint32_t>(o >> 32), static_cast<uint32_t>(o),
-                                  static_cast<uint32_t>(n >> 32), static_cast<uint32_t>(n));
+            vol->ram_cache->fixup(&doc->first_key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
           }
         } else {
           DDebug("cache_evac", "evacuating earliest: %X %d", (int)doc->key.slice32(0), (int)dir_offset(&overwrite_dir));
