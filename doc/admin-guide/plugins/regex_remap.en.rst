@@ -54,6 +54,16 @@ profile dump, you can do ::
     $ sudo touch remap.config
     $ sudo traffic_ctl config reload
 
+By default, this plugin operates on the post-remap URL (including any
+remappings done by preceding plugins in the remap rule).  This behavior
+can be modified with the optional parameter ::
+
+    @pparam=[no-]pristine            [default: off]
+
+With ``@pparam=pristine``, the plugin will operate on the pre-remap, or
+pristine, URL.  (But, if no regular expression in the config file is
+matched, the resulting URL will still be the post-remap URL.)
+
 By default, only the path and query string of the URL are provided for
 the regular expressions to match. The following optional parameters can
 be used to modify the plugin instance behavior ::

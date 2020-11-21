@@ -78,14 +78,14 @@ struct UrlComponents {
   UrlComponents() = default;
 
   void
-  populate(TSRemapRequestInfo *rri)
+  populate(TSMBuffer bufp, TSMLoc url)
   {
-    scheme = TSUrlSchemeGet(rri->requestBufp, rri->requestUrl, &scheme_len);
-    host   = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &host_len);
-    path   = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
-    query  = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &query_len);
-    matrix = TSUrlHttpParamsGet(rri->requestBufp, rri->requestUrl, &matrix_len);
-    port   = TSUrlPortGet(rri->requestBufp, rri->requestUrl);
+    scheme = TSUrlSchemeGet(bufp, url, &scheme_len);
+    host   = TSUrlHostGet(bufp, url, &host_len);
+    path   = TSUrlPathGet(bufp, url, &path_len);
+    query  = TSUrlHttpQueryGet(bufp, url, &query_len);
+    matrix = TSUrlHttpParamsGet(bufp, url, &matrix_len);
+    port   = TSUrlPortGet(bufp, url);
 
     url_len = scheme_len + host_len + path_len + query_len + matrix_len + 32;
   }
@@ -626,6 +626,7 @@ struct RemapInstance {
 
   RemapRegex *first  = nullptr;
   RemapRegex *last   = nullptr;
+  bool pristine_url  = false;
   bool profile       = false;
   bool method        = false;
   bool query_string  = true;
@@ -726,6 +727,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       ri->host = true;
     } else if (strncmp(argv[i], "no-host", 7) == 0) {
       ri->host = false;
+    } else if (strcmp(argv[i], "pristine") == 0) {
+      ri->pristine_url = true;
+    } else if (strcmp(argv[i], "no-pristine") == 0) {
+      ri->pristine_url = false;
     } else {
       TSError("[%s] invalid option '%s'", PLUGIN_NAME, argv[i]);
     }
@@ -913,12 +918,36 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     TSDebug(PLUGIN_NAME, "Falling back to default URL on regex remap without rules");
     return TSREMAP_NO_REMAP;
   }
+  RemapInstance *ri = static_cast<RemapInstance *>(ih);
+
+  struct SrcUrl {
+    TSMBuffer bufp;
+    TSMLoc loc;
+    bool bad;
+  };
+
+  const SrcUrl src_url([=]() -> SrcUrl {
+    SrcUrl u;
+
+    if (ri->pristine_url) {
+      u.bufp = rri->requestBufp;
+      u.loc  = rri->requestUrl;
+      u.bad  = false;
+
+    } else {
+      u.bad = TSHttpTxnPristineUrlGet(txnp, &u.bufp, &u.loc) != TS_SUCCESS;
+    }
+    return u;
+  }());
+
+  if (src_url.bad) {
+    return TSREMAP_NO_REMAP;
+  }
 
   // Populate the request url
   UrlComponents req_url;
-  req_url.populate(rri);
+  req_url.populate(src_url.bufp, src_url.loc);
 
-  RemapInstance *ri = static_cast<RemapInstance *>(ih);
   int ovector[OVECCOUNT];
   int lengths[OVECCOUNT / 2 + 1];
   int dest_len;
@@ -1061,7 +1090,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           const char *start = dest;
 
           // Setup the new URL
-          if (TS_PARSE_ERROR == TSUrlParse(rri->requestBufp, rri->requestUrl, &start, start + dest_len)) {
+          if (TS_PARSE_ERROR == TSUrlParse(src_url.bufp, src_url.loc, &start, start + dest_len)) {
             TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
             TSError("[%s] can't parse substituted URL string", PLUGIN_NAME);
           }
