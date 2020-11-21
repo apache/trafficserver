@@ -652,11 +652,11 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   // FIXME: the nh must not nullptr.
   ink_assert(nh);
 
+  // The vio continuations will be cleared in ::clear called from ::free
   read.enabled    = 0;
   write.enabled   = 0;
   read.vio.nbytes = 0;
   read.vio.op     = VIO::NONE;
-  read.vio.cont   = nullptr;
 
   if (netvc_context == NET_VCONNECTION_OUT) {
     // do not clear the iobufs yet to guard
@@ -670,7 +670,6 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
-  write.vio.cont   = nullptr;
 
   EThread *t        = this_ethread();
   bool close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
