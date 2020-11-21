@@ -325,8 +325,9 @@ public:
   TestClientSNIAction(const char *servrername, const IpEndpoint &ep, int &policy) const override
   {
     bool retval = false;
-    if (ip_map.contains(ep)) {
-      retval = true;
+    if (ip_map.count() > 0) {
+      // Only triggers if the map didn't contain the address
+      retval = !ip_map.contains(ep);
     }
     return retval;
   }

@@ -1896,7 +1896,7 @@ Security
 
    You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
 
-   Currently, only the verify_client policy is checked for host name and SNI matching.
+   Currently, only the verify_client and ip_allow policies are checked for host name and SNI matching.
 
 Cache Control
 =============
