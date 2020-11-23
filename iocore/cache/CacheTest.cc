@@ -668,7 +668,8 @@ REGRESSION_TEST(ram_cache)(RegressionTest *t, int level, int *pstatus)
   for (int s = 20; s <= 28; s += 4) {
     int64_t cache_size = 1LL << s;
     *pstatus           = REGRESSION_TEST_PASSED;
-    if (!test_RamCache(t, new_RamCacheLRU(), "LRU", cache_size) || !test_RamCache(t, new_RamCacheCLFUS(), "CLFUS", cache_size)) {
+    if (!test_RamCache(t, new_RamCacheLRU(), "LRU", cache_size) || !test_RamCache(t, new_RamCacheCLFUS(), "CLFUS", cache_size) ||
+        test_RamCache(t, new_RamCacheLocklessLRU(), "LocklessLRU", cache_size)) {
       *pstatus = REGRESSION_TEST_FAILED;
     }
   }

@@ -57,6 +57,7 @@ libinkcache_a_SOURCES = \
 	P_CacheVol.h \
 	P_RamCache.h \
 	RamCacheCLFUS.cc \
+	RamCacheLocklessLRU.cc \
 	RamCacheLRU.cc \
 	Store.cc
 

@@ -45,6 +45,8 @@ constexpr ts::VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MI
 #define USELESS_REENABLES // allow them for now
 // #define VERIFY_JTEST_DATA
 
+#define LOCKLESS_RAM_CACHE 1
+
 static size_t DEFAULT_RAM_CACHE_MULTIPLIER = 10; // I.e. 10x 1MB per 1GB of disk.
 
 // This is the oldest version number that is still usable.
@@ -912,7 +914,11 @@ CacheProcessor::cacheInitialized()
     Debug("cache_init", "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,
           gnvol.load());
 
-    int64_t ram_cache_bytes = 0;
+    int64_t ram_cache_bytes      = 0;
+    RamCache *lockless_ram_cache = nullptr;
+#ifdef LOCKLESS_RAM_CACHE
+    lockless_ram_cache = new_RamCacheLocklessLRU();
+#endif
 
     if (gnvol) {
       // new ram_caches, with algorithm from the config
@@ -920,10 +926,10 @@ CacheProcessor::cacheInitialized()
         switch (cache_config_ram_cache_algorithm) {
         default:
         case RAM_CACHE_ALGORITHM_CLFUS:
-          gvol[i]->ram_cache = new_RamCacheCLFUS();
+          gvol[i]->ram_cache = lockless_ram_cache ? lockless_ram_cache : new_RamCacheCLFUS();
           break;
         case RAM_CACHE_ALGORITHM_LRU:
-          gvol[i]->ram_cache = new_RamCacheLRU();
+          gvol[i]->ram_cache = lockless_ram_cache ? lockless_ram_cache : new_RamCacheLRU();
           break;
         }
       }
@@ -934,7 +940,9 @@ CacheProcessor::cacheInitialized()
           vol = gvol[i];
 
           if (gvol[i]->cache_vol->ramcache_enabled) {
-            gvol[i]->ram_cache->init(vol->dirlen() * DEFAULT_RAM_CACHE_MULTIPLIER, vol);
+            if (!lockless_ram_cache) {
+              gvol[i]->ram_cache->init(vol->dirlen() * DEFAULT_RAM_CACHE_MULTIPLIER, vol);
+            }
             ram_cache_bytes += gvol[i]->dirlen();
             Debug("cache_init", "CacheProcessor::cacheInitialized - ram_cache_bytes = %" PRId64 " = %" PRId64 "Mb", ram_cache_bytes,
                   ram_cache_bytes / (1024 * 1024));
@@ -976,13 +984,18 @@ CacheProcessor::cacheInitialized()
               cache_config_ram_cache_cutoff);
 
         for (i = 0; i < gnvol; i++) {
+          if (!i && lockless_ram_cache) {
+            lockless_ram_cache->init(http_ram_cache_size, vol);
+          }
           vol = gvol[i];
           double factor;
           if (gvol[i]->cache == theCache && gvol[i]->cache_vol->ramcache_enabled) {
             ink_assert(gvol[i]->cache != nullptr);
             factor = static_cast<double>(static_cast<int64_t>(gvol[i]->len >> STORE_BLOCK_SHIFT)) / theCache->cache_size;
             Debug("cache_init", "CacheProcessor::cacheInitialized - factor = %f", factor);
-            gvol[i]->ram_cache->init(static_cast<int64_t>(http_ram_cache_size * factor), vol);
+            if (!lockless_ram_cache) {
+              gvol[i]->ram_cache->init(static_cast<int64_t>(http_ram_cache_size * factor), vol);
+            }
             ram_cache_bytes += static_cast<int64_t>(http_ram_cache_size * factor);
             CACHE_VOL_SUM_DYN_STAT(cache_ram_cache_bytes_total_stat, (int64_t)(http_ram_cache_size * factor));
           } else if (gvol[i]->cache_vol->ramcache_enabled) {
