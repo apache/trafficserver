@@ -113,7 +113,7 @@ increment_reader(std::atomic<uint64_t> *p)
 {
   uint64_t d;
   while (true) {
-    uint64_t data = p->load(std::memory_order_acquire);
+    uint64_t data = p->load();
     if ((data & LOCK) == LOCK) { // Max count, just spin.
       continue;
     }
@@ -129,7 +129,7 @@ decrement_reader(std::atomic<uint64_t> *p)
 {
   uint64_t d;
   while (true) {
-    uint64_t data = p->load(std::memory_order_acquire);
+    uint64_t data = p->load();
     d             = data - 1;
     if (p->compare_exchange_weak(data, d)) {
       return d;
@@ -141,7 +141,7 @@ static void
 update_lru(int i, RamCacheLocklessLRUTags *t)
 {
   while (true) {
-    uint64_t lru     = t->lru.load(std::memory_order_acquire);
+    uint64_t lru     = t->lru.load(std::memory_order_relaxed); // Handled at a higher level.
     uint64_t new_lru = lru;
     // Update the row so that there is a zero for i and 1 for all others.
     // Set row to all ones.
@@ -160,7 +160,7 @@ static void
 update_tag(int i, RamCacheLocklessLRUTags *t, CryptoHash *key)
 {
   while (true) {
-    uint64_t tags     = t->tags.load(std::memory_order_acquire);
+    uint64_t tags     = t->tags.load(std::memory_order_relaxed); // Handled at a higher level.
     uint64_t new_tags = tags;
     uint64_t m        = 0xFF << i;
     new_tags &= ~m;
@@ -356,9 +356,9 @@ RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool
 
   // Update the key and auxkey.
   e->key = *key;
-  e->auxkey.store(auxkey);
   update_lru(empty, t);
   update_tag(empty, t, key);
+  e->auxkey.store(auxkey, std::memory_order_release);
 
   decrement_reader(&e->data);
 
@@ -392,8 +392,8 @@ RamCacheLocklessLRU::fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t 
       continue;
     }
     if (e->key == *key && e->auxkey.load() == old_auxkey) {
-      e->auxkey.store(new_auxkey);
       decrement_reader(&e->data);
+      e->auxkey.store(new_auxkey, std::memory_order_release);
       return 1;
     }
   }
