@@ -652,17 +652,11 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   // FIXME: the nh must not nullptr.
   ink_assert(nh);
 
-  // mark it closed first
-  if (alerrno == -1) {
-    closed = 1;
-  } else {
-    closed = -1;
-  }
+  // The vio continuations will be cleared in ::clear called from ::free
   read.enabled    = 0;
   write.enabled   = 0;
   read.vio.nbytes = 0;
   read.vio.op     = VIO::NONE;
-  read.vio.cont   = nullptr;
 
   if (netvc_context == NET_VCONNECTION_OUT) {
     // do not clear the iobufs yet to guard
@@ -676,7 +670,6 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
-  write.vio.cont   = nullptr;
 
   EThread *t        = this_ethread();
   bool close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
@@ -684,6 +677,14 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1) {
     this->lerrno = alerrno;
+  }
+
+  // Must mark for closed last in case this is a
+  // cross thread migration scenario.
+  if (alerrno == -1) {
+    closed = 1;
+  } else {
+    closed = -1;
   }
 
   if (close_inline) {
