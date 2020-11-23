@@ -76,7 +76,6 @@ int SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file      = nullptr;
 
 static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
-std::unique_ptr<ConfigUpdateHandler<SSLClientCoordinator>> sslClientUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
 
 SSLConfigParams::SSLConfigParams()
@@ -428,23 +427,8 @@ SSLConfigParams::getClientSSL_CTX() const
 }
 
 void
-SSLClientCoordinator::reconfigure()
-{
-  // The SSLConfig must have its configuration loaded before the SNIConfig.
-  // The SSLConfig owns the client cert context storage and the SNIConfig will load
-  // into it.
-  SSLConfig::reconfigure();
-  SNIConfig::reconfigure();
-}
-
-void
 SSLConfig::startup()
 {
-  sslClientUpdate.reset(new ConfigUpdateHandler<SSLClientCoordinator>());
-  sslClientUpdate->attach("proxy.config.ssl.client.cert.path");
-  sslClientUpdate->attach("proxy.config.ssl.client.cert.filename");
-  sslClientUpdate->attach("proxy.config.ssl.client.private_key.path");
-  sslClientUpdate->attach("proxy.config.ssl.client.private_key.filename");
   reconfigure();
 }
 

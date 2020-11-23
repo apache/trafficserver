@@ -26,8 +26,8 @@
 #include "records/I_RecHttp.h"
 #include "P_SSLUtils.h"
 #include "P_OCSPStapling.h"
-#include "P_SSLSNI.h"
 #include "SSLStats.h"
+#include "P_SSLClientCoordinator.h"
 
 //
 // Global Data
@@ -60,9 +60,8 @@ SSLNetProcessor::start(int, size_t stacksize)
 {
   // This initialization order matters ...
   SSLInitializeLibrary();
-  SSLConfig::startup();
+  SSLClientCoordinator::startup();
   SSLPostConfigInitialize();
-  SNIConfig::startup();
 
   if (!SSLCertificateConfig::startup()) {
     return -1;

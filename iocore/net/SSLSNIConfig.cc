@@ -32,7 +32,6 @@
 #include "P_SSLSNI.h"
 #include "tscore/Diags.h"
 #include "tscore/SimpleTokenizer.h"
-#include "P_SSLConfig.h"
 #include "tscore/ink_memory.h"
 #include "tscpp/util/TextView.h"
 #include "tscore/I_Layout.h"
@@ -190,7 +189,6 @@ SNIConfigParams::~SNIConfigParams()
 void
 SNIConfig::startup()
 {
-  sslClientUpdate->attach("proxy.config.ssl.servername.filename");
   reconfigure();
 }
 
