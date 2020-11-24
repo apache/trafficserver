@@ -477,6 +477,7 @@ HttpTunnel::reset()
   }
 #endif
 
+  call_sm       = false;
   num_producers = 0;
   num_consumers = 0;
   ink_zero(consumers);
