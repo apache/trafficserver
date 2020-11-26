@@ -74,6 +74,16 @@ The contents of the config-file could be as below::
    exclude X-Foo-Bar text
    exclude Content-Length <1000
 
+.. important::
+
+   The ``include`` configuration directive is only used when there is a corresponding ``exclude`` to exempt.
+   For example, a single line directive, ``include Host example.com`` would not make the plugin
+   *only* act on example.com. To acheive classic allow (only) lists, one would need to have a broad
+   exclude line, such as::
+
+      exclude Host *
+      include Host example.com
+
 The plugin also now supports per remap activation. To activate the plugin for a given remap, add the
 below on the remap line::
 
