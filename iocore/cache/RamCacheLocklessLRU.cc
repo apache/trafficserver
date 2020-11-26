@@ -34,13 +34,13 @@
 #define ILLEGAL_AUXKEY 0xFFFFFFFF // This is an offset into the cache which is out of range
 
 // Lockless behavior.
-// 'data' is a Ptr<IOBufferData> with the lower 3 bits used for read marking.
-// When reading the entry, readers increment the lowest 3 bits.
-// When attempting to replace an entry, the writer will skip entries with readers.
+// 'data' is a Ptr<IOBufferData> with the lower 3 bits used for marking.
+// When accessing the entry the lowest 3 bits are incremented.
+// When attempting to replace an entry, the writer will skip marked entries.
 
 struct RamCacheLocklessLRUEntry {
   std::atomic<uint64_t> data;
-  std::atomic<uint64_t> auxkey;
+  uint64_t auxkey;
   CryptoHash key;
 };
 
@@ -71,7 +71,6 @@ struct RamCacheLocklessLRU : public RamCache {
 
   bool remove(int i, RamCacheLocklessLRUEntry *e);
   int64_t remove_one();
-  int find_lru(RamCacheLocklessLRUTags *t);
   void get_bucket(int buckekt, RamCacheLocklessLRUTags **t, RamCacheLocklessLRUEntry **e);
 };
 
@@ -109,29 +108,29 @@ RamCacheLocklessLRU::init(int64_t abytes, Vol *avol)
 }
 
 static uint64_t
-increment_reader(std::atomic<uint64_t> *p)
+increment_mark(std::atomic<uint64_t> *p)
 {
   uint64_t d;
   while (true) {
-    uint64_t data = p->load();
+    uint64_t data = p->load(std::memory_order_relaxed);
     if ((data & LOCK) == LOCK) { // Max count, just spin.
       continue;
     }
     d = data + 1;
-    if (p->compare_exchange_weak(data, d)) {
+    if (p->compare_exchange_weak(data, d, std::memory_order_acquire, std::memory_order_relaxed)) {
       return d;
     }
   }
 }
 
 static uint64_t
-decrement_reader(std::atomic<uint64_t> *p)
+decrement_mark(std::atomic<uint64_t> *p)
 {
   uint64_t d;
   while (true) {
-    uint64_t data = p->load();
+    uint64_t data = p->load(std::memory_order_relaxed);
     d             = data - 1;
-    if (p->compare_exchange_weak(data, d)) {
+    if (p->compare_exchange_weak(data, d, std::memory_order_release, std::memory_order_relaxed)) {
       return d;
     }
   }
@@ -143,14 +142,15 @@ update_lru(int i, RamCacheLocklessLRUTags *t)
   while (true) {
     uint64_t lru     = t->lru.load(std::memory_order_relaxed); // Handled at a higher level.
     uint64_t new_lru = lru;
+    int shift        = i * 8;
     // Update the row so that there is a zero for i and 1 for all others.
     // Set row to all ones.
-    uint64_t m = 0xFF << i;
+    uint64_t m = 0xFFull << shift;
     new_lru |= m;
     // Clear the column.
-    m = 0x11111111 << i;
+    m = 0x11111111ull << shift;
     new_lru &= m;
-    if (t->lru.compare_exchange_weak(lru, new_lru)) {
+    if (lru == new_lru || t->lru.compare_exchange_weak(lru, new_lru, std::memory_order_relaxed)) {
       return;
     }
   }
@@ -162,12 +162,13 @@ update_tag(int i, RamCacheLocklessLRUTags *t, CryptoHash *key)
   while (true) {
     uint64_t tags     = t->tags.load(std::memory_order_relaxed); // Handled at a higher level.
     uint64_t new_tags = tags;
-    uint64_t m        = 0xFF << i;
+    int shift         = i * 8;
+    uint64_t m        = 0xFFull << shift;
     new_tags &= ~m;
     uint8_t *entry_tag_bits = reinterpret_cast<uint8_t *>(key);
-    m                       = *entry_tag_bits << i;
+    m                       = static_cast<uint64_t>(*entry_tag_bits) << shift;
     new_tags |= m;
-    if (t->lru.compare_exchange_weak(tags, new_tags)) {
+    if (tags == new_tags || t->tags.compare_exchange_weak(tags, new_tags, std::memory_order_relaxed)) {
       return;
     }
   }
@@ -191,7 +192,7 @@ RamCacheLocklessLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t 
   RamCacheLocklessLRUEntry *b;
   RamCacheLocklessLRUTags *t;
   get_bucket(key->slice32(3) % nbuckets, &t, &b);
-  uint64_t tags = t->tags.load(std::memory_order_acquire);
+  uint64_t tags = t->tags.load(std::memory_order_relaxed);
   for (int i = 0; i < ASSOCIATIVITY; i++) {
     uint8_t *tag_bits           = reinterpret_cast<uint8_t *>(&tags);
     RamCacheLocklessLRUEntry *e = &b[i];
@@ -199,32 +200,35 @@ RamCacheLocklessLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t 
     if (*entry_tag_bits != *tag_bits) {
       continue;
     }
-    uint64_t d    = increment_reader(&e->data);
+    uint64_t d    = increment_mark(&e->data);
     uint64_t dptr = d & ~LOCK;
     if (!dptr) { // Empty
-      decrement_reader(&e->data);
+      decrement_mark(&e->data);
       continue;
     }
-    if (e->key == *key && e->auxkey.load() == auxkey) {
+    if (e->key == *key && e->auxkey == auxkey) {
       (*ret_data) = *reinterpret_cast<Ptr<IOBufferData> *>(&dptr);
       DDebug("ram_cache", "get %X %" PRIu64 " HIT", key->slice32(3), auxkey);
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_hits_stat, 1);
       update_lru(i, t);
-      decrement_reader(&e->data);
+      decrement_mark(&e->data);
       return 1;
     }
+    decrement_mark(&e->data);
   }
   DDebug("ram_cache", "get %X %" PRIu64 " MISS", key->slice32(3), auxkey);
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
   return 0;
 }
 
+// Succeeds if the entry is already empty or if it is removed.
 bool
-RamCacheLocklessLRU::remove(int i, RamCacheLocklessLRUEntry *b)
+RamCacheLocklessLRU::remove(int i, RamCacheLocklessLRUEntry *bucket)
 {
+  RamCacheLocklessLRUEntry *e = &bucket[i];
   uint64_t d;
   while (true) {
-    uint64_t data = b->data.load(std::memory_order_acquire);
+    uint64_t data = e->data.load(std::memory_order_acquire);
     if ((data & LOCK)) {
       return false;
     }
@@ -232,47 +236,51 @@ RamCacheLocklessLRU::remove(int i, RamCacheLocklessLRUEntry *b)
       return false;
     }
     d = data + 1;
-    if (b->data.compare_exchange_weak(data, d)) {
+    if (e->data.compare_exchange_weak(data, d)) {
       break;
     }
   }
-  IOBufferData *block         = reinterpret_cast<IOBufferData *>(data);
-  auto size                   = block->block_size();
-  RamCacheLocklessLRUEntry *e = &b[i];
-  uint64_t new_data           = 0;
-  if (!e->data.compare_exchange_strong(d, new_data)) {
-    decrement_reader(&e->data);
+  IOBufferData *block = reinterpret_cast<IOBufferData *>(data);
+  auto size           = ENTRY_OVERHEAD + block->block_size();
+  uint64_t new_data   = 1;
+  if (!e->data.compare_exchange_strong(d, new_data, std::memory_order_relaxed, std::memory_order_relaxed)) {
+    decrement_mark(&e->data);
     return false;
   }
-  e->auxkey.store(ILLEGAL_AUXKEY);
+  e->auxkey = ILLEGAL_AUXKEY;
+  decrement_mark(&e->data);
+
+  block->refcount_dec();
   bytes -= size;
+  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -size);
   objects--;
   return true;
 }
 
-int64_t
-RamCacheLocklessLRU::remove_one()
+static int
+find_lru_victim(RamCacheLocklessLRUTags *t, RamCacheLocklessLRUEntry *b)
 {
-  RamCacheLocklessLRUEntry *b;
-  RamCacheLocklessLRUTags *t;
-  int i;
-  while (true) {
-    auto bucket = reclaim_sweep++;
-    get_bucket(bucket % nbuckets, &t, &b);
-    i = find_lru(t);
-    if (i < 0) {
+  // Find the row with the most bits set.
+  uint64_t lru = t->lru.load(std::memory_order_acquire);
+  int i        = -1;
+  int max_p    = -1;
+  for (int j = 0; j < 8; j++) {
+    if (!(b[j].data.load(std::memory_order_relaxed) & ~LOCK)) { // Skip empty entries.
       continue;
     }
-    if (!remove(i, b)) {
-      continue;
+    uint64_t c = lru >> (8 * j);
+    c &= 0xFF;
+    int p = std::__popcount(c);
+    if (p > max_p) {
+      i     = j;
+      max_p = p;
     }
-    break;
   }
-  return bytes;
+  return i;
 }
 
-int
-RamCacheLocklessLRU::find_lru(RamCacheLocklessLRUTags *t)
+static int
+find_lru(RamCacheLocklessLRUTags *t)
 {
   // Find the row with the most bits set.
   uint64_t lru = t->lru.load(std::memory_order_acquire);
@@ -290,6 +298,27 @@ RamCacheLocklessLRU::find_lru(RamCacheLocklessLRUTags *t)
   return i;
 }
 
+int64_t
+RamCacheLocklessLRU::remove_one()
+{
+  RamCacheLocklessLRUEntry *b;
+  RamCacheLocklessLRUTags *t;
+  int i;
+  while (true) {
+    auto bucket = reclaim_sweep++;
+    get_bucket(bucket % nbuckets, &t, &b);
+    i = find_lru_victim(t, b);
+    if (i < 0) {
+      continue;
+    }
+    if (!remove(i, b)) {
+      continue;
+    }
+    break;
+  }
+  return bytes;
+}
+
 int
 RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool, uint64_t auxkey)
 {
@@ -300,7 +329,7 @@ RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool
   RamCacheLocklessLRUEntry *b;
   RamCacheLocklessLRUTags *t;
   get_bucket(key->slice32(3) % nbuckets, &t, &b);
-  uint64_t tags = t->tags.load(std::memory_order_acquire);
+  uint64_t tags = t->tags.load(std::memory_order_relaxed);
   int empty     = -1;
   for (int i = 0; i < ASSOCIATIVITY; i++) {
     uint8_t *tag_bits           = reinterpret_cast<uint8_t *>(&tags);
@@ -309,19 +338,20 @@ RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool
     if (*entry_tag_bits != *tag_bits) {
       continue;
     }
-    uint64_t d    = increment_reader(&e->data);
+    uint64_t d    = increment_mark(&e->data);
     uint64_t dptr = d & ~LOCK;
     if (!dptr) { // Empty
-      decrement_reader(&e->data);
+      decrement_mark(&e->data);
       empty = i;
       continue;
     }
     if (e->key == *key && e->auxkey == auxkey) {
-      decrement_reader(&e->data);
+      decrement_mark(&e->data);
       return 0;
     }
-    decrement_reader(&e->data);
+    decrement_mark(&e->data);
   }
+  // Not found.
 
   // Free enough space.
   int size = ENTRY_OVERHEAD + data->block_size();
@@ -331,39 +361,46 @@ RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool
     bb = remove_one();
   }
 
+  int free = -1;
   // Find a cache line.
   if (empty < 0) {
-    empty = find_lru(t);
-    if (empty < 0) {
+    free = find_lru(t);
+    if (free < 0) {
       bytes -= size;
       return 0;
     }
   }
 
   // Remove current entry.
-  if (!remove(empty, b)) {
-    bytes -= size;
-    return 0;
+  if (empty < 0) {
+    if (!remove(free, b)) {
+      bytes -= size;
+      return 0;
+    }
+    empty = free;
   }
 
   // Swap in new pointer.
   RamCacheLocklessLRUEntry *e = &b[empty];
   uint64_t d                  = 0;
-  auto new_data               = reinterpret_cast<uint64_t>(data) + 1; // Mark reader.
-  if (!e->data.compare_exchange_strong(d, reinterpret_cast<uint64_t>(new_data))) {
+  uint64_t new_data           = reinterpret_cast<uint64_t>(data) + 1;
+  data->refcount_inc();
+  if (!e->data.compare_exchange_strong(d, new_data, std::memory_order_relaxed)) {
+    data->refcount_dec();
     return 0;
   }
 
   // Update the key and auxkey.
-  e->key = *key;
+  e->key    = *key;
+  e->auxkey = auxkey;
+
+  decrement_mark(&e->data);
+
   update_lru(empty, t);
   update_tag(empty, t, key);
-  e->auxkey.store(auxkey, std::memory_order_release);
-
-  decrement_reader(&e->data);
 
   objects++;
-  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, ENTRY_OVERHEAD + data->block_size());
+  CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, size);
   DDebug("ram_cache", "put %X %" PRIu64 " INSERTED", key->slice32(3), auxkey);
   return 1;
 }
@@ -385,17 +422,18 @@ RamCacheLocklessLRU::fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t 
     if (*entry_tag_bits != *tag_bits) {
       continue;
     }
-    uint64_t d    = increment_reader(&e->data);
+    uint64_t d    = increment_mark(&e->data);
     uint64_t dptr = d & ~LOCK;
     if (!dptr) { // Empty
-      decrement_reader(&e->data);
+      decrement_mark(&e->data);
       continue;
     }
-    if (e->key == *key && e->auxkey.load() == old_auxkey) {
-      decrement_reader(&e->data);
-      e->auxkey.store(new_auxkey, std::memory_order_release);
+    if (e->key == *key && e->auxkey == old_auxkey) {
+      e->auxkey = new_auxkey;
+      decrement_mark(&e->data);
       return 1;
     }
+    decrement_mark(&e->data);
   }
   return 0;
 }
