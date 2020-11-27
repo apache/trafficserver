@@ -27,11 +27,10 @@
 #include "P_Cache.h"
 
 #define ENTRY_OVERHEAD 64             // per-entry overhead to consider when computing sizes
-#define BYTES_PER_ENTRY (1 << 16)     // 1 entry for every 64K bytes
+#define BYTES_PER_ENTRY (1 << 14)     // 1 entry for every 16K bytes
 #define LOCK static_cast<uint64_t>(7) // lowest 3 bits
 #define ASSOCIATIVITY 8
 #define BUCKET_SIZE ((ASSOCIATIVITY * sizeof(RamCacheLocklessLRUEntry)) + sizeof(RamCacheLocklessLRUTags))
-#define ILLEGAL_AUXKEY 0xFFFFFFFF // This is an offset into the cache which is out of range
 
 // Lockless behavior.
 // 'data' is a Ptr<IOBufferData> with the lower 3 bits used for marking.
@@ -50,9 +49,9 @@ struct RamCacheLocklessLRUTags {
 };
 
 struct RamCacheLocklessLRU : public RamCache {
-  int64_t max_bytes = 0;
-  std::atomic<int64_t> bytes;
-  std::atomic<int64_t> objects;
+  int64_t max_bytes            = 0;
+  std::atomic<int64_t> bytes   = 0;
+  std::atomic<int64_t> objects = 0;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey must match
   int get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
@@ -63,13 +62,13 @@ struct RamCacheLocklessLRU : public RamCache {
   void init(int64_t max_bytes, Vol *) override;
 
   // private
-  void *data   = nullptr;
-  int nbuckets = 0;
-  int ibuckets = 0;
-  Vol *vol     = nullptr;
-  std::atomic<uint64_t> reclaim_sweep;
+  void *data                          = nullptr;
+  int nbuckets                        = 0;
+  int ibuckets                        = 0;
+  Vol *vol                            = nullptr;
+  std::atomic<uint64_t> reclaim_sweep = 0;
 
-  bool remove(int i, RamCacheLocklessLRUEntry *e);
+  int64_t remove(int i, RamCacheLocklessLRUEntry *e);
   int64_t remove_one();
   void get_bucket(int buckekt, RamCacheLocklessLRUTags **t, RamCacheLocklessLRUEntry **e);
 };
@@ -77,7 +76,7 @@ struct RamCacheLocklessLRU : public RamCache {
 int64_t
 RamCacheLocklessLRU::size() const
 {
-  return bytes.load();
+  return bytes.load(std::memory_order_relaxed);
 }
 
 static const int bucket_sizes[] = {1,        3,        7,         13,        31,        61,           127,         251,
@@ -148,7 +147,7 @@ update_lru(int i, RamCacheLocklessLRUTags *t)
     uint64_t m = 0xFFull << shift;
     new_lru |= m;
     // Clear the column.
-    m = 0x11111111ull << shift;
+    m = 0x11111111ull << i;
     new_lru &= m;
     if (lru == new_lru || t->lru.compare_exchange_weak(lru, new_lru, std::memory_order_relaxed)) {
       return;
@@ -197,7 +196,7 @@ RamCacheLocklessLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t 
     uint8_t *tag_bits           = reinterpret_cast<uint8_t *>(&tags);
     RamCacheLocklessLRUEntry *e = &b[i];
     uint8_t *entry_tag_bits     = reinterpret_cast<uint8_t *>(&e->key);
-    if (*entry_tag_bits != *tag_bits) {
+    if (*entry_tag_bits != *tag_bits << (8 * i)) {
       continue;
     }
     uint64_t d    = increment_mark(&e->data);
@@ -207,7 +206,7 @@ RamCacheLocklessLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t 
       continue;
     }
     if (e->key == *key && e->auxkey == auxkey) {
-      (*ret_data) = *reinterpret_cast<Ptr<IOBufferData> *>(&dptr);
+      (*ret_data) = reinterpret_cast<IOBufferData *>(dptr);
       DDebug("ram_cache", "get %X %" PRIu64 " HIT", key->slice32(3), auxkey);
       CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_hits_stat, 1);
       update_lru(i, t);
@@ -222,39 +221,42 @@ RamCacheLocklessLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t 
 }
 
 // Succeeds if the entry is already empty or if it is removed.
-bool
+// Returns 'bytes' on success or zero on failure.
+int64_t
 RamCacheLocklessLRU::remove(int i, RamCacheLocklessLRUEntry *bucket)
 {
   RamCacheLocklessLRUEntry *e = &bucket[i];
-  uint64_t d;
+  int64_t result              = 0;
+  uint64_t ptr                = 0;
+  uint64_t marked_ptr         = 0;
   while (true) {
-    uint64_t data = e->data.load(std::memory_order_acquire);
-    if ((data & LOCK)) {
-      return false;
+    ptr = e->data.load(std::memory_order_acquire);
+    if ((ptr & LOCK)) {
+      return result;
     }
-    if ((data & ~LOCK) == 0) {
-      return false;
+    if ((ptr & ~LOCK) == 0) {
+      return result;
     }
-    d = data + 1;
-    if (e->data.compare_exchange_weak(data, d)) {
+    marked_ptr = ptr + 1;
+    if (e->data.compare_exchange_weak(ptr, marked_ptr)) {
       break;
     }
   }
-  IOBufferData *block = reinterpret_cast<IOBufferData *>(data);
+  IOBufferData *block = reinterpret_cast<IOBufferData *>(ptr);
   auto size           = ENTRY_OVERHEAD + block->block_size();
-  uint64_t new_data   = 1;
-  if (!e->data.compare_exchange_strong(d, new_data, std::memory_order_relaxed, std::memory_order_relaxed)) {
+  uint64_t new_ptr    = 1;
+  if (!e->data.compare_exchange_strong(marked_ptr, new_ptr, std::memory_order_relaxed, std::memory_order_relaxed)) {
     decrement_mark(&e->data);
     return false;
   }
-  e->auxkey = ILLEGAL_AUXKEY;
   decrement_mark(&e->data);
 
   block->refcount_dec();
-  bytes -= size;
+
+  result = bytes.fetch_sub(size) - size;
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, -size);
-  objects--;
-  return true;
+  objects.fetch_sub(1, std::memory_order_relaxed);
+  return result;
 }
 
 static int
@@ -301,22 +303,23 @@ find_lru(RamCacheLocklessLRUTags *t)
 int64_t
 RamCacheLocklessLRU::remove_one()
 {
+  int64_t result = 0;
   RamCacheLocklessLRUEntry *b;
   RamCacheLocklessLRUTags *t;
   int i;
   while (true) {
-    auto bucket = reclaim_sweep++;
+    auto bucket = reclaim_sweep.fetch_add(1, std::memory_order_relaxed) + 1;
     get_bucket(bucket % nbuckets, &t, &b);
     i = find_lru_victim(t, b);
     if (i < 0) {
       continue;
     }
-    if (!remove(i, b)) {
+    if (!(result = remove(i, b))) {
       continue;
     }
     break;
   }
-  return bytes;
+  return result;
 }
 
 int
@@ -332,10 +335,9 @@ RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool
   uint64_t tags = t->tags.load(std::memory_order_relaxed);
   int empty     = -1;
   for (int i = 0; i < ASSOCIATIVITY; i++) {
-    uint8_t *tag_bits           = reinterpret_cast<uint8_t *>(&tags);
     RamCacheLocklessLRUEntry *e = &b[i];
     uint8_t *entry_tag_bits     = reinterpret_cast<uint8_t *>(&e->key);
-    if (*entry_tag_bits != *tag_bits) {
+    if (*entry_tag_bits != (tags << (0xFFull << (8 * i)))) {
       continue;
     }
     uint64_t d    = increment_mark(&e->data);
@@ -354,9 +356,8 @@ RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool
   // Not found.
 
   // Free enough space.
-  int size = ENTRY_OVERHEAD + data->block_size();
-  bytes += size;
-  int64_t bb = bytes;
+  int64_t size = ENTRY_OVERHEAD + data->block_size();
+  int64_t bb   = bytes.fetch_add(size, std::memory_order_relaxed) + size;
   while (bb > size && bb > max_bytes) {
     bb = remove_one();
   }
@@ -366,15 +367,11 @@ RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool
   if (empty < 0) {
     free = find_lru(t);
     if (free < 0) {
-      bytes -= size;
+      bytes.fetch_sub(size, std::memory_order_relaxed);
       return 0;
     }
-  }
-
-  // Remove current entry.
-  if (empty < 0) {
     if (!remove(free, b)) {
-      bytes -= size;
+      bytes.fetch_sub(size, std::memory_order_relaxed);
       return 0;
     }
     empty = free;
@@ -384,11 +381,11 @@ RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool
   RamCacheLocklessLRUEntry *e = &b[empty];
   uint64_t d                  = 0;
   uint64_t new_data           = reinterpret_cast<uint64_t>(data) + 1;
-  data->refcount_inc();
   if (!e->data.compare_exchange_strong(d, new_data, std::memory_order_relaxed)) {
-    data->refcount_dec();
+    bytes.fetch_sub(size, std::memory_order_relaxed);
     return 0;
   }
+  data->refcount_inc();
 
   // Update the key and auxkey.
   e->key    = *key;
@@ -399,7 +396,8 @@ RamCacheLocklessLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool
   update_lru(empty, t);
   update_tag(empty, t, key);
 
-  objects++;
+  // bytes updated above
+  objects.fetch_add(1, std::memory_order_relaxed);
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_bytes_stat, size);
   DDebug("ram_cache", "put %X %" PRIu64 " INSERTED", key->slice32(3), auxkey);
   return 1;
