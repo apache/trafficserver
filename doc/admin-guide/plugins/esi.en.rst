@@ -80,11 +80,11 @@ Enabling ESI
 
 2. There are four options you can add to the above.
 
-- "--private-response" will add private cache control and expires header to the processed ESI document.
-- "--packed-node-support" will enable the support for using packed node, which will improve the performance of parsing
+- ``--private-response`` will add private cache control and expires header to the processed ESI document.
+- ``--packed-node-support`` will enable the support for using packed node, which will improve the performance of parsing
   cached ESI document.
-- "--disable-gzip-output" will disable gzipped output, which will NOT gzip the output anyway.
-- "--first-byte-flush" will enable the first byte flush feature, which will flush content to users as soon as the entire
+- ``--disable-gzip-output`` will disable gzipped output, which will NOT gzip the output anyway.
+- ``--first-byte-flush`` will enable the first byte flush feature, which will flush content to users as soon as the entire
   ESI document is received and parsed without all ESI includes fetched (the flushing will stop at the ESI include markup
   till that include is fetched).
 

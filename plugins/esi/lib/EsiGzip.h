@@ -26,6 +26,7 @@
 #include "ComponentBase.h"
 #include <zlib.h>
 #include <string>
+#include <string_view>
 
 class EsiGzip : private EsiLib::ComponentBase
 {
@@ -34,19 +35,41 @@ public:
 
   ~EsiGzip() override;
 
+  /** Compress the provided content.
+   *
+   * @param[in] data The input data to compress.
+   * @param[in] data_len The length of the input data to compress.
+   * @param[in,out] The result of compressing the input data will be appended
+   *    to cdata.
+   *
+   * @return True if the compression succeeded, false otherwise.
+   */
   bool stream_encode(const char *data, int data_len, std::string &cdata);
 
+  /** A string_view overload of stream_encode. */
   inline bool
-  stream_encode(std::string data, std::string &cdata)
+  stream_encode(std::string_view data, std::string &cdata)
   {
     return stream_encode(data.data(), data.size(), cdata);
   }
 
+  /** Finish the compression stream.
+   *
+   * @param[out] cdata The compressed data is appended to this.
+   * @param[out] downstream_length The total number of compressed stream bytes
+   *    across all calls to stream_encode and stream_finish.
+   *
+   * @return True if the compression succeeded, false otherwise.
+   */
   bool stream_finish(std::string &cdata, int &downstream_length);
 
 private:
-  // int runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata);
+  /** The cumulative total number of bytes for the compressed stream. */
   int _downstream_length;
+
+  /** The cumulative total number of uncompressed bytes that have been
+   * compressed.
+   */
   int _total_data_length;
   z_stream _zstrm;
   uLong _crc;
