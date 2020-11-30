@@ -1566,10 +1566,9 @@ Negative Response Caching
    ====================== =====================================================
    ``204``                No Content
    ``305``                Use Proxy
-   ``400``                Bad Request
    ``403``                Forbidden
    ``404``                Not Found
-   ``405``                Method Not Allowed
+   ``414``                URI Too Long
    ``500``                Internal Server Error
    ``501``                Not Implemented
    ``502``                Bad Gateway

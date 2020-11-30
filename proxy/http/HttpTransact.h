@@ -921,8 +921,23 @@ public:
     bool client_connection_enabled;
     bool acl_filtering_performed;
 
-    // for negative caching
-    bool negative_caching;
+    /// True if negative caching is enabled and the response is cacheable.
+    ///
+    /// Note carefully that this being true does not necessarily imply that the
+    /// response code was negative. It means that (a) the response was
+    /// cacheable apart from response code considerations, and (b) concerning
+    /// the response code one of the following was true:
+    ///
+    ///   * The response was a negative response code configured cacheable
+    ///   by the user via negative response caching configuration, or ...
+    ///
+    ///   * The response code was an otherwise cacheable positive repsonse
+    ///   value (such as a 200 response, for example).
+    ///
+    /// TODO: We should consider refactoring this variable and its use. For now
+    /// I'm giving it an awkwardly long name to make sure the meaning of it is
+    /// clear in its various contexts.
+    bool is_cacheable_and_negative_caching_is_enabled;
     // for authenticated content caching
     CacheAuth_t www_auth_content;
 
@@ -1046,7 +1061,7 @@ public:
         state_machine_id(0),
         client_connection_enabled(true),
         acl_filtering_performed(false),
-        negative_caching(false),
+        is_cacheable_and_negative_caching_is_enabled(false),
         www_auth_content(CACHE_AUTH_NONE),
         remap_plugin_instance(0),
         fp_tsremap_os_response(NULL),
