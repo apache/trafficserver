@@ -39,6 +39,7 @@ public:
     ctx = EVP_MD_CTX_new();
     EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
   }
+  ~SHA256Context() { EVP_MD_CTX_free(ctx); }
   /// Update the hash with @a data of @a length bytes.
   bool
   update(void const *data, int length) override
