@@ -111,6 +111,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
   EVP_DigestUpdate(ctx, sli->secret, strlen(sli->secret));
   EVP_DigestUpdate(ctx, ip, strlen(ip));
+
   if (path) {
     EVP_DigestUpdate(ctx, path, strlen(path));
   }
@@ -118,6 +119,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     EVP_DigestUpdate(ctx, expire, strlen(expire));
   }
   EVP_DigestFinal_ex(ctx, md, NULL);
+#ifdef HAVE_EVP_MD_CTX_FREE
+  EVP_MD_CTX_free(ctx);
+#else
+  EVP_MD_CTX_destroy(ctx);
+#endif
   for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
     sprintf(&hash[i * 2], "%02x", md[i]);
   }
