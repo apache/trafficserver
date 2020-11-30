@@ -43,6 +43,7 @@
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
+#include "P_SSLSNI.h"
 #include "SSLDiags.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
@@ -75,7 +76,6 @@ int SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file      = nullptr;
 
 static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
-static std::unique_ptr<ConfigUpdateHandler<SSLConfig>> sslConfigUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
 
 SSLConfigParams::SSLConfigParams()
@@ -429,17 +429,13 @@ SSLConfigParams::getClientSSL_CTX() const
 void
 SSLConfig::startup()
 {
-  sslConfigUpdate.reset(new ConfigUpdateHandler<SSLConfig>());
-  sslConfigUpdate->attach("proxy.config.ssl.client.cert.path");
-  sslConfigUpdate->attach("proxy.config.ssl.client.cert.filename");
-  sslConfigUpdate->attach("proxy.config.ssl.client.private_key.path");
-  sslConfigUpdate->attach("proxy.config.ssl.client.private_key.filename");
   reconfigure();
 }
 
 void
 SSLConfig::reconfigure()
 {
+  Debug("ssl", "Reload SSLConfig");
   SSLConfigParams *params;
   params = new SSLConfigParams;
   params->initialize(); // re-read configuration
@@ -657,6 +653,8 @@ SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const cha
   std::string top_level_key, ctx_key;
   ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
   ts::bwprint(ctx_key, "{}:{}", client_cert, key_file);
+
+  Debug("ssl", "Load client cert %s %s", client_cert, key_file);
 
   auto ctx_map_iter = top_level_ctx_map.find(top_level_key);
   if (ctx_map_iter != top_level_ctx_map.end()) {
