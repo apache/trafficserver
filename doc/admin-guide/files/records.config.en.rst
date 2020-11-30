@@ -1506,11 +1506,9 @@ Negative Response Caching
    ====================== =====================================================
    ``204``                No Content
    ``305``                Use Proxy
-   ``400``                Bad Request
    ``403``                Forbidden
    ``404``                Not Found
    ``414``                URI Too Long
-   ``405``                Method Not Allowed
    ``500``                Internal Server Error
    ``501``                Not Implemented
    ``502``                Bad Gateway
@@ -1528,7 +1526,7 @@ Negative Response Caching
    How long (in seconds) Traffic Server keeps the negative responses  valid in cache. This value only affects negative
    responses that do NOT have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
 
-.. ts:cv:: CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 405 414 500 501 502 503 504
+.. ts:cv:: CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 414 500 501 502 503 504
    :reloadable:
 
    The HTTP status code for negative caching. Default values are mentioned above. The unwanted status codes can be

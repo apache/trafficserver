@@ -910,7 +910,7 @@ set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpCo
   HttpStatusBitset set;
   // values from proxy.config.http.negative_caching_list
   if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
-    // parse the list of status code
+    // parse the list of status codes
     ts::TextView status_list(data.rec_string, strlen(data.rec_string));
     auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
     while (!status_list.ltrim_if(is_sep).empty()) {
