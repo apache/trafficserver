@@ -493,7 +493,7 @@ Error responses from origins are conistent and costly
 If error responses are costly for your origin server to generate, you may elect
 to have |TS| cache these responses for a period of time. The default behavior is
 to consider all of these responses to be uncacheable, which will lead to every
-client request to result in an origin request.
+client request resulting in an origin request.
 
 This behavior is controlled by both enabling the feature via
 :ts:cv:`proxy.config.http.negative_caching_enabled` and setting the cache time
@@ -502,7 +502,7 @@ status code for negative caching can be set with :ts:cv:`proxy.config.http.negat
 
     CONFIG proxy.config.http.negative_caching_enabled INT 1
     CONFIG proxy.config.http.negative_caching_lifetime INT 10
-    CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 405 414 500 501 502 503 504
+    CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 414 500 501 502 503 504
 
 SSL-Specific Options
 ~~~~~~~~~~~~~~~~~~~~

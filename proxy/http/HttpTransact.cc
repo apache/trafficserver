@@ -4202,7 +4202,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     client_response_code = server_response_code;
     base_response        = &s->hdr_info.server_response;
 
-    s->negative_caching = is_negative_caching_appropriate(s) && cacheable;
+    s->is_cacheable_and_negative_caching_is_enabled = cacheable && s->txn_conf->negative_caching_enabled;
 
     // determine the correct cache action given the original cache action,
     // cacheability of server response, and request method
@@ -4237,7 +4237,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       }
 
     } else if (s->cache_info.action == CACHE_DO_WRITE) {
-      if (!cacheable && !s->negative_caching) {
+      if (!cacheable) {
         s->cache_info.action = CACHE_DO_NO_ACTION;
       } else if (s->method == HTTP_WKSIDX_HEAD) {
         s->cache_info.action = CACHE_DO_NO_ACTION;
@@ -4264,7 +4264,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     //   before issuing a 304
     if (s->cache_info.action == CACHE_DO_WRITE || s->cache_info.action == CACHE_DO_NO_ACTION ||
         s->cache_info.action == CACHE_DO_REPLACE) {
-      if (s->negative_caching) {
+      if (s->is_cacheable_and_negative_caching_is_enabled) {
         HTTPHdr *resp;
         s->cache_info.object_store.create();
         s->cache_info.object_store.request_set(&s->hdr_info.client_request);
@@ -4300,8 +4300,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVER_REVALIDATED);
         }
       }
-    } else if (s->negative_caching) {
-      s->negative_caching = false;
+    } else if (s->is_cacheable_and_negative_caching_is_enabled) {
+      s->is_cacheable_and_negative_caching_is_enabled = false;
     }
 
     break;
@@ -4711,7 +4711,7 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
      sites yields no insight. So the assert is removed and we keep the behavior that if the response
      in @a cache_info is already set, we don't override it.
   */
-  if (!s->negative_caching || !cache_info->response_get()->valid()) {
+  if (!s->is_cacheable_and_negative_caching_is_enabled || !cache_info->response_get()->valid()) {
     cache_info->response_set(response);
   }
 
@@ -6163,24 +6163,24 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     }
   }
 
-  // default cacheability
-  if (!s->txn_conf->negative_caching_enabled) {
-    if ((response_code == HTTP_STATUS_OK) || (response_code == HTTP_STATUS_NOT_MODIFIED) ||
-        (response_code == HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION) || (response_code == HTTP_STATUS_MOVED_PERMANENTLY) ||
-        (response_code == HTTP_STATUS_MULTIPLE_CHOICES) || (response_code == HTTP_STATUS_GONE)) {
-      TxnDebug("http_trans", "[is_response_cacheable] YES by default ");
-      return true;
-    } else {
-      TxnDebug("http_trans", "[is_response_cacheable] NO by default");
-      return false;
-    }
+  if ((response_code == HTTP_STATUS_OK) || (response_code == HTTP_STATUS_NOT_MODIFIED) ||
+      (response_code == HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION) || (response_code == HTTP_STATUS_MOVED_PERMANENTLY) ||
+      (response_code == HTTP_STATUS_MULTIPLE_CHOICES) || (response_code == HTTP_STATUS_GONE)) {
+    TxnDebug("http_trans", "[is_response_cacheable] YES response code seems fine");
+    return true;
   }
+  // Notice that the following are not overridable by negative caching.
   if (response_code == HTTP_STATUS_SEE_OTHER || response_code == HTTP_STATUS_UNAUTHORIZED ||
       response_code == HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED) {
     return false;
   }
-  // let is_negative_caching_approriate decide what to do
-  return true;
+  // The response code does not look appropriate for caching. Check, however,
+  // whether the user has specified it should be cached via negative response
+  // caching configuration.
+  if (is_negative_caching_appropriate(s)) {
+    return true;
+  }
+  return false;
   /* Since we weren't caching response obtained with
      Authorization (the cache control stuff was commented out previously)
      I've moved this check to is_request_cache_lookupable().
