@@ -1,0 +1,5 @@
+Changes with Apache Traffic Server 7.1.12
+  #6965 - Backport 7.1.x: HTTP/2: ignore unknown settings
+  #7009 - Backport 7.1.x: Add range check of Http2SettingsIdentifier
+  #7356 - ESI: Ensure gzip header is always initialized
+  #7357 - Add negative caching tests and fixes.
