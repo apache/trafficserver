@@ -53,15 +53,18 @@ testName = "regex_remap"
 regex_remap_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap.conf')
 curl_and_args = 'curl -s -D - -v --proxy localhost:{} '.format(ts.Variables.port)
 
-path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
-
 ts.Disk.File(regex_remap_conf_path, typename="ats:config").AddLines([
     "# regex_remap configuration\n"
     "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ http://example.one @status=301\n"
+    "^/charlie http://example.one @status=301\n"
 ])
 
 ts.Disk.remap_config.AddLine(
     "map http://example.one/ http://localhost:{}/ @plugin=regex_remap.so @pparam=regex_remap.conf\n".format(server.Variables.Port)
+)
+ts.Disk.remap_config.AddLine(
+    "map http://example.two/charlie http://localhost:{}/delta ".format(server.Variables.Port) +
+    "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine\n"
 )
 
 # minimal configuration
@@ -76,6 +79,14 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 creq = replay_txns[0]['client-request']
 tr.Processes.Default.Command = curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + creq["url"]
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("pristine test")
+tr.Processes.Default.Command = (
+    curl_and_args + '--header "uuid: {}" http://example.two/charlie'.format(creq["headers"]["fields"][1][1])
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
 tr.StillRunningAfter = ts
