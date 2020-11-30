@@ -776,7 +776,7 @@ transformData(TSCont contp)
             out_data_len = 0;
             out_data     = "";
           } else {
-            TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes", __FUNCTION__, out_data_len,
+            TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes via gzip", __FUNCTION__, out_data_len,
                     (int)cdata.size());
             out_data_len = cdata.size();
             out_data     = cdata.data();
@@ -841,12 +841,9 @@ transformData(TSCont contp)
         if (!cont_data->esi_gzip->stream_encode(out_data, cdata)) {
           TSError("[esi][%s] Error while gzipping content", __FUNCTION__);
         } else {
-          TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes", __FUNCTION__, (int)out_data.size(),
-                  (int)cdata.size());
+          TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes via EsiGzip", __FUNCTION__,
+                  (int)out_data.size(), (int)cdata.size());
         }
-      }
-
-      if (cont_data->gzip_output) {
         if (TSIOBufferWrite(TSVIOBufferGet(cont_data->output_vio), cdata.data(), cdata.size()) == TS_ERROR) {
           TSError("[esi][%s] Error while writing bytes to downstream VC", __FUNCTION__);
           return 0;
