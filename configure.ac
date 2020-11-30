@@ -1307,6 +1307,7 @@ AC_CHECK_FUNCS([ \
   CRYPTO_set_mem_functions \
   HMAC_CTX_new \
   X509_get0_signature \
+  ERR_get_error_all \
 ])
 
 AC_CHECK_FUNC([ASN1_STRING_get0_data], [],
