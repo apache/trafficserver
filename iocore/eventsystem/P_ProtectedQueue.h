@@ -33,10 +33,9 @@
 
 TS_INLINE
 ProtectedQueue::ProtectedQueue()
+  : al("ProtectedQueue", reinterpret_cast<char *>(&(reinterpret_cast<Event *>(0x10)->link.next)) - reinterpret_cast<char *>(0x10))
 {
-  Event e;
   ink_mutex_init(&lock);
-  ink_atomiclist_init(&al, "ProtectedQueue", (char *)&e.link.next - (char *)&e);
   ink_cond_init(&might_have_data);
 }
 

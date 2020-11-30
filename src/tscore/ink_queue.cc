@@ -36,17 +36,9 @@
 
   ****************************************************************************/
 
-#include "tscore/ink_config.h"
-#include <cassert>
-#include <memory.h>
-#include <cstdlib>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include "tscore/ink_atomic.h"
+#include <cstddef>
+#include <utility>
 #include "tscore/ink_queue.h"
-#include "tscore/ink_memory.h"
-#include "tscore/ink_error.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_align.h"
 #include "tscore/hugepages.h"
@@ -66,7 +58,155 @@
 #define DEADBEEF
 #endif
 
-static auto jma = je_mi_malloc::globalJeMiNodumpAllocator();
+namespace
+{
+// Atomic stack, implemented as a linked list.  The link is stored at the offset (given by the base class
+// member function link_offset() ) within each stack element.  The stack is empty when the head pointer is null.
+//
+template <class Base> class AtomicStack_ : private Base
+{
+public:
+  template <typename... Args>
+  AtomicStack_(ts::Atomic_versioned_ptr &head, Args &&... args) : Base(std::forward<Args>(args)...), _head(head)
+  {
+  }
+
+  // Return reference to "next" pointer within a stack element.
+  //
+  void *&
+  link(void *elem)
+  {
+    ink_assert(elem != nullptr);
+
+    return *reinterpret_cast<void **>(static_cast<char *>(elem) + Base::link_offset());
+  }
+
+  // Splice this stack to the tail of another stack (whose head and tail are given by the parameters).
+  // Returns previous head.
+  //
+  void *
+  splice_to_top(void *other_head, void *other_tail)
+  {
+    ts::Versioned_ptr curr_head{_head.load()};
+
+    do {
+      link(other_tail) = curr_head.ptr();
+
+    } while (!_head.compare_exchange_weak(curr_head, other_head));
+
+    return curr_head.ptr();
+  }
+
+  // Returns previous head.
+  //
+  void *
+  push(void *elem)
+  {
+    return splice_to_top(elem, elem);
+  }
+
+  template <bool All_elements = false>
+  void *
+  pop()
+  {
+    ts::Versioned_ptr curr_head{_head.load()};
+    void *new_head;
+
+    do {
+      if (!curr_head.ptr()) {
+        // Stack is empty.
+        //
+        return nullptr;
+      }
+
+      new_head = All_elements ? nullptr : link(curr_head.ptr());
+
+    } while (!_head.compare_exchange_weak(curr_head, new_head));
+
+    if (!All_elements) {
+      link(curr_head.ptr()) = nullptr;
+    }
+
+    return curr_head.ptr();
+  }
+
+  // WARNING:  This is not safe, unless no other thread is popping or removing.
+  //
+  // If "item" is in list, it is removed from the list, and the function returns true.  The function returns
+  // false if "item" is not in the list.  If "item" was in the list, it's link pointer is cleared.
+  //
+  bool
+  remove(void *item)
+  {
+    ts::Versioned_ptr curr_head{item, _head.load().version()};
+
+    if (_head.compare_exchange_strong(curr_head, link(item))) {
+      // Item was at the top of the stack.
+
+      link(item) = nullptr;
+
+      return true;
+    }
+
+    void *p = curr_head.ptr();
+    if (p) {
+      void *p2 = link(p);
+
+      while (p2 != item) {
+        if (nullptr == p2) {
+          // Item not in stack.
+          //
+          return false;
+        }
+        p  = p2;
+        p2 = link(p2);
+      }
+      link(p) = link(p2);
+
+      link(item) = nullptr;
+
+      return true;
+    }
+    // Stack is empty.
+    //
+    return false;
+  }
+
+private:
+  ts::Atomic_versioned_ptr &_head;
+};
+
+template <size_t FixedOffset> class AtomicStackBaseFixedOffset
+{
+protected:
+  static constexpr size_t
+  link_offset()
+  {
+    return FixedOffset;
+  }
+};
+
+using AtomicStackNoOffset = AtomicStack_<AtomicStackBaseFixedOffset<0>>;
+
+class AtomicStackBaseVariableOffset
+{
+protected:
+  AtomicStackBaseVariableOffset(size_t offset) : _link_offset(offset) {}
+
+  size_t
+  link_offset() const
+  {
+    return _link_offset;
+  }
+
+private:
+  size_t const _link_offset;
+};
+
+using AtomicStackVariableOffset = AtomicStack_<AtomicStackBaseVariableOffset>;
+
+auto jma = je_mi_malloc::globalJeMiNodumpAllocator();
+} // end anonymous namespace
 
 struct ink_freelist_ops {
   void *(*fl_new)(InkFreeList *);
@@ -125,7 +265,7 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   /* its safe to add to this global list because ink_freelist_init()
      is only called from single-threaded initialization code. */
   f = static_cast<InkFreeList *>(ats_memalign(alignment, sizeof(InkFreeList)));
-  ink_zero(*f);
+  ::new (f) InkFreeList;
 
   fll       = static_cast<ink_freelist_list *>(ats_malloc(sizeof(ink_freelist_list)));
   fll->fl   = f;
@@ -151,7 +291,6 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_pagesize()) / f->type_size;
   }
   Debug(DEBUG_TAG "_init", "<%s> Chunk Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, chunk_size, f->chunk_size);
-  SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
 
   *fl = f;
 }
@@ -173,8 +312,6 @@ ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, u
   return f;
 }
 
-#define ADDRESS_OF_NEXT(x, offset) ((void **)((char *)x + offset))
-
 #ifdef SANITY
 int fake_global_for_ink_queue = 0;
 #endif
@@ -185,7 +322,7 @@ ink_freelist_new(InkFreeList *f)
   void *ptr;
 
   if (likely(ptr = freelist_global_ops->fl_new(f))) {
-    ink_atomic_increment(reinterpret_cast<int *>(&f->used), 1);
+    ++(f->used);
   }
 
   return ptr;
@@ -194,13 +331,10 @@ ink_freelist_new(InkFreeList *f)
 static void *
 freelist_new(InkFreeList *f)
 {
-  head_p item;
-  head_p next;
-  int result = 0;
+  void *item;
 
-  do {
-    INK_QUEUE_LD(item, f->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
+  for (;;) {
+    if (INK_ATOMICLIST_EMPTY(*f)) {
       uint32_t i;
       void *newp        = nullptr;
       size_t alloc_size = f->chunk_size * f->type_size;
@@ -219,13 +353,12 @@ freelist_new(InkFreeList *f)
       if (f->advice) {
         ats_madvise(static_cast<caddr_t>(newp), INK_ALIGN(alloc_size, alignment), f->advice);
       }
-      SET_FREELIST_POINTER_VERSION(item, newp, 0);
 
-      ink_atomic_increment(reinterpret_cast<int *>(&f->allocated), f->chunk_size);
+      f->allocated += f->chunk_size;
 
       /* free each of the new elements */
       for (i = 0; i < f->chunk_size; i++) {
-        char *a = (static_cast<char *>(FREELIST_POINTER(item))) + i * f->type_size;
+        char *a = static_cast<char *>(newp) + i * f->type_size;
 #ifdef DEADBEEF
         const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
         for (int j = 0; j < static_cast<int>(f->type_size); j++) {
@@ -236,27 +369,28 @@ freelist_new(InkFreeList *f)
       }
 
     } else {
-      SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), 0), FREELIST_VERSION(item) + 1);
-      result = ink_atomic_cas(&f->head.data, item.data, next.data);
+      item = AtomicStackNoOffset(f->head).pop<>();
 
+      if (item) {
 #ifdef SANITY
-      if (result) {
-        if (FREELIST_POINTER(item) == TO_PTR(FREELIST_POINTER(next))) {
+        void *head = f->head.load().ptr();
+        if (head == item) {
           ink_abort("ink_freelist_new: loop detected");
         }
-        if (((uintptr_t)(TO_PTR(FREELIST_POINTER(next)))) & 3) {
+        if (reinterpret_cast<uintptr_t>(head) & 3) {
           ink_abort("ink_freelist_new: bad list");
         }
-        if (TO_PTR(FREELIST_POINTER(next))) {
-          fake_global_for_ink_queue = *static_cast<int *>(TO_PTR(FREELIST_POINTER(next)));
+        if (head) {
+          fake_global_for_ink_queue = *static_cast<int *>(head);
         }
-      }
 #endif /* SANITY */
+        break;
+      }
     }
-  } while (result == 0);
-  ink_assert(!((uintptr_t)TO_PTR(FREELIST_POINTER(item)) & (((uintptr_t)f->alignment) - 1)));
+  }
+  ink_assert(!(reinterpret_cast<uintptr_t>(item) & (static_cast<uintptr_t>(f->alignment) - 1)));
 
-  return TO_PTR(FREELIST_POINTER(item));
+  return item;
 }
 
 static void *
@@ -279,20 +413,13 @@ ink_freelist_free(InkFreeList *f, void *item)
   if (likely(item != nullptr)) {
     ink_assert(f->used != 0);
     freelist_global_ops->fl_free(f, item);
-    ink_atomic_decrement(reinterpret_cast<int *>(&f->used), 1);
+    --(f->used);
   }
 }
 
 static void
 freelist_free(InkFreeList *f, void *item)
 {
-  void **adr_of_next = ADDRESS_OF_NEXT(item, 0);
-  head_p h;
-  head_p item_pair;
-  int result = 0;
-
-  // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
-
 #ifdef DEADBEEF
   {
     static const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
@@ -304,24 +431,20 @@ freelist_free(InkFreeList *f, void *item)
   }
 #endif /* DEADBEEF */
 
-  while (!result) {
-    INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
-    if (TO_PTR(FREELIST_POINTER(h)) == item) {
-      ink_abort("ink_freelist_free: trying to free item twice");
-    }
-    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3) {
-      ink_abort("ink_freelist_free: bad list");
-    }
-    if (TO_PTR(FREELIST_POINTER(h))) {
-      fake_global_for_ink_queue = *static_cast<int *>(TO_PTR(FREELIST_POINTER(h)));
-    }
-#endif /* SANITY */
-    *adr_of_next = FREELIST_POINTER(h);
-    SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
-    INK_MEMORY_BARRIER;
-    result = ink_atomic_cas(&f->head.data, h.data, item_pair.data);
+  void *head = f->head.load().ptr();
+  if (head == item) {
+    ink_abort("ink_freelist_free: trying to free item twice");
   }
+  if (reinterpret_cast<uintptr_t>(head) & 3) {
+    ink_abort("ink_freelist_free: bad list");
+  }
+  if (head) {
+    fake_global_for_ink_queue = *static_cast<int *>(head);
+  }
+#endif /* SANITY */
+
+  AtomicStackNoOffset(f->head).push(item);
 }
 
 static void
@@ -340,53 +463,49 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
   ink_assert(f->used >= num_item);
 
   freelist_global_ops->fl_bulkfree(f, head, tail, num_item);
-  ink_atomic_decrement(reinterpret_cast<int *>(&f->used), num_item);
+
+  f->used -= num_item;
 }
 
 static void
-freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
+freelist_bulkfree(InkFreeList *f, void *head, void *tail,
+                  size_t
+#ifdef DEADBEEF
+                    num_item
+#endif
+)
 {
-  void **adr_of_next = ADDRESS_OF_NEXT(tail, 0);
-  head_p h;
-  head_p item_pair;
-  int result = 0;
-
-  // ink_assert(!((long)item&(f->alignment-1))); XXX - why is this no longer working? -bcall
-
 #ifdef DEADBEEF
   {
     static const char str[4] = {static_cast<char>(0xde), static_cast<char>(0xad), static_cast<char>(0xbe), static_cast<char>(0xef)};
 
     // set the entire item to DEADBEEF;
     void *temp = head;
-    for (size_t i = 0; i < num_item; i++) {
+    for (size_t i = 0; i < num_item;) {
       for (int j = sizeof(void *); j < static_cast<int>(f->type_size); j++) {
         (static_cast<char *>(temp))[j] = str[j % 4];
       }
-      *ADDRESS_OF_NEXT(temp, 0) = FROM_PTR(*ADDRESS_OF_NEXT(temp, 0));
-      temp                      = TO_PTR(*ADDRESS_OF_NEXT(temp, 0));
+      ++i;
+      ink_assert((i < num_item) || (temp == tail));
+      temp = *static_cast<void **>(temp);
     }
   }
 #endif /* DEADBEEF */
 
-  while (!result) {
-    INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
-    if (TO_PTR(FREELIST_POINTER(h)) == head) {
-      ink_abort("ink_freelist_free: trying to free item twice");
-    }
-    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3) {
-      ink_abort("ink_freelist_free: bad list");
-    }
-    if (TO_PTR(FREELIST_POINTER(h))) {
-      fake_global_for_ink_queue = *static_cast<int *>(TO_PTR(FREELIST_POINTER(h)));
-    }
-#endif /* SANITY */
-    *adr_of_next = FREELIST_POINTER(h);
-    SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));
-    INK_MEMORY_BARRIER;
-    result = ink_atomic_cas(&f->head.data, h.data, item_pair.data);
+  void *old_head = f->head.load().ptr();
+  if (old_head == head) {
+    ink_abort("ink_freelist_free: trying to free item twice");
   }
+  if (reinterpret_cast<uintptr_t>(old_head) & 3) {
+    ink_abort("ink_freelist_free: bad list");
+  }
+  if (old_head) {
+    fake_global_for_ink_queue = *static_cast<int *>(old_head);
+  }
+#endif /* SANITY */
+
+  AtomicStackNoOffset(f->head).splice_to_top(head, tail);
 }
 
 static void
@@ -470,122 +589,32 @@ ink_freelists_dump(FILE *f)
   fprintf(f, "-----------------------------------------------------------------------------------------\n");
 }
 
-void
-ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next)
-{
-  l->name   = name;
-  l->offset = offset_to_next;
-  SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(0), 0);
-}
-
 void *
 ink_atomiclist_pop(InkAtomicList *l)
 {
-  head_p item;
-  head_p next;
-  int result = 0;
-  do {
-    INK_QUEUE_LD(item, l->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
-      return nullptr;
-    }
-    SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset), FREELIST_VERSION(item) + 1);
-    result = ink_atomic_cas(&l->head.data, item.data, next.data);
-  } while (result == 0);
-  {
-    void *ret                        = TO_PTR(FREELIST_POINTER(item));
-    *ADDRESS_OF_NEXT(ret, l->offset) = nullptr;
-    return ret;
-  }
+  return AtomicStackVariableOffset(l->head, l->offset).pop<>();
 }
 
 void *
 ink_atomiclist_popall(InkAtomicList *l)
 {
-  head_p item;
-  head_p next;
-  int result = 0;
-  do {
-    INK_QUEUE_LD(item, l->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == nullptr) {
-      return nullptr;
-    }
-    SET_FREELIST_POINTER_VERSION(next, FROM_PTR(nullptr), FREELIST_VERSION(item) + 1);
-    result = ink_atomic_cas(&l->head.data, item.data, next.data);
-  } while (result == 0);
-  {
-    void *ret = TO_PTR(FREELIST_POINTER(item));
-    void *e   = ret;
-    /* fixup forward pointers */
-    while (e) {
-      void *n                        = TO_PTR(*ADDRESS_OF_NEXT(e, l->offset));
-      *ADDRESS_OF_NEXT(e, l->offset) = n;
-      e                              = n;
-    }
-    return ret;
-  }
+  return AtomicStackVariableOffset(l->head, l->offset).pop<true>();
 }
 
 void *
 ink_atomiclist_push(InkAtomicList *l, void *item)
 {
-  void **adr_of_next = ADDRESS_OF_NEXT(item, l->offset);
-  head_p head;
-  head_p item_pair;
-  int result = 0;
-  void *h    = nullptr;
-  do {
-    INK_QUEUE_LD(head, l->head);
-    h            = FREELIST_POINTER(head);
-    *adr_of_next = h;
-    ink_assert(item != TO_PTR(h));
-    SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
-    INK_MEMORY_BARRIER;
-    result = ink_atomic_cas(&l->head.data, head.data, item_pair.data);
-  } while (result == 0);
+  return AtomicStackVariableOffset(l->head, l->offset).push(item);
+}
 
-  return TO_PTR(h);
+void *
+ink_atomiclist_next(InkAtomicList *l, void *item)
+{
+  return item ? AtomicStackVariableOffset(l->head, l->offset).link(item) : nullptr;
 }
 
 void *
 ink_atomiclist_remove(InkAtomicList *l, void *item)
 {
-  head_p head;
-  void *prev       = nullptr;
-  void **addr_next = ADDRESS_OF_NEXT(item, l->offset);
-  void *item_next  = *addr_next;
-  int result       = 0;
-
-  /*
-   * first, try to pop it if it is first
-   */
-  INK_QUEUE_LD(head, l->head);
-  while (TO_PTR(FREELIST_POINTER(head)) == item) {
-    head_p next;
-    SET_FREELIST_POINTER_VERSION(next, item_next, FREELIST_VERSION(head) + 1);
-    result = ink_atomic_cas(&l->head.data, head.data, next.data);
-
-    if (result) {
-      *addr_next = nullptr;
-      return item;
-    }
-    INK_QUEUE_LD(head, l->head);
-  }
-
-  /*
-   * then, go down the list, trying to remove it
-   */
-  prev = TO_PTR(FREELIST_POINTER(head));
-  while (prev) {
-    void **prev_adr_of_next = ADDRESS_OF_NEXT(prev, l->offset);
-    void *prev_prev         = prev;
-    prev                    = TO_PTR(*prev_adr_of_next);
-    if (prev == item) {
-      ink_assert(prev_prev != item_next);
-      *prev_adr_of_next = item_next;
-      *addr_next        = nullptr;
-      return item;
-    }
-  }
-  return nullptr;
+  return AtomicStackVariableOffset(l->head, l->offset).remove(item) ? item : nullptr;
 }

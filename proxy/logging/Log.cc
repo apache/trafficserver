@@ -1119,10 +1119,9 @@ Log::create_threads()
   // TODO: Enable multiple flush threads, such as
   //       one flush thread per file.
   //
-  flush_notify    = new EventNotify;
-  flush_data_list = new InkAtomicList;
+  flush_notify = new EventNotify;
 
-  ink_atomiclist_init(flush_data_list, "Logging flush buffer list", 0);
+  flush_data_list          = new InkAtomicList("Logging flush buffer list", 0);
   Continuation *flush_cont = new LoggingFlushContinuation(0);
   eventProcessor.spawn_thread(flush_cont, "[LOG_FLUSH]", stacksize);
 }

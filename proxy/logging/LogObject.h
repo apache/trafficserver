@@ -24,6 +24,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
+#include "tscore/ver_ptr.h"
 #include "Log.h"
 #include "LogFile.h"
 #include "LogFormat.h"
@@ -273,7 +274,7 @@ private:
   int m_min_rolled;            // minimum number of rolled logs to be kept, 0 no limit
   bool m_reopen_after_rolling; // reopen log file after rolling (normally it is just renamed and closed)
 
-  head_p m_log_buffer; // current work buffer
+  ts::Atomic_versioned_ptr m_log_buffer; // current work buffer
   unsigned m_buffer_manager_idx;
   LogBufferManager *m_buffer_manager;
 

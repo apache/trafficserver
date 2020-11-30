@@ -926,12 +926,12 @@ template <class C, class L = typename C::Link_link> struct AtomicSLL {
   C *
   head()
   {
-    return (C *)TO_PTR(FREELIST_POINTER(al.head));
+    return (C *)(al.head.load());
   }
   C *
   next(C *c)
   {
-    return (C *)TO_PTR(c);
+    return (C *)ink_atomiclist_next(&al, c);
   }
 
   InkAtomicList al;
@@ -942,9 +942,10 @@ template <class C, class L = typename C::Link_link> struct AtomicSLL {
 #define ASLL(_c, _l) AtomicSLL<_c, _c::Link##_##_l>
 #define ASLLM(_c, _m, _ml, _l) AtomicSLL<_c, _c::Link##_##_ml##_##_l>
 
-template <class C, class L> inline AtomicSLL<C, L>::AtomicSLL()
+// need @c offsetof but that's not reliable until C++17, and we can't use the nullptr trick directly because
+// clang-analyzer gets upset, so we use 0x10 as the base and subtract it back afterwards.
+template <class C, class L>
+inline AtomicSLL<C, L>::AtomicSLL()
+  : al("AtomicSLL", reinterpret_cast<uintptr_t>(&L::next_link(reinterpret_cast<C *>(0x10))) - 0x10)
 {
-  // need @c offsetof but that's not reliable until C++17, and we can't use the nullptr trick directly because
-  // clang-analyzer gets upset, so we use 0x10 as the base and subtract it back afterwards.
-  ink_atomiclist_init(&al, "AtomicSLL", reinterpret_cast<uintptr_t>(&L::next_link(reinterpret_cast<C *>(0x10))) - 0x10);
 }
