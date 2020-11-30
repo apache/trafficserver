@@ -103,7 +103,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     /* this is just example, so set fake params to prevent plugin crash */
     path = TSstrdup("example/");
   }
+#ifdef HAVE_EVP_MD_CTX_NEW
   ctx = EVP_MD_CTX_new();
+#else
+  ctx = EVP_MD_CTX_create();
+#endif
   EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
   EVP_DigestUpdate(ctx, sli->secret, strlen(sli->secret));
   EVP_DigestUpdate(ctx, ip, strlen(ip));
