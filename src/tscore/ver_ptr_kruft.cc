@@ -21,11 +21,8 @@
   limitations under the License.
  */
 
-#include "tscore/ink_config.h"
-#include <cassert>
-
-#include "tscore/ink_atomic.h"
-#include "tscore/ink_queue.h"
+#include <inttypes.h>
+#include "tscore/ver_ptr_kruft.h"
 
 /*
  * This file was added during the debugging of Bug 50475.

@@ -84,7 +84,6 @@ libtscore_la_SOURCES = \
 	ink_memory.cc \
 	ink_mutex.cc \
 	ink_queue.cc \
-	ink_queue_utils.cc \
 	ink_rand.cc \
 	ink_res_init.cc \
 	ink_res_mkquery.cc \
@@ -119,6 +118,7 @@ libtscore_la_SOURCES = \
 	TextBuffer.cc \
 	Tokenizer.cc \
 	ts_file.cc \
+	ver_ptr_kruft.cc \
 	Version.cc \
 	X509HostnameValidator.cc
 

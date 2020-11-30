@@ -24,6 +24,7 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
+#include "tscore/ver_ptr_kruft.h"
 #include "Log.h"
 #include "LogFile.h"
 #include "LogFormat.h"

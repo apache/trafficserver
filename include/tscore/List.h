@@ -721,12 +721,12 @@ template <class C, class L = typename C::Link_link> struct AtomicSLL {
   C *
   head()
   {
-    return (C *)TO_PTR(FREELIST_POINTER(al.head));
+    return (C *)(al.head.load());
   }
   C *
   next(C *c)
   {
-    return (C *)TO_PTR(c);
+    return (C *)ink_atomiclist_next(&al, c);
   }
 
   InkAtomicList al;
