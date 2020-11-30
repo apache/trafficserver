@@ -28,7 +28,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <openssl/md5.h>
+#include <openssl/md5.h> // For MD5_DIGEST_LENGTH
+#include <openssl/evp.h>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -45,7 +46,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   int i, len;
   time_t t, e;
-  MD5_CTX ctx;
+  EVP_MD_CTX *ctx;
   struct sockaddr_in *in;
   const char *qh, *ph, *ip;
   unsigned char md[MD5_DIGEST_LENGTH];
@@ -102,16 +103,17 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     /* this is just example, so set fake params to prevent plugin crash */
     path = TSstrdup("example/");
   }
-  MD5_Init(&ctx);
-  MD5_Update(&ctx, sli->secret, strlen(sli->secret));
-  MD5_Update(&ctx, ip, strlen(ip));
+  ctx = EVP_MD_CTX_new();
+  EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
+  EVP_DigestUpdate(ctx, sli->secret, strlen(sli->secret));
+  EVP_DigestUpdate(ctx, ip, strlen(ip));
   if (path) {
-    MD5_Update(&ctx, path, strlen(path));
+    EVP_DigestUpdate(ctx, path, strlen(path));
   }
   if (expire) {
-    MD5_Update(&ctx, expire, strlen(expire));
+    EVP_DigestUpdate(ctx, expire, strlen(expire));
   }
-  MD5_Final(md, &ctx);
+  EVP_DigestFinal_ex(ctx, md, NULL);
   for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
     sprintf(&hash[i * 2], "%02x", md[i]);
   }
