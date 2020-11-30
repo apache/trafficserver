@@ -51,6 +51,8 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
     if http_ports is None:
         get_port(process, "http_port")
         http_ports = [process.Variables.http_port]
+    else:
+        process.Variables['http_port'] = http_ports[0]
 
     if len(http_ports) > 0:
         command += "--listen "
@@ -60,6 +62,8 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
     if https_ports is None:
         get_port(process, "https_port")
         https_ports = [process.Variables.https_port]
+    else:
+        process.Variables['https_port'] = https_ports[0]
 
     if len(https_ports) > 0:
         command += '--listen-https '
