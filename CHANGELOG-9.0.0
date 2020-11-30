@@ -1127,3 +1127,6 @@ Changes with Apache Traffic Server 9.0.0
   #7293 - sphinx for 9.x has to be 2.0.1
   #7294 - Make double Au test more reliable.
   #7299 - Adds a shell script to help build the H3 toolchains
+  #7301 - Updated release notes for 9.0.0 to have QUIC draft 29 support as well
+  #7360 - ESI: Ensure gzip header is always initialized
+  #7361 - Add negative caching tests and fixes.
