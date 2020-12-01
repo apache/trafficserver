@@ -26,23 +26,23 @@
 
 #include "TLSSessionResumptionSupport.h"
 
-#ifdef SSL_CTX_set_tlsext_ticket_key_cb
-#define TS_HAVE_OPENSSL_SESSION_TICKETS 1
-#endif
-
-#ifdef TS_HAVE_OPENSSL_SESSION_TICKETS
-
 #include "P_SSLConfig.h"
 #include "SSLStats.h"
 #include <openssl/evp.h>
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+#include <openssl/core_names.h>
+#endif
 #include "InkAPIInternal.h"
+#include "tscore/ink_config.h"
 
 // Remove this when drop OpenSSL 1.0.2 support
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
 #define evp_md_func EVP_sha1()
+char mac_param_digest[] = "sha1";
 #else
 #define evp_md_func EVP_sha256()
+char mac_param_digest[] = "sha256";
 #endif
 #endif
 
@@ -81,9 +81,15 @@ TLSSessionResumptionSupport::unbind(SSL *ssl)
   SSL_set_ex_data(ssl, _ex_data_index, nullptr);
 }
 
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+int
+TLSSessionResumptionSupport::processSessionTicket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx,
+                                                  EVP_MAC_CTX *hctx, int enc)
+#else
 int
 TLSSessionResumptionSupport::processSessionTicket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx,
                                                   HMAC_CTX *hctx, int enc)
+#endif
 {
   SSLConfig::scoped_config config;
   SSLCertificateConfig::scoped_config lookup;
@@ -172,29 +178,60 @@ TLSSessionResumptionSupport::clear()
   this->_sslSessionCacheHit = false;
 }
 
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+int
+TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname,
+                                                    unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx)
+#else
 int
 TLSSessionResumptionSupport::_setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname,
                                                     unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx)
+#endif
 {
   const ssl_ticket_key_t &most_recent_key = keyblock->keys[0];
   memcpy(keyname, most_recent_key.key_name, sizeof(most_recent_key.key_name));
   RAND_bytes(iv, EVP_MAX_IV_LENGTH);
   EVP_EncryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), nullptr, most_recent_key.aes_key, iv);
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+  const OSSL_PARAM params[] = {
+    OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_KEY, const_cast<unsigned char *>(most_recent_key.hmac_secret),
+                                      sizeof(most_recent_key.hmac_secret)),
+    OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST, mac_param_digest, 0),
+    OSSL_PARAM_construct_end(),
+  };
+  EVP_MAC_CTX_set_params(hctx, params);
+#else
   HMAC_Init_ex(hctx, most_recent_key.hmac_secret, sizeof(most_recent_key.hmac_secret), evp_md_func, nullptr);
+#endif
 
   Debug("ssl_session_ticket", "create ticket for a new session.");
   SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
   return 1;
 }
 
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+int
+TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname,
+                                                    unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx)
+#else
 int
 TLSSessionResumptionSupport::_getSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname,
                                                     unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx)
+#endif
 {
   for (unsigned i = 0; i < keyblock->num_keys; ++i) {
     if (memcmp(keyname, keyblock->keys[i].key_name, sizeof(keyblock->keys[i].key_name)) == 0) {
       EVP_DecryptInit_ex(cipher_ctx, EVP_aes_128_cbc(), nullptr, keyblock->keys[i].aes_key, iv);
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+      const OSSL_PARAM params[] = {
+        OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_KEY, keyblock->keys[i].hmac_secret, sizeof(keyblock->keys[i].hmac_secret)),
+        OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST, mac_param_digest, 0),
+        OSSL_PARAM_construct_end(),
+      };
+      EVP_MAC_CTX_set_params(hctx, params);
+#else
       HMAC_Init_ex(hctx, keyblock->keys[i].hmac_secret, sizeof(keyblock->keys[i].hmac_secret), evp_md_func, nullptr);
+#endif
 
       Debug("ssl_session_ticket", "verify the ticket for an existing session.");
       // Increase the total number of decrypted tickets.
@@ -234,5 +271,3 @@ TLSSessionResumptionSupport::_setSSLCurveNID(ssl_curve_id curve_nid)
 {
   this->_sslCurveNID = curve_nid;
 }
-
-#endif /* TS_HAVE_OPENSSL_SESSION_TICKETS */

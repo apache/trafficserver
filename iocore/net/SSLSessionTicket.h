@@ -23,21 +23,21 @@
 
 #pragma once
 
+#include "tscore/ink_config.h"
 #include <openssl/safestack.h>
 #include <openssl/tls1.h>
 #include <openssl/ssl.h>
 
-// Check if the ticket_key callback #define is available, and if so, enable session tickets.
-#ifdef SSL_CTX_set_tlsext_ticket_key_cb
-#define TS_HAVE_OPENSSL_SESSION_TICKETS 1
-#endif
-
-#ifdef TS_HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAS_TLS_SESSION_TICKET
 
 #include <openssl/crypto.h>
 #include <openssl/hmac.h>
 
 void ssl_session_ticket_free(void *, void *, CRYPTO_EX_DATA *, int, long, void *);
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, EVP_MAC_CTX *, int);
+#else
 int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, EVP_CIPHER_CTX *, HMAC_CTX *, int);
+#endif
 
-#endif /* TS_HAVE_OPENSSL_SESSION_TICKETS */
+#endif /* TS_HAS_TLS_SESSION_TICKET */
