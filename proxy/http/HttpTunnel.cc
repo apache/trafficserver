@@ -1335,15 +1335,17 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
         // If the consumer completed, presumably the producer successfully read
         c->producer->read_success = true;
         // Go ahead and clean up the producer side
-        p->alive = false;
-        if (p->read_vio) {
-          p->bytes_read = p->read_vio->ndone;
-        } else {
-          p->bytes_read = 0;
-        }
-        if (p->vc != HTTP_TUNNEL_STATIC_PRODUCER) {
-          // Clear any outstanding reads
-          p->vc->do_io_read(nullptr, 0, nullptr);
+        if (p->alive) {
+          p->alive = false;
+          if (p->read_vio) {
+            p->bytes_read = p->read_vio->ndone;
+          } else {
+            p->bytes_read = 0;
+          }
+          if (p->vc != HTTP_TUNNEL_STATIC_PRODUCER) {
+            // Clear any outstanding reads
+            p->vc->do_io_read(nullptr, 0, nullptr);
+          }
         }
       } else if (c->vc_type == HT_HTTP_SERVER) {
         c->producer->handler_state = HTTP_SM_POST_UA_FAIL;
