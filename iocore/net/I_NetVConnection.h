@@ -357,14 +357,6 @@ struct NetVCOptions {
 class NetVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS_VCONN>
 {
 public:
-  // How many bytes have been queued to the OS for sending by haven't been sent yet
-  // Not all platforms support this, and if they don't we'll return -1 for them
-  virtual int64_t
-  outstanding()
-  {
-    return -1;
-  };
-
   /**
      Initiates read. Thread safe, may be called when not handling
      an event from the NetVConnection, or the NetVConnection creation
