@@ -102,13 +102,6 @@ public:
   void clear() override;
   void free(EThread *t) override;
 
-  virtual void
-  enableRead()
-  {
-    read.enabled  = 1;
-    write.enabled = 1;
-  }
-
   bool
   trackFirstHandshake() override
   {
