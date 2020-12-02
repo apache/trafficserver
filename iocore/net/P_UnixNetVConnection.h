@@ -119,28 +119,6 @@ public:
   Action *send_OOB(Continuation *cont, char *buf, int len) override;
   void cancel_OOB() override;
 
-  virtual void
-  setSSLHandshakeWantsRead(bool /* flag */)
-  {
-    return;
-  }
-  virtual bool
-  getSSLHandshakeWantsRead()
-  {
-    return false;
-  }
-  virtual void
-  setSSLHandshakeWantsWrite(bool /* flag */)
-  {
-    return;
-  }
-
-  virtual bool
-  getSSLHandshakeWantsWrite()
-  {
-    return false;
-  }
-
   const char *
   get_server_name() const override
   {
