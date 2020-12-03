@@ -107,7 +107,6 @@ enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
 class UnixNetVConnection : public NetVConnection, public NetEvent
 {
 public:
-  int64_t outstanding() override;
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
 
