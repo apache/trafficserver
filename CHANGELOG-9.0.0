@@ -1126,7 +1126,14 @@ Changes with Apache Traffic Server 9.0.0
   #7282 - Reduce the number of write operation on H2
   #7293 - sphinx for 9.x has to be 2.0.1
   #7294 - Make double Au test more reliable.
+  #7295 - Get appropriate locks on SSN_START hook delays
   #7299 - Adds a shell script to help build the H3 toolchains
   #7301 - Updated release notes for 9.0.0 to have QUIC draft 29 support as well
+  #7306 - s3_auth: demote noisy errors around configuration that doesn't affect plugin usability
+  #7313 - Make reloading client certificate configuration more reliable
+  #7320 - Fix lookup split dns rule with fast path
+  #7321 - Set thread mutex to the DNSHandler mutex of SplitDNS
+  #7337 - Fix vc close migration race condition
+  #7343 - Add note to background fetch about include/exclude
   #7360 - ESI: Ensure gzip header is always initialized
   #7361 - Add negative caching tests and fixes.
