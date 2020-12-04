@@ -137,7 +137,12 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
   }
 
   es = reinterpret_cast<unsigned long>(pthread_self());
+#ifdef HAVE_ERR_GET_ERROR_ALL
+  while ((l = ERR_get_error_all(&file, &line, nullptr, &data, &flags)) != 0) {
+#else
+  // ERR_get_error_line_data is going to be deprecated since OpenSSL 3.0.0
   while ((l = ERR_get_error_line_data(&file, &line, &data, &flags)) != 0) {
+#endif
     if (debug) {
       if (unlikely(diags->on())) {
         diags->log("ssl-diag", DL_Debug, &loc, "SSL::%lu:%s:%s:%d%s%s%s%s", es, ERR_error_string(l, buf), file, line,
