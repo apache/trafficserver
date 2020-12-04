@@ -34,6 +34,7 @@
 #include <cstring>
 #include <cmath>
 
+#include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
 #include "tscore/I_Layout.h"
 #include "records/I_RecHttp.h"
@@ -529,7 +530,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
   cleanup();
   nochange = true;
 
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAS_TLS_SESSION_TICKET
   ssl_ticket_key_block *keyblock = nullptr;
 
   SSLConfig::scoped_config params;
@@ -577,15 +578,15 @@ SSLTicketParams::LoadTicket(bool &nochange)
   load_time               = time(nullptr);
 
   Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
-  return true;
 #endif
+  return true;
 }
 
 void
 SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 {
   cleanup();
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAS_TLS_SESSION_TICKET
   if (ticket_data != nullptr && ticket_data_len > 0) {
     default_global_keyblock = ticket_block_create(ticket_data, ticket_data_len);
   } else {

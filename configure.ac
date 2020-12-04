@@ -1298,6 +1298,9 @@ TS_CHECK_CRYPTO_SET_CIPHERSUITES
 # Check for openssl early data support
 TS_CHECK_EARLY_DATA
 
+# Check for openssl session ticket support
+TS_CHECK_SESSION_TICKET
+
 saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 

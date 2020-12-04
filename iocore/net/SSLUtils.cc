@@ -22,6 +22,7 @@
 #include "P_SSLUtils.h"
 
 #include "tscpp/util/TextView.h"
+#include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/I_Layout.h"
@@ -296,9 +297,13 @@ set_context_cert(SSL *ssl)
 
   if (ctx != nullptr) {
     SSL_set_SSL_CTX(ssl, ctx.get());
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAS_TLS_SESSION_TICKET
     // Reset the ticket callback if needed
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+    SSL_CTX_set_tlsext_ticket_key_evp_cb(ctx.get(), ssl_callback_session_ticket);
+#else
     SSL_CTX_set_tlsext_ticket_key_cb(ctx.get(), ssl_callback_session_ticket);
+#endif
 #endif
     // After replacing the SSL_CTX, make sure the overriden ca_cert_file is still set
     setClientCertCACerts(ssl, netvc->get_ca_cert_file(), netvc->get_ca_cert_dir());
@@ -597,7 +602,7 @@ ssl_context_enable_ecdh(SSL_CTX *ctx)
 static ssl_ticket_key_block *
 ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 {
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAS_TLS_SESSION_TICKET
   ssl_ticket_key_block *keyblock = nullptr;
 
   keyblock = ssl_create_ticket_keyblock(ticket_key_path);
@@ -619,10 +624,10 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
   SSL_CTX_clear_options(ctx, SSL_OP_NO_TICKET);
   return keyblock;
 
-#else  /* !TS_HAVE_OPENSSL_SESSION_TICKETS */
+#else  /* !TS_HAS_TLS_SESSION_TICKET */
   (void)ticket_key_path;
   return nullptr;
-#endif /* TS_HAVE_OPENSSL_SESSION_TICKETS */
+#endif /* TS_HAS_TLS_SESSION_TICKET */
 }
 
 struct passphrase_cb_userdata {

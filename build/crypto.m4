@@ -318,3 +318,50 @@ AC_DEFUN([TS_CHECK_EARLY_DATA], [
 
   AC_SUBST(has_tls_early_data)
 ])
+
+dnl
+dnl Since OpenSSL 1.1.1
+dnl
+dnl SSL_CTX_set_tlsext_ticket_key_evp_cb function is for OpenSSL 3.0
+dnl SSL_CTX_set_tlsext_ticket_key_cb macro is for OpenSSL 1.1.1
+dnl SSL_CTX_set_tlsext_ticket_key_cb function is for BoringSSL
+AC_DEFUN([TS_CHECK_SESSION_TICKET], [
+  _set_ssl_ctx_set_tlsext_ticket_key_evp_cb_saved_LIBS=$LIBS
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_HEADERS(openssl/ssl.h)
+  session_ticket_check=no
+  has_tls_session_ticket=0
+  AC_MSG_CHECKING([for SSL_CTX_set_tlsext_ticket_key_cb macro])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
+                     [[
+                     #ifndef SSL_CTX_set_tlsext_ticket_key_cb
+                     #error
+                     #endif
+                     ]])
+    ],
+    [
+      AC_DEFINE(HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB, 1, [Whether SSL_CTX_set_tlsext_ticket_key_cb is available])
+      session_ticket_check=yes
+      has_tls_session_ticket=1
+    ],
+    []
+  )
+  AC_MSG_RESULT([$session_ticket_check])
+  AC_CHECK_FUNCS(
+    SSL_CTX_set_tlsext_ticket_key_evp_cb SSL_CTX_set_tlsext_ticket_key_cb,
+    [
+      session_ticket_check=yes
+      has_tls_session_ticket=1
+    ],
+    []
+  )
+
+  LIBS=$_set_ssl_ctx_set_tlsext_ticket_key_evp_cb_saved_LIBS
+
+  AC_MSG_CHECKING([for session ticket support])
+  AC_MSG_RESULT([$session_ticket_check])
+
+  AC_SUBST(has_tls_session_ticket)
+])
