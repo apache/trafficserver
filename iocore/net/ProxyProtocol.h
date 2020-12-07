@@ -25,28 +25,29 @@
 
 #pragma once
 
-#include "tscore/ink_defs.h"
-#include "tscore/ink_memory.h"
-#include <tscore/ink_resolver.h>
-#include <tscore/ink_platform.h>
-#include "I_VConnection.h"
-#include "I_NetVConnection.h"
-#include "I_IOBuffer.h"
+#include <tscore/ink_inet.h>
+#include <tscpp/util/TextView.h>
 
-// http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
+enum class ProxyProtocolVersion {
+  UNDEFINED,
+  V1,
+  V2,
+};
 
-extern bool proxy_protov1_parse(NetVConnection *, ts::TextView hdr);
-extern bool ssl_has_proxy_v1(NetVConnection *, char *, int64_t *);
-extern bool http_has_proxy_v1(IOBufferReader *, NetVConnection *);
+enum class ProxyProtocolData {
+  UNDEFINED,
+  SRC,
+  DST,
+};
 
-const char *const PROXY_V1_CONNECTION_PREFACE = R"(PROXY)";
-const char *const PROXY_V2_CONNECTION_PREFACE = "\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A\x02";
+struct ProxyProtocol {
+  ProxyProtocolVersion version = ProxyProtocolVersion::UNDEFINED;
+  uint16_t ip_family           = AF_UNSPEC;
+  IpEndpoint src_addr          = {};
+  IpEndpoint dst_addr          = {};
+};
 
-const size_t PROXY_V1_CONNECTION_PREFACE_LEN = strlen(PROXY_V1_CONNECTION_PREFACE); // 5
-const size_t PROXY_V2_CONNECTION_PREFACE_LEN = 13;
+const size_t PPv1_CONNECTION_HEADER_LEN_MAX = 108;
+const size_t PPv2_CONNECTION_HEADER_LEN_MAX = 16;
 
-const size_t PROXY_V1_CONNECTION_HEADER_LEN_MIN = 15;
-const size_t PROXY_V2_CONNECTION_HEADER_LEN_MIN = 16;
-
-const size_t PROXY_V1_CONNECTION_HEADER_LEN_MAX = 108;
-const size_t PROXY_V2_CONNECTION_HEADER_LEN_MAX = 16;
+extern size_t proxy_protocol_parse(ProxyProtocol *pp_info, ts::TextView tv);
