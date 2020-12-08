@@ -113,6 +113,9 @@ union head_p {
  * -> A -> B -> C -> D
  * If the version check is not there, the list will look like
  * -> C -> D after the pop, which will result in the loss of "B"
+ *
+ * For more information, see:  https://en.wikipedia.org/wiki/ABA_problem .
+ * (Versioning is a case of the "tagged state reference" workaround.)
  */
 #define ZERO_HEAD_P(_x)
 
