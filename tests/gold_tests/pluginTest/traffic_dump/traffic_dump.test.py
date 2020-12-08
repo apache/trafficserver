@@ -80,7 +80,11 @@ request_header = {"headers": "GET /tls HTTP/1.1\r\n"
                   "Host: www.tls.com\r\nContent-Length: 0\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_200)
-request_header = {"headers": "GET /h2 HTTP/1.1\r\n"
+request_header = {"headers": "GET /h2_first HTTP/2\r\n"
+                  "Host: www.tls.com\r\nContent-Length: 0\r\n\r\n",
+                  "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionfile.log", request_header, response_200)
+request_header = {"headers": "GET /h2_second HTTP/2\r\n"
                   "Host: www.tls.com\r\nContent-Length: 0\r\n\r\n",
                   "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionfile.log", request_header, response_200)
@@ -409,10 +413,12 @@ tr.StillRunningAfter = ts
 #
 # Test 7: Verify correct protcol dumping of TLS and HTTP/2 connections.
 #
-tr = Test.AddTestRun("Conduct an HTTP/2 transaction over a TLS connection.")
+tr = Test.AddTestRun("Conduct two HTTP/2 transactions over a TLS connection.")
 tr.Processes.Default.Command = \
     ('curl --http2 -k -H"Host: www.tls.com" --resolve "www.tls.com:{0}:127.0.0.1" '
-     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://www.tls.com:{0}/h2'.format(
+     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://www.tls.com:{0}/h2_first '
+     '--next --http2 -k -H"Host: www.tls.com" --resolve "www.tls.com:{0}:127.0.0.1" '
+     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://www.tls.com:{0}/h2_second'.format(
          ts.Variables.ssl_port))
 
 tr.Processes.Default.ReturnCode = 0
