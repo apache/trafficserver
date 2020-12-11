@@ -459,7 +459,6 @@ struct HostDBContinuation : public Continuation {
   int dnsPendingEvent(int event, Event *e);
   int backgroundEvent(int event, Event *e);
   int retryEvent(int event, Event *e);
-  int removeEvent(int event, Event *e);
   int setbyEvent(int event, Event *e);
 
   /// Recompute the hash and update ancillary values.
