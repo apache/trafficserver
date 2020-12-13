@@ -27,6 +27,7 @@
 #include <cstdarg>
 
 #include <string>
+#include <iostream>
 #include <unordered_map>
 #include <cinttypes>
 #include <string_view>
@@ -39,7 +40,10 @@
 #include "configs.h"
 
 // Global config, if we don't have a remap specific config.
-static BgFetchConfig *gConfig = nullptr;
+static BgFetchConfig *gConfig           = nullptr;
+static const char *LOCATION_HEADER      = "Location";
+static const char *REDIRECT_REASON      = "Other";
+static const char *ATS_INTERNAL_MESSAGE = "@Ats-Internal";
 
 // This is the list of all headers that must be removed when we make the actual background
 // fetch request.
@@ -56,6 +60,11 @@ static const std::array<const std::string_view, 6> FILTER_HEADERS{
 // configurations, as a singleton. ToDo: Would it ever make sense to do this
 // per remap rule? Maybe for per-remap logging ??
 typedef std::unordered_map<std::string, bool> OutstandingRequests;
+typedef struct _RequestData {
+  TSHttpTxn txnp;
+  int wl_retry; // write lock failure retry count
+  std::string req_url;
+} RequestData;
 
 class BgFetchState
 {
@@ -276,6 +285,9 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
             if (set_header(mbuf, hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, hostp, len)) {
               TSDebug(PLUGIN_NAME, "Set header Host: %.*s", len, hostp);
             }
+            if (set_header(mbuf, hdr_loc, "test", 4, "test", 4)) {
+              TSDebug(PLUGIN_NAME, "Set header Host: %.*s", len, hostp);
+            }
 
             // Next, remove the Range headers and IMS (conditional) headers from the request
             for (auto const &header : FILTER_HEADERS) {
@@ -493,7 +505,97 @@ cont_check_cacheable(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 
   return 0;
 }
+static const char *
+getCacheLookupResultName(TSCacheLookupResult result)
+{
+  switch (result) {
+  case TS_CACHE_LOOKUP_MISS:
+    return "TS_CACHE_LOOKUP_MISS";
+    break;
+  case TS_CACHE_LOOKUP_HIT_STALE:
+    return "TS_CACHE_LOOKUP_HIT_STALE";
+    break;
+  case TS_CACHE_LOOKUP_HIT_FRESH:
+    return "TS_CACHE_LOOKUP_HIT_FRESH";
+    break;
+  case TS_CACHE_LOOKUP_SKIPPED:
+    return "TS_CACHE_LOOKUP_SKIPPED";
+    break;
+  default:
+    return "UNKNOWN_CACHE_LOOKUP_EVENT";
+    break;
+  }
+  return "UNKNOWN_CACHE_LOOKUP_EVENT";
+}
 
+void
+setup_transaction_cont(TSCont cont, TSHttpTxn rh)
+{
+  RequestData *req_data = new RequestData();
+
+  req_data->txnp     = rh;
+  req_data->wl_retry = 0;
+
+  int url_len = 0;
+  char *url   = TSHttpTxnEffectiveUrlStringGet(rh, &url_len);
+  req_data->req_url.assign(url, url_len);
+
+  TSfree(url);
+  TSContDataSet(cont, req_data);
+}
+static int
+add_redirect_header(TSMBuffer &bufp, TSMLoc &hdr_loc, const std::string &location)
+{
+  // This is needed in case the response already contains a Location header
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, LOCATION_HEADER, strlen(LOCATION_HEADER));
+
+  if (field_loc == TS_NULL_MLOC) {
+    TSMimeHdrFieldCreateNamed(bufp, hdr_loc, LOCATION_HEADER, strlen(LOCATION_HEADER), &field_loc);
+  }
+
+  if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, location.c_str(), location.size())) {
+    TSDebug(PLUGIN_NAME, "Adding Location header %s", LOCATION_HEADER);
+    TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+  }
+
+  set_header(bufp, hdr_loc, "test", 4, "test", 4);
+  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+
+  TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_MOVED_TEMPORARILY);
+  TSHttpHdrReasonSet(bufp, hdr_loc, REDIRECT_REASON, strlen(REDIRECT_REASON));
+  return TS_SUCCESS;
+}
+static int
+add_redirect(RequestData *req, TSCont &contp)
+{
+  if (!req) {
+    TSError("%s: invalid req_data", PLUGIN_NAME);
+    return TS_SUCCESS;
+  }
+  if (req->wl_retry > 0) {
+    TSHttpTxnReenable(req->txnp, TS_EVENT_HTTP_CONTINUE);
+    return TS_SUCCESS;
+  }
+  std::cout << "retry is " << req->wl_retry << std::endl;
+  req->wl_retry += 1;
+  std::cout << "retry is " << req->wl_retry << std::endl;
+
+  TSDebug(PLUGIN_NAME, "continuation delayed, scheduling now..for url: %s", req->req_url.c_str());
+
+  // add retry_done header to prevent looping
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  if (TSHttpTxnClientRespGet(req->txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+    std::cout << " i am erroring" << std::endl;
+    TSHttpTxnReenable(req->txnp, TS_EVENT_HTTP_ERROR);
+    return TS_SUCCESS;
+  }
+
+  add_redirect_header(bufp, hdr_loc, req->req_url);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  TSHttpTxnReenable(req->txnp, TS_EVENT_HTTP_CONTINUE);
+  return TS_SUCCESS;
+}
 //////////////////////////////////////////////////////////////////////////////
 // Main "plugin", which is a global READ_RESPONSE_HDR hook. Before
 // initiating a background fetch, this checks:
@@ -511,12 +613,59 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
   TSHttpTxn txnp        = static_cast<TSHttpTxn>(edata);
   BgFetchConfig *config = static_cast<BgFetchConfig *>(TSContDataGet(contp));
-
+  RequestData *my_req   = static_cast<RequestData *>(TSContDataGet(contp));
+  TSMBuffer request;
+  TSMLoc req_hdr;
+  TSMLoc field_loc;
   if (nullptr == config) {
     // something seriously wrong..
     TSError("[%s] Can't get configurations", PLUGIN_NAME);
   } else {
     switch (event) {
+    case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+      TSHttpTxnClientReqGet(txnp, &request, &req_hdr);
+      field_loc = TSMimeHdrFieldFind(request, req_hdr, "test", 4);
+      if (field_loc) {
+        std::cout << "look up status is  test " << std::endl;
+        break;
+      } else {
+        std::cout << "i am jju" << contp << std::endl;
+        add_redirect(my_req, contp);
+        return 0;
+      }
+    case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
+
+      TSHttpTxnClientReqGet(txnp, &request, &req_hdr);
+      field_loc = TSMimeHdrFieldFind(request, req_hdr, "test", 4);
+      if (field_loc) {
+        std::cout << "look up status is " << std::endl;
+        break;
+      }
+      int lookupStatus;
+      TSHttpTxnCacheLookupStatusGet(txnp, &lookupStatus);
+      std::cout << "look up status is " << getCacheLookupResultName((TSCacheLookupResult)lookupStatus) << std::endl;
+      TSDebug(PLUGIN_NAME, "lookup status: %s", getCacheLookupResultName((TSCacheLookupResult)lookupStatus));
+      if (TS_CACHE_LOOKUP_MISS == lookupStatus) {
+        setup_transaction_cont(contp, txnp);
+        BgFetchData *data = new BgFetchData();
+        // Initialize the data structure (can fail) and acquire a privileged lock on the URL
+        if (data->initialize(request, req_hdr, txnp) && data->acquireUrl()) {
+          data->schedule();
+        } else {
+          delete data; // Not sure why this would happen, but ok.
+        }
+        TSContScheduleOnPool(contp, 500, TS_THREAD_POOL_TASK);
+        return TS_SUCCESS;
+      }
+      break;
+
+    case TS_EVENT_IMMEDIATE:
+    case TS_EVENT_TIMEOUT:
+      std::cout << "i am done" << std::endl;
+      TSHttpTxnReenable(my_req->txnp, TS_EVENT_HTTP_ERROR);
+      TSHttpTxnHookAdd(my_req->txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+      return TS_SUCCESS;
+
     case TS_EVENT_HTTP_READ_RESPONSE_HDR:
       if (config->bgFetchAllowed(txnp)) {
         TSMBuffer response;
@@ -531,7 +680,7 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
           TSDebug(PLUGIN_NAME, "Testing: response status code: %d?", status);
           if (TS_HTTP_STATUS_PARTIAL_CONTENT == status || (config->allow304() && TS_HTTP_STATUS_NOT_MODIFIED == status)) {
             // Everything looks good so far, add a TXN hook for SEND_RESPONSE_HDR
-            TSCont localcontp = TSContCreate(cont_check_cacheable, nullptr);
+            TSCont localcontp = TSContCreate(cont_check_cacheable, TSMutexCreate());
 
             TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, localcontp);
           }
@@ -541,8 +690,8 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
       }
       break;
     default:
-      TSError("[%s] Unknown event for this plugin", PLUGIN_NAME);
-      TSDebug(PLUGIN_NAME, "unknown event for this plugin");
+      TSError("[%s] Unknown event for this plugin", PLUGIN_NAME, event);
+      TSDebug(PLUGIN_NAME, "unknown event for this plugin %d", event);
       break;
     }
   }
@@ -567,7 +716,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Plugin registration failed", PLUGIN_NAME);
   }
 
-  TSCont cont = TSContCreate(cont_handle_response, nullptr);
+  TSCont cont = TSContCreate(cont_handle_response, TSMutexCreate());
 
   gConfig = new BgFetchConfig(cont);
 
@@ -579,6 +728,7 @@ TSPluginInit(int argc, const char *argv[])
     }
     TSDebug(PLUGIN_NAME, "Initialized");
     TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
+    TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
   } else {
     // ToDo: Hmmm, no way to fail a global plugin here?
     TSDebug(PLUGIN_NAME, "Failed to initialize as global plugin");
