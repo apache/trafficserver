@@ -212,6 +212,7 @@ make_ssl_connection(SSL_CTX *ctx, SSLNetVConnection *netvc)
     }
 
     SSLNetVCAttach(ssl, netvc);
+    TLSSessionResumptionSupport::bind(ssl, netvc);
   }
 
   return ssl;
@@ -1820,6 +1821,7 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 
   sslHandshakeStatus = SSL_HANDSHAKE_DONE;
   SSLNetVCAttach(this->ssl, this);
+  TLSSessionResumptionSupport::bind(this->ssl, this);
   return EVENT_DONE;
 }
 
@@ -1936,4 +1938,22 @@ SSLNetVConnection::set_ca_cert_file(std::string_view file, std::string_view dir)
     n[dir.size()] = '\0';
     _ca_cert_dir.reset(n);
   }
+}
+
+void *
+SSLNetVConnection::_prepareForMigration()
+{
+  SSL *save_ssl = this->ssl;
+
+  SSLNetVCDetach(this->ssl);
+  TLSSessionResumptionSupport::unbind(this->ssl);
+  this->ssl = nullptr;
+
+  return save_ssl;
+}
+
+NetProcessor *
+SSLNetVConnection::_getNetProcessor()
+{
+  return &sslNetProcessor;
 }
