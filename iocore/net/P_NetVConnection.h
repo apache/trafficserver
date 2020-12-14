@@ -59,6 +59,13 @@ NetVConnection::get_remote_port()
   return ats_ip_port_host_order(this->get_remote_addr());
 }
 
+inline IpEndpoint const &
+NetVConnection::get_local_endpoint()
+{
+  get_local_addr();
+  return local_addr;
+}
+
 inline sockaddr const *
 NetVConnection::get_local_addr()
 {
@@ -98,4 +105,18 @@ NetVConnection::get_proxy_protocol_addr(const ProxyProtocolData src_or_dst) cons
   }
 
   return nullptr;
+}
+
+inline void
+NetVConnection::set_proxy_protocol_info(const ProxyProtocol &src)
+{
+  if (pp_info.version == ProxyProtocolVersion::UNDEFINED) {
+    pp_info = src;
+  }
+}
+
+inline const ProxyProtocol &
+NetVConnection::get_proxy_protocol_info() const
+{
+  return pp_info;
 }

@@ -43,6 +43,9 @@
 #include "P_SSLSNI.h"
 #include "HttpPages.h"
 #include "IPAllow.h"
+
+#include "ProxyProtocol.h"
+
 #include "tscore/I_Layout.h"
 #include "tscore/bwf_std_format.h"
 #include "ts/sdt.h"
@@ -127,6 +130,44 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
 
 // Unique state machine identifier
 std::atomic<int64_t> next_sm_id(0);
+
+/**
+   Outbound PROXY Protocol
+
+   Write PROXY Protocol to the first block of given MIOBuffer
+   FIXME: make @vc_in const
+ */
+int64_t
+do_outbound_proxy_protocol(MIOBuffer *miob, NetVConnection *vc_out, NetVConnection *vc_in, int conf)
+{
+  ink_release_assert(conf >= 0);
+
+  ProxyProtocol info              = vc_in->get_proxy_protocol_info();
+  ProxyProtocolVersion pp_version = proxy_protocol_version_cast(conf);
+
+  if (info.version == ProxyProtocolVersion::UNDEFINED) {
+    if (conf == 0) {
+      // nothing to forward
+      return 0;
+    } else {
+      // set info from incoming NetVConnection
+      IpEndpoint local = vc_in->get_local_endpoint();
+      info             = ProxyProtocol{pp_version, local.family(), local, vc_in->get_remote_endpoint()};
+    }
+  }
+
+  vc_out->set_proxy_protocol_info(info);
+
+  IOBufferBlock *block = miob->first_write_block();
+  size_t len           = proxy_protocol_build(reinterpret_cast<uint8_t *>(block->buf()), block->write_avail(), info, pp_version);
+
+  if (len > 0) {
+    miob->fill(len);
+  }
+
+  return len;
+}
+
 } // namespace
 
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
@@ -1816,19 +1857,28 @@ HttpSM::state_http_server_open(int event, void *data)
       session->to_parent_proxy = true;
       HTTP_INCREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);
       HTTP_INCREMENT_DYN_STAT(http_total_parent_proxy_connections_stat);
-
     } else {
       session->to_parent_proxy = false;
     }
+
     if (plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
       SMDebug("http", "[%" PRId64 "] setting handler for TCP handshake", sm_id);
       // Just want to get a write-ready event so we know that the TCP handshake is complete.
       server_entry->vc_handler = &HttpSM::state_http_server_open;
-      server_entry->write_vio  = server_session->do_io_write(this, 1, server_session->get_reader());
-    } else { // in the case of an intercept plugin don't to the connect timeout change
+
+      int64_t nbytes = 1;
+      if (t_state.txn_conf->proxy_protocol_out >= 0) {
+        nbytes =
+          do_outbound_proxy_protocol(server_session->read_buffer, vc, ua_txn->get_netvc(), t_state.txn_conf->proxy_protocol_out);
+      }
+
+      server_entry->write_vio = server_session->do_io_write(this, nbytes, server_session->get_reader());
+    } else {
+      // in the case of an intercept plugin don't to the connect timeout change
       SMDebug("http", "[%" PRId64 "] not setting handler for TCP handshake", sm_id);
       handle_http_server_open();
     }
+
     return 0;
   }
   case VC_EVENT_READ_COMPLETE:
