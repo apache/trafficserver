@@ -516,10 +516,12 @@ stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
 
       if ((my_state->encoding == GZIP) || (my_state->encoding == DEFLATE)) {
         gzip_out_stats(my_state);
-      } else if (my_state->encoding == BR) {
+      }
+#if HAVE_BROTLI_ENCODE_H
+      else if (my_state->encoding == BR) {
         br_out_stats(my_state);
       }
-
+#endif
       TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
     }
     TSVIOReenable(my_state->write_vio);
