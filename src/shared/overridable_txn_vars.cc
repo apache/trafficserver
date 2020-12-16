@@ -160,4 +160,5 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {"proxy.config.ssl.client.CA.cert.filename", {TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME, TS_RECORDDATATYPE_STRING}},
      {"proxy.config.hostdb.ip_resolve", {TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE, TS_RECORDDATATYPE_STRING}},
      {"proxy.config.plugin.vc.default_buffer_index", {TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX, TS_RECORDDATATYPE_INT}},
-     {"proxy.config.plugin.vc.default_buffer_water_mark", {TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}}});
+     {"proxy.config.plugin.vc.default_buffer_water_mark", {TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.ssl.client.alpn_protocols", {TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS, TS_RECORDDATATYPE_STRING}}});

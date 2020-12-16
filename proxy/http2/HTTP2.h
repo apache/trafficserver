@@ -84,12 +84,17 @@ const uint8_t HTTP2_PRIORITY_DEFAULT_WEIGHT             = 15;
 
 // Statistics
 enum {
-  HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT,           // Current # of HTTP2 connections
-  HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, // Current # of active HTTP2 connections
-  HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT,            // Current # of active HTTP2 streams
+  HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT,           // Current # of inbound HTTP2 connections
+  HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT,           // Current # of outbound HTTP2 connections
+  HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, // Current # of active inbound HTTP2 connections
+  HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT, // Current # of active outbound HTTP2 connections
+  HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT,            // Current # of active inbound HTTP2 streams
+  HTTP2_STAT_CURRENT_SERVER_STREAM_COUNT,            // Current # of active outboundHTTP2 streams
   HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT,
+  HTTP2_STAT_TOTAL_SERVER_STREAM_COUNT,
   HTTP2_STAT_TOTAL_TRANSACTIONS_TIME,       // Total stream time and streams
-  HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, // Total connections running http2
+  HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, // Total inbound connections running http2
+  HTTP2_STAT_TOTAL_SERVER_CONNECTION_COUNT, // Total outbound connections running http2
   HTTP2_STAT_STREAM_ERRORS_COUNT,
   HTTP2_STAT_CONNECTION_ERRORS_COUNT,
   HTTP2_STAT_SESSION_DIE_DEFAULT,
@@ -245,8 +250,8 @@ enum Http2SettingsIdentifier {
   HTTP2_SETTINGS_INITIAL_WINDOW_SIZE    = 4,
   HTTP2_SETTINGS_MAX_FRAME_SIZE         = 5,
   HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE   = 6,
-
-  HTTP2_SETTINGS_MAX
+  HTTP2_SETTINGS_MAX, // Really just the max of the "densely numbered" core id's
+  HTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA = 0xfe03,
 };
 
 // [RFC 7540] 4.1. Frame Format
@@ -362,7 +367,8 @@ bool http2_parse_goaway(IOVec, Http2Goaway &);
 
 bool http2_parse_window_update(IOVec, uint32_t &);
 
-Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint32_t, uint32_t *, HpackHandle &, bool &, uint32_t);
+Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint32_t, uint32_t *, HpackHandle &, bool, uint32_t,
+                                          bool is_outbound = false);
 
 Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32_t *, HpackHandle &, int32_t);
 
@@ -390,6 +396,7 @@ public:
   static uint32_t max_header_list_size;
   static uint32_t accept_no_activity_timeout;
   static uint32_t no_activity_timeout_in;
+  static uint32_t no_activity_timeout_out;
   static uint32_t active_timeout_in;
   static uint32_t push_diary_size;
   static uint32_t zombie_timeout_in;

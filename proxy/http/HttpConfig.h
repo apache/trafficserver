@@ -720,6 +720,7 @@ struct OverridableHttpConfigParams {
   char *ssl_client_cert_filename        = nullptr;
   char *ssl_client_private_key_filename = nullptr;
   char *ssl_client_ca_cert_filename     = nullptr;
+  char *ssl_client_alpn_protocols       = nullptr;
 
   // Host Resolution order
   HostResData host_res_data;

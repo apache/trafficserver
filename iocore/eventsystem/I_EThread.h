@@ -45,6 +45,7 @@ struct EventIO;
 class ServerSessionPool;
 class Event;
 class Continuation;
+class ConnectingPool;
 
 enum ThreadType {
   REGULAR = 0,
@@ -349,6 +350,7 @@ public:
   Event *start_event = nullptr;
 
   ServerSessionPool *server_session_pool = nullptr;
+  ConnectingPool *connecting_pool        = nullptr;
 
   /** Default handler used until it is overridden.
 

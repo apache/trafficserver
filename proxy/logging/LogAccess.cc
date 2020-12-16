@@ -1276,7 +1276,7 @@ LogAccess::marshal_client_provided_cert(char *buf)
 {
   int provided_cert = 0;
   if (m_http_sm) {
-    auto txn = m_http_sm->get_ua_txn();
+    auto txn = m_http_sm->ua_txn;
     if (txn) {
       auto ssn = txn->get_proxy_ssn();
       if (ssn) {

@@ -256,3 +256,7 @@ Http1ServerSession::new_transaction()
   trans.set_reader(this->get_remote_reader());
   return &trans;
 }
+
+std::function<PoolableSession *()> Create_h1_server_session = []() -> PoolableSession * {
+  return httpServerSessionAllocator.alloc();
+};

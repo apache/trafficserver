@@ -61,11 +61,16 @@ Http2HeaderName http2_connection_specific_headers[5] = {};
 // Statistics
 RecRawStatBlock *http2_rsb;
 static const char *const HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME        = "proxy.process.http2.current_client_connections";
+static const char *const HTTP2_STAT_CURRENT_SERVER_CONNECTION_NAME        = "proxy.process.http2.current_server_connections";
 static const char *const HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_NAME = "proxy.process.http2.current_active_client_connections";
+static const char *const HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_NAME = "proxy.process.http2.current_active_server_connections";
 static const char *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME            = "proxy.process.http2.current_client_streams";
+static const char *const HTTP2_STAT_CURRENT_SERVER_STREAM_NAME            = "proxy.process.http2.current_server_streams";
 static const char *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME              = "proxy.process.http2.total_client_streams";
+static const char *const HTTP2_STAT_TOTAL_SERVER_STREAM_NAME              = "proxy.process.http2.total_server_streams";
 static const char *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME          = "proxy.process.http2.total_transactions_time";
 static const char *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME          = "proxy.process.http2.total_client_connections";
+static const char *const HTTP2_STAT_TOTAL_SERVER_CONNECTION_NAME          = "proxy.process.http2.total_server_connections";
 static const char *const HTTP2_STAT_CONNECTION_ERRORS_NAME                = "proxy.process.http2.connection_errors";
 static const char *const HTTP2_STAT_STREAM_ERRORS_NAME                    = "proxy.process.http2.stream_errors";
 static const char *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME              = "proxy.process.http2.session_die_default";
@@ -442,10 +447,16 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     if (MIMEField *field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY);
         field != nullptr && field->value_is_valid()) {
       int authority_len;
+
+      // Set the host header field
+      MIMEField *host = headers->field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
+      if (host == nullptr) {
+        host = headers->field_create(MIME_FIELD_HOST, MIME_LEN_HOST);
+        headers->field_attach(host);
+      }
       const char *authority = field->value_get(&authority_len);
-
       url_host_set(headers->m_heap, headers->m_http->u.req.m_url_impl, authority, authority_len, true);
-
+      host->value_set(headers->m_heap, headers->m_mime, authority, authority_len);
       headers->field_delete(field);
     } else {
       return PARSE_RESULT_ERROR;
@@ -595,6 +606,9 @@ http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
       } else {
         field->value_set(headers->m_heap, headers->m_mime, value, value_len);
       }
+      // Remove the host header field, redundant to the authority field
+      // For istio/envoy, having both was causing 404 responses
+      headers->field_delete(MIME_FIELD_HOST, MIME_LEN_HOST);
     } else {
       ink_abort("initialize HTTP/2 pseudo-headers");
       return PARSE_RESULT_ERROR;
@@ -604,13 +618,27 @@ http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
     if (MIMEField *field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH); field != nullptr) {
       int value_len;
       const char *value = headers->path_get(&value_len);
+      int param_len;
+      const char *param = headers->params_get(&param_len);
+      int query_len;
+      const char *query = headers->query_get(&query_len);
+      int path_len      = value_len + 1;
 
-      ts::LocalBuffer<char> buf(value_len + 1);
+      ts::LocalBuffer<char> buf(value_len + 1 + 1 + 1 + query_len + param_len);
       char *path = buf.data();
       path[0]    = '/';
       memcpy(path + 1, value, value_len);
-
-      field->value_set(headers->m_heap, headers->m_mime, path, value_len + 1);
+      if (param_len > 0) {
+        path[path_len] = ';';
+        memcpy(path + path_len + 1, param, param_len);
+        path_len += 1 + param_len;
+      }
+      if (query_len > 0) {
+        path[path_len] = '?';
+        memcpy(path + path_len + 1, query, query_len);
+        path_len += 1 + query_len;
+      }
+      field->value_set(headers->m_heap, headers->m_mime, path, path_len);
     } else {
       ink_abort("initialize HTTP/2 pseudo-headers");
       return PARSE_RESULT_ERROR;
@@ -678,12 +706,11 @@ http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t
  */
 Http2ErrorCode
 http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_t buf_len, uint32_t *len_read, HpackHandle &handle,
-                           bool &trailing_header, uint32_t maximum_table_size)
+                           bool is_trailing_header, uint32_t maximum_table_size, bool is_outbound)
 {
   const MIMEField *field;
   const char *value;
   int len;
-  bool is_trailing_header = trailing_header;
   int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size);
 
   if (result < 0) {
@@ -700,7 +727,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   }
 
   MIMEFieldIter iter;
-  unsigned int expected_pseudo_header_count = 4;
+  unsigned int expected_pseudo_header_count = is_outbound ? 1 : 4;
   unsigned int pseudo_header_count          = 0;
 
   if (is_trailing_header) {
@@ -728,7 +755,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (hdr->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION) != nullptr ||
       hdr->field_find(MIME_FIELD_KEEP_ALIVE, MIME_LEN_KEEP_ALIVE) != nullptr ||
       hdr->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION) != nullptr ||
-      hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING) != nullptr ||
+      // hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING) != nullptr ||
       hdr->field_find(MIME_FIELD_UPGRADE, MIME_LEN_UPGRADE) != nullptr) {
     return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
   }
@@ -740,13 +767,6 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
     if (len == 0) {
       return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     }
-  }
-
-  // turn on that we have a trailer header
-  const char trailer_name[] = "trailer";
-  field                     = hdr->field_find(trailer_name, sizeof(trailer_name) - 1);
-  if (field) {
-    trailing_header = true;
   }
 
   // when The TE header field is received, it MUST NOT contain any
@@ -761,18 +781,29 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 
   if (!is_trailing_header) {
     // Check pseudo headers
-    if (hdr->fields_count() >= 4) {
-      if (hdr->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME) == nullptr ||
-          hdr->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD) == nullptr ||
-          hdr->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH) == nullptr ||
-          hdr->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY) == nullptr ||
-          hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) != nullptr) {
-        // Decoded header field is invalid
+    if (is_outbound) {
+      if (hdr->fields_count() >= 1) {
+        if (hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) == nullptr) {
+          return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
+        }
+      } else {
+        // Pseudo headers is insufficient
         return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
       }
     } else {
-      // Pseudo headers is insufficient
-      return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
+      if (hdr->fields_count() >= 4) {
+        if (hdr->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME) == nullptr ||
+            hdr->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD) == nullptr ||
+            hdr->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH) == nullptr ||
+            hdr->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY) == nullptr ||
+            hdr->field_find(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS) != nullptr) {
+          // Decoded header field is invalid
+          return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
+        }
+      } else {
+        // Pseudo headers is insufficient
+        return Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
+      }
     }
   }
 
@@ -791,6 +822,7 @@ uint32_t Http2::header_table_size              = 4096;
 uint32_t Http2::max_header_list_size           = 4294967295;
 uint32_t Http2::accept_no_activity_timeout     = 120;
 uint32_t Http2::no_activity_timeout_in         = 120;
+uint32_t Http2::no_activity_timeout_out        = 120;
 uint32_t Http2::active_timeout_in              = 0;
 uint32_t Http2::push_diary_size                = 256;
 uint32_t Http2::zombie_timeout_in              = 0;
@@ -821,6 +853,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_header_list_size, "proxy.config.http2.max_header_list_size");
   REC_EstablishStaticConfigInt32U(accept_no_activity_timeout, "proxy.config.http2.accept_no_activity_timeout");
   REC_EstablishStaticConfigInt32U(no_activity_timeout_in, "proxy.config.http2.no_activity_timeout_in");
+  REC_EstablishStaticConfigInt32U(no_activity_timeout_out, "proxy.config.http2.no_activity_timeout_out");
   REC_EstablishStaticConfigInt32U(active_timeout_in, "proxy.config.http2.active_timeout_in");
   REC_EstablishStaticConfigInt32U(push_diary_size, "proxy.config.http2.push_diary_size");
   REC_EstablishStaticConfigInt32U(zombie_timeout_in, "proxy.config.http2.zombie_debug_timeout_in");
@@ -857,18 +890,31 @@ Http2::init()
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT), RecRawStatSyncSum);
   HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_SERVER_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT), RecRawStatSyncSum);
+  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_SERVER_SESSION_COUNT);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
   HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_NAME, RECD_INT, RECP_NON_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT), RecRawStatSyncSum);
+  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_SERVER_CONNECTION_COUNT);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT), RecRawStatSyncSum);
   HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CURRENT_SERVER_STREAM_NAME, RECD_INT, RECP_NON_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_CURRENT_SERVER_STREAM_COUNT), RecRawStatSyncSum);
+  HTTP2_CLEAR_DYN_STAT(HTTP2_STAT_CURRENT_SERVER_STREAM_COUNT);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT), RecRawStatSyncCount);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_SERVER_STREAM_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_TOTAL_SERVER_STREAM_COUNT), RecRawStatSyncCount);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_TOTAL_SERVER_CONNECTION_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_TOTAL_SERVER_CONNECTION_COUNT), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_CONNECTION_ERRORS_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_CONNECTION_ERRORS_COUNT), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_STREAM_ERRORS_NAME, RECD_INT, RECP_PERSISTENT,

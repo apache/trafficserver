@@ -1128,6 +1128,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.CA.cert.filename", RECD_STRING, nullptr, RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.ssl.client.alpn_protocols", RECD_STRING, nullptr, RECU_RESTART_TS, RR_NULL, RECC_STR, "^[^[:space:]]*$", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.ssl.CA.cert.path", RECD_STRING, TS_BUILD_SYSCONFDIR, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.client.verify.server.policy", RECD_STRING, "ENFORCED", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -1327,6 +1329,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http2.accept_no_activity_timeout", RECD_INT, "120", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http2.no_activity_timeout_in", RECD_INT, "120", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http2.no_activity_timeout_out", RECD_INT, "120", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http2.active_timeout_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,

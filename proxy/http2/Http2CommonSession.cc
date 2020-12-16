@@ -91,6 +91,7 @@ Http2CommonSession::common_free(ProxySession *ssn)
           ink_hrtime_to_msec(this->_milestones[Http2SsnMilestone::OPEN]),
           this->_milestones.difference_sec(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE));
   }
+
   // Update stats on how we died.  May want to eliminate this.  Was useful for
   // tracking down which cases we were having problems cleaning up.  But for general
   // use probably not worth the effort
@@ -147,6 +148,20 @@ Http2CommonSession::set_half_close_local_flag(bool flag)
   half_close_local = flag;
 }
 
+void
+Http2CommonSession::add_url_to_pushed_table(const char *url, int url_len)
+{
+  // Delay std::unordered_set allocation until when it used
+  if (_h2_pushed_urls == nullptr) {
+    this->_h2_pushed_urls = new std::unordered_set<std::string>();
+    this->_h2_pushed_urls->reserve(Http2::push_diary_size);
+  }
+
+  if (_h2_pushed_urls->size() < Http2::push_diary_size) {
+    _h2_pushed_urls->emplace(url);
+  }
+}
+
 int64_t
 Http2CommonSession::xmit(const Http2TxFrame &frame, bool flush)
 {
@@ -172,10 +187,28 @@ void
 Http2CommonSession::flush()
 {
   if (this->_pending_sending_data_size > 0) {
+    total_write_len += this->_pending_sending_data_size;
     this->_pending_sending_data_size = 0;
     this->_write_buffer_last_flush   = Thread::get_hrtime();
     write_reenable();
   }
+}
+
+void
+Http2CommonSession::write_reenable()
+{
+  if (write_vio) {
+    // Grab the lock for the write_vio.  Holding the lock is
+    // checked eventually via the reenable logic
+    SCOPED_MUTEX_LOCK(lock, write_vio->mutex, this_ethread());
+    write_vio->reenable();
+  }
+}
+
+int64_t
+Http2CommonSession::write_avail()
+{
+  return this->write_buffer->write_avail();
 }
 
 int
@@ -268,13 +301,13 @@ Http2CommonSession::do_start_frame_read(Http2ErrorCode &ret_error)
 
   this->_read_buffer_reader->consume(nbytes);
 
-  if (!http2_frame_header_is_valid(this->current_hdr, this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
+  if (!http2_frame_header_is_valid(this->current_hdr, this->connection_state.local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
     ret_error = Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR;
     return -1;
   }
 
   // If we know up front that the payload is too long, nuke this connection.
-  if (this->current_hdr.length > this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
+  if (this->current_hdr.length > this->connection_state.local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
     ret_error = Http2ErrorCode::HTTP2_ERROR_FRAME_SIZE_ERROR;
     return -1;
   }
@@ -341,11 +374,15 @@ Http2CommonSession::do_complete_frame_read()
 int
 Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame)
 {
+  Http2SsnDebug("do_process_frame_read %" PRId64 " bytes ready", this->_read_buffer_reader->read_avail());
+
   if (inside_frame) {
     do_complete_frame_read();
   }
 
   while (this->_read_buffer_reader->read_avail() >= static_cast<int64_t>(HTTP2_FRAME_HEADER_LEN)) {
+    Http2SsnDebug("do_process_frame_read try to read frame %" PRId64 " bytes ready", this->_read_buffer_reader->read_avail());
+
     // Cancel reading if there was an error or connection is closed
     if (connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_NO_ERROR) ||
         connection_state.is_state_closed()) {
@@ -354,10 +391,11 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
     }
 
     Http2ErrorCode err = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
-    if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0)) {
+    if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0) &&
+        !this->is_outbound()) {
       ip_port_text_buffer ipb;
       const char *client_ip = ats_ip_ntop(this->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
-      SiteThrottledWarning("HTTP/2 session error client_ip=%s session_id=%" PRId64
+      SiteThrottledWarning("HTTP/2 session error peer_ip=%s session_id=%" PRId64
                            " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
                            client_ip, this->get_connection_id(), this->connection_state.get_stream_error_rate(),
                            Http2::stream_error_rate_threshold);
@@ -403,32 +441,17 @@ Http2CommonSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
 bool
 Http2CommonSession::_should_do_something_else()
 {
-  // Do something else every 128 incoming frames if connection state isn't closed
-  return (this->_n_frame_read & 0x7F) == 0 && !connection_state.is_state_closed();
-}
-
-int64_t
-Http2CommonSession::write_avail()
-{
-  return this->write_buffer->write_avail();
+  // Do something else every 128 incoming frames
+  return (this->_n_frame_read & 0x7F) == 0;
 }
 
 void
-Http2CommonSession::write_reenable()
+Http2CommonSession::add_session()
 {
-  write_vio->reenable();
 }
 
-void
-Http2CommonSession::add_url_to_pushed_table(const char *url, int url_len)
+bool
+Http2CommonSession::is_outbound() const
 {
-  // Delay std::unordered_set allocation until when it used
-  if (_h2_pushed_urls == nullptr) {
-    this->_h2_pushed_urls = new std::unordered_set<std::string>();
-    this->_h2_pushed_urls->reserve(Http2::push_diary_size);
-  }
-
-  if (_h2_pushed_urls->size() < Http2::push_diary_size) {
-    _h2_pushed_urls->emplace(url);
-  }
+  return false;
 }

@@ -1,6 +1,6 @@
 /** @file
 
-  Http2ConnectionState.
+  Http2ConnectionState.h
 
   @section license License
 
@@ -33,8 +33,8 @@
 #include "Http2DependencyTree.h"
 #include "Http2FrequencyCounter.h"
 
-class Http2CommonSession;
 class Http2Frame;
+class Http2CommonSession;
 
 enum class Http2SendDataFrameResult {
   NO_ERROR = 0,
@@ -87,8 +87,8 @@ public:
   ActivityCop<Http2Stream> _cop;
 
   // Settings.
-  Http2ConnectionSettings server_settings;
-  Http2ConnectionSettings client_settings;
+  Http2ConnectionSettings local_settings;
+  Http2ConnectionSettings peer_settings;
 
   void init(Http2CommonSession *ssn);
   void send_connection_preface();
@@ -100,9 +100,10 @@ public:
   int state_closed(int, void *);
 
   // Stream control interfaces
-  Http2Stream *create_stream(Http2StreamId new_id, Http2Error &error);
+  Http2Stream *create_stream(Http2StreamId new_id, Http2Error &error, bool initiating_connection = false);
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
+  void start_streams();
   bool delete_stream(Http2Stream *stream);
   void release_stream();
   void cleanup_streams();
@@ -113,6 +114,7 @@ public:
   Http2StreamId get_latest_stream_id_out() const;
   int get_stream_requests() const;
   void increment_stream_requests();
+  bool is_peer_concurrent_stream_max() const;
 
   // Continuated header decoding
   Http2StreamId get_continued_stream_id() const;
@@ -162,6 +164,9 @@ public:
   ssize_t server_rwnd() const;
   Http2ErrorCode increment_server_rwnd(size_t amount);
   Http2ErrorCode decrement_server_rwnd(size_t amount);
+
+  bool no_streams() const;
+  bool single_stream() const;
 
 private:
   unsigned _adjust_concurrent_stream();

@@ -189,6 +189,7 @@ tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{
     post_body, ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
+tr.TimeOut = 60
 tr.StillRunningAfter = server
 
 # Test Case 7: Post with big chunked body
@@ -199,6 +200,7 @@ tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @b
     ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
+tr.TimeOut = 60
 tr.StillRunningAfter = server
 
 # Test Case 8: Huge response header
@@ -208,6 +210,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http2_8_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.
 tr.Processes.Default.Streams.stderr = Testers.GoldFile("gold/http2_8_stderr.gold", case_insensitive=True)
+tr.TimeOut = 60
 tr.StillRunningAfter = server
 
 # Test Case 9: Header Only Response - e.g. 204
@@ -217,4 +220,5 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http2_9_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.
 tr.Processes.Default.Streams.stderr = Testers.GoldFile("gold/http2_9_stderr.gold", case_insensitive=True)
+tr.TimeOut = 60
 tr.StillRunningAfter = server

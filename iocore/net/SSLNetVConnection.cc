@@ -1142,6 +1142,16 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         return EVENT_ERROR;
       }
 
+      // If it is negative, we are conscious not setting alpn (e.g. for private server sessions)
+      if (options.alpn_protocols_array_size >= 0) {
+        if (options.alpn_protocols_array_size > 0) {
+          SSL_set_alpn_protos(this->ssl, options.alpn_protocols_array, options.alpn_protocols_array_size);
+        } else if (params->alpn_protocols_array_size > 0) {
+          // Set the ALPN protocols we are requesting.
+          SSL_set_alpn_protos(this->ssl, params->alpn_protocols_array, params->alpn_protocols_array_size);
+        }
+      }
+
       SSL_set_verify(this->ssl, SSL_VERIFY_PEER, verify_callback);
 
       // SNI
@@ -1501,6 +1511,16 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
         debug_certificate_name("server certificate issuer CN is", X509_get_issuer_name(cert));
         X509_free(cert);
       }
+    }
+    {
+      const unsigned char *proto;
+      unsigned int len = 0;
+      // Make note of the negotiated protocol
+      SSL_get0_alpn_selected(ssl, &proto, &len);
+      if (len == 0) {
+        SSL_get0_next_proto_negotiated(ssl, &proto, &len);
+      }
+      this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});
     }
 
     // if the handshake is complete and write is enabled reschedule the write
