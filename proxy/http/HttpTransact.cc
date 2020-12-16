@@ -35,6 +35,7 @@
 #include <ctime>
 #include "tscore/ParseRules.h"
 #include "tscore/Filenames.h"
+#include "tscore/bwf_std_format.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "logging/Log.h"
@@ -88,6 +89,9 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
   SpecificDebug((s->state_machine->debug_on), tag, "[%" PRId64 "] " fmt, s->state_machine->sm_id, ##__VA_ARGS__)
 
 extern HttpBodyFactory *body_factory;
+
+// Handy typedef for short (single line) message generation.
+using lbw = ts::LocalBufferWriter<256>;
 
 // wrapper to choose between a remap next hop strategy or use parent.config
 // remap next hop strategy is preferred
@@ -1826,10 +1830,14 @@ HttpTransact::ReDNSRoundRobin(State *s)
     s->next_action = how_to_open_connection(s);
   } else {
     // Our ReDNS failed so output the DNS failure error message
-    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
+    // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
+    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->next_action       = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     //  s->next_action = PROXY_INTERNAL_CACHE_NOOP;
+    char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
+    Log::error("%s",
+               lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
   }
 
   return;
@@ -1890,7 +1898,12 @@ HttpTransact::OSDNSLookup(State *s)
 
       // output the DNS failure error message
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
+      // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
+      build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
+      char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
+      Log::error("%s",
+                 lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
+      // s->cache_info.action = CACHE_DO_NO_ACTION;
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     }
     return;
@@ -3709,26 +3722,16 @@ HttpTransact::handle_response_from_server(State *s)
   case OUTBOUND_CONGESTION:
     TxnDebug("http_trans", "[handle_response_from_server] Error. congestion control -- congested.");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    s->current.server->set_connect_fail(EUSERS); // too many users
+    s->set_connect_fail(EUSERS); // too many users
     handle_server_connection_not_open(s);
     break;
   case OPEN_RAW_ERROR:
-  /* fall through */
   case CONNECTION_ERROR:
-  /* fall through */
   case STATE_UNDEFINED:
-  /* fall through */
   case INACTIVE_TIMEOUT:
-  /* fall through */
   case PARSE_ERROR:
-  /* fall through */
   case CONNECTION_CLOSED:
-  /* fall through */
   case BAD_INCOMING_RESPONSE:
-    // Set to generic I/O error if not already set specifically.
-    if (!s->current.server->had_connect_fail()) {
-      s->current.server->set_connect_fail(EIO);
-    }
 
     if (is_server_negative_cached(s)) {
       max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server - 1;
@@ -3776,6 +3779,7 @@ HttpTransact::handle_response_from_server(State *s)
         return;
       }
     } else {
+      error_log_connection_failure(s, s->current.state);
       TxnDebug("http_trans", "[handle_response_from_server] Error. No more retries.");
       SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
       handle_server_connection_not_open(s);
@@ -3784,7 +3788,7 @@ HttpTransact::handle_response_from_server(State *s)
   case ACTIVE_TIMEOUT:
     TxnDebug("http_trans", "[hrfs] connection not alive");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    s->current.server->set_connect_fail(ETIMEDOUT);
+    s->set_connect_fail(ETIMEDOUT);
     handle_server_connection_not_open(s);
     break;
   default:
@@ -3825,6 +3829,28 @@ HttpTransact::delete_server_rr_entry(State *s, int max_retries)
   TRANSACT_RETURN(SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN, ReDNSRoundRobin);
 }
 
+void
+HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
+{
+  char addrbuf[INET6_ADDRSTRLEN];
+
+  TxnDebug("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
+           ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+
+  //////////////////////////////////////////
+  // on the first connect attempt failure //
+  // record the failue                   //
+  //////////////////////////////////////////
+  if (0 == s->current.attempts) {
+    char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
+    Log::error("CONNECT: first attempt could not connect [%s] to %s for '%s' connect_result=%d src_port=%d cause_of_death_errno=%d",
+               HttpDebugNames::get_server_state_name(conn_state),
+               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>",
+               s->current.server->connect_result, ntohs(s->current.server->src_addr.port()), s->cause_of_death_errno);
+    s->arena.str_free(url_string);
+  }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : retry_server_connection_not_open
 // Description:
@@ -3843,28 +3869,10 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   ink_assert(s->current.state != CONNECTION_ALIVE);
   ink_assert(s->current.state != ACTIVE_TIMEOUT);
   ink_assert(s->current.attempts <= max_retries);
-  ink_assert(s->current.server->had_connect_fail());
-  char addrbuf[INET6_ADDRSTRLEN];
+  ink_assert(s->cause_of_death_errno != -UNKNOWN_INTERNAL_ERROR);
 
-  char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
+  error_log_connection_failure(s, conn_state);
 
-  TxnDebug("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
-           ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
-
-  //////////////////////////////////////////
-  // on the first connect attempt failure //
-  // record the failue                   //
-  //////////////////////////////////////////
-  if (0 == s->current.attempts) {
-    Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s' connect_result=%d src_port=%d", s->current.attempts,
-               HttpDebugNames::get_server_state_name(conn_state),
-               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>",
-               s->current.server->connect_result, ntohs(s->current.server->src_addr.port()));
-  }
-
-  if (url_string) {
-    s->arena.str_free(url_string);
-  }
   //////////////////////////////////////////////
   // disable keep-alive for request and retry //
   //////////////////////////////////////////////

@@ -184,7 +184,7 @@ class ActionE(Enum):
     Follow = {'config': 'follow', 'expectedStatusLine': 'HTTP/1.1 204 No Content\r\n'}
 
     # Added to test failure modes.
-    Break = {'expectedStatusLine': 'HTTP/1.1 502 Cannot find server.\r\n'}
+    Break = {'expectedStatusLine': 'HTTP/1.1 500 Cannot find server.\r\n'}
 
 
 scenarios = [
