@@ -1705,14 +1705,12 @@ void
 SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc)
 {
   SSL_set_ex_data(ssl, ssl_vc_index, vc);
-  TLSSessionResumptionSupport::bind(ssl, vc);
 }
 
 void
 SSLNetVCDetach(SSL *ssl)
 {
   SSL_set_ex_data(ssl, ssl_vc_index, nullptr);
-  TLSSessionResumptionSupport::unbind(ssl);
 }
 
 SSLNetVConnection *

@@ -291,6 +291,10 @@ public:
   void apply_options() override;
 
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
+
+private:
+  virtual void *_prepareForMigration();
+  virtual NetProcessor *_getNetProcessor();
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;
