@@ -833,7 +833,7 @@ main(int argc, const char **argv)
         just_started++;
       }
     } else {
-      // Even if we shouldn't try the start the proxy again, leave manager around to
+      // Even if we shouldn't try to start the proxy again, leave manager around to
       // avoid external automated restarts
       if (!lmgmt->proxy_recoverable && !printed_unrecoverable) {
         mgmt_log("[main] Proxy is un-recoverable. Proxy will not be relaunched.\n");
