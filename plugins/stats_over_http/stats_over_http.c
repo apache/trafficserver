@@ -450,6 +450,7 @@ br_out_stats(stats_state *my_state)
     TSDebug(PLUGIN_NAME, "brotli compress error");
   }
   my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, outputsize);
+  BrotliEncoderDestroyInstance(my_state->bstrm.br);
 }
 #endif
 
