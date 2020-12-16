@@ -49,6 +49,11 @@ public:
   virtual void set_inactivity_timeout(ink_hrtime timeout_in);
   virtual void cancel_inactivity_timeout();
   virtual void cancel_active_timeout();
+  virtual bool is_read_closed() const;
+  virtual bool expect_send_trailer() const;
+  virtual void set_expect_send_trailer();
+  virtual bool expect_receive_trailer() const;
+  virtual void set_expect_receive_trailer();
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;

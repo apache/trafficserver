@@ -162,6 +162,8 @@ public:
     return nullptr;
   }
 
+  static PoolableSession *protocol_creation(NetVConnection *netvc);
+
   ////////////////////
   // Members
 

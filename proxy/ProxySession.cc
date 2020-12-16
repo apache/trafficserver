@@ -26,6 +26,8 @@
 #include "ProxySession.h"
 #include "P_SSLNetVConnection.h"
 
+std::map<int, std::function<PoolableSession *()>> ProtocolSessionCreateMap;
+
 ProxySession::ProxySession() : VConnection(nullptr) {}
 
 ProxySession::ProxySession(NetVConnection *vc) : VConnection(nullptr), _vc(vc) {}
@@ -311,4 +313,22 @@ bool
 ProxySession::support_sni() const
 {
   return _vc ? _vc->support_sni() : false;
+}
+
+PoolableSession *
+ProxySession::protocol_creation(NetVConnection *netvc)
+{
+  // Figure out what protocol was negotiated
+  int proto_index             = SessionProtocolNameRegistry::INVALID;
+  SSLNetVConnection *sslnetvc = dynamic_cast<SSLNetVConnection *>(netvc);
+  if (sslnetvc) {
+    proto_index = sslnetvc->get_negotiated_protocol_id();
+  }
+  // No ALPN occurred. Assume it was HTTP/1.x and hope for the best
+  if (proto_index == SessionProtocolNameRegistry::INVALID) {
+    proto_index = TS_ALPN_PROTOCOL_INDEX_HTTP_1_1;
+  }
+  auto iter = ProtocolSessionCreateMap.find(proto_index);
+  ink_release_assert(iter != ProtocolSessionCreateMap.end());
+  return iter->second();
 }

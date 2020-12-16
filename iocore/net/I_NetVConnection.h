@@ -228,6 +228,9 @@ struct NetVCOptions {
 
   bool tls_upstream = false;
 
+  unsigned char alpn_protocols_array[MAX_ALPN_STRING];
+  int alpn_protocols_array_size = 0;
+
   /// Reset all values to defaults.
 
   /**

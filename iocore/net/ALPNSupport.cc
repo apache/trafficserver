@@ -145,3 +145,36 @@ ALPNSupport::registerNextProtocolSet(SSLNextProtocolSet *s, const SessionProtoco
   this->npnSet       = s;
   npnSet->create_npn_advertisement(protoenabled, &npn, &npnsz);
 }
+
+bool
+ALPNSupport::process_alpn_protocols(const std::string_view protocols, unsigned char *client_alpn_protocols, int &alpn_array_len)
+{
+  // Count up the number of separators
+  int start     = 0;
+  size_t offset = protocols.find(',', start);
+  int index     = 0;
+  bool retval   = true;
+  while (offset != protocols.npos) {
+    if ((index + 1 + static_cast<int>(offset) - start) > alpn_array_len) {
+      retval = false;
+      break;
+    }
+    client_alpn_protocols[index++] = offset - start;
+    memcpy(client_alpn_protocols + index, protocols.data() + start, offset - start);
+    index += offset - start;
+    start  = offset + 1;
+    offset = protocols.find(',', start);
+  }
+  // Copy in the last string
+  offset = protocols.length();
+  if ((index + 1 + static_cast<int>(offset) - start) > alpn_array_len) {
+    retval         = false;
+    alpn_array_len = 0;
+  } else {
+    client_alpn_protocols[index++] = offset - start;
+    memcpy(client_alpn_protocols + index, protocols.data() + start, offset - start);
+    index += offset - start;
+    alpn_array_len = index;
+  }
+  return retval;
+}

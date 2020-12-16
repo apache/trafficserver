@@ -110,6 +110,10 @@ public:
   // Variables
   Http2ConnectionState connection_state;
 
+  virtual void add_session();
+  virtual bool is_outbound() const;
+  virtual void set_no_activity_timeout() = 0;
+
 protected:
   // SessionHandler(s) - state of reading frame
   int state_read_connection_preface(int, void *);
@@ -134,6 +138,9 @@ protected:
   VIO *write_vio                       = nullptr;
   MIOBuffer *write_buffer              = nullptr;
   IOBufferReader *_write_buffer_reader = nullptr;
+
+
+  int64_t total_write_len = 0;
 
   Http2FrameHeader current_hdr        = {0, 0, 0, 0};
   uint32_t _write_size_threshold      = 0;
@@ -226,3 +233,4 @@ Http2CommonSession::do_clear_session_active()
 {
   get_proxy_session()->clear_session_active();
 }
+

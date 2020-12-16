@@ -8696,7 +8696,8 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.connect.dead.policy",
    "proxy.config.plugin.vc.default_buffer_index",
    "proxy.config.plugin.vc.default_buffer_water_mark",
-   "proxy.config.net.sock_notsent_lowat"}};
+   "proxy.config.net.sock_notsent_lowat",
+   "proxy.config.ssl.client.alpn_protocols"}};
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 

@@ -121,6 +121,7 @@ public:
   ProxyAllocator quicNetVCAllocator;
   ProxyAllocator http1ClientSessionAllocator;
   ProxyAllocator http2ClientSessionAllocator;
+  ProxyAllocator http2ServerSessionAllocator;
   ProxyAllocator http2StreamAllocator;
   ProxyAllocator httpSMAllocator;
   ProxyAllocator quicClientSessionAllocator;

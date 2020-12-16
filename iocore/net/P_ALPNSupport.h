@@ -45,6 +45,7 @@ public:
   void enableProtocol(int idx);
   void clear();
   bool setSelectedProtocol(const unsigned char *proto, unsigned int len);
+  static bool process_alpn_protocols(const std::string_view protocols, unsigned char *alpn_array, int &alpn_array_len);
 
   int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned *outlen);
   int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen);

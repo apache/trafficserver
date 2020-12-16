@@ -47,6 +47,7 @@ class PreWarmQueue;
 
 class Event;
 class Continuation;
+class ConnectingPool;
 
 enum ThreadType {
   REGULAR = 0,
@@ -352,6 +353,7 @@ public:
 
   ServerSessionPool *server_session_pool = nullptr;
   PreWarmQueue *prewarm_queue            = nullptr;
+  ConnectingPool *connecting_pool        = nullptr;
 
   /** Default handler used until it is overridden.
 
