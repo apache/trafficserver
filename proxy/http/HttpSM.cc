@@ -5374,7 +5374,6 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
 
   switch (ua_abort) {
   case HttpTransact::ABORTED:
-  case HttpTransact::MAYBE_ABORTED:
     // More detailed client side abort logging based on event
     switch (event) {
     case VC_EVENT_ERROR:
