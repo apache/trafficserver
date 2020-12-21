@@ -1116,11 +1116,9 @@ Log::create_threads()
   flush_notify    = new EventNotify;
   flush_data_list = new InkAtomicList;
 
-  sprintf(desc, "Logging flush buffer list");
-  ink_atomiclist_init(flush_data_list, desc, 0);
+  ink_atomiclist_init(flush_data_list, "Logging flush buffer list", 0);
   Continuation *flush_cont = new LoggingFlushContinuation(0);
-  sprintf(desc, "[LOG_FLUSH]");
-  eventProcessor.spawn_thread(flush_cont, desc, stacksize);
+  eventProcessor.spawn_thread(flush_cont, "[LOG_FLUSH]", stacksize);
 }
 
 /*-------------------------------------------------------------------------
