@@ -1141,8 +1141,6 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   Continuation *reader_cont     = nullptr;
   Continuation *writer_cont     = nullptr;
   ink_hrtime *signal_timeout_at = nullptr;
-  Event *t                      = nullptr;
-  Event **signal_timeout        = &t;
 
   switch (event) {
   // Treating immediate as inactivity timeout for any
@@ -1163,7 +1161,6 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     break;
   }
 
-  *signal_timeout    = nullptr;
   *signal_timeout_at = 0;
   writer_cont        = write.vio.cont;
 
@@ -1179,7 +1176,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     }
   }
 
-  if (!*signal_timeout && !*signal_timeout_at && !closed && write.vio.op == VIO::WRITE && !(f.shutdown & NET_VC_SHUTDOWN_WRITE) &&
+  if (!*signal_timeout_at && !closed && write.vio.op == VIO::WRITE && !(f.shutdown & NET_VC_SHUTDOWN_WRITE) &&
       reader_cont != write.vio.cont && writer_cont == write.vio.cont) {
     if (write_signal_and_update(signal_event, this) == EVENT_DONE) {
       return EVENT_DONE;
