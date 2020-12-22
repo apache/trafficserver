@@ -729,6 +729,8 @@ CacheProcessor::start_internal(int flags)
     }
     Emergency("Cache initialization failed - only %d out of %d disks were valid and all were required.", gndisks,
               theCacheStore.n_disks_in_config);
+  } else if (this->waitForCache() == 2 && static_cast<unsigned int>(gndisks) < theCacheStore.n_disks_in_config) {
+    Warning("Cache initialization incomplete - only %d out of %d disks were valid.", gndisks, theCacheStore.n_disks_in_config);
   }
 
   // If we got here, we have enough disks to proceed
@@ -784,7 +786,9 @@ CacheProcessor::diskInitialized()
       if (cb_after_init) {
         cb_after_init();
       }
-      Fatal("Cache initialization failed - only %d of %d disks were available.", gndisks, theCacheStore.n_disks_in_config);
+      Emergency("Cache initialization failed - only %d of %d disks were available.", gndisks, theCacheStore.n_disks_in_config);
+    } else if (this->waitForCache() == 2) {
+      Warning("Cache initialization incomplete - only %d of %d disks were available.", gndisks, theCacheStore.n_disks_in_config);
     }
   }
 
@@ -1052,7 +1056,7 @@ CacheProcessor::cacheInitialized()
 
   // TS-3848
   if (CACHE_INIT_FAILED == CacheProcessor::initialized && cacheProcessor.waitForCache() > 1) {
-    Fatal("Cache initialization failed with cache required, exiting.");
+    Emergency("Cache initialization failed with cache required, exiting.");
   }
 }
 
@@ -2062,7 +2066,7 @@ Cache::open_done()
 
   // TS-3848
   if (ready == CACHE_INIT_FAILED && cacheProcessor.waitForCache() >= 2) {
-    Fatal("Failed to initialize cache host table");
+    Emergency("Failed to initialize cache host table");
   }
 
   cacheProcessor.cacheInitialized();
