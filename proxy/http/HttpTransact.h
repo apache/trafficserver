@@ -219,7 +219,6 @@ public:
   enum AbortState_t {
     ABORT_UNDEFINED = 0,
     DIDNOT_ABORT,
-    MAYBE_ABORTED,
     ABORTED,
   };
 
