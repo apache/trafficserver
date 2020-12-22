@@ -490,7 +490,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
 
     vc->write.triggered = 0;
-    write_signal_error(nh, vc, static_cast<int>(-total_written));
+    write_signal_error(nh, vc, static_cast<int>(-r));
     return;
   } else {                                        // Wrote data.  Finished without error
     int wbe_event = vc->write_buffer_empty_event; // save so we can clear if needed.
