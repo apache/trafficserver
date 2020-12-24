@@ -191,6 +191,12 @@ ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
 static int
 ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 {
+#ifdef TLS1_3_VERSION
+  if (SSL_SESSION_get_protocol_version(sess) == TLS1_3_VERSION) {
+    return 0;
+  }
+#endif
+
   unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
 
@@ -219,6 +225,12 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 static void
 ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 {
+#ifdef TLS1_3_VERSION
+  if (SSL_SESSION_get_protocol_version(sess) == TLS1_3_VERSION) {
+    return;
+  }
+#endif
+
   unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
