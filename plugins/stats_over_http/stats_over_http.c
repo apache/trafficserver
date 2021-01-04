@@ -38,6 +38,13 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <zlib.h>
+
+#include "ink_autoconf.h"
+
+#if HAVE_BROTLI_ENCODE_H
+#include <brotli/encode.h>
+#endif
 
 #include "tscore/ink_defs.h"
 
@@ -53,6 +60,29 @@
 
 /* global holding the path used for access to this JSON data */
 #define DEFAULT_URL_PATH "_stats"
+
+// from mod_deflate:
+// ZLIB's compression algorithm uses a
+// 0-9 based scale that GZIP does where '1' is 'Best speed'
+// and '9' is 'Best compression'. Testing has proved level '6'
+// to be about the best level to use in an HTTP Server.
+
+const int ZLIB_COMPRESSION_LEVEL = 6;
+const char *dictionary           = NULL;
+
+// zlib stuff, see [deflateInit2] at http://www.zlib.net/manual.html
+static const int ZLIB_MEMLEVEL = 9; // min=1 (optimize for memory),max=9 (optimized for speed)
+
+static const int WINDOW_BITS_DEFLATE = 15;
+static const int WINDOW_BITS_GZIP    = 16;
+#define DEFLATE_MODE WINDOW_BITS_DEFLATE
+#define GZIP_MODE (WINDOW_BITS_DEFLATE | WINDOW_BITS_GZIP)
+
+// brotli compression quality 1-11. Testing proved level '6'
+#if HAVE_BROTLI_ENCODE_H
+const int BROTLI_COMPRESSION_LEVEL = 6;
+const int BROTLI_LGW               = 16;
+#endif
 
 static bool integer_counters = false;
 static bool wrap_counters    = false;
@@ -73,6 +103,7 @@ typedef struct {
 } config_holder_t;
 
 typedef enum { JSON_OUTPUT, CSV_OUTPUT } output_format;
+typedef enum { NONE, DEFLATE, GZIP, BR } encoding_format;
 
 int configReloadRequests = 0;
 int configReloads        = 0;
@@ -86,6 +117,18 @@ static config_t *get_config(TSCont cont);
 static config_holder_t *new_config_holder(const char *path);
 static bool is_ip_allowed(const config_t *config, const struct sockaddr *addr);
 
+#if HAVE_BROTLI_ENCODE_H
+typedef struct {
+  BrotliEncoderState *br;
+  uint8_t *next_in;
+  size_t avail_in;
+  uint8_t *next_out;
+  size_t avail_out;
+  size_t total_in;
+  size_t total_out;
+} b_stream;
+#endif
+
 typedef struct stats_state_t {
   TSVConn net_vc;
   TSVIO read_vio;
@@ -98,6 +141,11 @@ typedef struct stats_state_t {
   int output_bytes;
   int body_written;
   output_format output;
+  encoding_format encoding;
+  z_stream zstrm;
+#if HAVE_BROTLI_ENCODE_H
+  b_stream bstrm;
+#endif
 } stats_state;
 
 static char *
@@ -106,6 +154,57 @@ nstr(const char *s)
   char *mys = (char *)TSmalloc(strlen(s) + 1);
   strcpy(mys, s);
   return mys;
+}
+
+#if HAVE_BROTLI_ENCODE_H
+encoding_format
+init_br(stats_state *my_state)
+{
+  my_state->bstrm.br = NULL;
+
+  my_state->bstrm.br = BrotliEncoderCreateInstance(NULL, NULL, NULL);
+  if (!my_state->bstrm.br) {
+    TSDebug(PLUGIN_NAME, "Brotli Encoder Instance Failed");
+    return NONE;
+  }
+  BrotliEncoderSetParameter(my_state->bstrm.br, BROTLI_PARAM_QUALITY, BROTLI_COMPRESSION_LEVEL);
+  BrotliEncoderSetParameter(my_state->bstrm.br, BROTLI_PARAM_LGWIN, BROTLI_LGW);
+  my_state->bstrm.next_in   = NULL;
+  my_state->bstrm.avail_in  = 0;
+  my_state->bstrm.total_in  = 0;
+  my_state->bstrm.next_out  = NULL;
+  my_state->bstrm.avail_out = 0;
+  my_state->bstrm.total_out = 0;
+  return BR;
+}
+#endif
+
+encoding_format
+init_gzip(stats_state *my_state, int mode)
+{
+  my_state->zstrm.next_in   = Z_NULL;
+  my_state->zstrm.avail_in  = 0;
+  my_state->zstrm.total_in  = 0;
+  my_state->zstrm.next_out  = Z_NULL;
+  my_state->zstrm.avail_out = 0;
+  my_state->zstrm.total_out = 0;
+  my_state->zstrm.zalloc    = Z_NULL;
+  my_state->zstrm.zfree     = Z_NULL;
+  my_state->zstrm.opaque    = Z_NULL;
+  my_state->zstrm.data_type = Z_ASCII;
+  int err = deflateInit2(&my_state->zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, mode, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
+  if (err != Z_OK) {
+    TSDebug(PLUGIN_NAME, "gzip intialization failed");
+    return NONE;
+  } else {
+    TSDebug(PLUGIN_NAME, "gzip initialized succesfully");
+    if (mode == GZIP_MODE) {
+      return GZIP;
+    } else if (mode == DEFLATE_MODE) {
+      return DEFLATE;
+    }
+  }
+  return NONE;
 }
 
 static void
@@ -120,6 +219,7 @@ stats_cleanup(TSCont contp, stats_state *my_state)
     TSIOBufferDestroy(my_state->resp_buffer);
     my_state->resp_buffer = NULL;
   }
+
   TSVConnClose(my_state->net_vc);
   TSfree(my_state);
   TSContDestroy(contp);
@@ -145,17 +245,45 @@ stats_add_data_to_resp_buffer(const char *s, stats_state *my_state)
 }
 
 static const char RESP_HEADER_JSON[] = "HTTP/1.0 200 Ok\r\nContent-Type: text/json\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV[]  = "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_JSON_GZIP[] =
+  "HTTP/1.0 200 Ok\r\nContent-Type: text/json\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_JSON_DEFLATE[] =
+  "HTTP/1.0 200 Ok\r\nContent-Type: text/json\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_JSON_BR[] =
+  "HTTP/1.0 200 Ok\r\nContent-Type: text/json\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_CSV[] = "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_CSV_GZIP[] =
+  "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_CSV_DEFLATE[] =
+  "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
+static const char RESP_HEADER_CSV_BR[] =
+  "HTTP/1.0 200 Ok\r\nContent-Type: text/csv\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
 
 static int
 stats_add_resp_header(stats_state *my_state)
 {
   switch (my_state->output) {
   case JSON_OUTPUT:
-    return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
+    if (my_state->encoding == GZIP) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_GZIP, my_state);
+    } else if (my_state->encoding == DEFLATE) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_DEFLATE, my_state);
+    } else if (my_state->encoding == BR) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_BR, my_state);
+    } else {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
+    }
     break;
   case CSV_OUTPUT:
-    return stats_add_data_to_resp_buffer(RESP_HEADER_CSV, my_state);
+    if (my_state->encoding == GZIP) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_GZIP, my_state);
+    } else if (my_state->encoding == DEFLATE) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_DEFLATE, my_state);
+    } else if (my_state->encoding == BR) {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_BR, my_state);
+    } else {
+      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV, my_state);
+    }
     break;
   default:
     TSError("stats_add_resp_header: Unknown output format");
@@ -295,12 +423,77 @@ json_out_stats(stats_state *my_state)
   APPEND("  }\n}\n");
 }
 
+#if HAVE_BROTLI_ENCODE_H
+// Takes an input stats state struct holding the uncompressed
+// stats values. Compresses and copies it back into the state struct
+static void
+br_out_stats(stats_state *my_state)
+{
+  size_t outputsize = BrotliEncoderMaxCompressedSize(my_state->output_bytes);
+  uint8_t inputbuf[my_state->output_bytes];
+  uint8_t outputbuf[outputsize];
+
+  memset(&inputbuf, 0, sizeof(inputbuf));
+  memset(&outputbuf, 0, sizeof(outputbuf));
+
+  int64_t inputbytes = TSIOBufferReaderCopy(my_state->resp_reader, &inputbuf, my_state->output_bytes);
+
+  // Consume existing uncompressed buffer now that it has been stored to
+  // free up the buffer to contain the compressed data
+  int64_t toconsume = TSIOBufferReaderAvail(my_state->resp_reader);
+  TSIOBufferReaderConsume(my_state->resp_reader, toconsume);
+  my_state->output_bytes -= toconsume;
+  BROTLI_BOOL err = BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, inputbytes, inputbuf,
+                                          &outputsize, outputbuf);
+
+  if (err == BROTLI_FALSE) {
+    TSDebug(PLUGIN_NAME, "brotli compress error");
+  }
+  my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, outputsize);
+  BrotliEncoderDestroyInstance(my_state->bstrm.br);
+}
+#endif
+
+// Takes an input stats state struct holding the uncompressed
+// stats values. Compresses and copies it back into the state struct
+static void
+gzip_out_stats(stats_state *my_state)
+{
+  char inputbuf[my_state->output_bytes];
+  char outputbuf[deflateBound(&my_state->zstrm, my_state->output_bytes)];
+  memset(&inputbuf, 0, sizeof(inputbuf));
+  memset(&outputbuf, 0, sizeof(outputbuf));
+
+  int64_t inputbytes = TSIOBufferReaderCopy(my_state->resp_reader, &inputbuf, my_state->output_bytes);
+
+  // Consume existing uncompressed buffer now that it has been stored to
+  // free up the buffer to contain the compressed data
+  int64_t toconsume = TSIOBufferReaderAvail(my_state->resp_reader);
+  TSIOBufferReaderConsume(my_state->resp_reader, toconsume);
+
+  my_state->output_bytes -= toconsume;
+  my_state->zstrm.avail_in  = inputbytes;
+  my_state->zstrm.avail_out = sizeof(outputbuf);
+  my_state->zstrm.next_in   = (Bytef *)inputbuf;
+  my_state->zstrm.next_out  = (Bytef *)outputbuf;
+  int err                   = deflate(&my_state->zstrm, Z_FINISH);
+  if (err != Z_STREAM_END) {
+    TSDebug(PLUGIN_NAME, "deflate error: %d", err);
+  }
+
+  err = deflateEnd(&my_state->zstrm);
+  if (err != Z_OK) {
+    TSDebug(PLUGIN_NAME, "deflate end err: %d", err);
+  }
+
+  my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, my_state->zstrm.total_out);
+}
+
 static void
 csv_out_stats(stats_state *my_state)
 {
-  const char *version;
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), csv_out_stat, my_state);
-  version = TSTrafficServerVersionGet();
+  const char *version = TSTrafficServerVersionGet();
   APPEND_STAT_CSV("version", "%s", version);
 }
 
@@ -309,7 +502,6 @@ stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (my_state->body_written == 0) {
-      TSDebug(PLUGIN_NAME, "plugin adding response body");
       my_state->body_written = 1;
       switch (my_state->output) {
       case JSON_OUTPUT:
@@ -322,6 +514,15 @@ stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
         TSError("stats_process_write: Unknown output type\n");
         break;
       }
+
+      if ((my_state->encoding == GZIP) || (my_state->encoding == DEFLATE)) {
+        gzip_out_stats(my_state);
+      }
+#if HAVE_BROTLI_ENCODE_H
+      else if (my_state->encoding == BR) {
+        br_out_stats(my_state);
+      }
+#endif
       TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
     }
     TSVIOReenable(my_state->write_vio);
@@ -359,7 +560,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   config_t *config;
   TSHttpTxn txnp = (TSHttpTxn)edata;
   TSMBuffer reqp;
-  TSMLoc hdr_loc = NULL, url_loc = NULL, accept_field = NULL;
+  TSMLoc hdr_loc = NULL, url_loc = NULL, accept_field = NULL, accept_encoding_field = NULL;
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
   TSDebug(PLUGIN_NAME, "in the read stuff");
@@ -392,9 +593,9 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   /* This is us -- register our intercept */
   TSDebug(PLUGIN_NAME, "Intercepting request");
 
-  icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
   my_state = (stats_state *)TSmalloc(sizeof(*my_state));
   memset(my_state, 0, sizeof(*my_state));
+  icontp = TSContCreate(stats_dostuff, TSMutexCreate());
 
   accept_field     = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT);
   my_state->output = JSON_OUTPUT; // default to json output
@@ -411,6 +612,31 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
     }
   }
 
+  // Check for Accept Encoding and init
+  accept_encoding_field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  my_state->encoding    = NONE;
+  if (accept_encoding_field != TS_NULL_MLOC) {
+    int len         = -1;
+    const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_encoding_field, -1, &len);
+    if (strstr(str, "deflate") != NULL) {
+      TSDebug(PLUGIN_NAME, "Saw deflate in accept encoding");
+      my_state->encoding = init_gzip(my_state, DEFLATE_MODE);
+    } else if (strstr(str, "gzip") != NULL) {
+      TSDebug(PLUGIN_NAME, "Saw gzip in accept encoding");
+      my_state->encoding = init_gzip(my_state, GZIP_MODE);
+    }
+#if HAVE_BROTLI_ENCODE_H
+    else if (strstr(str, "br") != NULL) {
+      TSDebug(PLUGIN_NAME, "Saw br in accept encoding");
+      my_state->encoding = init_br(my_state);
+    }
+#endif
+    else {
+      my_state->encoding = NONE;
+    }
+  }
+  TSDebug(PLUGIN_NAME, "Finished AE check");
+
   TSContDataSet(icontp, my_state);
   TSHttpTxnIntercept(icontp, txnp);
   goto cleanup;
@@ -426,6 +652,9 @@ cleanup:
   }
   if (accept_field) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, accept_field);
+  }
+  if (accept_encoding_field) {
+    TSHandleMLocRelease(reqp, TS_NULL_MLOC, accept_encoding_field);
   }
   TSHttpTxnReenable(txnp, reenable);
   return 0;
