@@ -1189,7 +1189,6 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigLongLong(c.oride.transaction_active_timeout_in, "proxy.config.http.transaction_active_timeout_in");
   HttpEstablishStaticConfigLongLong(c.oride.transaction_active_timeout_out, "proxy.config.http.transaction_active_timeout_out");
-  HttpEstablishStaticConfigLongLong(c.accept_no_activity_timeout, "proxy.config.http.accept_no_activity_timeout");
 
   HttpEstablishStaticConfigLongLong(c.oride.background_fill_active_timeout, "proxy.config.http.background_fill_active_timeout");
   HttpEstablishStaticConfigFloat(c.oride.background_fill_threshold, "proxy.config.http.background_fill_completed_threshold");
@@ -1461,7 +1460,6 @@ HttpConfig::reconfigure()
   params->oride.transaction_active_timeout_out      = m_master.oride.transaction_active_timeout_out;
   params->oride.websocket_active_timeout            = m_master.oride.websocket_active_timeout;
   params->oride.websocket_inactive_timeout          = m_master.oride.websocket_inactive_timeout;
-  params->accept_no_activity_timeout                = m_master.accept_no_activity_timeout;
   params->oride.background_fill_active_timeout      = m_master.oride.background_fill_active_timeout;
   params->oride.background_fill_threshold           = m_master.oride.background_fill_threshold;
 

@@ -169,6 +169,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
 int
 ProtocolProbeSessionAccept::mainEvent(int event, void *data)
 {
+  static int no_activity_timeout = 0;
   if (event == NET_EVENT_ACCEPT) {
     ink_assert(data);
 
@@ -176,7 +177,12 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     NetVConnection *netvc          = static_cast<NetVConnection *>(data);
     ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, nullptr, nullptr);
 
-    // XXX we need to apply accept inactivity timeout here ...
+    // The connection has completed, set the accept inactivity timeout here to watch over the difference between the
+    // connection set up and the first transaction..
+    if (no_activity_timeout == 0) {
+      REC_ReadConfigInteger(no_activity_timeout, "proxy.config.http.accept_no_activity_timeout");
+    }
+    netvc->set_inactivity_timeout(HRTIME_SECONDS(no_activity_timeout));
 
     if (!probe->reader->is_read_avail_more_than(0)) {
       Debug("http", "probe needs data, read..");
