@@ -1409,26 +1409,36 @@ ConditionStringLiteral::eval(const Resources &res)
   return static_cast<const MatcherType *>(_matcher)->test(_literal);
 }
 
-ConditionExpandableString::ConditionExpandableString(const std::string &v)
+// ConditionSessionTransactCount
+void
+ConditionSessionTransactCount::initialize(Parser &p)
 {
-  TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionExpandableString");
-  _value = v;
+  Condition::initialize(p);
+  MatcherType *match     = new MatcherType(_cond_op);
+  std::string const &arg = p.get_arg();
+
+  match->set(strtol(arg.c_str(), nullptr, 10));
+  _matcher = match;
 }
 
 bool
-ConditionExpandableString::eval(const Resources &res)
+ConditionSessionTransactCount::eval(const Resources &res)
 {
-  std::string s;
+  int const val = TSHttpTxnServerSsnTransactionCount(res.txnp);
 
-  append_value(s, res);
-
-  return static_cast<const MatcherType *>(_matcher)->test(s);
+  TSDebug(PLUGIN_NAME, "Evaluating SSN-TXN-COUNT()");
+  return static_cast<MatcherType *>(_matcher)->test(val);
 }
 
 void
-ConditionExpandableString::append_value(std::string &s, const Resources &res)
+ConditionSessionTransactCount::append_value(std::string &s, Resources const &res)
 {
-  VariableExpander ve(_value);
-  s += ve.expand(res);
-  TSDebug(PLUGIN_NAME, "Appending to evaluation value -> %s", s.c_str());
+  char value[32]; // enough for UINT64_MAX
+  int const count  = TSHttpTxnServerSsnTransactionCount(res.txnp);
+  int const length = ink_fast_itoa(count, value, sizeof(value));
+
+  if (length > 0) {
+    TSDebug(PLUGIN_NAME, "Appending SSN-TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
+    s.append(value, length);
+  }
 }
