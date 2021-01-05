@@ -261,7 +261,7 @@ public:
   TLSValidProtocols() : protocol_mask(max_mask) {}
   TLSValidProtocols(unsigned long protocols) : unset(false), protocol_mask(protocols) {}
   int
-  SNIAction(Continuation *cont, const Context &ctx) const override
+  SNIAction(Continuation *cont, const Context & /* ctx */) const override
   {
     if (!unset) {
       auto ssl_vc = dynamic_cast<SSLNetVConnection *>(cont);
