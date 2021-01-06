@@ -2977,7 +2977,7 @@ ts.http.transaction_count
 
 **context:** do_remap/do_os_response or do_global_* or later
 
-**description:** This function returns the number of transaction in this connection
+**description:** This function returns the number of transaction in this client connection
 
 Here is an example
 
@@ -2988,6 +2988,16 @@ Here is an example
         ts.debug(tostring(count))
         return 0
     end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
+ts.http.server_transaction_count
+--------------------------------
+**syntax:** *ts.http.server_transaction_count()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function returns the number of transaction in this server connection
 
 :ref:`TOP <admin-plugins-ts-lua>`
 

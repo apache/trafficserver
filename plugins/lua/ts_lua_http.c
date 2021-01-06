@@ -95,6 +95,7 @@ static int ts_lua_http_is_internal_request(lua_State *L);
 static int ts_lua_http_is_aborted(lua_State *L);
 static int ts_lua_http_skip_remapping_set(lua_State *L);
 static int ts_lua_http_transaction_count(lua_State *L);
+static int ts_lua_http_server_transaction_count(lua_State *L);
 static int ts_lua_http_redirect_url_set(lua_State *L);
 static int ts_lua_http_get_server_state(lua_State *L);
 
@@ -248,6 +249,9 @@ ts_lua_inject_http_misc_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_transaction_count);
   lua_setfield(L, -2, "transaction_count");
+
+  lua_pushcfunction(L, ts_lua_http_server_transaction_count);
+  lua_setfield(L, -2, "server_transaction_count");
 
   lua_pushcfunction(L, ts_lua_http_redirect_url_set);
   lua_setfield(L, -2, "redirect_url_set");
@@ -802,6 +806,19 @@ ts_lua_http_transaction_count(lua_State *L)
   } else {
     lua_pushnil(L);
   }
+
+  return 1;
+}
+
+static int
+ts_lua_http_server_transaction_count(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  int n = TSHttpTxnServerSsnTransactonCount(http_ctx->txnp);
+  lua_pushnumber(L, n);
 
   return 1;
 }
