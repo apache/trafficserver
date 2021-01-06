@@ -40,10 +40,11 @@
 
 #include "rpc/common/JsonRpcApi.h"
 #include "LocalSocketClient.h"
-
 #include "I_EventSystem.h"
 #include "tscore/I_Layout.h"
 #include "diags.i"
+
+#define DEFINE_JSONRPC_PROTO_FUNCTION(fn) ts::Rv<YAML::Node> fn(std::string_view const &id, const YAML::Node &params)
 
 static const std::string sockPath{"/tmp/jsonrpc20_test.sock"};
 static const std::string lockPath{"/tmp/jsonrpc20_test.lock"};
@@ -122,6 +123,56 @@ struct ScopedLocalSocket : LocalSocketClient {
   // TODO, use another path.
   ScopedLocalSocket() : LocalSocketClient(sockPath) {}
   ~ScopedLocalSocket() { LocalSocketClient::disconnect(); }
+
+  template <std::size_t N>
+  void
+  send_in_chunks_with_wait(std::string_view data, std::chrono::milliseconds wait_between_write)
+  {
+    assert(_state == State::CONNECTED || _state == State::SENT);
+
+    auto chunks = chunk<N>(data);
+    for (auto &&part : chunks) {
+      if (::write(_sock, part.c_str(), part.size()) < 0) {
+        Debug(logTag, "error sending message :%s", std ::strerror(errno));
+        break;
+      }
+      std::this_thread::sleep_for(wait_between_write);
+    }
+    _state = State::SENT;
+  }
+
+private:
+  template <typename Iter, std::size_t N>
+  std::array<std::string, N>
+  chunk_impl(Iter from, Iter to)
+  {
+    const std::size_t size = std::distance(from, to);
+    if (size <= N) {
+      return {std::string{from, to}};
+    }
+    std::size_t index{0};
+    std::array<std::string, N> ret;
+    const std::size_t each_part = size / N;
+    const std::size_t remainder = size % N;
+
+    for (auto it = from; it != to;) {
+      if (std::size_t rem = std::distance(it, to); rem == (each_part + remainder)) {
+        ret[index++] = std::string{it, it + rem};
+        break;
+      }
+      ret[index++] = std::string{it, it + each_part};
+      std::advance(it, each_part);
+    }
+
+    return ret;
+  }
+
+  template <std::size_t N>
+  auto
+  chunk(std::string_view v)
+  {
+    return chunk_impl<std::string_view::const_iterator, N>(v.begin(), v.end());
+  }
 };
 
 void
@@ -248,7 +299,9 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
 
     ScopedLocalSocket rpc_client;
     using namespace std::chrono_literals;
-    auto resp = rpc_client.connect().send_in_chunks_with_wait<3>(json, 10ms).read();
+    rpc_client.connect();
+    rpc_client.send_in_chunks_with_wait<3>(json, 10ms);
+    auto resp = rpc_client.read();
     REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "chunk-parts-3"})");
   }
   REQUIRE(rpc::JsonRpc::instance().remove_handler("do_nothing"));

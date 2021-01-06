@@ -27,7 +27,6 @@
 #include <sys/un.h>
 #include <stdio.h>
 
-#include "helpers.h"
 #include <tscore/BufferWriter.h>
 
 static constexpr auto logTag{"rpc.test"};
@@ -45,8 +44,8 @@ static constexpr std::size_t READ_BUFFER_SIZE{32000};
 struct LocalSocketClient {
   using self_reference = LocalSocketClient &;
 
-  LocalSocketClient(std::string path) : _state{State::DISCONNECTED}, _path{std::move(path)} {}
-  LocalSocketClient() : _state{State::DISCONNECTED}, _path{"/tmp/jsonrpc20.sock"} {}
+  LocalSocketClient(std::string path) : _path{std::move(path)}, _state{State::DISCONNECTED} {}
+  LocalSocketClient() : _path{"/tmp/jsonrpc20.sock"}, _state{State::DISCONNECTED} {}
 
   ~LocalSocketClient() { this->disconnect(); }
   self_reference
@@ -76,24 +75,6 @@ struct LocalSocketClient {
   is_connected()
   {
     return _state == State::CONNECTED;
-  }
-
-  template <std::size_t N>
-  self_reference
-  send_in_chunks_with_wait(std::string_view data, std::chrono::milliseconds wait_between_write)
-  {
-    assert(_state == State::CONNECTED || _state == State::SENT);
-
-    auto chunks = chunk<N>(data);
-    for (auto &&part : chunks) {
-      if (::write(_sock, part.c_str(), part.size()) < 0) {
-        Debug(logTag, "error sending message :%s", std ::strerror(errno));
-        break;
-      }
-      std::this_thread::sleep_for(wait_between_write);
-    }
-    _state = State::SENT;
-    return *this;
   }
 
   self_reference
@@ -152,9 +133,10 @@ struct LocalSocketClient {
 
 private:
   enum class State { CONNECTED, DISCONNECTED, SENT, RECEIVED };
-  State _state;
   std::string _path;
-
-  int _sock{-1};
   struct sockaddr_un _server;
+
+protected:
+  State _state;
+  int _sock{-1};
 };
