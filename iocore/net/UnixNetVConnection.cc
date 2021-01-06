@@ -490,7 +490,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
 
     vc->write.triggered = 0;
-    write_signal_error(nh, vc, static_cast<int>(-total_written));
+    write_signal_error(nh, vc, static_cast<int>(-r));
     return;
   } else {                                        // Wrote data.  Finished without error
     int wbe_event = vc->write_buffer_empty_event; // save so we can clear if needed.
@@ -1141,8 +1141,6 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   Continuation *reader_cont     = nullptr;
   Continuation *writer_cont     = nullptr;
   ink_hrtime *signal_timeout_at = nullptr;
-  Event *t                      = nullptr;
-  Event **signal_timeout        = &t;
 
   switch (event) {
   // Treating immediate as inactivity timeout for any
@@ -1163,7 +1161,6 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     break;
   }
 
-  *signal_timeout    = nullptr;
   *signal_timeout_at = 0;
   writer_cont        = write.vio.cont;
 
@@ -1179,7 +1176,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     }
   }
 
-  if (!*signal_timeout && !*signal_timeout_at && !closed && write.vio.op == VIO::WRITE && !(f.shutdown & NET_VC_SHUTDOWN_WRITE) &&
+  if (!*signal_timeout_at && !closed && write.vio.op == VIO::WRITE && !(f.shutdown & NET_VC_SHUTDOWN_WRITE) &&
       reader_cont != write.vio.cont && writer_cont == write.vio.cont) {
     if (write_signal_and_update(signal_event, this) == EVENT_DONE) {
       return EVENT_DONE;
@@ -1415,14 +1412,8 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
 
   Connection hold_con;
   hold_con.move(this->con);
-  SSLNetVConnection *sslvc = dynamic_cast<SSLNetVConnection *>(this);
 
-  SSL *save_ssl = nullptr;
-  if (sslvc) {
-    save_ssl = sslvc->ssl;
-    SSLNetVCDetach(sslvc->ssl);
-    sslvc->ssl = nullptr;
-  }
+  void *arg = this->_prepareForMigration();
 
   // Do_io_close will signal the VC to be freed on the original thread
   // Since we moved the con context, the fd will not be closed
@@ -1431,32 +1422,32 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   this->ep.stop();
 
   // Create new VC:
-  UnixNetVConnection *netvc = nullptr;
-  if (save_ssl) {
-    sslvc = static_cast<SSLNetVConnection *>(sslNetProcessor.allocate_vc(t));
-    if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
-      sslvc->do_io_close();
-      sslvc = nullptr;
-    } else {
-      // Update the SSL fields
-      sslvc->set_context(get_context());
-    }
-    netvc = sslvc;
-  } else {
-    netvc = static_cast<UnixNetVConnection *>(netProcessor.allocate_vc(t));
-    if (netvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
-      netvc->do_io_close();
-      netvc = nullptr;
-    } else {
-      netvc->set_context(get_context());
-    }
+  UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(this->_getNetProcessor()->allocate_vc(t));
+  ink_assert(newvc != nullptr);
+  if (newvc->populate(hold_con, cont, arg) != EVENT_DONE) {
+    newvc->do_io_close();
+    newvc = nullptr;
   }
-  if (netvc) {
-    netvc->options = this->options;
+  if (newvc) {
+    newvc->set_context(get_context());
+    newvc->options = this->options;
   }
+
   // Do not mark this closed until the end so it does not get freed by the other thread too soon
   this->do_io_close();
-  return netvc;
+  return newvc;
+}
+
+void *
+UnixNetVConnection::_prepareForMigration()
+{
+  return nullptr;
+}
+
+NetProcessor *
+UnixNetVConnection::_getNetProcessor()
+{
+  return &netProcessor;
 }
 
 void

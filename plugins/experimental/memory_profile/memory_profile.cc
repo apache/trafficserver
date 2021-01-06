@@ -49,26 +49,28 @@ CallbackHandler(TSCont cont, TSEvent id, void *data)
     TSDebug(PLUGIN_NAME, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
     if (strcmp(PLUGIN_NAME, msg->tag) == 0) { // Message is for us
 #if TS_HAS_JEMALLOC
-      int retval = 0;
-      if (strncmp((char *)msg->data, "dump", msg->data_size) == 0) {
-        if ((retval = mallctl("prof.dump", nullptr, nullptr, nullptr, 0)) != 0) {
-          TSError("mallct(prof.dump) failed retval=%d errno=%d", retval, errno);
-        }
-      } else if (strncmp((char *)msg->data, "activate", msg->data_size) == 0) {
-        bool active = true;
+      if (msg->data_size) {
+        int retval = 0;
+        if (strncmp((char *)msg->data, "dump", msg->data_size) == 0) {
+          if ((retval = mallctl("prof.dump", nullptr, nullptr, nullptr, 0)) != 0) {
+            TSError("mallct(prof.dump) failed retval=%d errno=%d", retval, errno);
+          }
+        } else if (strncmp((char *)msg->data, "activate", msg->data_size) == 0) {
+          bool active = true;
 
-        if ((retval = mallctl("prof.active", nullptr, nullptr, &active, sizeof(active))) != 0) {
-          TSError("mallct(prof.activate) on failed retval=%d errno=%d", retval, errno);
+          if ((retval = mallctl("prof.active", nullptr, nullptr, &active, sizeof(active))) != 0) {
+            TSError("mallct(prof.activate) on failed retval=%d errno=%d", retval, errno);
+          }
+        } else if (strncmp((char *)msg->data, "deactivate", msg->data_size) == 0) {
+          bool active = false;
+          if ((retval = mallctl("prof.active", nullptr, nullptr, &active, sizeof(active))) != 0) {
+            TSError("mallct(prof.activate) off failed retval=%d errno=%d", retval, errno);
+          }
+        } else if (strncmp((char *)msg->data, "stats", msg->data_size) == 0) {
+          malloc_stats_print(nullptr, nullptr, nullptr);
+        } else {
+          TSError("Unexpected msg %*.s", (int)msg->data_size, (char *)msg->data);
         }
-      } else if (strncmp((char *)msg->data, "deactivate", msg->data_size) == 0) {
-        bool active = false;
-        if ((retval = mallctl("prof.active", nullptr, nullptr, &active, sizeof(active))) != 0) {
-          TSError("mallct(prof.activate) off failed retval=%d errno=%d", retval, errno);
-        }
-      } else if (strncmp((char *)msg->data, "stats", msg->data_size) == 0) {
-        malloc_stats_print(nullptr, nullptr, nullptr);
-      } else {
-        TSError("Unexpected msg %*.s", (int)msg->data_size, (char *)msg->data);
       }
 #else
       TSError("Not built with jemalloc");

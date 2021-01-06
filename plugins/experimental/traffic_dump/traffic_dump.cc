@@ -43,14 +43,14 @@ global_message_handler(TSCont contp, TSEvent event, void *edata)
     std::string_view tag(msg->tag, strlen(msg->tag));
     if (tag.substr(0, PLUGIN_PREFIX.size()) == PLUGIN_PREFIX) {
       tag.remove_prefix(PLUGIN_PREFIX.size());
-      if (tag == "sample") {
+      if (tag == "sample" && msg->data_size) {
         const auto new_sample_size = static_cast<int64_t>(strtol(static_cast<char const *>(msg->data), nullptr, 0));
         TSDebug(debug_tag, "TS_EVENT_LIFECYCLE_MSG: Received Msg to change sample size to %" PRId64 "bytes", new_sample_size);
         SessionData::set_sample_pool_size(new_sample_size);
       } else if (tag == "reset") {
         TSDebug(debug_tag, "TS_EVENT_LIFECYCLE_MSG: Received Msg to reset disk usage counter");
         SessionData::reset_disk_usage();
-      } else if (tag == "limit") {
+      } else if (tag == "limit" && msg->data_size) {
         const auto new_max_disk_usage = static_cast<int64_t>(strtol(static_cast<char const *>(msg->data), nullptr, 0));
         TSDebug(debug_tag, "TS_EVENT_LIFECYCLE_MSG: Received Msg to change max disk usage to %" PRId64 "bytes", new_max_disk_usage);
         SessionData::set_max_disk_usage(new_max_disk_usage);

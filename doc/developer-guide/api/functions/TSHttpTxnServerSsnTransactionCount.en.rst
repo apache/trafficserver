@@ -18,33 +18,20 @@
 
 .. default-domain:: c
 
-TSMgmtDataTypeGet
-*****************
+TSHttpTxnServerSsnTransactionCount
+**********************************
 
 Synopsis
 ========
 
-.. code-block:: c
+.. code-block:: cpp
 
     #include <ts/ts.h>
 
-.. function:: TSReturnCode TSMgmtDataTypeGet(const char * var_name, TSRecordDataType * result)
+.. function:: int TSHttpTxnServerSsnTransactionCount(TSHttpTxn txnp)
 
 Description
 ===========
 
-Get the type of a value for a configuration variable. :arg:`var_name` is the name of the variable
-as a null terminated string. The type value is stored in :arg:`result`. The function can return
-:c:data:`TS_ERROR` if :arg:`var_name` is not found.
-
-Types
-=====
-
-Check :type:`TSRecordDataType` for a detailed description.
-
-
-
-Return Values
-=============
-
-:data:`TS_SUCCESS` if the :arg:`var_name` was found, :data:`TS_ERROR` if not.
+Gets  the number of transactions between the Traffic Server proxy and the origin server from a single session.
+Any value greater than zero indicates connection reuse.

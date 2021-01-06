@@ -3055,7 +3055,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       // the reason string being written to the client and a bad CL when reading from cache.
       // I didn't find anywhere this appended reason is being used, so commenting it out.
       /*
-        if (t_state.is_cacheable_and_negative_caching_is_enabled && p->bytes_read == 0) {
+        if (t_state.is_cacheable_due_to_negative_caching_configuration && p->bytes_read == 0) {
         int reason_len;
         const char *reason = t_state.hdr_info.server_response.reason_get(&reason_len);
         if (reason == NULL)
@@ -3111,8 +3111,8 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   }
 
   // turn off negative caching in case there are multiple server contacts
-  if (t_state.is_cacheable_and_negative_caching_is_enabled) {
-    t_state.is_cacheable_and_negative_caching_is_enabled = false;
+  if (t_state.is_cacheable_due_to_negative_caching_configuration) {
+    t_state.is_cacheable_due_to_negative_caching_configuration = false;
   }
 
   // If we had a ground fill, check update our status
@@ -5374,7 +5374,6 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
 
   switch (ua_abort) {
   case HttpTransact::ABORTED:
-  case HttpTransact::MAYBE_ABORTED:
     // More detailed client side abort logging based on event
     switch (event) {
     case VC_EVENT_ERROR:
@@ -6736,7 +6735,7 @@ HttpSM::setup_server_transfer()
 
   nbytes = server_transfer_init(buf, hdr_size);
 
-  if (t_state.is_cacheable_and_negative_caching_is_enabled &&
+  if (t_state.is_cacheable_due_to_negative_caching_configuration &&
       t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NO_CONTENT) {
     int s = sizeof("No Content") - 1;
     buf->write("No Content", s);

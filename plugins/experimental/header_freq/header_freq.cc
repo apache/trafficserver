@@ -195,6 +195,8 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
         TSCont c = TSContCreate(CB_Command_Log, TSMutexCreate());
         TSContDataSet(c, new std::string(static_cast<const char *>(msgp->data), msgp->data_size));
         TSContScheduleOnPool(c, 0, TS_THREAD_POOL_TASK);
+      } else if (msgp->data_size == 0) {
+        TSError("[%s] No command provided.", PLUGIN_NAME);
       } else {
         TSError("[%s] Unknown command '%.*s'", PLUGIN_NAME, static_cast<int>(msgp->data_size),
                 static_cast<const char *>(msgp->data));
