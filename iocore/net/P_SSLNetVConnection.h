@@ -531,6 +531,11 @@ private:
   std::unique_ptr<char[]> _ca_cert_dir;
 
   EventIO async_ep{};
+
+private:
+  void _make_ssl_connection(SSL_CTX *ctx);
+  void _bindSSLObject();
+  void _unbindSSLObject();
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
