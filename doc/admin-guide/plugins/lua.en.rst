@@ -4251,7 +4251,7 @@ ts.mgmt.add_config_file
 
 **context:** do_remap/do_os_response or do_global_* or later.
 
-**description:** This function invokes ``TSMgmtConfigFileAdd`` API. 
+**description:** This function invokes ``TSMgmtConfigFileAdd`` API.
 
 ::
 
