@@ -4245,6 +4245,21 @@ ts.mgmt.get_string
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.mgmt.add_config_file
+-----------------------
+**syntax:** *ts.mgmt.add_config_file(parent, filename)*
+
+**context:** do_remap/do_os_response or do_global_* or later.
+
+**description:** This function invokes ``TSMgmtConfigFileAdd`` API. 
+
+::
+
+    remap = ts.mgmt.get_string('proxy.config.url_remap.filename')
+    ts.mgmt.add_config_file(remap, '/etc/my.config')
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.stat_create
 --------------
 **syntax:** *val = ts.stat_create(STAT_NAME, RECORDDATA_TYPE, PERSISTENT, SYNC)*
