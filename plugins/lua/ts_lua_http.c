@@ -817,7 +817,7 @@ ts_lua_http_server_transaction_count(lua_State *L)
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
-  int n = TSHttpTxnServerSsnTransactonCount(http_ctx->txnp);
+  int n = TSHttpTxnServerSsnTransactionCount(http_ctx->txnp);
   lua_pushnumber(L, n);
 
   return 1;
