@@ -66,6 +66,8 @@ const int BROTLI_LGW               = 16;
 
 static const char *global_hidden_header_name = nullptr;
 
+static TSMutex compress_config_mutex = TSMutexCreate();
+
 // Current global configuration, and the previous one (for cleanup)
 Configuration *cur_config  = nullptr;
 Configuration *prev_config = nullptr;
@@ -665,8 +667,9 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
   int method_length;
   const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
 
-  if (!(method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0)) {
-    debug("method is not GET, not compressible");
+  if (!((method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0) ||
+        (method_length == TS_HTTP_LEN_POST && memcmp(method, TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST) == 0))) {
+    debug("method is not GET or POST, not compressible");
     TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
     return 0;
   }
@@ -964,11 +967,14 @@ load_global_configuration(TSCont contp)
 
   debug("config swapped, old config %p", oldconfig);
 
+  // need a mutex for when there are multiple reloads going on
+  TSMutexLock(compress_config_mutex);
   if (prev_config) {
     debug("deleting previous configuration container, %p", prev_config);
     delete prev_config;
   }
   prev_config = oldconfig;
+  TSMutexUnlock(compress_config_mutex);
 }
 
 static int
