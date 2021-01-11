@@ -64,7 +64,7 @@ public:
   }
 
   // allow cast to bool
-  explicit operator const bool() const { return (*_byte_ptr) & _mask; }
+  explicit operator bool() const { return (*_byte_ptr) & _mask; }
 
   // allows compare with bool
   bool
