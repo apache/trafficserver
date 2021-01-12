@@ -65,7 +65,9 @@ QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t
       return nullptr;
     }
     this->_records_rst_stream_frame(level, *static_cast<QUICRstStreamFrame *>(frame));
-    this->_state.update_with_sending_frame(*frame);
+    if (this->_state.update_with_sending_frame(*frame)) {
+      this->_notify_state_change();
+    }
     this->_is_reset_sent = true;
     return frame;
   }
@@ -149,7 +151,9 @@ QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t
   this->_records_stream_frame(level, *static_cast<QUICStreamFrame *>(frame));
 
   this->_adapter->encourge_write();
-  this->_state.update_with_sending_frame(*frame);
+  if (this->_state.update_with_sending_frame(*frame)) {
+    this->_notify_state_change();
+  }
 
   return frame;
 }
@@ -157,7 +161,9 @@ QUICSendStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t
 QUICConnectionErrorUPtr
 QUICSendStream::recv(const QUICStopSendingFrame &frame)
 {
-  this->_state.update_with_receiving_frame(frame);
+  if (this->_state.update_with_receiving_frame(frame)) {
+    this->_notify_state_change();
+  }
   this->reset(QUICStreamErrorUPtr(new QUICStreamError(this, QUIC_APP_ERROR_CODE_STOPPING)));
   // We received and processed STOP_SENDING frame, so return NO_ERROR here
   return nullptr;
@@ -294,7 +300,9 @@ QUICReceiveStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
       return nullptr;
     }
     this->_records_stop_sending_frame(level, *static_cast<QUICStopSendingFrame *>(frame));
-    this->_state.update_with_sending_frame(*frame);
+    if (this->_state.update_with_sending_frame(*frame)) {
+      this->_notify_state_change();
+    }
     this->_is_stop_sending_sent = true;
     return frame;
   }
@@ -308,7 +316,9 @@ QUICReceiveStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
 QUICConnectionErrorUPtr
 QUICReceiveStream::recv(const QUICRstStreamFrame &frame)
 {
-  this->_state.update_with_receiving_frame(frame);
+  if (this->_state.update_with_receiving_frame(frame)) {
+    this->_notify_state_change();
+  }
   this->_adapter->notify_eos();
   return nullptr;
 }
@@ -366,7 +376,9 @@ QUICReceiveStream::recv(const QUICStreamFrame &frame)
 
     this->_adapter->write(stream_frame->offset(), reinterpret_cast<uint8_t *>(stream_frame->data()->start()),
                           stream_frame->data_length(), stream_frame->has_fin_flag());
-    this->_state.update_with_receiving_frame(*new_frame);
+    if (this->_state.update_with_receiving_frame(*new_frame)) {
+      this->_notify_state_change();
+    }
 
     delete new_frame;
     new_frame = this->_received_stream_frame_buffer.pop();
@@ -388,13 +400,17 @@ QUICReceiveStream::recv(const QUICStreamFrame &frame)
 void
 QUICReceiveStream::on_read()
 {
-  this->_state.update_on_read();
+  if (this->_state.update_on_read()) {
+    this->_notify_state_change();
+  }
 }
 
 void
 QUICReceiveStream::on_eos()
 {
-  this->_state.update_on_eos();
+  if (this->_state.update_on_eos()) {
+    this->_notify_state_change();
+  }
 }
 
 QUICOffset

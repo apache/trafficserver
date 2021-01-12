@@ -36,7 +36,7 @@
 
 class QUICTransportParameters;
 
-class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
+class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator, public QUICStreamStateListener
 {
 public:
   QUICStreamManager(QUICContext *context, QUICApplicationMap *app_map);
@@ -67,6 +67,9 @@ public:
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t timestamp) override;
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
                             size_t current_packet_size, uint32_t timestamp) override;
+
+  // QUICStreamStateListener
+  void on_stream_state_close(const QUICStream *stream) override;
 
 protected:
   virtual bool _is_level_matched(QUICEncryptionLevel level) override;

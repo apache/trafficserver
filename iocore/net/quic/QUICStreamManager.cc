@@ -337,6 +337,7 @@ QUICStreamManager::_find_or_create_stream(QUICStreamId stream_id)
 
     stream = this->_stream_factory.create(stream_id, local_max_stream_data, remote_max_stream_data);
     ink_assert(stream != nullptr);
+    stream->set_state_listener(this);
     this->stream_list.push(stream);
 
     QUICApplication *application = this->_app_map->get(stream_id);
@@ -453,6 +454,34 @@ QUICStreamManager::generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint6
   }
 
   return frame;
+}
+
+void
+QUICStreamManager::on_stream_state_close(const QUICStream *stream)
+{
+  auto direction = this->_context->connection_info()->direction();
+  switch (QUICTypeUtil::detect_stream_type(stream->id())) {
+  case QUICStreamType::SERVER_BIDI:
+    if (direction == NET_VCONNECTION_OUT) {
+      this->_local_max_streams_bidi += 1;
+    }
+    break;
+  case QUICStreamType::SERVER_UNI:
+    if (direction == NET_VCONNECTION_OUT) {
+      this->_local_max_streams_uni += 1;
+    }
+    break;
+  case QUICStreamType::CLIENT_BIDI:
+    if (direction == NET_VCONNECTION_IN) {
+      this->_local_max_streams_bidi += 1;
+    }
+    break;
+  case QUICStreamType::CLIENT_UNI:
+    if (direction == NET_VCONNECTION_IN) {
+      this->_local_max_streams_uni += 1;
+    }
+    break;
+  }
 }
 
 bool

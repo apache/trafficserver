@@ -38,6 +38,7 @@
 #include "QUICDebugNames.h"
 
 class QUICStreamAdapter;
+class QUICStreamStateListener;
 
 /**
  * @brief QUIC Stream
@@ -84,6 +85,8 @@ public:
   virtual void stop_sending(QUICStreamErrorUPtr error);
   virtual void reset(QUICStreamErrorUPtr error);
 
+  void set_state_listener(QUICStreamStateListener *listener);
+
   LINK(QUICStream, link);
 
 protected:
@@ -92,14 +95,23 @@ protected:
   QUICOffset _send_offset                      = 0;
   QUICOffset _reordered_bytes                  = 0;
 
-  QUICStreamAdapter *_adapter = nullptr;
+  QUICStreamAdapter *_adapter              = nullptr;
+  QUICStreamStateListener *_state_listener = nullptr;
 
   virtual void _on_adapter_updated(){};
+
+  void _notify_state_change();
 
   void _records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame);
   void _records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame);
   void _records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame);
   void _records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFrame &frame);
+};
+
+class QUICStreamStateListener
+{
+public:
+  virtual void on_stream_state_close(const QUICStream *stream) = 0;
 };
 
 #define QUICStreamDebug(fmt, ...)                                                                        \

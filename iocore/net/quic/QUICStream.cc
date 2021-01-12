@@ -161,6 +161,20 @@ QUICStream::_records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFra
 }
 
 void
+QUICStream::set_state_listener(QUICStreamStateListener *listener)
+{
+  this->_state_listener = listener;
+}
+
+void
+QUICStream::_notify_state_change()
+{
+  if (this->_state_listener) {
+    // TODO Check own state and call an appropriate callback function
+  }
+}
+
+void
 QUICStream::reset(QUICStreamErrorUPtr error)
 {
 }
