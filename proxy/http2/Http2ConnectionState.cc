@@ -1068,7 +1068,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
     if (error.cls != Http2ErrorClass::HTTP2_ERROR_CLASS_NONE) {
       ip_port_text_buffer ipb;
-      const char *client_ip = ats_ip_ntop(ua_session->get_client_addr(), ipb, sizeof(ipb));
+      const char *client_ip = ats_ip_ntop(ua_session->get_remote_addr(), ipb, sizeof(ipb));
       if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION) {
         if (error.msg) {
           Error("HTTP/2 connection error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s",

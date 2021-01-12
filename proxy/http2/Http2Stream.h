@@ -96,7 +96,7 @@ public:
   // Accessors
   void set_active_timeout(ink_hrtime timeout_in) override;
   void set_inactivity_timeout(ink_hrtime timeout_in) override;
-  void cancel_active_timeout();
+  void cancel_active_timeout() override;
   void cancel_inactivity_timeout() override;
   bool is_active_timeout_expired(ink_hrtime now);
   bool is_inactive_timeout_expired(ink_hrtime now);

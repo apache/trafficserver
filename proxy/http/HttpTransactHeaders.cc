@@ -35,6 +35,7 @@
 #include "HdrUtils.h"
 #include "HttpCompat.h"
 #include "HttpSM.h"
+#include "PoolableSession.h"
 
 #include "I_Machine.h"
 
