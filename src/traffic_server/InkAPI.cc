@@ -4897,8 +4897,8 @@ TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 TSVConn
 TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
 {
-  TSVConn vconn          = nullptr;
-  Http1ServerSession *ss = reinterpret_cast<Http1ServerSession *>(ssnp);
+  TSVConn vconn       = nullptr;
+  PoolableSession *ss = reinterpret_cast<PoolableSession *>(ssnp);
   if (ss != nullptr) {
     vconn = reinterpret_cast<TSVConn>(ss->get_netvc());
   }
@@ -4912,7 +4912,7 @@ TSHttpTxnServerVConnGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   if (sm != nullptr) {
-    Http1ServerSession *ss = sm->get_server_session();
+    PoolableSession *ss = sm->get_server_session();
     if (ss != nullptr) {
       vconn = reinterpret_cast<TSVConn>(ss->get_netvc());
     }

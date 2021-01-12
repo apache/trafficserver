@@ -391,8 +391,8 @@ HSMresult_t
 HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
                                      TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type)
 {
-  Http1ServerSession *to_return = nullptr;
-  HSMresult_t retval            = HSM_NOT_FOUND;
+  PoolableSession *to_return = nullptr;
+  HSMresult_t retval         = HSM_NOT_FOUND;
 
   // Extend the mutex window until the acquired Server session is attached
   // to the SM. Releasing the mutex before that results in race conditions
@@ -447,7 +447,7 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
 
     if (to_return) {
       Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
-      to_return->state = PoolableSession::PS_SSN_IN_USE;
+      to_return->state = PoolableSession::SSN_IN_USE;
       // the attach_server_session will issue the do_io_read under the sm lock
       sm->attach_server_session(to_return);
       retval = HSM_DONE;
