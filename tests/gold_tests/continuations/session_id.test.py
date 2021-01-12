@@ -97,6 +97,7 @@ tr.Processes.Default.ReturnCode = Any(0, 2)
 # them. The test plugin prints an error to this log if it sees duplicate ids.
 # The following is to verify that we encountered the expected ids.
 
+
 def verify_session_count(output):
     global numberOfRequests
     nReq = numberOfRequests * 2
@@ -104,5 +105,6 @@ def verify_session_count(output):
     if len(session_ids) != nReq:
         return "Found {} session_id's, expected {}".format(len(session_ids), nReq)
     return ""
+
 
 ts.Streams.All += Testers.FileContentCallback(verify_session_count, 'verify_session_count')
