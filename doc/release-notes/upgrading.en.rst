@@ -43,7 +43,7 @@ We are moving configurations over to YAML, and thus far, the following configura
 
 In addition, a new file for TLS handshake negotiation configuration is added:
 
-* :file:`sni.yaml` (this was for a while named ssl_server_name.config in Github)
+* :file:`sni.yaml` (this was for a while named ssl_server_name.yaml in Github)
 
 Configuration Settings: records.config
 --------------------------------------
@@ -86,6 +86,15 @@ or modify the `Vary` header on server responses instead.
 * `proxy.config.http.cache.vary_default_images`
 * `proxy.config.http.cache.vary_default_other`
 
+SSLv3 support has been removed
+
+* `proxy.config.ssl.client.SSLv3`
+
+The option to disable the caching of an empty response (zero length body response) has been removed.  Zero length body responses are no
+longer a special case and are handled the same as a response with a non-zero length body.
+
+* `proxy.config.http.cache.allow_empty_doc`
+
 Deprecated records.config settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -114,11 +123,15 @@ The following settings have changed from being `on` by default, to being off:
 * :ts:cv:`proxy.config.ssl.client.TLSv1`
 * :ts:cv:`proxy.config.ssl.client.TLSv1_1`
 
+The default cipher list has changed:
+
+* :ts:cv:`proxy.config.ssl.server.cipher_suite`
+
 
 Metrics
 -------
 
-Renamed or modified metrics
+Renamed or Modified Metrics
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 `proxy.process.http2.current_client_sessions` is renamed to be :ts:stat:`proxy.process.http2.current_client_connections`
@@ -127,6 +140,20 @@ Renamed or modified metrics
 the number current of HTTP/1.1 client requests.  Please use :ts:stat:`proxy.process.http2.current_client_streams` to get the number of current HTTP/2
 client requests.
 
+Removed Metrics
+~~~~~~~~~~~~~~~
+
+The following metrics have been removed.
+
+* `proxy.process.ssl.ssl_error_want_read`
+* `proxy.process.ssl.ssl_error_want_write`
+* `proxy.process.ssl.ssl_error_want_x509_lookup`
+* `proxy.process.ssl.ssl_error_zero_return`
+
+Command Line Options
+--------------------
+`--with-max-api-stats` was replace with `--maxRecords` to specify the total number of metric instead of just the total API metrics to use when running ATS.
+
 Deprecated or Removed Features
 ------------------------------
 
@@ -134,6 +161,11 @@ The following features, configurations and plugins are either removed or depreca
 should be avoided, with the expectation that they will be removed in the next major release of ATS.
 
 Removed the log collation feature along with its configuration settings (`proxy.local.log.collation*`).
+
+Rollback Configuration
+~~~~~~~~~~~~~~~~~~~~~~
+The rollback configuration code was removed in for ATS v9.0.0.  This featured copied the configuration files to have version
+numbers if the end user wanted to rollback to a previous version of the configuration.
 
 API Changes
 -----------
@@ -169,6 +201,28 @@ but if you do run into this, clearing the cache is required.
 
 Plugins
 -------
+
+Promoted Plugins
+~~~~~~~~~~~~~~~~
+
+The following plugins have been promoted from experimental to stable plugins:
+* :ts:cv:`cache_range_requests`
+* :ts:cv:`certifier`
+* :ts:cv:`multiplexer`
+* :ts:cv:`prefetch`
+* :ts:cv:`remap_purge`
+
+Removed Plugins
+~~~~~~~~~~~~~~~
+
+The following plugins have been removed because they are no longer used or maintained:
+* `balancer`
+* `buffer_uplaod`
+* `header_normalize`
+* `hipes`
+* `memcached_remap`
+* `stale_while_revalidate`
+* `mysql_remap`
 
 The following plugins have changes that might require you to change
 configurations.
