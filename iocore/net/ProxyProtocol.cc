@@ -39,6 +39,10 @@ constexpr ts::TextView PPv2_CONNECTION_PREFACE = "\x0D\x0A\x0D\x0A\x00\x0D\x0A\x
 constexpr size_t PPv1_CONNECTION_HEADER_LEN_MIN = 15;
 constexpr size_t PPv2_CONNECTION_HEADER_LEN_MIN = 16;
 
+constexpr ts::TextView PPv1_PROTO_UNKNOWN = "UNKNOWN"sv;
+constexpr ts::TextView PPv1_PROTO_TCP4    = "TCP4"sv;
+constexpr ts::TextView PPv1_PROTO_TCP6    = "TCP6"sv;
+
 /**
    PROXY Protocol v1 Parser
 
@@ -47,15 +51,21 @@ constexpr size_t PPv2_CONNECTION_HEADER_LEN_MIN = 16;
 size_t
 proxy_protocol_v1_parse(ProxyProtocol *pp_info, ts::TextView hdr)
 {
-  //  Find the terminating newline
+  ink_release_assert(hdr.size() >= PPv1_CONNECTION_HEADER_LEN_MIN);
+
+  // Find the terminating newline
   ts::TextView::size_type pos = hdr.find('\n');
   if (pos == hdr.npos) {
-    Debug("proxyprotocol_v1", "ssl_has_proxy_v1: newline not found");
+    Debug("proxyprotocol_v1", "ssl_has_proxy_v1: LF not found");
+    return 0;
+  }
+
+  if (hdr[pos - 1] != '\r') {
+    Debug("proxyprotocol_v1", "ssl_has_proxy_v1: CR not found");
     return 0;
   }
 
   ts::TextView token;
-  in_port_t port;
 
   // All the cases are special and sequence, might as well unroll them.
 
@@ -69,8 +79,28 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, ts::TextView hdr)
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = PREFACE", static_cast<int>(token.size()), token.data());
 
   // The INET protocol family - TCP4, TCP6 or UNKNOWN
-  token = hdr.split_prefix_at(' ');
-  if (0 == token.size()) {
+  if (PPv1_PROTO_UNKNOWN.isPrefixOf(hdr)) {
+    Debug("proxyprotocol_v1", "proxy_protov1_parse: [UNKNOWN] = INET Family");
+
+    // Ignore anything presented before the CRLF
+    pp_info->version = ProxyProtocolVersion::V1;
+
+    return pos + 1;
+  } else if (PPv1_PROTO_TCP4.isPrefixOf(hdr)) {
+    token = hdr.split_prefix_at(' ');
+    if (0 == token.size()) {
+      return 0;
+    }
+
+    pp_info->ip_family = AF_INET;
+  } else if (PPv1_PROTO_TCP6.isPrefixOf(hdr)) {
+    token = hdr.split_prefix_at(' ');
+    if (0 == token.size()) {
+      return 0;
+    }
+
+    pp_info->ip_family = AF_INET6;
+  } else {
     return 0;
   }
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = INET Family", static_cast<int>(token.size()), token.data());
@@ -104,26 +134,29 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, ts::TextView hdr)
   }
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Source Port", static_cast<int>(token.size()), token.data());
 
-  if (0 == (port = ts::svtoi(token))) {
-    Debug("proxyprotocol_v1", "proxy_protov1_parse: src port [%d] token [%.*s] failed to parse", port,
+  in_port_t src_port = ts::svtoi(token);
+  if (src_port == 0) {
+    Debug("proxyprotocol_v1", "proxy_protov1_parse: src port [%d] token [%.*s] failed to parse", src_port,
           static_cast<int>(token.size()), token.data());
     return 0;
   }
-  pp_info->src_addr.port() = htons(port);
+  pp_info->src_addr.port() = htons(src_port);
 
   // Next is the TCP destination port represented as a decimal number in the range of [0..65535] inclusive.
   // Final trailer is CR LF so split at CR.
   token = hdr.split_prefix_at('\r');
-  if (0 == token.size()) {
+  if (0 == token.size() || token.find(0x20) != token.npos) {
     return 0;
   }
   Debug("proxyprotocol_v1", "proxy_protov1_parse: [%.*s] = Destination Port", static_cast<int>(token.size()), token.data());
-  if (0 == (port = ts::svtoi(token))) {
-    Debug("proxyprotocol_v1", "proxy_protov1_parse: dst port [%d] token [%.*s] failed to parse", port,
+
+  in_port_t dst_port = ts::svtoi(token);
+  if (dst_port == 0) {
+    Debug("proxyprotocol_v1", "proxy_protov1_parse: dst port [%d] token [%.*s] failed to parse", dst_port,
           static_cast<int>(token.size()), token.data());
     return 0;
   }
-  pp_info->dst_addr.port() = htons(port);
+  pp_info->dst_addr.port() = htons(dst_port);
 
   pp_info->version = ProxyProtocolVersion::V1;
 
