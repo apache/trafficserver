@@ -30,7 +30,7 @@ Synopsis
 
 .. function:: TSSslSession TSSslSessionGet(const TSSslSessionID * sessionid)
 .. function:: int TSSslSessionGetBuffer(const TSSslSessionID * sessionid, char * buffer, int * len_ptr)
-.. function:: TSReturnCode TSSslSessionInsert(const TSSslSessionID * sessionid, TSSslSession addSession)
+.. function:: TSReturnCode TSSslSessionInsert(const TSSslSessionID * sessionid, TSSslSession addSession, TSSslConnection ssl_conn)
 .. function:: TSReturnCode TSSslSessionRemove(const TSSslSessionID * sessionid)
 .. function:: void TSSslTicketKeyUpdate(char * ticketData, int ticketDataLength)
 
@@ -54,7 +54,8 @@ returns 0.
 
 :func:`TSSslSessionGetBuffer` returns the session information serialized in a buffer that can be shared between processes.
 When the function is called len_ptr should point to the amount of space
-available in the buffer parameter.  The function returns the amount of data really needed to encode the session.  len_ptr is updated with the amount of data actually stored in the buffer.
+available in the buffer parameter.  The function returns the amount of data really needed to encode the session.  len_ptr is
+updated with the amount of data actually stored in the buffer.
 :func:`TSSslSessionGetBuffer` will not overrun the provided buffer, but the caller should ensure that the data's size was not larger
 than the buffer by comparing the returned value with the value of len_ptr. If the returned value is larger than the buffer size,
 then the session data did not fit in the buffer and the session data stored in the buffer output variable should not be used.
@@ -69,5 +70,5 @@ If there is already an entry in the cache for the session id key, it is first re
 updating the session ticket encrypt key file with new data and reloading the current ATS process.  However, this API does not
 require writing session ticket encryption keys to disk.
 
-If both the ticket key files and :func:`TSSslTicketKeyUpdate` are used to update session ticket encryption keys, ATS will use the most recent update
-regardless if whether it was made by file and configuration reload or API.
+If both the ticket key files and :func:`TSSslTicketKeyUpdate` are used to update session ticket encryption keys, ATS will use the
+most recent update regardless if whether it was made by file and configuration reload or API.
