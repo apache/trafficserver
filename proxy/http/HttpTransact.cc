@@ -380,6 +380,10 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
 inline static void
 simple_or_unavailable_server_retry(HttpTransact::State *s)
 {
+  if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
+    return; // must return now if the response isn't valid, before calling http_hdr_status_get on uninitialized data
+  }
+
   HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
   switch (response_is_retryable(s, server_response)) {
   case PARENT_RETRY_SIMPLE:
