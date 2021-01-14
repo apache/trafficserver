@@ -55,8 +55,6 @@ private:
   virtual bool _set_info_callback(SSL_CTX *ctx) override;
   virtual bool _set_npn_callback(SSL_CTX *ctx) override;
 
-  static int ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                                      unsigned inlen, void *);
   static int ssl_cert_cb(SSL *ssl, void *arg);
   static int ssl_sni_cb(SSL *ssl, int *ad, void *arg);
 };

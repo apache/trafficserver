@@ -463,6 +463,36 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
   return SSL_TLSEXT_ERR_OK;
 }
 
+// NextProtocolNegotiation TLS extension callback. The NPN extension
+// allows the client to select a preferred protocol, so all we have
+// to do here is tell them what out protocol set is.
+int
+ssl_next_protos_advertised_callback(SSL *ssl, const unsigned char **out, unsigned *outlen, void *)
+{
+  ALPNSupport *alpns = ALPNSupport::getInstance(ssl);
+
+  ink_assert(alpns);
+  if (alpns) {
+    return alpns->advertise_next_protocol(ssl, out, outlen);
+  }
+
+  return SSL_TLSEXT_ERR_NOACK;
+}
+
+int
+ssl_alpn_select_callback(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen,
+                         void *)
+{
+  ALPNSupport *alpns = ALPNSupport::getInstance(ssl);
+
+  ink_assert(alpns);
+  if (alpns) {
+    return alpns->select_next_protocol(ssl, out, outlen, in, inlen);
+  }
+
+  return SSL_TLSEXT_ERR_NOACK;
+}
+
 #if TS_USE_GET_DH_2048_256 == 0
 /* Build 2048-bit MODP Group with 256-bit Prime Order Subgroup from RFC 5114 */
 static DH *
@@ -873,6 +903,7 @@ SSLInitializeLibrary()
   ssl_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
 
   TLSBasicSupport::initialize();
+  ALPNSupport::initialize();
   TLSSessionResumptionSupport::initialize();
   TLSSNISupport::initialize();
 
@@ -1434,14 +1465,14 @@ SSLMultiCertConfigLoader::_set_info_callback(SSL_CTX *ctx)
 bool
 SSLMultiCertConfigLoader::_set_npn_callback(SSL_CTX *ctx)
 {
-  SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, nullptr);
+  SSL_CTX_set_next_protos_advertised_cb(ctx, ssl_next_protos_advertised_callback, nullptr);
   return true;
 }
 
 bool
 SSLMultiCertConfigLoader::_set_alpn_callback(SSL_CTX *ctx)
 {
-  SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, nullptr);
+  SSL_CTX_set_alpn_select_cb(ctx, ssl_alpn_select_callback, nullptr);
   return true;
 }
 

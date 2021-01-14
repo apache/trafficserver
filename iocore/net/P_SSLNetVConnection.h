@@ -143,9 +143,6 @@ public:
   ////////////////////////////////////////////////////////////
   SSLNetVConnection();
   ~SSLNetVConnection() override {}
-  static int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned *outlen, void *);
-  static int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                                  unsigned inlen, void *);
 
   bool
   getSSLClientRenegotiationAbort() const
