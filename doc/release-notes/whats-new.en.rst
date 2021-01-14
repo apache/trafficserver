@@ -71,7 +71,8 @@ Parent Selection
 ~~~~~~~~~~~~~~~~
 
 A new directive, `ignore_self_detect`, is added to the :file:`parent.config` format. This allows you to parent proxy to
-sibling proxies, without creating loops.
+sibling proxies, without creating loops. The setting for :ts:cv:`proxy.config.http.parent_proxy_routing_enable`
+is no longer needed, it's implicit by the usage of the :file:`parent.config` configuration file.
 
 
 HTTP/2 settings
@@ -118,6 +119,13 @@ ssh            ssah
 cssh           cssah
 ============== ===================
 
+Metric scaling
+~~~~~~~~~~~~~~
+
+In previous versions of ATS, you had to rebuild the software to increase the maximum
+number of metrics that the system could handle. This is replaced with a new command
+line option for :program:`traffic_manager`, `--maxRecords`. The old build configure
+option for this, `--with-max-api-stats`, is also eliminated.
 
 Plugins
 -------
@@ -126,6 +134,11 @@ xdebug
 ~~~~~~
 
 * A new directive, `fwd=<n>` to control the number of hops the header is forwarded for.
+
+cert_reporting_tool
+~~~~~~~~~~~~~~~~~~~
+
+This is a new plugin to log examine and log information on loaded certificates.
 
 Plugin APIs
 -----------
