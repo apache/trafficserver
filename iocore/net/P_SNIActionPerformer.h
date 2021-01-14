@@ -113,6 +113,9 @@ public:
       } else {
         ssl_netvc->set_tunnel_destination(destination, tunnel_decrypt, tls_upstream);
       }
+      if (ssl_netvc->has_tunnel_destination() && !ssl_netvc->decrypt_tunnel()) {
+        ssl_netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
+      }
     }
     return SSL_TLSEXT_ERR_OK;
   }
@@ -266,9 +269,9 @@ public:
     if (!unset) {
       auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
       Debug("ssl_sni", "TLSValidProtocol param 0%x", static_cast<unsigned int>(this->protocol_mask));
-      ssl_vc->protocol_mask_set = true;
-      ssl_vc->protocol_mask     = protocol_mask;
+      ssl_vc->set_valid_tls_protocols(protocol_mask, TLSValidProtocols::max_mask);
     }
+
     return SSL_TLSEXT_ERR_OK;
   }
 };

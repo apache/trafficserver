@@ -373,13 +373,6 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
     return SSL_CLIENT_HELLO_ERROR;
   }
 
-  if (netvc->has_tunnel_destination() && !netvc->decrypt_tunnel()) {
-    netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-  }
-  if (netvc->protocol_mask_set) {
-    setTLSValidProtocols(s, netvc->protocol_mask, TLSValidProtocols::max_mask);
-  }
-
   bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
 
   if (!reenabled) {
@@ -455,14 +448,6 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
 
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  if (!netvc || netvc->ssl != ssl) {
-    Debug("ssl.error", "ssl_servername_callback call back on stale netvc");
-    return SSL_TLSEXT_ERR_ALERT_FATAL;
-  }
-  if (netvc->has_tunnel_destination() && !netvc->decrypt_tunnel()) {
-    netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-  }
   return SSL_TLSEXT_ERR_OK;
 }
 
@@ -1087,13 +1072,6 @@ SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 #if TS_USE_HELLO_CB
   SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
 #endif
-}
-
-void
-setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask)
-{
-  SSL_set_options(ssl, proto_mask);
-  SSL_clear_options(ssl, max_mask & ~proto_mask);
 }
 
 void

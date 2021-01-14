@@ -472,6 +472,13 @@ public:
     return _ca_cert_dir.get();
   }
 
+  void
+  set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask)
+  {
+    SSL_set_options(this->ssl, proto_mask);
+    SSL_clear_options(this->ssl, max_mask & ~proto_mask);
+  }
+
 protected:
   const IpEndpoint &
   _getLocalEndpoint() override
