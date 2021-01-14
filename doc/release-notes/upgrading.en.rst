@@ -79,8 +79,8 @@ The following settings are simply gone, and have no purpose:
 * `proxy.config.http.server_tcp_init_cwnd` (see Solaris section below)
 * `proxy.config.http.parent_proxy_routing_enable` (implicit by use of :file:`parent.config`)
 
-All the `Vary` related configuration overrides were eliminated, prefer to set this via the origin server,
-or modify the `Vary` header on server responses instead.
+All the `Vary` related configuration overrides were eliminated, prefer to set this via the origin server, or modify the `Vary`
+header on server responses instead.
 
 * `proxy.config.http.cache.vary_default_text`
 * `proxy.config.http.cache.vary_default_images`
@@ -136,9 +136,9 @@ Renamed or Modified Metrics
 
 `proxy.process.http2.current_client_sessions` is renamed to be :ts:stat:`proxy.process.http2.current_client_connections`
 
-:ts:stat:`proxy.process.http.current_client_transactions` used to record both the number current of HTTP/1.1 and HTTP/2 requests.  Now it only records
-the number current of HTTP/1.1 client requests.  Please use :ts:stat:`proxy.process.http2.current_client_streams` to get the number of current HTTP/2
-client requests.
+:ts:stat:`proxy.process.http.current_client_transactions` used to record both the number current of HTTP/1.1 and HTTP/2 requests.
+Now it only records the number current of HTTP/1.1 client requests.  Please use
+:ts:stat:`proxy.process.http2.current_client_streams` to get the number of current HTTP/2 client requests.
 
 Removed Metrics
 ~~~~~~~~~~~~~~~
@@ -152,7 +152,12 @@ The following metrics have been removed.
 
 Command Line Options
 --------------------
-`--with-max-api-stats` was replace with `--maxRecords` to specify the total number of metric instead of just the total API metrics to use when running ATS.
+
+The following command line options were either renamed or removed.
+
+* `--with-max-api-stats` was replace with `--maxRecords` to specify the total number of metric instead of just the total API metrics
+to use when running ATS.
+* `--read_core` was removed and gdb should be used instead.
 
 Deprecated or Removed Features
 ------------------------------
@@ -164,8 +169,11 @@ Removed the log collation feature along with its configuration settings (`proxy.
 
 Rollback Configuration
 ~~~~~~~~~~~~~~~~~~~~~~
-The rollback configuration code was removed in for ATS v9.0.0.  This featured copied the configuration files to have version
-numbers if the end user wanted to rollback to a previous version of the configuration.
+The rollback configuration code was removed in for ATS v9.0.0.  This featured copied the configuration files to have version numbers
+if the end user wanted to rollback to a previous version of the configuration.
+
+`records.config.shadow` and `records.config.snap` support has also been removed in order to clean up and simply loading of
+configuration files.
 
 API Changes
 -----------
@@ -196,8 +204,8 @@ in a remap rule would get the pristine URL, and subsequent plugins would get the
 receive the remapped URL. If you are using a plugin that modifies the cache key, e.g. :ref:`admin-plugins-cachekey`, if it was
 evaluated first in a remap rule, the behavior (input) changes, and therefore, cache keys can change!
 
-Caches created with ATS v2.x are incompatible and can't be loading into ATS v9.0.0 or later. We feel that this is an unlikely scenario,
-but if you do run into this, clearing the cache is required.
+Caches created with ATS v2.x are incompatible and can't be loading into ATS v9.0.0 or later. We feel that this is an unlikely
+scenario, but if you do run into this, clearing the cache is required.
 
 Plugins
 -------
