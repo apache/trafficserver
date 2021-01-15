@@ -33,8 +33,14 @@ New Features
 
 This version of ATS has a number of new features (details below), but we're particularly excited about the following features:
 
-* Experimental QUIC support (draft 27 and 29).
-* TLS v1.3 0RTT support.
+* Experimental QUIC support (draft 27 and 29)
+* TLS v1.3 0RTT support
+* Significant HTTP/2 performance improvement
+* PROXY protocol support
+* Significant improvments to parent selection, including a new configuration file :file:`strategies.yaml`
+* Several new plugins
+
+A new infrastructure and tool chain for end-to-end testing and replaying traffic is introduced, the Proxy Verifier.
 
 PROXY protocol
 ~~~~~~~~~~~~~~
@@ -66,6 +72,8 @@ The following new configurations are available to rate limit some potentially ab
 
 * :ts:cv:`proxy.config.http2.max_settings_per_frame`
 * :ts:cv:`proxy.config.http2.max_settings_per_minute`
+
+Overall, the performance for HTTP/2 is significantly better in ATS v9.x.
 
 Parent Selection
 ~~~~~~~~~~~~~~~~
@@ -123,6 +131,13 @@ augmented significantly, the full list of host matches now are:
                  applicable for TLS sessions.
    ============= ===================================================================
 
+RAM cache per volumes
+~~~~~~~~~~~~~~~~~~~~~
+
+In :file:`volume.config`, you can now specify if a volume should have a RAM cache or not. This
+can be particularly useful when a volume is assigned to a RAM disk already. The new option flag
+is `ramcache`, with a value of `true` or `false`.
+
 Incompatible records.config settings
 ------------------------------------
 
@@ -148,7 +163,6 @@ These are all gone, and replaced with the following set of configurations:
 * :ts:cv:`proxy.config.http.per_server.connection.min`
 
 
-
 Logging and Metrics
 -------------------
 
@@ -168,6 +182,28 @@ the entire header. This table shows the additions, and what they correspond with
 
 A new log field for the elliptic curve was introduced, `cqssu`. Also related to TLS, the
 new log field `cssn` allows logging the SNI server name from the client handshake.
+
+New origin metrics
+~~~~~~~~~~~~~~~~~~
+
+A large number of metrics were added for the various cases where ATS closes an origin
+connection. This includes:
+
+* ts:stat:`proxy.process.http.origin_shutdown.pool_lock_contention`
+* ts:stat:`proxy.process.http.origin_shutdown.migration_failure`
+* ts:stat:`proxy.process.http.origin_shutdown.tunnel_server`
+* ts:stat:`proxy.process.http.origin_shutdown.tunnel_server_no_keep_alive`
+* ts:stat:`proxy.process.http.origin_shutdown.tunnel_server_eos`
+* ts:stat:`proxy.process.http.origin_shutdown.tunnel_server_plugin_tunnel`
+* ts:stat:`proxy.process.http.origin_shutdown.tunnel_transform_read`
+* ts:stat:`proxy.process.http.origin_shutdown.release_no_sharing`
+* ts:stat:`proxy.process.http.origin_shutdown.release_no_keep_alive`
+* ts:stat:`proxy.process.http.origin_shutdown.release_invalid_repsonse`
+* ts:stat:`proxy.process.http.origin_shutdown.release_invalid_request`
+* ts:stat:`proxy.process.http.origin_shutdown.release_modified`
+* ts:stat:`proxy.process.http.origin_shutdown.release_misc`
+* ts:stat:`proxy.process.http.origin_shutdown.cleanup_entry`
+* ts:stat:`proxy.process.http.origin_shutdown.tunnel_abort`
 
 Metric scaling
 ~~~~~~~~~~~~~~
@@ -190,6 +226,30 @@ A set of new metrics for SSL and TLS versions have been added:
 
 Plugins
 -------
+
+statichit
+~~~~~~~~~
+
+This is a new, generic static file serving plugin. This can replace other plugins as well,
+for example the :program:`healthchecks`.
+
+maxmind
+~~~~~~~
+
+A new geo-ACL plugin was merged, :program:`maxmind`. This should support the newer APIs
+from MaxMind, and should likely replace the old plugin in future release of ATS.
+
+memory_profile
+~~~~~~~~~~~~~~
+
+This is a helper plugin for debugging and analyzing memory usage with e.g. JEMalloc.
+
+slice
+~~~~~
+
+The :program:`slice` plugin has had a major overhaul, and has a significant number of new features
+and configurations. If you use the slice plugin, we recommend you take a look at the
+documentation again.
 
 xdebug
 ~~~~~~
@@ -249,6 +309,12 @@ We have also added two new alert mechanisms for plugins:
     void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2)
     void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2)
 
+A new API was added to allow control over whether the plugin will participate in the
+dynamic plugin reload mechanism:
+
+.. code-block:: c
+
+    TSReturnCode TSPluginDSOReloadEnable(int enabled)
 
 User Arg Slots
 ~~~~~~~~~~~~~~
