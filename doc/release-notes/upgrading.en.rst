@@ -51,7 +51,7 @@ Configuration Settings: records.config
 These are the changes that are most likely to cause problems during an upgrade. Take special care making sure you have updated your
 configurations accordingly.
 
-Connection management
+Connection Management
 ~~~~~~~~~~~~~~~~~~~~~
 
 The old settings for origin connection management included the following settings:
@@ -69,7 +69,13 @@ These are all gone, and replaced with the following set of configurations:
 * :ts:cv:`proxy.config.http.per_server.connection.queue_delay`
 * :ts:cv:`proxy.config.http.per_server.connection.min`
 
-Removed records.config settings
+
+Renamed records.config Settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* `proxy.config.http.proxy_protocol_whitelist` was renamed to :ts:cv:`proxy.config.http.proxy_protocol_allowlist`
+* `proxy.config.net.max_connections_active_in` was renamed to :ts:cv:`proxy.config.net.max_requests_in`
+
+Removed records.config Settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following settings are simply gone, and have no purpose:
@@ -95,7 +101,11 @@ longer a special case and are handled the same as a response with a non-zero len
 
 * `proxy.config.http.cache.allow_empty_doc`
 
-Deprecated records.config settings
+
+* `proxy.config.ssl.client.verify.server` was deprecated for ATS 8.x and has been removed.  Use
+:ts:cv:`proxy.config.ssl.client.verify.server.properties` instead.
+
+Deprecated records.config Settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following configurations still exist, and functions, but are considered deprecated and will be removed in a future release. We
@@ -113,7 +123,7 @@ The following configurations still exist, and functions, but are considered depr
   * ``proxy.config.cache.volume_filename``
   * ``proxy.config.dns.splitdns.filename``
 
-Settings with new defaults
+Settings With New Defaults
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The following settings have changed from being `on` by default, to being off:
@@ -124,9 +134,16 @@ The following settings have changed from being `on` by default, to being off:
 * :ts:cv:`proxy.config.ssl.client.TLSv1_1`
 
 The default cipher list has changed:
-
 * :ts:cv:`proxy.config.ssl.server.cipher_suite`
 
+* :ts:cv:`proxy.config.exec_thread.autoconfig.scale` went from a value of 1.5 to 1.  This controls the number of worker threads and
+the ratio is now worker thread 1 to 1 processing thread on the CPU or CPUs.
+
+
+Settings with new behavior
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+* :ts:cv:`proxy.config.http.connect_attempts_max_retries_dead_server` specifies the exact number of times a dead server will be
+retried for each new request.  Before ATS tried 1 time more than this setting making it impossible to set the retry value to 0.
 
 Metrics
 -------
@@ -183,14 +200,15 @@ Our APIs are guaranteed to be compatible within major versions, but we do make c
 Removed APIs
 ~~~~~~~~~~~~
 
-* ``TSHttpTxnRedirectRequest()``
+* :func:`TSHttpTxnRedirectRequest`
 
-Renamed or modified APIs
+Renamed or Modified APIs
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-* ``TSVConnSSLConnectionGet()`` is renamed to be :c:func:`TSVConnSslConnectionGet`
-
-* ``TSHttpTxnServerPush()`` now returns a :c:type:`TSReturnCode`
+* :func:`TSVConnSSLConnectionGet` is renamed to be :func:`TSVConnSslConnectionGet`
+* :func:`TSHttpTxnServerPush` now returns a :c:type:`TSReturnCode`
+* :func:`TSContSchedule` and :func:`TSContScheduleAPI` by default will run on the same thread from which they are called.
+* :func:`TSFetchUrl` and :func:`TSFetchCreate` now return a :c:type:`TSFetchSM`
 
 
 Cache
@@ -243,13 +261,23 @@ Header Rewrite
 
 * `header-rewrite-expansion` was removed and replaced with `header-rewrite-concatenations`
 
-Library Dependencies
---------------------
-TCL is no longer required to build ATS.
+Cache Key
+~~~~~~~~~
+* `--ua-blacklist` was renamed to `--ua-blocklist` and `--ua-whitelist` was renamed to `--ua-allowlist`
 
-The minium OpenSSL version to build ATS is now 1.0.2.
+Logging
+-------
+* cqhv has been deprecated and cqpv should be used instead.
 
-Platform specific
+Library Dependencies and Builds
+-------------------------------
+* TCL is no longer required to build ATS.
+* The minium OpenSSL version to build ATS is now 1.0.2.
+* To build the documentation we now require Sphinx 2.0.1
+* CentOS 6 support has been removed.
+* Ubuntu 14.04 support has been removed.
+
+Platform Specific
 -----------------
 
 Solaris is no longer a supported platform, but the code is still there. However, it's unlikely to work, and unless someone takes on
