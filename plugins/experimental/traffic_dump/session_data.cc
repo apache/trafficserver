@@ -213,7 +213,8 @@ SessionData::init(std::string_view log_directory, int64_t max_disk_usage, int64_
 }
 
 std::string
-SessionData::get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_stack, const get_tls_description_f &get_tls_node)
+SessionData::get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_stack, const get_tls_description_f &get_tls_node,
+                                       const handle_http_version_f &handle_http_version)
 {
   std::ostringstream protocol_description;
   protocol_description << R"("protocol":[)";
@@ -244,7 +245,7 @@ SessionData::get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_
       // See whether an HTTP version is provided. If so, record it.
       auto const it = http_tag_to_version.find(std::string(protocol_string));
       if (it != http_tag_to_version.end()) {
-        this->http_version_in_client_stack = it->second;
+        handle_http_version(it->second);
       }
     }
   }
@@ -259,7 +260,8 @@ SessionData::get_client_protocol_description(TSHttpSsn client_ssnp)
     [&client_ssnp](int n, const char **result, int *actual) {
       return TSHttpSsnClientProtocolStackGet(client_ssnp, n, result, actual);
     },
-    [&client_ssnp]() { return get_client_tls_description(client_ssnp); });
+    [&client_ssnp]() { return get_client_tls_description(client_ssnp); },
+    [this](std::string_view http_version) { this->http_version_in_client_stack = http_version; });
 }
 
 std::string
@@ -269,7 +271,7 @@ SessionData::get_server_protocol_description(TSHttpTxn server_txnp)
     [&server_txnp](int n, const char **result, int *actual) {
       return TSHttpTxnServerProtocolStackGet(server_txnp, n, result, actual);
     },
-    [&server_txnp]() { return get_server_tls_description(server_txnp); });
+    [&server_txnp]() { return get_server_tls_description(server_txnp); }, [](std::string_view http_version) {});
 }
 
 SessionData::SessionData()

@@ -100,7 +100,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     IpMap *pp_ipmap;
     pp_ipmap = probeParent->proxy_protocol_ipmap;
 
-    if (netvc->get_is_proxy_protocol()) {
+    if (netvc->get_is_proxy_protocol() && netvc->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
       Debug("proxyprotocol", "ioCompletionEvent: proxy protocol is enabled on this port");
       if (pp_ipmap->count() > 0) {
         Debug("proxyprotocol", "ioCompletionEvent: proxy protocol has a configured allowlist of trusted IPs - checking");
@@ -120,8 +120,8 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
               "ernabled on this port - processing all connections");
       }
 
-      if (http_has_proxy_v1(reader, netvc)) {
-        Debug("proxyprotocol", "ioCompletionEvent: http has proxy_v1 header");
+      if (netvc->has_proxy_protocol(reader)) {
+        Debug("proxyprotocol", "ioCompletionEvent: http has proxy protocol header");
         netvc->set_remote_addr(netvc->get_proxy_protocol_src_addr());
       } else {
         Debug("proxyprotocol",

@@ -192,6 +192,7 @@ private:
 
   using get_protocol_stack_f  = std::function<TSReturnCode(int, const char **, int *)>;
   using get_tls_description_f = std::function<std::string()>;
+  using handle_http_version_f = std::function<void(std::string_view)>;
 
   /** Create the protocol stack for a session.
    *
@@ -201,10 +202,16 @@ private:
    * @param[in] get_protocol_stack The function to use to populate a protocol
    * stack.
    *
+   * @param[in] get_tls_node The function to use to populate the tls node.
+   *
+   * @param[in] handle_http_version A function that performs arbitrary logic
+   * given the HTTP/2 protocol version.
+   *
    * @return The description of the protocol stack and True if the stack
    * contained an HTTP description, false otherwise.
    */
-  std::string get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_stack, const get_tls_description_f &get_tls_node);
+  std::string get_protocol_stack_helper(const get_protocol_stack_f &get_protocol_stack, const get_tls_description_f &get_tls_node,
+                                        const handle_http_version_f &handle_http_version);
 
   /** Get the JSON string that describes the client session stack.
    *

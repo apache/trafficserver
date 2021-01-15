@@ -235,7 +235,9 @@ traffic_ctl plugin
    :cpp:enumerator:`TSLifecycleHookID::TS_LIFECYCLE_MSG_HOOK` will receive a callback for that hook.
    The :arg:`TAG` and :arg:`DATA` will be available to the plugin hook processing. It is expected
    that plugins will use :arg:`TAG` to select relevant messages and determine the format of the
-   :arg:`DATA`.
+   :arg:`DATA`. The :arg:`DATA` is optional and may not be available to consume, if not available then size will be 0
+   and the data will be NULL. Any extra passed value beside the tag and the optional data will be ignored.
+   Check :c:type:`TSPluginMsg` for more info.
 
 traffic_ctl host
 ----------------

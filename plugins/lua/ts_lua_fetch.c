@@ -262,9 +262,19 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
           return 0;
         }
       }
+    } else {
+      if (TS_ERROR == TSIpStringToAddr(TS_LUA_FETCH_CLIENT_ADDRPORT, TS_LUA_FETCH_CLIENT_ADDRPORT_LEN, &clientaddr)) {
+        TSError("[ts_lua][%s] Default client ip parse failed!", TS_LUA_DEBUG_TAG);
+        return 0;
+      }
     }
 
     lua_pop(L, 1);
+  } else {
+    if (TS_ERROR == TSIpStringToAddr(TS_LUA_FETCH_CLIENT_ADDRPORT, TS_LUA_FETCH_CLIENT_ADDRPORT_LEN, &clientaddr)) {
+      TSError("[ts_lua][%s] Default client ip parse failed!", TS_LUA_DEBUG_TAG);
+      return 0;
+    }
   }
 
   /* option */

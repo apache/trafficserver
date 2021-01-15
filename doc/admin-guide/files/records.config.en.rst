@@ -994,7 +994,19 @@ mptcp
    ========== =================================================================
    ``global`` Re-use sessions from a global pool of all server sessions.
    ``thread`` Re-use sessions from a per-thread pool.
+   ``hybrid`` Try to work as a global pool, but release server sessions to the
+              per-thread pool if there is lock contention on the global pool.
    ========== =================================================================
+
+
+   Setting :ts:cv:`proxy.config.http.server_session_sharing.pool` to global can reduce
+   the number of connections to origin for some traffic loads.  However, if many
+   execute threads are active, the thread contention on the global pool can reduce the
+   lifetime of connections to origin and reduce effective origin connection reuse.
+
+   For a hybrid pool, the operation starts as the global pool, but sessons are returned
+   to the local thread pool if the global pool lock is not acquired rather than just
+   closing the origin connection as is the case in standard global mode.
 
 .. ts:cv:: CONFIG proxy.config.http.attach_server_session_to_client INT 0
    :overridable:
@@ -1652,11 +1664,9 @@ Negative Response Caching
    ====================== =====================================================
    ``204``                No Content
    ``305``                Use Proxy
-   ``400``                Bad Request
    ``403``                Forbidden
    ``404``                Not Found
    ``414``                URI Too Long
-   ``405``                Method Not Allowed
    ``500``                Internal Server Error
    ``501``                Not Implemented
    ``502``                Bad Gateway
@@ -1674,7 +1684,7 @@ Negative Response Caching
    How long (in seconds) |TS| keeps the negative responses  valid in cache. This value only affects negative
    responses that do NOT have explicit ``Expires:`` or ``Cache-Control:`` lifetimes set by the server.
 
-.. ts:cv:: CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 405 414 500 501 502 503 504
+.. ts:cv:: CONFIG proxy.config.http.negative_caching_list STRING 204 305 403 404 414 500 501 502 503 504
    :reloadable:
 
    The HTTP status code for negative caching. Default values are mentioned above. The unwanted status codes can be
@@ -1693,7 +1703,7 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
 
-   How long, in seconds, to consider a stale cached document valid if If
+   How long, in seconds, to consider a stale cached document valid if
    :ts:cv:`proxy.config.http.negative_revalidating_enabled` is enabled and |TS| receives a negative
    (``5xx`` only) response from the origin server during revalidation.
 
@@ -1884,7 +1894,7 @@ Security
 
    You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`host_sni_policy attribute<override-host-sni-policy>` action.
 
-   Currently, only the verify_client policy is checked for host name and SNI matching.
+   Currently, only the verify_client and ip_allow policies are checked for host name and SNI matching.
 
 Cache Control
 =============
@@ -3900,6 +3910,27 @@ HTTP/2 Configuration
    Specifies the minimum average window increment |TS| allows. The average will be calculated based on the last 5 WINDOW_UPDATE frames.
    Clients that send smaller window increments lower than this limit will be immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+
+.. ts:cv:: CONFIG proxy.config.http2.write_buffer_block_size INT 262144
+   :reloadable:
+
+   Specifies the size of a buffer block that is used for buffering outgoing
+   HTTP/2 frames. The size will be rounded up based on power of 2.
+
+.. ts:cv:: CONFIG proxy.config.http2.write_size_threshold FLOAT 0.5
+   :reloadable:
+
+   Specifies the size threshold for triggering write operation for sending HTTP/2
+   frames. The default value is 0.5 and it measn write operation is going to be
+   triggered when half or more of the buffer is occupied.
+
+.. ts:cv:: CONFIG proxy.config.http2.write_time_threshold INT 100
+   :reloadable:
+   :units: milliseconds
+
+   Specifies the time threshold for triggering write operation for sending HTTP/2
+   frames. Write operation will be triggered at least once every this configured
+   number of millisecond regardless of pending data size.
 
 HTTP/3 Configuration
 ====================

@@ -179,6 +179,9 @@ nitpick_ignore = [('c:type', 'int64_t'),
                   ('cpp:identifier', 'F'),  # template arg
                   ('cpp:identifier', 'Args'),  # variadic template arg
                   ('cpp:identifier', 'Rest'),  # variadic template arg
+                  ('c:type', 'uint64_t'),
+                  ('c:type', 'uint8_t'),
+                  ('c:type', 'int32_t')
                   ]
 
 # Autolink issue references.

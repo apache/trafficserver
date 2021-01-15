@@ -549,13 +549,16 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       // header may have been successfully parsed but with caveats
       switch (data->m_blockstate) {
         // request new version of current internal slice
-      case BlockState::PendingInt: {
-        request_block(contp, data);
-        return;
-      } break;
-        // request new version of reference slice
+      case BlockState::PendingInt:
       case BlockState::PendingRef: {
-        request_block(contp, data);
+        if (!request_block(contp, data)) {
+          data->m_blockstate = BlockState::Fail;
+          if (data->m_dnstream.m_write.isOpen()) {
+            TSVIOReenable(data->m_dnstream.m_write.m_vio);
+          } else {
+            shutdown(contp, data);
+          }
+        }
         return;
       } break;
       case BlockState::ActiveRef: {
@@ -644,29 +647,33 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       // Don't immediately request the next slice if the client
       // isn't keeping up
 
-      bool start_next_block = true;
+      if (data->m_dnstream.m_write.isOpen()) {
+        bool start_next_block = true;
 
-      // throttle condition
-      if (data->m_config->m_throttle && data->m_dnstream.m_read.isOpen()) {
+        // check throttle condition
         TSVIO const output_vio    = data->m_dnstream.m_write.m_vio;
         int64_t const output_done = TSVIONDoneGet(output_vio);
         int64_t const output_sent = data->m_bytessent;
         int64_t const threshout   = data->m_config->m_blockbytes;
+        int64_t const buffered    = output_sent - output_done;
 
-        if (threshout < (output_sent - output_done)) {
+        if (threshout < buffered) {
           start_next_block = false;
-          DEBUG_LOG("%p handle_server_resp: throttling %" PRId64, data, (output_sent - output_done));
+          DEBUG_LOG("%p handle_server_resp: throttling %" PRId64, data, buffered);
+        }
+
+        if (start_next_block) {
+          if (!request_block(contp, data)) {
+            data->m_blockstate = BlockState::Fail;
+            abort(contp, data);
+            return;
+          }
         }
       }
-
-      if (start_next_block) {
-        request_block(contp, data);
-      }
-
     } else {
       data->m_upstream.close();
       data->m_blockstate = BlockState::Done;
-      if (!data->m_dnstream.m_read.isOpen()) {
+      if (!data->m_dnstream.m_write.isOpen()) {
         shutdown(contp, data);
       }
     }

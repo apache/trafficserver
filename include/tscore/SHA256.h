@@ -26,25 +26,30 @@
 #include "tscore/ink_code.h"
 #include "tscore/ink_defs.h"
 #include "tscore/CryptoHash.h"
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 
 class SHA256Context : public ats::CryptoContextBase
 {
 protected:
-  SHA256_CTX _ctx;
+  EVP_MD_CTX *ctx;
 
 public:
-  SHA256Context() { SHA256_Init(&_ctx); }
+  SHA256Context()
+  {
+    ctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
+  }
+  ~SHA256Context() { EVP_MD_CTX_free(ctx); }
   /// Update the hash with @a data of @a length bytes.
   bool
   update(void const *data, int length) override
   {
-    return SHA256_Update(&_ctx, data, length);
+    return EVP_DigestUpdate(ctx, data, length);
   }
   /// Finalize and extract the @a hash.
   bool
   finalize(CryptoHash &hash) override
   {
-    return SHA256_Final(hash.u8, &_ctx);
+    return EVP_DigestFinal_ex(ctx, hash.u8, nullptr);
   }
 };

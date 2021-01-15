@@ -40,8 +40,13 @@ public:
   static void bind(SSL *ssl, TLSSessionResumptionSupport *srs);
   static void unbind(SSL *ssl);
 
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+  int processSessionTicket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx,
+                           int enc);
+#else
   int processSessionTicket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                            int enc);
+#endif
   bool getSSLSessionCacheHit() const;
   ssl_curve_id getSSLCurveNID() const;
 
@@ -57,10 +62,17 @@ private:
   bool _sslSessionCacheHit = false;
   int _sslCurveNID         = NID_undef;
 
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+  int _setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,
+                             EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx);
+  int _getSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,
+                             EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx);
+#else
   int _setSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,
                              EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx);
   int _getSessionInformation(ssl_ticket_key_block *keyblock, SSL *ssl, unsigned char *keyname, unsigned char *iv,
                              EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx);
+#endif
 
   void _setSSLSessionCacheHit(bool state);
   void _setSSLCurveNID(ssl_curve_id curve_nid);

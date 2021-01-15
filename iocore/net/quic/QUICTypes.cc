@@ -355,7 +355,7 @@ QUICResumptionToken::cid() const
   return QUICTypeUtil::read_QUICConnectionId(this->_token + (1 + 20 + 4), this->_token_len - (1 + 20 + 4));
 }
 
-const ink_hrtime
+ink_hrtime
 QUICResumptionToken::expire_time() const
 {
   return QUICIntUtil::read_nbytes_as_uint(this->_token + (1 + 20), 4);

@@ -1359,15 +1359,15 @@ LogAccess::marshal_proxy_protocol_version(char *buf)
   int len                 = INK_MIN_ALIGN;
 
   if (m_http_sm) {
-    NetVConnection::ProxyProtocolVersion ver = m_http_sm->t_state.pp_info.proxy_protocol_version;
+    ProxyProtocolVersion ver = m_http_sm->t_state.pp_info.version;
     switch (ver) {
-    case NetVConnection::ProxyProtocolVersion::V1:
+    case ProxyProtocolVersion::V1:
       version_str = "V1";
       break;
-    case NetVConnection::ProxyProtocolVersion::V2:
+    case ProxyProtocolVersion::V2:
       version_str = "V2";
       break;
-    case NetVConnection::ProxyProtocolVersion::UNDEFINED:
+    case ProxyProtocolVersion::UNDEFINED:
     default:
       version_str = "-";
       break;
@@ -1387,7 +1387,7 @@ int
 LogAccess::marshal_proxy_protocol_src_ip(char *buf)
 {
   sockaddr const *ip = nullptr;
-  if (m_http_sm && m_http_sm->t_state.pp_info.proxy_protocol_version != NetVConnection::ProxyProtocolVersion::UNDEFINED) {
+  if (m_http_sm && m_http_sm->t_state.pp_info.version != ProxyProtocolVersion::UNDEFINED) {
     ip = &m_http_sm->t_state.pp_info.src_addr.sa;
   }
   return marshal_ip(buf, ip);
@@ -1399,7 +1399,7 @@ int
 LogAccess::marshal_proxy_protocol_dst_ip(char *buf)
 {
   sockaddr const *ip = nullptr;
-  if (m_http_sm && m_http_sm->t_state.pp_info.proxy_protocol_version != NetVConnection::ProxyProtocolVersion::UNDEFINED) {
+  if (m_http_sm && m_http_sm->t_state.pp_info.version != ProxyProtocolVersion::UNDEFINED) {
     ip = &m_http_sm->t_state.pp_info.dst_addr.sa;
   }
   return marshal_ip(buf, ip);

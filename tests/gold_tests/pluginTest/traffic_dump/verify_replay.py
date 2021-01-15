@@ -79,6 +79,26 @@ def verify_there_was_a_transaction(replay_json):
     return True
 
 
+def verify_http_information(replay_json):
+    """
+    Verify various expected HTTP information.
+    """
+    for session in replay_json['sessions']:
+        top_layer = session['protocol'][0]
+        is_http2 = top_layer['name'] == 'http' and top_layer['version'] == '2'
+        if is_http2:
+            # Every HTTP/2 client request should have a stream-id node.
+            for transaction in session['transactions']:
+                client_request = transaction['client-request']
+                try:
+                    client_request['http2']['stream-id']
+                except KeyError:
+                    print("An HTTP/2 transaction did not have a stream-id node.")
+                    return False
+
+    return True
+
+
 def verify_request_target(replay_json, request_target):
     """
     Verify that the 'url' element of the first transaction contains the request target.
@@ -316,6 +336,9 @@ def main():
     # Thus we do the following sanity check to make sure that the replay file
     # appears to have some transaction in it.
     if not verify_there_was_a_transaction(replay_json):
+        return 1
+
+    if not verify_http_information(replay_json):
         return 1
 
     if args.request_target and not verify_request_target(replay_json, args.request_target):

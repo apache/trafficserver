@@ -1298,6 +1298,9 @@ TS_CHECK_CRYPTO_SET_CIPHERSUITES
 # Check for openssl early data support
 TS_CHECK_EARLY_DATA
 
+# Check for openssl session ticket support
+TS_CHECK_SESSION_TICKET
+
 saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 
@@ -1307,6 +1310,7 @@ AC_CHECK_FUNCS([ \
   CRYPTO_set_mem_functions \
   HMAC_CTX_new \
   X509_get0_signature \
+  ERR_get_error_all \
 ])
 
 AC_CHECK_FUNC([ASN1_STRING_get0_data], [],

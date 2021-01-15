@@ -32,6 +32,8 @@
 
 #include "ProxyConfig.h"
 
+#include "tscore/HostLookup.h"
+
 /* ---------------------------
    forward declarations ...
    --------------------------- */
@@ -88,9 +90,9 @@ struct SplitDNS : public ConfigInfo {
      required by the alleged fast
      path
      ---------------------------- */
-  bool m_bEnableFastPath = false;
-  void *m_pxLeafArray    = nullptr;
-  int m_numEle           = 0;
+  bool m_bEnableFastPath               = false;
+  HostLookup::LeafArray *m_pxLeafArray = nullptr;
+  int m_numEle                         = 0;
 };
 
 /* --------------------------------------------------------------

@@ -56,7 +56,7 @@ ssl_new_session(TSSslSessionID &sid)
   char session_data[SSL_SESSION_MAX_DER];
   const auto buffer_length = TSSslSessionGetBuffer(&sid, session_data, &session_ret_len);
   if (buffer_length == 0) {
-    TSError("Failed to find a session buffer.");
+    TSDebug(PLUGIN, "Failed to find a session buffer.");
     return 0;
   } else if (buffer_length > session_ret_len) {
     TSError("Session data is too large. Its size is: %d but our max buffer size is: %d.", buffer_length, SSL_SESSION_MAX_DER);

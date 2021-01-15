@@ -113,6 +113,9 @@ union head_p {
  * -> A -> B -> C -> D
  * If the version check is not there, the list will look like
  * -> C -> D after the pop, which will result in the loss of "B"
+ *
+ * For more information, see:  https://en.wikipedia.org/wiki/ABA_problem .
+ * (Versioning is a case of the "tagged state reference" workaround.)
  */
 #define ZERO_HEAD_P(_x)
 
@@ -208,7 +211,10 @@ struct InkAtomicList {
 #define INK_ATOMICLIST_EMPTY(_x) (!((FREELIST_POINTER((_x.head)))))
 #endif
 
+// WARNING: the "name" string is not copied, it has to be a statically-stored constant string.
+//
 inkcoreapi void ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next);
+
 inkcoreapi void *ink_atomiclist_push(InkAtomicList *l, void *item);
 void *ink_atomiclist_pop(InkAtomicList *l);
 inkcoreapi void *ink_atomiclist_popall(InkAtomicList *l);

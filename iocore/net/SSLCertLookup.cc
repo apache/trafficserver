@@ -28,6 +28,7 @@
 #include "tscore/MatcherUtils.h"
 #include "tscore/Regex.h"
 #include "tscore/Trie.h"
+#include "tscore/ink_config.h"
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
 #include "tscore/TestBox.h"
@@ -216,7 +217,7 @@ fail:
 ssl_ticket_key_block *
 ssl_create_ticket_keyblock(const char *ticket_key_path)
 {
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAS_TLS_SESSION_TICKET
   ats_scoped_str ticket_key_data;
   int ticket_key_len;
   ssl_ticket_key_block *keyblock = nullptr;
@@ -241,10 +242,10 @@ fail:
   ticket_block_free(keyblock);
   return nullptr;
 
-#else  /* !TS_HAVE_OPENSSL_SESSION_TICKETS */
+#else  /* !TS_HAS_TLS_SESSION_TICKET */
   (void)ticket_key_path;
   return nullptr;
-#endif /* TS_HAVE_OPENSSL_SESSION_TICKETS */
+#endif /* TS_HAS_TLS_SESSION_TICKET */
 }
 
 SSLCertContext::SSLCertContext(SSLCertContext const &other)

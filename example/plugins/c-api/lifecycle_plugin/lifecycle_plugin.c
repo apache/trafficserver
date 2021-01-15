@@ -49,6 +49,10 @@ CallbackHandler(TSCont this, TSEvent id, void *data)
   case TS_EVENT_LIFECYCLE_MSG: {
     TSPluginMsg *msg = (TSPluginMsg *)data;
     TSDebug(PLUGIN_NAME, "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
+    if (msg->data_size == 0) {
+      TSDebug(PLUGIN_NAME, "Message data is not available");
+    }
+
     break;
   }
   default:

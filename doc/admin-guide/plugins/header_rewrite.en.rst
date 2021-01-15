@@ -482,6 +482,15 @@ Refer to `Requests vs. Responses`_ for more information on determining the
 context in which the transaction's URL is evaluated.  The ``<part>`` may be
 specified according to the options documented in `URL Parts`_.
 
+SSN-TXN-COUNT
+~~~~~~~~~~~~~
+::
+
+    cond %{SSN-TXN-COUNT} <operand>
+
+Returns the number of transactions between the Traffic Server proxy and the origin server from a single session.
+Any value greater than zero indicates connection reuse.
+
 Condition Operands
 ------------------
 

@@ -33,6 +33,7 @@
 #include "P_Net.h"
 #include "records/P_RecUtils.h"
 #include <records/I_RecHttp.h>
+#include "HttpSessionManager.h"
 
 #define HttpEstablishStaticConfigStringAlloc(_ix, _n) \
   REC_EstablishStaticConfigStringAlloc(_ix, _n);      \
@@ -164,7 +165,8 @@ http_config_enum_mask_read(const char *name, MgmtByte &value)
 
 static const ConfigEnumPair<TSServerSessionSharingPoolType> SessionSharingPoolStrings[] = {
   {TS_SERVER_SESSION_SHARING_POOL_GLOBAL, "global"},
-  {TS_SERVER_SESSION_SHARING_POOL_THREAD, "thread"}};
+  {TS_SERVER_SESSION_SHARING_POOL_THREAD, "thread"},
+  {TS_SERVER_SESSION_SHARING_POOL_HYBRID, "hybrid"}};
 
 int HttpConfig::m_id = 0;
 HttpConfigParams HttpConfig::m_master;
@@ -1036,7 +1038,7 @@ set_negative_caching_list(const char *name, RecDataT dtype, RecData data, HttpCo
   HttpStatusBitset set;
   // values from proxy.config.http.negative_caching_list
   if (0 == strcasecmp("proxy.config.http.negative_caching_list", name) && RECD_STRING == dtype && data.rec_string) {
-    // parse the list of status code
+    // parse the list of status codes
     ts::TextView status_list(data.rec_string, strlen(data.rec_string));
     auto is_sep{[](char c) { return isspace(c) || ',' == c || ';' == c; }};
     while (!status_list.ltrim_if(is_sep).empty()) {
@@ -1153,6 +1155,7 @@ HttpConfig::startup()
   http_config_enum_mask_read("proxy.config.http.server_session_sharing.match", c.oride.server_session_sharing_match);
   HttpEstablishStaticConfigStringAlloc(c.oride.server_session_sharing_match_str, "proxy.config.http.server_session_sharing.match");
   http_config_enum_read("proxy.config.http.server_session_sharing.pool", SessionSharingPoolStrings, c.server_session_sharing_pool);
+  httpSessionManager.set_pool_type(c.server_session_sharing_pool);
 
   RecRegisterConfigUpdateCb("proxy.config.http.insert_forwarded", &http_insert_forwarded_cb, &c);
   {

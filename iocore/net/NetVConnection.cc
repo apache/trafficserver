@@ -33,6 +33,9 @@
 #include "P_Net.h"
 #include "ts/apidefs.h"
 
+////
+// NetVConnection
+//
 Action *
 NetVConnection::send_OOB(Continuation *, char *, int)
 {
@@ -45,6 +48,60 @@ NetVConnection::cancel_OOB()
   return;
 }
 
+/**
+   PROXY Protocol check with IOBufferReader
+
+   If the buffer has PROXY Protocol, it will be consumed by this function.
+ */
+bool
+NetVConnection::has_proxy_protocol(IOBufferReader *reader)
+{
+  char buf[PPv1_CONNECTION_HEADER_LEN_MAX + 1];
+  ts::TextView tv;
+  tv.assign(buf, reader->memcpy(buf, sizeof(buf), 0));
+
+  size_t len = proxy_protocol_parse(&this->pp_info, tv);
+
+  if (len > 0) {
+    reader->consume(len);
+    return true;
+  }
+
+  return false;
+}
+
+/**
+   PROXY Protocol check with buffer
+
+   If the buffer has PROXY Protocol, it will be consumed by this function.
+ */
+bool
+NetVConnection::has_proxy_protocol(char *buffer, int64_t *bytes_r)
+{
+  ts::TextView tv;
+  tv.assign(buffer, *bytes_r);
+
+  size_t len = proxy_protocol_parse(&this->pp_info, tv);
+
+  if (len <= 0) {
+    *bytes_r = -EAGAIN;
+    return false;
+  }
+
+  *bytes_r -= len;
+  if (*bytes_r <= 0) {
+    *bytes_r = -EAGAIN;
+  } else {
+    Debug("ssl", "Moving %" PRId64 " characters remaining in the buffer from %p to %p", *bytes_r, buffer + len, buffer);
+    memmove(buffer, buffer + len, *bytes_r);
+  }
+
+  return true;
+}
+
+////
+// NetVCOptions
+//
 std::string_view
 NetVCOptions::get_proto_string() const
 {

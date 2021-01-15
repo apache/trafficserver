@@ -107,7 +107,6 @@ enum tcp_congestion_control_t { CLIENT_SIDE, SERVER_SIDE };
 class UnixNetVConnection : public NetVConnection, public NetEvent
 {
 public:
-  int64_t outstanding() override;
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
 
@@ -118,28 +117,6 @@ public:
 
   Action *send_OOB(Continuation *cont, char *buf, int len) override;
   void cancel_OOB() override;
-
-  virtual void
-  setSSLHandshakeWantsRead(bool /* flag */)
-  {
-    return;
-  }
-  virtual bool
-  getSSLHandshakeWantsRead()
-  {
-    return false;
-  }
-  virtual void
-  setSSLHandshakeWantsWrite(bool /* flag */)
-  {
-    return;
-  }
-
-  virtual bool
-  getSSLHandshakeWantsWrite()
-  {
-    return false;
-  }
 
   const char *
   get_server_name() const override
@@ -291,11 +268,6 @@ public:
   bool from_accept_thread  = false;
   NetAccept *accept_object = nullptr;
 
-  // es - origin_trace associated connections
-  bool origin_trace;
-  const sockaddr *origin_trace_addr;
-  int origin_trace_port;
-
   int startEvent(int event, Event *e);
   int acceptEvent(int event, Event *e);
   int mainEvent(int event, Event *e);
@@ -320,23 +292,9 @@ public:
 
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
 
-  void
-  setOriginTrace(bool t)
-  {
-    origin_trace = t;
-  }
-
-  void
-  setOriginTraceAddr(const sockaddr *addr)
-  {
-    origin_trace_addr = addr;
-  }
-
-  void
-  setOriginTracePort(int port)
-  {
-    origin_trace_port = port;
-  }
+private:
+  virtual void *_prepareForMigration();
+  virtual NetProcessor *_getNetProcessor();
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;

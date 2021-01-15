@@ -23,7 +23,7 @@
 
 #include "SSLSessionTicket.h"
 
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAS_TLS_SESSION_TICKET
 
 #include "P_SSLCertLookup.h"
 #include "TLSSessionResumptionSupport.h"
@@ -40,8 +40,13 @@ ssl_session_ticket_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, i
  * a mechanism to present the ticket back to the server.
  * */
 int
+#ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
+ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, EVP_MAC_CTX *hctx,
+                            int enc)
+#else
 ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv, EVP_CIPHER_CTX *cipher_ctx, HMAC_CTX *hctx,
                             int enc)
+#endif
 {
   TLSSessionResumptionSupport *srs = TLSSessionResumptionSupport::getInstance(ssl);
 
@@ -57,4 +62,4 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   }
 }
 
-#endif /* TS_HAVE_OPENSSL_SESSION_TICKETS */
+#endif /* TS_HAS_TLS_SESSION_TICKET */

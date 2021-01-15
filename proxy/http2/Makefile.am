@@ -66,11 +66,12 @@ TESTS = $(check_PROGRAMS)
 # Be careful if you change the order. Details in GitHub #6666
 test_libhttp2_LDADD = \
 	libhttp2.a \
-	$(top_builddir)/iocore/eventsystem/libinkevent.a \
-	$(top_builddir)/proxy/hdrs/libhdrs.a \
-	$(top_builddir)/src/tscore/libtscore.la \
-	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/proxy/hdrs/libhdrs.a \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@HWLOC_LIBS@

@@ -22,12 +22,13 @@
  */
 
 #include "I_NetVConnection.h"
+#include "ProxyProtocol.h"
 
 inline sockaddr const *
 NetVConnection::get_remote_addr()
 {
   if (!got_remote_addr) {
-    if (pp_info.proxy_protocol_version != ProxyProtocolVersion::UNDEFINED) {
+    if (pp_info.version != ProxyProtocolVersion::UNDEFINED) {
       set_remote_addr(get_proxy_protocol_src_addr());
     } else {
       set_remote_addr();

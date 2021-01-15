@@ -477,6 +477,7 @@ HttpTunnel::reset()
   }
 #endif
 
+  call_sm       = false;
   num_producers = 0;
   num_consumers = 0;
   ink_zero(consumers);
@@ -1332,9 +1333,21 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     if (c->producer && c->producer->handler_state == 0) {
       if (event == VC_EVENT_WRITE_COMPLETE) {
         c->producer->handler_state = HTTP_SM_POST_SUCCESS;
-        // If the consumer completed, presumably the producer successfully read and is done
+        // If the consumer completed, presumably the producer successfully read
         c->producer->read_success = true;
-        c->producer->alive        = false;
+        // Go ahead and clean up the producer side
+        if (p->alive) {
+          p->alive = false;
+          if (p->read_vio) {
+            p->bytes_read = p->read_vio->ndone;
+          } else {
+            p->bytes_read = 0;
+          }
+          if (p->vc != HTTP_TUNNEL_STATIC_PRODUCER) {
+            // Clear any outstanding reads
+            p->vc->do_io_read(nullptr, 0, nullptr);
+          }
+        }
       } else if (c->vc_type == HT_HTTP_SERVER) {
         c->producer->handler_state = HTTP_SM_POST_UA_FAIL;
       } else if (c->vc_type == HT_HTTP_CLIENT) {

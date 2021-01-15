@@ -182,13 +182,13 @@ add_session(char *session_id, int session_id_len, const std::string &encrypted_s
   int32_t session_data_len = SSL_SESSION_MAX_DER;
   int ret = decrypt_session(encrypted_session, (unsigned char *)get_key_ptr(), get_key_length(), session_data, session_data_len);
   if (ret < 0) {
-    TSError("Failed to decrypt session %.*s, error: %d", session_id_len, hex_str(session).c_str(), ret);
+    TSDebug(PLUGIN, "Failed to decrypt session %.*s, error: %d", session_id_len, hex_str(session).c_str(), ret);
     return ret;
   }
   const unsigned char *loc = reinterpret_cast<const unsigned char *>(session_data);
   SSL_SESSION *sess        = d2i_SSL_SESSION(nullptr, &loc, session_data_len);
   if (nullptr == sess) {
-    TSError("Failed to transform session buffer %.*s", session_id_len, hex_str(session).c_str());
+    TSDebug(PLUGIN, "Failed to transform session buffer %.*s", session_id_len, hex_str(session).c_str());
     return -1;
   }
   TSSslSessionID sid;

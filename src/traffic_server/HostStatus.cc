@@ -365,6 +365,15 @@ HostStatus::getHostStatus(const char *name)
   time_t now           = time(0);
   bool lookup          = false;
 
+  // if host_statuses is empty, just return
+  // a nullptr as there is no need to lock
+  // and search.  A return of nullptr indicates
+  // to the caller that the host is available,
+  // HOST_STATUS_UP.
+  if (hosts_statuses.empty()) {
+    return _status;
+  }
+
   // the hash table value pointer has the HostStatus_t value.
   ink_rwlock_rdlock(&host_status_rwlock);
   {

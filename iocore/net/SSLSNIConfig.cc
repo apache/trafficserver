@@ -32,14 +32,12 @@
 #include "P_SSLSNI.h"
 #include "tscore/Diags.h"
 #include "tscore/SimpleTokenizer.h"
-#include "P_SSLConfig.h"
 #include "tscore/ink_memory.h"
 #include "tscpp/util/TextView.h"
 #include "tscore/I_Layout.h"
 #include <sstream>
 #include <pcre.h>
 
-static ConfigUpdateHandler<SNIConfig> *sniConfigUpdate;
 static constexpr int OVECSIZE{30};
 
 const NextHopProperty *
@@ -191,14 +189,13 @@ SNIConfigParams::~SNIConfigParams()
 void
 SNIConfig::startup()
 {
-  sniConfigUpdate = new ConfigUpdateHandler<SNIConfig>();
-  sniConfigUpdate->attach("proxy.config.ssl.servername.filename");
   reconfigure();
 }
 
 void
 SNIConfig::reconfigure()
 {
+  Debug("ssl", "Reload SNI file");
   SNIConfigParams *params = new SNIConfigParams;
 
   params->Initialize();

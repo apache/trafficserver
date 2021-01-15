@@ -1781,10 +1781,9 @@ HttpSM::state_http_server_open(int event, void *data)
 
   switch (event) {
   case NET_EVENT_OPEN: {
-    Http1ServerSession *session =
-      (TS_SERVER_SESSION_SHARING_POOL_THREAD == t_state.http_config_param->server_session_sharing_pool) ?
-        THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
-        httpServerSessionAllocator.alloc();
+    Http1ServerSession *session = (TS_SERVER_SESSION_SHARING_POOL_THREAD == httpSessionManager.get_pool_type()) ?
+                                    THREAD_ALLOC_INIT(httpServerSessionAllocator, mutex->thread_holding) :
+                                    httpServerSessionAllocator.alloc();
     session->sharing_pool  = static_cast<TSServerSessionSharingPoolType>(t_state.http_config_param->server_session_sharing_pool);
     session->sharing_match = static_cast<TSServerSessionSharingMatchMask>(t_state.txn_conf->server_session_sharing_match);
 
@@ -2980,7 +2979,13 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_server, event);
 
-  milestones[TS_MILESTONE_SERVER_CLOSE] = Thread::get_hrtime();
+  // An intercept handler may not set TS_MILESTONE_SERVER_CONNECT
+  // by default. Therefore we only set TS_MILESTONE_SERVER_CLOSE if
+  // TS_MILESTONE_SERVER_CONNECT is set (non-zero), lest certain time
+  // statistics are calculated from epoch time.
+  if (0 != milestones[TS_MILESTONE_SERVER_CONNECT]) {
+    milestones[TS_MILESTONE_SERVER_CLOSE] = Thread::get_hrtime();
+  }
 
   bool close_connection = false;
 
@@ -3050,7 +3055,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
       // the reason string being written to the client and a bad CL when reading from cache.
       // I didn't find anywhere this appended reason is being used, so commenting it out.
       /*
-        if (t_state.negative_caching && p->bytes_read == 0) {
+        if (t_state.is_cacheable_due_to_negative_caching_configuration && p->bytes_read == 0) {
         int reason_len;
         const char *reason = t_state.hdr_info.server_response.reason_get(&reason_len);
         if (reason == NULL)
@@ -3106,8 +3111,8 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   }
 
   // turn off negative caching in case there are multiple server contacts
-  if (t_state.negative_caching) {
-    t_state.negative_caching = false;
+  if (t_state.is_cacheable_due_to_negative_caching_configuration) {
+    t_state.is_cacheable_due_to_negative_caching_configuration = false;
   }
 
   // If we had a ground fill, check update our status
@@ -5369,7 +5374,6 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
 
   switch (ua_abort) {
   case HttpTransact::ABORTED:
-  case HttpTransact::MAYBE_ABORTED:
     // More detailed client side abort logging based on event
     switch (event) {
     case VC_EVENT_ERROR:
@@ -6731,7 +6735,8 @@ HttpSM::setup_server_transfer()
 
   nbytes = server_transfer_init(buf, hdr_size);
 
-  if (t_state.negative_caching && t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NO_CONTENT) {
+  if (t_state.is_cacheable_due_to_negative_caching_configuration &&
+      t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NO_CONTENT) {
     int s = sizeof("No Content") - 1;
     buf->write("No Content", s);
     nbytes += s;

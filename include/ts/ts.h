@@ -1313,6 +1313,15 @@ tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLo
 
 tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc);
 
+/**
+ * @brief Gets  the number of transactions between the Traffic Server proxy and the origin server from a single session.
+ *        Any value greater than zero indicates connection reuse.
+ *
+ * @param txnp The transaction
+ * @return int The number of transactions between the Traffic Server proxy and the origin server from a single session
+ */
+tsapi int TSHttpTxnServerSsnTransactionCount(TSHttpTxn txnp);
+
 /** Get the effective URL for the transaction.
     The effective URL is the URL taking in to account both the explicit
     URL in the request and the HOST field.

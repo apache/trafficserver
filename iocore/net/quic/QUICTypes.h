@@ -373,7 +373,7 @@ public:
   bool is_valid(const IpEndpoint &src) const;
 
   const QUICConnectionId cid() const;
-  const ink_hrtime expire_time() const;
+  ink_hrtime expire_time() const;
 };
 
 class QUICRetryToken : public QUICAddressValidationToken

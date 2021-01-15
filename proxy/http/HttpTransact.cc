@@ -482,11 +482,10 @@ update_current_info(HttpTransact::CurrentInfo *into, HttpTransact::ConnectionAtt
 }
 
 inline static void
-update_dns_info(HttpTransact::DNSLookupInfo *dns, HttpTransact::CurrentInfo *from, int attempts, Arena * /* arena ATS_UNUSED */)
+update_dns_info(HttpTransact::DNSLookupInfo *dns, HttpTransact::CurrentInfo *from)
 {
   dns->looking_up  = from->request_to;
   dns->lookup_name = from->server->name;
-  dns->attempts    = attempts;
 }
 
 inline static HTTPHdr *
@@ -607,7 +606,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
   case PARENT_SPECIFIED:
     s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
     update_current_info(&s->current, &s->parent_info, HttpTransact::PARENT_PROXY, (s->current.attempts)++);
-    update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
+    update_dns_info(&s->dns_info, &s->current);
     ink_assert(s->dns_info.looking_up == HttpTransact::PARENT_PROXY);
     s->next_hop_scheme = URL_WKSIDX_HTTP;
 
@@ -628,7 +627,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
   /* fall through */
   default:
     update_current_info(&s->current, &s->server_info, HttpTransact::ORIGIN_SERVER, (s->current.attempts)++);
-    update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
+    update_dns_info(&s->dns_info, &s->current);
     ink_assert(s->dns_info.looking_up == HttpTransact::ORIGIN_SERVER);
     s->next_hop_scheme = s->scheme;
     return HttpTransact::ORIGIN_SERVER;
@@ -1718,9 +1717,7 @@ HttpTransact::HandleApiErrorJump(State *s)
 void
 HttpTransact::PPDNSLookup(State *s)
 {
-  ++s->dns_info.attempts;
-
-  TxnDebug("http_trans", "[HttpTransact::PPDNSLookup] This was attempt %d", s->dns_info.attempts);
+  TxnDebug("http_trans", "[HttpTransact::PPDNSLookup]");
 
   ink_assert(s->dns_info.looking_up == PARENT_PROXY);
   if (!s->dns_info.lookup_success) {
@@ -1836,8 +1833,7 @@ HttpTransact::ReDNSRoundRobin(State *s)
 // Details    :
 //
 // normally called after Start. may be called more than once, however,
-// if the dns lookup fails. this may be if the client does not specify
-// the full hostname (e.g. just cnn, instead of www.cnn.com), or because
+// if the dns lookup fails. this may be because
 // it was not possible to resolve the name after several attempts.
 //
 // the next action depends. since this function is normally called after
@@ -1859,12 +1855,9 @@ HttpTransact::ReDNSRoundRobin(State *s)
 void
 HttpTransact::OSDNSLookup(State *s)
 {
-  static const int max_dns_lookups = 3;
-
   ink_assert(s->dns_info.looking_up == ORIGIN_SERVER);
 
-  TxnDebug("http_trans", "[HttpTransact::OSDNSLookup] This was attempt %d", s->dns_info.attempts);
-  ++s->dns_info.attempts;
+  TxnDebug("http_trans", "[HttpTransact::OSDNSLookup]");
 
   // It's never valid to connect *to* INADDR_ANY, so let's reject the request now.
   if (ats_is_ip_any(s->host_db_info.ip())) {
@@ -1875,55 +1868,30 @@ HttpTransact::OSDNSLookup(State *s)
   }
 
   if (!s->dns_info.lookup_success) {
-    // maybe the name can be expanded (e.g cnn -> www.cnn.com)
-    HostNameExpansionError_t host_name_expansion = try_to_expand_host_name(s);
+    if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
+      /*
+       *  Transparent case: We tried to connect to client target address, failed and tried to use a different addr
+       *  No HostDB data, just keep on with the CTA.
+       */
+      s->dns_info.lookup_success = true;
+      s->dns_info.os_addr_style  = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
+      TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful, using client target address");
+    } else {
+      TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
 
-    switch (host_name_expansion) {
-    case RETRY_EXPANDED_NAME:
-      // expansion successful, do a dns lookup on expanded name
-      HTTP_RELEASE_ASSERT(s->dns_info.attempts < max_dns_lookups);
-      return CallOSDNSLookup(s);
-      break;
-    case EXPANSION_NOT_ALLOWED:
-    case EXPANSION_FAILED:
-    case DNS_ATTEMPTS_EXHAUSTED:
-      if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
-        /*
-         *  We tried to connect to client target address, failed and tried to use a different addr
-         *  No HostDB data, just keep on with the CTA.
-         */
-        s->dns_info.lookup_success = true;
-        s->dns_info.os_addr_style  = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
-        TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful, using client target address");
-      } else {
-        if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
-          // config file doesn't allow automatic expansion of host names
-          TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
-        } else if (host_name_expansion == EXPANSION_FAILED) {
-          // not able to expand the hostname. dns lookup failed
-          TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
-        } else if (host_name_expansion == DNS_ATTEMPTS_EXHAUSTED) {
-          // retry attempts exhausted --- can't find dns entry for this host name
-          HTTP_RELEASE_ASSERT(s->dns_info.attempts >= max_dns_lookups);
-          TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
-        }
-        // output the DNS failure error message
-        SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-        build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
-        // s->cache_info.action = CACHE_DO_NO_ACTION;
-        TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-      }
-      break;
-    default:
-      ink_assert(!("try_to_expand_hostname returned an unsupported code"));
-      break;
+      // output the DNS failure error message
+      SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
+      TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     }
     return;
   }
-  // ok, so the dns lookup succeeded
+
+  // The dns lookup succeeded
   ink_assert(s->dns_info.lookup_success);
   TxnDebug("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup successful");
 
+  // For the transparent case, nail down the kind of address we are really using
   if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
     // We've backed off from a client supplied address and found some
     // HostDB addresses. We use those if they're different from the CTA.
@@ -2002,25 +1970,6 @@ HttpTransact::OSDNSLookup(State *s)
     }
   }
 
-  // so the dns lookup was a success, but the lookup succeeded on
-  // a hostname which was expanded by the traffic server. we should
-  // not automatically forward the request to this expanded hostname.
-  // return a response to the client with the expanded host name
-  // and a tasty little blurb explaining what happened.
-
-  // if a DNS lookup succeeded on a user-defined
-  // hostname expansion, forward the request to the expanded hostname.
-  // On the other hand, if the lookup succeeded on a www.<hostname>.com
-  // expansion, return a 302 response.
-  // [amc] Also don't redirect if we backed off using HostDB instead of CTA.
-  if (s->dns_info.attempts == max_dns_lookups && s->dns_info.looking_up == ORIGIN_SERVER &&
-      DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT != s->dns_info.os_addr_style) {
-    TxnDebug("http_trans", "[OSDNSLookup] DNS name resolution on expansion");
-    TxnDebug("http_seq", "[OSDNSLookup] DNS name resolution on expansion - returning");
-    build_redirect_response(s);
-    // s->cache_info.action = CACHE_DO_NO_ACTION;
-    TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, nullptr);
-  }
   // everything succeeded with the DNS lookup so do an API callout
   //   that allows for filtering.  We'll do traffic_server internal
   //   filtering after API filtering
@@ -2862,7 +2811,6 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
   if (send_revalidate) {
     TxnDebug("http_trans", "CacheOpenRead --- HIT-STALE");
-    s->dns_info.attempts = 0;
 
     TxnDebug("http_seq", "[HttpTransact::HandleCacheOpenReadHit] "
                          "Revalidate document with server");
@@ -3855,7 +3803,7 @@ HttpTransact::delete_server_rr_entry(State *s, int max_retries)
   ink_assert(s->current.server->had_connect_fail());
   ink_assert(s->current.request_to == ORIGIN_SERVER);
   ink_assert(s->current.server == &s->server_info);
-  update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
+  update_dns_info(&s->dns_info, &s->current);
   s->current.attempts++;
   TxnDebug("http_trans", "[delete_server_rr_entry] attempts now: %d, max: %d", s->current.attempts, max_retries);
   TRANSACT_RETURN(SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN, ReDNSRoundRobin);
@@ -4454,7 +4402,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     client_response_code = server_response_code;
     base_response        = &s->hdr_info.server_response;
 
-    s->negative_caching = is_negative_caching_appropriate(s) && cacheable;
+    s->is_cacheable_due_to_negative_caching_configuration = cacheable && is_negative_caching_appropriate(s);
 
     // determine the correct cache action given the original cache action,
     // cacheability of server response, and request method
@@ -4489,7 +4437,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       }
 
     } else if (s->cache_info.action == CACHE_DO_WRITE) {
-      if (!cacheable && !s->negative_caching) {
+      if (!cacheable) {
         s->cache_info.action = CACHE_DO_NO_ACTION;
       } else if (s->method == HTTP_WKSIDX_HEAD) {
         s->cache_info.action = CACHE_DO_NO_ACTION;
@@ -4516,7 +4464,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     //   before issuing a 304
     if (s->cache_info.action == CACHE_DO_WRITE || s->cache_info.action == CACHE_DO_NO_ACTION ||
         s->cache_info.action == CACHE_DO_REPLACE) {
-      if (s->negative_caching) {
+      if (s->is_cacheable_due_to_negative_caching_configuration) {
         HTTPHdr *resp;
         s->cache_info.object_store.create();
         s->cache_info.object_store.request_set(&s->hdr_info.client_request);
@@ -4552,8 +4500,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVER_REVALIDATED);
         }
       }
-    } else if (s->negative_caching) {
-      s->negative_caching = false;
+    } else if (s->is_cacheable_due_to_negative_caching_configuration) {
+      s->is_cacheable_due_to_negative_caching_configuration = false;
     }
 
     break;
@@ -4963,7 +4911,7 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
      sites yields no insight. So the assert is removed and we keep the behavior that if the response
      in @a cache_info is already set, we don't override it.
   */
-  if (!s->negative_caching || !cache_info->response_get()->valid()) {
+  if (!s->is_cacheable_due_to_negative_caching_configuration || !cache_info->response_get()->valid()) {
     cache_info->response_set(response);
   }
 
@@ -5771,11 +5719,11 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   ats_ip_copy(&s->request_data.src_ip, &s->client_info.src_addr);
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
   if (vc) {
-    s->request_data.incoming_port     = vc->get_local_port();
-    s->pp_info.proxy_protocol_version = vc->get_proxy_protocol_version();
-    if (s->pp_info.proxy_protocol_version != NetVConnection::ProxyProtocolVersion::UNDEFINED) {
-      ats_ip_copy(s->pp_info.src_addr, vc->pp_info.src_addr);
-      ats_ip_copy(s->pp_info.dst_addr, vc->pp_info.dst_addr);
+    s->request_data.incoming_port = vc->get_local_port();
+    s->pp_info.version            = vc->get_proxy_protocol_version();
+    if (s->pp_info.version != ProxyProtocolVersion::UNDEFINED) {
+      ats_ip_copy(s->pp_info.src_addr, vc->get_proxy_protocol_src_addr());
+      ats_ip_copy(s->pp_info.dst_addr, vc->get_proxy_protocol_dst_addr());
     }
   }
   s->request_data.xact_start                      = s->client_request_time;
@@ -5789,7 +5737,6 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   // the host ip for reverse proxy.          //
   /////////////////////////////////////////////
   s->dns_info.looking_up  = ORIGIN_SERVER;
-  s->dns_info.attempts    = 0;
   s->dns_info.lookup_name = s->server_info.name;
 }
 
@@ -6349,24 +6296,24 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     }
   }
 
-  // default cacheability
-  if (!s->txn_conf->negative_caching_enabled) {
-    if ((response_code == HTTP_STATUS_OK) || (response_code == HTTP_STATUS_NOT_MODIFIED) ||
-        (response_code == HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION) || (response_code == HTTP_STATUS_MOVED_PERMANENTLY) ||
-        (response_code == HTTP_STATUS_MULTIPLE_CHOICES) || (response_code == HTTP_STATUS_GONE)) {
-      TxnDebug("http_trans", "[is_response_cacheable] YES by default ");
-      return true;
-    } else {
-      TxnDebug("http_trans", "[is_response_cacheable] NO by default");
-      return false;
-    }
+  if ((response_code == HTTP_STATUS_OK) || (response_code == HTTP_STATUS_NOT_MODIFIED) ||
+      (response_code == HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION) || (response_code == HTTP_STATUS_MOVED_PERMANENTLY) ||
+      (response_code == HTTP_STATUS_MULTIPLE_CHOICES) || (response_code == HTTP_STATUS_GONE)) {
+    TxnDebug("http_trans", "[is_response_cacheable] YES response code seems fine");
+    return true;
   }
+  // Notice that the following are not overridable by negative caching.
   if (response_code == HTTP_STATUS_SEE_OTHER || response_code == HTTP_STATUS_UNAUTHORIZED ||
       response_code == HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED) {
     return false;
   }
-  // let is_negative_caching_approriate decide what to do
-  return true;
+  // The response code does not look appropriate for caching. Check, however,
+  // whether the user has specified it should be cached via negative response
+  // caching configuration.
+  if (is_negative_caching_appropriate(s)) {
+    return true;
+  }
+  return false;
   /* Since we weren't caching response obtained with
      Authorization (the cache control stuff was commented out previously)
      I've moved this check to is_request_cache_lookupable().
@@ -6564,28 +6511,6 @@ HttpTransact::process_quick_http_filter(State *s, int method)
       }
       s->client_connection_enabled = false;
     }
-  }
-}
-
-HttpTransact::HostNameExpansionError_t
-HttpTransact::try_to_expand_host_name(State *s)
-{
-  HTTP_RELEASE_ASSERT(!s->dns_info.lookup_success);
-
-  if (s->dns_info.looking_up == ORIGIN_SERVER) {
-    return EXPANSION_NOT_ALLOWED;
-  } else {
-    //////////////////////////////////////////////////////
-    // we looked up dns of parent proxy, but it failed, //
-    // try lookup of origin server name.                //
-    //////////////////////////////////////////////////////
-    ink_assert(s->dns_info.looking_up == PARENT_PROXY);
-
-    s->dns_info.lookup_name = s->server_info.name;
-    s->dns_info.looking_up  = ORIGIN_SERVER;
-    s->dns_info.attempts    = 0;
-
-    return RETRY_EXPANDED_NAME;
   }
 }
 
@@ -8415,8 +8340,6 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   //////////////////////////////////////////
   if (s->client_info.abort == ABORTED) {
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_ABORT;
-  } else if (s->client_info.abort == MAYBE_ABORTED) {
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_POSSIBLE_ABORT;
   }
   // Count the status codes, assuming the client didn't abort (i.e. there is an m_http)
   if ((s->source != SOURCE_NONE) && (s->client_info.abort == DIDNOT_ABORT)) {

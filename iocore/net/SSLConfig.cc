@@ -34,6 +34,7 @@
 #include <cstring>
 #include <cmath>
 
+#include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
 #include "tscore/I_Layout.h"
 #include "records/I_RecHttp.h"
@@ -43,6 +44,7 @@
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
 #include "P_SSLCertLookup.h"
+#include "P_SSLSNI.h"
 #include "SSLDiags.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
@@ -75,7 +77,6 @@ int SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file      = nullptr;
 
 static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
-static std::unique_ptr<ConfigUpdateHandler<SSLConfig>> sslConfigUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
 
 SSLConfigParams::SSLConfigParams()
@@ -429,17 +430,13 @@ SSLConfigParams::getClientSSL_CTX() const
 void
 SSLConfig::startup()
 {
-  sslConfigUpdate.reset(new ConfigUpdateHandler<SSLConfig>());
-  sslConfigUpdate->attach("proxy.config.ssl.client.cert.path");
-  sslConfigUpdate->attach("proxy.config.ssl.client.cert.filename");
-  sslConfigUpdate->attach("proxy.config.ssl.client.private_key.path");
-  sslConfigUpdate->attach("proxy.config.ssl.client.private_key.filename");
   reconfigure();
 }
 
 void
 SSLConfig::reconfigure()
 {
+  Debug("ssl", "Reload SSLConfig");
   SSLConfigParams *params;
   params = new SSLConfigParams;
   params->initialize(); // re-read configuration
@@ -533,7 +530,7 @@ SSLTicketParams::LoadTicket(bool &nochange)
   cleanup();
   nochange = true;
 
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAS_TLS_SESSION_TICKET
   ssl_ticket_key_block *keyblock = nullptr;
 
   SSLConfig::scoped_config params;
@@ -581,15 +578,15 @@ SSLTicketParams::LoadTicket(bool &nochange)
   load_time               = time(nullptr);
 
   Debug("ssl", "ticket key reloaded from %s", ticket_key_filename);
-  return true;
 #endif
+  return true;
 }
 
 void
 SSLTicketParams::LoadTicketData(char *ticket_data, int ticket_data_len)
 {
   cleanup();
-#if TS_HAVE_OPENSSL_SESSION_TICKETS
+#if TS_HAS_TLS_SESSION_TICKET
   if (ticket_data != nullptr && ticket_data_len > 0) {
     default_global_keyblock = ticket_block_create(ticket_data, ticket_data_len);
   } else {
@@ -657,6 +654,8 @@ SSLConfigParams::getCTX(const char *client_cert, const char *key_file, const cha
   std::string top_level_key, ctx_key;
   ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
   ts::bwprint(ctx_key, "{}:{}", client_cert, key_file);
+
+  Debug("ssl", "Load client cert %s %s", client_cert, key_file);
 
   auto ctx_map_iter = top_level_ctx_map.find(top_level_key);
   if (ctx_map_iter != top_level_ctx_map.end()) {
