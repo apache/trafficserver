@@ -264,3 +264,4 @@ tr.Processes.Default.Command = (
 
 # Overriding the built in ERROR check since we expect some ERROR messages
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Some tests are failure tests")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression("Error parsing", "Verify that we can accept long comment lines")

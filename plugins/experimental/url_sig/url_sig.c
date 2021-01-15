@@ -134,6 +134,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   char line[300];
   int line_no = 0;
   int keynum;
+  bool eat_comment = false;
 
   cfg = TSmalloc(sizeof(struct config));
   memset(cfg, 0, sizeof(struct config));
@@ -141,7 +142,19 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   while (fgets(line, sizeof(line), file) != NULL) {
     TSDebug(PLUGIN_NAME, "LINE: %s (%d)", line, (int)strlen(line));
     line_no++;
+
+    if (eat_comment) {
+      // Check if final char is EOL, if so we are done eating
+      if (line[strlen(line) - 1] == '\n') {
+        eat_comment = false;
+      }
+      continue;
+    }
     if (line[0] == '#' || strlen(line) <= 1) {
+      // Check if we have a comment longer than the full buffer if no EOL
+      if (line[strlen(line) - 1] != '\n') {
+        eat_comment = true;
+      }
       continue;
     }
     char *pos = strchr(line, '=');
