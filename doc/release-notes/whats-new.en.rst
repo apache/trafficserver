@@ -74,8 +74,54 @@ A new directive, `ignore_self_detect`, is added to the :file:`parent.config` for
 sibling proxies, without creating loops. The setting for :ts:cv:`proxy.config.http.parent_proxy_routing_enable`
 is no longer needed, it's implicit by the usage of the :file:`parent.config` configuration file.
 
+A new option was added to :file:`parent.config` for which status codes triggers a simple retry,
+`simple_server_retry_responses`.
 
-HTTP/2 settings
+A configuration file for the new parent selection strategy is added, :file:`strategies.yaml`.
+
+SNI
+~~~
+
+A new option to control how host header and SNI name mismatches are handled has been added. With this new
+setting, :ts:cv:`proxy.config.http.host_sni_policy`, when set to `0`, no checking is performed. If this
+setting is `1` or `2` (the default), the host header and SNI values are compared if the host header value
+would have triggered a SNI policy.
+
+A new blind tunneling option was added, `partial_blind_route`, which is similar to the existing
+`forward_route` feature.
+
+The captured group from a FQDN matching in :file:`sni.yaml` can now be used in the `tunnel_route`, as e.g.
+`$1` and `$2`.
+
+Plugin reload
+~~~~~~~~~~~~~
+
+A new setting was added to turn off the dynamic plugin reload, :ts:cv:`proxy.config.plugin.dynamic_reload_mode`.
+By default, the feature is still enabled.
+
+Updated host matching settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The options for host matching configuration, ts:cv:`proxy.config.http.server_session_sharing.match` has been
+augmented significantly, the full list of host matches now are:
+
+   ============= ===================================================================
+   Value         Description
+   ============= ===================================================================
+   ``none``      Do not match and do not re-use server sessions.
+   ``ip``        Re-use server sessions, checking only that the IP address and port
+                 of the origin server matches.
+   ``host``      Re-use server sessions, checking that the fully qualified
+                 domain name matches. In addition, if the session uses TLS, it also
+                 checks that the current transaction's host header value matchs the session's SNI.
+   ``both``      Equivalent to ``host,ip``.
+   ``hostonly``  Check that the fully qualified domain name matches.
+   ``sni``       Check that the SNI of the session matches the SNI that would be used to
+                 create a new session.  Only applicable for TLS sessions.
+   ``cert``      Check that the certificate file name used for the server session matches the
+                 certificate file name that would be used for the new server session.  Only
+                 applicable for TLS sessions.
+   ============= ===================================================================
 
 Incompatible records.config settings
 ------------------------------------
@@ -109,18 +155,19 @@ Logging and Metrics
 In addition to logging indivdiual headers, we now have comparable log tags that dumbs
 the entire header. This table shows the additions, and what they correspond with.
 
-============== ===================
-Original Field All Headers Variant
-============== ===================
-cqh            cqah
-pqh            pqah
-psh            psah
-ssh            ssah
-cssh           cssah
-============== ===================
+    ============== ===================
+    Original Field All Headers Variant
+    ============== ===================
+    cqh            cqah
+    pqh            pqah
+    psh            psah
+    ssh            ssah
+    cssh           cssah
+    ============== ===================
 
 
-A new log field for the elliptic curve was introduced, `cqssu`.
+A new log field for the elliptic curve was introduced, `cqssu`. Also related to TLS, the
+new log field `cssn` allows logging the SNI server name from the client handshake.
 
 Metric scaling
 ~~~~~~~~~~~~~~
@@ -201,3 +248,44 @@ We have also added two new alert mechanisms for plugins:
 
     void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2)
     void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2)
+
+
+User Arg Slots
+~~~~~~~~~~~~~~
+
+The concept of user argument slots for plugins was completely redesigned. The old behavior
+still exists, but we now have a much cleaner, and smaller, set of APIs. In addition, it also
+adds a new slot type, `global`, which allows a slot for plugins to retain global data across
+reloads and cross-plugins.
+
+The new set of APIs has the following signature:
+
+.. code-block:: c
+
+    typedef enum {
+       TS_USER_ARGS_TXN,   ///< Transaction based.
+       TS_USER_ARGS_SSN,   ///< Session based
+       TS_USER_ARGS_VCONN, ///< VConnection based
+       TS_USER_ARGS_GLB,   ///< Global based
+       TS_USER_ARGS_COUNT  ///< Fake enum, # of valid entries.
+     } TSUserArgType;
+
+
+    TSReturnCode TSUserArgIndexReserve(TSUserArgType type, const char *name, const char *description, int *arg_idx);
+    TSReturnCode TSUserArgIndexNameLookup(TSUserArgType type, const char *name, int *arg_idx, const char **description);
+    TSReturnCode TSUserArgIndexLookup(TSUserArgType type, int arg_idx, const char **name, const char **description);
+    void TSUserArgSet(void *data, int arg_idx, void *arg);
+    void *TSUserArgGet(void *data, int arg_idx);
+
+One fundamental change here is that the opaque `data` parameter to `TSUserArgSet` and `TSUserArgGet` are context aware.
+If you pass in a `Txn` pointer, it behaves as a transaction user arg slot. If you pass in a nullptr, it becomes the new
+`global` slot behavior (since there is no context). The valid contexts are:
+
+   ============== =======================================================================
+   data type      Semantics
+   ============== =======================================================================
+   ``TSHttpTxn``  The implicit context is for a transaction (``TS_USER_ARGS_TXN``)
+   ``TSHttpSsn``  The implicit context is for a transaction (``TS_USER_ARGS_SSN``)
+   ``TSVConn``    The implicit context is for a transaction (``TS_USER_ARGS_VCONN``)
+   ``nullptr``    The implicit context is global (``TS_USER_ARGS_GLB``)
+   ============== =======================================================================
