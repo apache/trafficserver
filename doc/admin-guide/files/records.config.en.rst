@@ -1703,7 +1703,7 @@ Negative Response Caching
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
 
-   How long, in seconds, to consider a stale cached document valid if If
+   How long, in seconds, to consider a stale cached document valid if
    :ts:cv:`proxy.config.http.negative_revalidating_enabled` is enabled and |TS| receives a negative
    (``5xx`` only) response from the origin server during revalidation.
 
