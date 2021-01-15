@@ -119,6 +119,9 @@ ssh            ssah
 cssh           cssah
 ============== ===================
 
+
+A new log field for the elliptic curve was introduced, `cqssu`.
+
 Metric scaling
 ~~~~~~~~~~~~~~
 
@@ -126,6 +129,17 @@ In previous versions of ATS, you had to rebuild the software to increase the max
 number of metrics that the system could handle. This is replaced with a new command
 line option for :program:`traffic_manager`, `--maxRecords`. The old build configure
 option for this, `--with-max-api-stats`, is also eliminated.
+
+TLS version metrics
+~~~~~~~~~~~~~~~~~~~
+
+A set of new metrics for SSL and TLS versions have been added:
+
+* :ts:stat:`proxy.process.ssl.ssl_total_sslv3`
+* :ts:stat:`proxy.process.ssl.ssl_total_tlsv1`
+* :ts:stat:`proxy.process.ssl.ssl_total_tlsv11`
+* :ts:stat:`proxy.process.ssl.ssl_total_tlsv12`
+* :ts:stat:`proxy.process.ssl.ssl_total_tlsv13`
 
 Plugins
 -------
@@ -154,8 +168,8 @@ A new set of APIs for scheduling continuations on a specific set of threads has 
 
 .. code-block:: c
 
-    TSAction TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
-    TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread);
+    TSAction TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp)
+    TSAction TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread)
 
 
 There is a new API for redoing a cache lookup, typically after a URL change, or cache key update:
@@ -168,5 +182,22 @@ New APIs for TLS client context retrievals were added:
 
 .. code-block:: c
 
-    TSReturnCode TSSslClientContextsNamesGet(int n, const char **result, int *actual);
-    TSSslContext TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths);
+    TSReturnCode TSSslClientContextsNamesGet(int n, const char **result, int *actual)
+    TSSslContext TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)
+
+In addition to these, a new set of APIs were added for the effective TLS handshake with
+the client. These APIs also have equivalent Lua APIs:
+
+.. code-block:: c
+
+    int TSVConnIsSslReused(TSVConn sslp)
+    const char *TSVConnSslCipherGet(TSVConn sslp)
+    const char *TSVConnSslProtocolGet(TSVConn sslp)
+    const char *TSVConnSslCurveGet(TSVConn sslp)
+
+We have also added two new alert mechanisms for plugins:
+
+.. code-block:: c
+
+    void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2)
+    void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2)
