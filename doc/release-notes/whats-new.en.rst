@@ -218,11 +218,11 @@ TLS version metrics
 
 A set of new metrics for SSL and TLS versions have been added:
 
-* `proxy.process.ssl.ssl_total_sslv3`
-* `proxy.process.ssl.ssl_total_tlsv1`
-* `proxy.process.ssl.ssl_total_tlsv11`
-* `proxy.process.ssl.ssl_total_tlsv12`
-* `proxy.process.ssl.ssl_total_tlsv13`
+* proxy.process.ssl.ssl_total_sslv3
+* proxy.process.ssl.ssl_total_tlsv1
+* proxy.process.ssl.ssl_total_tlsv11
+* proxy.process.ssl.ssl_total_tlsv12
+* proxy.process.ssl.ssl_total_tlsv13
 
 Plugins
 -------
