@@ -79,7 +79,7 @@ Parent Selection
 ~~~~~~~~~~~~~~~~
 
 A new directive, `ignore_self_detect`, is added to the :file:`parent.config` format. This allows you to parent proxy to
-sibling proxies, without creating loops. The setting for :ts:cv:`proxy.config.http.parent_proxy_routing_enable`
+sibling proxies, without creating loops. The setting for `proxy.config.http.parent_proxy_routing_enable`
 is no longer needed, it's implicit by the usage of the :file:`parent.config` configuration file.
 
 A new option was added to :file:`parent.config` for which status codes triggers a simple retry,
@@ -198,7 +198,7 @@ connection. This includes:
 * :ts:stat:`proxy.process.http.origin_shutdown.tunnel_transform_read`
 * :ts:stat:`proxy.process.http.origin_shutdown.release_no_sharing`
 * :ts:stat:`proxy.process.http.origin_shutdown.release_no_keep_alive`
-* :ts:stat:`proxy.process.http.origin_shutdown.release_invalid_repsonse`
+* :ts:stat:`proxy.process.http.origin_shutdown.release_invalid_response`
 * :ts:stat:`proxy.process.http.origin_shutdown.release_invalid_request`
 * :ts:stat:`proxy.process.http.origin_shutdown.release_modified`
 * :ts:stat:`proxy.process.http.origin_shutdown.release_misc`
@@ -218,11 +218,11 @@ TLS version metrics
 
 A set of new metrics for SSL and TLS versions have been added:
 
-* :ts:stat:`proxy.process.ssl.ssl_total_sslv3`
-* :ts:stat:`proxy.process.ssl.ssl_total_tlsv1`
-* :ts:stat:`proxy.process.ssl.ssl_total_tlsv11`
-* :ts:stat:`proxy.process.ssl.ssl_total_tlsv12`
-* :ts:stat:`proxy.process.ssl.ssl_total_tlsv13`
+* `proxy.process.ssl.ssl_total_sslv3`
+* `proxy.process.ssl.ssl_total_tlsv1`
+* `proxy.process.ssl.ssl_total_tlsv11`
+* `proxy.process.ssl.ssl_total_tlsv12`
+* `proxy.process.ssl.ssl_total_tlsv13`
 
 Plugins
 -------
