@@ -189,21 +189,21 @@ New origin metrics
 A large number of metrics were added for the various cases where ATS closes an origin
 connection. This includes:
 
-* ts:stat:`proxy.process.http.origin_shutdown.pool_lock_contention`
-* ts:stat:`proxy.process.http.origin_shutdown.migration_failure`
-* ts:stat:`proxy.process.http.origin_shutdown.tunnel_server`
-* ts:stat:`proxy.process.http.origin_shutdown.tunnel_server_no_keep_alive`
-* ts:stat:`proxy.process.http.origin_shutdown.tunnel_server_eos`
-* ts:stat:`proxy.process.http.origin_shutdown.tunnel_server_plugin_tunnel`
-* ts:stat:`proxy.process.http.origin_shutdown.tunnel_transform_read`
-* ts:stat:`proxy.process.http.origin_shutdown.release_no_sharing`
-* ts:stat:`proxy.process.http.origin_shutdown.release_no_keep_alive`
-* ts:stat:`proxy.process.http.origin_shutdown.release_invalid_repsonse`
-* ts:stat:`proxy.process.http.origin_shutdown.release_invalid_request`
-* ts:stat:`proxy.process.http.origin_shutdown.release_modified`
-* ts:stat:`proxy.process.http.origin_shutdown.release_misc`
-* ts:stat:`proxy.process.http.origin_shutdown.cleanup_entry`
-* ts:stat:`proxy.process.http.origin_shutdown.tunnel_abort`
+* :ts:stat:`proxy.process.http.origin_shutdown.pool_lock_contention`
+* :ts:stat:`proxy.process.http.origin_shutdown.migration_failure`
+* :ts:stat:`proxy.process.http.origin_shutdown.tunnel_server`
+* :ts:stat:`proxy.process.http.origin_shutdown.tunnel_server_no_keep_alive`
+* :ts:stat:`proxy.process.http.origin_shutdown.tunnel_server_eos`
+* :ts:stat:`proxy.process.http.origin_shutdown.tunnel_server_plugin_tunnel`
+* :ts:stat:`proxy.process.http.origin_shutdown.tunnel_transform_read`
+* :ts:stat:`proxy.process.http.origin_shutdown.release_no_sharing`
+* :ts:stat:`proxy.process.http.origin_shutdown.release_no_keep_alive`
+* :ts:stat:`proxy.process.http.origin_shutdown.release_invalid_repsonse`
+* :ts:stat:`proxy.process.http.origin_shutdown.release_invalid_request`
+* :ts:stat:`proxy.process.http.origin_shutdown.release_modified`
+* :ts:stat:`proxy.process.http.origin_shutdown.release_misc`
+* :ts:stat:`proxy.process.http.origin_shutdown.cleanup_entry`
+* :ts:stat:`proxy.process.http.origin_shutdown.tunnel_abort`
 
 Metric scaling
 ~~~~~~~~~~~~~~
