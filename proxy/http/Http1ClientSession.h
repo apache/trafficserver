@@ -43,9 +43,12 @@
 extern ink_mutex debug_cs_list_mutex;
 #endif
 
-class HttpSM;
-class Http1ServerSession;
+enum {
+  HTTP_CS_MAGIC_ALIVE = 0x0123FEED,
+  HTTP_CS_MAGIC_DEAD  = 0xDEADFEED,
+};
 
+class HttpSM;
 class Http1ClientSession : public ProxySession
 {
 public:
@@ -60,7 +63,7 @@ public:
   void destroy() override;
   void free() override;
 
-  bool attach_server_session(Http1ServerSession *ssession, bool transaction_done = true) override;
+  bool attach_server_session(PoolableSession *ssession, bool transaction_done = true) override;
 
   // Implement VConnection interface.
   void do_io_close(int lerrno = -1) override;
@@ -73,11 +76,11 @@ public:
   int get_transact_count() const override;
   virtual bool is_outbound_transparent() const;
 
-  Http1ServerSession *get_server_session() const override;
+  PoolableSession *get_server_session() const override;
   const char *get_protocol_string() const override;
 
-  void increment_current_active_client_connections_stat() override;
-  void decrement_current_active_client_connections_stat() override;
+  void increment_current_active_connections_stat() override;
+  void decrement_current_active_connections_stat() override;
 
 private:
   Http1ClientSession(Http1ClientSession &);
@@ -96,7 +99,7 @@ private:
     HCS_CLOSED,
   };
 
-  int magic          = HTTP_SS_MAGIC_DEAD;
+  int magic          = HTTP_CS_MAGIC_DEAD;
   int transact_count = 0;
   bool half_close    = false;
   bool conn_decrease = false;
@@ -109,7 +112,7 @@ private:
   VIO *ka_vio       = nullptr;
   VIO *slave_ka_vio = nullptr;
 
-  Http1ServerSession *bound_ss = nullptr;
+  PoolableSession *bound_ss = nullptr;
 
   int released_transactions = 0;
 

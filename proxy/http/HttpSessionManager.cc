@@ -32,7 +32,6 @@
 
 #include "HttpSessionManager.h"
 #include "../ProxySession.h"
-#include "Http1ServerSession.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 
@@ -57,21 +56,21 @@ ServerSessionPool::purge()
 {
   // @c do_io_close can free the instance which clears the intrusive links and breaks the iterator.
   // Therefore @c do_io_close is called on a post-incremented iterator.
-  m_ip_pool.apply([](Http1ServerSession *ssn) -> void { ssn->do_io_close(); });
+  m_ip_pool.apply([](PoolableSession *ssn) -> void { ssn->do_io_close(); });
   m_ip_pool.clear();
   m_fqdn_pool.clear();
 }
 
 bool
-ServerSessionPool::match(Http1ServerSession *ss, sockaddr const *addr, CryptoHash const &hostname_hash,
+ServerSessionPool::match(PoolableSession *ss, sockaddr const *addr, CryptoHash const &hostname_hash,
                          TSServerSessionSharingMatchMask match_style)
 {
   bool retval = match_style != 0;
   if (retval && (TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style)) {
-    retval = ats_ip_addr_port_eq(ss->get_server_ip(), addr);
+    retval = ats_ip_addr_port_eq(ss->get_remote_addr(), addr);
   }
   if (retval && (TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY & match_style)) {
-    retval = (ats_ip_port_cast(addr) == ats_ip_port_cast(ss->get_server_ip()) && ss->hostname_hash == hostname_hash);
+    retval = (ats_ip_port_cast(addr) == ats_ip_port_cast(ss->get_remote_addr()) && ss->hostname_hash == hostname_hash);
   }
   return retval;
 }
@@ -142,7 +141,7 @@ ServerSessionPool::validate_cert(HttpSM *sm, NetVConnection *netvc)
 
 HSMresult_t
 ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostname_hash,
-                                  TSServerSessionSharingMatchMask match_style, HttpSM *sm, Http1ServerSession *&to_return)
+                                  TSServerSessionSharingMatchMask match_style, HttpSM *sm, PoolableSession *&to_return)
 {
   HSMresult_t zret = HSM_NOT_FOUND;
   to_return        = nullptr;
@@ -151,12 +150,16 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     // This is broken out because only in this case do we check the host hash first. The range must be checked
     // to verify an upstream that matches port and SNI name is selected. Walk backwards to select oldest.
     in_port_t port = ats_ip_port_cast(addr);
-    auto first     = m_fqdn_pool.find(hostname_hash);
-    while (first != m_fqdn_pool.end() && first->hostname_hash == hostname_hash) {
-      if (port == ats_ip_port_cast(first->get_server_ip()) &&
-          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, first->get_netvc())) &&
-          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, first->get_netvc())) &&
-          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, first->get_netvc()))) {
+    FQDNTable::iterator first, last;
+    // FreeBSD/clang++ bug workaround: explicit cast to super type to make overload work. Not needed on Fedora27 nor gcc.
+    // Not fixed on FreeBSD as of llvm 6.0.1.
+    std::tie(first, last) = static_cast<const decltype(m_fqdn_pool)::range::super_type &>(m_fqdn_pool.equal_range(hostname_hash));
+    while (last != first) {
+      --last;
+      if (port == ats_ip_port_cast(last->get_remote_addr()) &&
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, last->get_netvc())) &&
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, last->get_netvc())) &&
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, last->get_netvc()))) {
         zret = HSM_DONE;
         break;
       }
@@ -173,7 +176,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     // And matches the other constraints as well
     // Note the port is matched as part of the address key so it doesn't need to be checked again.
     if (match_style & (~TS_SERVER_SESSION_SHARING_MATCH_MASK_IP)) {
-      while (first != m_ip_pool.end() && ats_ip_addr_port_eq(first->get_server_ip(), addr)) {
+      while (first != m_ip_pool.end() && ats_ip_addr_port_eq(first->get_remote_addr(), addr)) {
         if ((!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY) || first->hostname_hash == hostname_hash) &&
             (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, first->get_netvc())) &&
             (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, first->get_netvc())) &&
@@ -196,21 +199,21 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
 }
 
 void
-ServerSessionPool::releaseSession(Http1ServerSession *ss)
+ServerSessionPool::releaseSession(PoolableSession *ss)
 {
-  ss->state = HSS_KA_SHARED;
+  ss->state = PoolableSession::KA_POOLED;
   // Now we need to issue a read on the connection to detect
   //  if it closes on us.  We will get called back in the
   //  continuation for this bucket, ensuring we have the lock
   //  to remove the connection from our lists
-  ss->do_io_read(this, INT64_MAX, ss->read_buffer);
+  ss->do_io_read(this, 0, nullptr);
 
   // Transfer control of the write side as well
   ss->do_io_write(this, 0, nullptr);
 
   // we probably don't need the active timeout set, but will leave it for now
-  ss->get_netvc()->set_inactivity_timeout(ss->get_netvc()->get_inactivity_timeout());
-  ss->get_netvc()->set_active_timeout(ss->get_netvc()->get_active_timeout());
+  ss->set_inactivity_timeout(ss->get_netvc()->get_inactivity_timeout());
+  ss->set_active_timeout(ss->get_netvc()->get_active_timeout());
   // put it in the pools.
   m_ip_pool.insert(ss);
   m_fqdn_pool.insert(ss);
@@ -218,7 +221,7 @@ ServerSessionPool::releaseSession(Http1ServerSession *ss)
   Debug("http_ss",
         "[%" PRId64 "] [release session] "
         "session placed into shared pool",
-        ss->con_id);
+        ss->connection_id());
 }
 
 //   Called from the NetProcessor to let us know that a
@@ -228,7 +231,7 @@ int
 ServerSessionPool::eventHandler(int event, void *data)
 {
   NetVConnection *net_vc = nullptr;
-  Http1ServerSession *s  = nullptr;
+  PoolableSession *s     = nullptr;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -257,7 +260,7 @@ ServerSessionPool::eventHandler(int event, void *data)
       // keeping the connection alive will not keep us above the # of max connections
       // to the origin and we are below the min number of keep alive connections to this
       // origin, then reset the timeouts on our end and do not close the connection
-      if ((event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) && s->state == HSS_KA_SHARED &&
+      if ((event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) && s->state == PoolableSession::KA_POOLED &&
           s->conn_track_group) {
         Debug("http_ss", "s->conn_track_group->min_keep_alive_conns : %d", s->conn_track_group->min_keep_alive_conns);
         bool connection_count_below_min = s->conn_track_group->_count <= s->conn_track_group->min_keep_alive_conns;
@@ -266,7 +269,7 @@ ServerSessionPool::eventHandler(int event, void *data)
           Debug("http_ss",
                 "[%" PRId64 "] [session_bucket] session received io notice [%s], "
                 "resetting timeout to maintain minimum number of connections",
-                s->con_id, HttpDebugNames::get_event_name(event));
+                s->connection_id(), HttpDebugNames::get_event_name(event));
           s->get_netvc()->set_inactivity_timeout(s->get_netvc()->get_inactivity_timeout());
           s->get_netvc()->set_active_timeout(s->get_netvc()->get_active_timeout());
           found = true;
@@ -276,9 +279,9 @@ ServerSessionPool::eventHandler(int event, void *data)
 
       // We've found our server session. Remove it from
       //   our lists and close it down
-      Debug("http_ss", "[%" PRId64 "] [session_pool] session %p received io notice [%s]", s->con_id, s,
+      Debug("http_ss", "[%" PRId64 "] [session_pool] session %p received io notice [%s]", s->connection_id(), s,
             HttpDebugNames::get_event_name(event));
-      ink_assert(s->state == HSS_KA_SHARED);
+      ink_assert(s->state == PoolableSession::KA_POOLED);
       // Out of the pool! Now!
       m_ip_pool.erase(spot);
       m_fqdn_pool.erase(s);
@@ -330,8 +333,7 @@ HSMresult_t
 HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockaddr const *ip, const char *hostname,
                                     ProxyTransaction *ua_txn, HttpSM *sm)
 {
-  // First test for any session bound to the ua_txn
-  Http1ServerSession *to_return = nullptr;
+  PoolableSession *to_return = nullptr;
   TSServerSessionSharingMatchMask match_style =
     static_cast<TSServerSessionSharingMatchMask>(sm->t_state.txn_conf->server_session_sharing_match);
   CryptoHash hostname_hash;
@@ -356,8 +358,8 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
          ServerSessionPool::validate_host_sni(sm, to_return->get_netvc())) &&
         (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) ||
          ServerSessionPool::validate_cert(sm, to_return->get_netvc()))) {
-      Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->con_id);
-      to_return->state = HSS_ACTIVE;
+      Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->connection_id());
+      to_return->state = PoolableSession::SSN_IN_USE;
       sm->attach_server_session(to_return);
       return HSM_DONE;
     }
@@ -366,8 +368,8 @@ HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockad
     Debug("http_ss",
           "[%" PRId64 "] [acquire session] "
           "session not a match, returning to shared pool",
-          to_return->con_id);
-    to_return->release();
+          to_return->connection_id());
+    to_return->release(nullptr);
     to_return = nullptr;
   }
 
@@ -389,8 +391,8 @@ HSMresult_t
 HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
                                      TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type)
 {
-  Http1ServerSession *to_return = nullptr;
-  HSMresult_t retval            = HSM_NOT_FOUND;
+  PoolableSession *to_return = nullptr;
+  HSMresult_t retval         = HSM_NOT_FOUND;
 
   // Extend the mutex window until the acquired Server session is attached
   // to the SM. Releasing the mutex before that results in race conditions
@@ -444,8 +446,8 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
     }
 
     if (to_return) {
-      Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->con_id);
-      to_return->state = HSS_ACTIVE;
+      Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
+      to_return->state = PoolableSession::SSN_IN_USE;
       // the attach_server_session will issue the do_io_read under the sm lock
       sm->attach_server_session(to_return);
       retval = HSM_DONE;
@@ -455,7 +457,7 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
 }
 
 HSMresult_t
-HttpSessionManager::release_session(Http1ServerSession *to_release)
+HttpSessionManager::release_session(PoolableSession *to_release)
 {
   EThread *ethread = this_ethread();
   ServerSessionPool *pool =
@@ -471,7 +473,8 @@ HttpSessionManager::release_session(Http1ServerSession *to_release)
     to_release->sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
     return release_session(to_release);
   } else {
-    Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention", to_release->con_id);
+    Debug("http_ss", "[%" PRId64 "] [release session] could not release session due to lock contention",
+          to_release->connection_id());
     released_p = false;
   }
 

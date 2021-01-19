@@ -39,18 +39,7 @@ public:
   void release(IOBufferReader *r) override;
   void destroy() override; // todo make ~Http1Transaction()
 
-  // Implement VConnection interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
-                   bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
-
   bool allow_half_open() const override;
-  void set_active_timeout(ink_hrtime timeout_in) override;
-  void set_inactivity_timeout(ink_hrtime timeout_in) override;
-  void cancel_inactivity_timeout() override;
   void transaction_done() override;
   int get_transaction_id() const override;
   void increment_client_transactions_stat() override;
