@@ -1184,11 +1184,99 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
 {
   const SSLConfigParams *params = this->_params;
 
-  int server_verify_client;
   SSL_CTX *ctx = this->default_server_ssl_ctx();
 
   // disable selected protocols
   SSL_CTX_set_options(ctx, params->ssl_ctx_options);
+
+  if (!this->_setup_session_cache(ctx)) {
+    goto fail;
+  }
+
+#ifdef SSL_MODE_RELEASE_BUFFERS
+  Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
+  SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+#endif
+
+#ifdef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
+  SSL_CTX_set_options(ctx, SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
+#endif
+
+  if (sslMultCertSettings) {
+    if (!this->_setup_dialog(ctx, sslMultCertSettings)) {
+      goto fail;
+    }
+
+    if (sslMultCertSettings->cert) {
+      if (!SSLMultiCertConfigLoader::load_certs(ctx, data, params, sslMultCertSettings)) {
+        goto fail;
+      }
+    }
+
+    if (!this->_set_verify_path(ctx, sslMultCertSettings)) {
+      goto fail;
+    }
+
+    if (!this->_setup_session_ticket(ctx, sslMultCertSettings)) {
+      goto fail;
+    }
+  }
+
+  if (!this->_setup_client_cert_verification(ctx)) {
+    goto fail;
+  }
+
+  if (!SSLMultiCertConfigLoader::set_session_id_context(ctx, params, sslMultCertSettings)) {
+    goto fail;
+  }
+
+  if (!this->_set_cipher_suites_for_legacy_versions(ctx)) {
+    goto fail;
+    ;
+  }
+  if (!this->_set_cipher_suites(ctx)) {
+    goto fail;
+  }
+  if (!this->_set_curves(ctx)) {
+    goto fail;
+  }
+
+  if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
+    goto fail;
+  }
+
+  ssl_context_enable_ecdh(ctx);
+
+  if (sslMultCertSettings && sslMultCertSettings->dialog) {
+    SSLMultiCertConfigLoader::clear_pw_references(ctx);
+  }
+
+  if (!this->_set_info_callback(ctx)) {
+    goto fail;
+  };
+  if (!this->_set_npn_callback(ctx)) {
+    goto fail;
+  }
+  if (!this->_set_alpn_callback(ctx)) {
+    goto fail;
+  }
+
+  if (SSLConfigParams::init_ssl_ctx_cb) {
+    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+  }
+
+  return ctx;
+
+fail:
+  SSLMultiCertConfigLoader::clear_pw_references(ctx);
+  SSLReleaseContext(ctx);
+  return nullptr;
+}
+
+bool
+SSLMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
+{
+  const SSLConfigParams *params = this->_params;
 
   Debug("ssl.session_cache",
         "ssl context=%p: using session cache options, enabled=%d, size=%d, num_buckets=%d, "
@@ -1226,90 +1314,98 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     break;
   }
   }
+  return true;
+}
 
-#ifdef SSL_MODE_RELEASE_BUFFERS
-  Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
-  SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
-#endif
-
-#ifdef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
-  SSL_CTX_set_options(ctx, SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
-#endif
-
-  if (sslMultCertSettings) {
-    if (sslMultCertSettings->dialog) {
-      passphrase_cb_userdata ud(params, sslMultCertSettings->dialog, sslMultCertSettings->first_cert, sslMultCertSettings->key);
-      // pass phrase dialog configuration
-      pem_password_cb *passwd_cb = nullptr;
-      if (strncmp(sslMultCertSettings->dialog, "exec:", 5) == 0) {
-        ud._serverDialog = &sslMultCertSettings->dialog[5];
-        // validate the exec program
-        if (!ssl_private_key_validate_exec(ud._serverDialog)) {
-          SSLError("failed to access '%s' pass phrase program: %s", (const char *)ud._serverDialog, strerror(errno));
-          memset(static_cast<void *>(&ud), 0, sizeof(ud));
-          goto fail;
-        }
-        passwd_cb = ssl_private_key_passphrase_callback_exec;
-      } else if (strcmp(sslMultCertSettings->dialog, "builtin") == 0) {
-        passwd_cb = ssl_private_key_passphrase_callback_builtin;
-      } else { // unknown config
-        SSLError("unknown %s configuration value '%s'", SSL_KEY_DIALOG.data(), (const char *)sslMultCertSettings->dialog);
+bool
+SSLMultiCertConfigLoader::_setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings)
+{
+  if (sslMultCertSettings->dialog) {
+    passphrase_cb_userdata ud(this->_params, sslMultCertSettings->dialog, sslMultCertSettings->first_cert,
+                              sslMultCertSettings->key);
+    // pass phrase dialog configuration
+    pem_password_cb *passwd_cb = nullptr;
+    if (strncmp(sslMultCertSettings->dialog, "exec:", 5) == 0) {
+      ud._serverDialog = &sslMultCertSettings->dialog[5];
+      // validate the exec program
+      if (!ssl_private_key_validate_exec(ud._serverDialog)) {
+        SSLError("failed to access '%s' pass phrase program: %s", (const char *)ud._serverDialog, strerror(errno));
         memset(static_cast<void *>(&ud), 0, sizeof(ud));
-        goto fail;
+        return false;
       }
-      SSL_CTX_set_default_passwd_cb(ctx, passwd_cb);
-      SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
-      // Clear any password info lingering in the UD data structure
+      passwd_cb = ssl_private_key_passphrase_callback_exec;
+    } else if (strcmp(sslMultCertSettings->dialog, "builtin") == 0) {
+      passwd_cb = ssl_private_key_passphrase_callback_builtin;
+    } else { // unknown config
+      SSLError("unknown %s configuration value '%s'", SSL_KEY_DIALOG.data(), (const char *)sslMultCertSettings->dialog);
       memset(static_cast<void *>(&ud), 0, sizeof(ud));
+      return false;
     }
+    SSL_CTX_set_default_passwd_cb(ctx, passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
+    // Clear any password info lingering in the UD data structure
+    memset(static_cast<void *>(&ud), 0, sizeof(ud));
+  }
+  return true;
+}
 
-    if (sslMultCertSettings->cert) {
-      if (!SSLMultiCertConfigLoader::load_certs(ctx, data, params, sslMultCertSettings)) {
-        goto fail;
-      }
+bool
+SSLMultiCertConfigLoader::_set_verify_path(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings)
+{
+  // SSL_CTX_load_verify_locations() builds the cert chain from the
+  // serverCACertFilename if that is not nullptr.  Otherwise, it uses the hashed
+  // symlinks in serverCACertPath.
+  //
+  // if ssl_ca_name is NOT configured for this cert in ssl_multicert.config
+  //     AND
+  // if proxy.config.ssl.CA.cert.filename and proxy.config.ssl.CA.cert.path
+  //     are configured
+  //   pass that file as the chain (include all certs in that file)
+  // else if proxy.config.ssl.CA.cert.path is configured (and
+  //       proxy.config.ssl.CA.cert.filename is nullptr)
+  //   use the hashed symlinks in that directory to build the chain
+  const SSLConfigParams *params = this->_params;
+  if (!sslMultCertSettings->ca && params->serverCACertPath != nullptr) {
+    if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
+        (!SSL_CTX_set_default_verify_paths(ctx))) {
+      SSLError("invalid CA Certificate file or CA Certificate path");
+      return false;
     }
+  }
+  return true;
+}
 
-    // SSL_CTX_load_verify_locations() builds the cert chain from the
-    // serverCACertFilename if that is not nullptr.  Otherwise, it uses the hashed
-    // symlinks in serverCACertPath.
-    //
-    // if ssl_ca_name is NOT configured for this cert in ssl_multicert.config
-    //     AND
-    // if proxy.config.ssl.CA.cert.filename and proxy.config.ssl.CA.cert.path
-    //     are configured
-    //   pass that file as the chain (include all certs in that file)
-    // else if proxy.config.ssl.CA.cert.path is configured (and
-    //       proxy.config.ssl.CA.cert.filename is nullptr)
-    //   use the hashed symlinks in that directory to build the chain
-    if (!sslMultCertSettings->ca && params->serverCACertPath != nullptr) {
-      if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
-          (!SSL_CTX_set_default_verify_paths(ctx))) {
-        SSLError("invalid CA Certificate file or CA Certificate path");
-        goto fail;
-      }
-    }
-
+bool
+SSLMultiCertConfigLoader::_setup_session_ticket(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings)
+{
 #if defined(SSL_OP_NO_TICKET)
-    // Session tickets are enabled by default. Disable if explicitly requested.
-    if (sslMultCertSettings->session_ticket_enabled == 0) {
-      SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
-      Debug("ssl", "ssl session ticket is disabled");
-    }
+  // Session tickets are enabled by default. Disable if explicitly requested.
+  if (sslMultCertSettings->session_ticket_enabled == 0) {
+    SSL_CTX_set_options(ctx, SSL_OP_NO_TICKET);
+    Debug("ssl", "ssl session ticket is disabled");
+  }
 #endif
 #if defined(TLS1_3_VERSION) && !defined(LIBRESSL_VERSION_NUMBER) && !defined(OPENSSL_IS_BORINGSSL)
-    if (!(params->ssl_ctx_options & SSL_OP_NO_TLSv1_3)) {
-      SSL_CTX_set_num_tickets(ctx, sslMultCertSettings->session_ticket_number);
-      Debug("ssl", "ssl session ticket number set to %d", sslMultCertSettings->session_ticket_number);
-    }
-#endif
+  if (!(this->_params->ssl_ctx_options & SSL_OP_NO_TLSv1_3)) {
+    SSL_CTX_set_num_tickets(ctx, sslMultCertSettings->session_ticket_number);
+    Debug("ssl", "ssl session ticket number set to %d", sslMultCertSettings->session_ticket_number);
   }
+#endif
+  return true;
+}
+
+bool
+SSLMultiCertConfigLoader::_setup_client_cert_verification(SSL_CTX *ctx)
+{
+  int server_verify_client;
+  const SSLConfigParams *params = this->_params;
 
   if (params->clientCertLevel != 0) {
     if (params->serverCACertFilename != nullptr && params->serverCACertPath != nullptr) {
       if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
           (!SSL_CTX_set_default_verify_paths(ctx))) {
         SSLError("CA Certificate file or CA Certificate path invalid");
-        goto fail;
+        return false;
       }
     }
 
@@ -1325,64 +1421,72 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     SSL_CTX_set_verify(ctx, server_verify_client, ssl_verify_client_callback);
     SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
   }
+  return true;
+}
 
-  if (!SSLMultiCertConfigLoader::set_session_id_context(ctx, params, sslMultCertSettings)) {
-    goto fail;
-  }
-
-  if (params->cipherSuite != nullptr) {
-    if (!SSL_CTX_set_cipher_list(ctx, params->cipherSuite)) {
+bool
+SSLMultiCertConfigLoader::_set_cipher_suites_for_legacy_versions(SSL_CTX *ctx)
+{
+  if (this->_params->cipherSuite != nullptr) {
+    if (!SSL_CTX_set_cipher_list(ctx, this->_params->cipherSuite)) {
       SSLError("invalid cipher suite in %s", ts::filename::RECORDS);
-      goto fail;
+      return false;
     }
   }
+  return true;
+}
 
+bool
+SSLMultiCertConfigLoader::_set_cipher_suites(SSL_CTX *ctx)
+{
 #if TS_USE_TLS_SET_CIPHERSUITES
-  if (params->server_tls13_cipher_suites != nullptr) {
-    if (!SSL_CTX_set_ciphersuites(ctx, params->server_tls13_cipher_suites)) {
+  if (this->_params->server_tls13_cipher_suites != nullptr) {
+    if (!SSL_CTX_set_ciphersuites(ctx, this->_params->server_tls13_cipher_suites)) {
       SSLError("invalid tls server cipher suites in %s", ts::filename::RECORDS);
-      goto fail;
+      return false;
     }
   }
 #endif
+  return true;
+}
 
+bool
+SSLMultiCertConfigLoader::_set_curves(SSL_CTX *ctx)
+{
 #if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
-  if (params->server_groups_list != nullptr) {
+  if (this->_params->server_groups_list != nullptr) {
 #ifdef SSL_CTX_set1_groups_list
-    if (!SSL_CTX_set1_groups_list(ctx, params->server_groups_list)) {
+    if (!SSL_CTX_set1_groups_list(ctx, this->_params->server_groups_list)) {
 #else
-    if (!SSL_CTX_set1_curves_list(ctx, params->server_groups_list)) {
+    if (!SSL_CTX_set1_curves_list(ctx, this->_params->server_groups_list)) {
 #endif
       SSLError("invalid groups list for server in %s", ts::filename::RECORDS);
-      goto fail;
+      return false;
     }
   }
 #endif
+  return true;
+}
 
-  if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
-    goto fail;
-  }
-
-  ssl_context_enable_ecdh(ctx);
-
-  if (sslMultCertSettings && sslMultCertSettings->dialog) {
-    SSLMultiCertConfigLoader::clear_pw_references(ctx);
-  }
+bool
+SSLMultiCertConfigLoader::_set_info_callback(SSL_CTX *ctx)
+{
   SSL_CTX_set_info_callback(ctx, ssl_callback_info);
+  return true;
+}
 
+bool
+SSLMultiCertConfigLoader::_set_npn_callback(SSL_CTX *ctx)
+{
   SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, nullptr);
+  return true;
+}
+
+bool
+SSLMultiCertConfigLoader::_set_alpn_callback(SSL_CTX *ctx)
+{
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, nullptr);
-
-  if (SSLConfigParams::init_ssl_ctx_cb) {
-    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
-  }
-
-  return ctx;
-
-fail:
-  SSLMultiCertConfigLoader::clear_pw_references(ctx);
-  SSLReleaseContext(ctx);
-  return nullptr;
+  return true;
 }
 
 SSL_CTX *
