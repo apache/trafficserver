@@ -38,12 +38,12 @@ ts = Test.MakeATSProcess("ts", command="traffic_server")
 
 # default root
 request_header_chk = {"headers":
-  "GET / HTTP/1.1\r\n" +
-  "Host: ats\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": "",
-}
+                      "GET / HTTP/1.1\r\n" +
+                      "Host: ats\r\n" +
+                      "\r\n",
+                      "timestamp": "1469733493.993",
+                      "body": "",
+                      }
 
 response_header_chk = {"headers":
                        "HTTP/1.1 200 OK\r\n" +
@@ -59,12 +59,12 @@ block_bytes = 7
 body = "lets go surfin now"
 
 request_header = {"headers":
-  "GET /path HTTP/1.1\r\n" +
-  "Host: origin\r\n" +
-  "\r\n",
-  "timestamp": "1469733493.993",
-  "body": "",
-}
+                  "GET /path HTTP/1.1\r\n" +
+                  "Host: origin\r\n" +
+                  "\r\n",
+                  "timestamp": "1469733493.993",
+                  "body": "",
+                  }
 
 response_header = {"headers":
                    "HTTP/1.1 200 OK\r\n" +
@@ -82,17 +82,17 @@ curl_and_args = 'curl -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.f
 
 # set up whole asset fetch into cache
 ts.Disk.remap_config.AddLines([
-  'map http://preload/ http://127.0.0.1:{}'.format(server.Variables.Port),
-  'map http://slice/ http://127.0.0.1:{}'.format(server.Variables.Port) +
+    'map http://preload/ http://127.0.0.1:{}'.format(server.Variables.Port),
+    'map http://slice/ http://127.0.0.1:{}'.format(server.Variables.Port) +
     ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(block_bytes)
 ])
 
 # minimal configuration
 ts.Disk.records_config.update({
-#  'proxy.config.diags.debug.enabled': 1,
-#  'proxy.config.diags.debug.tags': 'slice',
-  'proxy.config.http.cache.http': 1,
-  'proxy.config.http.wait_for_cache': 1,
+    #  'proxy.config.diags.debug.enabled': 1,
+    #  'proxy.config.diags.debug.tags': 'slice',
+    'proxy.config.http.cache.http': 1,
+    'proxy.config.http.wait_for_cache': 1,
 })
 
 # 0 Test - Prefetch entire asset into cache
