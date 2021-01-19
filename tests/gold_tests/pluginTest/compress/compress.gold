@@ -180,6 +180,7 @@
 > POST http://ae-0/obj0 HTTP/1.1
 > X-Ats-Compress-Test: 0/gzip
 > Accept-Encoding: gzip
+> Content-Length: 0
 < HTTP/1.1 200 OK
 < Content-Type: text/javascript
 < Content-Encoding: gzip

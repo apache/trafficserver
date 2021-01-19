@@ -83,7 +83,7 @@ def curl_post(ts, idx, encodingList):
     return (
         "curl --verbose --request POST --proxy http://127.0.0.1:{}".format(ts.Variables.port) +
         " --header 'X-Ats-Compress-Test: {}/{}'".format(idx, encodingList) +
-        " --header 'Accept-Encoding: {0}' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
+        " --header 'Accept-Encoding: {0}' --header 'Content-Length: 0' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
         " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log"
     )
 
