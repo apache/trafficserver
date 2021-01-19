@@ -63,6 +63,10 @@ for i in range(3):
     }
     server.addResponse("sessionfile.log", request_header, response_header)
 
+# post for the origin server
+post_request_header = {
+    "headers": "POST /obj0 HTTP/1.1\r\nHost: just.any.thing\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+server.addResponse("sessionfile.log", post_request_header, response_header)
 
 def curl(ts, idx, encodingList):
     return (
@@ -72,6 +76,13 @@ def curl(ts, idx, encodingList):
         " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log"
     )
 
+def curl_post(ts, idx, encodingList):
+    return (
+        "curl --verbose --request POST --proxy http://127.0.0.1:{}".format(ts.Variables.port) +
+        " --header 'X-Ats-Compress-Test: {}/{}'".format(idx, encodingList) +
+        " --header 'Accept-Encoding: {0}' 'http://ae-{1}/obj{1}'".format(encodingList, idx) +
+        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log"
+    )
 
 waitForServer = True
 
@@ -161,6 +172,11 @@ tr.Processes.Default.Command = curl(ts, 0, " br ; q=0.666, bbb")
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = curl(ts, 0, "aaa, gzip;q=0.666 , ")
+
+# post
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = curl_post(ts, 0, "gzip")
 
 # compress_long.log contains all the output from the curl commands.  The tr removes the carriage returns for easier
 # readability.  Curl seems to have a bug, where it will neglect to output an end of line before outputing an HTTP
