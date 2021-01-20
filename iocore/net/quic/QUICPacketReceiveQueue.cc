@@ -24,8 +24,10 @@
 #include "QUICPacketReceiveQueue.h"
 #include "QUICPacketHeaderProtector.h"
 #include "QUICPacketFactory.h"
-
 #include "QUICIntUtil.h"
+
+#include "P_UDPConnection.h"
+#include "P_UDPPacket.h"
 
 static bool
 is_vn(QUICVersion v)
