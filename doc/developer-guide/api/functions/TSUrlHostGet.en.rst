@@ -33,6 +33,7 @@ Synopsis
 
 .. function:: const char * TSUrlHostGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: const char * TSUrlSchemeGet(TSMBuffer bufp, TSMLoc offset, int * length)
+.. function:: const char * TSUrlRawSchemeGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: const char * TSUrlUserGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: const char * TSUrlPasswordGet(TSMBuffer bufp, TSMLoc offset, int* length)
 .. function:: int TSUrlPortGet(TSMBuffer bufp, TSMLoc offset)
@@ -50,12 +51,16 @@ buffers. The URL functions can create, copy, retrieve or delete entire URLs,
 and retrieve or modify parts of URLs, such as their host, port or scheme
 information.
 
-:func:`TSUrlSchemeGet`, :func:`TSUrlUserGet`, :func:`TSUrlPasswordGet`,
+:func:`TSUrlSchemeGet`, :func:`TSUrlRawSchemeGet`, :func:`TSUrlUserGet`, :func:`TSUrlPasswordGet`,
 :func:`TSUrlHostGet`, :func:`TSUrlPathGet`, :func:`TSUrlHttpParamsGet`, :func:`TSUrlHttpQueryGet`
 and :func:`TSUrlHttpFragmentGet` each retrieve an internal pointer to the
 specified portion of the URL from the marshall buffer :arg:`bufp`. The length
 of the returned string is placed in :arg:`length` and a pointer to the URL
 portion is returned.
+
+If a request URL does not have a explicit scheme, :func:`TSUrlRawSchemeGet` will return null and
+set :arg:`length` to zero.  :func:`TSUrlSchemeGet`, will return the scheme corresponding to the
+URL type (HTTP or HTTPS) if there is no explicit scheme.
 
 :func:`TSUrlPortGet` retrieves the port number portion of the URL located at
 :arg:`offset` within the marshal buffer :arg:`bufp`. If there is no explicit
