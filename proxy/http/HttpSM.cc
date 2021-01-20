@@ -6119,9 +6119,7 @@ HttpSM::attach_server_session(Http1ServerSession *s)
   // first tunnel was sometimes behind handled by the consumer of the
   // first tunnel instead of the producer of the second tunnel.
   // The real read is setup in setup_server_read_response_header()
-  //
-  // Keep the read disabled until setup_server_read_response_header
-  server_entry->read_vio = server_session->do_io_read(this, 0, nullptr);
+  server_entry->read_vio = server_session->do_io_read(this, 0, server_session->read_buffer);
 
   // Transfer control of the write side as well
   server_entry->write_vio = server_session->do_io_write(this, 0, nullptr);
