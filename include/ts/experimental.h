@@ -452,6 +452,16 @@ tsapi TSMBuffer TSFetchRespHdrMBufGet(TSFetchSM fetch_sm);
  */
 tsapi TSMLoc TSFetchRespHdrMLocGet(TSFetchSM fetch_sm);
 
+/*
+ * Parse a MIME header date string.
+ */
+tsapi time_t TSMimeParseDate(char const *const value_str, int const value_len);
+
+/*
+ * Print as a MIME header date string.
+ */
+tsapi TSReturnCode TSMimeFormatDate(time_t const value_time, char *const value_str, int *const value_len);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

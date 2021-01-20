@@ -111,7 +111,7 @@ Config::fromArgs(int const argc, char const *const argv[])
     {const_cast<char *>("disable-errorlog"), no_argument, nullptr, 'd'},
     {const_cast<char *>("exclude-regex"), required_argument, nullptr, 'e'},
     {const_cast<char *>("include-regex"), required_argument, nullptr, 'i'},
-    {const_cast<char *>("throttle"), no_argument, nullptr, 'o'},
+    {const_cast<char *>("ref-relative"), no_argument, nullptr, 'l'},
     {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
     {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
     {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
@@ -121,7 +121,7 @@ Config::fromArgs(int const argc, char const *const argv[])
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:de:i:op:r:t:", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:de:i:lop:r:t:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -177,9 +177,9 @@ Config::fromArgs(int const argc, char const *const argv[])
         DEBUG_LOG("Using regex for url include: '%s'", m_regexstr.c_str());
       }
     } break;
-    case 'o': {
-      m_throttle = true;
-      DEBUG_LOG("Enabling internal block throttling");
+    case 'l': {
+      m_reftype = RefType::Relative;
+      DEBUG_LOG("Reference slice relative to request (not slice block 0)");
     } break;
     case 'p': {
       int const secsread = atoi(optarg);

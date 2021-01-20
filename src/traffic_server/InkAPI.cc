@@ -3364,6 +3364,16 @@ TSMimeHdrFieldValueDateGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
   return mime_parse_date(value_str, value_str + value_len);
 }
 
+time_t
+TSMimeParseDate(char const *const value_str, int const value_len)
+{
+  if (value_str == nullptr) {
+    return (time_t)0;
+  }
+
+  return mime_parse_date(value_str, value_str + value_len);
+}
+
 int
 TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 {
@@ -3460,6 +3470,21 @@ TSMimeHdrFieldValueDateSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t valu
   // idx is ignored and we overwrite all existing values
   // TSMimeFieldValueSet(bufp, field_obj, idx, tmp, len);
   TSMimeFieldValueSet(bufp, field, -1, tmp, len);
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSMimeFormatDate(time_t const value_time, char *const value_str, int *const value_length)
+{
+  if (value_length == nullptr) {
+    return TS_ERROR;
+  }
+
+  if (*value_length < 33) {
+    return TS_ERROR;
+  }
+
+  *value_length = mime_format_date(value_str, value_time);
   return TS_SUCCESS;
 }
 
