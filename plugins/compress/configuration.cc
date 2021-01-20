@@ -105,6 +105,7 @@ enum ParserState {
   kParseRemoveAcceptEncoding,
   kParseEnable,
   kParseCache,
+  kParseRangeRequest,
   kParseFlush,
   kParseAllow,
   kParseMinimumContentLength
@@ -347,6 +348,8 @@ Configuration::Parse(const char *path)
           state = kParseEnable;
         } else if (token == "cache") {
           state = kParseCache;
+        } else if (token == "range-request") {
+          state = kParseRangeRequest;
         } else if (token == "flush") {
           state = kParseFlush;
         } else if (token == "supported-algorithms") {
@@ -377,6 +380,10 @@ Configuration::Parse(const char *path)
         break;
       case kParseCache:
         current_host_configuration->set_cache(token == "true");
+        state = kParseStart;
+        break;
+      case kParseRangeRequest:
+        current_host_configuration->set_range_request(token == "true");
         state = kParseStart;
         break;
       case kParseFlush:
