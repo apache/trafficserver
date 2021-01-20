@@ -629,7 +629,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
   /* Client request header */
   TSMBuffer cbuf;
   TSMLoc chdr;
-  TSMLoc cfield;
+  TSMLoc cfield, rfield;
 
   const char *value;
   int len;
@@ -661,6 +661,17 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
     return 0;
   }
 
+  // check if Range Requests are cacheable
+  bool range_request = host_configuration->range_request();
+  rfield             = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+  if (rfield != TS_NULL_MLOC && !range_request) {
+    debug("Range header found in the request and range_request is configured as false, not compressible");
+    TSHandleMLocRelease(cbuf, chdr, rfield);
+    TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    return 0;
+  }
+
   // the only compressible method is currently GET.
   int method_length;
   const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
@@ -668,6 +679,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
   if (!(method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0)) {
     debug("method is not GET, not compressible");
     TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
 
