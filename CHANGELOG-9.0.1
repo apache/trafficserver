@@ -1,5 +1,11 @@
 Changes with Apache Traffic Server 9.0.1
+  #6691 - Slice plugin: self heal when asset etag/last-modified block mismatches
+  #6860 - Make format specifier for time_t portable
+  #6919 - slice: clean up 502 header/body generation.
+  #7257 - slice: default to throttling, fixes to manufactured 416 responses.
   #7377 - Addresses some of the lock contention with HostStatus.
   #7395 - Replace ::exit() with _exit() to avoid secondary cleanup cores
   #7414 - Remove the warning messages
   #7420 - Update documentation for TSSslSessionInsert
+  #7432 - Fix stall on outbound TLS handshake
+  #7435 - Slice: 9.0.x back port of self healing and throttle by default
