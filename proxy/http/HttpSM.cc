@@ -552,18 +552,18 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   if (ssl_vc != nullptr) {
     client_connection_is_ssl = true;
     client_ssl_reused        = ssl_vc->getSSLSessionCacheHit();
-    const char *protocol     = ssl_vc->getSSLProtocol();
+    const char *protocol     = ssl_vc->get_tls_protocol_name();
     client_sec_protocol      = protocol ? protocol : "-";
-    const char *cipher       = ssl_vc->getSSLCipherSuite();
+    const char *cipher       = ssl_vc->get_tls_cipher_suite();
     client_cipher_suite      = cipher ? cipher : "-";
-    const char *curve        = ssl_vc->getSSLCurve();
+    const char *curve        = ssl_vc->get_tls_curve();
     client_curve             = curve ? curve : "-";
     client_alpn_id           = ssl_vc->get_negotiated_protocol_id();
 
     if (!client_tcp_reused) {
       // Copy along the TLS handshake timings
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = ssl_vc->sslHandshakeBeginTime;
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = ssl_vc->sslHandshakeEndTime;
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = ssl_vc->get_tls_handshake_begin_time();
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = ssl_vc->get_tls_handshake_end_time();
     }
   }
 

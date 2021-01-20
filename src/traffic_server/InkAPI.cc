@@ -54,6 +54,7 @@
 #include "P_SSLClientUtils.h"
 #include "SSLDiags.h"
 #include "SSLInternal.h"
+#include "TLSBasicSupport.h"
 #include "ProxyConfig.h"
 #include "Plugin.h"
 #include "LogObject.h"
@@ -6650,28 +6651,28 @@ TSVConnIsSslReused(TSVConn sslp)
 const char *
 TSVConnSslCipherGet(TSVConn sslp)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
+  TLSBasicSupport *tlsbs = dynamic_cast<TLSBasicSupport *>(vc);
 
-  return ssl_vc ? ssl_vc->getSSLCipherSuite() : nullptr;
+  return tlsbs ? tlsbs->get_tls_cipher_suite() : nullptr;
 }
 
 const char *
 TSVConnSslProtocolGet(TSVConn sslp)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
+  TLSBasicSupport *tlsbs = dynamic_cast<TLSBasicSupport *>(vc);
 
-  return ssl_vc ? ssl_vc->getSSLProtocol() : nullptr;
+  return tlsbs ? tlsbs->get_tls_protocol_name() : nullptr;
 }
 
 const char *
 TSVConnSslCurveGet(TSVConn sslp)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
+  TLSBasicSupport *tlsbs = dynamic_cast<TLSBasicSupport *>(vc);
 
-  return ssl_vc ? ssl_vc->getSSLCurve() : nullptr;
+  return tlsbs ? tlsbs->get_tls_curve() : nullptr;
 }
 
 int

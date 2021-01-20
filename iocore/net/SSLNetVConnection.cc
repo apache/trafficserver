@@ -214,6 +214,7 @@ void
 SSLNetVConnection::_bindSSLObject()
 {
   SSLNetVCAttach(this->ssl, this);
+  TLSBasicSupport::bind(this->ssl, this);
   TLSSessionResumptionSupport::bind(this->ssl, this);
   TLSSNISupport::bind(this->ssl, this);
 }
@@ -222,6 +223,7 @@ void
 SSLNetVConnection::_unbindSSLObject()
 {
   SSLNetVCDetach(this->ssl);
+  TLSBasicSupport::unbind(this->ssl);
   TLSSessionResumptionSupport::unbind(this->ssl);
   TLSSNISupport::unbind(this->ssl);
 }
@@ -610,7 +612,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       readSignalError(nh, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
       if (SSLConfigParams::ssl_handshake_timeout_in > 0) {
-        double handshake_time = (static_cast<double>(Thread::get_hrtime() - sslHandshakeBeginTime) / 1000000000);
+        double handshake_time = (static_cast<double>(Thread::get_hrtime() - this->get_tls_handshake_begin_time()) / 1000000000);
         Debug("ssl", "ssl handshake for vc %p, took %.3f seconds, configured handshake_timer: %d", this, handshake_time,
               SSLConfigParams::ssl_handshake_timeout_in);
         if (handshake_time > SSLConfigParams::ssl_handshake_timeout_in) {
@@ -938,11 +940,11 @@ SSLNetVConnection::clear()
     ssl = nullptr;
   }
   ALPNSupport::clear();
+  TLSBasicSupport::clear();
   TLSSessionResumptionSupport::clear();
   TLSSNISupport::_clear();
 
   sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
-  sslHandshakeBeginTime       = 0;
   sslLastWriteTime            = 0;
   sslTotalBytesSent           = 0;
   sslClientRenegotiationAbort = false;
@@ -999,8 +1001,8 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     Debug("ssl", "Stopping handshake due to server shutting down.");
     return EVENT_ERROR;
   }
-  if (sslHandshakeBeginTime == 0) {
-    sslHandshakeBeginTime = Thread::get_hrtime();
+  if (this->get_tls_handshake_begin_time() == 0) {
+    this->_record_tls_handshake_begin_time();
     // net_activity will not be triggered until after the handshake
     set_inactivity_timeout(HRTIME_SECONDS(SSLConfigParams::ssl_handshake_timeout_in));
   }
@@ -1309,12 +1311,8 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
     sslHandshakeStatus = SSL_HANDSHAKE_DONE;
 
-    if (sslHandshakeBeginTime) {
-      sslHandshakeEndTime                 = Thread::get_hrtime();
-      const ink_hrtime ssl_handshake_time = sslHandshakeEndTime - sslHandshakeBeginTime;
-
-      Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
-      SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
+    if (this->get_tls_handshake_begin_time()) {
+      this->_record_tls_handshake_end_time();
       SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
     }
 
@@ -1423,7 +1421,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
   ssl_error_t ssl_error;
 
-  ink_assert(SSLNetVCAccess(ssl) == this);
+  ink_assert(TLSBasicSupport::getInstance(ssl) == this);
 
   // Initialize properly for a client connection
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
@@ -1947,7 +1945,7 @@ SSLNetVConnection::populate_protocol(std::string_view *results, int n) const
 {
   int retval = 0;
   if (n > retval) {
-    results[retval] = map_tls_protocol_to_tag(getSSLProtocol());
+    results[retval] = map_tls_protocol_to_tag(this->get_tls_protocol_name());
     if (!results[retval].empty()) {
       ++retval;
     }
@@ -1962,7 +1960,7 @@ const char *
 SSLNetVConnection::protocol_contains(std::string_view prefix) const
 {
   const char *retval   = nullptr;
-  std::string_view tag = map_tls_protocol_to_tag(getSSLProtocol());
+  std::string_view tag = map_tls_protocol_to_tag(this->get_tls_protocol_name());
   if (prefix.size() <= tag.size() && strncmp(tag.data(), prefix.data(), prefix.size()) == 0) {
     retval = tag.data();
   } else {
@@ -2009,4 +2007,14 @@ NetProcessor *
 SSLNetVConnection::_getNetProcessor()
 {
   return &sslNetProcessor;
+}
+
+ssl_curve_id
+SSLNetVConnection::_get_tls_curve() const
+{
+  if (getSSLSessionCacheHit()) {
+    return getSSLCurveNID();
+  } else {
+    return SSLGetCurveNID(ssl);
+  }
 }
