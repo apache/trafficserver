@@ -66,8 +66,7 @@ for i in range(3):
 
 # post for the origin server
 post_request_header = {
-    "headers": "POST /obj3 HTTP/1.1\r\nHost: just.any.thing\r\nContent-Type:
-application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n", "timestamp": "1469733493.993", "body": "knock knock"}
+    "headers": "POST /obj3 HTTP/1.1\r\nHost: just.any.thing\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n", "timestamp": "1469733493.993", "body": "knock knock"}
 server.addResponse("sessionfile.log", post_request_header, response_header)
 
 
