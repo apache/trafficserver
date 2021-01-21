@@ -40,14 +40,11 @@
 
 // Properties for the next hop server
 struct NextHopProperty {
-  std::string name;                                                                // name of the server
   std::string client_cert_file;                                                    // full path to client cert file for lookup
   std::string client_key_file;                                                     // full path to client key file for lookup
   YamlSNIConfig::Policy verifyServerPolicy       = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
   YamlSNIConfig::Property verifyServerProperties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
-  bool tls_upstream                              = false;                          // whether the upstream connection should be TLS
 
-  SSL_CTX *ctx = nullptr; // ctx generated off the certificate to present to this server
   NextHopProperty() {}
 };
 

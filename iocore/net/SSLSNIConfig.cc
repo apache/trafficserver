@@ -101,7 +101,6 @@ SNIConfigParams::loadSNIConfig()
     nps->setGlobName(item.fqdn);
     nps->prop.verifyServerPolicy     = item.verify_server_policy;
     nps->prop.verifyServerProperties = item.verify_server_properties;
-    nps->prop.tls_upstream           = item.tls_upstream;
   } // end for
 }
 
