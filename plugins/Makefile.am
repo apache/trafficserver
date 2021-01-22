@@ -29,6 +29,7 @@ AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
 
 include authproxy/Makefile.inc
 include background_fetch/Makefile.inc
+include cache_fill/Makefile.inc
 include cachekey/Makefile.inc
 include cache_promote/Makefile.inc
 include cache_range_requests/Makefile.inc
