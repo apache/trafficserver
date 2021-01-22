@@ -5596,6 +5596,15 @@ TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag)
   return TS_SUCCESS;
 }
 
+bool
+TSHttpTxnServerRespNoStoreGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpTransact::State *s = &(((HttpSM *)txnp)->t_state);
+  return s->api_server_response_no_store;
+}
+
 TSReturnCode
 TSHttpTxnServerRespIgnore(TSHttpTxn txnp)
 {
