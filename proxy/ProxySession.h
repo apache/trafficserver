@@ -30,7 +30,6 @@
 #include <memory>
 #include "P_Net.h"
 #include "InkAPIInternal.h"
-#include "http/Http1ServerSession.h"
 #include "http/HttpSessionAccept.h"
 #include "IPAllow.h"
 #include "private/SSLProxySession.h"
@@ -41,6 +40,7 @@
 #define SsnDebug(ssn, tag, ...) SpecificDebug((ssn)->debug(), tag, __VA_ARGS__)
 
 class ProxyTransaction;
+class PoolableSession;
 
 enum class ProxyErrorClass {
   NONE,
@@ -89,18 +89,17 @@ public:
   // Virtual Methods
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) = 0;
   virtual void start()                                                                          = 0;
-  virtual bool attach_server_session(Http1ServerSession *ssession, bool transaction_done = true);
+  virtual bool attach_server_session(PoolableSession *ssession, bool transaction_done = true);
 
   virtual void release(ProxyTransaction *trans) = 0;
 
   virtual void destroy() = 0;
   virtual void free();
 
-  virtual void increment_current_active_client_connections_stat() = 0;
-  virtual void decrement_current_active_client_connections_stat() = 0;
+  virtual void increment_current_active_connections_stat() = 0;
+  virtual void decrement_current_active_connections_stat() = 0;
 
   // Virtual Accessors
-  NetVConnection *get_netvc() const;
   virtual int get_transact_count() const          = 0;
   virtual const char *get_protocol_string() const = 0;
 
@@ -111,20 +110,22 @@ public:
   virtual void set_half_close_flag(bool flag);
   virtual bool get_half_close_flag() const;
 
-  virtual Http1ServerSession *get_server_session() const;
+  virtual PoolableSession *get_server_session() const;
 
   // Replicate NetVConnection API
-  virtual sockaddr const *get_client_addr();
+  virtual sockaddr const *get_remote_addr() const;
   virtual sockaddr const *get_local_addr();
 
   virtual void set_active_timeout(ink_hrtime timeout_in);
   virtual void set_inactivity_timeout(ink_hrtime timeout_in);
   virtual void cancel_inactivity_timeout();
+  virtual void cancel_active_timeout();
 
   virtual int populate_protocol(std::string_view *result, int size) const;
   virtual const char *protocol_contains(std::string_view tag_prefix) const;
 
   // Non-Virtual Methods
+  NetVConnection *get_netvc() const;
   int do_api_callout(TSHttpHookID id);
 
   void set_debug(bool flag);

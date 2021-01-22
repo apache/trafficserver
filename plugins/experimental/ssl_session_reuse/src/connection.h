@@ -55,7 +55,7 @@ public:
    * management.
    * @return
    */
-  inline redisContext *const
+  inline redisContext *
   c_ptr() const
   {
     return c;

@@ -1300,3 +1300,37 @@ ConditionStringLiteral::eval(const Resources &res)
 
   return static_cast<const MatcherType *>(_matcher)->test(_literal);
 }
+
+// ConditionSessionTransactCount
+void
+ConditionSessionTransactCount::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  MatcherType *match     = new MatcherType(_cond_op);
+  std::string const &arg = p.get_arg();
+
+  match->set(strtol(arg.c_str(), nullptr, 10));
+  _matcher = match;
+}
+
+bool
+ConditionSessionTransactCount::eval(const Resources &res)
+{
+  int const val = TSHttpTxnServerSsnTransactionCount(res.txnp);
+
+  TSDebug(PLUGIN_NAME, "Evaluating SSN-TXN-COUNT()");
+  return static_cast<MatcherType *>(_matcher)->test(val);
+}
+
+void
+ConditionSessionTransactCount::append_value(std::string &s, Resources const &res)
+{
+  char value[32]; // enough for UINT64_MAX
+  int const count  = TSHttpTxnServerSsnTransactionCount(res.txnp);
+  int const length = ink_fast_itoa(count, value, sizeof(value));
+
+  if (length > 0) {
+    TSDebug(PLUGIN_NAME, "Appending SSN-TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
+    s.append(value, length);
+  }
+}

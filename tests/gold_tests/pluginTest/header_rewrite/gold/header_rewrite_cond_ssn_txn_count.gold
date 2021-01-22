@@ -1,0 +1,71 @@
+``
+> GET /hello HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+> Connection: keep-alive
+``
+< HTTP/1.1 200 OK
+< Server: ATS/``
+< Content-Length: ``0``
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< 
+``
+> GET /hello HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+> Connection: keep-alive
+``
+< HTTP/1.1 200 OK
+< Server: ATS/``
+< Content-Length: ``0``
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< 
+``
+> GET /hello HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+> Connection: keep-alive
+``
+< HTTP/1.1 200 OK
+< Server: ATS/``
+< Content-Length: ``0``
+< Date: ``
+< Age: ``
+< Connection: keep-alive
+< 
+``
+> GET /hello HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+> Connection: keep-alive
+``
+< HTTP/1.1 200 OK
+< Server: ATS/``
+< Content-Length: ``0``
+< Date: ``
+< Age: ``
+< Connection: close
+< 
+``
+> GET /world HTTP/1.1
+> Host: www.example.com
+> User-Agent: curl/``
+> Accept: */*
+> Connection: close
+``
+< HTTP/1.1 200 OK
+< Server: ATS/``
+< Content-Length: ``0``
+< Date: ``
+< Age: ``
+< Connection: close
+< 
+``

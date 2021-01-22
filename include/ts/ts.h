@@ -431,6 +431,22 @@ tsapi char *TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int *length);
     @return The scheme portion of the URL, as a string.
 
  */
+tsapi const char *TSUrlRawSchemeGet(TSMBuffer bufp, TSMLoc offset, int *length);
+
+/**
+    Retrieves the scheme portion of the URL located at url_loc within
+    the marshal buffer bufp. TSUrlSchemeGet() places the length of
+    the string in the length argument. If the length is NULL then no
+    attempt is made to dereference it.  If there is no explicit scheme,
+    a scheme of http is returned if the URL type is HTTP, and a scheme
+    of https is returned if the URL type is HTTPS.
+
+    @param bufp marshal buffer storing the URL.
+    @param offset location of the URL within bufp.
+    @param length length of the returned string.
+    @return The scheme portion of the URL, as a string.
+
+ */
 tsapi const char *TSUrlSchemeGet(TSMBuffer bufp, TSMLoc offset, int *length);
 
 /**
@@ -1312,6 +1328,15 @@ tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc
 tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 
 tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc);
+
+/**
+ * @brief Gets  the number of transactions between the Traffic Server proxy and the origin server from a single session.
+ *        Any value greater than zero indicates connection reuse.
+ *
+ * @param txnp The transaction
+ * @return int The number of transactions between the Traffic Server proxy and the origin server from a single session
+ */
+tsapi int TSHttpTxnServerSsnTransactionCount(TSHttpTxn txnp);
 
 /** Get the effective URL for the transaction.
     The effective URL is the URL taking in to account both the explicit

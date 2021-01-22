@@ -35,8 +35,8 @@
 #include "Http1Transaction.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
-#include "Http1ServerSession.h"
 #include "Plugin.h"
+#include "PoolableSession.h"
 
 #define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
 
@@ -45,11 +45,6 @@
     /*ink_assert (magic == HTTP_SM_MAGIC_ALIVE);  REMEMBER (event, NULL, reentrancy_count); */          \
     HttpSsnDebug("[%" PRId64 "] [%s, %s]", con_id, #state_name, HttpDebugNames::get_event_name(event)); \
   } while (0)
-
-enum {
-  HTTP_CS_MAGIC_ALIVE = 0x0123F00D,
-  HTTP_CS_MAGIC_DEAD  = 0xDEADF00D,
-};
 
 #ifdef USE_HTTP_DEBUG_LISTS
 
@@ -227,7 +222,7 @@ Http1ClientSession::do_io_close(int alerrno)
   // If we have an attached server session, release
   //   it back to our shared pool
   if (bound_ss) {
-    bound_ss->release();
+    bound_ss->release(nullptr);
     bound_ss     = nullptr;
     slave_ka_vio = nullptr;
   }
@@ -339,7 +334,7 @@ Http1ClientSession::state_slave_keep_alive(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
     // Timeout - place the session on the shared pool
-    bound_ss->release();
+    bound_ss->release(nullptr);
     bound_ss     = nullptr;
     slave_ka_vio = nullptr;
     break;
@@ -461,14 +456,13 @@ Http1ClientSession::new_transaction()
 }
 
 bool
-Http1ClientSession::attach_server_session(Http1ServerSession *ssession, bool transaction_done)
+Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transaction_done)
 {
   if (ssession) {
     ink_assert(bound_ss == nullptr);
-    ssession->state = HSS_KA_CLIENT_SLAVE;
+    ssession->state = PoolableSession::KA_RESERVED;
     bound_ss        = ssession;
-    HttpSsnDebug("[%" PRId64 "] attaching server session [%" PRId64 "] as slave", con_id, ssession->con_id);
-    ink_assert(ssession->get_reader()->read_avail() == 0);
+    HttpSsnDebug("[%" PRId64 "] attaching server session [%" PRId64 "] as slave", con_id, ssession->connection_id());
     ink_assert(ssession->get_netvc() != this->get_netvc());
 
     // handling potential keep-alive here
@@ -478,21 +472,19 @@ Http1ClientSession::attach_server_session(Http1ServerSession *ssession, bool tra
     //  have it call the client session back.  This IO also prevent
     //  the server net conneciton from calling back a dead sm
     SET_HANDLER(&Http1ClientSession::state_keep_alive);
-    slave_ka_vio = ssession->do_io_read(this, INT64_MAX, ssession->read_buffer);
-    this->do_io_write(this, 0, nullptr); // Capture the inactivity timeouts
+    slave_ka_vio = ssession->do_io_read(this, 0, nullptr);
     ink_assert(slave_ka_vio != ka_vio);
 
     // Transfer control of the write side as well
     ssession->do_io_write(this, 0, nullptr);
 
     if (transaction_done) {
-      ssession->get_netvc()->set_inactivity_timeout(
-        HRTIME_SECONDS(trans.get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_out));
-      ssession->get_netvc()->cancel_active_timeout();
+      ssession->set_inactivity_timeout(HRTIME_SECONDS(trans.get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_out));
+      ssession->cancel_active_timeout();
     } else {
       // we are serving from the cache - this could take a while.
-      ssession->get_netvc()->cancel_inactivity_timeout();
-      ssession->get_netvc()->cancel_active_timeout();
+      ssession->cancel_inactivity_timeout();
+      ssession->cancel_active_timeout();
     }
   } else {
     ink_assert(bound_ss != nullptr);
@@ -503,13 +495,12 @@ Http1ClientSession::attach_server_session(Http1ServerSession *ssession, bool tra
 }
 
 void
-Http1ClientSession::increment_current_active_client_connections_stat()
+Http1ClientSession::increment_current_active_connections_stat()
 {
   HTTP_INCREMENT_DYN_STAT(http_current_active_client_connections_stat);
 }
-
 void
-Http1ClientSession::decrement_current_active_client_connections_stat()
+Http1ClientSession::decrement_current_active_connections_stat()
 {
   HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
 }
@@ -558,7 +549,7 @@ Http1ClientSession::is_outbound_transparent() const
   return f_outbound_transparent;
 }
 
-Http1ServerSession *
+PoolableSession *
 Http1ClientSession::get_server_session() const
 {
   return bound_ss;

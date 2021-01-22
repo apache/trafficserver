@@ -29,7 +29,12 @@ CtrlEngine::plugin_msg()
   TSMgmtError error;
   auto msg_data = arguments.get("msg");
 
-  error = TSLifecycleMessage(msg_data[0].c_str(), msg_data[1].c_str(), msg_data[1].size() + 1);
+  if (msg_data.size() == 1) { // no data provided, just the tag
+    error = TSLifecycleMessage(msg_data[0].c_str(), nullptr, 0);
+  } else {
+    error = TSLifecycleMessage(msg_data[0].c_str(), msg_data[1].c_str(), msg_data[1].size() + 1);
+  }
+
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "message '%s' not sent", msg_data[0].c_str());
     status_code = CTRL_EX_ERROR;

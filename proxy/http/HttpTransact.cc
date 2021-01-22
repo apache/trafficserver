@@ -380,6 +380,10 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
 inline static void
 simple_or_unavailable_server_retry(HttpTransact::State *s)
 {
+  if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
+    return; // must return now if the response isn't valid, before calling http_hdr_status_get on uninitialized data
+  }
+
   HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
   switch (response_is_retryable(s, server_response)) {
   case PARENT_RETRY_SIMPLE:
@@ -4402,7 +4406,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     client_response_code = server_response_code;
     base_response        = &s->hdr_info.server_response;
 
-    s->is_cacheable_and_negative_caching_is_enabled = cacheable && s->txn_conf->negative_caching_enabled;
+    s->is_cacheable_due_to_negative_caching_configuration = cacheable && is_negative_caching_appropriate(s);
 
     // determine the correct cache action given the original cache action,
     // cacheability of server response, and request method
@@ -4464,7 +4468,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     //   before issuing a 304
     if (s->cache_info.action == CACHE_DO_WRITE || s->cache_info.action == CACHE_DO_NO_ACTION ||
         s->cache_info.action == CACHE_DO_REPLACE) {
-      if (s->is_cacheable_and_negative_caching_is_enabled) {
+      if (s->is_cacheable_due_to_negative_caching_configuration) {
         HTTPHdr *resp;
         s->cache_info.object_store.create();
         s->cache_info.object_store.request_set(&s->hdr_info.client_request);
@@ -4500,8 +4504,8 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVER_REVALIDATED);
         }
       }
-    } else if (s->is_cacheable_and_negative_caching_is_enabled) {
-      s->is_cacheable_and_negative_caching_is_enabled = false;
+    } else if (s->is_cacheable_due_to_negative_caching_configuration) {
+      s->is_cacheable_due_to_negative_caching_configuration = false;
     }
 
     break;
@@ -4911,7 +4915,7 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
      sites yields no insight. So the assert is removed and we keep the behavior that if the response
      in @a cache_info is already set, we don't override it.
   */
-  if (!s->is_cacheable_and_negative_caching_is_enabled || !cache_info->response_get()->valid()) {
+  if (!s->is_cacheable_due_to_negative_caching_configuration || !cache_info->response_get()->valid()) {
     cache_info->response_set(response);
   }
 
@@ -8340,8 +8344,6 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   //////////////////////////////////////////
   if (s->client_info.abort == ABORTED) {
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_ABORT;
-  } else if (s->client_info.abort == MAYBE_ABORTED) {
-    client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_POSSIBLE_ABORT;
   }
   // Count the status codes, assuming the client didn't abort (i.e. there is an m_http)
   if ((s->source != SOURCE_NONE) && (s->client_info.abort == DIDNOT_ABORT)) {

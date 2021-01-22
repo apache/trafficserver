@@ -153,28 +153,24 @@ private:
 // Private
 //
 
-static SSL *
-make_ssl_connection(SSL_CTX *ctx, SSLNetVConnection *netvc)
+void
+SSLNetVConnection::_make_ssl_connection(SSL_CTX *ctx)
 {
-  SSL *ssl;
-
-  if (likely(ssl = SSL_new(ctx))) {
-    netvc->ssl = ssl;
-
+  if (likely(this->ssl = SSL_new(ctx))) {
     // Only set up the bio stuff for the server side
-    if (netvc->get_context() == NET_VCONNECTION_OUT) {
+    if (this->get_context() == NET_VCONNECTION_OUT) {
       BIO *bio = BIO_new(const_cast<BIO_METHOD *>(BIO_s_fastopen()));
-      BIO_set_fd(bio, netvc->get_socket(), BIO_NOCLOSE);
+      BIO_set_fd(bio, this->get_socket(), BIO_NOCLOSE);
 
-      if (netvc->options.f_tcp_fastopen) {
-        BIO_set_conn_address(bio, netvc->get_remote_addr());
+      if (this->options.f_tcp_fastopen) {
+        BIO_set_conn_address(bio, this->get_remote_addr());
       }
 
       SSL_set_bio(ssl, bio, bio);
     } else {
-      netvc->initialize_handshake_buffers();
+      this->initialize_handshake_buffers();
       BIO *rbio = BIO_new(BIO_s_mem());
-      BIO *wbio = BIO_new_fd(netvc->get_socket(), BIO_NOCLOSE);
+      BIO *wbio = BIO_new_fd(this->get_socket(), BIO_NOCLOSE);
       BIO_set_mem_eof_return(wbio, -1);
       SSL_set_bio(ssl, rbio, wbio);
 
@@ -210,11 +206,22 @@ make_ssl_connection(SSL_CTX *ctx, SSLNetVConnection *netvc)
       }
 #endif
     }
-
-    SSLNetVCAttach(ssl, netvc);
+    this->_bindSSLObject();
   }
+}
 
-  return ssl;
+void
+SSLNetVConnection::_bindSSLObject()
+{
+  SSLNetVCAttach(this->ssl, this);
+  TLSSessionResumptionSupport::bind(this->ssl, this);
+}
+
+void
+SSLNetVConnection::_unbindSSLObject()
+{
+  SSLNetVCDetach(this->ssl);
+  TLSSessionResumptionSupport::unbind(this->ssl);
 }
 
 static void
@@ -1040,7 +1047,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
       // Attach the default SSL_CTX to this SSL session. The default context is never going to be able
       // to negotiate a SSL session, but it's enough to trampoline us into the SNI callback where we
       // can select the right server certificate.
-      this->ssl = make_ssl_connection(lookup->defaultContext(), this);
+      this->_make_ssl_connection(lookup->defaultContext());
     }
 
     if (this->ssl == nullptr) {
@@ -1117,7 +1124,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         return EVENT_ERROR;
       }
 
-      this->ssl = make_ssl_connection(clientCTX, this);
+      this->_make_ssl_connection(clientCTX);
       if (this->ssl == nullptr) {
         SSLErrorVC(this, "failed to create SSL client session");
         return EVENT_ERROR;
@@ -1819,7 +1826,7 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   // Maybe bring over the stats?
 
   sslHandshakeStatus = SSL_HANDSHAKE_DONE;
-  SSLNetVCAttach(this->ssl, this);
+  this->_bindSSLObject();
   return EVENT_DONE;
 }
 
@@ -1936,4 +1943,21 @@ SSLNetVConnection::set_ca_cert_file(std::string_view file, std::string_view dir)
     n[dir.size()] = '\0';
     _ca_cert_dir.reset(n);
   }
+}
+
+void *
+SSLNetVConnection::_prepareForMigration()
+{
+  SSL *save_ssl = this->ssl;
+
+  this->_unbindSSLObject();
+  this->ssl = nullptr;
+
+  return save_ssl;
+}
+
+NetProcessor *
+SSLNetVConnection::_getNetProcessor()
+{
+  return &sslNetProcessor;
 }

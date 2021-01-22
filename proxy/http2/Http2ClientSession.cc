@@ -362,7 +362,7 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     } else if (this->connection_state.get_stream_error_rate() >
                Http2::stream_error_rate_threshold) { // For a case many stream errors happened
       ip_port_text_buffer ipb;
-      const char *client_ip = ats_ip_ntop(get_client_addr(), ipb, sizeof(ipb));
+      const char *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
       Warning("HTTP/2 session error client_ip=%s session_id=%" PRId64
               " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
               client_ip, connection_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
@@ -559,7 +559,7 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
     Http2ErrorCode err = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
     if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0)) {
       ip_port_text_buffer ipb;
-      const char *client_ip = ats_ip_ntop(get_client_addr(), ipb, sizeof(ipb));
+      const char *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
       Warning("HTTP/2 session error client_ip=%s session_id=%" PRId64
               " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
               client_ip, connection_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
@@ -603,13 +603,13 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
 }
 
 void
-Http2ClientSession::increment_current_active_client_connections_stat()
+Http2ClientSession::increment_current_active_connections_stat()
 {
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, this_ethread());
 }
 
 void
-Http2ClientSession::decrement_current_active_client_connections_stat()
+Http2ClientSession::decrement_current_active_connections_stat()
 {
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_ACTIVE_CLIENT_CONNECTION_COUNT, this_ethread());
 }
@@ -628,7 +628,7 @@ Http2ClientSession::_should_do_something_else()
 }
 
 sockaddr const *
-Http2ClientSession::get_client_addr()
+Http2ClientSession::get_remote_addr() const
 {
   return _vc ? _vc->get_remote_addr() : &cached_client_addr.sa;
 }

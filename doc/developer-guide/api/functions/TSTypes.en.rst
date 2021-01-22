@@ -276,3 +276,40 @@ more widely. Those are described on this page.
 .. type:: TSFetchUrlParams_t
 .. type:: TSFetchSM
 .. type:: TSFetchEvent
+
+.. type:: TSHttpPriority
+
+   The abstract type of the various HTTP priority implementations.
+
+   .. member:: uint8_t priority_type
+
+      The reference to the concrete HTTP priority implementation. This will be
+      a value from TSHttpPriorityType
+
+   .. member:: uint8_t data[7]
+
+      The space allocated for the concrete priority implementation.
+
+      Note that this has to take padding into account. There is a static_assert
+      in ``InkAPI.cc`` to verify that :type:`TSHttpPriority` is at least as large as
+      :type:`TSHttp2Priority`. As other structures are added that are represented by
+      :type:`TSHttpPriority` add more static_asserts to verify that :type:`TSHttpPriority` is as
+      large as it needs to be.
+
+
+.. type:: TSHttp2Priority
+
+   A structure for HTTP/2 priority. For an explanation of these terms with respect
+   to HTTP/2, see RFC 7540, section 5.3.
+
+   .. member:: uint8_t priority_type
+
+      HTTP_PROTOCOL_TYPE_HTTP_2
+
+   .. member:: uint8_t weight
+
+   .. member:: int32_t stream_dependency
+
+      The stream dependency. Per spec, see RFC 7540 section 6.2, this is 31
+      bits. We use a signed 32 bit stucture to store either a valid dependency
+      or -1 if the stream has no dependency.

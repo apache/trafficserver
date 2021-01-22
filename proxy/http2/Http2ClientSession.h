@@ -88,14 +88,14 @@ public:
 
   ////////////////////
   // Accessors
-  sockaddr const *get_client_addr() override;
+  sockaddr const *get_remote_addr() const override;
   sockaddr const *get_local_addr() override;
   int get_transact_count() const override;
   const char *get_protocol_string() const override;
   int populate_protocol(std::string_view *result, int size) const override;
   const char *protocol_contains(std::string_view prefix) const override;
-  void increment_current_active_client_connections_stat() override;
-  void decrement_current_active_client_connections_stat() override;
+  void increment_current_active_connections_stat() override;
+  void decrement_current_active_connections_stat() override;
 
   void set_upgrade_context(HTTPHdr *h);
   void set_dying_event(int event);

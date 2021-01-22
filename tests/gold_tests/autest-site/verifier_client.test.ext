@@ -78,10 +78,8 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
                 raise ValueError("Tried to use '{}' for --client-cert, but it is not "
                                  "a valid file.".format(ssl_cert))
         if ssl_cert:
-            run_ssl_cert = ssl_cert
-            if os.path.isfile(ssl_cert):
-                run_ssl_cert = os.path.join(client_dir, os.path.basename(ssl_cert))
-                process.Setup.Copy(ssl_cert, run_ssl_cert, CopyLogic.SoftFiles)
+            run_ssl_cert = os.path.join(client_dir, os.path.basename(ssl_cert))
+            process.Setup.Copy(ssl_cert, run_ssl_cert, CopyLogic.SoftFiles)
             command += ' --client-cert "{}" '.format(run_ssl_cert)
 
         if ca_cert == '':
@@ -92,10 +90,8 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
                 raise ValueError("Tried to use '{}' for --ca-certs, but it is not "
                                  "a valid file.".format(ca_cert))
         if ca_cert:
-            run_ca_cert = ca_cert
-            if os.path.isfile(ca_cert):
-                run_ca_cert = os.path.join(client_dir, os.path.basename(ca_cert))
-                process.Setup.Copy(ca_cert, run_ca_cert, CopyLogic.SoftFiles)
+            run_ca_cert = os.path.join(client_dir, os.path.basename(ca_cert))
+            process.Setup.Copy(ca_cert, run_ca_cert, CopyLogic.SoftFiles)
             command += ' --ca-certs "{}" '.format(run_ca_cert)
 
     if other_args:

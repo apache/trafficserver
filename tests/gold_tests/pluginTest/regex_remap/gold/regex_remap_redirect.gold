@@ -1,0 +1,2 @@
+HTTP/1.1 301 Redirect
+Location: http://localhost:SERVER_PORT/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E

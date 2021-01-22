@@ -211,7 +211,10 @@ struct InkAtomicList {
 #define INK_ATOMICLIST_EMPTY(_x) (!((FREELIST_POINTER((_x.head)))))
 #endif
 
+// WARNING: the "name" string is not copied, it has to be a statically-stored constant string.
+//
 inkcoreapi void ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next);
+
 inkcoreapi void *ink_atomiclist_push(InkAtomicList *l, void *item);
 void *ink_atomiclist_pop(InkAtomicList *l);
 inkcoreapi void *ink_atomiclist_popall(InkAtomicList *l);

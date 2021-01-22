@@ -52,7 +52,7 @@ void
 ink_fatal_va(const char *fmt, va_list ap)
 {
   fatal_va("Fatal: ", fmt, ap);
-  ::exit(70); // 70 corresponds to EX_SOFTWARE in BSD's sysexits. As good a status as any.
+  _exit(70); // 70 corresponds to EX_SOFTWARE in BSD's sysexits. As good a status as any.
 }
 
 void
@@ -64,14 +64,14 @@ ink_fatal(const char *message_format, ...)
   fatal_va("Fatal: ", message_format, ap);
   va_end(ap);
 
-  ::exit(70); // 70 corresponds to EX_SOFTWARE in BSD's sysexits. As good a status as any.
+  _exit(70); // 70 corresponds to EX_SOFTWARE in BSD's sysexits. As good a status as any.
 }
 
 void
 ink_emergency_va(const char *fmt, va_list ap)
 {
   fatal_va("Emergency: ", fmt, ap);
-  ::exit(UNRECOVERABLE_EXIT);
+  _exit(UNRECOVERABLE_EXIT);
 }
 
 void
@@ -84,7 +84,7 @@ ink_emergency(const char *message_format, ...)
   // Should never reach here since ink_emergency_va calls exit()
   va_end(ap);
 
-  ::exit(UNRECOVERABLE_EXIT);
+  _exit(UNRECOVERABLE_EXIT);
 }
 
 void

@@ -48,6 +48,7 @@ public:
     : host_(host),
       enabled_(true),
       cache_(true),
+      range_request_(false),
       remove_accept_encoding_(false),
       flush_(false),
       compression_algorithms_(ALGORITHM_GZIP),
@@ -64,6 +65,16 @@ public:
   set_enabled(bool x)
   {
     enabled_ = x;
+  }
+  bool
+  range_request()
+  {
+    return range_request_;
+  }
+  void
+  set_range_request(bool x)
+  {
+    range_request_ = x;
   }
   bool
   cache()
@@ -131,6 +142,7 @@ private:
   std::string host_;
   bool enabled_;
   bool cache_;
+  bool range_request_;
   bool remove_accept_encoding_;
   bool flush_;
   int compression_algorithms_;

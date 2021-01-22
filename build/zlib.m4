@@ -22,13 +22,12 @@ dnl
 dnl TS_CHECK_ZLIB: look for zlib libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_ZLIB], [
-enable_zlib=no
+enable_zlib=yes
 AC_ARG_WITH(zlib, [AC_HELP_STRING([--with-zlib=DIR],[use a specific zlib library])],
 [
   if test "x$withval" != "xyes" && test "x$withval" != "x"; then
     zlib_base_dir="$withval"
     if test "$withval" != "no"; then
-      enable_zlib=yes
       case "$withval" in
       *":"*)
         zlib_include="`echo $withval |sed -e 's/:.*$//'`"
@@ -46,7 +45,6 @@ AC_ARG_WITH(zlib, [AC_HELP_STRING([--with-zlib=DIR],[use a specific zlib library
 ])
 
 if test "x$zlib_base_dir" = "x"; then
-  AC_MSG_CHECKING([for zlib location])
   AC_CACHE_VAL(ats_cv_zlib_dir,[
   for dir in /usr/local /usr ; do
     if test -d $dir && test -f $dir/include/zlib.h; then
@@ -56,19 +54,15 @@ if test "x$zlib_base_dir" = "x"; then
   done
   ])
   zlib_base_dir=$ats_cv_zlib_dir
-  if test "x$zlib_base_dir" = "x"; then
-    enable_zlib=no
-    AC_MSG_RESULT([not found])
-  else
-    enable_zlib=yes
+  if test "x$zlib_base_dir" != "x"; then
     zlib_include="$zlib_base_dir/include"
     zlib_ldflags="$zlib_base_dir/lib"
-    AC_MSG_RESULT([$zlib_base_dir])
   fi
 else
   if test -d $zlib_include && test -d $zlib_ldflags && test -f $zlib_include/zlib.h; then
     AC_MSG_RESULT([ok])
   else
+    enable_zlib=no
     AC_MSG_RESULT([not found])
   fi
 fi
@@ -78,7 +72,7 @@ if test "$enable_zlib" != "no"; then
   saved_cppflags=$CPPFLAGS
   zlib_have_headers=0
   zlib_have_libs=0
-  if test "$zlib_base_dir" != "/usr"; then
+  if test "$zlib_base_dir" != "/usr" && test "x$zlib_base_dir" != "x"; then
     TS_ADDTO(CPPFLAGS, [-I${zlib_include}])
     TS_ADDTO(LDFLAGS, [-L${zlib_ldflags}])
     TS_ADDTO_RPATH(${zlib_ldflags})

@@ -492,7 +492,8 @@ main(int argc, const char **argv)
   char *tsArgs       = nullptr;
   int disable_syslog = false;
   char userToRunAs[MAX_LOGIN + 1];
-  RecInt fds_throttle = -1;
+  RecInt fds_throttle        = -1;
+  bool printed_unrecoverable = false;
 
   ArgumentDescription argument_descriptions[] = {
     {"proxyOff", '-', "Disable proxy", "F", &proxy_off, nullptr, nullptr},
@@ -831,9 +832,12 @@ main(int argc, const char **argv)
       } else {
         just_started++;
       }
-    } else { /* Give the proxy a chance to fire up */
-      if (!lmgmt->proxy_recoverable) {
+    } else {
+      // Even if we shouldn't try to start the proxy again, leave manager around to
+      // avoid external automated restarts
+      if (!lmgmt->proxy_recoverable && !printed_unrecoverable) {
         mgmt_log("[main] Proxy is un-recoverable. Proxy will not be relaunched.\n");
+        printed_unrecoverable = true;
       }
 
       just_started++;
