@@ -31,7 +31,7 @@ TLS connections.
 
 .. note::
 
-    The current version only supports transforming client IP from PROXY Version 1
+    The current version only supports transforming client IP from PROXY Version 1/2
     header to the Forwarded: header.
 
 In the current implementation, the client IP address in the PROXY protocol header
@@ -41,7 +41,7 @@ is passed to the origin server via an HTTP `Forwarded:
 The Proxy Protocol must be enabled on each port.  See
 :ts:cv:`proxy.config.http.server_ports` for information on how to enable the
 Proxy Protocol on a port.  Once enabled, all incoming requests must be prefaced
-with the PROXY v1 header.  Any request not preface by this header will be
+with the PROXY v1/v2 header.  Any request not preface by this header will be
 dropped.
 
 As a security measure, an optional list of trusted IP addresses may be
@@ -50,7 +50,7 @@ configured with :ts:cv:`proxy.config.http.proxy_protocol_allowlist`.
    .. important::
 
        If the allowlist is configured, requests will only be accepted from these
-       IP addresses and must be prefaced with the PROXY v1 header.
+       IP addresses and must be prefaced with the PROXY v1/v2 header.
 
 See :ts:cv:`proxy.config.http.insert_forwarded` for configuration information.
 Detection of the PROXY protocol header is automatic.  If the PROXY header
