@@ -6542,6 +6542,7 @@ HttpTransact::will_this_request_self_loop(State *s)
         TxnDebug("http_transact", "unknown's ip and port same as local ip and port - bailing");
         break;
       }
+      SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
       build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
       return true;
     }
