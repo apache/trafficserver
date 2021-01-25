@@ -206,15 +206,16 @@ public:
   // reconfiguration stuff
   static void change_configuration();
 
+  static int handle_logging_mode_change(const char *name, RecDataT data_type, RecData data, void *cookie);
+  static int handle_periodic_tasks_int_change(const char *name, RecDataT data_type, RecData data, void *cookie);
+
   /** Check each log file path to see whether it exists and re-open if not.
    *
    * This is called when an external log rotation entity has moved log files to
    * rolled names. This checks whether the original log file exists and, if
    * not, closes the file descriptor and re-opens the file.
    */
-  static void reopen_moved_log_files();
-  static int handle_logging_mode_change(const char *name, RecDataT data_type, RecData data, void *cookie);
-  static int handle_periodic_tasks_int_change(const char *name, RecDataT data_type, RecData data, void *cookie);
+  static int handle_log_rotation_request();
 
   friend void RegressionTest_LogObjectManager_Transfer(RegressionTest *, int, int *);
 
@@ -226,6 +227,7 @@ private:
   static int init_status;
   static int config_flags;
   static bool logging_mode_changed;
+  static bool log_rotate_signal_received;
   static uint32_t periodic_tasks_interval;
 };
 
