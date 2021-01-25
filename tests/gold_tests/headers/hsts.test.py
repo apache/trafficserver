@@ -34,8 +34,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # ATS Configuration
-ts.addSSLfile("../remap/ssl/server.pem")
-ts.addSSLfile("../remap/ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,

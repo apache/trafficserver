@@ -108,8 +108,7 @@ server.addResponse("sessionlog.json",
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
 
 # add ssl materials like key, certificates for the server
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Setup.CopyAs('rules/huge_resp_hdrs.conf', Test.RunDirectory)
 ts.Disk.remap_config.AddLine(

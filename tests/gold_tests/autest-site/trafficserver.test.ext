@@ -162,6 +162,10 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     p.Env['PROXY_CONFIG_SSL_DIR'] = ssl_dir
     p.Variables.SSLDir = ssl_dir
     AddMethodToInstance(p, addSSLfile)
+
+    # Add default cert folder & register handy method.
+    AddMethodToInstance(p, addDefaultSSLFiles)
+    AddMethodToInstance(p, addSSLFileFromDefaultTestFolder)
     ########################################################
     # cache.db directory
     p.Setup.MakeDir(storage_dir)
@@ -459,6 +463,15 @@ class RecordsConfig(Config, dict):
 
 def addSSLfile(self, filename):
     self.Setup.CopyAs(filename, self.Variables.SSLDir)
+
+
+def addDefaultSSLFiles(self):
+    addSSLfile(self, os.path.join(self.Variables.AtsTestToolsDir, "ssl", "server.pem"))
+    addSSLfile(self, os.path.join(self.Variables.AtsTestToolsDir, "ssl", "server.key"))
+
+
+def addSSLFileFromDefaultTestFolder(self, filename):
+    addSSLfile(self, os.path.join(self.Variables.AtsTestToolsDir, "ssl", filename))
 
 
 RegisterFileType(Config, "ats:config")

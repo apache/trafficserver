@@ -63,7 +63,7 @@ ts.Disk.remap_config.AddLine('map /get_ttfb_blocked https://127.0.0.1:{0}'.forma
 # Request the port that should timeout in the handshake
 # Should retry once
 tr = Test.AddTestRun("tr-blocking-post")
-tr.Setup.Copy("../chunked_encoding/ssl/server.pem")
+tr.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, "ssl", "server.pem"))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(delay_post_connect, ready=When.PortOpen(Test.Variables.block_connect_port))
 tr.Processes.Default.Command = 'curl -H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/connect_blocked --tlsv1.2'.format(

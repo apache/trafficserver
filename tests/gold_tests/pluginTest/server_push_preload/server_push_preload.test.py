@@ -56,8 +56,8 @@ microserver.addResponse("sessionfile.log",
 # ----
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
+
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
