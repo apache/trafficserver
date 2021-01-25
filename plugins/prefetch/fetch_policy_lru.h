@@ -23,7 +23,12 @@
 
 #pragma once
 
+#include "tscore/ink_defs.h"
 #include "fetch_policy.h"
+#include <openssl/sha.h>
+#ifndef HAVE_SHA1
+#include <openssl/evp.h>
+#endif
 
 /* Here reusing some of the classes used in cache_promote plugin.
  * @todo: this was done in interest of time, see if LRU is what we really need, can we do it differently / better? */
@@ -44,11 +49,15 @@ public:
   void
   init(const char *data, int len)
   {
-    SHA_CTX sha;
-
-    SHA1_Init(&sha);
-    SHA1_Update(&sha, data, len);
-    SHA1_Final(_hash, &sha);
+    // SHA1() is deprecated on OpenSSL 3, but it's faster than its replacement.
+#ifdef HAVE_SHA1
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    SHA1(reinterpret_cast<const unsigned char *>(data), len, _hash);
+#pragma GCC diagnostic pop
+#else
+    EVP_Digest(data, len, _hash, nullptr, EVP_sha1(), nullptr);
+#endif
   }
 
 private:
