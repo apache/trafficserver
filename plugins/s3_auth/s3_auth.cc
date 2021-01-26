@@ -34,13 +34,16 @@
 #include <string>
 #include <unordered_map>
 
+#include "tscore/ink_config.h"
+
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
+#if defined(HAVE_EVP_MAC_CTX_NEW)
 #include <openssl/core_names.h>
+#endif
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include "tscore/ink_config.h"
 
 #include "aws_auth_v4.h"
 

@@ -22,21 +22,24 @@
  * @see aws_auth_v4.h
  */
 
-#include <cstring>              /* strlen() */
-#include <string>               /* stoi() */
-#include <ctime>                /* strftime(), time(), gmtime_r() */
-#include <iomanip>              /* std::setw */
-#include <sstream>              /* std::stringstream */
-#include <openssl/sha.h>        /* SHA256_DIGEST_LENGTH */
-#include <openssl/evp.h>        /* EVP_DigestInit_ex, etc.*/
-#include <openssl/hmac.h>       /* HMAC() */
+#include <cstring> /* strlen() */
+#include <string>  /* stoi() */
+#include <ctime>   /* strftime(), time(), gmtime_r() */
+#include <iomanip> /* std::setw */
+#include <sstream> /* std::stringstream */
+
+#include "tscore/ink_config.h"
+
+#include <openssl/sha.h>  /* SHA256_DIGEST_LENGTH */
+#include <openssl/evp.h>  /* EVP_DigestInit_ex, etc.*/
+#include <openssl/hmac.h> /* HMAC() */
+#if defined(HAVE_EVP_MAC_CTX_NEW)
 #include <openssl/core_names.h> /* OSSL_MAC_PARAM_KEY, etc.  */
+#endif
 
 #ifdef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
 #include <iostream>
 #endif
-
-#include "tscore/ink_config.h"
 
 #include "aws_auth_v4.h"
 
