@@ -221,30 +221,30 @@ trimWhiteSpaces(const String &s)
  * Group of static inline helper function for less error prone parameter handling and unit test logging.
  */
 inline static void
-sha256Update(SHA256_CTX *ctx, const char *in, size_t inLen)
+sha256Update(EVP_MD_CTX *ctx, const char *in, size_t inLen)
 {
-  SHA256_Update(ctx, in, inLen);
+  EVP_DigestUpdate(ctx, in, inLen);
 #ifdef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
   std::cout << String(in, inLen);
 #endif
 }
 
 inline static void
-sha256Update(SHA256_CTX *ctx, const char *in)
+sha256Update(EVP_MD_CTX *ctx, const char *in)
 {
   sha256Update(ctx, in, strlen(in));
 }
 
 inline static void
-sha256Update(SHA256_CTX *ctx, const String &in)
+sha256Update(EVP_MD_CTX *ctx, const String &in)
 {
   sha256Update(ctx, in.c_str(), in.length());
 }
 
 inline static void
-sha256Final(unsigned char hex[SHA256_DIGEST_LENGTH], SHA256_CTX *ctx)
+sha256Final(unsigned char hex[SHA256_DIGEST_LENGTH], EVP_MD_CTX *ctx)
 {
-  SHA256_Final(hex, ctx);
+  EVP_DigestFinal_ex(ctx, hex, nullptr);
 }
 
 static unsigned char *
@@ -305,7 +305,12 @@ getPayloadSha256(bool signPayload)
   }
 
   unsigned char payloadHash[SHA256_DIGEST_LENGTH];
-  SHA256(reinterpret_cast<const unsigned char *>(""), 0, payloadHash); /* empty content */
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr)) {
+    EVP_DigestUpdate(ctx, reinterpret_cast<const unsigned char *>(""), 0); /* empty content */
+    EVP_DigestFinal_ex(ctx, payloadHash, nullptr);
+  }
+  EVP_MD_CTX_free(ctx);
 
   return base16Encode(reinterpret_cast<char *>(payloadHash), SHA256_DIGEST_LENGTH);
 }
@@ -330,9 +335,10 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
   int length;
   const char *str = nullptr;
   unsigned char canonicalRequestSha256Hash[SHA256_DIGEST_LENGTH];
-  SHA256_CTX canonicalRequestSha256Ctx;
+  EVP_MD_CTX *canonicalRequestSha256Ctx;
 
-  SHA256_Init(&canonicalRequestSha256Ctx);
+  canonicalRequestSha256Ctx = EVP_MD_CTX_new();
+  EVP_DigestInit_ex(canonicalRequestSha256Ctx, EVP_sha256(), nullptr);
 
 #ifdef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
   std::cout << "<CanonicalRequest>";
@@ -340,8 +346,8 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
 
   /* <HTTPMethod>\n */
   str = api.getMethod(&length);
-  sha256Update(&canonicalRequestSha256Ctx, str, length);
-  sha256Update(&canonicalRequestSha256Ctx, "\n");
+  sha256Update(canonicalRequestSha256Ctx, str, length);
+  sha256Update(canonicalRequestSha256Ctx, "\n");
 
   /* URI Encoded Canonical URI
    * <CanonicalURI>\n */
@@ -349,8 +355,8 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
   String path("/");
   path.append(str, length);
   String canonicalUri = canonicalEncode(path, /* isObjectName */ true);
-  sha256Update(&canonicalRequestSha256Ctx, canonicalUri);
-  sha256Update(&canonicalRequestSha256Ctx, "\n");
+  sha256Update(canonicalRequestSha256Ctx, canonicalUri);
+  sha256Update(canonicalRequestSha256Ctx, "\n");
 
   /* Sorted Canonical Query String
    * <CanonicalQueryString>\n */
@@ -380,8 +386,8 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
     queryStr.append(paramName);
     queryStr.append("=").append(paramsMap[paramName]);
   }
-  sha256Update(&canonicalRequestSha256Ctx, queryStr);
-  sha256Update(&canonicalRequestSha256Ctx, "\n");
+  sha256Update(canonicalRequestSha256Ctx, queryStr);
+  sha256Update(canonicalRequestSha256Ctx, "\n");
 
   /* Sorted Canonical Headers
    *  <CanonicalHeaders>\n */
@@ -438,12 +444,12 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
   }
 
   for (const auto &it : signedHeadersSet) {
-    sha256Update(&canonicalRequestSha256Ctx, it);
-    sha256Update(&canonicalRequestSha256Ctx, ":");
-    sha256Update(&canonicalRequestSha256Ctx, headersMap[it]);
-    sha256Update(&canonicalRequestSha256Ctx, "\n");
+    sha256Update(canonicalRequestSha256Ctx, it);
+    sha256Update(canonicalRequestSha256Ctx, ":");
+    sha256Update(canonicalRequestSha256Ctx, headersMap[it]);
+    sha256Update(canonicalRequestSha256Ctx, "\n");
   }
-  sha256Update(&canonicalRequestSha256Ctx, "\n");
+  sha256Update(canonicalRequestSha256Ctx, "\n");
 
   for (const auto &it : signedHeadersSet) {
     if (!signedHeaders.empty()) {
@@ -452,19 +458,20 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
     signedHeaders.append(it);
   }
 
-  sha256Update(&canonicalRequestSha256Ctx, signedHeaders);
-  sha256Update(&canonicalRequestSha256Ctx, "\n");
+  sha256Update(canonicalRequestSha256Ctx, signedHeaders);
+  sha256Update(canonicalRequestSha256Ctx, "\n");
 
   /* Hex(SHA256Hash(<payload>) (no new-line char at end)
    * @TODO support non-empty content, i.e. POST */
   String payloadSha256Hash = getPayloadSha256(signPayload);
-  sha256Update(&canonicalRequestSha256Ctx, payloadSha256Hash);
+  sha256Update(canonicalRequestSha256Ctx, payloadSha256Hash);
 
   /* Hex(SHA256Hash(<CanonicalRequest>)) */
-  sha256Final(canonicalRequestSha256Hash, &canonicalRequestSha256Ctx);
+  sha256Final(canonicalRequestSha256Hash, canonicalRequestSha256Ctx);
 #ifdef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
   std::cout << "</CanonicalRequest>" << std::endl;
 #endif
+  EVP_MD_CTX_free(canonicalRequestSha256Ctx);
   return base16Encode(reinterpret_cast<char *>(canonicalRequestSha256Hash), SHA256_DIGEST_LENGTH);
 }
 
