@@ -22,17 +22,21 @@
  * @see aws_auth_v4.h
  */
 
-#include <cstring>        /* strlen() */
-#include <string>         /* stoi() */
-#include <ctime>          /* strftime(), time(), gmtime_r() */
-#include <iomanip>        /* std::setw */
-#include <sstream>        /* std::stringstream */
-#include <openssl/sha.h>  /* SHA(), sha256_Update(), SHA256_Final, etc. */
-#include <openssl/hmac.h> /* HMAC() */
+#include <cstring>              /* strlen() */
+#include <string>               /* stoi() */
+#include <ctime>                /* strftime(), time(), gmtime_r() */
+#include <iomanip>              /* std::setw */
+#include <sstream>              /* std::stringstream */
+#include <openssl/sha.h>        /* SHA256_DIGEST_LENGTH */
+#include <openssl/evp.h>        /* EVP_DigestInit_ex, etc.*/
+#include <openssl/hmac.h>       /* HMAC() */
+#include <openssl/core_names.h> /* OSSL_MAC_PARAM_KEY, etc.  */
 
 #ifdef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
 #include <iostream>
 #endif
+
+#include "tscore/ink_config.h"
 
 #include "aws_auth_v4.h"
 
@@ -241,6 +245,47 @@ inline static void
 sha256Final(unsigned char hex[SHA256_DIGEST_LENGTH], SHA256_CTX *ctx)
 {
   SHA256_Final(hex, ctx);
+}
+
+static unsigned char *
+hmac_sha256(const void *key, int key_len, const unsigned char *data, int data_len, unsigned char *md, unsigned int *md_len)
+{
+#if defined(HAVE_EVP_MAC_CTX_NEW)
+  unsigned char *result = nullptr;
+
+  if (EVP_MAC *mac = EVP_MAC_fetch(nullptr, "HMAC", nullptr); mac) {
+    if (EVP_MAC_CTX *ctx = EVP_MAC_CTX_new(mac); ctx) {
+      const OSSL_PARAM params[] = {
+        OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_KEY, const_cast<void *>(key), key_len),
+        OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST, const_cast<char *>(SN_sha256), 0),
+        OSSL_PARAM_construct_end(),
+      };
+      bool ret = EVP_MAC_CTX_set_params(ctx, params);
+
+      if (ret) {
+        ret = EVP_MAC_init(ctx);
+      }
+      if (ret) {
+        ret = EVP_MAC_update(ctx, data, data_len);
+      }
+      if (ret) {
+        size_t len;
+        ret     = EVP_MAC_final(ctx, md, &len, SHA256_DIGEST_LENGTH); // Assuming md has enough space as HMAC() does
+        *md_len = len;
+      }
+      if (ret) {
+        result = md;
+      }
+
+      EVP_MAC_CTX_free(ctx);
+    }
+    EVP_MAC_free(mac);
+  }
+
+  return result;
+#else
+  return HMAC(EVP_sha256(), key, key_len, data, data_len, md, md_len);
+#endif
 }
 
 /**
@@ -663,14 +708,14 @@ getSignature(const char *awsSecret, size_t awsSecretLen, const char *awsRegion, 
   memcpy(key + 4, awsSecret, awsSecretLen);
 
   unsigned int len = signatureLen;
-  if (HMAC(EVP_sha256(), key, keyLen, (unsigned char *)dateTime, dateTimeLen, dateKey, &dateKeyLen) &&
-      HMAC(EVP_sha256(), dateKey, dateKeyLen, (unsigned char *)awsRegion, awsRegionLen, dateRegionKey, &dateRegionKeyLen) &&
-      HMAC(EVP_sha256(), dateRegionKey, dateRegionKeyLen, (unsigned char *)awsService, awsServiceLen, dateRegionServiceKey,
-           &dateRegionServiceKeyLen) &&
-      HMAC(EVP_sha256(), dateRegionServiceKey, dateRegionServiceKeyLen, reinterpret_cast<const unsigned char *>("aws4_request"), 12,
-           signingKey, &signingKeyLen) &&
-      HMAC(EVP_sha256(), signingKey, signingKeyLen, (unsigned char *)stringToSign, stringToSignLen,
-           reinterpret_cast<unsigned char *>(signature), &len)) {
+  if (hmac_sha256(key, keyLen, (unsigned char *)dateTime, dateTimeLen, dateKey, &dateKeyLen) &&
+      hmac_sha256(dateKey, dateKeyLen, (unsigned char *)awsRegion, awsRegionLen, dateRegionKey, &dateRegionKeyLen) &&
+      hmac_sha256(dateRegionKey, dateRegionKeyLen, (unsigned char *)awsService, awsServiceLen, dateRegionServiceKey,
+                  &dateRegionServiceKeyLen) &&
+      hmac_sha256(dateRegionServiceKey, dateRegionServiceKeyLen, reinterpret_cast<const unsigned char *>("aws4_request"), 12,
+                  signingKey, &signingKeyLen) &&
+      hmac_sha256(signingKey, signingKeyLen, (unsigned char *)stringToSign, stringToSignLen,
+                  reinterpret_cast<unsigned char *>(signature), &len)) {
     return len;
   }
 

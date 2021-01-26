@@ -36,6 +36,7 @@
 
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
+#include <openssl/core_names.h>
 
 #include <ts/ts.h>
 #include <ts/remap.h>
@@ -130,6 +131,23 @@ loadRegionMap(StringMap &m, const String &filename)
   ifstr.close();
   return true;
 }
+
+/**
+ * A wrapper function to absorb API difference among OpenSSL versions
+ */
+#if defined(HAVE_EVP_MAC_CTX_NEW)
+inline static int
+s3_auth_HMAC_Update(EVP_MAC_CTX *ctx, const unsigned char *data, size_t datalen)
+{
+  return EVP_MAC_update(ctx, data, datalen);
+}
+#else
+inline static int
+s3_auth_HMAC_Update(HMAC_CTX *ctx, const unsigned char *data, size_t datalen)
+{
+  return HMAC_Update(ctx, data, datalen);
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Cache for the secrets file, to avoid reading / loading them repeatedly on
@@ -799,44 +817,75 @@ S3Request::authorizeV2(S3Config *s3)
   }
 
 // Produce the SHA1 MAC digest
-#ifndef HAVE_HMAC_CTX_NEW
+#if defined(HAVE_EVP_MAC_CTX_NEW)
+  EVP_MAC *mac;
+  EVP_MAC_CTX *ctx;
+#elif !defined(HAVE_HMAC_CTX_NEW)
   HMAC_CTX ctx[1];
 #else
   HMAC_CTX *ctx;
 #endif
+
+#if defined(HAVE_EVP_MAC_CTX_NEW)
+  size_t hmac_len;
+#else
   unsigned int hmac_len;
+#endif
   size_t hmac_b64_len;
   unsigned char hmac[SHA_DIGEST_LENGTH];
   char hmac_b64[SHA_DIGEST_LENGTH * 2];
 
-#ifndef HAVE_HMAC_CTX_NEW
+#if defined(HAVE_EVP_MAC_CTX_NEW)
+  mac = EVP_MAC_fetch(nullptr, "HMAC", nullptr);
+  ctx = EVP_MAC_CTX_new(mac);
+#elif !defined(HAVE_HMAC_CTX_NEW)
   HMAC_CTX_init(ctx);
 #else
   ctx = HMAC_CTX_new();
 #endif
+
+#if defined(HAVE_EVP_MAC_CTX_NEW)
+  const OSSL_PARAM params[] = {
+    OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_KEY, const_cast<char *>(s3->secret()), s3->secret_len()),
+    OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST, const_cast<char *>(SN_sha1), 0),
+    OSSL_PARAM_construct_end(),
+  };
+  EVP_MAC_CTX_set_params(ctx, params);
+  EVP_MAC_init(ctx);
+#else
   HMAC_Init_ex(ctx, s3->secret(), s3->secret_len(), EVP_sha1(), nullptr);
-  HMAC_Update(ctx, (unsigned char *)method, method_len);
-  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
-  HMAC_Update(ctx, (unsigned char *)con_md5, con_md5_len);
-  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
-  HMAC_Update(ctx, (unsigned char *)con_type, con_type_len);
-  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
-  HMAC_Update(ctx, reinterpret_cast<unsigned char *>(date), date_len);
-  HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n/"), 2);
+#endif
+
+  s3_auth_HMAC_Update(ctx, (unsigned char *)method, method_len);
+  s3_auth_HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
+  s3_auth_HMAC_Update(ctx, (unsigned char *)con_md5, con_md5_len);
+  s3_auth_HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
+  s3_auth_HMAC_Update(ctx, (unsigned char *)con_type, con_type_len);
+  s3_auth_HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n"), 1);
+  s3_auth_HMAC_Update(ctx, reinterpret_cast<unsigned char *>(date), date_len);
+  s3_auth_HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("\n/"), 2);
 
   if (host && host_endp) {
-    HMAC_Update(ctx, (unsigned char *)host, host_endp - host);
-    HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("/"), 1);
+    s3_auth_HMAC_Update(ctx, (unsigned char *)host, host_endp - host);
+    s3_auth_HMAC_Update(ctx, reinterpret_cast<const unsigned char *>("/"), 1);
   }
 
-  HMAC_Update(ctx, (unsigned char *)path, path_len);
+  s3_auth_HMAC_Update(ctx, (unsigned char *)path, path_len);
   if (param) {
-    HMAC_Update(ctx, reinterpret_cast<const unsigned char *>(";"), 1); // TSUrlHttpParamsGet() does not include ';'
-    HMAC_Update(ctx, (unsigned char *)param, param_len);
+    s3_auth_HMAC_Update(ctx, reinterpret_cast<const unsigned char *>(";"), 1); // TSUrlHttpParamsGet() does not include ';'
+    s3_auth_HMAC_Update(ctx, (unsigned char *)param, param_len);
   }
 
+#if defined(HAVE_EVP_MAC_CTX_NEW)
+  EVP_MAC_final(ctx, hmac, &hmac_len, sizeof(hmac));
+#else
   HMAC_Final(ctx, hmac, &hmac_len);
-#ifndef HAVE_HMAC_CTX_NEW
+#endif
+
+#if defined(HAVE_EVP_MAC_CTX_NEW)
+  EVP_MAC_CTX_free(ctx);
+  EVP_MAC_free(mac);
+#elif !defined(HAVE_HMAC_CTX_NEW)
   HMAC_CTX_cleanup(ctx);
 #else
   HMAC_CTX_free(ctx);
