@@ -427,3 +427,103 @@ TEST_CASE("PROXY Protocol v2 Parser", "[ProxyProtocol][ProxyProtocolv2]")
     }
   }
 }
+
+TEST_CASE("ProxyProtocol v1 Builder", "[ProxyProtocol][ProxyProtocolv1]")
+{
+  SECTION("TCP over IPv4")
+  {
+    uint8_t buf[PPv1_CONNECTION_HEADER_LEN_MAX] = {0};
+
+    ProxyProtocol pp_info;
+    pp_info.version   = ProxyProtocolVersion::V1;
+    pp_info.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", pp_info.src_addr);
+    ats_ip_pton("198.51.100.1:443", pp_info.dst_addr);
+
+    size_t len = proxy_protocol_build(buf, sizeof(buf), pp_info);
+
+    std::string_view expected = "PROXY TCP4 192.0.2.1 198.51.100.1 50000 443\r\n"sv;
+
+    CHECK(len == expected.size());
+    CHECK(memcmp(buf, expected.data(), expected.size()) == 0);
+  }
+
+  SECTION("TCP over IPv6")
+  {
+    uint8_t buf[PPv1_CONNECTION_HEADER_LEN_MAX] = {0};
+
+    ProxyProtocol pp_info;
+    pp_info.version   = ProxyProtocolVersion::V1;
+    pp_info.ip_family = AF_INET6;
+    ats_ip_pton("[2001:db8:0:1::]:50000", pp_info.src_addr);
+    ats_ip_pton("[2001:db8:0:2::]:443", pp_info.dst_addr);
+
+    size_t len = proxy_protocol_build(buf, sizeof(buf), pp_info);
+
+    std::string_view expected = "PROXY TCP6 2001:db8:0:1:: 2001:db8:0:2:: 50000 443\r\n"sv;
+
+    CHECK(len == expected.size());
+    CHECK(memcmp(buf, expected.data(), expected.size()) == 0);
+  }
+}
+
+TEST_CASE("ProxyProtocol v2 Builder", "[ProxyProtocol][ProxyProtocolv2]")
+{
+  SECTION("TCP over IPv4 / no TLV")
+  {
+    uint8_t buf[1024] = {0};
+
+    ProxyProtocol pp_info;
+    pp_info.version   = ProxyProtocolVersion::V2;
+    pp_info.ip_family = AF_INET;
+    ats_ip_pton("192.0.2.1:50000", pp_info.src_addr);
+    ats_ip_pton("198.51.100.1:443", pp_info.dst_addr);
+
+    size_t len = proxy_protocol_build(buf, sizeof(buf), pp_info);
+
+    uint8_t expected[] = {
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< sig
+      0x55, 0x49, 0x54, 0x0A,                         ///<
+      0x21,                                           ///< ver_vmd
+      0x11,                                           ///< fam
+      0x00, 0x0C,                                     ///< len
+      0xC0, 0x00, 0x02, 0x01,                         ///< src_addr
+      0xC6, 0x33, 0x64, 0x01,                         ///< dst_addr
+      0xC3, 0x50,                                     ///< src_port
+      0x01, 0xBB,                                     ///< dst_port
+    };
+
+    CHECK(len == sizeof(expected));
+    CHECK(memcmp(expected, buf, len) == 0);
+  }
+
+  SECTION("TCP over IPv6 / no TLV")
+  {
+    uint8_t buf[1024] = {0};
+
+    ProxyProtocol pp_info;
+    pp_info.version   = ProxyProtocolVersion::V2;
+    pp_info.ip_family = AF_INET6;
+    ats_ip_pton("[2001:db8:0:1::]:50000", pp_info.src_addr);
+    ats_ip_pton("[2001:db8:0:2::]:443", pp_info.dst_addr);
+
+    size_t len = proxy_protocol_build(buf, sizeof(buf), pp_info);
+
+    uint8_t expected[] = {
+      0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, ///< sig
+      0x55, 0x49, 0x54, 0x0A,                         ///<
+      0x21,                                           ///< ver_vmd
+      0x21,                                           ///< fam
+      0x00, 0x24,                                     ///< len
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x01, ///< src_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x02, ///< dst_addr
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ///<
+      0xC3, 0x50,                                     ///< src_port
+      0x01, 0xBB,                                     ///< dst_port
+    };
+
+    CHECK(len == sizeof(expected));
+    CHECK(memcmp(expected, buf, len) == 0);
+  }
+}
