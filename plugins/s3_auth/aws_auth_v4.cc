@@ -307,8 +307,8 @@ getPayloadSha256(bool signPayload)
     return UNSIGNED_PAYLOAD;
   }
 
-  unsigned char payloadHash[SHA256_DIGEST_LENGTH];
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  unsigned char payloadHash[SHA256_DIGEST_LENGTH] = {0};
+  EVP_MD_CTX *ctx                                 = EVP_MD_CTX_new();
   if (EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr)) {
     EVP_DigestUpdate(ctx, reinterpret_cast<const unsigned char *>(""), 0); /* empty content */
     EVP_DigestFinal_ex(ctx, payloadHash, nullptr);
