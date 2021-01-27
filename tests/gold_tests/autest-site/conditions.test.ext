@@ -40,6 +40,10 @@ def HasCurlVersion(self, version):
     return self.EnsureVersion(["curl", "--version"], min_version=version)
 
 
+def HasProxyVerifierVersion(self, version):
+    return self.EnsureVersion(["verifier-client", "--version"], min_version=version)
+
+
 def HasCurlFeature(self, feature):
 
     def default(output):
