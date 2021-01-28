@@ -19,18 +19,16 @@
 */
 #include <string>
 
-#include "JsonRpcConfig.h"
+#include "JsonRPCConfig.h"
 
 #include "tscore/Diags.h"
 #include "tscore/ts_file.h"
 #include "records/I_RecCore.h"
 
-#include "rpc/common/JsonRpcApi.h"
-#include "rpc/jsonrpc/JsonRpc.h"
+#include "rpc/jsonrpc/JsonRPCManager.h"
 
 namespace
 {
-static constexpr auto DEFAULT_FILE_NAME{"proxy.config.jsonrpc.filename"};
 static constexpr auto COMM_TYPE_KEY_NAME{"comm_type"};
 static constexpr auto RPC_ENABLED_KEY_NAME{"rpc_enabled"};
 static constexpr auto COMM_CONFIG_KEY_NAME{"comm_config"};

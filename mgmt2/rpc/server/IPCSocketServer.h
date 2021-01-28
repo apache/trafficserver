@@ -29,9 +29,10 @@
 
 #include "tscpp/util/MemSpan.h"
 #include "tscore/BufferWriter.h"
+#include "tscore/I_Layout.h"
 
 #include "rpc/server/CommBase.h"
-#include "rpc/config/JsonRpcConfig.h"
+#include "rpc/config/JsonRPCConfig.h"
 
 namespace rpc::comm
 {
@@ -44,7 +45,7 @@ namespace rpc::comm
 /// Message completion is checked base on the \link MessageParserLigic implementation. As we are not using any
 /// user defined protocol more than the defined json, we keep reading till we find a well-formed json or the buffer if full.
 ///
-class LocalUnixSocket : public BaseCommInterface
+class IPCSocketServer : public BaseCommInterface
 {
   static constexpr std::string_view _summary{"Local Socket"};
 
@@ -86,8 +87,8 @@ class LocalUnixSocket : public BaseCommInterface
   };
 
 public:
-  LocalUnixSocket() = default;
-  virtual ~LocalUnixSocket() override;
+  IPCSocketServer() = default;
+  virtual ~IPCSocketServer() override;
 
   /// Configure the  local socket.
   ts::Errata configure(YAML::Node const &params) override;
@@ -110,19 +111,15 @@ protected: // unit test access
     static constexpr auto LOCK_PATH_NAME_KEY_STR{"lock_path_name"};
     static constexpr auto BACKLOG_KEY_STR{"backlog"};
     static constexpr auto MAX_RETRY_ON_TR_ERROR_KEY_STR{"max_retry_on_transient_errors"};
-
-    static constexpr auto DEFAULT_SOCK_NAME{"/tmp/jsonrpc20.sock"};
-    static constexpr auto DEFAULT_LOCK_NAME{"/tmp/jsonrpc20.lock"};
-
-    // Review this names
-    std::string sockPathName{DEFAULT_SOCK_NAME};
-    std::string lockPathName{DEFAULT_LOCK_NAME};
+    // is it safe to call Layout now?
+    std::string sockPathName{Layout::get()->runtimedir + "/jsonrpc20.sock"};
+    std::string lockPathName{Layout::get()->runtimedir + "/jsonrpc20.lock"};
 
     int backlog{5};
     int maxRetriesOnTransientErrors{64};
   };
 
-  friend struct YAML::convert<rpc::comm::LocalUnixSocket::Config>;
+  friend struct YAML::convert<rpc::comm::IPCSocketServer::Config>;
   Config _conf;
 
 private:

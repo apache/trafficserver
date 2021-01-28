@@ -39,34 +39,32 @@
 
 #include <ts/ts.h>
 
-#include "rpc/jsonrpc/JsonRpc.h"
-#include "rpc/server/LocalUnixSocket.h"
+#include "rpc/jsonrpc/JsonRPCManager.h"
+#include "rpc/server/IPCSocketServer.h"
 
 namespace rpc::comm
 {
 static constexpr auto logTag = "rpc.net";
 
-LocalUnixSocket::~LocalUnixSocket()
+IPCSocketServer::~IPCSocketServer()
 {
   unlink(_conf.sockPathName.c_str());
 }
 
 ts::Errata
-LocalUnixSocket::configure(YAML::Node const &params)
+IPCSocketServer::configure(YAML::Node const &params)
 {
   try {
     _conf = params.as<Config>();
   } catch (YAML::Exception const &ex) {
-    // if any error, we keep  the default values?
-    // TODO, fix this, use proper error.
-    return {1, {ex.what()}};
+    return {1 /*Work this error*/, {ex.what()}};
   }
 
   return {};
 }
 
 ts::Errata
-LocalUnixSocket::init()
+IPCSocketServer::init()
 {
   ts::Errata r;
 
@@ -77,7 +75,7 @@ LocalUnixSocket::init()
     r.push(ec.value(), ec.message());
     return r;
   }
-
+  Debug("rpc", "Using %s as socket path.", _conf.sockPathName.c_str());
   _serverAddr.sun_family = AF_UNIX;
   strcpy(_serverAddr.sun_path, _conf.sockPathName.c_str());
 
@@ -99,7 +97,7 @@ LocalUnixSocket::init()
 }
 
 bool
-LocalUnixSocket::wait_for_new_client(int timeout) const
+IPCSocketServer::wait_for_new_client(int timeout) const
 {
   auto keep_polling = [&](int pfd) -> bool {
     if (!_running.load()) {
@@ -141,7 +139,7 @@ LocalUnixSocket::wait_for_new_client(int timeout) const
 }
 
 void
-LocalUnixSocket::run()
+IPCSocketServer::run()
 {
   _running.store(true);
 
@@ -163,7 +161,7 @@ LocalUnixSocket::run()
       if (auto ret = client.read_all(bw); ret) {
         // we will load the yaml node twice using the YAMLParserChecker, ok for now.
         const auto json = std::string{bw.data(), bw.size()};
-        if (auto response = rpc::JsonRpc::instance().handle_call(json); response) {
+        if (auto response = rpc::JsonRPCManager::instance().handle_call(json); response) {
           // seems a valid response.
           const bool success = client.write(*response);
           if (!success) {
@@ -188,7 +186,7 @@ LocalUnixSocket::run()
 }
 
 bool
-LocalUnixSocket::stop()
+IPCSocketServer::stop()
 {
   _running.store(false);
 
@@ -203,7 +201,7 @@ LocalUnixSocket::stop()
 }
 
 void
-LocalUnixSocket::create_socket(std::error_code &ec)
+IPCSocketServer::create_socket(std::error_code &ec)
 {
   for (int retries = 0; retries < _conf.maxRetriesOnTransientErrors; retries++) {
     _socket = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -223,7 +221,7 @@ LocalUnixSocket::create_socket(std::error_code &ec)
 }
 
 bool
-LocalUnixSocket::check_for_transient_errors() const
+IPCSocketServer::check_for_transient_errors() const
 {
   switch (errno) {
   case EINTR:
@@ -247,7 +245,7 @@ LocalUnixSocket::check_for_transient_errors() const
 }
 
 int
-LocalUnixSocket::accept(std::error_code &ec) const
+IPCSocketServer::accept(std::error_code &ec) const
 {
   int ret = {-1};
 
@@ -271,7 +269,7 @@ LocalUnixSocket::accept(std::error_code &ec) const
 }
 
 void
-LocalUnixSocket::bind(std::error_code &ec)
+IPCSocketServer::bind(std::error_code &ec)
 {
   int lock_fd = open(_conf.lockPathName.c_str(), O_RDONLY | O_CREAT, 0600);
   if (lock_fd == -1) {
@@ -297,7 +295,7 @@ LocalUnixSocket::bind(std::error_code &ec)
 }
 
 void
-LocalUnixSocket::listen(std::error_code &ec)
+IPCSocketServer::listen(std::error_code &ec)
 {
   if (::listen(_socket, _conf.backlog) != 0) {
     ec = std::make_error_code(static_cast<std::errc>(errno));
@@ -317,7 +315,7 @@ namespace detail
     }
   };
 
-  template <> struct MessageParser<rpc::comm::LocalUnixSocket::Client::yamlparser> {
+  template <> struct MessageParser<rpc::comm::IPCSocketServer::Client::yamlparser> {
     static bool
     is_complete(std::string const &view)
     {
@@ -334,14 +332,14 @@ namespace detail
   };
 } // namespace detail
 
-LocalUnixSocket::Client::Client(int fd) : _fd{fd} {}
-LocalUnixSocket::Client::~Client()
+IPCSocketServer::Client::Client(int fd) : _fd{fd} {}
+IPCSocketServer::Client::~Client()
 {
   this->close();
 }
 
 bool
-LocalUnixSocket::Client::wait_for_data(int timeout) const
+IPCSocketServer::Client::wait_for_data(int timeout) const
 {
   auto keep_polling = [&](int pfd) -> bool {
     if (pfd < 0) {
@@ -378,7 +376,7 @@ LocalUnixSocket::Client::wait_for_data(int timeout) const
 }
 
 void
-LocalUnixSocket::Client::close()
+IPCSocketServer::Client::close()
 {
   if (_fd > 0) {
     ::close(_fd);
@@ -387,13 +385,13 @@ LocalUnixSocket::Client::close()
 }
 
 ssize_t
-LocalUnixSocket::Client::read(ts::MemSpan<char> span) const
+IPCSocketServer::Client::read(ts::MemSpan<char> span) const
 {
   return ::read(_fd, span.data(), span.size());
 }
 
 bool
-LocalUnixSocket::Client::read_all(ts::FixedBufferWriter &bw) const
+IPCSocketServer::Client::read_all(ts::FixedBufferWriter &bw) const
 {
   if (!this->wait_for_data()) {
     return false;
@@ -406,7 +404,7 @@ LocalUnixSocket::Client::read_all(ts::FixedBufferWriter &bw) const
     if (ret > 0) {
       // already read.
       bw.fill(ret);
-      std::string msg{bw.data(), bw.size()};
+      std::string msg{bw.data(), bw.size()}; // TODO: improve. make the parser to work with a bw.
       if (!MsgParser::is_complete(msg)) {
         // we need more data, we check the buffer if we have space.
         if (bw.remaining() > 0) {
@@ -445,7 +443,7 @@ LocalUnixSocket::Client::read_all(ts::FixedBufferWriter &bw) const
 }
 
 bool
-LocalUnixSocket::Client::write(std::string const &data) const
+IPCSocketServer::Client::write(std::string const &data) const
 {
   // TODO: broken pipe if client closes the socket. Add a test
   if (::write(_fd, data.c_str(), data.size()) < 0) {
@@ -460,20 +458,12 @@ LocalUnixSocket::Client::write(std::string const &data) const
 
 namespace YAML
 {
-template <> struct convert<rpc::comm::LocalUnixSocket::Config> {
-  using config = rpc::comm::LocalUnixSocket::Config;
+template <> struct convert<rpc::comm::IPCSocketServer::Config> {
+  using config = rpc::comm::IPCSocketServer::Config;
 
   static bool
   decode(const Node &node, config &rhs)
   {
-    // it will throw on any error.
-    // TODO: fix this, if first one fails, then all fails.
-    if (auto n = node[config::LOCK_PATH_NAME_KEY_STR]) {
-      rhs.lockPathName = n.as<std::string>();
-    }
-    if (auto n = node[config::SOCK_PATH_NAME_KEY_STR]) {
-      rhs.sockPathName = n.as<std::string>();
-    }
     if (auto n = node[config::BACKLOG_KEY_STR]) {
       rhs.backlog = n.as<int>();
     }

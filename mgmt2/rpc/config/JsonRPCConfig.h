@@ -40,7 +40,7 @@ namespace rpc::config
 /// b) Comm specfics Configuration.
 ///   "comm_config"
 ///   This is defined by the specific communication, each communication can define and implement their own configuration flags. @see
-///   LocalUnixSocket::Config for an example
+///   IPCSocketServer::Config for an example
 ///
 /// Example configuration:
 ///

@@ -23,7 +23,7 @@
 
 #include <tscore/Errata.h>
 
-#include "rpc/config/JsonRpcConfig.h"
+#include "rpc/config/JsonRPCConfig.h"
 
 namespace rpc::comm
 {

@@ -181,15 +181,13 @@ ts::Rv<YAML::Node>
 reload_config(std::string_view const &id, YAML::Node const &params)
 {
   ts::Rv<YAML::Node> resp;
-
+  Debug("RPC", "invoke plugin callbacks");
   // if there is any error, report it back.
-  if (auto err = FileManager::instance().rereadConfig(); err) {
-    return err;
+  if (auto err = FileManager::instance().rereadConfig(); err.size()) {
+    resp = err;
   }
-
   // If any callback was register(TSMgmtUpdateRegister) for config notifications, then it will be eventually notify.
   FileManager::instance().invokeConfigPluginCallbacks();
-
   // save config time.
   RecSetRecordInt("proxy.node.config.reconfigure_time", time(nullptr), REC_SOURCE_DEFAULT);
   // TODO: we may not need this any more

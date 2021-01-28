@@ -60,8 +60,7 @@ Description
   Primarily this specification defines several data structures and the rules around their processing.
 
 
-In order for programs to communicate with |TS|, the server exposes a public (local through IPC socket)
- ``JSONRRPC 2.0`` API where programs can communicate with it.
+In order for programs to communicate with |TS|, the server exposes a ``JSONRRPC 2.0`` API where programs can communicate with it.
 
 
 
@@ -87,7 +86,7 @@ File `jsonrpc.yaml` is a YAML format. The default configuration is::
 
    #YAML
    comm_type: 1
-   ipcsocket_config: 
+   comm_config:
       backlog: 5
       lock_path_name: /tmp/conf_jsonrpc.lock
       max_retry_on_transient_errors: 64
@@ -110,11 +109,11 @@ Field Name            Description
                             Unix Domain Socket implementation
 
 ``rpc_enabled``       Enable/disable toggle for the whole implementation, server will not start if this is false/no
-``ipcsocket_config``  This section is specified by each communication implementation.
+``comm_config``       Specific definitions as per transport.
 ===================== =========================================================================================
 
 
-IPC Socket:
+IPC Socket (comm_config):
 
 ===================================== =========================================================================================
 Field Name                            Description
@@ -126,9 +125,16 @@ Field Name                            Description
 ===================================== =========================================================================================
 
 
-.. note:
+.. note::
 
-    As today, there is only 1 communication mechanism supported. IPC Sockets.
+   As today, there is only 1 communication mechanism supported. IPC Sockets.
+
+
+
+.. note::
+
+   Traffic Control does support this RPC mechanism for comunication with |TS| . Please check :program:`traffic_ctl` documentation for
+   more details.
 
 
 .. _admin-jsonrpc-api:
@@ -1007,7 +1013,7 @@ Examples
 
 * Response.
 
-   The response will contain the default :ref:`success_response`  or an :cpp:class:`RpcErrorCode`.
+   The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
 
 
 * Validation
@@ -1119,7 +1125,7 @@ Parameters
 Result
 ^^^^^^
 
-This api will only inform for errors during the metric update. Errors will be tracked down in the :cpp:class:`RpcErrorCode` field.
+This api will only inform for errors during the metric update. Errors will be tracked down in the :cpp:class:`RPCErrorCode` field.
 
 .. note::
 
@@ -1146,7 +1152,7 @@ Examples
 
 * Response.
 
-   The response will contain the default :ref:`success_response`  or an :cpp:class:`RpcErrorCode`.
+   The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
 
 
 
@@ -1158,9 +1164,9 @@ admin_host_set_status
 Description
 ^^^^^^^^^^^
 
-A stat to track status is created for each host. The name is the host fqdn with a prefix of “proxy.process.host_status”. The value of
+A stat to track status is created for each host. The name is the host fqdn with a prefix of `proxy.process.host_status`. The value of
 the stat is a string which is the serialized representation of the status. This contains the overall status and the status for each reason. 
-The stats may be viewed using the `admin_lookup_records` rpc api or through the ``stats_over_http`` endpoint.
+The stats may be viewed using the `admin_lookup_records`_ rpc api or through the ``stats_over_http`` endpoint.
 
 Parameters
 ^^^^^^^^^^
@@ -1177,7 +1183,7 @@ Parameters
                                      and none is provided by this option.
    =================== ============= =================================================================================================
 
-# operation.
+* operation.
 
    =================== ============= =================================================================================================
    Field               Type          Description
@@ -1191,7 +1197,7 @@ Parameters
                                      are cleared by marking up the host for the specified reason code.
    =================== ============= =================================================================================================
 
-# reason.
+* reason.
 
    =================== ============= =================================================================================================
    Field               Type          Description
@@ -1199,7 +1205,7 @@ Parameters
    ``active``          |str|         Set the active health check reason.
    ``local``           |str|         Set the local health check reason.
    ``manual``          |str|         Set the administrative reason. This is the default reason if a reason is needed and not provided 
-                                     by this option.
+                                     by this option. If an invalid reason is provided ``manual`` will be defaulted.
    =================== ============= =================================================================================================
 
    Internally the reason can be ``self_detect`` if
@@ -1216,7 +1222,7 @@ Parameters
 Result
 ^^^^^^
 
-The response will contain the default :ref:`success_response`  or an :cpp:class:`RpcErrorCode`.
+The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
 
 
 Examples
@@ -1257,7 +1263,7 @@ Examples
 *Get the current status of the specified hosts with respect to their use as targets for parent selection. This returns the same
 information as the per host stat.*
 
-Although there is no single API that you can call to get a status from a particular host you can work away by pulling the right records.
+Although there is no a specialized API that you can call to get a status from a particular host you can work away by pulling the right records.
 For instance, the ``host1``  that we just set up can be easily fetch for a status:
 
 
@@ -1328,7 +1334,7 @@ Parameters
 Result
 ^^^^^^
 
-The response will contain the default :ref:`success_response`  or an :cpp:class:`RpcErrorCode`.
+The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
 
 
 Examples
@@ -1353,7 +1359,7 @@ admin_server_start_drain
 Description
 ^^^^^^^^^^^
 
-Drain the requests.
+Drain TS requests.
 
 Parameters
 ^^^^^^^^^^
@@ -1369,7 +1375,7 @@ Field                   Type          Description
 Result
 ^^^^^^
 
-The response will contain the default :ref:`success_response`  or an :cpp:class:`RpcErrorCode`.
+The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
 
 .. note::
 
@@ -1397,7 +1403,7 @@ Examples
 
 # Response.
 
-The response will contain the default :ref:`success_response` 
+The response will contain the default `success_response`
 
 # Response to a server that is already in drain mode.
 
@@ -1446,7 +1452,7 @@ Parameters
 Result
 ^^^^^^
 
-The response will contain the default :ref:`success_response`  or an :cpp:class:`RpcErrorCode`.
+The response will contain the default `success_response`  or an :cpp:class:`RPCErrorCode`.
 
 
 Examples

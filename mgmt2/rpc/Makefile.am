@@ -42,10 +42,10 @@ TESTS = $(check_PROGRAMS)
 # Protocol library only, no transport.
 
 libjsonrpc_protocol_COMMON = \
-	jsonrpc/error/RpcError.cc \
-	jsonrpc/error/RpcError.h \
-	jsonrpc/JsonRpc.cc \
-	jsonrpc/JsonRpc.h
+	jsonrpc/error/RPCError.cc \
+	jsonrpc/error/RPCError.h \
+	jsonrpc/JsonRPCManager.cc \
+	jsonrpc/JsonRPCManager.h
 
 libjsonrpc_protocol_la_SOURCES = \
 	$(libjsonrpc_protocol_COMMON)
@@ -83,14 +83,14 @@ test_jsonrpc_LDADD = \
 ###########################################################################################
 # RPC server only.
 libjsonrpc_server_COMMON = \
-	server/RpcServer.cc \
-	server/RpcServer.h \
+	server/RPCServer.cc \
+	server/RPCServer.h \
 	server/CommBase.cc \
 	server/CommBase.h \
-	server/LocalUnixSocket.cc \
-	server/LocalUnixSocket.h \
-	config/JsonRpcConfig.cc \
-	config/JsonRpcConfig.h
+	server/IPCSocketServer.cc \
+	server/IPCSocketServer.h \
+	config/JsonRPCConfig.cc \
+	config/JsonRPCConfig.h
 
 libjsonrpc_server_la_SOURCES = \
 	$(libjsonrpc_server_COMMON)
@@ -98,6 +98,7 @@ libjsonrpc_server_la_SOURCES = \
 test_jsonrpcserver_CPPFLAGS = \
 	$(AM_CPPFLAGS) \
 	-I$(abs_top_srcdir)/tests/include \
+	-I$(abs_top_srcdir)/tests \
 	@YAMLCPP_INCLUDES@
 
 test_jsonrpcserver_LDFLAGS = \

@@ -18,7 +18,7 @@
   limitations under the License.
 */
 
-#include "JsonRpc.h"
+#include "JsonRPCManager.h"
 
 #include <iostream>
 #include <chrono>
@@ -30,10 +30,8 @@ namespace rpc
 {
 static constexpr auto logTag = "rpc";
 
-namespace error = jsonrpc::error;
-
-JsonRpc::Dispatcher::response_type
-JsonRpc::Dispatcher::dispatch(jsonrpc::RpcRequestInfo const &request) const
+JsonRPCManager::Dispatcher::response_type
+JsonRPCManager::Dispatcher::dispatch(specs::RPCRequestInfo const &request) const
 {
   if (request.is_notification()) {
     std::error_code ec;
@@ -48,8 +46,8 @@ JsonRpc::Dispatcher::dispatch(jsonrpc::RpcRequestInfo const &request) const
   return {};
 }
 
-jsonrpc::MethodHandler
-JsonRpc::Dispatcher::find_handler(const std::string &methodName) const
+JsonRPCManager::MethodHandler
+JsonRPCManager::Dispatcher::find_handler(const std::string &methodName) const
 {
   std::lock_guard<std::mutex> lock(_mutex);
 
@@ -57,8 +55,8 @@ JsonRpc::Dispatcher::find_handler(const std::string &methodName) const
   return search != std::end(_methods) ? search->second : nullptr;
 }
 
-jsonrpc::NotificationHandler
-JsonRpc::Dispatcher::find_notification_handler(const std::string &notificationName) const
+JsonRPCManager::NotificationHandler
+JsonRPCManager::Dispatcher::find_notification_handler(const std::string &notificationName) const
 {
   std::lock_guard<std::mutex> lock(_mutex);
 
@@ -66,14 +64,14 @@ JsonRpc::Dispatcher::find_notification_handler(const std::string &notificationNa
   return search != std::end(_notifications) ? search->second : nullptr;
 }
 
-JsonRpc::Dispatcher::response_type
-JsonRpc::Dispatcher::invoke_handler(jsonrpc::RpcRequestInfo const &request) const
+JsonRPCManager::Dispatcher::response_type
+JsonRPCManager::Dispatcher::invoke_handler(specs::RPCRequestInfo const &request) const
 {
   auto handler = find_handler(request.method);
   if (!handler) {
-    return {std::nullopt, error::RpcErrorCode::METHOD_NOT_FOUND};
+    return {std::nullopt, error::RPCErrorCode::METHOD_NOT_FOUND};
   }
-  jsonrpc::RpcResponseInfo response{request.id};
+  specs::RPCResponseInfo response{request.id};
 
   try {
     auto const &rv = handler(*request.id, request.params);
@@ -86,18 +84,18 @@ JsonRpc::Dispatcher::invoke_handler(jsonrpc::RpcRequestInfo const &request) cons
     }
   } catch (std::exception const &e) {
     Debug(logTag, "Ups, something happened during the callback invocation: %s", e.what());
-    return {std::nullopt, error::RpcErrorCode::INTERNAL_ERROR};
+    return {std::nullopt, error::RPCErrorCode::INTERNAL_ERROR};
   }
 
   return {response, {}};
 }
 
 void
-JsonRpc::Dispatcher::invoke_notification_handler(jsonrpc::RpcRequestInfo const &notification, std::error_code &ec) const
+JsonRPCManager::Dispatcher::invoke_notification_handler(specs::RPCRequestInfo const &notification, std::error_code &ec) const
 {
   auto handler = find_notification_handler(notification.method);
   if (!handler) {
-    ec = error::RpcErrorCode::METHOD_NOT_FOUND;
+    ec = error::RPCErrorCode::METHOD_NOT_FOUND;
     return;
   }
   try {
@@ -109,7 +107,7 @@ JsonRpc::Dispatcher::invoke_notification_handler(jsonrpc::RpcRequestInfo const &
 }
 
 bool
-JsonRpc::Dispatcher::remove_handler(std::string const &name)
+JsonRPCManager::Dispatcher::remove_handler(std::string const &name)
 {
   std::lock_guard<std::mutex> lock(_mutex);
   auto foundIt = std::find_if(std::begin(_methods), std::end(_methods), [&](auto const &p) { return p.first == name; });
@@ -122,7 +120,7 @@ JsonRpc::Dispatcher::remove_handler(std::string const &name)
 }
 
 bool
-JsonRpc::Dispatcher::remove_notification_handler(std::string const &name)
+JsonRPCManager::Dispatcher::remove_notification_handler(std::string const &name)
 {
   std::lock_guard<std::mutex> lock(_mutex);
   auto foundIt = std::find_if(std::begin(_notifications), std::end(_notifications), [&](auto const &p) { return p.first == name; });
@@ -137,7 +135,7 @@ JsonRpc::Dispatcher::remove_notification_handler(std::string const &name)
 // RPC
 
 void
-JsonRpc::register_internal_api()
+JsonRPCManager::register_internal_api()
 {
   // register. TMP
   if (!_dispatcher.add_handler("show_registered_handlers",
@@ -150,51 +148,50 @@ JsonRpc::register_internal_api()
 }
 
 bool
-JsonRpc::remove_handler(std::string const &name)
+JsonRPCManager::remove_handler(std::string const &name)
 {
   return _dispatcher.remove_handler(name);
 }
 
 bool
-JsonRpc::remove_notification_handler(std::string const &name)
+JsonRPCManager::remove_notification_handler(std::string const &name)
 {
   return _dispatcher.remove_notification_handler(name);
 }
 
-static inline jsonrpc::RpcResponseInfo
-make_error_response(jsonrpc::RpcRequestInfo const &req, std::error_code const &ec)
+static inline specs::RPCResponseInfo
+make_error_response(specs::RPCRequestInfo const &req, std::error_code const &ec)
 {
-  jsonrpc::RpcResponseInfo resp;
+  specs::RPCResponseInfo resp;
 
   // we may have been able to collect the id, if so, use it.
   if (req.id) {
     resp.id = req.id;
   }
 
-  resp.rpcError = ec; // std::make_optional<jsonrpc::RpcError>(ec.value(), ec.message());
+  resp.rpcError = ec;
 
   return resp;
 }
 
-static inline jsonrpc::RpcResponseInfo
+static inline specs::RPCResponseInfo
 make_error_response(std::error_code const &ec)
 {
-  jsonrpc::RpcResponseInfo resp;
+  specs::RPCResponseInfo resp;
 
   resp.rpcError = ec;
-  // std::make_optional<jsonrpc::RpcError>(ec.value(), ec.message());
   return resp;
 }
 
 std::optional<std::string>
-JsonRpc::handle_call(std::string_view request)
+JsonRPCManager::handle_call(std::string_view request)
 {
   Debug(logTag, "Incoming request '%s'", request.data());
 
   std::error_code ec;
   try {
     // let's decode all the incoming messages into our own types.
-    jsonrpc::RpcRequest const &msg = Decoder::decode(request, ec);
+    specs::RPCRequest const &msg = Decoder::decode(request, ec);
 
     // If any error happened within the request, they will be kept inside each
     // particular request, as they would need to be converted back in a proper error response.
@@ -203,7 +200,7 @@ JsonRpc::handle_call(std::string_view request)
       return Encoder::encode(response);
     }
 
-    jsonrpc::RpcResponse response{msg.is_batch()};
+    specs::RPCResponse response{msg.is_batch()};
     for (auto const &[req, decode_error] : msg.get_messages()) {
       // As per jsonrpc specs we do care about invalid messages as long as they are well-formed,  our decode logic will make their
       // best to build up a request, if any errors were detected during decoding, we will save the error and make it part of the
@@ -235,14 +232,14 @@ JsonRpc::handle_call(std::string_view request)
     return response.is_notification() ? std::nullopt : std::make_optional<std::string>(Encoder::encode(response));
 
   } catch (std::exception const &ex) {
-    ec = jsonrpc::error::RpcErrorCode::INTERNAL_ERROR;
+    ec = error::RPCErrorCode::INTERNAL_ERROR;
   }
 
   return {Encoder::encode(make_error_response(ec))};
 }
 
 ts::Rv<YAML::Node>
-JsonRpc::Dispatcher::show_registered_handlers(std::string_view const &, const YAML::Node &)
+JsonRPCManager::Dispatcher::show_registered_handlers(std::string_view const &, const YAML::Node &)
 {
   ts::Rv<YAML::Node> resp;
   // use the same lock?

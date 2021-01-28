@@ -21,10 +21,10 @@
 #pragma once
 
 #include <yaml-cpp/yaml.h>
-#include "rpc/jsonrpc/error/RpcError.h"
+#include "rpc/jsonrpc/error/RPCError.h"
 #include "rpc/jsonrpc/Defs.h"
 
-namespace rpc::jsonrpc
+namespace rpc::json_codecs
 {
 ///
 /// @note The overall design is to make this classes @c yamlcpp_json_decoder and @c yamlcpp_json_encoder plugables into the Json Rpc
@@ -35,12 +35,12 @@ namespace rpc::jsonrpc
 ///
 /// The basic interface for the decoder to implement:
 ///
-///     static RpcRequest extract(std::string_view request, std::error_code &ec)
+///     static specs::RPCRequest extract(std::string_view request, std::error_code &ec)
 ///
 /// and for the encoder to implement:
 ///
-///  static std::string encode(const RpcResponseInfo &resp)
-///  static std::string encode(const RpcResponse &response)
+///  static std::string encode(const specs::RPCResponseInfo &resp)
+///  static std::string encode(const specs::RPCResponse &response)
 ///
 
 ///
@@ -54,15 +54,15 @@ class yamlcpp_json_decoder
   /// field.
   ///
   /// @param node  @see YAML::Node that contains all the fields.
-  /// @return std::pair<RpcRequestInfo, std::error_code> It returns a pair of request and an the error reporting.
+  /// @return std::pair<specs::RPCRequestInfo, std::error_code> It returns a pair of request and an the error reporting.
   ///
-  static std::pair<RpcRequestInfo, std::error_code>
+  static std::pair<specs::RPCRequestInfo, std::error_code>
   decode_and_validate(YAML::Node const &node) noexcept
   {
-    RpcRequestInfo request;
+    specs::RPCRequestInfo request;
     if (!node.IsDefined() || (node.Type() != YAML::NodeType::Map) || (node.size() == 0)) {
       // We only care about structures with elements.
-      return {request, error::RpcErrorCode::INVALID_REQUEST};
+      return {request, error::RPCErrorCode::INVALID_REQUEST};
     }
 
     try {
@@ -72,13 +72,13 @@ class yamlcpp_json_decoder
         if (auto id = node["id"]) {
           if (id.IsNull()) {
             // if it's present, it should be valid.
-            return {request, error::RpcErrorCode::NullId};
+            return {request, error::RPCErrorCode::NullId};
           }
 
           try {
             request.id = id.as<std::string>();
           } catch (YAML::Exception const &) {
-            return {request, error::RpcErrorCode::InvalidIdType};
+            return {request, error::RPCErrorCode::InvalidIdType};
           }
         } // else ->  it's fine, could be a notification.
       }
@@ -88,14 +88,14 @@ class yamlcpp_json_decoder
           try {
             request.jsonrpc = version.as<std::string>();
 
-            if (request.jsonrpc != JSONRPC_VERSION) {
-              return {request, error::RpcErrorCode::InvalidVersion};
+            if (request.jsonrpc != specs::JSONRPC_VERSION) {
+              return {request, error::RPCErrorCode::InvalidVersion};
             }
           } catch (YAML::Exception const &ex) {
-            return {request, error::RpcErrorCode::InvalidVersionType};
+            return {request, error::RPCErrorCode::InvalidVersionType};
           }
         } else {
-          return {request, error::RpcErrorCode::MissingVersion};
+          return {request, error::RPCErrorCode::MissingVersion};
         }
       }
       // method
@@ -104,10 +104,10 @@ class yamlcpp_json_decoder
           try {
             request.method = method.as<std::string>();
           } catch (YAML::Exception const &ex) {
-            return {request, error::RpcErrorCode::InvalidMethodType};
+            return {request, error::RPCErrorCode::InvalidMethodType};
           }
         } else {
-          return {request, error::RpcErrorCode::MissingMethod};
+          return {request, error::RPCErrorCode::MissingMethod};
         }
       }
       // params
@@ -119,7 +119,7 @@ class yamlcpp_json_decoder
           case YAML::NodeType::Sequence:
             break;
           default:
-            return {request, error::RpcErrorCode::InvalidParamType};
+            return {request, error::RPCErrorCode::InvalidParamType};
           }
           request.params = std ::move(params);
         }
@@ -127,7 +127,7 @@ class yamlcpp_json_decoder
       }
     } catch (std::exception const &e) {
       // we want to keep the request as we will respond with a message.
-      return {request, error::RpcErrorCode::PARSE_ERROR};
+      return {request, error::RPCErrorCode::PARSE_ERROR};
     }
     // TODO  We may want to extend the error handling and inform the user if there is  more than one invalid field in the request,
     // so far we notify only the first one, we can use the data field to add more errors in it. ts::Errata
@@ -136,16 +136,17 @@ class yamlcpp_json_decoder
 
 public:
   ///
-  /// @brief Decode a string, either json or yaml into a @see RpcRequest . @c ec will report the error if occurs @see RpcErrorCode
+  /// @brief Decode a string, either json or yaml into a @see specs::RPCRequest . @c ec will report the error if occurs @see
+  /// RPCErrorCode
   ///
   /// @param request The string request, this should be either json or yaml.
   /// @param ec Output value, The error reporting.
-  /// @return RpcRequest A valid rpc response object if no errors.
+  /// @return specs::RPCRequest A valid rpc response object if no errors.
   ///
-  static RpcRequest
+  static specs::RPCRequest
   decode(std::string_view request, std::error_code &ec) noexcept
   {
-    RpcRequest msg;
+    specs::RPCRequest msg;
     try {
       YAML::Node node = YAML::Load(request.data());
       switch (node.Type()) {
@@ -165,16 +166,16 @@ public:
           }
         } else {
           // Valid json but invalid base on jsonrpc specs, ie: [].
-          ec = jsonrpc::error::RpcErrorCode::INVALID_REQUEST;
+          ec = error::RPCErrorCode::INVALID_REQUEST;
         }
       } break;
       default:
         // Only Sequences or Objects are valid.
-        ec = jsonrpc::error::RpcErrorCode::INVALID_REQUEST;
+        ec = error::RPCErrorCode::INVALID_REQUEST;
         break;
       }
     } catch (YAML::Exception const &e) {
-      ec = jsonrpc::error::RpcErrorCode::PARSE_ERROR;
+      ec = error::RPCErrorCode::PARSE_ERROR;
     }
     return msg;
   }
@@ -243,7 +244,7 @@ class yamlcpp_json_encoder
   static void
   encode_error(ts::Errata const &errata, YAML::Emitter &json)
   {
-    encode_error({jsonrpc::error::RpcErrorCode::ExecutionError}, errata, json);
+    encode_error({error::RPCErrorCode::ExecutionError}, errata, json);
   }
 
   static void
@@ -268,10 +269,10 @@ class yamlcpp_json_encoder
   /// @param json output yaml emitter
   ///
   static void
-  encode(const RpcResponseInfo &resp, YAML::Emitter &json)
+  encode(const specs::RPCResponseInfo &resp, YAML::Emitter &json)
   {
     json << YAML::BeginMap;
-    json << YAML::Key << "jsonrpc" << YAML::Value << JSONRPC_VERSION;
+    json << YAML::Key << "jsonrpc" << YAML::Value << specs::JSONRPC_VERSION;
 
     // Important! As per specs, errors have preference over the result, we ignore result if error was set.
 
@@ -305,13 +306,13 @@ class yamlcpp_json_encoder
 
 public:
   ///
-  /// @brief Convert @see RpcResponseInfo into a std::string.
+  /// @brief Convert @see specs::RPCResponseInfo into a std::string.
   ///
-  /// @param resp The rpc object to be converted @see RpcResponseInfo
+  /// @param resp The rpc object to be converted @see specs::RPCResponseInfo
   /// @return std::string The string representation of the response object
   ///
   static std::string
-  encode(const RpcResponseInfo &resp)
+  encode(const specs::RPCResponseInfo &resp)
   {
     YAML::Emitter json;
     json << YAML::DoubleQuoted << YAML::Flow;
@@ -321,13 +322,13 @@ public:
   }
 
   ///
-  /// @brief Convert @see RpcResponse into a std::string, this handled a batch response.
+  /// @brief Convert @see specs::RPCResponse into a std::string, this handled a batch response.
   ///
   /// @param response The object to be converted
   /// @return std::string the string representation of the response object after being encode.
   ///
   static std::string
-  encode(const RpcResponse &response)
+  encode(const specs::RPCResponse &response)
   {
     YAML::Emitter json;
     json << YAML::DoubleQuoted << YAML::Flow;
@@ -348,4 +349,4 @@ public:
     return json.c_str();
   }
 };
-} // namespace rpc::jsonrpc
+} // namespace rpc::json_codecs

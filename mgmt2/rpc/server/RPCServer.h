@@ -25,8 +25,13 @@
 
 #include "tscore/Diags.h"
 
-#include "rpc/jsonrpc/JsonRpc.h"
-#include "rpc/config/JsonRpcConfig.h"
+#include "tscore/ink_thread.h"
+#include "tscore/ink_mutex.h"
+
+#include "tscore/ink_apidefs.h"
+#include <ts/apidefs.h>
+#include "rpc/jsonrpc/JsonRPCManager.h"
+#include "rpc/config/JsonRPCConfig.h"
 
 namespace rpc
 {
@@ -40,10 +45,10 @@ namespace comm
 /// BaseCommInterface
 /// Objects of this class can start @see thread_start , stop @see stop the server at any? time. More than one instance of this
 /// class can be created as long as they use different transport configuration.
-class RpcServer
+class RPCServer
 {
 public:
-  RpcServer() = default;
+  RPCServer() = default;
   ///
   /// @brief Construct a new Rpc Server object
   ///        This function have one main goal, select the transport type base on the configuration and  initialize it.
@@ -53,25 +58,36 @@ public:
   ///        2 - The transport layer cannot be initialized.
   /// @param conf the configuration object.
   ///
-  RpcServer(config::RPCConfig const &conf);
+  RPCServer(config::RPCConfig const &conf);
 
   /// @brief The destructor will join the thread.
-  ~RpcServer();
+  ~RPCServer();
 
   /// @brief Thread function that runs the transport.
   void thread_start();
-  /// @brief Function to stop the transport and join the thread to finish.
-  void stop();
+
   /// @brief Returns a descriptive name that was set by the transport. Check @see BaseCommInterface
   std::string_view selected_comm_name() const noexcept;
 
+  /// @brief Thread function that runs the transport.
+  void start_thread(std::function<TSThread()> const &cb_init        = std::function<TSThread()>(),
+                    std::function<void(TSThread)> const &cb_destroy = std::function<void(TSThread)>());
+
+  /// @brief Function to stop the transport and join the thread to finish.
+  void stop_thread();
+
 private:
-  /// @brief This function join the thread.
-  void join_thread() noexcept;
+  /// @brief Actual thread routine. This will start the socket.
+  static void *run_thread(void *);
+
+  std::function<TSThread()> _init;
+  std::function<void(TSThread)> _destroy;
+  ink_thread _this_thread{ink_thread_null()};
+  TSThread _rpcThread{nullptr};
 
   std::thread running_thread;
   std::unique_ptr<comm::BaseCommInterface> _socketImpl;
 };
 } // namespace rpc
 
-inkcoreapi extern rpc::RpcServer *jsonrpcServer;
+inkcoreapi extern rpc::RPCServer *jsonrpcServer;

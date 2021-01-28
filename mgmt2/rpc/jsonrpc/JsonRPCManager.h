@@ -24,8 +24,10 @@
 #include <functional>
 #include <tuple>
 #include <forward_list>
+#include <string_view>
 #include <mutex>
 
+#include "tscore/Errata.h"
 #include "tscore/Diags.h"
 
 #include "Defs.h"
@@ -33,16 +35,16 @@
 namespace rpc
 {
 // forward
-namespace jsonrpc
+namespace json_codecs
 {
   class yamlcpp_json_decoder;
   class yamlcpp_json_encoder;
-} // namespace jsonrpc
+} // namespace json_codecs
 
 ///
 /// @brief JSONRPC registration and JSONRPC invocation logic  https://www.jsonrpc.org/specification
 /// doc TBC
-class JsonRpc
+class JsonRPCManager
 {
   using NotificationHandler = std::function<void(const YAML::Node &)>;
   using MethodHandler       = std::function<ts::Rv<YAML::Node>(std::string_view const &, const YAML::Node &)>;
@@ -51,15 +53,15 @@ private:
   /// @note In case we want to change the codecs and use another library, we just need to follow the same signatures @see
   /// yamlcpp_json_decoder and @see yamlcpp_json_encoder.
   // We use the yamlcpp library by default.
-  using Decoder = jsonrpc::yamlcpp_json_decoder;
-  using Encoder = jsonrpc::yamlcpp_json_encoder;
+  using Decoder = json_codecs::yamlcpp_json_decoder;
+  using Encoder = json_codecs::yamlcpp_json_encoder;
 
 protected: // protected: For unit test.
-  JsonRpc()                = default;
-  JsonRpc(JsonRpc const &) = delete;
-  JsonRpc(JsonRpc &&)      = delete;
-  JsonRpc &operator=(JsonRpc const &) = delete;
-  JsonRpc &operator=(JsonRpc &&) = delete;
+  JsonRPCManager()                       = default;
+  JsonRPCManager(JsonRPCManager const &) = delete;
+  JsonRPCManager(JsonRPCManager &&)      = delete;
+  JsonRPCManager &operator=(JsonRPCManager const &) = delete;
+  JsonRPCManager &operator=(JsonRPCManager &&) = delete;
 
 private:
   ///
@@ -69,7 +71,7 @@ private:
   ///
   class Dispatcher
   {
-    using response_type = std::pair<std::optional<jsonrpc::RpcResponseInfo>, std::error_code>;
+    using response_type = std::pair<std::optional<specs::RPCResponseInfo>, std::error_code>;
 
   public:
     /// Add a method handler to the internal container
@@ -81,18 +83,18 @@ private:
     template <typename Handler> bool add_notification_handler(std::string const &name, Handler &&handler);
 
     /// @brief Find and call the request's callback. If any error, the return type will have the specific error.
-    ///        For notifications the @c RpcResponseInfo will not be set as part of the response. @c response_type
-    response_type dispatch(jsonrpc::RpcRequestInfo const &request) const;
+    ///        For notifications the @c RPCResponseInfo will not be set as part of the response. @c response_type
+    response_type dispatch(specs::RPCRequestInfo const &request) const;
 
     /// @brief  Find a particular registered handler(method) by its associated name.
     /// @return A pair. The handler itself and a boolean flag indicating that the handler was found. If not found, second will
     ///         be false and the handler null.
-    jsonrpc::MethodHandler find_handler(const std::string &methodName) const;
+    MethodHandler find_handler(const std::string &methodName) const;
 
     /// @brief  Find a particular registered handler(notification) by its associated name.
     /// @return A pair. The handler itself and a boolean flag indicating that the handler was found. If not found, second will
     ///         be false and the handler null.
-    jsonrpc::NotificationHandler find_notification_handler(const std::string &notificationName) const;
+    NotificationHandler find_notification_handler(const std::string &notificationName) const;
 
     /// @brief Removes a method handler
     bool remove_handler(std::string const &name);
@@ -107,11 +109,11 @@ private:
     ts::Rv<YAML::Node> show_registered_handlers(std::string_view const &, const YAML::Node &);
 
   private:
-    response_type invoke_handler(jsonrpc::RpcRequestInfo const &request) const;
-    void invoke_notification_handler(jsonrpc::RpcRequestInfo const &notification, std::error_code &ec) const;
+    response_type invoke_handler(specs::RPCRequestInfo const &request) const;
+    void invoke_notification_handler(specs::RPCRequestInfo const &notification, std::error_code &ec) const;
 
-    std::unordered_map<std::string, jsonrpc::MethodHandler> _methods;             ///< Registered handler methods container.
-    std::unordered_map<std::string, jsonrpc::NotificationHandler> _notifications; ///< Registered handler methods container.
+    std::unordered_map<std::string, MethodHandler> _methods;             ///< Registered handler methods container.
+    std::unordered_map<std::string, NotificationHandler> _notifications; ///< Registered handler methods container.
 
     mutable std::mutex _mutex; ///< insert/find/delete mutex.
   };
@@ -123,14 +125,14 @@ public:
   ///
   /// @brief Add new registered method handler to the JSON RPC engine.
   ///
-  /// @tparam Func The callback function type. \link jsonrpc::MethodHandler
+  /// @tparam Func The callback function type. \link specs::MethodHandler
   /// @param name Name to be exposed by the RPC Engine, this should match the incoming request. i.e: If you register 'get_stats'
   ///             then the incoming jsonrpc call should have this very same name in the 'method' field. .. {...'method':
   ///             'get_stats'...} .
-  /// @param call The function to be regsitered.  \link jsonrpc::MethodHandler
+  /// @param call The function to be regsitered.  \link specs::MethodHandler
   /// @return bool Boolean flag. true if the callback was successfully added, false otherwise
   ///
-  /// @note @see \link jsonrpc::method_handler_from_member_function if the registered function is a member function.
+  /// @note @see \link specs::method_handler_from_member_function if the registered function is a member function.
   template <typename Func> bool add_handler(const std::string &name, Func &&call);
 
   ///
@@ -145,12 +147,12 @@ public:
   ///
   /// @brief Add new registered notification handler to the JSON RPC engine.
   ///
-  /// @tparam Func The callback function type. \link jsonrpc::NotificationHandler
+  /// @tparam Func The callback function type. \link NotificationHandler
   /// @param name Name to be exposed by the RPC Engine.
-  /// @param call The callback function that needs to be regsitered.  \link jsonrpc::NotificationHandler
+  /// @param call The callback function that needs to be regsitered.  \link NotificationHandler
   /// @return bool Boolean flag. true if the callback was successfully added, false otherwise
   ///
-  /// @note @see \link jsonrpc::notification_handler_from_member_function if the registered function is a member function.
+  /// @note @see \link specs::notification_handler_from_member_function if the registered function is a member function.
   template <typename Func> bool add_notification_handler(const std::string &name, Func &&call);
 
   ///
@@ -174,12 +176,12 @@ public:
   ///
   /// @brief Get the instance of the whole RPC engine.
   ///
-  /// @return JsonRpc& The JsonRpc protocol implementation object.
+  /// @return JsonRPCManager& The JsonRPCManager protocol implementation object.
   ///
-  static JsonRpc &
+  static JsonRPCManager &
   instance()
   {
-    static JsonRpc rpc;
+    static JsonRPCManager rpc;
     return rpc;
   }
 
@@ -191,21 +193,21 @@ private:
 /// Template impl.
 template <typename Handler>
 bool
-JsonRpc::add_handler(const std::string &name, Handler &&call)
+JsonRPCManager::add_handler(const std::string &name, Handler &&call)
 {
   return _dispatcher.add_handler(name, std::forward<Handler>(call));
 }
 
 template <typename Handler>
 bool
-JsonRpc::add_notification_handler(const std::string &name, Handler &&call)
+JsonRPCManager::add_notification_handler(const std::string &name, Handler &&call)
 {
   return _dispatcher.add_notification_handler(name, std::forward<Handler>(call));
 }
 
 template <typename Handler>
 bool
-JsonRpc::Dispatcher::add_handler(std::string const &name, Handler &&handler)
+JsonRPCManager::Dispatcher::add_handler(std::string const &name, Handler &&handler)
 {
   std::lock_guard<std::mutex> lock(_mutex);
   return _methods.emplace(name, std::move(handler)).second;
@@ -213,7 +215,7 @@ JsonRpc::Dispatcher::add_handler(std::string const &name, Handler &&handler)
 
 template <typename Handler>
 bool
-JsonRpc::Dispatcher::add_notification_handler(std::string const &name, Handler &&handler)
+JsonRPCManager::Dispatcher::add_notification_handler(std::string const &name, Handler &&handler)
 {
   std::lock_guard<std::mutex> lock(_mutex);
   return _notifications.emplace(name, std::forward<Handler>(handler)).second;

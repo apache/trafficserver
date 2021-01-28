@@ -17,20 +17,20 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#include "RpcServer.h"
-#include "rpc/server/LocalUnixSocket.h"
+#include "RPCServer.h"
+#include "rpc/server/IPCSocketServer.h"
 
-// rethink the whole global stuff/ singleton?
-inkcoreapi rpc::RpcServer *jsonrpcServer = nullptr;
+inkcoreapi rpc::RPCServer *jsonrpcServer = nullptr;
 
 namespace rpc
 {
 static const auto logTag{"rpc"};
-RpcServer::RpcServer(config::RPCConfig const &conf)
+
+RPCServer::RPCServer(config::RPCConfig const &conf)
 {
   switch (conf.get_comm_type()) {
   case config::RPCConfig::CommType::UDS: {
-    _socketImpl     = std::make_unique<comm::LocalUnixSocket>();
+    _socketImpl     = std::make_unique<comm::IPCSocketServer>();
     auto const &ret = _socketImpl->configure(conf.get_comm_config_params());
     if (ret) {
       Warning("Unable to configure the socket impl: %s", ret.top().text().c_str());
@@ -49,40 +49,46 @@ RpcServer::RpcServer(config::RPCConfig const &conf)
 }
 
 std::string_view
-RpcServer::selected_comm_name() const noexcept
+RPCServer::selected_comm_name() const noexcept
 {
   return _socketImpl->name();
 }
 
-void
-RpcServer::join_thread() noexcept
+RPCServer::~RPCServer()
 {
-  if (running_thread.joinable()) {
-    try {
-      running_thread.join();
-    } catch (std::system_error const &se) {
-      Warning("Found an issue during join: %s", se.what());
-    }
+  stop_thread();
+}
+
+void * /* static */
+RPCServer::run_thread(void *a)
+{
+  void *ret = a;
+  Debug(logTag, "about to run this.");
+  if (jsonrpcServer->_init) {
+    jsonrpcServer->_rpcThread = jsonrpcServer->_init();
   }
-}
-
-RpcServer::~RpcServer()
-{
-  this->join_thread();
+  jsonrpcServer->_socketImpl->run();
+  Debug(logTag, "Socket stopped");
+  return ret;
 }
 
 void
-RpcServer::thread_start()
+RPCServer::start_thread(std::function<TSThread()> const &cb_init, std::function<void(TSThread)> const &cb_destroy)
 {
   Debug(logTag, "Starting RPC Server on: %s", _socketImpl->name().data());
-  running_thread = std::thread([&]() { _socketImpl->run(); });
+  _init    = cb_init;
+  _destroy = cb_destroy;
+
+  ink_thread_create(&_this_thread, run_thread, nullptr, 0, 0, nullptr);
 }
 
 void
-RpcServer::stop()
+RPCServer::stop_thread()
 {
   _socketImpl->stop();
-  this->join_thread();
+
+  ink_thread_join(_this_thread);
+  _this_thread = ink_thread_null();
   Debug(logTag, "Stopping RPC server on: %s", _socketImpl->name().data());
 }
 } // namespace rpc

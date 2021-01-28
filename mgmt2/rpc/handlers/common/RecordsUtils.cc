@@ -66,14 +66,7 @@ RPCRecordErrorCategory::message(int ev) const
   }
 }
 
-// Make this available if need to compare against different categories.
-const RPCRecordErrorCategory &
-get_record_error_category()
-{
-  static RPCRecordErrorCategory rpcRecordErrorCategory;
-  return rpcRecordErrorCategory;
-}
-
+const RPCRecordErrorCategory rpcRecordErrorCategory{};
 } // anonymous namespace
 
 namespace rpc::handlers::errors
@@ -81,7 +74,7 @@ namespace rpc::handlers::errors
 std::error_code
 make_error_code(rpc::handlers::errors::RecordError e)
 {
-  return {static_cast<int>(e), get_record_error_category()};
+  return {static_cast<int>(e), rpcRecordErrorCategory};
 }
 } // namespace rpc::handlers::errors
 

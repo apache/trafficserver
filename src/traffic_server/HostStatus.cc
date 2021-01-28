@@ -24,7 +24,7 @@
 #include "ProcessManager.h"
 
 #include "tscore/BufferWriter.h"
-#include "rpc/jsonrpc/JsonRpc.h"
+#include "rpc/jsonrpc/JsonRPCManager.h"
 #include "rpc/handlers/common/ErrorUtils.h"
 
 ts::Rv<YAML::Node> server_set_status(std::string_view const &id, YAML::Node const &params);
@@ -214,7 +214,7 @@ HostStatus::HostStatus()
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_UP, &mgmt_host_status_up_callback);
   pmgmt->registerMgmtCallback(MGMT_EVENT_HOST_STATUS_DOWN, &mgmt_host_status_down_callback);
 
-  rpc::JsonRpc::instance().add_handler("admin_host_set_status", &server_set_status);
+  rpc::JsonRPCManager::instance().add_handler("admin_host_set_status", &server_set_status);
 }
 
 HostStatus::~HostStatus()
@@ -463,7 +463,6 @@ namespace
 struct HostCmdInfo {
   HostStatus_t type{HostStatus_t::HOST_STATUS_INIT};
   unsigned int reasonType{0};
-  std::string reasonStr;
   std::vector<std::string> hosts;
   int time{0};
 };
@@ -499,8 +498,8 @@ template <> struct convert<HostCmdInfo> {
     }
 
     if (auto n = node["reason"]) {
-      rhs.reasonStr  = n.as<std::string>();
-      rhs.reasonType = Reason::getReason(rhs.reasonStr.c_str());
+      auto reasonStr = n.as<std::string>();
+      rhs.reasonType = Reason::getReason(reasonStr.c_str());
     } // manual by default.
 
     if (auto n = node["time"]) {
@@ -533,13 +532,15 @@ server_set_status(std::string_view const &id, YAML::Node const &params)
         if (hs.getHostStat(statName, buf, 1024) == REC_ERR_FAIL) {
           hs.createHostStat(name.c_str());
         }
+        Debug("host_statuses", "marking server %s : %s", name.c_str(),
+              (cmdInfo.type == HostStatus_t::HOST_STATUS_UP ? "up" : "down"));
         hs.setHostStatus(name.c_str(), cmdInfo.type, cmdInfo.time, cmdInfo.reasonType);
       }
     } else {
       resp.errata().push(err::make_errata(err::Codes::SERVER, "Invalid input parameters, null"));
     }
   } catch (std::exception const &ex) {
-    Debug("rpc.handler.server.status", "Got an error HostCmdInfo decoding: %s", ex.what());
+    Debug("host_statuses", "Got an error HostCmdInfo decoding: %s", ex.what());
     resp.errata().push(err::make_errata(err::Codes::SERVER, "Error found during host status set: {}", ex.what()));
   }
   return resp;

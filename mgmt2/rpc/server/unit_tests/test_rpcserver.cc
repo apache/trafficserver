@@ -33,13 +33,13 @@
 
 #include <tscore/BufferWriter.h>
 #include <tscore/ts_file.h>
+#include "ts/ts.h"
 
-#include "rpc/jsonrpc/JsonRpc.h"
-#include "rpc/server/RpcServer.h"
-#include "rpc/server/LocalUnixSocket.h"
+#include "rpc/jsonrpc/JsonRPCManager.h"
+#include "rpc/server/RPCServer.h"
+#include "rpc/server/IPCSocketServer.h"
 
-#include "rpc/common/JsonRpcApi.h"
-#include "LocalSocketClient.h"
+#include "tools/cpp/IPCSocketClient.h"
 #include "I_EventSystem.h"
 #include "tscore/I_Layout.h"
 #include "diags.i"
@@ -51,9 +51,9 @@ static const std::string lockPath{"/tmp/jsonrpc20_test.lock"};
 static constexpr int default_backlog{5};
 static constexpr int default_maxRetriesOnTransientErrors{64};
 
-struct RpcServerTestListener : Catch::TestEventListenerBase {
+struct RPCServerTestListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
-  ~RpcServerTestListener();
+  ~RPCServerTestListener();
 
   // The whole test run starting
   void
@@ -79,26 +79,29 @@ struct RpcServerTestListener : Catch::TestEventListenerBase {
 
     YAML::Node configNode = YAML::Load(confStr);
     serverConfig.load(configNode);
-    jrpcServer = std::make_unique<rpc::RpcServer>(serverConfig);
+    jsonrpcServer = new rpc::RPCServer(serverConfig);
 
-    jrpcServer->thread_start();
+    jsonrpcServer->start_thread();
   }
 
   // The whole test run ending
   void
   testRunEnded(Catch::TestRunStats const &testRunStats) override
   {
-    jrpcServer->stop();
+    jsonrpcServer->stop_thread();
     // delete main_thread;
+    // if (jsonrpcServer) {
+    //   delete jsonrpcServer;
+    // }
   }
 
 private:
-  std::unique_ptr<rpc::RpcServer> jrpcServer;
+  // std::unique_ptr<rpc::RPCServer> jrpcServer;
   std::unique_ptr<EThread> main_thread;
 };
-CATCH_REGISTER_LISTENER(RpcServerTestListener)
+CATCH_REGISTER_LISTENER(RPCServerTestListener)
 
-RpcServerTestListener::~RpcServerTestListener() {}
+RPCServerTestListener::~RPCServerTestListener() {}
 
 DEFINE_JSONRPC_PROTO_FUNCTION(some_foo) // id, params
 {
@@ -116,13 +119,15 @@ DEFINE_JSONRPC_PROTO_FUNCTION(some_foo) // id, params
   INFO("Done sleeping");
   return resp;
 }
-
-// Handy class to avoid disconecting the socket.
+namespace
+{
+// Handy class to avoid manually disconecting the socket.
 // TODO: should it also connect?
-struct ScopedLocalSocket : LocalSocketClient {
+struct ScopedLocalSocket : IPCSocketClient {
+  using super = IPCSocketClient;
   // TODO, use another path.
-  ScopedLocalSocket() : LocalSocketClient(sockPath) {}
-  ~ScopedLocalSocket() { LocalSocketClient::disconnect(); }
+  ScopedLocalSocket() : IPCSocketClient(sockPath) {}
+  ~ScopedLocalSocket() { IPCSocketClient::disconnect(); }
 
   template <std::size_t N>
   void
@@ -139,6 +144,31 @@ struct ScopedLocalSocket : LocalSocketClient {
       std::this_thread::sleep_for(wait_between_write);
     }
     _state = State::SENT;
+  }
+
+  // basic read, if fail, why it fail is irrelevant in this test.
+  std::string
+  read()
+  {
+    ts::LocalBufferWriter<32000> bw;
+    auto ret = super::read(bw);
+    if (ret == ReadStatus::OK) {
+      return {bw.data(), bw.size()};
+    }
+
+    return {};
+  }
+  // small wrapper function to deal with the bw.
+  std::string
+  query(std::string_view msg)
+  {
+    ts::LocalBufferWriter<32000> bw;
+    auto ret = connect().send(msg).read(bw);
+    if (ret == ReadStatus::OK) {
+      return {bw.data(), bw.size()};
+    }
+
+    return {};
   }
 
 private:
@@ -175,20 +205,22 @@ private:
   }
 };
 
+// helper function to send a request and update the promise when the response is done.
+// This is to be used in a multithread test.
 void
 send_request(std::string json, std::promise<std::string> p)
 {
   ScopedLocalSocket rpc_client;
-  auto resp = rpc_client.connect().send(json).read();
+  auto resp = rpc_client.query(json);
   p.set_value(resp);
 }
-
+} // namespace
 TEST_CASE("Sending 'concurrent' requests to the rpc server.", "[thread]")
 {
   SECTION("A registered handlers")
   {
-    rpc::JsonRpc::instance().add_handler("some_foo", &some_foo);
-    rpc::JsonRpc::instance().add_handler("some_foo2", &some_foo);
+    rpc::JsonRPCManager::instance().add_handler("some_foo", &some_foo);
+    rpc::JsonRPCManager::instance().add_handler("some_foo2", &some_foo);
 
     std::promise<std::string> p1;
     std::promise<std::string> p2;
@@ -241,55 +273,55 @@ DEFINE_JSONRPC_PROTO_FUNCTION(do_nothing) // id, params, resp
 
 TEST_CASE("Basic message sending to a running server", "[socket]")
 {
-  REQUIRE(rpc::JsonRpc::instance().add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::JsonRPCManager::instance().add_handler("do_nothing", &do_nothing));
   SECTION("Basic single request to the rpc server")
   {
     const int S{500};
     auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
     ScopedLocalSocket rpc_client;
-    auto resp = rpc_client.connect().send(json).read();
+    auto resp = rpc_client.query(json);
 
     REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "EfGh-1"})");
   }
-  REQUIRE(rpc::JsonRpc::instance().remove_handler("do_nothing"));
+  REQUIRE(rpc::JsonRPCManager::instance().remove_handler("do_nothing"));
 }
 
 TEST_CASE("Sending a message bigger than the internal server's buffer.", "[buffer][error]")
 {
-  REQUIRE(rpc::JsonRpc::instance().add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::JsonRPCManager::instance().add_handler("do_nothing", &do_nothing));
 
   SECTION("The Server message buffer size same as socket buffer")
   {
     const int S{64000};
     auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
     ScopedLocalSocket rpc_client;
-    auto resp = rpc_client.connect().send(json).read();
+    auto resp = rpc_client.query(json);
     REQUIRE(resp.empty());
     REQUIRE(rpc_client.is_connected() == false);
   }
 
-  REQUIRE(rpc::JsonRpc::instance().remove_handler("do_nothing"));
+  REQUIRE(rpc::JsonRPCManager::instance().remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with invalid json message", "[socket]")
 {
-  REQUIRE(rpc::JsonRpc::instance().add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::JsonRPCManager::instance().add_handler("do_nothing", &do_nothing));
 
   SECTION("A rpc server")
   {
     const int S{10};
     auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) + R"("}, "id": "EfGh})"};
     ScopedLocalSocket rpc_client;
-    auto resp = rpc_client.connect().send(json).read();
+    auto resp = rpc_client.query(json);
 
     CHECK(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
   }
-  REQUIRE(rpc::JsonRpc::instance().remove_handler("do_nothing"));
+  REQUIRE(rpc::JsonRPCManager::instance().remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with chunks", "[socket][chunks]")
 {
-  REQUIRE(rpc::JsonRpc::instance().add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::JsonRPCManager::instance().add_handler("do_nothing", &do_nothing));
 
   SECTION("Sending request by chunks")
   {
@@ -304,7 +336,7 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
     auto resp = rpc_client.read();
     REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "chunk-parts-3"})");
   }
-  REQUIRE(rpc::JsonRpc::instance().remove_handler("do_nothing"));
+  REQUIRE(rpc::JsonRPCManager::instance().remove_handler("do_nothing"));
 }
 
 // Enable toggle
@@ -345,19 +377,19 @@ TEST_CASE("Test rpc server configuration with invalid communication type", "[rpc
   YAML::Node configNode = YAML::Load(confStr);
   serverConfig.load(configNode);
 
-  REQUIRE_THROWS([&]() { auto server = std::make_unique<rpc::RpcServer>(serverConfig); }());
+  REQUIRE_THROWS([&]() { auto server = std::make_unique<rpc::RPCServer>(serverConfig); }());
 }
 
 // TEST UDS Server configuration
 namespace
 {
 namespace trp = rpc::comm;
-// This class is defined to get access to the protected config object inside the LocalUnixSocket class.
-struct LocalSocketTest : public trp::LocalUnixSocket {
+// This class is defined to get access to the protected config object inside the IPCSocketServer class.
+struct LocalSocketTest : public trp::IPCSocketServer {
   ts::Errata
   configure(YAML::Node const &params) override
   {
-    return trp::LocalUnixSocket::configure(params);
+    return trp::IPCSocketServer::configure(params);
   }
   void
   run() override
@@ -366,7 +398,7 @@ struct LocalSocketTest : public trp::LocalUnixSocket {
   ts::Errata
   init() override
   {
-    return trp::LocalUnixSocket::init();
+    return trp::IPCSocketServer::init();
   }
   bool
   stop() override
@@ -378,7 +410,7 @@ struct LocalSocketTest : public trp::LocalUnixSocket {
   {
     return "LocalSocketTest";
   }
-  trp::LocalUnixSocket::Config const &
+  trp::IPCSocketServer::Config const &
   get_conf() const
   {
     return _conf;
@@ -387,13 +419,13 @@ struct LocalSocketTest : public trp::LocalUnixSocket {
   static std::string_view
   default_sock_name()
   {
-    return trp::LocalUnixSocket::Config::DEFAULT_SOCK_NAME;
+    return trp::IPCSocketServer::Config::DEFAULT_SOCK_NAME;
   }
 
   static std::string_view
   default_lock_name()
   {
-    return trp::LocalUnixSocket::Config::DEFAULT_LOCK_NAME;
+    return trp::IPCSocketServer::Config::DEFAULT_LOCK_NAME;
   }
 };
 } // namespace

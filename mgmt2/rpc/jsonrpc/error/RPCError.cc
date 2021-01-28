@@ -18,7 +18,7 @@
   limitations under the License.
 */
 
-#include "RpcError.h"
+#include "RPCError.h"
 
 #include <string>
 #include <system_error> // TODO: remove
@@ -26,74 +26,68 @@
 namespace
 { // anonymous namespace
 
-struct RpcErrorCategory : std::error_category {
+struct RPCErrorCategory : std::error_category {
   const char *name() const noexcept override;
   std::string message(int ev) const override;
 };
 
 const char *
-RpcErrorCategory::name() const noexcept
+RPCErrorCategory::name() const noexcept
 {
   return "rpc_msg";
 }
 
 std::string
-RpcErrorCategory::message(int ev) const
+RPCErrorCategory::message(int ev) const
 {
-  using namespace rpc::jsonrpc::error;
-  switch (static_cast<RpcErrorCode>(ev)) {
-  case RpcErrorCode::INVALID_REQUEST:
+  using namespace rpc::error;
+  switch (static_cast<RPCErrorCode>(ev)) {
+  case RPCErrorCode::INVALID_REQUEST:
     return {"Invalid Request"};
-  case RpcErrorCode::METHOD_NOT_FOUND:
+  case RPCErrorCode::METHOD_NOT_FOUND:
     return {"Method not found"};
-  case RpcErrorCode::INVALID_PARAMS:
+  case RPCErrorCode::INVALID_PARAMS:
     return {"Invalid params"};
-  case RpcErrorCode::INTERNAL_ERROR:
+  case RPCErrorCode::INTERNAL_ERROR:
     return {"Internal error"};
-  case RpcErrorCode::PARSE_ERROR:
+  case RPCErrorCode::PARSE_ERROR:
     return {"Parse error"};
   // version
-  case RpcErrorCode::InvalidVersion:
+  case RPCErrorCode::InvalidVersion:
     return {"Invalid version, 2.0 only"};
-  case RpcErrorCode::InvalidVersionType:
+  case RPCErrorCode::InvalidVersionType:
     return {"Invalid version type, should be a string"};
-  case RpcErrorCode::MissingVersion:
+  case RPCErrorCode::MissingVersion:
     return {"Missing version field"};
   // method
-  case RpcErrorCode::InvalidMethodType:
+  case RPCErrorCode::InvalidMethodType:
     return {"Invalid method type, should be a string"};
-  case RpcErrorCode::MissingMethod:
+  case RPCErrorCode::MissingMethod:
     return {"Missing method field"};
   // params
-  case RpcErrorCode::InvalidParamType:
+  case RPCErrorCode::InvalidParamType:
     return {"Invalid params type, should be a structure"};
   // id
-  case RpcErrorCode::InvalidIdType:
+  case RPCErrorCode::InvalidIdType:
     return {"Invalid id type"};
-  case RpcErrorCode::NullId:
+  case RPCErrorCode::NullId:
     return {"Use of null as id is discouraged"};
-  case RpcErrorCode::ExecutionError:
+  case RPCErrorCode::ExecutionError:
     return {"Error during execution"};
   default:
     return "Rpc error " + std::to_string(ev);
   }
 }
 
-const RpcErrorCategory &
-get_rpc_error_category()
-{
-  static RpcErrorCategory rpcErrorCategory;
-  return rpcErrorCategory;
-}
-
+const RPCErrorCategory rpcErrorCategory{};
 } // anonymous namespace
 
-namespace rpc::jsonrpc::error
+namespace rpc::error
 {
 std::error_code
-make_error_code(rpc::jsonrpc::error::RpcErrorCode e)
+make_error_code(rpc::error::RPCErrorCode e)
 {
-  return {static_cast<int>(e), get_rpc_error_category()};
+  return {static_cast<int>(e), rpcErrorCategory};
 }
 
-} // namespace rpc::jsonrpc::error
+} // namespace rpc::error

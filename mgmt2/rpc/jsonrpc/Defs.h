@@ -25,19 +25,18 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "rpc/jsonrpc/error/RpcError.h"
-#include "rpc/common/JsonRpcApi.h"
+#include "rpc/jsonrpc/error/RPCError.h"
 
 // This file contains all the internal types used by the RPC engine to deal with all the messages
-// While we use yamlcpp for parsing, internally we model the request/response on our wrappers (RpcRequest, RpcResponse)
-namespace rpc::jsonrpc
+// While we use yamlcpp for parsing, internally we model the request/response on our wrappers (RPCRequest, RPCResponse)
+namespace rpc::specs
 {
 static constexpr auto JSONRPC_VERSION{"2.0"};
 
 // /// @brief Class that contains a translated error from an std::error_code that can be understand by the YAMLCodec when building a
 // /// response.
-// struct RpcError {
-//   RpcError(int c, std::string const &m) : code(c), message(m) {}
+// struct RPCError {
+//   RPCError(int c, std::string const &m) : code(c), message(m) {}
 //   int code;
 //   std::string message;
 // };
@@ -46,18 +45,18 @@ static constexpr auto JSONRPC_VERSION{"2.0"};
 /// It contains the YAML::Node that will contain the response of a call and  if any error, will also encapsulate the  error from the
 /// call.
 /// @see MethodHandler
-class RpcHandlerResponse
+class RPCHandlerResponse
 {
 public:
   YAML::Node result; //!< The response from the registered handler.
   ts::Errata errata; //!< The  error response from the registered handler.
 };
 
-struct RpcResponseInfo {
-  RpcResponseInfo(std::optional<std::string> const &id_) : id(id_) {}
-  RpcResponseInfo() = default;
+struct RPCResponseInfo {
+  RPCResponseInfo(std::optional<std::string> const &id_) : id(id_) {}
+  RPCResponseInfo() = default;
 
-  RpcHandlerResponse callResult;
+  RPCHandlerResponse callResult;
   std::error_code rpcError;
   std::optional<std::string> id;
 };
@@ -67,8 +66,10 @@ struct RpcResponseInfo {
 /// This class maps the jsonrpc protocol for a request. It can be used for Methods and Notifications.
 /// Notifications will not use the id, this is the main reason why is a std::optional<>.
 ///
-struct RpcRequestInfo {
-  std::string jsonrpc;           //!<  JsonRpc version ( we only allow 2.0 ). @see yamlcpp_json_decoder
+struct RPCRequestInfo {
+  RPCRequestInfo() = default;
+  RPCRequestInfo(std::string const &version, std::string const &mid) : jsonrpc(version), id(mid) {}
+  std::string jsonrpc;           //!<  JsonRPC version ( we only allow 2.0 ). @see yamlcpp_json_decoder
   std::string method;            //!< incoming method name.
   std::optional<std::string> id; //!< incoming request if (only used for method calls.)
   YAML::Node params;             //!< incoming parameter structure.
@@ -83,25 +84,25 @@ struct RpcRequestInfo {
 };
 
 template <class M> class RPCMessage;
-using RpcRequest  = RPCMessage<std::pair<RpcRequestInfo, std::error_code>>;
-using RpcResponse = RPCMessage<RpcResponseInfo>;
+using RPCRequest  = RPCMessage<std::pair<RPCRequestInfo, std::error_code>>;
+using RPCResponse = RPCMessage<RPCResponseInfo>;
 
 ///
 /// @brief Class that reprecent a RPC message, it could be either the request or the response.
-/// Requests @see RpcRequest are represented by a vector of pairs, which contains, the request @see RpcRequestInfo and an associated
+/// Requests @see RPCRequest are represented by a vector of pairs, which contains, the request @see RPCRequestInfo and an associated
 /// error_code in case that the request fails. The main reason of this to be a pair is that as per the protocol specs we need to
 /// respond every message(if it's a method), so for cases like a batch request where you may have some of the request fail, then the
 /// error will be attached to the response. The order is not important
 ///
-/// Responses @see RpcResponse models pretty much the same structure except that there is no error associated with it. The @see
-/// RpcResponseInfo could be the error.
+/// Responses @see RPCResponse models pretty much the same structure except that there is no error associated with it. The @see
+/// RPCResponseInfo could be the error.
 ///
-/// @tparam Message The type of the RPCMessage, either a pair of @see RpcRequestInfo, std::error_code. Or @see RpcResponseInfo
+/// @tparam Message The type of the RPCMessage, either a pair of @see RPCRequestInfo, std::error_code. Or @see RPCResponseInfo
 ///
 template <typename Message> class RPCMessage
 {
-  static_assert(!std::is_same_v<Message, RpcRequest> || !std::is_same_v<Message, RpcResponse>,
-                "Ups, only RpcRequest or RpcResponse");
+  static_assert(!std::is_same_v<Message, RPCRequest> || !std::is_same_v<Message, RPCResponse>,
+                "Ups, only RPCRequest or RPCResponse");
 
   using MessageList = std::vector<Message>;
   /// @brief to keep track of internal message data.
@@ -181,4 +182,4 @@ private:
   Metadata _metadata;
 };
 
-} // namespace rpc::jsonrpc
+} // namespace rpc::specs

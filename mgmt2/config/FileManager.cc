@@ -177,6 +177,7 @@ FileManager::registerConfigPluginCallbacks(ConfigUpdateCbTable *cblist)
 void
 FileManager::invokeConfigPluginCallbacks()
 {
+  Debug("filemanager", "invoke plugin callbacks");
   static const std::string_view s{"*"};
   if (_pluginCallbackList) {
     _pluginCallbackList->invoke(s.data());
@@ -388,7 +389,7 @@ FileManager::ConfigManager::checkForUserUpdate(FileManager::RollBackCheckType ho
       fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
       // TODO: syslog????
     }
-    Debug("logTag", "User has changed config file %s\n", fileName);
+    Debug(logTag, "User has changed config file %s\n", fileName);
     result = true;
   } else {
     result = false;

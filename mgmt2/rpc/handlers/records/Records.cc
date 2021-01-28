@@ -24,7 +24,7 @@
 #include <string_view>
 
 #include "handlers/common/RecordsUtils.h"
-
+// #include "common/yaml/codecs.h"
 ///
 /// @brief Local definitions to map requests and responsponses(not fully supported yet) to custom structures. All this definitions
 /// are used during decoding and encoding of the  RPC requests.
@@ -58,8 +58,8 @@ struct ErrorInfo {
   }
   // Build it from a @c std::error_code
   ErrorInfo(std::error_code ec) : code(ec.value()), message(ec.message()) {}
-  int code; //!< Error code, it's not mandatory to include the message if we have the code instead. The message can be found in the
-            // documentation if the code is returned.
+  int code; //!< Error code, it's not mandatory to include the message if we have the code instead. The message can be found in
+            // the documentation if the code is returned.
   std::string recordName; //!< record name may not be available in some cases, instead we can use a message. Message will use
                           // their own field name.
   std::string message;
@@ -70,14 +70,14 @@ static constexpr auto RECORD_NAME{"record_name"};
 static constexpr auto RECORD_TYPES{"rec_types"};
 static constexpr auto ERROR_CODE{"code"};
 static constexpr auto ERROR_MESSAGE{"message"};
-static constexpr auto RECORD_VALUE{"record_name"};
 
 } // namespace
-
+// using namespace rpc::codec::types;
 // YAML Converter for the incoming record request @see RequestRecordElement. Make sure you protect this by try/catch. We may get
 // some invalid types.
 namespace YAML
 {
+// using namespace rpc::codec::types;
 template <> struct convert<RequestRecordElement> {
   static bool
   decode(Node const &node, RequestRecordElement &info)

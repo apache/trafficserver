@@ -18,7 +18,7 @@
   limitations under the License.
 */
 
-#include "rpc/jsonrpc/JsonRpc.h"
+#include "rpc/jsonrpc/JsonRPCManager.h"
 
 // Admin API Implementation headers.
 #include "rpc/handlers/config/Configuration.h"
@@ -34,33 +34,33 @@ namespace rpc::admin
 void
 register_admin_jsonrpc_handlers()
 {
-  rpc::JsonRpc::instance().register_internal_api();
+  rpc::JsonRPCManager::instance().register_internal_api();
 
   // Config
   using namespace rpc::handlers::config;
-  rpc::JsonRpc::instance().add_handler("admin_config_set_records", &set_config_records);
-  rpc::JsonRpc::instance().add_handler("admin_config_reload", &reload_config);
+  rpc::JsonRPCManager::instance().add_handler("admin_config_set_records", &set_config_records);
+  rpc::JsonRPCManager::instance().add_handler("admin_config_reload", &reload_config);
 
   // Records
   using namespace rpc::handlers::records;
-  rpc::JsonRpc::instance().add_handler("admin_lookup_records", &lookup_records);
-  rpc::JsonRpc::instance().add_handler("admin_clear_all_metrics_records", &clear_all_metrics_records);
-  rpc::JsonRpc::instance().add_handler("admin_clear_metrics_records", &clear_metrics_records);
+  rpc::JsonRPCManager::instance().add_handler("admin_lookup_records", &lookup_records);
+  rpc::JsonRPCManager::instance().add_handler("admin_clear_all_metrics_records", &clear_all_metrics_records);
+  rpc::JsonRPCManager::instance().add_handler("admin_clear_metrics_records", &clear_metrics_records);
 
   // plugin
   using namespace rpc::handlers::plugins;
-  rpc::JsonRpc::instance().add_handler("admin_plugin_send_basic_msg", &plugin_send_basic_msg);
+  rpc::JsonRPCManager::instance().add_handler("admin_plugin_send_basic_msg", &plugin_send_basic_msg);
 
   // server
   using namespace rpc::handlers::server;
-  rpc::JsonRpc::instance().add_handler("admin_server_start_drain", &server_start_drain);
-  rpc::JsonRpc::instance().add_handler("admin_server_stop_drain", &server_stop_drain);
-  rpc::JsonRpc::instance().add_notification_handler("admin_server_shutdown", &server_shutdown);
-  rpc::JsonRpc::instance().add_notification_handler("admin_server_restart", &server_shutdown);
+  rpc::JsonRPCManager::instance().add_handler("admin_server_start_drain", &server_start_drain);
+  rpc::JsonRPCManager::instance().add_handler("admin_server_stop_drain", &server_stop_drain);
+  rpc::JsonRPCManager::instance().add_notification_handler("admin_server_shutdown", &server_shutdown);
+  rpc::JsonRPCManager::instance().add_notification_handler("admin_server_restart", &server_shutdown);
 
   // storage
   using namespace rpc::handlers::storage;
-  rpc::JsonRpc::instance().add_handler("admin_storage_set_device_offline", &set_storage_offline);
-  rpc::JsonRpc::instance().add_handler("admin_storage_get_device_status", &get_storage_status);
+  rpc::JsonRPCManager::instance().add_handler("admin_storage_set_device_offline", &set_storage_offline);
+  rpc::JsonRPCManager::instance().add_handler("admin_storage_get_device_status", &get_storage_status);
 }
 } // namespace rpc::admin

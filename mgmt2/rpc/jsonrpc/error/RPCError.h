@@ -27,50 +27,46 @@
 #include <optional>
 #include <system_error>
 
-namespace rpc::jsonrpc
+namespace rpc::error
 {
-namespace error
-{
-  enum class RpcErrorCode {
-    // for std::error_code to work, we shouldn't define 0.
+enum class RPCErrorCode {
+  // for std::error_code to work, we shouldn't define 0.
 
-    // JSONRPC 2.0 protocol defined errors.
-    INVALID_REQUEST  = -32600,
-    METHOD_NOT_FOUND = -32601,
-    INVALID_PARAMS   = -32602,
-    INTERNAL_ERROR   = -32603,
-    PARSE_ERROR      = -32700,
+  // JSONRPC 2.0 protocol defined errors.
+  INVALID_REQUEST  = -32600,
+  METHOD_NOT_FOUND = -32601,
+  INVALID_PARAMS   = -32602,
+  INTERNAL_ERROR   = -32603,
+  PARSE_ERROR      = -32700,
 
-    // Custom errors.
+  // Custom errors.
 
-    // version
-    InvalidVersion     = 1,
-    InvalidVersionType = 2,
-    MissingVersion,
-    // method
-    InvalidMethodType,
-    MissingMethod,
+  // version
+  InvalidVersion     = 1,
+  InvalidVersionType = 2,
+  MissingVersion,
+  // method
+  InvalidMethodType,
+  MissingMethod,
 
-    // params
-    InvalidParamType,
+  // params
+  InvalidParamType,
 
-    // id
-    InvalidIdType,
-    NullId = 8,
+  // id
+  InvalidIdType,
+  NullId = 8,
 
-    // execution errors
+  // execution errors
 
-    // Internal rpc error when executing the method.
-    ExecutionError
-  };
-  // TODO: force non 0 check
-  std::error_code make_error_code(rpc::jsonrpc::error::RpcErrorCode e);
-} // namespace error
-
-} // namespace rpc::jsonrpc
+  // Internal rpc error when executing the method.
+  ExecutionError
+};
+// TODO: force non 0 check
+std::error_code make_error_code(rpc::error::RPCErrorCode e);
+} // namespace rpc::error
 
 namespace std
 {
-template <> struct is_error_code_enum<rpc::jsonrpc::error::RpcErrorCode> : true_type {
+template <> struct is_error_code_enum<rpc::error::RPCErrorCode> : true_type {
 };
 } // namespace std

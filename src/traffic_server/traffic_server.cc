@@ -108,8 +108,8 @@ extern "C" int plock(int);
 #include "RpcAdminPubHandlers.h"
 
 // Json Rpc stuffs
-#include "rpc/jsonrpc/JsonRpc.h"
-#include "rpc/server/RpcServer.h"
+#include "rpc/jsonrpc/JsonRPCManager.h"
+#include "rpc/server/RPCServer.h"
 
 #include "config/FileManager.h"
 
@@ -260,7 +260,7 @@ struct AutoStopCont : public Continuation {
 
     // if the jsonrpc feature was disabled, the object will not be created.
     if (jsonrpcServer) {
-      jsonrpcServer->stop();
+      jsonrpcServer->stop_thread();
     }
 
     TSSystemState::shut_down_event_system();
@@ -741,11 +741,11 @@ initialize_jsonrpc_server()
   Note("JSONRPC Enabled. Public admin handlers regsitered.");
   // create and start the server.
   try {
-    jsonrpcServer = new rpc::RpcServer{serverConfig};
-    jsonrpcServer->thread_start();
+    jsonrpcServer = new rpc::RPCServer{serverConfig};
+    jsonrpcServer->start_thread(TSThreadInit, TSThreadDestroy);
     Note("JSONRPC Enabled. RPC Server started, communication type set to %s", jsonrpcServer->selected_comm_name().data());
   } catch (std::exception const &ex) {
-    Warning("Something happened while starting the JSONRPC Server: %s", ex.what());
+    Warning("Something happened while starting the JSONRPC Server: %s . Server didn't start.", ex.what());
   }
 }
 
@@ -2160,6 +2160,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     quic_NetProcessor.start(-1, stacksize);
 #endif
     pmgmt->registerPluginCallbacks(global_config_cbs);
+    FileManager::instance().registerConfigPluginCallbacks(global_config_cbs);
     cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);
     cacheProcessor.start();
 

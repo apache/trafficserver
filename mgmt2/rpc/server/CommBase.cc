@@ -49,14 +49,7 @@ CommInternalErrorCategory::message(int ev) const
   }
 }
 
-// TODO: Make this available in the header if needed.
-const CommInternalErrorCategory &
-get_comm_internal_error_category()
-{
-  static CommInternalErrorCategory commInternalErrorCategory;
-  return commInternalErrorCategory;
-}
-
+const CommInternalErrorCategory commInternalErrorCategory{};
 } // anonymous namespace
 
 namespace rpc::comm
@@ -64,7 +57,7 @@ namespace rpc::comm
 std::error_code
 make_error_code(rpc::comm::InternalError e)
 {
-  return {static_cast<int>(e), get_comm_internal_error_category()};
+  return {static_cast<int>(e), commInternalErrorCategory};
 }
 
 } // namespace rpc::comm

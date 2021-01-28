@@ -315,7 +315,7 @@ Examples:
 Internally we have this ``enum`` class that defines the errors that the server will inform in any case. Some of this errors are already
 defined by the `JSONRPC`_ specs and some (``>=1``) are a Server definition.
 
-.. class:: RpcErrorCode
+.. class:: RPCErrorCode
 
    Defines the API error codes that will be used in case of any RPC error.
 

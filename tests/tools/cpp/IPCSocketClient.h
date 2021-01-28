@@ -27,27 +27,29 @@
 #include <sys/un.h>
 #include <stdio.h>
 
+#include "tscore/Diags.h"
+#include <tscore/ink_assert.h>
 #include <tscore/BufferWriter.h>
 
 static constexpr auto logTag{"rpc.test"};
-static constexpr std::size_t READ_BUFFER_SIZE{32000};
-// This class is used for testing purposes only. To make the usage easy and more readable this class provides
-// a chained API, so you can do this like this:
-//
-//    ScopedLocalSocket rpc_client;
-//    auto resp = rpc_client.connect().send(json).read();
 
-// In order to prevent the misuse of the API this class implements a sort of state machine that will assert if
-// you call a function which is not in the right state, so read will assert if it is not called after a send.
-// Send will assert if not called after connect, and so on.
-// There was no need to make this at compile time as it’s only used for unit tests.
-struct LocalSocketClient {
-  using self_reference = LocalSocketClient &;
+/// This class is used for testing purposes only(and traffic_ctl). To make the usage easy and more readable this class provides
+/// a chained API, so you can do this like this:
+///
+///    IPCSocketClient client;
+///    auto resp = client.connect().send(json).read();
+///
+/// In order to prevent the misuse of the API this class implements a sort of state machine that will assert if
+/// you call a function which is not in the right state, so read will assert if it is not called after a send.
+/// Send will assert if not called after connect, and so on.
+struct IPCSocketClient {
+  enum class ReadStatus { OK = 0, BUFFER_FULL, STREAM_ERROR };
+  using self_reference = IPCSocketClient &;
 
-  LocalSocketClient(std::string path) : _path{std::move(path)}, _state{State::DISCONNECTED} {}
-  LocalSocketClient() : _path{"/tmp/jsonrpc20.sock"}, _state{State::DISCONNECTED} {}
+  IPCSocketClient(std::string path) : _path{std::move(path)}, _state{State::DISCONNECTED} {}
+  IPCSocketClient() : _path{"/tmp/jsonrpc20.sock"}, _state{State::DISCONNECTED} {}
 
-  ~LocalSocketClient() { this->disconnect(); }
+  ~IPCSocketClient() { this->disconnect(); }
   self_reference
   connect()
   {
@@ -80,7 +82,7 @@ struct LocalSocketClient {
   self_reference
   send(std::string_view data)
   {
-    assert(_state == State::CONNECTED || _state == State::SENT);
+    ink_assert(_state == State::CONNECTED || _state == State::SENT);
 
     if (::write(_sock, data.data(), data.size()) < 0) {
       Debug(logTag, "Error writing on stream socket %s", std ::strerror(errno));
@@ -91,28 +93,40 @@ struct LocalSocketClient {
     return *this;
   }
 
-  std::string
-  read()
+  ReadStatus
+  read(ts::FixedBufferWriter &bw)
   {
-    assert(_state == State::SENT);
+    ink_assert(_state == State::SENT);
 
     if (_sock <= 0) {
       // we had a failure.
       return {};
     }
 
-    char buf[READ_BUFFER_SIZE]; // should be enough
-    bzero(buf, READ_BUFFER_SIZE);
-    ssize_t rval{-1};
-
-    if (rval = ::read(_sock, buf, READ_BUFFER_SIZE); rval <= 0) {
-      Debug(logTag, "error reading stream message :%s, socket: %d", std ::strerror(errno), _sock);
-      this->disconnect();
-      return {};
+    while (bw.remaining()) {
+      ts::MemSpan<char> span{bw.auxBuffer(), bw.remaining()};
+      const ssize_t ret = ::read(_sock, span.data(), span.size());
+      if (ret > 0) {
+        bw.fill(ret);
+        if (bw.remaining() > 0) { // some space available.
+          continue;
+        } else {
+          // buffer full.
+          //   break;
+          return ReadStatus::BUFFER_FULL;
+        }
+      } else {
+        if (bw.size()) {
+          // data was read.
+          return ReadStatus::OK;
+        }
+        Debug(logTag, "error reading stream message :%s, socket: %d", std ::strerror(errno), _sock);
+        this->disconnect();
+        return ReadStatus::STREAM_ERROR;
+      }
     }
     _state = State::RECEIVED;
-
-    return {buf, static_cast<std::size_t>(rval)};
+    return ReadStatus::OK;
   }
 
   void
