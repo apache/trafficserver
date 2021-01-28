@@ -4328,7 +4328,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     return;
 
   default:
-    HTTPStatus cached_response_code = s->cache_info.object_read->response_get()->status_get();
     TxnDebug("http_trans", "[hcoofsr] response code: %d", server_response_code);
     SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
     SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
@@ -4341,9 +4340,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     if ((server_response_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || server_response_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
          server_response_code == HTTP_STATUS_BAD_GATEWAY || server_response_code == HTTP_STATUS_SERVICE_UNAVAILABLE) &&
         s->cache_info.action == CACHE_DO_UPDATE && s->txn_conf->negative_revalidating_enabled &&
-        is_stale_cache_response_returnable(s) &&
-        (!(cached_response_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || cached_response_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
-           cached_response_code == HTTP_STATUS_BAD_GATEWAY || cached_response_code == HTTP_STATUS_SERVICE_UNAVAILABLE))) {
+        is_stale_cache_response_returnable(s)) {
       TxnDebug("http_trans", "[hcoofsr] negative revalidating: revalidate stale object and serve from cache");
 
       s->cache_info.object_store.create();
