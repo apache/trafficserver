@@ -52,3 +52,7 @@ NetProcessor::AcceptOptions make_net_accept_options(const HttpProxyPort *port, u
 extern std::mutex proxyServerMutex;
 extern std::condition_variable proxyServerCheck;
 extern bool et_net_threads_ready;
+
+extern std::mutex etUdpMutex;
+extern std::condition_variable etUdpCheck;
+extern bool et_udp_threads_ready;
