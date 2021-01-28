@@ -1,0 +1,255 @@
+Changes with Apache Traffic Server 9.1.0
+  #5758 - Fix race condition when invoking TASK_THREADS_READY lifecycle hook
+  #5759 - Remove unnecessary parts from tests
+  #5761 - Remove testing command
+  #5816 - Add helper functions to apply api timeouts consistently.
+  #5881 - CI: added support for disabling curl in the build
+  #5882 - Adds the v9.0.x Docs link to main docs page
+  #5884 - Updates the CI build scripts, adds QUIC support
+  #5890 - Bumped the version of master to 10.0.0
+  #5904 - Add implementation for TextView::rtrim(char const*)
+  #5928 - Cleanup RamCacheCLFUS
+  #5938 - Fix dynamic update for conntrack (HttpConnectionCount) config vars
+  #5960 - Add Nexthop selection strategies and @strategy tag to remap.config.
+  #5975 - Add some documentation to the action class to avoid confusion
+  #5984 - Adds build targets on CI for 9.0.x
+  #5988 - Refactor Http1Session to derive from ProxySsn
+  #5999 - A general autoconf cleanup
+  #6004 - Add example to retrieve request body using Lua
+  #6014 - ProxySsn con_id refactor
+  #6015 - Do not reload configs periodically
+  #6020 - These are the current settings we're running on docs
+  #6036 - Cleanup: Remove use of obsolete class TSConstBuffer from MIME.cc
+  #6059 - Remove obsolete pipeline_max variable
+  #6060 - Remove remnants of http/1.1 pipeline logic.
+  #6063 - Add tests for MIMEHdr::get_host_port_values
+  #6067 - Updates references to OSX to macOS
+  #6079 - traffic_quic: Support close exercise option on H3 session
+  #6100 - Script used for comparing commits on internal branch and remote branches
+  #6101 - Updating the autest version pin to 1.7.4.
+  #6102 - Add lua watermark autest
+  #6105 - Cleaned up the changelog command for making our release notes
+  #6146 - Check Range header for stale content
+  #6183 - Dockerfile for Debian package managers
+  #6184 - Remove header conversion functions for HTTP/0.9
+  #6213 - Adds WS check, and some cleanup
+  #6215 - Do not reenable txnp with TS_EVENT_HTTP_ERROR if received TS_EVENT_HTTP_TXN_CLOSE event
+  #6220 - Correct handle the value return from mgmt socket read and write (#6220)
+  #6221 - Docker builds do not need build numbers in workspace
+  #6254 - H1 txn new
+  #6258 - Initial revision of .lgtm.yml config file
+  #6271 - LGTM: fixes a shadowed variable in ParentSelection::PreprocessParents().
+  #6274 - Remove -j from lgtm build
+  #6282 - LGTM: Fix unused imports
+  #6288 - Follow the comments in I_Thread.h, add an independent ink_thread_key for EThread
+  #6292 - Update git-versions figure
+  #6310 - Improvements on ESI plugin
+  #6326 - Remove dequeue_timed since it is not being used anymore
+  #6360 - Cleanup: Remove empty function
+  #6385 - Set default encoding UTF-8 for AuTest on Linux
+  #6447 - Revert "Disable the chunked_encoding test"
+  #6452 - Using dynamic ports in AUtest
+  #6458 - Turn on debug for the bash script test_logstats_summary
+  #6481 - traffic_manager - Exponential backoff - Make values configurable
+  #6484 - Add ICAP plugin
+  #6485 - Be explicit about RTLD_LOCAL, defaults varies on platforms
+  #6491 - LGTM: Fix comparing int8_t with wider type
+  #6494 - Cleanup: check activity of Http2Stream by ActivityCop
+  #6505 - Created remap_stats au test
+  #6506 - In Au tests, poll for excretion of log file rather than waiting fixed delay.
+  #6509 - Cleanup: Break down HpackIndexingTable::lookup() into static table lookup & dynamic table lookup
+  #6515 - Check the exit value of the regression test
+  #6528 - Introduce LocalBuffer
+  #6531 - Allow lo interface in list of system stats
+  #6536 - Perf: Use LocalBuffer in HTTP/2
+  #6539 - Convert tscore regression tests to Catch unit tests.
+  #6544 - Convert proxy/logging unit tests to use Catch.
+  #6545 - Optimize HTTPHdr conversion of HTTP/2 to HTTP/1.1
+  #6548 - Remove unused unit test source files in src/tscore.
+  #6554 - Convert mgmt/utils unit tests to use Catch.
+  #6559 - Convert unit tests for sslheaders plugin to Catch.
+  #6563 - Removed some unused declarations in HttpTransact
+  #6564 - Convert single regression test in iocore/eventsystem/SocketManager.cc to Catch.
+  #6570 - Make request/response body as an option for AuTest microserver
+  #6611 - Make next_cs_id a private member variable.
+  #6612 - Convert HTTP/2 regression tests to use Catch
+  #6619 - Fix ASAN detected crash in test_LogUtils.
+  #6630 - close the file after use
+  #6644 - Augment autest to exercise combined cert and key file
+  #6651 - Run httpbin as an origin server of AuTest
+  #6668 - Added bonded interface support to system stats plugin
+  #6669 - Added a basic CODEOWNERS
+  #6670 - Skip running autests for ci builds that don't have relevant changed files
+  #6675 - Test PUSHing an object into the cache and then GETting it.
+  #6679 - Adds the 8.1 stuff that's already running and building
+  #6680 - Skip running autests for ci builds that don't have relevant changed files
+  #6681 - chdir into src before running git commands
+  #6687 - Added more of the main sub-trees
+  #6696 - Fixed memory leak in header unit test
+  #6719 - Fix typo in DiagsConfig
+  #6721 - HttpSM cleaning up non-sense pointer indirection
+  #6722 - Au test: HTTP/2 client sends POST, server delays 2 minutes, sends 200 KB
+  #6726 - Lua plugin: add ts.server_response.is_cacheable()
+  #6728 - Fix ink_endian.h to include an appropriate header file
+  #6751 - Script to find mutexes/futexes that are contending
+  #6761 - Disable remap-stats test until we can reliably wait for metrics
+  #6762 - Make chunked_encoding test more reliable by killing nc process
+  #6763 - Accept handling VIO events
+  #6764 - Accept Handling VIO events SSL
+  #6767 - Lua plugin: add ts.server_response.get_maxage()
+  #6773 - Add back reading config for handshake timeout
+  #6775 - Updates clang-format to LLVM v10.0.0
+  #6780 - Use Proxy-Connection iff parent_is_proxy=true
+  #6782 - NextHop Strategy Refactor and Fixes
+  #6790 - clang-analyzer: eliminate identical conditions
+  #6791 - clang-analyzer: code clone in get_proxy_protocol_addr
+  #6806 - Support external log rotation tools via SIGUSR2
+  #6814 - Make post_slow_server Au test work in Docker container.
+  #6820 - HostDB - change HostResPreferenceOrder type to std::array.
+  #6828 - PoolableSession class abstracted from Http1ServerSession
+  #6844 - LGTM: fix hiding a global variable with the same name
+  #6858 - Make HostDBInfo class safer to use.
+  #6875 - Fix for Ubuntu 16 and Clang 5
+  #6893 - AuTest: Pipfile update to use microserver 1.0.5
+  #6897 - Test connection timeout and retries
+  #6905 - Remove two unused includes in HdrHeap.h.
+  #6931 - AuTest: New log and When condition for ATS initialized
+  #6934 - Update buffer-writer.en.rst (wrong header link)
+  #6935 - Adds qlog_dir documentation 
+  #6943 - Cleanup: Remove unused arguments
+  #6945 - Build AuTest C/C++ test plugins and utilities with Automake.
+  #6947 - Add CI verbose and debug options for autest
+  #6951 - Cleanup: Remove unnecessary member from Http2Stream
+  #6952 - remove useless code
+  #6958 - Fixes icap build on macOS
+  #6962 - Cleanup: Simplify Http2Stream::update_write_request()
+  #6963 - Fix format string for int64_t
+  #6966 - Make the log_pipe test more efficient.
+  #6967 - Add new test and fix for float configuration failure in conf_remap
+  #6971 - AuTest: Properly handle experimental plugins.
+  #6972 - Traffic Dump: dump server-side protocol stack
+  #6974 - Remap doc correction
+  #6976 - Use print mode with length in validate_sni debug
+  #6978 - Add option for hybrid global and thread session pools
+  #6979 - hostdb: don't use next_sync_time - now() as TTL (it can be negative)
+  #6991 - Fix typo in Http2ConnectionState
+  #6992 - Add logic to resolve content-length transfer-encoding conflicts on response
+  #6993 - Updates path to reflect new location in tree
+  #6996 - Make the setting of the continuation handler safer.
+  #6997 - Cleanup: Write error message on diags output instead of stderr
+  #7006 - ProtocolStack variable rename: n -> count
+  #7010 - Removes use of SPLIT_DNS macro
+  #7011 - Fix typos relating to tls_bridge
+  #7018 - Make tls_conn_timeout test more reliable in CI - fixes autest on master
+  #7025 - Removes dead code from iocore/dns
+  #7026 - Spacing tweaks to acl_filter_rule::print
+  #7027 - Removes TODO
+  #7039 - Avoid unnecessary copying of STL map for QUICTPConfigQCP class.
+  #7043 - Fix a typo
+  #7047 - Fixes spelling/license formatting in traffic_dump plugin
+  #7049 - Cleans up various versions checks
+  #7058 - Removes FIXME that is unlikely to be fixed at this point in the project history
+  #7063 - Add an autest testcase for HTTP3
+  #7066 - Use system include-style for STL and OpenSSL headers
+  #7067 - tests: gitignore ssl-delay-server binary
+  #7068 - constify Print() methods and other low hanging fruit
+  #7070 - Update and run the autopep8 make target
+  #7072 - Added support for out of tree builds with vscode
+  #7073 - Expose remap config file callback
+  #7077 - Ran clang-tidy over the source tree
+  #7078 - Ran clang-tidy over the source tree
+  #7079 - const-ify quic/http3 code
+  #7088 - Skip docs builds if there are no changes in the doc dir and files it includes
+  #7093 - Fix compilation error - missing '&' operator
+  #7100 - Fixes uninitialized variables found by Xcode
+  #7105 - Add modsecurity lua script to example
+  #7109 - Supporting out of source builds for AuTests.
+  #7111 - Cancel active/inactive timeout on closing Http2Stream
+  #7132 - Add member initialization to the Errata class.
+  #7133 - Updated gdb mutex script to get process file for Fedora 32
+  #7149 - Traffic Dump: Record HTTP/2 priority.
+  #7152 - Updates the list of supported / linked Docs versions
+  #7153 - Add metric tracking async job pauses
+  #7175 - Fix TSHttpTxnServerPacket* API's to correctly update existing server connections
+  #7180 - Remove duplicate code
+  #7182 - Remove obsolete cdn_ HttpTransact vars
+  #7184 - Add virtual destructor to QUICRTTProvider.
+  #7185 - TextView: add constructor size values to enable strlen even for null pointers
+  #7188 - Update sni outbound policy to allow directly setting the outbound SNI.
+  #7189 - TextView: Add additional constructor tests.
+  #7194 - Remove unused HttpUpdate mechanism
+  #7197 - Fix the active_timeout test to work without quic enabled
+  #7198 - KWF useless member function HttpSM::kill_this_async_hook().
+  #7206 - If the weight is 0, the SRV record should be selected from the highest priority group
+  #7207 - Add duplicate header field processing when creating outgoing response
+  #7208 - Add support for TS API for Note, Status, Warning, Alert
+  #7209 - Cleanup: remove unnecessary memset() within dns_process()
+  #7211 - Introduce proxy-verifier to AuTests
+  #7216 - Make double Au test more reliable.
+  #7221 - Add support for a new (TSMgmtDataTypeGet) mgmt API to retrieve the record data type.
+  #7226 - Bugfix: set a default inactivity timeout only if a read or write I/O operation was set
+  #7228 - Let Dedicated EThreads use `EThread::schedule`
+  #7231 - url_sig: add 'ignore_expiry = true' option to config file just for log replay
+  #7233 - [multiplexer] option to skip post/put requests
+  #7236 - clean up body factory tests
+  #7239 - Add support for server protocol stack API in lua plugin
+  #7248 - Fix test_error_page_selection memory leaks and logic errors
+  #7249 - Fix for plugins ASAN suppression file
+  #7250 - Remove useless if for port set assertion.
+  #7251 - Incorporates the latest CI build changes
+  #7262 - Make TSUrlSchemeGet() return scheme implied by URL type when there is no explicit scheme.
+  #7264 - HostDB: remove unused field in HostDBApplicationInfo
+  #7265 - Document external log rotation support via SIGUSR2
+  #7270 - In CI, only run autopep8 on branches that enforce autopep8
+  #7271 - Add AuTest for HTTP/2 Graceful Shutdown
+  #7273 - Removes commented out code from esi plugin
+  #7276 - Remove the last remnants of the enable_url_expandomatic
+  #7277 - Fix example in default sni.yaml configuration.
+  #7286 - Remove unfinished h2c support
+  #7289 - Enable all h2spec test
+  #7292 - Allow disabling SO_MARK and IP_TOS usage
+  #7311 - Traffic Dump: Fix stream-id printing after first transaction.
+  #7323 - Updates the Dockerfile with more packages
+  #7325 - AuTest for Split DNS
+  #7326 - AuTest for incoming PROXY Protocol v1
+  #7329 - Remove unnecessary cast from ReverseProxy.
+  #7331 - Cleanup incoming PROXY Protocol v1
+  #7332 - Add unit tests for PROXY Protocol v1 parser
+  #7334 - Add a post case to the conn_timeout test
+  #7340 - Add Incoming PROXY Protocol v2 Support 
+  #7342 - Use OpeSSL EVP API instead of SHA256_Init/Update/Final
+  #7344 - TLS Session Reuse: Downgrade noisy log to debug
+  #7345 - TLS Session Reuse: Downgrade add_session messages to debug
+  #7349 - Fix sni ip_allow and host_sni_policy
+  #7354 - Use ERR_get_error_all if available
+  #7355 - Use EVP API instead of MD5_Init/Update/Final (secure_link plugin)
+  #7363 - Use EVP MAC API if available
+  #7364 - traffic_ctl - plugin msg  now require only the tag as mandatory field data field is now optional.
+  #7365 - Cleanup: Remove unused functions
+  #7366 - Cleanup: Get rid of NetVConnection::outstanding()
+  #7367 - Fix FreeBSD 12 link issue in test_libhttp2.
+  #7368 - Cleanup: Remove SSL Wire Trace releated code in UnixNetVConnection
+  #7376 - Add comments to ink_queue.h.
+  #7383 - Unused code: HostDBContinuation::removeEvent
+  #7384 - Remove a special treatment for SSLNetVC in migrateToCurrentThread()
+  #7387 - API - Add new api function TSHttpTxnServerSsnTransactionCount() 
+  #7391 - [Docs] Fix build warnings
+  #7392 - Eliminate dangling pointer into stack space.
+  #7393 - Add compression support to stats_over_http
+  #7397 - traffic_manager should not retry on disk failure
+  #7399 - Make places to bind/unbind SSL object with/from NetVC
+  #7400 - Remove unused MAYBE_ABORT state
+  #7402 - Correctly pass back errno to HttpSM
+  #7403 - Remove unneeded variables in UnixNetVConnection
+  #7404 - Doc: Fix INPUT tag of Doxyfile
+  #7409 - Fix clang compiler complaint about an unused parameter in SNIAction.
+  #7410 - Fix issue with unavailable server retry codes
+  #7412 - LGTM: Remove superfluous const qualifier in return type
+  #7413 - Improvement to lua plugin
+  #7415 - Fix the Proxy Verifier AuTest extension to handle cert paths correctly
+  #7421 - Change comment handling for long lines in url_sig plugin
+  #7427 - Doc: Fix typo in negative_revalidating_lifetime
+  #7429 - Fix parent connect fail segfault
+  #7430 - Improve zlib detection logic
+  #7433 - Fix a link error on traffic_quic command
+  #7436 - Cleanup: Remove unused members of NextHopProperty
