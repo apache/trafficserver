@@ -30,7 +30,7 @@ namespace filename
   constexpr const char *VOLUME  = "volume.config";
   constexpr const char *PLUGIN  = "plugin.config";
 
-  // These still need to have their corrensponding records.config settings remove
+  // These still need to have their corresponding records.config settings removed.
   constexpr const char *LOGGING       = "logging.yaml";
   constexpr const char *CACHE         = "cache.config";
   constexpr const char *IP_ALLOW      = "ip_allow.yaml";
