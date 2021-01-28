@@ -1231,7 +1231,7 @@ DNSEntry::mainEvent(int event, Event *e)
     } else {
       Debug("dns", "adding first to collapsing queue");
       dnsH->entries.enqueue(this);
-      write_dns(dnsH);
+      dnsProcessor.thread->schedule_imm(dnsH);
     }
     return EVENT_DONE;
   }
