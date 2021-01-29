@@ -347,75 +347,30 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   return preverify_ok;
 }
 
-static int
-PerformAction(Continuation *cont, const char *servername)
-{
-  SNIConfig::scoped_config params;
-  if (const auto &actions = params->get(servername); !actions.first) {
-    Debug("ssl_sni", "%s not available in the map", servername);
-  } else {
-    for (auto &&item : *actions.first) {
-      auto ret = item->SNIAction(cont, actions.second);
-      if (ret != SSL_TLSEXT_ERR_OK) {
-        return ret;
-      }
-    }
-  }
-  return SSL_TLSEXT_ERR_OK;
-}
-
 #if TS_USE_HELLO_CB
 // Pausable callback
 static int
 ssl_client_hello_callback(SSL *s, int *al, void *arg)
 {
-  SSLNetVConnection *netvc = SSLNetVCAccess(s);
-  const char *servername   = nullptr;
-  const unsigned char *p;
-  size_t remaining, len;
+  TLSSNISupport *snis = TLSSNISupport::getInstance(s);
+  if (snis) {
+    snis->on_client_hello(s, al, arg);
+    int ret = snis->perform_sni_action();
+    if (ret != SSL_TLSEXT_ERR_OK) {
+      return SSL_CLIENT_HELLO_ERROR;
+    }
+  } else {
+    // This error suggests either of these:
+    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
+    // 2) Call back on stale netvc
+    Debug("ssl.error", "ssl_client_hello_callback was called unexpectedly");
+    return SSL_CLIENT_HELLO_ERROR;
+  }
 
+  SSLNetVConnection *netvc = SSLNetVCAccess(s);
   if (!netvc || netvc->ssl != s) {
     Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
     return SSL_CLIENT_HELLO_ERROR;
-  }
-
-  // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
-  if (SSL_client_hello_get0_ext(s, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
-    // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
-    /* Extract the length of the supplied list of names. */
-    len = *(p++) << 8;
-    len += *(p++);
-    if (len + 2 == remaining) {
-      remaining = len;
-      /*
-       * The list in practice only has a single element, so we only consider
-       * the first one.
-       */
-      if (*p++ == TLSEXT_NAMETYPE_host_name) {
-        remaining--;
-        /* Now we can finally pull out the byte array with the actual hostname. */
-        if (remaining > 2) {
-          len = *(p++) << 8;
-          len += *(p++);
-          if (len + 2 <= remaining) {
-            servername = reinterpret_cast<const char *>(p);
-          }
-        }
-      }
-    }
-  }
-  if (servername) {
-    netvc->set_server_name(std::string_view(servername, len));
-  }
-  int ret = PerformAction(netvc, netvc->get_server_name());
-  if (ret != SSL_TLSEXT_ERR_OK) {
-    return SSL_CLIENT_HELLO_ERROR;
-  }
-  if (netvc->has_tunnel_destination() && !netvc->decrypt_tunnel()) {
-    netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-  }
-  if (netvc->protocol_mask_set) {
-    setTLSValidProtocols(s, netvc->protocol_mask, TLSValidProtocols::max_mask);
   }
 
   bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
@@ -473,32 +428,26 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
  * Cannot stop this callback. Always reeneabled
  */
 static int
-ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
+ssl_servername_callback(SSL *ssl, int *al, void *arg)
 {
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-
-  if (!netvc || netvc->ssl != ssl) {
-    Debug("ssl.error", "ssl_servername_callback call back on stale netvc");
-    return SSL_TLSEXT_ERR_ALERT_FATAL;
-  }
-
-  netvc->callHooks(TS_EVENT_SSL_SERVERNAME);
-
-  const char *name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  if (name) {
-    netvc->set_server_name(name);
-  }
-
+  TLSSNISupport *snis = TLSSNISupport::getInstance(ssl);
+  if (snis) {
+    snis->on_servername(ssl, al, arg);
 #if !TS_USE_HELLO_CB
-  // Only call the SNI actions here if not already performed in the HELLO_CB
-  int ret = PerformAction(netvc, netvc->get_server_name());
-  if (ret != SSL_TLSEXT_ERR_OK) {
+    // Only call the SNI actions here if not already performed in the HELLO_CB
+    int ret = snis->perform_sni_action();
+    if (ret != SSL_TLSEXT_ERR_OK) {
+      return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+#endif
+  } else {
+    // This error suggests either of these:
+    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
+    // 2) Call back on stale netvc
+    Debug("ssl.error", "ssl_servername_callback was called unexpectedly");
     return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
-#endif
-  if (netvc->has_tunnel_destination() && !netvc->decrypt_tunnel()) {
-    netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-  }
+
   return SSL_TLSEXT_ERR_OK;
 }
 
@@ -912,6 +861,7 @@ SSLInitializeLibrary()
   ssl_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
 
   TLSSessionResumptionSupport::initialize();
+  TLSSNISupport::initialize();
 
   open_ssl_initialized = true;
 }
@@ -1122,13 +1072,6 @@ SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 #if TS_USE_HELLO_CB
   SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
 #endif
-}
-
-void
-setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask)
-{
-  SSL_set_options(ssl, proto_mask);
-  SSL_clear_options(ssl, max_mask & ~proto_mask);
 }
 
 void
