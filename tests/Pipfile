@@ -32,7 +32,7 @@ dnslib = "*"
 requests = "*"
 gunicorn = "*"
 httpbin = "*"
-microserver = ">=1.0.5"
+microserver = ">=1.0.6"
 jsonschema = "*"
 python-jose = "*"
 
