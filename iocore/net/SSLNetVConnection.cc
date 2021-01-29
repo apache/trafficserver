@@ -215,6 +215,7 @@ SSLNetVConnection::_bindSSLObject()
 {
   SSLNetVCAttach(this->ssl, this);
   TLSSessionResumptionSupport::bind(this->ssl, this);
+  TLSSNISupport::bind(this->ssl, this);
 }
 
 void
@@ -222,6 +223,7 @@ SSLNetVConnection::_unbindSSLObject()
 {
   SSLNetVCDetach(this->ssl);
   TLSSessionResumptionSupport::unbind(this->ssl);
+  TLSSNISupport::unbind(this->ssl);
 }
 
 static void
@@ -928,7 +930,6 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::clear()
 {
-  _serverName.reset();
   _ca_cert_file.reset();
   _ca_cert_dir.reset();
 
@@ -938,6 +939,7 @@ SSLNetVConnection::clear()
   }
   ALPNSupport::clear();
   TLSSessionResumptionSupport::clear();
+  TLSSNISupport::_clear();
 
   sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
   sslHandshakeBeginTime       = 0;
@@ -1918,14 +1920,9 @@ SSLNetVConnection::protocol_contains(std::string_view prefix) const
 }
 
 void
-SSLNetVConnection::set_server_name(std::string_view name)
+SSLNetVConnection::_fire_ssl_servername_event()
 {
-  if (name.size()) {
-    char *n = new char[name.size() + 1];
-    std::memcpy(n, name.data(), name.size());
-    n[name.size()] = '\0';
-    _serverName.reset(n);
-  }
+  this->callHooks(TS_EVENT_SSL_SERVERNAME);
 }
 
 void

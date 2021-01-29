@@ -48,6 +48,7 @@
 #include "P_UnixNet.h"
 #include "P_ALPNSupport.h"
 #include "TLSSessionResumptionSupport.h"
+#include "TLSSNISupport.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 
@@ -93,7 +94,7 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport, public TLSSessionResumptionSupport
+class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport, public TLSSessionResumptionSupport, public TLSSNISupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
@@ -384,10 +385,8 @@ public:
   const char *
   get_server_name() const override
   {
-    return _serverName.get() ? _serverName.get() : "";
+    return _get_sni_server_name() ? _get_sni_server_name() : "";
   }
-
-  void set_server_name(std::string_view name);
 
   bool
   support_sni() const override
@@ -473,12 +472,21 @@ public:
     return _ca_cert_dir.get();
   }
 
+  void
+  set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask)
+  {
+    SSL_set_options(this->ssl, proto_mask);
+    SSL_clear_options(this->ssl, max_mask & ~proto_mask);
+  }
+
 protected:
   const IpEndpoint &
   _getLocalEndpoint() override
   {
     return local_addr;
   }
+
+  void _fire_ssl_servername_event() override;
 
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
@@ -526,7 +534,6 @@ private:
   X509_STORE_CTX *verify_cert = nullptr;
 
   // Null-terminated string, or nullptr if there is no SNI server name.
-  std::unique_ptr<char[]> _serverName;
   std::unique_ptr<char[]> _ca_cert_file;
   std::unique_ptr<char[]> _ca_cert_dir;
 
