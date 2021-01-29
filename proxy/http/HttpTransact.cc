@@ -3254,6 +3254,8 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
              does_method_effect_cache(s->method) == false || s->range_setup == RANGE_NOT_SATISFIABLE ||
              s->range_setup == RANGE_NOT_HANDLED) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
+  } else if (s->api_server_response_no_store) { // plugin may have decided not to cache the response
+    s->cache_info.action = CACHE_DO_NO_ACTION;
   } else {
     s->cache_info.action = CACHE_PREPARE_TO_WRITE;
   }
