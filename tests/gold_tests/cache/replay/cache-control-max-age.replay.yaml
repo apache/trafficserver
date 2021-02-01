@@ -34,6 +34,10 @@ meta:
           fields:
           - [ Host, example.com ]
 
+        # Add a delay so ATS has time to finish any caching IO for the previous
+        # transaction.
+        delay: 50ms
+
   - request_for_zero_max_age: &request_for_zero_max_age
       client-request:
         method: "GET"
@@ -43,6 +47,10 @@ meta:
         headers:
           fields:
           - [ Host, example.com ]
+
+        # Add a delay so ATS has time to finish any caching IO for the previous
+        # transaction.
+        delay: 50ms
 
   - request_for_negative_max_age: &request_for_negative_max_age
       client-request:
@@ -54,6 +62,10 @@ meta:
           fields:
           - [ Host, example.com ]
 
+        # Add a delay so ATS has time to finish any caching IO for the previous
+        # transaction.
+        delay: 50ms
+
   - request_for_non_number_max_age: &request_for_non_number_max_age
       client-request:
         method: "GET"
@@ -63,6 +75,10 @@ meta:
         headers:
           fields:
           - [ Host, example.com ]
+
+        # Add a delay so ATS has time to finish any caching IO for the previous
+        # transaction.
+        delay: 50ms
 
   - 200_ok_response: &200_ok_response
       server-response:
@@ -249,6 +265,10 @@ sessions:
         - [ Host, example.com ]
         - [ Cache-Control, max-age=300 ]
 
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 50ms
+
     # This should be replied to out of the cache, therefore this 400 response
     # should not make it to the client.
     server-response:
@@ -295,6 +315,10 @@ sessions:
         fields:
         - [ Host, example.com ]
         - [ Cache-Control, max-age=0 ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 50ms
 
     # This should go through to the server because the 0 max-age
     # directive in the request should make ATS consider it stale.
@@ -344,6 +368,10 @@ sessions:
         fields:
         - [ Host, example.com ]
         - [ Cache-Control, max-age=-300 ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 50ms
 
     # This should go through to the server because the negative max-age
     # directive in the request should make ATS consider it stale.
