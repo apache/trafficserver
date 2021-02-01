@@ -45,11 +45,11 @@ struct MIOBuffer {
 #include "MIOBufferWriter.cc"
 
 IOBufferBlock iobb[1];
-int iobbIdx{0};
+unsigned int iobbIdx{0};
 
-const int BlockSize = 11 * 11;
+const unsigned int BlockSize = 11 * 11;
 char block[BlockSize];
-int blockUsed{0};
+unsigned int blockUsed{0};
 
 std::int64_t
 IOBufferBlock::write_avail()

@@ -99,7 +99,7 @@ TEST_CASE("IntrusiveHashMap", "[libts][IntrusiveHashMap]")
 
   size_t nb = map.bucket_count();
   std::bitset<64> marks;
-  for (int i = 1; i <= 63; ++i) {
+  for (unsigned int i = 1; i <= 63; ++i) {
     std::string name;
     ts::bwprint(name, "{} squared is {}", i, i * i);
     Thing *thing = new Thing(name);
