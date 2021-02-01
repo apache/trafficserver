@@ -484,7 +484,7 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   main_ctx = pthread_getspecific(lua_state_key);
   if (main_ctx == NULL) {
-    req_id = __sync_fetch_and_add(&ts_lua_http_next_id, 1).
+    req_id   = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
     main_ctx = &ts_lua_main_ctx_array[req_id % instance_conf->states];
     pthread_setspecific(lua_state_key, main_ctx);
   }
@@ -589,12 +589,12 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 
   main_ctx = pthread_getspecific(lua_g_state_key);
   if (main_ctx == NULL) {
-    req_id = __sync_fetch_and_add(&ts_lua_g_http_next_id, 1).
+    req_id = __sync_fetch_and_add(&ts_lua_g_http_next_id, 1);
+    TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
     main_ctx = &ts_lua_g_main_ctx_array[req_id % conf->states];
     pthread_setspecific(lua_g_state_key, main_ctx);
   }
 
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
   TSMutexLock(main_ctx->mutexp);
 
   http_ctx           = ts_lua_create_http_ctx(main_ctx, conf);
