@@ -24,7 +24,7 @@ from verifier_common import create_address_argument
 
 def _configure_client(obj, process, name, replay_path, http_ports=None,
                       https_ports=None, keys=None, ssl_cert='', ca_cert='',
-                      other_args='--verbose diag'):
+                      verbose=True, other_args=''):
     """
     Configure the process for running the verifier-client.
 
@@ -61,12 +61,14 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
     if not http_ports:
         http_ports = [8080]
     if http_ports:
+        command += "--connect-http "
         command += create_address_argument(http_ports)
         command += " "
 
     if not https_ports:
         https_ports = [4443]
     if https_ports:
+        command += "--connect-https "
         command += create_address_argument(https_ports)
         command += " "
 
@@ -94,6 +96,9 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
             process.Setup.Copy(ca_cert, run_ca_cert, CopyLogic.SoftFiles)
             command += ' --ca-certs "{}" '.format(run_ca_cert)
 
+    if verbose:
+        command += ' --verbose diag '
+
     if other_args:
         command += " {}".format(other_args)
 
@@ -110,7 +115,7 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
 
 def AddVerifierClientProcess(run, name, replay_path, http_ports=None,
                              https_ports=None, keys=None, ssl_cert='', ca_cert='',
-                             other_args='--verbose diag'):
+                             verbose=True, other_args=''):
     """
     Set the Default process of the test run to a verifier-client Process.
 
@@ -134,6 +139,8 @@ def AddVerifierClientProcess(run, name, replay_path, http_ports=None,
         ca_cert: (path) The location of the CA for HTTPS encryption. If this
             is not provided a stock CA will be used.
 
+        verbose: (bool) Whether to enable debug level logging.
+
         other_args: (str) Any other arbitrary options to pass to verifier-client.
 
     Returns:
@@ -143,7 +150,7 @@ def AddVerifierClientProcess(run, name, replay_path, http_ports=None,
 
     p = run.Processes.Default
     _configure_client(run, p, name, replay_path, http_ports, https_ports,
-                      keys, ssl_cert, ca_cert, other_args)
+                      keys, ssl_cert, ca_cert, verbose, other_args)
     return p
 
 
