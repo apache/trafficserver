@@ -23,6 +23,8 @@ import pprint
 import subprocess
 import shutil
 
+PROXY_VERIFIER_VERSION_FILENAME = 'proxy-verifier-version.txt'
+
 test_root = dirname(dirname(AutestSitePath))
 repo_root = dirname(test_root)
 
@@ -38,6 +40,9 @@ else:
 
 host.WriteVerbose(['ats'], "Test build root: {}:".format(ENV['BUILD_ROOT']))
 
+proxy_verifer_version_file = os.path.join(test_root, PROXY_VERIFIER_VERSION_FILENAME)
+proxy_verifer_version = open(proxy_verifer_version_file, "rt").read().strip()
+
 if Arguments.proxy_verifier_bin is not None:
     ENV['VERIFIER_BIN'] = Arguments.proxy_verifier_bin
     host.WriteVerbose(
@@ -47,7 +52,7 @@ if Arguments.proxy_verifier_bin is not None:
 else:
     # No Verifier bin path was specified. First see if a Proxy Verifier was
     # unpacked as a part of preparing for this test.
-    unpack_bin = os.path.join(test_root, 'proxy-verifier', 'unpack', 'bin')
+    unpack_bin = os.path.join(test_root, 'proxy-verifier', 'unpack', proxy_verifer_version, 'bin')
     if os.path.exists(os.path.join(unpack_bin, 'verifier-client')):
         ENV['VERIFIER_BIN'] = unpack_bin
         host.WriteVerbose(
@@ -67,6 +72,20 @@ else:
             prepare_proxy_verifier_path = os.path.join(test_root, "prepare_proxy_verifier.sh")
             host.WriteError("Could not find Proxy Verifier binaries. "
                             "Try running: ", prepare_proxy_verifier_path)
+
+required_pv_version = Version(proxy_verifer_version[1:])
+verifier_client = os.path.join(ENV['VERIFIER_BIN'], 'verifier-client')
+pv_version_out = subprocess.check_output([verifier_client, "--version"])
+pv_version = Version(pv_version_out.decode("utf-8").split()[1])
+if pv_version < required_pv_version:
+    host.WriteError(
+        f"Proxy Verifier at {verifier_client} is too old. "
+        f"Version required: {required_pv_version}, version found: {pv_version}")
+else:
+    host.WriteVerbose(
+        ['ats'],
+        f"Proxy Verifier at {verifier_client} has version: {pv_version}")
+
 
 if ENV['ATS_BIN'] is not None:
     # Add variables for Tests
