@@ -28,24 +28,33 @@ CCACHE="--enable-ccache"
 # When to enable -Werror
 WERROR="--enable-werror"
 
+# Optional settings
+ASAN=""
+[ "1" == "$enable_asan" ] && ASAN="--enable-asan"
+
 echo "DEBUG: $DEBUG"
 echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
+echo "ASAN: $ASAN"
 
 # Change to the build area (this is previously setup in extract.sh)
-cd "${WORKSPACE}/${BUILD_NUMBER}/build"
+cd "${ATS_BUILD_BASEDIR}/build"
 mkdir -p BUILDS && cd BUILDS
 
 # Restore verbose shell output
 set -x
 
 ../configure \
-    --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
+    --prefix="${ATS_BUILD_BASEDIR}/install" \
     --enable-experimental-plugins \
     --enable-example-plugins \
     --with-user=jenkins \
     ${CCACHE} \
     ${WERROR} \
-    ${DEBUG}
+    ${DEBUG} \
+    ${ASAN}
 
+echo
+echo -n "Main build started at " && date
 ${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q= || exit 1
+echo -n "Main build finished at " && date

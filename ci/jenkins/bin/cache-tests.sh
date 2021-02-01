@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-PREFIX="${WORKSPACE}/${BUILD_NUMBER}/install"
+PREFIX="${ATS_BUILD_BASEDIR}/install"
 REMAP="${PREFIX}/etc/trafficserver/remap.config"
 RECORDS="${PREFIX}/etc/trafficserver/records.config"
 
@@ -25,7 +25,7 @@ TWEAK=""
 
 # Change to the build area (this is previously setup in extract.sh)
 set +x
-cd "${WORKSPACE}/${BUILD_NUMBER}/build"
+cd "${ATS_BUILD_BASEDIR}/build"
 
 ./configure \
     --prefix=${PREFIX} \
@@ -37,19 +37,20 @@ ${ATS_MAKE} -i ${ATS_MAKE_FLAGS} V=1 Q=
 ${ATS_MAKE} -i install
 
 [ -x ${PREFIX}/bin/traffic_server ] || exit 1
+ldd  ${PREFIX}/bin/traffic_server
 
-# Get NPM v10
-source /opt/rh/rh-nodejs10/enable
+# Get NPM v12
+source /opt/rh/rh-nodejs12/enable
 
 # Setup and start ATS with the required remap rule
-echo "map http://127.0.0.1:8080 http://192.168.3.13:8000" >> $REMAP
+echo "map http://127.0.0.1:8080 http://192.168.3.1:8000" >> $REMAP
 
 ${PREFIX}/bin/trafficserver start
 
 set -x
 
 cd /home/jenkins/cache-tests
-npm run --silent cli --base=http://127.0.0.1:8080/ > /CA/cache-tests/${ATS_BRANCH}.json
+npm run --silent cli --base=http://127.0.0.1:8080 > /CA/cache-tests/${ATS_BRANCH}.json
 cat /CA/cache-tests/${ATS_BRANCH}.json
 
 ${PREFIX}/bin/trafficserver stop
@@ -61,7 +62,7 @@ if [ "" != "$TWEAK" ]; then
     echo "CONFIG proxy.config.http.negative_caching_enabled INT 1" >> $RECORDS
     ${PREFIX}/bin/trafficserver start
     cd /home/jenkins/cache-tests
-    npm run --silent cli --base=http://127.0.0.1:8080/ > /CA/cache-tests/${ATS_BRANCH}${TWEAK}.json
+    npm run --silent cli --base=http://127.0.0.1:8080 > /CA/cache-tests/${ATS_BRANCH}${TWEAK}.json
     echo "TWEAKED RESULTS"
     cat /CA/cache-tests/${ATS_BRANCH}${TWEAK}.json
 

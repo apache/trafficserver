@@ -19,8 +19,10 @@
 set +x
 
 cd src
+sleep 30
 
-if [ ! -z "$ghprbActualCommit" ]; then
+git branch --contains ${ghprbActualCommit} > /dev/null
+if [ $? = 0 -a ! -z "$ghprbActualCommit" ]; then
     git diff ${ghprbActualCommit}^...${ghprbActualCommit} --name-only | egrep -E '^(build|iocore|proxy|tests|include|mgmt|plugins|proxy|src)/' > /dev/null
     if [ $? = 1 ]; then
         echo "No relevant files changed, skipping run"
@@ -44,6 +46,9 @@ URL="https://ci.trafficserver.apache.org/autest"
 JOB_ID=${ghprbPullId:-${ATS_BRANCH:-master}}
 AUSB="ausb-${JOB_ID}.${BUILD_NUMBER}"
 SANDBOX="/var/tmp/${AUSB}"
+PROXY_VERIFIER_VERSIONS="/home/jenkins/proxy-verifier"
+PROXY_VERIFIER_VERSION_FILE="tests/proxy-verifier-version.txt"
+PROXY_VERIFIER_PREPARE="tests/prepare_proxy_verifier.sh"
 
 # Optional settings
 CCACHE=""
@@ -55,6 +60,7 @@ QUIC=""
 CURL=""
 AUTEST_DEBUG=""
 AUTEST_VERBOSE=""
+PROXY_VERIFIER_ARGUMENT=""
 
 [ "1" == "$enable_ccache" ] && CCACHE="--enable-ccache"
 [ "1" == "$enable_werror" ] && WERROR="--enable-werror"
@@ -84,7 +90,8 @@ set -x
 
 # Configure
 autoreconf -if
-./configure --prefix="${INSTALL}" \
+./configure \
+    --prefix="${INSTALL}" \
     --with-user=jenkins \
     --enable-experimental-plugins \
     --enable-example-plugins \
@@ -105,7 +112,28 @@ set +x
 echo -n "=======>>>>  Started on "
 date
 
-./tests/autest.sh --sandbox "$SANDBOX" --ats-bin "${INSTALL}/bin" $AUTEST_DEBUG $AUTEST_VERBOSE
+AUTEST="/usr/bin/autest"
+[ ! -x ${AUTEST} ] && AUTEST="/usr/local/bin/autest"
+set -x
+
+pv_version=""
+if [ -f "${PROXY_VERIFIER_VERSION_FILE}" ]; then
+  pv_version=`cat "${PROXY_VERIFIER_VERSION_FILE}"`
+elif [ -f "${PROXY_VERIFIER_PREPARE}" ]; then
+  pv_version=`awk -F'"' '/^pv_version/ {print $2}' "${PROXY_VERIFIER_PREPARE}"`
+fi
+if [ "x${pv_version}" != "x" ]; then
+  PROXY_VERIFIER_BIN="${PROXY_VERIFIER_VERSIONS}/${pv_version}/bin"
+  PROXY_VERIFIER_ARGUMENT="--proxy-verifier-bin ${PROXY_VERIFIER_BIN}"
+fi
+
+${AUTEST} \
+    -D ./tests/gold_tests \
+    --sandbox "$SANDBOX" \
+    --ats-bin "${INSTALL}/bin" \
+    $PROXY_VERIFIER_ARGUMENT \
+    $AUTEST_DEBUG \
+    $AUTEST_VERBOSE
 status=$?
 
 set +x
