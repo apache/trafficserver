@@ -3744,7 +3744,7 @@ HttpTransact::handle_response_from_server(State *s)
         return CallOSDNSLookup(s);
       } else if ((s->dns_info.srv_lookup_success || s->host_db_info.is_rr_elt()) &&
                  (s->txn_conf->connect_attempts_rr_retries > 0) &&
-                 (s->current.attempts % s->txn_conf->connect_attempts_rr_retries == 0)) {
+                 ((s->current.attempts + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
         delete_server_rr_entry(s, max_connect_retries);
         return;
       } else {
