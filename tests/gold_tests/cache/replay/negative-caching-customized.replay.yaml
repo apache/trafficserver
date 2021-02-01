@@ -72,6 +72,10 @@ sessions:
         fields:
         - [ Host, example.com ]
 
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 50ms
+
     # Since 404 responses are customized to not be cached, this will go
     # through.
     <<: *200_response
@@ -115,6 +119,10 @@ sessions:
         fields:
         - [ Host, example.com ]
 
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 50ms
+
     # By customization, the 400 will be cached and this will not go through.
     <<: *200_response
 
@@ -150,6 +158,10 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 50ms
 
     # This should not go to the server since the 200 response is cached.
     server-response:

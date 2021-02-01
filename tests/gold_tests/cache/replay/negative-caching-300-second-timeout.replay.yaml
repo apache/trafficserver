@@ -36,6 +36,10 @@ meta:
           fields:
           - [ Host, example.com ]
 
+        # Add a delay so ATS has time to finish any caching IO for the previous
+        # transaction.
+        delay: 50ms
+
 sessions:
 - transactions:
 
