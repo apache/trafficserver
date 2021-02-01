@@ -188,7 +188,7 @@ struct ParentResult {
   int port;
   bool retry;
   bool chash_init[MAX_GROUP_RINGS] = {false};
-  HostStatus_t first_choice_status = HostStatus_t::HOST_STATUS_INIT;
+  TSHostStatus first_choice_status = TSHostStatus::TS_HOST_STATUS_INIT;
 
   void
   reset()

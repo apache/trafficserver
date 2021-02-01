@@ -297,7 +297,7 @@ SCENARIO("Testing NextHop ignore_self_detect false", "[NextHopConsistentHash]")
     strategy = nhf.strategyInstance("ignore-self-detect-false");
 
     HostStatus &hs = HostStatus::instance();
-    hs.setHostStatus("localhost", HostStatus_t::HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
+    hs.setHostStatus("localhost", TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
 
     WHEN("the config is loaded.")
     {
@@ -347,7 +347,7 @@ SCENARIO("Testing NextHop ignore_self_detect true", "[NextHopConsistentHash]")
     strategy = nhf.strategyInstance("ignore-self-detect-true");
 
     HostStatus &hs = HostStatus::instance();
-    hs.setHostStatus("localhost", HostStatus_t::HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
+    hs.setHostStatus("localhost", TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
 
     WHEN("the config is loaded.")
     {

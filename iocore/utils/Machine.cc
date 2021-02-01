@@ -32,9 +32,8 @@
 #endif
 
 static void
-make_to_lower_case(const char *name, char *lower_case_name, int buf_len)
+make_to_lower_case(const char *name, int name_len, char *lower_case_name, int buf_len)
 {
-  int name_len = strlen(name);
   int i;
 
   if (name_len > (buf_len - 1)) {
@@ -239,13 +238,19 @@ Machine::~Machine()
 bool
 Machine::is_self(const char *name)
 {
+  return is_self(name, strlen(name));
+}
+
+bool
+Machine::is_self(const char *name, int name_len)
+{
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1] = {0};
 
-  if (name == nullptr) {
+  if (name_len == 0) {
     return false;
   }
 
-  make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
+  make_to_lower_case(name, name_len, lower_case_name, sizeof(lower_case_name));
 
   return machine_id_strings.find(lower_case_name) != machine_id_strings.end();
 }
@@ -279,7 +284,7 @@ Machine::insert_id(char *id)
 {
   char lower_case_name[TS_MAX_HOST_NAME_LEN + 1] = {0};
 
-  make_to_lower_case(id, lower_case_name, sizeof(lower_case_name));
+  make_to_lower_case(id, strlen(id), lower_case_name, sizeof(lower_case_name));
   machine_id_strings.emplace(lower_case_name);
 }
 

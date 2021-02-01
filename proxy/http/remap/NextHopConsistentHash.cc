@@ -227,7 +227,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
   HostRecord *hostRec              = nullptr;
   std::shared_ptr<HostRecord> pRec = nullptr;
   HostStatus &pStatus              = HostStatus::instance();
-  HostStatus_t host_stat           = HostStatus_t::HOST_STATUS_INIT;
+  TSHostStatus host_stat           = TSHostStatus::TS_HOST_STATUS_INIT;
   HostStatRec *hst                 = nullptr;
 
   if (result->line_number == -1 && result->result == PARENT_UNDEFINED) {
@@ -279,7 +279,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       pRec = host_groups[hostRec->group_index][hostRec->host_index];
       if (firstcall) {
         hst                         = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
-        result->first_choice_status = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
+        result->first_choice_status = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
         break;
       }
     } else {
@@ -294,18 +294,18 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
   // ----------------------------------------------------------------------------------------------------
 
   hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
-  host_stat = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
+  host_stat = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
   // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
   // ignore the down status and mark it as avaialble
-  if ((pRec && ignore_self_detect) && (hst && hst->status == HOST_STATUS_DOWN)) {
+  if ((pRec && ignore_self_detect) && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
     if (hst->reasons == Reason::SELF_DETECT) {
-      host_stat = HOST_STATUS_UP;
+      host_stat = TS_HOST_STATUS_UP;
     }
   }
-  if (!pRec || (pRec && !pRec->available) || host_stat == HOST_STATUS_DOWN) {
+  if (!pRec || (pRec && !pRec->available) || host_stat == TS_HOST_STATUS_DOWN) {
     do {
       // check if an unavailable server is now retryable, use it if it is.
-      if (pRec && !pRec->available && host_stat == HOST_STATUS_UP) {
+      if (pRec && !pRec->available && host_stat == TS_HOST_STATUS_UP) {
         _now == 0 ? _now = time(nullptr) : _now = now;
         // check if the host is retryable.  It's retryable if the retry window has elapsed
         if ((pRec->failedAt + retry_time) < static_cast<unsigned>(_now)) {
@@ -339,18 +339,18 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       if (hostRec) {
         pRec      = host_groups[hostRec->group_index][hostRec->host_index];
         hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
-        host_stat = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
+        host_stat = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
         // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
         // ignore the down status and mark it as avaialble
-        if ((pRec && ignore_self_detect) && (hst && hst->status == HOST_STATUS_DOWN)) {
+        if ((pRec && ignore_self_detect) && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
           if (hst->reasons == Reason::SELF_DETECT) {
-            host_stat = HOST_STATUS_UP;
+            host_stat = TS_HOST_STATUS_UP;
           }
         }
         NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Selected a new parent: %s, available: %s, wrapped: %s, lookups: %d.", sm_id,
                  pRec->hostname.c_str(), (pRec->available) ? "true" : "false", (wrapped) ? "true" : "false", lookups);
         // use available host.
-        if (pRec->available && host_stat == HOST_STATUS_UP) {
+        if (pRec->available && host_stat == TS_HOST_STATUS_UP) {
           break;
         }
       } else {
@@ -369,14 +369,14 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
         }
         break;
       }
-    } while (!pRec || (pRec && !pRec->available) || host_stat == HOST_STATUS_DOWN);
+    } while (!pRec || (pRec && !pRec->available) || host_stat == TS_HOST_STATUS_DOWN);
   }
 
   // ----------------------------------------------------------------------------------------------------
   // Validate and return the final result.
   // ----------------------------------------------------------------------------------------------------
 
-  if (pRec && host_stat == HOST_STATUS_UP && (pRec->available || result->retry)) {
+  if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available || result->retry)) {
     result->result      = PARENT_SPECIFIED;
     result->hostname    = pRec->hostname.c_str();
     result->last_parent = pRec->host_index;
