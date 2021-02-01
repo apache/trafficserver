@@ -207,16 +207,13 @@ template <> struct convert<YamlSNIConfig::Item> {
 
     if (node[TS_tunnel_route]) {
       item.tunnel_destination = node[TS_tunnel_route].as<std::string>();
-      item.tunnel_decrypt     = false;
-      item.tls_upstream       = false;
+      item.tunnel_type        = SNIRoutingType::BLIND;
     } else if (node[TS_forward_route]) {
       item.tunnel_destination = node[TS_forward_route].as<std::string>();
-      item.tunnel_decrypt     = true;
-      item.tls_upstream       = false;
+      item.tunnel_type        = SNIRoutingType::FORWARD;
     } else if (node[TS_partial_blind_route]) {
       item.tunnel_destination = node[TS_partial_blind_route].as<std::string>();
-      item.tunnel_decrypt     = true;
-      item.tls_upstream       = true;
+      item.tunnel_type        = SNIRoutingType::PARTIAL_BLIND;
     }
 
     if (node[TS_verify_server_policy]) {
