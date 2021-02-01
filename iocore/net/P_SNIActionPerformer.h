@@ -31,9 +31,12 @@
 #pragma once
 
 #include "I_EventSystem.h"
-#include <vector>
 #include "P_SSLNextProtocolAccept.h"
+#include "SSLTypes.h"
+
 #include "tscore/ink_inet.h"
+
+#include <vector>
 
 class ActionItem
 {
@@ -92,8 +95,7 @@ private:
 class TunnelDestination : public ActionItem
 {
 public:
-  TunnelDestination(const std::string_view &dest, bool decrypt, bool tls_upstream)
-    : destination(dest), tunnel_decrypt(decrypt), tls_upstream(tls_upstream)
+  TunnelDestination(const std::string_view &dest, SNIRoutingType type) : destination(dest), type(type)
   {
     need_fix = (destination.find_first_of('$') != std::string::npos);
   }
@@ -108,15 +110,16 @@ public:
       // If needed, we will try to amend the tunnel destination.
       if (ctx._fqdn_wildcard_captured_groups && need_fix) {
         const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups);
-        ssl_netvc->set_tunnel_destination(fixed_dst, tunnel_decrypt, tls_upstream);
+        ssl_netvc->set_tunnel_destination(fixed_dst, type);
         Debug("TunnelDestination", "Destination now is [%s], configured [%s]", fixed_dst.c_str(), destination.c_str());
       } else {
-        ssl_netvc->set_tunnel_destination(destination, tunnel_decrypt, tls_upstream);
+        ssl_netvc->set_tunnel_destination(destination, type);
       }
-      if (ssl_netvc->has_tunnel_destination() && !ssl_netvc->decrypt_tunnel()) {
+      if (type == SNIRoutingType::BLIND) {
         ssl_netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       }
     }
+
     return SSL_TLSEXT_ERR_OK;
   }
 
@@ -187,10 +190,8 @@ private:
   }
 
   std::string destination;
-
-  bool tunnel_decrypt;
+  SNIRoutingType type = SNIRoutingType::NONE;
   bool need_fix;
-  bool tls_upstream;
 };
 
 class VerifyClient : public ActionItem
