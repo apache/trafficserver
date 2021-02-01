@@ -42,7 +42,7 @@ static ts_lua_main_ctx *ts_lua_main_ctx_array   = NULL;
 static ts_lua_main_ctx *ts_lua_g_main_ctx_array = NULL;
 
 static pthread_key_t lua_g_state_key;
-static pthread_key_t_lua_state_key;
+static pthread_key_t lua_state_key;
 
 // records.config entry injected by plugin
 static char const *const ts_lua_mgmt_state_str   = "proxy.config.plugin.lua.max_states";
