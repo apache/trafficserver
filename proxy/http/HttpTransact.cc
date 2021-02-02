@@ -5382,14 +5382,12 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
         s->client_info.transfer_encoding != CHUNKED_ENCODING) {
-      if (s->state_machine->ua_txn->is_chunked_encoding_supported()) {
+      // In normal operation there will always be a ua_txn at this point, but in one of the -R1  regression tests a request is
+      // createdindependent of a transaction and this method is called, so we must null check
+      if (!s->state_machine->ua_txn || s->state_machine->ua_txn->is_chunked_encoding_supported()) {
         // See if we need to insert a chunked header
         if (!incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-          // In normal operation there will always be a ua_txn at this point, but in one of the -R1  regression tests a request is
-          // created
-          // independent of a transaction and this method is called, so we must null check
-          if (s->txn_conf->post_check_content_length_enabled &&
-              (!s->state_machine->ua_txn || s->state_machine->ua_txn->is_chunked_encoding_supported())) {
+          if (s->txn_conf->post_check_content_length_enabled) {
             return NO_POST_CONTENT_LENGTH;
           } else {
             // Stuff in a TE setting so we treat this as chunked, sort of.
