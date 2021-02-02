@@ -1380,6 +1380,13 @@ tsapi void TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag);
 */
 tsapi TSReturnCode TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag);
 
+/** Get flag indicating whether or not to cache the server response for
+    given TSHttpTxn
+    @param txnp The transaction whose server response you do not want to store.
+
+    @return TS_SUCCESS.
+*/
+tsapi bool TSHttpTxnServerRespNoStoreGet(TSHttpTxn txnp);
 tsapi TSReturnCode TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 tsapi char *TSFetchRespGet(TSHttpTxn txnp, int *length);
 tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status);
