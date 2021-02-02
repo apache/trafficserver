@@ -198,19 +198,13 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         for (unsigned int i = 9; i < sizeof(literal_test_case) / sizeof(literal_test_case[0]); i++) {
           memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
-          ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
-          headers->create(HTTP_TYPE_RESPONSE);
-          MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
-          MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
+          HpackHeaderField header{literal_test_case[i].raw_name, literal_test_case[i].raw_value};
 
-          header.name_set(literal_test_case[i].raw_name, strlen(literal_test_case[i].raw_name));
-          header.value_set(literal_test_case[i].raw_value, strlen(literal_test_case[i].raw_value));
           if (literal_test_case[i].index > 0) {
             len =
               encode_literal_header_field_with_indexed_name(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, header,
                                                             literal_test_case[i].index, indexing_table, literal_test_case[i].type);
           } else {
-            header.name_set(literal_test_case[i].raw_name, strlen(literal_test_case[i].raw_name));
             len = encode_literal_header_field_with_new_name(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, header, indexing_table,
                                                             literal_test_case[i].type);
           }
@@ -383,15 +377,14 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
            j++) {
         const char *expected_name  = dynamic_table_response_test_case[i][j].name;
         const char *expected_value = dynamic_table_response_test_case[i][j].value;
-        int expected_name_len      = strlen(expected_name);
-        int expected_value_len     = strlen(expected_value);
 
-        if (expected_name_len == 0) {
+        if (strlen(expected_name) == 0) {
           break;
         }
 
-        HpackLookupResult lookupResult =
-          indexing_table.lookup(expected_name, expected_name_len, expected_value, expected_value_len);
+        HpackHeaderField expected_header{expected_name, expected_value};
+        HpackLookupResult lookupResult = indexing_table.lookup(expected_header);
+
         CHECK(lookupResult.match_type == HpackMatch::EXACT);
         CHECK(lookupResult.index_type == HpackIndex::DYNAMIC);
 
