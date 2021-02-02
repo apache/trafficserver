@@ -113,7 +113,7 @@ private:
     void invoke_notification_handler(specs::RPCRequestInfo const &notification, std::error_code &ec) const;
 
     std::unordered_map<std::string, MethodHandler> _methods;             ///< Registered handler methods container.
-    std::unordered_map<std::string, NotificationHandler> _notifications; ///< Registered handler methods container.
+    std::unordered_map<std::string, NotificationHandler> _notifications; ///< Registered handler notification container.
 
     mutable std::mutex _mutex; ///< insert/find/delete mutex.
   };
@@ -221,4 +221,32 @@ JsonRPCManager::Dispatcher::add_notification_handler(std::string const &name, Ha
   return _notifications.emplace(name, std::forward<Handler>(handler)).second;
 }
 
+/// Set of convenience API function. Users can avoid having to name the whole rps::JsonRPCManager::instance() to use the object.
+///
+/// @see JsonRPCManager::add_handler for details
+template <typename Func>
+inline bool
+add_handler(const std::string &name, Func &&call)
+{
+  return JsonRPCManager::instance().add_handler(name, std::forward<Func>(call));
+}
+/// @see JsonRPCManager::remove_handler for details
+inline bool
+remove_handler(std::string const &name)
+{
+  return JsonRPCManager::instance().remove_handler(name);
+}
+/// @see JsonRPCManager::add_notification_handler for details
+template <typename Func>
+inline bool
+add_notification_handler(const std::string &name, Func &&call)
+{
+  return JsonRPCManager::instance().add_notification_handler(name, std::forward<Func>(call));
+}
+/// @see JsonRPCManager::remove_notification_handler for details
+inline bool
+remove_notification_handler(std::string const &name)
+{
+  return JsonRPCManager::instance().remove_notification_handler(name);
+}
 } // namespace rpc

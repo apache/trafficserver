@@ -29,7 +29,7 @@ static const auto logTag{"rpc"};
 RPCServer::RPCServer(config::RPCConfig const &conf)
 {
   switch (conf.get_comm_type()) {
-  case config::RPCConfig::CommType::UDS: {
+  case config::RPCConfig::CommType::UNIX: {
     _socketImpl     = std::make_unique<comm::IPCSocketServer>();
     auto const &ret = _socketImpl->configure(conf.get_comm_config_params());
     if (ret) {
@@ -63,7 +63,6 @@ void * /* static */
 RPCServer::run_thread(void *a)
 {
   void *ret = a;
-  Debug(logTag, "about to run this.");
   if (jsonrpcServer->_init) {
     jsonrpcServer->_rpcThread = jsonrpcServer->_init();
   }

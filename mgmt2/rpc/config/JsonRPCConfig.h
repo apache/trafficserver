@@ -44,13 +44,13 @@ namespace rpc::config
 ///
 /// Example configuration:
 ///
-///     comm_type: 1
-///     rpc_enabled: true
-///     comm_config:
-///       lock_path_name: "/tmp/conf_jsonrp"
-///       sock_path_name: "/tmp/conf_jsonrpc.sock"
-///       backlog: 5
-///       max_retry_on_transient_errors: 64
+// rpc:
+//   enabled: true
+//   unix:
+//     lock_path_name: /tmp/conf_jsonrp
+//     sock_path_name: /tmp/conf_jsonrpc.sock
+//     backlog: 5
+//     max_retry_on_transient_errors: 64
 ///
 /// All communication section should use a root node name "comm_config", @c RPCConfig will return the full node when requested @see
 /// get_comm_config_param, then it's up to the communication implementation to parse it.
@@ -60,7 +60,7 @@ namespace rpc::config
 class RPCConfig
 {
 public:
-  enum class CommType { UDS = 1 };
+  enum class CommType { UNIX = 1 };
 
   RPCConfig() = default;
 
@@ -70,7 +70,7 @@ public:
   YAML::Node get_comm_config_params() const;
 
   /// @brief Function that returns the configured communication type.
-  /// @return a communication type, CommType::UDS by default.
+  /// @return a communication type, CommType::UNIX by default.
   CommType get_comm_type() const;
 
   /// @brief Checks if the server was configured to be enabled or disabled. The server should be explicitly disabled by
@@ -85,8 +85,8 @@ public:
   void load(YAML::Node const &params);
 
 private:
-  YAML::Node _commConfig;                    //!< "comm_config" section of the configuration file.
-  CommType _selectedCommType{CommType::UDS}; //!< The selected (by configuration) communication type. 1 by default.
-  bool _rpcEnabled{true};                    //!< holds the configuration toggle value for "rpc_enable" node. Enabled by default.
+  YAML::Node _commConfig;                     //!< "comm_config" section of the configuration file.
+  CommType _selectedCommType{CommType::UNIX}; //!< The selected (by configuration) communication type. 1 by default.
+  bool _rpcEnabled{true};                     //!< holds the configuration toggle value for "rpc_enable" node. Enabled by default.
 };
 } // namespace rpc::config

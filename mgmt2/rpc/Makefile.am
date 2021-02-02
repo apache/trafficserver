@@ -105,7 +105,7 @@ test_jsonrpcserver_LDFLAGS = \
 	@AM_LDFLAGS@
 
 test_jsonrpcserver_SOURCES = \
-    server/unit_tests/unit_test_main.cc \
+	server/unit_tests/unit_test_main.cc \
 	server/unit_tests/test_rpcserver.cc
 
 test_jsonrpcserver_LDADD = \

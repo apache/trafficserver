@@ -36,6 +36,7 @@
 
 #include "tscore/Diags.h"
 #include "tscore/bwf_std_format.h"
+#include "records/I_RecProcess.h"
 
 #include <ts/ts.h>
 
@@ -453,7 +454,13 @@ IPCSocketServer::Client::write(std::string const &data) const
 
   return true;
 }
-
+IPCSocketServer::Config::Config()
+{
+  // Set default values.
+  std::string rundir{RecConfigReadRuntimeDir()};
+  lockPathName = Layout::relative_to(rundir, "jsonrpc20.lock");
+  sockPathName = Layout::relative_to(rundir, "jsonrpc20.sock");
+}
 } // namespace rpc::comm
 
 namespace YAML
@@ -464,6 +471,16 @@ template <> struct convert<rpc::comm::IPCSocketServer::Config> {
   static bool
   decode(const Node &node, config &rhs)
   {
+    // ++ If we configure this, traffic_ctl will not be able to connect.
+    // ++ This is meant to be used by unit test as you need to set up  a
+    // ++ server.
+    if (auto n = node[config::LOCK_PATH_NAME_KEY_STR]) {
+      rhs.lockPathName = n.as<std::string>();
+    }
+    if (auto n = node[config::SOCK_PATH_NAME_KEY_STR]) {
+      rhs.sockPathName = n.as<std::string>();
+    }
+
     if (auto n = node[config::BACKLOG_KEY_STR]) {
       rhs.backlog = n.as<int>();
     }

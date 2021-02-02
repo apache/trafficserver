@@ -32,6 +32,7 @@
 #include <sysexits.h>
 
 std::string global_usage;
+std::string description;
 std::string parser_program_name;
 std::string default_command;
 
@@ -91,6 +92,10 @@ ArgParser::help_message(std::string_view err) const
 void
 ArgParser::Command::help_message(std::string_view err) const
 {
+  if (!description.empty()) {
+    std::cout << description << '\n';
+  }
+
   if (!err.empty()) {
     std::cout << "Error: " << err << std::endl;
   }
@@ -98,6 +103,7 @@ ArgParser::Command::help_message(std::string_view err) const
   if (global_usage.size() > 0) {
     std::cout << "\nUsage: " + global_usage << std::endl;
   }
+
   // output subcommands
   std::cout << "\nCommands ---------------------- Description -----------------------" << std::endl;
   std::string prefix = "";
@@ -209,6 +215,11 @@ ArgParser::get_error() const
   return _error_msg;
 }
 
+void
+ArgParser::add_description(std::string descr)
+{
+  description = std::move(descr);
+}
 //=========================== Command class ================================
 ArgParser::Command::Command() {}
 

@@ -29,9 +29,8 @@
 
 namespace
 {
-static constexpr auto COMM_TYPE_KEY_NAME{"comm_type"};
-static constexpr auto RPC_ENABLED_KEY_NAME{"rpc_enabled"};
-static constexpr auto COMM_CONFIG_KEY_NAME{"comm_config"};
+static constexpr auto RPC_ENABLED_KEY_NAME{"enabled"};
+static constexpr auto COMM_CONFIG_KEY_UNIX{"unix"};
 } // namespace
 namespace rpc::config
 {
@@ -39,22 +38,17 @@ void
 RPCConfig::load(YAML::Node const &params)
 {
   try {
-    if (auto n = params[COMM_TYPE_KEY_NAME]) {
-      _selectedCommType = static_cast<CommType>(n.as<int>());
-    } else {
-      Warning("%s not present, using default", COMM_TYPE_KEY_NAME);
-    }
-
     if (auto n = params[RPC_ENABLED_KEY_NAME]) {
       _rpcEnabled = n.as<bool>();
     } else {
       Warning("%s not present, using default", RPC_ENABLED_KEY_NAME);
     }
 
-    if (auto n = params[COMM_CONFIG_KEY_NAME]) {
-      _commConfig = n;
+    if (auto n = params[COMM_CONFIG_KEY_UNIX]) {
+      _commConfig       = n;
+      _selectedCommType = CommType::UNIX;
     } else {
-      Warning("%s not present.", COMM_CONFIG_KEY_NAME);
+      Note("%s not present.", COMM_CONFIG_KEY_UNIX);
     }
 
   } catch (YAML::Exception const &ex) {
@@ -97,7 +91,9 @@ RPCConfig::load_from_file(std::string_view filePath)
     rootNode = YAML::Load(content);
 
     // read configured parameters.
-    this->load(rootNode);
+    if (auto rpc = rootNode["rpc"]) {
+      this->load(rpc);
+    }
   } catch (std::exception const &ex) {
     Warning("Something happened parsing the content of %s : %s", filePath.data(), ex.what());
     return;

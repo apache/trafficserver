@@ -107,13 +107,14 @@ public:
 
 protected: // unit test access
   struct Config {
+    Config();
     static constexpr auto SOCK_PATH_NAME_KEY_STR{"sock_path_name"};
     static constexpr auto LOCK_PATH_NAME_KEY_STR{"lock_path_name"};
     static constexpr auto BACKLOG_KEY_STR{"backlog"};
     static constexpr auto MAX_RETRY_ON_TR_ERROR_KEY_STR{"max_retry_on_transient_errors"};
     // is it safe to call Layout now?
-    std::string sockPathName{Layout::get()->runtimedir + "/jsonrpc20.sock"};
-    std::string lockPathName{Layout::get()->runtimedir + "/jsonrpc20.lock"};
+    std::string sockPathName;
+    std::string lockPathName;
 
     int backlog{5};
     int maxRetriesOnTransientErrors{64};

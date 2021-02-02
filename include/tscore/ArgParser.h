@@ -250,6 +250,9 @@ public:
   // get the error message
   std::string get_error() const;
 
+  // Add App's description.
+  void add_description(std::string descr);
+
 protected:
   // Converted from 'const char **argv' for the use of parsing and help
   AP_StrVec _argv;

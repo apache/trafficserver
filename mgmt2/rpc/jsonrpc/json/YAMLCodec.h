@@ -29,18 +29,8 @@ namespace rpc::json_codecs
 ///
 /// @note The overall design is to make this classes @c yamlcpp_json_decoder and @c yamlcpp_json_encoder plugables into the Json Rpc
 /// encode/decode logic. yamlcpp does not give us all the behavior we need, such as the way it handles the null values. Json needs
-/// to use literal null and yamlcpp uses ~. If this is a problem, then we may need to change the codec implementation, we just
+/// to use literal null and yamlcpp uses ~. If this becomes a problem, then we may need to change the codec implementation, we just
 /// follow the api and it should work with minimum changes.
-///
-///
-/// The basic interface for the decoder to implement:
-///
-///     static specs::RPCRequest extract(std::string_view request, std::error_code &ec)
-///
-/// and for the encoder to implement:
-///
-///  static std::string encode(const specs::RPCResponseInfo &resp)
-///  static std::string encode(const specs::RPCResponse &response)
 ///
 
 ///
@@ -197,10 +187,9 @@ class yamlcpp_json_encoder
     // workaround, we should find a better way, we should be able to use literal null if needed
     if (id) {
       json << YAML::Key << "id" << YAML::Value << *id;
-    } else {
-      // We do not insert null as it will break the json, we need literal null and not ~ (as per yaml)
-      // json << YAML::Null;
     }
+    // We do not insert null as it will break the json, we need literal null and not ~ (as per yaml)
+    // json << YAML::Null;
   }
 
   ///

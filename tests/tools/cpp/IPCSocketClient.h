@@ -65,7 +65,7 @@ struct IPCSocketClient {
     strcpy(_server.sun_path, _path.c_str());
     if (::connect(_sock, (struct sockaddr *)&_server, sizeof(struct sockaddr_un)) < 0) {
       this->close();
-      Debug(logTag, "error reading stream message :%s", std ::strerror(errno));
+      Debug(logTag, "Connect(%s): error reading stream message :%s", _path.c_str(), std::strerror(errno));
       throw std::runtime_error{std::strerror(errno)};
     }
 
@@ -85,6 +85,7 @@ struct IPCSocketClient {
     ink_assert(_state == State::CONNECTED || _state == State::SENT);
 
     if (::write(_sock, data.data(), data.size()) < 0) {
+      // TODO: work on the return error so the client can do something about it. EWOULDBLOCK, EAGAIN, etc.
       Debug(logTag, "Error writing on stream socket %s", std ::strerror(errno));
       this->close();
     }
@@ -145,12 +146,12 @@ struct IPCSocketClient {
     }
   }
 
-private:
+protected:
   enum class State { CONNECTED, DISCONNECTED, SENT, RECEIVED };
+
   std::string _path;
+  State _state;
   struct sockaddr_un _server;
 
-protected:
-  State _state;
   int _sock{-1};
 };

@@ -540,13 +540,24 @@ AM_CONDITIONAL([BUILD_IMAGE_MAGICK_PLUGINS], [test "x${enable_image_magick_plugi
 
 AC_MSG_CHECKING([whether to install example plugins])
 AC_ARG_ENABLE([example-plugins],
-  [AS_HELP_STRING([--enable-example-plugins],[build and install example plugins])],
+  [AS_HELP_STRING([--enable-example-plugins],[Build and install example plugins])],
   [],
   [enable_example_plugins=no]
 )
 AC_MSG_RESULT([$enable_example_plugins])
 AM_CONDITIONAL([BUILD_EXAMPLE_PLUGINS], [ test "x${enable_example_plugins}" = "xyes" ])
 
+#
+# JSONRPC 2.0  build options.
+#
+AC_MSG_CHECKING([whether to build & install non jsonrpc traffic_ctl])
+AC_ARG_ENABLE([legacy-traffic_ctl],
+  [AS_HELP_STRING([--enable-legacy-traffic_ctl],[build and install legacy traffic_ctl. No jsonrpc will be supported through traffic_ctl])],
+  [],
+  [enable_legacy_tc=no]
+)
+AC_MSG_RESULT([$enable_legacy_tc])
+AM_CONDITIONAL([BUILD_LEGACY_TC], [ test "x${enable_legacy_tc}" = "xyes" ])
 
 #
 # Test tools. The test tools are always built, but not always installed. Installing

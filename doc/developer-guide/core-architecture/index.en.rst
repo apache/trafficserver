@@ -28,4 +28,3 @@ Core Architecture
    heap.en
    rpc.en
    url_rewrite_architecture.en.rst
-   jsonrpc.en

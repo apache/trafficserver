@@ -43,8 +43,8 @@ namespace comm
 ///
 /// @brief RPC Server implementation for the JSONRPC Logic. This class holds a transport which implements @see
 /// BaseCommInterface
-/// Objects of this class can start @see thread_start , stop @see stop the server at any? time. More than one instance of this
-/// class can be created as long as they use different transport configuration.
+/// Objects of this class can start @see start_thread , stop @see stop_thread the server at any? time. More than one instance of
+/// this class can be created as long as they use different transport configuration.
 class RPCServer
 {
 public:
@@ -62,9 +62,6 @@ public:
 
   /// @brief The destructor will join the thread.
   ~RPCServer();
-
-  /// @brief Thread function that runs the transport.
-  void thread_start();
 
   /// @brief Returns a descriptive name that was set by the transport. Check @see BaseCommInterface
   std::string_view selected_comm_name() const noexcept;

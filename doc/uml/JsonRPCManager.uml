@@ -1,0 +1,16 @@
+@startuml
+class JsonRPCManager {
+add_handler(name, Func)
+add_notification_handler(name, Func)
+rsponse handle_call(request)
+JsonRPCManager instance()
+}
+note left: Singleton class.
+
+class Dispatcher {
+    _methods: std::unordered_map<std::string, MethodHandler>
+    _notifications: std::unordered_map<std::string, NotificationHandler>
+}
+note right: Class that knows how to call each callback handler. Storage class.
+JsonRPCManager *-- Dispatcher
+@enduml

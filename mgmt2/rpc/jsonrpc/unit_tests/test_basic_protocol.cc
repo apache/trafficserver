@@ -23,6 +23,7 @@
 #include <tscore/BufferWriter.h>
 
 #include "rpc/jsonrpc/JsonRPCManager.h"
+#include "rpc/handlers/common/ErrorUtils.h"
 
 namespace
 {
@@ -32,6 +33,23 @@ const int ErratId{1};
 struct JsonRpcUnitTest : rpc::JsonRPCManager {
   JsonRpcUnitTest() : JsonRPCManager() {}
 };
+
+inline ts::Rv<YAML::Node>
+respond_with_an_error(std::string_view const &id, YAML::Node const &params)
+{
+  using namespace rpc::handlers::errors;
+  return make_errata(Codes::SERVER, "Something happened in the server");
+}
+
+inline ts::Rv<YAML::Node>
+respond_with_my_own_error(std::string_view const &id, YAML::Node const &params)
+{
+  YAML::Node resp;
+
+  resp["HandlerErrorDescription"] = "I can set up my own error in the result field.";
+
+  return resp;
+}
 
 enum class TestErrors { ERR1 = 9999, ERR2 };
 inline ts::Rv<YAML::Node>
@@ -347,7 +365,7 @@ TEST_CASE("Basic test with member functions(add, remove)", "[basic][member_funct
   }
 }
 
-TEST_CASE("Test Distpatcher rpc method", "[distpatcher]")
+TEST_CASE("Test Dispatcher rpc method", "[dispatcher]")
 {
   JsonRpcUnitTest rpc;
   rpc.register_internal_api();

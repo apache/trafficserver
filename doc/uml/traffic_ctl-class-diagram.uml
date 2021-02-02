@@ -1,0 +1,49 @@
+@startuml
+class traffic_ctl {
+
+command :std::shared_ptr<CtrlCommand>
+parser: ArgParser
+}
+note left: ArgParser Invoker
+class CtrlCommand {
+virtual void execute()
+_printer: std::unique_ptr<BasePrinter>
+}
+
+class DirectRPCCommand {
+void execute()
+}
+class RecordCommand {
+void execute()
+}
+class XCommand {
+void execute()
+}
+
+
+traffic_ctl -|> CtrlCommand
+CtrlCommand <|-- RecordCommand
+CtrlCommand <|-- DirectRPCCommand
+CtrlCommand <|-- XCommand
+
+abstract BasePrinter {
+void write_output(JSONRPCResponse)
+virtual void write_output(std::string_view)
+}
+CtrlCommand *-- BasePrinter
+
+class XPrinter{
+void write_output(JSONRPCResponse)
+}
+class DiffConfigPrinter{
+void write_output(JSONRPCResponse)
+}
+
+class RecordPrinter{
+void write_output(JSONRPCResponse)
+}
+
+BasePrinter <|-- DiffConfigPrinter
+BasePrinter <|-- RecordPrinter
+BasePrinter <|-- XPrinter
+@enduml

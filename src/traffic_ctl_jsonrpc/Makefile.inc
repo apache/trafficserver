@@ -1,4 +1,6 @@
 #
+# Makefile.am for the Enterprise Management module.
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -15,43 +17,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-include $(top_srcdir)/build/tidy.mk
+bin_PROGRAMS += traffic_ctl_jsonrpc/traffic_ctl
 
-bin_PROGRAMS =
-check_PROGRAMS =
-TESTS =
-lib_LTLIBRARIES =
-noinst_PROGRAMS =
+traffic_ctl_jsonrpc_traffic_ctl_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	$(TS_INCLUDES) \
+	-I$(abs_top_srcdir)/mgmt2 \
+    -I$(abs_top_srcdir)/tests \
+	@YAMLCPP_INCLUDES@
 
-SUBDIRS = tscpp/api
+traffic_ctl_jsonrpc_traffic_ctl_SOURCES = \
+	traffic_ctl_jsonrpc/traffic_ctl.cc \
+	traffic_ctl_jsonrpc/CtrlPrinters.cc \
+	traffic_ctl_jsonrpc/CtrlCommands.cc
 
-if BUILD_WCCP
-SUBDIRS += wccp
-include traffic_wccp/Makefile.inc
-endif
-
-include traffic_cache_tool/Makefile.inc
-include traffic_via/Makefile.inc
-include traffic_top/Makefile.inc
-include traffic_manager/Makefile.inc
-include traffic_server/Makefile.inc
-include traffic_logstats/Makefile.inc
-include traffic_crashlog/Makefile.inc
-include traffic_layout/Makefile.inc
-include traffic_logcat/Makefile.inc
-
-# Build non jsonrpc traffic_ctl
-if BUILD_LEGACY_TC
-include traffic_ctl/Makefile.inc
-else
-include traffic_ctl_jsonrpc/Makefile.inc
-endif
-
-
-
-if ENABLE_QUIC
-include traffic_quic/Makefile.inc
-endif
-
-clang-tidy-local: $(DIST_SOURCES)
-	$(CXX_Clang_Tidy)
+traffic_ctl_jsonrpc_traffic_ctl_LDADD = \
+    $(top_builddir)/src/tscore/libtscore.la \
+    @HWLOC_LIBS@ @YAMLCPP_LIBS@

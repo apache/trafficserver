@@ -23,4 +23,7 @@ JSONRPC
 *******
 
 .. toctree::
-    RecordError.en
+   jsonrpc-architecture.en
+   jsonrpc-handler-development.en
+   traffic_ctl-development.en
+   HandlerError.en

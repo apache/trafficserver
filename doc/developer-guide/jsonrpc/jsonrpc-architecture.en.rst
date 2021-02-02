@@ -39,6 +39,59 @@
 JSONRPC
 *******
 
+RPC Architecture
+================
+
+
+Protocol
+^^^^^^^^
+
+The RPC mechanism implements the  `JSONRPC`_ protocol. You can refer to this section `jsonrpc-protocol`_ for more information.
+
+Server
+^^^^^^
+
+IPC
+"""
+
+The current server implementation runs on an IPC Socket(Unix Domain Socket). This server implements an iterative server style.
+The implementation runs on a dedicated ``TSThread`` and as their style express, this performs blocking calls to all the registered handlers.
+Configuration for this particular server style can be found in the admin section :ref:`admnin-jsonrpc-configuration`.
+
+
+Using the JSONRPC mechanism
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As a user, currently,  :program:`traffic_ctl` exercise this new protocol, please refer to the :ref:`traffic_ctl_jsonrpc` section.
+
+As a developer, please refer to the :ref:`jsonrpc_development` for a more detailed guide.
+
+
+
+JSON Parsing
+^^^^^^^^^^^^
+
+Our JSONRPC  protocol implementation uses lib yamlcpp for parsing incoming and outgoing requests,
+this allows the server to accept either JSON or YAML format messages which then will be parsed by the protocol implementation. This seems handy
+for user that want to feed |TS| with existing yaml configuration without the need to translate yaml into json.
+
+.. note::
+
+   :program:`traffic_ctl` have an option to read files from disc and push them into |TS| through the RPC server. Files should be a
+   valid `JSONRPC`_ message. Please refer to :ref:`traffic_ctl rpc` for more details.
+
+
+In order to programs communicate with |TS| , This one implements a simple RPC mechanism to expose all the registered API handlers.
+
+You can check all current API by:
+
+   .. code-block:: bash
+
+      traffic_ctl rpc get-api
+
+or by using the ``show_registered_handlers`` API method.
+
+
 .. _jsonrpc-protocol:
 
 JSONRPC 2.0 Protocol
@@ -52,13 +105,13 @@ Overview
 ========
 
 .. note::
-   
+
    Although most of the protocol specs are granted, we do have implemented some exceptions. All the modifications we have implemented will
    be documented.
 
 
 There are a set  of mandatory fields that must be included in a `JSONRPC`_ message as well as some optional fields, all this is documented here,
-you also can find this information in the `JSONRPC`_ link. 
+you also can find this information in the `JSONRPC`_ link.
 
 .. _jsonrpc-request:
 
@@ -82,7 +135,7 @@ Requests
 
 
    * ``params``:
-      
+
       A Structured value that holds the parameter values to be used during the invocation of the method. This member
       **may** be omitted. If passed then a parameters for the rpc call **must** be provided as a Structured value.
       Either by-position through an Array or by-name through an Object.
@@ -150,7 +203,7 @@ Responses
 ^^^^^^^^^
 
 Although each individual API call will describe the response details and some specific errors, in this section we will describe a high
-level protocol errors, some defined by the `JSONRPC`_ specs and some by |TS|
+level protocol response, some defined by the `JSONRPC`_ specs and some by |TS|
 
 The responses have the following structure:
 
@@ -159,15 +212,17 @@ The responses have the following structure:
    Field        Type     Description
    ============ ======== ==============================================
    ``jsonrpc``  |strnum| A Number that indicates the error type that occurred.
-   ``result``   ok       Result of the invoked operation. See `jsonrpc-result`_
+   ``result``            Result of the invoked operation. See `jsonrpc-result`_
    ``id``       |strnum| It will be the same as the value of the id member in the `jsonrpc-request`_
    ``error``    |object| Error object, it will be present in case of an error. See `jsonrpc-error`_
    ============ ======== ==============================================
 
-Example 1.
+Example 1:
+
+Request
 
    .. code-block:: json
-   
+
       {
          "jsonrpc": "2.0",
          "result": ["hello", 5],
@@ -175,19 +230,22 @@ Example 1.
       }
 
 
-Example 2.
+Response
 
    .. code-block:: json
 
       {
-         "jsonrpc": "2.0",
-         "error": {
-            "code": -32600,
-            "message": "Invalid Request"
+         "jsonrpc":"2.0",
+         "error":{
+            "code":5,
+            "message":"Missing method field"
          },
-         "id": null
+         "id":"9"
       }
 
+
+As the protocol specifies |TS| have their own set of error, in the example above it's clear that the incoming request is missing
+the method name, which |TS| sends a clear response error back.
 
 .. _jsonrpc-result:
 
@@ -197,7 +255,6 @@ Result
 
 * This member is required and will be present on success.
 * This member will not exist if there was an error invoking the method.
-* The value of this member is determined by the method invoked on the Server.
 * The value of this member is determined by the method invoked on the Server.
 
 In |TS| a RPC method that does not report any error and have nothing to send back to the client will use the following format to
@@ -218,13 +275,14 @@ Example:
          "result": "success"
       }
 
+``"result": "success"`` will be set.
 
 .. _jsonrpc-error:
 
 Errors
 """"""
 
-The specs define the error fields that the client must expect to be sent back from the Server in case of an error.
+The specs define the error fields that the client must expect to be sent back from the Server in case of any error.
 
 
 =============== ======== ==============================================
@@ -232,7 +290,7 @@ Field           Type     Description
 =============== ======== ==============================================
 ``code``        |num|    A Number that indicates the error type that occurred.
 ``message``     |str|    A String providing a short description of the error.
-``data``        |object| This is an optional field that contains additional error data. 
+``data``        |object| This is an optional field that contains additional error data. Depending on the API this could contain data.
 =============== ======== ==============================================
 
 # data.
@@ -251,69 +309,160 @@ This can be used for nested error so |TS| can inform a detailed error.
 
 Examples:
 
- # Fetch records from |TS|
+# Fetch a config record response from |TS|
+
+Request:
+
 
    .. code-block:: json
-      
-      {  
-         "jsonrpc": "2.0",
-         "id": "ded7018e-0720-11eb-abe2-001fc69cc946",
-         "result": {
-            "recordList": [{
-               "record": {
-                  "record_name": "proxy.config.log.rolling_interval_sec",
-                  "record_type": "1",
-                  "version": "0",
-                  "raw_stat_block": "0",
-                  "order": "410",
-                  "config_meta": {
-                     "access_type": "0",
-                     "update_status": "0",
-                     "update_type": "1",
-                     "checktype": "1",
-                     "source": "3",
-                     "check_expr": "^[0-9]+$"
-                  },
-                  "record_class": "1",
-                  "overridable": "false",
-                  "data_type": "INT",
-                  "current_value": "86416",
-                  "default_value": "86400"
+
+      {
+         "id":"0f0780a5-0758-4f51-a177-752facc7c0eb",
+         "jsonrpc":"2.0",
+         "method":"admin_lookup_records",
+         "params":[
+            {
+               "record_name":"proxy.config.diags.debug.tags",
+               "rec_types":[
+                  "1",
+                  "16"
+               ]
+            }
+         ]
+      }
+
+Response:
+
+   .. code-block:: json
+
+      {
+         "jsonrpc":"2.0",
+         "result":{
+            "recordList":[
+               {
+                  "record":{
+                     "record_name":"proxy.config.diags.debug.tags",
+                     "record_type":"3",
+                     "version":"0",
+                     "raw_stat_block":"0",
+                     "order":"423",
+                     "config_meta":{
+                        "access_type":"0",
+                        "update_status":"0",
+                        "update_type":"1",
+                        "checktype":"0",
+                        "source":"3",
+                        "check_expr":"null"
+                     },
+                     "record_class":"1",
+                     "overridable":"false",
+                     "data_type":"STRING",
+                     "current_value":"rpc",
+                     "default_value":"http|dns"
+                  }
                }
-            }]
+            ]
+         },
+         "id":"0f0780a5-0758-4f51-a177-752facc7c0eb"
+      }
+
+
+# Getting errors from |TS|
+
+
+Request an invalid record (invalid name)
+
+
+   .. code-block:: json
+
+      {
+         "id":"f212932f-b260-4f01-9648-8332200524cc",
+         "jsonrpc":"2.0",
+         "method":"admin_lookup_records",
+         "params":[
+            {
+               "record_name":"invalid.record",
+               "rec_types":[
+                  "1",
+                  "16"
+               ]
+            }
+         ]
+      }
+
+
+Response:
+
+   .. code-block:: json
+
+      {
+         "jsonrpc":"2.0",
+         "result":{
+            "errorList":[
+               {
+                  "code":"2000",
+                  "record_name":"invalid.record"
+               }
+            ]
+         },
+         "id":"f212932f-b260-4f01-9648-8332200524cc"
+      }
+
+
+Parse Error.
+
+*Note that this is an incomplete request*
+
+   .. code-block:: json
+
+      {[[ invalid json
+
+
+   .. code-block:: json
+
+      {
+         "jsonrpc":"2.0",
+         "error":{
+            "code":-32700,
+            "message":"Parse error"
          }
       }
 
 
-   # Getting errors from |TS|
 
-      Parse Error.
+Invalid method invocation.
 
-      .. code-block:: json
-      
-         {"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}}
+Request:
 
+   .. code-block:: json
 
+      {
+         "id":"f212932f-b260-4f01-9648-8332200524cc",
+         "jsonrpc":"2.0",
+         "method":"some_non_existing_method",
+         "params":{
 
-      Invalid method invocation.
-
-
-      .. code-block::json
-
-         {
-            "error": {
-               "code": -32601,
-               "message": "Method not found"
-            },
-            "id": "ded7018e-0720-11eb-abe2-001fc69cc946",
-            "jsonrpc": "2.0"
          }
+      }
+
+Response:
+
+   .. code-block::json
+
+      {
+         "error": {
+            "code": -32601,
+            "message": "Method not found"
+         },
+         "id": "ded7018e-0720-11eb-abe2-001fc69cc946",
+         "jsonrpc": "2.0"
+      }
 
 
 .. _rpc-error-code:
 
-Internally we have this ``enum`` class that defines the errors that the server will inform in any case. Some of this errors are already
-defined by the `JSONRPC`_ specs and some (``>=1``) are a Server definition.
+Internally we have defined an ``enum`` class that keeps track of the errors that the server will inform in most of the cases.
+Some of this errors are already defined by the `JSONRPC`_ specs and some (``>=1``) are defined by |TS|.
 
 .. class:: RPCErrorCode
 
@@ -342,14 +491,14 @@ defined by the `JSONRPC`_ specs and some (``>=1``) are a Server definition.
    .. enumerator:: InvalidMethodType = 4
 
       The passed method field type is invalid. **must** be a **string**
-   
+
    .. enumerator:: MissingMethod = 5
 
       Method field is missing from the request. This field is mandatory.
 
    .. enumerator:: InvalidParamType = 6
 
-      The passed parameter field type is not valid. 
+      The passed parameter field type is not valid.
 
    .. enumerator:: InvalidIdType = 7
 
@@ -361,106 +510,24 @@ defined by the `JSONRPC`_ specs and some (``>=1``) are a Server definition.
 
    .. enumerator:: ExecutionError = 9
 
-      An error occured during the execution of the RPC call. This error is used as a generic High level error. The details details about
+      An error occurred during the execution of the RPC call. This error is used as a generic High level error. The details details about
       the error, in most cases are specified in the ``data`` field.
 
 
 .. information:
 
-   According to the JSONRPC 2.0 specs, if you get an error, the ``result`` field will **not** be set.
-
-
-Examples:
-
-   # Server response to a drain request while the server is already draining.
-
-      .. code-block:: json
-
-         {
-            "jsonrpc": "2.0",
-            "id": "30700808-0cc4-11eb-b811-001fc69cc946",
-            "error": {
-
-               "code": 9,
-               "message": "Error during execution",
-               "data": [{
-
-                  "code": 3000,
-                  "message": "Server already draining."
-                  }]
-            
-            }
-
-
-
-
-
-
-
-
-RPC Architecture
-================
-
-In order to programs communicate with |TS| there is an RPC mechanism that exposes several client APIs.
-
-
-Protocol
-^^^^^^^^
-
-The RPC mechanism implements a JSONRPC protocol `JSONRPC`_. You can refer to this section `jsonrpc-protocol`_ for more information.
-
-Server
-^^^^^^
-
-IPC
-"""
-
-The current server implementation runs on an IPC Socket(Unix Domain Socket). This server implements an iterative server style. Configuration
-for this particular server style can be found in the admin section :ref:`admnin-jsonrpc-configuration`. 
-This implementation runs on a dedicated thread and as their style express this performs blocking calls to the registered handlers.
-
-
-Using the JSONRPC mechanism
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You can find a detailed information about how to use the current implementation and how to interact with |TS| in the admin section. :ref:`admnin-jsonrpc-configuration`. 
-
-
-JSON Parsing
-^^^^^^^^^^^^
-
-The JSONRPC protocol uses libyamlcpp for parsing incoming and outgoing requests, this allow the server to accept either JSON or YAML
-format messages which then will be parsed by the protocol implementation parser.
-The protocol implementation knows the request format and will respond with the same, this means that if the server receives a JSON message
-the outgoing response will be as well JSON, if YAML is the request format, then the response will be YAML as well. This eventually will allow clients to
-feed configuration wrapped into a jsonrpc format message directly into |TS|.
-
+   According to the JSONRPC 2.0 specs, if you get an error, the ``result`` field will **not** be set. |TS| will grant this.
 
 
 
 Development Guide
 =================
 
+* For details on how to implement JSONRPC  handler and expose them through the rpc server, please refer to :ref:`jsonrpc_development`.
+* If you need to call a new JSONRPC API through :program:`traffic_ctl`, please refer to :ref:`developer-guide-traffic_ctl-development`
 
-Development API
-^^^^^^^^^^^^^^^
+See also
+========
 
-
-Handling Errors
-^^^^^^^^^^^^^^^
-
-
-Parsing incoming parameters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-Send information back
-^^^^^^^^^^^^^^^^^^^^^
-
-
-Registering public handlers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-
-
+:ref:`admnin-jsonrpc-configuration`,
+:ref:`traffic_ctl_jsonrpc`

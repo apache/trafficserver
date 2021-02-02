@@ -74,11 +74,10 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
 
     auto serverConfig = rpc::config::RPCConfig{};
 
-    auto confStr{R"({"comm_type": 1, "comm_config": {"lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
-                 R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
-
+    auto confStr{R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
+                 R"(",  "backlog": 5,"max_retry_on_transient_errors": 64 }}})"};
     YAML::Node configNode = YAML::Load(confStr);
-    serverConfig.load(configNode);
+    serverConfig.load(configNode["rpc"]);
     jsonrpcServer = new rpc::RPCServer(serverConfig);
 
     jsonrpcServer->start_thread();
@@ -88,11 +87,11 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
   void
   testRunEnded(Catch::TestRunStats const &testRunStats) override
   {
-    jsonrpcServer->stop_thread();
+    // jsonrpcServer->stop_thread();
     // delete main_thread;
-    // if (jsonrpcServer) {
-    //   delete jsonrpcServer;
-    // }
+    if (jsonrpcServer) {
+      delete jsonrpcServer;
+    }
   }
 
 private:
@@ -219,33 +218,35 @@ TEST_CASE("Sending 'concurrent' requests to the rpc server.", "[thread]")
 {
   SECTION("A registered handlers")
   {
-    rpc::JsonRPCManager::instance().add_handler("some_foo", &some_foo);
-    rpc::JsonRPCManager::instance().add_handler("some_foo2", &some_foo);
+    rpc::add_handler("some_foo", &some_foo);
+    rpc::add_handler("some_foo2", &some_foo);
 
     std::promise<std::string> p1;
     std::promise<std::string> p2;
     auto fut1 = p1.get_future();
     auto fut2 = p2.get_future();
 
-    // Two different clients, on the same server, as the server is an Unix Domain Socket, it should handle all this
-    // properly, in any case we just run the basic smoke test for our server.
-    auto t1 = std::thread(&send_request, R"({"jsonrpc": "2.0", "method": "some_foo", "params": {"duration": 1}, "id": "aBcD"})",
-                          std::move(p1));
-    auto t2 = std::thread(&send_request, R"({"jsonrpc": "2.0", "method": "some_foo", "params": {"duration": 1}, "id": "eFgH"})",
-                          std::move(p2));
-    // wait to get the promise set.
-    fut1.wait();
-    fut2.wait();
+    REQUIRE_NOTHROW([&]() {
+      // Two different clients, on the same server, as the server is an Unix Domain Socket, it should handle all this
+      // properly, in any case we just run the basic smoke test for our server.
+      auto t1 = std::thread(&send_request, R"({"jsonrpc": "2.0", "method": "some_foo", "params": {"duration": 1}, "id": "aBcD"})",
+                            std::move(p1));
+      auto t2 = std::thread(&send_request, R"({"jsonrpc": "2.0", "method": "some_foo", "params": {"duration": 1}, "id": "eFgH"})",
+                            std::move(p2));
+      // wait to get the promise set.
+      fut1.wait();
+      fut2.wait();
 
-    // the expected
-    std::string_view expected1{R"({"jsonrpc": "2.0", "result": {"res": "ok", "duration": "1"}, "id": "aBcD"})"};
-    std::string_view expected2{R"({"jsonrpc": "2.0", "result": {"res": "ok", "duration": "1"}, "id": "eFgH"})"};
+      // the expected
+      std::string_view expected1{R"({"jsonrpc": "2.0", "result": {"res": "ok", "duration": "1"}, "id": "aBcD"})"};
+      std::string_view expected2{R"({"jsonrpc": "2.0", "result": {"res": "ok", "duration": "1"}, "id": "eFgH"})"};
 
-    CHECK(fut1.get() == expected1);
-    CHECK(fut2.get() == expected2);
+      CHECK(fut1.get() == expected1);
+      CHECK(fut2.get() == expected2);
 
-    t1.join();
-    t2.join();
+      t1.join();
+      t2.join();
+    }());
   }
 }
 
@@ -273,55 +274,61 @@ DEFINE_JSONRPC_PROTO_FUNCTION(do_nothing) // id, params, resp
 
 TEST_CASE("Basic message sending to a running server", "[socket]")
 {
-  REQUIRE(rpc::JsonRPCManager::instance().add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
   SECTION("Basic single request to the rpc server")
   {
     const int S{500};
     auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
-    ScopedLocalSocket rpc_client;
-    auto resp = rpc_client.query(json);
+    REQUIRE_NOTHROW([&]() {
+      ScopedLocalSocket rpc_client;
+      auto resp = rpc_client.query(json);
 
-    REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "EfGh-1"})");
+      REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "EfGh-1"})");
+    }());
   }
-  REQUIRE(rpc::JsonRPCManager::instance().remove_handler("do_nothing"));
+  REQUIRE(rpc::remove_handler("do_nothing"));
 }
 
 TEST_CASE("Sending a message bigger than the internal server's buffer.", "[buffer][error]")
 {
-  REQUIRE(rpc::JsonRPCManager::instance().add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
 
   SECTION("The Server message buffer size same as socket buffer")
   {
     const int S{64000};
     auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
-    ScopedLocalSocket rpc_client;
-    auto resp = rpc_client.query(json);
-    REQUIRE(resp.empty());
-    REQUIRE(rpc_client.is_connected() == false);
+    REQUIRE_NOTHROW([&]() {
+      ScopedLocalSocket rpc_client;
+      auto resp = rpc_client.query(json);
+      REQUIRE(resp.empty());
+      REQUIRE(rpc_client.is_connected() == false);
+    }());
   }
 
-  REQUIRE(rpc::JsonRPCManager::instance().remove_handler("do_nothing"));
+  REQUIRE(rpc::remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with invalid json message", "[socket]")
 {
-  REQUIRE(rpc::JsonRPCManager::instance().add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
 
   SECTION("A rpc server")
   {
     const int S{10};
     auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) + R"("}, "id": "EfGh})"};
-    ScopedLocalSocket rpc_client;
-    auto resp = rpc_client.query(json);
+    REQUIRE_NOTHROW([&]() {
+      ScopedLocalSocket rpc_client;
+      auto resp = rpc_client.query(json);
 
-    CHECK(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
+      CHECK(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
+    }());
   }
-  REQUIRE(rpc::JsonRPCManager::instance().remove_handler("do_nothing"));
+  REQUIRE(rpc::remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with chunks", "[socket][chunks]")
 {
-  REQUIRE(rpc::JsonRPCManager::instance().add_handler("do_nothing", &do_nothing));
+  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
 
   SECTION("Sending request by chunks")
   {
@@ -329,14 +336,16 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
     auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) +
               R"("}, "id": "chunk-parts-3"})"};
 
-    ScopedLocalSocket rpc_client;
-    using namespace std::chrono_literals;
-    rpc_client.connect();
-    rpc_client.send_in_chunks_with_wait<3>(json, 10ms);
-    auto resp = rpc_client.read();
-    REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "chunk-parts-3"})");
+    REQUIRE_NOTHROW([&]() {
+      ScopedLocalSocket rpc_client;
+      using namespace std::chrono_literals;
+      rpc_client.connect();
+      rpc_client.send_in_chunks_with_wait<3>(json, 10ms);
+      auto resp = rpc_client.read();
+      REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "chunk-parts-3"})");
+    }());
   }
-  REQUIRE(rpc::JsonRPCManager::instance().remove_handler("do_nothing"));
+  REQUIRE(rpc::remove_handler("do_nothing"));
 }
 
 // Enable toggle
@@ -350,10 +359,10 @@ TEST_CASE("Test rpc enable toggle feature. Enabled by configuration", "[rpc][ena
 {
   auto serverConfig = rpc::config::RPCConfig{};
 
-  auto confStr{R"({rpc_enabled": true})"};
-
+  auto confStr{R"({"rpc": {"enabled": true}})"};
+  std::cout << "'" << confStr << "'" << std::endl;
   YAML::Node configNode = YAML::Load(confStr);
-  serverConfig.load(configNode);
+  serverConfig.load(configNode["rpc"]);
   REQUIRE(serverConfig.is_enabled() == true);
 }
 
@@ -361,23 +370,13 @@ TEST_CASE("Test rpc  enable toggle feature. Disabled by configuration", "[rpc][d
 {
   auto serverConfig = rpc::config::RPCConfig{};
 
-  auto confStr{R"({"rpc_enabled": false})"};
+  auto confStr{R"({"rpc": {"enabled":false}})"};
 
-  YAML::Node configNode = YAML::Load(confStr);
-  serverConfig.load(configNode);
+  REQUIRE_NOTHROW([&]() {
+    YAML::Node configNode = YAML::Load(confStr);
+    serverConfig.load(configNode["rpc"]);
+  }());
   REQUIRE(serverConfig.is_enabled() == false);
-}
-
-TEST_CASE("Test rpc server configuration with invalid communication type", "[rpc][socket]")
-{
-  auto serverConfig = rpc::config::RPCConfig{};
-
-  auto confStr{R"({"comm_type": 2})"};
-
-  YAML::Node configNode = YAML::Load(confStr);
-  serverConfig.load(configNode);
-
-  REQUIRE_THROWS([&]() { auto server = std::make_unique<rpc::RPCServer>(serverConfig); }());
 }
 
 // TEST UDS Server configuration
@@ -419,13 +418,13 @@ struct LocalSocketTest : public trp::IPCSocketServer {
   static std::string_view
   default_sock_name()
   {
-    return trp::IPCSocketServer::Config::DEFAULT_SOCK_NAME;
+    return "jsonrpc20.sock";
   }
 
   static std::string_view
   default_lock_name()
   {
-    return trp::IPCSocketServer::Config::DEFAULT_LOCK_NAME;
+    return "jsonrpc20.lock";
   }
 };
 } // namespace
@@ -434,13 +433,12 @@ TEST_CASE("Test configuration parsing. UDS values", "[string]")
 {
   auto serverConfig = rpc::config::RPCConfig{};
 
-  const auto confStr{R"({"comm_type": 1, "comm_config": {"lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
-                     R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
-
+  auto confStr{R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
+               R"(",  "backlog": 5,"max_retry_on_transient_errors": 64 }}})"};
   YAML::Node configNode = YAML::Load(confStr);
-  serverConfig.load(configNode);
+  serverConfig.load(configNode["rpc"]);
 
-  REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UDS);
+  REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UNIX);
 
   auto socket     = std::make_unique<LocalSocketTest>();
   auto const &ret = socket->configure(serverConfig.get_comm_config_params());
@@ -462,9 +460,8 @@ TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
   std::string sockPathName{configPath.string() + "jsonrpc20_test2.sock"};
   std::string lockPathName{configPath.string() + "jsonrpc20_test2.lock"};
 
-  auto confStr{R"({"comm_type": 1, "comm_config": {"lock_path_name": ")" + lockPathName + R"(", "sock_path_name": ")" +
-               sockPathName + R"(", "backlog": 5, "max_retry_on_transient_errors": 64 }})"};
-
+  auto confStr{R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPathName + R"(", "sock_path_name": ")" +
+               sockPathName + R"(",  "backlog": 5,"max_retry_on_transient_errors": 64 }}})"};
   // write the config.
   std::ofstream ofs(configPath.string(), std::ofstream::out);
   // Yes, we write json into the yaml, remember, YAML is a superset of JSON, yaml parser can handle this.
@@ -475,7 +472,7 @@ TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
   // on any error reading the file, default values will be used.
   serverConfig.load_from_file(configPath.view());
 
-  REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UDS);
+  REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UNIX);
 
   auto socket     = std::make_unique<LocalSocketTest>();
   auto const &ret = socket->configure(serverConfig.get_comm_config_params());
@@ -487,17 +484,4 @@ TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
 
   std::error_code ec;
   REQUIRE(fs::remove(sandboxDir, ec));
-}
-
-TEST_CASE("Test configuration parsing. UDS socket with default values", "[default values]")
-{
-  auto serverConfig = rpc::config::RPCConfig{};
-
-  auto socket     = std::make_unique<LocalSocketTest>();
-  auto const &ret = socket->configure(serverConfig.get_comm_config_params());
-  REQUIRE(ret);
-  REQUIRE(socket->get_conf().backlog == default_backlog);
-  REQUIRE(socket->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
-  REQUIRE(socket->get_conf().sockPathName == LocalSocketTest::default_sock_name());
-  REQUIRE(socket->get_conf().lockPathName == LocalSocketTest::default_lock_name());
 }
