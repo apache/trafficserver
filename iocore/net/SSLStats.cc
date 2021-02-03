@@ -217,6 +217,10 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.early_data_received", RECD_INT, RECP_PERSISTENT,
                      (int)ssl_early_data_received_count, RecRawStatSyncCount);
 
+  // Origin Server Session Reuse stats
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_session_reused", RECD_INT, RECP_PERSISTENT,
+                     (int)ssl_origin_session_reused_count, RecRawStatSyncCount);
+
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not
   // filtered by proxy.config.ssl.server.cipher_suite. This keeps the set of cipher suites stable across

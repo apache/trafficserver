@@ -29,9 +29,12 @@
 #include "P_SSLClientUtils.h"
 #include "YamlSNIConfig.h"
 #include "SSLDiags.h"
+#include "SSLSessionCache.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>
+
+SSLOriginSessionCache *origin_sess_cache;
 
 int
 verify_callback(int signature_ok, X509_STORE_CTX *ctx)
@@ -152,6 +155,37 @@ ssl_client_cert_callback(SSL *ssl, void * /*arg*/)
   return 1;
 }
 
+static int
+ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
+{
+  const char *tlsext_host_name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  if (tlsext_host_name) {
+    std::string sni(tlsext_host_name);
+    origin_sess_cache->insert_session(sni, sess);
+  } else {
+    int sock_fd = SSL_get_fd(ssl);
+    sockaddr_storage addr;
+    socklen_t addr_len = sizeof(addr);
+    std::string addr_s;
+    if (sock_fd >= 0) {
+      getpeername(sock_fd, reinterpret_cast<sockaddr *>(&addr), &addr_len);
+      if (addr.ss_family == AF_INET || addr.ss_family == AF_INET6) {
+        addr_s.assign(reinterpret_cast<char *>(&addr), addr_len);
+        origin_sess_cache->insert_session(addr_s, sess);
+      } else {
+        if (is_debug_tag_set("ssl.origin_session_cache")) {
+          Debug("ssl.origin_session_cache", "unknown address family: %d", addr.ss_family);
+        }
+        return 0;
+      }
+    } else {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
 SSL_CTX *
 SSLInitClientContext(const SSLConfigParams *params)
 {
@@ -207,6 +241,11 @@ SSLInitClientContext(const SSLConfigParams *params)
   }
 
   SSL_CTX_set_cert_cb(client_ctx, ssl_client_cert_callback, nullptr);
+
+  if (params->ssl_origin_session_cache == 1) {
+    SSL_CTX_set_session_cache_mode(client_ctx, SSL_SESS_CACHE_CLIENT | SSL_SESS_CACHE_NO_AUTO_CLEAR | SSL_SESS_CACHE_NO_INTERNAL);
+    SSL_CTX_sess_set_new_cb(client_ctx, ssl_new_session_callback);
+  }
 
   return client_ctx;
 
