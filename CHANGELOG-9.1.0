@@ -1,4 +1,5 @@
 Changes with Apache Traffic Server 9.1.0
+  #3871 - Fix heap use after free in DNSProcessor::getby()
   #5758 - Fix race condition when invoking TASK_THREADS_READY lifecycle hook
   #5759 - Remove unnecessary parts from tests
   #5761 - Remove testing command
@@ -59,6 +60,7 @@ Changes with Apache Traffic Server 9.1.0
   #6506 - In Au tests, poll for excretion of log file rather than waiting fixed delay.
   #6509 - Cleanup: Break down HpackIndexingTable::lookup() into static table lookup & dynamic table lookup
   #6515 - Check the exit value of the regression test
+  #6520 - Cleanup: Get rid of MIMEFieldWrapper from HPACK encoding
   #6528 - Introduce LocalBuffer
   #6531 - Allow lo interface in list of system stats
   #6536 - Perf: Use LocalBuffer in HTTP/2
@@ -109,6 +111,7 @@ Changes with Apache Traffic Server 9.1.0
   #6828 - PoolableSession class abstracted from Http1ServerSession
   #6844 - LGTM: fix hiding a global variable with the same name
   #6858 - Make HostDBInfo class safer to use.
+  #6870 - Generalize SNI support
   #6875 - Fix for Ubuntu 16 and Clang 5
   #6893 - AuTest: Pipfile update to use microserver 1.0.5
   #6897 - Test connection timeout and retries
@@ -150,6 +153,7 @@ Changes with Apache Traffic Server 9.1.0
   #7049 - Cleans up various versions checks
   #7058 - Removes FIXME that is unlikely to be fixed at this point in the project history
   #7063 - Add an autest testcase for HTTP3
+  #7064 - CacheRead: clear dir entry if doc is found to be truncated
   #7066 - Use system include-style for STL and OpenSSL headers
   #7067 - tests: gitignore ssl-delay-server binary
   #7068 - constify Print() methods and other low hanging fruit
@@ -160,9 +164,11 @@ Changes with Apache Traffic Server 9.1.0
   #7078 - Ran clang-tidy over the source tree
   #7079 - const-ify quic/http3 code
   #7088 - Skip docs builds if there are no changes in the doc dir and files it includes
+  #7090 - Cleans up duplicated TSOutboundConnectionMatchType definition
   #7093 - Fix compilation error - missing '&' operator
   #7100 - Fixes uninitialized variables found by Xcode
   #7105 - Add modsecurity lua script to example
+  #7106 - drop use of BIO_f_base64 and EVP_PKEY_new_mac_key
   #7109 - Supporting out of source builds for AuTests.
   #7111 - Cancel active/inactive timeout on closing Http2Stream
   #7132 - Add member initialization to the Errata class.
@@ -242,14 +248,28 @@ Changes with Apache Traffic Server 9.1.0
   #7402 - Correctly pass back errno to HttpSM
   #7403 - Remove unneeded variables in UnixNetVConnection
   #7404 - Doc: Fix INPUT tag of Doxyfile
+  #7405 - Improving session cache performance
+  #7407 - Add synchronization between UDPNetProcessor::UDPBind in main Thread and initialize_thread_for_udp_net in ET_UDP Thread
   #7409 - Fix clang compiler complaint about an unused parameter in SNIAction.
   #7410 - Fix issue with unavailable server retry codes
   #7412 - LGTM: Remove superfluous const qualifier in return type
   #7413 - Improvement to lua plugin
   #7415 - Fix the Proxy Verifier AuTest extension to handle cert paths correctly
   #7421 - Change comment handling for long lines in url_sig plugin
+  #7426 - Add command line utility to help convert remap plugin usage to ATS9.
   #7427 - Doc: Fix typo in negative_revalidating_lifetime
   #7429 - Fix parent connect fail segfault
   #7430 - Improve zlib detection logic
   #7433 - Fix a link error on traffic_quic command
   #7436 - Cleanup: Remove unused members of NextHopProperty
+  #7439 - API to retrieve NoStore set by plugins
+  #7453 - Cleanup: Add SNIRoutingType
+  #7454 - Updating to Proxy Verifier v2.0.0
+  #7455 - Fix Makefile target for creating changelogs
+  #7457 - Fix comment in include/tscore/Filenames.h.
+  #7460 - Update to the new MicroServer 1.0.6 release
+  #7461 - Do not write to the cache if the plugin decides not to write 
+  #7463 - Fixing compress expectation for new microserver
+  #7466 - Change atoi to atol, causing obvious issues on what needs to be int64's
+  #7468 - Proxy Verifier: Making use of delay directives for caching tests.
+  #7469 - Update AuTest version update directions for pipenv
