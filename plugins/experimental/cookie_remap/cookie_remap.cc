@@ -69,21 +69,30 @@ struct UrlComponents {
 
   ~UrlComponents()
   {
+    if (handle_valid) {
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, urlp);
+    }
     if (url != nullptr) {
       TSfree((void *)url);
     }
   }
 
-  void
-  populate(TSRemapRequestInfo *rri)
+  bool
+  populate(TSRemapRequestInfo *rri, TSHttpTxn txn)
   {
-    scheme    = TSUrlSchemeGet(rri->requestBufp, rri->requestUrl, &scheme_len);
-    host      = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &host_len);
-    tspath    = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &tspath_len);
-    query     = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &query_len);
-    matrix    = TSUrlHttpParamsGet(rri->requestBufp, rri->requestUrl, &matrix_len);
-    port      = TSUrlPortGet(rri->requestBufp, rri->requestUrl);
-    url       = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &url_len);
+    if (TSHttpTxnPristineUrlGet(txn, &bufp, &urlp) != TS_SUCCESS) {
+      TSError("%s: Plugin is unable to get pristine url", MY_NAME);
+      return false;
+    }
+    handle_valid = true;
+
+    scheme    = TSUrlSchemeGet(bufp, urlp, &scheme_len);
+    host      = TSUrlHostGet(bufp, urlp, &host_len);
+    tspath    = TSUrlPathGet(bufp, urlp, &tspath_len);
+    query     = TSUrlHttpQueryGet(bufp, urlp, &query_len);
+    matrix    = TSUrlHttpParamsGet(bufp, urlp, &matrix_len);
+    port      = TSUrlPortGet(bufp, urlp);
+    url       = TSUrlStringGet(bufp, urlp, &url_len);
     from_path = TSUrlPathGet(rri->requestBufp, rri->mapFromUrl, &from_path_len);
 
     // based on RFC2396, matrix params are part of path segments so
@@ -94,8 +103,12 @@ struct UrlComponents {
       path += ';';
       path.append(matrix, matrix_len);
     }
+
+    return true;
   }
 
+  TSMBuffer bufp;
+  TSMLoc urlp;
   const char *scheme = nullptr;
   const char *host   = nullptr;
   const char *tspath = nullptr;
@@ -113,6 +126,7 @@ struct UrlComponents {
   int matrix_len    = 0;
   int url_len       = 0;
   int from_path_len = 0;
+  bool handle_valid = false;
 };
 
 void
@@ -475,7 +489,7 @@ public:
   }
 
   bool
-  process(CookieJar &jar, std::string &dest, TSHttpStatus &retstat, TSRemapRequestInfo *rri) const
+  process(CookieJar &jar, std::string &dest, TSHttpStatus &retstat, TSRemapRequestInfo *rri, TSHttpTxn txn) const
   {
     if (sendto == "") {
       return false; // guessing every operation must have a
@@ -596,7 +610,9 @@ public:
       const std::string &string_to_match(target == URI ? request_uri : cookie_data);
       if (target == URI) {
         UrlComponents req_url;
-        req_url.populate(rri);
+        if (!req_url.populate(rri, txn)) {
+          break;
+        }
 
         TSDebug(MY_NAME, "process req_url.path = %s", req_url.path.c_str());
         request_uri = req_url.path;
@@ -910,7 +926,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 //  $url, $unmatched_path, $cr_req_url, and $cr_url_encode
 // returns 0 if no substitutions, 1 otw.
 int
-cr_substitutions(std::string &obj, TSRemapRequestInfo *rri)
+cr_substitutions(std::string &obj, TSRemapRequestInfo *rri, TSHttpTxn txn)
 {
   int retval = 0;
 
@@ -919,7 +935,10 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri)
   size_t last_pos = pos;
 
   UrlComponents req_url;
-  req_url.populate(rri);
+  if (!req_url.populate(rri, txn)) {
+    return retval;
+  }
+
   TSDebug(MY_NAME, "x req_url.path: %s %zu", req_url.path.c_str(), req_url.path.length());
   TSDebug(MY_NAME, "x req_url.url: %s %d", std::string(req_url.url, req_url.url_len).c_str(), req_url.url_len);
 
@@ -977,7 +996,7 @@ cr_substitutions(std::string &obj, TSRemapRequestInfo *rri)
           if (obj.substr(pos + 4, 10) == "urlencode(" && (tmp_pos = obj.find(')', pos + 14)) != std::string::npos) {
             std::string str = obj.substr(pos + 14, tmp_pos - pos - 14); // the string to
                                                                         // encode
-            cr_substitutions(str, rri);                                 // expand any
+            cr_substitutions(str, rri, txn);                            // expand any
                                                                         // variables as
                                                                         // necessary
                                                                         // before
@@ -1013,7 +1032,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   TSHttpStatus status = TS_HTTP_STATUS_NONE;
 
   UrlComponents req_url;
-  req_url.populate(rri);
+  if (!req_url.populate(rri, txnp)) {
+    return TSREMAP_NO_REMAP;
+  }
 
   if (ops == (OpsQueue *)nullptr) {
     TSError("serious error with encountered while attempting to "
@@ -1051,8 +1072,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   for (auto &op : *ops) {
     TSDebug(MY_NAME, ">>> processing new operation");
-    if (op->process(jar, rewrite_to, status, rri)) {
-      cr_substitutions(rewrite_to, rri);
+    if (op->process(jar, rewrite_to, status, rri, txnp)) {
+      cr_substitutions(rewrite_to, rri, txnp);
 
       size_t pos = 7;                             // 7 because we want to ignore the // in
                                                   // http:// :)
