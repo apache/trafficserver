@@ -1,0 +1,7 @@
+# This is a test configuration
+
+# Do a regex against the request url
+op:
+  target: puri
+  regex: /orig_
+  sendto: http://127.0.0.10:$PORT/i/////////like/cheetos?.done=http://finance.yahoo.com
