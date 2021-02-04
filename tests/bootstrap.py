@@ -178,7 +178,7 @@ def venv_cmds(path):
     return [
         # first command only needed for rhel and centos systems at this time
         extra + " virtualenv --python=python3 {0}".format(path),
-        extra + " {0}/bin/pip install pip --upgrade".format(path)
+        extra + " {0}/bin/pip install pip setuptools wheel --upgrade".format(path)
     ]
 
 
