@@ -26,7 +26,10 @@
 #include "I_EventSystem.h"
 #include "I_NetVConnection.h"
 
+#include "tscore/BufferWriter.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ink_string.h"
+#include "tscore/ink_inet.h"
 #include "tscpp/util/TextView.h"
 
 namespace
@@ -42,6 +45,8 @@ constexpr ts::TextView PPv1_PROTO_UNKNOWN = "UNKNOWN"sv;
 constexpr ts::TextView PPv1_PROTO_TCP4    = "TCP4"sv;
 constexpr ts::TextView PPv1_PROTO_TCP6    = "TCP6"sv;
 
+constexpr std::string_view PPv1_DELIMITER = " "sv;
+
 constexpr uint8_t PPv2_CMD_LOCAL = 0x20;
 constexpr uint8_t PPv2_CMD_PROXY = 0x21;
 
@@ -55,7 +60,7 @@ constexpr uint8_t PPv2_PROTO_UNIX_DATAGRAM = 0x32;
 
 constexpr uint16_t PPv2_ADDR_LEN_INET  = 4 + 4 + 2 + 2;
 constexpr uint16_t PPv2_ADDR_LEN_INET6 = 16 + 16 + 2 + 2;
-// constexpr uint16_t PPv2_ADDR_LEN_UNIX  = 108 + 108;
+constexpr uint16_t PPv2_ADDR_LEN_UNIX  = 108 + 108;
 
 struct PPv2Hdr {
   uint8_t sig[12]; ///< preface
@@ -302,6 +307,149 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const ts::TextView &msg)
   return 0;
 }
 
+/**
+   Build PROXY Protocol v1
+ */
+size_t
+proxy_protocol_v1_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info)
+{
+  if (max_buf_len < PPv1_CONNECTION_HEADER_LEN_MAX) {
+    return 0;
+  }
+
+  ts::FixedBufferWriter bw{reinterpret_cast<char *>(buf), max_buf_len};
+
+  // preface
+  bw.write(PPv1_CONNECTION_PREFACE);
+  bw.write(PPv1_DELIMITER);
+
+  // the proxied INET protocol and family
+  if (pp_info.src_addr.isIp4()) {
+    bw.write(PPv1_PROTO_TCP4);
+  } else if (pp_info.src_addr.isIp6()) {
+    bw.write(PPv1_PROTO_TCP6);
+  } else {
+    bw.write(PPv1_PROTO_UNKNOWN);
+  }
+  bw.write(PPv1_DELIMITER);
+
+  // the layer 3 source address
+  char src_ip_buf[INET6_ADDRSTRLEN];
+  ats_ip_ntop(pp_info.src_addr, src_ip_buf, sizeof(src_ip_buf));
+  size_t src_ip_len = strnlen(src_ip_buf, sizeof(src_ip_buf));
+
+  bw.write(src_ip_buf, src_ip_len);
+  bw.write(PPv1_DELIMITER);
+
+  // the layer 3 destination address
+  char dst_ip_buf[INET6_ADDRSTRLEN];
+  ats_ip_ntop(pp_info.dst_addr, dst_ip_buf, sizeof(dst_ip_buf));
+  size_t dst_ip_len = strnlen(dst_ip_buf, sizeof(dst_ip_buf));
+
+  bw.write(dst_ip_buf, dst_ip_len);
+  bw.write(PPv1_DELIMITER);
+
+  // TCP source port
+  {
+    size_t len = ink_small_itoa(ats_ip_port_host_order(pp_info.src_addr), bw.auxBuffer(), bw.remaining());
+    bw.fill(len);
+    bw.write(PPv1_DELIMITER);
+  }
+
+  // TCP destination port
+  {
+    size_t len = ink_small_itoa(ats_ip_port_host_order(pp_info.dst_addr), bw.auxBuffer(), bw.remaining());
+    bw.fill(len);
+  }
+
+  bw.write("\r\n");
+
+  return bw.size();
+}
+
+/**
+   Build PROXY Protocol v2
+
+   UDP, Unix Domain Socket, and TLV fields are not supported yet
+ */
+size_t
+proxy_protocol_v2_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info)
+{
+  if (max_buf_len < PPv2_CONNECTION_HEADER_LEN) {
+    return 0;
+  }
+
+  ts::FixedBufferWriter bw{reinterpret_cast<char *>(buf), max_buf_len};
+
+  // # proxy_hdr_v2
+  // ## preface
+  bw.write(PPv2_CONNECTION_PREFACE);
+
+  // ## version and command
+  // TODO: support PPv2_CMD_LOCAL for health check
+  bw.write(static_cast<char>(PPv2_CMD_PROXY));
+
+  // ## family & address
+  // TODO: support UDP
+  switch (pp_info.src_addr.family()) {
+  case AF_INET:
+    bw.write(static_cast<char>(PPv2_PROTO_TCP4));
+    break;
+  case AF_INET6:
+    bw.write(static_cast<char>(PPv2_PROTO_TCP6));
+    break;
+  case AF_UNIX:
+    bw.write(static_cast<char>(PPv2_PROTO_UNIX_STREAM));
+    break;
+  default:
+    bw.write(static_cast<char>(PPv2_PROTO_UNSPEC));
+    break;
+  }
+
+  // ## len field. this will be set at the end of this function
+  const size_t len_field_offset = bw.size();
+  bw.fill(2);
+
+  ink_release_assert(bw.size() == PPv2_CONNECTION_HEADER_LEN);
+
+  // # proxy_addr
+  // TODO: support UDP
+  switch (pp_info.src_addr.family()) {
+  case AF_INET: {
+    bw.write(&ats_ip4_addr_cast(pp_info.src_addr), TS_IP4_SIZE);
+    bw.write(&ats_ip4_addr_cast(pp_info.dst_addr), TS_IP4_SIZE);
+    bw.write(&ats_ip_port_cast(pp_info.src_addr), TS_PORT_SIZE);
+    bw.write(&ats_ip_port_cast(pp_info.dst_addr), TS_PORT_SIZE);
+
+    break;
+  }
+  case AF_INET6: {
+    bw.write(&ats_ip6_addr_cast(pp_info.src_addr), TS_IP6_SIZE);
+    bw.write(&ats_ip6_addr_cast(pp_info.dst_addr), TS_IP6_SIZE);
+    bw.write(&ats_ip_port_cast(pp_info.src_addr), TS_PORT_SIZE);
+    bw.write(&ats_ip_port_cast(pp_info.dst_addr), TS_PORT_SIZE);
+
+    break;
+  }
+  case AF_UNIX: {
+    // unsupported yet
+    bw.fill(PPv2_ADDR_LEN_UNIX);
+    break;
+  }
+  default:
+    // do nothing
+    break;
+  }
+
+  // # Additional TLVs (pp2_tlv)
+  // unsupported yet
+
+  // Set len field (number of following bytes part of the header) in the hdr
+  uint16_t len = htons(bw.size() - PPv2_CONNECTION_HEADER_LEN);
+  memcpy(buf + len_field_offset, &len, sizeof(uint16_t));
+  return bw.size();
+}
+
 } // namespace
 
 /**
@@ -325,4 +473,40 @@ proxy_protocol_parse(ProxyProtocol *pp_info, ts::TextView tv)
   }
 
   return len;
+}
+
+/**
+   PROXY Protocol Builder
+ */
+size_t
+proxy_protocol_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info, ProxyProtocolVersion force_version)
+{
+  ProxyProtocolVersion version = pp_info.version;
+  if (force_version != ProxyProtocolVersion::UNDEFINED) {
+    version = force_version;
+  }
+
+  size_t len = 0;
+
+  if (version == ProxyProtocolVersion::V1) {
+    len = proxy_protocol_v1_build(buf, max_buf_len, pp_info);
+  } else if (version == ProxyProtocolVersion::V2) {
+    len = proxy_protocol_v2_build(buf, max_buf_len, pp_info);
+  } else {
+    ink_abort("PROXY Protocol Version is undefined");
+  }
+
+  return len;
+}
+
+ProxyProtocolVersion
+proxy_protocol_version_cast(int i)
+{
+  switch (i) {
+  case 1:
+  case 2:
+    return static_cast<ProxyProtocolVersion>(i);
+  default:
+    return ProxyProtocolVersion::UNDEFINED;
+  }
 }

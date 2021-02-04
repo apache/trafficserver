@@ -181,8 +181,10 @@ inkcoreapi uint32_t ats_inet_addr(const char *s);
 const char *ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size);
 
 // --
-/// Size in bytes of an IPv6 address.
-static size_t const TS_IP6_SIZE = sizeof(in6_addr);
+/// Size in bytes of an port and IPv4/IPv6 address.
+static constexpr size_t TS_IP4_SIZE  = sizeof(in_addr_t); ///< 4
+static constexpr size_t TS_IP6_SIZE  = sizeof(in6_addr);  ///< 16
+static constexpr size_t TS_PORT_SIZE = sizeof(in_port_t); ///< 2
 
 /// Reset an address to invalid.
 /// @note Useful for marking a member as not yet set.
