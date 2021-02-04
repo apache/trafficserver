@@ -50,14 +50,14 @@ server.addResponse("sessionlog.json",
 
 # For Test Case 6 - /postchunked
 post_body = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-server.addResponse("sessionlog.jason",
+server.addResponse("sessionlog.json",
                    {"headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": post_body},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
 
 # For Test Case 7 - /bigpostchunked
 # Make a post body that will be split across at least two frames
 big_post_body = "0123456789" * 131070
-server.addResponse("sessionlog.jason",
+server.addResponse("sessionlog.json",
                    {"headers": "POST /bigpostchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": big_post_body},
                    {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n", "timestamp": "1469733493.993", "body": "0123456789"})
 

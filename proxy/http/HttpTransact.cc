@@ -1182,8 +1182,7 @@ HttpTransact::HandleRequest(State *s)
         }
       }
     }
-    if (s->txn_conf->request_buffer_enabled &&
-        (s->hdr_info.request_content_length > 0 || s->client_info.transfer_encoding == CHUNKED_ENCODING)) {
+    if (s->txn_conf->request_buffer_enabled && has_request_body(s, s->state_machine->ua_txn)) {
       TRANSACT_RETURN(SM_ACTION_WAIT_FOR_FULL_BODY, nullptr);
     }
   }
@@ -5156,8 +5155,11 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
   // than in initialize_state_variables_from_request //
   /////////////////////////////////////////////////////
   if (method != HTTP_WKSIDX_TRACE) {
-    int64_t length                     = incoming_hdr->get_content_length();
-    s->hdr_info.request_content_length = (length >= 0) ? length : HTTP_UNDEFINED_CL; // content length less than zero is invalid
+    if (incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+      s->hdr_info.request_content_length = incoming_hdr->get_content_length();
+    } else {
+      s->hdr_info.request_content_length = HTTP_UNDEFINED_CL; // content length less than zero is invalid
+    }
 
     TxnDebug("http_trans", "[init_stat_vars_from_req] set req cont length to %" PRId64, s->hdr_info.request_content_length);
 
@@ -5198,22 +5200,23 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
         s->client_info.transfer_encoding != CHUNKED_ENCODING) {
-      if (!incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-        // In normal operation there will always be a ua_txn at this point, but in one of the -R1  regression tests a request is
-        // created
-        // independent of a transaction and this method is called, so we must null check
-        if (s->txn_conf->post_check_content_length_enabled &&
-            (!s->state_machine->ua_txn || s->state_machine->ua_txn->is_chunked_encoding_supported())) {
-          return NO_POST_CONTENT_LENGTH;
-        } else {
-          // Stuff in a TE setting so we treat this as chunked, sort of.
-          s->client_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
-          incoming_hdr->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED, HTTP_LEN_CHUNKED,
-                                     true);
+      // In normal operation there will always be a ua_txn at this point, but in one of the -R1  regression tests a request is
+      // createdindependent of a transaction and this method is called, so we must null check
+      if (!s->state_machine->ua_txn || s->state_machine->ua_txn->is_chunked_encoding_supported()) {
+        // See if we need to insert a chunked header
+        if (!incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+          if (s->txn_conf->post_check_content_length_enabled) {
+            return NO_POST_CONTENT_LENGTH;
+          } else {
+            // Stuff in a TE setting so we treat this as chunked, sort of.
+            s->client_info.transfer_encoding = HttpTransact::CHUNKED_ENCODING;
+            incoming_hdr->value_append(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED,
+                                       HTTP_LEN_CHUNKED, true);
+          }
         }
-      }
-      if (HTTP_UNDEFINED_CL == s->hdr_info.request_content_length) {
-        return INVALID_POST_CONTENT_LENGTH;
+        if (HTTP_UNDEFINED_CL == s->hdr_info.request_content_length) {
+          return INVALID_POST_CONTENT_LENGTH;
+        }
       }
     }
   }
@@ -8833,6 +8836,15 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
     // Always update the Content-Length: header.
     header->set_content_length(s->range_output_cl);
   }
+}
+
+bool
+HttpTransact::has_request_body(State *s, ProxyClientTransaction *txn)
+{
+  int method = s->hdr_info.client_request.method_get_wksidx();
+  return (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
+         (s->hdr_info.request_content_length > 0 || s->client_info.transfer_encoding == CHUNKED_ENCODING ||
+          !txn->is_chunked_encoding_supported());
 }
 
 #if TS_HAS_TESTS
