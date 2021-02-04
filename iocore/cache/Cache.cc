@@ -2275,8 +2275,7 @@ CacheVC::handleReadDone(int event, Event *e)
            (doc_len && static_cast<int64_t>(doc_len) < cache_config_ram_cache_cutoff) || !cache_config_ram_cache_cutoff);
         if (cutoff_check && !f.doc_from_ram_cache) {
           uint64_t o = dir_offset(&dir);
-          vol->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, static_cast<uint32_t>(o >> 32),
-                              static_cast<uint32_t>(o));
+          vol->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, o);
         }
         if (!doc_len) {
           // keep a pointer to it. In case the state machine decides to
@@ -2308,7 +2307,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   // check ram cache
   ink_assert(vol->mutex->thread_holding == this_ethread());
   int64_t o           = dir_offset(&dir);
-  int ram_hit_state   = vol->ram_cache->get(read_key, &buf, static_cast<uint32_t>(o >> 32), static_cast<uint32_t>(o));
+  int ram_hit_state   = vol->ram_cache->get(read_key, &buf, static_cast<uint64_t>(o));
   f.compressed_in_ram = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
   if (ram_hit_state >= RAM_HIT_COMPRESS_NONE) {
     goto LramHit;

@@ -50,8 +50,7 @@
 
 struct RamCacheCLFUSEntry {
   CryptoHash key;
-  uint32_t auxkey1;
-  uint32_t auxkey2;
+  uint64_t auxkey;
   uint64_t hits;
   uint32_t size; // memory used including padding in buffer
   uint32_t len;  // actual data length
@@ -76,10 +75,9 @@ public:
   RamCacheCLFUS() {}
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  int get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0) override;
-  int put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint32_t auxkey1 = 0,
-          uint32_t auxkey2 = 0) override;
-  int fixup(const CryptoHash *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2) override;
+  int get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
+  int put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
+  int fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
   int64_t size() const override;
 
   void init(int64_t max_bytes, Vol *vol) override;
@@ -237,7 +235,7 @@ check_accounting(RamCacheCLFUS *c)
 #endif
 
 int
-RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, uint32_t auxkey2)
+RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey)
 {
   if (!this->_max_bytes) {
     return 0;
@@ -246,7 +244,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey
   RamCacheCLFUSEntry *e = this->_bucket[i].head;
   char *b               = nullptr;
   while (e) {
-    if (e->key == *key && e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2) {
+    if (e->key == *key && e->auxkey == auxkey) {
       this->_move_compressed(e);
       if (!e->flag_bits.lru) { // in memory
         if (CACHE_VALUE(e) > this->_average_value) {
@@ -313,25 +311,25 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey
           (*ret_data) = data;
         }
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_hits_stat, 1);
-        DDebug("ram_cache", "get %X %d %d size %d HIT", key->slice32(3), auxkey1, auxkey2, e->size);
+        DDebug("ram_cache", "get %X %" PRId64 " size %d HIT", key->slice32(3), auxkey, e->size);
         return ram_hit_state;
       } else {
         CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
-        DDebug("ram_cache", "get %X %d %d HISTORY", key->slice32(3), auxkey1, auxkey2);
+        DDebug("ram_cache", "get %X %" PRId64 " HISTORY", key->slice32(3), auxkey);
         return 0;
       }
     }
     assert(e != e->hash_link.next);
     e = e->hash_link.next;
   }
-  DDebug("ram_cache", "get %X %d %d MISS", key->slice32(3), auxkey1, auxkey2);
+  DDebug("ram_cache", "get %X %" PRId64 " MISS", key->slice32(3), auxkey);
 Lerror:
   CACHE_SUM_DYN_STAT_THREAD(cache_ram_cache_misses_stat, 1);
   return 0;
 Lfailed:
   ats_free(b);
   this->_destroy(e);
-  DDebug("ram_cache", "get %X %d %d Z_ERR", key->slice32(3), auxkey1, auxkey2);
+  DDebug("ram_cache", "get %X %" PRId64 " Z_ERR", key->slice32(3), auxkey);
   goto Lerror;
 }
 
@@ -361,7 +359,7 @@ Lfree:
   this->_history--;
   uint32_t b = e->key.slice32(3) % this->_nbuckets;
   this->_bucket[b].remove(e);
-  DDebug("ram_cache", "put %X %d %d size %d FREED", e->key.slice32(3), e->auxkey1, e->auxkey2, e->size);
+  DDebug("ram_cache", "put %X %" PRId64 " size %d FREED", e->key.slice32(3), e->auxkey, e->size);
   THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
 }
 
@@ -369,7 +367,7 @@ void
 RamCacheCLFUS::_victimize(RamCacheCLFUSEntry *e)
 {
   this->_objects--;
-  DDebug("ram_cache", "put %X %d %d size %d VICTIMIZED", e->key.slice32(3), e->auxkey1, e->auxkey2, e->size);
+  DDebug("ram_cache", "put %X %" PRId64 " size %d VICTIMIZED", e->key.slice32(3), e->auxkey, e->size);
   e->data          = nullptr;
   e->flag_bits.lru = 1;
   this->_lru[1].enqueue(e);
@@ -405,7 +403,7 @@ RamCacheCLFUS::_destroy(RamCacheCLFUSEntry *e)
   }
   uint32_t b = e->key.slice32(3) % this->_nbuckets;
   this->_bucket[b].remove(e);
-  DDebug("ram_cache", "put %X %d %d DESTROYED", e->key.slice32(3), e->auxkey1, e->auxkey2);
+  DDebug("ram_cache", "put %X %" PRId64 " DESTROYED", e->key.slice32(3), e->auxkey);
   THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
   return ret;
 }
@@ -552,7 +550,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
     ats_free(b);
     e->flag_bits.incompressible = 1;
   Lcontinue:;
-    DDebug("ram_cache", "compress %X %d %d %d %d %d %d %d", e->key.slice32(3), e->auxkey1, e->auxkey2, e->flag_bits.incompressible,
+    DDebug("ram_cache", "compress %X %" PRId64 " %d %d %d %d %d", e->key.slice32(3), e->auxkey, e->flag_bits.incompressible,
            e->flag_bits.compressed, e->len, e->compressed_len, this->_ncompressed);
     if (!e->lru_link.next) {
       break;
@@ -576,7 +574,7 @@ void RamCacheCLFUS::_requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims
 }
 
 int
-RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy, uint32_t auxkey1, uint32_t auxkey2)
+RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy, uint64_t auxkey)
 {
   if (!this->_max_bytes) {
     return 0;
@@ -587,7 +585,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
   double victim_value   = 0;
   while (e) {
     if (e->key == *key) {
-      if (e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2) {
+      if (e->auxkey == auxkey) {
         break;
       } else {
         e = this->_destroy(e); // discard when aux keys conflict
@@ -618,7 +616,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       check_accounting(this);
       e->flag_bits.copy       = copy;
       e->flag_bits.compressed = 0;
-      DDebug("ram_cache", "put %X %d %d size %d HIT", key->slice32(3), auxkey1, auxkey2, e->size);
+      DDebug("ram_cache", "put %X %" PRId64 " size %d HIT", key->slice32(3), auxkey, e->size);
       return 1;
     } else {
       this->_lru[1].remove(e);
@@ -642,7 +640,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
     uint16_t kk    = this->_seen[s];
     this->_seen[s] = k;
     if (this->_history >= this->_objects && kk != k) {
-      DDebug("ram_cache", "put %X %d %d size %d UNSEEN", key->slice32(3), auxkey1, auxkey2, size);
+      DDebug("ram_cache", "put %X %" PRId64 " size %d UNSEEN", key->slice32(3), auxkey, size);
       return 0;
     }
   }
@@ -656,7 +654,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
         this->_lru[1].enqueue(e);
       }
       this->_requeue_victims(victims);
-      DDebug("ram_cache", "put %X %d %d NO VICTIM", key->slice32(3), auxkey1, auxkey2);
+      DDebug("ram_cache", "put %X %" PRId64 " NO VICTIM", key->slice32(3), auxkey);
       return 0;
     }
     this->_average_value = (CACHE_VALUE(victim) + (this->_average_value * (AVERAGE_VALUE_OVER - 1))) / AVERAGE_VALUE_OVER;
@@ -681,7 +679,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       if (this->_bytes + victim->size + size > this->_max_bytes && victim_value > CACHE_VALUE(e)) {
         this->_requeue_victims(victims);
         this->_lru[1].enqueue(e);
-        DDebug("ram_cache", "put %X %d %d size %d INC %" PRId64 " HISTORY", key->slice32(3), auxkey1, auxkey2, e->size, e->hits);
+        DDebug("ram_cache", "put %X %" PRId64 " size %d INC %" PRId64 " HISTORY", key->slice32(3), auxkey, e->size, e->hits);
         return 0;
       }
     }
@@ -703,11 +701,10 @@ Linsert:
   if (e) {
     this->_history--; // move from history
   } else {
-    e          = THREAD_ALLOC(ramCacheCLFUSEntryAllocator, this_ethread());
-    e->key     = *key;
-    e->auxkey1 = auxkey1;
-    e->auxkey2 = auxkey2;
-    e->hits    = 1;
+    e         = THREAD_ALLOC(ramCacheCLFUSEntryAllocator, this_ethread());
+    e->key    = *key;
+    e->auxkey = auxkey;
+    e->hits   = 1;
     this->_bucket[i].push(e);
     if (this->_objects > this->_nbuckets) {
       ++this->_ibuckets;
@@ -732,28 +729,27 @@ Linsert:
   this->_lru[0].enqueue(e);
   e->len = len;
   check_accounting(this);
-  DDebug("ram_cache", "put %X %d %d size %d INSERTED", key->slice32(3), auxkey1, auxkey2, e->size);
+  DDebug("ram_cache", "put %X %" PRId64 " size %d INSERTED", key->slice32(3), auxkey, e->size);
   return 1;
 Lhistory:
   this->_requeue_victims(victims);
   check_accounting(this);
-  e          = THREAD_ALLOC(ramCacheCLFUSEntryAllocator, this_ethread());
-  e->key     = *key;
-  e->auxkey1 = auxkey1;
-  e->auxkey2 = auxkey2;
-  e->hits    = 1;
-  e->size    = data->block_size();
-  e->flags   = 0;
+  e         = THREAD_ALLOC(ramCacheCLFUSEntryAllocator, this_ethread());
+  e->key    = *key;
+  e->auxkey = auxkey;
+  e->hits   = 1;
+  e->size   = data->block_size();
+  e->flags  = 0;
   this->_bucket[i].push(e);
   e->flag_bits.lru = 1;
   this->_lru[1].enqueue(e);
   this->_history++;
-  DDebug("ram_cache", "put %X %d %d HISTORY", key->slice32(3), auxkey1, auxkey2);
+  DDebug("ram_cache", "put %X %" PRId64 " HISTORY", key->slice32(3), auxkey);
   return 0;
 }
 
 int
-RamCacheCLFUS::fixup(const CryptoHash *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2)
+RamCacheCLFUS::fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey)
 {
   if (!this->_max_bytes) {
     return 0;
@@ -761,9 +757,8 @@ RamCacheCLFUS::fixup(const CryptoHash *key, uint32_t old_auxkey1, uint32_t old_a
   uint32_t i            = key->slice32(3) % this->_nbuckets;
   RamCacheCLFUSEntry *e = this->_bucket[i].head;
   while (e) {
-    if (e->key == *key && e->auxkey1 == old_auxkey1 && e->auxkey2 == old_auxkey2) {
-      e->auxkey1 = new_auxkey1;
-      e->auxkey2 = new_auxkey2;
+    if (e->key == *key && e->auxkey == old_auxkey) {
+      e->auxkey = new_auxkey;
       return 1;
     }
     e = e->hash_link.next;
