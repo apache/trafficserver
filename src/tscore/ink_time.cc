@@ -44,37 +44,6 @@
  *===========================================================================*/
 
 /*---------------------------------------------------------------------------*
-  uint64_t microseconds(which)
-
-  returns microsecond-resolution clock info
- *---------------------------------------------------------------------------*/
-
-uint64_t
-ink_microseconds(int which)
-{
-  struct timeval tp;
-  struct rusage ru;
-
-  switch (which) {
-  case MICRO_REAL:
-    gettimeofday(&tp, nullptr);
-    break;
-  case MICRO_USER:
-    getrusage(RUSAGE_SELF, &ru);
-    tp = ru.ru_utime;
-    break;
-  case MICRO_SYS:
-    getrusage(RUSAGE_SELF, &ru);
-    tp = ru.ru_stime;
-    break;
-  default:
-    return 0;
-  }
-
-  return tp.tv_sec * 1000000 + tp.tv_usec;
-}
-
-/*---------------------------------------------------------------------------*
 
   double ink_time_wall_seconds()
 

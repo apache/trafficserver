@@ -51,12 +51,8 @@ typedef time_t ink_time_t;
 
  *===========================================================================*/
 
-#define MICRO_USER 1
-#define MICRO_SYS 2
-#define MICRO_REAL 3
 #define UNDEFINED_TIME ((time_t)0)
 
-uint64_t ink_microseconds(int which);
 double ink_time_wall_seconds();
 
 int cftime_replacement(char *s, int maxsize, const char *format, const time_t *clock);
