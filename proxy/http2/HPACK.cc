@@ -231,9 +231,8 @@ namespace HpackStaticTable
       std::string_view name  = STATIC_TABLE[index].name;
       std::string_view value = STATIC_TABLE[index].value;
 
-      // TODO: replace `strcasecmp` with `memcmp`
       // Check whether name (and value) are matched
-      if (strcasecmp(header.name, name) == 0) {
+      if (memcmp(header.name, name) == 0) {
         if (memcmp(header.value, value) == 0) {
           result.index      = index;
           result.index_type = HpackIndex::STATIC;
@@ -619,19 +618,8 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   }
   *(p++) = flag;
 
-  // Convert field name to lower case to follow HTTP2 spec.
-  // This conversion is needed because WKSs in MIMEFields is old fashioned
-  int name_len              = header.name.size();
-  const char *original_name = header.name.data();
-
-  ts::LocalBuffer<char> local_buffer(name_len);
-  char *lower_name = local_buffer.data();
-  for (int i = 0; i < name_len; i++) {
-    lower_name[i] = ParseRules::ink_tolower(original_name[i]);
-  }
-
   // Name String
-  len = xpack_encode_string(p, buf_end, lower_name, name_len);
+  len = xpack_encode_string(p, buf_end, header.name.data(), header.name.size());
   if (len == -1) {
     return -1;
   }
@@ -645,8 +633,8 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 
   p += len;
 
-  Debug("hpack_encode", "Encoded field: %.*s: %.*s", name_len, lower_name, static_cast<int>(header.value.size()),
-        header.value.data());
+  Debug("hpack_encode", "Encoded field: %.*s: %.*s", static_cast<int>(header.name.size()), header.name.data(),
+        static_cast<int>(header.value.size()), header.value.data());
 
   return p - buf_start;
 }
@@ -922,16 +910,24 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
 
   MIMEFieldIter field_iter;
   for (MIMEField *field = hdr->iter_get_first(&field_iter); field != nullptr; field = hdr->iter_get_next(&field_iter)) {
-    std::string_view name  = field->name_get();
+    // Convert field name to lower case to follow HTTP2 spec
+    // This conversion is needed because WKSs in MIMEFields is old fashioned
+    std::string_view original_name = field->name_get();
+    int name_len                   = original_name.size();
+    ts::LocalBuffer<char> local_buffer(name_len);
+    char *lower_name = local_buffer.data();
+    for (int i = 0; i < name_len; i++) {
+      lower_name[i] = ParseRules::ink_tolower(original_name[i]);
+    }
+
+    std::string_view name{lower_name, static_cast<size_t>(name_len)};
     std::string_view value = field->value_get();
 
     // Choose field representation (See RFC7541 7.1.3)
     // - Authorization header obviously should not be indexed
     // - Short Cookie header should not be indexed because of low entropy
     HpackField field_type;
-    // TODO: replace `strcasecmp` with `memcmp`
-    if ((value.size() < 20 && strcasecmp(name, HPACK_HDR_FIELD_COOKIE) == 0) ||
-        (strcasecmp(name, HPACK_HDR_FIELD_AUTHORIZATION) == 0)) {
+    if ((value.size() < 20 && memcmp(name, HPACK_HDR_FIELD_COOKIE) == 0) || memcmp(name, HPACK_HDR_FIELD_AUTHORIZATION) == 0) {
       field_type = HpackField::NEVERINDEX_LITERAL;
     } else {
       field_type = HpackField::INDEXED_LITERAL;
