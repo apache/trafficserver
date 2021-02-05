@@ -533,6 +533,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssu", field);
 
+  field = new LogField("client_sec_alpn", "cqssa", LogField::STRING, &LogAccess::marshal_client_security_alpn,
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqssa", field);
+
   Ptr<LogFieldAliasTable> finish_status_map = make_ptr(new LogFieldAliasTable);
   finish_status_map->init(N_LOG_FINISH_CODE_TYPES, LOG_FINISH_FIN, "FIN", LOG_FINISH_INTR, "INTR", LOG_FINISH_TIMEOUT, "TIMEOUT");
 

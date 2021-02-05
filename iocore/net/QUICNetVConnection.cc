@@ -2133,6 +2133,8 @@ QUICNetVConnection::_start_application()
       app_name_len = IP_PROTO_TAG_HTTP_QUIC.size();
     }
 
+    this->set_negotiated_protocol_id({reinterpret_cast<const char *>(app_name), static_cast<size_t>(app_name_len)});
+
     if (netvc_context == NET_VCONNECTION_IN) {
       if (!this->setSelectedProtocol(app_name, app_name_len)) {
         this->_handle_error(std::make_unique<QUICConnectionError>(QUICTransErrorCode::PROTOCOL_VIOLATION));

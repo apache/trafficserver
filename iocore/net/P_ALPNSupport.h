@@ -61,6 +61,9 @@ public:
     return npnSet;
   }
 
+  void set_negotiated_protocol_id(const ts::TextView &proto);
+  int get_negotiated_protocol_id() const;
+
 private:
   const SSLNextProtocolSet *npnSet = nullptr;
   SessionProtocolSet protoenabled;
@@ -68,4 +71,21 @@ private:
   unsigned char *npn        = nullptr;
   size_t npnsz              = 0;
   Continuation *npnEndpoint = nullptr;
+  int _negotiated_proto_id  = SessionProtocolNameRegistry::INVALID;
 };
+
+//
+// Inline functions
+//
+
+inline void
+ALPNSupport::set_negotiated_protocol_id(const ts::TextView &proto)
+{
+  _negotiated_proto_id = globalSessionProtocolNameRegistry.indexFor(proto);
+}
+
+inline int
+ALPNSupport::get_negotiated_protocol_id() const
+{
+  return _negotiated_proto_id;
+}

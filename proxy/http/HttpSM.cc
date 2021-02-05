@@ -525,6 +525,8 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
     client_cipher_suite      = cipher ? cipher : "-";
     const char *curve        = ssl_vc->getSSLCurve();
     client_curve             = curve ? curve : "-";
+    client_alpn_id           = ssl_vc->get_negotiated_protocol_id();
+
     if (!client_tcp_reused) {
       // Copy along the TLS handshake timings
       milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = ssl_vc->sslHandshakeBeginTime;
