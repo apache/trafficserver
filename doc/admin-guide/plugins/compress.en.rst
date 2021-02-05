@@ -104,7 +104,7 @@ versions of the content as :term:`alternates <alternate>`. When set to
 by the origin. Enabled by default.
 
 range-request
------
+-------------
 
 When set to ``true``, causes |TS| to compress responses to Range Requests.
 Disabled by default. Setting this to true while setting cache to false leads to delivering corrupted content.
