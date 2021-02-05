@@ -273,7 +273,7 @@ main(int argc, const char **argv)
     diags->show_location                      = SHOW_LOCATION_DEBUG;
   }
 
-  argparser_runroot_handler(engine.arguments.get("--run-root").value(), argv[0]);
+  argparser_runroot_handler(engine.arguments.get("run-root").value(), argv[0]);
   Layout::create();
 
   // This is a little bit of a hack, for now it'll suffice.
