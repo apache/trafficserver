@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include <chrono>
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_hrtime.h"
@@ -43,7 +45,17 @@
 
  *===========================================================================*/
 
-typedef time_t ink_time_t;
+using ink_time_t  = time_t;
+using ts_clock    = std::chrono::system_clock;
+using ts_time     = ts_clock::time_point;
+using ts_hr_clock = std::chrono::high_resolution_clock;
+using ts_hr_time  = ts_hr_clock::time_point;
+
+using ts_seconds      = std::chrono::seconds;
+using ts_milliseconds = std::chrono::milliseconds;
+
+/// Equivalent of 0 for @c ts_time. This should be used as the default initializer.
+static constexpr ts_time TS_TIME_ZERO;
 
 /*===========================================================================*
 
