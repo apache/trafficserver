@@ -20,7 +20,7 @@ Cache Fill Plugin
 The speed of the response served from the cache depends on the cache speed and the client filling the object.
 This dependency could significantly impact all the clients requesting the object.
 This plugin tries to eliminate the dependence by making the original request spawn a background request to fill the cache.
-The initial version of this plugin relays the initial request to the origin server instead of waiting for the background request to start filling the cache as there is no easier way to find the wait time. 
+The initial version of this plugin relays the initial request to the origin server instead of waiting for the background request to start filling the cache as there is no easier way to find the wait time.
 This plugin doesn't provide any improvement for smaller objects but could also degrade the performance as two outgoing requests for every cache update.
 
 
