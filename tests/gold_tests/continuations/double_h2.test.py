@@ -40,8 +40,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-L
 server.addResponse("sessionfile.log", request_header, response_header)
 
 # add ssl materials like key, certificates for the server
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 # add port and remap rule
 ts.Disk.remap_config.AddLine(

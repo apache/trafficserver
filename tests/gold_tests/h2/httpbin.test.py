@@ -42,8 +42,7 @@ httpbin = Test.MakeHttpBinServer("httpbin")
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
 
 # add ssl materials like key, certificates for the server
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(httpbin.Variables.Port)

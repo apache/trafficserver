@@ -54,8 +54,7 @@ ts = Test.MakeATSProcess("ts", select_ports=True,
                          enable_tls=True, enable_cache=False)
 
 # add ssl materials like key, certificates for the server
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Setup.CopyAs('rules/graceful_shutdown.conf', Test.RunDirectory)
 

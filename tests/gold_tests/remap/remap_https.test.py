@@ -37,8 +37,7 @@ server.addResponse("sessionlog.json", request_header, response_header)
 server2.addResponse("sessionlog.json", request_header, response_header)
 
 # add ssl materials like key, certificates for the server
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
