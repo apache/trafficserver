@@ -47,9 +47,7 @@ server.addResponse("sessionfile.log", request_header, response_header)
 # to the origin server.
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
 
-ts.addSSLfile("../../remap/ssl/server.pem")
-ts.addSSLfile("../../remap/ssl/server.key")
-
+ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
     # 'proxy.config.diags.debug.enabled': 1,

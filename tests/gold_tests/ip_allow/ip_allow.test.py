@@ -77,8 +77,7 @@ response = {
 server.addResponse("sessionlog.json", request, response)
 
 # Configure TLS for Traffic Server for HTTP/2.
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'

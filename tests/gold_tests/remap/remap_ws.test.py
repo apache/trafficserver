@@ -33,8 +33,7 @@ response_header = {
     "body": None}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),

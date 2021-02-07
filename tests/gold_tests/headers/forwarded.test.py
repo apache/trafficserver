@@ -79,8 +79,7 @@ forwarded_log_id.Content = "forwarded.gold"
 
 def baselineTsSetup(ts):
 
-    ts.addSSLfile("../remap/ssl/server.pem")
-    ts.addSSLfile("../remap/ssl/server.key")
+    ts.addDefaultSSLFiles()
 
     ts.Disk.records_config.update({
         # 'proxy.config.diags.debug.enabled': 1,

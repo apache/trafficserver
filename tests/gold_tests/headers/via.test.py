@@ -42,8 +42,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # These should be promoted rather than other tests like this reaching around.
-ts.addSSLfile("../remap/ssl/server.pem")
-ts.addSSLfile("../remap/ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
     'proxy.config.http.insert_request_via_str': 4,

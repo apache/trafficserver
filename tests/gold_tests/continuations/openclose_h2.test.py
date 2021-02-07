@@ -40,8 +40,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-L
                    "timestamp": "1469733493.993", "body": ""}
 
 # add ssl materials like key, certificates for the server
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
                                     'ssntxnorder_verify.so'), ts)
