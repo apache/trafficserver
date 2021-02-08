@@ -35,11 +35,13 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
 	$(TS_INCLUDES) \
-	@OPENSSL_INCLUDES@
+	@OPENSSL_INCLUDES@ \
+	@BORINGOCSP_INCLUDES@
 
 traffic_server_traffic_server_LDFLAGS = \
 	$(AM_LDFLAGS) \
-	@YAMLCPP_LDFLAGS@
+	@YAMLCPP_LDFLAGS@ \
+	@BORINGOCSP_LDFLAGS@
 
 traffic_server_traffic_server_SOURCES = \
 	traffic_server/Crash.cc \
@@ -87,6 +89,7 @@ traffic_server_traffic_server_LDADD = \
 	@LIBPROFILER@ \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
+	@BORINGOCSP_LIBS@ \
 	-lm
 
 if IS_DARWIN
