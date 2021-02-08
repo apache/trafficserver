@@ -1018,8 +1018,6 @@ public:
   static bool is_cache_hit(CacheLookupResult_t r);
   static bool is_fresh_cache_hit(CacheLookupResult_t r);
 
-  static bool has_request_body(State *s, ProxyTransaction *txn);
-
   static void build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_request, HTTPVersion outgoing_version);
   static void build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing_response, HTTPVersion outgoing_version,
                              HTTPStatus status_code, const char *reason_phrase = nullptr);

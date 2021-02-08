@@ -2110,7 +2110,9 @@ HttpSM::state_send_server_request_header(int event, void *data)
     free_MIOBuffer(server_entry->write_buffer);
     server_entry->write_buffer = nullptr;
     method                     = t_state.hdr_info.server_request.method_get_wksidx();
-    if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE && HttpTransact::has_request_body(&t_state, ua_txn)) {
+    if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
+        ua_txn->has_request_body(t_state.hdr_info.request_content_length,
+                                 t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
       if (post_transform_info.vc) {
         setup_transform_to_server_transfer();
       } else {
@@ -6152,7 +6154,8 @@ HttpSM::attach_server_session(PoolableSession *s)
   server_session->set_active_timeout(get_server_active_timeout());
 
   // Do we need Transfer_Encoding?
-  if (HttpTransact::has_request_body(&t_state, ua_txn)) {
+  if (ua_txn->has_request_body(t_state.hdr_info.request_content_length,
+                               t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
     // See if we need to insert a chunked header
     if (!t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH)) {
       // Stuff in a TE setting so we treat this as chunked, sort of.

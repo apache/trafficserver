@@ -115,6 +115,8 @@ public:
   bool is_closed() const;
   IOBufferReader *response_get_data_reader() const;
 
+  bool has_request_body(int64_t content_length, bool is_chunked_set) const override;
+
   void mark_milestone(Http2StreamMilestone type);
 
   void increment_data_length(uint64_t length);
@@ -176,6 +178,7 @@ private:
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
 
   bool trailing_header = false;
+  bool has_body        = false;
 
   // A brief discussion of similar flags and state variables:  _state, closed, terminate_stream
   //
