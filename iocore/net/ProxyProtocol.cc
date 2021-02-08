@@ -62,6 +62,8 @@ constexpr uint16_t PPv2_ADDR_LEN_INET  = 4 + 4 + 2 + 2;
 constexpr uint16_t PPv2_ADDR_LEN_INET6 = 16 + 16 + 2 + 2;
 constexpr uint16_t PPv2_ADDR_LEN_UNIX  = 108 + 108;
 
+const ts::BWFSpec ADDR_ONLY_FMT{"::a"};
+
 struct PPv2Hdr {
   uint8_t sig[12]; ///< preface
   uint8_t ver_cmd; ///< protocol version and command
@@ -334,19 +336,11 @@ proxy_protocol_v1_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
   bw.write(PPv1_DELIMITER);
 
   // the layer 3 source address
-  char src_ip_buf[INET6_ADDRSTRLEN];
-  ats_ip_ntop(pp_info.src_addr, src_ip_buf, sizeof(src_ip_buf));
-  size_t src_ip_len = strnlen(src_ip_buf, sizeof(src_ip_buf));
-
-  bw.write(src_ip_buf, src_ip_len);
+  bwformat(bw, ADDR_ONLY_FMT, pp_info.src_addr);
   bw.write(PPv1_DELIMITER);
 
   // the layer 3 destination address
-  char dst_ip_buf[INET6_ADDRSTRLEN];
-  ats_ip_ntop(pp_info.dst_addr, dst_ip_buf, sizeof(dst_ip_buf));
-  size_t dst_ip_len = strnlen(dst_ip_buf, sizeof(dst_ip_buf));
-
-  bw.write(dst_ip_buf, dst_ip_len);
+  bwformat(bw, ADDR_ONLY_FMT, pp_info.dst_addr);
   bw.write(PPv1_DELIMITER);
 
   // TCP source port
