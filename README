@@ -101,6 +101,7 @@ plugins to build large scale web applications.
     pkg-config
     libmodule-install-perl
     gcc/g++ or clang/clang++
+    zlib1g-dev
     libssl-dev
     libpcre3-dev
     libcap-dev (optional, highly recommended)
