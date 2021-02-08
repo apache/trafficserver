@@ -32,8 +32,8 @@ server_bar = Test.MakeOriginServer("server_bar",
                                             "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)})
 server_wild = Test.MakeOriginServer("server_wild",
                                     ssl=True,
-                                    options={"--key": "{0}/wild.key".format(Test.RunDirectory),
-                                             "--cert": "{0}/wild-signed.pem".format(Test.RunDirectory)})
+                                    options={"--key": "{0}/signed-wild.key".format(Test.RunDirectory),
+                                             "--cert": "{0}/signed-wild.pem".format(Test.RunDirectory)})
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -56,8 +56,8 @@ ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
-ts.addSSLfile("ssl/wild.key")
-ts.addSSLfile("ssl/wild-signed.pem")
+ts.addSSLfile("ssl/signed-wild.key")
+ts.addSSLfile("ssl/signed-wild.pem")
 
 ts.Disk.remap_config.AddLine(
     'map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
@@ -111,8 +111,8 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
-tr.Setup.Copy("ssl/wild-signed.pem")
-tr.Setup.Copy("ssl/wild.key")
+tr.Setup.Copy("ssl/signed-wild.pem")
+tr.Setup.Copy("ssl/signed-wild.key")
 tr.Processes.Default.Command = "curl -v -k -H \"host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_foo)
