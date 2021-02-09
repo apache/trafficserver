@@ -1,0 +1,335 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - 200_ok_response: &200_ok_response
+      server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 16 ]
+          - [ Connection, close ]
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /one
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ X-Request-1, ultra_sensitive ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 1 ]
+
+    proxy-request:
+      headers:
+        fields:
+        # The field should get through to the server. The traffic dump, though,
+        # should not contain it since x-request-1 is a sensitive field.
+        - [ X-Request-1, { value: ultra_sensitive, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Set-Cookie, classified_not_for_logging ]
+
+    proxy-response:
+      status: 200
+      headers:
+        field:
+        # Again, the sensitive set-cookie should get through to the client, it
+        # just shouldn't be dumped in traffic dumps.
+        - [ Set-Cookie, { value: classified_not_for_logging, as: equal } ]
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /two
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ X-Request-2, also_very_sensitive ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 2 ]
+
+    proxy-request:
+      headers:
+        fields:
+        # The field should get through to the server. The traffic dump, though,
+        # should not contain it since x-request-1 is a sensitive field.
+        - [ X-Request-2, { value: also_very_sensitive, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Set-Cookie, classified_not_for_logging ]
+
+    proxy-response:
+      status: 200
+      headers:
+        field:
+        # Again, the sensitive set-cookie should get through to the client, it
+        # just shouldn't be dumped in traffic dumps.
+        - [ Set-Cookie, { value: classified_not_for_logging, as: equal } ]
+
+- transactions:
+  - client-request:
+      method: GET
+      url: "http://www.some.host.com/candy"
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.some.host.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 3 ]
+
+    proxy-request:
+      # Having a mismatch in the Host header and the request target is
+      # malformed. ATS, by default, deals with this by choosing the host from
+      # the request target, making that the Host header value, and then
+      # adjusting the request target to just have the path.
+      url:
+      - [ scheme, { as: absent } ]
+      - [ host, { as: absent } ]
+      - [ path, { value: /candy, as: equal } ]
+
+      headers:
+        fields:
+        - [ Host, { value: www.some.host.com, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Set-Cookie, classified_not_for_logging ]
+
+    proxy-response:
+      status: 200
+      headers:
+        field:
+        - [ Set-Cookie, { value: classified_not_for_logging, as: equal } ]
+
+- transactions:
+  # The test expects a POST with a body of 12345 bytes.
+  - client-request:
+      method: POST
+      url: /post/with/body
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ Content-Length, 12345 ]
+        - [ uuid, 4 ]
+
+    proxy-request:
+      url:
+      - [ path, { value: /post/with/body, as: equal } ]
+
+      headers:
+        fields:
+        - [ Host, { value: www.notls.com, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Set-Cookie, classified_not_for_logging ]
+
+    proxy-response:
+      status: 200
+      headers:
+        field:
+        - [ Set-Cookie, { value: classified_not_for_logging, as: equal } ]
+
+- transactions:
+
+  # Make a couple requests for the same target and expect it to be served out
+  # of the cache.
+
+  - client-request:
+      method: GET
+      url: /expect/this/to/be/cached
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 5 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        field:
+        - [ Cache-Control, { value: max-age=300, as: equal } ]
+
+# The delay here is needed because it gives the ATS cache time to finish IO.
+- delay: 50ms
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /expect/this/to/be/cached
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 6 ]
+
+    # We do not expect this to make it to the server since it should be served
+    # out of the cache. If it makes it to the server, reply with a 503 so
+    # we can detect that this happened.
+    server-response:
+      status: 503
+      reason: Service Unavailable
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+
+    # Expect the cached 200 response.
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /first
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 7 ]
+
+    <<: *200_ok_response
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: GET
+      url: /second
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 8 ]
+
+    <<: *200_ok_response
+
+    proxy-response:
+      status: 200
+
+- protocol: [ {name: tls, sni: www.tls.com },
+              {name: tcp },
+              {name: ip} ]
+
+  transactions:
+  - client-request:
+      method: GET
+      url: /tls
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.tls.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 9 ]
+
+    <<: *200_ok_response
+
+    proxy-response:
+      status: 200
+
+- protocol: [ {name: http, version: 2},
+              {name: tls, sni: www.tls.com},
+              {name: tcp},
+              {name: ip} ]
+
+  transactions:
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.tls.com ]
+        - [ :path, /h2_first ]
+        - [ uuid, 10 ]
+
+    <<: *200_ok_response
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.tls.com ]
+        - [ :path, /h2_second ]
+        - [ uuid, 11 ]
+
+    <<: *200_ok_response
+
+    proxy-response:
+      status: 200
+
+- protocol: [ {name: tls, sni: www.client_only_tls.com},
+              {name: tcp},
+              {name: ip} ]
+
+  transactions:
+  - client-request:
+      method: GET
+      url: /client_only_tls
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.client_only_tls.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 12 ]
+
+    <<: *200_ok_response
+
+    proxy-response:
+      status: 200
+

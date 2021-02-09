@@ -26,17 +26,10 @@ Test.SkipUnless(
     Condition.PluginExists('traffic_dump.so'),
 )
 
-# Configure the origin server.
-server = Test.MakeOriginServer("server")
-
-request_header = {"headers": "GET / HTTP/1.1\r\n"
-                  "Host: bob\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK"
-                   "\r\nConnection: close\r\nContent-Length: 0"
-                   "\r\nSet-Cookie: classified_not_for_logging\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_header)
+replay_file = "replay/various_sni.yaml"
+server = Test.MakeVerifierServerProcess(
+    "server-various-sni", replay_file,
+    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
 
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
@@ -45,9 +38,6 @@ replay_dir = os.path.join(ts.RunDirectory, "ts", "log")
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
-
-ts.Setup.Copy("ssl/signed-foo.pem")
-ts.Setup.Copy("ssl/signed-foo.key")
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
@@ -68,20 +58,18 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
+    'map / https://127.0.0.1:{0}'.format(server.Variables.https_port)
 )
 
 ts.Disk.sni_yaml.AddLines([
     'sni:',
-    '- fqdn: boblite',
-    '  verify_client: STRICT',
+    '- fqdn: bob.com',
+    '  verify_client: NONE',
     '  host_sni_policy: PERMISSIVE',
-    '- fqdn: bob',
-    '  verify_client: STRICT',
 ])
 
-# Configure traffic_dump's SNI filter to only dump connections with SNI bob.
-sni_filter = "bob"
+# Configure traffic_dump's SNI filter to only dump connections with SNI bob.com.
+sni_filter = "bob.com"
 ts.Disk.plugin_config.AddLine(
     'traffic_dump.so --logdir {0} --sample 1 --limit 1000000000 '
     '--sni-filter "{1}"'.format(replay_dir, sni_filter)
@@ -110,49 +98,23 @@ ts.Disk.File(replay_file_session_2, exists=False)
 replay_file_session_2 = os.path.join(replay_dir, "127", "0000000000000002")
 ts.Disk.File(replay_file_session_2, exists=False)
 
-#
-# Test 1: Verify dumping a session with the desired SNI and not dumping
-#         the session with the other SNI.
-#
-
-# Execute the first transaction with an SNI of bob.
-tr = Test.AddTestRun("Verify dumping of a session with the filtered SNI")
-tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = \
-    ('curl --http2 --tls-max 1.2 -k -H"Host: bob" --resolve "bob:{0}:127.0.0.1" '
-     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://bob:{0}'.format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/200_sni_bob.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-session_1_protocols = "http,tls,tcp,ip"
-# Observe that the sni.yaml config dictates STRICT as the verify_client
-# attribute.
-session_1_tls_features = 'sni:bob,proxy-verify-mode:7,proxy-provided-cert:true'
-
-# Execute the second transaction with an SNI of dave.
-tr = Test.AddTestRun("Verify that a session of a different SNI is not dumped.")
-tr.Processes.Default.Command = \
-    ('curl --tls-max 1.2 -k -H"Host: dave" --resolve "dave:{0}:127.0.0.1" '
-     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://dave:{0}'.format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/200_sni_dave.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
-# Execute the third transaction without any SNI.
-tr = Test.AddTestRun("Verify that a session of a non-existent SNI is not dumped.")
-tr.Processes.Default.Command = \
-    ('curl --tls-max 1.2 -k -H"Host: bob"'
-     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://127.0.0.1:{0}'.format(ts.Variables.ssl_port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/200_bob_no_sni.gold"
+# Run the traffic with connections containing various SNI values.
+tr = Test.AddTestRun("Test SNI filter with various SNI values in the handshakes.")
+# Use the same port across the two servers so that the remap config will work
+# across both.
+server_port = server.Variables.http_port
+tr.AddVerifierClientProcess(
+    "client-various-sni", replay_file, https_ports=[ts.Variables.ssl_port],
+    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
 # Verify the properties of the replay file for the dumped transaction.
 tr = Test.AddTestRun("Verify the json content of the first session")
+session_1_protocols = "http,tls,tcp,ip"
+session_1_tls_features = 'sni:bob.com,proxy-verify-mode:0,proxy-provided-cert:true'
 verify_replay = "verify_replay.py"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}" --client-tls-features "{4}"'.format(
@@ -162,5 +124,3 @@ tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}" --c
     session_1_protocols,
     session_1_tls_features)
 tr.Processes.Default.ReturnCode = 0
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
