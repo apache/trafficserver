@@ -65,6 +65,20 @@ TEST_CASE("QUICPacketHeaderProtector")
   BIO *key_bio(BIO_new_mem_buf(server_key, sizeof(server_key)));
   EVP_PKEY *pkey = PEM_read_bio_PrivateKey(key_bio, nullptr, nullptr, nullptr);
   SSL_CTX_use_PrivateKey(server_ssl_ctx, pkey);
+  SSL_CTX_set_alpn_select_cb(
+    server_ssl_ctx,
+    [](SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen, void *) {
+      auto ret = SSL_select_next_proto(const_cast<unsigned char **>(out), outlen,
+                                       reinterpret_cast<const unsigned char *>("\6h3-foo"), 7, in, inlen);
+      if (ret == OPENSSL_NPN_NEGOTIATED) {
+        return SSL_TLSEXT_ERR_OK;
+      } else {
+        *out    = nullptr;
+        *outlen = 0;
+        return SSL_TLSEXT_ERR_NOACK;
+      }
+    },
+    nullptr);
 
   SECTION("Long header", "[quic]")
   {
@@ -85,9 +99,11 @@ TEST_CASE("QUICPacketHeaderProtector")
 
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
-    NetVCOptions netvc_options;
-    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
-    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
+    NetVCOptions netvc_options_client;
+    NetVCOptions netvc_options_server;
+    netvc_options_client.alpn_protos = "\6h3-foo";
+    QUICHandshakeProtocol *client    = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options_client);
+    QUICHandshakeProtocol *server    = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options_server);
 
     CHECK(client->initialize_key_materials({reinterpret_cast<const uint8_t *>("\x83\x94\xc8\xf0\x3e\x51\x57\x00"), 8},
                                            QUIC_SUPPORTED_VERSIONS[0]));
@@ -124,11 +140,13 @@ TEST_CASE("QUICPacketHeaderProtector")
 
     QUICPacketProtectionKeyInfo pp_key_info_client;
     QUICPacketProtectionKeyInfo pp_key_info_server;
-    NetVCOptions netvc_options;
+    NetVCOptions netvc_options_client;
+    NetVCOptions netvc_options_server;
+    netvc_options_client.alpn_protos = "\6h3-foo";
     MockQUICConnection mock_client_connection;
     MockQUICConnection mock_server_connection;
-    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options);
-    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options);
+    QUICHandshakeProtocol *client = new QUICTLS(pp_key_info_client, client_ssl_ctx, NET_VCONNECTION_OUT, netvc_options_client);
+    QUICHandshakeProtocol *server = new QUICTLS(pp_key_info_server, server_ssl_ctx, NET_VCONNECTION_IN, netvc_options_server);
     SSL_set_ex_data(static_cast<QUICTLS *>(client)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_client_connection);
     SSL_set_ex_data(static_cast<QUICTLS *>(server)->ssl_handle(), QUIC::ssl_quic_qc_index, &mock_server_connection);
 
