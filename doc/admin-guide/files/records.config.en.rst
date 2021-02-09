@@ -2419,6 +2419,15 @@ DNS
    ``2`` TCP_ONLY:  |TS| always talks to nameservers over TCP.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.dns.local_ipv4 STRING NULL
+
+   Local IPV4 address to bind to in order to make DNS requests
+
+.. ts:cv:: CONFIG proxy.config.dns.local_ipv6 STRING NULL
+
+   Local IPV6 address to bind to in order to make DNS requests
+
+
 HostDB
 ======
 
