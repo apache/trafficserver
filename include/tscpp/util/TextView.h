@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <string>
 #include <string_view>
+#include <limits>
 
 /** Compare views with ordering, ignoring case.
  *
