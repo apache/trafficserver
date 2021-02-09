@@ -69,7 +69,7 @@ TEST_CASE("QUICPacketHeaderProtector")
     server_ssl_ctx,
     [](SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen, void *) {
       auto ret = SSL_select_next_proto(const_cast<unsigned char **>(out), outlen,
-                                       reinterpret_cast<const unsigned char *>("\6h3-foo"), 6, in, inlen);
+                                       reinterpret_cast<const unsigned char *>("\6h3-foo"), 7, in, inlen);
       if (ret == OPENSSL_NPN_NEGOTIATED) {
         return SSL_TLSEXT_ERR_OK;
       } else {
