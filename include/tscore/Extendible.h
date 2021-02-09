@@ -44,6 +44,7 @@
 #include <typeinfo>
 #include <type_traits>
 #include <unordered_map>
+#include <limits>
 
 #include "tscore/AtomicBit.h"
 #include "tscore/ink_assert.h"
