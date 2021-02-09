@@ -139,6 +139,11 @@ partial_blind_route       Destination as an FQDN and port, separated by a colon 
                           In addition partial_blind_route creates a new TLS connection to the specified origin.
                           It does not interpret the decrypted data before passing it to the origin TLS
                           connection, so the contents do not need to be HTTP.
+
+tunnel_alpn               List of ALPN Protocol Ids for Partial Blind Tunnel.
+
+                          ATS negotiates application protocol with the client on behalf of the origin server.
+                          This only works with ``partial_blind_route``.
 ========================= ========================================================================================
 
 Client verification, via ``verify_client``, corresponds to setting

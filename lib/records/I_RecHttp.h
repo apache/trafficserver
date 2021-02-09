@@ -167,6 +167,8 @@ public:
   static int constexpr MAX     = SessionProtocolSet::MAX; ///< Maximum # of registered names.
   static int constexpr INVALID = -1;                      ///< Normalized invalid index value.
 
+  static std::string_view convert_openssl_alpn_wire_format(int index);
+
   using TextView = ts::TextView;
 
   /// Default constructor.
@@ -194,6 +196,15 @@ public:
       @return A pointer to the name or @c nullptr if the index isn't registered.
   */
   TextView nameFor(int index) const;
+
+  /** Convert an @a index to the corresponding name in OpenSSL ALPN wire format.
+
+      OpenSSL ALPN wire format (vector of non-empty, 8-bit length-prefixed, byte strings)
+      https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_alpn_protos.html
+
+      @return A pointer to the name or @c nullptr if the index isn't registered.
+  */
+  static TextView wireNameFor(int index);
 
   /// Mark protocols as present in @a sp_set based on the names in @a value.
   /// The names can be separated by ;/|,: and space.

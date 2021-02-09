@@ -38,6 +38,7 @@ TSDECL(verify_client_ca_certs);
 TSDECL(tunnel_route);
 TSDECL(forward_route);
 TSDECL(partial_blind_route);
+TSDECL(tunnel_alpn);
 TSDECL(verify_server_policy);
 TSDECL(verify_server_properties);
 TSDECL(verify_origin_server);
@@ -88,6 +89,7 @@ struct YamlSNIConfig {
     std::string ip_allow;
     bool protocol_unset = true;
     unsigned long protocol_mask;
+    std::vector<int> tunnel_alpn{};
 
     void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
   };

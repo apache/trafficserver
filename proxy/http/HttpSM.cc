@@ -5168,6 +5168,14 @@ HttpSM::do_http_server_open(bool raw)
     SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_txn->get_netvc());
     if (ssl_vc && raw) {
       tls_upstream = ssl_vc->upstream_tls();
+
+      // ALPN on TLS Partial Blind Tunnel - set negotiated ALPN id
+      if (ssl_vc->tunnel_type() == SNIRoutingType::PARTIAL_BLIND) {
+        int pid = ssl_vc->get_negotiated_protocol_id();
+        if (pid != SessionProtocolNameRegistry::INVALID) {
+          opt.alpn_protos = SessionProtocolNameRegistry::convert_openssl_alpn_wire_format(pid);
+        }
+      }
     }
     opt.local_port = ua_txn->get_outbound_port();
 

@@ -198,6 +198,12 @@ size_t const OPT_OUTBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_OUTBOUND_IP_
 size_t const OPT_INBOUND_IP_PREFIX_LEN  = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
 size_t const OPT_HOST_RES_PREFIX_LEN    = strlen(HttpProxyPort::OPT_HOST_RES_PREFIX);
 size_t const OPT_PROTO_PREFIX_LEN       = strlen(HttpProxyPort::OPT_PROTO_PREFIX);
+
+constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_0_9("\x8http/0.9");
+constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_1_0("\x8http/1.0");
+constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_1_1("\x8http/1.1");
+constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_2("\x2h2");
+constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_3("\x2h3");
 } // namespace
 
 namespace
@@ -758,6 +764,31 @@ RecNormalizeProtoTag(const char *tag)
 {
   auto findResult = TSProtoTags.find(tag);
   return findResult == TSProtoTags.end() ? nullptr : findResult->data();
+}
+
+/**
+   Convert TS_ALPN_PROTOCOL_INDEX_* into OpenSSL ALPN Wire Format
+
+   https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_alpn_protos.html
+
+   TODO: support dynamic generation of wire format
+ */
+std::string_view
+SessionProtocolNameRegistry::convert_openssl_alpn_wire_format(int index)
+{
+  if (index == TS_ALPN_PROTOCOL_INDEX_HTTP_0_9) {
+    return TS_ALPN_PROTO_ID_OPENSSL_HTTP_0_9;
+  } else if (index == TS_ALPN_PROTOCOL_INDEX_HTTP_1_0) {
+    return TS_ALPN_PROTO_ID_OPENSSL_HTTP_1_0;
+  } else if (index == TS_ALPN_PROTOCOL_INDEX_HTTP_1_1) {
+    return TS_ALPN_PROTO_ID_OPENSSL_HTTP_1_1;
+  } else if (index == TS_ALPN_PROTOCOL_INDEX_HTTP_2_0) {
+    return TS_ALPN_PROTO_ID_OPENSSL_HTTP_2;
+  } else if (index == TS_ALPN_PROTOCOL_INDEX_HTTP_3) {
+    return TS_ALPN_PROTO_ID_OPENSSL_HTTP_3;
+  }
+
+  return {};
 }
 
 int
