@@ -140,17 +140,6 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 
   if (opt._bind_random_port) {
     int retries = 0;
-    IpEndpoint bind_addr;
-    size_t bind_size = 0;
-    memset(&bind_addr, 0, sizeof bind_addr);
-    bind_addr.sa.sa_family = af;
-    if (AF_INET6 == af) {
-      bind_addr.sin6.sin6_addr = in6addr_any;
-      bind_size                = sizeof bind_addr.sin6;
-    } else {
-      bind_addr.sin.sin_addr.s_addr = INADDR_ANY;
-      bind_size                     = sizeof bind_addr.sin;
-    }
     while (retries++ < 10000) {
       ip_port_text_buffer b;
       uint32_t p                      = generator.random();
