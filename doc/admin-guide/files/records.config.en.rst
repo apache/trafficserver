@@ -2570,6 +2570,15 @@ DNS
 
    Maximum number of retries made by |TS| on a given DNS query
 
+.. ts:cv:: CONFIG proxy.config.dns.local_ipv4 STRING NULL
+
+   Local IPV4 address to bind to in order to make DNS requests
+
+.. ts:cv:: CONFIG proxy.config.dns.local_ipv6 STRING NULL
+
+   Local IPV6 address to bind to in order to make DNS requests
+
+
 HostDB
 ======
 
