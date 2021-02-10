@@ -245,9 +245,12 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     if (stream == nullptr) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED,
                         "recv headers cannot find existing stream_id");
+    } else if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED,
+                        "recv_header to closed stream");
     } else if (!stream->has_trailing_header()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
-                        "recv headers cannot find existing stream_id");
+                        "stream not expecting trailer header");
     }
   } else {
     // Create new stream
