@@ -136,7 +136,7 @@ ats_base64_decode(const char *inBuffer, size_t inBufferSize, unsigned char *outB
 
   // Ignore any trailing ='s or other undecodable characters.
   // TODO: Perhaps that ought to be an error instead?
-  while (printableToSixBit[static_cast<uint8_t>(inBuffer[inBytes])] <= MAX_PRINT_VAL) {
+  while (inBytes < inBufferSize && printableToSixBit[static_cast<uint8_t>(inBuffer[inBytes])] <= MAX_PRINT_VAL) {
     ++inBytes;
   }
 
