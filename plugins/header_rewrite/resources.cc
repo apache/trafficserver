@@ -87,6 +87,11 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
         TSDebug(PLUGIN_NAME, "\tAdding TXN client response status resource");
         resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
       }
+      if (client_bufp && client_hdr_loc) {
+        TSDebug(PLUGIN_NAME, "\tAdding TXN client response header buffers");
+        bufp    = client_bufp;
+        hdr_loc = client_hdr_loc;
+      }
     }
     break;
 
@@ -94,6 +99,24 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     // Pseudo-hook for a remap instance
     if (client_bufp && client_hdr_loc) {
       TSDebug(PLUGIN_NAME, "\tAdding TXN client request header buffers for remap instance");
+      bufp    = client_bufp;
+      hdr_loc = client_hdr_loc;
+    }
+    break;
+
+  case TS_HTTP_TXN_START_HOOK:
+    // Get TCP Info at transaction start
+    if (client_bufp && client_hdr_loc) {
+      TSDebug(PLUGIN_NAME, "\tAdding TXN Start header buffers");
+      bufp    = client_bufp;
+      hdr_loc = client_hdr_loc;
+    }
+    break;
+
+  case TS_HTTP_TXN_CLOSE_HOOK:
+    // Get TCP Info at transaction close
+    if (client_bufp && client_hdr_loc) {
+      TSDebug(PLUGIN_NAME, "\tAdding TXN Close header buffers");
       bufp    = client_bufp;
       hdr_loc = client_hdr_loc;
     }

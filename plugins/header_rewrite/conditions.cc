@@ -1334,3 +1334,70 @@ ConditionSessionTransactCount::append_value(std::string &s, Resources const &res
     s.append(value, length);
   }
 }
+
+void
+ConditionTcpInfo::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  TSDebug(PLUGIN_NAME, "Initializing TCP Info");
+  MatcherType *match     = new MatcherType(_cond_op);
+  std::string const &arg = p.get_arg();
+
+  match->set(strtol(arg.c_str(), nullptr, 10));
+  _matcher = match;
+}
+
+void
+ConditionTcpInfo::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+}
+
+bool
+ConditionTcpInfo::eval(const Resources &res)
+{
+  std::string s;
+
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+
+  TSDebug(PLUGIN_NAME, "Evaluating TCP-Info: %s - rval: %d", s.c_str(), rval);
+
+  return rval;
+}
+
+void
+ConditionTcpInfo::append_value(std::string &s, Resources const &res)
+{
+#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
+  TSReturnCode tsSsn;
+  int fd;
+  struct tcp_info info;
+  socklen_t tcp_info_len = sizeof(info);
+  tsSsn                  = TSHttpTxnClientFdGet(res.txnp, &fd);
+  if (tsSsn != TS_SUCCESS || fd <= 0) {
+    TSDebug(PLUGIN_NAME, "error getting the client socket fd from ssn");
+  }
+  if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) != 0) {
+    TSDebug(PLUGIN_NAME, "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
+  }
+
+  if (tsSsn == TS_SUCCESS) {
+    if (tcp_info_len > 0) {
+      char buf[12 * 4 + 9]; // 4x uint32's + 4x "; " + '\0'
+#if !defined(freebsd) || defined(__GLIBC__)
+      snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
+               info.tcpi_snd_cwnd, info.tcpi_retrans);
+#else
+      snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
+               info.tcpi_snd_cwnd, info.__tcpi_retrans);
+#endif
+      s += buf;
+    }
+  }
+#else
+  s += "-";
+#endif
+}
