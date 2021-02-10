@@ -123,13 +123,14 @@ def logFindStrings(content, substr_list):
             print('\n' + line)
             print(found)
             return ''  # everything found in one line
-    print('missing ' + str(substr_list))
+    print(content)
+    print('----\nmissing ' + str(substr_list))
     return 'missing ' + str(substr_list)
 
 
 def logContains(log, substr_list):
     def f(content): return logFindStrings(content, substr_list)
-    log += Testers.FileContentCallback(f, 'logFindStrings')
+    log.Content += Testers.FileContentCallback(f, 'logFindStrings')
 
     #g = lambda x: validate_forwards_logged(x, owner_name, ingress)
     #logfilename = os.path.join(ts.Variables.LOGDIR, 'carp{}.log'.format(ts.Variables.port))

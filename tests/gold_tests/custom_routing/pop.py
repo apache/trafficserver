@@ -40,18 +40,20 @@ def makeATS(name, origin):
     ts = Test.MakeATSProcess(name)
 
     ts.Disk.records_config.update({
+        'proxy.config.http.insert_response_via_str': 3,
         'proxy.config.http.response_via_str': 3,
         'proxy.config.http.cache.http': 1,
         'proxy.config.http.wait_for_cache': 1,
     })
+    ts.Variables.Port = ts.Variables.port
 
-    ts.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = "{} {}:ipv6 ".format(ts.Variables.port, ts.Variables.portv6)
+    ts.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = "{} {}:ipv6 ".format(ts.Variables.Port, ts.Variables.portv6)
 
     ts.Disk.remap_config.AddLine(
         'map / http://127.0.0.1:{port}'.format(port=origin.Variables.Port)
     )
 
-    debugOut('makeATS', ts.Name, ts.Variables.port)
+    debugOut('makeATS', ts.Name, ts.Variables.Port)
     return ts
 
 
@@ -63,12 +65,14 @@ def enableRoutingLog(ts):
         return ret
     # log format:
     log_fmt_str = ' '.join([
-        '%<cquuc>',         # client_req_unmapped_url_canonical
-        '%<crc>',           # cache_resp_code
-        '%<nhi>:%<nhp>',    # nexthop_ip:port
-        '%<pqsi>:%<pqsp>',  # server_ip:port
-        '%<sssc>',          # server_resp_code
-        '%<sstc>',          # server_transact_count
+        '%<cquuc>',                 # client_req_unmapped_url_canonical
+        'client=%<chi>:%<chp>',     # client_ip:port
+        'cache=%<crc>',             # cache_resp_code
+        'nh=%<nhi>:%<nhp>',         # nexthop_ip:port
+        'srv_resp_code=%<sssc>',    # server_resp_code
+        'srv_txn_cnt=%<sstc>',      # server_transact_count
+        # 'srv_via=\"%<{Via}ssh>\"',      # server via header response code
+        # 'proxy_via=\"%<{Via}psh>\"',    # proxy via header response code
     ])
     return addLogging(ts, 'routing.log', 'routing', log_fmt_str)
 
@@ -92,7 +96,7 @@ def cfgDNS(ts, dns):
         return
 
     debugOut('cfgDNS', ts.Name, dns.Name)
-    dns.addRecords(records={ts.Name: ['127.0.0.1', '::{}'.format(ts.Variables.port)]})
+    dns.addRecords(records={ts.Name: ['127.0.0.1', '::{}'.format(ts.Variables.Port)]})
     ts.Disk.records_config.update({
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
         'proxy.config.dns.resolv_conf': 'NULL',
@@ -101,10 +105,10 @@ def cfgDNS(ts, dns):
     })
 
 
-def cfgParents(ts, parents):
+def cfgParents(ts, parents, dest_domain):
     if isinstance(ts, list):
         for p in ts:
-            cfgParents(p, parents)
+            cfgParents(p, parents, dest_domain)
         return
 
     debugOut('cfgParents', '{} -> {}'.format(ts.Name, [p.Name for p in parents]))
@@ -120,8 +124,8 @@ def cfgParents(ts, parents):
     file = ts.Disk.File(fname, id='parent_config', typename="ats:config")
 
     # write the config file to map to all nodes in the Pod
-    parent_fmt_list = ';'.join([localhost + ':{}'.format(p.Variables.port) for p in parents])
-    config_text = 'dest_domain=. parent="{}" round_robin=consistent_hash'.format(parent_fmt_list)
+    parent_fmt_list = ';'.join([localhost + ':{}'.format(p.Variables.Port) for p in parents])
+    config_text = 'dest_domain={} parent="{}" round_robin=consistent_hash'.format(dest_domain, parent_fmt_list)
     file.AddLine(config_text)
 
     # Each process starts and waits for ready serially.
