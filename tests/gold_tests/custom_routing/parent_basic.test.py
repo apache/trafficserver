@@ -16,16 +16,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import pop
+import util
 import os
 import sys
-import util
-import pop
+sys.path += [Test.TestDirectory]  # allows importing other modules, autopep8 moves to after imports, which breaks util and pop
+
 Test.Summary = '''
 Basic Parent selection test.
 '''
-
-
-sys.path += [Test.TestDirectory]  # allows importing other modules
 
 pop.Test = Test
 pop.Testers = Testers
@@ -53,22 +52,26 @@ mid = pop.makeATS(['mid' + str(i) for i in range(num_hosts)], origin)
 dns = Test.MakeDNServer("dns")
 pop.cfgDNS(edge + mid, dns)
 
+util.debugOut('init', origin.Name, origin.Variables.Port)
+util.debugOut('init', dns.Name, dns.Variables.Port)
+
 # configure edge to shard to mid
-pop.cfgParents(edge, mid)
+pop.cfgParents(edge, mid, 'parent.test')
 
 routing_logs = pop.enableRoutingLog(edge + mid)
 
 all_proc = edge + mid + [dns, origin]
 
-pop.cfgResponse(origin, dns, 'parent.test', '/basic.txt', "hello")
+pop.cfgResponse(origin, dns, 'direct.test', '/basic.txt', "basic hello")
+pop.cfgResponse(origin, dns, 'parent.test', '/basic.txt', "basic parent")
 
 # START ROUTING TESTS
 
 # Basic Parent Test
 tr = Test.AddTestRun("Test traffic server started properly")
 p = tr.Processes.Default
-p.Command = "curl --proxy 127.0.0.1:{} http://parent.test/basic.txt".format(edge[0].Variables.port)
-#p.Command += '; sleep 2; cat '+routing_logs[0]
+p.Command = "curl --proxy 127.0.0.1:{} http://direct.test/basic.txt".format(edge[0].Variables.Port) + \
+    "; curl --proxy 127.0.0.1:{} http://parent.test/basic.txt".format(edge[0].Variables.Port)
 p.ReturnCode = 0
 pop.waitAllStarted(tr, all_proc)
 p.StillRunningAfter = all_proc
@@ -86,6 +89,13 @@ tr.Processes.Default.Command = cmd_text
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("parse logs")
-log = tr.Disk.File(routing_logs[0])
+cmd_text = 'cat {log}'.format(log=routing_logs[0])
+for p in all_proc:
+    cmd_text += ' | sed "s/127.0.0.1:{port}/{host}/g"'.format(port=p.Variables.Port, host=p.Name)
+cmd_text += ' > {log}.sub'.format(log=routing_logs[0])
+print(cmd_text)
+tr.Processes.Default.Command = cmd_text
+log = tr.Disk.File(routing_logs[0] + '.sub')
 
-util.logContains(log, "parent")
+
+util.logContains(log, ['direct.test', 'nh=origin', 'code=200'])
