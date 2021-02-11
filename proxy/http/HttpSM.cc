@@ -1979,28 +1979,13 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     // Now that we know that we have all of the origin server
     // response headers, we can reset the client inactivity
-    // timeout.  This is unlikely to cause a recurrence of
-    // old bug because there will be no more retries now that
-    // the connection has been established.  It is possible
-    // however.  We do not need to reset the inactivity timeout
-    // if the request contains a body (noted by the
-    // request_content_length field) because it was never
-    // canceled.
-    //
-
+    // timeout.
     // we now reset the client inactivity timeout only
     // when we are ready to send the response headers. In the
     // case of transform plugin, this is after the transform
     // outputs the 1st byte, which can take a long time if the
     // plugin buffers the whole response.
-    // Also, if the request contains a body, we cancel the timeout
-    // when we read the 1st byte of the origin server response.
-    /*
-       if (ua_txn && !t_state.hdr_info.request_content_length) {
-       ua_txn->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(
-       HttpConfig::m_master.accept_no_activity_timeout));
-       }
-     */
+    ua_txn->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
 
     t_state.current.state         = HttpTransact::CONNECTION_ALIVE;
     t_state.transact_return_point = HttpTransact::HandleResponse;
@@ -3556,7 +3541,13 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
       }
     }
 
-    // Initiate another read to catch aborts and timeouts.
+    // Now that we have communicated the post body, turn off the inactivity timeout
+    // until the server starts sending data back
+    if (ua_txn && t_state.hdr_info.request_content_length) {
+      ua_txn->cancel_inactivity_timeout();
+    }
+
+    // Initiate another read to catch aborts
     ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
     ua_entry->read_vio   = p->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
     break;
