@@ -8682,6 +8682,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.parent_proxy.connect_attempts_timeout",
    "proxy.config.http.normalize_ae",
    "proxy.config.http.insert_forwarded",
+   "proxy.config.http.proxy_protocol_out",
    "proxy.config.http.allow_multi_range",
    "proxy.config.http.request_buffer_enabled",
    "proxy.config.http.allow_half_open",
