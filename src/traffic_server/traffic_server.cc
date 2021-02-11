@@ -290,7 +290,7 @@ public:
         Note("Could not reseat %s", DIAGS_LOG_FILENAME);
       }
       // Reload any of the other moved log files (such as the ones in logging.yaml).
-      Log::reopen_moved_log_files();
+      Log::handle_log_rotation_request();
     }
 
     if (signal_received[SIGTERM] || signal_received[SIGINT]) {
