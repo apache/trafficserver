@@ -8563,6 +8563,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
     ret = _memberp_to_generic(&overridableHttpConfig->insert_forwarded, conv);
     break;
+  case TS_CONFIG_HTTP_PROXY_PROTOCOL_OUT:
+    ret = _memberp_to_generic(&overridableHttpConfig->proxy_protocol_out, conv);
+    break;
   case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
     ret = _memberp_to_generic(&overridableHttpConfig->send_http11_requests, conv);
     break;

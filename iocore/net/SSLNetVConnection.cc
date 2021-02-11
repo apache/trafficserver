@@ -1404,6 +1404,35 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   // Initialize properly for a client connection
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
+    if (this->pp_info.version != ProxyProtocolVersion::UNDEFINED) {
+      // Outbound PROXY Protocol
+      VIO &vio        = this->write.vio;
+      int64_t ntodo   = vio.ntodo();
+      int64_t towrite = vio.buffer.reader()->read_avail();
+
+      if (ntodo > 0 && towrite > 0) {
+        MIOBufferAccessor &buf = vio.buffer;
+        int needs              = 0;
+        int64_t total_written  = 0;
+        int64_t r              = super::load_buffer_and_write(towrite, buf, total_written, needs);
+
+        if (total_written > 0) {
+          vio.ndone += total_written;
+          if (vio.ntodo() != 0) {
+            return SSL_WAIT_FOR_HOOK;
+          }
+        }
+
+        if (r < 0) {
+          if (r == -EAGAIN || r == -ENOTCONN || -r == EINPROGRESS) {
+            return SSL_WAIT_FOR_HOOK;
+          } else {
+            return EVENT_ERROR;
+          }
+        }
+      }
+    }
+
     sslHandshakeHookState = HANDSHAKE_HOOKS_OUTBOUND_PRE;
   }
 
