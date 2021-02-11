@@ -49,7 +49,7 @@ TEST_CASE("Basic Errata test with id,code and text", "[errata]")
 {
   ts::Errata err;
   int id{1};
-  int code{2};
+  unsigned int code{2};
   std::string text{"Some error text"};
 
   err.push(id, code, text);
