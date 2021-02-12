@@ -1325,6 +1325,8 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         if (!this->setSelectedProtocol(proto, len)) {
           return EVENT_ERROR;
         }
+        this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});
+
         Debug("ssl", "client selected next protocol '%.*s'", len, proto);
       } else {
         Debug("ssl", "client did not select a next protocol");

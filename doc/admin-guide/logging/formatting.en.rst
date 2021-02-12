@@ -604,6 +604,7 @@ SSL / Encryption
 .. _cqssv:
 .. _cqssc:
 .. _cqssu:
+.. _cqssa:
 .. _pqssl:
 .. _pscert:
 
@@ -628,6 +629,7 @@ cqssv  Client Request SSL version used to communicate with the client.
 cqssc  Client Request SSL Cipher used by |TS| to communicate with the client.
 cqssu  Client Request SSL Elliptic Curve used by |TS| to communicate with the
                       client when using an ECDHE cipher.
+cqssa  Client Request ALPN Protocol ID negotiated with the client.
 pqssl  Proxy Request  Indicates whether the connection from |TS| to the origin
                       was over SSL or not.
 pscert Proxy Request  1 if origin requested certificate from |TS| during TLS

@@ -551,6 +551,7 @@ public:
   const char *client_sec_protocol = "-";
   const char *client_cipher_suite = "-";
   const char *client_curve        = "-";
+  int client_alpn_id              = SessionProtocolNameRegistry::INVALID;
   int server_transact_count       = 0;
 
   TransactionMilestones milestones;
