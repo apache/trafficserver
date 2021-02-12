@@ -91,8 +91,6 @@ enum HeaderState {
 HeaderState
 handleFirstServerHeader(Data *const data, TSCont const contp)
 {
-  HeaderState state = HeaderState::Good;
-
   HttpHeader header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
 
   if (TSIsDebugTagSet(PLUGIN_NAME)) {
@@ -119,8 +117,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
       TSVIONBytesSet(output_vio, clen);
     }
     TSHttpHdrPrint(header.m_buffer, header.m_lochdr, output_buf);
-    state = HeaderState::Passthru;
-    return state;
+    return HeaderState::Passthru;
   }
 
   ContentRange const blockcr = contentRangeFrom(header);
@@ -131,8 +128,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     TSVIONBytesSet(output_vio, msg502.size());
     TSIOBufferWrite(output_buf, msg502.data(), msg502.size());
     TSVIOReenable(output_vio);
-    state = HeaderState::Fail;
-    return state;
+    return HeaderState::Fail;
   }
 
   // set the resource content length from block response
@@ -163,10 +159,8 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     TSHttpHdrPrint(header.m_buffer, header.m_lochdr, output_buf);
     TSIOBufferWrite(output_buf, bodystr.data(), bodystr.size());
     TSVIOReenable(output_vio);
-
     data->m_upstream.m_read.close();
-
-    state = HeaderState::Fail;
+    return HeaderState::Fail;
   }
 
   // save data header string
@@ -199,7 +193,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
       data->m_dnstream.close();
 
       ERROR_LOG("Bad/invalid response content range");
-      state = HeaderState::Fail;
+      return HeaderState::Fail;
     }
 
     header.setKeyVal(TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE, rangestr, rangelen);
@@ -223,7 +217,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
   data->m_bytessent = hbytes;
   TSVIOReenable(output_vio);
 
-  return state;
+  return HeaderState::Good;
 }
 
 void

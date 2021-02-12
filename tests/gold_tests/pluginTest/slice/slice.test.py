@@ -174,3 +174,12 @@ ps.Streams.stderr = "gold/slice_mid.stderr.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
 ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 5-16/18", "mismatch byte content response")
 tr.StillRunningAfter = ts
+
+# 8 Test - special case, begin inside last slice block but outside asset len
+tr = Test.AddTestRun("Invalid end range request, 416")
+beg = len(body) + 1
+end = beg + block_bytes
+ps = tr.Processes.Default
+ps.Command = curl_and_args + ' http://slice/path' + ' -r {}-{}'.format(beg, end)
+ps.Streams.stdout.Content = Testers.ContainsExpression("416 Requested Range Not Satisfiable", "expected 416 response")
+tr.StillRunningAfter = ts
