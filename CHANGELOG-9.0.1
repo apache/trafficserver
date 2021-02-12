@@ -2,7 +2,9 @@ Changes with Apache Traffic Server 9.0.1
   #6302 - Simple and miscellaneous fixes/additions for lua plugin
   #6691 - Slice plugin: self heal when asset etag/last-modified block mismatches
   #6860 - Make format specifier for time_t portable
+  #6893 - AuTest: Pipfile update to use microserver 1.0.5
   #6919 - slice: clean up 502 header/body generation.
+  #7064 - CacheRead: clear dir entry if doc is found to be truncated
   #7158 - Fix lua plugin mem leak problem
   #7257 - slice: default to throttling, fixes to manufactured 416 responses.
   #7259 - detect and fix stms log field having epoch time ms for intercept plugins.
@@ -13,6 +15,7 @@ Changes with Apache Traffic Server 9.0.1
   #7395 - Replace ::exit() with _exit() to avoid secondary cleanup cores
   #7410 - Fix issue with unavailable server retry codes
   #7414 - Remove the warning messages
+  #7415 - Fix the Proxy Verifier AuTest extension to handle cert paths correctly
   #7416 - Enhancements for compress plugin
   #7420 - Update documentation for TSSslSessionInsert
   #7421 - Change comment handling for long lines in url_sig plugin
@@ -21,4 +24,9 @@ Changes with Apache Traffic Server 9.0.1
   #7435 - Slice: 9.0.x back port of self healing and throttle by default
   #7437 - Small fix to regex_remap PR # 7347.
   #7443 - Change squid log code for self looping
+  #7454 - Updating to Proxy Verifier v2.0.0
+  #7460 - Update to the new MicroServer 1.0.6 release
+  #7463 - Fixing compress expectation for new microserver
+  #7493 - AuTest: Upgrade to Proxy Verifier 2.0.2
+  #7506 - Fixed build issues with Fedora 34
   #7507 - Fixing DNS local_ipv* config option
