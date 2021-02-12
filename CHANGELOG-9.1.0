@@ -113,7 +113,6 @@ Changes with Apache Traffic Server 9.1.0
   #6858 - Make HostDBInfo class safer to use.
   #6870 - Generalize SNI support
   #6875 - Fix for Ubuntu 16 and Clang 5
-  #6893 - AuTest: Pipfile update to use microserver 1.0.5
   #6897 - Test connection timeout and retries
   #6905 - Remove two unused includes in HdrHeap.h.
   #6931 - AuTest: New log and When condition for ATS initialized
@@ -153,7 +152,6 @@ Changes with Apache Traffic Server 9.1.0
   #7049 - Cleans up various versions checks
   #7058 - Removes FIXME that is unlikely to be fixed at this point in the project history
   #7063 - Add an autest testcase for HTTP3
-  #7064 - CacheRead: clear dir entry if doc is found to be truncated
   #7066 - Use system include-style for STL and OpenSSL headers
   #7067 - tests: gitignore ssl-delay-server binary
   #7068 - constify Print() methods and other low hanging fruit
@@ -214,6 +212,7 @@ Changes with Apache Traffic Server 9.1.0
   #7286 - Remove unfinished h2c support
   #7289 - Enable all h2spec test
   #7292 - Allow disabling SO_MARK and IP_TOS usage
+  #7309 - Disable client inactivity timeout while server is processing POST request
   #7311 - Traffic Dump: Fix stream-id printing after first transaction.
   #7323 - Updates the Dockerfile with more packages
   #7325 - AuTest for Split DNS
@@ -251,11 +250,8 @@ Changes with Apache Traffic Server 9.1.0
   #7405 - Improving session cache performance
   #7407 - Add synchronization between UDPNetProcessor::UDPBind in main Thread and initialize_thread_for_udp_net in ET_UDP Thread
   #7409 - Fix clang compiler complaint about an unused parameter in SNIAction.
-  #7410 - Fix issue with unavailable server retry codes
   #7412 - LGTM: Remove superfluous const qualifier in return type
   #7413 - Improvement to lua plugin
-  #7415 - Fix the Proxy Verifier AuTest extension to handle cert paths correctly
-  #7421 - Change comment handling for long lines in url_sig plugin
   #7426 - Add command line utility to help convert remap plugin usage to ATS9.
   #7427 - Doc: Fix typo in negative_revalidating_lifetime
   #7429 - Fix parent connect fail segfault
@@ -264,12 +260,11 @@ Changes with Apache Traffic Server 9.1.0
   #7436 - Cleanup: Remove unused members of NextHopProperty
   #7439 - API to retrieve NoStore set by plugins
   #7453 - Cleanup: Add SNIRoutingType
-  #7454 - Updating to Proxy Verifier v2.0.0
   #7455 - Fix Makefile target for creating changelogs
   #7457 - Fix comment in include/tscore/Filenames.h.
-  #7460 - Update to the new MicroServer 1.0.6 release
   #7461 - Do not write to the cache if the plugin decides not to write 
-  #7463 - Fixing compress expectation for new microserver
   #7466 - Change atoi to atol, causing obvious issues on what needs to be int64's
   #7468 - Proxy Verifier: Making use of delay directives for caching tests.
   #7469 - Update AuTest version update directions for pipenv
+  #7473 - Adjust so transfer-encoding header can be treated hop-by-hop
+  #7502 - traffic_dump: AuTests to use Proxy Verifier.
