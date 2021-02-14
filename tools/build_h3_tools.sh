@@ -22,30 +22,43 @@
 # Probably have to change these to your preferred installation directory
 BASE=${BASE:-"/opt"}
 OPENSSL=${OPENSSL:-"${BASE}/openssl-quic"}
+MAKE="make"
 
 # These are for Linux like systems, specially the LDFLAGS, also depends on dirs above
 CFLAGS=${CFLAGS:-"-O3 -g"}
 CXXFLAGS=${CXXFLAGS:-"-O3 -g"}
 LDFLAGS=${LDFLAGS:-"-Wl,-rpath=${OPENSSL}/lib"}
 
-echo "+-------------------------------------------------------------------------+"
-echo "| You probably need to run this, or something like this, for your system: |"
-echo "|                                                                         |"
-echo "|   sudo yum -y install libev-devel jemalloc-devel python2-devel          |"
-echo "|   sudo yum -y install libxml2-devel c-ares-devel libevent-devel         |"
-echo "|   sudo yum -y install jansson-devel zlib-devel systemd-devel            |"
-echo "+-------------------------------------------------------------------------+"
-echo
-echo
-
+if [ -e /etc/redhat-release ]; then
+    MAKE="gmake"
+    echo "+-------------------------------------------------------------------------+"
+    echo "| You probably need to run this, or something like this, for your system: |"
+    echo "|                                                                         |"
+    echo "|   sudo yum -y install libev-devel jemalloc-devel python2-devel          |"
+    echo "|   sudo yum -y install libxml2-devel c-ares-devel libevent-devel         |"
+    echo "|   sudo yum -y install jansson-devel zlib-devel systemd-devel            |"
+    echo "+-------------------------------------------------------------------------+"
+    echo
+    echo
+elif [ -e /etc/debian_version ]; then
+    echo "+-------------------------------------------------------------------------+"
+    echo "| You probably need to run this, or something like this, for your system: |"
+    echo "|                                                                         |"
+    echo "|   sudo apt -y install libev-dev libjemalloc-dev python2-dev libxml2-dev |"
+    echo "|   sudo apt -y install libpython2-dev libc-ares-dev libsystemd-dev       |"
+    echo "|   sudo apt -y install libevent-dev libjansson-dev zlib1g-dev            |"
+    echo "+-------------------------------------------------------------------------+"
+    echo
+    echo
+fi
 
 # OpenSSL needs special hackery ... Only grabbing the branch we need here... Bryan has shit for network.
 echo "Building OpenSSL with QUIC support"
 [ ! -d openssl-quic ] && git clone -b OpenSSL_1_1_1g-quic-draft-32 --depth 1 https://github.com/tatsuhiro-t/openssl openssl-quic
 cd openssl-quic
 ./config --prefix=${OPENSSL}
-gmake -j $(nproc)
-sudo gmake install
+${MAKE} -j $(nproc)
+sudo ${MAKE} install
 cd ..
 
 # Then nghttp3
@@ -54,10 +67,9 @@ echo "Building nghttp3..."
 cd nghttp3
 autoreconf -if
 ./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
-gmake -j $(nproc)
-sudo gmake install
+${MAKE} -j $(nproc)
+sudo ${MAKE} install
 cd ..
-
 
 # Now ngtcp2
 echo "Building ngtcp2..."
@@ -65,10 +77,9 @@ echo "Building ngtcp2..."
 cd ngtcp2
 autoreconf -if
 ./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
-gmake -j $(nproc)
-sudo gmake install
+${MAKE} -j $(nproc)
+sudo ${MAKE} install
 cd ..
-
 
 # Then nghttp2, with support for H3
 echo "Building nghttp2 ..."
@@ -77,10 +88,9 @@ cd nghttp2
 git checkout --track -b quic origin/quic
 autoreconf -if
 ./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
-gmake -j $(nproc)
-sudo gmake install
+${MAKE} -j $(nproc)
+sudo ${MAKE} install
 cd ..
-
 
 # And finally curl
 echo "Building curl ..."
@@ -88,5 +98,5 @@ echo "Building curl ..."
 cd curl
 autoreconf -i
 ./configure --prefix=${BASE} --with-ssl=${OPENSSL} --with-nghttp2=${BASE} --with-nghttp3=${BASE} --with-ngtcp2=${BASE} CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
-gmake -j $(nproc)
-sudo gmake install
+${MAKE} -j $(nproc)
+sudo ${MAKE} install
