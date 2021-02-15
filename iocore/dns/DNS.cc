@@ -239,6 +239,7 @@ DNSProcessor::start(int, size_t stacksize)
   dns_failover_try_period = dns_timeout + 1; // Modify the "default" accordingly
 
   if (SplitDNSConfig::gsplit_dns_enabled) {
+    SplitDNSConfig::dnsHandler_mutex = thread->mutex;
     // reconfigure after threads start
     SplitDNSConfig::reconfigure();
   }

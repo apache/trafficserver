@@ -114,8 +114,6 @@ SplitDNSConfig::release(SplitDNS *params)
 void
 SplitDNSConfig::startup()
 {
-  dnsHandler_mutex = new_ProxyMutex();
-
   // startup just check gsplit_dns_enabled
   REC_ReadConfigInt32(gsplit_dns_enabled, "proxy.config.dns.splitDNS.enabled");
   SplitDNSConfig::splitDNSUpdate = new ConfigUpdateHandler<SplitDNSConfig>();
