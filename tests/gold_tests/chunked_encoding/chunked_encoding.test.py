@@ -140,6 +140,7 @@ tr.StillRunningAfter = server
 
 server4_out = Test.Disk.File("outserver4")
 server4_out.Content = Testers.ExcludesExpression("sneaky", "Extra body bytes should not be delivered")
+server4_out.Content += Testers.ContainsExpression("Transfer-Encoding: chunked", "Request should be chunked encoded")
 
 # HTTP/1.1 Try to smuggle another request to the origin
 tr = Test.AddTestRun()
