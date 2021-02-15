@@ -1990,7 +1990,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     server_session->set_inactivity_timeout(get_server_inactivity_timeout());
 
     // For requests that contain a body, we can cancel the ua inactivity timeout.
-    if (ua_txn && t_state.hdr_info.request_content_length) {
+    if (ua_txn && t_state.hdr_info.request_content_length != HTTP_UNDEFINED_CL) {
       ua_txn->cancel_inactivity_timeout();
     }
   }
@@ -3622,7 +3622,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
 
     // Now that we have communicated the post body, turn off the inactivity timeout
     // until the server starts sending data back
-    if (ua_txn && t_state.hdr_info.request_content_length) {
+    if (ua_txn && t_state.hdr_info.request_content_length != HTTP_UNDEFINED_CL) {
       ua_txn->cancel_inactivity_timeout();
     }
 
@@ -5035,8 +5035,8 @@ HttpSM::do_http_server_open(bool raw)
   }
 
   if ((raw == false) && TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
-      (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) && !is_private() &&
-      ua_txn != nullptr) {
+      (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) &&
+      !is_private() && ua_txn != nullptr) {
     HSMresult_t shared_result;
     shared_result = httpSessionManager.acquire_session(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // ip + port
@@ -7500,7 +7500,7 @@ HttpSM::set_next_state()
       // light of this dependency, TS must ensure that the client finishes
       // sending its request and for this reason, the inactivity timeout
       // cannot be cancelled.
-      if (ua_txn && !t_state.hdr_info.request_content_length) {
+      if (ua_txn && t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
         ua_txn->cancel_inactivity_timeout();
       } else if (!ua_txn) {
         terminate_sm = true;
@@ -7545,7 +7545,7 @@ HttpSM::set_next_state()
       // light of this dependency, TS must ensure that the client finishes
       // sending its request and for this reason, the inactivity timeout
       // cannot be cancelled.
-      if (ua_txn && !t_state.hdr_info.request_content_length) {
+      if (ua_txn && t_state.hdr_info.request_content_length == HTTP_UNDEFINED_CL) {
         ua_txn->cancel_inactivity_timeout();
       } else if (!ua_txn) {
         terminate_sm = true;
