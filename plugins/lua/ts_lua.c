@@ -21,6 +21,7 @@
 #include <pthread.h>
 #include <getopt.h>
 #include <inttypes.h>
+#include <pthread.h>
 
 #include "ts_lua_util.h"
 
@@ -39,6 +40,9 @@ static uint64_t ts_lua_g_http_next_id = 0;
 
 static ts_lua_main_ctx *ts_lua_main_ctx_array   = NULL;
 static ts_lua_main_ctx *ts_lua_g_main_ctx_array = NULL;
+
+static pthread_key_t lua_g_state_key;
+static pthread_key_t lua_state_key;
 
 // records.config entry injected by plugin
 static char const *const ts_lua_mgmt_state_str   = "proxy.config.plugin.lua.max_states";
@@ -307,6 +311,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   if (NULL == ts_lua_main_ctx_array) {
     ts_lua_main_ctx_array = create_lua_vms();
     if (NULL != ts_lua_main_ctx_array) {
+      pthread_key_create(&lua_state_key, NULL);
+
       TSCont const lcontp = TSContCreate(lifecycleHandler, TSMutexCreate());
       TSContDataSet(lcontp, ts_lua_main_ctx_array);
       TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, lcontp);
@@ -475,9 +481,13 @@ ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   int remap     = (rri == NULL ? 0 : 1);
   instance_conf = (ts_lua_instance_conf *)ih;
-  req_id        = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
 
-  main_ctx = &ts_lua_main_ctx_array[req_id % instance_conf->states];
+  main_ctx = pthread_getspecific(lua_state_key);
+  if (main_ctx == NULL) {
+    req_id   = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
+    main_ctx = &ts_lua_main_ctx_array[req_id % instance_conf->states];
+    pthread_setspecific(lua_state_key, main_ctx);
+  }
 
   TSMutexLock(main_ctx->mutexp);
 
@@ -577,11 +587,14 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
 
   ts_lua_instance_conf *conf = (ts_lua_instance_conf *)TSContDataGet(contp);
 
-  req_id = __sync_fetch_and_add(&ts_lua_g_http_next_id, 1);
+  main_ctx = pthread_getspecific(lua_g_state_key);
+  if (main_ctx == NULL) {
+    req_id = __sync_fetch_and_add(&ts_lua_g_http_next_id, 1);
+    TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
+    main_ctx = &ts_lua_g_main_ctx_array[req_id % conf->states];
+    pthread_setspecific(lua_g_state_key, main_ctx);
+  }
 
-  main_ctx = &ts_lua_g_main_ctx_array[req_id % conf->states];
-
-  TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
   TSMutexLock(main_ctx->mutexp);
 
   http_ctx           = ts_lua_create_http_ctx(main_ctx, conf);
@@ -740,6 +753,8 @@ TSPluginInit(int argc, const char *argv[])
   if (NULL == ts_lua_g_main_ctx_array) {
     ts_lua_g_main_ctx_array = create_lua_vms();
     if (NULL != ts_lua_g_main_ctx_array) {
+      pthread_key_create(&lua_g_state_key, NULL);
+
       TSCont const contp = TSContCreate(lifecycleHandler, TSMutexCreate());
       TSContDataSet(contp, ts_lua_g_main_ctx_array);
       TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, contp);
