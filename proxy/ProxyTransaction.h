@@ -83,6 +83,9 @@ public:
 
   virtual void set_proxy_ssn(ProxySession *set_proxy_ssn);
 
+  // Returns true if there is a request body for this request
+  virtual bool has_request_body(int64_t content_length, bool is_chunked_set) const;
+
   /// Non-Virtual Methods
   //
   const char *get_protocol_string();

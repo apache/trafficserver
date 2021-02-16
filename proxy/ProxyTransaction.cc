@@ -215,3 +215,9 @@ ProxyTransaction::reenable(VIO *vio)
 {
   _proxy_ssn->reenable(vio);
 }
+
+bool
+ProxyTransaction::has_request_body(int64_t request_content_length, bool is_chunked) const
+{
+  return request_content_length > 0 || is_chunked;
+}
