@@ -603,6 +603,13 @@ Http3Transaction::_on_qpack_decode_complete()
   return 1;
 }
 
+// TODO:  Just a place holder for now
+bool
+Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) const
+{
+  return false;
+}
+
 //
 // Http09Transaction
 //
