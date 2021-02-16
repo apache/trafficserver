@@ -75,11 +75,11 @@ Options
 .. option:: -f, --format
 
    Specify the output print style. `legacy` and `pretty` are availables.
-   `legacy` will honour the old :program:`traffic_ctl` output messages. `pretty` <if available> will print a different output. 
+   `legacy` will honour the old :program:`traffic_ctl` output messages. `pretty` <if available> will print a different output.
    Errors from the server will be display if ``pretty`` is specified.
    In case of a record request(config, metric) ``--records`` overrides this flag.
 
-   Default: ``legacy`` 
+   Default: ``legacy``
 
 .. option:: -r, --debugrpc
 
@@ -340,15 +340,15 @@ traffic_ctl rpc
 
 A mechanism to interact directly with the |TS| |RPC| endpoint. This means that this is not tied to any particular API
 but rather to the rpc endpoint, so you can directly send requests and receive responses from the server.
- 
+
 .. option:: file
 
    Reads a file or a set of files from the disc, use the content of the files as message(s) to the |RPC| endpoint. All jsonrpc messages
    will be validated before sending them. If the file contains invalid  json|yaml format the message will not be send, in
    case of a set of files, if a particular file is not a proper json/yaml format then that particular file will be skipped.
-   
+
    Example:
-   
+
    .. code-block:: bash
 
       traffic_ctl rpc file jsonrpc_cmd1.json jsonrpc_cmd2.yaml
@@ -381,9 +381,9 @@ but rather to the rpc endpoint, so you can directly send requests and receive re
 
 .. option:: input
 
-   Input mode, traffic_ctl will provide a control input from a stream buffer. Once the content was write the terminal :program:`traffic_ctl`
+   Input mode, traffic_ctl will provide a control input from a stream buffer. Once the content is written the terminal :program:`traffic_ctl`
    will wait for the user to press Control-D to send the request to the rpc endpoint.
-   This feature allow you to directly interact with the jsonrpc endpoint and test your API easily and without the need to know the low level
+   This feature allows you to directly interact with the jsonrpc endpoint and test your API easily and without the need to know the low level
    implementation details of the transport layer.
    :program:`traffic_ctl` will validate the input format, not the message content. The message content will be validated by the server.
    See example `input_example_2`_.
@@ -413,7 +413,7 @@ but rather to the rpc endpoint, so you can directly send requests and receive re
          ]
       }
       <pressed Ctrl-D>
-      
+
       <-- Server's response.
       {
          "jsonrpc":"2.0",

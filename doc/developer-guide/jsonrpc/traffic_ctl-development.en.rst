@@ -188,7 +188,7 @@ Let's define a new command for a new specific API with name == ``admin_new_comma
 
 
    The way you print and the destination of the message is up to the developer's needs, either a terminal or some other place. If the response
-   from the server is a complex object, always can model the response with your own class or structure and use the built-in yamlcpp mechanism
+   from the server is a complex object, you can always model the response with your own type and use the built-in yamlcpp mechanism
    to decode the ``YAML::Node``.  ``write_output(YAML::Node const &result)`` will only have the result defined in the protocol,
    check :ref:`jsonrpc-result` for more detail. So something like this can be easily achieved:
 

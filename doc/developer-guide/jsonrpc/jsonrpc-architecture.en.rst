@@ -62,7 +62,7 @@ Configuration for this particular server style can be found in the admin section
 Using the JSONRPC mechanism
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-As a user, currently,  :program:`traffic_ctl` exercise this new protocol, please refer to the :ref:`traffic_ctl_jsonrpc` section.
+As a user, currently,  :program:`traffic_ctl` exercises this new protocol, please refer to the :ref:`traffic_ctl_jsonrpc` section.
 
 As a developer, please refer to the :ref:`jsonrpc_development` for a more detailed guide.
 
@@ -106,8 +106,7 @@ Overview
 
 .. note::
 
-   Although most of the protocol specs are granted, we do have implemented some exceptions. All the modifications we have implemented will
-   be documented.
+   Although most of the protocol specs are granted, we have implemented some exceptions. All the modifications will be properly documented.
 
 
 There are a set  of mandatory fields that must be included in a `JSONRPC`_ message as well as some optional fields, all this is documented here,

@@ -117,7 +117,7 @@ Field Name                            Description
 
 .. note::
 
-   As today, there is only 1 communication mechanism supported. IPC Sockets.
+   As of today, there is only 1 communication mechanism supported. IPC Sockets.
 
 
 
@@ -138,7 +138,7 @@ API
 Administrative API
 ------------------
 
-This section describe how to interact with the administrative RPC API to interact with |TS|
+This section describes how to interact with the administrative RPC API to interact with |TS|
 
 ..
    _This: We should explain how to deal with permission once it's implemented.
@@ -844,7 +844,7 @@ Examples
 
 
 
-   We get a valid record that was  found base on the passed criteria, ``proxy.config.exec_thread.autoconfig.sca*`` and the ``rec_type`` *1*.
+   We get a valid record that was found based on the passed criteria, ``proxy.config.exec_thread.autoconfig.sca*`` and the ``rec_type`` *1*.
    Also we get a particular error that was caused by the invalid rec types ``987``
 
 

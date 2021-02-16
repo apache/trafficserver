@@ -25,7 +25,7 @@ JSONRPC handler implementation
 ******************************
 
 Use this section as a guide for developing new rpc methods inside |TS| and how to expose them through the |RPC| endpoint.
-Before we start is worth mentioning some of the architecture of the current implementation. The whole RPC mechanism is divided in
+Before we start, it is worth mentioning some of the architecture of the current implementation. The whole RPC mechanism is divided in
 few components.
 
 Json RPC manager
@@ -105,7 +105,7 @@ Error Handling
 ^^^^^^^^^^^^^^
 
 
-There are several ways to deal with internal handler errors. Errors are expected to be send back to the client if the API was expressed that way
+There are several ways to deal with internal handler errors. Errors are expected to be sent back to the client if the API was expressed that way
 and if the request was a ``method``.
 We have defined some generic errors that can be used to respond depending on the nature of the registered handler,
 please check :ref:`jsonrpc-handler-errors` for more info.

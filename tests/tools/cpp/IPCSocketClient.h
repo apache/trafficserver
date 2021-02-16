@@ -58,15 +58,17 @@ struct IPCSocketClient {
     }
     _sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (_sock < 0) {
-      Debug(logTag, "error reading stream message :%s", std ::strerror(errno));
-      throw std::runtime_error{std::strerror(errno)};
+      std::string text;
+      ts::bwprint(text, "connect: error creating new socket. Why?: {}\n", std::strerror(errno));
+      throw std::runtime_error{text};
     }
     _server.sun_family = AF_UNIX;
     strcpy(_server.sun_path, _path.c_str());
     if (::connect(_sock, (struct sockaddr *)&_server, sizeof(struct sockaddr_un)) < 0) {
       this->close();
-      Debug(logTag, "Connect(%s): error reading stream message :%s", _path.c_str(), std::strerror(errno));
-      throw std::runtime_error{std::strerror(errno)};
+      std::string text;
+      ts::bwprint(text, "connect: Couldn't open connection with {}. Why?: {}\n", _path, std::strerror(errno));
+      throw std::runtime_error{text};
     }
 
     _state = State::CONNECTED;

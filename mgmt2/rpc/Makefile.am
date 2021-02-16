@@ -76,7 +76,7 @@ test_jsonrpc_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@YAMLCPP_LIBS@
+	@YAMLCPP_LIBS@ @HWLOC_LIBS@
 
 
 
@@ -120,7 +120,7 @@ test_jsonrpcserver_LDADD = \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/mgmt/libmgmt_p.la \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
-	@YAMLCPP_LIBS@
+	@YAMLCPP_LIBS@ @HWLOC_LIBS@
 
 
 ###########################################################################################
@@ -147,8 +147,9 @@ librpcpublichandlers_COMMON = \
 	handlers/plugins/Plugins.h \
 	handlers/plugins/Plugins.cc \
 	handlers/Admin.h \
-	$(top_builddir)/src/shared/overridable_txn_vars.cc
-
+	../../src/shared/overridable_txn_vars.cc
+# ^ on newer automake using some of the existing variables seems to fail.
+# this is a workaround for now.
 
 librpcpublichandlers_la_SOURCES = \
     $(librpcpublichandlers_COMMON)

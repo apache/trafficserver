@@ -173,7 +173,7 @@ main(int argc, const char **argv)
     // Execute
     args.invoke();
   } catch (std::exception const &ex) {
-    std::cout << "TC: " << ex.what() << '\n';
+    std::cout << "Error found.\n" << ex.what() << '\n';
   }
 
   return status_code;
