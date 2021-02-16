@@ -1841,7 +1841,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     }
 
     // For requests that contain a body, we can cancel the ua inactivity timeout.
-    if (ua_txn && t_state.hdr_info.request_content_length) {
+    if (ua_txn && t_state.hdr_info.request_content_length > 0) {
       ua_txn->cancel_inactivity_timeout();
     }
   }
@@ -1976,7 +1976,9 @@ HttpSM::state_send_server_request_header(int event, void *data)
     free_MIOBuffer(server_entry->write_buffer);
     server_entry->write_buffer = nullptr;
     method                     = t_state.hdr_info.server_request.method_get_wksidx();
-    if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE && HttpTransact::has_request_body(&t_state, ua_txn)) {
+    if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
+        ua_txn->has_request_body(t_state.hdr_info.request_content_length,
+                                 t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
       if (post_transform_info.vc) {
         setup_transform_to_server_transfer();
       } else {
@@ -4790,8 +4792,8 @@ HttpSM::do_http_server_open(bool raw)
     set_server_session_private(true);
   }
 
-  if (raw == false && TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
-      (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length == 0) && !is_private() &&
+  if ((raw == false) && TS_SERVER_SESSION_SHARING_MATCH_NONE != t_state.txn_conf->server_session_sharing_match &&
+      (t_state.txn_conf->keep_alive_post_out == 1 || t_state.hdr_info.request_content_length <= 0) && !is_private() &&
       ua_txn != nullptr) {
     HSMresult_t shared_result;
     shared_result = httpSessionManager.acquire_session(this,                                 // state machine
@@ -5971,7 +5973,8 @@ HttpSM::attach_server_session(HttpServerSession *s)
   }
 
   // Do we need Transfer_Encoding?
-  if (HttpTransact::has_request_body(&t_state, ua_txn)) {
+  if (ua_txn->has_request_body(t_state.hdr_info.request_content_length,
+                               t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
     // See if we need to insert a chunked header
     if (!t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH)) {
       // Stuff in a TE setting so we treat this as chunked, sort of.
@@ -7336,7 +7339,7 @@ HttpSM::set_next_state()
       // light of this dependency, TS must ensure that the client finishes
       // sending its request and for this reason, the inactivity timeout
       // cannot be cancelled.
-      if (ua_txn && !t_state.hdr_info.request_content_length) {
+      if (ua_txn && t_state.hdr_info.request_content_length <= 0) {
         ua_txn->cancel_inactivity_timeout();
       } else if (!ua_txn) {
         terminate_sm = true;
@@ -7381,7 +7384,7 @@ HttpSM::set_next_state()
       // light of this dependency, TS must ensure that the client finishes
       // sending its request and for this reason, the inactivity timeout
       // cannot be cancelled.
-      if (ua_txn && !t_state.hdr_info.request_content_length) {
+      if (ua_txn && t_state.hdr_info.request_content_length <= 0) {
         ua_txn->cancel_inactivity_timeout();
       } else if (!ua_txn) {
         terminate_sm = true;

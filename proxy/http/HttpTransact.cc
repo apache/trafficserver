@@ -1182,7 +1182,9 @@ HttpTransact::HandleRequest(State *s)
         }
       }
     }
-    if (s->txn_conf->request_buffer_enabled && has_request_body(s, s->state_machine->ua_txn)) {
+    if (s->txn_conf->request_buffer_enabled &&
+        s->state_machine->ua_txn->has_request_body(s->hdr_info.request_content_length,
+                                                   s->client_info.transfer_encoding == CHUNKED_ENCODING)) {
       TRANSACT_RETURN(SM_ACTION_WAIT_FOR_FULL_BODY, nullptr);
     }
   }
@@ -8836,15 +8838,6 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
     // Always update the Content-Length: header.
     header->set_content_length(s->range_output_cl);
   }
-}
-
-bool
-HttpTransact::has_request_body(State *s, ProxyClientTransaction *txn)
-{
-  int method = s->hdr_info.client_request.method_get_wksidx();
-  return (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
-         (s->hdr_info.request_content_length > 0 || s->client_info.transfer_encoding == CHUNKED_ENCODING ||
-          !txn->is_chunked_encoding_supported());
 }
 
 #if TS_HAS_TESTS
