@@ -36,7 +36,6 @@ libinkdns_a_SOURCES = \
 	I_DNSProcessor.h \
 	I_SplitDNS.h \
 	I_SplitDNSProcessor.h \
-	Inline.cc \
 	P_DNS.h \
 	P_DNSConnection.h \
 	P_DNSProcessor.h \
@@ -44,10 +43,6 @@ libinkdns_a_SOURCES = \
 	P_SplitDNSProcessor.h \
 	SRV.h \
 	SplitDNS.cc
-
-#test_UNUSED_SOURCES = \
-#  test_I_DNS.cc \
-#  test_P_DNS.cc
 
 include $(top_srcdir)/build/tidy.mk
 

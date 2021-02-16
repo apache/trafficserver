@@ -130,8 +130,5 @@ test_XPACK_SOURCES = \
 	HuffmanCodec.cc \
 	XPACK.cc
 
-#test_UNUSED_SOURCES = \
-#  test_urlhash.cc
-
 clang-tidy-local: $(libhdrs_a_SOURCES)
 	$(CXX_Clang_Tidy)

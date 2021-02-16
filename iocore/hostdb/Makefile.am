@@ -35,7 +35,6 @@ libinkhostdb_a_SOURCES = \
 	HostDB.cc \
 	I_HostDB.h \
 	I_HostDBProcessor.h \
-	Inline.cc \
 	P_HostDB.h \
 	P_HostDBProcessor.h \
 	P_RefCountCache.h \
@@ -47,10 +46,6 @@ check_PROGRAMS = test_RefCountCache
 
 test_RefCountCache_SOURCES = \
 	test_RefCountCache.cc
-
-#test_UNUSED_SOURCES = \
-#  test_I_HostDB.cc \
-#  test_P_HostDB.cc
 
 test_LD_FLAGS = \
 	@AM_LDFLAGS@ \

@@ -127,7 +127,6 @@ libinknet_a_SOURCES = \
 	I_UDPConnection.h \
 	I_UDPNet.h \
 	I_UDPPacket.h \
-	Inline.cc \
 	I_SessionAccept.h \
 	YamlSNIConfig.h \
 	YamlSNIConfig.cc \
@@ -150,7 +149,7 @@ libinknet_a_SOURCES = \
 	P_SSLNextProtocolSet.h \
 	P_SSLSNI.h \
 	P_SSLUtils.h \
-        P_SSLClientCoordinator.h \
+	P_SSLClientCoordinator.h \
 	P_SSLClientUtils.h \
 	P_OCSPStapling.h \
 	P_UDPConnection.h \
@@ -168,7 +167,7 @@ libinknet_a_SOURCES = \
 	ProxyProtocol.cc \
 	Socks.cc \
 	SSLCertLookup.cc \
-        SSLClientCoordinator.cc \
+	SSLClientCoordinator.cc \
 	SSLClientUtils.cc \
 	SSLConfig.cc \
 	SSLDiags.cc \
