@@ -273,6 +273,11 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
 {
   return "dummy";
 }
+const char *
+HttpDebugNames::get_event_name(int)
+{
+  return "dummy";
+}
 
 #include "HttpSM.h"
 HttpSM::HttpSM() : Continuation(nullptr), vc_table(this) {}
