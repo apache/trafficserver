@@ -160,7 +160,7 @@ TEST_CASE("HdrUtils 2", "[proxy][hdrutils]")
   int skip   = 0;
   auto parse = mime_hdr_print(heap, mime.m_mime, buff, static_cast<int>(sizeof(buff)), &idx, &skip);
   REQUIRE(parse != 0);
-  REQUIRE(idx == text.size());
+  REQUIRE(idx == static_cast<int>(text.size()));
   REQUIRE(0 == memcmp(ts::TextView(buff, idx), text));
   heap->destroy();
 };
@@ -203,7 +203,7 @@ TEST_CASE("HdrUtils 3", "[proxy][hdrutils]")
   int skip   = 0;
   auto parse = mime_hdr_print(heap, mime.m_mime, buff, static_cast<int>(sizeof(buff)), &idx, &skip);
   REQUIRE(parse != 0);
-  REQUIRE(idx == text.size());
+  REQUIRE(idx == static_cast<int>(text.size()));
   REQUIRE(0 == memcmp(ts::TextView(buff, idx), text));
   heap->destroy();
 };

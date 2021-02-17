@@ -26,7 +26,10 @@
 #include "I_EventSystem.h"
 #include "I_NetVConnection.h"
 
+#include "tscore/BufferWriter.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ink_string.h"
+#include "tscore/ink_inet.h"
 #include "tscpp/util/TextView.h"
 
 namespace
@@ -34,14 +37,60 @@ namespace
 using namespace std::literals;
 
 constexpr ts::TextView PPv1_CONNECTION_PREFACE = "PROXY"sv;
-constexpr ts::TextView PPv2_CONNECTION_PREFACE = "\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A\x02"sv;
+constexpr ts::TextView PPv2_CONNECTION_PREFACE = "\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A"sv;
 
 constexpr size_t PPv1_CONNECTION_HEADER_LEN_MIN = 15;
-constexpr size_t PPv2_CONNECTION_HEADER_LEN_MIN = 16;
 
 constexpr ts::TextView PPv1_PROTO_UNKNOWN = "UNKNOWN"sv;
 constexpr ts::TextView PPv1_PROTO_TCP4    = "TCP4"sv;
 constexpr ts::TextView PPv1_PROTO_TCP6    = "TCP6"sv;
+
+constexpr std::string_view PPv1_DELIMITER = " "sv;
+
+constexpr uint8_t PPv2_CMD_LOCAL = 0x20;
+constexpr uint8_t PPv2_CMD_PROXY = 0x21;
+
+constexpr uint8_t PPv2_PROTO_UNSPEC        = 0x00;
+constexpr uint8_t PPv2_PROTO_TCP4          = 0x11;
+constexpr uint8_t PPv2_PROTO_UDP4          = 0x12;
+constexpr uint8_t PPv2_PROTO_TCP6          = 0x21;
+constexpr uint8_t PPv2_PROTO_UDP6          = 0x22;
+constexpr uint8_t PPv2_PROTO_UNIX_STREAM   = 0x31;
+constexpr uint8_t PPv2_PROTO_UNIX_DATAGRAM = 0x32;
+
+constexpr uint16_t PPv2_ADDR_LEN_INET  = 4 + 4 + 2 + 2;
+constexpr uint16_t PPv2_ADDR_LEN_INET6 = 16 + 16 + 2 + 2;
+constexpr uint16_t PPv2_ADDR_LEN_UNIX  = 108 + 108;
+
+const ts::BWFSpec ADDR_ONLY_FMT{"::a"};
+
+struct PPv2Hdr {
+  uint8_t sig[12]; ///< preface
+  uint8_t ver_cmd; ///< protocol version and command
+  uint8_t fam;     ///< protocol family and transport
+  uint16_t len;    ///< number of following bytes part of the header
+  union {
+    // for TCP/UDP over IPv4, len = 12 (PPv2_ADDR_LEN_INET)
+    struct {
+      uint32_t src_addr;
+      uint32_t dst_addr;
+      uint16_t src_port;
+      uint16_t dst_port;
+    } ip4;
+    // for TCP/UDP over IPv6, len = 36 (PPv2_ADDR_LEN_INET6)
+    struct {
+      uint8_t src_addr[16];
+      uint8_t dst_addr[16];
+      uint16_t src_port;
+      uint16_t dst_port;
+    } ip6;
+    // for AF_UNIX sockets, len = 216 (PPv2_ADDR_LEN_UNIX)
+    struct {
+      uint8_t src_addr[108];
+      uint8_t dst_addr[108];
+    } unix;
+  } addr;
+};
 
 /**
    PROXY Protocol v1 Parser
@@ -166,13 +215,235 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, ts::TextView hdr)
 /**
    PROXY Protocol v2 Parser
 
+   TODO: TLVs Support
+
    @return read length
  */
 size_t
-proxy_protocol_v2_parse(ProxyProtocol * /*pp_info*/, ts::TextView /*hdr*/)
+proxy_protocol_v2_parse(ProxyProtocol *pp_info, const ts::TextView &msg)
 {
+  ink_release_assert(msg.size() >= PPv2_CONNECTION_HEADER_LEN);
+
+  const PPv2Hdr *hdr_v2 = reinterpret_cast<const PPv2Hdr *>(msg.data());
+
+  // Assuming PREFACE check is done
+
+  // length check
+  const uint16_t len     = ntohs(hdr_v2->len);
+  const size_t total_len = PPv2_CONNECTION_HEADER_LEN + len;
+
+  if (msg.size() < total_len) {
+    return 0;
+  }
+
+  // protocol version and command
+  switch (hdr_v2->ver_cmd) {
+  case PPv2_CMD_LOCAL: {
+    // protocol byte should be UNSPEC (\x00) with LOCAL command
+    if (hdr_v2->fam != PPv2_PROTO_UNSPEC) {
+      return 0;
+    }
+
+    pp_info->version   = ProxyProtocolVersion::V2;
+    pp_info->ip_family = AF_UNSPEC;
+
+    return total_len;
+  }
+  case PPv2_CMD_PROXY: {
+    switch (hdr_v2->fam) {
+    case PPv2_PROTO_TCP4: {
+      if (len < PPv2_ADDR_LEN_INET) {
+        return 0;
+      }
+
+      IpAddr src_addr(reinterpret_cast<in_addr_t>(hdr_v2->addr.ip4.src_addr));
+      pp_info->src_addr.assign(src_addr, hdr_v2->addr.ip4.src_port);
+
+      IpAddr dst_addr(reinterpret_cast<in_addr_t>(hdr_v2->addr.ip4.dst_addr));
+      pp_info->dst_addr.assign(dst_addr, hdr_v2->addr.ip4.dst_port);
+
+      pp_info->version   = ProxyProtocolVersion::V2;
+      pp_info->ip_family = AF_INET;
+
+      break;
+    }
+    case PPv2_PROTO_TCP6: {
+      if (len < PPv2_ADDR_LEN_INET6) {
+        return 0;
+      }
+
+      IpAddr src_addr(reinterpret_cast<in6_addr const &>(hdr_v2->addr.ip6.src_addr));
+      pp_info->src_addr.assign(src_addr, hdr_v2->addr.ip6.src_port);
+
+      IpAddr dst_addr(reinterpret_cast<in6_addr const &>(hdr_v2->addr.ip6.dst_addr));
+      pp_info->dst_addr.assign(dst_addr, hdr_v2->addr.ip6.dst_port);
+
+      pp_info->version   = ProxyProtocolVersion::V2;
+      pp_info->ip_family = AF_INET6;
+
+      break;
+    }
+    case PPv2_PROTO_UDP4:
+      [[fallthrough]];
+    case PPv2_PROTO_UDP6:
+      [[fallthrough]];
+    case PPv2_PROTO_UNIX_STREAM:
+      [[fallthrough]];
+    case PPv2_PROTO_UNIX_DATAGRAM:
+      [[fallthrough]];
+    case PPv2_PROTO_UNSPEC:
+      [[fallthrough]];
+    default:
+      // unsupported
+      return 0;
+    }
+
+    // TODO: Parse TLVs
+
+    return total_len;
+  }
+  default:
+    break;
+  }
+
   return 0;
 }
+
+/**
+   Build PROXY Protocol v1
+ */
+size_t
+proxy_protocol_v1_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info)
+{
+  if (max_buf_len < PPv1_CONNECTION_HEADER_LEN_MAX) {
+    return 0;
+  }
+
+  ts::FixedBufferWriter bw{reinterpret_cast<char *>(buf), max_buf_len};
+
+  // preface
+  bw.write(PPv1_CONNECTION_PREFACE);
+  bw.write(PPv1_DELIMITER);
+
+  // the proxied INET protocol and family
+  if (pp_info.src_addr.isIp4()) {
+    bw.write(PPv1_PROTO_TCP4);
+  } else if (pp_info.src_addr.isIp6()) {
+    bw.write(PPv1_PROTO_TCP6);
+  } else {
+    bw.write(PPv1_PROTO_UNKNOWN);
+  }
+  bw.write(PPv1_DELIMITER);
+
+  // the layer 3 source address
+  bwformat(bw, ADDR_ONLY_FMT, pp_info.src_addr);
+  bw.write(PPv1_DELIMITER);
+
+  // the layer 3 destination address
+  bwformat(bw, ADDR_ONLY_FMT, pp_info.dst_addr);
+  bw.write(PPv1_DELIMITER);
+
+  // TCP source port
+  {
+    size_t len = ink_small_itoa(ats_ip_port_host_order(pp_info.src_addr), bw.auxBuffer(), bw.remaining());
+    bw.fill(len);
+    bw.write(PPv1_DELIMITER);
+  }
+
+  // TCP destination port
+  {
+    size_t len = ink_small_itoa(ats_ip_port_host_order(pp_info.dst_addr), bw.auxBuffer(), bw.remaining());
+    bw.fill(len);
+  }
+
+  bw.write("\r\n");
+
+  return bw.size();
+}
+
+/**
+   Build PROXY Protocol v2
+
+   UDP, Unix Domain Socket, and TLV fields are not supported yet
+ */
+size_t
+proxy_protocol_v2_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info)
+{
+  if (max_buf_len < PPv2_CONNECTION_HEADER_LEN) {
+    return 0;
+  }
+
+  ts::FixedBufferWriter bw{reinterpret_cast<char *>(buf), max_buf_len};
+
+  // # proxy_hdr_v2
+  // ## preface
+  bw.write(PPv2_CONNECTION_PREFACE);
+
+  // ## version and command
+  // TODO: support PPv2_CMD_LOCAL for health check
+  bw.write(static_cast<char>(PPv2_CMD_PROXY));
+
+  // ## family & address
+  // TODO: support UDP
+  switch (pp_info.src_addr.family()) {
+  case AF_INET:
+    bw.write(static_cast<char>(PPv2_PROTO_TCP4));
+    break;
+  case AF_INET6:
+    bw.write(static_cast<char>(PPv2_PROTO_TCP6));
+    break;
+  case AF_UNIX:
+    bw.write(static_cast<char>(PPv2_PROTO_UNIX_STREAM));
+    break;
+  default:
+    bw.write(static_cast<char>(PPv2_PROTO_UNSPEC));
+    break;
+  }
+
+  // ## len field. this will be set at the end of this function
+  const size_t len_field_offset = bw.size();
+  bw.fill(2);
+
+  ink_release_assert(bw.size() == PPv2_CONNECTION_HEADER_LEN);
+
+  // # proxy_addr
+  // TODO: support UDP
+  switch (pp_info.src_addr.family()) {
+  case AF_INET: {
+    bw.write(&ats_ip4_addr_cast(pp_info.src_addr), TS_IP4_SIZE);
+    bw.write(&ats_ip4_addr_cast(pp_info.dst_addr), TS_IP4_SIZE);
+    bw.write(&ats_ip_port_cast(pp_info.src_addr), TS_PORT_SIZE);
+    bw.write(&ats_ip_port_cast(pp_info.dst_addr), TS_PORT_SIZE);
+
+    break;
+  }
+  case AF_INET6: {
+    bw.write(&ats_ip6_addr_cast(pp_info.src_addr), TS_IP6_SIZE);
+    bw.write(&ats_ip6_addr_cast(pp_info.dst_addr), TS_IP6_SIZE);
+    bw.write(&ats_ip_port_cast(pp_info.src_addr), TS_PORT_SIZE);
+    bw.write(&ats_ip_port_cast(pp_info.dst_addr), TS_PORT_SIZE);
+
+    break;
+  }
+  case AF_UNIX: {
+    // unsupported yet
+    bw.fill(PPv2_ADDR_LEN_UNIX);
+    break;
+  }
+  default:
+    // do nothing
+    break;
+  }
+
+  // # Additional TLVs (pp2_tlv)
+  // unsupported yet
+
+  // Set len field (number of following bytes part of the header) in the hdr
+  uint16_t len = htons(bw.size() - PPv2_CONNECTION_HEADER_LEN);
+  memcpy(buf + len_field_offset, &len, sizeof(uint16_t));
+  return bw.size();
+}
+
 } // namespace
 
 /**
@@ -187,7 +458,7 @@ proxy_protocol_parse(ProxyProtocol *pp_info, ts::TextView tv)
   if (tv.size() >= PPv1_CONNECTION_HEADER_LEN_MIN && PPv1_CONNECTION_PREFACE.isPrefixOf(tv)) {
     // Client must send at least 15 bytes to get a reasonable match.
     len = proxy_protocol_v1_parse(pp_info, tv);
-  } else if (tv.size() >= PPv2_CONNECTION_HEADER_LEN_MIN && PPv2_CONNECTION_PREFACE.isPrefixOf(tv)) {
+  } else if (tv.size() >= PPv2_CONNECTION_HEADER_LEN && PPv2_CONNECTION_PREFACE.isPrefixOf(tv)) {
     len = proxy_protocol_v2_parse(pp_info, tv);
   } else {
     // if we don't have the PROXY preface, we don't have a ProxyProtocol header
@@ -196,4 +467,40 @@ proxy_protocol_parse(ProxyProtocol *pp_info, ts::TextView tv)
   }
 
   return len;
+}
+
+/**
+   PROXY Protocol Builder
+ */
+size_t
+proxy_protocol_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info, ProxyProtocolVersion force_version)
+{
+  ProxyProtocolVersion version = pp_info.version;
+  if (force_version != ProxyProtocolVersion::UNDEFINED) {
+    version = force_version;
+  }
+
+  size_t len = 0;
+
+  if (version == ProxyProtocolVersion::V1) {
+    len = proxy_protocol_v1_build(buf, max_buf_len, pp_info);
+  } else if (version == ProxyProtocolVersion::V2) {
+    len = proxy_protocol_v2_build(buf, max_buf_len, pp_info);
+  } else {
+    ink_abort("PROXY Protocol Version is undefined");
+  }
+
+  return len;
+}
+
+ProxyProtocolVersion
+proxy_protocol_version_cast(int i)
+{
+  switch (i) {
+  case 1:
+  case 2:
+    return static_cast<ProxyProtocolVersion>(i);
+  default:
+    return ProxyProtocolVersion::UNDEFINED;
+  }
 }

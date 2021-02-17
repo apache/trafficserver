@@ -929,7 +929,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   const SrcUrl src_url([=]() -> SrcUrl {
     SrcUrl u;
 
-    if (ri->pristine_url) {
+    if (!ri->pristine_url) {
       u.bufp = rri->requestBufp;
       u.loc  = rri->requestUrl;
       u.bad  = false;

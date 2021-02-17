@@ -2350,9 +2350,32 @@ URLPartSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length, URLPartSet
 }
 
 const char *
-TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
+TSUrlRawSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
 {
   return URLPartGet(bufp, obj, length, &URL::scheme_get);
+}
+
+const char *
+TSUrlSchemeGet(TSMBuffer bufp, TSMLoc obj, int *length)
+{
+  char const *data = TSUrlRawSchemeGet(bufp, obj, length);
+  if (data && *length) {
+    return data;
+  }
+  switch (reinterpret_cast<URLImpl *>(obj)->m_url_type) {
+  case URL_TYPE_HTTP:
+    data    = URL_SCHEME_HTTP;
+    *length = URL_LEN_HTTP;
+    break;
+  case URL_TYPE_HTTPS:
+    data    = URL_SCHEME_HTTPS;
+    *length = URL_LEN_HTTPS;
+    break;
+  default:
+    *length = 0;
+    data    = nullptr;
+  }
+  return data;
 }
 
 TSReturnCode
@@ -4897,8 +4920,8 @@ TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 TSVConn
 TSHttpSsnServerVConnGet(TSHttpSsn ssnp)
 {
-  TSVConn vconn          = nullptr;
-  Http1ServerSession *ss = reinterpret_cast<Http1ServerSession *>(ssnp);
+  TSVConn vconn       = nullptr;
+  PoolableSession *ss = reinterpret_cast<PoolableSession *>(ssnp);
   if (ss != nullptr) {
     vconn = reinterpret_cast<TSVConn>(ss->get_netvc());
   }
@@ -4912,7 +4935,7 @@ TSHttpTxnServerVConnGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   if (sm != nullptr) {
-    Http1ServerSession *ss = sm->get_server_session();
+    PoolableSession *ss = sm->get_server_session();
     if (ss != nullptr) {
       vconn = reinterpret_cast<TSVConn>(ss->get_netvc());
     }
@@ -5573,6 +5596,15 @@ TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag)
   return TS_SUCCESS;
 }
 
+bool
+TSHttpTxnServerRespNoStoreGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpTransact::State *s = &(((HttpSM *)txnp)->t_state);
+  return s->api_server_response_no_store;
+}
+
 TSReturnCode
 TSHttpTxnServerRespIgnore(TSHttpTxn txnp)
 {
@@ -5722,7 +5754,7 @@ TSHttpSsnClientAddrGet(TSHttpSsn ssnp)
   if (cs == nullptr) {
     return nullptr;
   }
-  return cs->get_client_addr();
+  return cs->get_remote_addr();
 }
 sockaddr const *
 TSHttpTxnClientAddrGet(TSHttpTxn txnp)
@@ -5759,7 +5791,7 @@ TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
-  Http1ServerSession *ssn = sm->get_server_session();
+  PoolableSession *ssn = sm->get_server_session();
   if (ssn == nullptr) {
     return nullptr;
   }
@@ -5893,12 +5925,14 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the mark on an active server session
-  Http1ServerSession *ssn = sm->get_server_session();
-  if (nullptr != ssn) {
-    NetVConnection *vc = ssn->get_netvc();
-    if (vc != nullptr) {
-      vc->options.packet_mark = (uint32_t)mark;
-      vc->apply_options();
+  if (nullptr != sm->ua_txn) {
+    PoolableSession *ssn = sm->ua_txn->get_server_session();
+    if (nullptr != ssn) {
+      NetVConnection *vc = ssn->get_netvc();
+      if (vc != nullptr) {
+        vc->options.packet_mark = (uint32_t)mark;
+        vc->apply_options();
+      }
     }
   }
 
@@ -5933,12 +5967,14 @@ TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the tos on an active server session
-  Http1ServerSession *ssn = sm->get_server_session();
-  if (nullptr != ssn) {
-    NetVConnection *vc = ssn->get_netvc();
-    if (vc != nullptr) {
-      vc->options.packet_tos = (uint32_t)tos;
-      vc->apply_options();
+  if (nullptr != sm->ua_txn) {
+    PoolableSession *ssn = sm->ua_txn->get_server_session();
+    if (nullptr != ssn) {
+      NetVConnection *vc = ssn->get_netvc();
+      if (vc != nullptr) {
+        vc->options.packet_tos = (uint32_t)tos;
+        vc->apply_options();
+      }
     }
   }
 
@@ -5973,12 +6009,14 @@ TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the tos on an active server session
-  Http1ServerSession *ssn = sm->get_server_session();
-  if (nullptr != ssn) {
-    NetVConnection *vc = ssn->get_netvc();
-    if (vc != nullptr) {
-      vc->options.packet_tos = (uint32_t)dscp << 2;
-      vc->apply_options();
+  if (nullptr != sm->ua_txn) {
+    PoolableSession *ssn = sm->ua_txn->get_server_session();
+    if (nullptr != ssn) {
+      NetVConnection *vc = ssn->get_netvc();
+      if (vc != nullptr) {
+        vc->options.packet_tos = (uint32_t)dscp << 2;
+        vc->apply_options();
+      }
     }
   }
 
@@ -7759,7 +7797,7 @@ TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   *fdp       = -1;
 
-  Http1ServerSession *ss = sm->get_server_session();
+  PoolableSession *ss = sm->get_server_session();
   if (ss == nullptr) {
     return TS_ERROR;
   }
@@ -8461,6 +8499,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_INSERT_FORWARDED:
     ret = _memberp_to_generic(&overridableHttpConfig->insert_forwarded, conv);
+    break;
+  case TS_CONFIG_HTTP_PROXY_PROTOCOL_OUT:
+    ret = _memberp_to_generic(&overridableHttpConfig->proxy_protocol_out, conv);
     break;
   case TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS:
     ret = _memberp_to_generic(&overridableHttpConfig->send_http11_requests, conv);

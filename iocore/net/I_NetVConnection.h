@@ -623,6 +623,7 @@ public:
 
   /** Returns local sockaddr storage. */
   sockaddr const *get_local_addr();
+  IpEndpoint const &get_local_endpoint();
 
   /** Returns local ip.
       @deprecated get_local_addr() should be used instead for AF_INET6 compatibility.
@@ -839,6 +840,9 @@ public:
   {
     return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::DST));
   };
+
+  void set_proxy_protocol_info(const ProxyProtocol &src);
+  const ProxyProtocol &get_proxy_protocol_info() const;
 
   bool has_proxy_protocol(IOBufferReader *);
   bool has_proxy_protocol(char *, int64_t *);

@@ -514,6 +514,13 @@ Http3Transaction::_process_write_vio()
   return nwritten;
 }
 
+// TODO:  Just a place holder for now
+bool
+Http3Transaction::has_request_body(int64_t content_length, bool is_chunked_set) const
+{
+  return false;
+}
+
 //
 // Http09Transaction
 //

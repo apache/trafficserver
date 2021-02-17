@@ -56,6 +56,10 @@ std::mutex proxyServerMutex;
 std::condition_variable proxyServerCheck;
 bool et_net_threads_ready = false;
 
+std::mutex etUdpMutex;
+std::condition_variable etUdpCheck;
+bool et_udp_threads_ready = false;
+
 extern int num_of_net_threads;
 extern int num_accept_threads;
 
@@ -322,6 +326,15 @@ init_HttpProxyServer()
     lock.unlock();
     proxyServerCheck.notify_one();
   }
+
+#if TS_USE_QUIC == 1
+  if (eventProcessor.has_tg_started(ET_UDP)) {
+    std::unique_lock<std::mutex> lock(etUdpMutex);
+    et_udp_threads_ready = true;
+    lock.unlock();
+    etUdpCheck.notify_one();
+  }
+#endif
 }
 
 void

@@ -1487,14 +1487,8 @@ Origin Server Connect Attempts
 
    Set a limit for the number of concurrent connections to an upstream server group. A value of
    ``0`` disables checking. If a transaction attempts to connect to a group which already has the
-   maximum number of concurrent connections the transaction either rechecks after a delay or a 503
+   maximum number of concurrent connections a 503
    (``HTTP_STATUS_SERVICE_UNAVAILABLE``) error response is sent to the user agent. To configure
-
-   Number of transactions that can be delayed concurrently
-      See :ts:cv:`proxy.config.http.per_server.connection.queue_size`.
-
-   How long to delay before rechecking
-      See :ts:cv:`proxy.config.http.per_server.connection.queue_delay`.
 
    Upstream server group definition
       See :ts:cv:`proxy.config.http.per_server.connection.match`.
@@ -1528,26 +1522,6 @@ Origin Server Connect Attempts
 
    This setting is independent of the :ts:cv:`setting for upstream session sharing matching
    <proxy.config.http.server_session_sharing.match>`.
-
-.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_size INT 0
-   :reloadable:
-
-   Controls the number of transactions that can be waiting on an upstream server group.
-
-   ``-1``
-      Unlimited.
-
-   ``0``
-      Never wait. If the connection maximum has been reached immediately respond with an error.
-
-   A positive number
-      If there are less than this many waiting transactions, delay this transaction and try again. Otherwise respond immediately with an error.
-
-.. ts:cv:: CONFIG proxy.config.http.per_server.connection.queue_delay INT 100
-   :reloadable:
-   :units: milliseconds
-
-   If a transaction is delayed due to too many connections in an upstream server group, delay this amount of time before checking again.
 
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.alert_delay INT 60
    :reloadable:
@@ -1817,6 +1791,21 @@ Proxy User Variables
        See :ts:cv:`proxy.config.http.server_ports` for information on how to enable Proxy Protocol on a port.
 
    See :ref:`proxy-protocol` for more discussion on how |TS| transforms the `Forwarded: header`.
+
+.. ts:cv:: CONFIG proxy.config.http.proxy_protocol_out INT ``-1``
+   :reloadable:
+   :overridable:
+
+   Set the behavior of outbound PROXY Protocol.
+
+   =========== ======================================================================
+   Value       Description
+   =========== ======================================================================
+   ``-1``      Disable (default)
+   ``0``       Forward received PROXY protocol to the next hop
+   ``1``       Send client information in PROXY protocol version 1
+   ``2``       Send client information in PROXY protocol version 2
+   =========== ======================================================================
 
 .. ts:cv:: CONFIG proxy.config.http.normalize_ae INT 1
    :reloadable:
@@ -2595,6 +2584,15 @@ DNS
 .. ts:cv:: CONFIG proxy.config.dns.retries INT 5
 
    Maximum number of retries made by |TS| on a given DNS query
+
+.. ts:cv:: CONFIG proxy.config.dns.local_ipv4 STRING NULL
+
+   Local IPV4 address to bind to in order to make DNS requests
+
+.. ts:cv:: CONFIG proxy.config.dns.local_ipv6 STRING NULL
+
+   Local IPV6 address to bind to in order to make DNS requests
+
 
 HostDB
 ======

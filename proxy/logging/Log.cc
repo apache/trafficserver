@@ -72,6 +72,7 @@ int Log::preproc_threads;
 int Log::init_status                  = 0;
 int Log::config_flags                 = 0;
 bool Log::logging_mode_changed        = false;
+bool Log::log_rotate_signal_received  = false;
 uint32_t Log::periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
 
 // Hash table for LogField symbols
@@ -138,12 +139,6 @@ Log::change_configuration()
   prev_config->log_object_manager.flush_all_objects();
 
   Debug("log-config", "... new configuration in place");
-}
-
-void
-Log::reopen_moved_log_files()
-{
-  Log::config->log_object_manager.reopen_moved_log_files();
 }
 
 /*-------------------------------------------------------------------------
@@ -259,6 +254,10 @@ Log::periodic_tasks(long time_now)
         global_scrap_object->roll_files(time_now);
       }
       Log::config->log_object_manager.roll_files(time_now);
+    }
+    if (log_rotate_signal_received) {
+      Log::config->log_object_manager.reopen_moved_log_files();
+      log_rotate_signal_received = false;
     }
   }
 }
@@ -532,6 +531,11 @@ Log::init_fields()
                        reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssu", field);
+
+  field = new LogField("client_sec_alpn", "cqssa", LogField::STRING, &LogAccess::marshal_client_security_alpn,
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqssa", field);
 
   Ptr<LogFieldAliasTable> finish_status_map = make_ptr(new LogFieldAliasTable);
   finish_status_map->init(N_LOG_FINISH_CODE_TYPES, LOG_FINISH_FIN, "FIN", LOG_FINISH_INTR, "INTR", LOG_FINISH_TIMEOUT, "TIMEOUT");
@@ -984,6 +988,14 @@ Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDat
     Debug("log-periodic", "periodic task interval changed to %u", periodic_tasks_interval);
   }
   return REC_ERR_OKAY;
+}
+
+int
+Log::handle_log_rotation_request()
+{
+  Debug("log", "Request to reopen rotated log files.");
+  log_rotate_signal_received = true;
+  return 0;
 }
 
 void

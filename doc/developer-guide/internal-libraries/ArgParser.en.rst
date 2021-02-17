@@ -158,7 +158,9 @@ Classes
 
    .. function:: Option &add_option(std::string const &long_option, std::string const &short_option, std::string const &description, std::string const &envvar = "", unsigned arg_num = 0, std::string const &default_value = "", std::string const &key = "")
 
-      Add an option to current command with *long name*, *short name*, *help description*, *environment variable*, *arguments expected*, *default value* and *lookup key*. Return The Option object itself.
+      Add an option to current command with *long name*, *short name*, *help description*, *environment variable*, *arguments expected*, *default value* and *lookup key*.
+      If no *lookup key* is provided, the *long name* will be used as lookup key without the prefix, for instance, for a long option ``--debug`` you should use ``debug`` as
+      as lookup key. Return The Option object itself.
 
    .. function:: Command &add_command(std::string const &cmd_name, std::string const &cmd_description, std::function<void()> const &f = nullptr, std::string const &key = "")
 

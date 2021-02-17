@@ -27,71 +27,11 @@ Test.SkipUnless(
 )
 
 # Configure the origin server.
-server = Test.MakeOriginServer("server", both=True)
+replay_file = "replay/traffic_dump.yaml"
+server = Test.MakeVerifierServerProcess(
+    "server", replay_file,
+    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
 
-request_header = {"headers": "GET /one HTTP/1.1\r\n"
-                  "Host: www.notls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK"
-                   "\r\nConnection: close\r\nContent-Length: 0"
-                   "\r\nSet-Cookie: classified_not_for_logging\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_header)
-request_header = {"headers": "GET /two HTTP/1.1\r\n"
-                  "Host: www.notls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK"
-                   "\r\nConnection: close\r\nContent-Length: 0"
-                   "\r\nSet-Cookie: classified_not_for_logging\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_header)
-request_header = {"headers": "GET /three HTTP/1.1\r\n"
-                  "Host: www.notls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK"
-                   "\r\nConnection: close\r\nContent-Length: 0"
-                   "\r\nSet-Cookie: classified_not_for_logging\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_header)
-request_header = {"headers": "GET /post_with_body HTTP/1.1\r\n"
-                  "Host: www.notls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_200 = {"headers": "HTTP/1.1 200 OK"
-                "\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
-                "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_200)
-request_header = {"headers": "GET /cache_test HTTP/1.1\r\n"
-                  "Host: www.notls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK"
-                   "\r\nConnection: close\r\nCache-Control: max-age=300\r\n"
-                   "Content-Length: 4\r\n\r\n",
-                   "timestamp": "1469733493.993", "body": "1234"}
-server.addResponse("sessionfile.log", request_header, response_header)
-request_header = {"headers": "GET /first HTTP/1.1\r\n"
-                  "Host: www.notls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_200)
-request_header = {"headers": "GET /second HTTP/1.1\r\n"
-                  "Host: www.notls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_200)
-request_header = {"headers": "GET /tls HTTP/1.1\r\n"
-                  "Host: www.tls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_200)
-request_header = {"headers": "GET /h2_first HTTP/2\r\n"
-                  "Host: www.tls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_200)
-request_header = {"headers": "GET /h2_second HTTP/2\r\n"
-                  "Host: www.tls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_200)
-request_header = {"headers": "GET /client_only_tls HTTP/1.1\r\n"
-                  "Host: www.client_only_tls.com\r\nContent-Length: 0\r\n\r\n",
-                  "timestamp": "1469733493.993", "body": ""}
-server.addResponse("sessionfile.log", request_header, response_200)
 
 # Define ATS and configure it.
 ts = Test.MakeATSProcess("ts", enable_tls=True)
@@ -124,13 +64,13 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.remap_config.AddLine(
-    'map https://www.client_only_tls.com/ http://127.0.0.1:{0}'.format(server.Variables.Port)
+    'map https://www.client_only_tls.com/ http://127.0.0.1:{0}'.format(server.Variables.http_port)
 )
 ts.Disk.remap_config.AddLine(
-    'map https://www.tls.com/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port)
+    'map https://www.tls.com/ https://127.0.0.1:{0}'.format(server.Variables.https_port)
 )
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
+    'map / http://127.0.0.1:{0}'.format(server.Variables.http_port)
 )
 
 # Configure traffic_dump.
@@ -186,38 +126,27 @@ ts.Disk.File(replay_file_session_9, exists=True)
 replay_file_session_10 = os.path.join(replay_dir, "127", "0000000000000009")
 ts.Disk.File(replay_file_session_10, exists=True)
 
+# Execute the first transaction. We limit the threads to 1 so that the sessions
+# are run in serial.
+tr = Test.AddTestRun("Run the test traffic.")
+tr.AddVerifierClientProcess(
+    "client", replay_file, http_ports=[ts.Variables.port],
+    https_ports=[ts.Variables.ssl_port],
+    ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem",
+    other_args='--thread-limit 1')
+
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(ts)
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+
 #
 # Test 1: Verify the correct behavior of two transactions across two sessions.
 #
 
-# Execute the first transaction.
-tr = Test.AddTestRun("First transaction")
-
-tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = \
-    ('curl --http1.1 http://127.0.0.1:{0}/one -H"Cookie: donotlogthis" '
-     '-H"Host: www.notls.com" -H"X-Request-1: ultra_sensitive" --verbose'.format(
-         ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/200.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-http_protocols = "tcp,ip"
-
-# Execute the second transaction.
-tr = Test.AddTestRun("Second transaction")
-tr.Processes.Default.Command = \
-    ('curl --http1.0 http://127.0.0.1:{0}/two -H"Host: www.notls.com" '
-     '-H"X-Request-2: also_very_sensitive" --verbose'.format(
-         ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/200_http10.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
 # Verify the properties of the replay file for the first transaction.
 tr = Test.AddTestRun("Verify the json content of the first session")
+http_protocols = "tcp,ip"
 verify_replay = "verify_replay.py"
 sensitive_fields_arg = (
     "--sensitive-fields cookie "
@@ -241,7 +170,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the json content of the second session")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = \
-    ('python3 {0} {1} {2} {3} --client-http-version "1.0" '
+    ('python3 {0} {1} {2} {3} --client-http-version "1.1" '
      '--request-target "/two"'.format(
          verify_replay,
          os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
@@ -255,18 +184,7 @@ tr.StillRunningAfter = ts
 # Test 2: Verify the correct behavior of an explicit path in the request line.
 #
 
-# Verify that an explicit path in the request line is recorded.
-tr = Test.AddTestRun("Make a request with an explicit target.")
-request_target = "http://localhost:{0}/candy".format(ts.Variables.port)
-tr.Processes.Default.Command = (
-    'curl --request-target "{0}" '
-    'http://127.0.0.1:{1}/three -H"Host: www.notls.com" --verbose'.format(
-        request_target, ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/explicit_target.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
+# Verify recording of a request target with the host specified.
 tr = Test.AddTestRun("Verify the replay file has the explicit target.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 
@@ -275,7 +193,7 @@ tr.Processes.Default.Command = "python3 {0} {1} {2} {3} --request-target '{4}'".
     os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
     replay_file_session_3,
     sensitive_fields_arg,
-    request_target)
+    "http://www.some.host.com/candy")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -284,31 +202,18 @@ tr.StillRunningAfter = ts
 # Test 3: Verify correct handling of a POST with body data.
 #
 
-tr = Test.AddTestRun("Make a POST request with a body.")
-request_target = "http://localhost:{0}/post_with_body".format(ts.Variables.port)
-
-# Send the replay file as the request body because it is conveniently already
-# in the test run directory.
-tr.Processes.Default.Command = (
-    'curl --data-binary @{0} --request-target "{1}" '
-    'http://127.0.0.1:{2} -H"Host: www.notls.com" --verbose'.format(
-        verify_replay, request_target, ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/post_with_body.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun("Verify the client-request size node has the expected value.")
+tr = Test.AddTestRun("Verify the client-request size node for a request with a body.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 
 size_of_verify_replay_file = os.path.getsize(os.path.join(Test.TestDirectory, verify_replay))
+expected_body_size = 12345
 tr.Processes.Default.Command = \
     "python3 {0} {1} {2} {3} --client-request-size {4}".format(
         verify_replay,
         os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json'),
         replay_file_session_4,
         sensitive_fields_arg,
-        size_of_verify_replay_file)
+        expected_body_size)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -316,24 +221,6 @@ tr.StillRunningAfter = ts
 #
 # Test 4: Verify correct handling of a response produced out of the cache.
 #
-tr = Test.AddTestRun("Make a request for an uncached object.")
-tr.Processes.Default.Command = \
-    ('curl --http1.1 http://127.0.0.1:{0}/cache_test -H"Host: www.notls.com" --verbose'.format(
-        ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/4_byte_response_body.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun("Repeat the previous request: should be cached now.")
-tr.Processes.Default.Command = \
-    ('curl --http1.1 http://127.0.0.1:{0}/cache_test -H"Host: www.notls.com" --verbose'.format(
-        ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/4_byte_response_body.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
 tr = Test.AddTestRun("Verify that the cached response's replay file looks appropriate.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}"'.format(
@@ -348,17 +235,7 @@ tr.StillRunningAfter = ts
 #
 # Test 5: Verify correct handling of two transactions in a session.
 #
-tr = Test.AddTestRun("Conduct two transactions in the same session.")
-tr.Processes.Default.Command = \
-    ('curl --http1.1 http://127.0.0.1:{0}/first -H"Host: www.notls.com" --verbose --next '
-     'curl --http1.1 http://127.0.0.1:{0}/second -H"Host: www.notls.com" --verbose'
-            .format(ts.Variables.port))
-tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stderr = "gold/two_transactions.gold"
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun("Verify that the dump file can be read.")
+tr = Test.AddTestRun("Verify the dump file of two transactions in a session.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-protocols "{3}"'.format(
     verify_replay,
@@ -372,17 +249,7 @@ tr.StillRunningAfter = ts
 #
 # Test 6: Verify correct protcol dumping of a TLS connection.
 #
-tr = Test.AddTestRun("Perform an HTTP/1 transaction over a TLS connection.")
-tr.Processes.Default.Command = \
-    ('curl --http1.1 -k -H"Host: www.tls.com" --resolve "www.tls.com:{0}:127.0.0.1" '
-     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://www.tls.com:{0}/tls'.format(
-         ts.Variables.ssl_port))
-
-tr.Processes.Default.ReturnCode = 0
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun("Verify the client protocol stack.")
+tr = Test.AddTestRun("Verify the client protocol stack of a TLS session.")
 https_protocols = "tls,tcp,ip"
 client_tls_features = "sni:www.tls.com,proxy-verify-mode:0,proxy-provided-cert:true"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
@@ -396,7 +263,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-tr = Test.AddTestRun("Verify the server protocol stack.")
+tr = Test.AddTestRun("Verify the server TLS protocol stack.")
 https_server_stack = "http,tls,tcp,ip"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 server_tls_features = 'proxy-provided-cert:false,sni:www.tls.com,proxy-verify-mode:1'
@@ -413,19 +280,7 @@ tr.StillRunningAfter = ts
 #
 # Test 7: Verify correct protcol dumping of TLS and HTTP/2 connections.
 #
-tr = Test.AddTestRun("Conduct two HTTP/2 transactions over a TLS connection.")
-tr.Processes.Default.Command = \
-    ('curl --http2 -k -H"Host: www.tls.com" --resolve "www.tls.com:{0}:127.0.0.1" '
-     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://www.tls.com:{0}/h2_first '
-     '--next --http2 -k -H"Host: www.tls.com" --resolve "www.tls.com:{0}:127.0.0.1" '
-     '--cert ./signed-foo.pem --key ./signed-foo.key --verbose https://www.tls.com:{0}/h2_second'.format(
-         ts.Variables.ssl_port))
-
-tr.Processes.Default.ReturnCode = 0
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun("Verify the client protocol stack.")
+tr = Test.AddTestRun("Verify the client HTTP/2 protocol stack.")
 h2_protocols = "http,tls,tcp,ip"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = \
@@ -440,7 +295,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-tr = Test.AddTestRun("Verify the server protocol stack.")
+tr = Test.AddTestRun("Verify the server HTTP/2 protocol stack.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --server-protocols "{3}" --server-tls-features "{4}"'.format(
     verify_replay,
@@ -455,19 +310,7 @@ tr.StillRunningAfter = ts
 #
 # Test 8: Verify correct protcol dumping of client-side TLS and server-side HTTP.
 #
-tr = Test.AddTestRun("Conduct a client-side TLS connection with an HTTP server-side connection.")
-tr.Processes.Default.Command = \
-    ('curl --http1.1 -k -H"Host: www.client_only_tls.com" '
-     '--resolve "www.client_only_tls.com:{0}:127.0.0.1" '
-     '--cert ./signed-foo.pem --key ./signed-foo.key '
-     '--verbose https://www.client_only_tls.com:{0}/client_only_tls'.format(
-         ts.Variables.ssl_port))
-
-tr.Processes.Default.ReturnCode = 0
-tr.StillRunningAfter = server
-tr.StillRunningAfter = ts
-
-tr = Test.AddTestRun("Verify the client protocol stack.")
+tr = Test.AddTestRun("Verify the client TLS protocol stack.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --client-http-version "1.1" --client-protocols "{3}"'.format(
     verify_replay,
@@ -478,7 +321,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-tr = Test.AddTestRun("Verify the server protocol stack.")
+tr = Test.AddTestRun("Verify the server HTTP protocol stack.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 http_server_stack = "http,tcp,ip"
 tr.Processes.Default.Command = 'python3 {0} {1} {2} --server-protocols "{3}"'.format(

@@ -563,7 +563,6 @@ CacheVC::openReadReadDone(int event, Event *e)
       VC_SCHED_LOCK_RETRY();
     }
     if (event == AIO_EVENT_DONE && !io.ok()) {
-      dir_delete(&earliest_key, vol, &earliest_dir);
       goto Lerror;
     }
     if (last_collision &&     // no missed lock
@@ -621,10 +620,11 @@ Lerror : {
   if (request.valid()) {
     int url_length;
     const char *url_text = request.url_get()->string_get_ref(&url_length);
-    Warning("Document %s truncated, url[%.*s]", earliest_key.toHexStr(tmpstring), url_length, url_text);
+    Warning("Document %s truncated, url[%.*s] .. clearing", earliest_key.toHexStr(tmpstring), url_length, url_text);
   } else {
-    Warning("Document %s truncated", earliest_key.toHexStr(tmpstring));
+    Warning("Document %s truncated .. clearing", earliest_key.toHexStr(tmpstring));
   }
+  dir_delete(&earliest_key, vol, &earliest_dir);
   return calluser(VC_EVENT_ERROR);
 }
 Ldone:

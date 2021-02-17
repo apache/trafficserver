@@ -1235,6 +1235,8 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.insert_squid_x_forwarded_for, "proxy.config.http.insert_squid_x_forwarded_for");
 
+  HttpEstablishStaticConfigLongLong(c.oride.proxy_protocol_out, "proxy.config.http.proxy_protocol_out");
+
   HttpEstablishStaticConfigByte(c.oride.insert_age_in_response, "proxy.config.http.insert_age_in_response");
   HttpEstablishStaticConfigByte(c.enable_http_stats, "proxy.config.http.enable_http_stats");
   HttpEstablishStaticConfigByte(c.oride.normalize_ae, "proxy.config.http.normalize_ae");
@@ -1394,17 +1396,9 @@ HttpConfig::reconfigure()
   params->disable_ssl_parenting        = INT_TO_BOOL(m_master.disable_ssl_parenting);
   params->oride.forward_connect_method = INT_TO_BOOL(m_master.oride.forward_connect_method);
 
-  params->server_max_connections    = m_master.server_max_connections;
-  params->max_websocket_connections = m_master.max_websocket_connections;
-  params->oride.outbound_conntrack  = m_master.oride.outbound_conntrack;
-  // If queuing for outbound connection tracking is enabled without enabling max connections, it is meaningless, so we'll warn
-  if (params->outbound_conntrack.queue_size > 0 &&
-      !(params->oride.outbound_conntrack.max > 0 || params->oride.outbound_conntrack.min > 0)) {
-    Warning("'%s' is set, but neither '%s' nor '%s' are "
-            "set, please correct your %s",
-            OutboundConnTrack::CONFIG_VAR_QUEUE_SIZE.data(), OutboundConnTrack::CONFIG_VAR_MAX.data(),
-            OutboundConnTrack::CONFIG_VAR_MIN.data(), ts::filename::RECORDS);
-  }
+  params->server_max_connections                = m_master.server_max_connections;
+  params->max_websocket_connections             = m_master.max_websocket_connections;
+  params->oride.outbound_conntrack              = m_master.oride.outbound_conntrack;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
 
   params->http_request_line_max_size = m_master.http_request_line_max_size;
@@ -1525,6 +1519,7 @@ HttpConfig::reconfigure()
   params->oride.insert_age_in_response       = INT_TO_BOOL(m_master.oride.insert_age_in_response);
   params->enable_http_stats                  = INT_TO_BOOL(m_master.enable_http_stats);
   params->oride.normalize_ae                 = m_master.oride.normalize_ae;
+  params->oride.proxy_protocol_out           = m_master.oride.proxy_protocol_out;
 
   params->oride.cache_heuristic_min_lifetime = m_master.oride.cache_heuristic_min_lifetime;
   params->oride.cache_heuristic_max_lifetime = m_master.oride.cache_heuristic_max_lifetime;

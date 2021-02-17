@@ -518,6 +518,7 @@ struct OverridableHttpConfigParams {
   // Forwarded //
   ///////////////
   HttpForwarded::OptionBitSet insert_forwarded;
+  MgmtInt proxy_protocol_out = -1;
 
   //////////////////////
   //  Version Hell    //

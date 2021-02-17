@@ -77,7 +77,7 @@ SNIConfigParams::loadSNIConfig()
       ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
     }
     if (item.tunnel_destination.length() > 0) {
-      ai->actions.push_back(std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_decrypt, item.tls_upstream));
+      ai->actions.push_back(std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_type));
     }
 
     ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
@@ -101,7 +101,6 @@ SNIConfigParams::loadSNIConfig()
     nps->setGlobName(item.fqdn);
     nps->prop.verifyServerPolicy     = item.verify_server_policy;
     nps->prop.verifyServerProperties = item.verify_server_properties;
-    nps->prop.tls_upstream           = item.tls_upstream;
   } // end for
 }
 

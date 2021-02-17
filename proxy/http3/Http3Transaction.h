@@ -106,6 +106,9 @@ public:
   bool is_response_header_sent() const;
   bool is_response_body_sent() const;
 
+  // TODO:  Just a place holder for now
+  bool has_request_body(int64_t content_length, bool is_chunked_set) const override;
+
 private:
   int64_t _process_read_vio() override;
   int64_t _process_write_vio() override;

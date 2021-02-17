@@ -80,7 +80,7 @@ headerExist(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen)
  * @param header header name
  * @param headerlen header name length
  * @param value buffer for the value
- * @param valuelen lenght of the buffer for the value
+ * @param valuelen length of the buffer for the value
  * @return pointer to the string with the value.
  */
 char *
@@ -129,7 +129,7 @@ getHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, char
  * @param header header name
  * @param headerlen header name len
  * @param value the new value
- * @param valuelen lenght of the value
+ * @param valuelen length of the value
  * @return true - OK, false - failed
  */
 bool

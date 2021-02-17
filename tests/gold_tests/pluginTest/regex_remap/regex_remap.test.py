@@ -56,14 +56,13 @@ curl_and_args = 'curl -s -D - -v --proxy localhost:{} '.format(ts.Variables.port
 ts.Disk.File(regex_remap_conf_path, typename="ats:config").AddLines([
     "# regex_remap configuration\n"
     "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ http://example.one @status=301\n"
-    "^/charlie http://example.one @status=301\n"
 ])
 
 ts.Disk.remap_config.AddLine(
     "map http://example.one/ http://localhost:{}/ @plugin=regex_remap.so @pparam=regex_remap.conf\n".format(server.Variables.Port)
 )
 ts.Disk.remap_config.AddLine(
-    "map http://example.two/charlie http://localhost:{}/delta ".format(server.Variables.Port) +
+    "map http://example.two/ http://localhost:{}/ ".format(server.Variables.Port) +
     "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine\n"
 )
 
@@ -83,15 +82,18 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
 tr.StillRunningAfter = ts
 
+# 1 Test - Match and redirect
 tr = Test.AddTestRun("pristine test")
 tr.Processes.Default.Command = (
-    curl_and_args + '--header "uuid: {}" http://example.two/charlie'.format(creq["headers"]["fields"][1][1])
+    curl_and_args +
+    "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
+    f" | grep -e '^HTTP/' -e '^Location' | sed 's/{server.Variables.Port}/SERVER_PORT/'"
 )
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
 tr.StillRunningAfter = ts
 
-# Crash test.
+# 2 Test - Crash test.
 tr = Test.AddTestRun("crash test")
 creq = replay_txns[1]['client-request']
 tr.Processes.Default.Command = curl_and_args + \

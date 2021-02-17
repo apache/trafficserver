@@ -36,8 +36,7 @@ server.addResponse("sessionfile.log", request_header, response_header)
 # Configure ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=True, enable_cache=False)
 
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsBuildGoldTestsDir,
                                     'continuations', 'plugins', '.libs', 'session_id_verify.so'), ts)
@@ -96,6 +95,15 @@ tr.Processes.Default.ReturnCode = Any(0, 2)
 # AuTest already searches for errors in diags.log and fails if it encounters
 # them. The test plugin prints an error to this log if it sees duplicate ids.
 # The following is to verify that we encountered the expected ids.
-ts.Streams.stderr += Testers.ContainsExpression(
-    "session id: 199",
-    "Verify the various session ids were found.")
+
+
+def verify_session_count(output):
+    global numberOfRequests
+    nReq = numberOfRequests * 2
+    session_ids = [line[0:line.find("\n")] for line in str(output).split("session id: ")[1:]]
+    if len(session_ids) != nReq:
+        return "Found {} session_id's, expected {}".format(len(session_ids), nReq)
+    return ""
+
+
+ts.Streams.All += Testers.FileContentCallback(verify_session_count, 'verify_session_count')

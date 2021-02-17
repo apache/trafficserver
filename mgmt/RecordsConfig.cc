@@ -390,10 +390,6 @@ static const RecordElement RecordsConfig[] =
         ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.alert_delay", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
         ,
-  {RECT_CONFIG, "proxy.config.http.per_server.connection.queue_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-    ,
-  {RECT_CONFIG, "proxy.config.http.per_server.connection.queue_delay", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
-        ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.min", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.attach_server_session_to_client", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
@@ -528,6 +524,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http.insert_forwarded", RECD_STRING, "none", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.proxy_protocol_allowlist", RECD_STRING, "none", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.proxy_protocol_out", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-2]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.insert_age_in_response", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,

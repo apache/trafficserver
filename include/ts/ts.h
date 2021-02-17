@@ -431,6 +431,22 @@ tsapi char *TSUrlStringGet(TSMBuffer bufp, TSMLoc offset, int *length);
     @return The scheme portion of the URL, as a string.
 
  */
+tsapi const char *TSUrlRawSchemeGet(TSMBuffer bufp, TSMLoc offset, int *length);
+
+/**
+    Retrieves the scheme portion of the URL located at url_loc within
+    the marshal buffer bufp. TSUrlSchemeGet() places the length of
+    the string in the length argument. If the length is NULL then no
+    attempt is made to dereference it.  If there is no explicit scheme,
+    a scheme of http is returned if the URL type is HTTP, and a scheme
+    of https is returned if the URL type is HTTPS.
+
+    @param bufp marshal buffer storing the URL.
+    @param offset location of the URL within bufp.
+    @param length length of the returned string.
+    @return The scheme portion of the URL, as a string.
+
+ */
 tsapi const char *TSUrlSchemeGet(TSMBuffer bufp, TSMLoc offset, int *length);
 
 /**
@@ -1362,6 +1378,13 @@ tsapi void TSHttpTxnReqCacheableSet(TSHttpTxn txnp, int flag);
 */
 tsapi TSReturnCode TSHttpTxnServerRespNoStoreSet(TSHttpTxn txnp, int flag);
 
+/** Get flag indicating whether or not to cache the server response for
+    given TSHttpTxn
+    @param txnp The transaction whose server response you do not want to store.
+
+    @return TS_SUCCESS.
+*/
+tsapi bool TSHttpTxnServerRespNoStoreGet(TSHttpTxn txnp);
 tsapi TSReturnCode TSFetchPageRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 tsapi char *TSFetchRespGet(TSHttpTxn txnp, int *length);
 tsapi TSReturnCode TSHttpTxnCacheLookupStatusGet(TSHttpTxn txnp, int *lookup_status);

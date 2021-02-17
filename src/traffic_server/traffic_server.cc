@@ -290,7 +290,7 @@ public:
         Note("Could not reseat %s", DIAGS_LOG_FILENAME);
       }
       // Reload any of the other moved log files (such as the ones in logging.yaml).
-      Log::reopen_moved_log_files();
+      Log::handle_log_rotation_request();
     }
 
     if (signal_received[SIGTERM] || signal_received[SIGINT]) {
@@ -2098,6 +2098,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     }
     if (num_of_udp_threads) {
       udpNet.start(num_of_udp_threads, stacksize);
+      eventProcessor.thread_group[ET_UDP]._afterStartCallback = init_HttpProxyServer;
     }
 
     // Initialize Response Body Factory
@@ -2135,6 +2136,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
         proxyServerCheck.wait(lock, [] { return et_net_threads_ready; });
       }
 
+#if TS_USE_QUIC == 1
+      if (num_of_udp_threads) {
+        std::unique_lock<std::mutex> lock(etUdpMutex);
+        etUdpCheck.wait(lock, [] { return et_udp_threads_ready; });
+      }
+#endif
       // Delay only if config value set and flag value is zero
       // (-1 => cache already initialized)
       if (delay_p && ink_atomic_cas(&delay_listen_for_cache, 0, 1)) {

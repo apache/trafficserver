@@ -215,6 +215,7 @@ SSLNetVConnection::_bindSSLObject()
 {
   SSLNetVCAttach(this->ssl, this);
   TLSSessionResumptionSupport::bind(this->ssl, this);
+  TLSSNISupport::bind(this->ssl, this);
 }
 
 void
@@ -222,6 +223,7 @@ SSLNetVConnection::_unbindSSLObject()
 {
   SSLNetVCDetach(this->ssl);
   TLSSessionResumptionSupport::unbind(this->ssl);
+  TLSSNISupport::unbind(this->ssl);
 }
 
 static void
@@ -928,7 +930,6 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::clear()
 {
-  _serverName.reset();
   _ca_cert_file.reset();
   _ca_cert_dir.reset();
 
@@ -938,6 +939,7 @@ SSLNetVConnection::clear()
   }
   ALPNSupport::clear();
   TLSSessionResumptionSupport::clear();
+  TLSSNISupport::_clear();
 
   sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
   sslHandshakeBeginTime       = 0;
@@ -1323,6 +1325,8 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         if (!this->setSelectedProtocol(proto, len)) {
           return EVENT_ERROR;
         }
+        this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});
+
         Debug("ssl", "client selected next protocol '%.*s'", len, proto);
       } else {
         Debug("ssl", "client did not select a next protocol");
@@ -1402,6 +1406,35 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
   // Initialize properly for a client connection
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
+    if (this->pp_info.version != ProxyProtocolVersion::UNDEFINED) {
+      // Outbound PROXY Protocol
+      VIO &vio        = this->write.vio;
+      int64_t ntodo   = vio.ntodo();
+      int64_t towrite = vio.buffer.reader()->read_avail();
+
+      if (ntodo > 0 && towrite > 0) {
+        MIOBufferAccessor &buf = vio.buffer;
+        int needs              = 0;
+        int64_t total_written  = 0;
+        int64_t r              = super::load_buffer_and_write(towrite, buf, total_written, needs);
+
+        if (total_written > 0) {
+          vio.ndone += total_written;
+          if (vio.ntodo() != 0) {
+            return SSL_WAIT_FOR_HOOK;
+          }
+        }
+
+        if (r < 0) {
+          if (r == -EAGAIN || r == -ENOTCONN || -r == EINPROGRESS) {
+            return SSL_WAIT_FOR_HOOK;
+          } else {
+            return EVENT_ERROR;
+          }
+        }
+      }
+    }
+
     sslHandshakeHookState = HANDSHAKE_HOOKS_OUTBOUND_PRE;
   }
 
@@ -1918,14 +1951,9 @@ SSLNetVConnection::protocol_contains(std::string_view prefix) const
 }
 
 void
-SSLNetVConnection::set_server_name(std::string_view name)
+SSLNetVConnection::_fire_ssl_servername_event()
 {
-  if (name.size()) {
-    char *n = new char[name.size() + 1];
-    std::memcpy(n, name.data(), name.size());
-    n[name.size()] = '\0';
-    _serverName.reset(n);
-  }
+  this->callHooks(TS_EVENT_SSL_SERVERNAME);
 }
 
 void

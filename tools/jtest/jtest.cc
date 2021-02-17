@@ -4800,7 +4800,7 @@ ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len)
   int quit   = 0;
 
   while ((*src != 0) && (dcount < max_dest_len) && (quit == 0)) {
-    if ((char *)memchr(dontescapify, *src, INT_MAX) || ParseRules::is_alpha(*src) || ParseRules::is_digit(*src)) {
+    if ((char *)strchr(dontescapify, *src) || ParseRules::is_alpha(*src) || ParseRules::is_digit(*src)) {
       /* this is regular character, don't escapify it */
       if (dcount + 1 < max_dest_len) {
         *dest++ = *src;

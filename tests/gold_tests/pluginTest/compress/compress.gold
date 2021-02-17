@@ -177,3 +177,12 @@
 < Vary: Accept-Encoding
 < Content-Length: 71
 ===
+> POST http://ae-3/obj3 HTTP/1.1
+> X-Ats-Compress-Test: 3/gzip
+> Accept-Encoding: gzip
+< HTTP/1.1 200 OK
+< Content-Type: text/javascript
+< Content-Encoding: gzip
+< Vary: Accept-Encoding
+< Content-Length: 71
+===

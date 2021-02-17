@@ -43,6 +43,7 @@ class Sigusr2Test:
             'proxy.config.http.wait_for_cache': 1,
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'log',
+            'proxy.config.log.periodic_tasks_interval': 1,
 
             # All log rotation should be handled externally.
             'proxy.config.log.rolling_enabled': 0,

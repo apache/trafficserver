@@ -28,6 +28,9 @@
 
 #include "I_EventSystem.h"
 #include "RecordsConfig.h"
+#if defined(darwin)
+#include "P_IOBuffer.h"
+#endif
 
 #include "diags.i"
 

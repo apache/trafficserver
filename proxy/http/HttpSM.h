@@ -221,15 +221,11 @@ public:
   // Called by httpSessionManager so that we can reset
   //  the session timeouts and initiate a read while
   //  holding the lock for the server session
-  void attach_server_session(Http1ServerSession *s);
+  void attach_server_session(PoolableSession *s);
 
   // Used to read attributes of
   // the current active server session
-  Http1ServerSession *
-  get_server_session()
-  {
-    return server_session;
-  }
+  PoolableSession *get_server_session() const;
 
   ProxyTransaction *
   get_ua_txn()
@@ -555,6 +551,7 @@ public:
   const char *client_sec_protocol = "-";
   const char *client_cipher_suite = "-";
   const char *client_curve        = "-";
+  int client_alpn_id              = SessionProtocolNameRegistry::INVALID;
   int server_transact_count       = 0;
 
   TransactionMilestones milestones;
@@ -634,9 +631,9 @@ public:
     return _client_transaction_priority_dependence;
   }
 
-  void set_server_netvc_inactivity_timeout(NetVConnection *netvc);
-  void set_server_netvc_active_timeout(NetVConnection *netvc);
-  void set_server_netvc_connect_timeout(NetVConnection *netvc);
+  ink_hrtime get_server_inactivity_timeout();
+  ink_hrtime get_server_active_timeout();
+  ink_hrtime get_server_connect_timeout();
   void rewind_state_machine();
 
 private:

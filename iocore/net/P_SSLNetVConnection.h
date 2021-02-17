@@ -48,6 +48,7 @@
 #include "P_UnixNet.h"
 #include "P_ALPNSupport.h"
 #include "TLSSessionResumptionSupport.h"
+#include "TLSSNISupport.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 
@@ -93,7 +94,7 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport, public TLSSessionResumptionSupport
+class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport, public TLSSessionResumptionSupport, public TLSSNISupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
@@ -329,25 +330,15 @@ public:
     return tunnel_port;
   }
 
-  /* Returns true if this vc was configured for forward_route or partial_blind_route
-   */
-  bool
-  decrypt_tunnel()
-  {
-    return has_tunnel_destination() && tunnel_decrypt;
-  }
-
-  /* Returns true if this vc was configured partial_blind_route
-   */
-  bool
-  upstream_tls()
-  {
-    return has_tunnel_destination() && tls_upstream;
-  }
+  bool decrypt_tunnel() const;
+  bool upstream_tls() const;
+  SNIRoutingType tunnel_type() const;
 
   void
-  set_tunnel_destination(const std::string_view &destination, bool decrypt, bool upstream_tls)
+  set_tunnel_destination(const std::string_view &destination, SNIRoutingType type)
   {
+    _tunnel_type = type;
+
     auto pos = destination.find(":");
     if (nullptr != tunnel_host) {
       ats_free(tunnel_host);
@@ -359,8 +350,6 @@ public:
       tunnel_port = 0;
       tunnel_host = ats_strndup(destination.data(), destination.length());
     }
-    tunnel_decrypt = decrypt;
-    tls_upstream   = upstream_tls;
   }
 
   int populate_protocol(std::string_view *results, int n) const override;
@@ -384,10 +373,8 @@ public:
   const char *
   get_server_name() const override
   {
-    return _serverName.get() ? _serverName.get() : "";
+    return _get_sni_server_name() ? _get_sni_server_name() : "";
   }
-
-  void set_server_name(std::string_view name);
 
   bool
   support_sni() const override
@@ -473,12 +460,21 @@ public:
     return _ca_cert_dir.get();
   }
 
+  void
+  set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask)
+  {
+    SSL_set_options(this->ssl, proto_mask);
+    SSL_clear_options(this->ssl, max_mask & ~proto_mask);
+  }
+
 protected:
   const IpEndpoint &
   _getLocalEndpoint() override
   {
     return local_addr;
   }
+
+  void _fire_ssl_servername_event() override;
 
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
@@ -521,12 +517,10 @@ private:
   int64_t redoWriteSize       = 0;
   char *tunnel_host           = nullptr;
   in_port_t tunnel_port       = 0;
-  bool tunnel_decrypt         = false;
-  bool tls_upstream           = false;
+  SNIRoutingType _tunnel_type = SNIRoutingType::NONE;
   X509_STORE_CTX *verify_cert = nullptr;
 
   // Null-terminated string, or nullptr if there is no SNI server name.
-  std::unique_ptr<char[]> _serverName;
   std::unique_ptr<char[]> _ca_cert_file;
   std::unique_ptr<char[]> _ca_cert_dir;
 
@@ -541,3 +535,30 @@ private:
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
+
+//
+// Inline Functions
+//
+inline SNIRoutingType
+SSLNetVConnection::tunnel_type() const
+{
+  return _tunnel_type;
+}
+
+/**
+   Returns true if this vc was configured for forward_route or partial_blind_route
+ */
+inline bool
+SSLNetVConnection::decrypt_tunnel() const
+{
+  return _tunnel_type == SNIRoutingType::FORWARD || _tunnel_type == SNIRoutingType::PARTIAL_BLIND;
+}
+
+/**
+   Returns true if this vc was configured partial_blind_route
+ */
+inline bool
+SSLNetVConnection::upstream_tls() const
+{
+  return _tunnel_type == SNIRoutingType::PARTIAL_BLIND;
+}

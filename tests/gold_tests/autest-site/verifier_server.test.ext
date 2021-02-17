@@ -23,7 +23,7 @@ from verifier_common import create_address_argument
 
 
 def _configure_server(obj, process, name, replay_path, http_ports=None, https_ports=None,
-                      ssl_cert='', ca_cert='', other_args='--verbose diag'):
+                      ssl_cert='', ca_cert='', verbose=True, other_args=''):
     """
     Configure the provided process to run a verifier-server command.
 
@@ -55,7 +55,7 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
         process.Variables['http_port'] = http_ports[0]
 
     if len(http_ports) > 0:
-        command += "--listen "
+        command += "--listen-http "
         command += create_address_argument(http_ports)
         command += " "
 
@@ -100,6 +100,9 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
         process.Setup.Copy(replay_path, run_replay_path, CopyLogic.SoftFiles)
         command += "{} ".format(run_replay_path)
 
+    if verbose:
+        command += ' --verbose diag '
+
     if other_args:
         command += "{} ".format(other_args)
     process.Command = command
@@ -114,7 +117,7 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
 
 def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
                               https_ports=None, ssl_cert='', ca_cert='',
-                              other_args='--verbose diag'):
+                              verbose=True, other_args=''):
     """
     Create a verifier-server process for the Test.
 
@@ -140,6 +143,8 @@ def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
         ca_cert: (path) The location of the CA for HTTPS encryption. If this
             is not provided a stock CA will be used.
 
+        verbose: (bool) Whether to enable debug level logging.
+
         other_args: (str) Any other arbitrary options to pass to verifier-server.
 
     Raises:
@@ -148,13 +153,13 @@ def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
     """
     server = test.Processes.Process(name)
     _configure_server(test, server, name, replay_path, http_ports, https_ports,
-                      ssl_cert, ca_cert, other_args)
+                      ssl_cert, ca_cert, verbose, other_args)
     return server
 
 
 def AddVerifierServerProcess(run, name, replay_path, http_ports=None,
                              https_ports=None, ssl_cert='', ca_cert='',
-                             other_args='--verbose diag'):
+                             verbose=True, other_args=''):
     """
     Create a verifier-server process and configure it for the given TestRun.
 
@@ -169,7 +174,7 @@ def AddVerifierServerProcess(run, name, replay_path, http_ports=None,
 
     server = run.Processes.Process(name)
     _configure_server(run, server, name, replay_path, http_ports, https_ports,
-                      ssl_cert, ca_cert, other_args)
+                      ssl_cert, ca_cert, verbose, other_args)
 
     client = run.Processes.Default
     client.StartBefore(server)

@@ -70,6 +70,7 @@ libproxy_a_SOURCES = \
 	ProtocolProbeSessionAccept.h \
 	ProxySession.cc \
 	ProxySession.h \
+	PoolableSession.h \
 	ProxyTransaction.cc \
 	ProxyTransaction.h \
 	ReverseProxy.cc \

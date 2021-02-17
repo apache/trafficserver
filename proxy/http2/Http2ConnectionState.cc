@@ -245,9 +245,12 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     if (stream == nullptr) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED,
                         "recv headers cannot find existing stream_id");
+    } else if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED,
+                        "recv_header to closed stream");
     } else if (!stream->has_trailing_header()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
-                        "recv headers cannot find existing stream_id");
+                        "stream not expecting trailer header");
     }
   } else {
     // Create new stream
@@ -1068,7 +1071,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
     if (error.cls != Http2ErrorClass::HTTP2_ERROR_CLASS_NONE) {
       ip_port_text_buffer ipb;
-      const char *client_ip = ats_ip_ntop(ua_session->get_client_addr(), ipb, sizeof(ipb));
+      const char *client_ip = ats_ip_ntop(ua_session->get_remote_addr(), ipb, sizeof(ipb));
       if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION) {
         if (error.msg) {
           Error("HTTP/2 connection error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s",
@@ -1798,6 +1801,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   stream->change_state(HTTP2_FRAME_TYPE_PUSH_PROMISE, HTTP2_FLAGS_PUSH_PROMISE_END_HEADERS);
   stream->set_request_headers(hdr);
   stream->new_transaction();
+  stream->recv_end_stream = true; // No more data with the request
   stream->send_request(*this);
 
   return true;

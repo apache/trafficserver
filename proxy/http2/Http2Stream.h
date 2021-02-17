@@ -96,7 +96,7 @@ public:
   // Accessors
   void set_active_timeout(ink_hrtime timeout_in) override;
   void set_inactivity_timeout(ink_hrtime timeout_in) override;
-  void cancel_active_timeout();
+  void cancel_active_timeout() override;
   void cancel_inactivity_timeout() override;
   bool is_active_timeout_expired(ink_hrtime now);
   bool is_inactive_timeout_expired(ink_hrtime now);
@@ -114,6 +114,8 @@ public:
   bool is_client_state_writeable() const;
   bool is_closed() const;
   IOBufferReader *response_get_data_reader() const;
+
+  bool has_request_body(int64_t content_length, bool is_chunked_set) const override;
 
   void mark_milestone(Http2StreamMilestone type);
 
@@ -176,6 +178,7 @@ private:
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
 
   bool trailing_header = false;
+  bool has_body        = false;
 
   // A brief discussion of similar flags and state variables:  _state, closed, terminate_stream
   //

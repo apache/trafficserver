@@ -65,8 +65,7 @@ server2.addResponse("sessionlog.json", request_header2, response_header2)
 server3.addResponse("sessionlog.json", request_header3, response_header3)
 
 # add ssl materials like key, certificates for the server
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
@@ -141,7 +140,6 @@ tr.StillRunningAfter = server
 
 server4_out = Test.Disk.File("outserver4")
 server4_out.Content = Testers.ExcludesExpression("sneaky", "Extra body bytes should not be delivered")
-server4_out.Content += Testers.ContainsExpression("Transfer-Encoding: chunked", "Request should be chunked encoded")
 
 # HTTP/1.1 Try to smuggle another request to the origin
 tr = Test.AddTestRun()

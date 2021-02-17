@@ -103,6 +103,12 @@ versions of the content as :term:`alternates <alternate>`. When set to
 ``false``, |TS| will cache only the compressed or decompressed variant returned
 by the origin. Enabled by default.
 
+range-request
+-------------
+
+When set to ``true``, causes |TS| to compress responses to Range Requests.
+Disabled by default. Setting this to true while setting cache to false leads to delivering corrupted content.
+
 compressible-content-type
 -------------------------
 
