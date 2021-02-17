@@ -27,6 +27,7 @@
 
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
+#include "P_SSLNetVConnection.h"
 #include "YamlSNIConfig.h"
 #include "SSLDiags.h"
 

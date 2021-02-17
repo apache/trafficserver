@@ -25,6 +25,8 @@
 #include "HttpDebugNames.h"
 #include "tscore/ink_base64.h"
 
+#include "P_SSLNetVConnection.h"
+
 #define REMEMBER(e, r)                          \
   {                                             \
     this->remember(MakeSourceLocation(), e, r); \

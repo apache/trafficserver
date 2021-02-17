@@ -27,6 +27,7 @@
 
 #include "P_Net.h"
 #include "SSLStats.h"
+#include "P_SSLNetVConnection.h"
 
 // return true if we have a stat for the error
 static bool
