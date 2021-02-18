@@ -43,6 +43,7 @@ TSDECL(verify_server_properties);
 TSDECL(verify_origin_server);
 TSDECL(client_cert);
 TSDECL(client_key);
+TSDECL(client_sni_policy);
 TSDECL(ip_allow);
 TSDECL(valid_tls_versions_in);
 TSDECL(http2);
@@ -69,6 +70,7 @@ struct YamlSNIConfig {
     Property verify_server_properties = Property::UNSET;
     std::string client_cert;
     std::string client_key;
+    std::string client_sni_policy;
     std::string ip_allow;
     bool protocol_unset = true;
     unsigned long protocol_mask;

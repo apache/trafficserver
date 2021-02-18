@@ -344,3 +344,27 @@ public:
     return retval;
   }
 };
+
+/**
+   Override proxy.config.ssl.client.sni_policy by client_sni_policy in sni.yaml
+ */
+class OutboundSNIPolicy : public ActionItem
+{
+public:
+  OutboundSNIPolicy(const std::string_view &p) : policy(p) {}
+  ~OutboundSNIPolicy() override {}
+
+  int
+  SNIAction(TLSSNISupport *snis, const Context &ctx) const override
+  {
+    // TODO: change design to avoid this dynamic_cast
+    auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
+    if (ssl_vc && !policy.empty()) {
+      ssl_vc->options.outbound_sni_policy = policy;
+    }
+    return SSL_TLSEXT_ERR_OK;
+  }
+
+private:
+  std::string_view policy{};
+};

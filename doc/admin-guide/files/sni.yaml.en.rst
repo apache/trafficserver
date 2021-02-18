@@ -114,6 +114,10 @@ client_key                The file containing the client private key that corres
                           |TS| tries to use a private key in client_cert.  Otherwise,
                           :ts:cv:`proxy.config.ssl.client.private_key.filename` is used.
 
+client_sni_policy         Policy of SNI on outbound connection.
+
+                          If not specified, the value of :ts:cv:`proxy.config.ssl.client.sni_policy` is used.
+
 http2                     Indicates whether the H2 protocol should be added to or removed from the
                           protocol negotiation list.  The valid values are :code:`on` or :code:`off`.
 

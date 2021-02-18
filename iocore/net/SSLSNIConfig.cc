@@ -79,6 +79,9 @@ SNIConfigParams::loadSNIConfig()
     if (item.tunnel_destination.length() > 0) {
       ai->actions.push_back(std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_type, item.tunnel_alpn));
     }
+    if (!item.client_sni_policy.empty()) {
+      ai->actions.push_back(std::make_unique<OutboundSNIPolicy>(item.client_sni_policy));
+    }
 
     ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
 
