@@ -78,6 +78,8 @@ struct SSLConfigParams : public ConfigInfo {
   int configExitOnLoadError;
   int clientCertLevel;
   int verify_depth;
+  int ssl_origin_session_cache;
+  int ssl_origin_session_cache_size;
   int ssl_session_cache; // SSL_SESSION_CACHE_MODE
   int ssl_session_cache_size;
   int ssl_session_cache_num_buckets;
@@ -118,6 +120,8 @@ struct SSLConfigParams : public ConfigInfo {
   static int ssl_handshake_timeout_in;
   char *ssl_ocsp_response_path_only;
 
+  static int origin_session_cache;
+  static size_t origin_session_cache_size;
   static size_t session_cache_number_buckets;
   static size_t session_cache_max_bucket_size;
   static bool session_cache_skip_on_lock_contention;
@@ -218,3 +222,4 @@ private:
 };
 
 extern SSLSessionCache *session_cache;
+extern SSLOriginSessionCache *origin_sess_cache;
