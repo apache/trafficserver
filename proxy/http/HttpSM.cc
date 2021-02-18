@@ -4874,6 +4874,8 @@ HttpSM::get_outbound_sni() const
     int len;
     char const *ptr = t_state.hdr_info.server_request.host_get(&len);
     zret.assign(ptr, len);
+  } else if (ua_txn && !strcmp(policy, "server_name"_tv)) {
+    zret.assign(ua_txn->get_netvc()->get_server_name(), ts::TextView::npos);
   } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
     zret = policy.remove_prefix(1);
   } else {
