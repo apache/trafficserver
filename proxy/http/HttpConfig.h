@@ -747,6 +747,8 @@ public:
   int proxy_request_via_string_len  = 0;
   int proxy_response_via_string_len = 0;
 
+  MgmtInt accept_no_activity_timeout = 120;
+
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
   ///////////////////////////////////////////////////////////////////
