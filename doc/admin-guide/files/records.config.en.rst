@@ -3420,7 +3420,7 @@ SSL Termination
   a single segment after ~1 second of inactivity and the record size ramping
   mechanism is repeated again.
 
-.. ts:cv:: CONFIG proxy.config.ssl.origin_session_cache INT 0
+.. ts:cv:: CONFIG proxy.config.ssl.origin_session_cache INT 1
 
    This configuration enables the SSL session cache for the origin server
    when set to ``1``.
