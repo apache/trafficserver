@@ -1993,9 +1993,9 @@ SSLConnect(SSL *ssl)
 {
   ERR_clear_error();
 
-  SSL_SESSION *sess = nullptr;
+  SSL_SESSION *sess = SSL_get_session(ssl);
   std::string lookup_key;
-  if (SSLConfigParams::origin_session_cache == 1 && SSLConfigParams::origin_session_cache_size > 0) {
+  if (!sess && SSLConfigParams::origin_session_cache == 1 && SSLConfigParams::origin_session_cache_size > 0) {
     const char *tlsext_host_name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
     if (tlsext_host_name) {
       lookup_key.assign(tlsext_host_name);
@@ -2012,10 +2012,10 @@ SSLConnect(SSL *ssl)
         }
       }
     }
-  }
 
-  if (sess) {
-    SSL_set_session(ssl, sess);
+    if (sess) {
+      SSL_set_session(ssl, sess);
+    }
   }
 
   int ret = SSL_connect(ssl);
