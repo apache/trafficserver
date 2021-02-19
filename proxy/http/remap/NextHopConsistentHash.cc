@@ -134,7 +134,7 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, HttpRequestData *hrdata, ATSHa
   // calculate a hash using the selected config.
   switch (hash_key) {
   case NH_URL_HASH_KEY:
-    url_string_ref = url->string_get_ref(&len, true);
+    url_string_ref = url->string_get_ref(&len, URLNormalize::LC_SCHEME_HOST);
     if (url_string_ref && len > 0) {
       h->update(url_string_ref, len);
       NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] url hash string: %s", sm_id, url_string_ref);
