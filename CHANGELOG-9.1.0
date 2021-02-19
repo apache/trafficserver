@@ -117,7 +117,7 @@ Changes with Apache Traffic Server 9.1.0
   #6905 - Remove two unused includes in HdrHeap.h.
   #6931 - AuTest: New log and When condition for ATS initialized
   #6934 - Update buffer-writer.en.rst (wrong header link)
-  #6935 - Adds qlog_dir documentation 
+  #6935 - Adds qlog_dir documentation
   #6943 - Cleanup: Remove unused arguments
   #6945 - Build AuTest C/C++ test plugins and utilities with Automake.
   #6947 - Add CI verbose and debug options for autest
@@ -221,7 +221,7 @@ Changes with Apache Traffic Server 9.1.0
   #7331 - Cleanup incoming PROXY Protocol v1
   #7332 - Add unit tests for PROXY Protocol v1 parser
   #7334 - Add a post case to the conn_timeout test
-  #7340 - Add Incoming PROXY Protocol v2 Support 
+  #7340 - Add Incoming PROXY Protocol v2 Support
   #7342 - Use OpeSSL EVP API instead of SHA256_Init/Update/Final
   #7344 - TLS Session Reuse: Downgrade noisy log to debug
   #7345 - TLS Session Reuse: Downgrade add_session messages to debug
@@ -237,7 +237,7 @@ Changes with Apache Traffic Server 9.1.0
   #7376 - Add comments to ink_queue.h.
   #7383 - Unused code: HostDBContinuation::removeEvent
   #7384 - Remove a special treatment for SSLNetVC in migrateToCurrentThread()
-  #7387 - API - Add new api function TSHttpTxnServerSsnTransactionCount() 
+  #7387 - API - Add new api function TSHttpTxnServerSsnTransactionCount()
   #7391 - [Docs] Fix build warnings
   #7392 - Eliminate dangling pointer into stack space.
   #7393 - Add compression support to stats_over_http
