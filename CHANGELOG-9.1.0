@@ -262,9 +262,12 @@ Changes with Apache Traffic Server 9.1.0
   #7453 - Cleanup: Add SNIRoutingType
   #7455 - Fix Makefile target for creating changelogs
   #7457 - Fix comment in include/tscore/Filenames.h.
-  #7461 - Do not write to the cache if the plugin decides not to write 
+  #7461 - Do not write to the cache if the plugin decides not to write
   #7466 - Change atoi to atol, causing obvious issues on what needs to be int64's
   #7468 - Proxy Verifier: Making use of delay directives for caching tests.
   #7469 - Update AuTest version update directions for pipenv
   #7473 - Adjust so transfer-encoding header can be treated hop-by-hop
+  #7499 - Move has_request_body to ProxyTransaction
   #7502 - traffic_dump: AuTests to use Proxy Verifier.
+  #7518 - Updates the Dockerfile for debian
+  #7522 - Make the H3 build script work properly on Debian platforms
