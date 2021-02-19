@@ -92,6 +92,17 @@ private:
   virtual const char *_debug_tag() const;
   bool _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &ssl_multi_cert_params);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
+  virtual bool _setup_session_cache(SSL_CTX *ctx);
+  virtual bool _setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings);
+  virtual bool _set_verify_path(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings);
+  virtual bool _setup_session_ticket(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings);
+  virtual bool _setup_client_cert_verification(SSL_CTX *ctx);
+  virtual bool _set_cipher_suites_for_legacy_versions(SSL_CTX *ctx);
+  virtual bool _set_cipher_suites(SSL_CTX *ctx);
+  virtual bool _set_curves(SSL_CTX *ctx);
+  virtual bool _set_info_callback(SSL_CTX *ctx);
+  virtual bool _set_npn_callback(SSL_CTX *ctx);
+  virtual bool _set_alpn_callback(SSL_CTX *ctx);
 };
 
 // Create a new SSL server context fully configured (cert and keys are optional).
