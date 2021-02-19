@@ -25,6 +25,7 @@
 
 #include "SSLProxySession.h"
 #include "P_Net.h"
+#include "P_SSLNetVConnection.h"
 
 void
 SSLProxySession::init(SSLNetVConnection const &new_vc)

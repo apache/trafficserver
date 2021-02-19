@@ -38,6 +38,8 @@
 #include "Plugin.h"
 #include "PoolableSession.h"
 
+#include "P_SSLNetVConnection.h"
+
 #define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
 
 #define STATE_ENTER(state_name, event, vio)                                                             \
