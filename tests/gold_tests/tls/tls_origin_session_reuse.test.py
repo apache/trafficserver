@@ -149,7 +149,7 @@ ts4.Disk.records_config.update({
     'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
     'proxy.config.ssl.session_cache.timeout': 0,
     'proxy.config.ssl.session_cache.auto_clear': 1,
-    'proxy.config.ssl.server.session_ticket.enable': 0,
+    'proxy.config.ssl.server.session_ticket.enable': 1,
     'proxy.config.ssl.origin_session_cache': 1,
     'proxy.config.ssl.origin_session_cache.size': 1
 })
@@ -167,8 +167,8 @@ ts5.Disk.records_config.update({
     'proxy.config.ssl.session_cache.skip_cache_on_bucket_contention': 0,
     'proxy.config.ssl.session_cache.timeout': 0,
     'proxy.config.ssl.session_cache.auto_clear': 1,
-    'proxy.config.ssl.server.session_ticket.enable': 0,
-    'proxy.config.ssl.origin_session_cache': 1,
+    'proxy.config.ssl.server.session_ticket.enable': 1,
+    'proxy.config.ssl.origin_session_cache': 0,
     'proxy.config.ssl.origin_session_cache.size': 1
 })
 
@@ -196,7 +196,7 @@ ts3.Streams.All += Testers.ContainsExpression('new session to origin', '')
 ts3.Streams.All += Testers.ContainsExpression('reused session to origin', '')
 tr.StillRunningAfter = server
 
-tr = Test.AddTestRun('disable tls tickets, reuse should fail')
+tr = Test.AddTestRun('disable origin session reuse, reuse should fail')
 tr.Processes.Default.Command = 'curl https://127.0.0.1:{0} -k && curl https://127.0.0.1:{0} -k'.format(ts5.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts4)
