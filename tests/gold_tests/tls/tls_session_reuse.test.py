@@ -111,7 +111,8 @@ tr.Command = \
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts1)
-tr.Processes.Default.Streams.All = Testers.ContainsExpression('Reused, TLSv1.2', '')
+tr.Processes.Default.Streams.All = Testers.ContainsExpression('Reused, TLSv', '')
+tr.Processes.Default.Streams.All += Testers.ContainsExpression('Protocol  : TLSv1.2', '')
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun("TLSv1.2 Session Ticket")
@@ -121,7 +122,8 @@ tr.Command = \
     .format(ts2.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess.dat'))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts2)
-tr.Processes.Default.Streams.All = Testers.ContainsExpression('Reused, TLSv1.2', '')
+tr.Processes.Default.Streams.All = Testers.ContainsExpression('Reused, TLSv', '')
+tr.Processes.Default.Streams.All += Testers.ContainsExpression('Protocol  : TLSv1.2', '')
 tr.StillRunningAfter = server
 
 tr = Test.AddTestRun("Disabled Session Cache")
