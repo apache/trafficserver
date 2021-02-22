@@ -1,0 +1,16 @@
+<none>|yahoo.com :
+  - aaa
+  - "*.bbb"
+  - ccc.*
+  - ddd.*.eee
+
+xxx : ""
+
+huffPOST.com|<other>,aol.com :
+  - fff
+  - "*.bbb"
+
+uuu : vvv
+
+yyy :
+  - "*"

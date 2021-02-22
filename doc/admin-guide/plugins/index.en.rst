@@ -149,6 +149,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Access Control <access_control.en>
    Certifier <certifier.en>
    Cert Reporting Tool <cert_reporting_tool.en>
+   Client Allow List <client_allow_list.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
@@ -181,6 +182,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Cert Reporting Tool <cert_reporting_tool.en>`
    Examines and logs information on loaded certificates.
+
+:doc:`Client Allow List <client_allow_list.en>`
+   Check to ensure that at least one of the names in the client provided certificate exists in the configured allow list.
 
 :doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
    Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving

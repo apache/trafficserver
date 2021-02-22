@@ -1,0 +1,5 @@
+
+aol.com:
+  - aaa
+  - *.bbb
+  - ccc.*
