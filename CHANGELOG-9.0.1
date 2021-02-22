@@ -1,4 +1,5 @@
 Changes with Apache Traffic Server 9.0.1
+  #3871 - Fix heap use after free in DNSProcessor::getby()
   #6302 - Simple and miscellaneous fixes/additions for lua plugin
   #6691 - Slice plugin: self heal when asset etag/last-modified block mismatches
   #6860 - Make format specifier for time_t portable
@@ -10,6 +11,7 @@ Changes with Apache Traffic Server 9.0.1
   #7259 - detect and fix stms log field having epoch time ms for intercept plugins.
   #7287 - option to disable compression for range request's response
   #7288 - Adjust to actually try a server address more than once
+  #7309 - Disable client inactivity timeout while server is processing POST request
   #7347 - Allow for regex_remap of pristine URL.
   #7377 - Addresses some of the lock contention with HostStatus.
   #7395 - Replace ::exit() with _exit() to avoid secondary cleanup cores
@@ -29,6 +31,7 @@ Changes with Apache Traffic Server 9.0.1
   #7463 - Fixing compress expectation for new microserver
   #7486 - slice/server: handleFirstServerHeader exit sooner on detected requested range errors.
   #7493 - AuTest: Upgrade to Proxy Verifier 2.0.2
+  #7495 - Add zlib1g-dev to Debian dependencies in README (#7303)
   #7506 - Fixed build issues with Fedora 34
   #7507 - Fixing DNS local_ipv* config option
   #7534 - Updating to use Proxy Verifier 2.1.0
