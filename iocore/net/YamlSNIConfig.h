@@ -32,7 +32,6 @@
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
-TSDECL(disable_h2);
 TSDECL(verify_client);
 TSDECL(verify_client_ca_certs);
 TSDECL(tunnel_route);
@@ -52,8 +51,7 @@ TSDECL(host_sni_policy);
 const int start = 0;
 struct YamlSNIConfig {
   enum class Action {
-    disable_h2 = start,
-    verify_client,
+    verify_client = start,
     verify_client_ca_certs,
     tunnel_route,             // blind tunnel action
     forward_route,            // decrypt data and then blind tunnel action
