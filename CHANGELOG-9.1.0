@@ -1,5 +1,4 @@
 Changes with Apache Traffic Server 9.1.0
-  #3871 - Fix heap use after free in DNSProcessor::getby()
   #5758 - Fix race condition when invoking TASK_THREADS_READY lifecycle hook
   #5759 - Remove unnecessary parts from tests
   #5761 - Remove testing command
@@ -212,7 +211,6 @@ Changes with Apache Traffic Server 9.1.0
   #7286 - Remove unfinished h2c support
   #7289 - Enable all h2spec test
   #7292 - Allow disabling SO_MARK and IP_TOS usage
-  #7309 - Disable client inactivity timeout while server is processing POST request
   #7311 - Traffic Dump: Fix stream-id printing after first transaction.
   #7323 - Updates the Dockerfile with more packages
   #7325 - AuTest for Split DNS
@@ -263,6 +261,7 @@ Changes with Apache Traffic Server 9.1.0
   #7455 - Fix Makefile target for creating changelogs
   #7457 - Fix comment in include/tscore/Filenames.h.
   #7461 - Do not write to the cache if the plugin decides not to write
+  #7465 - Select lua context per thread
   #7466 - Change atoi to atol, causing obvious issues on what needs to be int64's
   #7468 - Proxy Verifier: Making use of delay directives for caching tests.
   #7469 - Update AuTest version update directions for pipenv
@@ -271,3 +270,4 @@ Changes with Apache Traffic Server 9.1.0
   #7502 - traffic_dump: AuTests to use Proxy Verifier.
   #7518 - Updates the Dockerfile for debian
   #7522 - Make the H3 build script work properly on Debian platforms
+  #7539 - Fix the schedule AuTest for 9.1.x: use PrepareTestPlugin
