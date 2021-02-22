@@ -86,8 +86,7 @@ copy(const TSIOBufferReader &r, const TSIOBuffer b)
     const void *const pointer = TSIOBufferBlockReadStart(block, r, &size);
 
     if (pointer != nullptr && size > 0) {
-      const int64_t size2 = TSIOBufferWrite(b, pointer, size);
-      assert(size == size2);
+      CHECK(TSIOBufferWrite(b, pointer, size) == size);
       length += size;
     }
   }
