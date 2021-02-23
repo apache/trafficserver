@@ -1363,7 +1363,7 @@ AC_EGREP_CPP(yes, [
   #endif
   ], [
     AC_MSG_RESULT(yes)
-    AS_IF([test "x${enable_experimental_plugins}" = "xyes" && -z "$openssl_is_boringssl"], [
+    AS_IF([test "x${enable_experimental_plugins}" = "xyes" && test -z "$openssl_is_boringssl"], [
       enable_ja3_plugin=yes
     ])
   ], [AC_MSG_RESULT(no)])
