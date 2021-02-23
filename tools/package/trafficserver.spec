@@ -111,6 +111,8 @@ find %{buildroot} -type f -name "*.a" -delete
 find %{buildroot} -type f -name "*.pod" -delete
 find %{buildroot} -type f -name "*.in" -delete
 find %{buildroot} -type f -name ".packlist" -delete
+find %{buildroot} -type f -name "plugin_*.so" -delete
+
 
 # ToDo: Why is the Perl stuff ending up in the wrong place ??
 mkdir -p %{buildroot}%{_datadir}/perl5
