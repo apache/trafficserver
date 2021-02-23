@@ -1,0 +1,171 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
+# test max-age in the client requests.
+#
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - delayed_response: &delayed_response
+      server-response:
+        delay: 3s
+
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 16 ]
+          - [ Connection, close ]
+
+sessions:
+
+#
+# An HTTP GET request.
+#
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/path/1"
+      headers:
+        fields:
+        - [ Host, www.no_tls.com ]
+        - [ uuid, 1 ]
+
+    <<: *delayed_response
+
+    proxy-response:
+      status: 200
+
+#
+# An HTTP POST request.
+#
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: "/path/2"
+      headers:
+        fields:
+        - [ Host, www.no_tls.com ]
+        - [ Content-Length, 10 ]
+        - [ uuid, 2 ]
+
+    <<: *delayed_response
+
+    proxy-response:
+      status: 200
+
+
+#
+# An HTTPS GET request.
+#
+- protocol: [ {name: tls},
+              {name: tcp},
+              {name: ip} ]
+
+  transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/path/3"
+      headers:
+        fields:
+        - [ Host, www.tls.com ]
+        - [ uuid, 3 ]
+
+    <<: *delayed_response
+
+    proxy-response:
+      status: 200
+
+#
+# An HTTPS POST request.
+#
+- protocol: [ {name: tls},
+              {name: tcp},
+              {name: ip} ]
+
+  transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: "/path/4"
+      headers:
+        fields:
+        - [ Host, www.tls.com ]
+        - [ Content-Length, 10 ]
+        - [ uuid, 4 ]
+
+    <<: *delayed_response
+
+    proxy-response:
+      status: 200
+
+#
+# An HTTP/2 GET request.
+#
+- protocol: [ {name: http, version: 2},
+              {name: tls},
+              {name: tcp},
+              {name: ip} ]
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, www.tls.com ]
+        - [ :path, '/path/5' ]
+        - [ uuid, 5 ]
+
+    <<: *delayed_response
+
+    proxy-response:
+      status: 200
+
+#
+# An HTTP/2 POST request.
+#
+- protocol: [ {name: http, version: 2},
+              {name: tls},
+              {name: tcp},
+              {name: ip} ]
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, www.tls.com ]
+        - [ :path, '/path/6' ]
+        - [ uuid, 6 ]
+      content:
+        size: 10
+
+    <<: *delayed_response
+
+    proxy-response:
+      status: 200
