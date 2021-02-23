@@ -14,6 +14,7 @@ Changes with Apache Traffic Server 9.0.1
   #7309 - Disable client inactivity timeout while server is processing POST request
   #7347 - Allow for regex_remap of pristine URL.
   #7377 - Addresses some of the lock contention with HostStatus.
+  #7389 - Apple Silicon macOS support
   #7395 - Replace ::exit() with _exit() to avoid secondary cleanup cores
   #7410 - Fix issue with unavailable server retry codes
   #7414 - Remove the warning messages
@@ -29,9 +30,14 @@ Changes with Apache Traffic Server 9.0.1
   #7454 - Updating to Proxy Verifier v2.0.0
   #7460 - Update to the new MicroServer 1.0.6 release
   #7463 - Fixing compress expectation for new microserver
+  #7484 - traffic_ctl - Fix lookup key for run-root option.
   #7486 - slice/server: handleFirstServerHeader exit sooner on detected requested range errors.
+  #7490 - Fix out of bounds access error in ats_base64_decode
   #7493 - AuTest: Upgrade to Proxy Verifier 2.0.2
   #7495 - Add zlib1g-dev to Debian dependencies in README (#7303)
   #7506 - Fixed build issues with Fedora 34
   #7507 - Fixing DNS local_ipv* config option
+  #7526 - Fix out of bounds access error in jtest
   #7534 - Updating to use Proxy Verifier 2.1.0
+  #7549 - Release Notes update on HTTP/2 disabling in v9.x
+  #7551 - Removes the test plugins from the .spec file / RPM
