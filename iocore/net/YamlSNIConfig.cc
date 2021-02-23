@@ -28,12 +28,37 @@
 #include <yaml-cpp/yaml.h>
 #include <openssl/ssl.h>
 
+#include "P_SNIActionPerformer.h"
+
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
 #include "tscore/Errata.h"
 #include "tscore/ink_assert.h"
-#include "P_SNIActionPerformer.h"
+
 #include "records/I_RecCore.h"
+#include "records/I_RecHttp.h"
+
+namespace
+{
+// Assuming node is value of [TS_tunnel_alpn]
+void
+load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
+{
+  if (!node.IsSequence()) {
+    throw YAML::ParserException(node.Mark(), "\"tunnel_alpn\" is not sequence");
+  }
+
+  for (const auto &alpn : node) {
+    auto value = alpn.as<std::string>();
+    int index  = globalSessionProtocolNameRegistry.indexFor(value);
+    if (index == SessionProtocolNameRegistry::INVALID) {
+      throw YAML::ParserException(alpn.Mark(), "unknown value \"" + value + "\"");
+    } else {
+      dst.push_back(index);
+    }
+  }
+}
+} // namespace
 
 ts::Errata
 YamlSNIConfig::loader(const char *cfgFilename)
@@ -104,6 +129,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_tunnel_route,
                                                TS_forward_route,
                                                TS_partial_blind_route,
+                                               TS_tunnel_alpn,
                                                TS_verify_server_policy,
                                                TS_verify_server_properties,
                                                TS_client_cert,
@@ -214,6 +240,10 @@ template <> struct convert<YamlSNIConfig::Item> {
     } else if (node[TS_partial_blind_route]) {
       item.tunnel_destination = node[TS_partial_blind_route].as<std::string>();
       item.tunnel_type        = SNIRoutingType::PARTIAL_BLIND;
+
+      if (node[TS_tunnel_alpn]) {
+        load_tunnel_alpn(item.tunnel_alpn, node[TS_tunnel_alpn]);
+      }
     }
 
     if (node[TS_verify_server_policy]) {

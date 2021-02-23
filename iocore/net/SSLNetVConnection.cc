@@ -1134,6 +1134,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
       SSL_set_verify(this->ssl, SSL_VERIFY_PEER, verify_callback);
 
+      // SNI
       ats_scoped_str &tlsext_host_name = this->options.sni_hostname ? this->options.sni_hostname : this->options.sni_servername;
       if (tlsext_host_name) {
         if (SSL_set_tlsext_host_name(this->ssl, tlsext_host_name)) {
@@ -1141,6 +1142,16 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         } else {
           Debug("ssl.error", "failed to set SNI name '%s' for client handshake", tlsext_host_name.get());
           SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
+        }
+      }
+
+      // ALPN
+      if (!this->options.alpn_protos.empty()) {
+        if (int res = SSL_set_alpn_protos(this->ssl, reinterpret_cast<const uint8_t *>(this->options.alpn_protos.data()),
+                                          this->options.alpn_protos.size());
+            res != 0) {
+          Debug("ssl.error", "failed to set ALPN '%.*s' for client handshake", static_cast<int>(this->options.alpn_protos.size()),
+                this->options.alpn_protos.data());
         }
       }
     }
@@ -1306,6 +1317,15 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
       SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
     }
+
+    if (_tunnel_type != SNIRoutingType::NONE) {
+      // Foce to use HTTP/1.1 endpoint for SNI Routing
+      if (!this->setSelectedProtocol(reinterpret_cast<const unsigned char *>(IP_PROTO_TAG_HTTP_1_1.data()),
+                                     IP_PROTO_TAG_HTTP_1_1.size())) {
+        return EVENT_ERROR;
+      }
+    }
+
     {
       const unsigned char *proto = nullptr;
       unsigned len               = 0;
@@ -1322,7 +1342,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       }
 
       if (len) {
-        if (!this->setSelectedProtocol(proto, len)) {
+        if (_tunnel_type == SNIRoutingType::NONE && !this->setSelectedProtocol(proto, len)) {
           return EVENT_ERROR;
         }
         this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});
@@ -1332,6 +1352,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         Debug("ssl", "client did not select a next protocol");
       }
     }
+
 #if TS_USE_TLS_ASYNC
     if (SSLConfigParams::async_handshake_enabled) {
       SSL_clear_mode(ssl, SSL_MODE_ASYNC);

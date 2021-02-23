@@ -95,7 +95,8 @@ private:
 class TunnelDestination : public ActionItem
 {
 public:
-  TunnelDestination(const std::string_view &dest, SNIRoutingType type) : destination(dest), type(type)
+  TunnelDestination(const std::string_view &dest, SNIRoutingType type, const std::vector<int> &alpn)
+    : destination(dest), type(type), alpn_ids(alpn)
   {
     need_fix = (destination.find_first_of('$') != std::string::npos);
   }
@@ -115,8 +116,14 @@ public:
       } else {
         ssl_netvc->set_tunnel_destination(destination, type);
       }
+
       if (type == SNIRoutingType::BLIND) {
         ssl_netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
+      }
+
+      // ALPN
+      for (int id : alpn_ids) {
+        ssl_netvc->enableProtocol(id);
       }
     }
 
@@ -191,6 +198,7 @@ private:
 
   std::string destination;
   SNIRoutingType type = SNIRoutingType::NONE;
+  const std::vector<int> &alpn_ids;
   bool need_fix;
 };
 
