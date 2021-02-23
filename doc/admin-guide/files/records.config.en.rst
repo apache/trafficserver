@@ -3662,6 +3662,9 @@ Client-Related Configuration
    ``host``
       This is the default. The value of the ``Host`` field in the proxy request is used.
 
+   ``server_name``
+      The SNI value of the inbound TLS connection is used.
+
    ``remap``
       The remapped upstream name is used.
 
