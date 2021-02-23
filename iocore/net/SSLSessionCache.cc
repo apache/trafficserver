@@ -313,7 +313,7 @@ void
 SSLOriginSessionCache::insert_session(std::string lookup_key, SSL_SESSION *sess)
 {
   if (is_debug_tag_set("ssl.origin_session_cache")) {
-    Debug("ssl.origin_session_cache", "insert session: %lx = %p", std::hash<std::string>{}(lookup_key), sess);
+    Debug("ssl.origin_session_cache", "insert session: %s = %p", lookup_key.c_str(), sess);
   }
 
   std::unique_lock lock(mutex);
@@ -330,7 +330,7 @@ void
 SSLOriginSessionCache::remove_session(std::string lookup_key)
 {
   if (is_debug_tag_set("ssl.origin_session_cache")) {
-    Debug("ssl.origin_session_cache", "remove session: %lx", std::hash<std::string>{}(lookup_key));
+    Debug("ssl.origin_session_cache", "remove session: %s", lookup_key.c_str());
   }
 
   std::unique_lock lock(mutex);
@@ -345,7 +345,7 @@ SSL_SESSION *
 SSLOriginSessionCache::get_session(std::string lookup_key)
 {
   if (is_debug_tag_set("ssl.origin_session_cache")) {
-    Debug("ssl.origin_session_cache", "get session: %lx", std::hash<std::string>{}(lookup_key));
+    Debug("ssl.origin_session_cache", "get session: %s", lookup_key.c_str());
   }
 
   std::shared_lock lock(mutex);
@@ -365,7 +365,7 @@ SSLOriginSessionCache::remove_oldest_session(const std::unique_lock<std::shared_
   auto node = origin_sessions.begin();
 
   if (is_debug_tag_set("ssl.origin_session_cache")) {
-    Debug("ssl.origin_session_cache", "remove oldest session: %lx = %p", std::hash<std::string>{}(node->first), node->second);
+    Debug("ssl.origin_session_cache", "remove oldest session: %s = %p", node->first.c_str(), node->second);
   }
 
   SSL_SESSION_free(node->second);

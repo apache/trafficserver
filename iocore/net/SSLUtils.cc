@@ -1994,27 +1994,21 @@ SSLConnect(SSL *ssl)
   ERR_clear_error();
 
   SSL_SESSION *sess = SSL_get_session(ssl);
-  std::string lookup_key;
   if (!sess && SSLConfigParams::origin_session_cache == 1 && SSLConfigParams::origin_session_cache_size > 0) {
-    const char *tlsext_host_name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-    if (tlsext_host_name) {
-      lookup_key.assign(tlsext_host_name);
-      sess = origin_sess_cache->get_session(lookup_key);
-    } else {
-      int sock_fd = SSL_get_fd(ssl);
-      sockaddr_storage addr;
-      socklen_t addr_len = sizeof(addr);
-      if (sock_fd >= 0) {
-        getpeername(sock_fd, reinterpret_cast<sockaddr *>(&addr), &addr_len);
-        if (addr.ss_family == AF_INET || addr.ss_family == AF_INET6) {
-          lookup_key.assign(reinterpret_cast<char *>(&addr), addr_len);
-          sess = origin_sess_cache->get_session(lookup_key);
-        }
-      }
-    }
+    std::string sni_addr = get_sni_addr(ssl);
+    if (!sni_addr.empty()) {
+      SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+      std::stringstream ctx_ss;
+      ctx_ss << static_cast<const void *>(ctx);
+      std::string lookup_key;
+      ts::bwprint(lookup_key, "{}:{}", sni_addr.c_str(), ctx_ss.str().c_str());
 
-    if (sess) {
-      SSL_set_session(ssl, sess);
+      Debug("ssl.origin_session_cache", "origin session cache lookup key = %s", lookup_key.c_str());
+
+      sess = origin_sess_cache->get_session(lookup_key);
+      if (sess) {
+        SSL_set_session(ssl, sess);
+      }
     }
   }
 
@@ -2024,11 +2018,11 @@ SSLConnect(SSL *ssl)
     if (sess && SSL_session_reused(ssl)) {
       SSL_INCREMENT_DYN_STAT(ssl_origin_session_reused_count);
       if (is_debug_tag_set("ssl.origin_session_cache")) {
-        Debug("ssl.origin_session_cache", "reused session to origin: %lx = %p", std::hash<std::string>{}(lookup_key), sess);
+        Debug("ssl.origin_session_cache", "reused session to origin server = %p", sess);
       }
     } else {
       if (is_debug_tag_set("ssl.origin_session_cache")) {
-        Debug("ssl.origin_session_cache", "new session to origin: %lx = %p", std::hash<std::string>{}(lookup_key), sess);
+        Debug("ssl.origin_session_cache", "new session to origin server = %p", sess);
       }
     }
     return SSL_ERROR_NONE;
@@ -2042,6 +2036,33 @@ SSLConnect(SSL *ssl)
   }
 
   return ssl_error;
+}
+
+std::string
+get_sni_addr(SSL *ssl)
+{
+  std::string sni_addr;
+
+  if (ssl != nullptr) {
+    const char *sni_name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+    if (sni_name) {
+      sni_addr.assign(sni_name);
+    } else {
+      int sock_fd = SSL_get_fd(ssl);
+      sockaddr_storage addr;
+      socklen_t addr_len = sizeof(addr);
+      if (sock_fd >= 0) {
+        getpeername(sock_fd, reinterpret_cast<sockaddr *>(&addr), &addr_len);
+        if (addr.ss_family == AF_INET || addr.ss_family == AF_INET6) {
+          char ip_addr[INET6_ADDRSTRLEN];
+          ats_ip_ntop(reinterpret_cast<sockaddr *>(&addr), ip_addr, INET6_ADDRSTRLEN);
+          sni_addr.assign(ip_addr);
+        }
+      }
+    }
+  }
+
+  return sni_addr;
 }
 
 /**

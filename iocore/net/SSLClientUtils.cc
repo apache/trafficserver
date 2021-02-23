@@ -159,32 +159,21 @@ ssl_client_cert_callback(SSL *ssl, void * /*arg*/)
 static int
 ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
 {
-  const char *tlsext_host_name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  if (tlsext_host_name) {
-    std::string sni(tlsext_host_name);
-    origin_sess_cache->insert_session(sni, sess);
+  std::string sni_addr = get_sni_addr(ssl);
+  if (!sni_addr.empty()) {
+    SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
+    std::stringstream ctx_ss;
+    ctx_ss << static_cast<const void *>(ctx);
+    std::string lookup_key;
+    ts::bwprint(lookup_key, "{}:{}", sni_addr.c_str(), ctx_ss.str().c_str());
+    origin_sess_cache->insert_session(lookup_key, sess);
+    return 1;
   } else {
-    int sock_fd = SSL_get_fd(ssl);
-    sockaddr_storage addr;
-    socklen_t addr_len = sizeof(addr);
-    std::string addr_s;
-    if (sock_fd >= 0) {
-      getpeername(sock_fd, reinterpret_cast<sockaddr *>(&addr), &addr_len);
-      if (addr.ss_family == AF_INET || addr.ss_family == AF_INET6) {
-        addr_s.assign(reinterpret_cast<char *>(&addr), addr_len);
-        origin_sess_cache->insert_session(addr_s, sess);
-      } else {
-        if (is_debug_tag_set("ssl.origin_session_cache")) {
-          Debug("ssl.origin_session_cache", "unknown address family: %d", addr.ss_family);
-        }
-        return 0;
-      }
-    } else {
-      return 0;
+    if (is_debug_tag_set("ssl.origin_session_cache")) {
+      Debug("ssl.origin_session_cache", "Failed to fetch SNI/IP.");
     }
+    return 0;
   }
-
-  return 1;
 }
 
 SSL_CTX *
