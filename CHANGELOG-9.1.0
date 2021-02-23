@@ -60,6 +60,7 @@ Changes with Apache Traffic Server 9.1.0
   #6509 - Cleanup: Break down HpackIndexingTable::lookup() into static table lookup & dynamic table lookup
   #6515 - Check the exit value of the regression test
   #6520 - Cleanup: Get rid of MIMEFieldWrapper from HPACK encoding
+  #6521 - Perf: Replace casecmp with memcmp in HPACK static table lookup
   #6528 - Introduce LocalBuffer
   #6531 - Allow lo interface in list of system stats
   #6536 - Perf: Use LocalBuffer in HTTP/2
@@ -208,6 +209,7 @@ Changes with Apache Traffic Server 9.1.0
   #7273 - Removes commented out code from esi plugin
   #7276 - Remove the last remnants of the enable_url_expandomatic
   #7277 - Fix example in default sni.yaml configuration.
+  #7281 - Make s3_auth plugin auto reload the config at expiration time
   #7286 - Remove unfinished h2c support
   #7289 - Enable all h2spec test
   #7292 - Allow disabling SO_MARK and IP_TOS usage
@@ -257,17 +259,31 @@ Changes with Apache Traffic Server 9.1.0
   #7433 - Fix a link error on traffic_quic command
   #7436 - Cleanup: Remove unused members of NextHopProperty
   #7439 - API to retrieve NoStore set by plugins
+  #7445 - Add PROXY Protocol Builder
+  #7446 - Add Outbound PROXY Protocol (v1/v2) Support
+  #7450 - Move reopen_moved_log_files to log flushing thread
+  #7451 - Unit Test -  Increase openssl's key size. Place test certs into a comon test folder
   #7453 - Cleanup: Add SNIRoutingType
   #7455 - Fix Makefile target for creating changelogs
   #7457 - Fix comment in include/tscore/Filenames.h.
   #7461 - Do not write to the cache if the plugin decides not to write
+  #7464 - Upgrade Catch.hpp to v2.13.4
   #7465 - Select lua context per thread
   #7466 - Change atoi to atol, causing obvious issues on what needs to be int64's
   #7468 - Proxy Verifier: Making use of delay directives for caching tests.
   #7469 - Update AuTest version update directions for pipenv
   #7473 - Adjust so transfer-encoding header can be treated hop-by-hop
+  #7488 - Avoid -Warray-bounds on PROXY Protocol Builder
+  #7491 - Add new log field for negotiated ALPN Protocol ID with the client
+  #7494 - Fix certs used in tls related autests
+  #7496 - Fix QUIC unit tests build issue on GNU ld
+  #7497 - Fix QUIC unit test failures
   #7499 - Move has_request_body to ProxyTransaction
+  #7500 - Disable ja3 plugin when building with boringssl
   #7502 - traffic_dump: AuTests to use Proxy Verifier.
   #7518 - Updates the Dockerfile for debian
   #7522 - Make the H3 build script work properly on Debian platforms
+  #7532 - Fix asserts in multiplexer plugin.
+  #7535 - Convert the inactive_client_timeout test to use Proxy Verifier
   #7539 - Fix the schedule AuTest for 9.1.x: use PrepareTestPlugin
+  #7550 - Fix ja3_fingerprint configure syntax
