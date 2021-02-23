@@ -45,6 +45,13 @@ In addition, a new file for TLS handshake negotiation configuration is added:
 
 * :file:`sni.yaml` (this was for a while named ssl_server_name.yaml in Github)
 
+HTTP/2
+------
+
+HTTP/2 is enabled by default in ATS v9.0.0 on TLS ports. This can be customized per individual domain or globally via
+:file:`sni.yaml`. Note that this is a major behavior change compared to prior releases where HTTP/2 was explicitly
+required to be enabled per listener port via :ts:cv:`proxy.config.http.server_ports`.
+
 Configuration Settings: records.config
 --------------------------------------
 
