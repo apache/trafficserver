@@ -77,7 +77,7 @@ SNIConfigParams::loadSNIConfig()
       ai->actions.push_back(std::make_unique<TLSValidProtocols>(item.protocol_mask));
     }
     if (item.tunnel_destination.length() > 0) {
-      ai->actions.push_back(std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_type));
+      ai->actions.push_back(std::make_unique<TunnelDestination>(item.tunnel_destination, item.tunnel_type, item.tunnel_alpn));
     }
 
     ai->actions.push_back(std::make_unique<SNI_IpAllow>(item.ip_allow, item.fqdn));
