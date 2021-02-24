@@ -248,7 +248,6 @@ struct HttpTunnelProducer {
 class HttpTunnel : public Continuation
 {
   friend class HttpPagesHandler;
-  friend class CoreUtils;
 
   /** Data for implementing flow control across a tunnel.
 

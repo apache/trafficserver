@@ -179,8 +179,6 @@ public:
 
 private:
   T *m_ptr;
-
-  friend class CoreUtils;
 };
 
 template <typename T>
