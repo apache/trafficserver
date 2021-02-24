@@ -161,11 +161,8 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
 {
   std::string sni_addr = get_sni_addr(ssl);
   if (!sni_addr.empty()) {
-    SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
-    std::stringstream ctx_ss;
-    ctx_ss << static_cast<const void *>(ctx);
     std::string lookup_key;
-    ts::bwprint(lookup_key, "{}:{}", sni_addr.c_str(), ctx_ss.str().c_str());
+    ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
     origin_sess_cache->insert_session(lookup_key, sess);
     return 1;
   } else {

@@ -144,6 +144,10 @@ void setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_
 // Used as part of the lookup key into the origin server session cache
 std::string get_sni_addr(SSL *ssl);
 
+// Helper functions to retrieve server verify policy and properties from a SSL object
+// Used as part of the lookup key into the origin server session cache
+std::string get_verify_str(SSL *ssl);
+
 namespace ssl
 {
 namespace detail
