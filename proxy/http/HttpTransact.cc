@@ -7600,10 +7600,18 @@ HttpTransact::handle_parent_died(State *s)
 {
   ink_assert(s->parent_result.result == PARENT_FAIL);
 
-  if (s->current.state == OUTBOUND_CONGESTION) {
+  switch (s->current.state) {
+  case OUTBOUND_CONGESTION:
     build_error_response(s, HTTP_STATUS_SERVICE_UNAVAILABLE, "Next Hop Congested", "congestion#retryAfter");
-  } else {
-    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect");
+    break;
+  case INACTIVE_TIMEOUT:
+    build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Next Hop Timeout", "timeout#inactivity");
+    break;
+  case ACTIVE_TIMEOUT:
+    build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Next Hop Timeout", "timeout#activity");
+    break;
+  default:
+    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect");
   }
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
