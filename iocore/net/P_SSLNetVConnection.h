@@ -95,7 +95,11 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport, public TLSSessionResumptionSupport, public TLSSNISupport, public TLSBasicSupport
+class SSLNetVConnection : public UnixNetVConnection,
+                          public ALPNSupport,
+                          public TLSSessionResumptionSupport,
+                          public TLSSNISupport,
+                          public TLSBasicSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
