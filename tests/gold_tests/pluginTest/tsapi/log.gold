@@ -40,14 +40,14 @@ TSUrlPortGet():  SERVER_PORT
 Global: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/
 Request To Server:
-TSHttpHdrEffectiveUrlBufGet():  127.0.0.1:SERVER_PORT/
+TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
 Transaction: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/
 Request To Server:
-TSHttpHdrEffectiveUrlBufGet():  127.0.0.1:SERVER_PORT/
+TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
@@ -81,14 +81,14 @@ TSUrlPortGet():  SERVER_PORT
 Global: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/xYz
 Request To Server:
-TSHttpHdrEffectiveUrlBufGet():  127.0.0.1:SERVER_PORT/xYz
+TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/xYz
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
 Transaction: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/xYz
 Request To Server:
-TSHttpHdrEffectiveUrlBufGet():  127.0.0.1:SERVER_PORT/xYz
+TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/xYz
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
@@ -122,14 +122,14 @@ TSUrlPortGet():  SERVER_PORT
 Global: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/
 Request To Server:
-TSHttpHdrEffectiveUrlBufGet():  127.0.0.1:SERVER_PORT/
+TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
 Transaction: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/
 Request To Server:
-TSHttpHdrEffectiveUrlBufGet():  127.0.0.1:SERVER_PORT/
+TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80

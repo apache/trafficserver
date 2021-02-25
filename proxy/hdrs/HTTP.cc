@@ -1753,7 +1753,7 @@ class UrlPrintHack
 };
 
 char *
-HTTPHdr::url_string_get(Arena *arena, int *length, bool normalized)
+HTTPHdr::url_string_get(Arena *arena, int *length)
 {
   char *zret = nullptr;
   UrlPrintHack hack(this);
@@ -1763,14 +1763,13 @@ HTTPHdr::url_string_get(Arena *arena, int *length, bool normalized)
     // even uglier but it's less so than duplicating this entire method to
     // change that one thing.
 
-    zret = (arena == USE_HDR_HEAP_MAGIC) ? m_url_cached.string_get_ref(length, normalized) :
-                                           m_url_cached.string_get(arena, length, normalized);
+    zret = (arena == USE_HDR_HEAP_MAGIC) ? m_url_cached.string_get_ref(length) : m_url_cached.string_get(arena, length);
   }
   return zret;
 }
 
 int
-HTTPHdr::url_print(char *buff, int length, int *offset, int *skip, bool normalized)
+HTTPHdr::url_print(char *buff, int length, int *offset, int *skip, unsigned normalization_flags)
 {
   ink_release_assert(offset);
   ink_release_assert(skip);
@@ -1778,18 +1777,18 @@ HTTPHdr::url_print(char *buff, int length, int *offset, int *skip, bool normaliz
   int zret = 0;
   UrlPrintHack hack(this);
   if (hack.is_valid()) {
-    zret = m_url_cached.print(buff, length, offset, skip, normalized);
+    zret = m_url_cached.print(buff, length, offset, skip, normalization_flags);
   }
   return zret;
 }
 
 int
-HTTPHdr::url_printed_length()
+HTTPHdr::url_printed_length(unsigned normalization_flags)
 {
   int zret = -1;
   UrlPrintHack hack(this);
   if (hack.is_valid()) {
-    zret = m_url_cached.length_get();
+    zret = m_url_cached.length_get(normalization_flags);
   }
   return zret;
 }

@@ -5220,7 +5220,7 @@ TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_
     return TS_ERROR;
   }
 
-  int url_length = buf_handle->url_printed_length();
+  int url_length = buf_handle->url_printed_length(URLNormalize::LC_SCHEME_HOST | URLNormalize::IMPLIED_SCHEME);
 
   sdk_assert(url_length >= 0);
 
@@ -5233,7 +5233,7 @@ TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_
     int index  = 0;
     int offset = 0;
 
-    buf_handle->url_print(buf, size, &index, &offset, true);
+    buf_handle->url_print(buf, size, &index, &offset, URLNormalize::LC_SCHEME_HOST | URLNormalize::IMPLIED_SCHEME);
   }
 
   return TS_SUCCESS;
