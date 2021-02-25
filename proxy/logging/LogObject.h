@@ -97,7 +97,6 @@ public:
             const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec = 0,
             int rolling_offset_hr = 0, int rolling_size_mb = 0, bool auto_created = false, int rolling_max_count = 0,
             int rolling_min_count = 0, bool reopen_after_rolling = false, int pipe_buffer_size = 0);
-  LogObject(LogObject &);
   ~LogObject() override;
 
   void add_filter(LogFilter *filter, bool copy = true);
