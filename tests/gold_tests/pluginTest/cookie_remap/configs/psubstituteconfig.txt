@@ -1,0 +1,21 @@
+# This is a test configuration (version using pre-remap URL)
+
+# Do a regex against the cookie
+op:
+  cookie: fpbeta
+  operation: exists
+  sendto: http://127.0.0.10:$PORT/photos/search?query=$ppath
+op:
+  cookie: oxalpha
+  operation: exists
+  sendto: http://127.0.0.10:$PORT/photos/search?query=$unmatched_ppath
+op:
+  cookie: acgamma
+  operation: exists
+  sendto: http://127.0.0.10:$PORT/photos/search/cr_substitutions?query=$cr_urlencode($cr_req_purl)
+# Regex against url and path is substituted in outgoing path
+op:
+  operation: regex
+  regex: foobar
+  sendto: http://127.0.0.10:$PORT/photos/search/$ppath
+

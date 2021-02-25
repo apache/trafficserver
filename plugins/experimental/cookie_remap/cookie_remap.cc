@@ -28,19 +28,16 @@
 #include <ts/remap.h>
 #include <yaml-cpp/yaml.h>
 
-#include <algorithm>
-#include <list>
-#include <map>
-#include <set>
-#include <cstring>
 #include <string>
-#include <unistd.h>
 #include <vector>
+#include <string_view>
+#include <cstddef>
 #include "hash.h"
 
-using namespace std;
+#undef FMT_SV
+#define FMT_SV(SV) static_cast<int>((SV).size()), (SV).data()
 
-// for bucketizing
+using namespace std;
 
 #define MY_NAME "cookie_remap"
 const int OVECCOUNT = 30; // We support $1 - $9 only, and this needs to be 3x that
@@ -65,59 +62,129 @@ ink_free(void *s)
 {
   return TSfree(s);
 }
-///////////////////////////////////////////////////////////////////////////////
-// Class holding one request URL's component, to simplify the code and
-// length calculations (we need all of them).
-//
-struct UrlComponents {
-  UrlComponents() = default;
+
+class UrlComponents
+{
+public:
+  UrlComponents(TSRemapRequestInfo *rri, TSHttpTxn txn) : _rri(rri), _txn(txn) {}
+
+  std::string const &
+  path(bool pre_remap)
+  {
+    if (_d[pre_remap].path_str.empty()) {
+      auto urlh = _get_url(pre_remap);
+      // based on RFC2396, matrix params are part of path segments so
+      // we will just
+      // append them to the path
+      _d[pre_remap].path_str = _get_url_comp(urlh, TSUrlPathGet);
+      auto matrix            = _get_url_comp(urlh, TSUrlHttpParamsGet);
+      if (!matrix.empty()) {
+        _d[pre_remap].path_str.append(";", 1).append(matrix);
+      }
+    }
+    return _d[pre_remap].path_str;
+  }
+
+  std::string_view
+  query(bool pre_remap)
+  {
+    if (_d[pre_remap].query.empty()) {
+      _d[pre_remap].query = _get_url_comp(_get_url(pre_remap), TSUrlHttpQueryGet);
+    }
+    return _d[pre_remap].query;
+  }
+
+  std::string_view
+  from_path()
+  {
+    if (_from_path.empty()) {
+      _UrlHandle urlh{_rri->requestBufp, _rri->mapFromUrl};
+      _from_path = _get_url_comp(urlh, TSUrlPathGet);
+    }
+    return _from_path;
+  }
+
+  std::string_view
+  url(bool pre_remap)
+  {
+    if (_d[pre_remap].url.empty()) {
+      auto urlh = _get_url(pre_remap);
+      int length;
+      auto data         = TSUrlStringGet(urlh.bufp, urlh.urlp, &length);
+      _d[pre_remap].url = std::string_view(data, length);
+    }
+    return _d[pre_remap].url;
+  }
+
+  // No copying/moving.
+  //
+  UrlComponents(UrlComponents const &) = delete;
+  UrlComponents &operator=(UrlComponents const &) = delete;
 
   ~UrlComponents()
   {
-    if (url != nullptr) {
-      TSfree((void *)url);
+    // Not calling TSHandleMLocRelease() for the URL TSMLoc pointers because it doesn't do anything.
+
+    if (_d[0].url.data() != nullptr) {
+      TSfree(const_cast<char *>(_d[0].url.data()));
+    }
+    if (_d[1].url.data() != nullptr) {
+      TSfree(const_cast<char *>(_d[1].url.data()));
     }
   }
 
-  void
-  populate(TSRemapRequestInfo *rri)
+private:
+  TSRemapRequestInfo *_rri;
+  TSHttpTxn _txn;
+
+  struct _UrlHandle {
+    TSMBuffer bufp = nullptr;
+    TSMLoc urlp;
+  };
+
+  // Buffer any data that's likely to be used more than once.
+
+  struct _Data {
+    _UrlHandle urlh;
+    std::string path_str;
+    std::string_view url;
+    std::string_view query;
+  };
+
+  // index 0 - remapped
+  // index 1 - pre-remap
+  //
+  _Data _d[2];
+
+  std::string_view _from_path;
+
+  _UrlHandle
+  _get_url(bool pre_remap)
   {
-    scheme    = TSUrlSchemeGet(rri->requestBufp, rri->requestUrl, &scheme_len);
-    host      = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &host_len);
-    tspath    = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &tspath_len);
-    query     = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &query_len);
-    matrix    = TSUrlHttpParamsGet(rri->requestBufp, rri->requestUrl, &matrix_len);
-    port      = TSUrlPortGet(rri->requestBufp, rri->requestUrl);
-    url       = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &url_len);
-    from_path = TSUrlPathGet(rri->requestBufp, rri->mapFromUrl, &from_path_len);
+    _UrlHandle h = _d[pre_remap].urlh;
 
-    // based on RFC2396, matrix params are part of path segments so
-    // we will just
-    // append them to the path
-    path.assign(tspath, tspath_len);
-    if (matrix_len) {
-      path += ';';
-      path.append(matrix, matrix_len);
+    if (!h.bufp) {
+      if (pre_remap) {
+        if (TSHttpTxnPristineUrlGet(_txn, &h.bufp, &h.urlp) != TS_SUCCESS) {
+          TSError("%s: Plugin is unable to get pristine url", MY_NAME);
+          return _UrlHandle();
+        }
+      } else {
+        h.bufp = _rri->requestBufp;
+        h.urlp = _rri->requestUrl;
+      }
+      _d[pre_remap].urlh = h;
     }
+    return h;
   }
 
-  const char *scheme = nullptr;
-  const char *host   = nullptr;
-  const char *tspath = nullptr;
-  std::string path{};
-  const char *query     = nullptr;
-  const char *matrix    = nullptr;
-  const char *url       = nullptr;
-  const char *from_path = nullptr;
-  int port              = 0;
-
-  int scheme_len    = 0;
-  int host_len      = 0;
-  int tspath_len    = 0;
-  int query_len     = 0;
-  int matrix_len    = 0;
-  int url_len       = 0;
-  int from_path_len = 0;
+  static std::string_view
+  _get_url_comp(_UrlHandle urlh, char const *(*comp_func)(TSMBuffer, TSMLoc, int *))
+  {
+    int length;
+    auto data = comp_func(urlh.bufp, urlh.urlp, &length);
+    return std::string_view(data, length);
+  }
 };
 
 void
@@ -132,6 +199,7 @@ enum operation_type { UNKNOWN = -1, EXISTS = 1, NOTEXISTS, REGEXP, STRING, BUCKE
 enum target_type {
   COOKIE = 1,
   URI, // URI = PATH + QUERY
+  PRE_REMAP_URI,
   UNKNOWN_TARGET
 };
 
@@ -177,13 +245,25 @@ dec_to_hex(type _num, char *hdigits)
 void
 urlencode(std::string &str)
 {
-  size_t pos = 0;
-  for (; pos < str.length(); pos++) {
-    if (!isalnum(str[pos])) {
-      char dec[2];
-      dec_to_hex(str[pos], dec);
-      std::string replacement = "%" + std::string(dec, 2);
-      str.replace(pos, 1, replacement);
+  auto orig = str.size();
+  auto enc  = orig;
+  for (auto c : str) {
+    if (!isalnum(c)) {
+      enc += 2;
+    }
+  }
+  if (enc == orig) {
+    // No changes needed.
+    return;
+  }
+  str.resize(enc);
+  while (orig--) {
+    if (!isalnum(str[orig])) {
+      enc -= 3;
+      dec_to_hex(str[orig], &(str[enc + 1]));
+      str[enc] = '%';
+    } else {
+      str[--enc] = str[orig];
     }
   }
 }
@@ -279,6 +359,8 @@ public:
   {
     if (s == "uri") {
       target = URI;
+    } else if (s == "puri") {
+      target = PRE_REMAP_URI;
     } else {
       target = COOKIE;
     }
@@ -480,7 +562,7 @@ public:
   }
 
   bool
-  process(CookieJar &jar, std::string &dest, TSHttpStatus &retstat, TSRemapRequestInfo *rri) const
+  process(CookieJar &jar, std::string &dest, TSHttpStatus &retstat, TSRemapRequestInfo *rri, UrlComponents &req_url) const
   {
     if (sendto == "") {
       return false; // guessing every operation must have a
@@ -572,7 +654,7 @@ public:
         } // handled EXISTS / NOTEXISTS subops
 
         TSDebug(MY_NAME, "processing cookie data: \"%s\"", cookie_data.c_str());
-      } else {
+      } else if (target != PRE_REMAP_URI) {
         target = URI;
       }
 
@@ -598,19 +680,18 @@ public:
       std::string request_uri; // only set the value if we
                                // need it; we might
       // match the cookie data instead
-      const std::string &string_to_match(target == URI ? request_uri : cookie_data);
-      if (target == URI) {
-        UrlComponents req_url;
-        req_url.populate(rri);
-
-        TSDebug(MY_NAME, "process req_url.path = %s", req_url.path.c_str());
-        request_uri = req_url.path;
+      bool use_url = (target == URI) || (target == PRE_REMAP_URI);
+      const std::string &string_to_match(use_url ? request_uri : cookie_data);
+      if (use_url) {
+        request_uri = req_url.path(target == PRE_REMAP_URI);
+        TSDebug(MY_NAME, "process req_url.path = %s", request_uri.c_str());
         if (request_uri.length() && request_uri[0] != '/') {
           request_uri.insert(0, 1, '/');
         }
-        if (req_url.query_len > 0) {
+        auto query = req_url.query(target == PRE_REMAP_URI);
+        if (query.size() > 0) {
           request_uri += '?';
-          request_uri += std::string(req_url.query, req_url.query_len);
+          request_uri += query;
         }
         object_name = "request uri";
       }
@@ -771,6 +852,8 @@ build_op(op &o, OpMap const &q)
     std::string const &key = pr.first;
     std::string const &val = pr.second;
 
+    TSDebug(MY_NAME, "build_op: key=%s val=%s", key.c_str(), val.c_str());
+
     if (key == "cookie") {
       if (!sub->empty()) {
         TSDebug(MY_NAME, "ERROR: you need to define a connector");
@@ -909,103 +992,182 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   return TS_SUCCESS;
 }
 
+namespace
+{
+std::string
+unmatched_path(UrlComponents &req_url, bool pre_remap)
+{
+  std::string path           = req_url.path(pre_remap);
+  std::string_view from_path = req_url.from_path();
+
+  std::size_t pos = path.find(from_path);
+  if (pos != std::string::npos) {
+    path.erase(pos, from_path.size());
+  }
+  TSDebug(MY_NAME, "from_path: %*s", FMT_SV(from_path));
+  TSDebug(MY_NAME, "%s: %s", pre_remap ? "unmatched_ppath" : "unmatched_path", path.c_str());
+
+  return path;
+}
+
+int const sub_req_url_id         = 0;
+int const sub_req_purl_id        = -1;
+int const sub_path_id            = -2;
+int const sub_ppath_id           = -3;
+int const sub_unmatched_path_id  = -4;
+int const sub_unmatched_ppath_id = -5;
+int const sub_url_encode_id      = -6;
+
+struct CompNext {
+  std::string_view const comp;
+  int const *const next;
+
+  CompNext(std::string_view p, int const *n) : comp(p), next(n) {}
+};
+
+struct {
+  int count = 2;
+  CompNext o1{"ath", &sub_unmatched_path_id};
+  CompNext o2{"path", &sub_unmatched_ppath_id};
+} const sub_unmatched;
+
+struct {
+  int count = 2;
+  CompNext o1{"ath", &sub_path_id};
+  CompNext o2{"path", &sub_ppath_id};
+} const sub_p;
+
+struct {
+  int count = 2;
+  CompNext o1{"url", &sub_req_url_id};
+  CompNext o2{"purl", &sub_req_purl_id};
+} const sub_cr_req;
+
+struct {
+  int count = 2;
+  CompNext o1{"req_", &sub_cr_req.count};
+  CompNext o2{"urlencode(", &sub_url_encode_id};
+} const sub_cr;
+
+struct {
+  int count = 3;
+  CompNext o1{"cr_", &sub_cr.count};
+  CompNext o2{"p", &sub_p.count};
+  CompNext o3{"unmatched_p", &sub_unmatched.count};
+} const sub;
+
+int
+sub_lookup(char const *targ, int targ_len)
+{
+  int count = sub.count;
+  auto opt  = &sub.o1;
+  for (;;) {
+    while ((targ_len < static_cast<int>(opt->comp.size())) || (std::string_view(targ, opt->comp.size()) != opt->comp)) {
+      if (!--count) {
+        return 1; // Failed lookup, return some positive numver.
+      }
+      ++opt;
+    }
+    count = *opt->next;
+    if (count <= 0) {
+      break;
+    }
+    targ += opt->comp.size();
+    targ_len -= opt->comp.size();
+    opt = reinterpret_cast<CompNext const *>(reinterpret_cast<char const *>(opt->next) + offsetof(decltype(sub), o1));
+  }
+  return count;
+}
+
+} // end anonymous namespace
+
 //----------------------------------------------------------------------------
 // called whenever we need to perform substitutions on a string; used to replace
 // things like
-//  $url, $unmatched_path, $cr_req_url, and $cr_url_encode
-// returns 0 if no substitutions, 1 otw.
-int
-cr_substitutions(std::string &obj, TSRemapRequestInfo *rri)
+//  $path, $ppath, $unmatched_path, $unmatched_ppath, $cr_req_url, $cr_req_purl, and $cr_url_encode
+void
+cr_substitutions(std::string &obj, UrlComponents &req_url)
 {
-  int retval = 0;
-
-  size_t pos      = obj.find('$');
-  size_t tmp_pos  = 0;
-  size_t last_pos = pos;
-
-  UrlComponents req_url;
-  req_url.populate(rri);
-  TSDebug(MY_NAME, "x req_url.path: %s %zu", req_url.path.c_str(), req_url.path.length());
-  TSDebug(MY_NAME, "x req_url.url: %s %d", std::string(req_url.url, req_url.url_len).c_str(), req_url.url_len);
-
-  while (pos < obj.length()) {
-    if (pos + 1 >= obj.length()) {
-      break; // trailing ?
-    }
-
-    switch (obj[pos + 1]) {
-    case 'p':
-      if (obj.substr(pos + 1, 4) == "path") {
-        obj.replace(pos, 5, req_url.path);
-        pos += req_url.path.length();
-      }
-      break;
-    case 'u':
-      if (obj.substr(pos + 1, 14) == "unmatched_path") {
-        // we found $unmatched_path inside the sendto
-        // url
-        std::string unmatched_path(req_url.path);
-        TSDebug(MY_NAME, "unmatched_path: %s", unmatched_path.c_str());
-        TSDebug(MY_NAME, "from_path: %s", req_url.from_path);
-
-        tmp_pos = unmatched_path.find(req_url.from_path, 0, req_url.from_path_len); // from patch
-        if (tmp_pos != std::string::npos) {
-          unmatched_path.erase(tmp_pos, req_url.from_path_len);
-        }
-        TSDebug(MY_NAME, "unmatched_path: %s", unmatched_path.c_str());
-        TSDebug(MY_NAME, "obj: %s", obj.c_str());
-        obj.replace(pos, 15, unmatched_path);
-        TSDebug(MY_NAME, "obj: %s", obj.c_str());
-        pos += unmatched_path.length();
-      }
-      break;
-    case 'c':
-      if (obj.substr(pos + 1, 3) == "cr_") {
-        switch (obj[pos + 4]) {
-        case 'r':
-          if (obj.substr(pos + 4, 7) == "req_url") {
-            // we found $cr_req_url inside
-            // the sendto url
-            std::string request_url;
-            if (req_url.url && req_url.url_len > 0) {
-              request_url = std::string(req_url.url, req_url.url_len);
-            }
-            TSDebug(MY_NAME, "req_url.url: %s %d", std::string(req_url.url, req_url.url_len).c_str(), req_url.url_len);
-            obj.replace(pos, 11, request_url);
-            pos += request_url.length();
-          }
-          break;
-        case 'u':
-          // note that this allows for variables
-          // nested in the function, but not
-          // for functions nested in the function
-          if (obj.substr(pos + 4, 10) == "urlencode(" && (tmp_pos = obj.find(')', pos + 14)) != std::string::npos) {
-            std::string str = obj.substr(pos + 14, tmp_pos - pos - 14); // the string to
-                                                                        // encode
-            cr_substitutions(str, rri);                                 // expand any
-                                                                        // variables as
-                                                                        // necessary
-                                                                        // before
-                                                                        // encoding
-            urlencode(str);
-            obj.replace(pos, tmp_pos - pos + 1, str); // +1 for the
-                                                      // closing
-                                                      // parens
-            pos += str.length();
-          }
-          break;
-        }
-      }
-      break;
-    }
-    if (last_pos == pos) {
-      pos++; // don't search the same place again and again
-    }
-    last_pos = pos;
-    pos      = obj.find('$', pos);
+  {
+    auto path = req_url.path(false);
+    TSDebug(MY_NAME, "x req_url.path: %*s %d", FMT_SV(path), static_cast<int>(path.size()));
+    auto url = req_url.url(false);
+    TSDebug(MY_NAME, "x req_url.url: %*s %d", FMT_SV(url), static_cast<int>(url.size()));
   }
 
-  return retval;
+  auto npos = std::string::npos;
+  std::string tmp;
+  std::size_t pos = 0;
+  for (;;) {
+    pos = obj.find('$', pos);
+    if (npos == pos) {
+      break;
+    }
+    std::string_view variable, value;
+    switch (sub_lookup(obj.data() + pos + 1, static_cast<int>(obj.size()) - pos - 1)) {
+    case sub_req_url_id: {
+      variable = "$cr_req_url";
+      value    = req_url.url(false);
+    } break;
+
+    case sub_req_purl_id: {
+      variable = "$cr_req_purl";
+      value    = req_url.url(true);
+    } break;
+
+    case sub_path_id: {
+      variable = "$path";
+      value    = req_url.path(false);
+    } break;
+
+    case sub_ppath_id: {
+      variable = "$ppath";
+      value    = req_url.path(true);
+    } break;
+
+    case sub_unmatched_path_id: {
+      variable = "$unmatched_path";
+      tmp      = unmatched_path(req_url, false);
+      value    = tmp;
+    } break;
+
+    case sub_unmatched_ppath_id: {
+      variable = "$unmatched_ppath";
+      tmp      = unmatched_path(req_url, true);
+      value    = tmp;
+    } break;
+
+    case sub_url_encode_id: {
+      std::size_t bpos = pos + sizeof("cr_urlencode(") - 1;
+      std::size_t epos = obj.find(')', bpos);
+      if (npos == epos) {
+        variable = "$";
+        value    = variable;
+      } else {
+        variable = std::string_view(obj.data() + pos, epos + 1 - pos);
+
+        tmp = obj.substr(bpos, epos - bpos);
+        cr_substitutions(tmp, req_url);
+        urlencode(tmp);
+        value = tmp;
+      }
+    } break;
+
+    default: {
+      variable = "$";
+      value    = variable;
+
+    } break;
+
+    } // end switch
+
+    TSDebug(MY_NAME, "%*s => %*s", FMT_SV(variable), FMT_SV(value));
+
+    obj.replace(pos, variable.size(), value);
+
+    pos += value.size();
+
+  } // end for (;;)
 }
 
 //----------------------------------------------------------------------------
@@ -1017,8 +1179,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   OpsQueue *ops       = static_cast<OpsQueue *>(ih);
   TSHttpStatus status = TS_HTTP_STATUS_NONE;
 
-  UrlComponents req_url;
-  req_url.populate(rri);
+  UrlComponents req_url{rri, txnp};
 
   if (ops == (OpsQueue *)nullptr) {
     TSError("serious error with encountered while attempting to "
@@ -1029,9 +1190,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   // get any query params..we will append that to the answer (possibly)
   std::string client_req_query_params;
-  if (req_url.query_len) {
+  auto query = req_url.query(false);
+  if (!query.empty()) {
     client_req_query_params = "?";
-    client_req_query_params += std::string(req_url.query, req_url.query_len);
+    client_req_query_params += query;
   }
   TSDebug(MY_NAME, "Query Parameters: %s", client_req_query_params.c_str());
 
@@ -1056,8 +1218,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   for (auto &op : *ops) {
     TSDebug(MY_NAME, ">>> processing new operation");
-    if (op->process(jar, rewrite_to, status, rri)) {
-      cr_substitutions(rewrite_to, rri);
+    if (op->process(jar, rewrite_to, status, rri, req_url)) {
+      cr_substitutions(rewrite_to, req_url);
 
       size_t pos = 7;                             // 7 because we want to ignore the // in
                                                   // http:// :)
