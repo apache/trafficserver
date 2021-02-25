@@ -1997,11 +1997,8 @@ SSLConnect(SSL *ssl)
   if (!sess && SSLConfigParams::origin_session_cache == 1 && SSLConfigParams::origin_session_cache_size > 0) {
     std::string sni_addr = get_sni_addr(ssl);
     if (!sni_addr.empty()) {
-      SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
-      std::stringstream ctx_ss;
-      ctx_ss << static_cast<const void *>(ctx);
       std::string lookup_key;
-      ts::bwprint(lookup_key, "{}:{}", sni_addr.c_str(), ctx_ss.str().c_str());
+      ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
 
       Debug("ssl.origin_session_cache", "origin session cache lookup key = %s", lookup_key.c_str());
 
@@ -2063,6 +2060,54 @@ get_sni_addr(SSL *ssl)
   }
 
   return sni_addr;
+}
+
+std::string
+get_verify_str(SSL *ssl)
+{
+  std::string verify_str;
+
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  if (netvc != nullptr) {
+    std::string policy_str;
+    switch (netvc->options.verifyServerPolicy) {
+    case YamlSNIConfig::Policy::DISABLED:
+      policy_str.assign("DISABLED");
+      break;
+    case YamlSNIConfig::Policy::PERMISSIVE:
+      policy_str.assign("PERMISSIVE");
+      break;
+    case YamlSNIConfig::Policy::ENFORCED:
+      policy_str.assign("ENFORCED");
+      break;
+    case YamlSNIConfig::Policy::UNSET:
+      policy_str.assign("UNSET");
+      break;
+    }
+
+    std::string property_str;
+    switch (netvc->options.verifyServerProperties) {
+    case YamlSNIConfig::Property::NONE:
+      property_str.assign("NONE");
+      break;
+    case YamlSNIConfig::Property::SIGNATURE_MASK:
+      property_str.assign("SIGNATURE_MASK");
+      break;
+    case YamlSNIConfig::Property::NAME_MASK:
+      property_str.assign("NAME_MASK");
+      break;
+    case YamlSNIConfig::Property::ALL_MASK:
+      property_str.assign("ALL_MASK");
+      break;
+    case YamlSNIConfig::Property::UNSET:
+      property_str.assign("UNSET");
+      break;
+    }
+
+    ts::bwprint(verify_str, "{}:{}", policy_str.c_str(), property_str.c_str());
+  }
+
+  return verify_str;
 }
 
 /**
