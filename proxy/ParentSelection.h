@@ -112,13 +112,14 @@ private:
 struct pRecord : ATSConsistentHashNode {
   char hostname[MAXDNAME + 1];
   int port;
-  time_t failedAt;
-  int failCount;
+  std::atomic<time_t> failedAt = 0;
+  std::atomic<int> failCount   = 0;
   int32_t upAt;
   const char *scheme; // for which parent matches (if any)
   int idx;
   float weight;
   char hash_string[MAXDNAME + 1];
+  std::atomic<int> retriers = 0;
 };
 
 typedef ControlMatcher<ParentRecord, ParentResult> P_table;
@@ -332,6 +333,9 @@ struct ParentSelectionPolicy {
 class ParentSelectionStrategy
 {
 public:
+  int max_retriers = 0;
+
+  ParentSelectionStrategy() { REC_ReadConfigInteger(max_retriers, "proxy.config.http.parent_proxy.max_trans_retries"); }
   //
   // Return the pRecord.
   virtual pRecord *getParents(ParentResult *result) = 0;
