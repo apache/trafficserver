@@ -125,7 +125,7 @@ public:
   /// Set outbound connection to transparent.
   bool f_outbound_transparent = false;
 
-  Http1Transaction trans;
+  Http1Transaction trans = {this};
 };
 
 extern ClassAllocator<Http1ClientSession> http1ClientSessionAllocator;

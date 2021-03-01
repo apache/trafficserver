@@ -32,7 +32,7 @@ class Http1Transaction : public ProxyTransaction
 public:
   using super_type = ProxyTransaction;
 
-  Http1Transaction() {}
+  Http1Transaction(ProxySession *session) : super_type(session) {}
 
   ////////////////////
   // Methods

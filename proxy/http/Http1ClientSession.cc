@@ -451,7 +451,6 @@ Http1ClientSession::new_transaction()
 
   read_state = HCS_ACTIVE_READER;
 
-  trans.set_proxy_ssn(this);
   transact_count++;
 
   trans.new_transaction(read_from_early_data > 0 ? true : false);

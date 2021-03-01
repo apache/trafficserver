@@ -54,9 +54,8 @@ public:
   const int retry_delay = HRTIME_MSECONDS(10);
   using super           = ProxyTransaction; ///< Parent type.
 
-  Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size);
-
-  void init(Http2StreamId sid, ssize_t initial_rwnd);
+  Http2Stream() {} // Just to satisfy ClassAllocator
+  Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_rwnd);
 
   int main_event_handler(int event, void *edata);
 
