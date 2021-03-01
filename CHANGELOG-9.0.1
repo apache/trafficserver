@@ -2,6 +2,7 @@ Changes with Apache Traffic Server 9.0.1
   #3871 - Fix heap use after free in DNSProcessor::getby()
   #6302 - Simple and miscellaneous fixes/additions for lua plugin
   #6691 - Slice plugin: self heal when asset etag/last-modified block mismatches
+  #6780 - Use Proxy-Connection iff parent_is_proxy=true
   #6860 - Make format specifier for time_t portable
   #6893 - AuTest: Pipfile update to use microserver 1.0.5
   #6919 - slice: clean up 502 header/body generation.
@@ -31,6 +32,7 @@ Changes with Apache Traffic Server 9.0.1
   #7460 - Update to the new MicroServer 1.0.6 release
   #7463 - Fixing compress expectation for new microserver
   #7468 - Proxy Verifier: Making use of delay directives for caching tests.
+  #7483 - Fix KA header not checking strategy
   #7484 - traffic_ctl - Fix lookup key for run-root option.
   #7486 - slice/server: handleFirstServerHeader exit sooner on detected requested range errors.
   #7490 - Fix out of bounds access error in ats_base64_decode
