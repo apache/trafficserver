@@ -106,6 +106,7 @@ testsForReqHdr(char const *desc, TSMBuffer hbuf, TSMLoc hloc)
       logFile << std::string_view(scheme_data, scheme_len) << std::endl;
     }
     logFile << "TSUrlPortGet():  " << TSUrlPortGet(hbuf, url_loc) << std::endl;
+    logFile << "TSUrlRawPortGet():  " << TSUrlRawPortGet(hbuf, url_loc) << std::endl;
   }
 }
 
