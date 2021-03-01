@@ -50,7 +50,6 @@ using HdrHeapMarshalBlocks                     = ts::Scalar<HDR_PTR_SIZE>;
 //  to fix the unrolled operations
 static constexpr unsigned HDR_BUF_RONLY_HEAPS = 3;
 
-class CoreUtils;
 class IOBufferBlock;
 
 enum {
@@ -169,8 +168,6 @@ struct StrHeapDesc {
 
 class HdrHeap
 {
-  friend class CoreUtils;
-
 public:
   static constexpr int DEFAULT_SIZE = 2048;
 

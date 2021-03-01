@@ -164,7 +164,6 @@ enum HttpPluginTunnel_t {
   HTTP_PLUGIN_AS_INTERCEPT,
 };
 
-class CoreUtils;
 class PluginVCCore;
 
 class PostDataBuffers
@@ -202,7 +201,6 @@ public:
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpPagesHandler;
-  friend class CoreUtils;
 
 public:
   HttpSM();
