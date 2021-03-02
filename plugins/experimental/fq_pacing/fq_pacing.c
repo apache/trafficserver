@@ -196,6 +196,7 @@ reset_pacing_cont(TSCont contp, TSEvent event, void *edata)
 #endif
 
   TSfree(txn_data);
+  TSContDestroy(contp);
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
