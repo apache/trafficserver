@@ -288,7 +288,6 @@ void
 Http2ClientSession::flush()
 {
   if (this->_pending_sending_data_size > 0) {
-    total_write_len += this->_pending_sending_data_size;
     this->_pending_sending_data_size = 0;
     this->_write_buffer_last_flush   = Thread::get_hrtime();
     write_reenable();
