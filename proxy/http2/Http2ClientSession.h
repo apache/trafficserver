@@ -136,11 +136,17 @@ private:
 
   bool _should_do_something_else();
 
-  SessionHandler session_handler      = nullptr;
+  ////////
+  // Variables
+  SessionHandler session_handler = nullptr;
+
   MIOBuffer *read_buffer              = nullptr;
-  IOBufferReader *_reader             = nullptr;
-  MIOBuffer *write_buffer             = nullptr;
-  IOBufferReader *sm_writer           = nullptr;
+  IOBufferReader *_read_buffer_reader = nullptr;
+
+  VIO *write_vio                       = nullptr;
+  MIOBuffer *write_buffer              = nullptr;
+  IOBufferReader *_write_buffer_reader = nullptr;
+
   Http2FrameHeader current_hdr        = {0, 0, 0, 0};
   uint32_t _write_size_threshold      = 0;
   uint32_t _write_time_threshold      = 100;
@@ -152,7 +158,6 @@ private:
   History<HISTORY_DEFAULT_SIZE> _history;
   Milestones<Http2SsnMilestone, static_cast<size_t>(Http2SsnMilestone::LAST_ENTRY)> _milestones;
 
-  VIO *write_vio                 = nullptr;
   int dying_event                = 0;
   bool kill_me                   = false;
   Http2SessionCod cause_of_death = Http2SessionCod::NOT_PROVIDED;
