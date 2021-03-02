@@ -48,6 +48,7 @@ public:
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
   void start() override;
   void destroy() override;
+  void free() override;
   void release(ProxyTransaction *trans) override;
   int get_transact_count() const override;
 

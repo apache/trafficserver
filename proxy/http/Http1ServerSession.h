@@ -56,11 +56,13 @@ public:
   Http1ServerSession() : super_type() {}
   Http1ServerSession(self_type const &) = delete;
   self_type &operator=(self_type const &) = delete;
+  ~Http1ServerSession()                   = default;
 
   ////////////////////
   // Methods
   void release(ProxyTransaction *) override;
   void destroy() override;
+  void free() override;
 
   // VConnection Methods
   void do_io_close(int lerrno = -1) override;

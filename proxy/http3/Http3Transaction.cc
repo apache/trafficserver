@@ -216,12 +216,6 @@ HQTransaction::reenable(VIO *vio)
 }
 
 void
-HQTransaction::destroy()
-{
-  _sm = nullptr;
-}
-
-void
 HQTransaction::transaction_done()
 {
   // TODO: start closing transaction

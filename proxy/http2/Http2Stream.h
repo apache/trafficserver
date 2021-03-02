@@ -56,10 +56,10 @@ public:
 
   Http2Stream() {} // Just to satisfy ClassAllocator
   Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_rwnd);
+  ~Http2Stream();
 
   int main_event_handler(int event, void *edata);
 
-  void destroy() override;
   void release(IOBufferReader *r) override;
   void reenable(VIO *vio) override;
   void transaction_done() override;
