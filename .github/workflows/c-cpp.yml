@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: configure
-      run: autoreconf -if; ./configure
+      run: brew install aclocal; autoreconf -if; ./configure
     - name: make
       run: make
     - name: make check
