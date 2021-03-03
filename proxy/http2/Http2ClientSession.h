@@ -136,7 +136,6 @@ private:
 
   bool _should_do_something_else();
 
-  int64_t total_write_len             = 0;
   SessionHandler session_handler      = nullptr;
   MIOBuffer *read_buffer              = nullptr;
   IOBufferReader *_reader             = nullptr;
