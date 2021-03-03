@@ -99,6 +99,7 @@ ConfigCommand::ConfigCommand(ts::Arguments args) : RecordCommand(args)
 {
   auto const fmt = parse_format(_arguments);
   if (args.get("match")) {
+    _printer      = std::make_unique<RecordPrinter>(fmt);
     _invoked_func = [&]() { config_match(); };
   } else if (args.get("get")) {
     _printer      = std::make_unique<RecordPrinter>(fmt);
@@ -203,10 +204,10 @@ MetricCommand::MetricCommand(ts::Arguments args) : RecordCommand(args)
 {
   auto const fmt = parse_format(_arguments);
   if (args.get("match")) {
-    _printer      = std::make_unique<RecordPrinter>(fmt);
+    _printer      = std::make_unique<MetricRecordPrinter>(fmt);
     _invoked_func = [&]() { metric_match(); };
   } else if (args.get("get")) {
-    _printer      = std::make_unique<RecordPrinter>(fmt);
+    _printer      = std::make_unique<MetricRecordPrinter>(fmt);
     _invoked_func = [&]() { metric_get(); };
   } else if (args.get("describe")) {
     _printer      = std::make_unique<RecordDescribePrinter>(fmt);

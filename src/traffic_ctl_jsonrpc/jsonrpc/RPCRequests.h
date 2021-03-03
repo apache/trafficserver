@@ -259,7 +259,7 @@ struct ConfigSetRecordRequest : CtrlClientRequest {
   std::string
   get_method() const
   {
-    return "admin_clear_metrics_records";
+    return "admin_config_set_records";
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------

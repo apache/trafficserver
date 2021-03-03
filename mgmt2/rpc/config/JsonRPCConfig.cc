@@ -41,7 +41,7 @@ RPCConfig::load(YAML::Node const &params)
     if (auto n = params[RPC_ENABLED_KEY_NAME]) {
       _rpcEnabled = n.as<bool>();
     } else {
-      Warning("%s not present, using default", RPC_ENABLED_KEY_NAME);
+      Warning("%s not present.", RPC_ENABLED_KEY_NAME);
     }
 
     if (auto n = params[COMM_CONFIG_KEY_UNIX]) {
