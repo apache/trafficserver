@@ -59,7 +59,7 @@ ink_mutex debug_cs_list_mutex;
 
 ClassAllocator<Http1ClientSession> http1ClientSessionAllocator("http1ClientSessionAllocator");
 
-Http1ClientSession::Http1ClientSession() {}
+Http1ClientSession::Http1ClientSession() : super(), trans(this) {}
 
 void
 Http1ClientSession::destroy()
