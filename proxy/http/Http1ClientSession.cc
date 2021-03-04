@@ -412,6 +412,24 @@ Http1ClientSession::release(ProxyTransaction *trans)
   //  IO to wait for new data
   bool more_to_read = this->_reader->is_read_avail_more_than(0);
   if (more_to_read) {
+    // Is it just extra \r or \n?  Easily added by health checking scripts
+    int64_t b_avail       = this->_reader->block_read_avail();
+    char *start           = this->_reader->start();
+    int64_t consume_count = 0;
+    while (consume_count < b_avail) {
+      if (start[consume_count] == '\r' || start[consume_count] == '\n') {
+        consume_count++;
+      } else {
+        break;
+      }
+    }
+    if (consume_count > 0) {
+      _reader->consume(consume_count);
+      more_to_read = this->_reader->is_read_avail_more_than(0);
+    }
+  }
+
+  if (more_to_read) {
     trans->destroy();
     HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", con_id);
     new_transaction();
