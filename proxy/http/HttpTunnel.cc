@@ -1010,7 +1010,7 @@ HttpTunnel::producer_handler_dechunked(int event, HttpTunnelProducer *p)
       HttpTunnelConsumer *c;
       for (c = p->consumer_list.head; c; c = c->link.next) {
         if (c->alive) {
-          c->write_vio->nbytes = p->chunked_handler.chunked_size;
+          c->write_vio->nbytes = p->chunked_handler.chunked_size + p->chunked_handler.skip_bytes;
           // consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
         }
       }
