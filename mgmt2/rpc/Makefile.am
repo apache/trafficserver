@@ -146,15 +146,37 @@ librpcpublichandlers_COMMON = \
 	handlers/server/Server.cc \
 	handlers/plugins/Plugins.h \
 	handlers/plugins/Plugins.cc \
-	handlers/Admin.h \
-	../../src/shared/overridable_txn_vars.cc
-# ^ on newer automake using some of the existing variables seems to fail.
-# this is a workaround for now.
+	handlers/Admin.h
 
 librpcpublichandlers_la_SOURCES = \
-    $(librpcpublichandlers_COMMON)
+    $(librpcpublichandlers_COMMON) \
+    $(shared_overridable_txn_vars_SOURCES)
 
-# TODO: Add test
+
+# distclean
+# This is a workaround to deal with a newer version of automake, apparently there
+# is an issue when including subdir-objects and sources outside of subtree.
+# If we include a file from another subdir as is(was) the case of overridable_txn,
+# then the distclean will try to remove the file from the original folder as well
+# from here. To overcome this issue, we create a file here that will be used
+# for building.
+# We have also added a proper cleaning for it.
+shared_overridable_txn_vars_SOURCES = overridable_txn_vars.cc
+nodist_librpcpublichandlers_la_SOURCES = $(shared_overridable_txn_vars_SOURCES)
+
+# This may not be needed. Ok for now.
+CLEANDIST = $(shared_overridable_txn_vars_SOURCES)
+
+clean-local:
+	rm -f $(shared_overridable_txn_vars_SOURCES)
+
+distclean-local:
+	rm -f $(shared_overridable_txn_vars_SOURCES)
+
+# Build with this file instead of the original one.
+$(shared_overridable_txn_vars_SOURCES):
+	echo "#include \"$(top_builddir)/src/shared/$@\"" >$@
+
 
 include $(top_srcdir)/build/tidy.mk
 
