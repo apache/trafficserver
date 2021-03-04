@@ -353,6 +353,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
   NetState *s       = &vc->write;
   ProxyMutex *mutex = thread->mutex.get();
+  Continuation *c   = vc->write.vio.cont;
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
 
