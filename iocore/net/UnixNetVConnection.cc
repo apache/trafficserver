@@ -431,6 +431,9 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   if (towrite != ntodo && buf.writer()->write_avail()) {
     if (write_signal_and_update(VC_EVENT_WRITE_READY, vc) != EVENT_CONT) {
       return;
+    } else if (c != s->vio.cont) { /* The write vio was updated in the handler */
+      write_reschedule(nh, vc);
+      return;
     }
 
     ntodo = s->vio.ntodo();
