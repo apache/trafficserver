@@ -54,8 +54,9 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
   }
 
   Http2ClientSession *new_session = THREAD_ALLOC_INIT(http2ClientSessionAllocator, this_ethread());
-  new_session->acl                = std::move(session_acl);
-  new_session->accept_options     = &options;
+  new (new_session) Http2ClientSession();
+  new_session->acl            = std::move(session_acl);
+  new_session->accept_options = &options;
 
   // Pin session to current ET_NET thread
   new_session->setThreadAffinity(this_ethread());

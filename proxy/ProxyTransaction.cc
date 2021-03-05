@@ -26,7 +26,7 @@
 
 #define HttpTxnDebug(fmt, ...) SsnDebug(this, "http_txn", fmt, __VA_ARGS__)
 
-ProxyTransaction::ProxyTransaction() : VConnection(nullptr) {}
+ProxyTransaction::ProxyTransaction(ProxySession *session) : VConnection(nullptr), _proxy_ssn(session) {}
 
 void
 ProxyTransaction::new_transaction(bool from_early_data)

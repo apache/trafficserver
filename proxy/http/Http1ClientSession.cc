@@ -57,7 +57,7 @@ ink_mutex debug_cs_list_mutex;
 
 ClassAllocator<Http1ClientSession> http1ClientSessionAllocator("http1ClientSessionAllocator");
 
-Http1ClientSession::Http1ClientSession() {}
+Http1ClientSession::Http1ClientSession() : super(), trans(this) {}
 
 void
 Http1ClientSession::destroy()
@@ -449,7 +449,6 @@ Http1ClientSession::new_transaction()
 
   read_state = HCS_ACTIVE_READER;
 
-  trans.set_proxy_ssn(this);
   transact_count++;
 
   trans.new_transaction(read_from_early_data > 0 ? true : false);
