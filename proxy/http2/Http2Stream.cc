@@ -39,14 +39,11 @@
 
 ClassAllocator<Http2Stream> http2StreamAllocator("http2StreamAllocator");
 
-Http2Stream::Http2Stream(Http2StreamId sid, ssize_t initial_rwnd) : _id(sid), _client_rwnd(initial_rwnd)
+Http2Stream::Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initial_rwnd)
+  : super(session), _id(sid), _client_rwnd(initial_rwnd)
 {
   SET_HANDLER(&Http2Stream::main_event_handler);
-}
 
-void
-Http2Stream::init(Http2StreamId sid, ssize_t initial_rwnd)
-{
   this->mark_milestone(Http2StreamMilestone::OPEN);
 
   this->_sm          = nullptr;
