@@ -31,7 +31,7 @@ Http1Transaction::release(IOBufferReader *r)
 }
 
 void
-Http1Transaction::destroy() // todo make ~Http1Transaction()
+Http1Transaction::reset()
 {
   _sm = nullptr;
 }

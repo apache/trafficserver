@@ -79,6 +79,7 @@ class ProxySession : public VConnection, public PluginUserArgs<TS_USER_ARGS_SSN>
 public:
   ProxySession();
   ProxySession(NetVConnection *vc);
+  virtual ~ProxySession();
 
   // noncopyable
   ProxySession(ProxySession &) = delete;
@@ -94,7 +95,7 @@ public:
   virtual void release(ProxyTransaction *trans) = 0;
 
   virtual void destroy() = 0;
-  virtual void free();
+  virtual void free()    = 0;
 
   virtual void increment_current_active_connections_stat() = 0;
   virtual void decrement_current_active_connections_stat() = 0;
