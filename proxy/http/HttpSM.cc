@@ -622,7 +622,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   /////////////////////////
   // set up timeouts     //
   /////////////////////////
-  client_vc->set_inactivity_timeout(HRTIME_SECONDS(t_state.http_config_param->accept_no_activity_timeout));
+  client_vc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
   client_vc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
 
   ++reentrancy_count;
