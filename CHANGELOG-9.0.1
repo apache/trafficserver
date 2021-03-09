@@ -39,8 +39,10 @@ Changes with Apache Traffic Server 9.0.1
   #7495 - Add zlib1g-dev to Debian dependencies in README
   #7506 - Fixed build issues with Fedora 34
   #7507 - Fixing DNS local_ipv* config option
+  #7515 - Replace psutil.pid() with psutil.process_iter() for safer execution
   #7526 - Fix out of bounds access error in jtest
   #7534 - Updating to use Proxy Verifier 2.1.0
   #7549 - Release Notes update on HTTP/2 disabling in v9.x
   #7551 - Removes the test plugins from the .spec file / RPM
   #7558 - Fix parent.config timeouts to return a 504 not 502 on timeout
+  #7564 - Fix compress issues with 304s, only looks at 304 headers
