@@ -14,8 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-nc -l -p $1 -c 'echo -e "This is a reply"' -o test.out &
-echo "This is a test" | openssl s_client -servername bar.com -connect localhost:$2 -ign_eof
 start=`date +%s`
 $1
 end=`date +%s`
