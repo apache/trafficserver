@@ -36,7 +36,7 @@
 #include "HttpSessionManager.h"
 #include "HttpSM.h"
 
-ClassAllocator<Http1ServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
+ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator("httpServerSessionAllocator");
 
 void
 Http1ServerSession::destroy()
@@ -50,7 +50,6 @@ Http1ServerSession::destroy()
   }
 
   mutex.clear();
-  this->~Http1ServerSession();
   if (httpSessionManager.get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_THREAD) {
     THREAD_FREE(this, httpServerSessionAllocator, this_thread());
   } else {

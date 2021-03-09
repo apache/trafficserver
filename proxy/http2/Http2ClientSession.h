@@ -175,7 +175,7 @@ private:
   bool cur_frame_from_early_data = false;
 };
 
-extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
+extern ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator;
 
 ///////////////////////////////////////////////
 // INLINE
