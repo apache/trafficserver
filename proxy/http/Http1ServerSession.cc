@@ -50,11 +50,18 @@ Http1ServerSession::destroy()
   }
 
   mutex.clear();
+  this->~Http1ServerSession();
   if (httpSessionManager.get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_THREAD) {
     THREAD_FREE(this, httpServerSessionAllocator, this_thread());
   } else {
     httpServerSessionAllocator.free(this);
   }
+}
+
+void
+Http1ServerSession::free()
+{
+  // Unlike Http1ClientSession, Http1ServerSession is freed in destroy()
 }
 
 void

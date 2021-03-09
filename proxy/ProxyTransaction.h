@@ -34,6 +34,7 @@ class ProxyTransaction : public VConnection
 public:
   ProxyTransaction() : VConnection(nullptr) {}
   ProxyTransaction(ProxySession *ssn);
+  virtual ~ProxyTransaction();
 
   /// Virtual Methods
   //
@@ -42,7 +43,6 @@ public:
   Action *adjust_thread(Continuation *cont, int event, void *data);
   virtual void release(IOBufferReader *r) = 0;
   virtual void transaction_done();
-  virtual void destroy();
 
   virtual void set_active_timeout(ink_hrtime timeout_in);
   virtual void set_inactivity_timeout(ink_hrtime timeout_in);

@@ -28,6 +28,12 @@
 
 ProxyTransaction::ProxyTransaction(ProxySession *session) : VConnection(nullptr), _proxy_ssn(session) {}
 
+ProxyTransaction::~ProxyTransaction()
+{
+  this->_sm = nullptr;
+  this->mutex.clear();
+}
+
 void
 ProxyTransaction::new_transaction(bool from_early_data)
 {
@@ -59,13 +65,6 @@ bool
 ProxyTransaction::attach_server_session(PoolableSession *ssession, bool transaction_done)
 {
   return _proxy_ssn->attach_server_session(ssession, transaction_done);
-}
-
-void
-ProxyTransaction::destroy()
-{
-  _sm = nullptr;
-  this->mutex.clear();
 }
 
 void
