@@ -26,7 +26,5 @@
  *
  */
 
-#if !defined(darwin)
 #define TS_INLINE
 #include "P_HostDB.h"
-#endif
