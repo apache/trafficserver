@@ -945,7 +945,6 @@ original versions of those attributes delivered by the origin server.
 
 TXN_START_HOOK
 ~~~~~~~~~~~~~~
-
 Rulesets are evaluated when |TS| receives a request and accepts it. This hook context indicates that a HTTP transaction is initiated and therefore, can only be enabled as a global plugin.
 
 TXN_CLOSE_HOOK
