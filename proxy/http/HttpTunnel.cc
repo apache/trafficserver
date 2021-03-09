@@ -1057,16 +1057,18 @@ HttpTunnel::producer_handler_dechunked(int event, HttpTunnelProducer *p)
 
   // We only interested in translating certain events
   switch (event) {
-  case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
   case HTTP_TUNNEL_EVENT_PRECOMPLETE:
   case VC_EVENT_EOS:
+    p->alive = false; // Update the producer state for final_consumer_bytes_to_write
+    /* fallthrough */
+  case VC_EVENT_READ_READY:
     p->last_event = p->chunked_handler.last_server_event = event;
     if (p->chunked_handler.generate_chunked_content()) { // We are done, make sure the consumer is activated
       HttpTunnelConsumer *c;
       for (c = p->consumer_list.head; c; c = c->link.next) {
         if (c->alive) {
-          c->write_vio->nbytes = p->chunked_handler.chunked_size;
+          c->write_vio->nbytes = final_consumer_bytes_to_write(p, c);
           // consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
         }
       }
