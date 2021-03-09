@@ -215,6 +215,7 @@ SSLNetVConnection::_bindSSLObject()
 {
   SSLNetVCAttach(this->ssl, this);
   TLSBasicSupport::bind(this->ssl, this);
+  ALPNSupport::bind(this->ssl, this);
   TLSSessionResumptionSupport::bind(this->ssl, this);
   TLSSNISupport::bind(this->ssl, this);
 }
@@ -224,6 +225,7 @@ SSLNetVConnection::_unbindSSLObject()
 {
   SSLNetVCDetach(this->ssl);
   TLSBasicSupport::unbind(this->ssl);
+  ALPNSupport::unbind(this->ssl);
   TLSSessionResumptionSupport::unbind(this->ssl);
   TLSSNISupport::unbind(this->ssl);
 }
@@ -1560,48 +1562,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   } break;
   }
   return EVENT_CONT;
-}
-
-// NextProtocolNegotiation TLS extension callback. The NPN extension
-// allows the client to select a preferred protocol, so all we have
-// to do here is tell them what out protocol set is.
-int
-SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen, void * /*arg ATS_UNUSED */)
-{
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-
-  ink_release_assert(netvc && netvc->ssl == ssl);
-
-  if (netvc->getNPN(out, outlen)) {
-    // Successful return tells OpenSSL to advertise.
-    return SSL_TLSEXT_ERR_OK;
-  }
-  return SSL_TLSEXT_ERR_NOACK;
-}
-
-// ALPN TLS extension callback. Given the client's set of offered
-// protocols, we have to select a protocol to use for this session.
-int
-SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen,
-                                        const unsigned char *in ATS_UNUSED, unsigned inlen ATS_UNUSED, void *)
-{
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-
-  ink_release_assert(netvc && netvc->ssl == ssl);
-  const unsigned char *npnptr = nullptr;
-  unsigned int npnsize        = 0;
-  if (netvc->getNPN(&npnptr, &npnsize)) {
-    // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
-    // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
-    if (SSL_select_next_proto(const_cast<unsigned char **>(out), outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
-      Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
-      return SSL_TLSEXT_ERR_OK;
-    }
-  }
-
-  *out    = nullptr;
-  *outlen = 0;
-  return SSL_TLSEXT_ERR_NOACK;
 }
 
 void

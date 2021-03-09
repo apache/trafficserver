@@ -120,18 +120,6 @@ QUICMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ssl_ctx)
 }
 
 int
-QUICMultiCertConfigLoader::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen,
-                                                    const unsigned char *in, unsigned inlen, void *)
-{
-  QUICConnection *qc = static_cast<QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
-
-  if (qc) {
-    return qc->select_next_protocol(ssl, out, outlen, in, inlen);
-  }
-  return SSL_TLSEXT_ERR_NOACK;
-}
-
-int
 QUICMultiCertConfigLoader::ssl_sni_cb(SSL *ssl, int * /*ad*/, void * /*arg*/)
 {
   // XXX: add SNIConfig support ?
