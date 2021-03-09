@@ -196,8 +196,6 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     if (read_retry_on_write_fail || open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
       // Retry open write;
       open_write_cb = false;
-      // reset captive_action since HttpSM cancelled it
-      captive_action.cancelled = 0;
       do_schedule_in();
     } else {
       // The cache is hosed or full or something.
@@ -338,6 +336,9 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   open_write_cb = false;
   open_write_tries++;
   this->retry_write = retry;
+
+  // Reset the action in case an earlier attempt to open was canceled.
+  captive_action.cancelled = 0;
 
   // We should be writing the same document we did
   //  a lookup on
