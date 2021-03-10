@@ -107,7 +107,7 @@ private:
   IOBufferReader *buf_reader = nullptr;
 };
 
-extern ClassAllocator<Http1ServerSession> httpServerSessionAllocator;
+extern ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator;
 
 ////////////////////////////////////////////
 // INLINE
