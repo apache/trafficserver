@@ -45,7 +45,7 @@
     this->session_handler = (handler);     \
   } while (0)
 
-ClassAllocator<Http2ClientSession> http2ClientSessionAllocator("http2ClientSessionAllocator");
+ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator("http2ClientSessionAllocator");
 
 // memcpy the requested bytes from the IOBufferReader, returning how many were
 // actually copied.
@@ -161,7 +161,6 @@ Http2ClientSession::free()
 
   free_MIOBuffer(this->read_buffer);
   free_MIOBuffer(this->write_buffer);
-  this->~Http2ClientSession();
   THREAD_FREE(this, http2ClientSessionAllocator, this_ethread());
 }
 
