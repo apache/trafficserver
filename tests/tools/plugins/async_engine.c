@@ -227,8 +227,11 @@ delay_method(void *arg)
   int signal_fd = (intptr_t)arg;
   sleep(2);
   char buf = DUMMY_CHAR;
-  write(signal_fd, &buf, sizeof(buf));
-  fprintf(stderr, "Send signal to %d\n", signal_fd);
+  if (write(signal_fd, &buf, sizeof(buf)) < 0) {
+    fprintf(stderr, "Failed to send signal to %d, errno=%d\n", signal_fd, errno);
+  } else {
+    fprintf(stderr, "Send signal to %d\n", signal_fd);
+  }
   return NULL;
 }
 
@@ -251,7 +254,9 @@ spawn_delay_thread()
     OSSL_ASYNC_FD signal_fd;
     OSSL_ASYNC_FD pipefds[2] = {0, 0};
     OSSL_ASYNC_FD *writefd   = OPENSSL_malloc(sizeof(*writefd));
-    pipe(pipefds);
+    if (pipe(pipefds) < 0) {
+      fprintf(stderr, "Spawn, failed to create pipe errno=%d\n", errno);
+    }
     signal_fd = *writefd = pipefds[1];
     ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0], writefd, wait_cleanup);
     fprintf(stderr, "Spawn, create wait_ctx %d %d\n", pipefds[0], pipefds[1]);
