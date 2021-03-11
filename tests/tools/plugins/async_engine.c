@@ -256,6 +256,7 @@ spawn_delay_thread()
     OSSL_ASYNC_FD *writefd   = OPENSSL_malloc(sizeof(*writefd));
     if (pipe(pipefds) < 0) {
       fprintf(stderr, "Spawn, failed to create pipe errno=%d\n", errno);
+      return;
     }
     signal_fd = *writefd = pipefds[1];
     ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0], writefd, wait_cleanup);
