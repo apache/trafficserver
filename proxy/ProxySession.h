@@ -154,6 +154,7 @@ public:
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
   VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
+  void do_io_close(int alerrno = -1) override;
   void reenable(VIO *vio) override;
 
   ////////////////////
@@ -167,6 +168,8 @@ public:
   ink_hrtime ssn_last_txn_time = 0;
 
 protected:
+  virtual void _do_io_close(int alerrno) = 0;
+
   // Hook dispatching state
   HttpHookState hook_state;
 
@@ -201,6 +204,8 @@ private:
 
   std::unique_ptr<SSLProxySession> _ssl;
   static inline int64_t next_cs_id = 0;
+
+  bool _need_do_io_close = false;
 };
 
 ///////////////////

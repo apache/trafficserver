@@ -38,7 +38,6 @@ public:
   // Implement VConnection interface
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
   VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
@@ -55,6 +54,10 @@ public:
   // HQSession
   void add_transaction(HQTransaction *);
   HQTransaction *get_transaction(QUICStreamId);
+
+protected:
+  // Implement ProxySession interface
+  void _do_io_close(int lerrno) override;
 
 private:
   // this should be unordered map?

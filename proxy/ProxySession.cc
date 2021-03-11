@@ -32,6 +32,8 @@ ProxySession::ProxySession(NetVConnection *vc) : VConnection(nullptr), _vc(vc) {
 
 ProxySession::~ProxySession()
 {
+  ink_assert(!this->_need_do_io_close);
+
   if (schedule_event) {
     schedule_event->cancel();
     schedule_event = nullptr;
@@ -280,12 +282,18 @@ ProxySession::_handle_if_ssl(NetVConnection *new_vc)
 VIO *
 ProxySession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
+  if (buf) {
+    this->_need_do_io_close = true;
+  }
   return _vc ? this->_vc->do_io_read(c, nbytes, buf) : nullptr;
 }
 
 VIO *
 ProxySession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
+  if (buf) {
+    this->_need_do_io_close = true;
+  }
   return _vc ? this->_vc->do_io_write(c, nbytes, buf, owner) : nullptr;
 }
 
@@ -293,6 +301,13 @@ void
 ProxySession::do_io_shutdown(ShutdownHowTo_t howto)
 {
   this->_vc->do_io_shutdown(howto);
+}
+
+void
+ProxySession::do_io_close(int alerrno)
+{
+  this->_need_do_io_close = false;
+  this->_do_io_close(alerrno);
 }
 
 void

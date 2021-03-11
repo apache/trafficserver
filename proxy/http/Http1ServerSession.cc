@@ -105,7 +105,7 @@ Http1ServerSession::enable_outbound_connection_tracking(OutboundConnTrack::Group
 }
 
 void
-Http1ServerSession::do_io_close(int alerrno)
+Http1ServerSession::_do_io_close(int alerrno)
 {
   ts::LocalBufferWriter<256> w;
   bool debug_p = is_debug_tag_set("http_ss");

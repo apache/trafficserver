@@ -233,7 +233,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 // are scenarios where we would like to complete the outstanding streams.
 
 void
-Http2ClientSession::do_io_close(int alerrno)
+Http2ClientSession::_do_io_close(int alerrno)
 {
   REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session closed");

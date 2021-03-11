@@ -97,7 +97,7 @@ HQSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, boo
 }
 
 void
-HQSession::do_io_close(int lerrno)
+HQSession::_do_io_close(int lerrno)
 {
   // TODO
   return;

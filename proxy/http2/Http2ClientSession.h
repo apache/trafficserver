@@ -71,9 +71,6 @@ public:
   /////////////////////
   // Methods
 
-  // Implement VConnection interface
-  void do_io_close(int lerrno = -1) override;
-
   // Implement ProxySession interface
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
   void start() override;
@@ -133,6 +130,9 @@ private:
   // event handler.  Both feed into state_process_frame_read which may iterate
   // if there are multiple frames ready on the wire
   int state_process_frame_read(int event, VIO *vio, bool inside_frame);
+
+  // Implement ProxySession interface
+  void _do_io_close(int lerrno) override;
 
   bool _should_do_something_else();
 

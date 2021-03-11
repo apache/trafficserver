@@ -64,9 +64,6 @@ public:
   void destroy() override;
   void free() override;
 
-  // VConnection Methods
-  void do_io_close(int lerrno = -1) override;
-
   // ProxySession Methods
   int get_transact_count() const override;
   const char *get_protocol_string() const override;
@@ -100,6 +97,10 @@ public:
   //   not change the buffer for I/O without issuing a
   //   an asynchronous cancel on NT
   MIOBuffer *read_buffer = nullptr;
+
+protected:
+  // Implement ProxySession interface
+  void _do_io_close(int lerrno) override;
 
 private:
   int magic = HTTP_SS_MAGIC_DEAD;

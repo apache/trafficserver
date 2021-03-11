@@ -66,9 +66,6 @@ public:
 
   bool attach_server_session(PoolableSession *ssession, bool transaction_done = true) override;
 
-  // Implement VConnection interface.
-  void do_io_close(int lerrno = -1) override;
-
   // Accessor Methods
   bool allow_half_open() const;
   void set_half_close_flag(bool flag) override;
@@ -82,6 +79,10 @@ public:
 
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
+
+protected:
+  // Implement ProxySession interface
+  void _do_io_close(int lerrno) override;
 
 private:
   Http1ClientSession(Http1ClientSession &);

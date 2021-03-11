@@ -205,7 +205,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 }
 
 void
-Http1ClientSession::do_io_close(int alerrno)
+Http1ClientSession::_do_io_close(int alerrno)
 {
   if (read_state == HCS_CLOSED) {
     return; // Don't double call session close
