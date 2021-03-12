@@ -498,9 +498,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
   }
 
   // Check validity of all names and values
-  MIMEFieldIter iter;
-  for (auto *mf = headers->iter_get_first(&iter); mf != nullptr; mf = headers->iter_get_next(&iter)) {
-    if (!mf->name_is_valid() || !mf->value_is_valid()) {
+  for (auto &mf : *headers) {
+    if (!mf.name_is_valid() || !mf.value_is_valid()) {
       return PARSE_RESULT_ERROR;
     }
   }
@@ -707,8 +706,8 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (is_trailing_header) {
     expected_pseudo_header_count = 0;
   }
-  for (field = hdr->iter_get_first(&iter); field != nullptr; field = hdr->iter_get_next(&iter)) {
-    value = field->name_get(&len);
+  for (auto &field : *hdr) {
+    value = field.name_get(&len);
     // Pseudo headers must appear before regular headers
     if (len && value[0] == ':') {
       ++pseudo_header_count;

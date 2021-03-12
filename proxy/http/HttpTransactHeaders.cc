@@ -200,8 +200,6 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   ink_assert(src_hdr->valid());
   ink_assert(!new_hdr->valid());
 
-  MIMEField *field;
-  MIMEFieldIter field_iter;
   bool date_hdr = false;
 
   // Start with an exact duplicate
@@ -222,19 +220,19 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   //         is changed for example by dechunking, the transfer encoding
   //         should be modified when when the decision is made to dechunk it
 
-  for (field = new_hdr->iter_get_first(&field_iter); field != nullptr; field = new_hdr->iter_get_next(&field_iter)) {
-    if (field->m_wks_idx == -1) {
+  for (auto &field : *new_hdr) {
+    if (field.m_wks_idx == -1) {
       continue;
     }
 
-    int field_flags = hdrtoken_index_to_flags(field->m_wks_idx);
+    int field_flags = hdrtoken_index_to_flags(field.m_wks_idx);
 
     if (field_flags & HTIF_HOPBYHOP) {
       // Delete header if not in special proxy_auth retention mode
       if ((!retain_proxy_auth_hdrs) || (!(field_flags & HTIF_PROXYAUTH))) {
-        new_hdr->field_delete(field);
+        new_hdr->field_delete(&field);
       }
-    } else if (field->m_wks_idx == MIME_WKSIDX_DATE) {
+    } else if (field.m_wks_idx == MIME_WKSIDX_DATE) {
       date_hdr = true;
     }
   }
