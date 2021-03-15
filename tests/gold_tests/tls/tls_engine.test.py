@@ -64,7 +64,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.engine.conf_file': '{0}/ts/config/load_engine.cnf'.format(Test.RunDirectory),
     'proxy.config.ssl.async.handshake.enabled': 1,
     'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'ssl'
+    'proxy.config.diags.debug.tags': 'ssl|http'
 })
 
 ts.Disk.MakeConfigFile('load_engine.cnf').AddLines([
