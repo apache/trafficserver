@@ -485,7 +485,6 @@ Http2Stream::terminate_if_possible()
 
     Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
     SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
-    this->~Http2Stream();
     THREAD_FREE(this, http2StreamAllocator, this_ethread());
   }
 }
