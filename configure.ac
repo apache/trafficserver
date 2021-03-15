@@ -1993,7 +1993,7 @@ if test "x${ac_cv_member_struct_tcp_info_tcpi_data_segs_out}" = "xyes"; then
 fi
 
 if test "x${with_profiler}" = "xyes"; then
-AC_CHECK_HEADERS([google/profiler.h \
+AC_CHECK_HEADERS([gperftools/profiler.h \
                   ], [], [])
 fi
 
