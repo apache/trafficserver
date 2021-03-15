@@ -170,8 +170,9 @@ wait_cleanup(ASYNC_WAIT_CTX *ctx, const void *key, OSSL_ASYNC_FD readfd, void *p
 {
   OSSL_ASYNC_FD *pwritefd = (OSSL_ASYNC_FD *)pvwritefd;
   close(readfd);
-  close(*pwritefd);
+  close(*((OSSL_ASYNC_FD *)pwritefd));
   OPENSSL_free(pwritefd);
+  fprintf(stderr, "Cleanup %d and %d\n", readfd, *pwritefd);
 }
 
 #define DUMMY_CHAR 'X'
@@ -193,8 +194,7 @@ async_pause_job(void)
   waitctx = ASYNC_get_wait_ctx(job);
 
   if (ASYNC_WAIT_CTX_get_fd(waitctx, engine_id, &pipefds[0], (void **)&writefd)) {
-    fprintf(stderr, "Existing wait ctx\n");
-    return;
+    fprintf(stderr, "Existing wait ctx %d\n", *writefd);
   } else {
     writefd = (OSSL_ASYNC_FD *)OPENSSL_malloc(sizeof(*writefd));
     if (writefd == NULL)
@@ -208,6 +208,7 @@ async_pause_job(void)
     fprintf(stderr, "New wait ctx %d %d\n", pipefds[0], pipefds[1]);
 
     if (!ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0], writefd, wait_cleanup)) {
+      fprintf(stderr, "set_wait_fd failed\n");
       wait_cleanup(waitctx, engine_id, pipefds[0], writefd);
       return;
     }
@@ -227,8 +228,11 @@ delay_method(void *arg)
   int signal_fd = (intptr_t)arg;
   sleep(2);
   char buf = DUMMY_CHAR;
-  write(signal_fd, &buf, sizeof(buf));
-  fprintf(stderr, "Send signal to %d\n", signal_fd);
+  if (write(signal_fd, &buf, sizeof(buf)) < 0) {
+    fprintf(stderr, "Failed to send signal to %d, errno=%d\n", signal_fd, errno);
+  } else {
+    fprintf(stderr, "Send signal to %d\n", signal_fd);
+  }
   return NULL;
 }
 
@@ -251,7 +255,10 @@ spawn_delay_thread()
     OSSL_ASYNC_FD signal_fd;
     OSSL_ASYNC_FD pipefds[2] = {0, 0};
     OSSL_ASYNC_FD *writefd   = OPENSSL_malloc(sizeof(*writefd));
-    pipe(pipefds);
+    if (pipe(pipefds) < 0) {
+      fprintf(stderr, "Spawn, failed to create pipe errno=%d\n", errno);
+      return;
+    }
     signal_fd = *writefd = pipefds[1];
     ASYNC_WAIT_CTX_set_wait_fd(waitctx, engine_id, pipefds[0], writefd, wait_cleanup);
     fprintf(stderr, "Spawn, create wait_ctx %d %d\n", pipefds[0], pipefds[1]);
@@ -281,6 +288,7 @@ async_rsa_priv_enc(int flen, const unsigned char *from, unsigned char *to, RSA *
   fprintf(stderr, "async_priv_enc\n");
   spawn_delay_thread();
   async_pause_job();
+  fprintf(stderr, "async_priv_enc resume\n");
   return RSA_meth_get_priv_enc(RSA_PKCS1_OpenSSL())(flen, from, to, rsa, padding);
 }
 
