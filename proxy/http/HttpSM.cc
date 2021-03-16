@@ -6779,6 +6779,7 @@ HttpSM::setup_server_transfer()
 
   tunnel.add_consumer(ua_entry->vc, server_entry->vc, &HttpSM::tunnel_handler_ua, HT_HTTP_CLIENT, "user agent");
 
+  ua_entry->read_vio      = ua_txn->do_io_read(this, 0, nullptr);
   ua_entry->in_tunnel     = true;
   server_entry->in_tunnel = true;
 
