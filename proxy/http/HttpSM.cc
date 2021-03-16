@@ -5132,10 +5132,9 @@ HttpSM::do_http_server_open(bool raw)
 
       ct_state.blocked();
       HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
-      send_origin_throttled_response();
-
       ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
                             debug_on && is_debug_tag_set("http") ? "http" : nullptr);
+      send_origin_throttled_response();
 
       return;
     } else {
