@@ -14,6 +14,7 @@ Changes with Apache Traffic Server 9.0.1
   #7288 - Adjust to actually try a server address more than once
   #7309 - Disable client inactivity timeout while server is processing POST request
   #7347 - Allow for regex_remap of pristine URL.
+  #7368 - Cleanup: Remove SSL Wire Trace releated code in UnixNetVConnection
   #7377 - Addresses some of the lock contention with HostStatus.
   #7395 - Replace ::exit() with _exit() to avoid secondary cleanup cores
   #7410 - Fix issue with unavailable server retry codes
@@ -46,3 +47,6 @@ Changes with Apache Traffic Server 9.0.1
   #7551 - Removes the test plugins from the .spec file / RPM
   #7558 - Fix parent.config timeouts to return a 504 not 502 on timeout
   #7564 - Fix compress issues with 304s, only looks at 304 headers
+  #7592 - Remove inline for detail::cache::CacheData::idAddr
+  #7596 - Remove UnixNetVConnection::startEvent - not actually called.
+  #7602 - Fix the connection limit crash while using parents
