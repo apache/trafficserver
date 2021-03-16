@@ -242,7 +242,6 @@ void
 QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
                          QUICPacketHandler *packet_handler, QUICResetTokenTable *rtable)
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
   this->_initial_version             = version;
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
@@ -385,25 +384,6 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
   this->_schedule_packet_write_ready();
-
-  return EVENT_DONE;
-}
-
-int
-QUICNetVConnection::startEvent(int event, Event *e)
-{
-  ink_assert(event == EVENT_IMMEDIATE);
-  MUTEX_TRY_LOCK(lock, get_NetHandler(e->ethread)->mutex, e->ethread);
-  if (!lock.is_locked()) {
-    e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
-    return EVENT_CONT;
-  }
-
-  if (!action_.cancelled) {
-    this->connectUp(e->ethread, NO_FD);
-  } else {
-    this->free(e->ethread);
-  }
 
   return EVENT_DONE;
 }
