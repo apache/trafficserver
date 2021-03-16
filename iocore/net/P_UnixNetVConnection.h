@@ -268,7 +268,6 @@ public:
   bool from_accept_thread  = false;
   NetAccept *accept_object = nullptr;
 
-  int startEvent(int event, Event *e);
   int acceptEvent(int event, Event *e);
   int mainEvent(int event, Event *e);
   virtual int connectUp(EThread *t, int fd);

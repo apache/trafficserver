@@ -883,10 +883,7 @@ UnixNetVConnection::reenable_re(VIO *vio)
   }
 }
 
-UnixNetVConnection::UnixNetVConnection()
-{
-  SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
-}
+UnixNetVConnection::UnixNetVConnection() {}
 
 // Private methods
 
@@ -1047,22 +1044,6 @@ void
 UnixNetVConnection::netActivity(EThread *lthread)
 {
   net_activity(this, lthread);
-}
-
-int
-UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
-{
-  MUTEX_TRY_LOCK(lock, get_NetHandler(e->ethread)->mutex, e->ethread);
-  if (!lock.is_locked()) {
-    e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
-    return EVENT_CONT;
-  }
-  if (!action_.cancelled) {
-    connectUp(e->ethread, NO_FD);
-  } else {
-    free(e->ethread);
-  }
-  return EVENT_DONE;
 }
 
 int
@@ -1354,7 +1335,6 @@ UnixNetVConnection::free(EThread *t)
   con.close();
 
   clear();
-  SET_CONTINUATION_HANDLER(this, (NetVConnHandler)&UnixNetVConnection::startEvent);
   ink_assert(con.fd == NO_FD);
   ink_assert(t == this_ethread());
 
