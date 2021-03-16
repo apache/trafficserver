@@ -23,9 +23,9 @@
 
 #include <cassert>
 #include <new>
+#include <string_view>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
-#include "tscore/TsBuffer.h"
 #include "URL.h"
 #include "MIME.h"
 #include "HTTP.h"
@@ -1239,7 +1239,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
   const char *cur = *start;
   const char *base;              // Base for host/port field.
   const char *bracket = nullptr; // marker for open bracket, if any.
-  ts::ConstBuffer user, passw, host, port;
+  std::string_view user, passw, host, port;
   static size_t const MAX_COLON = 8; // max # of valid colons.
   size_t n_colon                = 0;
   const char *last_colon        = nullptr; // pointer to last colon seen.
@@ -1268,7 +1268,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
          stripping brackets from non-IPv6 content but that gets ugly
          as well. Just not worth it.
        */
-      host.set(bracket, cur);
+      host = std::string_view(bracket, cur - bracket);
       // Spec requires This constitute the entire host so the next
       // character must be missing (EOS), slash, or colon.
       if (cur >= end || '/' == *cur) { // done which is OK
@@ -1290,16 +1290,16 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
       ++cur;
       break;
     case '@': // user/password marker.
-      if (user || n_colon > 1) {
+      if (!user.empty() || n_colon > 1) {
         return PARSE_RESULT_ERROR; // we already got one, or too many colons.
       }
       if (n_colon) {
-        user.set(base, last_colon);
-        passw.set(last_colon + 1, cur);
+        user       = std::string_view(base, last_colon - base);
+        passw      = std::string_view(last_colon + 1, cur - last_colon - 1);
         n_colon    = 0;
         last_colon = nullptr;
       } else {
-        user.set(base, cur);
+        user = std::string_view(base, cur - base);
       }
       ++cur;
       base = cur;
@@ -1325,28 +1325,28 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
       break;
     };
   }
-  // Time to pick up the pieces. At this pointer cur._ptr is the first
+  // Time to pick up the pieces. At this pointer cur.data() is the first
   // character past the parse area.
 
-  if (user) {
-    url_user_set(heap, url, user._ptr, user._size, copy_strings_p);
-    if (passw) {
-      url_password_set(heap, url, passw._ptr, passw._size, copy_strings_p);
+  if (!user.empty()) {
+    url_user_set(heap, url, user.data(), user.size(), copy_strings_p);
+    if (!passw.empty()) {
+      url_password_set(heap, url, passw.data(), passw.size(), copy_strings_p);
     }
   }
 
   // @a host not set means no brackets to mark explicit host.
-  if (!host) {
+  if (host.empty()) {
     if (1 == n_colon || MAX_COLON == n_colon) { // presume port.
-      host.set(base, last_colon);
+      host = std::string_view(base, last_colon - base);
     } else { // it's all host.
-      host.set(base, cur);
+      host       = std::string_view(base, cur - base);
       last_colon = nullptr; // prevent port setting.
     }
   }
-  if (host._size) {
-    if (!verify_host_characters || validate_host_name(std::string_view(host._ptr, host._size))) {
-      url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
+  if (host.size()) {
+    if (!verify_host_characters || validate_host_name(std::string_view(host.data(), host.size()))) {
+      url_host_set(heap, url, host.data(), host.size(), copy_strings_p);
     } else {
       return PARSE_RESULT_ERROR;
     }
@@ -1354,11 +1354,11 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, char const *
 
   if (last_colon) {
     ink_assert(n_colon);
-    port.set(last_colon + 1, cur);
-    if (!port._size) {
+    port = std::string_view(last_colon + 1, cur - last_colon - 1);
+    if (!port.size()) {
       return PARSE_RESULT_ERROR; // colon w/o port value.
     }
-    url_port_set(heap, url, port._ptr, port._size, copy_strings_p);
+    url_port_set(heap, url, port.data(), port.size(), copy_strings_p);
   }
   *start = cur;
   return PARSE_RESULT_DONE;

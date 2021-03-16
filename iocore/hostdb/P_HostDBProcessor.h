@@ -28,7 +28,8 @@
 #pragma once
 
 #include "I_HostDBProcessor.h"
-#include "tscore/TsBuffer.h"
+
+#include <string_view>
 
 //
 // Data
@@ -171,14 +172,14 @@ extern RecRawStatBlock *hostdb_rsb;
 
 struct CmpConstBuffferCaseInsensitive {
   bool
-  operator()(ts::ConstBuffer a, ts::ConstBuffer b) const
+  operator()(std::string_view a, std::string_view b) const
   {
-    return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;
+    return ptr_len_casecmp(a.data(), a.size(), b.data(), b.size()) < 0;
   }
 };
 
 // Our own typedef for the host file mapping
-typedef std::map<ts::ConstBuffer, IpAddr, CmpConstBuffferCaseInsensitive> HostsFileMap;
+typedef std::map<std::string_view, IpAddr, CmpConstBuffferCaseInsensitive> HostsFileMap;
 // A to hold a ref-counted map
 struct RefCountedHostsFileMap : public RefCountObj {
   HostsFileMap hosts_file_map;

@@ -1585,7 +1585,7 @@ HostDBContinuation::do_dns()
       hostdb_cont_free(this);
       return;
     }
-    ts::ConstBuffer hname(hash.host_name, hash.host_len);
+    std::string_view hname(hash.host_name, hash.host_len);
     Ptr<RefCountedHostsFileMap> current_host_file_map = hostDB.hosts_file_ptr;
     HostsFileMap::iterator find_result                = current_host_file_map->hosts_file_map.find(hname);
     if (find_result != current_host_file_map->hosts_file_map.end()) {
@@ -2149,7 +2149,7 @@ ParseHostLine(Ptr<RefCountedHostsFileMap> &map, char *l)
   IpAddr ip;
   if (n_elts > 1 && 0 == ip.load(elts[0])) {
     for (int i = 1; i < n_elts; ++i) {
-      ts::ConstBuffer name(elts[i], strlen(elts[i]));
+      std::string_view name(elts[i], strlen(elts[i]));
       // If we don't have an entry already (host files only support single IPs for a given name)
       if (map->hosts_file_map.find(name) == map->hosts_file_map.end()) {
         map->hosts_file_map[name] = ip;

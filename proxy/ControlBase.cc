@@ -33,16 +33,15 @@
 #include "tscore/ink_time.h"
 
 #include "URL.h"
-#include "tscore/Tokenizer.h"
 #include "ControlBase.h"
 #include "tscore/MatcherUtils.h"
 #include "HTTP.h"
 #include "ControlMatcher.h"
 #include "HdrUtils.h"
 
-#include "tscore/TsBuffer.h"
-
 #include <vector>
+#include <string>
+#include <cstring>
 
 /** Used for printing IP address.
     @code
@@ -114,19 +113,19 @@ TimeMod::check(HttpRequestData *req) const
 TimeMod *
 TimeMod::make(char *value, const char **error)
 {
-  Tokenizer rangeTok("-");
-  TimeMod *mod = nullptr;
-  TimeMod tmp;
-  int num_tok;
-
-  num_tok = rangeTok.Initialize(value, SHARE_TOKS);
-  if (num_tok == 1) {
+  TimeMod *mod    = nullptr;
+  char *range_end = std::strchr(value, '-');
+  if (nullptr == range_end) {
     *error = "End time not specified";
-  } else if (num_tok > 2) {
-    *error = "Malformed time range";
-  } else if (nullptr == (*error = timeOfDayToSeconds(rangeTok[0], &tmp.start_time)) &&
-             nullptr == (*error = timeOfDayToSeconds(rangeTok[1], &tmp.end_time))) {
-    mod = new TimeMod(tmp);
+  } else {
+    *(range_end++) = '\0';
+    TimeMod tmp;
+    if (std::strchr(range_end, '-') != nullptr) {
+      *error = "Malformed time range";
+    } else if (nullptr == (*error = timeOfDayToSeconds(value, &tmp.start_time)) &&
+               nullptr == (*error = timeOfDayToSeconds(range_end, &tmp.end_time))) {
+      mod = new TimeMod(tmp);
+    }
   }
   return mod;
 }
@@ -208,25 +207,24 @@ PortMod::check(HttpRequestData *req) const
 PortMod *
 PortMod::make(char *value, const char **error)
 {
-  Tokenizer rangeTok("-");
-  PortMod tmp;
-  int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
-
   *error = nullptr;
-  if (num_tok > 2) {
-    *error = "Malformed Range";
-    // coverity[secure_coding]
-  } else if (sscanf(rangeTok[0], "%d", &tmp.start_port) != 1) {
+
+  char *range_end = std::strchr(value, '-');
+  if (range_end) {
+    *(range_end++) = '\0';
+  }
+
+  PortMod tmp;
+  if (sscanf(value, "%d", &tmp.start_port) != 1) {
     *error = "Invalid start port";
-  } else if (num_tok == 2) {
-    // coverity[secure_coding]
-    if (sscanf(rangeTok[1], "%d", &tmp.end_port) != 1) {
-      *error = "Invalid end port";
-    } else if (tmp.end_port < tmp.start_port) {
-      *error = "Malformed Range: end port < start port";
-    }
-  } else {
+  } else if (nullptr == range_end) {
     tmp.end_port = tmp.start_port;
+  } else if (std::strchr(range_end, '-') != nullptr) {
+    *error = "Malformed Range";
+  } else if (sscanf(range_end, "%d", &tmp.end_port) != 1) {
+    *error = "Invalid end port";
+  } else if (tmp.end_port < tmp.start_port) {
+    *error = "Malformed Range: end port < start port";
   }
 
   // If there's an error message, return null.
@@ -396,10 +394,9 @@ SchemeMod::make(char *value, const char **error)
 // This is a base class for all of the mods that have a
 // text string.
 struct TextMod : public ControlBase::Modifier {
-  ts::Buffer text;
+  std::string text;
 
   TextMod();
-  ~TextMod() override;
 
   // Calls name() which the subclass must provide.
   void print(FILE *f) const override;
@@ -409,10 +406,6 @@ struct TextMod : public ControlBase::Modifier {
 };
 
 TextMod::TextMod() : text() {}
-TextMod::~TextMod()
-{
-  free(text.data());
-}
 
 void
 TextMod::print(FILE *f) const
@@ -423,14 +416,12 @@ TextMod::print(FILE *f) const
 void
 TextMod::set(const char *value)
 {
-  free(this->text.data());
-  this->text.set(ats_strdup(value), strlen(value));
+  this->text = value;
 }
 
 struct MultiTextMod : public ControlBase::Modifier {
-  std::vector<ts::Buffer> text_vec;
+  std::vector<std::string> text_vec;
   MultiTextMod();
-  ~MultiTextMod() override;
 
   // Copy the value to the MultiTextMod buffer.
   void set(char *value);
@@ -440,10 +431,6 @@ struct MultiTextMod : public ControlBase::Modifier {
 };
 
 MultiTextMod::MultiTextMod() = default;
-MultiTextMod::~MultiTextMod()
-{
-  text_vec.clear();
-}
 
 void
 MultiTextMod::print(FILE *f) const
@@ -456,13 +443,13 @@ MultiTextMod::print(FILE *f) const
 void
 MultiTextMod::set(char *value)
 {
-  Tokenizer rangeTok(",");
-  int num_tok = rangeTok.Initialize(value, SHARE_TOKS);
-  for (int i = 0; i < num_tok; i++) {
-    ts::Buffer text;
-    text.set(ats_strdup(rangeTok[i]), strlen(rangeTok[i]));
-    this->text_vec.push_back(text);
+  char *comma_p;
+
+  while ((comma_p = std::strchr(value, ',')) != nullptr) {
+    this->text_vec.emplace_back(value, comma_p - value);
+    value = comma_p + 1;
   }
+  this->text_vec.emplace_back(value);
 }
 
 // ----------

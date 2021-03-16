@@ -231,7 +231,7 @@ Impl::handleMessage()
   MsgBuffer msg_buffer(buffer, n);
   if (PARSE_SUCCESS == header.parse(msg_buffer)) {
     message_type_t msg_type = header.getType();
-    ts::Buffer chunk(buffer, n);
+    ts::MemSpan<char> chunk(buffer, static_cast<std::size_t>(n));
 
     switch (msg_type) {
     case HERE_I_AM:
@@ -257,22 +257,22 @@ Impl::handleMessage()
 }
 
 ts::Errata
-Impl::handleHereIAm(IpHeader const &, ts::Buffer const &)
+Impl::handleHereIAm(IpHeader const &, ts::MemSpan<char> const &)
 {
   return log(LVL_INFO, "Unanticipated WCCP2_HERE_I_AM message ignored");
 }
 ts::Errata
-Impl::handleISeeYou(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED */)
+Impl::handleISeeYou(IpHeader const &, ts::MemSpan<char> const &)
 {
   return log(LVL_INFO, "Unanticipated WCCP2_I_SEE_YOU message ignored.");
 }
 ts::Errata
-Impl::handleRedirectAssign(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED */)
+Impl::handleRedirectAssign(IpHeader const &, ts::MemSpan<char> const &)
 {
   return log(LVL_INFO, "Unanticipated WCCP2_REDIRECT_ASSIGN message ignored.");
 }
 ts::Errata
-Impl::handleRemovalQuery(IpHeader const &, ts::Buffer const & /* data ATS_UNUSED */)
+Impl::handleRemovalQuery(IpHeader const &, ts::MemSpan<char> const &)
 {
   return log(LVL_INFO, "Unanticipated WCCP2_REMOVAL_QUERY message ignored.");
 }
@@ -690,7 +690,7 @@ CacheImpl::housekeeping()
 }
 
 ts::Errata
-CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer const &chunk)
+CacheImpl::handleISeeYou(IpHeader const &, ts::MemSpan<char> const &chunk)
 {
   ts::Errata zret;
   ISeeYouMsg msg;
@@ -849,7 +849,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
 }
 
 ts::Errata
-CacheImpl::handleRemovalQuery(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer const &chunk)
+CacheImpl::handleRemovalQuery(IpHeader const &, ts::MemSpan<char> const &chunk)
 {
   ts::Errata zret;
   RemovalQueryMsg msg;
@@ -937,7 +937,7 @@ RouterImpl::GroupData::resizeRouterSources()
 }
 
 ts::Errata
-RouterImpl::handleHereIAm(IpHeader const &ip_hdr, ts::Buffer const &chunk)
+RouterImpl::handleHereIAm(IpHeader const &ip_hdr, ts::MemSpan<char> const &chunk)
 {
   ts::Errata zret;
   HereIAmMsg msg;

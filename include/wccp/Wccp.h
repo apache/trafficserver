@@ -24,7 +24,6 @@
 
 #include <memory.h>
 
-#include "tscore/TsBuffer.h"
 #include "tscore/Errata.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
