@@ -242,7 +242,6 @@ void
 QUICNetVConnection::init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *udp_con,
                          QUICPacketHandler *packet_handler, QUICResetTokenTable *rtable)
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::startEvent);
   this->_initial_version             = version;
   this->_udp_con                     = udp_con;
   this->_packet_handler              = packet_handler;
@@ -385,25 +384,6 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
   this->_schedule_packet_write_ready();
-
-  return EVENT_DONE;
-}
-
-int
-QUICNetVConnection::startEvent(int event, Event *e)
-{
-  ink_assert(event == EVENT_IMMEDIATE);
-  MUTEX_TRY_LOCK(lock, get_NetHandler(e->ethread)->mutex, e->ethread);
-  if (!lock.is_locked()) {
-    e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
-    return EVENT_CONT;
-  }
-
-  if (!action_.cancelled) {
-    this->connectUp(e->ethread, NO_FD);
-  } else {
-    this->free(e->ethread);
-  }
 
   return EVENT_DONE;
 }
@@ -1077,28 +1057,6 @@ QUICNetVConnection::protocol_contains(std::string_view prefix) const
     retval = super::protocol_contains(prefix);
   }
   return retval;
-}
-
-// ALPN TLS extension callback. Given the client's set of offered
-// protocols, we have to select a protocol to use for this session.
-int
-QUICNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                                         unsigned inlen) const
-{
-  const unsigned char *npnptr = nullptr;
-  unsigned int npnsize        = 0;
-  if (this->getNPN(&npnptr, &npnsize)) {
-    // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
-    // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
-    if (SSL_select_next_proto(const_cast<unsigned char **>(out), outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
-      Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
-      return SSL_TLSEXT_ERR_OK;
-    }
-  }
-
-  *out    = nullptr;
-  *outlen = 0;
-  return SSL_TLSEXT_ERR_NOACK;
 }
 
 bool

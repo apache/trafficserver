@@ -55,8 +55,6 @@ public:
 
   virtual uint32_t pmtu() const                                = 0;
   virtual NetVConnectionContext_t direction() const            = 0;
-  virtual int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                                   unsigned inlen) const       = 0;
   virtual bool is_closed() const                               = 0;
   virtual bool is_at_anti_amplification_limit() const          = 0;
   virtual bool is_address_validation_completed() const         = 0;

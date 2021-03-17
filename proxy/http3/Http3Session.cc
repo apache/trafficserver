@@ -140,6 +140,12 @@ HQSession::destroy()
 }
 
 void
+HQSession::free()
+{
+  delete this;
+}
+
+void
 HQSession::release(ProxyTransaction *trans)
 {
   return;

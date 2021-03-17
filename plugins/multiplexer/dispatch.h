@@ -31,11 +31,31 @@
 
 #include "ts.h"
 
-#define CHECK(X)                                         \
-  {                                                      \
-    const TSReturnCode r = static_cast<TSReturnCode>(X); \
-    assert(r == TS_SUCCESS);                             \
+#ifdef __OPTIMIZE__
+
+// Optimized -- release build.
+
+// For CHECK(), execute any side effects (only) for expression X.
+#define CHECK(X)          \
+  {                       \
+    static_cast<void>(X); \
   }
+
+// Make sure assert() disabled.
+#ifndef NDEBUG
+#define NDEBUG
+#endif
+
+#else
+
+// Check if expression X returns a value that implicitly converts to bool false (such as TS_SUCCESS).
+#define CHECK(X)                \
+  {                             \
+    static_assert(!TS_SUCCESS); \
+    assert(!(X));               \
+  }
+
+#endif
 
 struct Statistics {
   int failures;

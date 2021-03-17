@@ -32,6 +32,7 @@ Cookie Based Routing Inside TrafficServer Using cookie_remap
 
     * `Comments <#comments>`_
     * `cookie: X|X.Y <#cookie-xxy>`_
+    * `target: purl <#purl>`_
     * `operation: exists|not exists|string|regex|bucket <#operation-existsnot-existsstringregexbucket>`_
     * `match: str <#match-str>`_
     * `regex: str <#regex-str>`_
@@ -135,6 +136,13 @@ e.g
    B.f will operate on fsub
    </pre>
 
+target: puri
+^^^^^^^^^^^^
+
+----
+
+When the cookie key is omitted, the operation is applied to the request uri instead.  If this key and value
+is specified, the uri for the operation will be the pre-remapped, rather than the remapped, uri.
 
 operation: exists|not exists|string|regex|bucket
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -358,6 +366,12 @@ and a request like `http://finance.yahoo.com/photos/what/ever/ <http://foo.com/p
 
 
 will become `http://foo.com/what/ever/matches/x/y/z <http://foo.com/what/ever/matches/x/y/z>`_
+
+Alternatives using pre-remapped URL
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+$cr_req_url, $path and $unamatched_path are based on the remapped URL.  To use the pre-remapped
+URL, instead use $cr_req_purl, $ppath and $unmatched_ppath, respectively.
 
 An example configuration file
 -----------------------------

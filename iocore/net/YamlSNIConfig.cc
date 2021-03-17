@@ -28,12 +28,37 @@
 #include <yaml-cpp/yaml.h>
 #include <openssl/ssl.h>
 
+#include "P_SNIActionPerformer.h"
+
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
 #include "tscore/Errata.h"
 #include "tscore/ink_assert.h"
-#include "P_SNIActionPerformer.h"
+
 #include "records/I_RecCore.h"
+#include "records/I_RecHttp.h"
+
+namespace
+{
+// Assuming node is value of [TS_tunnel_alpn]
+void
+load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
+{
+  if (!node.IsSequence()) {
+    throw YAML::ParserException(node.Mark(), "\"tunnel_alpn\" is not sequence");
+  }
+
+  for (const auto &alpn : node) {
+    auto value = alpn.as<std::string>();
+    int index  = globalSessionProtocolNameRegistry.indexFor(value);
+    if (index == SessionProtocolNameRegistry::INVALID) {
+      throw YAML::ParserException(alpn.Mark(), "unknown value \"" + value + "\"");
+    } else {
+      dst.push_back(index);
+    }
+  }
+}
+} // namespace
 
 ts::Errata
 YamlSNIConfig::loader(const char *cfgFilename)
@@ -98,12 +123,12 @@ TsEnumDescriptor PROPERTIES_DESCRIPTOR    = {{{"NONE", 0}, {"SIGNATURE", 0x1}, {
 TsEnumDescriptor TLS_PROTOCOLS_DESCRIPTOR = {{{"TLSv1", 0}, {"TLSv1_1", 1}, {"TLSv1_2", 2}, {"TLSv1_3", 3}}};
 
 std::set<std::string> valid_sni_config_keys = {TS_fqdn,
-                                               TS_disable_h2,
                                                TS_verify_client,
                                                TS_verify_client_ca_certs,
                                                TS_tunnel_route,
                                                TS_forward_route,
                                                TS_partial_blind_route,
+                                               TS_tunnel_alpn,
                                                TS_verify_server_policy,
                                                TS_verify_server_properties,
                                                TS_client_cert,
@@ -132,9 +157,6 @@ template <> struct convert<YamlSNIConfig::Item> {
       item.fqdn = node[TS_fqdn].as<std::string>();
     } else {
       return false; // servername must be present
-    }
-    if (node[TS_disable_h2]) {
-      item.offer_h2 = false;
     }
     if (node[TS_http2]) {
       item.offer_h2 = node[TS_http2].as<bool>();
@@ -214,6 +236,10 @@ template <> struct convert<YamlSNIConfig::Item> {
     } else if (node[TS_partial_blind_route]) {
       item.tunnel_destination = node[TS_partial_blind_route].as<std::string>();
       item.tunnel_type        = SNIRoutingType::PARTIAL_BLIND;
+
+      if (node[TS_tunnel_alpn]) {
+        load_tunnel_alpn(item.tunnel_alpn, node[TS_tunnel_alpn]);
+      }
     }
 
     if (node[TS_verify_server_policy]) {

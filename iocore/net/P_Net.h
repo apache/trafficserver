@@ -106,11 +106,6 @@ extern RecRawStatBlock *net_rsb;
 #include "P_CompletionUtil.h"
 #include "P_NetVCTest.h"
 
-#include "P_SSLNetVConnection.h"
-#include "P_SSLNetProcessor.h"
-#include "P_SSLNetAccept.h"
-#include "P_SSLCertLookup.h"
-
 static constexpr ts::ModuleVersion NET_SYSTEM_MODULE_INTERNAL_VERSION(NET_SYSTEM_MODULE_PUBLIC_VERSION, ts::ModuleVersion::PRIVATE);
 
 // For very verbose iocore debugging.

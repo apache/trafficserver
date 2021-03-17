@@ -46,15 +46,15 @@ public:
   QUICMultiCertConfigLoader(const SSLConfigParams *p) : SSLMultiCertConfigLoader(p) {}
 
   virtual SSL_CTX *default_server_ssl_ctx() override;
-  // override;
-  SSL_CTX *init_server_ssl_ctx(SSLMultiCertConfigLoader::CertLoadData const &data,
-                               const SSLMultiCertConfigParams *sslMultCertSettings, std::set<std::string> &names) override;
 
 private:
   const char *_debug_tag() const override;
   virtual void _set_handshake_callbacks(SSL_CTX *ssl_ctx) override;
-  static int ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                                      unsigned inlen, void *);
+  virtual bool _setup_session_cache(SSL_CTX *ctx) override;
+  virtual bool _set_cipher_suites_for_legacy_versions(SSL_CTX *ctx) override;
+  virtual bool _set_info_callback(SSL_CTX *ctx) override;
+  virtual bool _set_npn_callback(SSL_CTX *ctx) override;
+
   static int ssl_cert_cb(SSL *ssl, void *arg);
   static int ssl_sni_cb(SSL *ssl, int *ad, void *arg);
 };

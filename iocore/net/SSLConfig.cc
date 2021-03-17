@@ -61,6 +61,8 @@ int SSLConfigParams::ssl_ocsp_cache_timeout                 = 3600;
 int SSLConfigParams::ssl_ocsp_request_timeout               = 10;
 int SSLConfigParams::ssl_ocsp_update_period                 = 60;
 int SSLConfigParams::ssl_handshake_timeout_in               = 0;
+int SSLConfigParams::origin_session_cache                   = 1;
+size_t SSLConfigParams::origin_session_cache_size           = 10240;
 size_t SSLConfigParams::session_cache_number_buckets        = 1024;
 bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
@@ -317,6 +319,8 @@ SSLConfigParams::initialize()
   ats_free(CACertRelativePath);
 
   // SSL session cache configurations
+  REC_ReadConfigInteger(ssl_origin_session_cache, "proxy.config.ssl.origin_session_cache");
+  REC_ReadConfigInteger(ssl_origin_session_cache_size, "proxy.config.ssl.origin_session_cache.size");
   REC_ReadConfigInteger(ssl_session_cache, "proxy.config.ssl.session_cache");
   REC_ReadConfigInteger(ssl_session_cache_size, "proxy.config.ssl.session_cache.size");
   REC_ReadConfigInteger(ssl_session_cache_num_buckets, "proxy.config.ssl.session_cache.num_buckets");
@@ -324,6 +328,8 @@ SSLConfigParams::initialize()
   REC_ReadConfigInteger(ssl_session_cache_timeout, "proxy.config.ssl.session_cache.timeout");
   REC_ReadConfigInteger(ssl_session_cache_auto_clear, "proxy.config.ssl.session_cache.auto_clear");
 
+  SSLConfigParams::origin_session_cache      = ssl_origin_session_cache;
+  SSLConfigParams::origin_session_cache_size = ssl_origin_session_cache_size;
   SSLConfigParams::session_cache_max_bucket_size =
     static_cast<size_t>(ceil(static_cast<double>(ssl_session_cache_size) / ssl_session_cache_num_buckets));
   SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
@@ -331,6 +337,10 @@ SSLConfigParams::initialize()
 
   if (ssl_session_cache == SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL) {
     session_cache = new SSLSessionCache();
+  }
+
+  if (ssl_origin_session_cache == 1 && ssl_origin_session_cache_size > 0) {
+    origin_sess_cache = new SSLOriginSessionCache();
   }
 
   // SSL record size

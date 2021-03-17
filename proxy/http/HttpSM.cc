@@ -346,15 +346,7 @@ HttpSM::get_server_connect_timeout()
   if (t_state.api_txn_connect_timeout_value != -1) {
     retval = HRTIME_MSECONDS(t_state.api_txn_connect_timeout_value);
   } else {
-    int connect_timeout;
-    if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
-      connect_timeout = t_state.txn_conf->post_connect_attempts_timeout;
-    } else if (t_state.current.server == &t_state.parent_info) {
-      connect_timeout = t_state.txn_conf->parent_connect_timeout;
-    } else {
-      connect_timeout = t_state.txn_conf->connect_attempts_timeout;
-    }
-    retval = HRTIME_SECONDS(connect_timeout);
+    retval = HRTIME_SECONDS(t_state.txn_conf->connect_attempts_timeout);
   }
   return retval;
 }
@@ -560,18 +552,18 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   if (ssl_vc != nullptr) {
     client_connection_is_ssl = true;
     client_ssl_reused        = ssl_vc->getSSLSessionCacheHit();
-    const char *protocol     = ssl_vc->getSSLProtocol();
+    const char *protocol     = ssl_vc->get_tls_protocol_name();
     client_sec_protocol      = protocol ? protocol : "-";
-    const char *cipher       = ssl_vc->getSSLCipherSuite();
+    const char *cipher       = ssl_vc->get_tls_cipher_suite();
     client_cipher_suite      = cipher ? cipher : "-";
-    const char *curve        = ssl_vc->getSSLCurve();
+    const char *curve        = ssl_vc->get_tls_curve();
     client_curve             = curve ? curve : "-";
     client_alpn_id           = ssl_vc->get_negotiated_protocol_id();
 
     if (!client_tcp_reused) {
       // Copy along the TLS handshake timings
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = ssl_vc->sslHandshakeBeginTime;
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = ssl_vc->sslHandshakeEndTime;
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = ssl_vc->get_tls_handshake_begin_time();
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = ssl_vc->get_tls_handshake_end_time();
     }
   }
 
@@ -630,7 +622,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc, IOBufferReader *buffe
   /////////////////////////
   // set up timeouts     //
   /////////////////////////
-  client_vc->set_inactivity_timeout(HRTIME_SECONDS(t_state.http_config_param->accept_no_activity_timeout));
+  client_vc->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
   client_vc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_active_timeout_in));
 
   ++reentrancy_count;
@@ -4876,6 +4868,8 @@ HttpSM::get_outbound_sni() const
     int len;
     char const *ptr = t_state.hdr_info.server_request.host_get(&len);
     zret.assign(ptr, len);
+  } else if (ua_txn && !strcmp(policy, "server_name"_tv)) {
+    zret.assign(ua_txn->get_netvc()->get_server_name(), ts::TextView::npos);
   } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
     zret = policy.remove_prefix(1);
   } else {
@@ -5138,10 +5132,9 @@ HttpSM::do_http_server_open(bool raw)
 
       ct_state.blocked();
       HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
-      send_origin_throttled_response();
-
       ct_state.Warn_Blocked(&t_state.txn_conf->outbound_conntrack, sm_id, ccount - 1, &t_state.current.server->dst_addr.sa,
                             debug_on && is_debug_tag_set("http") ? "http" : nullptr);
+      send_origin_throttled_response();
 
       return;
     } else {
@@ -5170,6 +5163,14 @@ HttpSM::do_http_server_open(bool raw)
     SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_txn->get_netvc());
     if (ssl_vc && raw) {
       tls_upstream = ssl_vc->upstream_tls();
+
+      // ALPN on TLS Partial Blind Tunnel - set negotiated ALPN id
+      if (ssl_vc->tunnel_type() == SNIRoutingType::PARTIAL_BLIND) {
+        int pid = ssl_vc->get_negotiated_protocol_id();
+        if (pid != SessionProtocolNameRegistry::INVALID) {
+          opt.alpn_protos = SessionProtocolNameRegistry::convert_openssl_alpn_wire_format(pid);
+        }
+      }
     }
     opt.local_port = ua_txn->get_outbound_port();
 

@@ -54,6 +54,7 @@
 #include "P_SSLClientUtils.h"
 #include "SSLDiags.h"
 #include "SSLInternal.h"
+#include "TLSBasicSupport.h"
 #include "ProxyConfig.h"
 #include "Plugin.h"
 #include "LogObject.h"
@@ -5157,7 +5158,7 @@ TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_
     return TS_ERROR;
   }
 
-  int url_length = buf_handle->url_printed_length();
+  int url_length = buf_handle->url_printed_length(URLNormalize::LC_SCHEME_HOST | URLNormalize::IMPLIED_SCHEME);
 
   sdk_assert(url_length >= 0);
 
@@ -5170,7 +5171,7 @@ TSHttpHdrEffectiveUrlBufGet(TSMBuffer hdr_buf, TSMLoc hdr_loc, char *buf, int64_
     int index  = 0;
     int offset = 0;
 
-    buf_handle->url_print(buf, size, &index, &offset, true);
+    buf_handle->url_print(buf, size, &index, &offset, URLNormalize::LC_SCHEME_HOST | URLNormalize::IMPLIED_SCHEME);
   }
 
   return TS_SUCCESS;
@@ -6650,28 +6651,28 @@ TSVConnIsSslReused(TSVConn sslp)
 const char *
 TSVConnSslCipherGet(TSVConn sslp)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
+  TLSBasicSupport *tlsbs = dynamic_cast<TLSBasicSupport *>(vc);
 
-  return ssl_vc ? ssl_vc->getSSLCipherSuite() : nullptr;
+  return tlsbs ? tlsbs->get_tls_cipher_suite() : nullptr;
 }
 
 const char *
 TSVConnSslProtocolGet(TSVConn sslp)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
+  TLSBasicSupport *tlsbs = dynamic_cast<TLSBasicSupport *>(vc);
 
-  return ssl_vc ? ssl_vc->getSSLProtocol() : nullptr;
+  return tlsbs ? tlsbs->get_tls_protocol_name() : nullptr;
 }
 
 const char *
 TSVConnSslCurveGet(TSVConn sslp)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+  NetVConnection *vc     = reinterpret_cast<NetVConnection *>(sslp);
+  TLSBasicSupport *tlsbs = dynamic_cast<TLSBasicSupport *>(vc);
 
-  return ssl_vc ? ssl_vc->getSSLCurve() : nullptr;
+  return tlsbs ? tlsbs->get_tls_curve() : nullptr;
 }
 
 int
@@ -8581,9 +8582,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT:
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
     break;
-  case TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->post_connect_attempts_timeout, conv);
-    break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
     ret = _memberp_to_generic(&overridableHttpConfig->down_server_timeout, conv);
     break;
@@ -8757,9 +8755,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     break;
   case TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS:
     ret = _memberp_to_generic(&overridableHttpConfig->per_parent_connect_attempts, conv);
-    break;
-  case TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT:
-    ret = _memberp_to_generic(&overridableHttpConfig->parent_connect_timeout, conv);
     break;
   case TS_CONFIG_HTTP_ALLOW_MULTI_RANGE:
     ret = _memberp_to_generic(&overridableHttpConfig->allow_multi_range, conv);

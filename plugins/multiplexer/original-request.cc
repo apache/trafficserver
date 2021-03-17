@@ -93,8 +93,7 @@ OriginalRequest::urlScheme(const std::string &s)
 {
   assert(buffer_ != nullptr);
   assert(url_ != nullptr);
-  const TSReturnCode result = TSUrlSchemeSet(buffer_, url_, s.c_str(), s.size());
-  assert(result == TS_SUCCESS);
+  CHECK(TSUrlSchemeSet(buffer_, url_, s.c_str(), s.size()));
 }
 
 void

@@ -357,7 +357,7 @@ CacheImpl::RouterData::waitTime(time_t now) const
   return m_assign ? 0 : this->pingTime(now);
 }
 
-inline uint32_t
+uint32_t
 detail::cache::CacheData::idAddr() const
 {
   return m_id.getAddr();

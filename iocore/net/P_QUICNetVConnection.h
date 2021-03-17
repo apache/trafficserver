@@ -166,7 +166,6 @@ public:
   int connectUp(EThread *t, int fd) override;
 
   // QUICNetVConnection
-  int startEvent(int event, Event *e);
   int state_pre_handshake(int event, Event *data);
   int state_handshake(int event, Event *data);
   int state_connection_established(int event, Event *data);
@@ -185,9 +184,6 @@ public:
 
   int populate_protocol(std::string_view *results, int n) const override;
   const char *protocol_contains(std::string_view tag) const override;
-
-  int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                           unsigned inlen) const override;
 
   // QUICConnection
   QUICStreamManager *stream_manager() override;

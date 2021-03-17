@@ -32,12 +32,12 @@
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
-TSDECL(disable_h2);
 TSDECL(verify_client);
 TSDECL(verify_client_ca_certs);
 TSDECL(tunnel_route);
 TSDECL(forward_route);
 TSDECL(partial_blind_route);
+TSDECL(tunnel_alpn);
 TSDECL(verify_server_policy);
 TSDECL(verify_server_properties);
 TSDECL(verify_origin_server);
@@ -49,26 +49,10 @@ TSDECL(http2);
 TSDECL(host_sni_policy);
 #undef TSDECL
 
-const int start = 0;
 struct YamlSNIConfig {
-  enum class Action {
-    disable_h2 = start,
-    verify_client,
-    verify_client_ca_certs,
-    tunnel_route,             // blind tunnel action
-    forward_route,            // decrypt data and then blind tunnel action
-    partial_blind_route,      // decrypt data; partial blind routing
-    verify_server_policy,     // this applies to server side vc only
-    verify_server_properties, // this applies to server side vc only
-    client_cert,
-    h2,             // this applies to client side only
-    host_sni_policy // Applies to client side only
-  };
-  enum class Level { NONE = 0, MODERATE, STRICT };
   enum class Policy : uint8_t { DISABLED = 0, PERMISSIVE, ENFORCED, UNSET };
   enum class Property : uint8_t { NONE = 0, SIGNATURE_MASK = 0x1, NAME_MASK = 0x2, ALL_MASK = 0x3, UNSET };
   enum class TLSProtocol : uint8_t { TLSv1 = 0, TLSv1_1, TLSv1_2, TLSv1_3, TLS_MAX = TLSv1_3 };
-  enum class Control : uint8_t { NONE = 0, ENABLE, DISABLE };
 
   YamlSNIConfig() {}
 
@@ -88,6 +72,7 @@ struct YamlSNIConfig {
     std::string ip_allow;
     bool protocol_unset = true;
     unsigned long protocol_mask;
+    std::vector<int> tunnel_alpn{};
 
     void EnableProtocol(YamlSNIConfig::TLSProtocol proto);
   };

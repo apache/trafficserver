@@ -27,6 +27,9 @@
 #include "P_SSLUtils.h"
 #include "P_OCSPStapling.h"
 #include "SSLStats.h"
+#include "P_SSLNetProcessor.h"
+#include "P_SSLNetAccept.h"
+#include "P_SSLNetVConnection.h"
 #include "P_SSLClientCoordinator.h"
 
 //

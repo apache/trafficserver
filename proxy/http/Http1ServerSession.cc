@@ -36,7 +36,7 @@
 #include "HttpSessionManager.h"
 #include "HttpSM.h"
 
-ClassAllocator<Http1ServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
+ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator("httpServerSessionAllocator");
 
 void
 Http1ServerSession::destroy()
@@ -55,6 +55,12 @@ Http1ServerSession::destroy()
   } else {
     httpServerSessionAllocator.free(this);
   }
+}
+
+void
+Http1ServerSession::free()
+{
+  // Unlike Http1ClientSession, Http1ServerSession is freed in destroy()
 }
 
 void

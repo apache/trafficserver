@@ -14,6 +14,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-nc -4 -l ${2} -c  "sh ./delay-inactive-server.sh" &
-sleep 1
-curl -k -i --http1.1 https://127.0.0.1:${1}/${3}
+start=`date +%s`
+$1
+end=`date +%s`
+
+runtime=$((end-start))
+echo $runtime
+if [ $runtime -lt 6 ]
+then
+  echo "Accept timeout $runtime"
+  exit 0
+elif [ $runtime -lt 10 ]
+then
+  echo "Transaction inactivity timeout $runtime"
+  exit 0
+else
+  echo "Default inactivity timeout $runtime"
+  exit 1
+fi

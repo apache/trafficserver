@@ -49,6 +49,7 @@
 #include "P_ALPNSupport.h"
 #include "TLSSessionResumptionSupport.h"
 #include "TLSSNISupport.h"
+#include "TLSBasicSupport.h"
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 
@@ -94,7 +95,11 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection, public ALPNSupport, public TLSSessionResumptionSupport, public TLSSNISupport
+class SSLNetVConnection : public UnixNetVConnection,
+                          public ALPNSupport,
+                          public TLSSessionResumptionSupport,
+                          public TLSSNISupport,
+                          public TLSBasicSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
@@ -106,9 +111,9 @@ public:
   bool
   trackFirstHandshake() override
   {
-    bool retval = sslHandshakeBeginTime == 0;
+    bool retval = this->get_tls_handshake_begin_time() == 0;
     if (retval) {
-      sslHandshakeBeginTime = Thread::get_hrtime();
+      this->_record_tls_handshake_begin_time();
     }
     return retval;
   }
@@ -138,9 +143,6 @@ public:
   ////////////////////////////////////////////////////////////
   SSLNetVConnection();
   ~SSLNetVConnection() override {}
-  static int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned *outlen, void *);
-  static int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                                  unsigned inlen, void *);
 
   bool
   getSSLClientRenegotiationAbort() const
@@ -275,43 +277,6 @@ public:
     return retval;
   }
 
-  const char *
-  getSSLProtocol() const
-  {
-    return ssl ? SSL_get_version(ssl) : nullptr;
-  }
-
-  const char *
-  getSSLCipherSuite() const
-  {
-    return ssl ? SSL_get_cipher_name(ssl) : nullptr;
-  }
-
-  const char *
-  getSSLCurve() const
-  {
-    if (!ssl) {
-      return nullptr;
-    }
-    ssl_curve_id curve;
-    if (getSSLSessionCacheHit()) {
-      curve = getSSLCurveNID();
-    } else {
-      curve = SSLGetCurveNID(ssl);
-    }
-#ifndef OPENSSL_IS_BORINGSSL
-    if (curve == NID_undef) {
-      return nullptr;
-    }
-    return OBJ_nid2sn(curve);
-#else
-    if (curve == 0) {
-      return nullptr;
-    }
-    return SSL_get_curve_name(curve);
-#endif
-  }
-
   bool
   has_tunnel_destination() const
   {
@@ -362,11 +327,9 @@ public:
    */
   int populate(Connection &con, Continuation *c, void *arg) override;
 
-  SSL *ssl                         = nullptr;
-  ink_hrtime sslHandshakeBeginTime = 0;
-  ink_hrtime sslHandshakeEndTime   = 0;
-  ink_hrtime sslLastWriteTime      = 0;
-  int64_t sslTotalBytesSent        = 0;
+  SSL *ssl                    = nullptr;
+  ink_hrtime sslLastWriteTime = 0;
+  int64_t sslTotalBytesSent   = 0;
 
   // The serverName is either a pointer to the (null-terminated) name fetched from the
   // SSL object or the empty string.
@@ -468,6 +431,13 @@ public:
   }
 
 protected:
+  SSL *
+  _get_ssl_object() const override
+  {
+    return this->ssl;
+  }
+  ssl_curve_id _get_tls_curve() const override;
+
   const IpEndpoint &
   _getLocalEndpoint() override
   {

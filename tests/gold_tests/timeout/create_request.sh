@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,6 +16,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-nc -4 -l ${2} -c  "sh ./delay-inactive-server.sh" &
-sleep 1
-curl -d "post body" -k -i --http1.1 https://127.0.0.1:${1}/${3}
+printf GET / HTTP/1.1
+sleep 11

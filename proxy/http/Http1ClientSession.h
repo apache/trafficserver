@@ -54,6 +54,7 @@ class Http1ClientSession : public ProxySession
 public:
   typedef ProxySession super; ///< Parent type.
   Http1ClientSession();
+  ~Http1ClientSession() = default;
 
   // Implement ProxySession interface.
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
@@ -128,4 +129,4 @@ public:
   Http1Transaction trans;
 };
 
-extern ClassAllocator<Http1ClientSession> http1ClientSessionAllocator;
+extern ClassAllocator<Http1ClientSession, true> http1ClientSessionAllocator;

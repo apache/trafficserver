@@ -79,89 +79,34 @@ QUICMultiCertConfigLoader::default_server_ssl_ctx()
   return quic_new_ssl_ctx();
 }
 
-SSL_CTX *
-QUICMultiCertConfigLoader::init_server_ssl_ctx(SSLMultiCertConfigLoader::CertLoadData const &data,
-                                               const SSLMultiCertConfigParams *multi_cert_params, std::set<std::string> &names)
+bool
+QUICMultiCertConfigLoader::_setup_session_cache(SSL_CTX *ctx)
 {
-  const SSLConfigParams *params = this->_params;
+  // Disabled for now
+  // TODO Check if the logic in SSLMultiCertConfigLoader is reusable
+  return true;
+}
 
-  SSL_CTX *ctx = this->default_server_ssl_ctx();
+bool
+QUICMultiCertConfigLoader::_set_cipher_suites_for_legacy_versions(SSL_CTX *ctx)
+{
+  // Do not set this since QUIC only uses TLS 1.3
+  return true;
+}
 
-  if (multi_cert_params) {
-    if (multi_cert_params->dialog) {
-      // TODO: dialog support
-    }
+bool
+QUICMultiCertConfigLoader::_set_info_callback(SSL_CTX *ctx)
+{
+  // Disabled for now
+  // TODO Check if we need this for QUIC
+  return true;
+}
 
-    if (multi_cert_params->cert) {
-      if (!SSLMultiCertConfigLoader::load_certs(ctx, data, params, multi_cert_params)) {
-        goto fail;
-      }
-    }
-
-    // SSL_CTX_load_verify_locations() builds the cert chain from the
-    // serverCACertFilename if that is not nullptr.  Otherwise, it uses the hashed
-    // symlinks in serverCACertPath.
-    //
-    // if ssl_ca_name is NOT configured for this cert in ssl_multicert.config
-    //     AND
-    // if proxy.config.ssl.CA.cert.filename and proxy.config.ssl.CA.cert.path
-    //     are configured
-    //   pass that file as the chain (include all certs in that file)
-    // else if proxy.config.ssl.CA.cert.path is configured (and
-    //       proxy.config.ssl.CA.cert.filename is nullptr)
-    //   use the hashed symlinks in that directory to build the chain
-    if (!multi_cert_params->ca && params->serverCACertPath != nullptr) {
-      if ((!SSL_CTX_load_verify_locations(ctx, params->serverCACertFilename, params->serverCACertPath)) ||
-          (!SSL_CTX_set_default_verify_paths(ctx))) {
-        Error("invalid CA Certificate file or CA Certificate path");
-        goto fail;
-      }
-    }
-  }
-
-  if (params->clientCertLevel != 0) {
-    // TODO: client cert support
-  }
-
-  if (!SSLMultiCertConfigLoader::set_session_id_context(ctx, params, multi_cert_params)) {
-    goto fail;
-  }
-
-#if TS_USE_TLS_SET_CIPHERSUITES
-  if (params->server_tls13_cipher_suites != nullptr) {
-    if (!SSL_CTX_set_ciphersuites(ctx, params->server_tls13_cipher_suites)) {
-      Error("invalid tls server cipher suites in %s", ts::filename::RECORDS);
-      goto fail;
-    }
-  }
-#endif
-
-#if defined(SSL_CTX_set1_groups_list) || defined(SSL_CTX_set1_curves_list)
-  if (params->server_groups_list != nullptr) {
-#ifdef SSL_CTX_set1_groups_list
-    if (!SSL_CTX_set1_groups_list(ctx, params->server_groups_list)) {
-#else
-    if (!SSL_CTX_set1_curves_list(ctx, params->server_groups_list)) {
-#endif
-      Error("invalid groups list for server in %s", ts::filename::RECORDS);
-      goto fail;
-    }
-  }
-#endif
-
-  // SSL_CTX_set_info_callback(ctx, ssl_callback_info);
-
-  SSL_CTX_set_alpn_select_cb(ctx, QUICMultiCertConfigLoader::ssl_select_next_protocol, nullptr);
-
-  if (SSLConfigParams::init_ssl_ctx_cb) {
-    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
-  }
-
-  return ctx;
-
-fail:
-  SSLReleaseContext(ctx);
-  return nullptr;
+bool
+QUICMultiCertConfigLoader::_set_npn_callback(SSL_CTX *ctx)
+{
+  // Do not set a callback for NPN since QUIC doens't use it
+  return true;
 }
 
 void
@@ -172,18 +117,6 @@ QUICMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ssl_ctx)
 
   // Set client hello callback if needed
   // SSL_CTX_set_client_hello_cb(ctx, QUIC::ssl_client_hello_cb, nullptr);
-}
-
-int
-QUICMultiCertConfigLoader::ssl_select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen,
-                                                    const unsigned char *in, unsigned inlen, void *)
-{
-  QUICConnection *qc = static_cast<QUICConnection *>(SSL_get_ex_data(ssl, QUIC::ssl_quic_qc_index));
-
-  if (qc) {
-    return qc->select_next_protocol(ssl, out, outlen, in, inlen);
-  }
-  return SSL_TLSEXT_ERR_NOACK;
 }
 
 int

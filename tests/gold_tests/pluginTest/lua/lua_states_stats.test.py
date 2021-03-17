@@ -23,15 +23,24 @@ Test lua states and stats functionality
 Test.SkipUnless(
     Condition.PluginExists('tslua.so'),
 )
-Test.SkipIf(Condition.true("Test cannot deterministically wait until the stats appear"))
 
 Test.ContinueOnFail = True
 # Define default ATS
 server = Test.MakeOriginServer("server")
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+# It is necessary to redirect stderr to a file so it will be available for examination by a test run.
+ts = Test.MakeATSProcess(
+    "ts", command="traffic_manager 2> " + Test.RunDirectory + "/ts.stderr.txt", select_ports=True
+)
+# For unknown reasons, traffic_manager returns 2 instead of 0 on exit with stderr redirect here.
+ts.ReturnCode = 2
 
 Test.testName = "Lua states and stats"
+
+Test.Setup.Copy("hello.lua")
+Test.Setup.Copy("global.lua")
+Test.Setup.Copy("metrics.sh")
+Test.Setup.Copy("lifecycle_stats.sh")
 
 # test to ensure origin server works
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
@@ -45,10 +54,10 @@ server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.remap_config.AddLines({
     'map / http://127.0.0.1:{}/'.format(server.Variables.Port),
     'map http://hello http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=tslua.so @pparam={}/hello.lua'.format(Test.TestDirectory)
+    ' @plugin=tslua.so @pparam={}/hello.lua'.format(Test.RunDirectory)
 })
 
-ts.Disk.plugin_config.AddLine('tslua.so {}/global.lua'.format(Test.TestDirectory))
+ts.Disk.plugin_config.AddLine('tslua.so {}/global.lua'.format(Test.RunDirectory))
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
@@ -67,36 +76,28 @@ ps.Command = "traffic_ctl config match lua"
 ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("proxy.config.plugin.lua.max_states: 4", "expected 4 states")
-tr.TimeOut = 5
 tr.StillRunningAfter = ts
 
 # 1 Test - Exercise lua script
 tr = Test.AddTestRun("Lua hello")
 ps = tr.Processes.Default  # alias
 ps.Command = curl_and_args + ' http://hello/hello'
-ps.TimeOut = 5
 ps.ReturnCode = 0
 ps.Streams.stderr.Content = Testers.ContainsExpression("Hello, World", "hello world content")
-tr.TimeOut = 5
 tr.StillRunningAfter = ts
 
 # 2 Test - Check for metrics
 tr = Test.AddTestRun("Check for metrics")
-tr.DelayStart = 15  # 5s lag on metrics to update
-tr.TimeOut = 5
 ps = tr.Processes.Default  # alias
-ps.Env = ts.Env
-ps.Command = "traffic_ctl metric match lua"
+ps.Command = "bash -c ./metrics.sh"
 ps.Env = ts.Env
 ps.ReturnCode = 0
-ps.Streams.stdout = "gold/metrics.stdout.gold"
 tr.StillRunningAfter = ts
 
 # 3 Test - Check for developer lifecycle stats
 tr = Test.AddTestRun("Check for lifecycle stats")
 ps = tr.Processes.Default  # alias
-ps.Command = "traffic_ctl plugin msg ts_lua print_stats"
+ps.Command = "bash -c ./lifecycle_stats.sh"
 ps.Env = ts.Env
 ps.ReturnCode = 0
-ts.Streams.stderr = "gold/lifecycle.stderr.gold"
 tr.StillRunningAfter = ts

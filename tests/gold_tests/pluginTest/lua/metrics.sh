@@ -14,6 +14,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-nc -4 -l ${2} -c  "sh ./delay-inactive-server.sh" &
-sleep 1
-curl -d "post body" -i  http://127.0.0.1:${1}/${3}
+N=60
+while (( N > 0 ))
+do
+    rm -f metrics.out metrics.txt
+    traffic_ctl metric match lua > metrics.out
+    sleep 1
+    sed 's/ [0-9][0-9]*//' metrics.out > metrics.txt
+    if diff metrics.txt ${AUTEST_TEST_DIR}/gold/metrics.gold
+    then
+        exit 0
+    fi
+    let N=N-1
+done
+echo TIMEOUT
+exit 1

@@ -214,6 +214,8 @@ void
 SSLNetVConnection::_bindSSLObject()
 {
   SSLNetVCAttach(this->ssl, this);
+  TLSBasicSupport::bind(this->ssl, this);
+  ALPNSupport::bind(this->ssl, this);
   TLSSessionResumptionSupport::bind(this->ssl, this);
   TLSSNISupport::bind(this->ssl, this);
 }
@@ -222,6 +224,8 @@ void
 SSLNetVConnection::_unbindSSLObject()
 {
   SSLNetVCDetach(this->ssl);
+  TLSBasicSupport::unbind(this->ssl);
+  ALPNSupport::unbind(this->ssl);
   TLSSessionResumptionSupport::unbind(this->ssl);
   TLSSNISupport::unbind(this->ssl);
 }
@@ -610,7 +614,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       readSignalError(nh, err);
     } else if (ret == SSL_HANDSHAKE_WANT_READ || ret == SSL_HANDSHAKE_WANT_ACCEPT) {
       if (SSLConfigParams::ssl_handshake_timeout_in > 0) {
-        double handshake_time = (static_cast<double>(Thread::get_hrtime() - sslHandshakeBeginTime) / 1000000000);
+        double handshake_time = (static_cast<double>(Thread::get_hrtime() - this->get_tls_handshake_begin_time()) / 1000000000);
         Debug("ssl", "ssl handshake for vc %p, took %.3f seconds, configured handshake_timer: %d", this, handshake_time,
               SSLConfigParams::ssl_handshake_timeout_in);
         if (handshake_time > SSLConfigParams::ssl_handshake_timeout_in) {
@@ -938,11 +942,11 @@ SSLNetVConnection::clear()
     ssl = nullptr;
   }
   ALPNSupport::clear();
+  TLSBasicSupport::clear();
   TLSSessionResumptionSupport::clear();
   TLSSNISupport::_clear();
 
   sslHandshakeStatus          = SSL_HANDSHAKE_ONGOING;
-  sslHandshakeBeginTime       = 0;
   sslLastWriteTime            = 0;
   sslTotalBytesSent           = 0;
   sslClientRenegotiationAbort = false;
@@ -980,7 +984,6 @@ SSLNetVConnection::free(EThread *t)
   early_data_buf    = nullptr;
 
   clear();
-  SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
   ink_assert(con.fd == NO_FD);
   ink_assert(t == this_ethread());
 
@@ -999,8 +1002,8 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
     Debug("ssl", "Stopping handshake due to server shutting down.");
     return EVENT_ERROR;
   }
-  if (sslHandshakeBeginTime == 0) {
-    sslHandshakeBeginTime = Thread::get_hrtime();
+  if (this->get_tls_handshake_begin_time() == 0) {
+    this->_record_tls_handshake_begin_time();
     // net_activity will not be triggered until after the handshake
     set_inactivity_timeout(HRTIME_SECONDS(SSLConfigParams::ssl_handshake_timeout_in));
   }
@@ -1134,6 +1137,7 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
 
       SSL_set_verify(this->ssl, SSL_VERIFY_PEER, verify_callback);
 
+      // SNI
       ats_scoped_str &tlsext_host_name = this->options.sni_hostname ? this->options.sni_hostname : this->options.sni_servername;
       if (tlsext_host_name) {
         if (SSL_set_tlsext_host_name(this->ssl, tlsext_host_name)) {
@@ -1141,6 +1145,16 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         } else {
           Debug("ssl.error", "failed to set SNI name '%s' for client handshake", tlsext_host_name.get());
           SSL_INCREMENT_DYN_STAT(ssl_sni_name_set_failure);
+        }
+      }
+
+      // ALPN
+      if (!this->options.alpn_protos.empty()) {
+        if (int res = SSL_set_alpn_protos(this->ssl, reinterpret_cast<const uint8_t *>(this->options.alpn_protos.data()),
+                                          this->options.alpn_protos.size());
+            res != 0) {
+          Debug("ssl.error", "failed to set ALPN '%.*s' for client handshake", static_cast<int>(this->options.alpn_protos.size()),
+                this->options.alpn_protos.data());
         }
       }
     }
@@ -1298,14 +1312,19 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
     sslHandshakeStatus = SSL_HANDSHAKE_DONE;
 
-    if (sslHandshakeBeginTime) {
-      sslHandshakeEndTime                 = Thread::get_hrtime();
-      const ink_hrtime ssl_handshake_time = sslHandshakeEndTime - sslHandshakeBeginTime;
-
-      Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
-      SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);
+    if (this->get_tls_handshake_begin_time()) {
+      this->_record_tls_handshake_end_time();
       SSL_INCREMENT_DYN_STAT(ssl_total_success_handshake_count_in_stat);
     }
+
+    if (_tunnel_type != SNIRoutingType::NONE) {
+      // Foce to use HTTP/1.1 endpoint for SNI Routing
+      if (!this->setSelectedProtocol(reinterpret_cast<const unsigned char *>(IP_PROTO_TAG_HTTP_1_1.data()),
+                                     IP_PROTO_TAG_HTTP_1_1.size())) {
+        return EVENT_ERROR;
+      }
+    }
+
     {
       const unsigned char *proto = nullptr;
       unsigned len               = 0;
@@ -1322,7 +1341,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       }
 
       if (len) {
-        if (!this->setSelectedProtocol(proto, len)) {
+        if (_tunnel_type == SNIRoutingType::NONE && !this->setSelectedProtocol(proto, len)) {
           return EVENT_ERROR;
         }
         this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});
@@ -1332,6 +1351,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         Debug("ssl", "client did not select a next protocol");
       }
     }
+
 #if TS_USE_TLS_ASYNC
     if (SSLConfigParams::async_handshake_enabled) {
       SSL_clear_mode(ssl, SSL_MODE_ASYNC);
@@ -1402,7 +1422,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
   ssl_error_t ssl_error;
 
-  ink_assert(SSLNetVCAccess(ssl) == this);
+  ink_assert(TLSBasicSupport::getInstance(ssl) == this);
 
   // Initialize properly for a client connection
   if (sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
@@ -1541,48 +1561,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   } break;
   }
   return EVENT_CONT;
-}
-
-// NextProtocolNegotiation TLS extension callback. The NPN extension
-// allows the client to select a preferred protocol, so all we have
-// to do here is tell them what out protocol set is.
-int
-SSLNetVConnection::advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned int *outlen, void * /*arg ATS_UNUSED */)
-{
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-
-  ink_release_assert(netvc && netvc->ssl == ssl);
-
-  if (netvc->getNPN(out, outlen)) {
-    // Successful return tells OpenSSL to advertise.
-    return SSL_TLSEXT_ERR_OK;
-  }
-  return SSL_TLSEXT_ERR_NOACK;
-}
-
-// ALPN TLS extension callback. Given the client's set of offered
-// protocols, we have to select a protocol to use for this session.
-int
-SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen,
-                                        const unsigned char *in ATS_UNUSED, unsigned inlen ATS_UNUSED, void *)
-{
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-
-  ink_release_assert(netvc && netvc->ssl == ssl);
-  const unsigned char *npnptr = nullptr;
-  unsigned int npnsize        = 0;
-  if (netvc->getNPN(&npnptr, &npnsize)) {
-    // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
-    // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
-    if (SSL_select_next_proto(const_cast<unsigned char **>(out), outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
-      Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
-      return SSL_TLSEXT_ERR_OK;
-    }
-  }
-
-  *out    = nullptr;
-  *outlen = 0;
-  return SSL_TLSEXT_ERR_NOACK;
 }
 
 void
@@ -1926,7 +1904,7 @@ SSLNetVConnection::populate_protocol(std::string_view *results, int n) const
 {
   int retval = 0;
   if (n > retval) {
-    results[retval] = map_tls_protocol_to_tag(getSSLProtocol());
+    results[retval] = map_tls_protocol_to_tag(this->get_tls_protocol_name());
     if (!results[retval].empty()) {
       ++retval;
     }
@@ -1941,7 +1919,7 @@ const char *
 SSLNetVConnection::protocol_contains(std::string_view prefix) const
 {
   const char *retval   = nullptr;
-  std::string_view tag = map_tls_protocol_to_tag(getSSLProtocol());
+  std::string_view tag = map_tls_protocol_to_tag(this->get_tls_protocol_name());
   if (prefix.size() <= tag.size() && strncmp(tag.data(), prefix.data(), prefix.size()) == 0) {
     retval = tag.data();
   } else {
@@ -1988,4 +1966,14 @@ NetProcessor *
 SSLNetVConnection::_getNetProcessor()
 {
   return &sslNetProcessor;
+}
+
+ssl_curve_id
+SSLNetVConnection::_get_tls_curve() const
+{
+  if (getSSLSessionCacheHit()) {
+    return getSSLCurveNID();
+  } else {
+    return SSLGetCurveNID(ssl);
+  }
 }

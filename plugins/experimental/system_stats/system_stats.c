@@ -61,9 +61,15 @@
 #define NET_STATS_DIR "/sys/class/net"
 #define STATISTICS_DIR "statistics"
 
-// Used for matching to slave symlinks in a bonded interface
+// Used for matching to slave (old name) and lower (new name) symlinks
+// in a bonded interface
 // This way we can report things like plugin.net.bond0.slave_dev1.speed
 #define SLAVE "slave_"
+#define LOWER "lower_"
+
+// Dir name for slave/lower interfaces that are bond members. This dir houses
+// port information we may want such as the up/down streams port state
+#define BONDING_SLAVE_DIR "bonding_slave"
 
 static int
 statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
@@ -174,9 +180,15 @@ setBondingStat(TSMutex stat_creation_mutex, const char *interface)
   DIR *localdir = opendir(infdir);
 
   while ((dent = readdir(localdir)) != NULL) {
-    if (strncmp(SLAVE, dent->d_name, strlen(SLAVE)) == 0 && (dent->d_type == DT_LNK)) {
-      // We have a symlink starting with slave, get its speed
+    if (((strncmp(SLAVE, dent->d_name, strlen(SLAVE)) == 0) || (strncmp(LOWER, dent->d_name, strlen(LOWER)) == 0)) &&
+        (dent->d_type == DT_LNK)) {
+      // We have a symlink starting with slave or lower, get its speed
       setNetStat(stat_creation_mutex, interface, "speed", dent->d_name, true);
+    }
+
+    if (strncmp(BONDING_SLAVE_DIR, dent->d_name, strlen(BONDING_SLAVE_DIR)) == 0 && (dent->d_type != DT_LNK)) {
+      setNetStat(stat_creation_mutex, interface, "ad_actor_oper_port_state", dent->d_name, false);
+      setNetStat(stat_creation_mutex, interface, "ad_partner_oper_port_state", dent->d_name, false);
     }
   }
 

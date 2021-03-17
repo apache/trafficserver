@@ -137,55 +137,6 @@ LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_di
   Debug("log-config", "exiting LogObject constructor, filename=%s this=%p", m_filename, this);
 }
 
-LogObject::LogObject(LogObject &rhs)
-  : RefCountObj(rhs),
-    m_basename(ats_strdup(rhs.m_basename)),
-    m_filename(ats_strdup(rhs.m_filename)),
-    m_alt_filename(ats_strdup(rhs.m_alt_filename)),
-    m_flags(rhs.m_flags),
-    m_signature(rhs.m_signature),
-    m_rolling_enabled(rhs.m_rolling_enabled),
-    m_flush_threads(rhs.m_flush_threads),
-    m_rolling_interval_sec(rhs.m_rolling_interval_sec),
-    m_rolling_offset_hr(rhs.m_rolling_offset_hr),
-    m_rolling_size_mb(rhs.m_rolling_size_mb),
-    m_last_roll_time(rhs.m_last_roll_time),
-    m_max_rolled(rhs.m_max_rolled),
-    m_min_rolled(rhs.m_min_rolled),
-    m_reopen_after_rolling(rhs.m_reopen_after_rolling),
-    m_buffer_manager_idx(rhs.m_buffer_manager_idx),
-    m_pipe_buffer_size(rhs.m_pipe_buffer_size)
-{
-  m_format         = new LogFormat(*(rhs.m_format));
-  m_buffer_manager = new LogBufferManager[m_flush_threads];
-
-  if (rhs.m_logFile) {
-    m_logFile = new LogFile(*(rhs.m_logFile));
-
-    if (m_reopen_after_rolling) {
-      m_logFile->open_file();
-    }
-  } else {
-    m_logFile = nullptr;
-  }
-
-  LogFilter *filter;
-  for (filter = rhs.m_filter_list.first(); filter; filter = rhs.m_filter_list.next(filter)) {
-    add_filter(filter);
-  }
-
-  // copy gets a fresh log buffer
-  //
-  LogBuffer *b = new LogBuffer(Log::config, this, Log::config->log_buffer_size);
-  ink_assert(b);
-  SET_FREELIST_POINTER_VERSION(m_log_buffer, b, 0);
-
-  Debug("log-config",
-        "exiting LogObject copy constructor, "
-        "filename=%s this=%p",
-        m_filename, this);
-}
-
 LogObject::~LogObject()
 {
   Debug("log-config", "entering LogObject destructor, this=%p", this);

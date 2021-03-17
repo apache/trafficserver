@@ -32,7 +32,9 @@ class HttpSM;
 class ProxyTransaction : public VConnection
 {
 public:
-  ProxyTransaction();
+  ProxyTransaction() : VConnection(nullptr) {}
+  ProxyTransaction(ProxySession *ssn);
+  virtual ~ProxyTransaction();
 
   /// Virtual Methods
   //
@@ -41,7 +43,6 @@ public:
   Action *adjust_thread(Continuation *cont, int event, void *data);
   virtual void release(IOBufferReader *r) = 0;
   virtual void transaction_done();
-  virtual void destroy();
 
   virtual void set_active_timeout(ink_hrtime timeout_in);
   virtual void set_inactivity_timeout(ink_hrtime timeout_in);
@@ -80,8 +81,6 @@ public:
 
   virtual bool get_half_close_flag() const;
   virtual bool is_chunked_encoding_supported() const;
-
-  virtual void set_proxy_ssn(ProxySession *set_proxy_ssn);
 
   // Returns true if there is a request body for this request
   virtual bool has_request_body(int64_t content_length, bool is_chunked_set) const;
@@ -189,12 +188,6 @@ inline ProxySession *
 ProxyTransaction::get_proxy_ssn()
 {
   return _proxy_ssn;
-}
-
-inline void
-ProxyTransaction::set_proxy_ssn(ProxySession *new_proxy_ssn)
-{
-  _proxy_ssn = new_proxy_ssn;
 }
 
 inline PoolableSession *

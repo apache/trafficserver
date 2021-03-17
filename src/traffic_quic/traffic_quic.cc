@@ -36,6 +36,9 @@
 #include "diags.h"
 #include "quic_client.h"
 
+#include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
+
 #define THREADS 1
 
 constexpr size_t stacksize = 1048576;

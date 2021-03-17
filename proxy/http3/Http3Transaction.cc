@@ -56,12 +56,10 @@
 //
 // HQTransaction
 //
-HQTransaction::HQTransaction(HQSession *session, QUICStreamVCAdapter::IOInfo &info) : super(), _info(info)
+HQTransaction::HQTransaction(HQSession *session, QUICStreamVCAdapter::IOInfo &info) : super(session), _info(info)
 {
   this->mutex   = new_ProxyMutex();
   this->_thread = this_ethread();
-
-  this->set_proxy_ssn(session);
 
   this->_reader = this->_read_vio_buf.alloc_reader();
 }
@@ -202,12 +200,6 @@ HQTransaction::reenable(VIO *vio)
       this->_signal_write_event();
     }
   }
-}
-
-void
-HQTransaction::destroy()
-{
-  _sm = nullptr;
 }
 
 void

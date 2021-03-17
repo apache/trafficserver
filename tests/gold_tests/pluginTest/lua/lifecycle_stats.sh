@@ -14,6 +14,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-nc -4 -l ${2} -c  "sh ./delay-inactive-server.sh" &
-sleep 1
-curl -k -i --http2 https://127.0.0.1:${1}/${3}
+traffic_ctl plugin msg ts_lua print_stats
+N=60
+while (( N > 0 ))
+do
+    sleep 1
+    rm -f lifecycle.out
+    grep -F ' ts_lua ' ts.stderr.txt | \
+        sed -e 's/^.* ts_lua //' -e 's/ gc_kb:.*gc_kb_max:.*threads:.*threads_max:.*$//' > lifecycle.out
+    if diff lifecycle.out ${AUTEST_TEST_DIR}/gold/lifecycle.gold > /dev/null
+    then
+        exit 0
+    fi
+    let N=N-1
+done
+echo TIMEOUT
+exit 1

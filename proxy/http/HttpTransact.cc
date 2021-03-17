@@ -236,6 +236,9 @@ parentExists(HttpTransact::State *s)
 inline static void
 nextParent(HttpTransact::State *s)
 {
+  TxnDebug("parent_down", "sm_id[%" PRId64 "] connection to parent %s failed, conn_state: %s, request to origin: %s",
+           s->state_machine->sm_id, s->parent_result.hostname, HttpDebugNames::get_server_state_name(s->current.state),
+           s->request_data.get_host());
   url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
     // NextHop only has a findNextHop() function.
@@ -6761,7 +6764,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
     case KA_CONNECTION:
       ink_assert(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
       if (ver == HTTPVersion(1, 0)) {
-        if (s->current.request_to == PARENT_PROXY && s->parent_result.parent_is_proxy()) {
+        if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "keep-alive", 10);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "keep-alive", 10);
@@ -6775,7 +6778,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTPVersion(1, 1))) {
         /* Had keep-alive */
         s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-        if (s->current.request_to == PARENT_PROXY && s->parent_result.parent_is_proxy()) {
+        if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
@@ -7471,10 +7474,18 @@ HttpTransact::handle_parent_died(State *s)
 {
   ink_assert(s->parent_result.result == PARENT_FAIL);
 
-  if (s->current.state == OUTBOUND_CONGESTION) {
+  switch (s->current.state) {
+  case OUTBOUND_CONGESTION:
     build_error_response(s, HTTP_STATUS_SERVICE_UNAVAILABLE, "Next Hop Congested", "congestion#retryAfter");
-  } else {
-    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect");
+    break;
+  case INACTIVE_TIMEOUT:
+    build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Next Hop Timeout", "timeout#inactivity");
+    break;
+  case ACTIVE_TIMEOUT:
+    build_error_response(s, HTTP_STATUS_GATEWAY_TIMEOUT, "Next Hop Timeout", "timeout#activity");
+    break;
+  default:
+    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect");
   }
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }

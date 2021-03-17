@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,7 +16,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-sleep 4
-printf "HTTP/1.1 200\r\nTransfer-encoding: chunked\r\n\r\n"
-printf "F\r\n123456789012345\r\n"
-printf "0\r\n\r\n"
+# Wait till remap.config finishes loading two times.
+
+WAIT=60
+LOG_FILE="$1"
+
+while (( WAIT > 0 ))
+do
+    N=$( grep -F 'NOTE: remap.config finished loading' $LOG_FILE | wc -l )
+    if [[ $N = 2 ]] ; then
+        exit 0
+    fi
+    sleep 1
+    let WAIT=WAIT-1
+done
+echo TIMEOUT
+exit 1

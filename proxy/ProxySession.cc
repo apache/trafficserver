@@ -30,6 +30,18 @@ ProxySession::ProxySession() : VConnection(nullptr) {}
 
 ProxySession::ProxySession(NetVConnection *vc) : VConnection(nullptr), _vc(vc) {}
 
+ProxySession::~ProxySession()
+{
+  if (schedule_event) {
+    schedule_event->cancel();
+    schedule_event = nullptr;
+  }
+  this->api_hooks.clear();
+  this->mutex.clear();
+  this->acl.clear();
+  this->_ssl.reset();
+}
+
 void
 ProxySession::set_session_active()
 {
@@ -68,19 +80,6 @@ static const TSEvent eventmap[TS_HTTP_LAST_HOOK + 1] = {
   TS_EVENT_NONE,                       // TS_HTTP_RESPONSE_CLIENT_HOOK
   TS_EVENT_NONE,                       // TS_HTTP_LAST_HOOK
 };
-
-void
-ProxySession::free()
-{
-  if (schedule_event) {
-    schedule_event->cancel();
-    schedule_event = nullptr;
-  }
-  this->api_hooks.clear();
-  this->mutex.clear();
-  this->acl.clear();
-  this->_ssl.reset();
-}
 
 int
 ProxySession::state_api_callout(int event, void *data)

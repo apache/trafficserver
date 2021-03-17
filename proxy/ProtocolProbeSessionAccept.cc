@@ -27,6 +27,7 @@
 #include "http2/HTTP2.h"
 #include "ProxyProtocol.h"
 #include "I_NetVConnection.h"
+#include "http/HttpConfig.h"
 
 static bool
 proto_is_http2(IOBufferReader *reader)
@@ -176,7 +177,11 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     NetVConnection *netvc          = static_cast<NetVConnection *>(data);
     ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, nullptr, nullptr);
 
-    // XXX we need to apply accept inactivity timeout here ...
+    // The connection has completed, set the accept inactivity timeout here to watch over the difference between the
+    // connection set up and the first transaction..
+    HttpConfigParams *param = HttpConfig::acquire();
+    netvc->set_inactivity_timeout(HRTIME_SECONDS(param->accept_no_activity_timeout));
+    HttpConfig::release(param);
 
     if (!probe->reader->is_read_avail_more_than(0)) {
       Debug("http", "probe needs data, read..");

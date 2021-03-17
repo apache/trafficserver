@@ -38,6 +38,8 @@
 #include "Plugin.h"
 #include "PoolableSession.h"
 
+#include "P_SSLNetVConnection.h"
+
 #define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
 
 #define STATE_ENTER(state_name, event, vio)                                                             \
@@ -55,9 +57,9 @@ ink_mutex debug_cs_list_mutex;
 
 #endif /* USE_HTTP_DEBUG_LISTS */
 
-ClassAllocator<Http1ClientSession> http1ClientSessionAllocator("http1ClientSessionAllocator");
+ClassAllocator<Http1ClientSession, true> http1ClientSessionAllocator("http1ClientSessionAllocator");
 
-Http1ClientSession::Http1ClientSession() {}
+Http1ClientSession::Http1ClientSession() : super(), trans(this) {}
 
 void
 Http1ClientSession::destroy()
@@ -113,15 +115,11 @@ Http1ClientSession::free()
     conn_decrease = false;
   }
 
-  // Free the transaction resources
-  this->trans.super_type::destroy();
-
   if (_vc) {
     _vc->do_io_close();
     _vc = nullptr;
   }
 
-  super::free();
   THREAD_FREE(this, http1ClientSessionAllocator, this_thread());
 }
 
@@ -392,7 +390,8 @@ Http1ClientSession::release(ProxyTransaction *trans)
 
   // When release is called from start() to read the first transaction, get_sm()
   // will return null.
-  HttpSM *sm = trans->get_sm();
+  HttpSM *sm                = trans->get_sm();
+  Http1Transaction *h1trans = static_cast<Http1Transaction *>(trans);
   if (sm) {
     MgmtInt ka_in = trans->get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_in;
     set_inactivity_timeout(HRTIME_SECONDS(ka_in));
@@ -410,7 +409,7 @@ Http1ClientSession::release(ProxyTransaction *trans)
   //  IO to wait for new data
   bool more_to_read = this->_reader->is_read_avail_more_than(0);
   if (more_to_read) {
-    trans->destroy();
+    h1trans->reset();
     HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", con_id);
     new_transaction();
   } else {
@@ -424,7 +423,7 @@ Http1ClientSession::release(ProxyTransaction *trans)
       _vc->cancel_active_timeout();
       _vc->add_to_keep_alive_queue();
     }
-    trans->destroy();
+    h1trans->reset();
   }
 }
 
@@ -449,7 +448,6 @@ Http1ClientSession::new_transaction()
 
   read_state = HCS_ACTIVE_READER;
 
-  trans.set_proxy_ssn(this);
   transact_count++;
 
   trans.new_transaction(read_from_early_data > 0 ? true : false);

@@ -612,40 +612,41 @@ url_clear_string_ref(URLImpl *url)
 }
 
 char *
-url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, bool normalized)
+url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length, unsigned normalization_flags)
 {
   if (!url) {
     return nullptr;
   }
 
-  if (url->m_ptr_printed_string && url->m_clean) {
+  if (url->m_ptr_printed_string && url->m_clean && (normalization_flags == url->m_normalization_flags)) {
     if (length) {
       *length = url->m_len_printed_string;
     }
     return const_cast<char *>(url->m_ptr_printed_string);
   } else { // either not clean or never printed
-    int len = url_length_get(url);
+    int len = url_length_get(url, normalization_flags);
     char *buf;
     int index  = 0;
     int offset = 0;
 
     /* stuff alloc'd here gets gc'd on HdrHeap::destroy() */
     buf = heap->allocate_str(len + 1);
-    url_print(url, buf, len, &index, &offset, normalized);
+    url_print(url, buf, len, &index, &offset, normalization_flags);
     buf[len] = '\0';
 
     if (length) {
       *length = len;
     }
-    url->m_clean              = true; // reset since we have url_print()'ed again
-    url->m_len_printed_string = len;
-    url->m_ptr_printed_string = buf;
+    url->m_clean               = true; // reset since we have url_print()'ed again
+    url->m_len_printed_string  = len;
+    url->m_ptr_printed_string  = buf;
+    url->m_normalization_flags = normalization_flags;
     return buf;
   }
 }
 
 char *
-url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap, bool normalized)
+url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
 {
   int len = url_length_get(url);
   char *buf;
@@ -655,7 +656,7 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap, bool norm
 
   buf = arena ? arena->str_alloc(len) : static_cast<char *>(ats_malloc(len + 1));
 
-  url_print(url, buf, len, &index, &offset, normalized);
+  url_print(url, buf, len, &index, &offset);
   buf[len] = '\0';
 
   /* see string_get_ref() */
@@ -801,15 +802,19 @@ url_type_get(URLImpl *url)
   -------------------------------------------------------------------------*/
 
 int
-url_length_get(URLImpl *url)
+url_length_get(URLImpl *url, unsigned normalization_flags)
 {
   int length = 0;
 
   if (url->m_ptr_scheme) {
-    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
-      length += url->m_len_scheme + 1; // +1 for ":"
-    } else {
-      length += url->m_len_scheme + 3; // +3 for "://"
+    length += url->m_len_scheme + 3; // +3 for "://"
+
+  } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
+    if (URL_TYPE_HTTP == url->m_url_type) {
+      length += URL_LEN_HTTP + 3;
+
+    } else if (URL_TYPE_HTTPS == url->m_url_type) {
+      length += URL_LEN_HTTPS + 3;
     }
   }
 
@@ -1582,15 +1587,30 @@ url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char
  ***********************************************************************/
 
 int
-url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout, bool normalize)
+url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout,
+          unsigned normalization_flags)
 {
 #define TRY(x) \
   if (!x)      \
   return 0
 
+  bool scheme_added = false;
   if (url->m_ptr_scheme) {
-    TRY((normalize ? mime_mem_print_lc : mime_mem_print)(url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length,
-                                                         buf_index_inout, buf_chars_to_skip_inout));
+    TRY(((normalization_flags & URLNormalize::LC_SCHEME_HOST) ? mime_mem_print_lc : mime_mem_print)(
+      url->m_ptr_scheme, url->m_len_scheme, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    scheme_added = true;
+
+  } else if (normalization_flags & URLNormalize::IMPLIED_SCHEME) {
+    if (URL_TYPE_HTTP == url->m_url_type) {
+      TRY(mime_mem_print(URL_SCHEME_HTTP, URL_LEN_HTTP, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      scheme_added = true;
+
+    } else if (URL_TYPE_HTTPS == url->m_url_type) {
+      TRY(mime_mem_print(URL_SCHEME_HTTPS, URL_LEN_HTTPS, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+      scheme_added = true;
+    }
+  }
+  if (scheme_added) {
     TRY(mime_mem_print("://", 3, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
   }
 
@@ -1612,8 +1632,8 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     if (bracket_p) {
       TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }
-    TRY((normalize ? mime_mem_print_lc : mime_mem_print)(url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout,
-                                                         buf_chars_to_skip_inout));
+    TRY(((normalization_flags & URLNormalize::LC_SCHEME_HOST) ? mime_mem_print_lc : mime_mem_print)(
+      url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     if (bracket_p) {
       TRY(mime_mem_print("]", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
     }

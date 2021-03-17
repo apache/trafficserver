@@ -27,11 +27,15 @@
 
 #include "P_Net.h"
 #include "P_SSLClientUtils.h"
+#include "P_SSLNetVConnection.h"
 #include "YamlSNIConfig.h"
 #include "SSLDiags.h"
+#include "SSLSessionCache.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>
+
+SSLOriginSessionCache *origin_sess_cache;
 
 int
 verify_callback(int signature_ok, X509_STORE_CTX *ctx)
@@ -152,6 +156,23 @@ ssl_client_cert_callback(SSL *ssl, void * /*arg*/)
   return 1;
 }
 
+static int
+ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
+{
+  std::string sni_addr = get_sni_addr(ssl);
+  if (!sni_addr.empty()) {
+    std::string lookup_key;
+    ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
+    origin_sess_cache->insert_session(lookup_key, sess);
+    return 1;
+  } else {
+    if (is_debug_tag_set("ssl.origin_session_cache")) {
+      Debug("ssl.origin_session_cache", "Failed to fetch SNI/IP.");
+    }
+    return 0;
+  }
+}
+
 SSL_CTX *
 SSLInitClientContext(const SSLConfigParams *params)
 {
@@ -207,6 +228,11 @@ SSLInitClientContext(const SSLConfigParams *params)
   }
 
   SSL_CTX_set_cert_cb(client_ctx, ssl_client_cert_callback, nullptr);
+
+  if (params->ssl_origin_session_cache == 1) {
+    SSL_CTX_set_session_cache_mode(client_ctx, SSL_SESS_CACHE_CLIENT | SSL_SESS_CACHE_NO_AUTO_CLEAR | SSL_SESS_CACHE_NO_INTERNAL);
+    SSL_CTX_sess_set_new_cb(client_ctx, ssl_new_session_callback);
+  }
 
   return client_ctx;
 

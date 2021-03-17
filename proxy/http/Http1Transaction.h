@@ -32,12 +32,12 @@ class Http1Transaction : public ProxyTransaction
 public:
   using super_type = ProxyTransaction;
 
-  Http1Transaction() {}
+  Http1Transaction(ProxySession *session) : super_type(session) {}
+  ~Http1Transaction() = default;
 
   ////////////////////
   // Methods
   void release(IOBufferReader *r) override;
-  void destroy() override; // todo make ~Http1Transaction()
 
   bool allow_half_open() const override;
   void transaction_done() override;
@@ -45,6 +45,7 @@ public:
   void increment_client_transactions_stat() override;
   void decrement_client_transactions_stat() override;
 
+  void reset();
   void set_reader(IOBufferReader *reader);
 
   ////////////////////

@@ -150,7 +150,7 @@ libinknet_a_SOURCES = \
 	P_SSLNextProtocolSet.h \
 	P_SSLSNI.h \
 	P_SSLUtils.h \
-        P_SSLClientCoordinator.h \
+	P_SSLClientCoordinator.h \
 	P_SSLClientUtils.h \
 	P_OCSPStapling.h \
 	P_UDPConnection.h \
@@ -168,7 +168,7 @@ libinknet_a_SOURCES = \
 	ProxyProtocol.cc \
 	Socks.cc \
 	SSLCertLookup.cc \
-        SSLClientCoordinator.cc \
+	SSLClientCoordinator.cc \
 	SSLClientUtils.cc \
 	SSLConfig.cc \
 	SSLDiags.cc \
@@ -184,6 +184,7 @@ libinknet_a_SOURCES = \
 	SSLSessionTicket.cc \
 	SSLUtils.cc \
 	OCSPStapling.cc \
+	TLSBasicSupport.cc \
 	TLSSessionResumptionSupport.cc \
 	TLSSNISupport.cc \
 	UDPIOEvent.cc \

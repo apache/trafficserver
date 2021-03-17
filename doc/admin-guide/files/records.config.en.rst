@@ -1194,6 +1194,11 @@ Parent Proxy Configuration
 
    The amount of time allowed between connection retries to a parent cache that is unavailable.
 
+.. ts:cv:: CONFIG proxy.config.http.parent_proxy.max_trans_retries INT 2
+
+   Limits the number of simultaneous transactions that may retry a parent once the parents
+   ``retry_time`` has expired.
+
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.fail_threshold INT 10
    :reloadable:
    :overridable:
@@ -1216,14 +1221,6 @@ Parent Proxy Configuration
 
    The total number of connection attempts allowed per parent for a specific
    transaction, if multiple parents are used.
-
-.. ts:cv:: CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
-   :reloadable:
-   :overridable:
-
-   The timeout value (in seconds) for parent cache connection attempts.
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.mark_down_hostdb INT 0
    :reloadable:
@@ -1553,15 +1550,6 @@ Origin Server Connect Attempts
 
    The timeout value (in seconds) for time to set up a connection to the origin. After the connection is established the value of
    ``proxy.config.http.transaction_no_activity_timeout_out`` is used to established timeouts on the data over the connection.
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
-.. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
-   :reloadable:
-   :overridable:
-
-   The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
-   request.
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
@@ -3437,6 +3425,21 @@ SSL Termination
   a single segment after ~1 second of inactivity and the record size ramping
   mechanism is repeated again.
 
+.. ts:cv:: CONFIG proxy.config.ssl.origin_session_cache INT 1
+
+   This configuration enables the SSL session cache for the origin server
+   when set to ``1``.
+
+   Setting to ``0`` disables SSL session cache for the origin server.
+
+.. ts:cv:: CONFIG proxy.config.ssl.origin_session_cache.size INT 10240
+
+  This configuration specifies the maximum number of entries
+  the SSL session cache for the origin server may contain.
+
+  Setting a value less than or equal to ``0`` effectively disables
+  SSL session cache for the origin server.
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache INT 2
 
    Enables the SSL session cache:
@@ -3551,7 +3554,7 @@ SSL Termination
 Client-Related Configuration
 ----------------------------
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING PERMISSIVE
+.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING STRICT
    :reloadable:
    :overridable:
 
@@ -3635,6 +3638,9 @@ Client-Related Configuration
 
    ``host``
       This is the default. The value of the ``Host`` field in the proxy request is used.
+
+   ``server_name``
+      The SNI value of the inbound TLS connection is used.
 
    ``remap``
       The remapped upstream name is used.

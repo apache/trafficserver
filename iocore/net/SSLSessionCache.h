@@ -198,3 +198,20 @@ private:
   SSLSessionBucket *session_bucket = nullptr;
   size_t nbuckets;
 };
+
+class SSLOriginSessionCache
+{
+public:
+  SSLOriginSessionCache();
+  ~SSLOriginSessionCache();
+
+  void insert_session(std::string lookup_key, SSL_SESSION *sess);
+  void remove_session(std::string lookup_key);
+  SSL_SESSION *get_session(std::string lookup_key);
+
+private:
+  mutable std::shared_mutex mutex;
+  std::map<std::string, SSL_SESSION *> origin_sessions;
+
+  void remove_oldest_session(const std::unique_lock<std::shared_mutex> &lock);
+};

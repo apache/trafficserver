@@ -41,6 +41,7 @@
 
 #include <new>
 #include <cstdlib>
+#include <utility>
 #include "tscore/ink_queue.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_resource.h"
@@ -108,29 +109,39 @@ public:
     ink_freelist_madvise_init(&this->fl, name, element_size, chunk_size, alignment, advice);
   }
 
+  // Dummies
+  void
+  destroy_if_enabled(void *)
+  {
+  }
+  Allocator &
+  raw()
+  {
+    return *this;
+  }
+
 protected:
   InkFreeList *fl;
 };
 
 /**
-  Allocator for Class objects. It uses a prototype object to do
-  fast initialization. Prototype of the template class is created
-  when the fast allocator is created. This is instantiated with
-  default (no argument) constructor. Constructor is not called for
-  the allocated objects. Instead, the prototype is just memory
-  copied onto the new objects. This is done for performance reasons.
+  Allocator for Class objects.
 
 */
-template <class C> class ClassAllocator : public Allocator
+template <class C, bool Destruct_on_free_ = false> class ClassAllocator : private Allocator
 {
 public:
-  /** Allocates objects of the templated type. */
+  using Value_type                   = C;
+  static bool const Destruct_on_free = Destruct_on_free_;
+
+  /** Allocates objects of the templated type.  Arguments are forwarded to the constructor for the object. */
+  template <typename... Args>
   C *
-  alloc()
+  alloc(Args &&... args)
   {
     void *ptr = ink_freelist_new(this->fl);
 
-    memcpy(ptr, (void *)&this->proto.typeObject, sizeof(C));
+    ::new (ptr) C(std::forward<Args>(args)...);
     return (C *)ptr;
   }
 
@@ -142,56 +153,9 @@ public:
   void
   free(C *ptr)
   {
+    destroy_if_enabled(ptr);
+
     ink_freelist_free(this->fl, ptr);
-  }
-
-  /**
-    Deallocates objects of the templated type.
-
-    @param head pointer to be freed.
-    @param tail pointer to be freed.
-    @param num_item of blocks to be freed.
-   */
-  void
-  free_bulk(C *head, C *tail, size_t num_item)
-  {
-    ink_freelist_free_bulk(this->fl, head, tail, num_item);
-  }
-
-  /**
-    Allocate objects of the templated type via the inherited interface
-    using void pointers.
-  */
-  void *
-  alloc_void()
-  {
-    return (void *)alloc();
-  }
-
-  /**
-    Deallocate objects of the templated type via the inherited
-    interface using void pointers.
-
-    @param ptr pointer to be freed.
-  */
-  void
-  free_void(void *ptr)
-  {
-    free((C *)ptr);
-  }
-
-  /**
-    Deallocate objects of the templated type via the inherited
-    interface using void pointers.
-
-    @param head pointer to be freed.
-    @param tail pointer to be freed.
-    @param num_item of blocks.
-  */
-  void
-  free_void_bulk(void *head, void *tail, size_t num_item)
-  {
-    free_bulk((C *)head, (C *)tail, num_item);
   }
 
   /**
@@ -203,21 +167,33 @@ public:
   */
   ClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
   {
-    ::new ((void *)&proto.typeObject) C();
     ink_freelist_init(&this->fl, name, RND16(sizeof(C)), chunk_size, RND16(alignment));
   }
 
-  struct {
-    uint8_t typeObject[sizeof(C)];
-    int64_t space_holder = 0;
-  } proto;
+  Allocator &
+  raw()
+  {
+    return *this;
+  }
+
+  void
+  destroy_if_enabled(C *ptr)
+  {
+    if (Destruct_on_free) {
+      ptr->~C();
+    }
+  }
+
+  // Ensure that C is big enough to hold a void pointer (when it's stored in the free list as raw memory).
+  //
+  static_assert(sizeof(C) >= sizeof(void *), "Can not allocate instances of this class using ClassAllocator");
 };
 
-template <class C> class TrackerClassAllocator : public ClassAllocator<C>
+template <class C, bool Destruct_on_free = false> class TrackerClassAllocator : public ClassAllocator<C, Destruct_on_free>
 {
 public:
   TrackerClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
-    : ClassAllocator<C>(name, chunk_size, alignment), allocations(0), trackerLock(PTHREAD_MUTEX_INITIALIZER)
+    : ClassAllocator<C, Destruct_on_free>(name, chunk_size, alignment), allocations(0), trackerLock(PTHREAD_MUTEX_INITIALIZER)
   {
   }
 
@@ -226,7 +202,7 @@ public:
   {
     void *callstack[3];
     int frames = backtrace(callstack, 3);
-    C *ptr     = ClassAllocator<C>::alloc();
+    C *ptr     = ClassAllocator<C, Destruct_on_free>::alloc();
 
     const void *symbol = nullptr;
     if (frames == 3 && callstack[2] != nullptr) {
@@ -252,7 +228,7 @@ public:
       reverse_lookup.erase(it);
     }
     ink_mutex_release(&trackerLock);
-    ClassAllocator<C>::free(ptr);
+    ClassAllocator<C, Destruct_on_free>::free(ptr);
   }
 
 private:

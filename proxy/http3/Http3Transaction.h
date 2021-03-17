@@ -52,7 +52,6 @@ public:
   void cancel_inactivity_timeout() override;
   void transaction_done() override;
   bool allow_half_open() const override;
-  void destroy() override;
   void release(IOBufferReader *r) override;
   int get_transaction_id() const override;
   void increment_client_transactions_stat() override;

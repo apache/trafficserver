@@ -117,9 +117,6 @@ client_key                The file containing the client private key that corres
 http2                     Indicates whether the H2 protocol should be added to or removed from the
                           protocol negotiation list.  The valid values are :code:`on` or :code:`off`.
 
-disable_h2                Deprecated for the more general h2 setting.  Setting disable_h2
-                          to :code:`true` is the same as setting http2 to :code:`on`.
-
 tunnel_route              Destination as an FQDN and port, separated by a colon ``:``.
                           Match group number can be specified by ``$N`` where N should refer to a specified group
                           in the FQDN, ``tunnel_route: $1.domain``.
@@ -139,6 +136,11 @@ partial_blind_route       Destination as an FQDN and port, separated by a colon 
                           In addition partial_blind_route creates a new TLS connection to the specified origin.
                           It does not interpret the decrypted data before passing it to the origin TLS
                           connection, so the contents do not need to be HTTP.
+
+tunnel_alpn               List of ALPN Protocol Ids for Partial Blind Tunnel.
+
+                          ATS negotiates application protocol with the client on behalf of the origin server.
+                          This only works with ``partial_blind_route``.
 ========================= ========================================================================================
 
 Client verification, via ``verify_client``, corresponds to setting

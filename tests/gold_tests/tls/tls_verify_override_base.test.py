@@ -21,7 +21,7 @@ Test tls server certificate verification options. Exercise conf_remap
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True)
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server_foo = Test.MakeOriginServer("server_foo",
                                    ssl=True,
                                    options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory),
@@ -85,10 +85,16 @@ ts.Disk.remap_config.AddLine(
     'map /snipolicyfoohost  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=host'.format(
         server_bar.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
+    'map /snipolicyfooservername  https://foo.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=server_name'.format(
+        server_bar.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine(
     'map /snipolicybarremap  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=remap'.format(
         server_bar.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
     'map /snipolicybarhost  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=host'.format(
+        server_bar.Variables.SSL_Port))
+ts.Disk.remap_config.AddLine(
+    'map /snipolicybarservername  https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=NAME @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED @plugin=conf_remap.so @pparam=proxy.config.ssl.client.sni_policy=server_name'.format(
         server_bar.Variables.SSL_Port))
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -106,7 +112,8 @@ ts.Disk.records_config.update({
     'proxy.config.url_remap.pristine_host_hdr': 1,
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-    'proxy.config.dns.resolv_conf': 'NULL'
+    'proxy.config.dns.resolv_conf': 'NULL',
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE'
 })
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
@@ -194,6 +201,15 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could not connect", "Curl attempt should fail")
 
 # Should fail
+tr = Test.AddTestRun("foo-to-bar-sni-policy-servername")
+tr.Processes.Default.Command = "curl -k --resolv foo.com:{0}:127.0.0.1 https://foo.com:{0}/snipolicybarservername".format(
+    ts.Variables.ssl_port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could not connect", "Curl attempt should fail")
+
+# Should fail
 tr = Test.AddTestRun("bar-to-foo-sni-policy-remap")
 tr.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/snipolicyfooremap".format(ts.Variables.port)
 tr.ReturnCode = 0
@@ -204,6 +220,15 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could not conn
 # Should succeed
 tr = Test.AddTestRun("bar-to-foo-sni-policy-host")
 tr.Processes.Default.Command = "curl -k -H \"host: bar.com\"  http://127.0.0.1:{0}/snipolicyfoohost".format(ts.Variables.port)
+tr.ReturnCode = 0
+tr.StillRunningAfter = server
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could not connect", "Curl attempt should succeed")
+
+# Should succeed
+tr = Test.AddTestRun("bar-to-foo-sni-policy-servername")
+tr.Processes.Default.Command = "curl -k --resolv bar.com:{0}:127.0.0.1 https://bar.com:{0}/snipolicyfooservername".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
