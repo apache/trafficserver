@@ -266,7 +266,6 @@ public:
   const sockaddr *origin_trace_addr;
   int origin_trace_port;
 
-  int startEvent(int event, Event *e);
   int acceptEvent(int event, Event *e);
   int mainEvent(int event, Event *e);
   virtual int connectUp(EThread *t, int fd);
