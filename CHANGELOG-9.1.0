@@ -101,7 +101,6 @@ Changes with Apache Traffic Server 9.1.0
   #6767 - Lua plugin: add ts.server_response.get_maxage()
   #6773 - Add back reading config for handshake timeout
   #6775 - Updates clang-format to LLVM v10.0.0
-  #6780 - Use Proxy-Connection iff parent_is_proxy=true
   #6782 - NextHop Strategy Refactor and Fixes
   #6790 - clang-analyzer: eliminate identical conditions
   #6791 - clang-analyzer: code clone in get_proxy_protocol_addr
@@ -233,7 +232,6 @@ Changes with Apache Traffic Server 9.1.0
   #7365 - Cleanup: Remove unused functions
   #7366 - Cleanup: Get rid of NetVConnection::outstanding()
   #7367 - Fix FreeBSD 12 link issue in test_libhttp2.
-  #7368 - Cleanup: Remove SSL Wire Trace releated code in UnixNetVConnection
   #7376 - Add comments to ink_queue.h.
   #7383 - Unused code: HostDBContinuation::removeEvent
   #7384 - Remove a special treatment for SSLNetVC in migrateToCurrentThread()
@@ -270,7 +268,6 @@ Changes with Apache Traffic Server 9.1.0
   #7464 - Upgrade Catch.hpp to v2.13.4
   #7465 - Select lua context per thread
   #7466 - Change atoi to atol, causing obvious issues on what needs to be int64's
-  #7468 - Proxy Verifier: Making use of delay directives for caching tests.
   #7469 - Update AuTest version update directions for pipenv
   #7473 - Adjust so transfer-encoding header can be treated hop-by-hop
   #7488 - Avoid -Warray-bounds on PROXY Protocol Builder
@@ -281,9 +278,14 @@ Changes with Apache Traffic Server 9.1.0
   #7499 - Move has_request_body to ProxyTransaction
   #7500 - Disable ja3 plugin when building with boringssl
   #7502 - traffic_dump: AuTests to use Proxy Verifier.
+  #7511 - Add ALPN support on TLS Partial Blind Tunnel
   #7518 - Updates the Dockerfile for debian
   #7522 - Make the H3 build script work properly on Debian platforms
   #7532 - Fix asserts in multiplexer plugin.
+  #7533 - Add server_name option to proxy.config.ssl.client.sni_policy
   #7535 - Convert the inactive_client_timeout test to use Proxy Verifier
   #7539 - Fix the schedule AuTest for 9.1.x: use PrepareTestPlugin
   #7550 - Fix ja3_fingerprint configure syntax
+  #7569 - Cleanup: Rename IOBufferReader of Http2ClientSession
+  #7572 - FQ pacing plugin memory leak fix
+  #7589 - Add gold test for remap config .include directive.
