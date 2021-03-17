@@ -43,21 +43,6 @@ using namespace std;
 
 const int OVECCOUNT = 30; // We support $1 - $9 only, and this needs to be 3x that
 
-///////////////////////////////////////////////////////////////////////////////
-// Helpers for memory management (to make sure pcre uses the TS APIs).
-//
-inline void *
-ink_malloc(size_t s)
-{
-  return TSmalloc(s);
-}
-
-inline void
-ink_free(void *s)
-{
-  return TSfree(s);
-}
-
 class UrlComponents
 {
 public:
@@ -181,13 +166,6 @@ private:
     return std::string_view(data, length);
   }
 };
-
-void
-setup_memory_allocation()
-{
-  pcre_malloc = &ink_malloc;
-  pcre_free   = &ink_free;
-}
 
 enum operation_type { UNKNOWN = -1, EXISTS = 1, NOTEXISTS, REGEXP, STRING, BUCKET };
 
@@ -914,8 +892,6 @@ using OpsQueue = std::vector<const op *>;
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
-  setup_memory_allocation();
-
   return TS_SUCCESS;
 }
 
