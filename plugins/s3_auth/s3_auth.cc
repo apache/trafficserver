@@ -45,6 +45,7 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
+#include <tscpp/util/TsSharedMutex.h>
 #include "tscore/ink_config.h"
 
 #include "aws_auth_v4.h"
@@ -488,8 +489,7 @@ public:
     _conf_rld_act = TSContScheduleOnPool(_conf_rld, delay * 1000, TS_THREAD_POOL_NET);
   }
 
-  std::shared_mutex reload_mutex;
-  std::atomic_bool reload_waiting = false;
+  ts::shared_mutex reload_mutex;
 
 private:
   char *_secret            = nullptr;
@@ -1002,10 +1002,6 @@ event_handler(TSCont cont, TSEvent event, void *edata)
     switch (event) {
     case TS_EVENT_HTTP_SEND_REQUEST_HDR:
       if (request.initialize()) {
-        while (s3->reload_waiting) {
-          std::this_thread::yield();
-        }
-
         std::shared_lock lock(s3->reload_mutex);
         status = request.authorize(s3);
       }
@@ -1058,12 +1054,10 @@ config_reloader(TSCont cont, TSEvent event, void *edata)
     return TS_ERROR;
   }
 
-  s3->reload_waiting = true;
   {
     std::unique_lock lock(s3->reload_mutex);
     s3->copy_changes_from(file_config);
   }
-  s3->reload_waiting = false;
 
   if (s3->expiration() == 0) {
     TSDebug(PLUGIN_NAME, "disabling auto config reload");
