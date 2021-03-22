@@ -104,10 +104,6 @@ countof(const T (&)[N])
 #include <hwloc.h>
 #endif
 
-#ifndef ROUNDUP
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
-#endif
-
 #if defined(MAP_NORESERVE)
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED | MAP_NORESERVE)
 #else
@@ -125,6 +121,21 @@ extern int on;
 int ink_sys_name_release(char *name, int namelen, char *release, int releaselen);
 int ink_number_of_processors();
 int ink_login_name_max();
+
+#ifdef __cplusplus
+// Round up a value to be a multiple of m if necessary.
+//
+template <typename ArithmeticV, typename ArithmeticM>
+constexpr ArithmeticV
+ROUNDUP(ArithmeticV value, ArithmeticM m)
+{
+  ArithmeticV remainder = value % m;
+  if (remainder) {
+    value += m - remainder;
+  }
+  return value;
+}
+#endif
 
 #if TS_USE_HWLOC
 // Get the hardware topology

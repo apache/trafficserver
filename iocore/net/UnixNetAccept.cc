@@ -22,13 +22,9 @@
  */
 
 #include <tscore/TSSystemState.h>
+#include <tscore/ink_defs.h>
 
 #include "P_Net.h"
-
-#ifdef ROUNDUP
-#undef ROUNDUP
-#endif
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
 int accept_till_done   = 1;
