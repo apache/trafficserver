@@ -1534,7 +1534,7 @@ AS_IF([test "x$event_interface" = "xauto"], [
       ;;
     xkqueue)
       use_kqueue=1
-      AC_MSG_RESULT([forced to port])
+      AC_MSG_RESULT([forced to kqueue])
       ;;
     *)
       AC_MSG_RESULT([failed])
