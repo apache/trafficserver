@@ -41,7 +41,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 50ms
+      delay: 100ms
 
     # This should not go to the server. Verify we get the cached 404 response
     # instead of this new 403 response.

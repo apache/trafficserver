@@ -76,7 +76,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 50ms
+      delay: 100ms
 
     # 403 responses should be cached when negative caching is enabled, so this
     # should not get to the server.  But if it does, return a 404 so the test
