@@ -34,7 +34,7 @@ meta:
 
         # Add a delay so ATS has time to finish any caching IO for the previous
         # transaction.
-        delay: 50ms
+        delay: 100ms
 
   - request_for_path_404: &request_for_path_404
       client-request:
@@ -48,7 +48,7 @@ meta:
 
         # Add a delay so ATS has time to finish any caching IO for the previous
         # transaction.
-        delay: 50ms
+        delay: 100ms
 
   - request_for_no_cache_control_response: &request_for_no_cache_control_response
       client-request:
@@ -62,7 +62,7 @@ meta:
 
         # Add a delay so ATS has time to finish any caching IO for the previous
         # transaction.
-        delay: 50ms
+        delay: 100ms
 
 
   - request_for_404_with_cc: &request_for_404_with_cc
@@ -77,7 +77,7 @@ meta:
 
         # Add a delay so ATS has time to finish any caching IO for the previous
         # transaction.
-        delay: 50ms
+        delay: 100ms
 
 sessions:
 - transactions:

@@ -74,7 +74,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 50ms
+      delay: 100ms
 
     # Since 404 responses are customized to not be cached, this will go
     # through.
@@ -121,7 +121,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 50ms
+      delay: 100ms
 
     # By customization, the 400 will be cached and this will not go through.
     <<: *200_response
@@ -161,7 +161,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 50ms
+      delay: 100ms
 
     # This should not go to the server since the 200 response is cached.
     server-response:
