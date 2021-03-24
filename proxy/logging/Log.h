@@ -232,6 +232,12 @@ private:
 };
 
 static inline bool
+LogThrottlingIsValid(int throttling_val)
+{
+  return throttling_val >= 0;
+}
+
+static inline bool
 LogRollingEnabledIsValid(int enabled)
 {
   return (enabled >= Log::NO_ROLLING || enabled < Log::INVALID_ROLLING_VALUE);

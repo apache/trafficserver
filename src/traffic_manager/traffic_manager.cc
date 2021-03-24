@@ -546,7 +546,6 @@ main(int argc, const char **argv)
   // Bootstrap the Diags facility so that we can use it while starting
   //  up the manager
   diagsConfig = new DiagsConfig("Manager", DIAGS_LOG_FILENAME, debug_tags, action_tags, false);
-  diags       = diagsConfig->diags;
   diags->set_std_output(StdStream::STDOUT, bind_stdout);
   diags->set_std_output(StdStream::STDERR, bind_stderr);
 
@@ -590,13 +589,15 @@ main(int argc, const char **argv)
   RecLocalInitMessage();
   lmgmt->initAlarm();
 
-  if (diags) {
-    delete diagsConfig;
-  }
   // INKqa11968: need to set up callbacks and diags data structures
   // using configuration in records.config
-  diagsConfig = new DiagsConfig("Manager", DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
-  diags       = diagsConfig->diags;
+  DiagsConfig *old_diagsconfig = diagsConfig;
+  diagsConfig                  = new DiagsConfig("Manager", DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
+  if (old_diagsconfig) {
+    delete old_diagsconfig;
+    old_diagsconfig = nullptr;
+  }
+
   RecSetDiags(diags);
   diags->set_std_output(StdStream::STDOUT, bind_stdout);
   diags->set_std_output(StdStream::STDERR, bind_stderr);
