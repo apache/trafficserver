@@ -1386,7 +1386,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
       // make sure we're open & ready to write
       logfile->check_fd();
       if (!logfile->is_open()) {
-        Warning("File:%s was closed, have dropped (%d) bytes.", logfile->get_name(), total_bytes);
+        SiteThrottledWarning("File:%s was closed, have dropped (%d) bytes.", logfile->get_name(), total_bytes);
 
         RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_lost_before_written_to_disk_stat, total_bytes);
         delete fdata;
@@ -1412,8 +1412,8 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
         len = ::write(logfilefd, &buf[bytes_written], total_bytes - bytes_written);
 
         if (len < 0) {
-          Error("Failed to write log to %s: [tried %d, wrote %d, %s]", logfile->get_name(), total_bytes - bytes_written,
-                bytes_written, strerror(errno));
+          SiteThrottledError("Failed to write log to %s: [tried %d, wrote %d, %s]", logfile->get_name(),
+                             total_bytes - bytes_written, bytes_written, strerror(errno));
 
           RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_lost_before_written_to_disk_stat,
                          total_bytes - bytes_written);
