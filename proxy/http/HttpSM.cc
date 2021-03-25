@@ -4301,6 +4301,7 @@ HttpSM::do_hostdb_update_if_necessary()
   } else {
     if (t_state.host_db_info.app.http_data.last_failure != 0) {
       t_state.host_db_info.app.http_data.last_failure = 0;
+      t_state.host_db_info.app.http_data.fail_count   = 0;
       issue_update |= 1;
       char addrbuf[INET6_ADDRPORTSTRLEN];
       SMDebug("http", "[%" PRId64 "] hostdb update marking IP: %s as up", sm_id,
@@ -5364,30 +5365,40 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
 {
   char addrbuf[INET6_ADDRPORTSTRLEN];
 
-  if (info->app.http_data.last_failure == 0) {
-    char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, nullptr);
-    Log::error("%s", lbw()
-                       .clip(1)
-                       .print("CONNECT Error: {} connecting to {} for '{}' (setting last failure time)",
-                              ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr,
-                              ts::bwf::FirstOf(url_str, "<none>"))
-                       .extend(1)
-                       .write('\0')
-                       .data());
+  if (time_down) {
+    // Increment the fail_count
+    ++info->app.http_data.fail_count;
+    if (info->app.http_data.fail_count >= t_state.txn_conf->connect_attempts_rr_retries) {
+      if (info->app.http_data.last_failure == 0) {
+        char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, nullptr);
+        Log::error("%s", lbw()
+                           .clip(1)
+                           .print("CONNECT Error: {} connecting to {} for '{}' (setting last failure time)",
+                                  ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr,
+                                  ts::bwf::FirstOf(url_str, "<none>"))
+                           .extend(1)
+                           .write('\0')
+                           .data());
 
-    if (url_str) {
-      t_state.arena.str_free(url_str);
+        if (url_str) {
+          t_state.arena.str_free(url_str);
+        }
+      }
+      info->app.http_data.last_failure = time_down;
+      SMDebug("http", "[%" PRId64 "] hostdb update marking IP: %s as down", sm_id,
+              ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+    } else {
+      SMDebug("http", "[%" PRId64 "] hostdb increment IP failcount %s to %d", sm_id,
+              ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), info->app.http_data.fail_count);
     }
+  } else { // Clear the failure
+    info->app.http_data.fail_count   = 0;
+    info->app.http_data.last_failure = time_down;
   }
-
-  info->app.http_data.last_failure = time_down;
 
 #ifdef DEBUG
   ink_assert(ink_local_time() + t_state.txn_conf->down_server_timeout > time_down);
 #endif
-
-  SMDebug("http", "[%" PRId64 "] hostdb update marking IP: %s as down", sm_id,
-          ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 }
 
 void
