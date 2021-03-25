@@ -4813,41 +4813,8 @@ HttpSM::send_origin_throttled_response()
 static void
 set_tls_options(NetVCOptions &opt, const OverridableHttpConfigParams *txn_conf)
 {
-  char *verify_server = nullptr;
-  if (txn_conf->ssl_client_verify_server_policy == nullptr) {
-    opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
-  } else {
-    verify_server = txn_conf->ssl_client_verify_server_policy;
-    if (strcmp(verify_server, "DISABLED") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
-    } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
-    } else if (strcmp(verify_server, "ENFORCED") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
-    } else {
-      Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
-              verify_server);
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
-    }
-  }
-  if (txn_conf->ssl_client_verify_server_properties == nullptr) {
-    opt.verifyServerProperties = YamlSNIConfig::Property::UNSET;
-  } else {
-    verify_server = txn_conf->ssl_client_verify_server_properties;
-    if (strcmp(verify_server, "SIGNATURE") == 0) {
-      opt.verifyServerProperties = YamlSNIConfig::Property::SIGNATURE_MASK;
-    } else if (strcmp(verify_server, "NAME") == 0) {
-      opt.verifyServerProperties = YamlSNIConfig::Property::NAME_MASK;
-    } else if (strcmp(verify_server, "ALL") == 0) {
-      opt.verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
-    } else if (strcmp(verify_server, "NONE") == 0) {
-      opt.verifyServerProperties = YamlSNIConfig::Property::NONE;
-    } else {
-      Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of SIGNATURE, NAME, or ALL",
-              verify_server);
-      opt.verifyServerProperties = YamlSNIConfig::Property::NONE;
-    }
-  }
+  opt.verifyServerPolicy     = txn_conf->ssl_client_verify_server_policy;
+  opt.verifyServerProperties = txn_conf->ssl_client_verify_server_properties;
 }
 
 std::string_view
@@ -4863,23 +4830,20 @@ HttpSM::get_outbound_cert() const
 std::string_view
 HttpSM::get_outbound_sni() const
 {
-  using namespace ts::literals;
-  ts::TextView zret;
-  ts::TextView policy{t_state.txn_conf->ssl_client_sni_policy, ts::TextView::npos};
-  if (policy.empty() || !strcmp(policy, "host"_tv)) {
-    // By default the host header field value is used for the SNI.
-    int len;
-    char const *ptr = t_state.hdr_info.server_request.host_get(&len);
-    zret.assign(ptr, len);
-  } else if (ua_txn && !strcmp(policy, "server_name"_tv)) {
-    zret.assign(ua_txn->get_netvc()->get_server_name(), ts::TextView::npos);
-  } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
-    zret = policy.remove_prefix(1);
-  } else {
-    // If other is specified, like "remap" and "verify_with_name_source", the remapped origin name is used for the SNI value
-    zret.assign(t_state.server_info.name, ts::TextView::npos);
+  auto const &policy = t_state.txn_conf->ssl_client_sni_policy;
+  if (policy.is_code()) {
+    if (policy.code() == SSLClientSNIPolicy::Code::host) {
+      int len;
+      char const *ptr = t_state.hdr_info.server_request.host_get(&len);
+      return std::string_view(ptr, len);
+    } else if (policy.code() == SSLClientSNIPolicy::Code::server_name) {
+      return std::string_view(ua_txn->get_netvc()->get_server_name());
+    }
+  } else if (policy.str().front() == '@') {
+    return ts::TextView(policy.str()).remove_prefix(1);
   }
-  return zret;
+  // If other is specified, like "remap" and "verify_with_name_source", the remapped origin name is used for the SNI value
+  return std::string_view(t_state.server_info.name);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -5230,8 +5194,8 @@ HttpSM::do_http_server_open(bool raw)
       opt.set_sni_servername(sni_name.data(), sni_name.length());
     }
     int len = 0;
-    if (t_state.txn_conf->ssl_client_sni_policy != nullptr &&
-        !strcmp(t_state.txn_conf->ssl_client_sni_policy, "verify_with_name_source")) {
+    if (t_state.txn_conf->ssl_client_sni_policy.is_code() &&
+        (t_state.txn_conf->ssl_client_sni_policy.code() == SSLClientSNIPolicy::Code::verify_with_name_source)) {
       // also set sni_hostname with host header from server request in this policy
       const char *host = t_state.hdr_info.server_request.host_get(&len);
       if (host && len > 0) {

@@ -8575,8 +8575,11 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
 //                    TSHttpTxnConfigStringGet
 ////////////////////////////////////////////////
 
+char const SDK_ORIDE_CFG_CUSTOM_TEST_NEXT[] = "";
+
 // The order of these should be the same as TSOverridableConfigKey
-std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
+// Add 2 extra entries for each overridable config with a custom test string.
+std::array<std::string_view, TS_CONFIG_LAST_ENTRY + 2 * 2> SDK_Overridable_Configs = {
   {"proxy.config.url_remap.pristine_host_hdr",
    "proxy.config.http.chunking_enabled",
    "proxy.config.http.negative_caching_enabled",
@@ -8687,7 +8690,11 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    OutboundConnTrack::CONFIG_VAR_MIN,
    OutboundConnTrack::CONFIG_VAR_MAX,
    OutboundConnTrack::CONFIG_VAR_MATCH,
+   SDK_ORIDE_CFG_CUSTOM_TEST_NEXT,
+   "PERMISSIVE",
    "proxy.config.ssl.client.verify.server.policy",
+   SDK_ORIDE_CFG_CUSTOM_TEST_NEXT,
+   "SIGNATURE",
    "proxy.config.ssl.client.verify.server.properties",
    "proxy.config.ssl.client.sni_policy",
    "proxy.config.ssl.client.private_key.filename",
@@ -8705,18 +8712,27 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
   TSMgmtInt ival_read, ival_rand;
   TSMgmtFloat fval_read, fval_rand;
   const char *sval_read;
-  const char *test_string = "The Apache Traffic Server";
+  const char *default_test_string = "The Apache Traffic Server";
   int len;
 
   s->init();
 
-  *pstatus = REGRESSION_TEST_INPROGRESS;
-  for (int i = 0; i < static_cast<int>(SDK_Overridable_Configs.size()); ++i) {
+  *pstatus         = REGRESSION_TEST_INPROGRESS;
+  int expected_key = 0;
+  for (int i = 0; i < static_cast<int>(SDK_Overridable_Configs.size()); ++i, ++expected_key) {
+    const char *test_string = default_test_string;
+
+    if (SDK_Overridable_Configs[i].data() == SDK_ORIDE_CFG_CUSTOM_TEST_NEXT) {
+      ++i;
+      test_string = SDK_Overridable_Configs[i++].data();
+    }
+
     std::string_view conf{SDK_Overridable_Configs[i]};
 
     if (TS_SUCCESS == TSHttpTxnConfigFind(conf.data(), -1, &key, &type)) {
-      if (key != i) {
-        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf.data(), i, key);
+      if (key != expected_key) {
+        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf.data(),
+                   expected_key, key);
         success = false;
         continue;
       }
@@ -8727,8 +8743,9 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
     }
 
     if (TS_SUCCESS == TSHttpTxnConfigFind(conf.data(), conf.size(), &key, &type)) {
-      if (key != i) {
-        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf.data(), i, key);
+      if (key != expected_key) {
+        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf.data(),
+                   expected_key, key);
         success = false;
         continue;
       }
@@ -8767,7 +8784,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
     case TS_RECORDDATATYPE_STRING:
       TSHttpTxnConfigStringSet(txnp, key, test_string, -1);
       TSHttpTxnConfigStringGet(txnp, key, &sval_read, &len);
-      if (test_string != sval_read) {
+      if ((test_string != sval_read) && (std::string_view(test_string) != std::string_view(sval_read, len))) {
         SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, %s != %s", conf.data(), sval_read,
                    test_string);
         success = false;

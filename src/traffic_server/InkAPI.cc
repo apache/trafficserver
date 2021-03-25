@@ -8931,17 +8931,31 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
     if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_verify_server_policy = const_cast<char *>(value);
+      auto idx = YamlSNIConfig::CvtPolicy::to_idx(value);
+      if (idx < 0) {
+        Warning("Plugin set illegal value for ssl_client_verify_server_policy: %s", value);
+        s->t_state.my_txn_conf().ssl_client_verify_server_policy = YamlSNIConfig::Policy::UNSET;
+
+      } else {
+        s->t_state.my_txn_conf().ssl_client_verify_server_policy = YamlSNIConfig::Policy(idx);
+      }
     }
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
     if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_verify_server_properties = const_cast<char *>(value);
+      auto idx = YamlSNIConfig::CvtProperty::to_idx(value);
+      if (idx < 0) {
+        Warning("Plugin set illegal value for ssl_client_verify_server_properties: %s", value);
+        s->t_state.my_txn_conf().ssl_client_verify_server_properties = YamlSNIConfig::Property::NONE;
+
+      } else {
+        s->t_state.my_txn_conf().ssl_client_verify_server_properties = YamlSNIConfig::Property(idx);
+      }
     }
     break;
   case TS_CONFIG_SSL_CLIENT_SNI_POLICY:
     if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_sni_policy = const_cast<char *>(value);
+      s->t_state.my_txn_conf().ssl_client_sni_policy = SSLClientSNIPolicy::dup(std::string_view(value, length));
     }
     break;
   case TS_CONFIG_SSL_CLIENT_CERT_FILENAME:
@@ -9008,6 +9022,21 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     *value  = sm->t_state.txn_conf->server_session_sharing_match_str;
     *length = *value ? strlen(*value) : 0;
     break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY: {
+    auto sv = YamlSNIConfig::CvtPolicy::str(sm->t_state.txn_conf->ssl_client_verify_server_policy);
+    *value  = sv.data();
+    *length = sv.size();
+  } break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES: {
+    auto sv = YamlSNIConfig::CvtProperty::str(sm->t_state.txn_conf->ssl_client_verify_server_properties);
+    *value  = sv.data();
+    *length = sv.size();
+  } break;
+  case TS_CONFIG_SSL_CLIENT_SNI_POLICY: {
+    auto sv = sm->t_state.txn_conf->ssl_client_sni_policy.str();
+    *value  = sv.data();
+    *length = sv.size();
+  } break;
   default: {
     MgmtConverter const *conv;
     const void *src = _conf_to_memberp(conf, sm->t_state.txn_conf, conv);

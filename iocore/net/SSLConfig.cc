@@ -365,36 +365,28 @@ SSLConfigParams::initialize()
   // ++++++++++++++++++++++++ Client part ++++++++++++++++++++
   client_verify_depth = 7;
 
-  char *verify_server = nullptr;
-  REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.policy");
-  if (strcmp(verify_server, "DISABLED") == 0) {
-    verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
-  } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
-    verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
-  } else if (strcmp(verify_server, "ENFORCED") == 0) {
-    verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
-  } else {
-    Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
-            verify_server);
-    verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
-  }
-  ats_free(verify_server);
+  {
+    char *verify_server = nullptr;
+    REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.policy");
+    int idx = YamlSNIConfig::CvtPolicy::to_idx(verify_server);
+    if (idx >= 0) {
+      verifyServerPolicy = YamlSNIConfig::Policy(idx);
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.", verify_server);
+      verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
+    }
+    ats_free(verify_server);
 
-  REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.properties");
-  if (strcmp(verify_server, "SIGNATURE") == 0) {
-    verifyServerProperties = YamlSNIConfig::Property::SIGNATURE_MASK;
-  } else if (strcmp(verify_server, "NAME") == 0) {
-    verifyServerProperties = YamlSNIConfig::Property::NAME_MASK;
-  } else if (strcmp(verify_server, "ALL") == 0) {
-    verifyServerProperties = YamlSNIConfig::Property::ALL_MASK;
-  } else if (strcmp(verify_server, "NONE") == 0) {
-    verifyServerProperties = YamlSNIConfig::Property::NONE;
-  } else {
-    Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.  Should be one of SIGNATURE, NAME, or ALL",
-            verify_server);
-    verifyServerProperties = YamlSNIConfig::Property::NONE;
+    REC_ReadConfigStringAlloc(verify_server, "proxy.config.ssl.client.verify.server.properties");
+    idx = YamlSNIConfig::CvtProperty::to_idx(verify_server);
+    if (idx >= 0) {
+      verifyServerProperties = YamlSNIConfig::Property(idx);
+    } else {
+      Warning("%s is invalid for proxy.config.ssl.client.verify.server.properties.", verify_server);
+      verifyServerProperties = YamlSNIConfig::Property::NONE;
+    }
+    ats_free(verify_server);
   }
-  ats_free(verify_server);
 
   ssl_client_cert_filename = nullptr;
   ssl_client_cert_path     = nullptr;

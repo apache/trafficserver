@@ -29,6 +29,7 @@
 #include "SSLTypes.h"
 
 #include "tscore/Errata.h"
+#include "tscpp/util/CodeOrStr.h"
 
 #define TSDECL(id) constexpr char TS_##id[] = #id
 TSDECL(fqdn);
@@ -50,8 +51,24 @@ TSDECL(host_sni_policy);
 #undef TSDECL
 
 struct YamlSNIConfig {
-  enum class Policy : uint8_t { DISABLED = 0, PERMISSIVE, ENFORCED, UNSET };
-  enum class Property : uint8_t { NONE = 0, SIGNATURE_MASK = 0x1, NAME_MASK = 0x2, ALL_MASK = 0x3, UNSET };
+#define L(X) X(DISABLED, "DISABLED"), X(PERMISSIVE, "PERMISSIVE"), X(ENFORCED, "ENFORCED"), X(UNSET, )
+
+  TS_CVT_CODE_STR(CvtPolicy, L)
+
+#undef L
+
+  using Policy = CvtPolicy::Code;
+
+// NOTE:  The enum values are used as bit masks so the order must not be changed.
+//
+#define L(X) X(NONE, "NONE"), X(SIGNATURE_MASK, "SIGNATURE"), X(NAME_MASK, "NAME"), X(ALL_MASK, "ALL"), X(UNSET, )
+
+  TS_CVT_CODE_STR(CvtProperty, L)
+
+#undef L
+
+  using Property = CvtProperty::Code;
+
   enum class TLSProtocol : uint8_t { TLSv1 = 0, TLSv1_1, TLSv1_2, TLSv1_3, TLS_MAX = TLSv1_3 };
 
   YamlSNIConfig() {}

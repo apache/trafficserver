@@ -293,6 +293,33 @@ http_insert_forwarded_cb(const char *name, RecDataT dtype, RecData data, void *c
   return REC_ERR_OKAY;
 }
 
+static int
+ssl_client_sni_policy_cb(const char *name, RecDataT dtype, RecData data, void *cookie)
+{
+  bool valid_p        = false;
+  HttpConfigParams *c = static_cast<HttpConfigParams *>(cookie);
+
+  if (0 == strcasecmp("proxy.config.ssl.client.sni_policy", name)) {
+    if (RECD_STRING == dtype) {
+      std::string_view sv{data.rec_string};
+      if (sv.empty()) {
+        c->oride.ssl_client_sni_policy = SSLClientSNIPolicy(SSLClientSNIPolicy::Code::host);
+
+      } else {
+        c->oride.ssl_client_sni_policy = SSLClientSNIPolicy::dup(sv);
+      }
+      valid_p = true;
+    }
+  }
+
+  // Signal an update if valid value arrived.
+  if (valid_p) {
+    http_config_cb(name, dtype, data, cookie);
+  }
+
+  return REC_ERR_OKAY;
+}
+
 void
 register_stat_callbacks()
 {
@@ -1356,7 +1383,21 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.redirect_actions_string, "proxy.config.http.redirect.actions");
   HttpEstablishStaticConfigByte(c.http_host_sni_policy, "proxy.config.http.host_sni_policy");
 
-  HttpEstablishStaticConfigStringAlloc(c.oride.ssl_client_sni_policy, "proxy.config.ssl.client.sni_policy");
+  RecRegisterConfigUpdateCb("proxy.config.ssl.client.sni_policy", &ssl_client_sni_policy_cb, &c);
+  {
+    char str[128];
+
+    if (REC_ERR_OKAY == RecGetRecordString("proxy.config.ssl.client.sni_policy", str, sizeof(str))) {
+      c.oride.ssl_client_sni_policy = SSLClientSNIPolicy::dup(str);
+      std::string_view sv{str};
+      if (sv.empty()) {
+        c.oride.ssl_client_sni_policy = SSLClientSNIPolicy(SSLClientSNIPolicy::Code::host);
+
+      } else {
+        c.oride.ssl_client_sni_policy = SSLClientSNIPolicy::dup(sv);
+      }
+    }
+  }
 
   OutboundConnTrack::config_init(&c.outbound_conntrack, &c.oride.outbound_conntrack);
 
@@ -1630,7 +1671,7 @@ HttpConfig::reconfigure()
   params->redirect_actions_map = parse_redirect_actions(params->redirect_actions_string, params->redirect_actions_self_action);
   params->http_host_sni_policy = m_master.http_host_sni_policy;
 
-  params->oride.ssl_client_sni_policy = ats_strdup(m_master.oride.ssl_client_sni_policy);
+  params->oride.ssl_client_sni_policy = SSLClientSNIPolicy::dup(m_master.oride.ssl_client_sni_policy);
 
   params->negative_caching_list = m_master.negative_caching_list;
 

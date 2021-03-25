@@ -46,10 +46,12 @@
 #include "tscore/IpMap.h"
 #include "tscore/Regex.h"
 #include "tscore/BufferWriter.h"
+#include "tscpp/util/CodeOrStr.h"
 #include "HttpProxyAPIEnums.h"
 #include "ProxyConfig.h"
 #include "records/P_RecProcess.h"
 #include "HttpConnectionCount.h"
+#include <YamlSNIConfig.h>
 
 static const unsigned HTTP_STATUS_NUMBER = 600;
 using HttpStatusBitset                   = std::bitset<HTTP_STATUS_NUMBER>;
@@ -429,6 +431,14 @@ OptionBitSet optStrToBitset(std::string_view optConfigStr, ts::FixedBufferWriter
 
 } // namespace HttpForwarded
 
+#define L(X) X(host), X(server_name), X(remap), X(verify_with_name_source)
+
+TS_CVT_CODE(CvtSSLClientSNIPolicy, L)
+
+#undef L
+
+using SSLClientSNIPolicy = ts::CodeOrStr<CvtSSLClientSNIPolicy>;
+
 namespace RedirectEnabled
 {
 enum class AddressClass {
@@ -588,9 +598,9 @@ struct OverridableHttpConfigParams {
   //////////////////////////////
   // server verification mode //
   //////////////////////////////
-  char *ssl_client_verify_server_policy     = nullptr;
-  char *ssl_client_verify_server_properties = nullptr;
-  char *ssl_client_sni_policy               = nullptr;
+  YamlSNIConfig::Policy ssl_client_verify_server_policy       = YamlSNIConfig::Policy::UNSET;
+  YamlSNIConfig::Property ssl_client_verify_server_properties = YamlSNIConfig::Property::UNSET;
+  SSLClientSNIPolicy ssl_client_sni_policy;
 
   //////////////////
   // Redirection  //
@@ -886,7 +896,6 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(redirect_actions_string);
-  ats_free(oride.ssl_client_sni_policy);
   ats_free(oride.host_res_data.conf_value);
 
   delete connect_ports;
