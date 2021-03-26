@@ -54,10 +54,10 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   static const struct option longopt[] = {
-    // There's only one limiter right now, so no option for --limiter
     {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
     {const_cast<char *>("queue"), required_argument, nullptr, 'q'},
     {const_cast<char *>("error"), required_argument, nullptr, 'e'},
+    {const_cast<char *>("header"), required_argument, nullptr, 'h'},
     // EOF
     {nullptr, no_argument, nullptr, '\0'},
   };
@@ -81,6 +81,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       break;
     case 'e':
       limiter->error = strtol(optarg, nullptr, 10);
+      break;
+    case 'h':
+      limiter->header = optarg;
       break;
     }
     if (opt == -1) {

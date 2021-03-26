@@ -25,10 +25,13 @@ int
 RateLimiter::queue_process_cont(TSCont cont, TSEvent event, void *edata)
 {
   RateLimiter *limiter = static_cast<RateLimiter *>(TSContDataGet(cont));
+  QueueTime now        = std::chrono::system_clock::now(); // Only do this once per "loop"
 
   while (limiter->size() > 0 && limiter->reserve()) {
     QueueItem item = limiter->pop();
+    long delay     = std::chrono::duration_cast<std::chrono::milliseconds>(now - std::get<2>(item)).count();
 
+    limiter->delayHeader(std::get<0>(item), delay, limiter->header);
     TSDebug(PLUGIN_NAME, "Enabling queued txn");
     // Since this was a delayed transaction, we need to add the TXN_CLOSE hook to free the slot when done
     TSHttpTxnHookAdd(std::get<0>(item), TS_HTTP_TXN_CLOSE_HOOK, std::get<1>(item));
@@ -81,4 +84,29 @@ RateLimiter::setupQueueCont()
   TSReleaseAssert(_queue_cont);
   TSContDataSet(_queue_cont, this);
   _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME, TS_THREAD_POOL_TASK);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Add a header with the delay imposed on this transaction. This can be used
+// for logging, and other types of metrics.
+//
+void
+RateLimiter::delayHeader(TSHttpTxn txnp, long delay, const std::string &header) const
+{
+  if (header.size() > 0) {
+    TSMLoc hdr_loc   = nullptr;
+    TSMBuffer bufp   = nullptr;
+    TSMLoc field_loc = nullptr;
+
+    if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+      if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
+        if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, delay)) {
+          TSDebug(PLUGIN_NAME, "The TXN was delayed %ldms", delay);
+          TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+        }
+        TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      }
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    }
+  }
 }

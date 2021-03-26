@@ -21,13 +21,15 @@
 #include <atomic>
 #include <cstring>
 #include <cstdio>
+#include <chrono>
 
 #include <ts/ts.h>
 
 constexpr char const PLUGIN_NAME[]  = "rate_limit";
 constexpr unsigned QUEUE_DELAY_TIME = 100; // Examine the queue every 100ms.
 
-using QueueItem = std::tuple<TSHttpTxn, TSCont>;
+using QueueTime = std::chrono::time_point<std::chrono::system_clock>;
+using QueueItem = std::tuple<TSHttpTxn, TSCont, QueueTime>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Configuration object for a rate limiting remap rule.
@@ -99,8 +101,10 @@ public:
   void
   push(TSHttpTxn txnp, TSCont cont)
   {
+    QueueTime now = std::chrono::system_clock::now();
+
     TSMutexLock(_queue_lock);
-    _queue.push_back(std::make_tuple(txnp, cont));
+    _queue.push_back(std::make_tuple(txnp, cont, now));
     ++_size;
     TSMutexUnlock(_queue_lock);
   }
@@ -108,7 +112,7 @@ public:
   QueueItem
   pop()
   {
-    QueueItem item{nullptr, nullptr};
+    QueueItem item;
 
     TSMutexLock(_queue_lock);
     if (!_queue.empty()) {
@@ -120,6 +124,8 @@ public:
 
     return item; // ToDo: do we see RVO here ?
   }
+
+  void delayHeader(TSHttpTxn txpn, long delay, const std::string &header) const;
 
   // Continuation creation and scheduling
   void setupQueueCont();
@@ -138,6 +144,7 @@ public:
   unsigned limit     = 100;      // Arbitrary default, probably should be a required config
   unsigned max_queue = UINT_MAX; // No queue limit, but if sets will give an immediate error if at max
   unsigned error     = 429;      // Error code when we decide not to allow a txn to be processed (e.g. queue full)
+  std::string header;            // Header to put the latency metrics in, e.g. @RateLimit-Delay
 
 private:
   static int queue_process_cont(TSCont cont, TSEvent event, void *edata);

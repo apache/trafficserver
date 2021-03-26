@@ -57,6 +57,16 @@ are available:
    An optional HTTP status error code, to be used together with the
    :option:`--queue` option above. The default is `429`.
 
+.. option:: --header
+
+   This is an optional HTTP header name, which will be added to the client
+   request header IF the transaction was delayed (queued). This can be useful
+   to for example log the delays for later analysis.
+
+   It is recommended that an `@` header is used here, e.g. `@RateLimit-Delay`,
+   since this header will not leave the ATS server instance. The value here is
+   appended to the header should one already exist.
+
 Examples
 --------
 
@@ -72,4 +82,5 @@ This example would put a hard transaction (in) limit to 256, with no backoff
 queue:
 
     map http://cdn.example.com/ http://some-server.example.com \
-      @plugin=rate_limit.so @pparam=--limit=256 @pparam=--queue=0
+      @plugin=rate_limit.so @pparam=--limit=256 @pparam=--queue=0 \
+      @pparam=--header=@RateLimit-Delay
