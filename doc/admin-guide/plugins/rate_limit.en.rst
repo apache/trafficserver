@@ -37,7 +37,7 @@ are available:
 
 .. option:: --limit
 
-   The maximum number of active connections.
+   The maximum number of active client transactions.
 
 .. option:: --queue
 
@@ -45,6 +45,12 @@ are available:
    on a FIFO queue. This option (optional) sets an upper bound on how many
    queued transactions we will allow. When this threshold is reached, all
    additional transactions are immediately served with an error message.
+
+   The queue is effectively disabled if this is set to `0`, which implies
+   that when the transaction limit is reached, we immediately start serving
+   error responses.
+
+   The default queue size is `UINT_MAX`, which is essentially unlimited.
 
 .. option:: --error
 
@@ -60,3 +66,10 @@ code `429` is used when queue is full.
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=rate_limit.so @pparam=--limit=128 @pparam=--queue=256
+
+
+This example would put a hard transaction (in) limit to 256, with no backoff
+queue:
+
+    map http://cdn.example.com/ http://some-server.example.com \
+      @plugin=rate_limit.so @pparam=--limit=256 @pparam=--queue=0

@@ -17,6 +17,7 @@
  */
 #include <deque>
 #include <tuple>
+#include <climits>
 #include <atomic>
 #include <cstring>
 #include <cstdio>
@@ -118,9 +119,9 @@ public:
   }
 
   // These are the configurable portions of this limiter, public so sue me.
-  unsigned limit     = 100; // Arbitrary default, probably should be a required config
-  unsigned max_queue = 0;   // No queue limit, but if sets will give an immediate error if at max
-  unsigned error     = 429; // Error code when we decide not to allow a txn to be processed (e.g. queue full)
+  unsigned limit     = 100;      // Arbitrary default, probably should be a required config
+  unsigned max_queue = UINT_MAX; // No queue limit, but if sets will give an immediate error if at max
+  unsigned error     = 429;      // Error code when we decide not to allow a txn to be processed (e.g. queue full)
 
 private:
   static int queue_process_cont(TSCont cont, TSEvent event, void *edata);

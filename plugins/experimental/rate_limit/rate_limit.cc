@@ -107,7 +107,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   if (limiter) {
     if (!limiter->reserve()) {
-      if (limiter->max_queue > 0 && limiter->full()) {
+      if (!limiter->max_queue || limiter->full()) {
         // We are running at limit, and the queue has reached max capacity, give back an error and be done.
         TSDebug(PLUGIN_NAME, "Rejecting request, we're at capacity and queue is full");
         TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
