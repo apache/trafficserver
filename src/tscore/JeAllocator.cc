@@ -29,7 +29,10 @@ namespace jearena
 {
 JemallocNodumpAllocator::JemallocNodumpAllocator()
 {
-  extend_and_setup_arena();
+  RecGetRecordBool("proxy.config.allocator.dontdump_iobuffers", &dont_dump_enabled, false);
+  if (dont_dump_enabled) {
+    extend_and_setup_arena();
+  }
 }
 
 #ifdef JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
@@ -100,7 +103,7 @@ JemallocNodumpAllocator::allocate(InkFreeList *f)
 {
   void *newp = nullptr;
 
-  if (f->advice) {
+  if (dont_dump_enabled && f->advice) {
 #ifdef JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
     if (likely(f->type_size > 0)) {
       int flags = flags_ | MALLOCX_ALIGN(f->alignment);
@@ -127,7 +130,7 @@ JemallocNodumpAllocator::allocate(InkFreeList *f)
 void
 JemallocNodumpAllocator::deallocate(InkFreeList *f, void *ptr)
 {
-  if (f->advice) {
+  if (dont_dump_enabled && f->advice) {
 #ifdef JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
     if (likely(ptr)) {
       dallocx(ptr, flags_);

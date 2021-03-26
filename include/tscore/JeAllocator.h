@@ -67,6 +67,8 @@ public:
   void deallocate(InkFreeList *f, void *ptr);
 
 private:
+  bool dont_dump_enabled = true;
+
 #if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
   static extent_hooks_t extent_hooks_;
   static extent_alloc_t *original_alloc_;
