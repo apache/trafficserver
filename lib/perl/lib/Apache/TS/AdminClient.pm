@@ -341,6 +341,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.cache.hosting_filename
  proxy.config.cache.ip_allow.filename
  proxy.config.cache.limits.http.max_alts
+ proxy.config.cache.log.alternate.eviction
  proxy.config.cache.max_disk_errors
  proxy.config.cache.max_doc_size
  proxy.config.cache.min_average_object_size

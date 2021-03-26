@@ -583,6 +583,9 @@ To force document caching:
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
+
+.. _CachingHttpAlternates:
+
 Caching HTTP Alternates
 =======================
 

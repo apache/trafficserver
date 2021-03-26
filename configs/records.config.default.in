@@ -129,6 +129,8 @@ CONFIG proxy.config.cache.ram_cache.size INT -1
 CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
     # https://docs.trafficserver.apache.org/records.config#proxy-config-cache-limits-http-max-alts
 CONFIG proxy.config.cache.limits.http.max_alts INT 5
+    # https://docs.trafficserver.apache.org/records.config#proxy-config-cache-log-alternate-eviction
+CONFIG proxy.config.cache.log.alternate.eviction INT 0
     # https://docs.trafficserver.apache.org/records.config#proxy-config-cache-max-doc-size
 CONFIG proxy.config.cache.max_doc_size INT 0
 CONFIG proxy.config.cache.min_average_object_size INT 8000

@@ -2242,6 +2242,22 @@ Cache Control
    The maximum number of alternates that are allowed for any given URL.
    Disable by setting to 0.
 
+.. ts:cv:: CONFIG proxy.config.cache.log.alternate.eviction INT 0
+
+   When enabled (``1``), |TS| will emit a Status level log entry every time an
+   alternate for an object is evicted due to the number of its alternates
+   exceeding the value of :ts:cv:`proxy.config.cache.limits.http.max_alts`. The
+   URI for the evicted alternate is included in the log. This logging may be
+   useful to determine whether :ts:cv:`proxy.config.cache.limits.http.max_alts`
+   is tuned correctly for a given environment. It also provides visibility into
+   alternate eviction for individual objects, which can be helpful for
+   diagnosing unexpected `Vary:` header behavior from particular origins.
+
+   For further details concerning the caching of alternates, see :ref:`Caching
+   HTTP Alternates <CachingHttpAlternates>`.
+
+   By default, alternate eviction logging is disabled (set to ``0``).
+
 .. ts:cv:: CONFIG proxy.config.cache.target_fragment_size INT 1048576
 
    Sets the target size of a contiguous fragment of a file in the disk cache.

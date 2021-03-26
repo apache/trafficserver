@@ -98,6 +98,30 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       if (od->move_resident_alt && get_alternate_index(write_vector, od->single_doc_key) == 0) {
         od->move_resident_alt = false;
       }
+      if (cache_config_log_alternate_eviction) {
+        CacheHTTPInfo *info = write_vector->get(0);
+        HTTPHdr *request    = info->request_get();
+        if (request->valid()) {
+          // In contrast to url_string_get, this url_print interface doesn't
+          // use HTTPHdr's m_heap which is not valid at this point because the
+          // HttpSM is most likely gone.
+          int url_length = request->url_printed_length();
+          ats_scoped_mem<char> url_text;
+          url_text   = static_cast<char *>(ats_malloc(url_length + 1));
+          int index  = 0;
+          int offset = 0;
+          // url_print does not NULL terminate, so url_length instead of url_length + 1.
+          int ret                    = request->url_print(url_text.get(), url_length, &index, &offset);
+          url_text.get()[url_length] = '\0';
+          if (ret == 0) {
+            Note("Could not print URL of evicted alternate.");
+          } else {
+            Status("The maximum number of alternates was exceeded for a resource. "
+                   "An alternate was evicted for URL: %.*s",
+                   url_length, url_text.get());
+          }
+        }
+      }
       write_vector->remove(0, true);
     }
     if (vec) {
