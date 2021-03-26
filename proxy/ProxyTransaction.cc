@@ -220,3 +220,9 @@ ProxyTransaction::has_request_body(int64_t request_content_length, bool is_chunk
 {
   return request_content_length > 0 || is_chunked;
 }
+
+bool
+ProxyTransaction::allow_half_open() const
+{
+  return false;
+}
