@@ -57,6 +57,11 @@ are available:
    An optional HTTP status error code, to be used together with the
    :option:`--queue` option above. The default is `429`.
 
+.. option:: --retry
+
+   An optional retry-after value, which if set will cause rejected (e.g. `429`)
+   responses to also include a header `Retry-After`.
+
 .. option:: --header
 
    This is an optional HTTP header name, which will be added to the client
@@ -79,8 +84,27 @@ code `429` is used when queue is full.
 
 
 This example would put a hard transaction (in) limit to 256, with no backoff
-queue:
+queue, and add a header with the transaction delay if it was queued:
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=rate_limit.so @pparam=--limit=256 @pparam=--queue=0 \
       @pparam=--header=@RateLimit-Delay
+
+This final example will limit the active transaction, queue size, and also
+add a `Retry-After` header once the queue is full and we return a `429` error:
+
+    map http://cdn.example.com/ http://some-server.example.com \
+      @plugin=rate_limit.so @pparam=--limit=256 @pparam=--queue=1024 \
+      @pparam=--retry=3600 @pparam=--header=@RateLimit-Delay
+
+In this case, the response would look like this when the queue is full:
+
+    HTTP/1.1 429 Too Many Requests
+    Date: Fri, 26 Mar 2021 22:42:38 GMT
+    Connection: keep-alive
+    Server: ATS/10.0.0
+    Cache-Control: no-store
+    Content-Type: text/html
+    Content-Language: en
+    Retry-After: 3600
+    Content-Length: 207

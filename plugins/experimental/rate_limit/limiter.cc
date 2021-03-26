@@ -49,7 +49,6 @@ int
 RateLimiter::rate_limit_cont(TSCont cont, TSEvent event, void *edata)
 {
   RateLimiter *limiter = static_cast<RateLimiter *>(TSContDataGet(cont));
-  TSDebug(PLUGIN_NAME, "rate_limit_cont() called with event == %d", static_cast<int>(event));
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_CLOSE:
@@ -66,8 +65,15 @@ RateLimiter::rate_limit_cont(TSCont cont, TSEvent event, void *edata)
     return TS_EVENT_NONE;
     break;
 
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR: // This is only applicable when we set an error in remap
+    limiter->retryAfter(static_cast<TSHttpTxn>(edata), limiter->retry);
+    TSContDestroy(cont); // We are done with this continuation now
+    TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
+    return TS_EVENT_CONTINUE;
+    break;
+
   default:
-    TSDebug(PLUGIN_NAME, "Unknown event");
+    TSDebug(PLUGIN_NAME, "Unknown event %d", static_cast<int>(event));
     TSError("Unknown event in %s", PLUGIN_NAME);
     break;
   }
@@ -102,6 +108,31 @@ RateLimiter::delayHeader(TSHttpTxn txnp, long delay, const std::string &header) 
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
         if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, delay)) {
           TSDebug(PLUGIN_NAME, "The TXN was delayed %ldms", delay);
+          TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+        }
+        TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      }
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Add a header with the delay imposed on this transaction. This can be used
+// for logging, and other types of metrics.
+//
+void
+RateLimiter::retryAfter(TSHttpTxn txnp, unsigned retry) const
+{
+  if (retry > 0) {
+    TSMLoc hdr_loc   = nullptr;
+    TSMBuffer bufp   = nullptr;
+    TSMLoc field_loc = nullptr;
+
+    if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
+      if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Retry-After", 12, &field_loc)) {
+        if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, retry)) {
+          TSDebug(PLUGIN_NAME, "Added a Retry-After: %u", retry);
           TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
         }
         TSHandleMLocRelease(bufp, hdr_loc, field_loc);

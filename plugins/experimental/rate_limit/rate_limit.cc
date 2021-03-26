@@ -57,6 +57,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
     {const_cast<char *>("queue"), required_argument, nullptr, 'q'},
     {const_cast<char *>("error"), required_argument, nullptr, 'e'},
+    {const_cast<char *>("retry"), required_argument, nullptr, 'r'},
     {const_cast<char *>("header"), required_argument, nullptr, 'h'},
     // EOF
     {nullptr, no_argument, nullptr, '\0'},
@@ -81,6 +82,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       break;
     case 'e':
       limiter->error = strtol(optarg, nullptr, 10);
+      break;
+    case 'r':
+      limiter->retry = strtol(optarg, nullptr, 10);
       break;
     case 'h':
       limiter->header = optarg;
@@ -112,8 +116,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     if (!limiter->reserve()) {
       if (!limiter->max_queue || limiter->full()) {
         // We are running at limit, and the queue has reached max capacity, give back an error and be done.
-        TSDebug(PLUGIN_NAME, "Rejecting request, we're at capacity and queue is full");
         TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
+        limiter->setupTxnCont(ih, txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+        TSDebug(PLUGIN_NAME, "Rejecting request, we're at capacity and queue is full");
       } else {
         limiter->setupTxnCont(ih, txnp, TS_HTTP_POST_REMAP_HOOK);
         TSDebug(PLUGIN_NAME, "Adding rate limiting hook, we are at capacity");

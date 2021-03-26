@@ -126,6 +126,7 @@ public:
   }
 
   void delayHeader(TSHttpTxn txpn, long delay, const std::string &header) const;
+  void retryAfter(TSHttpTxn txpn, unsigned after) const;
 
   // Continuation creation and scheduling
   void setupQueueCont();
@@ -144,6 +145,7 @@ public:
   unsigned limit     = 100;      // Arbitrary default, probably should be a required config
   unsigned max_queue = UINT_MAX; // No queue limit, but if sets will give an immediate error if at max
   unsigned error     = 429;      // Error code when we decide not to allow a txn to be processed (e.g. queue full)
+  unsigned retry     = 0;        // If > 0, we will also send a Retry-After: header with this retry value
   std::string header;            // Header to put the latency metrics in, e.g. @RateLimit-Delay
 
 private:
