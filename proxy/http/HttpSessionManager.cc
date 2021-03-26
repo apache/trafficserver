@@ -167,6 +167,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     }
     if (zret == HSM_DONE) {
       to_return = first;
+      HTTP_DECREMENT_DYN_STAT(http_pooled_server_connections_stat);
       m_fqdn_pool.erase(first);
       m_ip_pool.erase(to_return);
     }
@@ -191,6 +192,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     }
     if (zret == HSM_DONE) {
       to_return = first;
+      HTTP_DECREMENT_DYN_STAT(http_pooled_server_connections_stat);
       m_ip_pool.erase(first);
       m_fqdn_pool.erase(to_return);
     }
@@ -217,6 +219,8 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
   // put it in the pools.
   m_ip_pool.insert(ss);
   m_fqdn_pool.insert(ss);
+
+  HTTP_INCREMENT_DYN_STAT(http_pooled_server_connections_stat);
 
   Debug("http_ss",
         "[%" PRId64 "] [release session] "
@@ -288,6 +292,7 @@ ServerSessionPool::eventHandler(int event, void *data)
       // Drop connection on this end.
       s->do_io_close();
       found = true;
+      HTTP_DECREMENT_DYN_STAT(http_pooled_server_connections_stat);
       break;
     }
   }
