@@ -17,30 +17,6 @@
  */
 #include "limiter.h"
 
-bool
-RateLimiter::reserve()
-{
-  TSReleaseAssert(_active <= limit);
-  TSMutexLock(_active_lock);
-  if (_active == limit) {
-    TSMutexUnlock(_active_lock);
-    return false;
-  } else {
-    ++_active;
-    TSDebug(PLUGIN_NAME, "Active txns == %u", active());
-    TSMutexUnlock(_active_lock);
-    return true;
-  }
-}
-
-void
-RateLimiter::release()
-{
-  TSMutexLock(_active_lock);
-  --_active;
-  TSMutexUnlock(_active_lock);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // This is the continuation that gets scheduled perdiocally to process the
 // deque of waiting TXNs.
@@ -93,4 +69,16 @@ RateLimiter::rate_limit_cont(TSCont cont, TSEvent event, void *edata)
     break;
   }
   return TS_EVENT_NONE;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Setup the continuous queue processing continuation
+//
+void
+RateLimiter::setupQueueCont()
+{
+  _queue_cont = TSContCreate(queue_process_cont, TSMutexCreate());
+  TSReleaseAssert(_queue_cont);
+  TSContDataSet(_queue_cont, this);
+  _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME, TS_THREAD_POOL_TASK);
 }

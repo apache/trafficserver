@@ -39,6 +39,9 @@ public:
 
   ~RateLimiter()
   {
+    if (_action) {
+      TSActionCancel(_action);
+    }
     if (_queue_cont) {
       TSContDestroy(_queue_cont);
     }
@@ -48,8 +51,29 @@ public:
 
   // Reserve / release a slot from the active connect limits. Reserve will return
   // false if we are unable to reserve a slot.
-  bool reserve();
-  void release();
+  bool
+  reserve()
+  {
+    TSReleaseAssert(_active <= limit);
+    TSMutexLock(_active_lock);
+    if (_active == limit) {
+      TSMutexUnlock(_active_lock);
+      return false;
+    } else {
+      ++_active;
+      TSDebug(PLUGIN_NAME, "Active txns == %u", active());
+      TSMutexUnlock(_active_lock);
+      return true;
+    }
+  }
+
+  void
+  release()
+  {
+    TSMutexLock(_active_lock);
+    --_active;
+    TSMutexUnlock(_active_lock);
+  }
 
   // Current size of the active_in connections
   unsigned
@@ -97,17 +121,9 @@ public:
     return item; // ToDo: do we see RVO here ?
   }
 
-  // Setup the continuous queue processing continuation
-  void
-  setupQueueCont()
-  {
-    _queue_cont = TSContCreate(queue_process_cont, TSMutexCreate());
-    TSReleaseAssert(_queue_cont);
-    TSContDataSet(_queue_cont, this);
-    TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME, TS_THREAD_POOL_TASK);
-  }
+  // Continuation creation and scheduling
+  void setupQueueCont();
 
-  // Create and setup a TXN continuation for a connection that needs to be delayed
   void
   setupTxnCont(void *ih, TSHttpTxn txnp, TSHttpHookID hook)
   {
@@ -128,9 +144,10 @@ private:
   static int rate_limit_cont(TSCont cont, TSEvent event, void *edata);
 
   std::atomic<unsigned> _active = 0; // Current active number of txns. This has to always stay <= limit above
-  std::atomic<unsigned> _size   = 0; // Current size of the pending queue of txns. This should aim to be < _max_queue.
+  std::atomic<unsigned> _size   = 0; // Current size of the pending queue of txns. This should aim to be < _max_queue
 
   TSMutex _queue_lock, _active_lock; // Resource locks
   std::deque<QueueItem> _queue;      // Queue for the pending TXN's
-  TSCont _queue_cont = nullptr;      // Continuation processing the queue periodically.
+  TSCont _queue_cont = nullptr;      // Continuation processing the queue periodically
+  TSAction _action   = nullptr;      // The action associated with the queue continuation, needed to shut it down
 };
