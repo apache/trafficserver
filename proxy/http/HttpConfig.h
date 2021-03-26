@@ -84,6 +84,7 @@ enum {
   http_total_parent_switches_stat,
   http_total_parent_retries_exhausted_stat,
   http_total_parent_marked_down_count,
+  http_background_fill_total_count_stat,
   http_current_parent_proxy_connections_stat,
   http_current_server_connections_stat,
   http_current_cache_connections_stat,
