@@ -127,12 +127,11 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 {
   ink_assert(new_vc != nullptr);
   ink_assert(_vc == nullptr);
-  _vc            = new_vc;
-  magic          = HTTP_CS_MAGIC_ALIVE;
-  mutex          = new_vc->mutex;
-  trans.mutex    = mutex; // Share this mutex with the transaction
-  ssn_start_time = Thread::get_hrtime();
-  in_destroy     = false;
+  _vc         = new_vc;
+  magic       = HTTP_CS_MAGIC_ALIVE;
+  mutex       = new_vc->mutex;
+  trans.mutex = mutex; // Share this mutex with the transaction
+  in_destroy  = false;
 
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
   if (ssl_vc != nullptr) {
@@ -396,7 +395,6 @@ Http1ClientSession::release(ProxyTransaction *trans)
     set_inactivity_timeout(HRTIME_SECONDS(ka_in));
 
     this->clear_session_active();
-    this->ssn_last_txn_time = Thread::get_hrtime();
 
     // Timeout events should be delivered to the session
     this->do_io_write(this, 0, nullptr);
