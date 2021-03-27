@@ -59,6 +59,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     {const_cast<char *>("error"), required_argument, nullptr, 'e'},
     {const_cast<char *>("retry"), required_argument, nullptr, 'r'},
     {const_cast<char *>("header"), required_argument, nullptr, 'h'},
+    {const_cast<char *>("maxage"), required_argument, nullptr, 'm'},
     // EOF
     {nullptr, no_argument, nullptr, '\0'},
   };
@@ -85,6 +86,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       break;
     case 'r':
       limiter->retry = strtol(optarg, nullptr, 10);
+      break;
+    case 'm':
+      limiter->max_age = 1000 * strtol(optarg, nullptr, 10);
       break;
     case 'h':
       limiter->header = optarg;

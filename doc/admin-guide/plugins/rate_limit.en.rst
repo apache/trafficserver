@@ -65,12 +65,17 @@ are available:
 .. option:: --header
 
    This is an optional HTTP header name, which will be added to the client
-   request header IF the transaction was delayed (queued). This can be useful
-   to for example log the delays for later analysis.
+   request header IF the transaction was delayed (queued). The value of the
+   header is the delay, in milliseconds. This can be useful to for example
+   log the delays for later analysis.
 
    It is recommended that an `@` header is used here, e.g. `@RateLimit-Delay`,
-   since this header will not leave the ATS server instance. The value here is
-   appended to the header should one already exist.
+   since this header will not leave the ATS server instance.
+
+.. option:: --maxage
+
+   An optional `max-age` for how long a transaction can sit in the delay queue.
+   The value (default 0) is the age in seconds.
 
 Examples
 --------

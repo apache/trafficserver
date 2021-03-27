@@ -19,9 +19,10 @@
 #include <tuple>
 #include <climits>
 #include <atomic>
-#include <cstring>
 #include <cstdio>
 #include <chrono>
+#include <cstring>
+#include <string>
 
 #include <ts/ts.h>
 
@@ -58,14 +59,14 @@ public:
   {
     TSReleaseAssert(_active <= limit);
     TSMutexLock(_active_lock);
-    if (_active == limit) {
+    if (_active < limit) {
+      ++_active;
+      TSMutexUnlock(_active_lock); // Reduce the critical section, release early
+      TSDebug(PLUGIN_NAME, "Reserving a slot, active txns == %u", active());
+      return true;
+    } else {
       TSMutexUnlock(_active_lock);
       return false;
-    } else {
-      ++_active;
-      TSDebug(PLUGIN_NAME, "Active txns == %u", active());
-      TSMutexUnlock(_active_lock);
-      return true;
     }
   }
 
@@ -75,6 +76,7 @@ public:
     TSMutexLock(_active_lock);
     --_active;
     TSMutexUnlock(_active_lock);
+    TSDebug(PLUGIN_NAME, "Releasing a slot, active txns == %u", active());
   }
 
   // Current size of the active_in connections
@@ -104,7 +106,7 @@ public:
     QueueTime now = std::chrono::system_clock::now();
 
     TSMutexLock(_queue_lock);
-    _queue.push_back(std::make_tuple(txnp, cont, now));
+    _queue.push_front(std::make_tuple(txnp, cont, now));
     ++_size;
     TSMutexUnlock(_queue_lock);
   }
@@ -116,16 +118,33 @@ public:
 
     TSMutexLock(_queue_lock);
     if (!_queue.empty()) {
-      item = std::move(_queue.front());
-      _queue.pop_front();
+      item = std::move(_queue.back());
+      _queue.pop_back();
       --_size;
     }
     TSMutexUnlock(_queue_lock);
 
-    return item; // ToDo: do we see RVO here ?
+    return item;
   }
 
-  void delayHeader(TSHttpTxn txpn, long delay, const std::string &header) const;
+  bool
+  hasOldTxn(QueueTime now) const
+  {
+    TSMutexLock(_queue_lock);
+    if (!_queue.empty()) {
+      QueueItem item = _queue.back();
+      TSMutexUnlock(_queue_lock); // A little ugly but this reduces the critical section for the lock a little bit.
+
+      long age = std::chrono::duration_cast<std::chrono::milliseconds>(now - std::get<2>(item)).count();
+
+      return (age >= max_age);
+    } else {
+      TSMutexUnlock(_queue_lock);
+      return false;
+    }
+  }
+
+  void delayHeader(TSHttpTxn txpn, long delay) const;
   void retryAfter(TSHttpTxn txpn, unsigned after) const;
 
   // Continuation creation and scheduling
@@ -144,6 +163,7 @@ public:
   // These are the configurable portions of this limiter, public so sue me.
   unsigned limit     = 100;      // Arbitrary default, probably should be a required config
   unsigned max_queue = UINT_MAX; // No queue limit, but if sets will give an immediate error if at max
+  unsigned max_age   = 0;        // Max age (ms) in the queue, at which point we send an error
   unsigned error     = 429;      // Error code when we decide not to allow a txn to be processed (e.g. queue full)
   unsigned retry     = 0;        // If > 0, we will also send a Retry-After: header with this retry value
   std::string header;            // Header to put the latency metrics in, e.g. @RateLimit-Delay

@@ -27,23 +27,42 @@ RateLimiter::queue_process_cont(TSCont cont, TSEvent event, void *edata)
   RateLimiter *limiter = static_cast<RateLimiter *>(TSContDataGet(cont));
   QueueTime now        = std::chrono::system_clock::now(); // Only do this once per "loop"
 
+  // Try to enable some queued txns (if any) if there are slots available
   while (limiter->size() > 0 && limiter->reserve()) {
     QueueItem item = limiter->pop();
+    TSHttpTxn txnp = std::get<0>(item);
     long delay     = std::chrono::duration_cast<std::chrono::milliseconds>(now - std::get<2>(item)).count();
 
-    limiter->delayHeader(std::get<0>(item), delay, limiter->header);
-    TSDebug(PLUGIN_NAME, "Enabling queued txn");
+    limiter->delayHeader(txnp, delay);
+    TSDebug(PLUGIN_NAME, "Enabling queued txn after %ldms", delay);
     // Since this was a delayed transaction, we need to add the TXN_CLOSE hook to free the slot when done
-    TSHttpTxnHookAdd(std::get<0>(item), TS_HTTP_TXN_CLOSE_HOOK, std::get<1>(item));
-    TSHttpTxnReenable(std::get<0>(item), TS_EVENT_HTTP_CONTINUE);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, std::get<1>(item));
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  }
+
+  // Kill any queued txns if they are too old
+  if (limiter->max_age && limiter->size() > 0) {
+    now = std::chrono::system_clock::now(); // Update the "now", for some extra accuracy
+
+    while (limiter->size() > 0 && limiter->hasOldTxn(now)) {
+      // The oldest object on the queue is too old on the queue, so "kill" it.
+      QueueItem item = limiter->pop();
+      TSHttpTxn txnp = std::get<0>(item);
+      long age       = std::chrono::duration_cast<std::chrono::milliseconds>(now - std::get<2>(item)).count();
+
+      limiter->delayHeader(txnp, age);
+      TSDebug(PLUGIN_NAME, "Queued TXN is too old (%ldms), erroring out", age);
+      TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
+      TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, std::get<1>(item));
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+    }
   }
 
   return TS_EVENT_NONE;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// The main rate limiting continuation. ToDo: Maybe this should be in the
-// RateLimiter class (static)?
+// The main rate limiting continuation.
 //
 int
 RateLimiter::rate_limit_cont(TSCont cont, TSEvent event, void *edata)
@@ -52,7 +71,6 @@ RateLimiter::rate_limit_cont(TSCont cont, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_CLOSE:
-    TSDebug(PLUGIN_NAME, "Decrementing active count");
     limiter->release();
     TSContDestroy(cont); // We are done with this continuation now
     TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
@@ -60,7 +78,6 @@ RateLimiter::rate_limit_cont(TSCont cont, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_HTTP_POST_REMAP:
-    TSDebug(PLUGIN_NAME, "Delaying request");
     limiter->push(static_cast<TSHttpTxn>(edata), cont);
     return TS_EVENT_NONE;
     break;
@@ -97,7 +114,7 @@ RateLimiter::setupQueueCont()
 // for logging, and other types of metrics.
 //
 void
-RateLimiter::delayHeader(TSHttpTxn txnp, long delay, const std::string &header) const
+RateLimiter::delayHeader(TSHttpTxn txnp, long delay) const
 {
   if (header.size() > 0) {
     TSMLoc hdr_loc   = nullptr;
@@ -107,7 +124,6 @@ RateLimiter::delayHeader(TSHttpTxn txnp, long delay, const std::string &header) 
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
         if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, delay)) {
-          TSDebug(PLUGIN_NAME, "The TXN was delayed %ldms", delay);
           TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
         }
         TSHandleMLocRelease(bufp, hdr_loc, field_loc);
@@ -130,7 +146,7 @@ RateLimiter::retryAfter(TSHttpTxn txnp, unsigned retry) const
     TSMLoc field_loc = nullptr;
 
     if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
-      if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Retry-After", 12, &field_loc)) {
+      if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Retry-After", 11, &field_loc)) {
         if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, retry)) {
           TSDebug(PLUGIN_NAME, "Added a Retry-After: %u", retry);
           TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
