@@ -163,9 +163,6 @@ public:
 
   HttpSessionAccept::Options const *accept_options; ///< connection info // L7R TODO: set in constructor
 
-  ink_hrtime ssn_start_time    = 0;
-  ink_hrtime ssn_last_txn_time = 0;
-
 protected:
   // Hook dispatching state
   HttpHookState hook_state;
