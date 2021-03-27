@@ -23,6 +23,8 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
+#include <ts/experimental.h>
+
 #include <cerrno>
 #include <cinttypes>
 #include <iterator>
@@ -167,13 +169,18 @@ struct GeneratorRequest {
   unsigned flags = 0;
   unsigned delay = 0; // Milliseconds to delay before sending a response.
   unsigned maxage;    // Max age for cache responses.
+  unsigned bytesSeen;
+
+  int64_t contentLength;
   IOChannel readio;
   IOChannel writeio;
   GeneratorHttpHeader rqheader;
+  TSHttpStatus status = TS_HTTP_STATUS_NONE;
 
   enum {
     CACHEABLE = 0x0001,
     ISHEAD    = 0x0002,
+    ISPOST    = 0x0004,
   };
 
   GeneratorRequest() : maxage(60 * 60 * 24) {}
@@ -285,12 +292,8 @@ GeneratorGetRequestHeader(GeneratorHttpHeader &request, const char *field_name, 
 }
 
 static TSReturnCode
-GeneratorWriteResponseHeader(GeneratorRequest *grq, TSCont contp)
+WriteResponseHeader(GeneratorHttpHeader &response, TSHttpStatus status)
 {
-  GeneratorHttpHeader response;
-
-  VDEBUG("writing response header");
-
   if (TSHttpHdrTypeSet(response.buffer, response.header, TS_HTTP_TYPE_RESPONSE) != TS_SUCCESS) {
     VERROR("failed to set type");
     return TS_ERROR;
@@ -299,12 +302,48 @@ GeneratorWriteResponseHeader(GeneratorRequest *grq, TSCont contp)
     VERROR("failed to set HTTP version");
     return TS_ERROR;
   }
-  if (TSHttpHdrStatusSet(response.buffer, response.header, TS_HTTP_STATUS_OK) != TS_SUCCESS) {
+  if (TSHttpHdrStatusSet(response.buffer, response.header, status) != TS_SUCCESS) {
     VERROR("failed to set HTTP status");
     return TS_ERROR;
   }
 
-  TSHttpHdrReasonSet(response.buffer, response.header, TSHttpHdrReasonLookup(TS_HTTP_STATUS_OK), -1);
+  if (TSHttpHdrReasonSet(response.buffer, response.header, TSHttpHdrReasonLookup(status), -1) != TS_SUCCESS) {
+    VERROR("failed to set expand HTTP status");
+    return TS_ERROR;
+  };
+
+  return TS_SUCCESS;
+}
+
+static TSReturnCode
+GeneratorWriteFailureResponse(GeneratorRequest *grq, TSHttpStatus status)
+{
+  GeneratorHttpHeader response;
+  VDEBUG("writing failure response header");
+
+  if (WriteResponseHeader(response, status) != TS_SUCCESS) {
+    return TS_ERROR;
+  }
+
+  int hdrlen = TSHttpHdrLengthGet(response.buffer, response.header);
+
+  TSHttpHdrPrint(response.buffer, response.header, grq->writeio.iobuf);
+
+  TSVIONBytesSet(grq->writeio.vio, hdrlen);
+  TSVIOReenable(grq->writeio.vio);
+
+  return TS_SUCCESS;
+}
+
+static TSReturnCode
+GeneratorWriteResponse(GeneratorRequest *grq, TSCont contp)
+{
+  GeneratorHttpHeader response;
+  VDEBUG("writing GET response");
+
+  if (WriteResponseHeader(response, TS_HTTP_STATUS_OK) != TS_SUCCESS) {
+    return TS_ERROR;
+  }
 
   // Set the Content-Length header.
   HeaderFieldIntSet(response, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, grq->nbytes);
@@ -333,6 +372,26 @@ GeneratorWriteResponseHeader(GeneratorRequest *grq, TSCont contp)
   return TS_SUCCESS;
 }
 
+static TSReturnCode
+GeneratorPOSTResponse(GeneratorRequest *grq, TSCont contp)
+{
+  GeneratorHttpHeader response;
+  VDEBUG("writing POST response");
+
+  if (WriteResponseHeader(response, TS_HTTP_STATUS_OK) != TS_SUCCESS) {
+    return TS_ERROR;
+  }
+
+  int hdrlen = TSHttpHdrLengthGet(response.buffer, response.header);
+
+  TSHttpHdrPrint(response.buffer, response.header, grq->writeio.iobuf);
+
+  TSVIONBytesSet(grq->writeio.vio, hdrlen);
+  TSVIOReenable(grq->writeio.vio);
+
+  return TS_SUCCESS;
+}
+
 static bool
 GeneratorParseRequest(GeneratorRequest *grq)
 {
@@ -342,15 +401,20 @@ GeneratorParseRequest(GeneratorRequest *grq)
   int pathsz;
   unsigned count = 0;
 
-  // First, make sure this is a GET request.
   path = TSHttpHdrMethodGet(grq->rqheader.buffer, grq->rqheader.header, &pathsz);
-  if (path != TS_HTTP_METHOD_GET && path != TS_HTTP_METHOD_HEAD) {
-    VDEBUG("%.*s method is not supported", pathsz, path);
-    return false;
-  }
 
   if (path == TS_HTTP_METHOD_HEAD) {
     grq->flags |= GeneratorRequest::ISHEAD;
+  } else if (path == TS_HTTP_METHOD_POST) {
+    VDEBUG("requested operation is POST");
+    grq->flags |= GeneratorRequest::ISPOST;
+
+    grq->contentLength = GeneratorGetRequestHeader(grq->rqheader, "Content-Length", lengthof("Content-Length"), -1);
+
+    grq->bytesSeen = 0;
+
+    // implicitly reject "Transfer-Encoding: chunked" (or requests with invalid content-length)
+    return grq->contentLength > 0;
   }
 
   grq->delay  = GeneratorGetRequestHeader(grq->rqheader, "Generator-Delay", lengthof("Generator-Delay"), grq->delay);
@@ -474,21 +538,56 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
 
     VDEBUG("reading vio=%p vc=%p, grq=%p", arg.vio, TSVIOVConnGet(arg.vio), cdata.grq);
 
-    TSIOBufferBlock blk;
     ssize_t consumed     = 0;
     TSParseResult result = TS_PARSE_CONT;
 
-    for (blk = TSIOBufferReaderStart(cdata.grq->readio.reader); blk; blk = TSIOBufferBlockNext(blk)) {
-      const char *ptr;
-      const char *end;
-      int64_t nbytes;
+    if (cdata.grq->status == TS_HTTP_STATUS_OK && cdata.grq->flags & GeneratorRequest::ISPOST) {
+      TSVIO input_vio = cdata.grq->readio.vio;
 
-      ptr = TSIOBufferBlockReadStart(blk, cdata.grq->readio.reader, &nbytes);
+      // Look for data and if we find any, consume.
+      if (TSVIOBufferGet(input_vio)) {
+        TSIOBufferReader reader = cdata.grq->readio.reader;
+        int64_t n               = TSIOBufferReaderAvail(reader);
+        if (n > 0) {
+          TSIOBufferReaderConsume(reader, n);
+          TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + n);
+          cdata.grq->bytesSeen += n;
+        }
+
+        if (TSVIONTodoGet(input_vio) > 0 && cdata.grq->bytesSeen < cdata.grq->contentLength) {
+          // signal that we can accept more data.
+          TSVIOReenable(input_vio);
+
+        } else {
+          if (GeneratorPOSTResponse(cdata.grq, contp) != TS_SUCCESS) {
+            VERROR("failure writing response");
+            return TS_EVENT_ERROR;
+          }
+        }
+      } else { // buffer gone, we're done.
+        VDEBUG("upstream buffer disappeared - %d bytes", cdata.grq->bytesSeen);
+      }
+
+      return TS_EVENT_NONE;
+    }
+
+    if (cdata.grq->status != TS_HTTP_STATUS_NONE && cdata.grq->status != TS_HTTP_STATUS_OK) {
+      if (GeneratorWriteFailureResponse(cdata.grq, cdata.grq->status) != TS_SUCCESS) {
+        VERROR("failure writing failure response");
+        return TS_EVENT_ERROR;
+      }
+      return TS_EVENT_NONE;
+    }
+
+    for (TSIOBufferBlock blk = TSIOBufferReaderStart(cdata.grq->readio.reader); blk; blk = TSIOBufferBlockNext(blk)) {
+      int64_t nbytes;
+      const char *ptr = TSIOBufferBlockReadStart(blk, cdata.grq->readio.reader, &nbytes);
       if (ptr == nullptr || nbytes == 0) {
         continue;
       }
 
-      end    = ptr + nbytes;
+      const char *end = ptr + nbytes;
+
       result = TSHttpHdrParseReq(rqheader.parser, rqheader.buffer, rqheader.header, &ptr, end);
       switch (result) {
       case TS_PARSE_ERROR:
@@ -499,13 +598,25 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
 
       case TS_PARSE_DONE:
         // Check the response.
-        VDEBUG("parsed request on grq=%p, sending a response ", cdata.grq);
+        VDEBUG("parsed request on grq=%p, sending a response", cdata.grq);
         if (!GeneratorParseRequest(cdata.grq)) {
-          // We got a syntactically bad URL. It would be graceful to send
-          // a 400 response, but we are graceless and just fail the
-          // transaction.
-          GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
-          return TS_EVENT_ERROR;
+          VDEBUG("got bad response");
+          cdata.grq->status = TS_HTTP_STATUS_NOT_FOUND;
+          cdata.grq->nbytes = 0;
+
+          cdata.grq->writeio.write(TSVIOVConnGet(arg.vio), contp);
+          TSVIONBytesSet(cdata.grq->writeio.vio, 0);
+
+          return TS_EVENT_NONE;
+        }
+
+        if (cdata.grq->flags & GeneratorRequest::ISPOST) {
+          cdata.grq->status = TS_HTTP_STATUS_OK;
+          cdata.grq->nbytes = 0;
+
+          cdata.grq->writeio.write(TSVIOVConnGet(arg.vio), contp);
+          TSVIONBytesSet(cdata.grq->writeio.vio, 0);
+          return TS_EVENT_NONE;
         }
 
         // If this is a HEAD request, we don't need to send any bytes.
@@ -519,11 +630,12 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
 
         if (cdata.grq->delay > 0) {
           VDEBUG("delaying response by %ums", cdata.grq->delay);
+          // TS_EVENT_TIMEOUT
           TSContScheduleOnPool(contp, cdata.grq->delay, TS_THREAD_POOL_NET);
           return TS_EVENT_NONE;
         }
 
-        if (GeneratorWriteResponseHeader(cdata.grq, contp) != TS_SUCCESS) {
+        if (GeneratorWriteResponse(cdata.grq, contp) != TS_SUCCESS) {
           VERROR("failure writing response");
           return TS_EVENT_ERROR;
         }
@@ -602,7 +714,7 @@ GeneratorInterceptHook(TSCont contp, TSEvent event, void *edata)
     // Our response delay expired, so write the headers now, which
     // will also trigger the read+write event flow.
     argument_type cdata = TSContDataGet(contp);
-    if (GeneratorWriteResponseHeader(cdata.grq, contp) != TS_SUCCESS) {
+    if (GeneratorWriteResponse(cdata.grq, contp) != TS_SUCCESS) {
       VERROR("failure writing response");
       return TS_EVENT_ERROR;
     }
@@ -629,7 +741,7 @@ CheckCacheable(TSHttpTxn txnp, TSMLoc url, TSMBuffer bufp)
 
   if (path && (pathsz >= 8) && (0 == memcmp(path, "nocache/", 8))) {
     // It's not cacheable, so, turn off the cache. This avoids major serialization and performance issues.
-    VDEBUG("turning off the cache, uncacehable");
+    VDEBUG("turning off the cache, uncacheable");
     TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_HTTP, 0);
   }
 }
