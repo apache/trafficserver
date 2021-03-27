@@ -47,7 +47,8 @@ ts.Disk.records_config.update({
     'proxy.config.http.connect_attempts_max_retries': 1,
     'proxy.config.http.transaction_no_activity_timeout_out': 4,
     'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|ssl'
+    'proxy.config.diags.debug.tags': 'http|ssl',
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 
 ts.Disk.remap_config.AddLine('map /connect_blocked https://127.0.0.1:{0}'.format(Test.Variables.block_connect_port))
