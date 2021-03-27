@@ -571,6 +571,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     return TSREMAP_NO_REMAP;
   }
 
+  // Anchor to URL specified in remap
+  int pathsz;
+  TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathsz);
+  if (pathsz > 0) {
+    VERROR("Path is not an exact match. Rejecting!");
+    TSHttpTxnStatusSet(rh, TS_HTTP_STATUS_NOT_FOUND);
+    return TSREMAP_NO_REMAP;
+  }
+
   if (!cfg->maxAge) {
     TSHttpTxnConfigIntSet(rh, TS_CONFIG_HTTP_CACHE_HTTP, 0);
     StaticHitSetupIntercept(static_cast<StaticHitConfig *>(ih), rh);
@@ -629,6 +638,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (filePath.size() == 0) {
     printf("Need to specify --file-path\n");
     return TS_ERROR;
+  }
+
+  if (filePath.find("/") != 0) {
+    filePath = std::string(TSConfigDirGet()) + '/' + filePath;
   }
 
   StaticHitConfig *tc = new StaticHitConfig(filePath, mimeType);
