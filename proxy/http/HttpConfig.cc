@@ -416,6 +416,10 @@ register_stat_callbacks()
                      RECP_PERSISTENT, (int)http_ua_msecs_counts_errors_pre_accept_hangups_stat,
                      RecRawStatSyncIntMsecsToFloatSeconds);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.pooled_server_connections", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_pooled_server_connections_stat, RecRawStatSyncSum);
+  HTTP_CLEAR_DYN_STAT(http_pooled_server_connections_stat);
+
   // Transactional stats
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.incoming_requests", RECD_COUNTER, RECP_PERSISTENT,
