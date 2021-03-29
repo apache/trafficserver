@@ -580,6 +580,27 @@ public:
   const char *path_get(int *length ///< Storage for path length.
   );
 
+  /** Get the URL matrix params.
+      This is a reference, not allocated.
+      @return A pointer to the matrix params or @c NULL if there is no valid URL.
+  */
+  const char *params_get(int *length ///< Storage for param length.
+  );
+
+  /** Get the URL query.
+      This is a reference, not allocated.
+      @return A pointer to the query or @c NULL if there is no valid URL.
+  */
+  const char *query_get(int *length ///< Storage for query length.
+  );
+
+  /** Get the URL fragment.
+      This is a reference, not allocated.
+      @return A pointer to the fragment or @c NULL if there is no valid URL.
+  */
+  const char *fragment_get(int *length ///< Storage for fragement length.
+  );
+
   /** Get the target host name.
       The length is returned in @a length if non-NULL.
       @note The results are cached so this is fast after the first call.
@@ -1309,6 +1330,27 @@ HTTPHdr::path_get(int *length)
 {
   URL *url = this->url_get();
   return url ? url->path_get(length) : nullptr;
+}
+
+inline const char *
+HTTPHdr::params_get(int *length)
+{
+  URL *url = this->url_get();
+  return url ? url->params_get(length) : nullptr;
+}
+
+inline const char *
+HTTPHdr::query_get(int *length)
+{
+  URL *url = this->url_get();
+  return url ? url->query_get(length) : nullptr;
+}
+
+inline const char *
+HTTPHdr::fragment_get(int *length)
+{
+  URL *url = this->url_get();
+  return url ? url->fragment_get(length) : nullptr;
 }
 
 inline const char *
