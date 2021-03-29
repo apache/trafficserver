@@ -26,6 +26,7 @@
 
 **************************************************************************/
 #include "P_Net.h"
+#include "tscore/ink_defs.h"
 
 #define SET_NO_LINGER
 // set in the OS
@@ -33,8 +34,6 @@
 // #define SEND_BUF_SIZE            (1024*64)
 #define FIRST_RANDOM_PORT 16000
 #define LAST_RANDOM_PORT 32000
-
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
 #if TS_USE_TPROXY
 #if !defined(IP_TRANSPARENT)

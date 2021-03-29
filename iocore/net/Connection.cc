@@ -28,6 +28,7 @@
 
 **************************************************************************/
 #include "tscore/ink_platform.h"
+#include "tscore/ink_defs.h"
 
 #include "P_Net.h"
 
@@ -36,8 +37,6 @@
 // #define SEND_BUF_SIZE            (1024*64)
 #define FIRST_RANDOM_PORT 16000
 #define LAST_RANDOM_PORT 32000
-
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
 int
 get_listen_backlog()

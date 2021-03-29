@@ -27,6 +27,7 @@
   Commonality across all platforms -- move out as required.
 
 **************************************************************************/
+#include <tscore/ink_defs.h>
 #include "P_DNS.h"
 #include "P_DNSConnection.h"
 #include "P_DNSProcessor.h"
@@ -39,8 +40,6 @@
 // #define SEND_BUF_SIZE            (1024*64)
 #define FIRST_RANDOM_PORT (16000)
 #define LAST_RANDOM_PORT (60000)
-
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
 DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 
