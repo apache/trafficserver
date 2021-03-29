@@ -91,7 +91,8 @@ ts1.Disk.records_config.update({
     'proxy.config.ssl.session_cache.auto_clear': 1,
     'proxy.config.ssl.server.session_ticket.enable': 1,
     'proxy.config.ssl.origin_session_cache': 1,
-    'proxy.config.ssl.origin_session_cache.size': 1
+    'proxy.config.ssl.origin_session_cache.size': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 ts2.Disk.records_config.update({
     'proxy.config.http.cache.http': 0,
@@ -108,7 +109,8 @@ ts2.Disk.records_config.update({
     'proxy.config.ssl.session_cache.auto_clear': 1,
     'proxy.config.ssl.server.session_ticket.enable': 1,
     'proxy.config.ssl.origin_session_cache': 1,
-    'proxy.config.ssl.origin_session_cache.size': 1
+    'proxy.config.ssl.origin_session_cache.size': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 ts3.Disk.records_config.update({
     'proxy.config.http.cache.http': 0,
@@ -123,7 +125,8 @@ ts3.Disk.records_config.update({
     'proxy.config.ssl.session_cache.auto_clear': 1,
     'proxy.config.ssl.server.session_ticket.enable': 1,
     'proxy.config.ssl.origin_session_cache': 1,
-    'proxy.config.ssl.origin_session_cache.size': 1
+    'proxy.config.ssl.origin_session_cache.size': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 ts4.Disk.records_config.update({
     'proxy.config.http.cache.http': 0,
@@ -140,7 +143,8 @@ ts4.Disk.records_config.update({
     'proxy.config.ssl.session_cache.auto_clear': 1,
     'proxy.config.ssl.server.session_ticket.enable': 1,
     'proxy.config.ssl.origin_session_cache': 0,
-    'proxy.config.ssl.origin_session_cache.size': 1
+    'proxy.config.ssl.origin_session_cache.size': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 
 tr = Test.AddTestRun('new session then reuse')

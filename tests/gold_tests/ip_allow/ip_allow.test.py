@@ -89,6 +89,7 @@ ts.Disk.records_config.update({
     'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port),
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
     'proxy.config.http2.active_timeout_in': 3,
     'proxy.config.http2.max_concurrent_streams_in': 65535,
 })

@@ -81,6 +81,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.url_remap.pristine_host_hdr': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -178,6 +179,7 @@ tr2.Disk.records_config.update({
     'proxy.config.ssl.client.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
     'proxy.config.url_remap.pristine_host_hdr': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
