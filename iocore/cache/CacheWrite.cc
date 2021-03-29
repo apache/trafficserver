@@ -99,6 +99,13 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         od->move_resident_alt = false;
       }
       if (cache_config_log_alternate_eviction) {
+        // Initially there was an attempt to make alternate eviction a log
+        // field. However it was discovered this could not work because this
+        // code, in which alternates are evicted, happens during the processing
+        // of IO which happens after transaction logs are emitted and after the
+        // HttpSM is destructed. Instead, therefore, alternate eviction logging
+        // was implemented for diags.log with the
+        // proxy.config.cache.log.alternate.eviction toggle.
         CacheHTTPInfo *info = write_vector->get(0);
         HTTPHdr *request    = info->request_get();
         if (request->valid()) {
