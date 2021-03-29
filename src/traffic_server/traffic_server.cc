@@ -563,6 +563,8 @@ proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
   signal_format_siginfo(signo, info, appVersionInfo.AppStr);
 
 #if TS_HAS_PROFILER
+  HeapProfilerDump("/tmp/ts_end.hprof");
+  HeapProfilerStop();
   ProfilerStop();
 #endif
 
@@ -1718,6 +1720,7 @@ int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
 #if TS_HAS_PROFILER
+  HeapProfilerStart("/tmp/ts.hprof");
   ProfilerStart("/tmp/ts.prof");
 #endif
   bool admin_user_p = false;
