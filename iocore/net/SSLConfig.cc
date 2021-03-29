@@ -85,7 +85,6 @@ int SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file      = nullptr;
 
 static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
-std::unique_ptr<ConfigUpdateHandler<SSLClientCoordinator>> sslClientUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
 
 SSLConfigParams::SSLConfigParams()
@@ -444,13 +443,6 @@ SSLConfigParams::getClientSSL_CTX() const
   return client_ctx;
 }
 
-void
-SSLClientCoordinator::reconfigure()
-{
-  SSLConfig::reconfigure();
-  SNIConfig::reconfigure();
-}
-
 int
 SSLConfig::get_config_index()
 {
@@ -478,11 +470,6 @@ SSLConfig::commit_config_id()
 void
 SSLConfig::startup()
 {
-  sslClientUpdate.reset(new ConfigUpdateHandler<SSLClientCoordinator>());
-  sslClientUpdate->attach("proxy.config.ssl.client.cert.path");
-  sslClientUpdate->attach("proxy.config.ssl.client.cert.filename");
-  sslClientUpdate->attach("proxy.config.ssl.client.private_key.path");
-  sslClientUpdate->attach("proxy.config.ssl.client.private_key.filename");
   reconfigure();
 }
 

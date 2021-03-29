@@ -240,14 +240,5 @@ private:
   static int configid;
 };
 
-// A class to pass the ConfigUpdateHandler, so both SSLConfig and SNIConfig get updated
-// when the relevant files/configs get updated.
-class SSLClientCoordinator
-{
-public:
-  static void reconfigure();
-};
-
 extern SSLSessionCache *session_cache;
 extern SSLOriginSessionCache *origin_sess_cache;
-extern std::unique_ptr<ConfigUpdateHandler<SSLClientCoordinator>> sslClientUpdate;

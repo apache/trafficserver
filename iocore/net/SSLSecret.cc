@@ -22,6 +22,7 @@
 #include <map>
 #include "InkAPIInternal.h" // Added to include the ssl_hook and lifestyle_hook definitions
 #include "tscore/ts_file.h"
+#include "P_SSLConfig.h"
 
 bool
 SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::string &data_item1, std::string &data_item2)

@@ -923,42 +923,29 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
 #ifndef OPENSSL_IS_BORINGSSL
   ENGINE *e = ENGINE_get_default_RSA();
   if (e != nullptr) {
-    ats_scoped_str argkey;
-    if (keyPath == nullptr || keyPath[0] == '\0') {
-      argkey = completeServerCertPath.c_str();
-    } else {
-      argkey = Layout::get()->relative_to(params->serverKeyPathOnly, keyPath);
-    }
-    pkey = ENGINE_load_private_key(e, argkey.get(), nullptr, nullptr);
+    pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
     if (pkey) {
       if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
         SSLError("failed to load server private key from engine");
+        EVP_PKEY_free(pkey);
         return false;
       }
     }
   }
 #endif
   if (pkey == nullptr) {
-    if (!keyPath || keyPath[0] == '\0') {
-      // assume private key is contained in cert obtained from multicert file.
-      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerCertPath.c_str(), SSL_FILETYPE_PEM)) {
-        SSLError("failed to load server private key from %s", completeServerCertPath.c_str());
-        return false;
-      }
-    } else if (params->serverKeyPathOnly != nullptr) {
-      ats_scoped_str completeServerKeyPath(Layout::get()->relative_to(params->serverKeyPathOnly, keyPath));
-      if (!SSL_CTX_use_PrivateKey_file(ctx, completeServerKeyPath, SSL_FILETYPE_PEM)) {
-        SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
-        return false;
-      }
-      if (SSLConfigParams::load_ssl_file_cb) {
-        SSLConfigParams::load_ssl_file_cb(completeServerKeyPath);
-      }
-    } else {
-      SSLError("empty SSL private key path in %s", ts::filename::RECORDS);
+    scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
+    pkey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
+    if (nullptr == pkey) {
+      SSLError("failed to load server private key from %s", keyPath);
       return false;
     }
-    if (!SSL_CTX_check_private_key(ctx)) {
+    if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
+      SSLError("failed to attache server private key loaded from %s", keyPath);
+      EVP_PKEY_free(pkey);
+      return false;
+    }
+    if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
       SSLError("server private key does not match the certificate public key");
       return false;
     }

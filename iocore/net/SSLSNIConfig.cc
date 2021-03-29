@@ -186,7 +186,6 @@ SNIConfigParams::~SNIConfigParams()
 void
 SNIConfig::startup()
 {
-  sslClientUpdate->attach("proxy.config.ssl.servername.filename");
   reconfigure();
 }
 
