@@ -8720,9 +8720,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_FORWARD_CONNECT_METHOD:
     ret = _memberp_to_generic(&overridableHttpConfig->forward_connect_method, conv);
     break;
-  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER:
-    ret = _memberp_to_generic(&overridableHttpConfig->ssl_client_verify_server, conv);
-    break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
   case TS_CONFIG_SSL_CLIENT_SNI_POLICY:

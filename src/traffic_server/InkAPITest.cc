@@ -8687,7 +8687,6 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    OutboundConnTrack::CONFIG_VAR_MIN,
    OutboundConnTrack::CONFIG_VAR_MAX,
    OutboundConnTrack::CONFIG_VAR_MATCH,
-   "proxy.config.ssl.client.verify.server",
    "proxy.config.ssl.client.verify.server.policy",
    "proxy.config.ssl.client.verify.server.properties",
    "proxy.config.ssl.client.sni_policy",

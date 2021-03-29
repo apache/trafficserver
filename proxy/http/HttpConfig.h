@@ -586,7 +586,6 @@ struct OverridableHttpConfigParams {
   //////////////////////////////
   // server verification mode //
   //////////////////////////////
-  MgmtByte ssl_client_verify_server         = 0;
   char *ssl_client_verify_server_policy     = nullptr;
   char *ssl_client_verify_server_properties = nullptr;
   char *ssl_client_sni_policy               = nullptr;
