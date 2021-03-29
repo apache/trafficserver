@@ -48,6 +48,10 @@ Changes with Apache Traffic Server 9.0.1
   #7551 - Removes the test plugins from the .spec file / RPM
   #7558 - Fix parent.config timeouts to return a 504 not 502 on timeout
   #7564 - Fix compress issues with 304s, only looks at 304 headers
+  #7576 - Add thread yield to avoid busy waiting in LogObject::_checkout_write().
   #7592 - Remove inline for detail::cache::CacheData::idAddr
   #7596 - Remove UnixNetVConnection::startEvent - not actually called.
   #7602 - Fix the connection limit crash while using parents
+  #7616 - Increase Proxy Verifier caching delay.
+  #7620 - Adding negative revalidating AuTests.
+  #7634 - statichit: misc. fixes
