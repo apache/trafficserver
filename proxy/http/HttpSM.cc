@@ -3327,6 +3327,8 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
       //  detach the user agent
       if (background_fill == BACKGROUND_FILL_STARTED) {
         HTTP_INCREMENT_DYN_STAT(http_background_fill_current_count_stat);
+        HTTP_INCREMENT_DYN_STAT(http_background_fill_total_count_stat);
+
         ink_assert(server_entry->vc == server_session);
         ink_assert(c->is_downstream_from(server_session));
         server_session->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));

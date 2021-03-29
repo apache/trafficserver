@@ -352,6 +352,9 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_marked_down_count", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_total_parent_marked_down_count, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.background_fill_total_count", RECD_INT, RECP_PERSISTENT,
+                     (int)http_background_fill_total_count_stat, RecRawStatSyncCount);
+
   // Stats to track causes of ATS initiated origin shutdowns
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.pool_lock_contention", RECD_INT,
                      RECP_NON_PERSISTENT, (int)http_origin_shutdown_pool_lock_contention, RecRawStatSyncCount);
