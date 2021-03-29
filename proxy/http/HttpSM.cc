@@ -3546,6 +3546,10 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     break;
   }
 
+  if (background_fill != BACKGROUND_FILL_NONE) {
+    server_response_body_bytes = c->bytes_written;
+  }
+
   HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
   return 0;
 }
