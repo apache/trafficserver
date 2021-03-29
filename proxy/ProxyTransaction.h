@@ -62,7 +62,7 @@ public:
   virtual int get_transaction_id() const = 0;
   virtual int get_transaction_priority_weight() const;
   virtual int get_transaction_priority_dependence() const;
-  virtual bool allow_half_open() const              = 0;
+  virtual bool allow_half_open() const;
   virtual void increment_client_transactions_stat() = 0;
   virtual void decrement_client_transactions_stat() = 0;
 
