@@ -301,3 +301,4 @@ Changes with Apache Traffic Server 9.1.0
   #7628 - Expose URL element methods through HTTPHdr
   #7630 - Add default implementation for allow_half_open
   #7631 - Fix HttpSessionManager::acquireSession from previous rebase error
+  #7633 - Updating documentation for negative_revalidating_lifetime
