@@ -76,3 +76,7 @@ tr.Processes.Default.Command = (
 )
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
+
+ts.Disk.manager_log.Content += Testers.ExcludesExpression(
+    "needs restart",
+    "Ensure that extra msg reported in issue #7530 does not reappear")
