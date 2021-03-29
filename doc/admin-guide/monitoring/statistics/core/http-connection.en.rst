@@ -138,6 +138,12 @@ HTTP Connection
 
    This tracks the number of origin connections denied due to being over the :ts:cv:`proxy.config.http.per_server.connection.max` limit.
 
+.. ts:stat:: global proxy.process.http.pooled_server_connections integer
+   :type: counter
+
+   This metric tracks the number of server connections currently in the server session sharing pools. The server session sharing is
+   controlled by settings :ts:cv:`proxy.config.http.server_session_sharing.pool` and :ts:cv:`proxy.config.http.server_session_sharing.match`.
+
 
 HTTP/2
 ------
