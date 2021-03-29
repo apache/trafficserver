@@ -211,6 +211,7 @@ Changes with Apache Traffic Server 9.1.0
   #7281 - Make s3_auth plugin auto reload the config at expiration time
   #7286 - Remove unfinished h2c support
   #7289 - Enable all h2spec test
+  #7291 - Add failed state to hostdb to better track failing origins
   #7292 - Allow disabling SO_MARK and IP_TOS usage
   #7311 - Traffic Dump: Fix stream-id printing after first transaction.
   #7323 - Updates the Dockerfile with more packages
@@ -247,6 +248,7 @@ Changes with Apache Traffic Server 9.1.0
   #7404 - Doc: Fix INPUT tag of Doxyfile
   #7405 - Improving session cache performance
   #7407 - Add synchronization between UDPNetProcessor::UDPBind in main Thread and initialize_thread_for_udp_net in ET_UDP Thread
+  #7408 - Reactivate accept_no_activity_timeout
   #7409 - Fix clang compiler complaint about an unused parameter in SNIAction.
   #7412 - LGTM: Remove superfluous const qualifier in return type
   #7413 - Improvement to lua plugin
@@ -285,7 +287,17 @@ Changes with Apache Traffic Server 9.1.0
   #7533 - Add server_name option to proxy.config.ssl.client.sni_policy
   #7535 - Convert the inactive_client_timeout test to use Proxy Verifier
   #7539 - Fix the schedule AuTest for 9.1.x: use PrepareTestPlugin
+  #7545 - For TSHttpHdrEffectiveUrlBufGet(), include scheme for request to server URL.
   #7550 - Fix ja3_fingerprint configure syntax
+  #7567 - Remove ProxyTransaction::set_proxy_ssn
   #7569 - Cleanup: Rename IOBufferReader of Http2ClientSession
+  #7571 - Tidy up session/transaction destruction process
   #7572 - FQ pacing plugin memory leak fix
   #7589 - Add gold test for remap config .include directive.
+  #7608 - Set pcre_malloc/free function pointers in core main() only.
+  #7625 - Add proxy.process.http.background_fill_total_count
+  #7626 - Remove unused variables
+  #7627 - Add pooled_server_connections metric
+  #7628 - Expose URL element methods through HTTPHdr
+  #7630 - Add default implementation for allow_half_open
+  #7631 - Fix HttpSessionManager::acquireSession from previous rebase error
