@@ -117,8 +117,6 @@ libtscore_la_SOURCES = \
 	signals.cc \
 	SourceLocation.cc \
 	TextBuffer.cc \
-	LogMessage.cc \
-	Throttler.cc \
 	Tokenizer.cc \
 	ts_file.cc \
 	Version.cc \
@@ -179,13 +177,12 @@ test_tscore_SOURCES = \
 	unit_tests/test_List.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
-	unit_tests/test_ParseRules.cc \
+  unit_tests/test_ParseRules.cc \
 	unit_tests/test_PriorityQueue.cc \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
-	unit_tests/test_Throttler.cc \
 	unit_tests/test_Tokenizer.cc \
 	unit_tests/test_ts_file.cc \
 	unit_tests/test_Version.cc \

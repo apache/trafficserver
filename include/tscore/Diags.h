@@ -33,9 +33,236 @@
 
 #pragma once
 
-#include "DiagsTypes.h"
+#include <cstdarg>
+#include "ink_mutex.h"
+#include "Regex.h"
+#include "ink_apidefs.h"
+#include "ContFlags.h"
+#include "ink_inet.h"
+#include "BaseLogFile.h"
 #include "SourceLocation.h"
-#include "LogMessage.h"
+
+#define DIAGS_MAGIC 0x12345678
+#define BYTES_IN_MB 1000000
+
+class Diags;
+
+// extern int diags_on_for_plugins;
+enum DiagsTagType {
+  DiagsTagType_Debug  = 0, // do not renumber --- used as array index
+  DiagsTagType_Action = 1
+};
+
+struct DiagsModeOutput {
+  bool to_stdout;
+  bool to_stderr;
+  bool to_syslog;
+  bool to_diagslog;
+};
+
+enum DiagsLevel { // do not renumber --- used as array index
+  DL_Diag = 0,    // process does not die
+  DL_Debug,       // process does not die
+  DL_Status,      // process does not die
+  DL_Note,        // process does not die
+  DL_Warning,     // process does not die
+  DL_Error,       // process does not die
+  DL_Fatal,       // causes process termination
+  DL_Alert,       // causes process termination
+  DL_Emergency,   // causes process termination, exits with UNRECOVERABLE_EXIT
+  DL_Undefined    // must be last, used for size!
+};
+
+enum StdStream { STDOUT = 0, STDERR };
+
+enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_TIME_OR_SIZE, INVALID_ROLLING_VALUE };
+
+enum DiagsShowLocation { SHOW_LOCATION_NONE = 0, SHOW_LOCATION_DEBUG, SHOW_LOCATION_ALL };
+
+#define DiagsLevel_Count DL_Undefined
+
+#define DiagsLevel_IsTerminal(_l) (((_l) >= DL_Fatal) && ((_l) < DL_Undefined))
+
+// Cleanup Function Prototype - Called before ink_fatal to
+//   cleanup process state
+typedef void (*DiagsCleanupFunc)();
+
+struct DiagsConfigState {
+  // this is static to eliminate many loads from the critical path
+  static int enabled[2];                     // one debug, one action
+  DiagsModeOutput outputs[DiagsLevel_Count]; // where each level prints
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//
+//      class Diags
+//
+//      The Diags class is used for global configuration of the run-time
+//      diagnostics system.  This class provides the following services:
+//
+//      * run-time notices, debugging, warnings, errors
+//      * debugging tags to selectively enable & disable diagnostics
+//      * action tags to selectively enable & disable code paths
+//      * configurable output to stdout, stderr, syslog, error logs
+//      * traffic_manager interface supporting on-the-fly reconfiguration
+//
+//////////////////////////////////////////////////////////////////////////////
+
+class Diags
+{
+public:
+  Diags(std::string_view prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log,
+        int diags_log_perm = -1, int output_log_perm = -1);
+  virtual ~Diags();
+
+  BaseLogFile *diags_log;
+  BaseLogFile *stdout_log;
+  BaseLogFile *stderr_log;
+
+  const unsigned int magic;
+  DiagsConfigState config;
+  DiagsShowLocation show_location;
+  DiagsCleanupFunc cleanup_func;
+
+  ///////////////////////////
+  // conditional debugging //
+  ///////////////////////////
+
+  bool
+  get_override() const
+  {
+    return get_cont_flag(ContFlags::DEBUG_OVERRIDE);
+  }
+
+  bool
+  test_override_ip(IpEndpoint const &test_ip)
+  {
+    return this->debug_client_ip == test_ip;
+  }
+
+  bool
+  on(DiagsTagType mode = DiagsTagType_Debug) const
+  {
+    return ((config.enabled[mode] == 1) || (config.enabled[mode] == 2 && this->get_override()));
+  }
+
+  bool
+  on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const
+  {
+    return this->on(mode) && tag_activated(tag, mode);
+  }
+
+  /////////////////////////////////////
+  // low-level tag inquiry functions //
+  /////////////////////////////////////
+
+  bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
+
+  /////////////////////////////
+  // raw printing interfaces //
+  /////////////////////////////
+
+  const char *level_name(DiagsLevel level) const;
+
+  ///////////////////////////////////////////////////////////////////////
+  // user diagnostic output interfaces --- enabled on or off based     //
+  // on the value of the enable flag, and the state of the debug tags. //
+  ///////////////////////////////////////////////////////////////////////
+
+  void
+  print(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(5, 6)
+  {
+    va_list ap;
+    va_start(ap, fmt);
+    print_va(tag, level, loc, fmt, ap);
+    va_end(ap);
+  }
+
+  void print_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
+
+  void
+  log(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(5, 6)
+  {
+    if (on(tag)) {
+      va_list ap;
+      va_start(ap, fmt);
+      print_va(tag, level, loc, fmt, ap);
+      va_end(ap);
+    }
+  }
+
+  void
+  log_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap)
+  {
+    if (on(tag)) {
+      print_va(tag, level, loc, fmt, ap);
+    }
+  }
+
+  void
+  error(DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(4, 5)
+  {
+    va_list ap;
+    va_start(ap, fmt);
+    error_va(level, loc, fmt, ap);
+    va_end(ap);
+  }
+
+  virtual void error_va(DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
+
+  void dump(FILE *fp = stdout) const;
+
+  void activate_taglist(const char *taglist, DiagsTagType mode = DiagsTagType_Debug);
+
+  void deactivate_all(DiagsTagType mode = DiagsTagType_Debug);
+
+  bool setup_diagslog(BaseLogFile *blf);
+  void config_roll_diagslog(RollingEnabledValues re, int ri, int rs);
+  void config_roll_outputlog(RollingEnabledValues re, int ri, int rs);
+  bool reseat_diagslog();
+  bool should_roll_diagslog();
+  bool should_roll_outputlog();
+
+  bool set_std_output(StdStream stream, const char *file);
+
+  const char *base_debug_tags;  // internal copy of default debug tags
+  const char *base_action_tags; // internal copy of default action tags
+
+  IpAddr debug_client_ip;
+
+private:
+  const std::string prefix_str;
+  mutable ink_mutex tag_table_lock; // prevents reconfig/read races
+  DFA *activated_tags[2];           // 1 table for debug, 1 for action
+
+  // These are the default logfile permissions
+  int diags_logfile_perm  = -1;
+  int output_logfile_perm = -1;
+
+  // log rotation variables
+  RollingEnabledValues outputlog_rolling_enabled;
+  int outputlog_rolling_size;
+  int outputlog_rolling_interval;
+  RollingEnabledValues diagslog_rolling_enabled;
+  int diagslog_rolling_interval;
+  int diagslog_rolling_size;
+  time_t outputlog_time_last_roll;
+  time_t diagslog_time_last_roll;
+
+  bool rebind_std_stream(StdStream stream, int new_fd);
+
+  void
+  lock() const
+  {
+    ink_mutex_acquire(&tag_table_lock);
+  }
+
+  void
+  unlock() const
+  {
+    ink_mutex_release(&tag_table_lock);
+  }
+};
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
@@ -58,14 +285,10 @@
 
 extern inkcoreapi Diags *diags;
 
-// Note that the log functions being implemented as a macro has the advantage
-// that the pre-compiler expands this in place such that the call to
-// MakeSourceLocation happens at the call site for the function.
-#define DiagsError(level, ...)                              \
-  do {                                                      \
-    static const SourceLocation loc = MakeSourceLocation(); \
-    static LogMessage log_message;                          \
-    log_message.message(level, loc, __VA_ARGS__);           \
+#define DiagsError(level, fmt, ...)                \
+  do {                                             \
+    SourceLocation loc = MakeSourceLocation();     \
+    diags->error(level, &loc, fmt, ##__VA_ARGS__); \
   } while (0)
 
 #define Status(...) DiagsError(DL_Status, __VA_ARGS__)       // Log information
@@ -76,40 +299,10 @@ extern inkcoreapi Diags *diags;
 #define Alert(...) DiagsError(DL_Alert, __VA_ARGS__)         // Log recoverable crash, fail CI, exit & restart, Ops attention
 #define Emergency(...) DiagsError(DL_Emergency, __VA_ARGS__) // Log unrecoverable crash, fail CI, exit, Ops attention
 
-/** Apply throttling to a log site.
- *
- * Logs using SiteThrottled* version will be throttled at a certain interval
- * that applies to the call site, regardless of whether the messages within
- * that interval are unique or not. This is helpful for logs which can be noisy
- * and frequently have differing content, such as the length of a buffer or a
- * counter. Rather than changing the log to contain less information, this can
- * be applied to the site so that when it is emitted, the information is
- * present, but the set of possibly slightly different logs will still be
- * suppressed against a configurable interval as a whole.
- */
-#define SiteThrottledDiagsError(level, ...)                 \
-  do {                                                      \
-    static const SourceLocation loc = MakeSourceLocation(); \
-    static LogMessage log_message{IS_THROTTLED};            \
-    log_message.message(level, loc, __VA_ARGS__);           \
-  } while (0)
-
-#define SiteThrottledStatus(...) SiteThrottledDiagsError(DL_Status, __VA_ARGS__)   // Log information
-#define SiteThrottledNote(...) SiteThrottledDiagsError(DL_Note, __VA_ARGS__)       // Log significant information
-#define SiteThrottledWarning(...) SiteThrottledDiagsError(DL_Warning, __VA_ARGS__) // Log concerning information
-#define SiteThrottledError(...) SiteThrottledDiagsError(DL_Error, __VA_ARGS__)     // Log operational failure, fail CI
-#define SiteThrottledFatal(...) \
-  SiteThrottledDiagsError(DL_Fatal, __VA_ARGS__) // Log recoverable crash, fail CI, exit & allow restart
-#define SiteThrottledAlert(...) \
-  SiteThrottledDiagsError(DL_Alert, __VA_ARGS__) // Log recoverable crash, fail CI, exit & restart, Ops attention
-#define SiteThrottledEmergency(...) \
-  SiteThrottledDiagsError(DL_Emergency, __VA_ARGS__) // Log unrecoverable crash, fail CI, exit, Ops attention
-
-#define DiagsErrorV(level, fmt, ap)                         \
-  do {                                                      \
-    static const SourceLocation loc = MakeSourceLocation(); \
-    static LogMessage log_message;                          \
-    log_message.message_va(level, loc, fmt, ap);            \
+#define DiagsErrorV(level, fmt, ap)                  \
+  do {                                               \
+    const SourceLocation loc = MakeSourceLocation(); \
+    diags->error_va(level, &loc, fmt, ap);           \
   } while (0)
 
 #define StatusV(fmt, ap) DiagsErrorV(DL_Status, fmt, ap)
@@ -120,58 +313,29 @@ extern inkcoreapi Diags *diags;
 #define AlertV(fmt, ap) DiagsErrorV(DL_Alert, fmt, ap)
 #define EmergencyV(fmt, ap) DiagsErrorV(DL_Emergency, fmt, ap)
 
-/** See the comment above SiteThrottledDiagsError for an explanation of how the
- * SiteThrottled functions behave. */
-#define SiteThrottledDiagsErrorV(level, fmt, ap)            \
-  do {                                                      \
-    static const SourceLocation loc = MakeSourceLocation(); \
-    static LogMessage log_message{IS_THROTTLED};            \
-    log_message.message_va(level, loc, fmt, ap);            \
-  } while (0)
-
-#define SiteThrottledStatusV(fmt, ap) SiteThrottledDiagsErrorV(DL_Status, fmt, ap)
-#define SiteThrottledNoteV(fmt, ap) SiteThrottledDiagsErrorV(DL_Note, fmt, ap)
-#define SiteThrottledWarningV(fmt, ap) SiteThrottledDiagsErrorV(DL_Warning, fmt, ap)
-#define SiteThrottledErrorV(fmt, ap) SiteThrottledDiagsErrorV(DL_Error, fmt, ap)
-#define SiteThrottledFatalV(fmt, ap) SiteThrottledDiagsErrorV(DL_Fatal, fmt, ap)
-#define SiteThrottledAlertV(fmt, ap) SiteThrottledDiagsErrorV(DL_Alert, fmt, ap)
-#define SiteThrottledEmergencyV(fmt, ap) SiteThrottledDiagsErrorV(DL_Emergency, fmt, ap)
-
 #if TS_USE_DIAGS
 
-/// A Diag version of the above.
-#define Diag(tag, ...)                                        \
-  do {                                                        \
-    if (unlikely(diags->on())) {                              \
-      static const SourceLocation loc = MakeSourceLocation(); \
-      static LogMessage log_message;                          \
-      log_message.diag(tag, loc, __VA_ARGS__);                \
-    }                                                         \
+#define Diag(tag, ...)                                 \
+  do {                                                 \
+    if (unlikely(diags->on())) {                       \
+      const SourceLocation loc = MakeSourceLocation(); \
+      diags->log(tag, DL_Diag, &loc, __VA_ARGS__);     \
+    }                                                  \
   } while (0)
 
-/// A Debug version of the above.
-#define Debug(tag, ...)                                       \
-  do {                                                        \
-    if (unlikely(diags->on())) {                              \
-      static const SourceLocation loc = MakeSourceLocation(); \
-      static LogMessage log_message;                          \
-      log_message.debug(tag, loc, __VA_ARGS__);               \
-    }                                                         \
+#define Debug(tag, ...)                                \
+  do {                                                 \
+    if (unlikely(diags->on())) {                       \
+      const SourceLocation loc = MakeSourceLocation(); \
+      diags->log(tag, DL_Debug, &loc, __VA_ARGS__);    \
+    }                                                  \
   } while (0)
 
-/** Same as Debug above, but this allows a positive override of the tag
- * mechanism by a flag boolean.
- *
- * @param[in] flag True if the message should be logged regardless of tag
- * configuration, false if the logging of the message should respsect the tag
- * configuration.
- */
 #define SpecificDebug(flag, tag, ...)                                                                       \
   do {                                                                                                      \
     if (unlikely(diags->on())) {                                                                            \
-      static const SourceLocation loc = MakeSourceLocation();                                               \
-      static LogMessage log_message;                                                                        \
-      flag ? log_message.print(tag, DL_Debug, loc, __VA_ARGS__) : log_message.debug(tag, loc, __VA_ARGS__); \
+      const SourceLocation loc = MakeSourceLocation();                                                      \
+      flag ? diags->print(tag, DL_Debug, &loc, __VA_ARGS__) : diags->log(tag, DL_Debug, &loc, __VA_ARGS__); \
     }                                                                                                       \
   } while (0)
 

@@ -115,10 +115,6 @@ ink_get16(const uint8_t *src)
 static inline unsigned int
 get_rcode(char *buff)
 {
-  // 'buff' is always a HostEnt::buf which is a char array and therefore cannot
-  // be a nullptr. This assertion satisfies a mistaken clang-analyzer warning
-  // saying this can be a nullptr dereference.
-  ink_assert(buff != nullptr);
   return reinterpret_cast<HEADER *>(buff)->rcode;
 }
 

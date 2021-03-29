@@ -33,9 +33,8 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 
-#include "tscore/Filenames.h"
 #include "tscore/List.h"
-#include "tscore/LogMessage.h"
+#include "tscore/Filenames.h"
 
 #include "Log.h"
 #include "LogField.h"
@@ -202,20 +201,6 @@ LogConfig::read_configuration_variables()
 
   val                 = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.rolling_allow_empty"));
   rolling_allow_empty = (val > 0);
-
-  // THROTTLING
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.log.throttling_interval_msec"));
-  if (LogThrottlingIsValid(val)) {
-    LogMessage::set_default_log_throttling_interval(std::chrono::milliseconds{val});
-  } else {
-    Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.log.throttling_interval_msec");
-  }
-  val = static_cast<int>(REC_ConfigReadInteger("proxy.config.diags.debug.throttling_interval_msec"));
-  if (LogThrottlingIsValid(val)) {
-    LogMessage::set_default_debug_throttling_interval(std::chrono::milliseconds{val});
-  } else {
-    Warning("invalid value '%d' for '%s', disabling log rolling", val, "proxy.config.diags.debug.throttling_interval_msec");
-  }
 
   // Read in min_count control values for auto deletion
   if (auto_delete_rolled_files) {
@@ -450,27 +435,13 @@ void
 LogConfig::register_config_callbacks()
 {
   static const char *names[] = {
-    "proxy.config.log.log_buffer_size",
-    "proxy.config.log.max_secs_per_buffer",
-    "proxy.config.log.max_space_mb_for_logs",
-    "proxy.config.log.max_space_mb_headroom",
-    "proxy.config.log.logfile_perm",
-    "proxy.config.log.hostname",
-    "proxy.config.log.logfile_dir",
-    "proxy.config.log.rolling_enabled",
-    "proxy.config.log.rolling_interval_sec",
-    "proxy.config.log.rolling_offset_hr",
-    "proxy.config.log.rolling_size_mb",
-    "proxy.config.log.auto_delete_rolled_files",
-    "proxy.config.log.rolling_max_count",
-    "proxy.config.log.rolling_allow_empty",
-    "proxy.config.log.config.filename",
-    "proxy.config.log.sampling_frequency",
-    "proxy.config.log.file_stat_frequency",
-    "proxy.config.log.space_used_frequency",
+    "proxy.config.log.log_buffer_size",       "proxy.config.log.max_secs_per_buffer", "proxy.config.log.max_space_mb_for_logs",
+    "proxy.config.log.max_space_mb_headroom", "proxy.config.log.logfile_perm",        "proxy.config.log.hostname",
+    "proxy.config.log.logfile_dir",           "proxy.config.log.rolling_enabled",     "proxy.config.log.rolling_interval_sec",
+    "proxy.config.log.rolling_offset_hr",     "proxy.config.log.rolling_size_mb",     "proxy.config.log.auto_delete_rolled_files",
+    "proxy.config.log.rolling_max_count",     "proxy.config.log.rolling_allow_empty", "proxy.config.log.config.filename",
+    "proxy.config.log.sampling_frequency",    "proxy.config.log.file_stat_frequency", "proxy.config.log.space_used_frequency",
     "proxy.config.log.io.max_buffer_index",
-    "proxy.config.log.throttling_interval_msec",
-    "proxy.config.diags.debug.throttling_interval_msec",
   };
 
   for (unsigned i = 0; i < countof(names); ++i) {

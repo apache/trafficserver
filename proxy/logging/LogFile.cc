@@ -718,7 +718,7 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
     }
 
     if ((bytes_this_write = static_cast<int>(::writev(fd, (const struct iovec *)wvec, vcnt))) < 0) {
-      SiteThrottledWarning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
+      Warning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
     } else {
       total_bytes = bytes_this_write;
     }

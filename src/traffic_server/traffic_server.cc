@@ -1778,6 +1778,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // This is also needed for log rotation - setting up the file can cause privilege
   // related errors and if diagsConfig isn't get up yet that will crash on a NULL pointer.
   diagsConfig = new DiagsConfig("Server", DIAGS_LOG_FILENAME, error_tags, action_tags, false);
+  diags       = diagsConfig->diags;
   diags->set_std_output(StdStream::STDOUT, bind_stdout);
   diags->set_std_output(StdStream::STDERR, bind_stderr);
   if (is_debug_tag_set("diags")) {
@@ -1872,6 +1873,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Re-initialize diagsConfig based on records.config configuration
   DiagsConfig *old_log = diagsConfig;
   diagsConfig          = new DiagsConfig("Server", DIAGS_LOG_FILENAME, error_tags, action_tags, true);
+  diags                = diagsConfig->diags;
   RecSetDiags(diags);
   diags->set_std_output(StdStream::STDOUT, bind_stdout);
   diags->set_std_output(StdStream::STDERR, bind_stderr);

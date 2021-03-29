@@ -3007,29 +3007,6 @@ Logging Configuration
 
    How often |TS| executes log related periodic tasks, in seconds
 
-.. ts:cv:: CONFIG proxy.config.log.proxy.config.log.throttling_interval_msec INT 60000
-   :reloadable:
-   :units: milliseconds
-
-   The minimum amount of milliseconds between repeated throttled |TS| log
-   events. A value of 0 implies no throttling. Note that for performance
-   reasons only certain logs are compiled with throttling applied to them.
-
-   Throttling is applied to all log events for a particular message which is
-   emitted within its throttling interval. That is, once a throttled log is
-   emitted, none will be emitted until the next log event for that message
-   which occurs outside of this configured interval. As mentioned above, this
-   message is applied not broadly but rather to potentially noisy log messages,
-   such as ones that might occur thousands of times a second under certain
-   error conditions. Once the next log event occurs outside of its interval, a
-   summary message is printed conveying how many messages of that type were
-   throttled since the last time it was emitted.
-
-   It is possible that a log is emitted, followed by more of its type in an
-   interval, then none are emitted after that. Be aware this would result in no
-   summary log message for that interval until the message is emitted again
-   outside of the throttled interval.
-
 .. ts:cv:: CONFIG proxy.config.http.slow.log.threshold INT 0
    :reloadable:
    :units: milliseconds
@@ -3173,17 +3150,6 @@ Diagnostic Logging Configuration
    |TS| plugins will typically log debug messages using the :c:func:`TSDebug`
    API, passing the plugin name as the debug tag.
 
-.. ts:cv:: CONFIG proxy.config.diags.debug.throttling_interval_msec INT 0
-   :reloadable:
-   :units: milliseconds
-
-   The minimum amount of milliseconds between repeated |TS| `diag` and `debug`
-   log events. A value of 0 implies no throttling. All diags and debug logs
-   are compiled with throttling applied to them.
-
-   For details about how log throttling works, see
-   :ts:cv:`log.throttling_interval_msec
-   <proxy.config.log.proxy.config.log.throttling_interval_msec>`.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile_perm STRING rw-r--r--
 

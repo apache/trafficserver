@@ -504,7 +504,7 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
         res      = field->unmarshal(&read_from, to, write_to_len - bytes_written);
 
         if (res < 0) {
-          SiteThrottledNote("%s", buffer_size_exceeded_msg);
+          Note("%s", buffer_size_exceeded_msg);
           bytes_written = 0;
           break;
         }
@@ -529,7 +529,7 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
       if (1 + bytes_written < write_to_len) {
         write_to[bytes_written++] = printf_str[i];
       } else {
-        SiteThrottledNote("%s", buffer_size_exceeded_msg);
+        Note("%s", buffer_size_exceeded_msg);
         bytes_written = 0;
         break;
       }
