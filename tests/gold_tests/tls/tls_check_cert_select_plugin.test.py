@@ -56,7 +56,7 @@ Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_secre
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
-    'proxy.config.diags.debug.tags':  'ssl_secret_load_test|ssl',
+    'proxy.config.diags.debug.tags': 'ssl_secret_load_test|ssl',
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.ssl.server.cert.path': '{0}/../'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}/../'.format(ts.Variables.SSLDir),
@@ -125,7 +125,9 @@ tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "C
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should not contain bar.com")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
 
-# Copy in a new version of the bar.com cert.  Replace it with the version signed by signer 1.  Wait at least a second to sure the file update time differs
+# Copy in a new version of the bar.com cert.  Replace it with the version
+# signed by signer 1.  Wait at least a second to sure the file update time
+# differs
 trupdate = Test.AddTestRun("Update server bar cert file in place")
 trupdate.StillRunningAfter = ts
 trupdate.StillRunningAfter = server
@@ -136,10 +138,13 @@ trupdate.Processes.Default.Command = 'touch {0}/signed2-bar.pem'.format(ts.Varia
 trupdate.Processes.Default.Env = ts.Env
 trupdate.Processes.Default.ReturnCode = 0
 
-# The plugin will pull every 3 seconds.  So wait 4 seconds and test again.  Request with CA=signer.pem should work.  Request with CA=signer2.pem should fail
+# The plugin will pull every 3 seconds.  So wait 4 seconds and test again.
+# Request with CA=signer.pem should work.  Request with CA=signer2.pem
+# should fail
 tr = Test.AddTestRun("Test new version of bar cert with good CA")
 tr.DelayStart = 4
-tr.Processes.Default.Command = "date; curl -v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "date; curl -v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -149,7 +154,8 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Ce
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
 
 tr = Test.AddTestRun("Test new version of bar cert with bad CA")
-tr.Processes.Default.Command = "curl -v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port)
+tr.Processes.Default.Command = "curl -v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(
+    ts.Variables.ssl_port)
 tr.ReturnCode = 60
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -157,4 +163,3 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression("unknown CA", "Fai
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should contain bar.com")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Cert should not contain foo.com")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("404", "Should make an exchange")
-

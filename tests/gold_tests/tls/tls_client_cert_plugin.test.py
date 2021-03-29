@@ -28,8 +28,18 @@ ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 # --clientverify: "" empty string because microserver does store_true for argparse, but options is a dictionary
-server = Test.MakeOriginServer("server", ssl=True, options = { "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-foo.pem".format(Test.RunDirectory), clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
-server2 = Test.MakeOriginServer("server2", ssl=True, options = { "--clientCA": cafile2, "--clientverify": ""}, clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory), clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+server = Test.MakeOriginServer("server",
+                               ssl=True,
+                               options={"--clientCA": cafile,
+                                        "--clientverify": ""},
+                               clientcert="{0}/signed-foo.pem".format(Test.RunDirectory),
+                               clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
+server2 = Test.MakeOriginServer("server2",
+                                ssl=True,
+                                options={"--clientCA": cafile2,
+                                         "--clientverify": ""},
+                                clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory),
+                                clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
 server3 = Test.MakeOriginServer("server3")
 server.Setup.Copy("ssl/signer.pem")
 server.Setup.Copy("ssl/signer2.pem")
@@ -72,14 +82,14 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'ssl_secret_load_test|ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.verify.server':  0,
+    'proxy.config.ssl.client.verify.server': 0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.cert.path': '{0}/../'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.cert.filename': 'signed-foo.pem',
     'proxy.config.ssl.client.private_key.path': '{0}/../'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.url_remap.pristine_host_hdr' : 1,
+    'proxy.config.url_remap.pristine_host_hdr': 1,
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -115,7 +125,7 @@ tr.Processes.Default.Command = "curl -H host:example.com  http://127.0.0.1:{0}/c
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
-#Should fail
+# Should fail
 trfail = Test.AddTestRun("Connect with first client cert to second server")
 trfail.StillRunningAfter = ts
 trfail.StillRunningAfter = server
@@ -133,7 +143,7 @@ trbar.Processes.Default.Command = "curl -H host:bar.com  http://127.0.0.1:{0}/ca
 trbar.Processes.Default.ReturnCode = 0
 trbar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
-#Should fail
+# Should fail
 trbarfail = Test.AddTestRun("Connect with signed2 bar cert to first server")
 trbarfail.StillRunningAfter = ts
 trbarfail.StillRunningAfter = server
@@ -146,7 +156,7 @@ tr2 = Test.AddTestRun("Update config files")
 # Update the SNI config
 snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
-tr2.Disk.File(snipath, id = "sni_yaml", typename="ats:config"),
+tr2.Disk.File(snipath, id="sni_yaml", typename="ats:config"),
 tr2.Disk.sni_yaml.AddLine(
     'sni:')
 tr2.Disk.sni_yaml.AddLine(
@@ -156,17 +166,17 @@ tr2.Disk.sni_yaml.AddLine(
 tr2.Disk.sni_yaml.AddLine(
     '  client_key: {0}/../signed-bar.key'.format(ts.Variables.SSLDir))
 # recreate the records.config with the cert filename changed
-tr2.Disk.File(recordspath, id = "records_config", typename="ats:config:records"),
+tr2.Disk.File(recordspath, id="records_config", typename="ats:config:records"),
 tr2.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.verify.server':  0,
+    'proxy.config.ssl.client.verify.server': 0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.cert.path': '{0}/../'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.cert.filename': 'signed2-foo.pem',
     'proxy.config.ssl.client.private_key.path': '{0}/../'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
-    'proxy.config.url_remap.pristine_host_hdr' : 1,
+    'proxy.config.url_remap.pristine_host_hdr': 1,
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'ssl_secret_load_test|ssl',
 })
@@ -187,7 +197,7 @@ tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
 tr2reload.Processes.Default.Env = ts.Env
 tr2reload.Processes.Default.ReturnCode = 0
 
-#Should succeed
+# Should succeed
 tr3bar = Test.AddTestRun("Make request with other bar cert to first server")
 # Wait for the reload to complete
 tr3bar.Processes.Default.StartBefore(server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'sni.yaml finished loading', 3))
@@ -198,7 +208,7 @@ tr3bar.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/c
 tr3bar.Processes.Default.ReturnCode = 0
 tr3bar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
-#Should fail
+# Should fail
 tr3barfail = Test.AddTestRun("Make request with other bar cert to second server")
 tr3barfail.StillRunningAfter = ts
 tr3barfail.StillRunningAfter = server
@@ -207,7 +217,7 @@ tr3barfail.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{
 tr3barfail.Processes.Default.ReturnCode = 0
 tr3barfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
-#Should succeed
+# Should succeed
 tr3 = Test.AddTestRun("Make request with other cert to second server")
 # Wait for the reload to complete
 tr3.StillRunningAfter = ts
@@ -217,7 +227,7 @@ tr3.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/
 tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
-#Should fail
+# Should fail
 tr3fail = Test.AddTestRun("Make request with other cert to first server")
 tr3fail.StillRunningAfter = ts
 tr3fail.StillRunningAfter = server
@@ -236,7 +246,8 @@ trupdate.StillRunningAfter = server2
 trupdate.Setup.CopyAs("ssl/signed2-bar.pem", ".", "{0}/signed-bar.pem".format(ts.Variables.SSLDir))
 # in the config/ssl directory for records.config
 trupdate.Setup.CopyAs("ssl/signed-foo.pem", ".", "{0}/signed2-foo.pem".format(ts.Variables.SSLDir))
-trupdate.Processes.Default.Command = 'traffic_ctl config set proxy.config.ssl.client.cert.path {0}/../; touch {1}; touch {2}'.format(ts.Variables.SSLDir,snipath,recordspath)
+trupdate.Processes.Default.Command = 'traffic_ctl config set proxy.config.ssl.client.cert.path {0}/../; touch {1}; touch {2}'.format(
+    ts.Variables.SSLDir, snipath, recordspath)
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 trupdate.Processes.Default.Env = ts.Env
 trupdate.Processes.Default.ReturnCode = 0
@@ -249,7 +260,7 @@ trreload.Processes.Default.Command = 'traffic_ctl config reload'
 trreload.Processes.Default.Env = ts.Env
 trreload.Processes.Default.ReturnCode = 0
 
-#Should succeed
+# Should succeed
 tr4bar = Test.AddTestRun("Make request with renamed bar cert to second server")
 # Wait for the reload to complete
 tr4bar.DelayStart = 10
@@ -260,7 +271,7 @@ tr4bar.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{0}/c
 tr4bar.Processes.Default.ReturnCode = 0
 tr4bar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
-#Should fail
+# Should fail
 tr4barfail = Test.AddTestRun("Make request with renamed bar cert to first server")
 tr4barfail.StillRunningAfter = ts
 tr4barfail.StillRunningAfter = server
@@ -269,7 +280,7 @@ tr4barfail.Processes.Default.Command = 'curl  -H host:bar.com http://127.0.0.1:{
 tr4barfail.Processes.Default.ReturnCode = 0
 tr4barfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
 
-#Should succeed
+# Should succeed
 tr4 = Test.AddTestRun("Make request with renamed foo cert to first server")
 tr4.StillRunningAfter = ts
 tr4.StillRunningAfter = server
@@ -278,7 +289,7 @@ tr4.Processes.Default.Command = 'curl  -H host:example.com http://127.0.0.1:{0}/
 tr4.Processes.Default.ReturnCode = 0
 tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
-#Should fail
+# Should fail
 tr4fail = Test.AddTestRun("Make request with renamed foo cert to second server")
 tr4fail.StillRunningAfter = ts
 tr4fail.StillRunningAfter = server
