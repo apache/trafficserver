@@ -40,7 +40,6 @@ ts.addSSLfile("ssl/signer.pem")
 ts.Disk.records_config.update({
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.ssl.client.verify.server': 0,
     'proxy.config.url_remap.pristine_host_hdr': 1,
     'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
     'proxy.config.exec_thread.autoconfig.scale': 1.0,

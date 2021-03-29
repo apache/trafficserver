@@ -44,9 +44,6 @@ server = Test.MakeOriginServer("server")
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
-# **testname is required**
-#testName = "regex_reval"
-
 # default root
 request_header_0 = {"headers":
                     "GET / HTTP/1.1\r\n" +
