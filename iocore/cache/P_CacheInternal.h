@@ -207,6 +207,7 @@ extern RecRawStatBlock *cache_rsb;
 // Configuration
 extern int cache_config_dir_sync_frequency;
 extern int cache_config_http_max_alts;
+extern int cache_config_log_alternate_eviction;
 extern int cache_config_permit_pinning;
 extern int cache_config_select_alternate;
 extern int cache_config_max_doc_size;
