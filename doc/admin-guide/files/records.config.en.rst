@@ -1698,14 +1698,35 @@ Negative Response Caching
    to network or HTTP errors. If it is enabled, rather than caching the negative response, the
    current stale content is preserved and served. Note this is considered only on a revalidation of
    already cached content. A revalidation failure means a connection failure or a 50x response code.
+   When considering replying with a stale response in these negative revalidating circumstances,
+   |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` configuration and will not
+   use a cached response older than ``max_stale_age`` seconds.
 
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
 
-   How long, in seconds, to consider a stale cached document valid if
-   :ts:cv:`proxy.config.http.negative_revalidating_enabled` is enabled and |TS| receives a negative
-   (``5xx`` only) response from the origin server during revalidation.
+   When replying with a stale cached response in negative revalidating circumstances (see
+   :ts:cv:`proxy.config.http.negative_revalidating_enabled`), |TS| includes an ``Expires:`` HTTP
+   header field in the cached response with a future time so that upstream caches will not try to
+   revalidate their respective stale objects. This configuration specifies how many seconds in the
+   future |TS| will calculate the value of this inserted ``Expires:`` header field.
+
+   There is a limitation to this method to be aware of: per specification (see IETF RFC 7234,
+   section 4.2.1), ``Cache-Control:`` response directives take precedence over the ``Expires:``
+   header field when determining object freshness. Thus if the cached response contains either a
+   ``max-age`` or an ``s-maxage`` ``Cache-Control:`` response directive, then these directives would
+   take precedence for the upstream caches over the inserted ``Expires:`` field, rendering the
+   ``Expires:`` header ineffective in specifying the configured freshness lifetime.
+
+   Finally, be aware that the only way this configuration is used is as input into calculating the
+   value of these inserted ``Expires:`` header fields. This configuration does not direct |TS|
+   behavior with regard to whether it considers a stale object to be fresh enough to serve out of
+   cache when revalidation fails. As mentioned above in
+   :ts:cv:`proxy.config.http.negative_revalidating_enabled`,
+   :ts:cv:`proxy.config.http.cache.max_stale_age` is used for that determination.
+
+   This configuration defaults to 1,800 seconds (30 minutes).
 
 Proxy User Variables
 ====================
@@ -2114,7 +2135,7 @@ Cache Control
    :reloadable:
    :overridable:
 
-   The maximum age allowed for a stale response before it cannot be cached.
+   The maximum age in seconds allowed for a stale response before it cannot be cached.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.guaranteed_min_lifetime INT 0
    :reloadable:
