@@ -22,3 +22,36 @@
 Profiling
 *********
 
+There are two main options for performance profiling: perf and gperf.
+
+perf
+====
+
+The perf top option is useful to quickly identify functions that are taking a larger than expected
+portion of the execution time.::
+
+  sudo perf top -p `pidof traffic_server`
+
+For more details use the record subcommand to gather profiling data on the traffic_server process.  Using
+the -g option will gather call stack information.  Compiling with -ggdb and -fno-omit-frame-pointer
+will make it more likely that perf record will gather complete callstacks.::
+
+  sudo perf record -g -p `pidof traffic_server`
+
+After gathering profilng data with perf record, use perf report to display the call stacks with their corresponding
+contribution to total execution time.::
+
+  sudo perf report
+
+gperf
+=====
+
+Gperftools also provides libraries to statistically sample the callstacks of a process.  The --with-profile=yes option for configure will
+link with the gperftools profiling library and add profile stop and profile dump function calls at the beginning and end of the traffic_server
+main function.  The profilng data will be dumped in /tmp/ts.prof.
+
+Once the profiling data file is present, you can use the pprof tool to generate a pdf callgraph of the data to see which
+call stacks contribute most to the execution time.::
+
+  pprof --pdf /opt/trafficserver/9.0/bin/traffic_server ts.prof > prof.pdf
+
