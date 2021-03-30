@@ -6536,33 +6536,46 @@ HttpTransact::process_quick_http_filter(State *s, int method)
 bool
 HttpTransact::will_this_request_self_loop(State *s)
 {
+  // The self-loop detection for this ATS node will allow up to max_proxy_cycles
+  // (each time it sees it returns to itself it is one cycle) before declaring a self-looping condition detected.
+  // If max_proxy_cycles is > 0 then then next-hop is disabled since --
+  //   * if first cycle then it is alright okay
+  //   * if not first cycle then will be detected by via string checking the next time that
+  //     it enters the node
+  int max_proxy_cycles = s->txn_conf->max_proxy_cycles;
+
   ////////////////////////////////////////
   // check if we are about to self loop //
   ////////////////////////////////////////
   if (s->dns_info.lookup_success) {
-    in_port_t dst_port   = s->hdr_info.client_request.url_get()->port_get(); // going to this port.
-    in_port_t local_port = s->client_info.dst_addr.host_order_port();        // already connected proxy port.
-    // It's a loop if connecting to the same port as it already connected to the proxy and
-    // it's a proxy address or the same address it already connected to.
-    if (dst_port == local_port && (ats_ip_addr_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa) ||
-                                   ats_ip_addr_eq(s->host_db_info.ip(), s->client_info.dst_addr))) {
-      switch (s->dns_info.looking_up) {
-      case ORIGIN_SERVER:
-        TxnDebug("http_transact", "host ip and port same as local ip and port - bailing");
-        break;
-      case PARENT_PROXY:
-        TxnDebug("http_transact", "parent proxy ip and port same as local ip and port - bailing");
-        break;
-      default:
-        TxnDebug("http_transact", "unknown's ip and port same as local ip and port - bailing");
-        break;
+    TxnDebug("http_transact", "max_proxy_cycles = %d", max_proxy_cycles);
+    if (max_proxy_cycles == 0) {
+      in_port_t dst_port   = s->hdr_info.client_request.url_get()->port_get(); // going to this port.
+      in_port_t local_port = s->client_info.dst_addr.host_order_port();        // already connected proxy port.
+      // It's a loop if connecting to the same port as it already connected to the proxy and
+      // it's a proxy address or the same address it already connected to.
+      TxnDebug("http_transact", "dst_port = %d local_port = %d", dst_port, local_port);
+      if (dst_port == local_port && (ats_ip_addr_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa) ||
+                                     ats_ip_addr_eq(s->host_db_info.ip(), s->client_info.dst_addr))) {
+        switch (s->dns_info.looking_up) {
+        case ORIGIN_SERVER:
+          TxnDebug("http_transact", "host ip and port same as local ip and port - bailing");
+          break;
+        case PARENT_PROXY:
+          TxnDebug("http_transact", "parent proxy ip and port same as local ip and port - bailing");
+          break;
+        default:
+          TxnDebug("http_transact", "unknown's ip and port same as local ip and port - bailing");
+          break;
+        }
+        SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
+        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
+        return true;
       }
-      SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
-      return true;
     }
 
     // Now check for a loop using the Via string.
+    int count            = 0;
     const char *uuid     = Machine::instance()->uuid.getString();
     MIMEField *via_field = s->hdr_info.client_request.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
 
@@ -6572,15 +6585,28 @@ HttpTransact::will_this_request_self_loop(State *s)
       int via_len;
       const char *via_string = via_field->value_get(&via_len);
 
-      if (via_string && ptr_len_str(via_string, via_len, uuid)) {
-        SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
-        TxnDebug("http_transact", "Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string, s->http_config_param->proxy_hostname,
-                 uuid, s->http_config_param->proxy_request_via_string);
-        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected");
-        return true;
+      if (via_string) {
+        char *current = (char *)via_string;
+        int len       = via_len;
+        TxnDebug("http_transact", "Incoming via: \"%.*s\" --has-- (%s[%s] (%s))", via_len, via_string,
+                 s->http_config_param->proxy_hostname, uuid, s->http_config_param->proxy_request_via_string);
+        while (char *result = (char *)ptr_len_str(current, len, uuid)) {
+          count++;
+          current = result + TS_UUID_STRING_LEN;
+          len     = via_len - (current - via_string);
+          TxnDebug("http_transact", "count = %d current = %.*s", count, len, current);
+        }
       }
 
       via_field = via_field->m_next_dup;
+    }
+    if (count > max_proxy_cycles) {
+      TxnDebug("http_transact", "count = %d > max_proxy_cycles = %d : detected loop", count, max_proxy_cycles);
+      SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected");
+      return true;
+    } else {
+      TxnDebug("http_transact", "count = %d <= max_proxy_cycles = %d : allowing loop", count, max_proxy_cycles);
     }
   }
   return false;
