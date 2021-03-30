@@ -105,16 +105,27 @@ public:
 private:
   /// Base clock.
   using Clock = std::chrono::system_clock;
-  /// Time point type, based on the clock to be used.
-  using TimePoint = Clock::time_point;
+
+  /** A time_point with a noexcept constructor.
+   *
+   * This is a workaround for older gcc and clang compilers which implemented an
+   * older version of the standard which made atomic's noexcept construction
+   * specification not compatible with time_point's undecorated constructor.
+   */
+  class TimePoint : public Clock::time_point
+  {
+  public:
+    using time_point::time_point;
+
+    // This noexcept specification makes TimePoint compatible with older
+    // compiler implementations of atomic.
+    constexpr TimePoint() noexcept : time_point() {}
+
+    template <class Duration2> constexpr TimePoint(const time_point<Clock, Duration2> &t) : time_point(t) {}
+  };
 
   /// Time that the last item was emitted.
-  // It is strange that we need to explicitly default construct this with a
-  // default constructed TimePoint. Without it, however, I get a compiler error
-  // in gcc 8.x and 9.x.  Playing around in godbolt I notice that neither clang
-  // nor gcc versions starting from 10.x require this, so I suspect it is a
-  // compiler bug.
-  std::atomic<TimePoint> _last_allowed_time{TimePoint{}};
+  std::atomic<TimePoint> _last_allowed_time;
 
   /// The minimum number of microseconds desired between actions.
   std::atomic<std::chrono::microseconds> _interval{std::chrono::microseconds{0}};
