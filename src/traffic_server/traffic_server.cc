@@ -730,22 +730,22 @@ initialize_jsonrpc_server()
 
   auto serverConfig = rpc::config::RPCConfig{};
   serverConfig.load_from_file(filePath);
-
   if (!serverConfig.is_enabled()) {
-    Note("JSONRPC Disabled by configuration.");
+    Debug("rpc.init", "JSONRPC Disabled by configuration.");
     return;
   }
 
   // Register admin handlers.
   rpc::admin::register_admin_jsonrpc_handlers();
-  Note("JSONRPC Enabled. Public admin handlers regsitered.");
+  Debug("rpc.init", "JSONRPC Enabled. Public admin handlers regsitered.");
   // create and start the server.
   try {
     jsonrpcServer = new rpc::RPCServer{serverConfig};
     jsonrpcServer->start_thread(TSThreadInit, TSThreadDestroy);
-    Note("JSONRPC Enabled. RPC Server started, communication type set to %s", jsonrpcServer->selected_comm_name().data());
+    Debug("rpc.init", "JSONRPC Enabled. RPC Server started, communication type set to %s",
+          jsonrpcServer->selected_comm_name().data());
   } catch (std::exception const &ex) {
-    Warning("Something happened while starting the JSONRPC Server: %s . Server didn't start.", ex.what());
+    Debug("rpc.init", "Something happened while starting the JSONRPC Server: %s . Server didn't start.", ex.what());
   }
 }
 
@@ -1853,8 +1853,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   // Initialize file manager for TS.
   initialize_file_manager();
-  // JSONRPC server and handlers
-  initialize_jsonrpc_server();
 
   // Set the core limit for the process
   init_core_size();
@@ -1967,6 +1965,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     }
   }
 #endif
+
+  // JSONRPC server and handlers
+  initialize_jsonrpc_server();
 
   // setup callback for tracking remap included files
   load_remap_file_cb = load_config_file_callback;

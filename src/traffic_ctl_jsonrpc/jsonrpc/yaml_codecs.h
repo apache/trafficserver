@@ -24,14 +24,14 @@
 
 #include "RPCRequests.h"
 
-// the whole point if to not fail if the data is not available, and just return something
-// back so we can still display some error.
+// For some fields, If we can't get the value, then just send the default/empty value. Let the
+// traffic_ctl display something.
 template <typename T>
 static auto
-try_extract(YAML::Node const &node, std::string_view name, bool throwOnFail = false)
+try_extract(YAML::Node const &node, const char *name, bool throwOnFail = false)
 {
   try {
-    if (auto n = node[name.data()]) {
+    if (auto n = node[name]) {
       return n.as<T>();
     }
   } catch (YAML::Exception const &ex) {
@@ -41,7 +41,6 @@ try_extract(YAML::Node const &node, std::string_view name, bool throwOnFail = fa
   }
   return T{};
 }
-
 /**
  * YAML namespace. All json rpc request codecs can be placed here. It will read all the definitions from "requests.h"
  * It's noted that there may be some duplicated with the rpc server implementation structures but as this is very simple idiom where
@@ -70,16 +69,12 @@ template <> struct convert<RecordLookUpResponse::RecordParamInfo::ConfigMeta> {
   static bool
   decode(Node const &node, RecordLookUpResponse::RecordParamInfo::ConfigMeta &meta)
   {
-    try {
-      meta.accessType   = try_extract<int32_t>(node, "access_type");
-      meta.updateStatus = try_extract<int32_t>(node, "update_status");
-      meta.updateType   = try_extract<int32_t>(node, "update_type");
-      meta.checkType    = try_extract<int32_t>(node, "checktype");
-      meta.source       = try_extract<int32_t>(node, "source");
-      meta.checkExpr    = try_extract<std::string>(node, "check_expr");
-    } catch (Exception const &ex) {
-      return false;
-    }
+    meta.accessType   = try_extract<int32_t>(node, "access_type");
+    meta.updateStatus = try_extract<int32_t>(node, "update_status");
+    meta.updateType   = try_extract<int32_t>(node, "update_type");
+    meta.checkType    = try_extract<int32_t>(node, "checktype");
+    meta.source       = try_extract<int32_t>(node, "source");
+    meta.checkExpr    = try_extract<std::string>(node, "check_expr");
     return true;
   }
 };
@@ -88,11 +83,7 @@ template <> struct convert<RecordLookUpResponse::RecordParamInfo::StatMeta> {
   static bool
   decode(Node const &node, RecordLookUpResponse::RecordParamInfo::StatMeta &meta)
   {
-    try {
-      meta.persistType = try_extract<int32_t>(node, "persist_type");
-    } catch (Exception const &ex) {
-      return false;
-    }
+    meta.persistType = try_extract<int32_t>(node, "persist_type");
     return true;
   }
 };
@@ -101,21 +92,17 @@ template <> struct convert<RecordLookUpResponse::RecordParamInfo> {
   static bool
   decode(Node const &node, RecordLookUpResponse::RecordParamInfo &info)
   {
+    info.name         = try_extract<std::string>(node, "record_name");
+    info.type         = try_extract<int32_t>(node, "record_type");
+    info.version      = try_extract<int32_t>(node, "version");
+    info.rsb          = try_extract<int32_t>(node, "raw_stat_block");
+    info.order        = try_extract<int32_t>(node, "order");
+    info.rclass       = try_extract<int32_t>(node, "record_class");
+    info.overridable  = try_extract<bool>(node, "overridable");
+    info.dataType     = try_extract<std::string>(node, "data_type");
+    info.currentValue = try_extract<std::string>(node, "current_value");
+    info.defaultValue = try_extract<std::string>(node, "default_value");
     try {
-      // if (auto n = node["record_name"]) {
-      //   info.name = n.as<std::string>();
-      // }
-      info.name         = try_extract<std::string>(node, "record_name");
-      info.type         = try_extract<int32_t>(node, "record_type");
-      info.version      = try_extract<int32_t>(node, "version");
-      info.rsb          = try_extract<int32_t>(node, "raw_stat_block");
-      info.order        = try_extract<int32_t>(node, "order");
-      info.rclass       = try_extract<int32_t>(node, "record_class");
-      info.overridable  = try_extract<bool>(node, "overridable");
-      info.dataType     = try_extract<std::string>(node, "data_type");
-      info.currentValue = try_extract<std::string>(node, "current_value");
-      info.defaultValue = try_extract<std::string>(node, "default_value");
-
       if (auto n = node["config_meta"]) {
         info.meta = n.as<RecordLookUpResponse::RecordParamInfo::ConfigMeta>();
       } else if (auto n = node["stat_meta"]) {
@@ -172,14 +159,9 @@ template <> struct convert<RecordLookUpResponse::RecordError> {
   static bool
   decode(Node const &node, RecordLookUpResponse::RecordError &err)
   {
-    try {
-      err.code       = try_extract<std::string>(node, "code");
-      err.recordName = try_extract<std::string>(node, "record_name");
-      err.message    = try_extract<std::string>(node, "message");
-
-    } catch (Exception const &ex) {
-      return false;
-    }
+    err.code       = try_extract<std::string>(node, "code");
+    err.recordName = try_extract<std::string>(node, "record_name");
+    err.message    = try_extract<std::string>(node, "message");
     return true;
   }
 };

@@ -76,7 +76,7 @@ RecordPrinter::write_output_legacy(RecordLookUpResponse const &response)
   std::string text;
   for (auto &&recordInfo : response.recordList) {
     if (!_printAsRecords) {
-      std::cout << ts::bwprint(text, "{}: {}\n", recordInfo.name, recordInfo.currentValue);
+      std::cout << recordInfo.name << ": " << recordInfo.currentValue << '\n';
     } else {
       std::cout << ts::bwprint(text, "{} {} {} {} # default: {}\n", rec_labelof(recordInfo.rclass), recordInfo.name,
                                recordInfo.dataType, recordInfo.currentValue, recordInfo.defaultValue);
@@ -93,10 +93,9 @@ RecordPrinter::write_output_pretty(RecordLookUpResponse const &response)
 void
 MetricRecordPrinter::write_output(YAML::Node const &result)
 {
-  std::string text;
   auto response = result.as<RecordLookUpResponse>();
   for (auto &&recordInfo : response.recordList) {
-    std::cout << ts::bwprint(text, "{} {}\n", recordInfo.name, recordInfo.currentValue);
+    std::cout << recordInfo.name << " " << recordInfo.currentValue << '\n';
   }
 }
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -191,10 +190,10 @@ GetHostStatusPrinter::write_output(YAML::Node const &result)
   auto response = result.as<RecordLookUpResponse>();
   std::string text;
   for (auto &&recordInfo : response.recordList) {
-    std::cout << ts::bwprint(text, "{} {}\n", recordInfo.name, recordInfo.currentValue);
+    std::cout << recordInfo.name << " " << recordInfo.currentValue << '\n';
   }
   for (auto &&e : response.errorList) {
-    std::cout << ts::bwprint(text, "Failed  to fetch {}\n", e.recordName);
+    std::cout << "Failed  to fetch " << e.recordName << '\n';
   }
 }
 
@@ -217,11 +216,10 @@ CacheDiskStoragePrinter::write_output(YAML::Node const &result)
 void
 CacheDiskStoragePrinter::write_output_pretty(YAML::Node const &result)
 {
-  std::string text;
-  auto my_print = [&text](auto const &disk) {
-    std::cout << ts::bwprint(text, "Device: {}\n", disk.path);
-    std::cout << ts::bwprint(text, "Status: {}\n", disk.status);
-    std::cout << ts::bwprint(text, "Error Count: {}\n", disk.errorCount);
+  auto my_print = [](auto const &disk) {
+    std::cout << "Device: " << disk.path << '\n';
+    std::cout << "Status: " << disk.status << '\n';
+    std::cout << "Error Count: " << disk.errorCount << '\n';
   };
 
   auto const &resp = result.as<DeviceStatusInfoResponse>();
@@ -248,8 +246,7 @@ CacheDiskStorageOfflinePrinter::write_output_pretty(YAML::Node const &result)
     if (auto n = item["has_online_storage_left"]) {
       bool any_left = n.as<bool>();
       if (!any_left) {
-        std::string text;
-        std::cout << ts::bwprint(text, "No more online storage left. {}\n", try_extract<std::string>(n, "path"));
+        std::cout << "No more online storage left" << try_extract<std::string>(n, "path") << '\n';
       }
     }
   }
@@ -258,17 +255,16 @@ CacheDiskStorageOfflinePrinter::write_output_pretty(YAML::Node const &result)
 void
 RPCAPIPrinter::write_output(YAML::Node const &result)
 {
-  std::string text;
   if (auto methods = result["methods"]) {
     std::cout << "Methods:\n";
     for (auto &&m : methods) {
-      std::cout << ts::bwprint(text, "- {}\n", m.as<std::string>());
+      std::cout << "- " << m.as<std::string>() << '\n';
     }
   }
   if (auto notifications = result["notifications"]) {
     std::cout << "Notifications:\n";
     for (auto &&m : notifications) {
-      std::cout << ts::bwprint(text, "- {}\n", m.as<std::string>());
+      std::cout << "- " << m.as<std::string>() << '\n';
     }
   }
 }
@@ -292,15 +288,14 @@ namespace specs
 std::ostream &
 operator<<(std::ostream &os, const specs::JSONRPCError &err)
 {
-  std::string text;
   os << "Error found.\n";
-  os << ts::bwprint(text, "code: {}\n", err.code);
-  os << ts::bwprint(text, "message: {}\n", err.message);
+  os << "code: " << err.code << '\n';
+  os << "message: " << err.message << '\n';
   if (err.data.size() > 0) {
     os << "---\nAdditional error information found:\n";
     auto my_print = [&](auto const &e) {
-      os << ts::bwprint(text, "+ code: {}\n", e.first);
-      os << ts::bwprint(text, "+ message: {}\n", e.second);
+      os << "+ code: " << e.first << '\n';
+      os << "+ message: " << e.second << '\n';
     };
 
     auto iter = std::begin(err.data);

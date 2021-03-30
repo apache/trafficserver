@@ -20,8 +20,6 @@
 .. highlight:: cpp
 .. default-domain:: cpp
 
-
-
 .. |RPC| replace:: ``JSONRPC 2.0``
 
 .. _JSONRPC: https://www.jsonrpc.org/specification
@@ -44,8 +42,6 @@
 
 JSONRPC API
 ***********
-
-
 
 .. _admin-jsonrpc-description:
 
@@ -79,7 +75,7 @@ The |RPC| server can be configured using the following configuration file.
    |TS| will start the |RPC| server without any need for configuration.
 
 
-In case a special configuration is needed, the following describes the structure.
+If a non-default configuration is needed, the following describes the structure.
 
 
 File `jsonrpc.yaml` is a YAML format. The default configuration is::
@@ -117,14 +113,7 @@ Field Name                            Description
 
 .. note::
 
-   As of today, there is only 1 communication mechanism supported. IPC Sockets.
-
-
-
-.. note::
-
-   Traffic Control does support this RPC mechanism for communication with |TS| . Please check :program:`traffic_ctl` documentation for
-   more details.
+   Currently, there is only 1 communication mechanism supported. IPC Sockets.
 
 
 .. _admin-jsonrpc-api:
