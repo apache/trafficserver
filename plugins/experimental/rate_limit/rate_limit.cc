@@ -88,7 +88,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       limiter->retry = strtol(optarg, nullptr, 10);
       break;
     case 'm':
-      limiter->max_age = 1000 * strtol(optarg, nullptr, 10);
+      limiter->max_age = std::chrono::milliseconds(strtol(optarg, nullptr, 10));
       break;
     case 'h':
       limiter->header = optarg;

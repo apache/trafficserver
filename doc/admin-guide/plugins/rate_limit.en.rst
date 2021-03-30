@@ -75,7 +75,7 @@ are available:
 .. option:: --maxage
 
    An optional `max-age` for how long a transaction can sit in the delay queue.
-   The value (default 0) is the age in seconds.
+   The value (default 0) is the age in milliseconds.
 
 Examples
 --------
