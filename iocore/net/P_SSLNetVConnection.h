@@ -298,11 +298,13 @@ public:
   bool decrypt_tunnel() const;
   bool upstream_tls() const;
   SNIRoutingType tunnel_type() const;
+  YamlSNIConfig::TunnelPreWarm tunnel_prewarm() const;
 
   void
-  set_tunnel_destination(const std::string_view &destination, SNIRoutingType type)
+  set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm)
   {
-    _tunnel_type = type;
+    _tunnel_type    = type;
+    _tunnel_prewarm = prewarm;
 
     auto pos = destination.find(":");
     if (nullptr != tunnel_host) {
@@ -484,10 +486,13 @@ private:
     HANDSHAKE_HOOKS_DONE
   } sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
 
-  int64_t redoWriteSize       = 0;
-  char *tunnel_host           = nullptr;
-  in_port_t tunnel_port       = 0;
-  SNIRoutingType _tunnel_type = SNIRoutingType::NONE;
+  int64_t redoWriteSize = 0;
+
+  char *tunnel_host                            = nullptr;
+  in_port_t tunnel_port                        = 0;
+  SNIRoutingType _tunnel_type                  = SNIRoutingType::NONE;
+  YamlSNIConfig::TunnelPreWarm _tunnel_prewarm = YamlSNIConfig::TunnelPreWarm::UNSET;
+
   X509_STORE_CTX *verify_cert = nullptr;
 
   // Null-terminated string, or nullptr if there is no SNI server name.
@@ -519,6 +524,12 @@ inline SNIRoutingType
 SSLNetVConnection::tunnel_type() const
 {
   return _tunnel_type;
+}
+
+inline YamlSNIConfig::TunnelPreWarm
+SSLNetVConnection::tunnel_prewarm() const
+{
+  return _tunnel_prewarm;
 }
 
 /**

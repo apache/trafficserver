@@ -159,6 +159,27 @@ tunnel_alpn               Inbound   List of ALPN Protocol Ids for Partial Blind 
                                     This only works with ``partial_blind_route``.
 ========================= ========= ========================================================================================
 
+Pre-warming TLS Tunnel
+----------------------
+
+=============================== ========================================================================================
+Key                             Meaning
+=============================== ========================================================================================
+tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm` in records.config.
+
+tunnel_prewarm_srv              Enable SRV record lookup on pre-warming. Default is ``false``.
+
+tunnel_prewarm_rate             Rate of how many connections to pre-warm. Default is ``1.0``.
+
+tunnel_prewarm_min              Minimum number of pre-warming queue size (per thread). Default is ``0``.
+
+tunnel_prewarm_max              Maximum number of pre-warming queue size (per thread). Default is ``-1`` (unlimited).
+
+tunnel_prewarm_connect_timeout  Timeout for TCP/TLS handshake (in seconds).
+
+tunnel_prewarm_inactive_timeout Inactive timeout for connections in the pool (in seconds).
+=============================== ========================================================================================
+
 Client verification, via ``verify_client``, corresponds to setting
 :ts:cv:`proxy.config.ssl.client.certification_level` for this connection as noted below.
 

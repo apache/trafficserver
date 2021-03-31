@@ -129,3 +129,51 @@ tunneled connection like this, the only transaction hooks that will be triggered
 :c:macro:`TS_HTTP_TXN_START_HOOK` and :c:macro:`TS_HTTP_TXN_CLOSE_HOOK`. In addition, because |TS|
 does not terminate (and therefore does not decrypt) the connection, it cannot be cached or served from
 cache.
+
+.. _pre-warming-tls-tunnel:
+
+Pre-warming TLS Tunnel
+======================
+
+Pre-warming TLS Tunnel reduces the latency of TLS connections (``forward_route`` and ``partial_blind_route`` type SNI
+Routing). When this feature is enabled, each ET_NET thread makes TLS connections pool per routing type, SNI, and ALPN.
+
+.. figure:: ../uml/images/l4-pre-warming-overview.svg
+   :align: center
+
+Stats for connection pools are registered dynamically on start up. Details in :ref:`pre-warming-tls-tunnel-stats`.
+
+Examples
+--------
+
+.. code:: yaml
+
+   sni:
+   - fqdn: foo.com
+     http2: off
+     partial_blind_route: bar.com
+     client_sni_policy: server_name
+     tunnel_prewarm: true
+     tunnel_prewarm_connect_timeout: 10
+     tunnel_prewarm_inactive_timeout: 150
+     tunnel_prewarm_max: 100
+     tunnel_prewarm_min: 10
+     tunnel_alpn:
+       - h2
+
+.. code::
+
+  proxy.process.tunnel.prewarm.bar.com:443.tls.current_init 0
+  proxy.process.tunnel.prewarm.bar.com:443.tls.current_open 10
+  proxy.process.tunnel.prewarm.bar.com:443.tls.total_hit 0
+  proxy.process.tunnel.prewarm.bar.com:443.tls.total_miss 0
+  proxy.process.tunnel.prewarm.bar.com:443.tls.total_handshake_time 1106250000
+  proxy.process.tunnel.prewarm.bar.com:443.tls.total_handshake_count 10
+  proxy.process.tunnel.prewarm.bar.com:443.tls.total_retry 0
+  proxy.process.tunnel.prewarm.bar.com:443.tls.http2.current_init 0
+  proxy.process.tunnel.prewarm.bar.com:443.tls.http2.current_open 10
+  proxy.process.tunnel.prewarm.bar.com:443.tls.http2.total_hit 0
+  proxy.process.tunnel.prewarm.bar.com:443.tls.http2.total_miss 0
+  proxy.process.tunnel.prewarm.bar.com:443.tls.http2.total_handshake_time 1142368000
+  proxy.process.tunnel.prewarm.bar.com:443.tls.http2.total_handshake_count 10
+  proxy.process.tunnel.prewarm.bar.com:443.tls.http2.total_retry 0
