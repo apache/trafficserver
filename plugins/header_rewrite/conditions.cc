@@ -1388,6 +1388,10 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
   struct tcp_info info;
   socklen_t tcp_info_len = sizeof(info);
   tsSsn                  = TSHttpTxnClientFdGet(res.txnp, &fd);
+  if (TSHttpTxnIsInternal(res.txnp) == 1) {
+        TSDebug(PLUGIN_NAME, "No TCP-INFO available for internal transactions");
+        return;
+  }
   if (tsSsn != TS_SUCCESS || fd <= 0) {
     TSDebug(PLUGIN_NAME, "error getting the client socket fd from ssn");
   }
