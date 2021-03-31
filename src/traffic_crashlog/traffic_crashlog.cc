@@ -138,7 +138,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   crashlog_target target;
   pid_t parent = getppid();
 
-  diags = new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, new BaseLogFile("stderr"));
+  DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, new BaseLogFile("stderr")));
 
   appVersionInfo.setup(PACKAGE_NAME, "traffic_crashlog", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
@@ -182,14 +182,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     }
 
     openlog(appVersionInfo.AppStr, LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility);
-    diags->config.outputs[DL_Debug].to_syslog     = true;
-    diags->config.outputs[DL_Status].to_syslog    = true;
-    diags->config.outputs[DL_Note].to_syslog      = true;
-    diags->config.outputs[DL_Warning].to_syslog   = true;
-    diags->config.outputs[DL_Error].to_syslog     = true;
-    diags->config.outputs[DL_Fatal].to_syslog     = true;
-    diags->config.outputs[DL_Alert].to_syslog     = true;
-    diags->config.outputs[DL_Emergency].to_syslog = true;
+    diags()->config.outputs[DL_Debug].to_syslog     = true;
+    diags()->config.outputs[DL_Status].to_syslog    = true;
+    diags()->config.outputs[DL_Note].to_syslog      = true;
+    diags()->config.outputs[DL_Warning].to_syslog   = true;
+    diags()->config.outputs[DL_Error].to_syslog     = true;
+    diags()->config.outputs[DL_Fatal].to_syslog     = true;
+    diags()->config.outputs[DL_Alert].to_syslog     = true;
+    diags()->config.outputs[DL_Emergency].to_syslog = true;
   }
 
   Note("crashlog started, target=%ld, debug=%s syslog=%s, uid=%ld euid=%ld", (long)target_pid, debug_mode ? "true" : "false",

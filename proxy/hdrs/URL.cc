@@ -98,6 +98,8 @@ int URL_LEN_MMST;
 // url_CryptoHash_get_fast() does NOT produce the same result as url_CryptoHash_get_general().
 static int url_hash_method = 0;
 
+static DbgCtl http_dbg{"http"};
+
 // test to see if a character is a valid character for a host in a URI according to
 // RFC 3986 and RFC 1034
 inline static int
@@ -1184,7 +1186,7 @@ url_is_strictly_compliant(const char *start, const char *end)
 {
   for (const char *i = start; i < end; ++i) {
     if (!ParseRules::is_uri(*i)) {
-      Debug("http", "Non-RFC compliant character [0x%.2X] found in URL", (unsigned char)*i);
+      Dbg(http_dbg, "Non-RFC compliant character [0x%.2X] found in URL", (unsigned char)*i);
       return false;
     }
   }
@@ -1675,22 +1677,22 @@ url_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 {
   URLImpl *obj = (URLImpl *)raw;
 
-  Debug("http", "[URLTYPE: %d, SWKSIDX: %d,", obj->m_url_type, obj->m_scheme_wks_idx);
-  Debug("http", "\tSCHEME: \"%.*s\", SCHEME_LEN: %d,", obj->m_len_scheme, (obj->m_ptr_scheme ? obj->m_ptr_scheme : "NULL"),
-        obj->m_len_scheme);
-  Debug("http", "\tUSER: \"%.*s\", USER_LEN: %d,", obj->m_len_user, (obj->m_ptr_user ? obj->m_ptr_user : "NULL"), obj->m_len_user);
-  Debug("http", "\tPASSWORD: \"%.*s\", PASSWORD_LEN: %d,", obj->m_len_password,
-        (obj->m_ptr_password ? obj->m_ptr_password : "NULL"), obj->m_len_password);
-  Debug("http", "\tHOST: \"%.*s\", HOST_LEN: %d,", obj->m_len_host, (obj->m_ptr_host ? obj->m_ptr_host : "NULL"), obj->m_len_host);
-  Debug("http", "\tPORT: \"%.*s\", PORT_LEN: %d, PORT_NUM: %d", obj->m_len_port, (obj->m_ptr_port ? obj->m_ptr_port : "NULL"),
-        obj->m_len_port, obj->m_port);
-  Debug("http", "\tPATH: \"%.*s\", PATH_LEN: %d,", obj->m_len_path, (obj->m_ptr_path ? obj->m_ptr_path : "NULL"), obj->m_len_path);
-  Debug("http", "\tPARAMS: \"%.*s\", PARAMS_LEN: %d,", obj->m_len_params, (obj->m_ptr_params ? obj->m_ptr_params : "NULL"),
-        obj->m_len_params);
-  Debug("http", "\tQUERY: \"%.*s\", QUERY_LEN: %d,", obj->m_len_query, (obj->m_ptr_query ? obj->m_ptr_query : "NULL"),
-        obj->m_len_query);
-  Debug("http", "\tFRAGMENT: \"%.*s\", FRAGMENT_LEN: %d]", obj->m_len_fragment,
-        (obj->m_ptr_fragment ? obj->m_ptr_fragment : "NULL"), obj->m_len_fragment);
+  Dbg(http_dbg, "[URLTYPE: %d, SWKSIDX: %d,", obj->m_url_type, obj->m_scheme_wks_idx);
+  Dbg(http_dbg, "\tSCHEME: \"%.*s\", SCHEME_LEN: %d,", obj->m_len_scheme, (obj->m_ptr_scheme ? obj->m_ptr_scheme : "NULL"),
+      obj->m_len_scheme);
+  Dbg(http_dbg, "\tUSER: \"%.*s\", USER_LEN: %d,", obj->m_len_user, (obj->m_ptr_user ? obj->m_ptr_user : "NULL"), obj->m_len_user);
+  Dbg(http_dbg, "\tPASSWORD: \"%.*s\", PASSWORD_LEN: %d,", obj->m_len_password,
+      (obj->m_ptr_password ? obj->m_ptr_password : "NULL"), obj->m_len_password);
+  Dbg(http_dbg, "\tHOST: \"%.*s\", HOST_LEN: %d,", obj->m_len_host, (obj->m_ptr_host ? obj->m_ptr_host : "NULL"), obj->m_len_host);
+  Dbg(http_dbg, "\tPORT: \"%.*s\", PORT_LEN: %d, PORT_NUM: %d", obj->m_len_port, (obj->m_ptr_port ? obj->m_ptr_port : "NULL"),
+      obj->m_len_port, obj->m_port);
+  Dbg(http_dbg, "\tPATH: \"%.*s\", PATH_LEN: %d,", obj->m_len_path, (obj->m_ptr_path ? obj->m_ptr_path : "NULL"), obj->m_len_path);
+  Dbg(http_dbg, "\tPARAMS: \"%.*s\", PARAMS_LEN: %d,", obj->m_len_params, (obj->m_ptr_params ? obj->m_ptr_params : "NULL"),
+      obj->m_len_params);
+  Dbg(http_dbg, "\tQUERY: \"%.*s\", QUERY_LEN: %d,", obj->m_len_query, (obj->m_ptr_query ? obj->m_ptr_query : "NULL"),
+      obj->m_len_query);
+  Dbg(http_dbg, "\tFRAGMENT: \"%.*s\", FRAGMENT_LEN: %d]", obj->m_len_fragment,
+      (obj->m_ptr_fragment ? obj->m_ptr_fragment : "NULL"), obj->m_len_fragment);
 }
 
 /*-------------------------------------------------------------------------

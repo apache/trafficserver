@@ -27,7 +27,12 @@
 
 #include "P_RecCore.h"
 
-Diags *diags = nullptr;
+void
+DiagsPtr::set(Diags *new_ptr)
+{
+  _diags_ptr = new_ptr;
+}
+
 void RecDumpRecordsHt(RecT rec_type);
 
 //-------------------------------------------------------------------------
@@ -179,9 +184,9 @@ main(int argc, char **argv)
       log_fp = nullptr;
     }
   }
-  diags = new Diags("rec", nullptr, log_fp);
-  diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
-  diags->log(nullptr, DTA(DL_Note), "Starting '%s'", argv[0]);
+  DiagsPtr::set(new Diags("rec", nullptr, log_fp));
+  diags()->activate_taglist(diags()->base_debug_tags, DiagsTagType_Debug);
+  diags()->log(nullptr, DTA(DL_Note), "Starting '%s'", argv[0]);
 
   // system initialization
   RecLocalInit(diags);

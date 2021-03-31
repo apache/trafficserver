@@ -60,7 +60,6 @@ char error_tags[1024]    = "";
 char action_tags[1024]   = "";
 char command_string[512] = "";
 
-// Diags *diags = NULL;
 DiagsConfig *diagsConfig      = nullptr;
 HttpBodyFactory *body_factory = nullptr;
 AppVersionInfo appVersionInfo;
@@ -104,9 +103,9 @@ initialize_process_manager()
   }
 
   // diags should have been initialized by caller, e.g.: sac.cc
-  ink_assert(diags);
+  ink_assert(diags());
 
-  RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags);
+  RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags());
   LibRecordsConfigInit();
 
   // Start up manager

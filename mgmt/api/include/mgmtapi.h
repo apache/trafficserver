@@ -234,9 +234,9 @@ typedef void (*TSDisconnectFunc)(void *data);
 #define TSstrndup(p, n) _TSstrdup((p), (n), TS_RES_MEM_PATH)
 #define TSfree(p) _TSfree(p)
 
-tsapi void *_TSmalloc(unsigned int size, const char *path);
-tsapi void *_TSrealloc(void *ptr, unsigned int size, const char *path);
-tsapi char *_TSstrdup(const char *str, int length, const char *path);
+tsapi void *_TSmalloc(size_t size, const char *path);
+tsapi void *_TSrealloc(void *ptr, size_t size, const char *path);
+tsapi char *_TSstrdup(const char *str, int64_t length, const char *path);
 tsapi void _TSfree(void *ptr);
 
 /***************************************************************************

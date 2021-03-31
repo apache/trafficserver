@@ -267,12 +267,12 @@ main(int argc, const char **argv)
   engine.arguments = engine.parser.parse(argv);
 
   BaseLogFile *base_log_file = new BaseLogFile("stderr");
-  diags                      = new Diags("traffic_ctl", "" /* tags */, "" /* actions */, base_log_file);
+  DiagsPtr::set(new Diags("traffic_ctl", "" /* tags */, "" /* actions */, base_log_file));
 
   if (engine.arguments.get("debug")) {
-    diags->activate_taglist("traffic_ctl", DiagsTagType_Debug);
-    diags->config.enabled[DiagsTagType_Debug] = true;
-    diags->show_location                      = SHOW_LOCATION_DEBUG;
+    diags()->activate_taglist("traffic_ctl", DiagsTagType_Debug);
+    diags()->config.enabled(DiagsTagType_Debug, 1);
+    diags()->show_location = SHOW_LOCATION_DEBUG;
   }
 
   argparser_runroot_handler(engine.arguments.get("run-root").value(), argv[0]);
@@ -280,7 +280,7 @@ main(int argc, const char **argv)
 
   // This is a little bit of a hack, for now it'll suffice.
   max_records_entries = 262144;
-  RecProcessInit(RECM_STAND_ALONE, diags);
+  RecProcessInit(RECM_STAND_ALONE, diags());
   LibRecordsConfigInit();
 
   ats_scoped_str rundir(RecConfigReadRuntimeDir());

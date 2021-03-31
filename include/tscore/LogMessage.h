@@ -61,7 +61,6 @@ public:
 
   /* TODO: Add BufferWriter overloads for these. */
   void diag(const char *tag, SourceLocation const &loc, const char *fmt, ...);
-  void debug(const char *tag, SourceLocation const &loc, const char *fmt, ...);
   void status(SourceLocation const &loc, const char *fmt, ...);
   void note(SourceLocation const &loc, const char *fmt, ...);
   void warning(SourceLocation const &loc, const char *fmt, ...);

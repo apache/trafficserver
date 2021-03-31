@@ -83,6 +83,8 @@ static constexpr std::string_view SSL_KEY_DIALOG("ssl_key_dialog"sv);
 static constexpr std::string_view SSL_SERVERNAME("dest_fqdn"sv);
 static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 
+DbgCtl ssl_ssn_cache_dbg_ctl("ssl.session_cache");
+
 #ifndef evp_md_func
 #ifdef OPENSSL_NO_SHA256
 #define evp_md_func EVP_sha1()
@@ -202,7 +204,7 @@ ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 
   SSLSessionID sid(id, len);
 
-  if (diags->tag_activated("ssl.session_cache")) {
+  if (ssl_ssn_cache_dbg_ctl.ptr()->on) {
     char printable_buf[(len * 2) + 1];
 
     sid.toString(printable_buf, sizeof(printable_buf));
@@ -242,7 +244,7 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
     hook = hook->m_link.next;
   }
 
-  if (diags->tag_activated("ssl.session_cache")) {
+  if (ssl_ssn_cache_dbg_ctl.ptr()->on) {
     char printable_buf[(len * 2) + 1];
     sid.toString(printable_buf, sizeof(printable_buf));
     Debug("ssl.session_cache.remove", "ssl_rm_cached_session cached session '%s'", printable_buf);

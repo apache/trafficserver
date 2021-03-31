@@ -56,7 +56,21 @@
 #endif
 #endif
 
-extern inkcoreapi Diags *diags;
+class DiagsPtr
+{
+public:
+  friend Diags *diags();
+  static void set(Diags *new_ptr);
+
+private:
+  static Diags *_diags_ptr;
+};
+
+inline Diags *
+diags()
+{
+  return DiagsPtr::_diags_ptr;
+}
 
 // Note that the log functions being implemented as a macro has the advantage
 // that the pre-compiler expands this in place such that the call to
@@ -142,21 +156,43 @@ extern inkcoreapi Diags *diags;
 /// A Diag version of the above.
 #define Diag(tag, ...)                                        \
   do {                                                        \
-    if (unlikely(diags->on())) {                              \
+    if (unlikely(diags()->on())) {                            \
       static const SourceLocation loc = MakeSourceLocation(); \
       static LogMessage log_message;                          \
       log_message.diag(tag, loc, __VA_ARGS__);                \
     }                                                         \
   } while (0)
 
-/// A Debug version of the above.
-#define Debug(tag, ...)                                       \
-  do {                                                        \
-    if (unlikely(diags->on())) {                              \
-      static const SourceLocation loc = MakeSourceLocation(); \
-      static LogMessage log_message;                          \
-      log_message.debug(tag, loc, __VA_ARGS__);               \
-    }                                                         \
+inline bool
+is_dbg_ctl_enabled(DbgCtl const &ctl)
+{
+  return unlikely(diags()->on() && ctl.ptr()->on);
+}
+
+// printf-like debug output.  First parameter must be an instance of DbgCtl.
+//
+#define Dbg(ctl__, ...)                                                \
+  do {                                                                 \
+    if (is_dbg_ctl_enabled(ctl__)) {                                   \
+      static const SourceLocation loc = MakeSourceLocation();          \
+      static LogMessage log_message;                                   \
+      log_message.print(ctl__.ptr()->tag, DL_Debug, loc, __VA_ARGS__); \
+    }                                                                  \
+  } while (0)
+
+// printf-like debug output.  First parameter must be tag (C-string literal, or constexpr returning
+// char const pointer to null-terminated C-string).
+//
+#define Debug(tag__, ...)                                                \
+  do {                                                                   \
+    if (unlikely(diags()->on())) {                                       \
+      static DbgCtl ctl__(tag__);                                        \
+      static const SourceLocation loc = MakeSourceLocation();            \
+      static LogMessage log_message;                                     \
+      if (ctl__.ptr()->on) {                                             \
+        log_message.print(ctl__.ptr()->tag, DL_Debug, loc, __VA_ARGS__); \
+      }                                                                  \
+    }                                                                    \
   } while (0)
 
 /** Same as Debug above, but this allows a positive override of the tag
@@ -166,26 +202,39 @@ extern inkcoreapi Diags *diags;
  * configuration, false if the logging of the message should respsect the tag
  * configuration.
  */
-#define SpecificDebug(flag, tag, ...)                                                                       \
-  do {                                                                                                      \
-    if (unlikely(diags->on())) {                                                                            \
-      static const SourceLocation loc = MakeSourceLocation();                                               \
-      static LogMessage log_message;                                                                        \
-      flag ? log_message.print(tag, DL_Debug, loc, __VA_ARGS__) : log_message.debug(tag, loc, __VA_ARGS__); \
-    }                                                                                                       \
+#define SpecificDebug(flag, tag__, ...)                                  \
+  do {                                                                   \
+    if (unlikely(diags()->on())) {                                       \
+      static DbgCtl ctl__(tag__);                                        \
+      static const SourceLocation loc = MakeSourceLocation();            \
+      static LogMessage log_message;                                     \
+      if (flag || ctl__.ptr()->on) {                                     \
+        log_message.print(ctl__.ptr()->tag, DL_Debug, loc, __VA_ARGS__); \
+      }                                                                  \
+    }                                                                    \
   } while (0)
 
-#define is_debug_tag_set(_t) unlikely(diags->on(_t, DiagsTagType_Debug))
-#define is_action_tag_set(_t) unlikely(diags->on(_t, DiagsTagType_Action))
+// For better performance, use this instead of diags()-on(tag) when the tag parameter is a C-string literal.
+//
+#define is_debug_tag_set(tag__)             \
+  unlikely(diags()->on() && ([]() -> bool { \
+             static DbgCtl ctl__(tag__);    \
+             return ctl__.ptr()->on != 0;   \
+           }()))
+
+#define is_action_tag_set(_t) unlikely(diags()->on(_t, DiagsTagType_Action))
 #define debug_tag_assert(_t, _a) (is_debug_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)
 #define action_tag_assert(_t, _a) (is_action_tag_set(_t) ? (ink_release_assert(_a), 0) : 0)
-#define is_diags_on(_t) unlikely(diags->on(_t))
+#define is_diags_on(_t) is_debug_tag_set(_t) // Deprecated.
 
 #else // TS_USE_DIAGS
 
-#define Diag(tag, fmt, ...)
-#define Debug(tag, fmt, ...)
-#define SpecificDebug(flag, tag, ...)
+#define is_dbg_tag_set(_ctl) false
+
+#define Diag(...)
+#define Dbg(...)
+#define Debug(...)
+#define SpecificDebug(...)
 
 #define is_debug_tag_set(_t) 0
 #define is_action_tag_set(_t) 0

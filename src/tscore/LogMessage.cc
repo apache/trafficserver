@@ -84,7 +84,7 @@ LogMessage::standard_message_helper(DiagsLevel level, SourceLocation const &loc,
 {
   message_helper(
     _default_log_throttling_interval.load(),
-    [level, &loc](const char *fmt, va_list args) { diags->error_va(level, &loc, fmt, args); }, fmt, args);
+    [level, &loc](const char *fmt, va_list args) { diags()->error_va(level, &loc, fmt, args); }, fmt, args);
 }
 
 void
@@ -92,7 +92,7 @@ LogMessage::message_debug_helper(const char *tag, DiagsLevel level, SourceLocati
 {
   message_helper(
     _default_debug_throttling_interval.load(),
-    [tag, level, &loc](const char *fmt, va_list args) { diags->log_va(tag, level, &loc, fmt, args); }, fmt, args);
+    [tag, level, &loc](const char *fmt, va_list args) { diags()->log_va(tag, level, &loc, fmt, args); }, fmt, args);
 }
 
 void
@@ -100,7 +100,7 @@ LogMessage::message_print_helper(const char *tag, DiagsLevel level, SourceLocati
 {
   message_helper(
     _default_debug_throttling_interval.load(),
-    [tag, level, &loc](const char *fmt, va_list args) { diags->print_va(tag, level, &loc, fmt, args); }, fmt, args);
+    [tag, level, &loc](const char *fmt, va_list args) { diags()->print_va(tag, level, &loc, fmt, args); }, fmt, args);
 }
 
 LogMessage::LogMessage(bool is_throttled)
@@ -121,15 +121,6 @@ LogMessage::diag(const char *tag, SourceLocation const &loc, const char *fmt, ..
   va_list args;
   va_start(args, fmt);
   message_debug_helper(tag, DL_Diag, loc, fmt, args);
-  va_end(args);
-}
-
-void
-LogMessage::debug(const char *tag, SourceLocation const &loc, const char *fmt, ...)
-{
-  va_list args;
-  va_start(args, fmt);
-  message_debug_helper(tag, DL_Debug, loc, fmt, args);
   va_end(args);
 }
 
