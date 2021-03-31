@@ -1383,7 +1383,7 @@ void
 ConditionTcpInfo::append_value(std::string &s, Resources const &res)
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
-  if (TSHttpTxnIsInternal(res.txnp) == 1) {
+  if (TSHttpTxnIsInternal(res.txnp)) {
     TSDebug(PLUGIN_NAME, "No TCP-INFO available for internal transactions");
     return;
   }
