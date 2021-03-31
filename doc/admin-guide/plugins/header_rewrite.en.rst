@@ -498,7 +498,7 @@ TCP-INFO
 	cond %{<name>}
         add-header @PropertyName "%{TCP-INFO}"
 
-This operation records TCP Info struct field values as an Internal remap as well as global header at the event hook specified by the condition. Supported hook conditions include TXN_START_HOOK, SEND_RESPONSE_HEADER_HOOK and TXN_CLOSE_HOOK in the Global plugin and REMAP_PSEUDO_HOOK, SEND_RESPONSE_HEADER_HOOK and TXN_CLOSE_HOOK in the Remap plugin. TCP Info fields currently recorded include rtt, rto, snd_cwnd and all_retrans.
+This operation records TCP Info struct field values as an Internal remap as well as global header at the event hook specified by the condition. Supported hook conditions include TXN_START_HOOK, SEND_RESPONSE_HEADER_HOOK and TXN_CLOSE_HOOK in the Global plugin and REMAP_PSEUDO_HOOK, SEND_RESPONSE_HEADER_HOOK and TXN_CLOSE_HOOK in the Remap plugin. Conditions supported as request headers include TXN_START_HOOK and REMAP_PSEUDO_HOOK. The other conditions are supported as response headers. TCP Info fields currently recorded include rtt, rto, snd_cwnd and all_retrans. This operation is not supported on internal transactions.
 
 Condition Operands
 ------------------
