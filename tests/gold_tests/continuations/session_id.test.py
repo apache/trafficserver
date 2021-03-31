@@ -34,7 +34,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-L
 server.addResponse("sessionfile.log", request_header, response_header)
 
 # Configure ATS. Disable the cache to simplify the test.
-ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=True, enable_cache=False)
+ts = Test.MakeATSProcess("ts", command="traffic_server", enable_tls=True, enable_cache=False)
 
 ts.addDefaultSSLFiles()
 

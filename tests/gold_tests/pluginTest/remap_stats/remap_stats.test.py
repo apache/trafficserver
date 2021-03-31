@@ -29,7 +29,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
                    "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, dump_runroot=True)
 
 ts.Disk.plugin_config.AddLine('remap_stats.so')
 
@@ -64,7 +64,7 @@ tr.StillRunningAfter = server
 
 # 2 Test - Gather output
 tr = Test.AddTestRun("analyze stats")
-tr.Processes.Default.Command = r'traffic_ctl metric match \.\*remap_stats\*'
+tr.Processes.Default.Command = r'traffic_ctl metric match \.\*remap_stats\* {0}'.format(ts.Disk.runroot_yaml.Name)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 5
