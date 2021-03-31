@@ -166,6 +166,52 @@ enum HttpPluginTunnel_t {
 
 class PluginVCCore;
 
+class PendingAction
+{
+public:
+  bool
+  operator==(Action *b)
+  {
+    return b == pending_action;
+  }
+  bool
+  operator!=(Action *b)
+  {
+    return b != pending_action;
+  }
+  PendingAction &
+  operator=(Action *b)
+  {
+    // Don't do anything if the new action is _DONE
+    if (b != ACTION_RESULT_DONE) {
+      if (b != pending_action && pending_action != nullptr) {
+        pending_action->cancel();
+      }
+      pending_action = b;
+    }
+    return *this;
+  }
+  Action *
+  operator->()
+  {
+    return pending_action;
+  }
+  Action *
+  get()
+  {
+    return pending_action;
+  }
+  ~PendingAction()
+  {
+    if (pending_action) {
+      pending_action->cancel();
+    }
+  }
+
+private:
+  Action *pending_action = nullptr;
+};
+
 class PostDataBuffers
 {
 public:
@@ -387,8 +433,8 @@ protected:
   HttpCacheSM transform_cache_sm;
 
   HttpSMHandler default_handler = nullptr;
-  Action *pending_action        = nullptr;
-  Continuation *schedule_cont   = nullptr;
+  PendingAction pending_action;
+  Continuation *schedule_cont = nullptr;
 
   HTTPParser http_parser;
   void start_sub_sm();
