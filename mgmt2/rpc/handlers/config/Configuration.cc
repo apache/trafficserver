@@ -70,7 +70,7 @@ namespace
     if constexpr (std::is_same_v<T, float>) {
       T val;
       try {
-        val = std::stof(info.value.data());
+        val = std::stof(info.value);
       } catch (std::exception const &ex) {
         return false;
       }
@@ -81,7 +81,7 @@ namespace
     } else if constexpr (std::is_same_v<T, int>) {
       T val;
       try {
-        val = std::stoi(info.value.data());
+        val = std::stoi(info.value);
       } catch (std::exception const &ex) {
         return false;
       }
@@ -144,7 +144,7 @@ set_config_records(std::string_view const &id, YAML::Node const &params)
     auto const &[dataType, checkType, pattern] = recordCtx;
 
     // run the check only if we have something to check against it.
-    if (pattern != nullptr && utils::recordValidityCheck(info.value, checkType, pattern) == false) {
+    if (pattern != nullptr && utils::recordValidityCheck(info.value.c_str(), checkType, pattern) == false) {
       resp.errata().push({err::RecordError::VALIDITY_CHECK_ERROR});
       continue;
     }

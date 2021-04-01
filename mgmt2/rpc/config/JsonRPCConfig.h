@@ -79,7 +79,7 @@ public:
   bool is_enabled() const;
 
   /// @brief Load the configuration from the content of a file. If the file does not exist, the default values will be used.
-  void load_from_file(std::string_view filePath);
+  void load_from_file(std::string const &filePath);
 
   /// @brief Load configuration from a YAML::Node. This can be used to expose it as public rrc handler.
   void load(YAML::Node const &params);

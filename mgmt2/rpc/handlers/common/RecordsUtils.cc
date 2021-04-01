@@ -91,7 +91,7 @@ struct Context {
 
 namespace rpc::handlers::records::utils
 {
-void static get_record_impl(std::string_view name, Context &ctx)
+void static get_record_impl(std::string const &name, Context &ctx)
 {
   auto yamlConverter = [](const RecRecord *record, void *data) {
     auto &ctx = *static_cast<Context *>(data);
@@ -114,7 +114,7 @@ void static get_record_impl(std::string_view name, Context &ctx)
     }
   };
 
-  const auto ret = RecLookupRecord(name.data(), yamlConverter, &ctx);
+  const auto ret = RecLookupRecord(name.c_str(), yamlConverter, &ctx);
 
   if (ctx.ec) {
     // This will be set if the invocation of the callback inside the context have something to report, in this case
@@ -128,7 +128,7 @@ void static get_record_impl(std::string_view name, Context &ctx)
   }
 }
 
-void static get_record_regex_impl(std::string_view regex, unsigned recType, Context &ctx)
+void static get_record_regex_impl(std::string const &regex, unsigned recType, Context &ctx)
 {
   // In this case, where we lookup base on a regex, the only validation we need is base on the recType and the ability to be
   // converted to a Yaml Node.
@@ -152,7 +152,7 @@ void static get_record_regex_impl(std::string_view regex, unsigned recType, Cont
     ctx.yaml.push_back(recordYaml);
   };
 
-  const auto ret = RecLookupMatchingRecords(recType, regex.data(), yamlConverter, &ctx);
+  const auto ret = RecLookupMatchingRecords(recType, regex.c_str(), yamlConverter, &ctx);
   // if the passed regex didn't match, it will not report any error. We will only get errors when converting
   // the record into yaml(so far).
   if (ctx.ec) {
@@ -167,7 +167,7 @@ void static get_record_regex_impl(std::string_view regex, unsigned recType, Cont
 
 // This two functions may look similar but they are not. First runs the validation in a different way.
 std::tuple<YAML::Node, std::error_code>
-get_yaml_record_regex(std::string_view name, unsigned recType)
+get_yaml_record_regex(std::string const &name, unsigned recType)
 {
   Context ctx;
 
@@ -178,14 +178,14 @@ get_yaml_record_regex(std::string_view name, unsigned recType)
 }
 
 std::tuple<YAML::Node, std::error_code>
-get_yaml_record(std::string_view name, ValidateRecType check)
+get_yaml_record(std::string const &name, ValidateRecType check)
 {
   Context ctx;
 
   // Set the validation callback.
   ctx.checkCb = check;
 
-  // librecords wil use the callback we provide in the ctx.checkCb to run the validation.
+  // librecords will use the callback we provide in the ctx.checkCb to run the validation.
   get_record_impl(name, ctx);
 
   return {ctx.yaml, ctx.ec};
@@ -196,17 +196,17 @@ get_yaml_record(std::string_view name, ValidateRecType check)
 namespace
 { // anonymous namespace
   bool
-  recordRegexCheck(std::string_view pattern, std::string_view value)
+  recordRegexCheck(const char *pattern, const char *value)
   {
     pcre *regex;
     const char *error;
     int erroffset;
 
-    regex = pcre_compile(pattern.data(), 0, &error, &erroffset, nullptr);
+    regex = pcre_compile(pattern, 0, &error, &erroffset, nullptr);
     if (!regex) {
       return false;
     } else {
-      int r = pcre_exec(regex, nullptr, value.data(), value.size(), 0, 0, nullptr, 0);
+      int r = pcre_exec(regex, nullptr, value, strlen(value), 0, 0, nullptr, 0);
 
       pcre_free(regex);
       return (r != -1) ? true : false;
@@ -216,9 +216,9 @@ namespace
   }
 
   bool
-  recordRangeCheck(std::string_view pattern, std::string_view value)
+  recordRangeCheck(const char *pattern, const char *value)
   {
-    char *p = const_cast<char *>(pattern.data());
+    char *p = const_cast<char *>(pattern);
     Tokenizer dashTok("-");
 
     if (recordRegexCheck("^[0-9]+$", value)) {
@@ -228,7 +228,7 @@ namespace
       if (dashTok.Initialize(++p, COPY_TOKS) == 2) {
         int l_limit = atoi(dashTok[0]);
         int u_limit = atoi(dashTok[1]);
-        int val     = atoi(value.data());
+        int val     = atoi(value);
         if (val >= l_limit && val <= u_limit) {
           return true;
         }
@@ -238,21 +238,21 @@ namespace
   }
 
   bool
-  recordIPCheck(std::string_view pattern, std::string_view value)
+  recordIPCheck(const char *pattern, const char *value)
   {
     //  regex_t regex;
     //  int result;
     bool check;
-    std::string_view range_pattern = R"(\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\])";
-    std::string_view ip_pattern    = "[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9]";
+    const char *range_pattern = R"(\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\]\\\.\[[0-9]+\-[0-9]+\])";
+    const char *ip_pattern    = "[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9].[0-9]*[0-9]*[0-9]";
 
     Tokenizer dotTok1(".");
     Tokenizer dotTok2(".");
 
     check = true;
     if (recordRegexCheck(range_pattern, pattern) && recordRegexCheck(ip_pattern, value)) {
-      if (dotTok1.Initialize(const_cast<char *>(pattern.data()), COPY_TOKS) == 4 &&
-          dotTok2.Initialize(const_cast<char *>(value.data()), COPY_TOKS) == 4) {
+      if (dotTok1.Initialize(const_cast<char *>(pattern), COPY_TOKS) == 4 &&
+          dotTok2.Initialize(const_cast<char *>(value), COPY_TOKS) == 4) {
         for (int i = 0; i < 4 && check; i++) {
           if (!recordRangeCheck(dotTok1[i], dotTok2[i])) {
             check = false;
@@ -270,7 +270,7 @@ namespace
 } // namespace
 
 bool
-recordValidityCheck(std::string_view value, RecCheckT checkType, std::string_view pattern)
+recordValidityCheck(const char *value, RecCheckT checkType, const char *pattern)
 {
   switch (checkType) {
   case RECC_STR:

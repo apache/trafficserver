@@ -723,30 +723,32 @@ initialize_file_manager()
   initializeRegistry();
 }
 
-static void
+std::tuple<bool, std::string>
 initialize_jsonrpc_server()
 {
+  std::tuple<bool, std::string> ok{true, {}};
   auto filePath = RecConfigReadConfigPath("proxy.config.jsonrpc.filename", ts::filename::JSONRPC);
 
   auto serverConfig = rpc::config::RPCConfig{};
   serverConfig.load_from_file(filePath);
   if (!serverConfig.is_enabled()) {
-    Debug("rpc.init", "JSONRPC Disabled by configuration.");
-    return;
+    Debug("rpc.init", "JSONRPC Disabled");
+    return ok;
   }
 
-  // Register admin handlers.
-  rpc::admin::register_admin_jsonrpc_handlers();
-  Debug("rpc.init", "JSONRPC Enabled. Public admin handlers regsitered.");
   // create and start the server.
   try {
     jsonrpcServer = new rpc::RPCServer{serverConfig};
     jsonrpcServer->start_thread(TSThreadInit, TSThreadDestroy);
-    Debug("rpc.init", "JSONRPC Enabled. RPC Server started, communication type set to %s",
-          jsonrpcServer->selected_comm_name().data());
   } catch (std::exception const &ex) {
-    Debug("rpc.init", "Something happened while starting the JSONRPC Server: %s . Server didn't start.", ex.what());
+    std::string msg;
+    return {false, ts::bwprint(msg, "Server failed: '{}'", ex.what())};
   }
+  // Register admin handlers.
+  rpc::admin::register_admin_jsonrpc_handlers();
+  Debug("rpc.init", "JSONRPC. Public admin handlers registered.");
+
+  return ok;
 }
 
 #define CMD_ERROR -2      // serious error, exit maintenance mode
@@ -1967,7 +1969,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #endif
 
   // JSONRPC server and handlers
-  initialize_jsonrpc_server();
+  if (auto &&[ok, msg] = initialize_jsonrpc_server(); !ok) {
+    Warning("JSONRPC server could not be started.\n  Why?: '%s' ... Continuing without it.", msg.c_str());
+  }
 
   // setup callback for tracking remap included files
   load_remap_file_cb = load_config_file_callback;

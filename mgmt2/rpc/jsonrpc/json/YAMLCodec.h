@@ -134,11 +134,11 @@ public:
   /// @return specs::RPCRequest A valid rpc response object if no errors.
   ///
   static specs::RPCRequest
-  decode(std::string_view request, std::error_code &ec) noexcept
+  decode(std::string const &request, std::error_code &ec) noexcept
   {
     specs::RPCRequest msg;
     try {
-      YAML::Node node = YAML::Load(request.data());
+      YAML::Node node = YAML::Load(request);
       switch (node.Type()) {
       case YAML::NodeType::Map: { // 4
         // single element

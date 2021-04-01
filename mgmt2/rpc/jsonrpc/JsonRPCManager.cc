@@ -184,9 +184,9 @@ make_error_response(std::error_code const &ec)
 }
 
 std::optional<std::string>
-JsonRPCManager::handle_call(std::string_view request)
+JsonRPCManager::handle_call(std::string const &request)
 {
-  Debug(logTag, "Incoming request '%s'", request.data());
+  Debug(logTag, "Incoming request '%s'", request.c_str());
 
   std::error_code ec;
   try {

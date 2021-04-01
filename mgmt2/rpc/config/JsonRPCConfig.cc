@@ -75,14 +75,14 @@ RPCConfig::is_enabled() const
 }
 
 void
-RPCConfig::load_from_file(std::string_view filePath)
+RPCConfig::load_from_file(std::string const &filePath)
 {
   std::error_code ec;
   std::string content{ts::file::load(ts::file::path{filePath}, ec)};
 
   if (ec) {
-    Warning("Cannot open the config file: %s - %s", filePath.data(), strerror(ec.value()));
-    // if any issue, let's stop and let the default values be used.
+    Warning("Cannot open the config file: %s - %s", filePath.c_str(), strerror(ec.value()));
+    // The rpc will be enabled by default with the default values.
     return;
   }
 
@@ -95,7 +95,7 @@ RPCConfig::load_from_file(std::string_view filePath)
       this->load(rpc);
     }
   } catch (std::exception const &ex) {
-    Warning("Something happened parsing the content of %s : %s", filePath.data(), ex.what());
+    Warning("Something happened parsing the content of %s : %s", filePath.c_str(), ex.what());
     return;
   };
 }

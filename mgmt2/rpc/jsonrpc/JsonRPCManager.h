@@ -171,7 +171,7 @@ public:
   /// @return std::optional<std::string> For methods, a valid jsonrpc 2.0 json string will be passed back. Notifications will not
   ///         contain any json back.
   ///
-  std::optional<std::string> handle_call(std::string_view jsonString);
+  std::optional<std::string> handle_call(std::string const &jsonString);
 
   ///
   /// @brief Get the instance of the whole RPC engine.

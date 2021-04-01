@@ -29,11 +29,11 @@ namespace rpc::comm
 {
 struct BaseCommInterface {
   virtual ~BaseCommInterface() {}
-  virtual ts::Errata configure(YAML::Node const &params) = 0;
-  virtual void run()                                     = 0;
-  virtual ts::Errata init()                              = 0;
-  virtual bool stop()                                    = 0;
-  virtual std::string_view name() const                  = 0;
+  virtual bool configure(YAML::Node const &params) = 0;
+  virtual void run()                               = 0;
+  virtual std::error_code init()                   = 0;
+  virtual bool stop()                              = 0;
+  virtual std::string const &name() const          = 0;
 };
 
 enum class InternalError { MAX_TRANSIENT_ERRORS_HANDLED = 1, POLLIN_ERROR, PARTIAL_READ, FULL_BUFFER };

@@ -67,7 +67,7 @@ using ValidateRecType = std::function<bool(RecT, std::error_code &)>;
 /// criteria. ie: record type. Check @c RecLookupRecord API to see how it's called.
 /// @return std::tuple<YAML::Node, std::error_code>
 ///
-std::tuple<YAML::Node, std::error_code> get_yaml_record(std::string_view name, ValidateRecType check);
+std::tuple<YAML::Node, std::error_code> get_yaml_record(std::string const &name, ValidateRecType check);
 
 ///
 /// @brief Get a Record as a YAML node using regex as name.
@@ -77,7 +77,7 @@ std::tuple<YAML::Node, std::error_code> get_yaml_record(std::string_view name, V
 /// value.
 /// @return std::tuple<YAML::Node, std::error_code>
 ///
-std::tuple<YAML::Node, std::error_code> get_yaml_record_regex(std::string_view regex, unsigned recType);
+std::tuple<YAML::Node, std::error_code> get_yaml_record_regex(std::string const &regex, unsigned recType);
 
 ///
 /// @brief Runs a validity check base on the type and the pattern.
@@ -87,7 +87,7 @@ std::tuple<YAML::Node, std::error_code> get_yaml_record_regex(std::string_view r
 /// @param pattern  The pattern.
 /// @return true if the validity was ok, false otherwise.
 ///
-bool recordValidityCheck(std::string_view value, RecCheckT checkType,
-                         std::string_view pattern); // code originally from WebMgmtUtils
+bool recordValidityCheck(const char *value, RecCheckT checkType,
+                         const char *pattern); // code originally from WebMgmtUtils
 
 } // namespace rpc::handlers::records::utils

@@ -47,8 +47,6 @@ namespace rpc::comm
 ///
 class IPCSocketServer : public BaseCommInterface
 {
-  static constexpr std::string_view _summary{"Local Socket"};
-
   ///
   /// @brief Connection abstraction class that deals with sending and receiving data from the connected peer.
   ///
@@ -91,18 +89,18 @@ public:
   virtual ~IPCSocketServer() override;
 
   /// Configure the  local socket.
-  ts::Errata configure(YAML::Node const &params) override;
+  bool configure(YAML::Node const &params) override;
   /// This function will create the socket, bind it and make  it listen to the new socket.
-  /// @return the errata with the collected error(if any)
-  ts::Errata init() override;
+  /// @return the std::error_code with the collected error(if any)
+  std::error_code init() override;
 
   void run() override;
   bool stop() override;
 
-  std::string_view
+  std::string const &
   name() const override
   {
-    return _summary;
+    return _name;
   }
 
 protected: // unit test access
@@ -124,6 +122,7 @@ protected: // unit test access
   Config _conf;
 
 private:
+  inline static const std::string _name = "Local Socket";
   // TODO: 1000 what? add units.
   bool wait_for_new_client(int timeout = 1000) const;
   bool check_for_transient_errors() const;
@@ -132,10 +131,11 @@ private:
   int accept(std::error_code &ec) const;
   void bind(std::error_code &ec);
   void listen(std::error_code &ec);
+  void close();
 
   std::atomic_bool _running;
 
   struct sockaddr_un _serverAddr;
-  int _socket;
+  int _socket{-1};
 };
 } // namespace rpc::comm

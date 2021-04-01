@@ -72,15 +72,19 @@ struct RPCServerTestListener : Catch::TestEventListenerBase {
     main_thread = std::make_unique<EThread>();
     main_thread->set_specific();
 
-    auto serverConfig = rpc::config::RPCConfig{};
+    rpc::config::RPCConfig serverConfig;
 
     auto confStr{R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
                  R"(",  "backlog": 5,"max_retry_on_transient_errors": 64 }}})"};
     YAML::Node configNode = YAML::Load(confStr);
     serverConfig.load(configNode["rpc"]);
-    jsonrpcServer = new rpc::RPCServer(serverConfig);
+    try {
+      jsonrpcServer = new rpc::RPCServer(serverConfig);
 
-    jsonrpcServer->start_thread();
+      jsonrpcServer->start_thread();
+    } catch (std::exception const &ex) {
+      Debug(logTag, "Ups: %s", ex.what());
+    }
   }
 
   // The whole test run ending
@@ -351,13 +355,13 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
 // Enable toggle
 TEST_CASE("Test rpc enable toggle feature - default enabled.", "[default values]")
 {
-  auto serverConfig = rpc::config::RPCConfig{};
+  rpc::config::RPCConfig serverConfig;
   REQUIRE(serverConfig.is_enabled() == true);
 }
 
 TEST_CASE("Test rpc enable toggle feature. Enabled by configuration", "[rpc][enabled]")
 {
-  auto serverConfig = rpc::config::RPCConfig{};
+  rpc::config::RPCConfig serverConfig;
 
   auto confStr{R"({"rpc": {"enabled": true}})"};
   std::cout << "'" << confStr << "'" << std::endl;
@@ -368,7 +372,7 @@ TEST_CASE("Test rpc enable toggle feature. Enabled by configuration", "[rpc][ena
 
 TEST_CASE("Test rpc  enable toggle feature. Disabled by configuration", "[rpc][disabled]")
 {
-  auto serverConfig = rpc::config::RPCConfig{};
+  rpc::config::RPCConfig serverConfig;
 
   auto confStr{R"({"rpc": {"enabled":false}})"};
 
@@ -385,7 +389,8 @@ namespace
 namespace trp = rpc::comm;
 // This class is defined to get access to the protected config object inside the IPCSocketServer class.
 struct LocalSocketTest : public trp::IPCSocketServer {
-  ts::Errata
+  inline static const std::string _name = "LocalSocketTest";
+  bool
   configure(YAML::Node const &params) override
   {
     return trp::IPCSocketServer::configure(params);
@@ -394,7 +399,7 @@ struct LocalSocketTest : public trp::IPCSocketServer {
   run() override
   {
   }
-  ts::Errata
+  std::error_code
   init() override
   {
     return trp::IPCSocketServer::init();
@@ -404,34 +409,22 @@ struct LocalSocketTest : public trp::IPCSocketServer {
   {
     return true;
   }
-  std::string_view
+  std::string const &
   name() const override
   {
-    return "LocalSocketTest";
+    return _name;
   }
   trp::IPCSocketServer::Config const &
   get_conf() const
   {
     return _conf;
   }
-
-  static std::string_view
-  default_sock_name()
-  {
-    return "jsonrpc20.sock";
-  }
-
-  static std::string_view
-  default_lock_name()
-  {
-    return "jsonrpc20.lock";
-  }
 };
 } // namespace
 
 TEST_CASE("Test configuration parsing. UDS values", "[string]")
 {
-  auto serverConfig = rpc::config::RPCConfig{};
+  rpc::config::RPCConfig serverConfig;
 
   auto confStr{R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
                R"(",  "backlog": 5,"max_retry_on_transient_errors": 64 }}})"};
@@ -440,8 +433,8 @@ TEST_CASE("Test configuration parsing. UDS values", "[string]")
 
   REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UNIX);
 
-  auto socket     = std::make_unique<LocalSocketTest>();
-  auto const &ret = socket->configure(serverConfig.get_comm_config_params());
+  auto socket    = std::make_unique<LocalSocketTest>();
+  auto const ret = socket->configure(serverConfig.get_comm_config_params());
   REQUIRE(ret);
   REQUIRE(socket->get_conf().backlog == default_backlog);
   REQUIRE(socket->get_conf().maxRetriesOnTransientErrors == default_maxRetriesOnTransientErrors);
@@ -468,9 +461,9 @@ TEST_CASE("Test configuration parsing from a file. UDS Server", "[file]")
   ofs << confStr;
   ofs.close();
 
-  auto serverConfig = rpc::config::RPCConfig{};
+  rpc::config::RPCConfig serverConfig;
   // on any error reading the file, default values will be used.
-  serverConfig.load_from_file(configPath.view());
+  serverConfig.load_from_file(configPath.string());
 
   REQUIRE(serverConfig.get_comm_type() == rpc::config::RPCConfig::CommType::UNIX);
 

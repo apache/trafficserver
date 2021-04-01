@@ -30,21 +30,18 @@ RPCServer::RPCServer(config::RPCConfig const &conf)
 {
   switch (conf.get_comm_type()) {
   case config::RPCConfig::CommType::UNIX: {
-    _socketImpl     = std::make_unique<comm::IPCSocketServer>();
-    auto const &ret = _socketImpl->configure(conf.get_comm_config_params());
-    if (ret) {
-      Warning("Unable to configure the socket impl: %s", ret.top().text().c_str());
+    _socketImpl = std::make_unique<comm::IPCSocketServer>();
+    if (!_socketImpl->configure(conf.get_comm_config_params())) {
+      Debug(logTag, "Unable to configure the socket: Stick to the default configuration.");
     }
   } break;
   default:;
     throw std::runtime_error("Unsupported communication type.");
   };
 
-  assert(_socketImpl != nullptr);
-
-  // TODO: handle this properly.
-  if (auto error = _socketImpl->init(); error.size() > 0) {
-    throw std::runtime_error(error.top().text().c_str());
+  // make sure we can initialize it.
+  if (auto ec = _socketImpl->init(); ec) {
+    throw std::runtime_error(ec.message());
   }
 }
 
@@ -74,7 +71,7 @@ RPCServer::run_thread(void *a)
 void
 RPCServer::start_thread(std::function<TSThread()> const &cb_init, std::function<void(TSThread)> const &cb_destroy)
 {
-  Debug(logTag, "Starting RPC Server on: %s", _socketImpl->name().data());
+  Debug(logTag, "Starting RPC Server on: %s", _socketImpl->name().c_str());
   _init    = cb_init;
   _destroy = cb_destroy;
 
@@ -88,6 +85,6 @@ RPCServer::stop_thread()
 
   ink_thread_join(_this_thread);
   _this_thread = ink_thread_null();
-  Debug(logTag, "Stopping RPC server on: %s", _socketImpl->name().data());
+  Debug(logTag, "Stopping RPC server on: %s", _socketImpl->name().c_str());
 }
 } // namespace rpc

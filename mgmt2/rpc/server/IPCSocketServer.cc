@@ -52,49 +52,49 @@ IPCSocketServer::~IPCSocketServer()
   unlink(_conf.sockPathName.c_str());
 }
 
-ts::Errata
+bool
 IPCSocketServer::configure(YAML::Node const &params)
 {
   try {
     _conf = params.as<Config>();
   } catch (YAML::Exception const &ex) {
-    return {1 /*Work this error*/, {ex.what()}};
+    return false;
   }
 
-  return {};
+  return true;
 }
 
-ts::Errata
+std::error_code
 IPCSocketServer::init()
 {
-  ts::Errata r;
+  // Need to run some validations on the pathname to avoid issue. Normally this would not be an issue, but some tests may fail on
+  // this.
+  if (_conf.sockPathName.empty() || _conf.sockPathName.size() > sizeof _serverAddr.sun_path) {
+    Debug(logTag, "Invalid unix path name, check the size.");
+    return std::make_error_code(static_cast<std::errc>(EINVAL));
+  }
 
   std::error_code ec;
+
   create_socket(ec);
   if (ec) {
-    Debug(logTag, "Error during socket creation %s", ec.message().c_str());
-    r.push(ec.value(), ec.message());
-    return r;
+    return ec;
   }
-  Debug("rpc", "Using %s as socket path.", _conf.sockPathName.c_str());
+  Debug(logTag, "Using %s as socket path.", _conf.sockPathName.c_str());
   _serverAddr.sun_family = AF_UNIX;
-  strcpy(_serverAddr.sun_path, _conf.sockPathName.c_str());
+  std::strncpy(_serverAddr.sun_path, _conf.sockPathName.c_str(), sizeof(_serverAddr.sun_path) - 1);
 
-  bind(ec);
-  if (ec) {
-    Debug(logTag, "Error during bind %s", ec.message().c_str());
-    r.push(ec.value(), ec.message());
-    return r;
+  if (this->bind(ec); ec) {
+    this->close();
+    return ec;
   }
 
-  listen(ec);
-  if (ec) {
-    Debug(logTag, "Error during listen %s", ec.message().c_str());
-    r.push(ec.value(), ec.message());
-    return r;
+  if (this->listen(ec); ec) {
+    this->close();
+    return ec;
   }
 
-  return r;
+  return ec;
 }
 
 bool
@@ -179,11 +179,7 @@ IPCSocketServer::run()
     bw.reset();
   }
 
-  if (_socket != -1) {
-    if (close(_socket) != 0) {
-      Debug(logTag, "Error closing the socket: %s", std ::strerror(errno));
-    }
-  }
+  this->close();
 }
 
 bool
@@ -191,12 +187,7 @@ IPCSocketServer::stop()
 {
   _running.store(false);
 
-  if (_socket != -1) {
-    Debug(logTag, "socket still open, closing it.");
-    int tmp = _socket;
-    _socket = -1;
-    close(tmp);
-  }
+  this->close();
 
   return true;
 }
@@ -304,6 +295,14 @@ IPCSocketServer::listen(std::error_code &ec)
   }
 }
 
+void
+IPCSocketServer::close()
+{
+  if (_socket > 0) {
+    ::close(_socket);
+    _socket = -1;
+  }
+}
 //// client
 
 namespace detail
@@ -318,11 +317,10 @@ namespace detail
 
   template <> struct MessageParser<rpc::comm::IPCSocketServer::Client::yamlparser> {
     static bool
-    is_complete(std::string const &view)
+    is_complete(std::string const &data)
     {
       try {
-        std::string s{view.data(), view.size()};
-        [[maybe_unused]] auto const &node = YAML::Load(s);
+        [[maybe_unused]] auto const &node = YAML::Load(data);
         // TODO: if we follow this approach, keep in mind we can re-use the already parsed node. Using a lightweigh json SM is
         // another option.
       } catch (std::exception const &ex) {

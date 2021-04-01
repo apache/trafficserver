@@ -48,9 +48,9 @@ static constexpr auto logTag{"filemanager"};
 namespace
 {
 ts::Errata
-handle_file_reload(std::string_view const &fileName, std::string_view const &configName)
+handle_file_reload(std::string const &fileName, std::string const &configName)
 {
-  Debug(logTag, "handling reload %s - %s", fileName.data(), configName.data());
+  Debug(logTag, "handling reload %s - %s", fileName.c_str(), configName.c_str());
   ts::Errata ret;
   // TODO: make sure records holds the name after change, if not we should change it.
   if (fileName == ts::filename::RECORDS) {
@@ -62,7 +62,7 @@ handle_file_reload(std::string_view const &fileName, std::string_view const &con
     }
   } else {
     RecT rec_type;
-    char *data = const_cast<char *>(configName.data());
+    char *data = const_cast<char *>(configName.c_str());
     if (RecGetRecordType(data, &rec_type) == REC_ERR_OKAY && rec_type == RECT_CONFIG) {
       RecSetSyncRequired(data);
     } else {
@@ -149,15 +149,15 @@ FileManager::getConfigObj(const char *fileName, ConfigManager **rbPtr)
 }
 
 ts::Errata
-FileManager::fileChanged(std::string_view const &fileName, std::string_view const &configName)
+FileManager::fileChanged(std::string const &fileName, std::string const &configName)
 {
-  Debug("filemanager", "file changed %s", fileName.data());
+  Debug("filemanager", "file changed %s", fileName.c_str());
   ts::Errata ret;
 
   std::lock_guard<std::mutex> guard(_callbacksMutex);
   for (auto const &call : _configCallbacks) {
     if (auto const &r = call(fileName, configName); !r) {
-      Debug("filemanager", "something back from callback %s", fileName.data());
+      Debug("filemanager", "something back from callback %s", fileName.c_str());
       std::for_each(r.begin(), r.end(), [&ret](auto &&e) { ret.push(e); });
     }
   }
@@ -207,11 +207,10 @@ FileManager::rereadConfig()
     // ToDo: rb->isVersions() was always true before, because numberBackups was always >= 1. So ROLLBACK_CHECK_ONLY could not
     // happen at all...
     if (rb->checkForUserUpdate(FileManager::ROLLBACK_CHECK_AND_UPDATE)) {
-      Debug(logTag, "File %s changed.", it.first.data());
+      Debug(logTag, "File %s changed.", it.first.c_str());
       auto const &r = fileChanged(rb->getFileName(), rb->getConfigName());
 
       if (!r) {
-        Debug(logTag, "errr");
         std::for_each(r.begin(), r.end(), [&ret](auto &&e) { ret.push(e); });
       }
 

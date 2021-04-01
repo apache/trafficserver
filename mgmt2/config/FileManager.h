@@ -111,7 +111,6 @@ public:
     ConfigManager &operator=(const ConfigManager &) = delete;
 
   private:
-    // std::function<void(std::string_view const &, std::string_view const &)> _fileChangedCb;
     int statFile(struct stat *buf);
 
     ink_mutex fileAccessLock;
@@ -123,7 +122,7 @@ public:
     time_t fileLastModified = 0;
   };
 
-  using CallbackType = std::function<ts::Errata(std::string_view const &, std::string_view const &)>;
+  using CallbackType = std::function<ts::Errata(std::string const &, std::string const &)>;
 
   FileManager();
   ~FileManager();
@@ -139,7 +138,7 @@ public:
     _configCallbacks.push_front(std::move(f));
   }
 
-  ts::Errata fileChanged(std::string_view const &fileName, std::string_view const &configName);
+  ts::Errata fileChanged(std::string const &fileName, std::string const &configName);
   ts::Errata rereadConfig();
   bool isConfigStale();
   void configFileChild(const char *parent, const char *child);
@@ -163,7 +162,7 @@ private:
 
   std::forward_list<CallbackType> _configCallbacks;
 
-  std::unordered_map<std::string_view, ConfigManager *> bindings;
+  std::unordered_map<std::string, ConfigManager *> bindings;
   void addFileHelper(const char *fileName, const char *configName, bool root_access_needed, bool isRequired,
                      ConfigManager *parentConfig);
 };

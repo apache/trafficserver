@@ -63,7 +63,7 @@ struct IPCSocketClient {
       throw std::runtime_error{text};
     }
     _server.sun_family = AF_UNIX;
-    strcpy(_server.sun_path, _path.c_str());
+    std::strncpy(_server.sun_path, _path.c_str(), sizeof(_server.sun_path) - 1);
     if (::connect(_sock, (struct sockaddr *)&_server, sizeof(struct sockaddr_un)) < 0) {
       this->close();
       std::string text;

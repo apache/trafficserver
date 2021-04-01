@@ -282,7 +282,7 @@ clear_metrics_records(std::string_view const &id, YAML::Node const &params)
     }
 
     if (!recordElement.recName.empty()) {
-      if (RecResetStatRecord(recordElement.recName.data()) != REC_ERR_OKAY) {
+      if (RecResetStatRecord(recordElement.recName.c_str()) != REC_ERR_OKAY) {
         // This could be due the fact that the record is already cleared or the metric does not have any significant
         // value.
         ErrorInfo ei{err::RecordError::RECORD_WRITE_ERROR};
