@@ -101,7 +101,7 @@ tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername 
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(foo_ec_string, "Should select EC cert", reflags=re.S | re.M)

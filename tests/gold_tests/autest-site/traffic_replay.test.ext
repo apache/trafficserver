@@ -83,7 +83,7 @@ def Replay(obj, name, replay_dir, key=None, cert=None, conn_type='mixed', option
     tr.Setup.MakeDir(data_dir)
     tr.Setup.Copy(replay_dir, data_dir)
     tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.ssl_port))
+    tr.Processes.Default.StartBefore(ts)
     tr.Processes.Default.StartBefore(dns)
     tr.ReturnCode = Any(None, 0)
     tr.Processes.Default.Streams.All = Testers.ExcludesExpression("FAIL", "No fails allowed.")

@@ -73,14 +73,13 @@ server.addResponse("sessionfile.log", req_header, res_header)
 # http://user:password@host:port/path;params?query#fragment
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 #ts = Test.MakeATSProcess("ts", "traffic_server_valgrind.sh")
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'uri_signing|http',
     #  'proxy.config.diags.debug.tags': 'uri_signing',
-    'proxy.config.http.cache.http': 0,  # No cache
 })
 
 # Use unchanged incoming URL.

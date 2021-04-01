@@ -25,8 +25,8 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 Test.ContinueOnFail = True
-# Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager")
+# Define default ATS. Disable the cache to simplify the test.
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager", enable_cache=False)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
 
@@ -57,7 +57,6 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'continuations_verify',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.cache.http': 0,  # disable cache to simply the test.
     'proxy.config.cache.enable_read_while_writer': 0,
     'proxy.config.ssl.client.verify.server': 0,
     'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',

@@ -32,9 +32,9 @@ Test.ContinueOnFail = True
 httpbin = Test.MakeHttpBinServer("httpbin")
 
 # ----
-# Setup ATS
+# Setup ATS. Disable the cache to simplify the test.
 # ----
-ts = Test.MakeATSProcess("ts", select_ports=False)
+ts = Test.MakeATSProcess("ts", select_ports=False, enable_cache=False)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/server.pem")
@@ -51,7 +51,6 @@ ts.Disk.records_config.update({
     'proxy.config.http.server_ports': '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
     'proxy.config.http.insert_request_via_str': 1,
     'proxy.config.http.insert_response_via_str': 1,
-    'proxy.config.http.cache.http': 0,
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.verify.server': 0,
@@ -70,7 +69,7 @@ test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = 'h2spec {0} -t -k --timeout 10 -p {1}'.format(h2spec_targets, ts.Variables.ssl_port)
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
-test_run.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+test_run.Processes.Default.StartBefore(Test.Processes.ts)
 test_run.Processes.Default.Streams.stdout = "gold/h2spec_stdout.gold"
 test_run.StillRunningAfter = httpbin
 

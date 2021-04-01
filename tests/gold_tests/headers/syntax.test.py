@@ -40,7 +40,7 @@ ts.Disk.remap_config.AddLine(
 # Test 0 - 200 Response
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H " foo: bar" -H "Host: www.example.com" http://localhost:{0}/'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0

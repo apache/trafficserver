@@ -149,8 +149,6 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'regex_revalidate',
     #    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.wait_for_cache': 1,
     'proxy.config.http.insert_age_in_response': 0,
     'proxy.config.http.response_via_str': 3,
 })

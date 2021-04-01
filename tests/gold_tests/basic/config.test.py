@@ -19,8 +19,10 @@
 Test.Summary = "Test start up of Traffic server with configuration modification of starting port"
 
 ts = Test.MakeATSProcess("ts", select_ports=False)
-ts.Setup.ts.CopyConfig('config/records_8090.config', "records.config")
 ts.Variables.port = 8090
+ts.Disk.records_config.update({
+    'proxy.config.http.server_ports': str(ts.Variables.port),
+})
 ts.Ready = When.PortOpen(ts.Variables.port)
 t = Test.AddTestRun("Test traffic server started properly")
 t.Processes.Default.StartBefore(ts)

@@ -34,7 +34,7 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server", lookup_key="{%Range}{PATH}")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_server")
+ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False)
 
 body = "the quick brown fox"  # len 19
 
@@ -294,8 +294,6 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.records_config.update({
     #  'proxy.config.diags.debug.enabled': 1,
     #  'proxy.config.diags.debug.tags': 'slice',
-    'proxy.config.http.cache.http': 0,
-    'proxy.config.http.wait_for_cache': 0,
 })
 
 # Override builtin error check as these cases will fail
@@ -311,7 +309,7 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression('reason="404 internal bl
 tr = Test.AddTestRun("Etag test")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-ps.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+ps.StartBefore(Test.Processes.ts)
 ps.Command = curl_and_args + ' http://ats/etag'
 # ps.ReturnCode = 0 # curl will return fail status
 ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")

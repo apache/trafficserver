@@ -22,13 +22,12 @@ Test.Summary = '''
 Test log filter.
 '''
 
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 replay_file = "log-filter.replays.yaml"
 server = Test.MakeVerifierServerProcess("server", replay_file)
 
 ts.Disk.records_config.update({
     'proxy.config.net.connections_throttle': 100,
-    'proxy.config.http.cache.http': 0
 })
 # setup some config file for this server
 ts.Disk.remap_config.AddLine(

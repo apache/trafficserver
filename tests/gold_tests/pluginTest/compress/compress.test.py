@@ -94,10 +94,9 @@ waitForServer = True
 
 waitForTs = True
 
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 
 ts.Disk.records_config.update({
-    'proxy.config.http.cache.http': 0,
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'compress',
     'proxy.config.http.normalize_ae': 0,
@@ -126,7 +125,7 @@ for i in range(3):
 
     tr = Test.AddTestRun()
     if (waitForTs):
-        tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+        tr.Processes.Default.StartBefore(ts)
     waitForTs = False
     if (waitForServer):
         tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))

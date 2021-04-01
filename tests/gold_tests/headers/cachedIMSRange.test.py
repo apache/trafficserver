@@ -99,8 +99,6 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http',
     'proxy.config.http.response_via_str': 3,
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.wait_for_cache': 1,
 })
 
 ts.Disk.remap_config.AddLine(
@@ -110,7 +108,7 @@ ts.Disk.remap_config.AddLine(
 # Test 0 - Fill a 3 byte object with Last-Modified time into cache.
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Command = 'curl -s -D - -v --ipv4 --http1.1 -H"UID: Fill" -H "x-debug: x-cache,x-cache-key,via" -H "Host: www.example.com" http://localhost:{0}/'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0

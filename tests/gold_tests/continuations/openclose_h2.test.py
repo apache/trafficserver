@@ -26,8 +26,8 @@ Test.SkipUnless(
     Condition.HasCurlFeature('http2')
 )
 
-# Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager")
+# Define default ATS. Disable the cache to simplify the test.
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager", enable_cache=False)
 
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
@@ -52,7 +52,6 @@ ts.Disk.records_config.update({
     'proxy.config.http2.zombie_debug_timeout_in': 10,
     'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'ssntxnorder_verify',
-    'proxy.config.http.cache.http': 0,  # disable cache to simply the test.
     'proxy.config.cache.enable_read_while_writer': 0,
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
@@ -80,7 +79,7 @@ tr.Processes.Default.ReturnCode = Any(0, 2)
 # Execution order is: ts/server, ps(curl cmds), Default Process.
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 # Don't know why we need both the start before and the start after
 ts.StartAfter(*ps)
 server.StartAfter(*ps)

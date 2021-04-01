@@ -24,7 +24,7 @@ Test redirection
 
 Test.ContinueOnFail = True
 
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 redirect_serv = Test.MakeOriginServer("re_server")
 dest_serv = Test.MakeOriginServer("dest_server")
 dns = Test.MakeDNServer("dns")
@@ -33,7 +33,6 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|dns|redirect',
     'proxy.config.http.number_of_redirections': 1,
-    'proxy.config.http.cache.http': 0,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
     'proxy.config.dns.resolv_conf': 'NULL',
     'proxy.config.url_remap.remap_required': 0,  # need this so the domain gets a chance to be evaluated through DNS

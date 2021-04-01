@@ -74,8 +74,7 @@ ts.Disk.records_config.update({'proxy.config.ssl.server.cert.path': '{0}'.format
 tr = Test.AddTestRun("Run-Test")
 tr.Command = './ssl-post 127.0.0.1 40 {0} {1}'.format(header_count, ts.Variables.ssl_port)
 tr.ReturnCode = 0
-# time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stdout = "gold/ssl-post.gold"
 tr.StillRunningAfter = server

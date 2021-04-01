@@ -36,9 +36,6 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-con
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.Disk.records_config.update({
-    # Do not accept connections from clients until cache subsystem is operational.
-    'proxy.config.http.wait_for_cache': 1,
-
     'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http|dns',
 })

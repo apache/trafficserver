@@ -72,11 +72,9 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl --http1.1 -k https://127.0.0.1:{0} --verbose'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 
-# time delay as proxy.config.http.wait_for_cache could be broken
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
-# Delay on readyness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr = "gold/remap-hitATS-404.gold"
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

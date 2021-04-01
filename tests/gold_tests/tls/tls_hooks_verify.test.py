@@ -74,7 +74,7 @@ Test.PrepareTestPlugin(
 
 tr = Test.AddTestRun("request good name")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.Processes.Default.Command = "curl --resolve \"foo.com:{0}:127.0.0.1\" -k  https://foo.com:{0}".format(ts.Variables.ssl_port)

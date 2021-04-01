@@ -29,7 +29,7 @@ Test.SkipUnless(
 
 Test.ContinueOnFail = True
 
-ts = Test.MakeATSProcess("ts")
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 redirect_serv1 = Test.MakeOriginServer("re_server1")
 redirect_serv2 = Test.MakeOriginServer("re_server2")
 dest_serv = Test.MakeOriginServer("dest_server")
@@ -37,7 +37,6 @@ dest_serv = Test.MakeOriginServer("dest_server")
 ts.Disk.records_config.update({
     'proxy.config.http.number_of_redirections': MAX_REDIRECT,
     'proxy.config.http.post_copy_size': 919430601,
-    'proxy.config.http.cache.http': 0,
     'proxy.config.http.redirect.actions': 'self:follow',  # redirects to self are not followed by default
     # 'proxy.config.diags.debug.enabled': 1,
 })

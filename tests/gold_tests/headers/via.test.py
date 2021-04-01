@@ -79,7 +79,7 @@ tr = Test.AddTestRun()
 # Wait for the micro server
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 # Delay on readiness of our ssl ports
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 
 tr.Processes.Default.Command = 'curl --verbose --ipv4 --http1.1 --proxy localhost:{} http://www.example.com'.format(
     ts.Variables.port)
