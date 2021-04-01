@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Test lua functionality
 '''
@@ -41,8 +43,11 @@ server.addResponse("sessionfile.log", request_header, response_header)
 
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=tslua.so @pparam={}/watermark.lua'.format(Test.TestDirectory)
+    ' @plugin=tslua.so @pparam=watermark.lua'
 )
+
+# Configure the tslua's configuration file.
+ts.Setup.Copy("watermark.lua", ts.Variables.CONFIGDIR)
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,

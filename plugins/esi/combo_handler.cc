@@ -1121,7 +1121,7 @@ ContentTypeHandler::loadAllowList(std::string const &file_spec)
   bool extra_junk_on_line{false};
   int line_num = 0;
 
-  fs.open(file_spec);
+  fs.open(file_spec, std::ios_base::in);
   if (fs.good()) {
     for (;;) {
       ++line_num;
