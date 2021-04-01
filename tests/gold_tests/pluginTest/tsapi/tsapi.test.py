@@ -26,9 +26,6 @@ Test.SkipUnless(
 )
 Test.ContinueOnFail = True
 
-# test_tsapi.so will output test logging to this file.
-Test.Env["OUTPUT_FILE"] = Test.RunDirectory + "/log.txt"
-
 server = Test.MakeOriginServer("server")
 
 request_header = {
@@ -44,6 +41,10 @@ server.addResponse("sessionlog.json", request_header, response_header)
 # Disable the cache to make sure each request is forwarded to the origin
 # server.
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
+
+# test_tsapi.so will output test logging to this file.
+log_path = os.path.join(ts.Variables.LOGDIR, "log.txt")
+Test.Env["OUTPUT_FILE"] = log_path
 
 ts.addDefaultSSLFiles()
 
@@ -61,12 +62,13 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 rp = os.path.join(Test.TestDirectory, '.libs', 'test_tsapi.so')
+ts.Setup.Copy(rp, ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'])
 
 ts.Disk.remap_config.AddLine(
-    "map http://myhost.test http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, rp)
+    "map http://myhost.test http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, "test_tsapi.so")
 )
 ts.Disk.remap_config.AddLine(
-    "map https://myhost.test:123 http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, rp)
+    "map https://myhost.test:123 http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, "test_tsapi.so")
 )
 
 tr = Test.AddTestRun()
@@ -94,7 +96,7 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 # Change server port number (which can vary) to a fixed string for compare to gold file.
-tr.Processes.Default.Command = "sed 's/{}/SERVER_PORT/' < log.txt > log2.txt".format(server.Variables.Port)
+tr.Processes.Default.Command = "sed 's/{}/SERVER_PORT/' < {} > log2.txt".format(server.Variables.Port, log_path)
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("log2.txt")
 f.Content = "log.gold"
