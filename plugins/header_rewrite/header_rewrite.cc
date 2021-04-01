@@ -281,6 +281,12 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     hook = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
     break;
+  case TS_EVENT_HTTP_TXN_START:
+    hook = TS_HTTP_TXN_START_HOOK;
+    break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    hook = TS_HTTP_TXN_CLOSE_HOOK;
+    break;
   default:
     TSError("[%s] unknown event for this plugin", PLUGIN_NAME);
     TSDebug(PLUGIN_NAME, "unknown event for this plugin");

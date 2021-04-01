@@ -69,6 +69,8 @@ Statement::initialize_hooks()
   add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
 }
 
 // Parse URL qualifiers, this one is special since it's used in a few places.
