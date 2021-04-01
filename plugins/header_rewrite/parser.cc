@@ -244,6 +244,14 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
     hook = TS_REMAP_PSEUDO_HOOK;
     return true;
   }
+  if ("TXN_START_HOOK" == _op) {
+    hook = TS_HTTP_TXN_START_HOOK;
+    return true;
+  }
+  if ("TXN_CLOSE_HOOK" == _op) {
+    hook = TS_HTTP_TXN_CLOSE_HOOK;
+    return true;
+  }
 
   return false;
 }
