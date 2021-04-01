@@ -99,6 +99,24 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     }
     break;
 
+  case TS_HTTP_TXN_START_HOOK:
+    // Get TCP Info at transaction start
+    if (client_bufp && client_hdr_loc) {
+      TSDebug(PLUGIN_NAME, "\tAdding TXN client request header buffers for TXN Start instance");
+      bufp    = client_bufp;
+      hdr_loc = client_hdr_loc;
+    }
+    break;
+
+  case TS_HTTP_TXN_CLOSE_HOOK:
+    // Get TCP Info at transaction close
+    TSDebug(PLUGIN_NAME, "\tAdding TXN close buffers");
+    if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+      TSDebug(PLUGIN_NAME, "could not gather bufp/hdr_loc for request");
+      return;
+    }
+    break;
+
   default:
     break;
   }
