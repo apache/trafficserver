@@ -110,7 +110,7 @@ longer a special case and are handled the same as a response with a non-zero len
 
 
 * `proxy.config.ssl.client.verify.server` was deprecated for ATS 8.x and has been removed.  Use
-:ts:cv:`proxy.config.ssl.client.verify.server.properties` instead.
+   :ts:cv:`proxy.config.ssl.client.verify.server.properties` instead.
 
 Deprecated records.config Settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -144,13 +144,13 @@ The default cipher list has changed:
 * :ts:cv:`proxy.config.ssl.server.cipher_suite`
 
 * :ts:cv:`proxy.config.exec_thread.autoconfig.scale` went from a value of 1.5 to 1.  This controls the number of worker threads and
-the ratio is now worker thread 1 to 1 processing thread on the CPU or CPUs.
+  the ratio is now worker thread 1 to 1 processing thread on the CPU or CPUs.
 
 
 Settings with new behavior
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 * :ts:cv:`proxy.config.http.connect_attempts_max_retries_dead_server` specifies the exact number of times a dead server will be
-retried for each new request.  Before ATS tried 1 time more than this setting making it impossible to set the retry value to 0.
+  retried for each new request.  Before ATS tried 1 time more than this setting making it impossible to set the retry value to 0.
 
 Metrics
 -------
@@ -180,7 +180,7 @@ Command Line Options
 The following command line options were either renamed or removed.
 
 * `--with-max-api-stats` was replace with `--maxRecords` to specify the total number of metric instead of just the total API metrics
-to use when running ATS.
+  to use when running ATS.
 * `--read_core` was removed and gdb should be used instead.
 
 Deprecated or Removed Features
@@ -216,7 +216,7 @@ Renamed or Modified APIs
 * :func:`TSHttpTxnServerPush` now returns a :c:type:`TSReturnCode`
 * :func:`TSContSchedule` and :func:`TSContScheduleAPI` by default will run on the same thread from which they are called.
 * :func:`TSFetchUrl` and :func:`TSFetchCreate` now return a :c:type:`TSFetchSM`
-
+* :func:`TSHttpArgIndexReserve` is now renamed to be :func:`TSHttpTxnArgIndexReserve`
 
 Cache
 -----
