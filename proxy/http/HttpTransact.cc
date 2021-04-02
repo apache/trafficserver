@@ -8293,6 +8293,11 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL;
     break;
 
+  case SQUID_LOG_TCP_CF_HIT:
+    HTTP_INCREMENT_DYN_STAT(http_cache_hit_rww_stat);
+    client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
+    break;
+
   case SQUID_LOG_TCP_MEM_HIT:
     HTTP_INCREMENT_DYN_STAT(http_cache_hit_mem_fresh_stat);
     // fallthrough
@@ -8638,6 +8643,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   switch (s->squid_codes.log_code) {
   case SQUID_LOG_TCP_HIT:
   case SQUID_LOG_TCP_MEM_HIT:
+  case SQUID_LOG_TCP_CF_HIT:
     // It's possible to have two stat's instead of one, if needed.
     HTTP_INCREMENT_DYN_STAT(http_tcp_hit_count_stat);
     HTTP_SUM_DYN_STAT(http_tcp_hit_user_agent_bytes_stat, user_agent_bytes);
