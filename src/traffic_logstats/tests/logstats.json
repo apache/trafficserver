@@ -1,6 +1,7 @@
 { "total": {
     "hit.direct" : { "req": "19", "req_pct": "47.50", "bytes": "9216303", "bytes_pct": "64.52" },
     "hit.ram" : { "req": "8", "req_pct": "20.00", "bytes": "1486946", "bytes_pct": "10.41" },
+    "hit.rww" : { "req": "8", "req_pct": "20.00", "bytes": "1486946", "bytes_pct": "10.41" },
     "hit.ims" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.refresh" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
