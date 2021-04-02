@@ -27,6 +27,10 @@
 #include <sstream>
 
 #include "IPAllow.h"
+#include "tscore/BufferWriter.h"
+#include "tscore/bwf_std_format.h"
+#include "tscore/ts_file.h"
+#include "tscore/ink_memory.h"
 #include "tscore/Filenames.h"
 #include "tscpp/util/ts_errata.h"
 
@@ -59,6 +63,29 @@ bwformat(BufferWriter &w, Spec const &spec, YAML::Mark const &mark)
 }
 
 } // namespace swoc
+
+namespace YAML
+{
+template <> struct convert<ts::TextView> {
+  static Node
+  encode(ts::TextView const &tv)
+  {
+    Node zret;
+    zret = std::string(tv.data(), tv.size());
+    return zret;
+  }
+  static bool
+  decode(const Node &node, ts::TextView &tv)
+  {
+    if (!node.IsScalar()) {
+      return false;
+    }
+    tv.assign(node.Scalar());
+    return true;
+  }
+};
+
+} // namespace YAML
 
 enum AclOp {
   ACL_OP_ALLOW, ///< Allow access.

@@ -296,60 +296,19 @@ class SNI_IpAllow : public ActionItem
   IpMap ip_map;
 
 public:
-  SNI_IpAllow(std::string &ip_allow_list, const std::string &servername)
-  {
-    // the server identified by item.fqdn requires ATS to do IP filtering
-    if (ip_allow_list.length()) {
-      IpAddr addr1;
-      IpAddr addr2;
-      // check format first
-      // check if the input is a comma separated list of IPs
-      ts::TextView content(ip_allow_list);
-      while (!content.empty()) {
-        ts::TextView list{content.take_prefix_at(',')};
-        if (0 != ats_ip_range_parse(list, addr1, addr2)) {
-          Debug("ssl_sni", "%.*s is not a valid format", static_cast<int>(list.size()), list.data());
-          break;
-        } else {
-          Debug("ssl_sni", "%.*s added to the ip_allow list %s", static_cast<int>(list.size()), list.data(), servername.c_str());
-          ip_map.fill(IpEndpoint().assign(addr1), IpEndpoint().assign(addr2), reinterpret_cast<void *>(1));
-        }
-      }
-    }
-  } // end function SNI_IpAllow
+  SNI_IpAllow(std::string &ip_allow_list, const std::string &servername); // end function SNI_IpAllow
 
-  int
-  SNIAction(TLSSNISupport *snis, const Context &ctx) const override
-  {
-    // i.e, ip filtering is not required
-    if (ip_map.count() == 0) {
-      return SSL_TLSEXT_ERR_OK;
-    }
+  int SNIAction(TLSSNISupport *snis, const Context &ctx) const override;
 
-    auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
-    auto ip     = ssl_vc->get_remote_endpoint();
+  bool TestClientSNIAction(const char *servrername, const IpEndpoint &ep, int &policy) const override;
 
-    // check the allowed ips
-    if (ip_map.contains(ip)) {
-      return SSL_TLSEXT_ERR_OK;
-    } else {
-      char buff[256];
-      ats_ip_ntop(&ip.sa, buff, sizeof(buff));
-      Debug("ssl_sni", "%s is not allowed. Denying connection", buff);
-      return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-  }
-
-  bool
-  TestClientSNIAction(const char *servrername, const IpEndpoint &ep, int &policy) const override
-  {
-    bool retval = false;
-    if (ip_map.count() > 0) {
-      // Only triggers if the map didn't contain the address
-      retval = !ip_map.contains(ep);
-    }
-    return retval;
-  }
+protected:
+  /** Load the map from @a text.
+   *
+   * @param content A list of IP addresses in text form, separated by commas or newlines.
+   * @param server_name Server named, used only for debugging messages.
+   */
+  void load(ts::TextView content, ts::TextView server_name);
 };
 
 /**

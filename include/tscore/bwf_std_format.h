@@ -149,4 +149,6 @@ namespace bwf
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::OptionalAffix const &opts);
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, std::error_code const &ec);
+
 } // namespace ts
