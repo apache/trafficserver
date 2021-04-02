@@ -2026,7 +2026,7 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
 
   format_line(json ? "hit.direct" : "Cache hit", stat->results.hits.hit, stat->total, json, concise);
   format_line(json ? "hit.ram" : "Cache hit RAM", stat->results.hits.hit_ram, stat->total, json, concise);
-  format_line(json ? "hit.ram" : "Cache hit RWW", stat->results.hits.hit_rww, stat->total, json, concise);
+  format_line(json ? "hit.rww" : "Cache hit RWW", stat->results.hits.hit_rww, stat->total, json, concise);
   format_line(json ? "hit.ims" : "Cache hit IMS", stat->results.hits.ims, stat->total, json, concise);
   format_line(json ? "hit.refresh" : "Cache hit refresh", stat->results.hits.refresh, stat->total, json, concise);
   format_line(json ? "hit.other" : "Cache hit other", stat->results.hits.other, stat->total, json, concise);
@@ -2257,7 +2257,7 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
 
   format_elapsed_line(json ? "hit.direct.latency" : "Cache hit", stat->elapsed.hits.hit, json, concise);
   format_elapsed_line(json ? "hit.ram.latency" : "Cache hit RAM", stat->elapsed.hits.hit_ram, json, concise);
-  format_elapsed_line(json ? "hit.ram.latency" : "Cache hit RWW", stat->elapsed.hits.hit_rww, json, concise);
+  format_elapsed_line(json ? "hit.rww.latency" : "Cache hit RWW", stat->elapsed.hits.hit_rww, json, concise);
   format_elapsed_line(json ? "hit.ims.latency" : "Cache hit IMS", stat->elapsed.hits.ims, json, concise);
   format_elapsed_line(json ? "hit.refresh.latency" : "Cache hit refresh", stat->elapsed.hits.refresh, json, concise);
   format_elapsed_line(json ? "hit.other.latency" : "Cache hit other", stat->elapsed.hits.other, json, concise);
