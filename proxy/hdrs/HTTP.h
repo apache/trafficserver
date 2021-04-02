@@ -154,13 +154,13 @@ enum SquidLogCode {
   SQUID_LOG_ERR_NO_RELAY              = 'C',
   SQUID_LOG_ERR_DISK_IO               = 'D',
   SQUID_LOG_ERR_ZERO_SIZE_OBJECT      = 'E',
+  SQUID_LOG_TCP_CF_HIT                = 'F', // Collapsed forwarding HIT also known as Read while write hit
   SQUID_LOG_ERR_PROXY_DENIED          = 'G',
   SQUID_LOG_ERR_WEBFETCH_DETECTED     = 'H',
   SQUID_LOG_ERR_FUTURE_1              = 'I',
   SQUID_LOG_ERR_CLIENT_READ_ERROR     = 'J', // Client side abort logging
   SQUID_LOG_ERR_LOOP_DETECTED         = 'K', // Loop or cycle detected, request came back to this server
-  SQUID_LOG_ERR_UNKNOWN               = 'Z',
-  SQUID_LOG_TCP_CF_HIT                = 'F' // Collapsed forwarding HIT also known as Read while write hit
+  SQUID_LOG_ERR_UNKNOWN               = 'Z'
 };
 
 // squild log subcodes
