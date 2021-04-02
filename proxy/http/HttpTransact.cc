@@ -2933,6 +2933,11 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_FRESH);
   }
 
+  HttpCacheSM &cache_sm = s->state_machine->get_cache_sm();
+  TxnDebug("http_trans", "CacheOpenRead --- HIT-FRESH read while write %d", cache_sm.is_readwhilewrite_inprogress());
+  if (cache_sm.is_readwhilewrite_inprogress())
+    SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_RWW_HIT);
+
   if (s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING) {
     build_response_from_cache(s, HTTP_WARNING_CODE_HERUISTIC_EXPIRATION);
   } else if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE) {

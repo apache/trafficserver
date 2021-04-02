@@ -124,6 +124,7 @@ enum ViaString_t {
   VIA_IN_CACHE_STALE          = 'S',
   VIA_IN_CACHE_FRESH          = 'H',
   VIA_IN_RAM_CACHE_FRESH      = 'R',
+  VIA_IN_CACHE_RWW_HIT        = 'W',
   // server stuff
   VIA_SERVER_STRING       = 's',
   VIA_SERVER_ERROR        = 'E',

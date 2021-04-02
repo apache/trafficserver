@@ -462,6 +462,8 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     // its a cache hit.
     if (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) {
       hit_miss_code = SQUID_HIT_RAM;
+    } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT) {
+      hit_miss_code = SQUID_HIT_RWW;
     } else { // TODO: Support other cache tiers here
       hit_miss_code = SQUID_HIT_RESERVED;
     }
