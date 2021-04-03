@@ -1,6 +1,9 @@
 name: Mark stale issues and pull requests
 
 on:
+  push:
+    paths:
+      - .github/workflows/stale.yml
   schedule:
   - cron: "30 1 * * *"
 
