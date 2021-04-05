@@ -206,7 +206,8 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/huge_resp_hdrs'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http2_8_stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/http2_8_stderr.gold"
+# Different versions of curl will have different cases for HTTP/2 field names.
+tr.Processes.Default.Streams.stderr = Testers.GoldFile("gold/http2_8_stderr.gold", case_insensitive=True)
 tr.StillRunningAfter = server
 
 # Test Case 9: Header Only Response - e.g. 204
@@ -214,5 +215,6 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/status/204'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http2_9_stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/http2_9_stderr.gold"
+# Different versions of curl will have different cases for HTTP/2 field names.
+tr.Processes.Default.Streams.stderr = Testers.GoldFile("gold/http2_9_stderr.gold", case_insensitive=True)
 tr.StillRunningAfter = server
