@@ -183,6 +183,7 @@ Cache
 .. ts:stat:: global proxy.process.http.cache_hit_fresh integer
 .. ts:stat:: global proxy.process.http.cache_hit_ims integer
 .. ts:stat:: global proxy.process.http.cache_hit_mem_fresh integer
+.. ts:stat:: global proxy.process.http.cache_hit_rww integer
 .. ts:stat:: global proxy.process.http.cache_hit_revalidated integer
 .. ts:stat:: global proxy.process.http.cache_hit_stale_served integer
 .. ts:stat:: global proxy.process.http.cache_lookups integer

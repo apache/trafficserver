@@ -1,6 +1,7 @@
 { "total": {
     "hit.direct" : { "req": "19", "req_pct": "47.50", "bytes": "9216303", "bytes_pct": "64.52" },
     "hit.ram" : { "req": "8", "req_pct": "20.00", "bytes": "1486946", "bytes_pct": "10.41" },
+    "hit.rww" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.ims" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.refresh" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
@@ -114,6 +115,7 @@
     "content.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.direct.latency" : { "min": "2", "max": "269", "avg": "59.16", "dev": "88.68" },
     "hit.ram.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
+    "hit.rww.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.ims.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.refresh.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.other.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
@@ -127,6 +129,7 @@
   "i.imgur.com": {
     "hit.direct" : { "req": "19", "req_pct": "52.78", "bytes": "9216303", "bytes_pct": "64.58" },
     "hit.ram" : { "req": "8", "req_pct": "22.22", "bytes": "1486946", "bytes_pct": "10.42" },
+    "hit.rww" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.ims" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.refresh" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
@@ -240,6 +243,7 @@
     "content.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.direct.latency" : { "min": "2", "max": "269", "avg": "59.16", "dev": "88.68" },
     "hit.ram.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
+    "hit.rww.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.ims.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.refresh.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.other.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
@@ -253,6 +257,7 @@
   "i.imgur.com:443": {
     "hit.direct" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.ram" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
+    "hit.rww" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.ims" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.refresh" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
@@ -366,6 +371,7 @@
     "content.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.direct.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.ram.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
+    "hit.rww.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.ims.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.refresh.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.other.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },

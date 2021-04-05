@@ -177,6 +177,7 @@ enum {
   // cache result stats
   http_cache_hit_fresh_stat,
   http_cache_hit_mem_fresh_stat,
+  http_cache_hit_rww_stat,
   http_cache_hit_reval_stat,
   http_cache_hit_ims_stat,
   http_cache_hit_stale_served_stat,
