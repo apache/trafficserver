@@ -22,6 +22,7 @@ Test sslheaders plugin.
 '''
 
 Test.SkipUnless(
+    Condition.PluginExists('sslheaders.so'),
     Condition.HasATSFeature('TS_USE_TLS_ALPN'),
     Condition.HasCurlFeature('http2'),
 )
