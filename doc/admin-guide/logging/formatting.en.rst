@@ -171,7 +171,8 @@ crsc  Proxy Cache    Cache Result Sub-Code. More specific code to complement the
                      Cache Result Code.
 chm   Proxy Cache    Cache Hit-Miss status. Specifies the level of cache from
                      which this request was served by |TS|. Currently supports
-                     only RAM (``HIT_RAM``) vs disk (``HIT_DISK``).
+                     only RAM (``HIT_RAM``), disk (``HIT_DISK``) and Read While Write (``HIT_RWW``).
+                     HIT_RWW could imply either HIT_RAM or HIT_DISK.
 cwr   Proxy Cache    Cache Write Result. Specifies the result of attempting to
                      write to cache: not relevant (``-``), no cache write
                      (``WL_MISS``), write interrupted (``INTR``), error while

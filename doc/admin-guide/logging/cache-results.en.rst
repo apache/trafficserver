@@ -102,6 +102,14 @@ TCP_HIT
 A valid copy of the requested object was in the cache and Traffic Server sent
 the object to the client.
 
+.. _crc-tcp-cf-hit:
+
+TCP_CF_HIT
+-------
+
+A valid copy of the requested object is being updated in the cache and Traffic Server sent
+the object to the client.
+
 .. _crc-tcp-miss:
 
 TCP_MISS
