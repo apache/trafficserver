@@ -140,10 +140,9 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
   ink_release_assert(static_cast<size_t>(buf_exdata->block_size()) >= len_exdata);
   ssl_session_cache_exdata *exdata = reinterpret_cast<ssl_session_cache_exdata *>(buf_exdata->data());
   // This could be moved to a function in charge of populating exdata
-  exdata->curve  = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
-  ink_hrtime now = Thread::get_hrtime_updated();
+  exdata->curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
 
-  ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len, buf_exdata, now));
+  ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len, buf_exdata));
 
   std::unique_lock lock(mutex, std::try_to_lock);
   if (!lock.owns_lock()) {
@@ -170,9 +169,8 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *
   }
 
   /* do the actual insert */
-  auto node           = ssl_session.release();
-  bucket_data[id]     = node;
-  bucket_data_ts[now] = node;
+  auto node       = ssl_session.release();
+  bucket_data[id] = node;
 
   PRINT_BUCKET("insertSession after")
 }
@@ -268,9 +266,8 @@ void inline SSLSessionBucket::removeOldestSession(const std::unique_lock<std::sh
 
   PRINT_BUCKET("removeOldestSession before")
 
-  auto node = bucket_data_ts.begin();
-  bucket_data.erase(node->second->session_id);
-  bucket_data_ts.erase(node);
+  auto node = bucket_data.begin();
+  bucket_data.erase(node);
 
   PRINT_BUCKET("removeOldestSession after")
 }
@@ -286,7 +283,6 @@ SSLSessionBucket::removeSession(const SSLSessionID &id)
   PRINT_BUCKET("removeSession before")
 
   if (node != bucket_data.end()) {
-    bucket_data_ts.erase(node->second->time_stamp);
     bucket_data.erase(node);
   }
 
