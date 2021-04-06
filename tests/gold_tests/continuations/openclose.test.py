@@ -51,7 +51,8 @@ ts.Disk.remap_config.AddLine(
         ts.Variables.port, server.Variables.Port)
 )
 
-cmd = 'curl -vs -H "host:oc.test" http://127.0.0.1:{0}'.format(ts.Variables.port)
+# Add connection close to ensure that the client connection closes promptly after completing the transaction
+cmd = 'curl -H "Connection: close" -vs -H "host:oc.test" http://127.0.0.1:{0}'.format(ts.Variables.port)
 numberOfRequests = 100
 
 tr = Test.AddTestRun()
