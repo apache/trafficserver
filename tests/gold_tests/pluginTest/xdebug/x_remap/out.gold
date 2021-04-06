@@ -1,4 +1,4 @@
-HTTP/1.1 502 Cannot find server.
+HTTP/1.1 500 Cannot find server.
 Date: ``
 Connection: close
 Server: ATS/``

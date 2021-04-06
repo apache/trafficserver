@@ -24,6 +24,7 @@
 #include "tscore/BufferWriter.h"
 #include "tscore/bwf_std_format.h"
 #include "tscore/ink_thread.h"
+#include "tscore/InkErrno.h"
 #include <unistd.h>
 #include <sys/param.h>
 #include <cctype>
@@ -896,8 +897,12 @@ bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e)
   if (spec.has_numeric_type()) {              // if numeric type, print just the numeric part.
     w.print(number_fmt, e._e);
   } else {
-    w.write(short_name(e._e));
-    w.write(strerror(e._e));
+    if (e._e < 0) {
+      w.write(InkStrerror(-e._e));
+    } else {
+      w.write(short_name(e._e));
+      w.write(strerror(e._e));
+    }
     if (spec._type != 's' && spec._type != 'S') {
       w.write(' ');
       w.print(number_fmt, e._e);
