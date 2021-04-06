@@ -26,6 +26,7 @@
 
 #include <strings.h>
 #include <cmath>
+#include <string_view>
 
 #include "HttpTransact.h"
 #include "HttpTransactHeaders.h"
@@ -6576,8 +6577,8 @@ HttpTransact::will_this_request_self_loop(State *s)
 
     // Now check for a loop using the Via string.
     int count            = 0;
-    const char *uuid     = Machine::instance()->uuid.getString();
     MIMEField *via_field = s->hdr_info.client_request.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
+    std::string_view uuid{Machine::instance()->uuid.getString()};
 
     while (via_field) {
       // No need to waste cycles comma separating the via values since we want to do a match anywhere in the
@@ -6585,16 +6586,15 @@ HttpTransact::will_this_request_self_loop(State *s)
       int via_len;
       const char *via_string = via_field->value_get(&via_len);
 
-      if (via_string) {
-        char *current = (char *)via_string;
-        int len       = via_len;
+      if ((count <= max_proxy_cycles) && via_string) {
+        std::string_view current{via_field->value_get()};
+        std::string_view::size_type offset;
         TxnDebug("http_transact", "Incoming via: \"%.*s\" --has-- (%s[%s] (%s))", via_len, via_string,
-                 s->http_config_param->proxy_hostname, uuid, s->http_config_param->proxy_request_via_string);
-        while (char *result = (char *)ptr_len_str(current, len, uuid)) {
+                 s->http_config_param->proxy_hostname, uuid.data(), s->http_config_param->proxy_request_via_string);
+        while ((count <= max_proxy_cycles) && (std::string_view::npos != (offset = current.find(uuid)))) {
+          current.remove_prefix(offset + TS_UUID_STRING_LEN);
           count++;
-          current = result + TS_UUID_STRING_LEN;
-          len     = via_len - (current - via_string);
-          TxnDebug("http_transact", "count = %d current = %.*s", count, len, current);
+          TxnDebug("http_transact", "count = %d current = %.*s", count, current.length(), current.data());
         }
       }
 
