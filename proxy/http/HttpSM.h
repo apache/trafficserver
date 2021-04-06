@@ -170,14 +170,9 @@ class PendingAction
 {
 public:
   bool
-  operator==(Action *b)
+  is_empty() const
   {
-    return b == pending_action;
-  }
-  bool
-  operator!=(Action *b)
-  {
-    return b != pending_action;
+    return pending_action == nullptr;
   }
   PendingAction &
   operator=(Action *b)
@@ -191,13 +186,13 @@ public:
     }
     return *this;
   }
-  Action *
-  operator->()
+  Continuation *
+  get_continuation() const
   {
-    return pending_action;
+    return pending_action ? pending_action->continuation : nullptr;
   }
   Action *
-  get()
+  get() const
   {
     return pending_action;
   }
