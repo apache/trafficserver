@@ -70,7 +70,7 @@ tr.Processes.Default.Command = 'curl -H"Connection:close" -d "bob" -i http://127
     ts.Variables.port)
 #tr.Processes.Default.TimeOut = 6
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")
+    "HTTP/1.1 502 connect failed", "Connect failed")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_post_connect
 tr.StillRunningAfter = Test.Processes.ts
@@ -96,7 +96,7 @@ tr.Processes.Default.Command = 'curl -H"Connection:close" -i http://127.0.0.1:{0
     ts.Variables.port)
 #tr.Processes.Default.TimeOut = 6
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")
+    "HTTP/1.1 502 connect failed", "Connect failed")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_get_connect
 
