@@ -18,7 +18,7 @@
 #include "limiter.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-// This is the continuation that gets scheduled perdiocally to process the
+// This is the continuation that gets scheduled periodically to process the
 // deque of waiting TXNs.
 //
 int

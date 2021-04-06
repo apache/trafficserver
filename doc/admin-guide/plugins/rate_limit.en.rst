@@ -80,7 +80,7 @@ are available:
 Examples
 --------
 
-This example shows a simple rate limiting of `128` concurently active client
+This example shows a simple rate limiting of `128` concurrently active client
 transactions, with a maximum queue size of `256`. The default of HTTP status
 code `429` is used when queue is full.
 
