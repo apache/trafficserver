@@ -520,7 +520,7 @@ HttpTunnel::has_cache_writer() const
 inline bool
 HttpTunnel::has_consumer_besides_client() const
 {
-  bool res = true;
+  bool res = false; // case of no consumers
 
   for (const auto &consumer : consumers) {
     if (!consumer.alive) {
