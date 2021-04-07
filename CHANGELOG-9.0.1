@@ -50,6 +50,7 @@ Changes with Apache Traffic Server 9.0.1
   #7558 - Fix parent.config timeouts to return a 504 not 502 on timeout
   #7564 - Fix compress issues with 304s, only looks at 304 headers
   #7576 - Add thread yield to avoid busy waiting in LogObject::_checkout_write().
+  #7583 - Rollback LAZY_BUF_ALLOC remove in HttpTunnel
   #7592 - Remove inline for detail::cache::CacheData::idAddr
   #7596 - Remove UnixNetVConnection::startEvent - not actually called.
   #7602 - Fix the connection limit crash while using parents
