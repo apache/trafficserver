@@ -1462,6 +1462,8 @@ __saved_CXXFLAGS="${CXXFLAGS}"
 __saved_CFLAGS="${CFLAGS}"
 
 has_128bit_cas=0
+# Don't add the -mcx16 flag unless needed and it compiles cleanly.
+needs_mcx16_for_cas=0
 
 TS_TRY_COMPILE_NO_WARNING([],[
     __int128_t x = 0;
@@ -1480,6 +1482,7 @@ TS_TRY_COMPILE_NO_WARNING([],[
       ], [
         AC_MSG_RESULT(yes)
         has_128bit_cas=1
+        needs_mcx16_for_cas=1
       ], [
         AC_MSG_RESULT(no)
     ])
@@ -1490,11 +1493,9 @@ CFLAGS="${__saved_CFLAGS}"
 AC_LANG_POP
 AC_SUBST(has_128bit_cas)
 
-AS_IF([test "x$has_128bit_cas" = "x1"], [
-  AS_IF([test "x$ax_cv_c_compiler_vendor" != "xintel"], [
+AS_IF([test "x$needs_mcx16_for_cas" = "x1"], [
     TS_ADDTO(AM_CFLAGS, [-mcx16])
     TS_ADDTO(AM_CXXFLAGS, [-mcx16])
-  ])
 ])
 
 # Check for POSIX capabilities library.
