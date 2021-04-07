@@ -756,7 +756,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
   ctx_key = client_cert;
   ts::bwprint(top_level_key, "{}:{}", ca_bundle_file, ca_bundle_path);
 
-  Debug("ssl", "Look for client cert %s %s", top_level_key.c_str(), ctx_key.c_str());
+  Debug("ssl_client_ctx", "Look for client cert %s %s", top_level_key.c_str(), ctx_key.c_str());
 
   ink_mutex_acquire(&ctxMapLock);
   auto ctx_map_iter = top_level_ctx_map.find(top_level_key);
@@ -773,7 +773,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
   EVP_PKEY *key = nullptr;
   // Create context if doesn't exists
   if (!client_ctx) {
-    Debug("ssl", "Load new cert for %s %s", top_level_key.c_str(), ctx_key.c_str());
+    Debug("ssl_client_ctx", "Load new cert for %s %s", top_level_key.c_str(), ctx_key.c_str());
     client_ctx = shared_SSL_CTX(SSLInitClientContext(this), SSLReleaseContext);
 
     // Set public and private keys
