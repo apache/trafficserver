@@ -52,8 +52,6 @@ test(const MIMEField *pairs, int numPairs, const char *asciiResult, int extraUnm
 
   REQUIRE(binAlignSize < static_cast<int>(sizeof(binBuf)));
 
-  hdr.reset();
-
   REQUIRE(marshalMimeHdr(numPairs ? &hdr : nullptr, binBuf) == binAlignSize);
 
   int binSize{1};

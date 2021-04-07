@@ -908,11 +908,10 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
     cursor += written;
   }
 
-  MIMEFieldIter field_iter;
-  for (MIMEField *field = hdr->iter_get_first(&field_iter); field != nullptr; field = hdr->iter_get_next(&field_iter)) {
+  for (auto &field : *hdr) {
     // Convert field name to lower case to follow HTTP2 spec
     // This conversion is needed because WKSs in MIMEFields is old fashioned
-    std::string_view original_name = field->name_get();
+    std::string_view original_name = field.name_get();
     int name_len                   = original_name.size();
     ts::LocalBuffer<char> local_buffer(name_len);
     char *lower_name = local_buffer.data();
@@ -921,7 +920,7 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
     }
 
     std::string_view name{lower_name, static_cast<size_t>(name_len)};
-    std::string_view value = field->value_get();
+    std::string_view value = field.value_get();
 
     // Choose field representation (See RFC7541 7.1.3)
     // - Authorization header obviously should not be indexed

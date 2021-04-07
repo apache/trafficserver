@@ -987,6 +987,43 @@ struct MIMEFieldIter {
 class MIMEHdr : public HdrHeapSDKHandle
 {
 public:
+  /** Iterator over fields in the header.
+   * This iterator should be stable over field deletes, but not insertions.
+   */
+  class iterator
+  {
+    using self_type = iterator; ///< Self reference types.
+
+  public:
+    iterator() = default;
+
+    // STL iterator compliance types.
+    using difference_type   = void;
+    using value_type        = MIMEField;
+    using pointer           = value_type *;
+    using reference         = value_type &;
+    using iterator_category = std::forward_iterator_tag;
+
+    pointer operator->();
+    reference operator*();
+
+    self_type &operator++();
+    self_type operator++(int);
+
+    bool operator==(self_type const &that);
+    bool operator!=(self_type const &that);
+
+  protected:
+    MIMEFieldBlockImpl *_block = nullptr; ///< Current block.
+    unsigned _slot             = 0;       ///< Slot in @a _block
+
+    /// Internal method to move to a valid slot.
+    /// If the current location is valid, this is a no-op.
+    self_type &step();
+
+    friend class MIMEHdr;
+  };
+
   MIMEHdrImpl *m_mime = nullptr;
 
   MIMEHdr() = default; // Force the creation of the default constructor
@@ -1009,9 +1046,14 @@ public:
   void field_delete(MIMEField *field, bool delete_all_dups = true);
   void field_delete(const char *name, int name_length);
 
+  iterator begin();
+  iterator end();
+
+  /*
   MIMEField *iter_get_first(MIMEFieldIter *iter);
   MIMEField *iter_get(MIMEFieldIter *iter);
   MIMEField *iter_get_next(MIMEFieldIter *iter);
+   */
 
   uint64_t presence(uint64_t mask);
 
@@ -1229,52 +1271,86 @@ MIMEHdr::field_delete(MIMEField *field, bool delete_all_dups)
   mime_hdr_field_delete(m_heap, m_mime, field, delete_all_dups);
 }
 
+inline auto
+MIMEHdr::begin() -> iterator
+{
+  iterator spot;
+  spot._block = &m_mime->m_first_fblock;
+  spot._slot  = 0;
+  return spot.step();
+}
+
+inline auto
+MIMEHdr::end() -> iterator
+{
+  return {}; // default constructed iterator.
+}
+
+inline auto
+MIMEHdr::iterator::step() -> self_type &
+{
+  while (_block) {
+    auto limit = _block->m_freetop;
+    while (_slot < limit) {
+      if (_block->m_field_slots[_slot].is_live()) {
+        return *this;
+      }
+      ++_slot;
+    }
+    _block = _block->m_next;
+    _slot  = 0;
+  }
+  return *this;
+}
+
+inline auto
+MIMEHdr::iterator::operator*() -> reference
+{
+  return _block->m_field_slots[_slot];
+}
+
+inline auto
+MIMEHdr::iterator::operator->() -> pointer
+{
+  return &(_block->m_field_slots[_slot]);
+}
+
+inline bool
+MIMEHdr::iterator::operator==(const self_type &that)
+{
+  return _block == that._block && _slot == that._slot;
+}
+
+inline bool
+MIMEHdr::iterator::operator!=(const self_type &that)
+{
+  return _block != that._block || _slot != that._slot;
+}
+
+inline auto
+MIMEHdr::iterator::operator++() -> self_type &
+{
+  if (_block) {
+    ++_slot;
+    this->step();
+  }
+  return *this;
+}
+
+inline auto
+MIMEHdr::iterator::operator++(int) -> self_type
+{
+  self_type zret{*this};
+  this->step();
+  return zret;
+}
+
 inline void
 MIMEHdr::field_delete(const char *name, int name_length)
 {
   MIMEField *field = field_find(name, name_length);
   if (field)
     field_delete(field);
-}
-
-inline MIMEField *
-MIMEHdr::iter_get_first(MIMEFieldIter *iter)
-{
-  iter->m_block = &m_mime->m_first_fblock;
-  iter->m_slot  = 0;
-  return iter_get(iter);
-}
-
-inline MIMEField *
-MIMEHdr::iter_get(MIMEFieldIter *iter)
-{
-  MIMEField *f;
-  MIMEFieldBlockImpl *b = iter->m_block;
-
-  int slot = iter->m_slot;
-
-  while (b) {
-    for (; slot < (int)b->m_freetop; slot++) {
-      f = &(b->m_field_slots[slot]);
-      if (f->is_live()) {
-        iter->m_slot  = slot;
-        iter->m_block = b;
-        return f;
-      }
-    }
-    b    = b->m_next;
-    slot = 0;
-  }
-
-  iter->m_block = nullptr;
-  return nullptr;
-}
-
-inline MIMEField *
-MIMEHdr::iter_get_next(MIMEFieldIter *iter)
-{
-  iter->m_slot++;
-  return iter_get(iter);
 }
 
 /*-------------------------------------------------------------------------

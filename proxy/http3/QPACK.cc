@@ -191,9 +191,8 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, 
   IOBufferBlock *compressed_headers = new_IOBufferBlock();
   compressed_headers->alloc(BUFFER_SIZE_INDEX_2K);
 
-  MIMEFieldIter field_iter;
-  for (MIMEField *field = header_set.iter_get_first(&field_iter); field != nullptr; field = header_set.iter_get_next(&field_iter)) {
-    int ret            = this->_encode_header(*field, base_index, compressed_headers, referred_index);
+  for (auto &field : header_set) {
+    int ret            = this->_encode_header(field, base_index, compressed_headers, referred_index);
     largest_reference  = std::max(largest_reference, referred_index);
     smallest_reference = std::min(smallest_reference, referred_index);
     if (ret < 0) {

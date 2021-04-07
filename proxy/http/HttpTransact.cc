@@ -4965,17 +4965,14 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
 void
 HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, HTTPHdr *response_header)
 {
-  MIMEField *field;
   MIMEField *new_field;
-  MIMEFieldIter fiter;
   const char *name;
   bool dups_seen = false;
 
-  field = response_header->iter_get_first(&fiter);
-
-  for (; field != nullptr; field = response_header->iter_get_next(&fiter)) {
+  for (auto spot = response_header->begin(), limit = response_header->end(); spot != limit; ++spot) {
+    MIMEField &field{*spot};
     int name_len;
-    name = field->name_get(&name_len);
+    name = field.name_get(&name_len);
 
     ///////////////////////////
     // is hop-by-hop header? //
@@ -5025,31 +5022,20 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     //   the remaining fields one by one from the
     //   response header
     //
-    if (field->m_next_dup) {
+    if (field.m_next_dup) {
       if (dups_seen == false) {
-        MIMEField *dfield;
         // use a second iterator to delete the
         // remaining response headers in the cached response,
         // so that they will be added in the next iterations.
-        MIMEFieldIter fiter2 = fiter;
-        const char *dname    = name;
-        int dlen             = name_len;
-
-        while (dname) {
-          cached_header->field_delete(dname, dlen);
-          dfield = response_header->iter_get_next(&fiter2);
-          if (dfield) {
-            dname = dfield->name_get(&dlen);
-          } else {
-            dname = nullptr;
-          }
+        for (auto spot2 = spot; spot2 != limit; ++spot2) {
+          cached_header->field_delete(&*spot2, true);
         }
         dups_seen = true;
       }
     }
 
     int value_len;
-    const char *value = field->value_get(&value_len);
+    const char *value = field.value_get(&value_len);
 
     if (dups_seen == false) {
       cached_header->value_set(name, name_len, value, value_len);
