@@ -20,4 +20,4 @@ experimental_geoip_acl_geoip_acl_la_SOURCES = \
   experimental/geoip_acl/acl.cc \
   experimental/geoip_acl/geoip_acl.cc
 
-experimental_geoip_acl_geoip_acl_la_LIBADD = $(GEO_LIBS)
+experimental_geoip_acl_geoip_acl_la_LIBADD = $(GEOIP_LIBS)

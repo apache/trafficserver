@@ -437,12 +437,12 @@ public:
     _int_type = flag;
   }
 
+private:
+  virtual int64_t get_geo_int(const sockaddr *addr) const;
+  virtual std::string get_geo_string(const sockaddr *addr) const;
+
 protected:
   bool eval(const Resources &res) override;
-
-private:
-  int64_t get_geo_int(const sockaddr *addr) const;
-  const char *get_geo_string(const sockaddr *addr) const;
   GeoQualifiers _geo_qual = GEO_QUAL_COUNTRY;
   bool _int_type          = false;
 };
