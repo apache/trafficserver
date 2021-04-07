@@ -81,5 +81,6 @@ tr.Processes.Default.TimeOut = 5
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
 tr.Processes.Default.Streams.stdout = "gold/priority_0_stdout.gold"
-tr.Processes.Default.Streams.stderr = "gold/priority_0_stderr.gold"
+# Different versions of curl will have different cases for HTTP/2 field names.
+tr.Processes.Default.Streams.stderr = Testers.GoldFile("gold/priority_0_stderr.gold", case_insensitive=True)
 tr.StillRunningAfter = server
