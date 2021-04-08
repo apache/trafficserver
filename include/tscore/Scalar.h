@@ -33,13 +33,13 @@
 #include <type_traits>
 #include "tscore/BufferWriter.h"
 
-namespace tag
-{
-struct generic;
-}
-
 namespace ts
 {
+namespace tag
+{
+  struct generic;
+}
+
 template <intmax_t N, typename C, typename T> class Scalar;
 
 namespace detail
