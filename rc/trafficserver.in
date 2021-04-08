@@ -66,6 +66,8 @@ elif [ "$UNAME_S" = "Darwin" ]; then
     DISTRIB_ID="Darwin"
 elif [ "$UNAME_S" = "FreeBSD" ]; then
     DISTRIB_ID="FreeBSD"
+elif nixos-version > /dev/null; then
+    DISTRIB_ID="nixos"
 fi
 
 # We might want to move over to use /etc/system-release for more distros?
@@ -90,7 +92,7 @@ test -x $ESED || ESED=sed
 # Ubuntu: Do NOT "set -e"
 
 #Ubuntu:PATH should only include /usr/* if it runs after the mountnfs.sh script
-PATH=/usr/sbin:/usr/bin:/sbin:/bin
+test "$DISTRIB_ID" != nixos && PATH=/usr/sbin:/usr/bin:/sbin:/bin
 DESC="start/stop Traffic Server"
 NAME=trafficserver
 SLEEP_TIME=5
@@ -135,6 +137,10 @@ elif [ "$DISTRIB_ID" = "Darwin" ]; then
     SCRIPTNAME=$0 # Darwin
 elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
     SCRIPTNAME=$0 # FreeBSD
+elif [ "$DISTRIB_ID" = "nixos" ]; then
+    SCRIPTNAME=$0 # NixOS
+    echo "Warn: Use of this script is not recommended on NixOS. Instead, enable the module"
+    echo "      'services.trafficserver' and use systemctl to control Traffic Server."
 else
     echo "This script needs to be ported to this OS"
     exit 1
@@ -183,7 +189,7 @@ if [ ! -d $TS_BASE@exp_runtimedir@ ]; then
 fi
 
 #
-# Fedora:
+# Fedora/NixOS:
 #  launches $* in the background
 #  and checks if program creates its own pid lock file
 #  redirects stdout and stderr to files
@@ -201,7 +207,7 @@ forkdaemon()
     do
         # check for regular file and size greater than 0
         if [[ -f $TM_PIDFILE ]] && [[ -s $TM_PIDFILE ]]; then
-            success
+            success || true
             return 0
         fi
 
@@ -210,7 +216,7 @@ forkdaemon()
 
     done
 
-    failure
+    failure || true
     return 1
 }
 
@@ -321,6 +327,9 @@ case "$1" in
             echo -n "Starting ${TS_PACKAGE_NAME}"
             startproc -p $TM_PIDFILE $TM_DAEMON $TM_DAEMON_ARGS
             rc_status -v
+        elif [ "$DISTRIB_ID" = "nixos" ]; then
+            echo "Starting ${TS_PACKAGE_NAME}"
+            forkdaemon $TM_DAEMON $TM_DAEMON_ARGS
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Starting ${TS_PACKAGE_NAME}"
             launchctl bsexec / launchctl list $TM_NAME > /dev/null 2>&1 && exit 0
@@ -359,6 +368,16 @@ case "$1" in
             echo -n "Stopping ${TS_NAME}"
             killproc -p $TS_PIDFILE $TS_DAEMON
             rc_status -v
+        elif [ "$DISTRIB_ID" = "nixos" ]; then
+            echo "Stopping ${TS_PACKAGE_NAME}"
+            if [ -e "$TM_PIDFILE" ]; then
+                kill $(cat $TM_PIDFILE)
+                rm -f ${TM_PIDFILE}
+            fi
+            if [ -e "$TS_PIDFILE" ]; then
+                kill $(cat $TS_PIDFILE)
+                rm -f ${TS_PIDFILE}
+            fi
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Stopping ${TS_PACKAGE_NAME}"
             launchctl bsexec / launchctl list $TM_NAME > /dev/null 2>&1 || exit 0
@@ -404,6 +423,9 @@ case "$1" in
             echo -n "Reloading ${NAME}"
             $TL_BINARY config reload
             rc_status -v
+        elif [ "$DISTRIB_ID" = "nixos" ]; then
+            echo "Reloading ${NAME}"
+            $TL_BINARY config reload
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Reloading ${NAME}"
             $TL_BINARY config reload
@@ -460,7 +482,7 @@ case "$1" in
             status=$?
             [ $status -eq 0 ] || /bin/echo -n "not "
             echo "running."
-        elif [ "$DISTRIB_ID" = "FreeBSD" -o "$DISTRIB_ID" = "gentoo" ]; then
+        elif [ "$DISTRIB_ID" = "FreeBSD" -o "$DISTRIB_ID" = "gentoo" -o "$DISTRIB_ID" = "nixos" ]; then
             if pgrep $TM_NAME > /dev/null ; then
                 echo "$TM_NAME running as pid `cat $TM_PIDFILE`" ; else
                 echo "$TM_NAME not running"
@@ -496,6 +518,8 @@ case "$1" in
             echo "Usage: $0 {start|stop|reload|restart|status}"
         elif [ "$DISTRIB_ID" = "suse" ]; then
             echo "Usage: $0 {start|stop|restart|status}"
+        elif [ "$DISTRIB_ID" = "nixos" ]; then
+            echo "Usage: $0 {start|stop|reload|restart|status}"
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Usage: $0 {start|stop|restart|status}"
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
