@@ -22,11 +22,14 @@ After=network.target
 [Service]
 Type=simple
 EnvironmentFile=-/etc/sysconfig/trafficserver
-ExecStart=@exp_bindir@/traffic_manager $TM_DAEMON_ARGS
+ExecStart=@exp_bindir@/traffic_server $TS_DAEMON_ARGS
 Restart=on-failure
 RestartSec=5s
 LimitNOFILE=1000000
-PIDFile=@exp_runtimedir@/manager.lock
+ExecStopPost=/bin/sh -c ' \
+        export TS_PIDFILE=$(@exp_bindir@/traffic_layout 2>/dev/null | grep RUNTIMEDIR | cut -d: -f2)/server.lock ; \
+        /bin/rm -f $TS_PIDFILE ; \
+        if [[ $? -ne 0 ]]; then echo "ERROR: Unable to delete PID"; exit 1; fi'
 TimeoutStopSec=5s
 ExecReload=@exp_bindir@/traffic_ctl config reload
 KillMode=process
