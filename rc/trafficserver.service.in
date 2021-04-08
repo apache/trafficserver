@@ -17,7 +17,7 @@
 #
 [Unit]
 Description=Apache Traffic Server is a fast, scalable and extensible caching proxy server.
-After=syslog.target network.target
+After=network.target
 
 [Service]
 Type=simple
@@ -26,10 +26,7 @@ ExecStart=@exp_bindir@/traffic_manager $TM_DAEMON_ARGS
 Restart=on-failure
 RestartSec=5s
 LimitNOFILE=1000000
-ExecStopPost=/bin/sh -c ' \
-        export TM_PIDFILE=$(@exp_bindir@/traffic_layout 2>/dev/null | grep RUNTIMEDIR | cut -d: -f2)/manager.lock ; \
-        /bin/rm $TM_PIDFILE ; \
-        if [[ $? -ne 0 ]]; then echo "ERROR: Unable to delete PID"; exit 1; fi'
+PIDFile=@exp_runtimedir@/manager.lock
 TimeoutStopSec=5s
 ExecReload=@exp_bindir@/traffic_ctl config reload
 KillMode=process
