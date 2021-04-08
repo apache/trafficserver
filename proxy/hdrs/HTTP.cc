@@ -1781,6 +1781,30 @@ HTTPHdr::url_printed_length(unsigned normalization_flags)
   return zret;
 }
 
+// Look for headers that the proxy will need to be able to process
+// Return false if the proxy does not know how to process the header
+// Currently just looking at TRANSFER_ENCODING.  The proxy only knows how to
+// process the chunked action
+bool
+HTTPHdr::check_hdr_implements()
+{
+  bool retval = true;
+  MIMEField *transfer_encode =
+    mime_hdr_field_find(this->m_http->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+  if (transfer_encode) {
+    int len;
+    const char *val;
+    do {
+      val = transfer_encode->value_get(&len);
+      if (len != 7 || 0 != strncasecmp(val, "chunked", len)) {
+        retval = false;
+      }
+      transfer_encode = transfer_encode->m_next_dup;
+    } while (retval && transfer_encode);
+  }
+  return retval;
+}
+
 /***********************************************************************
  *                                                                     *
  *                        M A R S H A L I N G                          *
