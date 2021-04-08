@@ -523,7 +523,6 @@ protected:
   int write_header_into_buffer(HTTPHdr *h, MIOBuffer *b);
   int write_response_header_into_buffer(HTTPHdr *h, MIOBuffer *b);
   void setup_blind_tunnel_port();
-  void setup_client_header_nca();
   void setup_client_read_request_header();
   void setup_push_read_response_header();
   void setup_server_read_response_header();
