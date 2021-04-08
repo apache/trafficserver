@@ -542,7 +542,6 @@ protected:
   void issue_cache_update();
   void perform_cache_write_action();
   void perform_transform_cache_write_action();
-  void perform_nca_cache_action();
   void setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial = nullptr);
   HttpTunnelProducer *setup_server_transfer_to_transform();
   HttpTunnelProducer *setup_transfer_from_transform();
