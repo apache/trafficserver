@@ -26,8 +26,8 @@
 
 #include <ts/ts.h>
 
-constexpr char const PLUGIN_NAME[]  = "rate_limit";
-constexpr unsigned QUEUE_DELAY_TIME = 100; // Examine the queue every 100ms.
+constexpr char const PLUGIN_NAME[] = "rate_limit";
+constexpr auto QUEUE_DELAY_TIME    = std::chrono::milliseconds{100}; // Examine the queue every 100ms
 
 using QueueTime = std::chrono::time_point<std::chrono::system_clock>;
 using QueueItem = std::tuple<TSHttpTxn, TSCont, QueueTime>;

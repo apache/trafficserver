@@ -29,14 +29,13 @@ RateLimiter::queue_process_cont(TSCont cont, TSEvent event, void *edata)
 
   // Try to enable some queued txns (if any) if there are slots available
   while (limiter->size() > 0 && limiter->reserve()) {
-    QueueItem item                  = limiter->pop();
-    TSHttpTxn txnp                  = std::get<0>(item);
-    std::chrono::microseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - std::get<2>(item));
+    auto [txnp, contp, start_time]  = limiter->pop();
+    std::chrono::microseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
     limiter->delayHeader(txnp, delay);
     TSDebug(PLUGIN_NAME, "Enabling queued txn after %ldms", static_cast<long>(delay.count()));
     // Since this was a delayed transaction, we need to add the TXN_CLOSE hook to free the slot when done
-    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, std::get<1>(item));
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   }
 
@@ -46,14 +45,13 @@ RateLimiter::queue_process_cont(TSCont cont, TSEvent event, void *edata)
 
     while (limiter->size() > 0 && limiter->hasOldTxn(now)) {
       // The oldest object on the queue is too old on the queue, so "kill" it.
-      QueueItem item                = limiter->pop();
-      TSHttpTxn txnp                = std::get<0>(item);
-      std::chrono::milliseconds age = std::chrono::duration_cast<std::chrono::milliseconds>(now - std::get<2>(item));
+      auto [txnp, contp, start_time] = limiter->pop();
+      std::chrono::milliseconds age  = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
       limiter->delayHeader(txnp, age);
       TSDebug(PLUGIN_NAME, "Queued TXN is too old (%ldms), erroring out", static_cast<long>(age.count()));
       TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
-      TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, std::get<1>(item));
+      TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
     }
   }
@@ -106,7 +104,7 @@ RateLimiter::setupQueueCont()
   _queue_cont = TSContCreate(queue_process_cont, TSMutexCreate());
   TSReleaseAssert(_queue_cont);
   TSContDataSet(_queue_cont, this);
-  _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME, TS_THREAD_POOL_TASK);
+  _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME.count(), TS_THREAD_POOL_TASK);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
