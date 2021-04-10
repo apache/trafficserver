@@ -293,9 +293,12 @@ Changes with Apache Traffic Server 9.1.0
   #7569 - Cleanup: Rename IOBufferReader of Http2ClientSession
   #7571 - Tidy up session/transaction destruction process
   #7572 - FQ pacing plugin memory leak fix
+  #7580 -  Refine connection failure logging and messages and eliminate spurious connection errors
   #7589 - Add gold test for remap config .include directive.
+  #7601 - Update -with-profile and add some profiling documentation
   #7608 - Set pcre_malloc/free function pointers in core main() only.
   #7619 - Use standard isdigit library function
+  #7623 - New rate_limit plugin for simple resource limitations
   #7625 - Add proxy.process.http.background_fill_total_count
   #7626 - Remove unused variables
   #7627 - Add pooled_server_connections metric
@@ -303,3 +306,4 @@ Changes with Apache Traffic Server 9.1.0
   #7630 - Add default implementation for allow_half_open
   #7631 - Fix HttpSessionManager::acquireSession from previous rebase error
   #7633 - Updating documentation for negative_revalidating_lifetime
+  #7679 - Add close header normalize openclose test
