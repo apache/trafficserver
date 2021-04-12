@@ -19,24 +19,6 @@ dnl network.m4: Trafficserver's autoconf macros for testing network support
 dnl
 
 dnl
-dnl TS_CHECK_LOOPBACK_IFACE: try to figure out default loopback interface
-dnl
-AC_DEFUN([TS_CHECK_LOOPBACK_IFACE], [
-default_loopback_iface=""
-AC_MSG_CHECKING([for loopback network interface])
-case $host_os in
-  linux*)
-    default_loopback_iface=lo
-  ;;
-darwin* | freebsd* | solaris*)
-  default_loopback_iface=lo0
-  ;;
-esac
-AC_MSG_RESULT([$default_loopback_iface])
-AC_SUBST([default_loopback_iface])
-])
-
-dnl
 dnl Check on IN6_IS_ADDR_UNSPECIFIED. We can't just check if it is defined
 dnl because some releases of FreeBSD and Solaris define it incorrectly.
 dnl
