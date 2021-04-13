@@ -149,6 +149,7 @@ Traffic Server **URL functions** are listed below:
 :c:func:`TSUrlPathGet`
 :c:func:`TSUrlPathSet`
 :c:func:`TSUrlPortGet`
+:c:func:`TSUrlRawPortGet`
 :c:func:`TSUrlPortSet`
 :c:func:`TSUrlSchemeGet`
 :c:func:`TSUrlSchemeSet`
