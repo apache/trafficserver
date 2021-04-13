@@ -1786,6 +1786,40 @@ LogAccess::marshal_client_req_protocol_version(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_server_req_protocol_version(char *buf)
+{
+  const char *protocol_str = m_http_sm->server_protocol;
+  int len                  = LogAccess::strlen(protocol_str);
+
+  // Set major & minor versions when protocol_str is not "http/2".
+  if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
+    if (m_proxy_request) {
+      HTTPVersion versionObject = m_proxy_request->version_get();
+      int64_t major             = HTTP_MAJOR(versionObject.m_version);
+      int64_t minor             = HTTP_MINOR(versionObject.m_version);
+      if (major == 1 && minor == 1) {
+        protocol_str = "http/1.1";
+      } else if (major == 1 && minor == 0) {
+        protocol_str = "http/1.0";
+      } // else invalid http version
+    } else {
+      protocol_str = "*";
+    }
+
+    len = LogAccess::strlen(protocol_str);
+  }
+
+  if (buf) {
+    marshal_str(buf, protocol_str, len);
+  }
+
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_client_req_header_len(char *buf)
 {
   if (buf) {

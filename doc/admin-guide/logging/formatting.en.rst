@@ -568,6 +568,7 @@ Field Source                Description
 cqhv  Client Request        Client request HTTP version. Deprecated since 9.0.
                             Use ``cqpv`` instead.
 cqpv  Client Request        Client request protocol and version.
+sqpv  Proxy Request         Origin negotiated protocol and version
 csshv Cached Proxy Response Origin server's HTTP version from cached version of
                             the document in |TS| proxy cache.
 sshv  Origin Response       Origin server's response HTTP version.

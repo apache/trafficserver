@@ -6119,6 +6119,8 @@ HttpSM::attach_server_session(PoolableSession *s)
     server_connection_is_ssl = true;
   }
 
+  server_protocol = server_session->get_protocol_string();
+
   // Initiate a read on the session so that the SM and not
   //  session manager will get called back if the timeout occurs
   //  or the server closes on us.  The IO Core now requires us to
