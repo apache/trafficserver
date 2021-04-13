@@ -204,6 +204,9 @@ do
 		OBJ=$OPTARG
 		;;
 	i)
+		if [[ "$INSTALLDIR" = /nix/store* ]]; then
+			bail "unsupported option: -i is disabled on Nix"
+		fi
 		INSTALL=1
 		;;
 	c)
