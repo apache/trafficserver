@@ -555,7 +555,8 @@ tsapi const char *TSUrlHostGet(TSMBuffer bufp, TSMLoc offset, int *length);
 tsapi TSReturnCode TSUrlHostSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
 
 /**
-    Retrieves the port portion of the URL located at url_loc.
+    Returns the port portion of the URL located at url_loc if explicitly present,
+    otherwise the canonical port for the URL.
 
     @param bufp marshal buffer containing the URL.
     @param offset location of the URL.
@@ -563,6 +564,17 @@ tsapi TSReturnCode TSUrlHostSet(TSMBuffer bufp, TSMLoc offset, const char *value
 
  */
 tsapi int TSUrlPortGet(TSMBuffer bufp, TSMLoc offset);
+
+/**
+    Returns the port portion of the URL located at url_loc if explicitly present,
+    otherwise 0.
+
+    @param bufp marshal buffer containing the URL.
+    @param offset location of the URL.
+    @return port portion of the URL.
+
+ */
+tsapi int TSUrlRawPortGet(TSMBuffer bufp, TSMLoc offset);
 
 /**
     Sets the port portion of the URL located at url_loc.
