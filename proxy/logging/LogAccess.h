@@ -143,6 +143,7 @@ public:
   inkcoreapi int marshal_client_req_url_scheme(char *);         // STR
   inkcoreapi int marshal_client_req_http_version(char *);       // INT
   inkcoreapi int marshal_client_req_protocol_version(char *);   // STR
+  inkcoreapi int marshal_server_req_protocol_version(char *);   // STR
   inkcoreapi int marshal_client_req_squid_len(char *);          // INT
   inkcoreapi int marshal_client_req_header_len(char *);         // INT
   inkcoreapi int marshal_client_req_content_len(char *);        // INT
