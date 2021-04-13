@@ -360,18 +360,6 @@ AM_CONDITIONAL([BUILD_DOCS], [test "xyes" = "x$enable_doc_build"])
 AM_CONDITIONAL([BUILD_MANPAGES], [test "xtrue" = "x$build_manpages"])
 
 #
-# Remote Coverity Prevent commit
-#
-AC_MSG_CHECKING([whether to commit cov defects to remote host])
-AC_ARG_ENABLE([remote-cov-commit],
-  [AS_HELP_STRING([--enable-remote-cov-commit[=HOST]], [commit cov defects to remote host [HOST=localhost]])],
-  [],
-  [enable_remote_cov_commit=localhost]
-)
-AC_MSG_RESULT([$enable_remote_cov_commit])
-AC_SUBST([enable_remote_cov_commit])
-
-#
 # WCCP
 #
 AC_MSG_CHECKING([whether to enable WCCP v2 support])
