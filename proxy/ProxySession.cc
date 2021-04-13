@@ -306,3 +306,15 @@ ProxySession::support_sni() const
 {
   return _vc ? _vc->support_sni() : false;
 }
+
+HostDBApplicationInfo::HttpVersion
+ProxySession::get_version(HTTPHdr &hdr) const
+{
+  if (hdr.version_get() == HTTPVersion(1, 1)) {
+    return HostDBApplicationInfo::HTTP_VERSION_11;
+  } else if (hdr.version_get() == HTTPVersion(1, 0)) {
+    return HostDBApplicationInfo::HTTP_VERSION_10;
+  } else {
+    return HostDBApplicationInfo::HTTP_VERSION_09;
+  }
+}

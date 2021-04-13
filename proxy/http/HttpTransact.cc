@@ -3982,46 +3982,20 @@ HttpTransact::handle_forward_server_connection_open(State *s)
   TxnDebug("http_seq", "[HttpTransact::handle_server_connection_open] ");
   ink_release_assert(s->current.state == CONNECTION_ALIVE);
 
-  if (s->hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
-    TxnDebug("http_trans", "[hfsco] server sent 0.9 response, reading...");
-    build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTP_STATUS_OK, "Connection Established");
-
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
-    s->cache_info.action      = CACHE_DO_NO_ACTION;
-    s->next_action            = SM_ACTION_SERVER_READ;
-    return;
-
-  } else if (s->hdr_info.server_response.version_get() == HTTPVersion(1, 0)) {
-    if (s->current.server->http_version == HTTPVersion(0, 9)) {
-      // update_hostdb_to_indicate_server_version_is_1_0
-      s->updated_server_version = HostDBApplicationInfo::HTTP_VERSION_10;
-    } else if (s->current.server->http_version == HTTPVersion(1, 1)) {
-      // update_hostdb_to_indicate_server_version_is_1_0
-      s->updated_server_version = HostDBApplicationInfo::HTTP_VERSION_10;
-    } else {
-      // dont update the hostdb. let us try again with what we currently think.
-    }
-  } else if (s->hdr_info.server_response.version_get() == HTTPVersion(1, 1)) {
-    if (s->current.server->http_version == HTTPVersion(0, 9)) {
-      // update_hostdb_to_indicate_server_version_is_1_1
-      s->updated_server_version = HostDBApplicationInfo::HTTP_VERSION_11;
-    } else if (s->current.server->http_version == HTTPVersion(1, 0)) {
-      // update_hostdb_to_indicate_server_version_is_1_1
-      s->updated_server_version = HostDBApplicationInfo::HTTP_VERSION_11;
-    } else {
-      // dont update the hostdb. let us try again with what we currently think.
-    }
-  } else {
-    // dont update the hostdb. let us try again with what we currently think.
+  HostDBApplicationInfo::HttpVersion real_version = s->state_machine->get_server_version(s->hdr_info.server_response);
+  if (real_version != s->host_db_info.app.http_data.http_version) {
+    TxnDebug("http_trans", "Update hostdb history of server HTTP version 0x%x", real_version);
+    // Need to update the hostdb
+    s->updated_server_version = real_version;
   }
+
+  s->state_machine->do_hostdb_update_if_necessary();
 
   if (s->hdr_info.server_response.status_get() == HTTP_STATUS_CONTINUE ||
       s->hdr_info.server_response.status_get() == HTTP_STATUS_EARLY_HINTS) {
     handle_100_continue_response(s);
     return;
   }
-
-  s->state_machine->do_hostdb_update_if_necessary();
 
   if (s->www_auth_content == CACHE_AUTH_FRESH) {
     // no update is needed - either to serve from cache if authorized,
