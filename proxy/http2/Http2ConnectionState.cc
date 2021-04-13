@@ -757,7 +757,7 @@ rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                    static_cast<int>(goaway.error_code));
 
   cstate.rx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(goaway.error_code)};
-  cstate.handleEvent(HTTP2_SESSION_EVENT_FINI, nullptr);
+  cstate.ua_session->do_io_close();
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
 }
