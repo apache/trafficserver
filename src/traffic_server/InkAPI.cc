@@ -10005,6 +10005,69 @@ TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
   return remapUrlGet(txnp, urlLocp, &UrlMappingContainer::getToURL);
 }
 
+TSReturnCode
+TSHostnameIsSelf(const char *hostname, size_t hostname_len)
+{
+  return Machine::instance()->is_self(hostname, hostname_len) ? TS_SUCCESS : TS_ERROR;
+}
+
+TSReturnCode
+TSHostStatusGet(const char *hostname, const size_t hostname_len, TSHostStatus *status, unsigned int *reason)
+{
+  HostStatRec *hst = HostStatus::instance().getHostStatus(std::string_view(hostname, hostname_len));
+  if (hst == nullptr) {
+    return TS_ERROR;
+  }
+  if (status != nullptr) {
+    *status = hst->status;
+  }
+  if (reason != nullptr) {
+    *reason = hst->reasons;
+  }
+  return TS_SUCCESS;
+}
+
+void
+TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
+                const unsigned int reason)
+{
+  HostStatus::instance().setHostStatus(std::string_view(hostname, hostname_len), status, down_time, reason);
+}
+
+// TSHttpTxnResponseActionSet takes a ResponseAction and sets it as the behavior for finding the next parent.
+// Be aware ATS will never change this outside a plugin. Therefore, plugins which set the ResponseAction
+// to retry must also un-set it after the subsequent success or failure, or ATS will retry forever!
+//
+// The passed *action must not be null, and is copied and may be destroyed after this call returns.
+// Callers must maintain owernship of action.hostname, and its lifetime must exceed the transaction.
+tsapi void
+TSHttpTxnResponseActionSet(TSHttpTxn txnp, TSResponseAction *action)
+{
+  HttpSM *sm                 = reinterpret_cast<HttpSM *>(txnp);
+  HttpTransact::State *s     = &(sm->t_state);
+  s->response_action.handled = true;
+  s->response_action.action  = *action;
+}
+
+// Get the ResponseAction set by a plugin.
+//
+// The action is an out-param and must point to a valid location.
+// The returned action.hostname must not be modified, and is owned by some plugin if not null.
+//
+// The action members will always be zero, if no plugin has called TSHttpTxnResponseActionSet.
+//
+tsapi void
+TSHttpTxnResponseActionGet(TSHttpTxn txnp, TSResponseAction *action)
+{
+  HttpSM *sm             = reinterpret_cast<HttpSM *>(txnp);
+  HttpTransact::State *s = &(sm->t_state);
+  if (!s->response_action.handled) {
+    memset(action, 0, sizeof(TSResponseAction)); // because {0} gives a C++ warning. Ugh.
+  } else {
+    *action = s->response_action.action;
+  }
+}
+
 tsapi TSIOBufferReader
 TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp)
 {

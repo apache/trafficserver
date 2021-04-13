@@ -1304,6 +1304,26 @@ extern tsapi const char *const TS_PROTO_TAG_IPV6;
 #define TS_NULL_MLOC ((TSMLoc)0)
 
 /* --------------------------------------------------------------------------
+   HostStatus types */
+
+typedef enum {
+  TS_HOST_STATUS_INIT,
+  TS_HOST_STATUS_DOWN,
+  TS_HOST_STATUS_UP,
+} TSHostStatus;
+
+/* MUST match proxy/HostStatus.h Reason.
+ * If a value is added here, it MUST be added there with the same value.
+ */
+typedef enum {
+  TS_HOST_STATUS_ACTIVE      = 0x1,
+  TS_HOST_STATUS_LOCAL       = 0x2,
+  TS_HOST_STATUS_MANUAL      = 0x4,
+  TS_HOST_STATUS_SELF_DETECT = 0x8,
+  TS_HOST_STATUS_ALL         = 0xf,
+} TSHostStatusReason;
+
+/* --------------------------------------------------------------------------
    Interface for the UUID APIs. https://www.ietf.org/rfc/rfc4122.txt. */
 typedef enum {
   TS_UUID_UNDEFINED = 0,

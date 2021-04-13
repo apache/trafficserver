@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/nexthop.h"
+#include "ts/parentselectdefs.h"
 #include "tscore/ink_platform.h"
 
 #include <strings.h>
@@ -98,16 +98,16 @@ using lbw = ts::LocalBufferWriter<256>;
 inline static bool
 bypass_ok(HttpTransact::State *s)
 {
-  bool r          = false;
   url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
+  if (s->response_action.handled) {
+    return s->response_action.action.goDirect;
+  } else if (mp && mp->strategy) {
     // remap strategies do not support the TSHttpTxnParentProxySet API.
-    r = mp->strategy->go_direct;
+    return mp->strategy->go_direct;
   } else if (s->parent_params) {
-    r = s->parent_result.bypass_ok();
+    return s->parent_result.bypass_ok();
   }
-  return r;
+  return false;
 }
 
 // wrapper to choose between a remap next hop strategy or use parent.config
@@ -154,15 +154,15 @@ numParents(HttpTransact::State *s)
 inline static bool
 parent_is_proxy(HttpTransact::State *s)
 {
-  bool r          = false;
   url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
-    r = mp->strategy->parent_is_proxy;
+  if (s->response_action.handled) {
+    return s->response_action.action.parentIsProxy;
+  } else if (mp && mp->strategy) {
+    return mp->strategy->parent_is_proxy;
   } else if (s->parent_params) {
-    r = s->parent_result.parent_is_proxy();
+    return s->parent_result.parent_is_proxy();
   }
-  return r;
+  return false;
 }
 
 // wrapper to get the parent.config retry type.
@@ -182,12 +182,22 @@ inline static void
 findParent(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
-    return mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
+  if (s->response_action.handled) {
+    s->parent_result.hostname = s->response_action.action.hostname;
+    s->parent_result.port     = s->response_action.action.port;
+    s->parent_result.retry    = s->response_action.action.is_retry;
+    if (!s->response_action.action.fail) {
+      s->parent_result.result = PARENT_SPECIFIED;
+    } else if (s->response_action.action.goDirect) {
+      s->parent_result.result = PARENT_DIRECT;
+    } else {
+      s->parent_result.result = PARENT_FAIL;
+    }
+  } else if (mp && mp->strategy) {
+    mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
-    return s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                        s->txn_conf->parent_retry_time);
+    s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                 s->txn_conf->parent_retry_time);
   }
 }
 
@@ -199,11 +209,13 @@ markParentDown(HttpTransact::State *s)
   HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
   url_mapping *mp = s->url_map.getMapping();
 
-  if (mp && mp->strategy) {
-    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
-                                     s->parent_result.port, NH_MARK_DOWN);
+  if (s->response_action.handled) {
+    // Do nothing. If a plugin handled the response, let it handle markdown.
+  } else if (mp && mp->strategy) {
+    mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
+                              NH_MARK_DOWN);
   } else if (s->parent_params) {
-    return s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
+    s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
   }
 }
 
@@ -213,11 +225,13 @@ inline static void
 markParentUp(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
-  if (mp && mp->strategy) {
-    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
-                                     s->parent_result.port, NH_MARK_UP);
+  if (s->response_action.handled) {
+    // Do nothing. If a plugin handled the response, let it handle markdown
+  } else if (mp && mp->strategy) {
+    mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
+                              NH_MARK_UP);
   } else if (s->parent_params) {
-    return s->parent_params->markParentUp(&s->parent_result);
+    s->parent_params->markParentUp(&s->parent_result);
   }
 }
 
@@ -227,12 +241,15 @@ inline static bool
 parentExists(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
-  if (mp && mp->strategy) {
+  if (s->response_action.handled) {
+    return s->response_action.action.nextHopExists;
+  } else if (mp && mp->strategy) {
     return mp->strategy->nextHopExists(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
     return s->parent_params->parentExists(&s->request_data);
+  } else {
+    return false;
   }
-  return false;
 }
 
 // wrapper to choose between a remap next hop strategy or use parent.config
@@ -244,12 +261,23 @@ nextParent(HttpTransact::State *s)
            s->state_machine->sm_id, s->parent_result.hostname, HttpDebugNames::get_server_state_name(s->current.state),
            s->request_data.get_host());
   url_mapping *mp = s->url_map.getMapping();
-  if (mp && mp->strategy) {
+  if (s->response_action.handled) {
+    s->parent_result.hostname = s->response_action.action.hostname;
+    s->parent_result.port     = s->response_action.action.port;
+    s->parent_result.retry    = s->response_action.action.is_retry;
+    if (!s->response_action.action.fail) {
+      s->parent_result.result = PARENT_SPECIFIED;
+    } else if (s->response_action.action.goDirect) {
+      s->parent_result.result = PARENT_DIRECT;
+    } else {
+      s->parent_result.result = PARENT_FAIL;
+    }
+  } else if (mp && mp->strategy) {
     // NextHop only has a findNextHop() function.
-    return mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
+    mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
-    return s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                        s->txn_conf->parent_retry_time);
+    s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                 s->txn_conf->parent_retry_time);
   }
 }
 
@@ -347,7 +375,9 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
   if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response) || s->current.request_to != HttpTransact::PARENT_PROXY) {
     return PARENT_RETRY_NONE;
   }
-
+  if (s->response_action.handled) {
+    return s->response_action.action.responseIsRetryable ? PARENT_RETRY_SIMPLE : PARENT_RETRY_NONE;
+  }
   const url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
     if (mp->strategy->responseIsRetryable(s->current.simple_retry_attempts, response_code)) {
@@ -1707,6 +1737,13 @@ HttpTransact::HandleApiErrorJump(State *s)
   return;
 }
 
+// PPDNSLookupAPICall does an API callout, then calls PPDNSLookup
+void
+HttpTransact::PPDNSLookupAPICall(State *s)
+{
+  TRANSACT_RETURN(SM_ACTION_API_OS_DNS, PPDNSLookup);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : PPDNSLookup
 // Description: called after DNS lookup of parent proxy name
@@ -1745,10 +1782,15 @@ HttpTransact::PPDNSLookup(State *s)
 
     if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == PARENT_PROXY) {
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+        if (!s->response_action.handled) {
+          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+        } else {
+          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
+        }
       } else if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
         // We ran out of parents but parent configuration allows us to go to Origin Server directly
-        return CallOSDNSLookup(s);
+        CallOSDNSLookup(s);
+        return;
       } else {
         // We could be out of parents here if all the parents failed DNS lookup
         ink_assert(s->current.request_to == HOST_NONE);
@@ -2613,7 +2655,7 @@ HttpTransact::CallOSDNSLookup(State *s)
   TxnDebug("http", "[HttpTransact::callos] %s ", s->server_info.name);
   HostStatus &pstatus = HostStatus::instance();
   HostStatRec *hst    = pstatus.getHostStatus(s->server_info.name);
-  if (hst && hst->status == HostStatus_t::HOST_STATUS_DOWN) {
+  if (hst && hst->status == TSHostStatus::TS_HOST_STATUS_DOWN) {
     TxnDebug("http", "[HttpTransact::callos] %d ", s->cache_lookup_result);
     s->current.state = OUTBOUND_CONGESTION;
     if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
