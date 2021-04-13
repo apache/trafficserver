@@ -2102,7 +2102,6 @@ AC_SUBST(has_so_mark)
 AC_SUBST(has_ip_tos)
 AC_SUBST(has_so_peercred)
 
-TS_CHECK_LOOPBACK_IFACE
 TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED
 
 AC_CHECK_TYPE([struct tcp_info],
