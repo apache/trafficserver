@@ -373,14 +373,14 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
 
   std::unique_ptr<TSNextHopSelectionStrategy> strategy;
 
-  for (auto it = file_strategies.begin(); it != file_strategies.end(); it++) {
+  for (auto &file_strategie : file_strategies) {
     TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance strategy file had strategy named '%s'", remap_from, remap_to,
-            it->first.c_str());
-    if (strncmp(strategy_name, it->first.c_str(), strlen(strategy_name)) != 0) {
+            file_strategie.first.c_str());
+    if (strncmp(strategy_name, file_strategie.first.c_str(), strlen(strategy_name)) != 0) {
       continue;
     }
-    TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance using '%s'", remap_from, remap_to, it->first.c_str());
-    strategy = std::move(it->second);
+    TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance using '%s'", remap_from, remap_to, file_strategie.first.c_str());
+    strategy = std::move(file_strategie.second);
   }
 
   if (strategy.get() == nullptr) {

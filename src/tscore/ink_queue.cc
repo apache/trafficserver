@@ -74,10 +74,10 @@ struct ink_freelist_ops {
   void (*fl_bulkfree)(InkFreeList *, void *, void *, size_t);
 };
 
-typedef struct _ink_freelist_list {
+using ink_freelist_list = struct _ink_freelist_list {
   InkFreeList *fl;
   struct _ink_freelist_list *next;
-} ink_freelist_list;
+};
 
 static void *freelist_new(InkFreeList *f);
 static void freelist_free(InkFreeList *f, void *item);

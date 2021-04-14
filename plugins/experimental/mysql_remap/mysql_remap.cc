@@ -28,9 +28,9 @@
 
 MYSQL mysql;
 
-typedef struct {
+using my_data = struct {
   char *query;
-} my_data;
+};
 
 bool
 do_mysql_remap(TSCont contp, TSHttpTxn txnp)

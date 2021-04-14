@@ -522,7 +522,7 @@ StaticHitTxnHook(TSCont contp, TSEvent event, void *edata)
     }
 
     method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_length);
-    if (NULL == method) {
+    if (nullptr == method) {
       VERROR("Couldn't retrieve client request method");
       goto done;
     }
@@ -595,9 +595,9 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   static const struct option longopt[] = {
-    {"file-path", required_argument, NULL, 'f'},    {"mime-type", required_argument, NULL, 'm'},
-    {"max-age", required_argument, NULL, 'a'},      {"failure-code", required_argument, NULL, 'c'},
-    {"success-code", required_argument, NULL, 's'}, {NULL, no_argument, NULL, '\0'}};
+    {"file-path", required_argument, nullptr, 'f'},    {"mime-type", required_argument, nullptr, 'm'},
+    {"max-age", required_argument, nullptr, 'a'},      {"failure-code", required_argument, nullptr, 'c'},
+    {"success-code", required_argument, nullptr, 's'}, {nullptr, no_argument, nullptr, '\0'}};
 
   std::string filePath;
   std::string mimeType = "text/plain";
@@ -610,7 +610,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   optind = 0;
 
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "f:m:a:c:s:", longopt, NULL);
+    int opt = getopt_long(argc, (char *const *)argv, "f:m:a:c:s:", longopt, nullptr);
 
     switch (opt) {
     case 'f': {
@@ -640,7 +640,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     return TS_ERROR;
   }
 
-  if (filePath.find("/") != 0) {
+  if (filePath.find('/') != 0) {
     filePath = std::string(TSConfigDirGet()) + '/' + filePath;
   }
 

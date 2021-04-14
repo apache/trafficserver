@@ -609,7 +609,7 @@ cacheNodeList(ContData *cont_data)
   string body("");
   cont_data->esi_proc->packNodeList(body, false);
   char buf[64];
-  snprintf(buf, 64, "%s: %d\r\n\r\n", TS_MIME_FIELD_CONTENT_LENGTH, (int)body.size());
+  snprintf(buf, 64, "%s: %d\r\n\r\n", TS_MIME_FIELD_CONTENT_LENGTH, static_cast<int>(body.size()));
 
   post_request.append(buf);
   post_request.append(body);

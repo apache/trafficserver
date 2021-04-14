@@ -210,7 +210,7 @@ CacheWriteTest::start_test(int event, void *e)
   }
 
   SET_HANDLER(&CacheWriteTest::write_event);
-  cacheProcessor.open_write(this, 0, &key, (CacheHTTPHdr *)this->info.request_get(), old_info);
+  cacheProcessor.open_write(this, 0, &key, static_cast<CacheHTTPHdr *>(this->info.request_get()), old_info);
   return 0;
 }
 
@@ -271,7 +271,7 @@ CacheReadTest::start_test(int event, void *e)
   key = generate_key(this->info);
 
   SET_HANDLER(&CacheReadTest::read_event);
-  cacheProcessor.open_read(this, &key, (CacheHTTPHdr *)this->info.request_get(), &this->params);
+  cacheProcessor.open_read(this, &key, static_cast<CacheHTTPHdr *>(this->info.request_get()), &this->params);
   return 0;
 }
 

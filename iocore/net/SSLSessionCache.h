@@ -205,9 +205,9 @@ public:
   SSLOriginSessionCache();
   ~SSLOriginSessionCache();
 
-  void insert_session(std::string lookup_key, SSL_SESSION *sess);
-  void remove_session(std::string lookup_key);
-  SSL_SESSION *get_session(std::string lookup_key);
+  void insert_session(const std::string &lookup_key, SSL_SESSION *sess);
+  void remove_session(const std::string &lookup_key);
+  SSL_SESSION *get_session(const std::string &lookup_key);
 
 private:
   mutable std::shared_mutex mutex;

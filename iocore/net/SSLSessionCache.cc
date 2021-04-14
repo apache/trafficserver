@@ -310,7 +310,7 @@ SSLOriginSessionCache::~SSLOriginSessionCache()
 }
 
 void
-SSLOriginSessionCache::insert_session(std::string lookup_key, SSL_SESSION *sess)
+SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION *sess)
 {
   if (is_debug_tag_set("ssl.origin_session_cache")) {
     Debug("ssl.origin_session_cache", "insert session: %s = %p", lookup_key.c_str(), sess);
@@ -327,7 +327,7 @@ SSLOriginSessionCache::insert_session(std::string lookup_key, SSL_SESSION *sess)
 }
 
 void
-SSLOriginSessionCache::remove_session(std::string lookup_key)
+SSLOriginSessionCache::remove_session(const std::string &lookup_key)
 {
   if (is_debug_tag_set("ssl.origin_session_cache")) {
     Debug("ssl.origin_session_cache", "remove session: %s", lookup_key.c_str());
@@ -342,7 +342,7 @@ SSLOriginSessionCache::remove_session(std::string lookup_key)
 }
 
 SSL_SESSION *
-SSLOriginSessionCache::get_session(std::string lookup_key)
+SSLOriginSessionCache::get_session(const std::string &lookup_key)
 {
   if (is_debug_tag_set("ssl.origin_session_cache")) {
     Debug("ssl.origin_session_cache", "get session: %s", lookup_key.c_str());

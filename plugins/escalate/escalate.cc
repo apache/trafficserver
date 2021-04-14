@@ -49,7 +49,7 @@ struct EscalationState {
     std::string target;
   };
 
-  typedef std::map<unsigned, RetryInfo> StatusMapType;
+  using StatusMapType = std::map<unsigned int, RetryInfo>;
 
   EscalationState()
   {

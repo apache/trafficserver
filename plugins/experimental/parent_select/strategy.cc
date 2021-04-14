@@ -125,8 +125,8 @@ PLNextHopSelectionStrategy::Init(const YAML::Node &n)
           PL_NH_Error("Error in the response_codes definition for the strategy named '%s', skipping response_codes.",
                       strategy_name.c_str());
         } else {
-          for (unsigned int k = 0; k < resp_codes_node.size(); ++k) {
-            auto code = resp_codes_node[k].as<int>();
+          for (auto &&k : resp_codes_node) {
+            auto code = k.as<int>();
             if (code > 300 && code < 599) {
               resp_codes.add(code);
             } else {
@@ -192,7 +192,7 @@ PLNextHopSelectionStrategy::Init(const YAML::Node &n)
               host_rec->host_index                   = hst;
               if (TSHostnameIsSelf(host_rec->hostname.c_str(), host_rec->hostname.size()) == TS_SUCCESS) {
                 TSHostStatusSet(host_rec->hostname.c_str(), host_rec->hostname.size(), TSHostStatus::TS_HOST_STATUS_DOWN, 0,
-                                (unsigned int)TS_HOST_STATUS_SELF_DETECT);
+                                static_cast<unsigned int>(TS_HOST_STATUS_SELF_DETECT));
               }
               hosts_inner.push_back(std::move(host_rec));
               num_parents++;
@@ -220,8 +220,8 @@ PLNextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp)
   const int64_t sm_id = TSHttpTxnIdGet(txnp);
 
   for (uint32_t gg = 0; gg < groups; gg++) {
-    for (uint32_t hh = 0; hh < host_groups[gg].size(); hh++) {
-      PLHostRecord *p = host_groups[gg][hh].get();
+    for (auto &hh : host_groups[gg]) {
+      PLHostRecord *p = hh.get();
       if (p->available) {
         PL_NH_Debug(PL_NH_DEBUG_TAG, "[%" PRIu64 "] found available next hop %.*s", sm_id, int(p->hostname.size()),
                     p->hostname.c_str());
@@ -295,8 +295,8 @@ template <> struct convert<PLHostRecord> {
     if (proto.Type() != YAML::NodeType::Sequence) {
       throw std::invalid_argument("Invalid host protocol definition, expected a sequence.");
     } else {
-      for (unsigned int ii = 0; ii < proto.size(); ii++) {
-        YAML::Node protocol_node         = proto[ii];
+      for (auto &&ii : proto) {
+        YAML::Node protocol_node         = ii;
         std::shared_ptr<PLNHProtocol> pr = std::make_shared<PLNHProtocol>(protocol_node.as<PLNHProtocol>());
         nh.protocols.push_back(std::move(pr));
       }

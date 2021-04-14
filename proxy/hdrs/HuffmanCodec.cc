@@ -70,11 +70,11 @@ static const huffman_entry huffman_table[] = {
   {0x7ffffe8, 27}, {0x7ffffe9, 27},  {0x7ffffea, 27}, {0x7ffffeb, 27},  {0xffffffe, 28}, {0x7ffffec, 27}, {0x7ffffed, 27},
   {0x7ffffee, 27}, {0x7ffffef, 27},  {0x7fffff0, 27}, {0x3ffffee, 26},  {0x3fffffff, 30}};
 
-typedef struct node {
+using Node = struct node {
   node *left, *right;
   char ascii_code;
   bool leaf_node;
-} Node;
+};
 
 Node *HUFFMAN_TREE_ROOT;
 
