@@ -270,6 +270,7 @@ void inline SSLSessionBucket::removeOldestSession(const std::unique_lock<std::sh
 
   auto node = bucket_data_ts.begin();
   bucket_data.erase(node->second->session_id);
+  delete node->second;
   bucket_data_ts.erase(node);
 
   PRINT_BUCKET("removeOldestSession after")
@@ -287,6 +288,7 @@ SSLSessionBucket::removeSession(const SSLSessionID &id)
 
   if (node != bucket_data.end()) {
     bucket_data_ts.erase(node->second->time_stamp);
+    delete node->second;
     bucket_data.erase(node);
   }
 
