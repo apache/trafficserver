@@ -45,6 +45,8 @@ with open(os.path.join(Test.TestDirectory, 'replay/yts-2819.replay.json')) as sr
 
 replay_txns = replay["sessions"][0]["transactions"]
 
+nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
+
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", enable_cache=False)
 
@@ -81,11 +83,14 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|regex_remap',
+    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+    'proxy.config.dns.resolv_conf': 'NULL'
 })
 
 # 0 Test - Load cache (miss) (path1)
 tr = Test.AddTestRun("smoke test")
 tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 creq = replay_txns[0]['client-request']
 tr.Processes.Default.Command = curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + creq["url"]
