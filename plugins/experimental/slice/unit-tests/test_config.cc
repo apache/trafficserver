@@ -88,6 +88,7 @@ TEST_CASE("config bytesfrom invalid parsing", "[AWS][slice][utility]")
 
 TEST_CASE("config fromargs validate sizes", "[AWS][slice][utility]")
 {
+  char const *const appname = "slice.so";
   int64_t blockBytesMax = 128 * 1024 * 1024, blockBytesMin = 256 * 1024;
 
   CHECK(blockBytesMax == Config::blockbytesmax);
@@ -111,11 +112,12 @@ TEST_CASE("config fromargs validate sizes", "[AWS][slice][utility]")
   for (std::string const &kw : argkws) { // test each argument keyword with each test pair
     for (std::pair<std::string, bool> const &test : tests) {
       // getopt uses global variables; ensure the index is reset each iteration
-      optind = 1;
+      optind = 0;
 
       // set up args
       std::vector<char *> argv;
       std::string arg = kw + test.first;
+      argv.push_back((char *)appname);
       argv.push_back((char *)arg.c_str());
 
       // configure slice
