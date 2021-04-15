@@ -187,8 +187,8 @@ loadConfigFile(const std::string &fileName, std::stringstream &doc, std::unorder
       std::sort(files.begin(), files.end(),
                 [](const std::string_view lhs, const std::string_view rhs) { return lhs.compare(rhs) < 0; });
 
-      for (auto &i : files) {
-        std::ifstream file(fileName + "/" + i.data());
+      for (auto &f : files) {
+        std::ifstream file(fileName + "/" + f.data());
         if (file.is_open()) {
           while (std::getline(file, line)) {
             if (line[0] == '#') {
@@ -198,7 +198,7 @@ loadConfigFile(const std::string &fileName, std::stringstream &doc, std::unorder
           }
           file.close();
         } else {
-          throw std::invalid_argument("Unable to open and read '" + fileName + "/" + i.data() + "'");
+          throw std::invalid_argument("Unable to open and read '" + fileName + "/" + f.data() + "'");
         }
       }
     }
