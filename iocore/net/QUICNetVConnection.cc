@@ -2297,6 +2297,7 @@ QUICNetVConnection::_setup_handshake_protocol(const shared_SSL_CTX &ctx)
                              this->_quic_config->client_session_file(), this->_quic_config->client_keylog_file());
   SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
   TLSSessionResumptionSupport::bind(tls->ssl_handle(), this);
+  ALPNSupport::bind(tls->ssl_handle(), this);
 
   return tls;
 }
