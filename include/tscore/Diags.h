@@ -194,3 +194,17 @@ extern inkcoreapi Diags *diags;
 #define is_diags_on(_t) 0
 
 #endif // TS_USE_DIAGS
+
+#if !defined(TS_SVP)
+
+// Macros for convinient output of string_view (and thus also ts::TextView) instances using printf-like
+// functions.
+//
+#define TS_SVPF "%.*s"
+#define TS_SVP(SV__) static_cast<int>((SV__).size()), (SV__).data()
+
+// Usage example:
+// std::string_view yada;
+// Note("yada=" TS_SVPF, TS_SVP(yada));
+
+#endif // !defined(TS_SVP)

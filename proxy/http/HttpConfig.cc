@@ -79,7 +79,7 @@ template <typename T, unsigned N>
 static bool
 http_config_enum_search(std::string_view key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
-  Debug("http_config", "enum element %.*s", static_cast<int>(key.size()), key.data());
+  Debug("http_config", "enum element " TS_SVPF, TS_SVP(key));
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
     if (key.compare(list[i]._key) == 0) {

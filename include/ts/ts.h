@@ -2681,6 +2681,20 @@ tsapi TSReturnCode TSHostStatusGet(const char *hostname, const size_t hostname_l
 tsapi void TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus status, const unsigned int down_time,
                            const unsigned int reason);
 
+#if !defined(TS_SVP)
+
+// Macros for convinient output of string_view (and thus also ts::TextView) instances using printf-like
+// functions.
+//
+#define TS_SVPF "%.*s"
+#define TS_SVP(SV__) static_cast<int>((SV__).size()), (SV__).data()
+
+// Usage example:
+// std::string_view yada;
+// TSNote("yada=" TS_SVPF, TS_SVP(yada));
+
+#endif // !defined(TS_SVP)
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

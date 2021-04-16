@@ -118,7 +118,7 @@ create_pluginconfig(int argc, char *const argv[])
       pc->ps_mode = PS_CACHEKEY_URL;
     } break;
     case 'c': {
-      DEBUG_LOG("Plugin considers the '%.*s' header", (int)X_IMS_HEADER.size(), X_IMS_HEADER.data());
+      DEBUG_LOG("Plugin considers the '" TS_SVPF "' header", TS_SVP(X_IMS_HEADER));
       pc->consider_ims_header = true;
     } break;
     case 'n': {
