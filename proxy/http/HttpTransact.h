@@ -37,6 +37,7 @@
 #include "Transform.h"
 #include "Milestones.h"
 #include "ts/remap.h"
+#include "ts/parentselectdefs.h"
 #include "RemapPluginInfo.h"
 #include "UrlMapping.h"
 #include "records/I_RecHttp.h"
@@ -124,6 +125,7 @@ enum ViaString_t {
   VIA_IN_CACHE_STALE          = 'S',
   VIA_IN_CACHE_FRESH          = 'H',
   VIA_IN_RAM_CACHE_FRESH      = 'R',
+  VIA_IN_CACHE_RWW_HIT        = 'W',
   // server stuff
   VIA_SERVER_STRING       = 's',
   VIA_SERVER_ERROR        = 'E',
@@ -559,12 +561,6 @@ public:
     {
       connect_result = 0;
     }
-    void
-    set_connect_fail(int e)
-    {
-      connect_result = e;
-    }
-
     ConnectionAttributes() { clear(); }
 
     void
@@ -582,7 +578,7 @@ public:
     ConnectionAttributes *server               = nullptr;
     ink_time_t now                             = 0;
     ServerState_t state                        = STATE_UNDEFINED;
-    unsigned attempts                          = 1;
+    unsigned attempts                          = 0;
     unsigned simple_retry_attempts             = 0;
     unsigned unavailable_server_retry_attempts = 0;
     ParentRetry_t retry_type                   = PARENT_RETRY_NONE;
@@ -658,6 +654,13 @@ public:
 
     _SquidLogInfo() {}
   } SquidLogInfo;
+
+  typedef struct _ResponseAction {
+    bool handled = false;
+    TSResponseAction action;
+
+    _ResponseAction() {}
+  } ResponseAction;
 
   struct State {
     HttpTransactMagic_t m_magic = HTTP_TRANSACT_MAGIC_ALIVE;
@@ -812,6 +815,8 @@ public:
     bool transparent_passthrough = false;
     bool range_in_cache          = false;
 
+    ResponseAction response_action;
+
     // Methods
     void
     init()
@@ -908,6 +913,17 @@ public:
 
     ProxyProtocol pp_info;
 
+    void
+    set_connect_fail(int e)
+    {
+      if (e == EIO || this->current.server->connect_result == EIO) {
+        this->current.server->connect_result = e;
+      }
+      if (e != EIO) {
+        this->cause_of_death_errno = e;
+      }
+    }
+
   private:
     // Make this a raw byte array, so it will be accessed through the my_txn_conf() member function.
     alignas(OverridableHttpConfigParams) char _my_txn_conf[sizeof(OverridableHttpConfigParams)];
@@ -939,6 +955,7 @@ public:
   static void OSDNSLookup(State *s);
   static void ReDNSRoundRobin(State *s);
   static void PPDNSLookup(State *s);
+  static void PPDNSLookupAPICall(State *s);
   static void OriginServerRawOpen(State *s);
   static void HandleCacheOpenRead(State *s);
   static void HandleCacheOpenReadHitFreshness(State *s);
@@ -954,9 +971,11 @@ public:
   static void handle_transform_ready(State *s);
   static void handle_transform_cache_write(State *s);
   static void handle_response_from_parent(State *s);
+  static void handle_response_from_parent_plugin(State *s);
   static void handle_response_from_server(State *s);
   static void delete_server_rr_entry(State *s, int max_retries);
   static void retry_server_connection_not_open(State *s, ServerState_t conn_state, unsigned max_retries);
+  static void error_log_connection_failure(State *s, ServerState_t conn_state);
   static void handle_server_connection_not_open(State *s);
   static void handle_forward_server_connection_open(State *s);
   static void handle_cache_operation_on_forward_server_response(State *s);

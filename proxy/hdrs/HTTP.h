@@ -154,6 +154,7 @@ enum SquidLogCode {
   SQUID_LOG_ERR_NO_RELAY              = 'C',
   SQUID_LOG_ERR_DISK_IO               = 'D',
   SQUID_LOG_ERR_ZERO_SIZE_OBJECT      = 'E',
+  SQUID_LOG_TCP_CF_HIT                = 'F', // Collapsed forwarding HIT also known as Read while write hit
   SQUID_LOG_ERR_PROXY_DENIED          = 'G',
   SQUID_LOG_ERR_WEBFETCH_DETECTED     = 'H',
   SQUID_LOG_ERR_FUTURE_1              = 'I',
@@ -236,7 +237,8 @@ enum SquidHitMissCode {
   SQUID_HIT_SSD     = SQUID_HIT_LEVEL_2,
   SQUID_HIT_DISK    = SQUID_HIT_LEVEL_3,
   SQUID_HIT_CLUSTER = SQUID_HIT_LEVEL_4,
-  SQUID_HIT_NET     = SQUID_HIT_LEVEL_5
+  SQUID_HIT_NET     = SQUID_HIT_LEVEL_5,
+  SQUID_HIT_RWW     = SQUID_HIT_LEVEL_6
 };
 
 enum HTTPType {
@@ -578,6 +580,27 @@ public:
       @return A pointer to the path or @c NULL if there is no valid URL.
   */
   const char *path_get(int *length ///< Storage for path length.
+  );
+
+  /** Get the URL matrix params.
+      This is a reference, not allocated.
+      @return A pointer to the matrix params or @c NULL if there is no valid URL.
+  */
+  const char *params_get(int *length ///< Storage for param length.
+  );
+
+  /** Get the URL query.
+      This is a reference, not allocated.
+      @return A pointer to the query or @c NULL if there is no valid URL.
+  */
+  const char *query_get(int *length ///< Storage for query length.
+  );
+
+  /** Get the URL fragment.
+      This is a reference, not allocated.
+      @return A pointer to the fragment or @c NULL if there is no valid URL.
+  */
+  const char *fragment_get(int *length ///< Storage for fragement length.
   );
 
   /** Get the target host name.
@@ -1309,6 +1332,27 @@ HTTPHdr::path_get(int *length)
 {
   URL *url = this->url_get();
   return url ? url->path_get(length) : nullptr;
+}
+
+inline const char *
+HTTPHdr::params_get(int *length)
+{
+  URL *url = this->url_get();
+  return url ? url->params_get(length) : nullptr;
+}
+
+inline const char *
+HTTPHdr::query_get(int *length)
+{
+  URL *url = this->url_get();
+  return url ? url->query_get(length) : nullptr;
+}
+
+inline const char *
+HTTPHdr::fragment_get(int *length)
+{
+  URL *url = this->url_get();
+  return url ? url->fragment_get(length) : nullptr;
 }
 
 inline const char *

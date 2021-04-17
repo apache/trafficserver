@@ -1,0 +1,357 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# -------------
+# Replay Notes:
+# -------------
+# This replay file assumes a proxy.config.cache.limits.http.max_alts of 4.
+#
+
+meta:
+  version: "1.0"
+
+  blocks:
+
+  - 404_response: &404_response
+        status: 404
+        reason: "Not Found"
+        headers:
+          fields:
+          - [ Content-Length, 0 ]
+
+
+sessions:
+- transactions:
+
+  # Populate the cache with the first alternate.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /same/path/for/all/requests
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+        - [ X-Vary-On-This, first ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Vary-On-This, { value: first, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, X-Vary-On-This ]
+        - [ Connection, keep-alive ]
+        - [ X-Response-Identifier, first ]
+      content:
+        encoding: plain
+        data: "first"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: first, as: equal } ]
+
+  # Populate the cache with a second alternate.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /same/path/for/all/requests
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 2 ]
+        - [ X-Vary-On-This, second ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Vary-On-This, { value: second, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, X-Vary-On-This ]
+        - [ Connection, keep-alive ]
+        - [ X-Response-Identifier, second ]
+      content:
+        encoding: plain
+        data: "second"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: second, as: equal } ]
+
+  # There are two alternates in the cache now. Make sure we reply with the
+  # correct one based upon the specified Vary: target.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /same/path/for/all/requests
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 3 ]
+        - [ X-Vary-On-This, first ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 100ms
+
+    server-response:
+      <<: *404_response
+
+    # The response should be served out of the cache, not from the server.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: first, as: equal } ]
+
+  # Populate the cache with a third alternate.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /same/path/for/all/requests
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 4 ]
+        - [ X-Vary-On-This, third ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Vary-On-This, { value: third, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, X-Vary-On-This ]
+        - [ Connection, keep-alive ]
+        - [ X-Response-Identifier, third ]
+      content:
+        encoding: plain
+        data: "third"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: third, as: equal } ]
+
+  # Populate the cache with a fourth alternate.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /same/path/for/all/requests
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 5 ]
+        - [ X-Vary-On-This, fourth ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Vary-On-This, { value: fourth, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, X-Vary-On-This ]
+        - [ Connection, keep-alive ]
+        - [ X-Response-Identifier, fourth ]
+      content:
+        encoding: plain
+        data: "fourth"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: fourth, as: equal } ]
+
+  # This is the fifth alternate for the resource and should result in alternate
+  # eviction since max_alts is set to 4.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /same/path/for/all/requests
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 6 ]
+        - [ X-Vary-On-This, fifth ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Vary-On-This, { value: fifth, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, X-Vary-On-This ]
+        - [ Connection, keep-alive ]
+        - [ X-Response-Identifier, fifth ]
+      content:
+        encoding: plain
+        data: "fifth"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: fifth, as: equal } ]
+
+  # The fifth alternate should be in the cache. Verify we can reply with it.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /same/path/for/all/requests
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 7 ]
+        - [ X-Vary-On-This, fifth ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 100ms
+
+    server-response:
+      <<: *404_response
+
+    # The fifth alternate should be served out of cache.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: fifth, as: equal } ]
+
+  # There are currently 4 alternates cached. The addition of this one should,
+  # again, result in alternate eviction.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /same/path/for/all/requests
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 8 ]
+        - [ X-Vary-On-This, sixth ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Vary-On-This, { value: sixth, as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+        - [ Vary, X-Vary-On-This ]
+        - [ Connection, keep-alive ]
+        - [ X-Response-Identifier, sixth ]
+      content:
+        encoding: plain
+        data: "sixth"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: sixth, as: equal } ]
+
+  # Verify that we can reply to a request for that lastly added alternate.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /same/path/for/all/requests
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 9 ]
+        - [ X-Vary-On-This, sixth ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous
+      # transaction.
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Vary-On-This, { value: sixth, as: equal } ]
+
+    # This should be served out of the cache and not reach the origin.
+    server-response:
+      <<: *404_response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Identifier, { value: sixth, as: equal } ]

@@ -55,7 +55,6 @@ response_header_chk = {"headers":
 
 server.addResponse("sessionlog.json", request_header_chk, response_header_chk)
 
-#block_bytes = 7
 body = "lets go surfin now"
 
 request_header_txt = {"headers":

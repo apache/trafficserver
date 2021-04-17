@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Test lua functionality
 '''
@@ -41,8 +43,11 @@ server.addResponse("sessionfile.log", request_header, response_header)
 
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=tslua.so @pparam={}/watermark.lua'.format(Test.TestDirectory)
+    ' @plugin=tslua.so @pparam=watermark.lua'
 )
+
+# Configure the tslua's configuration file.
+ts.Setup.Copy("watermark.lua", ts.Variables.CONFIGDIR)
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
@@ -51,10 +56,6 @@ ts.Disk.records_config.update({
 
 # Test for watermark debug output
 ts.Streams.All = Testers.ContainsExpression(r"WMbytes\(31337\)", "Upstream watermark should be properly set")
-
-# These are needed for 8.x only since Lua errors go to diags in 8.x, newer versions go to stdout
-#ts.Disk.diags_log.Content = Testers.ContainsExpression("failed to get node's reconfigure time while checking script registration", "This test is a failure test")
-#ts.Disk.diags_log.Content = Testers.ContainsExpression("failed to get node's reconfigure time while registering script", "This test is a failure test")
 
 # Test if watermark upstream is set
 tr = Test.AddTestRun("Lua Watermark")

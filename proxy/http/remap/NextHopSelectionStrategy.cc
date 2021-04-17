@@ -175,7 +175,7 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
               if (mach->is_self(host_rec->hostname.c_str())) {
-                h_stat.setHostStatus(host_rec->hostname.c_str(), HostStatus_t::HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
+                h_stat.setHostStatus(host_rec->hostname.c_str(), TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
               }
               hosts_inner.push_back(std::move(host_rec));
               num_parents++;

@@ -82,7 +82,6 @@ ts1.Disk.records_config.update({
     'proxy.config.http.cache.http': 0,
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.ssl.session_cache': 2,
     'proxy.config.ssl.session_cache.size': 4096,
@@ -92,7 +91,8 @@ ts1.Disk.records_config.update({
     'proxy.config.ssl.session_cache.auto_clear': 1,
     'proxy.config.ssl.server.session_ticket.enable': 1,
     'proxy.config.ssl.origin_session_cache': 1,
-    'proxy.config.ssl.origin_session_cache.size': 1
+    'proxy.config.ssl.origin_session_cache.size': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 ts2.Disk.records_config.update({
     'proxy.config.http.cache.http': 0,
@@ -100,7 +100,6 @@ ts2.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'ssl.origin_session_cache',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.ssl.session_cache': 2,
     'proxy.config.ssl.session_cache.size': 4096,
@@ -110,13 +109,13 @@ ts2.Disk.records_config.update({
     'proxy.config.ssl.session_cache.auto_clear': 1,
     'proxy.config.ssl.server.session_ticket.enable': 1,
     'proxy.config.ssl.origin_session_cache': 1,
-    'proxy.config.ssl.origin_session_cache.size': 1
+    'proxy.config.ssl.origin_session_cache.size': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 ts3.Disk.records_config.update({
     'proxy.config.http.cache.http': 0,
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts3.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts3.Variables.SSLDir),
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.ssl.session_cache': 2,
     'proxy.config.ssl.session_cache.size': 4096,
@@ -126,7 +125,8 @@ ts3.Disk.records_config.update({
     'proxy.config.ssl.session_cache.auto_clear': 1,
     'proxy.config.ssl.server.session_ticket.enable': 1,
     'proxy.config.ssl.origin_session_cache': 1,
-    'proxy.config.ssl.origin_session_cache.size': 1
+    'proxy.config.ssl.origin_session_cache.size': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 ts4.Disk.records_config.update({
     'proxy.config.http.cache.http': 0,
@@ -134,7 +134,6 @@ ts4.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'ssl.origin_session_cache',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts4.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts4.Variables.SSLDir),
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
     'proxy.config.ssl.session_cache': 2,
     'proxy.config.ssl.session_cache.size': 4096,
@@ -144,7 +143,8 @@ ts4.Disk.records_config.update({
     'proxy.config.ssl.session_cache.auto_clear': 1,
     'proxy.config.ssl.server.session_ticket.enable': 1,
     'proxy.config.ssl.origin_session_cache': 0,
-    'proxy.config.ssl.origin_session_cache.size': 1
+    'proxy.config.ssl.origin_session_cache.size': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 
 tr = Test.AddTestRun('new session then reuse')

@@ -83,6 +83,7 @@ struct Machine {
   /// @return The global instance of this class.
   static self *instance();
   bool is_self(const char *name);
+  bool is_self(const char *name, int name_len);
   bool is_self(const IpAddr *ipaddr);
   bool is_self(struct sockaddr const *addr);
   void insert_id(char *id);

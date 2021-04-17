@@ -157,7 +157,7 @@ ts::svtoi(TextView src, TextView *out, int base)
 }
 
 void
-HostStatus::setHostStatus(const char *name, HostStatus_t status, const unsigned int down_time, const unsigned int reason)
+HostStatus::setHostStatus(const char *name, TSHostStatus status, const unsigned int down_time, const unsigned int reason)
 {
 }
 

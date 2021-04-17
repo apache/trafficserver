@@ -34,6 +34,7 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.url_remap.remap_required': 1,
     'proxy.config.http.transaction_no_activity_timeout_in': 2,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 
 ts.Disk.remap_config.AddLines([

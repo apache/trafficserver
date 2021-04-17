@@ -47,6 +47,7 @@ ts.Disk.records_config.update({
     'proxy.config.http.connect_ports': '{0} {1}'.format(ts.Variables.ssl_port, server_bar.Variables.SSL_Port),
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 
 # foo.com should terminate. and reconnect via TLS upstream to bar.com

@@ -126,6 +126,7 @@ struct OriginStats {
     struct {
       ElapsedStats hit;
       ElapsedStats hit_ram;
+      ElapsedStats hit_rww;
       ElapsedStats ims;
       ElapsedStats refresh;
       ElapsedStats other;
@@ -144,6 +145,7 @@ struct OriginStats {
     struct {
       StatsCounter hit;
       StatsCounter hit_ram;
+      StatsCounter hit_rww;
       StatsCounter ims;
       StatsCounter refresh;
       StatsCounter other;
@@ -424,6 +426,7 @@ public:
       case SQUID_LOG_TCP_REFRESH_HIT:
       case SQUID_LOG_TCP_DISK_HIT:
       case SQUID_LOG_TCP_MEM_HIT:
+      case SQUID_LOG_TCP_CF_HIT:
       case SQUID_LOG_TCP_REF_FAIL_HIT:
       case SQUID_LOG_UDP_HIT:
       case SQUID_LOG_UDP_WEAK_HIT:
@@ -498,6 +501,7 @@ public:
       case SQUID_LOG_TCP_REFRESH_HIT:
       case SQUID_LOG_TCP_DISK_HIT:
       case SQUID_LOG_TCP_MEM_HIT:
+      case SQUID_LOG_TCP_CF_HIT:
       case SQUID_LOG_TCP_REF_FAIL_HIT:
       case SQUID_LOG_UDP_HIT:
       case SQUID_LOG_UDP_WEAK_HIT:
@@ -791,6 +795,7 @@ init_elapsed(OriginStats *stats)
 {
   stats->elapsed.hits.hit.min       = -1;
   stats->elapsed.hits.hit_ram.min   = -1;
+  stats->elapsed.hits.hit_rww.min   = -1;
   stats->elapsed.hits.ims.min       = -1;
   stats->elapsed.hits.refresh.min   = -1;
   stats->elapsed.hits.other.min     = -1;
@@ -872,6 +877,12 @@ update_results_elapsed(OriginStats *stat, int result, int elapsed, int size)
     update_counter(stat->results.hits.hit_ram, size);
     update_counter(stat->results.hits.total, size);
     update_elapsed(stat->elapsed.hits.hit_ram, elapsed, stat->results.hits.hit_ram);
+    update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
+    break;
+  case SQUID_LOG_TCP_CF_HIT:
+    update_counter(stat->results.hits.hit_rww, size);
+    update_counter(stat->results.hits.total, size);
+    update_elapsed(stat->elapsed.hits.hit_rww, elapsed, stat->results.hits.hit_rww);
     update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
     break;
   case SQUID_LOG_TCP_MISS:
@@ -2015,6 +2026,7 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
 
   format_line(json ? "hit.direct" : "Cache hit", stat->results.hits.hit, stat->total, json, concise);
   format_line(json ? "hit.ram" : "Cache hit RAM", stat->results.hits.hit_ram, stat->total, json, concise);
+  format_line(json ? "hit.rww" : "Cache hit RWW", stat->results.hits.hit_rww, stat->total, json, concise);
   format_line(json ? "hit.ims" : "Cache hit IMS", stat->results.hits.ims, stat->total, json, concise);
   format_line(json ? "hit.refresh" : "Cache hit refresh", stat->results.hits.refresh, stat->total, json, concise);
   format_line(json ? "hit.other" : "Cache hit other", stat->results.hits.other, stat->total, json, concise);
@@ -2245,6 +2257,7 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
 
   format_elapsed_line(json ? "hit.direct.latency" : "Cache hit", stat->elapsed.hits.hit, json, concise);
   format_elapsed_line(json ? "hit.ram.latency" : "Cache hit RAM", stat->elapsed.hits.hit_ram, json, concise);
+  format_elapsed_line(json ? "hit.rww.latency" : "Cache hit RWW", stat->elapsed.hits.hit_rww, json, concise);
   format_elapsed_line(json ? "hit.ims.latency" : "Cache hit IMS", stat->elapsed.hits.ims, json, concise);
   format_elapsed_line(json ? "hit.refresh.latency" : "Cache hit refresh", stat->elapsed.hits.refresh, json, concise);
   format_elapsed_line(json ? "hit.other.latency" : "Cache hit other", stat->elapsed.hits.other, json, concise);

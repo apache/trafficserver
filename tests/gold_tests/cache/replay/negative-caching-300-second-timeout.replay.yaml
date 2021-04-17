@@ -38,7 +38,7 @@ meta:
 
         # Add a delay so ATS has time to finish any caching IO for the previous
         # transaction.
-        delay: 50ms
+        delay: 100ms
 
 sessions:
 - transactions:

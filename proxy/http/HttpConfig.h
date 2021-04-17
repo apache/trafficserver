@@ -65,6 +65,7 @@ enum {
   http_current_client_transactions_stat,
   http_total_incoming_connections_stat,
   http_current_server_transactions_stat,
+  http_pooled_server_connections_stat,
 
   //  Http Abort information (from HttpNetConnection)
   http_ua_msecs_counts_errors_pre_accept_hangups_stat,
@@ -84,6 +85,7 @@ enum {
   http_total_parent_switches_stat,
   http_total_parent_retries_exhausted_stat,
   http_total_parent_marked_down_count,
+  http_background_fill_total_count_stat,
   http_current_parent_proxy_connections_stat,
   http_current_server_connections_stat,
   http_current_cache_connections_stat,
@@ -175,6 +177,7 @@ enum {
   // cache result stats
   http_cache_hit_fresh_stat,
   http_cache_hit_mem_fresh_stat,
+  http_cache_hit_rww_stat,
   http_cache_hit_reval_stat,
   http_cache_hit_ims_stat,
   http_cache_hit_stale_served_stat,
@@ -586,7 +589,6 @@ struct OverridableHttpConfigParams {
   //////////////////////////////
   // server verification mode //
   //////////////////////////////
-  MgmtByte ssl_client_verify_server         = 0;
   char *ssl_client_verify_server_policy     = nullptr;
   char *ssl_client_verify_server_properties = nullptr;
   char *ssl_client_sni_policy               = nullptr;

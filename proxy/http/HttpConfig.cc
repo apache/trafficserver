@@ -352,6 +352,9 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_parent_marked_down_count", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_total_parent_marked_down_count, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.background_fill_total_count", RECD_INT, RECP_PERSISTENT,
+                     (int)http_background_fill_total_count_stat, RecRawStatSyncCount);
+
   // Stats to track causes of ATS initiated origin shutdowns
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.pool_lock_contention", RECD_INT,
                      RECP_NON_PERSISTENT, (int)http_origin_shutdown_pool_lock_contention, RecRawStatSyncCount);
@@ -412,6 +415,10 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.transaction_totaltime.errors.pre_accept_hangups", RECD_FLOAT,
                      RECP_PERSISTENT, (int)http_ua_msecs_counts_errors_pre_accept_hangups_stat,
                      RecRawStatSyncIntMsecsToFloatSeconds);
+
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.pooled_server_connections", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_pooled_server_connections_stat, RecRawStatSyncSum);
+  HTTP_CLEAR_DYN_STAT(http_pooled_server_connections_stat);
 
   // Transactional stats
 
@@ -612,6 +619,8 @@ register_stat_callbacks()
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.cache_hit_mem_fresh", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_cache_hit_mem_fresh_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.cache_hit_rww", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_cache_hit_rww_stat, RecRawStatSyncCount);
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.cache_hit_revalidated", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_cache_hit_reval_stat, RecRawStatSyncCount);

@@ -1130,6 +1130,17 @@ mptcp
    request bodies which lack a ``Content-length`` header.
 
 .. ts:cv:: CONFIG proxy.config.http.default_buffer_water_mark INT 32768
+   :reloadable:
+   :overridable:
+
+   Number of bytes |TS| is allowed to read ahead of the client from the origin. Note that when
+   :ref:`Read While Write <admin-configuration-reducing-origin-requests>` settings are in place,
+   this setting will apply to the first client to request the object, regardless if subsequent,
+   simultaneous clients of that object can read faster. The buffered bytes will consume memory
+   while waiting for the client to consume them.
+
+   While this setting is reloadable, dramatic changes can cause bigger memory usage than expected
+   and is thus not recommended.
 
 .. ts:cv:: CONFIG proxy.config.http.request_buffer_enabled INT 0
    :overridable:
@@ -1660,14 +1671,35 @@ Negative Response Caching
    to network or HTTP errors. If it is enabled, rather than caching the negative response, the
    current stale content is preserved and served. Note this is considered only on a revalidation of
    already cached content. A revalidation failure means a connection failure or a 50x response code.
+   When considering replying with a stale response in these negative revalidating circumstances,
+   |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` configuration and will not
+   use a cached response older than ``max_stale_age`` seconds.
 
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
 .. ts:cv:: CONFIG proxy.config.http.negative_revalidating_lifetime INT 1800
 
-   How long, in seconds, to consider a stale cached document valid if
-   :ts:cv:`proxy.config.http.negative_revalidating_enabled` is enabled and |TS| receives a negative
-   (``5xx`` only) response from the origin server during revalidation.
+   When replying with a stale cached response in negative revalidating circumstances (see
+   :ts:cv:`proxy.config.http.negative_revalidating_enabled`), |TS| includes an ``Expires:`` HTTP
+   header field in the cached response with a future time so that upstream caches will not try to
+   revalidate their respective stale objects. This configuration specifies how many seconds in the
+   future |TS| will calculate the value of this inserted ``Expires:`` header field.
+
+   There is a limitation to this method to be aware of: per specification (see IETF RFC 7234,
+   section 4.2.1), ``Cache-Control:`` response directives take precedence over the ``Expires:``
+   header field when determining object freshness. Thus if the cached response contains either a
+   ``max-age`` or an ``s-maxage`` ``Cache-Control:`` response directive, then these directives would
+   take precedence for the upstream caches over the inserted ``Expires:`` field, rendering the
+   ``Expires:`` header ineffective in specifying the configured freshness lifetime.
+
+   Finally, be aware that the only way this configuration is used is as input into calculating the
+   value of these inserted ``Expires:`` header fields. This configuration does not direct |TS|
+   behavior with regard to whether it considers a stale object to be fresh enough to serve out of
+   cache when revalidation fails. As mentioned above in
+   :ts:cv:`proxy.config.http.negative_revalidating_enabled`,
+   :ts:cv:`proxy.config.http.cache.max_stale_age` is used for that determination.
+
+   This configuration defaults to 1,800 seconds (30 minutes).
 
 Proxy User Variables
 ====================
@@ -2076,7 +2108,7 @@ Cache Control
    :reloadable:
    :overridable:
 
-   The maximum age allowed for a stale response before it cannot be cached.
+   The maximum age in seconds allowed for a stale response before it cannot be cached.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.guaranteed_min_lifetime INT 0
    :reloadable:
@@ -2220,6 +2252,22 @@ Cache Control
 
    The maximum number of alternates that are allowed for any given URL.
    Disable by setting to 0.
+
+.. ts:cv:: CONFIG proxy.config.cache.log.alternate.eviction INT 0
+
+   When enabled (``1``), |TS| will emit a Status level log entry every time an
+   alternate for an object is evicted due to the number of its alternates
+   exceeding the value of :ts:cv:`proxy.config.cache.limits.http.max_alts`. The
+   URI for the evicted alternate is included in the log. This logging may be
+   useful to determine whether :ts:cv:`proxy.config.cache.limits.http.max_alts`
+   is tuned correctly for a given environment. It also provides visibility into
+   alternate eviction for individual objects, which can be helpful for
+   diagnosing unexpected `Vary:` header behavior from particular origins.
+
+   For further details concerning the caching of alternates, see :ref:`Caching
+   HTTP Alternates <CachingHttpAlternates>`.
+
+   By default, alternate eviction logging is disabled (set to ``0``).
 
 .. ts:cv:: CONFIG proxy.config.cache.target_fragment_size INT 1048576
 
@@ -2969,6 +3017,29 @@ Logging Configuration
 
    How often |TS| executes log related periodic tasks, in seconds
 
+.. ts:cv:: CONFIG proxy.config.log.proxy.config.log.throttling_interval_msec INT 60000
+   :reloadable:
+   :units: milliseconds
+
+   The minimum amount of milliseconds between repeated throttled |TS| log
+   events. A value of 0 implies no throttling. Note that for performance
+   reasons only certain logs are compiled with throttling applied to them.
+
+   Throttling is applied to all log events for a particular message which is
+   emitted within its throttling interval. That is, once a throttled log is
+   emitted, none will be emitted until the next log event for that message
+   which occurs outside of this configured interval. As mentioned above, this
+   message is applied not broadly but rather to potentially noisy log messages,
+   such as ones that might occur thousands of times a second under certain
+   error conditions. Once the next log event occurs outside of its interval, a
+   summary message is printed conveying how many messages of that type were
+   throttled since the last time it was emitted.
+
+   It is possible that a log is emitted, followed by more of its type in an
+   interval, then none are emitted after that. Be aware this would result in no
+   summary log message for that interval until the message is emitted again
+   outside of the throttled interval.
+
 .. ts:cv:: CONFIG proxy.config.http.slow.log.threshold INT 0
    :reloadable:
    :units: milliseconds
@@ -3112,6 +3183,17 @@ Diagnostic Logging Configuration
    |TS| plugins will typically log debug messages using the :c:func:`TSDebug`
    API, passing the plugin name as the debug tag.
 
+.. ts:cv:: CONFIG proxy.config.diags.debug.throttling_interval_msec INT 0
+   :reloadable:
+   :units: milliseconds
+
+   The minimum amount of milliseconds between repeated |TS| `diag` and `debug`
+   log events. A value of 0 implies no throttling. All diags and debug logs
+   are compiled with throttling applied to them.
+
+   For details about how log throttling works, see
+   :ts:cv:`log.throttling_interval_msec
+   <proxy.config.log.proxy.config.log.throttling_interval_msec>`.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile_perm STRING rw-r--r--
 
@@ -3554,7 +3636,7 @@ SSL Termination
 Client-Related Configuration
 ----------------------------
 
-.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING STRICT
+.. ts:cv:: CONFIG proxy.config.ssl.client.verify.server.policy STRING ENFORCED
    :reloadable:
    :overridable:
 

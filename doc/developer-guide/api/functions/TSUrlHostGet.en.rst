@@ -37,6 +37,7 @@ Synopsis
 .. function:: const char * TSUrlUserGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: const char * TSUrlPasswordGet(TSMBuffer bufp, TSMLoc offset, int* length)
 .. function:: int TSUrlPortGet(TSMBuffer bufp, TSMLoc offset)
+.. function:: int TSUrlRawPortGet(TSMBuffer bufp, TSMLoc offset)
 .. function:: const char * TSUrlPathGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: const char * TSUrlHttpQueryGet(TSMBuffer bufp, TSMLoc offset, int * length)
 .. function:: const char * TSUrlHttpParamsGet(TSMBuffer bufp, TSMLoc offset, int * length)
@@ -67,17 +68,22 @@ URL type (HTTP or HTTPS) if there is no explicit scheme.
 port number in the URL, a canonicalized valued is returned based on the URL
 scheme.
 
+:func:`TSUrlRawPortGet` also retrieves the port number portion of the URL located at
+:arg:`offset` within the marshal buffer :arg:`bufp`. If there is no explicit
+port number in the URL, zero is returned.
+
 Return Values
 =============
 
-All APIs except :func:`TSUrlPortGet` returns a string, which is not guaranteed
-to be NULL terminated. You must therefore always use the :arg:`length` value
+All APIs except :func:`TSUrlPortGet` and :func:`TSUrlRawPortGet` return a string, which is
+not guaranteed to be NULL terminated. You must therefore always use the :arg:`length` value
 to determine the actual length of the returned string.
 
 :func:`TSUrlPortGet` simply returns the port number as an integer, possibly
 canonicalized with :literal:`80` for HTTP and :literal:`443` for HTTPS schemes. If
 there is neither port nor scheme information available in the URL, :literal:`0`
-is returned.
+is returned. :func:`TSUrlRawPortGet`, by contrast, returns 0 in all cases where the
+port is not explicitly present in the URL.
 
 See Also
 ========

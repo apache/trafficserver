@@ -670,14 +670,9 @@ marshalMimeHdr(MIMEHdr *hdr, char *buf)
   ts::FixedBufferWriter bw(buf, bwSize);
 
   if (hdr) {
-    MIMEFieldIter mfIter;
-    const MIMEField *mfp = hdr->iter_get_first(&mfIter);
-
-    while (mfp) {
-      marshalStr(bw, *mfp, &MIMEField::name_get);
-      marshalStr(bw, *mfp, &MIMEField::value_get);
-
-      mfp = hdr->iter_get_next(&mfIter);
+    for (auto const &mfp : *hdr) {
+      marshalStr(bw, mfp, &MIMEField::name_get);
+      marshalStr(bw, mfp, &MIMEField::value_get);
     }
   }
 

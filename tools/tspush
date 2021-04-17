@@ -50,8 +50,8 @@ HELP
 die ("--file and --url must be given!" ) unless ( $f_name && $url) ;
 
 open (my $fh, '<', $f_name) or die $!;
+chomp (my $f_type = `file -b --mime $f_name`);
 my $uri = URI->new($url);
-my $f_type = `file -b --mime $f_name`;
 
 #
 # read the file in one go:

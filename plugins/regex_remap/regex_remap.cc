@@ -639,28 +639,6 @@ struct RemapInstance {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Helpers for memory management (to make sure pcre uses the TS APIs).
-//
-inline void *
-ts_malloc(size_t s)
-{
-  return TSmalloc(s);
-}
-
-inline void
-ts_free(void *s)
-{
-  return TSfree(s);
-}
-
-void
-setup_memory_allocation()
-{
-  pcre_malloc = &ts_malloc;
-  pcre_free   = &ts_free;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin.
 //
 TSReturnCode
@@ -677,7 +655,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  setup_memory_allocation();
   TSDebug(PLUGIN_NAME, "Plugin is successfully initialized");
   return TS_SUCCESS;
 }

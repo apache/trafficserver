@@ -39,6 +39,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <thread>
 
 static bool
 should_roll_on_time(Log::RollingEnabledValues roll)
@@ -382,7 +383,9 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
       break;
 
     case LogBuffer::LB_RETRY:
-      // no more room, but another thread should be taking care of creating a new buffer, so try again
+      // no more room, but another thread should be taking care of creating a new buffer, so yield to let
+      // the other thread finish, then try again
+      std::this_thread::yield();
       break;
 
     case LogBuffer::LB_BUFFER_TOO_SMALL:
@@ -547,9 +550,9 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
   buffer = _checkout_write(&offset, bytes_needed);
 
   if (!buffer) {
-    Note("Skipping the current log entry for %s because its size (%zu) exceeds "
-         "the maximum payload space in a log buffer",
-         m_basename, bytes_needed);
+    SiteThrottledNote("Skipping the current log entry for %s because its size (%zu) exceeds "
+                      "the maximum payload space in a log buffer",
+                      m_basename, bytes_needed);
     return Log::FAIL;
   }
   //

@@ -36,12 +36,12 @@
 #include "tscore/CryptoHash.h"
 #include "tscore/ts_file.h"
 
-namespace tag
+namespace ts::tag
 {
 struct bytes {
   static constexpr char const *const label = " bytes";
 };
-} // namespace tag
+} // namespace ts::tag
 
 using ts::round_down;
 using ts::round_up;
@@ -76,19 +76,19 @@ constexpr static int MAX_VOLUME_IDX          = 255;
 constexpr static int ENTRIES_PER_BUCKET      = 4;
 constexpr static int MAX_BUCKETS_PER_SEGMENT = (1 << 16) / ENTRIES_PER_BUCKET;
 
-typedef Scalar<1, off_t, tag::bytes> Bytes;
-typedef Scalar<1024, off_t, tag::bytes> Kilobytes;
-typedef Scalar<1024 * Kilobytes::SCALE, off_t, tag::bytes> Megabytes;
-typedef Scalar<1024 * Megabytes::SCALE, off_t, tag::bytes> Gigabytes;
-typedef Scalar<1024 * Gigabytes::SCALE, off_t, tag::bytes> Terabytes;
+typedef Scalar<1, off_t, ts::tag::bytes> Bytes;
+typedef Scalar<1024, off_t, ts::tag::bytes> Kilobytes;
+typedef Scalar<1024 * Kilobytes::SCALE, off_t, ts::tag::bytes> Megabytes;
+typedef Scalar<1024 * Megabytes::SCALE, off_t, ts::tag::bytes> Gigabytes;
+typedef Scalar<1024 * Gigabytes::SCALE, off_t, ts::tag::bytes> Terabytes;
 
 // Units of allocation for stripes.
-typedef Scalar<128 * Megabytes::SCALE, int64_t, tag::bytes> CacheStripeBlocks;
+typedef Scalar<128 * Megabytes::SCALE, int64_t, ts::tag::bytes> CacheStripeBlocks;
 // Size measurement of cache storage.
 // Also size of meta data storage units.
-typedef Scalar<8 * Kilobytes::SCALE, int64_t, tag::bytes> CacheStoreBlocks;
+typedef Scalar<8 * Kilobytes::SCALE, int64_t, ts::tag::bytes> CacheStoreBlocks;
 // Size unit for content stored in cache.
-typedef Scalar<512, int64_t, tag::bytes> CacheDataBlocks;
+typedef Scalar<512, int64_t, ts::tag::bytes> CacheDataBlocks;
 
 /** A cache span is a representation of raw storage.
     It corresponds to a raw disk, disk partition, file, or directory.

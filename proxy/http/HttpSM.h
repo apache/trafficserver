@@ -166,6 +166,47 @@ enum HttpPluginTunnel_t {
 
 class PluginVCCore;
 
+class PendingAction
+{
+public:
+  bool
+  is_empty() const
+  {
+    return pending_action == nullptr;
+  }
+  PendingAction &
+  operator=(Action *b)
+  {
+    // Don't do anything if the new action is _DONE
+    if (b != ACTION_RESULT_DONE) {
+      if (b != pending_action && pending_action != nullptr) {
+        pending_action->cancel();
+      }
+      pending_action = b;
+    }
+    return *this;
+  }
+  Continuation *
+  get_continuation() const
+  {
+    return pending_action ? pending_action->continuation : nullptr;
+  }
+  Action *
+  get() const
+  {
+    return pending_action;
+  }
+  ~PendingAction()
+  {
+    if (pending_action) {
+      pending_action->cancel();
+    }
+  }
+
+private:
+  Action *pending_action = nullptr;
+};
+
 class PostDataBuffers
 {
 public:
@@ -387,8 +428,8 @@ protected:
   HttpCacheSM transform_cache_sm;
 
   HttpSMHandler default_handler = nullptr;
-  Action *pending_action        = nullptr;
-  Continuation *schedule_cont   = nullptr;
+  PendingAction pending_action;
+  Continuation *schedule_cont = nullptr;
 
   HTTPParser http_parser;
   void start_sub_sm();
@@ -482,7 +523,6 @@ protected:
   int write_header_into_buffer(HTTPHdr *h, MIOBuffer *b);
   int write_response_header_into_buffer(HTTPHdr *h, MIOBuffer *b);
   void setup_blind_tunnel_port();
-  void setup_client_header_nca();
   void setup_client_read_request_header();
   void setup_push_read_response_header();
   void setup_server_read_response_header();
@@ -502,7 +542,6 @@ protected:
   void issue_cache_update();
   void perform_cache_write_action();
   void perform_transform_cache_write_action();
-  void perform_nca_cache_action();
   void setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial = nullptr);
   HttpTunnelProducer *setup_server_transfer_to_transform();
   HttpTunnelProducer *setup_transfer_from_transform();
@@ -546,6 +585,7 @@ public:
   bool is_using_post_buffer           = false;
   std::optional<bool> mptcp_state; // Don't initialize, that marks it as "not defined".
   const char *client_protocol     = "-";
+  const char *server_protocol     = "-";
   const char *client_sec_protocol = "-";
   const char *client_cipher_suite = "-";
   const char *client_curve        = "-";

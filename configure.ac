@@ -360,18 +360,6 @@ AM_CONDITIONAL([BUILD_DOCS], [test "xyes" = "x$enable_doc_build"])
 AM_CONDITIONAL([BUILD_MANPAGES], [test "xtrue" = "x$build_manpages"])
 
 #
-# Remote Coverity Prevent commit
-#
-AC_MSG_CHECKING([whether to commit cov defects to remote host])
-AC_ARG_ENABLE([remote-cov-commit],
-  [AS_HELP_STRING([--enable-remote-cov-commit[=HOST]], [commit cov defects to remote host [HOST=localhost]])],
-  [],
-  [enable_remote_cov_commit=localhost]
-)
-AC_MSG_RESULT([$enable_remote_cov_commit])
-AC_SUBST([enable_remote_cov_commit])
-
-#
 # WCCP
 #
 AC_MSG_CHECKING([whether to enable WCCP v2 support])
@@ -1534,7 +1522,7 @@ AS_IF([test "x$event_interface" = "xauto"], [
       ;;
     xkqueue)
       use_kqueue=1
-      AC_MSG_RESULT([forced to port])
+      AC_MSG_RESULT([forced to kqueue])
       ;;
     *)
       AC_MSG_RESULT([failed])
@@ -1569,6 +1557,8 @@ __saved_CXXFLAGS="${CXXFLAGS}"
 __saved_CFLAGS="${CFLAGS}"
 
 has_128bit_cas=0
+# Don't add the -mcx16 flag unless needed and it compiles cleanly.
+needs_mcx16_for_cas=0
 
 TS_TRY_COMPILE_NO_WARNING([],[
     __int128_t x = 0;
@@ -1587,6 +1577,7 @@ TS_TRY_COMPILE_NO_WARNING([],[
       ], [
         AC_MSG_RESULT(yes)
         has_128bit_cas=1
+        needs_mcx16_for_cas=1
       ], [
         AC_MSG_RESULT(no)
     ])
@@ -1597,11 +1588,9 @@ CFLAGS="${__saved_CFLAGS}"
 AC_LANG_POP
 AC_SUBST(has_128bit_cas)
 
-AS_IF([test "x$has_128bit_cas" = "x1"], [
-  AS_IF([test "x$ax_cv_c_compiler_vendor" != "xintel"], [
+AS_IF([test "x$needs_mcx16_for_cas" = "x1"], [
     TS_ADDTO(AM_CFLAGS, [-mcx16])
     TS_ADDTO(AM_CXXFLAGS, [-mcx16])
-  ])
 ])
 
 # Check for POSIX capabilities library.
@@ -1993,7 +1982,7 @@ if test "x${ac_cv_member_struct_tcp_info_tcpi_data_segs_out}" = "xyes"; then
 fi
 
 if test "x${with_profiler}" = "xyes"; then
-AC_CHECK_HEADERS([google/profiler.h \
+AC_CHECK_HEADERS([gperftools/profiler.h \
                   ], [], [])
 fi
 
@@ -2101,7 +2090,6 @@ AC_SUBST(has_so_mark)
 AC_SUBST(has_ip_tos)
 AC_SUBST(has_so_peercred)
 
-TS_CHECK_LOOPBACK_IFACE
 TS_CHECK_MACRO_IN6_IS_ADDR_UNSPECIFIED
 
 AC_CHECK_TYPE([struct tcp_info],

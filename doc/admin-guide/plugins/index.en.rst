@@ -164,6 +164,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    MP4 <mp4.en>
    Multiplexer <multiplexer.en>
    MySQL Remap <mysql_remap.en>
+   Rate Limit <rate_limit.en>
    Signed URLs <url_sig.en>
    Slice <slice.en>
    SSL Headers <sslheaders.en>
@@ -227,6 +228,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Prefetch <prefetch.en>`
    Pre-fetch objects based on the requested URL path pattern.
+
+:doc:`Rate Limit <rate_limit.en>`
+   Simple transaction rate limiting.
 
 :doc:`Remap Purge <remap_purge.en>`
    This remap plugin allows the administrator to easily setup remotely

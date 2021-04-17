@@ -18,6 +18,7 @@ TSHttpHdrEffectiveUrlBufGet():  http://myhost.test/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0
 Transaction: event=TS_EVENT_HTTP_READ_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://mYhOsT.teSt/
 Client Request:
@@ -25,18 +26,21 @@ TSHttpHdrEffectiveUrlBufGet():  http://myhost.test/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0
 TSRemapDoRemap(): instance=0 redirect=0
 Remap Request:
 TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  SERVER_PORT
+TSUrlRawPortGet():  SERVER_PORT
 TSRemapDoRemap(): instance=1 redirect=0
 Remap Request:
 TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  SERVER_PORT
+TSUrlRawPortGet():  SERVER_PORT
 Global: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/
 Request To Server:
@@ -44,6 +48,7 @@ TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0
 Transaction: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/
 Request To Server:
@@ -51,6 +56,7 @@ TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0
 Global: event=TS_EVENT_HTTP_TXN_START
 Global: event=TS_EVENT_HTTP_READ_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://mYhOsT.teSt/xYz
@@ -59,6 +65,7 @@ TSHttpHdrEffectiveUrlBufGet():  http://myhost.test/xYz
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0
 Transaction: event=TS_EVENT_HTTP_READ_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://mYhOsT.teSt/xYz
 Client Request:
@@ -66,18 +73,21 @@ TSHttpHdrEffectiveUrlBufGet():  http://myhost.test/xYz
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0
 TSRemapDoRemap(): instance=0 redirect=0
 Remap Request:
 TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/xYz
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  SERVER_PORT
+TSUrlRawPortGet():  SERVER_PORT
 TSRemapDoRemap(): instance=1 redirect=0
 Remap Request:
 TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/xYz
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  SERVER_PORT
+TSUrlRawPortGet():  SERVER_PORT
 Global: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/xYz
 Request To Server:
@@ -85,6 +95,7 @@ TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/xYz
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0
 Transaction: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/xYz
 Request To Server:
@@ -92,6 +103,7 @@ TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/xYz
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0
 Global: event=TS_EVENT_HTTP_TXN_START
 Global: event=TS_EVENT_HTTP_READ_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  https://myhost.test:123/
@@ -100,6 +112,7 @@ TSHttpHdrEffectiveUrlBufGet():  https://myhost.test:123/
 TSUrlSchemeGet():  https
 TSUrlRawSchemeGet():  https
 TSUrlPortGet():  123
+TSUrlRawPortGet():  123
 Transaction: event=TS_EVENT_HTTP_READ_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  https://myhost.test:123/
 Client Request:
@@ -107,18 +120,21 @@ TSHttpHdrEffectiveUrlBufGet():  https://myhost.test:123/
 TSUrlSchemeGet():  https
 TSUrlRawSchemeGet():  https
 TSUrlPortGet():  123
+TSUrlRawPortGet():  123
 TSRemapDoRemap(): instance=2 redirect=0
 Remap Request:
 TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  SERVER_PORT
+TSUrlRawPortGet():  SERVER_PORT
 TSRemapDoRemap(): instance=3 redirect=0
 Remap Request:
 TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  http
 TSUrlPortGet():  SERVER_PORT
+TSUrlRawPortGet():  SERVER_PORT
 Global: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/
 Request To Server:
@@ -126,6 +142,7 @@ TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0
 Transaction: event=TS_EVENT_HTTP_SEND_REQUEST_HDR
 TSHttpTxnEffectiveUrlStringGet():  http://127.0.0.1:SERVER_PORT/
 Request To Server:
@@ -133,3 +150,4 @@ TSHttpHdrEffectiveUrlBufGet():  http://127.0.0.1:SERVER_PORT/
 TSUrlSchemeGet():  http
 TSUrlRawSchemeGet():  failed to get raw URL scheme
 TSUrlPortGet():  80
+TSUrlRawPortGet():  0

@@ -47,7 +47,8 @@ ts.Disk.records_config.update({
     'proxy.config.http.connect_attempts_max_retries': 1,
     'proxy.config.http.transaction_no_activity_timeout_out': 4,
     'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|ssl'
+    'proxy.config.diags.debug.tags': 'http|ssl',
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 
 ts.Disk.remap_config.AddLine('map /connect_blocked https://127.0.0.1:{0}'.format(Test.Variables.block_connect_port))
@@ -68,9 +69,8 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(delay_post_connect, ready=When.PortOpen(Test.Variables.block_connect_port))
 tr.Processes.Default.Command = 'curl -H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/connect_blocked --tlsv1.2'.format(
     ts.Variables.port)
-#tr.Processes.Default.TimeOut = 6
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")
+    "HTTP/1.1 502 connect failed", "Connect failed")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_post_connect
 tr.StillRunningAfter = Test.Processes.ts
@@ -81,7 +81,6 @@ tr = Test.AddTestRun("tr-delayed-post")
 tr.Processes.Default.StartBefore(delay_post_ttfb, ready=When.PortOpen(Test.Variables.block_ttfb_port))
 tr.Processes.Default.Command = 'curl -H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/ttfb_blocked --tlsv1.2'.format(
     ts.Variables.port)
-#tr.Processes.Default.TimeOut = 15
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("504 Connection Timed Out", "Conntect timeout")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_post_ttfb
@@ -94,9 +93,8 @@ tr = Test.AddTestRun("tr-blocking-get")
 tr.Processes.Default.StartBefore(delay_get_connect, ready=When.PortOpen(Test.Variables.get_block_connect_port))
 tr.Processes.Default.Command = 'curl -H"Connection:close" -i http://127.0.0.1:{0}/get_connect_blocked --tlsv1.2'.format(
     ts.Variables.port)
-#tr.Processes.Default.TimeOut = 6
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")
+    "HTTP/1.1 502 connect failed", "Connect failed")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_get_connect
 
@@ -106,7 +104,6 @@ tr = Test.AddTestRun("tr-delayed-get")
 tr.Processes.Default.StartBefore(delay_get_ttfb, ready=When.PortOpen(Test.Variables.get_block_ttfb_port))
 tr.Processes.Default.Command = 'curl -H"Connection:close" -i http://127.0.0.1:{0}/get_ttfb_blocked --tlsv1.2'.format(
     ts.Variables.port)
-#tr.Processes.Default.TimeOut = 15
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("504 Connection Timed Out", "Conntect timeout")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_get_ttfb
@@ -116,8 +113,6 @@ delay_post_connect.Streams.All = Testers.ContainsExpression(
 delay_post_connect.Streams.All += Testers.ExcludesExpression("TTFB delay", "Should not reach the TTFB delay logic")
 delay_post_ttfb.Streams.All = Testers.ContainsExpression("Accept try", "Should appear one time")
 delay_post_ttfb.Streams.All += Testers.ContainsExpression("TTFB delay", "Should reach the TTFB delay logic")
-# May fail due to port ready test
-#delay_post_ttfb.Streams.All += Testers.ExcludesExpression("Failed accept", "Accept should have succeeded")
 
 
 delay_get_connect.Streams.All = Testers.ContainsExpression(
@@ -126,5 +121,3 @@ delay_get_connect.Streams.All += Testers.ExcludesExpression("TTFB delay", "Shoul
 delay_get_ttfb.Streams.All = Testers.ContainsExpression(
     "Accept try", "Should appear at least two times (may be an extra one due to the port ready test)")
 delay_get_ttfb.Streams.All += Testers.ContainsExpression("TTFB delay", "Should reach the TTFB delay logic")
-# May fail due to port ready test
-#delay_get_ttfb.Streams.All += Testers.ExcludesExpression("Failed accept", "Accept should have succeeded")

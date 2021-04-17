@@ -198,27 +198,27 @@ HostStatus::~HostStatus()
 }
 
 HostStatRec *
-HostStatus::getHostStatus(const char *name)
+HostStatus::getHostStatus(const std::string_view name)
 {
-  if (this->hosts_statuses[name] == nullptr) {
+  if (this->hosts_statuses[std::string(name)] == nullptr) {
     // for unit tests only, always return a record with HOST_STATUS_UP, if it wasn't set with setHostStatus
     static HostStatRec rec;
-    rec.status = HostStatus_t::HOST_STATUS_UP;
+    rec.status = TSHostStatus::TS_HOST_STATUS_UP;
     return &rec;
   }
-  return this->hosts_statuses[name];
+  return this->hosts_statuses[std::string(name)];
 }
 
 void
-HostStatus::setHostStatus(char const *host, HostStatus_t status, unsigned int down_time, unsigned int reason)
+HostStatus::setHostStatus(const std::string_view host, TSHostStatus status, unsigned int down_time, unsigned int reason)
 {
-  if (this->hosts_statuses[host] == nullptr) {
-    this->hosts_statuses[host] = new (HostStatRec);
+  if (this->hosts_statuses[std::string(host)] == nullptr) {
+    this->hosts_statuses[std::string(host)] = new (HostStatRec);
   }
-  this->hosts_statuses[host]->status          = status;
-  this->hosts_statuses[host]->reasons         = reason;
-  this->hosts_statuses[host]->local_down_time = down_time;
-  NH_Debug("next_hop", "setting host status for '%s' to %s", host, HostStatusNames[status]);
+  this->hosts_statuses[std::string(host)]->status          = status;
+  this->hosts_statuses[std::string(host)]->reasons         = reason;
+  this->hosts_statuses[std::string(host)]->local_down_time = down_time;
+  NH_Debug("next_hop", "setting host status for '%.*s' to %s", host.size(), host.data(), HostStatusNames[status]);
 }
 
 #include "I_UDPConnection.h"

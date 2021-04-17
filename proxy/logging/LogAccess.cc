@@ -1786,6 +1786,40 @@ LogAccess::marshal_client_req_protocol_version(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_server_req_protocol_version(char *buf)
+{
+  const char *protocol_str = m_http_sm->server_protocol;
+  int len                  = LogAccess::strlen(protocol_str);
+
+  // Set major & minor versions when protocol_str is not "http/2".
+  if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
+    if (m_proxy_request) {
+      HTTPVersion versionObject = m_proxy_request->version_get();
+      int64_t major             = HTTP_MAJOR(versionObject.m_version);
+      int64_t minor             = HTTP_MINOR(versionObject.m_version);
+      if (major == 1 && minor == 1) {
+        protocol_str = "http/1.1";
+      } else if (major == 1 && minor == 0) {
+        protocol_str = "http/1.0";
+      } // else invalid http version
+    } else {
+      protocol_str = "*";
+    }
+
+    len = LogAccess::strlen(protocol_str);
+  }
+
+  if (buf) {
+    marshal_str(buf, protocol_str, len);
+  }
+
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_client_req_header_len(char *buf)
 {
   if (buf) {
@@ -2784,7 +2818,8 @@ LogAccess::marshal_cache_collapsed_connection_success(char *buf)
 
       // We increment open_write_tries beyond the max when we want to jump back to the read state for collapsing
       if ((m_http_sm->get_cache_sm().get_open_write_tries() > (m_http_sm->t_state.txn_conf->max_cache_open_write_retries)) &&
-          ((code == SQUID_LOG_TCP_HIT) || (code == SQUID_LOG_TCP_MEM_HIT) || (code == SQUID_LOG_TCP_DISK_HIT))) {
+          ((code == SQUID_LOG_TCP_HIT) || (code == SQUID_LOG_TCP_MEM_HIT) || (code == SQUID_LOG_TCP_DISK_HIT) ||
+           (code == SQUID_LOG_TCP_CF_HIT))) {
         // Attempted collapsed connection and got a hit, success
         id = 1;
       } else if (m_http_sm->get_cache_sm().get_open_write_tries() > (m_http_sm->t_state.txn_conf->max_cache_open_write_retries)) {

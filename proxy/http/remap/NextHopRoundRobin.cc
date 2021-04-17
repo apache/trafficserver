@@ -54,7 +54,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
   uint32_t start_host    = 0;
   std::shared_ptr<HostRecord> cur_host;
   HostStatus &pStatus    = HostStatus::instance();
-  HostStatus_t host_stat = HostStatus_t::HOST_STATUS_UP;
+  TSHostStatus host_stat = TSHostStatus::TS_HOST_STATUS_UP;
 
   if (result->line_number != -1 && result->result != PARENT_UNDEFINED) {
     firstcall = false;
@@ -122,12 +122,12 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
   // should be retried
   do {
     HostStatRec *hst = pStatus.getHostStatus(cur_host->hostname.c_str());
-    host_stat        = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
+    host_stat        = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
     // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
     // ignore the down status and mark it as avaialble
-    if (ignore_self_detect && (hst && hst->status == HOST_STATUS_DOWN)) {
+    if (ignore_self_detect && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
       if (hst->reasons == Reason::SELF_DETECT) {
-        host_stat = HOST_STATUS_UP;
+        host_stat = TS_HOST_STATUS_UP;
       }
     }
 
@@ -138,7 +138,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
              request_info.xact_start);
     // check if 'cur_host' is available, mark it up if it is.
     if ((cur_host->failedAt == 0) || (cur_host->failCount < fail_threshold)) {
-      if (host_stat == HOST_STATUS_UP) {
+      if (host_stat == TS_HOST_STATUS_UP) {
         NH_Debug(NH_DEBUG_TAG,
                  "[%" PRIu64
                  "] Selecting a parent, %s,  due to little failCount (faileAt: %d failCount: %d), FailThreshold: %" PRIu64,
@@ -149,7 +149,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
              // available.
       _now == 0 ? _now = time(nullptr) : _now = now;
       if (((result->wrap_around) || (cur_host->failedAt + retry_time) < static_cast<unsigned>(_now)) &&
-          host_stat == HOST_STATUS_UP) {
+          host_stat == TS_HOST_STATUS_UP) {
         // Reuse the parent
         parentUp    = true;
         parentRetry = true;
@@ -163,7 +163,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
              cur_host->hostname.c_str(), HostStatusNames[host_stat]);
 
     // The selected host is available or retryable, return the search result.
-    if (parentUp == true && host_stat != HOST_STATUS_DOWN) {
+    if (parentUp == true && host_stat != TS_HOST_STATUS_DOWN) {
       NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] status for %s: %s", sm_id, cur_host->hostname.c_str(), HostStatusNames[host_stat]);
       result->result      = PARENT_SPECIFIED;
       result->hostname    = cur_host->hostname.c_str();

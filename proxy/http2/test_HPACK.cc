@@ -133,16 +133,14 @@ compare_header_fields(HTTPHdr *a, HTTPHdr *b)
     return -1;
   }
 
-  MIMEFieldIter a_iter, b_iter;
+  auto a_spot = a->begin(), a_limit = a->end();
+  auto b_spot = b->begin(), b_limit = b->end();
 
-  const MIMEField *a_field = a->iter_get_first(&a_iter);
-  const MIMEField *b_field = b->iter_get_first(&b_iter);
-
-  while (a_field != nullptr && b_field != nullptr) {
+  while (a_spot != a_limit && b_spot != b_limit) {
     int a_str_len, b_str_len;
     // compare header name
-    const char *a_str = a_field->name_get(&a_str_len);
-    const char *b_str = b_field->name_get(&b_str_len);
+    const char *a_str = a_spot->name_get(&a_str_len);
+    const char *b_str = b_spot->name_get(&b_str_len);
     if (a_str_len != b_str_len) {
       if (memcmp(a_str, b_str, a_str_len) != 0) {
         print_difference(a_str, a_str_len, b_str, b_str_len);
@@ -150,17 +148,16 @@ compare_header_fields(HTTPHdr *a, HTTPHdr *b)
       }
     }
     // compare header value
-    a_str = a_field->value_get(&a_str_len);
-    b_str = b_field->value_get(&b_str_len);
+    a_str = a_spot->value_get(&a_str_len);
+    b_str = b_spot->value_get(&b_str_len);
     if (a_str_len != b_str_len) {
       if (memcmp(a_str, b_str, a_str_len) != 0) {
         print_difference(a_str, a_str_len, b_str, b_str_len);
         return -1;
       }
     }
-
-    a_field = a->iter_get_next(&a_iter);
-    b_field = b->iter_get_next(&b_iter);
+    ++a_spot;
+    ++b_spot;
   }
 
   return 0;

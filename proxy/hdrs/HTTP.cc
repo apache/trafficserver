@@ -142,18 +142,6 @@ Arena *const HTTPHdr::USE_HDR_HEAP_MAGIC = reinterpret_cast<Arena *>(1);
 
 /***********************************************************************
  *                                                                     *
- *                 U T I L I T Y    R O U T I N E S                    *
- *                                                                     *
- ***********************************************************************/
-
-inline static int
-is_digit(char c)
-{
-  return ((c <= '9') && (c >= '0'));
-}
-
-/***********************************************************************
- *                                                                     *
  *                         M A I N    C O D E                          *
  *                                                                     *
  ***********************************************************************/
@@ -930,7 +918,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
            (end[-2] ^ '\r') | (end[-1] ^ '\n')) != 0) {
         goto slow_case;
       }
-      if (!(is_digit(end[-5]) && is_digit(end[-3]))) {
+      if (!(isdigit(end[-5]) && isdigit(end[-3]))) {
         goto slow_case;
       }
       if (!(ParseRules::is_space(cur[3]) && (!ParseRules::is_space(cur[4])) && (!ParseRules::is_space(end[-12])) &&
@@ -1025,7 +1013,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     }
     version_end = cur + 1;
   parse_version2:
-    if (ParseRules::is_digit(*cur)) {
+    if (isdigit(*cur)) {
       GETPREV(parse_url);
       goto parse_version2;
     }
@@ -1035,7 +1023,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     }
     goto parse_url;
   parse_version3:
-    if (ParseRules::is_digit(*cur)) {
+    if (isdigit(*cur)) {
       GETPREV(parse_url);
       goto parse_version3;
     }
@@ -1271,8 +1259,8 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     if (end - cur >= 16) {
       int http_match =
         ((cur[0] ^ 'H') | (cur[1] ^ 'T') | (cur[2] ^ 'T') | (cur[3] ^ 'P') | (cur[4] ^ '/') | (cur[6] ^ '.') | (cur[8] ^ ' '));
-      if ((http_match != 0) || (!(is_digit(cur[5]) && is_digit(cur[7]) && is_digit(cur[9]) && is_digit(cur[10]) &&
-                                  is_digit(cur[11]) && (!ParseRules::is_space(cur[13]))))) {
+      if ((http_match != 0) || (!(isdigit(cur[5]) && isdigit(cur[7]) && isdigit(cur[9]) && isdigit(cur[10]) && isdigit(cur[11]) &&
+                                  (!ParseRules::is_space(cur[13]))))) {
         goto slow_case;
       }
 
@@ -1330,7 +1318,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     }
     GETNEXT(eoh);
   parse_version2:
-    if (ParseRules::is_digit(*cur)) {
+    if (isdigit(*cur)) {
       GETNEXT(eoh);
       goto parse_version2;
     }
@@ -1340,7 +1328,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     }
     goto eoh;
   parse_version3:
-    if (ParseRules::is_digit(*cur)) {
+    if (isdigit(*cur)) {
       GETNEXT(eoh);
       goto parse_version3;
     }
@@ -1359,7 +1347,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     status_start = cur;
   parse_status2:
     status_end = cur;
-    if (ParseRules::is_digit(*cur)) {
+    if (isdigit(*cur)) {
       GETNEXT(done);
       goto parse_status2;
     }
@@ -1431,7 +1419,7 @@ http_parse_status(const char *start, const char *end)
     start += 1;
   }
 
-  while ((start != end) && ParseRules::is_digit(*start)) {
+  while ((start != end) && isdigit(*start)) {
     status = (status * 10) + (*start++ - '0');
   }
 
@@ -1458,7 +1446,7 @@ http_parse_version(const char *start, const char *end)
     maj = 0;
     min = 0;
 
-    while ((start != end) && ParseRules::is_digit(*start)) {
+    while ((start != end) && isdigit(*start)) {
       maj = (maj * 10) + (*start - '0');
       start += 1;
     }
@@ -1467,7 +1455,7 @@ http_parse_version(const char *start, const char *end)
       start += 1;
     }
 
-    while ((start != end) && ParseRules::is_digit(*start)) {
+    while ((start != end) && isdigit(*start)) {
       min = (min * 10) + (*start - '0');
       start += 1;
     }
@@ -1537,7 +1525,7 @@ http_parse_qvalue(const char *&buf, int &len)
         http_skip_ws(buf, len);
 
         n = 0.0;
-        while (len > 0 && *buf && ParseRules::is_digit(*buf)) {
+        while (len > 0 && *buf && isdigit(*buf)) {
           n = (n * 10) + (*buf++ - '0');
           len -= 1;
         }
@@ -1547,7 +1535,7 @@ http_parse_qvalue(const char *&buf, int &len)
           len -= 1;
 
           f = 10;
-          while (len > 0 && *buf && ParseRules::is_digit(*buf)) {
+          while (len > 0 && *buf && isdigit(*buf)) {
             n += (*buf++ - '0') / static_cast<double>(f);
             f *= 10;
             len -= 1;
@@ -1625,7 +1613,7 @@ HTTPHdr::_fill_target_cache() const
              (m_host_mime = const_cast<HTTPHdr *>(this)->get_host_port_values(nullptr, &m_host_length, &port_ptr, &port_len))) {
     m_port = 0;
     if (port_ptr) {
-      for (; port_len > 0 && is_digit(*port_ptr); ++port_ptr, --port_len) {
+      for (; port_len > 0 && isdigit(*port_ptr); ++port_ptr, --port_len) {
         m_port = m_port * 10 + *port_ptr - '0';
       }
     }

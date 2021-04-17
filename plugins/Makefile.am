@@ -66,6 +66,7 @@ include experimental/custom_redirect/Makefile.inc
 include experimental/fq_pacing/Makefile.inc
 include experimental/geoip_acl/Makefile.inc
 include experimental/header_freq/Makefile.inc
+include experimental/parent_select/Makefile.inc
 include experimental/hook-trace/Makefile.inc
 include experimental/icap/Makefile.inc
 include experimental/inliner/Makefile.inc
@@ -79,6 +80,7 @@ include experimental/memory_profile/Makefile.inc
 include experimental/metalink/Makefile.inc
 include experimental/money_trace/Makefile.inc
 include experimental/mp4/Makefile.inc
+include experimental/rate_limit/Makefile.inc
 include experimental/redo_cache_lookup/Makefile.inc
 include experimental/remap_stats/Makefile.inc
 include experimental/slice/Makefile.inc

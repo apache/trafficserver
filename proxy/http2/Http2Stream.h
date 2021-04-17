@@ -100,7 +100,6 @@ public:
   bool is_active_timeout_expired(ink_hrtime now);
   bool is_inactive_timeout_expired(ink_hrtime now);
 
-  bool allow_half_open() const override;
   bool is_first_transaction() const override;
   void increment_client_transactions_stat() override;
   void decrement_client_transactions_stat() override;
@@ -292,12 +291,6 @@ Http2Stream::payload_length_is_valid() const
 {
   uint32_t content_length = _req_header.get_content_length();
   return content_length == 0 || content_length == data_length;
-}
-
-inline bool
-Http2Stream::allow_half_open() const
-{
-  return false;
 }
 
 inline bool

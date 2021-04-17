@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include "ts/nexthop.h"
+#include "ts/parentselectdefs.h"
 #include "tscore/ink_platform.h"
 
 #include <strings.h>
@@ -35,6 +35,7 @@
 #include <ctime>
 #include "tscore/ParseRules.h"
 #include "tscore/Filenames.h"
+#include "tscore/bwf_std_format.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "logging/Log.h"
@@ -89,21 +90,24 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 
 extern HttpBodyFactory *body_factory;
 
+// Handy typedef for short (single line) message generation.
+using lbw = ts::LocalBufferWriter<256>;
+
 // wrapper to choose between a remap next hop strategy or use parent.config
 // remap next hop strategy is preferred
 inline static bool
 bypass_ok(HttpTransact::State *s)
 {
-  bool r          = false;
   url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
+  if (s->response_action.handled) {
+    return s->response_action.action.goDirect;
+  } else if (mp && mp->strategy) {
     // remap strategies do not support the TSHttpTxnParentProxySet API.
-    r = mp->strategy->go_direct;
+    return mp->strategy->go_direct;
   } else if (s->parent_params) {
-    r = s->parent_result.bypass_ok();
+    return s->parent_result.bypass_ok();
   }
-  return r;
+  return false;
 }
 
 // wrapper to choose between a remap next hop strategy or use parent.config
@@ -150,15 +154,15 @@ numParents(HttpTransact::State *s)
 inline static bool
 parent_is_proxy(HttpTransact::State *s)
 {
-  bool r          = false;
   url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
-    r = mp->strategy->parent_is_proxy;
+  if (s->response_action.handled) {
+    return s->response_action.action.parentIsProxy;
+  } else if (mp && mp->strategy) {
+    return mp->strategy->parent_is_proxy;
   } else if (s->parent_params) {
-    r = s->parent_result.parent_is_proxy();
+    return s->parent_result.parent_is_proxy();
   }
-  return r;
+  return false;
 }
 
 // wrapper to get the parent.config retry type.
@@ -178,12 +182,22 @@ inline static void
 findParent(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
-
-  if (mp && mp->strategy) {
-    return mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
+  if (s->response_action.handled) {
+    s->parent_result.hostname = s->response_action.action.hostname;
+    s->parent_result.port     = s->response_action.action.port;
+    s->parent_result.retry    = s->response_action.action.is_retry;
+    if (!s->response_action.action.fail) {
+      s->parent_result.result = PARENT_SPECIFIED;
+    } else if (s->response_action.action.goDirect) {
+      s->parent_result.result = PARENT_DIRECT;
+    } else {
+      s->parent_result.result = PARENT_FAIL;
+    }
+  } else if (mp && mp->strategy) {
+    mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
-    return s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                        s->txn_conf->parent_retry_time);
+    s->parent_params->findParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                 s->txn_conf->parent_retry_time);
   }
 }
 
@@ -195,11 +209,13 @@ markParentDown(HttpTransact::State *s)
   HTTP_INCREMENT_DYN_STAT(http_total_parent_marked_down_count);
   url_mapping *mp = s->url_map.getMapping();
 
-  if (mp && mp->strategy) {
-    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
-                                     s->parent_result.port, NH_MARK_DOWN);
+  if (s->response_action.handled) {
+    // Do nothing. If a plugin handled the response, let it handle markdown.
+  } else if (mp && mp->strategy) {
+    mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
+                              NH_MARK_DOWN);
   } else if (s->parent_params) {
-    return s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
+    s->parent_params->markParentDown(&s->parent_result, s->txn_conf->parent_fail_threshold, s->txn_conf->parent_retry_time);
   }
 }
 
@@ -209,11 +225,13 @@ inline static void
 markParentUp(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
-  if (mp && mp->strategy) {
-    return mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname,
-                                     s->parent_result.port, NH_MARK_UP);
+  if (s->response_action.handled) {
+    // Do nothing. If a plugin handled the response, let it handle markdown
+  } else if (mp && mp->strategy) {
+    mp->strategy->markNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port,
+                              NH_MARK_UP);
   } else if (s->parent_params) {
-    return s->parent_params->markParentUp(&s->parent_result);
+    s->parent_params->markParentUp(&s->parent_result);
   }
 }
 
@@ -223,12 +241,15 @@ inline static bool
 parentExists(HttpTransact::State *s)
 {
   url_mapping *mp = s->url_map.getMapping();
-  if (mp && mp->strategy) {
+  if (s->response_action.handled) {
+    return s->response_action.action.nextHopExists;
+  } else if (mp && mp->strategy) {
     return mp->strategy->nextHopExists(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
     return s->parent_params->parentExists(&s->request_data);
+  } else {
+    return false;
   }
-  return false;
 }
 
 // wrapper to choose between a remap next hop strategy or use parent.config
@@ -240,12 +261,23 @@ nextParent(HttpTransact::State *s)
            s->state_machine->sm_id, s->parent_result.hostname, HttpDebugNames::get_server_state_name(s->current.state),
            s->request_data.get_host());
   url_mapping *mp = s->url_map.getMapping();
-  if (mp && mp->strategy) {
+  if (s->response_action.handled) {
+    s->parent_result.hostname = s->response_action.action.hostname;
+    s->parent_result.port     = s->response_action.action.port;
+    s->parent_result.retry    = s->response_action.action.is_retry;
+    if (!s->response_action.action.fail) {
+      s->parent_result.result = PARENT_SPECIFIED;
+    } else if (s->response_action.action.goDirect) {
+      s->parent_result.result = PARENT_DIRECT;
+    } else {
+      s->parent_result.result = PARENT_FAIL;
+    }
+  } else if (mp && mp->strategy) {
     // NextHop only has a findNextHop() function.
-    return mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
+    mp->strategy->findNextHop(reinterpret_cast<TSHttpTxn>(s->state_machine));
   } else if (s->parent_params) {
-    return s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
-                                        s->txn_conf->parent_retry_time);
+    s->parent_params->nextParent(&s->request_data, &s->parent_result, s->txn_conf->parent_fail_threshold,
+                                 s->txn_conf->parent_retry_time);
   }
 }
 
@@ -343,7 +375,9 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
   if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response) || s->current.request_to != HttpTransact::PARENT_PROXY) {
     return PARENT_RETRY_NONE;
   }
-
+  if (s->response_action.handled) {
+    return s->response_action.action.responseIsRetryable ? PARENT_RETRY_SIMPLE : PARENT_RETRY_NONE;
+  }
   const url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
     if (mp->strategy->responseIsRetryable(s->current.simple_retry_attempts, response_code)) {
@@ -472,6 +506,7 @@ HttpTransact::is_server_negative_cached(State *s)
     //   down to 2*down_server_timeout
     if (s->client_request_time + s->txn_conf->down_server_timeout < s->host_db_info.app.http_data.last_failure) {
       s->host_db_info.app.http_data.last_failure = 0;
+      s->host_db_info.app.http_data.fail_count   = 0;
       ink_assert(!"extreme clock skew");
       return true;
     }
@@ -1702,6 +1737,13 @@ HttpTransact::HandleApiErrorJump(State *s)
   return;
 }
 
+// PPDNSLookupAPICall does an API callout, then calls PPDNSLookup
+void
+HttpTransact::PPDNSLookupAPICall(State *s)
+{
+  TRANSACT_RETURN(SM_ACTION_API_OS_DNS, PPDNSLookup);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : PPDNSLookup
 // Description: called after DNS lookup of parent proxy name
@@ -1740,10 +1782,15 @@ HttpTransact::PPDNSLookup(State *s)
 
     if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == PARENT_PROXY) {
-        TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+        if (!s->response_action.handled) {
+          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
+        } else {
+          TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
+        }
       } else if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
         // We ran out of parents but parent configuration allows us to go to Origin Server directly
-        return CallOSDNSLookup(s);
+        CallOSDNSLookup(s);
+        return;
       } else {
         // We could be out of parents here if all the parents failed DNS lookup
         ink_assert(s->current.request_to == HOST_NONE);
@@ -1825,10 +1872,14 @@ HttpTransact::ReDNSRoundRobin(State *s)
     s->next_action = how_to_open_connection(s);
   } else {
     // Our ReDNS failed so output the DNS failure error message
-    build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
+    // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
+    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->next_action       = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     //  s->next_action = PROXY_INTERNAL_CACHE_NOOP;
+    char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
+    Log::error("%s",
+               lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
   }
 
   return;
@@ -1889,7 +1940,12 @@ HttpTransact::OSDNSLookup(State *s)
 
       // output the DNS failure error message
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Cannot find server.", "connect#dns_failed");
+      // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
+      build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
+      char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
+      Log::error("%s",
+                 lbw().clip(1).print("DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>")).extend(1).write('\0').data());
+      // s->cache_info.action = CACHE_DO_NO_ACTION;
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
     }
     return;
@@ -2599,7 +2655,7 @@ HttpTransact::CallOSDNSLookup(State *s)
   TxnDebug("http", "[HttpTransact::callos] %s ", s->server_info.name);
   HostStatus &pstatus = HostStatus::instance();
   HostStatRec *hst    = pstatus.getHostStatus(s->server_info.name);
-  if (hst && hst->status == HostStatus_t::HOST_STATUS_DOWN) {
+  if (hst && hst->status == TSHostStatus::TS_HOST_STATUS_DOWN) {
     TxnDebug("http", "[HttpTransact::callos] %d ", s->cache_lookup_result);
     s->current.state = OUTBOUND_CONGESTION;
     if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE || s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING ||
@@ -2931,6 +2987,11 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   } else {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_FRESH);
   }
+
+  HttpCacheSM &cache_sm = s->state_machine->get_cache_sm();
+  TxnDebug("http_trans", "CacheOpenRead --- HIT-FRESH read while write %d", cache_sm.is_readwhilewrite_inprogress());
+  if (cache_sm.is_readwhilewrite_inprogress())
+    SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_RWW_HIT);
 
   if (s->cache_lookup_result == CACHE_LOOKUP_HIT_WARNING) {
     build_response_from_cache(s, HTTP_WARNING_CODE_HERUISTIC_EXPIRATION);
@@ -3703,26 +3764,16 @@ HttpTransact::handle_response_from_server(State *s)
   case OUTBOUND_CONGESTION:
     TxnDebug("http_trans", "[handle_response_from_server] Error. congestion control -- congested.");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    s->current.server->set_connect_fail(EUSERS); // too many users
+    s->set_connect_fail(EUSERS); // too many users
     handle_server_connection_not_open(s);
     break;
   case OPEN_RAW_ERROR:
-  /* fall through */
   case CONNECTION_ERROR:
-  /* fall through */
   case STATE_UNDEFINED:
-  /* fall through */
   case INACTIVE_TIMEOUT:
-  /* fall through */
   case PARSE_ERROR:
-  /* fall through */
   case CONNECTION_CLOSED:
-  /* fall through */
   case BAD_INCOMING_RESPONSE:
-    // Set to generic I/O error if not already set specifically.
-    if (!s->current.server->had_connect_fail()) {
-      s->current.server->set_connect_fail(EIO);
-    }
 
     if (is_server_negative_cached(s)) {
       max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server - 1;
@@ -3770,6 +3821,7 @@ HttpTransact::handle_response_from_server(State *s)
         return;
       }
     } else {
+      error_log_connection_failure(s, s->current.state);
       TxnDebug("http_trans", "[handle_response_from_server] Error. No more retries.");
       SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
       handle_server_connection_not_open(s);
@@ -3778,7 +3830,7 @@ HttpTransact::handle_response_from_server(State *s)
   case ACTIVE_TIMEOUT:
     TxnDebug("http_trans", "[hrfs] connection not alive");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
-    s->current.server->set_connect_fail(ETIMEDOUT);
+    s->set_connect_fail(ETIMEDOUT);
     handle_server_connection_not_open(s);
     break;
   default:
@@ -3819,6 +3871,28 @@ HttpTransact::delete_server_rr_entry(State *s, int max_retries)
   TRANSACT_RETURN(SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN, ReDNSRoundRobin);
 }
 
+void
+HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
+{
+  char addrbuf[INET6_ADDRSTRLEN];
+
+  TxnDebug("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
+           ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+
+  //////////////////////////////////////////
+  // on the first connect attempt failure //
+  // record the failue                   //
+  //////////////////////////////////////////
+  if (0 == s->current.attempts) {
+    char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
+    Log::error("CONNECT: first attempt could not connect [%s] to %s for '%s' connect_result=%d src_port=%d cause_of_death_errno=%d",
+               HttpDebugNames::get_server_state_name(conn_state),
+               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>",
+               s->current.server->connect_result, ntohs(s->current.server->src_addr.port()), s->cause_of_death_errno);
+    s->arena.str_free(url_string);
+  }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : retry_server_connection_not_open
 // Description:
@@ -3837,28 +3911,10 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   ink_assert(s->current.state != CONNECTION_ALIVE);
   ink_assert(s->current.state != ACTIVE_TIMEOUT);
   ink_assert(s->current.attempts <= max_retries);
-  ink_assert(s->current.server->had_connect_fail());
-  char addrbuf[INET6_ADDRSTRLEN];
+  ink_assert(s->cause_of_death_errno != -UNKNOWN_INTERNAL_ERROR);
 
-  char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
+  error_log_connection_failure(s, conn_state);
 
-  TxnDebug("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
-           ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
-
-  //////////////////////////////////////////
-  // on the first connect attempt failure //
-  // record the failue                   //
-  //////////////////////////////////////////
-  if (0 == s->current.attempts) {
-    Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s' connect_result=%d src_port=%d", s->current.attempts,
-               HttpDebugNames::get_server_state_name(conn_state),
-               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>",
-               s->current.server->connect_result, ntohs(s->current.server->src_addr.port()));
-  }
-
-  if (url_string) {
-    s->arena.str_free(url_string);
-  }
   //////////////////////////////////////////////
   // disable keep-alive for request and retry //
   //////////////////////////////////////////////
@@ -4951,17 +5007,14 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
 void
 HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, HTTPHdr *response_header)
 {
-  MIMEField *field;
   MIMEField *new_field;
-  MIMEFieldIter fiter;
   const char *name;
   bool dups_seen = false;
 
-  field = response_header->iter_get_first(&fiter);
-
-  for (; field != nullptr; field = response_header->iter_get_next(&fiter)) {
+  for (auto spot = response_header->begin(), limit = response_header->end(); spot != limit; ++spot) {
+    MIMEField &field{*spot};
     int name_len;
-    name = field->name_get(&name_len);
+    name = field.name_get(&name_len);
 
     ///////////////////////////
     // is hop-by-hop header? //
@@ -5011,31 +5064,20 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     //   the remaining fields one by one from the
     //   response header
     //
-    if (field->m_next_dup) {
+    if (field.m_next_dup) {
       if (dups_seen == false) {
-        MIMEField *dfield;
         // use a second iterator to delete the
         // remaining response headers in the cached response,
         // so that they will be added in the next iterations.
-        MIMEFieldIter fiter2 = fiter;
-        const char *dname    = name;
-        int dlen             = name_len;
-
-        while (dname) {
-          cached_header->field_delete(dname, dlen);
-          dfield = response_header->iter_get_next(&fiter2);
-          if (dfield) {
-            dname = dfield->name_get(&dlen);
-          } else {
-            dname = nullptr;
-          }
+        for (auto spot2 = spot; spot2 != limit; ++spot2) {
+          cached_header->field_delete(&*spot2, true);
         }
         dups_seen = true;
       }
     }
 
     int value_len;
-    const char *value = field->value_get(&value_len);
+    const char *value = field.value_get(&value_len);
 
     if (dups_seen == false) {
       cached_header->value_set(name, name_len, value, value_len);
@@ -8287,6 +8329,11 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL;
     break;
 
+  case SQUID_LOG_TCP_CF_HIT:
+    HTTP_INCREMENT_DYN_STAT(http_cache_hit_rww_stat);
+    client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
+    break;
+
   case SQUID_LOG_TCP_MEM_HIT:
     HTTP_INCREMENT_DYN_STAT(http_cache_hit_mem_fresh_stat);
     // fallthrough
@@ -8632,6 +8679,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   switch (s->squid_codes.log_code) {
   case SQUID_LOG_TCP_HIT:
   case SQUID_LOG_TCP_MEM_HIT:
+  case SQUID_LOG_TCP_CF_HIT:
     // It's possible to have two stat's instead of one, if needed.
     HTTP_INCREMENT_DYN_STAT(http_tcp_hit_count_stat);
     HTTP_SUM_DYN_STAT(http_tcp_hit_user_agent_bytes_stat, user_agent_bytes);

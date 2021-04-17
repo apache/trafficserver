@@ -71,7 +71,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 50ms
+      delay: 100ms
 
     # 404 responses should be cached when negative caching is enabled, so this
     # should not get to the server.  But if it does, return a 200 so the test
@@ -119,7 +119,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 50ms
+      delay: 100ms
 
     # 400 responses should not be cached. Verify this goes to the server
     # by returning and expecting a 200 response.
@@ -159,7 +159,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 50ms
+      delay: 100ms
 
     # This should not go to the server, but if it does return a 400 so we catch
     # it.
@@ -211,7 +211,7 @@ sessions:
 
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
-      delay: 50ms
+      delay: 100ms
 
     # 405 responses should not be cached. Verify this goes to the server
     # by returning and expecting a 200 response.

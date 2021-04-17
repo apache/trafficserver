@@ -26,7 +26,7 @@
  *
  */
 
-#if !defined(darwin)
+#if !(defined(darwin) && defined(__aarch64__))
 #define TS_INLINE
 #include "P_Net.h"
 #endif

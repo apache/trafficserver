@@ -97,12 +97,6 @@ HQTransaction::release(IOBufferReader *r)
   this->_sm = nullptr;
 }
 
-bool
-HQTransaction::allow_half_open() const
-{
-  return false;
-}
-
 VIO *
 HQTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
