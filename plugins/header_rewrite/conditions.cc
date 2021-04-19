@@ -15,10 +15,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 // conditions.cc: Implementation of the condition classes
 //
 //
+
 #include <sys/time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -740,155 +742,11 @@ ConditionNow::eval(const Resources &res)
   return static_cast<const MatcherType *>(_matcher)->test(now);
 }
 
-// ConditionGeo: Geo-based information (integer). See ConditionGeoCountry for the string version.
-#if HAVE_GEOIP_H
-const char *
-ConditionGeo::get_geo_string(const sockaddr *addr) const
-{
-  const char *ret = "(unknown)";
-  int v           = 4;
-
-  if (addr) {
-    switch (_geo_qual) {
-    // Country database
-    case GEO_QUAL_COUNTRY:
-      switch (addr->sa_family) {
-      case AF_INET:
-        if (gGeoIP[GEOIP_COUNTRY_EDITION]) {
-          uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
-
-          ret = GeoIP_country_code_by_ipnum(gGeoIP[GEOIP_COUNTRY_EDITION], ip);
-        }
-        break;
-      case AF_INET6: {
-        if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
-          geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
-
-          v   = 6;
-          ret = GeoIP_country_code_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
-        }
-      } break;
-      default:
-        break;
-      }
-      TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from Country: %s", v, ret);
-      break;
-
-    // ASN database
-    case GEO_QUAL_ASN_NAME:
-      switch (addr->sa_family) {
-      case AF_INET:
-        if (gGeoIP[GEOIP_ASNUM_EDITION]) {
-          uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
-
-          ret = GeoIP_name_by_ipnum(gGeoIP[GEOIP_ASNUM_EDITION], ip);
-        }
-        break;
-      case AF_INET6: {
-        if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
-          geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
-
-          v   = 6;
-          ret = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
-        }
-      } break;
-      default:
-        break;
-      }
-      TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ASN Name: %s", v, ret);
-      break;
-
-    default:
-      break;
-    }
-  }
-
-  return ret ? ret : "(unknown)";
-}
-
-int64_t
-ConditionGeo::get_geo_int(const sockaddr *addr) const
-{
-  int64_t ret = -1;
-  int v       = 4;
-
-  if (!addr) {
-    return 0;
-  }
-
-  switch (_geo_qual) {
-  // Country Database
-  case GEO_QUAL_COUNTRY_ISO:
-    switch (addr->sa_family) {
-    case AF_INET:
-      if (gGeoIP[GEOIP_COUNTRY_EDITION]) {
-        uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
-
-        ret = GeoIP_id_by_ipnum(gGeoIP[GEOIP_COUNTRY_EDITION], ip);
-      }
-      break;
-    case AF_INET6: {
-      if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
-        geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
-
-        v   = 6;
-        ret = GeoIP_id_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
-      }
-    } break;
-    default:
-      break;
-    }
-    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from Country ISO: %" PRId64, v, ret);
-    break;
-
-  case GEO_QUAL_ASN: {
-    const char *asn_name = nullptr;
-
-    switch (addr->sa_family) {
-    case AF_INET:
-      if (gGeoIP[GEOIP_ASNUM_EDITION]) {
-        uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
-
-        asn_name = GeoIP_name_by_ipnum(gGeoIP[GEOIP_ASNUM_EDITION], ip);
-      }
-      break;
-    case AF_INET6:
-      if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
-        geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
-
-        v        = 6;
-        asn_name = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
-      }
-      break;
-    }
-    if (asn_name) {
-      // This is a little odd, but the strings returned are e.g. "AS1234 Acme Inc"
-      while (*asn_name && !(isdigit(*asn_name))) {
-        ++asn_name;
-      }
-      ret = strtol(asn_name, nullptr, 10);
-    }
-  }
-    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ASN #: %" PRId64, v, ret);
-    break;
-
-  // Likely shouldn't trip, should we assert?
-  default:
-    break;
-  }
-
-  return ret;
-}
-
-#else
-
-// No Geo library available, these are just stubs.
-
-const char *
+std::string
 ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
-  return nullptr;
+  return "";
 }
 
 int64_t
@@ -897,8 +755,6 @@ ConditionGeo::get_geo_int(const sockaddr *addr) const
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return 0;
 }
-
-#endif
 
 void
 ConditionGeo::initialize(Parser &p)
