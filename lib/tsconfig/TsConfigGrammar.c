@@ -71,6 +71,7 @@
 
 # include "TsConfigParseEvents.h"
 # include "tscore/ink_defs.h"
+# include "TsConfigGrammar.h"
 
 // Types we need for the lexer.
 typedef void* yyscan_t;
@@ -145,50 +146,6 @@ extern int tsconfigdebug;
  */
 
 #line 148 "TsConfigGrammar.c" /* yacc.c:355  */
-
-/* Token type.  */
-#ifndef YYTOKENTYPE
-# define YYTOKENTYPE
-  enum yytokentype
-  {
-    STRING = 258,
-    IDENT = 259,
-    INTEGER = 260,
-    LIST_OPEN = 261,
-    LIST_CLOSE = 262,
-    GROUP_OPEN = 263,
-    GROUP_CLOSE = 264,
-    PATH_OPEN = 265,
-    PATH_CLOSE = 266,
-    PATH_SEPARATOR = 267,
-    SEPARATOR = 268,
-    ASSIGN = 269
-  };
-#endif
-/* Tokens.  */
-#define STRING 258
-#define IDENT 259
-#define INTEGER 260
-#define LIST_OPEN 261
-#define LIST_CLOSE 262
-#define GROUP_OPEN 263
-#define GROUP_CLOSE 264
-#define PATH_OPEN 265
-#define PATH_CLOSE 266
-#define PATH_SEPARATOR 267
-#define SEPARATOR 268
-#define ASSIGN 269
-
-/* Value type.  */
-#if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
-# define YYSTYPE_IS_TRIVIAL 1
-# define YYSTYPE_IS_DECLARED 1
-#endif
-
-
-
-int tsconfigparse (yyscan_t lexer, struct TsConfigHandlers* handlers);
 
 #endif /* !YY_TSCONFIG_TSCONFIGGRAMMAR_H_INCLUDED  */
 
