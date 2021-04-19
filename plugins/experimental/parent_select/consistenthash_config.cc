@@ -108,9 +108,8 @@ createStrategiesFromFile(const char *file)
 
     // std::map<std::string, TSNextHopSelectionStrategy*, std::less<>>
     strategies_map strategiesMap;
-    for (auto &&strategie : strategies) {
-      YAML::Node strategy = strategie;
-      auto name           = strategy["strategy"].as<std::string>();
+    for (auto &&strategy : strategies) {
+      auto name = strategy["strategy"].as<std::string>();
       TSDebug(PLUGIN_NAME, "createStrategiesFromFile filename %s got strategy %s.", basename, name.c_str());
       auto policy = strategy["policy"];
       if (!policy) {
