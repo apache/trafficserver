@@ -39,7 +39,9 @@ include esi/Makefile.inc
 include generator/Makefile.inc
 include compress/Makefile.inc
 include header_rewrite/Makefile.inc
+if BUILD_HEALTHCHECK_PLUGIN
 include healthchecks/Makefile.inc
+endif
 include libloader/Makefile.inc
 if HAS_LUAJIT
 include lua/Makefile.inc
@@ -71,7 +73,7 @@ include experimental/hook-trace/Makefile.inc
 include experimental/icap/Makefile.inc
 include experimental/inliner/Makefile.inc
 
-if BUILD_MAXMIND_ACL_PLUGIN
+if HAS_MAXMINDDB
 include experimental/maxmind_acl/Makefile.inc
 endif
 
