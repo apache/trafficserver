@@ -820,8 +820,7 @@ AS_IF([test -n "$LEX"],
 
 # Generated files checked in, only build them if the local OS has the necessary support.
 # Otherwise just use the checked in version.
-#AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], [ test -n "$LEX" && test -n "$YACC" ])
-AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], false)
+AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], [ test -n "$LEX" && test -n "$YACC" ])
 
 # Check for Perl and Doxygen
 AC_PATH_PROG([DOXYGEN], [doxygen]) # needed for Doxygen
@@ -925,6 +924,9 @@ case $host_os_def in
     AS_IF([test -d /usr/local/lib], [
       TS_ADDTO(AM_LDFLAGS, [-L/usr/local/lib])
     ])
+
+    # NOTE: Force grammar to false on BSD, it has lex/yacc but not supported versions
+    AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], false)
 
     ;; # freebsd|kfreebsd)
 
