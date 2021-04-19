@@ -3913,8 +3913,6 @@ HTTP/2 Configuration
    The value of ``0`` specifies that there is no timeout.
 
 .. ts:cv:: CONFIG proxy.config.http2.accept_no_activity_timeout INT 120
-   :reloadable:
-   :overridable:
 
    Specifies how long |TS| keeps connections to clients open if no
    activity is received on the connection. Lowering this timeout can ease
@@ -3922,8 +3920,6 @@ HTTP/2 Configuration
    a large number of connections without submitting requests.
 
 .. ts:cv:: CONFIG proxy.config.http2.no_activity_timeout_in INT 120
-   :reloadable:
-   :overridable:
 
    Specifies how long |TS| keeps connections to clients open if a
    transaction stalls. Lowering this timeout can ease pressure on the proxy if
