@@ -216,7 +216,7 @@ RefCountCacheSerializer<C>::pause_event(int /* event */, Event *e)
 {
   // Schedule up the next partition
   if (partition < cache->partition_count()) {
-    mutex = cache->get_partition(partition).lock.get();
+    mutex = new_ProxyMutex();
   } else {
     mutex = cont->mutex;
   }
