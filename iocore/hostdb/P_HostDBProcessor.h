@@ -153,6 +153,8 @@ extern RecRawStatBlock *hostdb_rsb;
 
 #define HOSTDB_INCREMENT_DYN_STAT(_x) RecIncrRawStatSum(hostdb_rsb, mutex->thread_holding, (int)_x, 1)
 
+#define HOSTDB_INCREMENT_DYN_STAT_THREAD(_x, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_x, 1)
+
 #define HOSTDB_DECREMENT_DYN_STAT(_x) RecIncrRawStatSum(hostdb_rsb, mutex->thread_holding, (int)_x, -1)
 
 #define HOSTDB_SUM_DYN_STAT(_x, _r) RecIncrRawStatSum(hostdb_rsb, mutex->thread_holding, (int)_x, _r)
@@ -201,6 +203,7 @@ struct HostDBCache {
   Queue<HostDBContinuation, Continuation::Link_link> *remoteHostDBQueue = nullptr;
   HostDBCache();
   bool is_pending_dns_for_hash(const CryptoHash &hash);
+  bool remove_from_pending_dns_for_hash(const CryptoHash &hash, HostDBContinuation *c);
 };
 
 inline int

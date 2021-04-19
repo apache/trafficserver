@@ -30,6 +30,7 @@
 
 #include "tscore/List.h"
 #include "tscore/ink_hrtime.h"
+#include "tscore/ink_rwlock.h"
 
 #include "tscore/I_Version.h"
 #include <unistd.h>
@@ -169,7 +170,7 @@ public:
 
   hash_type &get_map();
 
-  Ptr<ProxyMutex> lock; // Lock
+  ink_rwlock lock = INK_RWLOCK_INIT_NO_WRITER_STARVATION;
 
 private:
   void metric_inc(RefCountCache_Stats metric_enum, int64_t data);
@@ -189,7 +190,7 @@ private:
 template <class C>
 RefCountCachePartition<C>::RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items,
                                                   RecRawStatBlock *rsb)
-  : lock(new_ProxyMutex()), part_num(part_num), max_size(max_size), max_items(max_items), size(0), items(0), rsb(rsb)
+  : part_num(part_num), max_size(max_size), max_items(max_items), size(0), items(0), rsb(rsb)
 {
 }
 
@@ -408,7 +409,7 @@ public:
 
   // Some methods to get some internal state
   int partition_for_key(uint64_t key);
-  Ptr<ProxyMutex> lock_for_key(uint64_t key);
+  ink_rwlock *lock_for_key(uint64_t key);
   size_t partition_count() const;
   RefCountCachePartition<C> &get_partition(int pnum);
   size_t count() const;
@@ -510,10 +511,10 @@ RefCountCache<C>::get_header()
 }
 
 template <class C>
-Ptr<ProxyMutex>
+ink_rwlock *
 RefCountCache<C>::lock_for_key(uint64_t key)
 {
-  return this->partitions[this->partition_for_key(key)]->lock;
+  return &this->partitions[this->partition_for_key(key)]->lock;
 }
 
 template <class C>
