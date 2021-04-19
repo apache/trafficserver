@@ -820,7 +820,8 @@ AS_IF([test -n "$LEX"],
 
 # Generated files checked in, only build them if the local OS has the necessary support.
 # Otherwise just use the checked in version.
-AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], [ test -n "$LEX" && test -n "$YACC" ])
+#AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], [ test -n "$LEX" && test -n "$YACC" ])
+AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], false)
 
 # Check for Perl and Doxygen
 AC_PATH_PROG([DOXYGEN], [doxygen]) # needed for Doxygen
