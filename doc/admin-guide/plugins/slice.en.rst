@@ -67,7 +67,7 @@ The slice plugin supports the following options::
         Default is 1m or 1048576 bytes
         -b <bytes> for short.
         Suffix k,m,g supported
-        Limited to 32k and 32m inclusive.
+        Limited to 32k and 128m inclusive.
 
     --blockbytes-test=<bytes> (optional)
         Suffix k,m,g supported

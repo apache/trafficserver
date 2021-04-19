@@ -26,6 +26,7 @@
 #include "catch.hpp" /* catch unit-test framework */
 
 #include <array>
+#include <getopt.h>
 
 TEST_CASE("config default", "[AWS][slice][utility]")
 {
@@ -81,6 +82,68 @@ TEST_CASE("config bytesfrom invalid parsing", "[AWS][slice][utility]")
     CHECK(0 == val);
     if (0 != val) {
       INFO(badstr.c_str());
+    }
+  }
+}
+
+TEST_CASE("config fromargs validate sizes", "[AWS][slice][utility]")
+{
+  char const *const appname = "slice.so";
+  int64_t blockBytesMax = 128 * 1024 * 1024, blockBytesMin = 256 * 1024;
+
+  CHECK(blockBytesMax == Config::blockbytesmax);
+  CHECK(blockBytesMin == Config::blockbytesmin);
+
+  std::vector<std::string> const argkws                 = {"-b ", "--blockbytes=", "blockbytes:"};
+  std::vector<std::pair<std::string, bool>> const tests = {{"4m", true},
+                                                           {"1", false},
+                                                           {"32m", true},
+                                                           {"64m", true},
+                                                           {"256k", true},
+                                                           {"128m", true},
+                                                           {"10m", true},
+                                                           {std::to_string(blockBytesMax), true},
+                                                           {std::to_string(blockBytesMax + 1), false},
+                                                           {std::to_string(blockBytesMax - 1), true},
+                                                           {std::to_string(blockBytesMin), true},
+                                                           {std::to_string(blockBytesMin + 1), true},
+                                                           {std::to_string(blockBytesMin - 1), false}};
+
+  for (std::string const &kw : argkws) { // test each argument keyword with each test pair
+    for (std::pair<std::string, bool> const &test : tests) {
+      // getopt uses global variables; ensure the index is reset each iteration
+      optind = 0;
+
+      // set up args
+      std::vector<char *> argv;
+      std::string arg = kw + test.first;
+      argv.push_back((char *)appname);
+      argv.push_back((char *)arg.c_str());
+
+      // configure slice
+      Config *const config = new Config;
+      config->fromArgs(argv.size(), argv.data());
+
+      // validate that the configured m_blockbytes are what we expect
+      CHECK(test.second == (config->m_blockbytes != config->blockbytesdefault));
+
+      // failed; print additional info
+      if (test.second != (config->m_blockbytes != config->blockbytesdefault)) {
+        INFO(test.first.c_str());
+        INFO(config->m_blockbytes);
+      }
+
+      // validate that the result of bytesFrom aligns with the current value of config->m_blockbytes as expected
+      int64_t const blockbytes = config->bytesFrom(test.first.c_str());
+      CHECK(test.second == (config->m_blockbytes == blockbytes));
+
+      // failed; print additional info
+      if (test.second != (config->m_blockbytes == blockbytes)) {
+        INFO(blockbytes);
+        INFO(config->m_blockbytes);
+      }
+
+      delete config;
     }
   }
 }
