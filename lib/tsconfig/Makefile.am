@@ -50,9 +50,9 @@ libtsconfig_la_SOURCES = \
 	TsValue.h
 
 # Depend on the original grammar files only if we can build them.
-#if BUILD_TSCONFIG_GRAMMAR
-#libtsconfig_la_SOURCES += TsConfigGrammar.y TsConfigSyntax.l
-#else
+if BUILD_TSCONFIG_GRAMMAR
+libtsconfig_la_SOURCES += TsConfigGrammar.y TsConfigSyntax.l
+else
 libtsconfig_la_SOURCES += TsConfigGrammar.c TsConfigGrammar.h TsConfigSyntax.c
 
 # Prevent automatic rules from firing if invalid.
