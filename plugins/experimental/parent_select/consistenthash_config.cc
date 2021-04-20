@@ -44,7 +44,7 @@
 
 #include "consistenthash_config.h"
 
-void loadConfigFile(const std::string fileName, std::stringstream &doc, std::unordered_set<std::string> &include_once);
+void loadConfigFile(const std::string &fileName, std::stringstream &doc, std::unordered_set<std::string> &include_once);
 
 // createStrategy creates and initializes a Consistent Hash strategy from the given YAML node.
 // Caller takes ownership of the returned pointer, and must call delete on it.
@@ -108,9 +108,8 @@ createStrategiesFromFile(const char *file)
 
     // std::map<std::string, TSNextHopSelectionStrategy*, std::less<>>
     strategies_map strategiesMap;
-    for (unsigned int i = 0; i < strategies.size(); ++i) {
-      YAML::Node strategy = strategies[i];
-      auto name           = strategy["strategy"].as<std::string>();
+    for (auto &&strategy : strategies) {
+      auto name = strategy["strategy"].as<std::string>();
       TSDebug(PLUGIN_NAME, "createStrategiesFromFile filename %s got strategy %s.", basename, name.c_str());
       auto policy = strategy["policy"];
       if (!policy) {
@@ -118,7 +117,7 @@ createStrategiesFromFile(const char *file)
         return strategies_map();
       }
       TSDebug(PLUGIN_NAME, "createStrategiesFromFile filename %s got strategy %s checked policy.", basename, name.c_str());
-      auto policy_value = policy.Scalar();
+      const auto &policy_value = policy.Scalar();
       if (policy_value != consistent_hash) {
         TSError("[%s] strategy named '%s' has unsupported policy '%s'.", PLUGIN_NAME, name.c_str(), policy_value.c_str());
         return strategies_map();
@@ -149,7 +148,7 @@ createStrategiesFromFile(const char *file)
  * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's begining.
  */
 void
-loadConfigFile(const std::string fileName, std::stringstream &doc, std::unordered_set<std::string> &include_once)
+loadConfigFile(const std::string &fileName, std::stringstream &doc, std::unordered_set<std::string> &include_once)
 {
   const char *sep = " \t";
   char *tok, *last;
@@ -187,8 +186,8 @@ loadConfigFile(const std::string fileName, std::stringstream &doc, std::unordere
       std::sort(files.begin(), files.end(),
                 [](const std::string_view lhs, const std::string_view rhs) { return lhs.compare(rhs) < 0; });
 
-      for (uint32_t i = 0; i < files.size(); i++) {
-        std::ifstream file(fileName + "/" + files[i].data());
+      for (auto &f : files) {
+        std::ifstream file(fileName + "/" + f.data());
         if (file.is_open()) {
           while (std::getline(file, line)) {
             if (line[0] == '#') {
@@ -198,7 +197,7 @@ loadConfigFile(const std::string fileName, std::stringstream &doc, std::unordere
           }
           file.close();
         } else {
-          throw std::invalid_argument("Unable to open and read '" + fileName + "/" + files[i].data() + "'");
+          throw std::invalid_argument("Unable to open and read '" + fileName + "/" + f.data() + "'");
         }
       }
     }

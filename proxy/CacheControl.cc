@@ -59,7 +59,7 @@ static const char *CC_directive_str[CC_NUM_TYPES] = {
   // "CACHE_AUTH_CONTENT"
 };
 
-typedef ControlMatcher<CacheControlRecord, CacheControlResult> CC_table;
+using CC_table = ControlMatcher<CacheControlRecord, CacheControlResult>;
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;

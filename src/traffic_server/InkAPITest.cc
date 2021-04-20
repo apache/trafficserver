@@ -3380,7 +3380,7 @@ checkHttpTxnServerRespGet(SocketTest *test, void *data)
 static int
 checkHttpTxnServerSsnTransactionCount(SocketTest *test, void *data)
 {
-  TSHttpTxn txnp = (TSHttpTxn)data;
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
 
   int count = TSHttpTxnServerSsnTransactionCount(txnp);
   if (count < 0) {

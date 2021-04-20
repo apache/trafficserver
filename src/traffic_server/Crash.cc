@@ -158,7 +158,7 @@ crash_logger_invoke(int signo, siginfo_t *info, void *ctx)
     // ucontext_t can contain pointers, so it's highly platform dependent. On Linux with glibc, however, it is
     // a single memory block that we can just puke out.
     ATS_UNUSED_RETURN(write(crash_logger_fd, info, sizeof(siginfo_t)));
-    ATS_UNUSED_RETURN(write(crash_logger_fd, (ucontext_t *)ctx, sizeof(ucontext_t)));
+    ATS_UNUSED_RETURN(write(crash_logger_fd, static_cast<ucontext_t *>(ctx), sizeof(ucontext_t)));
 #endif
 
     close(crash_logger_fd);

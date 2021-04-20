@@ -115,7 +115,7 @@ main()
   {
     cout << endl << "==================== Test 6: Invalid Quoted URL test " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string input_data = "<esi:include src=abc\"\"de\"f />";
+    string input_data = R"(<esi:include src=abc""de"f />)";
 
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == false);

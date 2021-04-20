@@ -55,7 +55,7 @@ static const std::array<const std::string_view, 6> FILTER_HEADERS{
 // Hold the global background fetch state. This is currently shared across all
 // configurations, as a singleton. ToDo: Would it ever make sense to do this
 // per remap rule? Maybe for per-remap logging ??
-typedef std::unordered_map<std::string, bool> OutstandingRequests;
+using OutstandingRequests = std::unordered_map<std::string, bool>;
 
 class BgFetchState
 {
