@@ -546,7 +546,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   // If the key renegotiation failed it's over, just signal the error and finish.
   if (sslClientRenegotiationAbort == true) {
     this->read.triggered = 0;
-    readSignalError(nh, (errno) ? errno : -ENET_SSL_FAILED);
+    readSignalError(nh, -ENET_SSL_FAILED);
     Debug("ssl", "client renegotiation setting read signal error");
     return;
   }
@@ -621,7 +621,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
           Debug("ssl", "ssl handshake for vc %p, expired, release the connection", this);
           read.triggered = 0;
           nh->read_ready_list.remove(this);
-          readSignalError(nh, EPIPE);
+          readSignalError(nh, ETIMEDOUT);
           return;
         }
       }
