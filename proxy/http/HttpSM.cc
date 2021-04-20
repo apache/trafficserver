@@ -4867,6 +4867,13 @@ HttpSM::get_outbound_sni() const
   using namespace ts::literals;
   ts::TextView zret;
   ts::TextView policy{t_state.txn_conf->ssl_client_sni_policy, ts::TextView::npos};
+
+  if (ua_txn) {
+    if (const NetVConnection *netvc = ua_txn->get_netvc(); netvc->options.outbound_sni_policy) {
+      policy.assign(netvc->options.outbound_sni_policy.get(), ts::TextView::npos);
+    }
+  }
+
   if (policy.empty() || !strcmp(policy, "host"_tv)) {
     // By default the host header field value is used for the SNI.
     int len;
