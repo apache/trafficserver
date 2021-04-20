@@ -814,6 +814,10 @@ HttpTransact::BadRequest(State *s)
     status                = s->http_return_code;
     reason                = "URI Too Long";
     break;
+  case HTTP_STATUS_NOT_IMPLEMENTED:
+    status                = s->http_return_code;
+    reason                = "Field not implemented";
+    body_factory_template = "transcoding#unsupported";
   default:
     break;
   }

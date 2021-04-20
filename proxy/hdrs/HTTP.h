@@ -636,6 +636,8 @@ public:
                         size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = UINT16_MAX);
   ParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
 
+  bool check_hdr_implements();
+
 public:
   // Utility routines
   bool is_cache_control_set(const char *cc_directive_wks);
