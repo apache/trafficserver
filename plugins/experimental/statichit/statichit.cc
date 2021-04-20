@@ -563,6 +563,12 @@ TSRemapInit(TSRemapInterface * /* api_info */, char * /* errbuf */, int /* errbu
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
+  const TSHttpStatus txnstat = TSHttpTxnStatusGet(rh);
+  if (txnstat != TS_HTTP_STATUS_NONE && txnstat != TS_HTTP_STATUS_OK) {
+    VDEBUG("transaction status_code=%d already set; skipping processing", static_cast<int>(txnstat));
+    return TSREMAP_NO_REMAP;
+  }
+
   StaticHitConfig *cfg = static_cast<StaticHitConfig *>(ih);
 
   if (!cfg) {
