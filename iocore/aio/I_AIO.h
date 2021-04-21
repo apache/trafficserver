@@ -67,7 +67,7 @@ typedef struct io_event ink_io_event_t;
 #else
 
 struct ink_aiocb {
-  int aio_fildes    = 0;
+  int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
   void *aio_buf     = nullptr; /* buffer location */
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t aio_offset  = 0;       /* file offset */
