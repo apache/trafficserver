@@ -426,6 +426,10 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
+  if (geoDBPath.find("/") != 0) {
+    geoDBPath = std::string(TSConfigDirGet()) + '/' + geoDBPath;
+  }
+
   std::call_once(initGeoLibs, [&geoDBPath]() { initGeoLib(geoDBPath); });
 
   RulesConfig *conf = new RulesConfig;
