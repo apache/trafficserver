@@ -16,11 +16,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import pop
-import util
 import os
 import sys
-sys.path += [Test.TestDirectory]  # allows importing other modules, autopep8 moves to after imports, which breaks util and pop
+
+sys.path.append(Test.TestDirectory)  # allows importing other modules
+
+import util
+import pop
 
 Test.Summary = '''
 Basic Parent selection test.
