@@ -39,9 +39,17 @@ constexpr const char *policy_strings[] = {"NH_UNDEFINED", "NH_FIRST_LIVE", "NH_R
 
 NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &policy)
 {
-  strategy_name = name;
-  policy_type   = policy;
-  NH_Debug(NH_DEBUG_TAG, "Using a selection strategy of type %s", policy_strings[policy]);
+  int _max_retriers = 0;
+  strategy_name     = name;
+  policy_type       = policy;
+  REC_ReadConfigInteger(_max_retriers, "proxy.config.http.parent_proxy.max_trans_retries");
+
+  // config settings may not be available when running unit tests.
+  // so use the max_retriers default setting.
+  if (_max_retriers > 0) {
+    max_retriers = _max_retriers;
+  }
+  NH_Debug(NH_DEBUG_TAG, "Using a selection strategy of type %s, max_retriers: %d", policy_strings[policy], max_retriers);
 }
 
 //
@@ -210,7 +218,7 @@ NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp, void *ih)
   for (uint32_t gg = 0; gg < groups; gg++) {
     for (auto &hh : host_groups[gg]) {
       HostRecord *p = hh.get();
-      if (p->available) {
+      if (p->available.load()) {
         NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] found available next hop %s", sm_id, p->hostname.c_str());
         return true;
       }

@@ -134,15 +134,15 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     NH_Debug(NH_DEBUG_TAG,
              "[%" PRIu64 "] Selected a parent, %s,  failCount (faileAt: %d failCount: %d), FailThreshold: %" PRIu64
              ", request_info->xact_start: %ld",
-             sm_id, cur_host->hostname.c_str(), (unsigned)cur_host->failedAt, cur_host->failCount, fail_threshold,
+             sm_id, cur_host->hostname.c_str(), (unsigned)cur_host->failedAt, cur_host->failCount.load(), fail_threshold,
              request_info.xact_start);
     // check if 'cur_host' is available, mark it up if it is.
-    if ((cur_host->failedAt == 0) || (cur_host->failCount < fail_threshold)) {
-      if (host_stat == TS_HOST_STATUS_UP) {
+    if ((cur_host->failedAt == 0) || (cur_host->failCount.load() < fail_threshold)) {
+      if (cur_host->available.load() && host_stat == TS_HOST_STATUS_UP) {
         NH_Debug(NH_DEBUG_TAG,
                  "[%" PRIu64
                  "] Selecting a parent, %s,  due to little failCount (faileAt: %d failCount: %d), FailThreshold: %" PRIu64,
-                 sm_id, cur_host->hostname.c_str(), (unsigned)cur_host->failedAt, cur_host->failCount, fail_threshold);
+                 sm_id, cur_host->hostname.c_str(), (unsigned)cur_host->failedAt, cur_host->failCount.load(), fail_threshold);
         parentUp = true;
       }
     } else { // if not available, check to see if it can be retried.  If so, set the retry flag and temporairly mark it as
@@ -150,11 +150,16 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       _now == 0 ? _now = time(nullptr) : _now = now;
       if (((result->wrap_around) || (cur_host->failedAt + retry_time) < static_cast<unsigned>(_now)) &&
           host_stat == TS_HOST_STATUS_UP) {
-        // Reuse the parent
-        parentUp    = true;
-        parentRetry = true;
-        NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "]  NextHop marked for retry %s:%d", sm_id, cur_host->hostname.c_str(),
-                 host_groups[cur_grp_index][cur_hst_index]->getPort(scheme));
+        if (cur_host->retriers.fetch_add(1, std::memory_order_relaxed) < max_retriers) {
+          // Reuse the parent
+          parentUp    = true;
+          parentRetry = true;
+          NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "]  NextHop marked for retry %s:%d, max_retriers: %d, retriers: %d", sm_id,
+                   cur_host->hostname.c_str(), host_groups[cur_grp_index][cur_hst_index]->getPort(scheme), max_retriers,
+                   cur_host->retriers.load());
+        } else {
+          cur_host->retriers--;
+        }
       } else { // not retryable or available.
         parentUp = false;
       }

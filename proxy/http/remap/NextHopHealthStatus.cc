@@ -57,7 +57,7 @@ NextHopHealthStatus::isNextHopAvailable(TSHttpTxn txn, const char *hostname, con
   }
 
   std::shared_ptr p = iter->second;
-  return p->available;
+  return p->available.load();
 }
 
 /**
@@ -103,17 +103,17 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
   switch (status) {
   // Mark the host up.
   case NH_MARK_UP:
-    if (!h->available) {
+    if (!h->available.load()) {
       h->set_available();
       NH_Note("[%" PRId64 "] http parent proxy %s restored", sm_id, hostname);
     }
     break;
   // Mark the host down.
   case NH_MARK_DOWN:
-    if (h->failedAt == 0 || result.retry == true) {
+    if (h->failedAt.load() == 0 || result.retry == true) {
       { // lock guard
         std::lock_guard<std::mutex> guard(h->_mutex);
-        if (h->failedAt == 0) {
+        if (h->failedAt.load() == 0) {
           h->failedAt = _now;
           if (result.retry == false) {
             new_fail_count = h->failCount = 1;
@@ -128,7 +128,7 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
       // if the last failure was outside the retry window, set the failcount to 1 and failedAt to now.
       { // lock guard
         std::lock_guard<std::mutex> lock(h->_mutex);
-        if ((h->failedAt + retry_time) < static_cast<unsigned>(_now)) {
+        if ((h->failedAt.load() + retry_time) < static_cast<unsigned>(_now)) {
           h->failCount = 1;
           h->failedAt  = _now;
         } else {
@@ -144,7 +144,7 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
       NH_Note("[%" PRId64 "] Failure threshold met failcount:%d >= threshold:%" PRId64 ", http parent proxy %s marked down", sm_id,
               new_fail_count, fail_threshold, h->hostname.c_str());
       NH_Debug(NH_DEBUG_TAG, "[%" PRId64 "] NextHop %s marked unavailable, h->available=%s", sm_id, h->hostname.c_str(),
-               (h->available) ? "true" : "false");
+               (h->available.load()) ? "true" : "false");
     }
     break;
   }
