@@ -732,6 +732,12 @@ TSRemapInit(TSRemapInterface * /* api_info */, char * /* errbuf */, int /* errbu
 TSRemapStatus
 TSRemapDoRemap(void * /* ih */, TSHttpTxn txn, TSRemapRequestInfo *rri)
 {
+  const TSHttpStatus txnstat = TSHttpTxnStatusGet(txn);
+  if (txnstat != TS_HTTP_STATUS_NONE && txnstat != TS_HTTP_STATUS_OK) {
+    VDEBUG("transaction status_code=%d already set; skipping processing", static_cast<int>(txnstat));
+    return TSREMAP_NO_REMAP;
+  }
+
   // Check if we should turn off the cache before doing anything else ...
   CheckCacheable(txn, rri->requestUrl, rri->requestBufp);
   TSHttpTxnHookAdd(txn, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, TxnHook);
