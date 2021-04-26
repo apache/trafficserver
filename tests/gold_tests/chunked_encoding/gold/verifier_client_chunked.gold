@@ -1,0 +1,13 @@
+``
+- "connection": "keep-alive"
+``
+- "Connection": "close"
+``
+``content: 0000000 0000001 0000002 0000003 
+``
+- "connection": "keep-alive"
+``
+- "Connection": "close"
+``
+``content: 0000000 0000001 0000002 0000003 
+``
