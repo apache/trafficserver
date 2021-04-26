@@ -116,5 +116,7 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOO
     return p
 
 
+ExtendTestRun(MakeDNServer, name="MakeDNServer")
+ExtendTestRun(MakeDNServer, name="MakeDNS")
 ExtendTest(MakeDNServer, name="MakeDNServer")
 ExtendTest(MakeDNServer, name="MakeDNS")
