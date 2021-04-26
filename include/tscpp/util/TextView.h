@@ -65,6 +65,29 @@ int strcasecmp(const std::string_view &lhs, const std::string_view &rhs);
  */
 int memcmp(const std::string_view &lhs, const std::string_view &rhs);
 
+/** Copy bytes.
+ *
+ * @param dst Destination buffer.
+ * @param src Original string.
+ * @return @a dest
+ *
+ * This is a convenience for
+ * @code
+ *   memcpy(dst, src.data(), size.size());
+ * @endcode
+ * Therefore @a dst must point at a buffer large enought to hold @a src. If this is not already
+ * determined, then presuming @c DST_SIZE is the size of the buffer at @a dst
+ * @code
+ *   memcpy(dst, src.prefix(DST_SIZE));
+ * @endcode
+ *
+ */
+inline void *
+memcpy(void *dst, const std::string_view &src)
+{
+  return memcpy(dst, src.data(), src.size());
+}
+
 /** Compare views with ordering.
  *
  * @param lhs input view
