@@ -461,7 +461,7 @@ HostStatus::getHostStat(std::string &stat_name, char *buf, unsigned int buf_len)
 namespace
 {
 struct HostCmdInfo {
-  HostStatus_t type{HostStatus_t::HOST_STATUS_INIT};
+  TSHostStatus type{TSHostStatus::TS_HOST_STATUS_INIT};
   unsigned int reasonType{0};
   std::vector<std::string> hosts;
   int time{0};
@@ -478,9 +478,9 @@ template <> struct convert<HostCmdInfo> {
     if (auto n = node["operation"]) {
       auto const &str = n.as<std::string>();
       if (str == "up") {
-        rhs.type = HostStatus_t::HOST_STATUS_UP;
+        rhs.type = TSHostStatus::TS_HOST_STATUS_UP;
       } else if (str == "down") {
-        rhs.type = HostStatus_t::HOST_STATUS_DOWN;
+        rhs.type = TSHostStatus::TS_HOST_STATUS_DOWN;
       } else {
         // unknown.
         return false;
@@ -533,7 +533,7 @@ server_set_status(std::string_view const &id, YAML::Node const &params)
           hs.createHostStat(name.c_str());
         }
         Debug("host_statuses", "marking server %s : %s", name.c_str(),
-              (cmdInfo.type == HostStatus_t::HOST_STATUS_UP ? "up" : "down"));
+              (cmdInfo.type == TSHostStatus::TS_HOST_STATUS_UP ? "up" : "down"));
         hs.setHostStatus(name.c_str(), cmdInfo.type, cmdInfo.time, cmdInfo.reasonType);
       }
     } else {
