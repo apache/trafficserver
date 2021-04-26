@@ -117,6 +117,7 @@ you also can find this information in the `JSONRPC`_ link.
 Requests
 ^^^^^^^^
 
+Please find the `jsonrpc 2.0 request` schema for reference ( `mgmt2/rpc/schema/jsonrpc_request_schema.json` ).
 
 * Mandatory fields.
 
@@ -204,6 +205,10 @@ Responses
 Although each individual API call will describe the response details and some specific errors, in this section we will describe a high
 level protocol response, some defined by the `JSONRPC`_ specs and some by |TS|
 
+Please find the `jsonrpc 2.0 response` schema for reference( `mgmt2/rpc/schema/jsonrpc_response_schema.json` ).
+
+
+
 The responses have the following structure:
 
 
@@ -212,7 +217,9 @@ The responses have the following structure:
    ============ ======== ==============================================
    ``jsonrpc``  |strnum| A Number that indicates the error type that occurred.
    ``result``            Result of the invoked operation. See `jsonrpc-result`_
-   ``id``       |strnum| It will be the same as the value of the id member in the `jsonrpc-request`_
+   ``id``       |strnum| It will be the same as the value of the id member in the `jsonrpc-request`_ .
+                         We will not be using `null` if the `id` could not be fetch from the request,
+                         in that case the field will not be set.
    ``error``    |object| Error object, it will be present in case of an error. See `jsonrpc-error`_
    ============ ======== ==============================================
 
