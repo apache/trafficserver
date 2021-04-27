@@ -7331,17 +7331,13 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 
   TxnDebug("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %" PRId64, fresh_limit, (int64_t)current_age);
 
-  /////////////////////////////////////////////////////////
-  // did the admin override the expiration calculations? //
-  // (used only for http).                               //
-  /////////////////////////////////////////////////////////
   ink_assert(client_request == &s->hdr_info.client_request);
 
-  if (s->txn_conf->cache_when_to_revalidate == 0) {
-    ;
-    // Compute how fresh below
-  } else if (client_request->url_get()->scheme_get_wksidx() == URL_WKSIDX_HTTP) {
+  if (auto scheme = client_request->url_get()->scheme_get_wksidx(); scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) {
     switch (s->txn_conf->cache_when_to_revalidate) {
+    case 0: // Use cache directives or heuristic (the default value)
+      // Nothing to do here
+      break;
     case 1: // Stale if heuristic
       if (heuristic) {
         TxnDebug("http_match", "[what_is_document_freshness] config requires FRESHNESS_STALE because heuristic calculation");
