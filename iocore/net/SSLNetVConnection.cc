@@ -670,6 +670,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   //
   // not sure if this do-while loop is really needed here, please replace
   // this comment if you know
+  int ssl_read_errno = 0;
   do {
     ret = ssl_read_from_net(this, lthread, r);
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
@@ -677,6 +678,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     }
     ink_assert(bytes >= 0);
   } while ((ret == SSL_READ_READY && bytes == 0) || ret == SSL_READ_ERROR_NONE);
+  ssl_read_errno = errno;
 
   if (bytes > 0) {
     if (ret == SSL_READ_WOULD_BLOCK || ret == SSL_READ_READY) {
@@ -736,7 +738,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     break;
   case SSL_READ_ERROR:
     this->read.triggered = 0;
-    readSignalError(nh, (errno) ? errno : -ENET_SSL_FAILED);
+    readSignalError(nh, (ssl_read_errno) ? ssl_read_errno : -ENET_SSL_FAILED);
     Debug("ssl", "read finished - read error");
     break;
   }
