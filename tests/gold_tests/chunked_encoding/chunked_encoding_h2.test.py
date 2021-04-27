@@ -35,7 +35,6 @@ ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
-    'proxy.config.http2.enabled': 1,    # this option is for VZM-internal only
     'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
