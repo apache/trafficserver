@@ -1323,7 +1323,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.referer_format_redirect, "proxy.config.http.referer_format_redirect");
 
   HttpEstablishStaticConfigLongLong(c.oride.down_server_timeout, "proxy.config.http.down_server.cache_time");
-  HttpEstablishStaticConfigLongLong(c.oride.client_abort_threshold, "proxy.config.http.down_server.abort_threshold");
 
   // Negative caching and revalidation
   HttpEstablishStaticConfigByte(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
@@ -1616,8 +1615,7 @@ HttpConfig::reconfigure()
 
   params->strict_uri_parsing = INT_TO_BOOL(m_master.strict_uri_parsing);
 
-  params->oride.down_server_timeout    = m_master.oride.down_server_timeout;
-  params->oride.client_abort_threshold = m_master.oride.client_abort_threshold;
+  params->oride.down_server_timeout = m_master.oride.down_server_timeout;
 
   params->oride.negative_caching_enabled       = INT_TO_BOOL(m_master.oride.negative_caching_enabled);
   params->oride.negative_caching_lifetime      = m_master.oride.negative_caching_lifetime;
