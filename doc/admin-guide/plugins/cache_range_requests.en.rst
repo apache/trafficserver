@@ -113,7 +113,7 @@ all requests (include partial content) will use consistent hashing method
 for parent selection.
 
 
-X-CRR-IMS header support
+X-Crr-Ims header support
 ------------------------
 
 .. option:: --consider-ims
@@ -125,13 +125,13 @@ special header:
 
 .. code::
 
-    X-CRR-IMS: Tue, 19 Nov 2019 13:26:45 GMT
+    X-Crr-Ims: Tue, 19 Nov 2019 13:26:45 GMT
 
-When this header is provided and a `cache hit fresh` is encoutered the
+When this header is provided and a `cache hit fresh` is encountered the
 ``Date`` header of the object in cache is compared to this header date
 value.  If the cache date is *less* than this IMS date then the object
 is marked as STALE and an appropriate If-Modified-Since or If-Match
-request along with this X-CRR-IMS header is passed up to the parent.
+request along with this X-Crr-Ims header is passed up to the parent.
 
 In order for this to properly work in a CDN each cache in the
 chain *SHOULD* also contain a remap rule with the

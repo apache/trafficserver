@@ -75,19 +75,52 @@ The slice plugin supports the following options::
         Limited to any positive number.
         Ignored if --blockbytes provided.
 
-    --remap-host=<loopback hostname> (optional)
-        Uses effective url with given hostname for remapping.
-        Requires setting up an intermediate loopback remap rule.
-        -r for short
+    --disable-errorlog (optional)
+        Disable writing block stitch errors to the error log.
+        -d for short
+
+    --exclude-regex=<regex> (optional)
+        If provided, only slice what matches.
+        If not provided will always slice
+        Cannot be used with --include-regex
+        -e for short
+
+    --include-regex=<regex> (optional)
+        If provided, only slice what matches.
+        If not provided will always slice
+        Cannot be used with --exclude-regex
+        -i for short
 
     --pace-errorlog=<seconds> (optional)
         Limit stitching error logs to every 'n' second(s)
         -p for short
 
-    --disable-errorlog (optional)
-        Disable writing block stitch errors to the error log.
-        -d for short
+    --ref-relative (optional)
+        Self healing mode typically uses slice 0 as the reference slice
+        for every request.  This is very safe but also increases plugin
+        time and latency as the first slice is always fully processed
+        whether or not the original requests needs any data from slice 0.
+        This option uses the first slice in the request as reference
+        which has better performance.  A downside of this mode is that
+        self healing won't happen if blocks in a request agree.
+        Normally leave this off.
+        -l for short
 
+    --remap-host=<loopback hostname> (optional)
+        Uses effective url with given hostname for remapping.
+        Requires setting up an intermediate loopback remap rule.
+        -r for short
+
+    --throttle (optional)
+        Under certain circumstances where many contiguous slices are in
+        RAM cache ATS will aggressively try to push these through the
+        slice plugin.  The downside of this is that all these contiguous
+        slices end up being marked as fresh even if the downstream
+        client aborts.  This option keeps track of how much data the
+        client has already passed down and slows down issuing new
+        slice requests.
+        Normally leave this off.
+        -o for short
 
 Examples::
 
@@ -122,6 +155,16 @@ After modifying :file:`remap.config`, restart or reload traffic server
 (sudo traffic_ctl config reload) or (sudo traffic_ctl server restart)
 to activate the new configuration values.
 
+Don't slice txt files::
+
+  slice.so --exclude-regex=\\.txt
+  slice.so -e \\.txt
+
+Slice only mp4 files::
+
+  slice.so --include-regex=\\.mp4
+  slice.so -i \\.mp4
+
 Debug Options
 -------------
 
@@ -136,11 +179,12 @@ Under normal logging these slice block errors tend to show up as::
     crc value ERR_READ_ERROR
 
 By default more detailed stitching errors are written to ``diags.log``.
-Examples are as follows::
 
-ERROR: [slice.cc: 288] logSliceError(): 1555705573.639 reason="Non 206 internal block response" uri="http://ats_ep/someasset.mp4" uas="curl" req_range="bytes=1000000-" norm_range="bytes 1000000-52428799/52428800" etag_exp="%221603934496%22" lm_exp="Fri, 19 Apr 2019 18:53:20 GMT" blk_range="21000000-21999999" status_got="206" cr_got="" etag_got="%221603934496%22" lm_got="" cc="no-store" via=""
+.. topic:: Example
 
-ERROR: [server.cc: 288] logSliceError(): 1572370000.219 reason="Mismatch block Etag" uri="http://ats_ep/someasset.mp4" uas="curl" req_range="bytes=1092779033-1096299354" norm_range="bytes 1092779033-1096299354/2147483648" etag_exp="%223719843648%22" lm_exp="Tue, 29 Oct 2019 14:40:00 GMT" blk_range="1095000000-1095999999" status_got="206" cr_got="bytes 1095000000-1095999999/2147483648" etag_got="%223719853648%22" lm_got="Tue, 29 Oct 2019 17:26:40 GMT" cc="max-age=10000" via=""
+    ERROR: [slice.cc: 288] logSliceError(): 1555705573.639 reason="Non 206 internal block response" uri="http://ats_ep/someasset.mp4" uas="curl" req_range="bytes=1000000-" norm_range="bytes 1000000-52428799/52428800" etag_exp="%221603934496%22" lm_exp="Fri, 19 Apr 2019 18:53:20 GMT" blk_range="21000000-21999999" status_got="206" cr_got="" etag_got="%221603934496%22" lm_got="" cc="no-store" via=""
+
+    ERROR: [server.cc: 288] logSliceError(): 1572370000.219 reason="Mismatch block Etag" uri="http://ats_ep/someasset.mp4" uas="curl" req_range="bytes=1092779033-1096299354" norm_range="bytes 1092779033-1096299354/2147483648" etag_exp="%223719843648%22" lm_exp="Tue, 29 Oct 2019 14:40:00 GMT" blk_range="1095000000-1095999999" status_got="206" cr_got="bytes 1095000000-1095999999/2147483648" etag_got="%223719853648%22" lm_got="Tue, 29 Oct 2019 17:26:40 GMT" cc="max-age=10000" via=""
 
 Whether or how often these detailed log entries are written are
 configurable plugin options.
@@ -172,21 +216,50 @@ adding in range request headers ("Range: bytes=").  A special
 header X-Slicer-Info header is added and the pristine URL is
 restored.
 
-For each of these blocks separate sequential TSHttpConnect(s) are made
-back into the front end of ATS and all of the remap plugins are rerun.
-Slice skips the remap due to presence of the X-Slicer-Info header and
-allows cache_range_requests.so to serve the slice block back to Slice
-either via cache OR parent request.
+For each of these blocks separate sequential TSHttpConnect(s) are
+made back into the front end of ATS.  By default of the remap plugins
+are rerun.  Slice skips the remap due to presence of the X-Slicer-Info
+header and allows cache_range_requests.so to serve the slice block back
+to Slice either via cache OR parent request.
 
-Slice assembles a header based on the first slice block response and
-sends it to the client.  If necessary it then skips over bytes in
-the first block and starts sending byte content, examining each
-block header and sends its bytes to the client until the client
-request is satisfied.
+Slice assembles a header based on the very first slice block response
+and sends it to the client.  If necessary it then skips over bytes in the
+first block and starts sending byte content, examining each block header
+and sends its bytes to the client until the client request is satisfied.
 
-Any extra bytes at the end of the last block are consumed by
-the the Slice plugin to allow cache_range_requests to finish
-the block fetch to ensure the block is cached.
+Any extra bytes at the end of the last block are consumed by the the
+Slice plugin to allow cache_range_requests to finish the block fetch to
+ensure the block is cached.
+
+Self Healing
+------------
+
+The slice plugin uses the very first slice as a reference slice which
+uses content-length and last-modified and/or etags to ensure assembled
+blocks come from the same asset.  In the case where a slice from a parent
+is fetched which indicates that the asset has changed, the slice plugin
+will attempt to self heal the asset.  The `cache_range_requests` plugin
+must be configured with the `--consider-ims` parameter in order for
+this to work.
+
+Example `remap.config` configuration::
+
+  map http://slice/ http://parent/ @plugin=slice.so @pparam=--remap-host=cache_range_requests
+  map http://cache_range_requests/ http://parent/ @plugin=cache_range_requests.so @pparam=--consider-ims
+
+When a request is served, the slice plugin uses reference slice 0 to
+build a response to the client.  When subsequent slices are fetched they
+are checked against this reference slice.  If a mismatch occurs an IMS
+request for the offending slice is made through the `cache_range_requests`
+plugin using an X-Crr-Ims header.  If the refetched slice still mismatches
+then the client connection is aborted a crr IMS request is made for
+the reference slice in an attempt to refetch it.
+
+Optionally (but not recommended) the plugin may be configured to use
+the first slice in the request as the reference slice.  This option
+is faster since it does not visit any slices outside those needed to
+fulfill a request.  However this may still cause problems if the
+requested range was calculated from a newer version of the asset.
 
 Important Notes
 ===============
@@ -194,8 +267,8 @@ Important Notes
 This plugin assumes that the content requested is cacheable.
 
 Any first block server response that is not a 206 is passed directly
-down to the client.  If that response is a '200' only the first
-portion of the response is passed back and the transaction is closed.
+down to the client. Any 200 responses are passed back through to
+the client.
 
 Only the first server response block is used to evaluate any "If-"
 conditional headers.  Subsequent server slice block requests
