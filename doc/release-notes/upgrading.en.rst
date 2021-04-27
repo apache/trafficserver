@@ -46,7 +46,7 @@ Configuration changes
 ---------------------
 The following incompatible changes to the configurations have been made in this version of ATS.
 
-The records.config entry proxy.config.http.down_server.abort_threshold has been removed. 
+The records.config entry proxy.config.http.down_server.abort_threshold has been removed.
 
 
 Plugins
