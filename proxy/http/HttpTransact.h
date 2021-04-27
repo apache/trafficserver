@@ -677,7 +677,6 @@ public:
     HostDBApplicationInfo::HttpVersion updated_server_version = HostDBApplicationInfo::HTTP_VERSION_UNDEFINED;
     bool force_dns                                            = false;
     MgmtByte cache_open_write_fail_action                     = 0;
-    bool is_revalidation_necessary = false; // Added to check if revalidation is necessary - YTS Team, yamsat
     ConnectionAttributes client_info;
     ConnectionAttributes parent_info;
     ConnectionAttributes server_info;
