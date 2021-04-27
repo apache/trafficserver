@@ -2620,8 +2620,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     case FRESHNESS_STALE:
       TxnDebug("http_seq", "[HttpTransact::HandleCacheOpenReadHitFreshness] "
                            "Stale in cache");
-      s->cache_lookup_result       = HttpTransact::CACHE_LOOKUP_HIT_STALE;
-      s->is_revalidation_necessary = true; // to identify a revalidation occurrence
+      s->cache_lookup_result = HttpTransact::CACHE_LOOKUP_HIT_STALE;
       break;
     default:
       ink_assert(!("what_is_document_freshness has returned unsupported code."));
