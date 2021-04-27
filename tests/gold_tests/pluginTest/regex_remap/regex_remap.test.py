@@ -51,11 +51,18 @@ ts = Test.MakeATSProcess("ts", enable_cache=False)
 testName = "regex_remap"
 
 regex_remap_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap.conf')
+regex_remap2_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap2.conf')
 curl_and_args = 'curl -s -D - -v --proxy localhost:{} '.format(ts.Variables.port)
 
 ts.Disk.File(regex_remap_conf_path, typename="ats:config").AddLines([
     "# regex_remap configuration\n"
     "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ http://example.one @status=301\n"
+])
+
+ts.Disk.File(regex_remap2_conf_path, typename="ats:config").AddLines([
+    "# 2nd regex_remap configuration\n"
+    "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ " +
+    f"http://localhost:{server.Variables.Port}\n"
 ])
 
 ts.Disk.remap_config.AddLine(
@@ -64,6 +71,10 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     "map http://example.two/ http://localhost:{}/ ".format(server.Variables.Port) +
     "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine\n"
+)
+ts.Disk.remap_config.AddLine(
+    "map http://example.three/ http://wrong.com/ ".format(server.Variables.Port) +
+    "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine\n"
 )
 
 # minimal configuration
@@ -93,7 +104,18 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
 tr.StillRunningAfter = ts
 
-# 2 Test - Crash test.
+# 2 Test - Match and remap
+tr = Test.AddTestRun("2nd pristine test")
+tr.Processes.Default.Command = (
+    curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) +
+    " 'http://example.three/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
+    " | grep -e '^HTTP/' -e '^Content-Length'"
+)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
+tr.StillRunningAfter = ts
+
+# 3 Test - Crash test.
 tr = Test.AddTestRun("crash test")
 creq = replay_txns[1]['client-request']
 tr.Processes.Default.Command = curl_and_args + \
