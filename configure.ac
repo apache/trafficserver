@@ -925,6 +925,9 @@ case $host_os_def in
       TS_ADDTO(AM_LDFLAGS, [-L/usr/local/lib])
     ])
 
+    # NOTE: Force grammar to false on BSD, it has lex/yacc but not supported versions
+    AM_CONDITIONAL([BUILD_TSCONFIG_GRAMMAR], false)
+
     ;; # freebsd|kfreebsd)
 
   solaris)
