@@ -23,8 +23,8 @@ from verifier_common import create_address_argument
 
 
 def _configure_client(obj, process, name, replay_path, http_ports=None,
-                      https_ports=None, keys=None, ssl_cert='', ca_cert='',
-                      verbose=True, other_args=''):
+                      https_ports=None, http3_ports=None, keys=None,
+                      ssl_cert='', ca_cert='', verbose=True, other_args=''):
     """
     Configure the process for running the verifier-client.
 
@@ -72,6 +72,19 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
         command += create_address_argument(https_ports)
         command += " "
 
+    if not http3_ports:
+        http3_ports = [4443]
+    if http3_ports:
+        command += "--connect-http3 "
+        command += create_address_argument(http3_ports)
+        command += " "
+
+        qlog_basename = "qlog_directory"
+        qlog_dir = os.path.join(client_dir, qlog_basename)
+        command += f"--qlog-dir {qlog_dir} "
+        obj.Variables['qlog_dir'] = qlog_dir
+
+    if https_ports or http3_ports:
         if ssl_cert == '':
             ssl_cert = os.path.join(obj.Variables["AtsTestToolsDir"],
                                     "proxy-verifier", "ssl", "client.pem")
@@ -83,6 +96,11 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
             run_ssl_cert = os.path.join(client_dir, os.path.basename(ssl_cert))
             process.Setup.Copy(ssl_cert, run_ssl_cert, CopyLogic.SoftFiles)
             command += ' --client-cert "{}" '.format(run_ssl_cert)
+
+            tls_secrets_log_filename = "tls_secrets.txt"
+            tls_secrets_log_path = os.path.join(client_dir, tls_secrets_log_filename)
+            command += f"--tls-secrets-log-file {tls_secrets_log_path} "
+            obj.Variables['tls_secrets_log_path'] = tls_secrets_log_path
 
         if ca_cert == '':
             ca_cert = os.path.join(obj.Variables["AtsTestToolsDir"],
@@ -114,8 +132,8 @@ def _configure_client(obj, process, name, replay_path, http_ports=None,
 
 
 def AddVerifierClientProcess(run, name, replay_path, http_ports=None,
-                             https_ports=None, keys=None, ssl_cert='', ca_cert='',
-                             verbose=True, other_args=''):
+                             https_ports=None, http3_ports=None, keys=None,
+                             ssl_cert='', ca_cert='', verbose=True, other_args=''):
     """
     Set the Default process of the test run to a verifier-client Process.
 
@@ -132,6 +150,8 @@ def AddVerifierClientProcess(run, name, replay_path, http_ports=None,
         http_ports: (list of ints) The set of HTTP ports to connect on.
 
         https_ports: (list of ints) The set of HTTPS ports to connect on.
+
+        http3_ports: (list of ints) The set of HTTP3 ports to connect on.
 
         ssl_cert: (path) The location of the cert for HTTPS encryption. If this
             is not provided and stock ssl_cert will be used.
@@ -150,7 +170,8 @@ def AddVerifierClientProcess(run, name, replay_path, http_ports=None,
 
     p = run.Processes.Default
     _configure_client(run, p, name, replay_path, http_ports, https_ports,
-                      keys, ssl_cert, ca_cert, verbose, other_args)
+                      http3_ports, keys, ssl_cert, ca_cert, verbose,
+                      other_args)
     return p
 
 

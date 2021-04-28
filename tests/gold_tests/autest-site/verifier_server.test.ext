@@ -23,7 +23,8 @@ from verifier_common import create_address_argument
 
 
 def _configure_server(obj, process, name, replay_path, http_ports=None, https_ports=None,
-                      ssl_cert='', ca_cert='', verbose=True, other_args=''):
+                      http3_ports=None, ssl_cert='', ca_cert='', verbose=True,
+                      other_args=''):
     """
     Configure the provided process to run a verifier-server command.
 
@@ -70,6 +71,24 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
         command += create_address_argument(https_ports)
         command += " "
 
+    if http3_ports is None:
+        get_port(process, "http3_port")
+        http3_ports = [process.Variables.http3_port]
+    else:
+        process.Variables['http3_port'] = http3_ports[0]
+
+    # Add in the following when Proxy Verifier server-side HTTP/3 is supported.
+    # if len(http3_ports) > 0:
+    #     command += '--listen-http3 '
+    #     command += create_address_argument(http3_ports)
+    #     command += " "
+    #
+    #     qlog_basename = "qlog_directory"
+    #     qlog_dir = os.path.join(server_dir, qlog_basename)
+    #     command += f"--qlog-dir {qlog_dir} "
+    #     obj.Variables['qlog_dir'] = qlog_dir
+
+    if https_ports or http3_ports:
         if ssl_cert == '':
             ssl_cert = os.path.join(obj.Variables["AtsTestToolsDir"],
                                     "proxy-verifier", "ssl", "server.pem")
@@ -81,6 +100,11 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
             run_ssl_cert = os.path.join(server_dir, os.path.basename(ssl_cert))
             process.Setup.Copy(ssl_cert, run_ssl_cert, CopyLogic.SoftFiles)
             command += ' --server-cert "{}" '.format(run_ssl_cert)
+
+            tls_secrets_log_filename = "tls_secrets.txt"
+            tls_secrets_log_path = os.path.join(server_dir, tls_secrets_log_filename)
+            command += f"--tls-secrets-log-file {tls_secrets_log_path} "
+            obj.Variables['tls_secrets_log_path'] = tls_secrets_log_path
 
         if ca_cert == '':
             ca_cert = os.path.join(obj.Variables["AtsTestToolsDir"],
@@ -116,8 +140,8 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
 
 
 def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
-                              https_ports=None, ssl_cert='', ca_cert='',
-                              verbose=True, other_args=''):
+                              https_ports=None, http3_ports=None, ssl_cert='',
+                              ca_cert='', verbose=True, other_args=''):
     """
     Create a verifier-server process for the Test.
 
@@ -137,6 +161,9 @@ def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
         https_ports: (list of ints) The set of HTTPS ports to listen on. If not
             passed in, a single open port will be selected.
 
+        http3_ports: (list of ints) The set of HTTP3 ports to listen on. If not
+            passed in, a single open port will be selected.
+
         ssl_cert: (path) The location of the cert for HTTPS encryption. If this
             is not provided and stock ssl_cert will be used.
 
@@ -153,13 +180,13 @@ def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
     """
     server = test.Processes.Process(name)
     _configure_server(test, server, name, replay_path, http_ports, https_ports,
-                      ssl_cert, ca_cert, verbose, other_args)
+                      http3_ports, ssl_cert, ca_cert, verbose, other_args)
     return server
 
 
 def AddVerifierServerProcess(run, name, replay_path, http_ports=None,
-                             https_ports=None, ssl_cert='', ca_cert='',
-                             verbose=True, other_args=''):
+                             https_ports=None, http3_ports=None, ssl_cert='',
+                             ca_cert='', verbose=True, other_args=''):
     """
     Create a verifier-server process and configure it for the given TestRun.
 
@@ -174,7 +201,7 @@ def AddVerifierServerProcess(run, name, replay_path, http_ports=None,
 
     server = run.Processes.Process(name)
     _configure_server(run, server, name, replay_path, http_ports, https_ports,
-                      ssl_cert, ca_cert, verbose, other_args)
+                      http3_ports, ssl_cert, ca_cert, verbose, other_args)
 
     client = run.Processes.Default
     client.StartBefore(server)
