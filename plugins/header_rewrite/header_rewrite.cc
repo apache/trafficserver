@@ -40,6 +40,7 @@ static std::once_flag initGeoLibs;
 static void
 initGeoLib(const std::string &dbPath)
 {
+  TSDebug(PLUGIN_NAME, "Loading geo db %s", dbPath.c_str());
 #if TS_USE_HRW_GEOIP
   GeoIPConditionGeo::initLibrary(dbPath);
 #elif TS_USE_HRW_MAXMINDDB
@@ -334,12 +335,18 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
+  if (!geoDBpath.empty() && geoDBpath.find("/") != 0) {
+    geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
+  }
+
+  TSDebug(PLUGIN_NAME, "Global geo db %s", geoDBpath.c_str());
+
+  std::call_once(initGeoLibs, [&geoDBpath]() { initGeoLib(geoDBpath); });
+
   // Parse the global config file(s). All rules are just appended
   // to the "global" Rules configuration.
   RulesConfig *conf = new RulesConfig;
   bool got_config   = false;
-
-  std::call_once(initGeoLibs, [&geoDBpath]() { initGeoLib(geoDBpath); });
 
   for (int i = optind; i < argc; ++i) {
     // Parse the config file(s). Note that multiple config files are
@@ -412,13 +419,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   --argc;
   ++argv;
 
-  std::string geoDBPath;
+  std::string geoDBpath;
   while (true) {
     int opt = getopt_long(argc, (char *const *)argv, "m:", longopt, NULL);
 
     switch (opt) {
     case 'm': {
-      geoDBPath = optarg;
+      geoDBpath = optarg;
     } break;
     }
     if (opt == -1) {
@@ -426,11 +433,15 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
-  if (geoDBPath.find("/") != 0) {
-    geoDBPath = std::string(TSConfigDirGet()) + '/' + geoDBPath;
-  }
+  if (!geoDBpath.empty()) {
+    if (geoDBpath.find("/") != 0) {
+      geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
+    }
 
-  std::call_once(initGeoLibs, [&geoDBPath]() { initGeoLib(geoDBPath); });
+    TSDebug(PLUGIN_NAME, "Remap geo db %s", geoDBpath.c_str());
+
+    std::call_once(initGeoLibs, [&geoDBpath]() { initGeoLib(geoDBpath); });
+  }
 
   RulesConfig *conf = new RulesConfig;
 
