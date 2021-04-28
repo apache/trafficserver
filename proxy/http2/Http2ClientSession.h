@@ -24,6 +24,7 @@
 #pragma once
 
 #include "HTTP2.h"
+#include "Http2Config.h"
 #include "Plugin.h"
 #include "ProxySession.h"
 #include "Http2ConnectionState.h"
@@ -96,6 +97,7 @@ public:
   const char *protocol_contains(std::string_view prefix) const override;
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
+  const Http2ConfigParams *config() const;
 
   void set_upgrade_context(HTTPHdr *h);
   void set_dying_event(int event);
@@ -138,6 +140,7 @@ private:
 
   ////////
   // Variables
+  Http2ConfigParams *_config     = nullptr;
   SessionHandler session_handler = nullptr;
 
   MIOBuffer *read_buffer              = nullptr;
@@ -224,4 +227,10 @@ inline int64_t
 Http2ClientSession::write_buffer_size()
 {
   return write_buffer->max_read_avail();
+}
+
+inline const Http2ConfigParams *
+Http2ClientSession::config() const
+{
+  return _config;
 }

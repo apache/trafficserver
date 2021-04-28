@@ -32,6 +32,7 @@
 #include "Http2Stream.h"
 #include "Http2DependencyTree.h"
 #include "Http2FrequencyCounter.h"
+#include "Http2Config.h"
 
 class Http2ClientSession;
 
@@ -63,13 +64,13 @@ public:
   }
 
   void
-  settings_from_configs()
+  settings_from_configs(const Http2ConfigParams *config)
   {
-    settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams_in;
-    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = Http2::initial_window_size;
-    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = Http2::max_frame_size;
-    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = Http2::header_table_size;
-    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = Http2::max_header_list_size;
+    settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = config->max_concurrent_streams_in;
+    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = config->initial_window_size;
+    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = config->max_frame_size;
+    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = config->header_table_size;
+    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = config->max_header_list_size;
   }
 
   unsigned
@@ -132,20 +133,7 @@ public:
   Http2ConnectionSettings server_settings;
   Http2ConnectionSettings client_settings;
 
-  void
-  init()
-  {
-    this->_server_rwnd = Http2::initial_window_size;
-
-    local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
-    remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
-    if (Http2::stream_priority_enabled) {
-      dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
-    }
-
-    _cop = ActivityCop<Http2Stream>(this->mutex, &stream_list, 1);
-    _cop.start();
-  }
+  void init();
 
   void
   destroy()
@@ -249,17 +237,7 @@ public:
     --total_client_streams_count;
   }
 
-  double
-  get_stream_error_rate() const
-  {
-    int total = get_stream_requests();
-
-    if (total >= (1 / Http2::stream_error_rate_threshold)) {
-      return (double)stream_error_count / (double)total;
-    } else {
-      return 0;
-    }
-  }
+  double get_stream_error_rate() const;
 
   Http2ErrorCode
   get_shutdown_reason() const
@@ -325,16 +303,7 @@ public:
     return zombie_event;
   }
 
-  void
-  schedule_zombie_event()
-  {
-    if (Http2::zombie_timeout_in) { // If we have zombie debugging enabled
-      if (zombie_event) {
-        zombie_event->cancel();
-      }
-      zombie_event = this_ethread()->schedule_in(this, HRTIME_SECONDS(Http2::zombie_timeout_in));
-    }
-  }
+  void schedule_zombie_event();
 
   void increment_received_settings_count(uint32_t count);
   uint32_t get_received_settings_count();

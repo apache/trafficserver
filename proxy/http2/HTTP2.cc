@@ -23,6 +23,7 @@
 
 #include "HTTP2.h"
 #include "HPACK.h"
+#include "Http2Config.h"
 
 #include "tscore/ink_assert.h"
 #include "tscpp/util/LocalBuffer.h"
@@ -45,8 +46,8 @@ const unsigned HTTP2_LEN_AUTHORITY = countof(":authority") - 1;
 const unsigned HTTP2_LEN_PATH      = countof(":path") - 1;
 const unsigned HTTP2_LEN_STATUS    = countof(":status") - 1;
 
-static size_t HTTP2_LEN_STATUS_VALUE_STR         = 3;
-static const uint32_t HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
+static size_t HTTP2_LEN_STATUS_VALUE_STR        = 3;
+static const int32_t HTTP2_MAX_TABLE_SIZE_LIMIT = 64 * 1024;
 
 namespace
 {
@@ -655,8 +656,7 @@ http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t
                            int32_t maximum_table_size)
 {
   // Limit the maximum table size to the configured value or 64kB at maximum, which is the size advertised by major clients
-  maximum_table_size =
-    std::min(maximum_table_size, static_cast<int32_t>(std::min(Http2::header_table_size_limit, HTTP2_MAX_TABLE_SIZE_LIMIT)));
+  maximum_table_size = std::min(maximum_table_size, HTTP2_MAX_TABLE_SIZE_LIMIT);
   // Set maximum table size only if it is different from current maximum size
   if (maximum_table_size == hpack_get_maximum_table_size(handle)) {
     maximum_table_size = -1;
@@ -678,13 +678,13 @@ http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t
  */
 Http2ErrorCode
 http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_t buf_len, uint32_t *len_read, HpackHandle &handle,
-                           bool &trailing_header, uint32_t maximum_table_size)
+                           bool &trailing_header, uint32_t max_header_size, uint32_t maximum_table_size)
 {
   const MIMEField *field;
   const char *value;
   int len;
   bool is_trailing_header = trailing_header;
-  int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size);
+  int64_t result          = hpack_decode_header_block(handle, hdr, buf_start, buf_len, max_header_size, maximum_table_size);
 
   if (result < 0) {
     if (result == HPACK_ERROR_COMPRESSION_ERROR) {
@@ -779,72 +779,21 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
 }
 
-// Initialize this subsystem with librecords configs (for now)
-uint32_t Http2::max_concurrent_streams_in      = 100;
-uint32_t Http2::min_concurrent_streams_in      = 10;
-uint32_t Http2::max_active_streams_in          = 0;
-bool Http2::throttling                         = false;
-uint32_t Http2::stream_priority_enabled        = 0;
-uint32_t Http2::initial_window_size            = 65535;
-uint32_t Http2::max_frame_size                 = 16384;
-uint32_t Http2::header_table_size              = 4096;
-uint32_t Http2::max_header_list_size           = 4294967295;
-uint32_t Http2::accept_no_activity_timeout     = 120;
-uint32_t Http2::no_activity_timeout_in         = 120;
-uint32_t Http2::active_timeout_in              = 0;
-uint32_t Http2::push_diary_size                = 256;
-uint32_t Http2::zombie_timeout_in              = 0;
-float Http2::stream_error_rate_threshold       = 0.1;
-uint32_t Http2::max_settings_per_frame         = 7;
-uint32_t Http2::max_settings_per_minute        = 14;
-uint32_t Http2::max_settings_frames_per_minute = 14;
-uint32_t Http2::max_ping_frames_per_minute     = 60;
-uint32_t Http2::max_priority_frames_per_minute = 120;
-float Http2::min_avg_window_update             = 2560.0;
-uint32_t Http2::con_slow_log_threshold         = 0;
-uint32_t Http2::stream_slow_log_threshold      = 0;
-uint32_t Http2::header_table_size_limit        = 65536;
-uint32_t Http2::write_buffer_block_size        = 262144;
-float Http2::write_size_threshold              = 0.5;
-uint32_t Http2::write_time_threshold           = 100;
+bool Http2::throttling = false;
 
 void
 Http2::init()
 {
-  REC_EstablishStaticConfigInt32U(max_concurrent_streams_in, "proxy.config.http2.max_concurrent_streams_in");
-  REC_EstablishStaticConfigInt32U(min_concurrent_streams_in, "proxy.config.http2.min_concurrent_streams_in");
-  REC_EstablishStaticConfigInt32U(max_active_streams_in, "proxy.config.http2.max_active_streams_in");
-  REC_EstablishStaticConfigInt32U(stream_priority_enabled, "proxy.config.http2.stream_priority_enabled");
-  REC_EstablishStaticConfigInt32U(initial_window_size, "proxy.config.http2.initial_window_size_in");
-  REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
-  REC_EstablishStaticConfigInt32U(header_table_size, "proxy.config.http2.header_table_size");
-  REC_EstablishStaticConfigInt32U(max_header_list_size, "proxy.config.http2.max_header_list_size");
-  REC_EstablishStaticConfigInt32U(accept_no_activity_timeout, "proxy.config.http2.accept_no_activity_timeout");
-  REC_EstablishStaticConfigInt32U(no_activity_timeout_in, "proxy.config.http2.no_activity_timeout_in");
-  REC_EstablishStaticConfigInt32U(active_timeout_in, "proxy.config.http2.active_timeout_in");
-  REC_EstablishStaticConfigInt32U(push_diary_size, "proxy.config.http2.push_diary_size");
-  REC_EstablishStaticConfigInt32U(zombie_timeout_in, "proxy.config.http2.zombie_debug_timeout_in");
-  REC_EstablishStaticConfigFloat(stream_error_rate_threshold, "proxy.config.http2.stream_error_rate_threshold");
-  REC_EstablishStaticConfigInt32U(max_settings_per_frame, "proxy.config.http2.max_settings_per_frame");
-  REC_EstablishStaticConfigInt32U(max_settings_per_minute, "proxy.config.http2.max_settings_per_minute");
-  REC_EstablishStaticConfigInt32U(max_settings_frames_per_minute, "proxy.config.http2.max_settings_frames_per_minute");
-  REC_EstablishStaticConfigInt32U(max_ping_frames_per_minute, "proxy.config.http2.max_ping_frames_per_minute");
-  REC_EstablishStaticConfigInt32U(max_priority_frames_per_minute, "proxy.config.http2.max_priority_frames_per_minute");
-  REC_EstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
-  REC_EstablishStaticConfigInt32U(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
-  REC_EstablishStaticConfigInt32U(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
-  REC_EstablishStaticConfigInt32U(header_table_size_limit, "proxy.config.http2.header_table_size_limit");
-  REC_EstablishStaticConfigInt32U(write_buffer_block_size, "proxy.config.http2.write_buffer_block_size");
-  REC_EstablishStaticConfigFloat(write_size_threshold, "proxy.config.http2.write_size_threshold");
-  REC_EstablishStaticConfigInt32U(write_time_threshold, "proxy.config.http2.write_time_threshold");
+  Http2Config::startup();
+  Http2Config::scoped_config conf;
 
   // If any settings is broken, ATS should not start
-  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams_in}));
-  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, min_concurrent_streams_in}));
-  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, initial_window_size}));
-  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_FRAME_SIZE, max_frame_size}));
-  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_HEADER_TABLE_SIZE, header_table_size}));
-  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE, max_header_list_size}));
+  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, conf->max_concurrent_streams_in}));
+  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, conf->min_concurrent_streams_in}));
+  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, conf->initial_window_size}));
+  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_FRAME_SIZE, conf->max_frame_size}));
+  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_HEADER_TABLE_SIZE, conf->header_table_size}));
+  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE, conf->max_header_list_size}));
 
 #define HTTP2_CLEAR_DYN_STAT(x)          \
   do {                                   \

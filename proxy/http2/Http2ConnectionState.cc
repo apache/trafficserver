@@ -320,7 +320,8 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     header_block_fragment_length -= HTTP2_PRIORITY_LEN;
   }
 
-  if (new_stream && Http2::stream_priority_enabled) {
+  const Http2ConfigParams *h2config = cstate.ua_session->config();
+  if (new_stream && h2config->stream_priority_enabled) {
     Http2DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
     if (node != nullptr) {
       stream->priority_node = node;
@@ -340,7 +341,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   // ATS advertises SETTINGS_MAX_HEADER_LIST_SIZE as a limit of total header blocks length. (Details in [RFC 7560] 10.5.1.)
   // Make it double to relax the limit in cases of 1) HPACK is used naively, or 2) Huffman Encoding generates large header blocks.
   // The total "decoded" header length is strictly checked by hpack_decode_header_block().
-  if (stream->header_blocks_length > std::max(Http2::max_header_list_size, Http2::max_header_list_size * 2)) {
+  if (stream->header_blocks_length > std::max(h2config->max_header_list_size, h2config->max_header_list_size * 2)) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                       "header blocks too large");
   }
@@ -369,8 +370,8 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
 
     stream->mark_milestone(Http2StreamMilestone::START_DECODE_HEADERS);
-    Http2ErrorCode result =
-      stream->decode_header_blocks(*cstate.local_hpack_handle, cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+    Http2ErrorCode result = stream->decode_header_blocks(*cstate.local_hpack_handle, h2config->max_header_list_size,
+                                                         cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
@@ -451,15 +452,16 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                       "PRIORITY frame depends on itself");
   }
 
-  if (!Http2::stream_priority_enabled) {
+  const Http2ConfigParams *h2config = cstate.ua_session->config();
+  if (!h2config->stream_priority_enabled) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
 
   // Update PRIORITY frame count per minute
   cstate.increment_received_priority_frame_count();
   // Close this connection if its priority frame count received exceeds a limit
-  if (Http2::max_priority_frames_per_minute != 0 &&
-      cstate.get_received_priority_frame_count() > Http2::max_priority_frames_per_minute) {
+  if (h2config->max_priority_frames_per_minute != 0 &&
+      cstate.get_received_priority_frame_count() > h2config->max_priority_frames_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_PRIORITY_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id,
                      "Observed too frequent priority changes: %u priority changes within a last minute",
@@ -487,7 +489,7 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
     // Restrict number of inactive node in dependency tree smaller than max_concurrent_streams.
     // Current number of inactive node is size of tree minus active node count.
-    if (Http2::max_concurrent_streams_in > cstate.dependency_tree->size() - cstate.get_client_stream_count() + 1) {
+    if (h2config->max_concurrent_streams_in > cstate.dependency_tree->size() - cstate.get_client_stream_count() + 1) {
       cstate.dependency_tree->add(priority.stream_dependency, stream_id, priority.weight, priority.exclusive_flag, nullptr);
     }
   }
@@ -569,10 +571,12 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     Warning("Setting frame for zombied session %" PRId64, cstate.ua_session->connection_id());
   }
 
+  const Http2ConfigParams *h2config = cstate.ua_session->config();
+
   // Update SETTIGNS frame count per minute
   cstate.increment_received_settings_frame_count();
   // Close this connection if its SETTINGS frame count exceeds a limit
-  if (cstate.get_received_settings_frame_count() > Http2::max_settings_frames_per_minute) {
+  if (cstate.get_received_settings_frame_count() > h2config->max_settings_frames_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent SETTINGS frames: %u frames within a last minute",
                      cstate.get_received_settings_frame_count());
@@ -611,7 +615,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   uint32_t n_settings = 0;
   while (nbytes < frame.header().length) {
-    if (n_settings >= Http2::max_settings_per_frame) {
+    if (n_settings >= h2config->max_settings_per_frame) {
       HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_PER_FRAME_EXCEEDED, this_ethread());
       Http2StreamDebug(cstate.ua_session, stream_id, "Observed too many settings in a frame");
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
@@ -652,7 +656,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   // Update settigs count per minute
   cstate.increment_received_settings_count(n_settings);
   // Close this connection if its settings count received exceeds a limit
-  if (cstate.get_received_settings_count() > Http2::max_settings_per_minute) {
+  if (cstate.get_received_settings_count() > h2config->max_settings_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_SETTINGS_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent setting changes: %u settings within a last minute",
                      cstate.get_received_settings_count());
@@ -703,10 +707,12 @@ rcv_ping_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                       "ping bad length");
   }
 
+  const Http2ConfigParams *h2config = cstate.ua_session->config();
+
   // Update PING frame count per minute
   cstate.increment_received_ping_frame_count();
   // Close this connection if its ping count received exceeds a limit
-  if (cstate.get_received_ping_frame_count() > Http2::max_ping_frames_per_minute) {
+  if (cstate.get_received_ping_frame_count() > h2config->max_ping_frames_per_minute) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_PING_FRAMES_PER_MINUTE_EXCEEDED, this_ethread());
     Http2StreamDebug(cstate.ua_session, stream_id, "Observed too frequent PING frames: %u PING frames within a last minute",
                      cstate.get_received_ping_frame_count());
@@ -908,10 +914,12 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   uint32_t header_blocks_offset = stream->header_blocks_length;
   stream->header_blocks_length += payload_length;
 
+  const Http2ConfigParams *h2config = cstate.ua_session->config();
+
   // ATS advertises SETTINGS_MAX_HEADER_LIST_SIZE as a limit of total header blocks length. (Details in [RFC 7560] 10.5.1.)
   // Make it double to relax the limit in cases of 1) HPACK is used naively, or 2) Huffman Encoding generates large header blocks.
   // The total "decoded" header length is strictly checked by hpack_decode_header_block().
-  if (stream->header_blocks_length > std::max(Http2::max_header_list_size, Http2::max_header_list_size * 2)) {
+  if (stream->header_blocks_length > std::max(h2config->max_header_list_size, h2config->max_header_list_size * 2)) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                       "header blocks too large");
   }
@@ -928,8 +936,8 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                         "continuation no state change");
     }
 
-    Http2ErrorCode result =
-      stream->decode_header_blocks(*cstate.local_hpack_handle, cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+    Http2ErrorCode result = stream->decode_header_blocks(*cstate.local_hpack_handle, h2config->max_header_list_size,
+                                                         cstate.server_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
 
     if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       if (result == Http2ErrorCode::HTTP2_ERROR_COMPRESSION_ERROR) {
@@ -973,6 +981,27 @@ static const http2_frame_dispatch frame_handlers[HTTP2_FRAME_TYPE_MAX] = {
   rcv_continuation_frame,  // HTTP2_FRAME_TYPE_CONTINUATION
 };
 
+////
+// Http2ConnectionState
+//
+
+void
+Http2ConnectionState::init()
+{
+  const Http2ConfigParams *h2config = ua_session->config();
+
+  this->_server_rwnd = h2config->initial_window_size;
+
+  local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
+  remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
+  if (h2config->stream_priority_enabled) {
+    dependency_tree = new DependencyTree(h2config->max_concurrent_streams_in);
+  }
+
+  _cop = ActivityCop<Http2Stream>(this->mutex, &stream_list, 1);
+  _cop.start();
+}
+
 int
 Http2ConnectionState::main_event_handler(int event, void *edata)
 {
@@ -999,7 +1028,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     // Load the server settings from the records.config / RecordsConfig.cc
     // settings.
     Http2ConnectionSettings configured_settings;
-    configured_settings.settings_from_configs();
+    configured_settings.settings_from_configs(ua_session->config());
     configured_settings.set(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, _adjust_concurrent_stream());
 
     send_settings_frame(configured_settings);
@@ -1371,7 +1400,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
   Http2StreamDebug(ua_session, stream->get_id(), "Delete stream");
   REMEMBER(NO_EVENT, this->recursion);
 
-  if (Http2::stream_priority_enabled) {
+  if (ua_session->config()->stream_priority_enabled) {
     Http2DependencyTree::Node *node = stream->priority_node;
     if (node != nullptr) {
       if (node->active) {
@@ -1738,8 +1767,11 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   ts::LocalBuffer local_buffer(buf_len);
   uint8_t *buf = local_buffer.data();
 
-  Http2ErrorCode result = http2_encode_header_blocks(&hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle),
-                                                     client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE));
+  int32_t maximum_table_size = static_cast<int32_t>(
+    std::min(ua_session->config()->header_table_size_limit, client_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE)));
+
+  Http2ErrorCode result =
+    http2_encode_header_blocks(&hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle), maximum_table_size);
   if (result != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     return false;
   }
@@ -1784,7 +1816,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
   }
 
   SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
-  if (Http2::stream_priority_enabled) {
+  if (ua_session->config()->stream_priority_enabled) {
     Http2DependencyTree::Node *node = this->dependency_tree->find(id);
     if (node != nullptr) {
       stream->priority_node = node;
@@ -1959,9 +1991,10 @@ Http2ConnectionState::get_received_priority_frame_count()
 unsigned
 Http2ConnectionState::_adjust_concurrent_stream()
 {
-  if (Http2::max_active_streams_in == 0) {
+  const Http2ConfigParams *h2config = ua_session->config();
+  if (h2config->max_active_streams_in == 0) {
     // Throttling down is disabled.
-    return Http2::max_concurrent_streams_in;
+    return h2config->max_concurrent_streams_in;
   }
 
   int64_t current_client_streams = 0;
@@ -1969,22 +2002,22 @@ Http2ConnectionState::_adjust_concurrent_stream()
 
   Http2ConDebug(ua_session, "current client streams: %" PRId64, current_client_streams);
 
-  if (current_client_streams >= Http2::max_active_streams_in) {
+  if (current_client_streams >= h2config->max_active_streams_in) {
     if (!Http2::throttling) {
       Warning("too many streams: %" PRId64 ", reduce SETTINGS_MAX_CONCURRENT_STREAMS to %d", current_client_streams,
-              Http2::min_concurrent_streams_in);
+              h2config->min_concurrent_streams_in);
       Http2::throttling = true;
     }
 
-    return Http2::min_concurrent_streams_in;
+    return h2config->min_concurrent_streams_in;
   } else {
     if (Http2::throttling) {
-      Note("revert SETTINGS_MAX_CONCURRENT_STREAMS to %d", Http2::max_concurrent_streams_in);
+      Note("revert SETTINGS_MAX_CONCURRENT_STREAMS to %d", h2config->max_concurrent_streams_in);
       Http2::throttling = false;
     }
   }
 
-  return Http2::max_concurrent_streams_in;
+  return h2config->max_concurrent_streams_in;
 }
 
 ssize_t
@@ -2003,7 +2036,7 @@ Http2ConnectionState::increment_client_rwnd(size_t amount)
   this->_recent_rwnd_increment_index %= this->_recent_rwnd_increment.size();
   double sum = std::accumulate(this->_recent_rwnd_increment.begin(), this->_recent_rwnd_increment.end(), 0.0);
   double avg = sum / this->_recent_rwnd_increment.size();
-  if (avg < Http2::min_avg_window_update) {
+  if (avg < ua_session->config()->min_avg_window_update) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE, this_ethread());
     return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
   }
@@ -2035,4 +2068,29 @@ Http2ConnectionState::decrement_server_rwnd(size_t amount)
 {
   this->_server_rwnd -= amount;
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+}
+
+double
+Http2ConnectionState::get_stream_error_rate() const
+{
+  int total = get_stream_requests();
+
+  if (total >= (1 / ua_session->config()->stream_error_rate_threshold)) {
+    return (double)stream_error_count / (double)total;
+  } else {
+    return 0;
+  }
+}
+
+void
+Http2ConnectionState::schedule_zombie_event()
+{
+  uint32_t zombie_timeout_in = ua_session->config()->zombie_timeout_in;
+
+  if (zombie_timeout_in) { // If we have zombie debugging enabled
+    if (zombie_event) {
+      zombie_event->cancel();
+    }
+    zombie_event = this_ethread()->schedule_in(this, HRTIME_SECONDS(zombie_timeout_in));
+  }
 }

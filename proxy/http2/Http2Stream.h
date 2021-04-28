@@ -69,7 +69,7 @@ public:
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false) override;
   void do_io_close(int lerrno = -1) override;
 
-  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size);
+  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t max_header_size, uint32_t maximum_table_size);
   void send_request(Http2ConnectionState &cstate);
   void initiating_close();
   void terminate_if_possible();

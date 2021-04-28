@@ -362,7 +362,8 @@ bool http2_parse_goaway(IOVec, Http2Goaway &);
 
 bool http2_parse_window_update(IOVec, uint32_t &);
 
-Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint32_t, uint32_t *, HpackHandle &, bool &, uint32_t);
+Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint32_t, uint32_t *, HpackHandle &, bool &, uint32_t,
+                                          uint32_t);
 
 Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32_t *, HpackHandle &, int32_t);
 
@@ -371,41 +372,10 @@ ParseResult http2_convert_header_from_1_1_to_2(HTTPHdr *);
 void http2_init_pseudo_headers(HTTPHdr &);
 void http2_init();
 
-// Not sure where else to put this, but figure this is as good of a start as
-// anything else.
-// Right now, only the static init() is available, which sets up some basic
-// librecords
-// dependencies.
 class Http2
 {
 public:
-  static uint32_t max_concurrent_streams_in;
-  static uint32_t min_concurrent_streams_in;
-  static uint32_t max_active_streams_in;
   static bool throttling;
-  static uint32_t stream_priority_enabled;
-  static uint32_t initial_window_size;
-  static uint32_t max_frame_size;
-  static uint32_t header_table_size;
-  static uint32_t max_header_list_size;
-  static uint32_t accept_no_activity_timeout;
-  static uint32_t no_activity_timeout_in;
-  static uint32_t active_timeout_in;
-  static uint32_t push_diary_size;
-  static uint32_t zombie_timeout_in;
-  static float stream_error_rate_threshold;
-  static uint32_t max_settings_per_frame;
-  static uint32_t max_settings_per_minute;
-  static uint32_t max_settings_frames_per_minute;
-  static uint32_t max_ping_frames_per_minute;
-  static uint32_t max_priority_frames_per_minute;
-  static float min_avg_window_update;
-  static uint32_t con_slow_log_threshold;
-  static uint32_t stream_slow_log_threshold;
-  static uint32_t header_table_size_limit;
-  static uint32_t write_buffer_block_size;
-  static float write_size_threshold;
-  static uint32_t write_time_threshold;
 
   static void init();
 };

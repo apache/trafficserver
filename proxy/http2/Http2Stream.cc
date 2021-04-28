@@ -44,13 +44,14 @@ Http2Stream::Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initi
 {
   SET_HANDLER(&Http2Stream::main_event_handler);
 
+  Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(session);
   this->mark_milestone(Http2StreamMilestone::OPEN);
 
   this->_sm          = nullptr;
   this->_id          = sid;
   this->_thread      = this_ethread();
   this->_client_rwnd = initial_rwnd;
-  this->_server_rwnd = Http2::initial_window_size;
+  this->_server_rwnd = h2_proxy_ssn->config()->initial_window_size;
 
   this->_reader = this->_request_buffer.alloc_reader();
 
@@ -71,14 +72,15 @@ Http2Stream::~Http2Stream()
   ink_release_assert(this->closed);
   ink_release_assert(reentrancy_count == 0);
 
-  uint64_t cid = 0;
-
+  uint64_t cid                       = 0;
+  uint32_t stream_slow_log_threshold = 0;
   // Safe to initiate SSN_CLOSE if this is the last stream
   if (_proxy_ssn) {
     cid = _proxy_ssn->connection_id();
 
     Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(_proxy_ssn);
     SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+    stream_slow_log_threshold = h2_proxy_ssn->config()->stream_slow_log_threshold;
     // Make sure the stream is removed from the stream list and priority tree
     // In many cases, this has been called earlier, so this call is a no-op
     h2_proxy_ssn->connection_state.delete_stream(this);
@@ -100,7 +102,7 @@ Http2Stream::~Http2Stream()
   HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, this->_thread, total_time);
 
   // Slow Log
-  if (Http2::stream_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::stream_slow_log_threshold) < total_time) {
+  if (stream_slow_log_threshold != 0 && ink_hrtime_from_msec(stream_slow_log_threshold) < total_time) {
     Error("[%" PRIu64 "] [%" PRIu32 "] [%" PRId64 "] Slow H2 Stream: "
           "open: %" PRIu64 " "
           "dec_hdrs: %.3f "
@@ -218,10 +220,10 @@ Http2Stream::main_event_handler(int event, void *edata)
 }
 
 Http2ErrorCode
-Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size)
+Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t max_header_size, uint32_t maximum_table_size)
 {
   return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks, header_blocks_length, nullptr, hpack_handle,
-                                    trailing_header, maximum_table_size);
+                                    trailing_header, max_header_size, maximum_table_size);
 }
 
 void
@@ -786,7 +788,7 @@ Http2Stream::send_response_body(bool call_update)
   Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
   _timeout.update_inactivity();
 
-  if (Http2::stream_priority_enabled) {
+  if (h2_proxy_ssn->config()->stream_priority_enabled) {
     SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
     h2_proxy_ssn->connection_state.schedule_stream(this);
     // signal_write_event() will be called from `Http2ConnectionState::send_data_frames_depends_on_priority()`
@@ -927,7 +929,9 @@ Http2Stream::increment_client_rwnd(size_t amount)
   this->_recent_rwnd_increment_index %= this->_recent_rwnd_increment.size();
   double sum = std::accumulate(this->_recent_rwnd_increment.begin(), this->_recent_rwnd_increment.end(), 0.0);
   double avg = sum / this->_recent_rwnd_increment.size();
-  if (avg < Http2::min_avg_window_update) {
+
+  Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(_proxy_ssn);
+  if (avg < h2_proxy_ssn->config()->min_avg_window_update) {
     return Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
   }
   return Http2ErrorCode::HTTP2_ERROR_NO_ERROR;

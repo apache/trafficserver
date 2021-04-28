@@ -112,7 +112,7 @@ Http2ClientSession::free()
   ink_hrtime total_time = this->_milestones.elapsed(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE);
 
   // Slow Log
-  if (Http2::con_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::con_slow_log_threshold) < total_time) {
+  if (_config->con_slow_log_threshold != 0 && ink_hrtime_from_msec(_config->con_slow_log_threshold) < total_time) {
     Error("[%" PRIu64 "] Slow H2 Connection: open: %" PRIu64 " close: %.3f", this->con_id,
           ink_hrtime_to_msec(this->_milestones[Http2SsnMilestone::OPEN]),
           this->_milestones.difference_sec(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE));
@@ -163,6 +163,8 @@ Http2ClientSession::free()
 
   free_MIOBuffer(this->read_buffer);
   free_MIOBuffer(this->write_buffer);
+  Http2Config::release(this->_config);
+
   THREAD_FREE(this, http2ClientSessionAllocator, this_ethread());
 }
 
@@ -193,10 +195,12 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, new_vc->mutex->thread_holding);
   this->_milestones.mark(Http2SsnMilestone::OPEN);
 
+  this->_config = Http2Config::acquire();
+
   // Unique client session identifier.
   this->con_id = ProxySession::next_connection_id();
   this->_vc    = new_vc;
-  _vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
+  _vc->set_inactivity_timeout(HRTIME_SECONDS(_config->accept_no_activity_timeout));
   this->schedule_event = nullptr;
   this->mutex          = new_vc->mutex;
   this->in_destroy     = false;
@@ -218,10 +222,10 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->_read_buffer_reader     = reader ? reader : this->read_buffer->alloc_reader();
 
   // This block size is the buffer size that we pass to SSLWriteBuffer
-  auto buffer_block_size_index = iobuffer_size_to_index(Http2::write_buffer_block_size, MAX_BUFFER_SIZE_INDEX);
+  auto buffer_block_size_index = iobuffer_size_to_index(_config->write_buffer_block_size, MAX_BUFFER_SIZE_INDEX);
   this->write_buffer           = new_MIOBuffer(buffer_block_size_index);
   this->_write_buffer_reader   = this->write_buffer->alloc_reader();
-  this->_write_size_threshold  = index_to_buffer_size(buffer_block_size_index) * Http2::write_size_threshold;
+  this->_write_size_threshold  = index_to_buffer_size(buffer_block_size_index) * _config->write_size_threshold;
 
   this->_handle_if_ssl(new_vc);
 
@@ -359,13 +363,13 @@ Http2ClientSession::main_event_handler(int event, void *edata)
       Http2SsnDebug("Preparing for graceful shutdown because of draining state");
       this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
     } else if (this->connection_state.get_stream_error_rate() >
-               Http2::stream_error_rate_threshold) { // For a case many stream errors happened
+               _config->stream_error_rate_threshold) { // For a case many stream errors happened
       ip_port_text_buffer ipb;
       const char *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
       SiteThrottledWarning("HTTP/2 session error client_ip=%s session_id=%" PRId64
                            " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
                            client_ip, connection_id(), this->connection_state.get_stream_error_rate(),
-                           Http2::stream_error_rate_threshold);
+                           _config->stream_error_rate_threshold);
       Http2SsnDebug("Preparing for graceful shutdown because of a high stream error rate");
       cause_of_death = Http2SessionCod::HIGH_ERROR_RATE;
       this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM);
@@ -413,8 +417,8 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
     this->_read_buffer_reader->consume(nbytes);
     HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
 
-    _vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::no_activity_timeout_in));
-    _vc->set_active_timeout(HRTIME_SECONDS(Http2::active_timeout_in));
+    _vc->set_inactivity_timeout(HRTIME_SECONDS(_config->no_activity_timeout_in));
+    _vc->set_active_timeout(HRTIME_SECONDS(_config->active_timeout_in));
 
     // XXX start the write VIO ...
 
@@ -557,13 +561,13 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
     }
 
     Http2ErrorCode err = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
-    if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0)) {
+    if (this->connection_state.get_stream_error_rate() > std::min(1.0, _config->stream_error_rate_threshold * 2.0)) {
       ip_port_text_buffer ipb;
       const char *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
       SiteThrottledWarning("HTTP/2 session error client_ip=%s session_id=%" PRId64
                            " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
                            client_ip, connection_id(), this->connection_state.get_stream_error_rate(),
-                           Http2::stream_error_rate_threshold);
+                           _config->stream_error_rate_threshold);
       err = Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }
 
@@ -701,10 +705,10 @@ Http2ClientSession::add_url_to_pushed_table(const char *url, int url_len)
   // Delay std::unordered_set allocation until when it used
   if (_h2_pushed_urls == nullptr) {
     this->_h2_pushed_urls = new std::unordered_set<std::string>();
-    this->_h2_pushed_urls->reserve(Http2::push_diary_size);
+    this->_h2_pushed_urls->reserve(_config->push_diary_size);
   }
 
-  if (_h2_pushed_urls->size() < Http2::push_diary_size) {
+  if (_h2_pushed_urls->size() < _config->push_diary_size) {
     _h2_pushed_urls->emplace(url);
   }
 }

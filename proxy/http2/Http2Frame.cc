@@ -76,11 +76,6 @@ Http2DataFrame::write_to(MIOBuffer *iobuffer) const
 int64_t
 Http2HeadersFrame::write_to(MIOBuffer *iobuffer) const
 {
-  // Validation
-  if (this->_hdr_block_len > Http2::max_frame_size) {
-    return -1;
-  }
-
   // Write frame header
   uint8_t buf[HTTP2_FRAME_HEADER_LEN];
   http2_write_frame_header(this->_hdr, make_iovec(buf));
@@ -153,11 +148,6 @@ Http2SettingsFrame::write_to(MIOBuffer *iobuffer) const
 int64_t
 Http2PushPromiseFrame::write_to(MIOBuffer *iobuffer) const
 {
-  // Validation
-  if (this->_hdr_block_len > Http2::max_frame_size) {
-    return -1;
-  }
-
   // Write frame header
   uint8_t buf[HTTP2_FRAME_HEADER_LEN];
   http2_write_frame_header(this->_hdr, make_iovec(buf));
@@ -234,11 +224,6 @@ Http2WindowUpdateFrame::write_to(MIOBuffer *iobuffer) const
 int64_t
 Http2ContinuationFrame::write_to(MIOBuffer *iobuffer) const
 {
-  // Validation
-  if (this->_hdr_block_len > Http2::max_frame_size) {
-    return -1;
-  }
-
   // Write frame header
   uint8_t buf[HTTP2_FRAME_HEADER_LEN];
   http2_write_frame_header(this->_hdr, make_iovec(buf));
