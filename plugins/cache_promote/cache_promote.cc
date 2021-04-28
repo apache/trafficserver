@@ -71,21 +71,21 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
           // Do nothing, just let it handle the lookup.
           TSDebug(PLUGIN_NAME, "cache-status is %d (hit), nothing to do", obj_status);
 
-          if (config->getPolicy()->stats_enabled) {
-            TSStatIntIncrement(config->getPolicy()->cache_hits_id, 1);
+          if (config->getPolicy()->_stats_enabled) {
+            TSStatIntIncrement(config->getPolicy()->_cache_hits_id, 1);
           }
           break;
         }
       }
-
-      if (config->getPolicy()->stats_enabled) {
-        TSStatIntIncrement(config->getPolicy()->total_requests_id, 1);
+      if (config->getPolicy()->_stats_enabled) {
+        TSStatIntIncrement(config->getPolicy()->_total_requests_id, 1);
       }
     } else {
       TSDebug(PLUGIN_NAME, "request is an internal (plugin) request, implicitly promoted");
     }
     break;
 
+  // This is the event when we want to count the bytes cache miss as well as hits
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     config->getPolicy()->addBytes(txnp);
     break;

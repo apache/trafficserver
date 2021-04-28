@@ -125,10 +125,10 @@ private:
   size_t _list_size = 0, _freelist_size = 0;
 
   // internal stats ids
-  int freelist_size_id = -1;
-  int lru_size_id      = -1;
-  int lru_hit_id       = -1;
-  int lru_miss_id      = -1;
-  int lru_vacated_id   = -1;
-  int promoted_id      = -1;
+  int _freelist_size_id = -1;
+  int _lru_size_id      = -1;
+  int _lru_hit_id       = -1;
+  int _lru_miss_id      = -1;
+  int _lru_vacated_id   = -1;
+  int _promoted_id      = -1;
 };

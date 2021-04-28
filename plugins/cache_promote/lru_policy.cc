@@ -126,7 +126,7 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
 
     // We have an entry in the LRU
     TSAssert(_list_size > 0); // mismatch in the LRUs hash and list, shouldn't happen
-    incrementStat(lru_hit_id, 1);
+    incrementStat(_lru_hit_id, 1);
     if (++(map_val->second) >= _hits) {
       // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
       TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
@@ -134,9 +134,9 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
       ++_freelist_size;
       --_list_size;
       _map.erase(map_key);
-      incrementStat(promoted_id, 1);
-      incrementStat(freelist_size_id, 1);
-      decrementStat(lru_size_id, 1);
+      incrementStat(_promoted_id, 1);
+      incrementStat(_freelist_size_id, 1);
+      decrementStat(_lru_size_id, 1);
       ret = true;
     } else {
       // It's still not promoted, make sure it's moved to the front of the list
@@ -145,24 +145,24 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
     }
   } else {
     // New LRU entry for the URL, try to repurpose the list entry as much as possible
-    incrementStat(lru_miss_id, 1);
+    incrementStat(_lru_miss_id, 1);
     if (_list_size >= _buckets) {
       TSDebug(PLUGIN_NAME, "repurposing last LRUHash entry");
       _list.splice(_list.begin(), _list, --_list.end());
       _map.erase(&(_list.begin()->first));
-      incrementStat(lru_vacated_id, 1);
+      incrementStat(_lru_vacated_id, 1);
     } else if (_freelist_size > 0) {
       TSDebug(PLUGIN_NAME, "reusing LRUEntry from freelist");
       _list.splice(_list.begin(), _freelist, _freelist.begin());
       --_freelist_size;
       ++_list_size;
-      incrementStat(lru_size_id, 1);
-      decrementStat(freelist_size_id, 1);
+      incrementStat(_lru_size_id, 1);
+      decrementStat(_freelist_size_id, 1);
     } else {
       TSDebug(PLUGIN_NAME, "creating new LRUEntry");
       _list.push_front(NULL_LRU_ENTRY);
       ++_list_size;
-      incrementStat(lru_size_id, 1);
+      incrementStat(_lru_size_id, 1);
     }
     // Update the "new" LRUEntry and add it to the hash
     *_list.begin()                = {hash, 1};
@@ -202,10 +202,10 @@ LRUPolicy::stats_add(const char *remap_id)
 {
   std::string_view remap_identifier                 = remap_id;
   const std::tuple<std::string_view, int *> stats[] = {
-    {"cache_hits", &cache_hits_id}, {"freelist_size", &freelist_size_id},
-    {"lru_size", &lru_size_id},     {"lru_hit", &lru_hit_id},
-    {"lru_miss", &lru_miss_id},     {"lru_vacated", &lru_vacated_id},
-    {"promoted", &promoted_id},     {"total_requests", &total_requests_id},
+    {"cache_hits", &_cache_hits_id}, {"freelist_size", &_freelist_size_id},
+    {"lru_size", &_lru_size_id},     {"lru_hit", &_lru_hit_id},
+    {"lru_miss", &_lru_miss_id},     {"lru_vacated", &_lru_vacated_id},
+    {"promoted", &_promoted_id},     {"total_requests", &_total_requests_id},
   };
 
   if (nullptr == remap_id) {
