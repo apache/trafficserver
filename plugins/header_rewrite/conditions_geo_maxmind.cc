@@ -36,14 +36,21 @@ void
 MMConditionGeo::initLibrary(const std::string &path)
 {
   if (path.empty()) {
-    TSError("[%s] Empty db path specified. Not initializing!", PLUGIN_NAME);
+    TSDebug(PLUGIN_NAME, "Empty MaxMind db path specified. Not initializing!");
     return;
   }
+
+  if (gMaxMindDB != nullptr) {
+    TSDebug(PLUGIN_NAME, "Maxmind library already initialized");
+    return;
+  }
+
   gMaxMindDB = new MMDB_s;
 
   int status = MMDB_open(path.c_str(), MMDB_MODE_MMAP, gMaxMindDB);
   if (MMDB_SUCCESS != status) {
     TSDebug(PLUGIN_NAME, "Cannot open %s - %s", path.c_str(), MMDB_strerror(status));
+    delete gMaxMindDB;
     return;
   }
   TSDebug(PLUGIN_NAME, "Loaded %s", path.c_str());
@@ -56,6 +63,7 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
   int mmdb_error;
 
   if (gMaxMindDB == nullptr) {
+    TSDebug(PLUGIN_NAME, "MaxMind not initialized; using default value");
     return ret;
   }
 
@@ -120,6 +128,7 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
   int mmdb_error;
 
   if (gMaxMindDB == nullptr) {
+    TSDebug(PLUGIN_NAME, "MaxMind not initialized; using default value");
     return ret;
   }
 
@@ -150,7 +159,7 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
   const char *field_name;
   switch (_geo_qual) {
   case GEO_QUAL_ASN:
-    field_name = "autonomous_system";
+    field_name = "autonomous_system_number";
     break;
   default:
     TSDebug(PLUGIN_NAME, "Unsupported field %d", _geo_qual);
