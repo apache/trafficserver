@@ -316,8 +316,10 @@ NextHopConsistentHash::findNextHop(const uint64_t sm_id, ParentResult &result, R
       }
       switch (ring_mode) {
       case NH_ALTERNATE_RING:
-        if (groups > 0) {
+        if (pRec && groups > 0) {
           cur_ring = (pRec->group_index + 1) % groups;
+        } else {
+          cur_ring = 0;
         }
         break;
       case NH_EXHAUST_RING:
