@@ -50,15 +50,8 @@ public:
     return *this;
   }
 
-  void
-  init(char *data, int len)
-  {
-    SHA_CTX sha;
-
-    SHA1_Init(&sha);
-    SHA1_Update(&sha, data, len);
-    SHA1_Final(_hash, &sha);
-  }
+  // Initialize the hash key from the TXN's URL
+  bool initFromUrl(TSHttpTxn txnp);
 
 private:
   u_char _hash[SHA_DIGEST_LENGTH];
@@ -78,9 +71,9 @@ struct LRUHashHasher {
   }
 };
 
-typedef std::pair<LRUHash, unsigned> LRUEntry;
-using LRUList = std::list<LRUEntry>;
-typedef std::unordered_map<const LRUHash *, LRUList::iterator, LRUHashHasher, LRUHashHasher> LRUMap;
+using LRUEntry = std::pair<LRUHash, unsigned>;
+using LRUList  = std::list<LRUEntry>;
+using LRUMap   = std::unordered_map<const LRUHash *, LRUList::iterator, LRUHashHasher, LRUHashHasher>;
 
 class LRUPolicy : public PromotionPolicy
 {
@@ -91,6 +84,13 @@ public:
   bool parseOption(int opt, char *optarg) override;
   bool doPromote(TSHttpTxn txnp) override;
   bool stats_add(const char *remap_id) override;
+  void addBytes(TSHttpTxn txnp);
+
+  bool
+  countBytes() const
+  {
+    return _bytes > 0;
+  };
 
   void
   usage() const override
@@ -112,8 +112,10 @@ public:
   }
 
 private:
-  unsigned _buckets = 1000;
-  unsigned _hits    = 10;
+  unsigned _buckets  = 1000;
+  unsigned _hits     = 10;
+  unsigned _bytes    = 0;
+  std::string _label = "";
 
   // For the LRU. Note that we keep track of the List sizes, because some versions fo STL have broken
   // implementations of size(), making them obsessively slow on calling ::size().

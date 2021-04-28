@@ -47,7 +47,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
   PromotionConfig *config = static_cast<PromotionConfig *>(TSContDataGet(contp));
 
   switch (event) {
-  // Main HOOK
+  // After the cache lookups check if it should be promoted on cache misses
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     if (!TSHttpTxnIsInternal(txnp)) {
       int obj_status;
@@ -60,6 +60,10 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
             TSDebug(PLUGIN_NAME, "cache-status is %d, and leaving cache on (promoted)", obj_status);
           } else {
             TSDebug(PLUGIN_NAME, "cache-status is %d, and turning off the cache (not promoted)", obj_status);
+            if (config->getPolicy()->countBytes()) {
+              // Need to schedule this continuation for read-response-header-hook as well.
+              TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+            }
             TSHttpTxnServerRespNoStoreSet(txnp, 1);
           }
           break;
@@ -80,6 +84,10 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
     } else {
       TSDebug(PLUGIN_NAME, "request is an internal (plugin) request, implicitly promoted");
     }
+    break;
+
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
+    config->getPolicy()->addBytes(txnp);
     break;
 
   // Should not happen

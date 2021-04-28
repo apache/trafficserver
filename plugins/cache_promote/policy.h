@@ -82,6 +82,18 @@ public:
     return "";
   }
 
+  // These are for any policy that also wants to count byters are a promotion criteria
+  virtual bool
+  countBytes() const
+  {
+    return false;
+  }
+
+  virtual void
+  addBytes(TSHttpTxn txnp)
+  {
+  }
+
   bool doSample() const;
   int create_stat(std::string_view name, std::string_view remap_identifier);
 
@@ -99,7 +111,4 @@ public:
 
 private:
   float _sample = 0.0;
-
-protected:
-  std::string _label = "";
 };

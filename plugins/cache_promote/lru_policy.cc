@@ -22,6 +22,42 @@
 #define MINIMUM_BUCKET_SIZE 10
 static LRUEntry NULL_LRU_ENTRY; // Used to create an "empty" new LRUEntry
 
+// Initialize the LRU hash key from the TXN's URL
+bool
+LRUHash::initFromUrl(TSHttpTxn txnp)
+{
+  bool ret     = false;
+  TSMLoc c_url = TS_NULL_MLOC;
+  TSMBuffer reqp;
+  TSMLoc req_hdr;
+
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &reqp, &req_hdr)) {
+    return false;
+  }
+
+  if (TS_SUCCESS == TSUrlCreate(reqp, &c_url)) {
+    if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(txnp, reqp, c_url)) {
+      int url_len = 0;
+      char *url   = TSUrlStringGet(reqp, c_url, &url_len);
+
+      if (url && url_len > 0) {
+        SHA_CTX sha;
+
+        SHA1_Init(&sha);
+        TSDebug(PLUGIN_NAME, "LRUHash::initFromUrl(%.*s%s)", url_len > 100 ? 100 : url_len, url, url_len > 100 ? "..." : "");
+        SHA1_Update(&sha, url, url_len);
+        SHA1_Final(_hash, &sha);
+        TSfree(url);
+        ret = true;
+      }
+    }
+    TSHandleMLocRelease(reqp, TS_NULL_MLOC, c_url);
+  }
+  TSHandleMLocRelease(reqp, TS_NULL_MLOC, req_hdr);
+
+  return ret;
+}
+
 LRUPolicy::~LRUPolicy()
 {
   TSDebug(PLUGIN_NAME, "LRUPolicy DTOR");
@@ -52,6 +88,9 @@ LRUPolicy::parseOption(int opt, char *optarg)
   case 'h':
     _hits = static_cast<unsigned>(strtol(optarg, nullptr, 10));
     break;
+  case 'B':
+    _bytes = static_cast<unsigned>(strtol(optarg, nullptr, 10));
+    break;
   case 'l':
     _label = optarg;
     break;
@@ -72,58 +111,37 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
 {
   LRUHash hash;
   LRUMap::iterator map_it;
-  char *url   = nullptr;
-  int url_len = 0;
-  bool ret    = false;
-  TSMBuffer request;
-  TSMLoc req_hdr;
+  bool ret = false;
 
-  if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
-    TSMLoc c_url = TS_NULL_MLOC;
-
-    // Get the cache key URL (for now), since this has better lookup behavior when using
-    // e.g. the cachekey plugin.
-    if (TS_SUCCESS == TSUrlCreate(request, &c_url)) {
-      if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(txnp, request, c_url)) {
-        url = TSUrlStringGet(request, c_url, &url_len);
-        TSHandleMLocRelease(request, TS_NULL_MLOC, c_url);
-      }
-    }
-    TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
-  }
-
-  // Generally shouldn't happen ...
-  if (!url) {
+  if (!hash.initFromUrl(txnp)) {
     return false;
   }
-
-  TSDebug(PLUGIN_NAME, "LRUPolicy::doPromote(%.*s%s)", url_len > 100 ? 100 : url_len, url, url_len > 100 ? "..." : "");
-  hash.init(url, url_len);
-  TSfree(url);
 
   // We have to hold the lock across all list and hash access / updates
   TSMutexLock(_lock);
 
   map_it = _map.find(&hash);
   if (_map.end() != map_it) {
+    auto &[map_key, map_val] = *map_it;
+
     // We have an entry in the LRU
     TSAssert(_list_size > 0); // mismatch in the LRUs hash and list, shouldn't happen
     incrementStat(lru_hit_id, 1);
-    if (++(map_it->second->second) >= _hits) {
+    if (++(map_val->second) >= _hits) {
       // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
       TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
-      _freelist.splice(_freelist.begin(), _list, map_it->second);
+      _freelist.splice(_freelist.begin(), _list, map_val);
       ++_freelist_size;
       --_list_size;
-      _map.erase(map_it->first);
+      _map.erase(map_key);
       incrementStat(promoted_id, 1);
       incrementStat(freelist_size_id, 1);
       decrementStat(lru_size_id, 1);
       ret = true;
     } else {
       // It's still not promoted, make sure it's moved to the front of the list
-      TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far", map_it->second->second);
-      _list.splice(_list.begin(), _list, map_it->second);
+      TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far", map_val->second);
+      _list.splice(_list.begin(), _list, map_val);
     }
   } else {
     // New LRU entry for the URL, try to repurpose the list entry as much as possible
@@ -147,14 +165,35 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
       incrementStat(lru_size_id, 1);
     }
     // Update the "new" LRUEntry and add it to the hash
-    _list.begin()->first          = hash;
-    _list.begin()->second         = 1;
+    *_list.begin()                = {hash, 1};
     _map[&(_list.begin()->first)] = _list.begin();
   }
 
   TSMutexUnlock(_lock);
 
   return ret;
+}
+
+void
+LRUPolicy::addBytes(TSHttpTxn txnp)
+{
+  LRUHash hash;
+
+  if (hash.initFromUrl(txnp)) {
+    LRUMap::iterator map_it;
+    // We have to hold the lock across all list and hash access / updates
+    TSMutexLock(_lock);
+
+    map_it = _map.find(&hash);
+    if (_map.end() != map_it) {
+      // auto &[map_key, map_val] = *map_it;
+
+      // ToDo: Need to get the Content-Length: header here, and update the bytes counters
+      // We still have an entry in the LRU, update the bytes counters
+    }
+
+    TSMutexUnlock(_lock);
+  }
 }
 
 bool
