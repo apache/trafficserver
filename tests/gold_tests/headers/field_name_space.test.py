@@ -1,5 +1,5 @@
 '''
-Test on handeling spaces after the field name and before the colon
+Test on handling spaces after the field name and before the colon
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,7 +18,7 @@ Test on handeling spaces after the field name and before the colon
 #  limitations under the License.
 
 Test.Summary = '''
-Checking  on handeling spaces after the field name and before the colon
+Checking  on handling spaces after the field name and before the colon
 '''
 
 Test.ContinueOnFail = True

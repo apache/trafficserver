@@ -35,7 +35,7 @@ ports.get_port(ts, 's_client_port')
 
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
-# Need no remap rules.  Everything should be proccessed by sni
+# Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(

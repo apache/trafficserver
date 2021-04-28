@@ -178,7 +178,7 @@ ps.Streams.stderr = "gold/bb.gold"
 ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
 tr.StillRunningAfter = ts
 
-# 3 Test - Request fullly healed asset via slice plugin
+# 3 Test - Request fully healed asset via slice plugin
 tr = Test.AddTestRun("Request full healed slice")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://slice/second'

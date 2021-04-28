@@ -182,7 +182,7 @@ tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
 tr.StillRunningAfter = server
 
 # Test Case 6: Post with chunked body
-# While HTTP/2 does not support Tranfer-encoding we pass that into curl to encourage it to not set the content length
+# While HTTP/2 does not support Transfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format(
@@ -192,7 +192,7 @@ tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
 
 # Test Case 7: Post with big chunked body
-# While HTTP/2 does not support Tranfer-encoding we pass that into curl to encourage it to not set the content length
+# While HTTP/2 does not support Transfer-encoding we pass that into curl to encourage it to not set the content length
 # on the post body
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format(
@@ -201,7 +201,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
 
-# Test Case 8: Huge resposne header
+# Test Case 8: Huge response header
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/huge_resp_hdrs'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0

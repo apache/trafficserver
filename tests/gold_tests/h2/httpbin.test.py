@@ -83,7 +83,7 @@ python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin), indent=2, se
 # Test Cases
 # ----
 
-# Test Case 0: Basic request and resposne
+# Test Case 0: Basic request and response
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = "curl -vs -k --http2 https://127.0.0.1:{0}/get | {1}".format(
     ts.Variables.ssl_port, json_printer)

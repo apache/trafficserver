@@ -131,7 +131,7 @@ rotate_diags_log = tr1.Processes.Process("rotate_diags_log", "mv {} {}".format(
 rotate_manager_log = tr1.Processes.Process("rotate_manager_log", "mv {} {}".format(
     diags_test.manager_log, diags_test.rotated_manager_log))
 
-# Configure the signaling of SIGUSR2 to traffic_manaager.
+# Configure the signaling of SIGUSR2 to traffic_manager.
 tr1.Processes.Default.Command = diags_test.get_sigusr2_signal_command()
 tr1.Processes.Default.Return = 0
 tr1.Processes.Default.Ready = When.FileExists(diags_test.diags_log)
@@ -178,7 +178,7 @@ first_curl = tr2.Processes.Process(
 # only allow us to wait until the logs get populated with the desired content,
 # the test will not wait the entire time for them to complete.
 first_curl_ready = tr2.Processes.Process("first_curl_ready", 'sleep 30')
-# In the autest enironment, it can take more than 10 seconds for the log file to be created.
+# In the autest environment, it can take more than 10 seconds for the log file to be created.
 first_curl_ready.StartupTimeout = 30
 first_curl_ready.Ready = When.FileContains(configured_test.configured_log, "/first")
 
@@ -190,7 +190,7 @@ second_curl = tr2.Processes.Process(
     'curl "http://127.0.0.1:{0}/second" --verbose'.format(configured_test.ts.Variables.port))
 
 second_curl_ready = tr2.Processes.Process("second_curl_ready", 'sleep 30')
-# In the autest enironment, it can take more than 10 seconds for the log file to be created.
+# In the autest environment, it can take more than 10 seconds for the log file to be created.
 second_curl_ready.StartupTimeout = 30
 second_curl_ready.Ready = When.FileContains(configured_test.rotated_configured_log, "/second")
 
@@ -203,7 +203,7 @@ third_curl = tr2.Processes.Process(
     "third_curl",
     'curl "http://127.0.0.1:{0}/third" --verbose'.format(configured_test.ts.Variables.port))
 third_curl_ready = tr2.Processes.Process("third_curl_ready", 'sleep 30')
-# In the autest enironment, it can take more than 10 seconds for the log file to be created.
+# In the autest environment, it can take more than 10 seconds for the log file to be created.
 third_curl_ready.StartupTimeout = 30
 third_curl_ready.Ready = When.FileContains(configured_test.configured_log, "/third")
 

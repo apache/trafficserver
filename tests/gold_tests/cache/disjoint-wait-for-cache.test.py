@@ -19,7 +19,7 @@
 import uuid
 
 Test.Summary = '''
-Same as cache-generaertaion-disjoint, but uses proxy.config.http.wait_for_cache which should delay
+Same as cache-generation-disjoint, but uses proxy.config.http.wait_for_cache which should delay
 the server from accepting connection till the cache is loaded
 '''
 
