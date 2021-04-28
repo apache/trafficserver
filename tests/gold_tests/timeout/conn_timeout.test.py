@@ -33,7 +33,6 @@ server4 = Test.MakeOriginServer("server4")
 ts.Disk.records_config.update({
     'proxy.config.url_remap.remap_required': 1,
     'proxy.config.http.connect_attempts_timeout': 2,
-    'proxy.config.http.post_connect_attempts_timeout': 2,
     'proxy.config.http.connect_attempts_max_retries': 0,
     'proxy.config.http.transaction_no_activity_timeout_out': 5,
     'proxy.config.diags.debug.enabled': 0,

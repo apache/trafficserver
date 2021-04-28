@@ -187,6 +187,9 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         "ERROR:", "diags.log should not contain errors")
     p.Disk.diags_log.Content += Testers.ExcludesExpression(
         "FATAL:", "diags.log should not contain errors")
+    p.Disk.diags_log.Content += Testers.ExcludesExpression(
+        "Unrecognized configuration value",
+        "diags.log should not contain a warning about an unrecognized configuration")
 
     if command == "traffic_manager":
         fname = "manager.log"
