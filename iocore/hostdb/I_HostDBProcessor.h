@@ -31,6 +31,7 @@
 #include "I_EventSystem.h"
 #include "SRV.h"
 #include "P_RefCountCache.h"
+#include "HTTP.h"
 
 // Event returned on a lookup
 #define EVENT_HOST_DB_LOOKUP (HOSTDB_EVENT_EVENTS_START + 0)
@@ -99,17 +100,10 @@ union HostDBApplicationInfo {
     unsigned int application2;
   } allotment;
 
-  enum HttpVersion : uint8_t {
-    HTTP_VERSION_UNDEFINED = 0,
-    HTTP_VERSION_09        = 1,
-    HTTP_VERSION_10        = 2,
-    HTTP_VERSION_11        = 3,
-  };
-
   //////////////////////////////////////////////////////////
   // http server attributes in the host database          //
   //                                                      //
-  // http_version       - one of HttpVersion              //
+  // http_version       - one of HTTPVersion              //
   // last_failure       - UNIX time for the last time     //
   //                      we tried the server & failed    //
   // fail_count         - Number of times we tried and    //
@@ -117,13 +111,15 @@ union HostDBApplicationInfo {
   //////////////////////////////////////////////////////////
   struct http_server_attr {
     uint32_t last_failure;
-    HttpVersion http_version;
+    HTTPVersion http_version;
     uint8_t fail_count;
+    http_server_attr() : http_version() {}
   } http_data;
 
   struct application_data_rr {
     unsigned int offset;
   } rr;
+  HostDBApplicationInfo() : http_data() {}
 };
 
 struct HostDBRoundRobin;
