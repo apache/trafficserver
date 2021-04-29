@@ -28,10 +28,10 @@
 #include "tscore/CryptoHash.h"
 #include "tscore/ink_align.h"
 #include "tscore/ink_resolver.h"
+#include "tscore/HTTPVersion.h"
 #include "I_EventSystem.h"
 #include "SRV.h"
 #include "P_RefCountCache.h"
-#include "HTTP.h"
 
 // Event returned on a lookup
 #define EVENT_HOST_DB_LOOKUP (HOSTDB_EVENT_EVENTS_START + 0)

@@ -26,6 +26,7 @@
 #include <cassert>
 #include "tscore/Arena.h"
 #include "tscore/CryptoHash.h"
+#include "tscore/HTTPVersion.h"
 #include "MIME.h"
 #include "URL.h"
 
@@ -241,30 +242,6 @@ enum HTTPType {
   HTTP_TYPE_UNKNOWN,
   HTTP_TYPE_REQUEST,
   HTTP_TYPE_RESPONSE,
-};
-
-class HTTPVersion
-{
-public:
-  HTTPVersion() {}
-  HTTPVersion(HTTPVersion const &that) = default;
-  explicit HTTPVersion(int version);
-  constexpr HTTPVersion(uint8_t ver_major, uint8_t ver_minor);
-
-  int operator==(const HTTPVersion &hv) const;
-  int operator!=(const HTTPVersion &hv) const;
-  int operator>(const HTTPVersion &hv) const;
-  int operator<(const HTTPVersion &hv) const;
-  int operator>=(const HTTPVersion &hv) const;
-  int operator<=(const HTTPVersion &hv) const;
-
-  uint8_t get_major() const;
-  uint8_t get_minor() const;
-  int get_flat_version() const;
-
-private:
-  uint8_t vmajor = 0;
-  uint8_t vminor = 0;
 };
 
 struct HTTPHdrImpl : public HdrHeapObjImpl {
@@ -692,110 +669,6 @@ protected:
 private:
   friend class UrlPrintHack; // don't ask.
 };
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline HTTPVersion::HTTPVersion(int version)
-{
-  vmajor = (version & 0xFFFF0000) >> 16;
-  vminor = version & 0xFFFF;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline constexpr HTTPVersion::HTTPVersion(uint8_t ver_major, uint8_t ver_minor) : vmajor(ver_major), vminor(ver_minor) {}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline uint8_t
-HTTPVersion::get_major() const
-{
-  return vmajor;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline uint8_t
-HTTPVersion::get_minor() const
-{
-  return vminor;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline int
-HTTPVersion::get_flat_version() const
-{
-  return vmajor << 16 | vminor;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline int
-HTTPVersion::operator==(const HTTPVersion &hv) const
-{
-  return vmajor == hv.get_major() && vminor == hv.get_minor();
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline int
-HTTPVersion::operator!=(const HTTPVersion &hv) const
-{
-  return !(*this == hv);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline int
-HTTPVersion::operator>(const HTTPVersion &hv) const
-{
-  return *this == hv || !(*this < hv);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline int
-HTTPVersion::operator<(const HTTPVersion &hv) const
-{
-  return vmajor < hv.get_major() || (vmajor == hv.get_major() && vminor < hv.get_minor());
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline int
-HTTPVersion::operator>=(const HTTPVersion &hv) const
-{
-  return !(*this < hv);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline int
-HTTPVersion::operator<=(const HTTPVersion &hv) const
-{
-  return *this == hv || *this < hv;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-constexpr HTTPVersion HTTP_INVALID{0, 0};
-constexpr HTTPVersion HTTP_0_9{0, 9};
-constexpr HTTPVersion HTTP_1_0{1, 0};
-constexpr HTTPVersion HTTP_1_1{1, 1};
-constexpr HTTPVersion HTTP_2_0{2, 0};
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
