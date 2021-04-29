@@ -27,9 +27,11 @@ def make_id(s):
 
 # this forms is for the global process define
 
-
+# 'block_for_debug', if True, causes traffic_server to run with the --block option enabled, and effectively
+# disables timeouts that could be triggered by running traffic_server under a debugger.
 def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
-                   enable_tls=False, enable_cache=True, enable_quic=False):
+                   enable_tls=False, enable_cache=True, enable_quic=False,
+                   block_for_debug=False):
     #####################################
     # common locations
 
@@ -59,6 +61,14 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     ssl_dir = os.path.join(ts_dir, 'ssl')
     storage_dir = os.path.join(ts_dir, 'storage')
     cache_dir = os.path.join(ts_dir, 'cache')
+
+    if block_for_debug:
+        if command.startswith('traffic_server'):
+            command += ' --block'
+        elif command.startswith('traffic_manager'):
+            if '--tsArgs' not in command:
+                command += ' --tsArgs'
+            command += ' --block'
 
     # create process
     p = obj.Processes.Process(name, command)
@@ -340,6 +350,15 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
         p.ReturnCode = 2
     else:
         p.ReturnCode = 0
+
+    if block_for_debug:
+        p.Env['PROXY_BLOCK'] = '1'
+        # Cause traffic_server to wait effectviely indefinitely (10 hours) for the debugger to attach.
+        p.StartupTimeout = 10 * 60 * 60
+        # Hitting breakpoints may cause long delays in traffic_server transaction processing, so make
+        # the timeout for test processes (that may interact with traffic_server) effectively forever
+        # (10 hours).
+        obj.Variables.Autest.Process.TimeOut = 10 * 60 * 60
 
     return p
 
