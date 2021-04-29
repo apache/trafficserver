@@ -16,6 +16,7 @@
   limitations under the License.
 */
 #include <unistd.h>
+#include <cinttypes>
 
 #include "lru_policy.h"
 
@@ -89,7 +90,7 @@ LRUPolicy::parseOption(int opt, char *optarg)
     _hits = static_cast<unsigned>(strtol(optarg, nullptr, 10));
     break;
   case 'B':
-    _bytes = static_cast<unsigned>(strtol(optarg, nullptr, 10));
+    _bytes = static_cast<int64_t>(strtoll(optarg, nullptr, 10));
     break;
   case 'l':
     _label = optarg;
@@ -122,12 +123,16 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
 
   map_it = _map.find(&hash);
   if (_map.end() != map_it) {
-    auto &[map_key, map_val] = *map_it;
+    auto &[map_key, map_val]             = *map_it;
+    auto &[val_key, val_hits, val_bytes] = *(map_it->second);
+
+    // This is beacuse compilers before gcc 8 aren't smart enough to ignore the unused structured bindings
+    (void)val_key;
 
     // We have an entry in the LRU
     TSAssert(_list_size > 0); // mismatch in the LRUs hash and list, shouldn't happen
     incrementStat(_lru_hit_id, 1);
-    if (++(map_val->second) >= _hits) {
+    if (++val_hits >= _hits || (_bytes > 0 && val_bytes > _bytes)) {
       // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
       TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
       _freelist.splice(_freelist.begin(), _list, map_val);
@@ -140,7 +145,7 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
       ret = true;
     } else {
       // It's still not promoted, make sure it's moved to the front of the list
-      TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far", map_val->second);
+      TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far and %" PRId64 " bytes", val_hits, val_bytes);
       _list.splice(_list.begin(), _list, map_val);
     }
   } else {
@@ -149,7 +154,7 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
     if (_list_size >= _buckets) {
       TSDebug(PLUGIN_NAME, "repurposing last LRUHash entry");
       _list.splice(_list.begin(), _list, --_list.end());
-      _map.erase(&(_list.begin()->first));
+      _map.erase(&(std::get<0>(*_list.begin()))); // Get the hash from the first list element
       incrementStat(_lru_vacated_id, 1);
     } else if (_freelist_size > 0) {
       TSDebug(PLUGIN_NAME, "reusing LRUEntry from freelist");
@@ -165,11 +170,18 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
       incrementStat(_lru_size_id, 1);
     }
     // Update the "new" LRUEntry and add it to the hash
-    *_list.begin()                = {hash, 1};
-    _map[&(_list.begin()->first)] = _list.begin();
+    *_list.begin()                       = {hash, 1, 0};
+    _map[&(std::get<0>(*_list.begin()))] = _list.begin();
   }
 
   TSMutexUnlock(_lock);
+
+  // If we didn't promote, and we want to count bytes, save away the calculated hash for later use
+  if (false == ret && countBytes()) {
+    TSUserArgSet(txnp, TXN_ARG_IDX, static_cast<void *>(new LRUHash(hash)));
+  } else {
+    TSUserArgSet(txnp, TXN_ARG_IDX, nullptr);
+  }
 
   return ret;
 }
@@ -177,22 +189,40 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
 void
 LRUPolicy::addBytes(TSHttpTxn txnp)
 {
-  LRUHash hash;
+  LRUHash *hash = static_cast<LRUHash *>(TSUserArgGet(txnp, TXN_ARG_IDX));
 
-  if (hash.initFromUrl(txnp)) {
+  if (hash) {
     LRUMap::iterator map_it;
+
     // We have to hold the lock across all list and hash access / updates
     TSMutexLock(_lock);
-
-    map_it = _map.find(&hash);
+    map_it = _map.find(hash);
     if (_map.end() != map_it) {
-      // auto &[map_key, map_val] = *map_it;
+      TSMBuffer resp;
+      TSMLoc resp_hdr;
 
-      // ToDo: Need to get the Content-Length: header here, and update the bytes counters
-      // We still have an entry in the LRU, update the bytes counters
+      if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &resp, &resp_hdr)) {
+        TSMLoc field_loc = TSMimeHdrFieldFind(resp, resp_hdr, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+
+        if (field_loc) {
+          auto &[val_key, val_hits, val_bytes] = *(map_it->second);
+          int64_t cl                           = TSMimeHdrFieldValueInt64Get(resp, resp_hdr, field_loc, -1);
+
+          // This is beacuse compilers before gcc 8 aren't smart enough to ignore the unused structured bindings
+          (void)val_key, (void)val_hits;
+
+          val_bytes += cl;
+          TSDebug(PLUGIN_NAME, "Added %" PRId64 " bytes for LRU entry", cl);
+          TSHandleMLocRelease(resp, resp_hdr, field_loc);
+        }
+        TSHandleMLocRelease(resp, TS_NULL_MLOC, resp_hdr);
+      }
     }
-
     TSMutexUnlock(_lock);
+
+    // Delete the hash, and remove the pointer from the TXN user arg slot (to be safe)
+    delete hash;
+    TSUserArgSet(txnp, TXN_ARG_IDX, nullptr);
   }
 }
 

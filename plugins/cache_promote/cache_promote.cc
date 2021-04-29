@@ -25,6 +25,7 @@
 #include "configs.h"
 
 const char *PLUGIN_NAME = "cache_promote";
+int TXN_ARG_IDX;
 
 // This has to be a global here. I tried doing a classic singleton (with a getInstance()) in the PolicyManager,
 // but then reloading the DSO does not work. What happens is that the old singleton is stil there, even though
@@ -118,7 +119,15 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
+  // Reserve a TXN slot for storing the calculated URL hash key
+  if (TS_SUCCESS != TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, PLUGIN_NAME, &TXN_ARG_IDX, nullptr)) {
+    if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "cache_promote URL hash key", &TXN_ARG_IDX)) {
+      strncpy(errbuf, "[tsremap_init] - Failed to reserve the TXN user argument slot", errbuf_size - 1);
+      return TS_ERROR;
+    }
+  }
+
+  TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized, TXN_IDX = %d", TXN_ARG_IDX);
   return TS_SUCCESS; /* success */
 }
 

@@ -23,6 +23,8 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
+extern int TXN_ARG_IDX;
+
 #define MAX_STAT_LENGTH (1 << 8)
 extern const char *PLUGIN_NAME;
 

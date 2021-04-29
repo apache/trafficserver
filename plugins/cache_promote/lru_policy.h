@@ -21,6 +21,7 @@
 #include <cstring>
 #include <unordered_map>
 #include <list>
+#include <tuple>
 
 #include "policy.h"
 
@@ -39,6 +40,12 @@ class LRUHash
 public:
   LRUHash() { TSDebug(PLUGIN_NAME, "LRUHash() CTOR"); }
   ~LRUHash() { TSDebug(PLUGIN_NAME, "~LRUHash() DTOR"); }
+
+  LRUHash(const LRUHash &h)
+  {
+    TSDebug(PLUGIN_NAME, "Copy CTOR an LRUHash object");
+    memcpy(_hash, h._hash, sizeof(_hash));
+  }
 
   LRUHash &
   operator=(const LRUHash &h)
@@ -71,7 +78,7 @@ struct LRUHashHasher {
   }
 };
 
-using LRUEntry = std::pair<LRUHash, unsigned>;
+using LRUEntry = std::tuple<LRUHash, unsigned, int64_t>;
 using LRUList  = std::list<LRUEntry>;
 using LRUMap   = std::unordered_map<const LRUHash *, LRUList::iterator, LRUHashHasher, LRUHashHasher>;
 
@@ -84,18 +91,18 @@ public:
   bool parseOption(int opt, char *optarg) override;
   bool doPromote(TSHttpTxn txnp) override;
   bool stats_add(const char *remap_id) override;
-  void addBytes(TSHttpTxn txnp);
+  void addBytes(TSHttpTxn txnp) override;
 
   bool
-  countBytes() const
+  countBytes() const override
   {
     return _bytes > 0;
-  };
+  }
 
   void
   usage() const override
   {
-    TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=lru @pparam=--buckets=<n> --hits=<m> --sample=<x>", PLUGIN_NAME,
+    TSError("[%s] Usage: @plugin=%s.so @pparam=--policy=lru @pparam=--buckets=<m> --hits=<n> --bytes=<o> --sample=<p>", PLUGIN_NAME,
             PLUGIN_NAME);
   }
 
@@ -108,13 +115,13 @@ public:
   const std::string
   id() const override
   {
-    return _label + ";LRU=b:" + std::to_string(_buckets) + ",h:" + std::to_string(_hits);
+    return _label + ";LRU=b:" + std::to_string(_buckets) + ",h:" + std::to_string(_hits) + ",B:" + std::to_string(_bytes);
   }
 
 private:
   unsigned _buckets  = 1000;
   unsigned _hits     = 10;
-  unsigned _bytes    = 0;
+  int64_t _bytes     = 0;
   std::string _label = "";
 
   // For the LRU. Note that we keep track of the List sizes, because some versions fo STL have broken
