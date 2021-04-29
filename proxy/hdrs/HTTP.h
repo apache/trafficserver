@@ -248,7 +248,7 @@ class HTTPVersion
 public:
   HTTPVersion() {}
   HTTPVersion(HTTPVersion const &that) = default;
-  explicit HTTPVersion(uint16_t version);
+  explicit HTTPVersion(int version);
   constexpr HTTPVersion(uint8_t ver_major, uint8_t ver_minor);
 
   int operator==(const HTTPVersion &hv) const;
@@ -260,7 +260,7 @@ public:
 
   uint8_t get_major() const;
   uint8_t get_minor() const;
-  uint16_t get_flat_version() const;
+  int get_flat_version() const;
 
 private:
   uint8_t vmajor = 0;
@@ -696,10 +696,10 @@ private:
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion::HTTPVersion(uint16_t version)
+inline HTTPVersion::HTTPVersion(int version)
 {
-  vmajor = (version & 0xFF00) >> 8;
-  vminor = version & 0xFF;
+  vmajor = (version & 0xFFFF0000) >> 16;
+  vminor = version & 0xFFFF;
 }
 
 /*-------------------------------------------------------------------------
@@ -728,10 +728,10 @@ HTTPVersion::get_minor() const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline uint16_t
+inline int
 HTTPVersion::get_flat_version() const
 {
-  return vmajor << 8 | vminor;
+  return vmajor << 16 | vminor;
 }
 
 /*-------------------------------------------------------------------------

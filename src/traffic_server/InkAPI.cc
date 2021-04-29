@@ -4065,7 +4065,7 @@ TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc obj, int ver)
   }
 
   HTTPHdr h;
-  HTTPVersion version{static_cast<uint16_t>(ver)};
+  HTTPVersion version{ver};
 
   SET_HTTP_HDR(h, bufp, obj);
   ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
