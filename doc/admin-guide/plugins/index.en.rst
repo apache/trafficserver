@@ -147,6 +147,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    :hidden:
 
    Access Control <access_control.en>
+   Cache Fill <cache_fill.en>
    Certifier <certifier.en>
    Cert Reporting Tool <cert_reporting_tool.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
