@@ -201,7 +201,7 @@ BgFetchData::schedule()
   resp_io_buf_reader = TSIOBufferReaderAlloc(resp_io_buf);
 
   // Schedule
-  TSContScheduleOnPool(_cont, 0, TS_THREAD_POOL_NET);
+  TSContSchedule(_cont, 0, TS_THREAD_POOL_NET);
 }
 
 //////////////////////////////////////////////////////////////////////////////
