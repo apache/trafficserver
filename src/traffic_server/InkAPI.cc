@@ -4047,7 +4047,7 @@ TSHttpHdrVersionGet(TSMBuffer bufp, TSMLoc obj)
 
   SET_HTTP_HDR(h, bufp, obj);
   HTTPVersion ver = h.version_get();
-  return ver.m_version;
+  return ver.get_flat_version();
 }
 
 TSReturnCode
@@ -4065,7 +4065,7 @@ TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc obj, int ver)
   }
 
   HTTPHdr h;
-  HTTPVersion version(ver);
+  HTTPVersion version{ver};
 
   SET_HTTP_HDR(h, bufp, obj);
   ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);

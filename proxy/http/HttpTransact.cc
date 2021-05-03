@@ -481,7 +481,7 @@ update_cache_control_information_from_config(HttpTransact::State *s)
   s->cache_info.directives.does_client_permit_dns_storing =
     HttpTransact::does_client_request_permit_dns_caching(&s->cache_control, &s->hdr_info.client_request);
 
-  if (s->client_info.http_version == HTTPVersion(0, 9)) {
+  if (s->client_info.http_version == HTTP_0_9) {
     s->cache_info.directives.does_client_permit_lookup  = false;
     s->cache_info.directives.does_client_permit_storing = false;
   }
@@ -809,7 +809,7 @@ how_to_open_connection(HttpTransact::State *s)
   }
 
   if (!s->already_downgraded) { // false unless downgraded previously (possibly due to HTTP 505)
-    (&s->hdr_info.server_request)->version_set(HTTPVersion(1, 1));
+    (&s->hdr_info.server_request)->version_set(HTTP_1_1);
     HttpTransactHeaders::convert_request(s->current.server->http_version, &s->hdr_info.server_request);
   }
 
@@ -1208,7 +1208,7 @@ HttpTransact::handle_upgrade_request(State *s)
         be at least 1.1. */
   if (!s->hdr_info.client_request.presence(MIME_PRESENCE_UPGRADE) ||
       !s->hdr_info.client_request.presence(MIME_PRESENCE_CONNECTION) || s->method != HTTP_WKSIDX_GET ||
-      s->hdr_info.client_request.version_get() < HTTPVersion(1, 1)) {
+      s->hdr_info.client_request.version_get() < HTTP_1_1) {
     return false;
   }
 
@@ -1451,7 +1451,7 @@ HttpTransact::handleIfRedirect(State *s)
     s->remap_redirect = redirect_url.string_get(&s->arena, &remap_redirect_len);
     redirect_url.destroy();
     if (answer == TEMPORARY_REDIRECT) {
-      if ((s->client_info).http_version.m_version == HTTP_VERSION(1, 1)) {
+      if ((s->client_info).http_version == HTTP_1_1) {
         build_error_response(s, HTTP_STATUS_TEMPORARY_REDIRECT, "Redirect", "redirect#moved_temporarily");
       } else {
         build_error_response(s, HTTP_STATUS_MOVED_TEMPORARILY, "Redirect", "redirect#moved_temporarily");
@@ -1679,9 +1679,9 @@ HttpTransact::setup_plugin_request_intercept(State *s)
 
   // Also "fake" the info we'd normally get from
   //   hostDB
-  s->server_info.http_version.set(1, 0);
+  s->server_info.http_version                = HTTP_1_0;
   s->server_info.keep_alive                  = HTTP_NO_KEEPALIVE;
-  s->host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_10;
+  s->host_db_info.app.http_data.http_version = HTTP_1_0;
   s->server_info.dst_addr.setToAnyAddr(AF_INET);                                 // must set an address or we can't set the port.
   s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // this is the info that matters.
 
@@ -2944,7 +2944,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         http_version = s->current.server->http_version;
       }
 
-      TxnDebug("http_trans", "CacheOpenReadHit - version %d", http_version.m_version);
+      TxnDebug("http_trans", "CacheOpenReadHit - version %d.%d", http_version.get_major(), http_version.get_minor());
       build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, http_version);
 
       issue_revalidate(s);
@@ -3343,7 +3343,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     if (!s->current.server || !s->current.server->dst_addr.isValid()) {
       // Short term hack.  get_ka_info_from_config assumes if http_version is > 0,9 it has already been
       // set and skips the rest of the function.  The default functor sets it to 1,0
-      s->server_info.http_version = HTTPVersion(0, 9);
+      s->server_info.http_version = HTTP_0_9;
       get_ka_info_from_config(s, &s->server_info);
     }
     find_server_and_update_current_info(s);
@@ -4027,37 +4027,8 @@ HttpTransact::handle_forward_server_connection_open(State *s)
   TxnDebug("http_seq", "[HttpTransact::handle_server_connection_open] ");
   ink_release_assert(s->current.state == CONNECTION_ALIVE);
 
-  if (s->hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
-    TxnDebug("http_trans", "[hfsco] server sent 0.9 response, reading...");
-    build_response(s, &s->hdr_info.client_response, s->client_info.http_version, HTTP_STATUS_OK, "Connection Established");
-
-    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
-    s->cache_info.action      = CACHE_DO_NO_ACTION;
-    s->next_action            = SM_ACTION_SERVER_READ;
-    return;
-
-  } else if (s->hdr_info.server_response.version_get() == HTTPVersion(1, 0)) {
-    if (s->current.server->http_version == HTTPVersion(0, 9)) {
-      // update_hostdb_to_indicate_server_version_is_1_0
-      s->updated_server_version = HostDBApplicationInfo::HTTP_VERSION_10;
-    } else if (s->current.server->http_version == HTTPVersion(1, 1)) {
-      // update_hostdb_to_indicate_server_version_is_1_0
-      s->updated_server_version = HostDBApplicationInfo::HTTP_VERSION_10;
-    } else {
-      // dont update the hostdb. let us try again with what we currently think.
-    }
-  } else if (s->hdr_info.server_response.version_get() == HTTPVersion(1, 1)) {
-    if (s->current.server->http_version == HTTPVersion(0, 9)) {
-      // update_hostdb_to_indicate_server_version_is_1_1
-      s->updated_server_version = HostDBApplicationInfo::HTTP_VERSION_11;
-    } else if (s->current.server->http_version == HTTPVersion(1, 0)) {
-      // update_hostdb_to_indicate_server_version_is_1_1
-      s->updated_server_version = HostDBApplicationInfo::HTTP_VERSION_11;
-    } else {
-      // dont update the hostdb. let us try again with what we currently think.
-    }
-  } else {
-    // dont update the hostdb. let us try again with what we currently think.
+  if (s->hdr_info.server_response.version_get() != s->current.server->http_version) {
+    s->updated_server_version = s->hdr_info.server_response.version_get();
   }
 
   if (s->hdr_info.server_response.status_get() == HTTP_STATUS_CONTINUE ||
@@ -4152,9 +4123,9 @@ HttpTransact::handle_100_continue_response(State *s)
   bool forward_100 = false;
 
   HTTPVersion ver = s->hdr_info.client_request.version_get();
-  if (ver == HTTPVersion(1, 1)) {
+  if (ver == HTTP_1_1) {
     forward_100 = true;
-  } else if (ver == HTTPVersion(1, 0)) {
+  } else if (ver == HTTP_1_0) {
     if (s->hdr_info.client_request.value_get_int(MIME_FIELD_EXPECT, MIME_LEN_EXPECT) == 100) {
       forward_100 = true;
     }
@@ -5179,22 +5150,22 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
 {
   bool check_hostdb = false;
 
-  if (server_info->http_version > HTTPVersion(0, 9)) {
-    TxnDebug("http_trans", "get_ka_info_from_config, version already set server_info->http_version %d",
-             server_info->http_version.m_version);
+  if (server_info->http_version > HTTP_0_9) {
+    TxnDebug("http_trans", "get_ka_info_from_config, version already set server_info->http_version %d.%d",
+             server_info->http_version.get_major(), server_info->http_version.get_minor());
     return false;
   }
   switch (s->txn_conf->send_http11_requests) {
   case HttpConfigParams::SEND_HTTP11_NEVER:
-    server_info->http_version = HTTPVersion(1, 0);
+    server_info->http_version = HTTP_1_0;
     break;
   case HttpConfigParams::SEND_HTTP11_UPGRADE_HOSTDB:
-    server_info->http_version = HTTPVersion(1, 0);
+    server_info->http_version = HTTP_1_0;
     check_hostdb              = true;
     break;
   case HttpConfigParams::SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB:
-    server_info->http_version = HTTPVersion(1, 0);
-    if (s->hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
+    server_info->http_version = HTTP_1_0;
+    if (s->hdr_info.client_request.version_get() == HTTP_1_1) {
       // check hostdb only if client req is http/1.1
       check_hostdb = true;
     }
@@ -5204,11 +5175,11 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
     ink_assert(0);
   // fallthrough
   case HttpConfigParams::SEND_HTTP11_ALWAYS:
-    server_info->http_version = HTTPVersion(1, 1);
+    server_info->http_version = HTTP_1_1;
     break;
   }
-  TxnDebug("http_trans", "get_ka_info_from_config, server_info->http_version %d, check_hostdb %d",
-           server_info->http_version.m_version, check_hostdb);
+  TxnDebug("http_trans", "get_ka_info_from_config, server_info->http_version %d.%d, check_hostdb %d",
+           server_info->http_version.get_major(), server_info->http_version.get_minor(), check_hostdb);
 
   // Set keep_alive info based on the records.config setting
   server_info->keep_alive = s->txn_conf->keep_alive_enabled_out ? HTTP_KEEPALIVE : HTTP_NO_KEEPALIVE;
@@ -5238,7 +5209,7 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
     http11_if_hostdb = true;
     break;
   case HttpConfigParams::SEND_HTTP11_IF_REQUEST_11_AND_HOSTDB:
-    if (s->hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
+    if (s->hdr_info.client_request.version_get() == HTTP_1_1) {
       http11_if_hostdb = true;
     }
     break;
@@ -5251,23 +5222,22 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
     break;
   }
 
-  if (force_http11 == true ||
-      (http11_if_hostdb == true && host_db_info->app.http_data.http_version == HostDBApplicationInfo::HTTP_VERSION_11)) {
-    server_info->http_version.set(1, 1);
-    server_info->keep_alive = HTTP_KEEPALIVE;
-  } else if (host_db_info->app.http_data.http_version == HostDBApplicationInfo::HTTP_VERSION_10) {
-    server_info->http_version.set(1, 0);
-    server_info->keep_alive = HTTP_KEEPALIVE;
-  } else if (host_db_info->app.http_data.http_version == HostDBApplicationInfo::HTTP_VERSION_09) {
-    server_info->http_version.set(0, 9);
-    server_info->keep_alive = HTTP_NO_KEEPALIVE;
+  if (force_http11 == true || (http11_if_hostdb == true && host_db_info->app.http_data.http_version == HTTP_1_1)) {
+    server_info->http_version = HTTP_1_1;
+    server_info->keep_alive   = HTTP_KEEPALIVE;
+  } else if (host_db_info->app.http_data.http_version == HTTP_1_0) {
+    server_info->http_version = HTTP_1_0;
+    server_info->keep_alive   = HTTP_KEEPALIVE;
+  } else if (host_db_info->app.http_data.http_version == HTTP_0_9) {
+    server_info->http_version = HTTP_0_9;
+    server_info->keep_alive   = HTTP_NO_KEEPALIVE;
   } else {
     //////////////////////////////////////////////
     // not set yet for this host. set defaults. //
     //////////////////////////////////////////////
-    server_info->http_version.set(1, 0);
+    server_info->http_version                = HTTP_1_0;
     server_info->keep_alive                  = HTTP_KEEPALIVE;
-    host_db_info->app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_10;
+    host_db_info->app.http_data.http_version = HTTP_1_0;
   }
 
   /////////////////////////////
@@ -5455,7 +5425,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     }
   }
   // Check whether a Host header field is missing in the request.
-  if (!incoming_hdr->presence(MIME_PRESENCE_HOST) && incoming_hdr->version_get() != HTTPVersion(0, 9)) {
+  if (!incoming_hdr->presence(MIME_PRESENCE_HOST) && incoming_hdr->version_get() != HTTP_0_9) {
     // Update the number of incoming 1.0 or 1.1 requests that do
     // not contain Host header fields.
     HTTP_INCREMENT_DYN_STAT(http_missing_host_hdr_stat);
@@ -6769,7 +6739,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
   // Check preconditions for Keep-Alive
   if (!upstream_ka) {
     ka_action = KA_DISABLED;
-  } else if (HTTP_MAJOR(ver.m_version) == 0) { /* No K-A for 0.9 apps */
+  } else if (ver.get_major() == 0) { /* No K-A for 0.9 apps */
     ka_action = KA_DISABLED;
   }
   // If preconditions are met, figure out what action to take
@@ -6801,7 +6771,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
     switch (ka_action) {
     case KA_CONNECTION:
       ink_assert(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
-      if (ver == HTTPVersion(1, 0)) {
+      if (ver == HTTP_1_0) {
         if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "keep-alive", 10);
         } else {
@@ -6813,7 +6783,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       break;
     case KA_DISABLED:
     case KA_CLOSE:
-      if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTPVersion(1, 1))) {
+      if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
         /* Had keep-alive */
         s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
         if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
@@ -6898,7 +6868,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   }
 
   // Check pre-conditions for keep-alive
-  if (HTTP_MAJOR(ver.m_version) == 0) { /* No K-A for 0.9 apps */
+  if (ver.get_major() == 0) { /* No K-A for 0.9 apps */
     ka_action = KA_DISABLED;
   } else if (heads->status_get() == HTTP_STATUS_NO_CONTENT &&
              ((s->source == SOURCE_HTTP_ORIGIN_SERVER && s->current.server->transfer_encoding != NO_TRANSFER_ENCODING) ||
@@ -6916,7 +6886,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     // check that the client protocol is HTTP/1.1 and the conf allows chunking or
     // the client protocol doesn't support chunked transfer coding (i.e. HTTP/1.0, HTTP/2, and HTTP/3)
     if (s->state_machine->ua_txn && s->state_machine->ua_txn->is_chunked_encoding_supported() &&
-        s->client_info.http_version == HTTPVersion(1, 1) && s->txn_conf->chunking_enabled == 1 &&
+        s->client_info.http_version == HTTP_1_1 && s->txn_conf->chunking_enabled == 1 &&
         s->state_machine->ua_txn->is_chunked_encoding_supported() &&
         // if we're not sending a body, don't set a chunked header regardless of server response
         !is_response_body_precluded(s->hdr_info.client_response.status_get(), s->method) &&
@@ -6977,7 +6947,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     break;
   case KA_CLOSE:
   case KA_DISABLED:
-    if (s->client_info.keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTPVersion(1, 1))) {
+    if (s->client_info.keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
       heads->value_set(c_hdr_field_str, c_hdr_field_len, "close", 5);
       s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
     }
@@ -7708,15 +7678,15 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   // We build 1.1 request header and then convert as necessary to
   //  the appropriate version in HttpTransact::build_request
-  outgoing_request->version_set(HTTPVersion(1, 1));
+  outgoing_request->version_set(HTTP_1_1);
 
   // Make sure our request version is defined
-  ink_assert(outgoing_version != HTTPVersion(0, 0));
+  ink_assert(outgoing_version != HTTP_0_9);
 
   // HttpTransactHeaders::convert_request(outgoing_version, outgoing_request); // commented out this idea
 
   // Check whether a Host header field is missing from a 1.0 or 1.1 request.
-  if (outgoing_version != HTTPVersion(0, 9) && !outgoing_request->presence(MIME_PRESENCE_HOST)) {
+  if (outgoing_version != HTTP_0_9 && !outgoing_request->presence(MIME_PRESENCE_HOST)) {
     URL *url = outgoing_request->url_get();
     int host_len;
     const char *host = url->host_get(&host_len);

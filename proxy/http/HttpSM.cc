@@ -874,7 +874,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
     ua_txn->set_session_active();
 
-    if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1) &&
+    if (t_state.hdr_info.client_request.version_get() == HTTP_1_1 &&
         (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
          t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT) &&
         t_state.http_config_param->send_100_continue_response) {
@@ -1161,7 +1161,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
   }
   // Don't allow 0.9 (unparsable headers) since TS doesn't
   //   cache 0.9 responses
-  if (state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
+  if (state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTP_0_9) {
     state = PARSE_RESULT_ERROR;
   }
 
@@ -2005,7 +2005,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
   // Don't allow HTTP 0.9 (unparsable headers) on resued connections.
   // And don't allow empty headers from closed connections
-  if ((state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9) &&
+  if ((state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTP_0_9 &&
        server_session->get_transact_count() > 1) ||
       (server_entry->eos && vio->ndone == 0)) {
     state = PARSE_RESULT_ERROR;
@@ -4298,7 +4298,7 @@ HttpSM::do_hostdb_update_if_necessary()
     return;
   }
 
-  if (t_state.updated_server_version != HostDBApplicationInfo::HTTP_VERSION_UNDEFINED) {
+  if (t_state.updated_server_version != HTTP_INVALID) {
     // we may have incorrectly assumed that the hostdb had the wrong version of
     // http for the server because our first few connect attempts to the server
     // failed, causing us to downgrade our requests to a lower version and changing
@@ -4311,7 +4311,7 @@ HttpSM::do_hostdb_update_if_necessary()
       issue_update |= 1;
     }
 
-    t_state.updated_server_version = HostDBApplicationInfo::HTTP_VERSION_UNDEFINED;
+    t_state.updated_server_version = HTTP_INVALID;
   }
   // Check to see if we need to report or clear a connection failure
   if (t_state.current.server->had_connect_fail()) {
@@ -4604,7 +4604,7 @@ HttpSM::do_range_setup_if_necessary()
 
   t_state.range_setup = HttpTransact::RANGE_NONE;
 
-  if (t_state.method == HTTP_WKSIDX_GET && t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
+  if (t_state.method == HTTP_WKSIDX_GET && t_state.hdr_info.client_request.version_get() == HTTP_1_1) {
     do_range_parse(field);
 
     if (t_state.range_setup == HttpTransact::RANGE_REQUESTED) {
@@ -6354,7 +6354,7 @@ HttpSM::setup_100_continue_transfer()
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // First write the client response header into the buffer
-  ink_assert(t_state.client_info.http_version != HTTPVersion(0, 9));
+  ink_assert(t_state.client_info.http_version != HTTP_0_9);
   client_response_hdr_bytes = write_header_into_buffer(&t_state.hdr_info.client_response, buf);
   ink_assert(client_response_hdr_bytes > 0);
 
@@ -6729,7 +6729,7 @@ HttpSM::setup_server_transfer()
     }
   } else {
     if (t_state.current.server->transfer_encoding != HttpTransact::CHUNKED_ENCODING) {
-      if (t_state.client_info.http_version == HTTPVersion(0, 9)) {
+      if (t_state.client_info.http_version == HTTP_0_9) {
         action = TCA_PASSTHRU_DECHUNKED_CONTENT; // send as-is
       } else {
         action = TCA_CHUNK_CONTENT;
@@ -7433,13 +7433,7 @@ HttpSM::set_next_state()
                 ats_ip_ntop(addr, ipb, sizeof(ipb)));
       }
       ats_ip_copy(t_state.host_db_info.ip(), addr);
-      if (t_state.hdr_info.client_request.version_get() == HTTPVersion(0, 9)) {
-        t_state.host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_09;
-      } else if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 0)) {
-        t_state.host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_10;
-      } else {
-        t_state.host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_11;
-      }
+      t_state.host_db_info.app.http_data.http_version = t_state.hdr_info.client_request.version_get();
 
       t_state.dns_info.lookup_success = true;
       // cache this result so we don't have to unreliably duplicate the
@@ -8227,13 +8221,13 @@ HttpSM::server_protocol_contains(std::string_view tag_prefix) const
 std::string_view
 HttpSM::find_proto_string(HTTPVersion version) const
 {
-  if (version == HTTPVersion(2, 0)) {
+  if (version == HTTP_2_0) {
     return IP_PROTO_TAG_HTTP_2_0;
-  } else if (version == HTTPVersion(1, 1)) {
+  } else if (version == HTTP_1_1) {
     return IP_PROTO_TAG_HTTP_1_1;
-  } else if (version == HTTPVersion(1, 0)) {
+  } else if (version == HTTP_1_0) {
     return IP_PROTO_TAG_HTTP_1_0;
-  } else if (version == HTTPVersion(0, 9)) {
+  } else if (version == HTTP_0_9) {
     return IP_PROTO_TAG_HTTP_0_9;
   }
   return {};
