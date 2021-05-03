@@ -1617,13 +1617,6 @@ Origin Server Connect Attempts
 
    Specifies how long (in seconds) |TS| remembers that an origin server was unreachable.
 
-.. ts:cv:: CONFIG proxy.config.http.down_server.abort_threshold INT 10
-   :reloadable:
-   :overridable:
-
-   The number of seconds before |TS| marks an origin server as unavailable after a client abandons a request
-   because the origin server was too slow in sending the response header.
-
 .. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
    :reloadable:
    :overridable:

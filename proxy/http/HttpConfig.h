@@ -662,7 +662,7 @@ struct OverridableHttpConfigParams {
   MgmtInt parent_connect_timeout      = 30;
 
   MgmtInt down_server_timeout    = 300;
-  MgmtInt client_abort_threshold = 10;
+  MgmtInt client_abort_threshold = 1000;
 
   // open read failure retries.
   MgmtInt max_cache_open_read_retries = -1;

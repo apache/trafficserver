@@ -1023,7 +1023,6 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
     if (ua_entry->read_vio) {
       ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     }
-    mark_server_down_on_client_abort();
     milestones[TS_MILESTONE_UA_CLOSE] = Thread::get_hrtime();
     set_ua_abort(HttpTransact::ABORTED, event);
 
@@ -5447,38 +5446,6 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
   case VC_EVENT_ERROR:
     t_state.client_info.state = HttpTransact::CONNECTION_ERROR;
     break;
-  }
-}
-
-void
-HttpSM::mark_server_down_on_client_abort()
-{
-  /////////////////////////////////////////////////////
-  //  Check see if the client aborted because the    //
-  //  origin server was too slow in sending the      //
-  //  response header.  If so, mark that             //
-  //  server as down so other clients won't try to   //
-  //  for revalidation or select it from a round     //
-  //  robin set                                      //
-  //                                                 //
-  //  Note: we do not want to mark parent            //
-  //  proxies as down with this metric because       //
-  //  that upstream proxy may be working but         //
-  //  the actual origin server is one that is hung   //
-  /////////////////////////////////////////////////////
-  if (t_state.current.request_to == HttpTransact::ORIGIN_SERVER && t_state.hdr_info.request_content_length <= 0) {
-    if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] != 0 && milestones[TS_MILESTONE_SERVER_FIRST_READ] == 0) {
-      // Check to see if client waited for the threshold
-      //  to declare the origin server as down
-      ink_hrtime wait = Thread::get_hrtime() - milestones[TS_MILESTONE_SERVER_FIRST_CONNECT];
-      if (wait < 0) {
-        wait = 0;
-      }
-      if (ink_hrtime_to_sec(wait) > t_state.txn_conf->client_abort_threshold) {
-        t_state.set_connect_fail(ETIMEDOUT);
-        do_hostdb_update_if_necessary();
-      }
-    }
   }
 }
 
