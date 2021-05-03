@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "tscore/ink_resolver.h"
 #include "SRV.h"
 
 const int DOMAIN_SERVICE_PORT = NAMESERVER_PORT;
@@ -58,13 +59,27 @@ extern EventType ET_DNS;
 
 struct DNSHandler;
 
+/** Data for a DNS query.
+ * This is either a name for a standard query or an IP address for reverse DNS.
+ * Its type should be indicated by other parameters, generally the query type.
+ * - T_PTR: IP Address
+ * - T_A, T_SRV: Name
+ */
+union DNSQueryData {
+  std::string_view name; ///< Look up a name.
+  IpAddr const *addr;    ///< Reverse DNS lookup.
+
+  DNSQueryData(std::string_view tv) : name(tv) {}
+  DNSQueryData(IpAddr const *a) : addr(a) {}
+};
+
 struct DNSProcessor : public Processor {
   // Public Interface
   //
 
   /// Options for host name resolution.
   struct Options {
-    typedef Options self; ///< Self reference type.
+    using self_type = Options; ///< Self reference type.
 
     /// Query handler to use.
     /// Default: single threaded handler.
@@ -81,19 +96,19 @@ struct DNSProcessor : public Processor {
 
     /// Set @a handler option.
     /// @return This object.
-    self &setHandler(DNSHandler *handler);
+    self_type &setHandler(DNSHandler *handler);
 
     /// Set @a timeout option.
     /// @return This object.
-    self &setTimeout(int timeout);
+    self_type &setTimeout(int timeout);
 
     /// Set host query @a style option.
     /// @return This object.
-    self &setHostResStyle(HostResStyle style);
+    self_type &setHostResStyle(HostResStyle style);
 
     /// Reset to default constructed values.
     /// @return This object.
-    self &reset();
+    self_type &reset();
   };
 
   // DNS lookup
@@ -103,8 +118,9 @@ struct DNSProcessor : public Processor {
   //
 
   Action *gethostbyname(Continuation *cont, const char *name, Options const &opt);
+  Action *gethostbyname(Continuation *cont, std::string_view name, Options const &opt);
   Action *getSRVbyname(Continuation *cont, const char *name, Options const &opt);
-  Action *gethostbyname(Continuation *cont, const char *name, int len, Options const &opt);
+  Action *getSRVbyname(Continuation *cont, std::string_view name, Options const &opt);
   Action *gethostbyaddr(Continuation *cont, IpAddr const *ip, Options const &opt);
 
   // Processor API
@@ -134,7 +150,7 @@ struct DNSProcessor : public Processor {
       For address resolution ( @a type is @c T_PTR ), @a x should be a
       @c sockaddr cast to  @c char @c const* .
    */
-  Action *getby(const char *x, int len, int type, Continuation *cont, Options const &opt);
+  Action *getby(DNSQueryData x, int type, Continuation *cont, Options const &opt);
 
   void dns_init();
 };
@@ -151,25 +167,31 @@ extern DNSProcessor dnsProcessor;
 inline Action *
 DNSProcessor::getSRVbyname(Continuation *cont, const char *name, Options const &opt)
 {
-  return getby(name, 0, T_SRV, cont, opt);
+  return getby(std::string_view(name), T_SRV, cont, opt);
+}
+
+inline Action *
+DNSProcessor::getSRVbyname(Continuation *cont, std::string_view name, Options const &opt)
+{
+  return getby(name, T_SRV, cont, opt);
 }
 
 inline Action *
 DNSProcessor::gethostbyname(Continuation *cont, const char *name, Options const &opt)
 {
-  return getby(name, 0, T_A, cont, opt);
+  return getby(std::string_view(name), T_A, cont, opt);
 }
 
 inline Action *
-DNSProcessor::gethostbyname(Continuation *cont, const char *name, int len, Options const &opt)
+DNSProcessor::gethostbyname(Continuation *cont, std::string_view name, Options const &opt)
 {
-  return getby(name, len, T_A, cont, opt);
+  return getby(name, T_A, cont, opt);
 }
 
 inline Action *
 DNSProcessor::gethostbyaddr(Continuation *cont, IpAddr const *addr, Options const &opt)
 {
-  return getby(reinterpret_cast<const char *>(addr), 0, T_PTR, cont, opt);
+  return getby(addr, T_PTR, cont, opt);
 }
 
 inline DNSProcessor::Options::Options() {}
