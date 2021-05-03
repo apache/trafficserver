@@ -150,6 +150,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Access Control <access_control.en>
    Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
+   Cache Fill <cache_fill.en>
    Certifier <certifier.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
    GeoIP ACL <geoip_acl.en>
