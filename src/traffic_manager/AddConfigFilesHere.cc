@@ -45,14 +45,14 @@ testcall(char *foo, char * /*configName */)
 }
 
 void
-registerFile(const char *configName, const char *defaultName, bool isRequired)
+registerFile(const char *configName, const char *defaultName, bool isRequired, bool isElevateNeeded = false)
 {
   bool found        = false;
   const char *fname = REC_readString(configName, &found);
   if (!found) {
     fname = defaultName;
   }
-  configFiles->addFile(fname, configName, false, isRequired);
+  configFiles->addFile(fname, configName, isElevateNeeded, isRequired);
 }
 
 //
@@ -87,7 +87,9 @@ initializeRegistry()
   registerFile("proxy.config.cache.hosting_filename", ts::filename::HOSTING, NOT_REQUIRED);
   registerFile("", ts::filename::PLUGIN, NOT_REQUIRED);
   registerFile("proxy.config.dns.splitdns.filename", ts::filename::SPLITDNS, NOT_REQUIRED);
-  registerFile("proxy.config.ssl.server.multicert.filename", ts::filename::SSL_MULTICERT, NOT_REQUIRED);
+  uint32_t elevate_setting = 0;
+  REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
+  registerFile("proxy.config.ssl.server.multicert.filename", ts::filename::SSL_MULTICERT, NOT_REQUIRED, elevate_setting);
   registerFile("proxy.config.ssl.servername.filename", ts::filename::SNI, NOT_REQUIRED);
 
   configFiles->registerCallback(testcall);
