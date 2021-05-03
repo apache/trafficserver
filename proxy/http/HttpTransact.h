@@ -665,9 +665,9 @@ public:
     DNSLookupInfo dns_info;
     RedirectInfo redirect_info;
     OutboundConnTrack::TxnState outbound_conn_track_state;
-    HostDBApplicationInfo::HttpVersion updated_server_version = HostDBApplicationInfo::HTTP_VERSION_UNDEFINED;
-    bool force_dns                                            = false;
-    MgmtByte cache_open_write_fail_action                     = 0;
+    HTTPVersion updated_server_version    = HTTP_INVALID;
+    bool force_dns                        = false;
+    MgmtByte cache_open_write_fail_action = 0;
     ConnectionAttributes client_info;
     ConnectionAttributes parent_info;
     ConnectionAttributes server_info;
