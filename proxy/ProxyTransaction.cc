@@ -24,7 +24,8 @@
 #include "http/HttpSM.h"
 #include "Plugin.h"
 
-#define HttpTxnDebug(fmt, ...) SsnDebug(this, "http_txn", fmt, __VA_ARGS__)
+static DbgCtl http_txn_dbg_ctl("http_txn");
+#define HttpTxnDebug(fmt, ...) SsnDebug(this, http_txn_dbg_ctl, fmt, __VA_ARGS__)
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 

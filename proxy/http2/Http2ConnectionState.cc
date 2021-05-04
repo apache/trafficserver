@@ -42,11 +42,13 @@
     }                                                         \
   }
 
+static DbgCtl http2_con_dbg_ctl("http2_con");
+
 #define Http2ConDebug(ua_session, fmt, ...) \
-  SsnDebug(ua_session, "http2_con", "[%" PRId64 "] " fmt, ua_session->connection_id(), ##__VA_ARGS__);
+  SsnDebug(ua_session, http2_con_dbg_ctl, "[%" PRId64 "] " fmt, ua_session->connection_id(), ##__VA_ARGS__);
 
 #define Http2StreamDebug(ua_session, stream_id, fmt, ...) \
-  SsnDebug(ua_session, "http2_con", "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
+  SsnDebug(ua_session, http2_con_dbg_ctl, "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
 
 using http2_frame_dispatch = Http2Error (*)(Http2ConnectionState &, const Http2Frame &);
 

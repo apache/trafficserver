@@ -40,7 +40,9 @@
 
 #include "P_SSLNetVConnection.h"
 
-#define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
+static DbgCtl http_cs_dbg_ctl("http_cs");
+
+#define HttpSsnDebug(fmt, ...) SsnDebug(this, http_cs_dbg_ctl, fmt, __VA_ARGS__)
 
 #define STATE_ENTER(state_name, event, vio)                                                             \
   do {                                                                                                  \

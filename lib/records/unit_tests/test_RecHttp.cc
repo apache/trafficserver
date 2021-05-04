@@ -33,7 +33,7 @@ using ts::TextView;
 TEST_CASE("RecHttp", "[librecords][RecHttp]")
 {
   std::vector<HttpProxyPort> ports;
-  CatchDiags *cdiag = static_cast<CatchDiags *>(diags);
+  CatchDiags *cdiag = static_cast<CatchDiags *>(diags());
   cdiag->messages.clear();
 
   SECTION("base")
