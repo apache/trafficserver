@@ -20,6 +20,7 @@ Test.Summary = 'Testing partial_blind_tunnel'
 
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
+nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
 request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_bar_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "ok bar"}
@@ -48,6 +49,8 @@ ts.Disk.records_config.update({
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
     'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+    'proxy.config.dns.resolv_conf': 'NULL'
 })
 
 # foo.com should terminate. and reconnect via TLS upstream to bar.com
@@ -62,6 +65,7 @@ tr.Processes.Default.Command = "curl --http1.1 -v --resolve 'foo.com:{0}:127.0.0
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server_bar)
+tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 
