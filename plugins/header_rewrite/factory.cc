@@ -143,6 +143,10 @@ condition_factory(const std::string &cond)
     c = new ConditionCidr();
   } else if (c_name == "INBOUND") {
     c = new ConditionInbound();
+  } else if (c_name == "SSN-TXN-COUNT") {
+    c = new ConditionSessionTransactCount();
+  } else if (c_name == "TCP-INFO") {
+    c = new ConditionTcpInfo();
   } else {
     TSError("[%s] Unknown condition %s", PLUGIN_NAME, c_name.c_str());
     return nullptr;

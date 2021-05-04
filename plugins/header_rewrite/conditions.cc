@@ -33,6 +33,17 @@
 #include "expander.h"
 #include "lulu.h"
 
+// This is a bit of a hack, to get the more linux specific tcp_info struct ...
+#if HAVE_STRUCT_LINUX_TCP_INFO
+#ifndef _LINUX_TCP_H
+#define _LINUX_TCP_H
+#endif
+#elif HAVE_NETINET_IN_H
+#ifndef _NETINET_TCP_H
+#define _NETINET_TCP_H
+#endif
+#endif
+
 // ConditionStatus
 void
 ConditionStatus::initialize(Parser &p)
@@ -1431,4 +1442,108 @@ ConditionExpandableString::append_value(std::string &s, const Resources &res)
   VariableExpander ve(_value);
   s += ve.expand(res);
   TSDebug(PLUGIN_NAME, "Appending to evaluation value -> %s", s.c_str());
+}
+// ConditionSessionTransactCount
+void
+ConditionSessionTransactCount::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  MatcherType *match     = new MatcherType(_cond_op);
+  std::string const &arg = p.get_arg();
+
+  match->set(strtol(arg.c_str(), nullptr, 10));
+  _matcher = match;
+}
+
+bool
+ConditionSessionTransactCount::eval(const Resources &res)
+{
+  int const val = TSHttpTxnServerSsnTransactionCount(res.txnp);
+
+  TSDebug(PLUGIN_NAME, "Evaluating SSN-TXN-COUNT()");
+  return static_cast<MatcherType *>(_matcher)->test(val);
+}
+
+void
+ConditionSessionTransactCount::append_value(std::string &s, Resources const &res)
+{
+  char value[32]; // enough for UINT64_MAX
+  int const count  = TSHttpTxnServerSsnTransactionCount(res.txnp);
+  int const length = ink_fast_itoa(count, value, sizeof(value));
+
+  if (length > 0) {
+    TSDebug(PLUGIN_NAME, "Appending SSN-TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
+    s.append(value, length);
+  }
+}
+
+void
+ConditionTcpInfo::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  TSDebug(PLUGIN_NAME, "Initializing TCP Info");
+  MatcherType *match     = new MatcherType(_cond_op);
+  std::string const &arg = p.get_arg();
+
+  match->set(strtol(arg.c_str(), nullptr, 10));
+  _matcher = match;
+}
+
+void
+ConditionTcpInfo::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+}
+
+bool
+ConditionTcpInfo::eval(const Resources &res)
+{
+  std::string s;
+
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+
+  TSDebug(PLUGIN_NAME, "Evaluating TCP-Info: %s - rval: %d", s.c_str(), rval);
+
+  return rval;
+}
+
+void
+ConditionTcpInfo::append_value(std::string &s, Resources const &res)
+{
+#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
+  if (TSHttpTxnIsInternal(res.txnp)) {
+    TSDebug(PLUGIN_NAME, "No TCP-INFO available for internal transactions");
+    return;
+  }
+  TSReturnCode tsSsn;
+  int fd;
+  struct tcp_info info;
+  socklen_t tcp_info_len = sizeof(info);
+  tsSsn                  = TSHttpTxnClientFdGet(res.txnp, &fd);
+  if (tsSsn != TS_SUCCESS || fd <= 0) {
+    TSDebug(PLUGIN_NAME, "error getting the client socket fd from ssn");
+  }
+  if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) != 0) {
+    TSDebug(PLUGIN_NAME, "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
+  }
+
+  if (tsSsn == TS_SUCCESS) {
+    if (tcp_info_len > 0) {
+      char buf[12 * 4 + 9]; // 4x uint32's + 4x "; " + '\0'
+#if !defined(freebsd) || defined(__GLIBC__)
+      snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
+               info.tcpi_snd_cwnd, info.tcpi_retrans);
+#else
+      snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
+               info.tcpi_snd_cwnd, info.__tcpi_retrans);
+#endif
+      s += buf;
+    }
+  }
+#else
+  s += "-";
+#endif
 }

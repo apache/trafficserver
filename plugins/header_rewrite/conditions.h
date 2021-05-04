@@ -575,3 +575,42 @@ private:
   std::string _value;
   DISALLOW_COPY_AND_ASSIGN(ConditionExpandableString);
 };
+
+// Single Session Transaction Count
+class ConditionSessionTransactCount : public Condition
+{
+  typedef Matchers<int> MatcherType;
+
+public:
+  ConditionSessionTransactCount() { TSDebug(PLUGIN_NAME_DBG, "ConditionSessionTransactCount()"); }
+
+  // noncopyable
+  ConditionSessionTransactCount(const ConditionSessionTransactCount &) = delete;
+  void operator=(const ConditionSessionTransactCount &) = delete;
+
+  void initialize(Parser &p) override;
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+};
+
+// Tcp Info
+class ConditionTcpInfo : public Condition
+{
+  typedef Matchers<int> MatcherType;
+
+public:
+  ConditionTcpInfo() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTcpInfo"); }
+
+  // noncopyable
+  ConditionTcpInfo(const ConditionTcpInfo &) = delete;
+  void operator=(const ConditionTcpInfo &) = delete;
+
+  void initialize(Parser &p) override;
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+  void initialize_hooks() override; // Return status only valid in certain hooks
+};

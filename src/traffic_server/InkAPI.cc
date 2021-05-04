@@ -4764,6 +4764,16 @@ TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc)
   return TS_ERROR;
 }
 
+int
+TSHttpTxnServerSsnTransactionCount(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+  // Any value greater than zero indicates connection reuse.
+  return sm->server_transact_count;
+}
+
 // Shortcut to just get the URL.
 // The caller is responsible to free memory that is allocated for the string
 // that is returned.
