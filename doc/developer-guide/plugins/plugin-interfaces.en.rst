@@ -122,14 +122,15 @@ The thread functions are listed below:
 Debugging Functions
 ===================
 
--  :c:func:`TSDebug`
-   prints out a formatted statement if you are running Traffic Server in
-   debug mode.
+-  :c:func:`TSDbg`
+   (replaces deprecated :c:func:`TSDebug`) prints out a formatted
+   statement if you are running Traffic Server in debug mode.
 
--  :c:func:`TSIsDebugTagSet`
-   checks to see if a debug tag is set. If the debug tag is set, then
-   Traffic Server prints out all debug statements associated with the
-   tag.
+-  :c:func:`TSIsDbgCtlSet`
+   (replaces deprecated :c:func:`TSIsDebugTagSet`)
+   checks to see if a debug control (associated with a debug tag) is
+   set. If the debug tag is set, then Traffic Server prints out all
+   debug statements associated with the control.
 
 -  :c:func:`TSError`
    prints error messages to Traffic Server's error log

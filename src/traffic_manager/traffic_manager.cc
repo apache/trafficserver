@@ -128,15 +128,15 @@ rotateLogs()
   int diags_log_roll_int     = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
   int diags_log_roll_size    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
   int diags_log_roll_enable  = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
-  diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
-  diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
+  diags()->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
+  diags()->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
 
   // Now we can actually roll the logs (if necessary)
-  if (diags->should_roll_diagslog()) {
+  if (diags()->should_roll_diagslog()) {
     mgmt_log("Rotated %s", diags_log_filename);
   }
 
-  if (diags->should_roll_outputlog()) {
+  if (diags()->should_roll_outputlog()) {
     // send a signal to TS to reload traffic.out, so the logfile is kept
     // synced across processes
     mgmt_log("Sending SIGUSR2 to TS");
@@ -552,8 +552,8 @@ main(int argc, const char **argv)
   // Bootstrap the Diags facility so that we can use it while starting
   //  up the manager
   diagsConfig = new DiagsConfig("Manager", DEFAULT_DIAGS_LOG_FILENAME, debug_tags, action_tags, false);
-  diags->set_std_output(StdStream::STDOUT, bind_stdout);
-  diags->set_std_output(StdStream::STDERR, bind_stderr);
+  diags()->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags()->set_std_output(StdStream::STDERR, bind_stderr);
 
   RecLocalInit();
   LibRecordsConfigInit();
@@ -608,14 +608,14 @@ main(int argc, const char **argv)
     old_diagsconfig = nullptr;
   }
 
-  RecSetDiags(diags);
-  diags->set_std_output(StdStream::STDOUT, bind_stdout);
-  diags->set_std_output(StdStream::STDERR, bind_stderr);
+  RecSetDiags(diags());
+  diags()->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags()->set_std_output(StdStream::STDERR, bind_stderr);
 
   if (is_debug_tag_set("diags")) {
-    diags->dump();
+    diags()->dump();
   }
-  diags->cleanup_func = mgmt_cleanup;
+  diags()->cleanup_func = mgmt_cleanup;
 
   // Setup the exported manager version records.
   RecSetRecordString("proxy.node.version.manager.short", appVersionInfo.VersionStr, REC_SOURCE_DEFAULT);
@@ -944,9 +944,9 @@ SignalHandler(int sig)
     if (lmgmt && lmgmt->watched_process_pid != -1) {
       kill(lmgmt->watched_process_pid, sig);
     }
-    diags->set_std_output(StdStream::STDOUT, bind_stdout);
-    diags->set_std_output(StdStream::STDERR, bind_stderr);
-    if (diags->reseat_diagslog()) {
+    diags()->set_std_output(StdStream::STDOUT, bind_stdout);
+    diags()->set_std_output(StdStream::STDERR, bind_stderr);
+    if (diags()->reseat_diagslog()) {
       Note("Reseated %s", diags_log_filename);
     } else {
       Note("Could not reseat %s", diags_log_filename);

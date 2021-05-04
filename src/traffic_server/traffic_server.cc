@@ -295,9 +295,9 @@ public:
 
       Debug("log", "received SIGUSR2, reloading traffic.out");
       // reload output logfile (file is usually called traffic.out)
-      diags->set_std_output(StdStream::STDOUT, bind_stdout);
-      diags->set_std_output(StdStream::STDERR, bind_stderr);
-      if (diags->reseat_diagslog()) {
+      diags()->set_std_output(StdStream::STDOUT, bind_stdout);
+      diags()->set_std_output(StdStream::STDERR, bind_stderr);
+      if (diags()->reseat_diagslog()) {
         Note("Reseated %s", diags_log_filename);
       } else {
         Note("Could not reseat %s", diags_log_filename);
@@ -406,9 +406,9 @@ public:
     int diags_log_roll_int    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
     int diags_log_roll_size   = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
     int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
-    diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
+    diags()->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
 
-    if (diags->should_roll_diagslog()) {
+    if (diags()->should_roll_diagslog()) {
       Note("Rolled %s", diags_log_filename);
     }
     return EVENT_CONT;
@@ -512,9 +512,9 @@ void
 set_debug_ip(const char *ip_string)
 {
   if (ip_string) {
-    diags->debug_client_ip.load(ip_string);
+    diags()->debug_client_ip.load(ip_string);
   } else {
-    diags->debug_client_ip.invalidate();
+    diags()->debug_client_ip.invalidate();
   }
 }
 
@@ -673,7 +673,7 @@ initialize_process_manager()
     EnableDeathSignal(SIGTERM);
   }
 
-  RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags);
+  RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags());
   LibRecordsConfigInit();
 
   // Start up manager
@@ -1780,10 +1780,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // This is also needed for log rotation - setting up the file can cause privilege
   // related errors and if diagsConfig isn't get up yet that will crash on a NULL pointer.
   diagsConfig = new DiagsConfig("Server", DEFAULT_DIAGS_LOG_FILENAME, error_tags, action_tags, false);
-  diags->set_std_output(StdStream::STDOUT, bind_stdout);
-  diags->set_std_output(StdStream::STDERR, bind_stderr);
+  diags()->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags()->set_std_output(StdStream::STDERR, bind_stderr);
   if (is_debug_tag_set("diags")) {
-    diags->dump();
+    diags()->dump();
   }
 
   // Bind stdout and stderr to specified switches
@@ -1878,11 +1878,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
   DiagsConfig *old_log = diagsConfig;
   diagsConfig          = new DiagsConfig("Server", diags_log_filename, error_tags, action_tags, true);
-  RecSetDiags(diags);
-  diags->set_std_output(StdStream::STDOUT, bind_stdout);
-  diags->set_std_output(StdStream::STDERR, bind_stderr);
+  RecSetDiags(diags());
+  diags()->set_std_output(StdStream::STDOUT, bind_stdout);
+  diags()->set_std_output(StdStream::STDERR, bind_stderr);
   if (is_debug_tag_set("diags")) {
-    diags->dump();
+    diags()->dump();
   }
 
   if (old_log) {
