@@ -25,9 +25,12 @@ Test log filter.
 ts = Test.MakeATSProcess("ts", enable_cache=False)
 replay_file = "log-filter.replays.yaml"
 server = Test.MakeVerifierServerProcess("server", replay_file)
+nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
 ts.Disk.records_config.update({
     'proxy.config.net.connections_throttle': 100,
+    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+    'proxy.config.dns.resolv_conf': 'NULL'
 })
 # setup some config file for this server
 ts.Disk.remap_config.AddLine(
@@ -61,6 +64,7 @@ Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'filter-test.log'),
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(nameserver)
 tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("client-1", replay_file, http_ports=[ts.Variables.port])
 
