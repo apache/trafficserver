@@ -42,7 +42,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
   int _max_retriers = 0;
   strategy_name     = name;
   policy_type       = policy;
-  REC_ReadConfigInteger(_max_retriers, "proxy.config.http.parent_proxy.max_trans_retries");
+  NH_GetConfig(_max_retriers, "proxy.config.http.parent_proxy.max_trans_retries");
 
   // config settings may not be available when running unit tests.
   // so use the max_retriers default setting.

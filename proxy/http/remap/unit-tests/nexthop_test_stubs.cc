@@ -126,6 +126,18 @@ build_request(int64_t sm_id, HttpSM *sm, sockaddr_in *ip, const char *os_hostnam
 }
 
 void
+GetConfigInteger(int *v, const char *n)
+{
+  if (v != nullptr && n != nullptr) {
+    if (strcmp(n, "proxy.config.http.parent_proxy.max_trans_retries") == 0) {
+      *v = 1;
+    } else {
+      *v = 0;
+    }
+  }
+}
+
+void
 PrintToStdErr(const char *fmt, ...)
 {
   va_list args;

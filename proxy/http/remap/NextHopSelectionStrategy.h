@@ -31,6 +31,7 @@
 #define NH_Error(...) DiagsError(DL_Error, __VA_ARGS__)
 #define NH_Note(...) DiagsError(DL_Note, __VA_ARGS__)
 #define NH_Warn(...) DiagsError(DL_Warning, __VA_ARGS__)
+#define NH_GetConfig(v, n) REC_ReadConfigInteger(v, n)
 #else
 #include "unit-tests/nexthop_test_stubs.h"
 #endif /* _NH_UNIT_TESTS_ */
