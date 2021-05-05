@@ -272,6 +272,7 @@ Changes with Apache Traffic Server 9.1.0
   #7466 - Change atoi to atol, causing obvious issues on what needs to be int64's
   #7470 - Experimental Cache fill plugin
   #7473 - Adjust so transfer-encoding header can be treated hop-by-hop
+  #7485 - PR to prevent thundering parent retries.
   #7488 - Avoid -Warray-bounds on PROXY Protocol Builder
   #7491 - Add new log field for negotiated ALPN Protocol ID with the client
   #7494 - Fix certs used in tls related autests
@@ -323,5 +324,6 @@ Changes with Apache Traffic Server 9.1.0
   #7743 - Add a chunked disabled test.
   #7746 - header_rewrite: Various fixes for MaxMind support
   #7747 - Remove unused variable is_revalidation_necessary
+  #7748 - Remove proxy.config.http.down_server.abort_threshold
   #7753 - Make when_to_revalidate setting available on HTTPS
   #7766 - Clean up HTTP version processing
