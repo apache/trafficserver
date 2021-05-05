@@ -200,7 +200,6 @@ SSLInitClientContext(const SSLConfigParams *params)
   }
 #endif
 
-  SSL_CTX_set_verify(client_ctx, SSL_VERIFY_PEER, verify_callback);
   SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(client_ctx, false);
