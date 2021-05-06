@@ -362,9 +362,10 @@ Http2ClientSession::main_event_handler(int event, void *edata)
                Http2::stream_error_rate_threshold) { // For a case many stream errors happened
       ip_port_text_buffer ipb;
       const char *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
-      Warning("HTTP/2 session error client_ip=%s session_id=%" PRId64
-              " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
-              client_ip, connection_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
+      SiteThrottledWarning("HTTP/2 session error client_ip=%s session_id=%" PRId64
+                           " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
+                           client_ip, connection_id(), this->connection_state.get_stream_error_rate(),
+                           Http2::stream_error_rate_threshold);
       Http2SsnDebug("Preparing for graceful shutdown because of a high stream error rate");
       cause_of_death = Http2SessionCod::HIGH_ERROR_RATE;
       this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM);
@@ -559,9 +560,10 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
     if (this->connection_state.get_stream_error_rate() > std::min(1.0, Http2::stream_error_rate_threshold * 2.0)) {
       ip_port_text_buffer ipb;
       const char *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
-      Warning("HTTP/2 session error client_ip=%s session_id=%" PRId64
-              " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
-              client_ip, connection_id(), this->connection_state.get_stream_error_rate(), Http2::stream_error_rate_threshold);
+      SiteThrottledWarning("HTTP/2 session error client_ip=%s session_id=%" PRId64
+                           " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
+                           client_ip, connection_id(), this->connection_state.get_stream_error_rate(),
+                           Http2::stream_error_rate_threshold);
       err = Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
     }
 
