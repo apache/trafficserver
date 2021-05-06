@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test xdebug plugin X-Remap header
+Test xdebug plugin X-Cache-Info header
 '''
 
 server = Test.MakeOriginServer("server")
