@@ -2485,7 +2485,7 @@ tsapi TSReturnCode TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup
 tsapi TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
 tsapi TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
 tsapi TSReturnCode TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session);
-tsapi TSReturnCode TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, const char **path);
+tsapi const char *TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp);
 tsapi int TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp);
 tsapi int TSHttpTxnIsWebsocket(TSHttpTxn txnp);
 

@@ -5489,8 +5489,8 @@ TSHttpTxnIsWebsocket(TSHttpTxn txnp)
   return sm->t_state.is_websocket;
 }
 
-TSReturnCode
-TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, const char **path)
+const char *
+TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5498,12 +5498,10 @@ TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, const char **path)
   HttpCacheSM *c_sm = &(s->get_cache_sm());
 
   if (!c_sm) {
-    return TS_ERROR;
+    return nullptr;
   }
 
-  *path = c_sm->get_disk_path();
-
-  return TS_SUCCESS;
+  return c_sm->get_disk_path();
 }
 
 TSReturnCode
