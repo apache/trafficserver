@@ -185,7 +185,7 @@ InjectCacheInfoHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 
   TSDebug("xdebug", "attempting to inject X-Cache-Info header");
 
-  if (TSHttpTxnCacheDiskPathGet(txn, &path) != TS_SUCCESS) {
+  if ((path = TSHttpTxnCacheDiskPathGet(txn)) == nullptr) {
     goto done;
   }
 
