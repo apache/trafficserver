@@ -398,7 +398,7 @@ DNSProcessor::DNSProcessor()
 }
 
 void
-DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt)
+DNSEntry::init(DNSQueryData target, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt)
 {
   qtype          = qtype_arg;
   host_res_style = opt.host_res_style;
@@ -425,21 +425,16 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
   mutex = dnsH->mutex;
 
   if (is_addr_query(qtype) || qtype == T_SRV) {
-    if (len) {
-      len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
-      memcpy(qname, x, len);
-      qname[len]     = 0;
-      orig_qname_len = qname_len = len;
-    } else {
-      qname_len      = ink_strlcpy(qname, x, MAXDNAME);
-      orig_qname_len = qname_len;
-    }
+    auto name = target.name.substr(0, MAXDNAME); // be sure of safe copy into @a qname
+    memcpy(qname, name);
+    qname[name.size()] = '\0';
+    orig_qname_len = qname_len = name.size();
   } else { // T_PTR
-    IpAddr const *ip = reinterpret_cast<IpAddr const *>(x);
-    if (ip->isIp6()) {
-      orig_qname_len = qname_len = make_ipv6_ptr(&ip->_addr._ip6, qname);
-    } else if (ip->isIp4()) {
-      orig_qname_len = qname_len = make_ipv4_ptr(ip->_addr._ip4, qname);
+    auto addr = target.addr;
+    if (addr->isIp6()) {
+      orig_qname_len = qname_len = make_ipv6_ptr(&addr->_addr._ip6, qname);
+    } else if (addr->isIp4()) {
+      orig_qname_len = qname_len = make_ipv4_ptr(addr->_addr._ip4, qname);
     } else {
       ink_assert(!"T_PTR query to DNS must be IP address.");
     }
@@ -1253,15 +1248,20 @@ DNSEntry::mainEvent(int event, Event *e)
 }
 
 Action *
-DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Options const &opt)
+DNSProcessor::getby(DNSQueryData x, int type, Continuation *cont, Options const &opt)
 {
-  Debug("dns", "received query %s type = %d, timeout = %d", x, type, opt.timeout);
-  if (type == T_SRV) {
-    Debug("dns_srv", "DNSProcessor::getby attempting an SRV lookup for %s, timeout = %d", x, opt.timeout);
+  if (type == T_PTR) {
+    Debug("dns", "received reverse query type = %d, timeout = %d", type, opt.timeout);
+  } else {
+    Debug("dns", "received query %.*s type = %d, timeout = %d", int(x.name.size()), x.name.data(), type, opt.timeout);
+    if (type == T_SRV) {
+      Debug("dns_srv", "DNSProcessor::getby attempting an SRV lookup for %.*s, timeout = %d", int(x.name.size()), x.name.data(),
+            opt.timeout);
+    }
   }
   DNSEntry *e = dnsEntryAllocator.alloc();
   e->retries  = dns_retries;
-  e->init(x, len, type, cont, opt);
+  e->init(x, type, cont, opt);
   MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
   if (!lock.is_locked()) {
     thread->schedule_imm(e);

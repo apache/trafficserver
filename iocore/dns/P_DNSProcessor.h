@@ -115,7 +115,7 @@ struct DNSEntry : public Continuation {
   int which_ns                = NO_NAMESERVER_SELECTED;
   ink_hrtime submit_time      = 0;
   ink_hrtime send_time        = 0;
-  char qname[MAXDNAME];
+  char qname[MAXDNAME + 1];
   int qname_len          = 0;
   int orig_qname_len     = 0;
   char **domains         = nullptr;
@@ -135,7 +135,7 @@ struct DNSEntry : public Continuation {
   int postAllEvent(int event, Event *e);
   int post(DNSHandler *h, HostEnt *ent);
   int postOneEvent(int event, Event *e);
-  void init(const char *x, int len, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt);
+  void init(DNSQueryData target, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt);
 
   DNSEntry()
   {
