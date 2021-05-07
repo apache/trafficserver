@@ -40,36 +40,34 @@ regular expression against your origin URLs permits. Thus, individual cache
 objects may have rules created for them, or entire path prefixes, or even any
 cache objects with a particular file extension.
 
-Installation
-============
-
-To make this plugin available, you must enable experimental plugins when
-building |TS|::
-
-    ./configure --enable-experimental-plugins
-
 Configuration
 =============
+.. program:: regex_revalidate.so
 
-This plugin is enabled via the :file:`plugin.config` configuration file, with
-two required arguments: the path to a rules file, and the path to a log file::
+``Regex Revalidate`` is a global plugin and is configured via :file:`plugin.config`.
+    .. option:: --config <path to revalidate rules> (also -c)
 
-    regex_revalidate.so -c <path to rules> -l <path to log>
+    (`required`) - specifies the file which contains the revalidation rules.
+    The rule configuration file format is described below in
+    `Revalidation Rules`_.  These rules are always reloaded when
+    ``traffic_ctl config reload`` is invoked.
 
-The rule configuration file format is described below in `Revalidation Rules`_.
+    .. option:: --log <path to log> (also -l)
 
-By default The plugin regularly (every 60 seconds) checks its rules configuration
-file for changes and it will also check for changes when ``traffic_ctl config reload``
-is run. If the file has been modified since its last scan, the contents
-are read and the in-memory rules list is updated. Thus, new rules may be added and
-existing ones modified without requiring a service restart.
+    (`optional`) - specifies path to rule logging. This log is written to
+    after rule changes and contains the current active ruleset.  If missing
+    no log file is generated.
 
-The configuration parameter `--disable-timed-updates` or `-d` may be used to configure
-the plugin to disable timed config file change checks.  With timed checks disabled,
-config file changes are checked are only when ``traffic_ctl config reload`` is run.::
+    .. option:: --disable-timed-reload (also -d)
 
-    regex_revalidate.so -d -c <path to rules> -l <path to log>
+    (`optional`) - default plugin behaviour is to check the revalidate
+    rules file for changes every 60 seconds.  This option disables the
+    checking.
 
+``traffic_ctl`` <command>
+    * ``traffic_ctl config reload`` - triggers a reload of the rules file.  If there are no changes then the loaded rules are discarded.
+    * ``traffic_ctl plugin msg regex_revalidate config_reload`` - triggers a reload of the rules file apart from a full config reload.
+    * ``traffic_ctl plugin msg regex_revalidate config_print`` - writes the current active ruleset to :file:`traffic.out`
 
 Revalidation Rules
 ==================
@@ -78,7 +76,7 @@ Inside your revalidation rules configuration, each rule line is defined as a
 regular expression followed by an integer which expresses the epoch time at
 which the rule will expire::
 
-    <regular expression> <rule expiry, as seconds since epoch>
+    <regular expression> <rule expiry, as seconds since epoch> [type MISS or default STALE]
 
 Blank lines and lines beginning with a ``#`` character are ignored.
 
@@ -97,6 +95,16 @@ expressed as an integer of seconds since epoch (equivalent to the return value
 of :manpage:`time(2)`), after which the forced revalidation will no longer
 occur.
 
+Type
+----
+
+By default any matching asset will have its cache lookup status changed
+from HIT_FRESH to HIT_STALE.  By adding an extra keyword MISS at the end
+of a line the asset will be marked MISS instead, forcing a refetch from
+the parent. *Use with care* as this will increase bandwidth to the parent.
+During configuration reload, any rule which changes it type will be
+reloaded and treated as a new rule.
+
 Caveats
 =======
 
@@ -111,11 +119,11 @@ the fact that the plugin uses :c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`.
 Removing Rules
 --------------
 
-While new rules are added dynamically (the configuration file is checked every
-60 seconds for changes), rule lines removed from the configuration file do not
-currently lead to that rule being removed from the running plugin. In these
-cases, if the rule must be taken out of service, a service restart may be
-necessary.
+While new rules are added dynamically (the configuration file is checked
+every 60 seconds for changes), rule lines removed from the configuration
+file do not currently lead to that rule being removed from the running
+plugin. To take these rules out of service the rule should be assigned a
+new time in the past which will cause it to be pruned during reload phase.
 
 Examples
 ========
@@ -128,3 +136,6 @@ in |TS| until 6:47:27 AM on Saturday, November 14th, 2015 (UTC)::
 
 Note the escaping of the ``.`` metacharacter in the rule's regular expression.
 
+Alternatively the following rule would case a refetch from the parent::
+
+    http://origin\.tld/images/foo\.jpg 1447483647 MISS

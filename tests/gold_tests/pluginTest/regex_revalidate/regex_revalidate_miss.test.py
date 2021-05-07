@@ -19,18 +19,12 @@
 import os
 import time
 Test.Summary = '''
-Basic regex_revalidate plugin test
+regex_revalidate plugin test, MISS (refetch) functionality
 '''
 
 # Test description:
-# Load up cache, ensure fresh
-# Create regex reval rule, config reload:
-#  ensure item is staled only once.
-# Add a new rule, config reload:
-#  ensure item isn't restaled again, but rule still in effect.
-#
-# If the rule disappears from regex_revalidate.conf its still loaded!!
-# A rule's expiry can't be changed after the fact!
+# If MISS tag encountered, should load rule as refetch instead of IMS.
+# If rule switched from MISS to IMS or vice versa, rule should reset.
 
 Test.SkipUnless(
     Condition.PluginExists('regex_revalidate.so'),
@@ -43,6 +37,9 @@ server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", command="traffic_manager")
+
+# **testname is required**
+#testName = "regex_reval"
 
 # default root
 request_header_0 = {"headers":
@@ -80,46 +77,9 @@ response_header_1 = {"headers":
                      "body": "abc"
                      }
 
-# cache item path1a
-request_header_2 = {"headers":
-                    "GET /path1a HTTP/1.1\r\n" +
-                    "Host: www.example.com\r\n" +
-                    "\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""
-                    }
-response_header_2 = {"headers":
-                     "HTTP/1.1 200 OK\r\n" +
-                     "Connection: close\r\n" +
-                     'Etag: "path1a"\r\n' +
-                     "Cache-Control: max-age=600,public\r\n" +
-                     "\r\n",
-                     "timestamp": "1469733493.993",
-                     "body": "cde"
-                     }
-
-# cache item path2a
-request_header_3 = {"headers":
-                    "GET /path2a HTTP/1.1\r\n" +
-                    "Host: www.example.com\r\n" +
-                    "\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""
-                    }
-response_header_3 = {"headers":
-                     "HTTP/1.1 200 OK\r\n" +
-                     "Connection: close\r\n" +
-                     'Etag: "path2a"\r\n' +
-                     "Cache-Control: max-age=900,public\r\n" +
-                     "\r\n",
-                     "timestamp": "1469733493.993",
-                     "body": "efg"
-                     }
 
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
 server.addResponse("sessionlog.json", request_header_1, response_header_1)
-server.addResponse("sessionlog.json", request_header_2, response_header_2)
-server.addResponse("sessionlog.json", request_header_3, response_header_3)
 
 # Configure ATS server
 ts.Disk.plugin_config.AddLine('xdebug.so')
@@ -130,7 +90,7 @@ ts.Disk.plugin_config.AddLine(
 regex_revalidate_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_revalidate.conf')
 #curl_and_args = 'curl -s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com"'
 
-path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
+path1_rule = 'path1 {}'.format(int(time.time()) + 600)
 
 # Define first revision for when trafficserver starts
 ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(
@@ -163,23 +123,7 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
 
-# 1 Test - Load cache (miss) for later test (path1a)
-tr = Test.AddTestRun("Cache miss path1a")
-ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://ats/path1a'
-ps.ReturnCode = 0
-ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
-tr.StillRunningAfter = ts
-
-# 2 Test - Load cache (miss) for later test (path2a)
-tr = Test.AddTestRun("Cache miss path2a")
-ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://ats/path2a'
-ps.ReturnCode = 0
-ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
-tr.StillRunningAfter = ts
-
-# 3 Test - Cache hit path1
+# 1 Test - Cache hit path1
 tr = Test.AddTestRun("Cache hit fresh path1")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://ats/path1'
@@ -187,30 +131,31 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
 tr.StillRunningAfter = ts
 
-# 4 Stage - Reload new regex_revalidate
+# 2 Stage - Load new regex_revalidate
 tr = Test.AddTestRun("Reload config add path1")
 ps = tr.Processes.Default
-tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule)
-tr.Disk.File(regex_revalidate_conf_path + "_tr4", typename="ats:config").AddLine(path1_rule)
+tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' MISS')
+tr.Disk.File(regex_revalidate_conf_path + "_tr2", typename="ats:config").AddLine(path1_rule + ' MISS')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-ps.Command = 'traffic_ctl config reload'
+#ps.Command = 'traffic_ctl config reload'
+ps.Command = 'traffic_ctl plugin msg regex_revalidate config_reload'
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
 
-# 5 Test - Revalidate path1
-tr = Test.AddTestRun("Revalidate stale path1")
+# 3 Test - Revalidate path1
+tr = Test.AddTestRun("Revalidate MISS path1")
 ps = tr.Processes.Default
 tr.DelayStart = 5
 ps.Command = curl_and_args + ' http://ats/path1'
 ps.ReturnCode = 0
-ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
 tr.StillRunningAfter = ts
 
-# 6 Test - Cache hit (path1)
+# 4 Test - Cache hit (path1)
 tr = Test.AddTestRun("Cache hit fresh path1")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://ats/path1'
@@ -218,94 +163,71 @@ ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
 tr.StillRunningAfter = ts
 
-# 7 Stage - Reload new regex_revalidate
-tr = Test.AddTestRun("Reload config add path2")
+# 5 Stage - Change from MISS to STALE, reload
+tr = Test.AddTestRun("Reload config path1 STLE")
 ps = tr.Processes.Default
-tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    path1_rule,
-    'path2 {}\n'.format(int(time.time()) + 700)
-])
-tr.Disk.File(regex_revalidate_conf_path + "_tr7", typename="ats:config").AddLines([
-    path1_rule,
-    'path2 {}\n'.format(int(time.time()) + 700)
-])
+tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' STALE')
+tr.Disk.File(regex_revalidate_conf_path + "_tr5", typename="ats:config").AddLine(path1_rule + ' STALE')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-ps.Command = 'traffic_ctl config reload'
-ps.Env = ts.Env
-ps.ReturnCode = 0
-ps.TimeOut = 5
-tr.TimeOut = 5
-
-# 8 Test - Cache hit (path1)
-tr = Test.AddTestRun("Cache hit fresh path1")
-ps = tr.Processes.Default
-tr.DelayStart = 5
-ps.Command = curl_and_args + ' http://ats/path1'
-ps.ReturnCode = 0
-ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
-tr.StillRunningAfter = ts
-
-# 9 Test - Cache stale (check rule is still loaded) (path1a)
-tr = Test.AddTestRun("Revalidate stale path1a")
-ps = tr.Processes.Default
-ps.Command = curl_and_args + ' http://ats/path1a'
-ps.ReturnCode = 0
-ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
-tr.StillRunningAfter = ts
-
-# 10 Stage - regex_revalidate rewrite rule early expire
-tr = Test.AddTestRun("Reload config change path2")
-ps = tr.Processes.Default
-tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    path1_rule,
-    'path2 {}\n'.format(int(time.time()) - 100),
-])
-tr.Disk.File(regex_revalidate_conf_path + "_tr10", typename="ats:config").AddLines([
-    path1_rule,
-    'path2 {}\n'.format(int(time.time()) - 100),
-])
-tr.StillRunningAfter = ts
-tr.StillRunningAfter = server
-ps.Command = 'traffic_ctl config reload'
-ps.Env = ts.Env
-ps.ReturnCode = 0
-ps.TimeOut = 5
-tr.TimeOut = 5
-
-# 11 Test - Cache hit fresh (path2a) -- path2 rule expired!
-tr = Test.AddTestRun("Cache hit fresh path2a")
-ps = tr.Processes.Default
-tr.DelayStart = 5
-ps.Command = curl_and_args + ' http://ats/path2a'
-ps.ReturnCode = 0
-ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
-tr.StillRunningAfter = ts
-
-# 12 Test - Lifecycle plugin reload
-tr = Test.AddTestRun("Reload config reenable path2")
-ps = tr.Processes.Default
-tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    path1_rule,
-    'path2 {}\n'.format(int(time.time()) + 500)
-])
-tr.Disk.File(regex_revalidate_conf_path + "_tr12", typename="ats:config").AddLines([
-    path1_rule,
-    'path2 {}\n'.format(int(time.time()) + 500)
-])
-tr.StillRunningAfter = ts
-tr.StillRunningAfter = server
+#ps.Command = 'traffic_ctl config reload'
 ps.Command = 'traffic_ctl plugin msg regex_revalidate config_reload'
 ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
 
-# 13 Test - Cache hit stale (path2a) -- path2 rule re-instated
-tr = Test.AddTestRun("Cache hit stale path2a")
+# 6 Test - Cache stale
+tr = Test.AddTestRun("Cache stale path1")
 ps = tr.Processes.Default
 tr.DelayStart = 5
-ps.Command = curl_and_args + ' http://ats/path2a'
+ps.Command = curl_and_args + ' http://ats/path1'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
+tr.StillRunningAfter = ts
+
+# 7 Stage - Switch back to MISS
+tr = Test.AddTestRun("Reload config path1 MISS")
+ps = tr.Processes.Default
+tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' MISS')
+tr.Disk.File(regex_revalidate_conf_path + "_tr7", typename="ats:config").AddLine(path1_rule + ' MISS')
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+#ps.Command = 'traffic_ctl config reload'
+ps.Command = 'traffic_ctl plugin msg regex_revalidate config_reload'
+ps.Env = ts.Env
+ps.ReturnCode = 0
+ps.TimeOut = 5
+tr.TimeOut = 5
+
+# 8 Test - Cache stale
+tr = Test.AddTestRun("Cache stale path1")
+ps = tr.Processes.Default
+tr.DelayStart = 5
+ps.Command = curl_and_args + ' http://ats/path1'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
+tr.StillRunningAfter = ts
+
+# 9 Stage - Write out same contents, ensure rule not reset
+tr = Test.AddTestRun("Reload config path1 MISS again")
+ps = tr.Processes.Default
+tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' MISS')
+tr.Disk.File(regex_revalidate_conf_path + "_tr9", typename="ats:config").AddLine(path1_rule + ' MISSSTALE')
+tr.StillRunningAfter = ts
+tr.StillRunningAfter = server
+#ps.Command = 'traffic_ctl config reload'
+ps.Command = 'traffic_ctl plugin msg regex_revalidate config_reload'
+ps.Env = ts.Env
+ps.ReturnCode = 0
+ps.TimeOut = 5
+tr.TimeOut = 5
+
+# 8 Test - Cache stale
+tr = Test.AddTestRun("Cache stale path1")
+ps = tr.Processes.Default
+tr.DelayStart = 5
+ps.Command = curl_and_args + ' http://ats/path1'
+ps.ReturnCode = 0
+ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
 tr.StillRunningAfter = ts
