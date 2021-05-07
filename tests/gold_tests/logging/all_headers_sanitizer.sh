@@ -17,7 +17,7 @@
 sed 's/ ___FS___ /\
 /g' | sed 's/^{//' | sed 's/}$//' | while read LN
 do
-    # For lines that contain a full set of messaage headers, get
+    # For lines that contain a full set of message headers, get
     # individual headers on separate lines, then sort the lines.
     #
     echo $LN | sed 's/}}/}}\

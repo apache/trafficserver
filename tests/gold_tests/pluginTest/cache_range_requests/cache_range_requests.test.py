@@ -350,7 +350,7 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
 # 11 Test - cache_key_url request -- deprecated
-tr = Test.AddTestRun("cache_key_url request - dprecated")
+tr = Test.AddTestRun("cache_key_url request - deprecated")
 ps = tr.Processes.Default
 ps.Command = curl_and_args + ' http://psd/path -r {} -H "uuid: pselect"'.format(pselect_str)
 ps.ReturnCode = 0

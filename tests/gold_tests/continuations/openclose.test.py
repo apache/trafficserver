@@ -57,8 +57,8 @@ numberOfRequests = 100
 
 tr = Test.AddTestRun()
 # Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
-# On Fedora 28/29, it seems that curl will occaisionally timeout after a couple seconds and return exitcode 2
-# Examinig the packet capture shows that Traffic Server dutifully sends the response
+# On Fedora 28/29, it seems that curl will occasionally timeout after a couple seconds and return exitcode 2
+# Examining the packet capture shows that Traffic Server dutifully sends the response
 ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 2)
@@ -97,7 +97,7 @@ def make_done_stat_ready(tsenv):
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun("Check Ssn order errors")
 server2.StartupTimeout = 60
-# Again, here the imporant thing is the ready function not the server2 process
+# Again, here the important thing is the ready function not the server2 process
 tr.Processes.Default.StartBefore(server2, ready=make_done_stat_ready(ts.Env))
 tr.Processes.Default.Command = 'traffic_ctl metric get ssntxnorder_verify.err'
 tr.Processes.Default.ReturnCode = 0

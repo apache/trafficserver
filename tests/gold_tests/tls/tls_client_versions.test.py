@@ -21,7 +21,7 @@ Test TLS protocol offering  based on SNI
 '''
 
 # By default only offer TLSv1_2
-# for special doman foo.com only offer TLSv1 and TLSv1_1
+# for special domain foo.com only offer TLSv1 and TLSv1_1
 
 Test.SkipUnless(
     Condition.HasOpenSSLVersion("1.1.1")
@@ -39,7 +39,7 @@ server.addResponse("sessionlog.json", request_foo_header, response_foo_header)
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
 
-# Need no remap rules.  Everything should be proccessed by sni
+# Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(

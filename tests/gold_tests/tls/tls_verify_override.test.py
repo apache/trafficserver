@@ -141,7 +141,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-# Should succed.  No message
+# Should succeed.  No message
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("200 OK", "Curl attempt should have succeeded")
 
@@ -261,7 +261,7 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression(
 # name check failure for random.com
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     r"WARNING: SNI \(random.com\) not in certificate. Action=Continue server=random.com\(127.0.0.1\)",
-    "Warning on missing name for randome.com")
+    "Warning on missing name for random.com")
 # name check failure for bar.com
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     r"WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com\(127.0.0.1\)",

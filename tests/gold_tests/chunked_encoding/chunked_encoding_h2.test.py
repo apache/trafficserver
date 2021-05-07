@@ -53,7 +53,7 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
-# Using netcat as a cheapy origin server in case 1 so we can insert a delay in sending back the response.
+# Using netcat as a cheap origin server in case 1 so we can insert a delay in sending back the response.
 # Replaced microserver for cases 2 and 3 as well because I was getting python exceptions when running
 # microserver if chunked encoding headers were specified for the request headers
 

@@ -132,7 +132,7 @@ curl_and_args = 'curl -s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com
 
 path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
 
-# Define first revistion for when trafficserver starts
+# Define first revision for when trafficserver starts
 ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
     "# Empty\n"
 ])

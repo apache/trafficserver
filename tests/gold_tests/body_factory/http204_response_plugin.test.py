@@ -1,5 +1,5 @@
 '''
-Tests that plugins may break HTTP by sending 204 respose bodies
+Tests that plugins may break HTTP by sending 204 response bodies
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -21,7 +21,7 @@ import os
 import sys
 
 Test.Summary = '''
-Tests that plugins may break HTTP by sending 204 respose bodies
+Tests that plugins may break HTTP by sending 204 response bodies
 '''
 
 ts = Test.MakeATSProcess("ts")
