@@ -91,10 +91,16 @@ SSL/TLS
 .. ts:stat:: global proxy.process.ssl.ssl_session_cache_hit integer
    :type: counter
 
+.. ts:stat:: global proxy.process.ssl.ssl_origin_session_cache_hit integer
+   :type: counter
+
 .. ts:stat:: global proxy.process.ssl.ssl_session_cache_lock_contention integer
    :type: counter
 
 .. ts:stat:: global proxy.process.ssl.ssl_session_cache_miss integer
+   :type: counter
+
+.. ts:stat:: global proxy.process.ssl.ssl_origin_session_cache_miss integer
    :type: counter
 
 .. ts:stat:: global proxy.process.ssl.ssl_session_cache_new_session integer

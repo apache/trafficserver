@@ -161,11 +161,17 @@ SSLInitializeStatistics()
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_hit", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_hit, RecRawStatSyncCount);
 
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_origin_session_cache_hit", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_origin_session_cache_hit, RecRawStatSyncCount);
+
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_new_session", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_new_session, RecRawStatSyncCount);
 
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_miss", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_miss, RecRawStatSyncCount);
+
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_origin_session_cache_miss", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_origin_session_cache_miss, RecRawStatSyncCount);
 
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_eviction", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_eviction, RecRawStatSyncCount);

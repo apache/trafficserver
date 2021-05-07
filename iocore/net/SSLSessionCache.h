@@ -183,19 +183,36 @@ private:
   size_t nbuckets;
 };
 
+class SSLOriginSession
+{
+public:
+  std::string key;
+  Ptr<IOBufferData> asn1_data; /* this is the ASN1 representation of the SSL_CTX */
+  size_t len_asn1_data;
+  Ptr<IOBufferData> extra_data;
+
+  SSLOriginSession(const std::string &lookup_key, const Ptr<IOBufferData> &ssl_asn1_data, size_t len_asn1,
+                   Ptr<IOBufferData> &exdata)
+    : key(lookup_key), asn1_data(ssl_asn1_data), len_asn1_data(len_asn1), extra_data(exdata)
+  {
+  }
+
+  LINK(SSLOriginSession, link);
+};
+
 class SSLOriginSessionCache
 {
 public:
   SSLOriginSessionCache();
   ~SSLOriginSessionCache();
 
-  void insert_session(const std::string &lookup_key, SSL_SESSION *sess);
-  void remove_session(const std::string &lookup_key);
-  SSL_SESSION *get_session(const std::string &lookup_key);
+  void insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl);
+  bool get_session(const std::string &lookup_key, SSL_SESSION **sess, ssl_session_cache_exdata **data);
 
 private:
-  mutable std::shared_mutex mutex;
-  std::map<std::string, SSL_SESSION *> origin_sessions;
-
   void remove_oldest_session(const std::unique_lock<std::shared_mutex> &lock);
+
+  mutable std::shared_mutex mutex;
+  CountQueue<SSLOriginSession> orig_sess_que;
+  std::map<std::string, SSLOriginSession *> orig_sess_map;
 };
