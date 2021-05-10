@@ -31,7 +31,7 @@ Age:``
 Transfer-Encoding: chunked
 Connection: keep-alive
 Server:``
-X-Cache-Info: path=``/tests/_sandbox/x_cache_info/ts/storage/cache.db; volume=0
+X-Cache-Info: path=``/x_cache_info/ts/storage/cache.db; volume=0
 
 0
 
@@ -42,7 +42,7 @@ Age:``
 Transfer-Encoding: chunked
 Connection: keep-alive
 Server:``
-X-Cache-Info: path=``/tests/_sandbox/x_cache_info/ts/storage/cache.db; volume=0
+X-Cache-Info: path=``/x_cache_info/ts/storage/cache.db; volume=0
 
 0
 
@@ -53,7 +53,7 @@ Age:``
 Transfer-Encoding: chunked
 Connection: keep-alive
 Server:``
-X-Cache-Info: path=``/tests/_sandbox/x_cache_info/ts/storage/cache.db; volume=0
+X-Cache-Info: path=``/x_cache_info/ts/storage/cache.db; volume=0
 
 0
 
