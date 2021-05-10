@@ -5498,16 +5498,21 @@ TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, int *length)
   HttpCacheSM *c_sm = &(s->get_cache_sm());
 
   if (!c_sm) {
-    *length = 0;
+    if (length != nullptr) {
+      *length = 0;
+    }
+
     return nullptr;
   }
 
   const char *path = c_sm->get_disk_path();
 
-  if (path == nullptr) {
-    *length = 0;
-  } else {
-    *length = strlen(path);
+  if (length != nullptr) {
+    if (path != nullptr) {
+      *length = strlen(path);
+    } else {
+      *length = 0;
+    }
   }
 
   return path;
