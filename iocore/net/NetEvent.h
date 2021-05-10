@@ -84,10 +84,12 @@ public:
   LINK(NetEvent, keep_alive_queue_link);
   LINK(NetEvent, active_queue_link);
 
+  /// Values for @a f.shutdown
+  static constexpr unsigned SHUTDOWN_READ  = 1;
+  static constexpr unsigned SHUTDOWN_WRITE = 2;
+
   union {
     unsigned int flags = 0;
-#define NET_VC_SHUTDOWN_READ 1
-#define NET_VC_SHUTDOWN_WRITE 2
     struct {
       unsigned int got_local_addr : 1;
       unsigned int shutdown : 2;
