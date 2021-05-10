@@ -5556,25 +5556,14 @@ TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, int *length)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
-  HttpSM *s         = reinterpret_cast<HttpSM *>(txnp);
-  HttpCacheSM *c_sm = &(s->get_cache_sm());
+  HttpSM *sm       = reinterpret_cast<HttpSM *>(txnp);
+  char const *path = nullptr;
 
-  if (!c_sm) {
-    if (length != nullptr) {
-      *length = 0;
-    }
-
-    return nullptr;
+  if (HttpCacheSM *c_sm = &(sm->get_cache_sm()); c_sm) {
+    path = c_sm->get_disk_path();
   }
-
-  const char *path = c_sm->get_disk_path();
-
-  if (length != nullptr) {
-    if (path != nullptr) {
-      *length = strlen(path);
-    } else {
-      *length = 0;
-    }
+  if (length) {
+    *length = path ? strlen(path) : 0;
   }
 
   return path;
