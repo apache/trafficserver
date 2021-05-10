@@ -144,6 +144,18 @@ public:
     return -1;
   }
 
+  const char *
+  get_disk_path()
+  {
+    if (cache_read_vc) {
+      return cache_read_vc->get_disk_path();
+    } else if (cache_write_vc) {
+      return cache_write_vc->get_disk_path();
+    }
+
+    return nullptr;
+  }
+
   inline void
   abort_read()
   {

@@ -293,6 +293,16 @@ struct CacheVC : public CacheVConnection {
     return -1;
   }
 
+  const char *
+  get_disk_path() const override
+  {
+    if (vol && vol->disk) {
+      return vol->disk->path;
+    }
+
+    return nullptr;
+  }
+
   bool
   is_compressed_in_ram() const override
   {
