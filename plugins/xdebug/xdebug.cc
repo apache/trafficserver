@@ -182,11 +182,10 @@ InjectCacheInfoHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   TSMLoc dst = TS_NULL_MLOC;
   TSMgmtInt volume;
   const char *path;
-  int length;
 
   TSDebug("xdebug", "attempting to inject X-Cache-Info header");
 
-  if ((path = TSHttpTxnCacheDiskPathGet(txn, &length)) == nullptr) {
+  if ((path = TSHttpTxnCacheDiskPathGet(txn, nullptr)) == nullptr) {
     goto done;
   }
 
