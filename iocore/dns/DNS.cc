@@ -44,6 +44,7 @@ int dns_failover_number              = DEFAULT_FAILOVER_NUMBER;
 int dns_failover_period              = DEFAULT_FAILOVER_PERIOD;
 int dns_failover_try_period          = DEFAULT_FAILOVER_TRY_PERIOD;
 int dns_max_dns_in_flight            = MAX_DNS_IN_FLIGHT;
+int dns_max_tcp_continuous_failures  = MAX_DNS_TCP_CONTINUOUS_FAILURES;
 int dns_validate_qname               = 0;
 unsigned int dns_handler_initialized = 0;
 int dns_ns_rr                        = 0;
@@ -217,6 +218,7 @@ DNSProcessor::start(int, size_t stacksize)
   REC_EstablishStaticConfigInt32(dns_max_dns_in_flight, "proxy.config.dns.max_dns_in_flight");
   REC_EstablishStaticConfigInt32(dns_validate_qname, "proxy.config.dns.validate_query_name");
   REC_EstablishStaticConfigInt32(dns_ns_rr, "proxy.config.dns.round_robin_nameservers");
+  REC_EstablishStaticConfigInt32(dns_max_tcp_continuous_failures, "proxy.config.dns.max_tcp_continuous_failures");
   REC_ReadConfigStringAlloc(dns_ns_list, "proxy.config.dns.nameservers");
   REC_ReadConfigStringAlloc(dns_local_ipv4, "proxy.config.dns.local_ipv4");
   REC_ReadConfigStringAlloc(dns_local_ipv6, "proxy.config.dns.local_ipv6");
@@ -459,6 +461,17 @@ DNSHandler::open_cons(sockaddr const *target, bool failed, int icon)
 }
 
 /**
+ Close the old TCP connection and open a new one
+ */
+bool
+DNSHandler::reset_tcp_conn(int ndx)
+{
+  DNS_INCREMENT_DYN_STAT(dns_tcp_reset_stat);
+  tcpcon[ndx].close();
+  return open_con(&m_res->nsaddr_list[ndx].sa, true, ndx, true);
+}
+
+/**
   Open (and close) connections as necessary and also assures that the
   epoll fd struct is properly updated.
 
@@ -472,11 +485,12 @@ DNSHandler::open_cons(sockaddr const *target, bool failed, int icon)
   target != nullptr and icon > 0 :
       open connection to target.
 */
-void
+bool
 DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tcp)
 {
   ip_port_text_buffer ip_text;
   PollDescriptor *pd = get_PollDescriptor(dnsProcessor.thread);
+  bool ret           = false;
 
   ink_assert(target != &ip.sa);
 
@@ -508,7 +522,7 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
         failover();
       }
     }
-    return;
+    return false;
   } else {
     ns_down[icon] = 0;
     if (cur_con.eio.start(pd, &cur_con, EVENTIO_READ) < 0) {
@@ -517,7 +531,10 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
       cur_con.num = icon;
       Debug("dns", "opening connection %s SUCCEEDED for %d", ip_text, icon);
     }
+    ret = true;
   }
+
+  return ret;
 }
 
 void
@@ -933,12 +950,32 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
 }
 
+void
+DNSHandler::check_and_reset_tcp_conn()
+{
+  for (int i = 0; i < n_con; i++) {
+    if (dns_max_tcp_continuous_failures > 0 && tcp_continuous_failures[i] >= dns_max_tcp_continuous_failures) {
+      // The times of continuous failures are more than the threshold, have to reset the connection
+      if (reset_tcp_conn(i)) {
+        // Reset the counter after the new TCP connection
+        // don't reset the counter if tcp conn reset failed, and we need continue to try to reset tcp conn next time
+        Warning("Reset tcp connection: nameserver = %d, failures = %d, threshold = %d", i, tcp_continuous_failures[i],
+                dns_max_tcp_continuous_failures);
+        tcp_continuous_failures[i] = 0;
+      }
+    }
+  }
+}
+
 /** Main event for the DNSHandler. Attempt to read from and write to named. */
 int
 DNSHandler::mainEvent(int event, Event *e)
 {
   recv_dns(event, e);
   if (dns_ns_rr) {
+    if (DNS_CONN_MODE::TCP_RETRY == dns_conn_mode) {
+      check_and_reset_tcp_conn();
+    }
     ink_hrtime t = Thread::get_hrtime();
     if (t - last_primary_retry > DNS_PRIMARY_RETRY_PERIOD) {
       for (int i = 0; i < n_con; i++) {
@@ -1139,6 +1176,14 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
   int s = socketManager.send(con_fd, buffer, r, 0);
   if (s != r) {
     Debug("dns", "send() failed: qname = %s, %d != %d, nameserver= %d", e->qname, s, r, h->name_server);
+
+    if (over_tcp) {
+      // add the counter for tcp connection failed
+      Debug("dns", "tcp query failed: name_server = %d, tcp_continuous_failures = %d", h->name_server,
+            h->tcp_continuous_failures[h->name_server]);
+      ++h->tcp_continuous_failures[h->name_server];
+    }
+
     // changed if condition from 'r < 0' to 's < 0' - 8/2001 pas
     if (s < 0) {
       if (dns_ns_rr) {
@@ -1148,6 +1193,13 @@ write_dns_event(DNSHandler *h, DNSEntry *e, bool over_tcp)
       }
     }
     return false;
+  }
+
+  if (over_tcp && h->tcp_continuous_failures[h->name_server] > 0) {
+    // reset the counter for any tcp connection succeed
+    Debug("dns", "reset tcp_continuous_failures: name_server = %d, tcp_continuous_failures = %d", h->name_server,
+          h->tcp_continuous_failures[h->name_server]);
+    h->tcp_continuous_failures[h->name_server] = 0;
   }
 
   e->written_flag      = true;
@@ -1487,6 +1539,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
   if (dns_conn_mode == DNS_CONN_MODE::TCP_RETRY && h->tc == 1) {
     Debug("dns", "Retrying DNS query over TCP for [%s]", e->qname);
     tcp_retry = true;
+    DNS_INCREMENT_DYN_STAT(dns_tcp_retries_stat);
     goto Lerror;
   }
 
@@ -1847,6 +1900,12 @@ ink_dns_init(ts::ModuleVersion v)
                      (int)dns_max_retries_exceeded_stat, RecRawStatSyncSum);
 
   RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.in_flight", RECD_INT, RECP_NON_PERSISTENT, (int)dns_in_flight_stat,
+                     RecRawStatSyncSum);
+
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.tcp_retries", RECD_INT, RECP_PERSISTENT, (int)dns_tcp_retries_stat,
+                     RecRawStatSyncSum);
+
+  RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.tcp_reset", RECD_INT, RECP_PERSISTENT, (int)dns_tcp_reset_stat,
                      RecRawStatSyncSum);
 }
 

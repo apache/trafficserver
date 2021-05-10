@@ -30,6 +30,7 @@
 #define MAX_DNS_RETRIES 9
 #define DEFAULT_DNS_TIMEOUT 30
 #define MAX_DNS_IN_FLIGHT 2048
+#define MAX_DNS_TCP_CONTINUOUS_FAILURES 10
 #define DEFAULT_FAILOVER_NUMBER (DEFAULT_DNS_RETRIES + 1)
 #define DEFAULT_FAILOVER_PERIOD (DEFAULT_DNS_TIMEOUT + 30)
 // how many seconds before FAILOVER_PERIOD to try the primary with
@@ -49,6 +50,7 @@ extern int dns_failover_number;
 extern int dns_failover_period;
 extern int dns_failover_try_period;
 extern int dns_max_dns_in_flight;
+extern int dns_max_tcp_continuous_failures;
 extern unsigned int dns_sequence_number;
 
 //
@@ -85,6 +87,8 @@ enum DNS_Stats {
   dns_retries_stat,
   dns_max_retries_exceeded_stat,
   dns_in_flight_stat,
+  dns_tcp_retries_stat,
+  dns_tcp_reset_stat,
   DNS_Stat_Count
 };
 
@@ -173,6 +177,7 @@ struct DNSHandler : public Continuation {
   int ns_down[MAX_NAMED];
   int failover_number[MAX_NAMED];
   int failover_soon_number[MAX_NAMED];
+  int tcp_continuous_failures[MAX_NAMED];
   ink_hrtime crossed_failover_number[MAX_NAMED];
   ink_hrtime last_primary_retry  = 0;
   ink_hrtime last_primary_reopen = 0;
@@ -225,7 +230,7 @@ struct DNSHandler : public Continuation {
   int mainEvent(int event, Event *e);
 
   void open_cons(sockaddr const *addr, bool failed = false, int icon = 0);
-  void open_con(sockaddr const *addr, bool failed = false, int icon = 0, bool over_tcp = false);
+  bool open_con(sockaddr const *addr, bool failed = false, int icon = 0, bool over_tcp = false);
   void failover();
   void rr_failure(int ndx);
   void recover();
@@ -257,6 +262,9 @@ struct DNSHandler : public Continuation {
 private:
   // Check the IP address and switch to default if needed.
   void validate_ip();
+  // Check tcp connection for TCP_RETRY mode
+  void check_and_reset_tcp_conn();
+  bool reset_tcp_conn(int ndx);
 };
 
 /* --------------------------------------------------------------
@@ -295,6 +303,7 @@ DNSHandler::DNSHandler()
     failover_number[i]         = 0;
     failover_soon_number[i]    = 0;
     crossed_failover_number[i] = 0;
+    tcp_continuous_failures[i] = 0;
     ns_down[i]                 = 1;
     tcpcon[i].handler          = this;
     udpcon[i].handler          = this;
