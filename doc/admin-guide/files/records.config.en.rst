@@ -2629,6 +2629,13 @@ DNS
    ``2`` TCP_ONLY:  |TS| always talks to nameservers over TCP.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.dns.max_tcp_continuous_failures INT 10
+
+   If DNS connection mode is TCP_RETRY, set the threshold of the continuous TCP
+   query failures count for the TCP connection, reset the TCP connection immediately
+   if the continuous TCP query failures conut over the threshold. If the threshold
+   is 0 (or less than 0) we close this feature.
+
 .. ts:cv:: CONFIG proxy.config.dns.max_dns_in_flight INT 2048
 
    Maximum inflight DNS queries made by |TS| at any given instant
