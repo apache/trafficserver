@@ -98,11 +98,13 @@ The following options may be specified in :file:`plugin.config`:
 
   In addition, on newer Linux system, the following two fields are appended
   in log level 2:
+
   ==============    ==================================================
   Field Name        Description
   ==============    ==================================================
   data_segs_in      Number of incoming data segments
   data_segs_out     Number of outgoing data segments
+  ==============    ==================================================
 
   Note: Features such as TSO (TCP Segment Offload) might skew the numbers
   here. That's true as well for e.g. the retransmit metrics, i.e. anything
