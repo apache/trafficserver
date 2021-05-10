@@ -507,27 +507,29 @@ NetHandler::waitForActivity(ink_hrtime timeout)
       if (cop_list.in(ne)) {
         cop_list.remove(ne);
       }
-      if (get_ev_events(pd, x) & (EVENTIO_READ | EVENTIO_ERROR)) {
+      auto flags        = get_ev_events(pd, x);
+      ne->f.epoll_error = (0 != (flags & EVENTIO_ERROR));
+      if (flags & (EVENTIO_READ | EVENTIO_ERROR)) {
         ne->read.triggered = 1;
         if (!read_ready_list.in(ne)) {
           read_ready_list.enqueue(ne);
-        } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
+        } else if (flags & EVENTIO_ERROR) {
           // check for unhandled epoll events that should be handled
-          Debug("iocore_net_main", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%d",
-                get_ev_events(pd, x), ne->read.enabled, ne->closed, read_ready_list.in(ne));
+          Debug("iocore_net_main", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%d", flags,
+                ne->read.enabled, ne->closed, read_ready_list.in(ne));
         }
       }
-      if (get_ev_events(pd, x) & (EVENTIO_WRITE | EVENTIO_ERROR)) {
+      if (flags & (EVENTIO_WRITE | EVENTIO_ERROR)) {
         ne->write.triggered = 1;
         if (!write_ready_list.in(ne)) {
           write_ready_list.enqueue(ne);
-        } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
+        } else if (flags & EVENTIO_ERROR) {
           // check for unhandled epoll events that should be handled
           Debug("iocore_net_main", "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%d",
-                get_ev_events(pd, x), ne->write.enabled, ne->closed, write_ready_list.in(ne));
+                flags, ne->write.enabled, ne->closed, write_ready_list.in(ne));
         }
-      } else if (!(get_ev_events(pd, x) & EVENTIO_READ)) {
-        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd, x));
+      } else if (!(flags & EVENTIO_READ)) {
+        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", flags);
       }
     } else if (epd->type == EVENTIO_DNS_CONNECTION) {
       if (epd->data.dnscon != nullptr) {

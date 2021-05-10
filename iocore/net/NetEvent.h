@@ -91,6 +91,7 @@ public:
     struct {
       unsigned int got_local_addr : 1;
       unsigned int shutdown : 2;
+      unsigned int epoll_error : 1;
     } f;
   };
 };
