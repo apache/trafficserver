@@ -368,7 +368,7 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
 inline static ParentRetry_t
 response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
 {
-  if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response) || s->current.request_to != HttpTransact::PARENT_PROXY) {
+  if (!HttpTransact::is_response_valid(s, &s->hdr_info.server_response) || s->current.request_to != ResolveInfo::PARENT_PROXY) {
     return PARENT_RETRY_NONE;
   }
   if (s->response_action.handled) {
@@ -487,8 +487,8 @@ update_cache_control_information_from_config(HttpTransact::State *s)
 bool
 HttpTransact::is_server_negative_cached(State *s)
 {
-  if (s->host_db_info.app.http_data.last_failure != 0 &&
-      s->host_db_info.app.http_data.last_failure + s->txn_conf->down_server_timeout > s->client_request_time) {
+  if (s->dns_info.active && s->dns_info.active->last_fail_time() != TS_TIME_ZERO &&
+      s->dns_info.active->last_fail_time() + s->txn_conf->down_server_timeout > ts_clock::from_time_t(s->client_request_time)) {
     return true;
   } else {
     // Make sure some nasty clock skew has not happened
@@ -496,9 +496,10 @@ HttpTransact::is_server_negative_cached(State *s)
     //   future we should tolerate bogus last failure times.  This sets
     //   the upper bound to the time that we would ever consider a server
     //   down to 2*down_server_timeout
-    if (s->client_request_time + s->txn_conf->down_server_timeout < s->host_db_info.app.http_data.last_failure) {
-      s->host_db_info.app.http_data.last_failure = 0;
-      s->host_db_info.app.http_data.fail_count   = 0;
+    if (s->dns_info.active &&
+        ts_clock::from_time_t(s->client_request_time) + s->txn_conf->down_server_timeout < s->dns_info.active->last_fail_time()) {
+      s->dns_info.active->last_failure = TS_TIME_ZERO;
+      s->dns_info.active->fail_count   = 0;
       ink_assert(!"extreme clock skew");
       return true;
     }
@@ -507,8 +508,8 @@ HttpTransact::is_server_negative_cached(State *s)
 }
 
 inline static void
-update_current_info(HttpTransact::CurrentInfo *into, HttpTransact::ConnectionAttributes *from, HttpTransact::LookingUp_t who,
-                    int attempts)
+update_current_info(HttpTransact::CurrentInfo *into, HttpTransact::ConnectionAttributes *from,
+                    ResolveInfo::UpstreamResolveStyle who, int attempts)
 {
   into->request_to = who;
   into->server     = from;
@@ -516,7 +517,7 @@ update_current_info(HttpTransact::CurrentInfo *into, HttpTransact::ConnectionAtt
 }
 
 inline static void
-update_dns_info(HttpTransact::DNSLookupInfo *dns, HttpTransact::CurrentInfo *from)
+update_dns_info(ResolveInfo *dns, HttpTransact::CurrentInfo *from)
 {
   dns->looking_up  = from->request_to;
   dns->lookup_name = from->server->name;
@@ -558,7 +559,7 @@ is_negative_caching_appropriate(HttpTransact::State *s)
   }
 }
 
-inline static HttpTransact::LookingUp_t
+inline static ResolveInfo::UpstreamResolveStyle
 find_server_and_update_current_info(HttpTransact::State *s)
 {
   int host_len;
@@ -639,16 +640,16 @@ find_server_and_update_current_info(HttpTransact::State *s)
   switch (s->parent_result.result) {
   case PARENT_SPECIFIED:
     s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
-    update_current_info(&s->current, &s->parent_info, HttpTransact::PARENT_PROXY, (s->current.attempts)++);
+    update_current_info(&s->current, &s->parent_info, ResolveInfo::PARENT_PROXY, (s->current.attempts)++);
     update_dns_info(&s->dns_info, &s->current);
-    ink_assert(s->dns_info.looking_up == HttpTransact::PARENT_PROXY);
+    ink_assert(s->dns_info.looking_up == ResolveInfo::PARENT_PROXY);
     s->next_hop_scheme = URL_WKSIDX_HTTP;
 
-    return HttpTransact::PARENT_PROXY;
+    return ResolveInfo::PARENT_PROXY;
   case PARENT_FAIL:
     // No more parents - need to return an error message
-    s->current.request_to = HttpTransact::HOST_NONE;
-    return HttpTransact::HOST_NONE;
+    s->current.request_to = ResolveInfo::HOST_NONE;
+    return ResolveInfo::HOST_NONE;
 
   case PARENT_DIRECT:
     // if the configuration does not allow the origin to be dns'd
@@ -656,15 +657,15 @@ find_server_and_update_current_info(HttpTransact::State *s)
     if (s->http_config_param->no_dns_forward_to_parent) {
       Warning("no available parents and the config proxy.config.http.no_dns_just_forward_to_parent, prevents origin lookups.");
       s->parent_result.result = PARENT_FAIL;
-      return HttpTransact::HOST_NONE;
+      return ResolveInfo::HOST_NONE;
     }
   /* fall through */
   default:
-    update_current_info(&s->current, &s->server_info, HttpTransact::ORIGIN_SERVER, (s->current.attempts)++);
+    update_current_info(&s->current, &s->server_info, ResolveInfo::ORIGIN_SERVER, (s->current.attempts)++);
     update_dns_info(&s->dns_info, &s->current);
-    ink_assert(s->dns_info.looking_up == HttpTransact::ORIGIN_SERVER);
+    ink_assert(s->dns_info.looking_up == ResolveInfo::ORIGIN_SERVER);
     s->next_hop_scheme = s->scheme;
-    return HttpTransact::ORIGIN_SERVER;
+    return ResolveInfo::ORIGIN_SERVER;
   }
 }
 
@@ -764,7 +765,7 @@ does_method_effect_cache(int method)
 inline static HttpTransact::StateMachineAction_t
 how_to_open_connection(HttpTransact::State *s)
 {
-  ink_assert((s->pending_work == nullptr) || (s->current.request_to == HttpTransact::PARENT_PROXY));
+  ink_assert((s->pending_work == nullptr) || (s->current.request_to == ResolveInfo::PARENT_PROXY));
 
   // Originally we returned which type of server to open
   // Now, however, we may want to issue a cache
@@ -1675,13 +1676,13 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   s->scheme = s->next_hop_scheme = URL_WKSIDX_HTTP;
 
   // Set up a "fake" server entry
-  update_current_info(&s->current, &s->server_info, HttpTransact::ORIGIN_SERVER, 0);
+  update_current_info(&s->current, &s->server_info, ResolveInfo::ORIGIN_SERVER, 0);
 
   // Also "fake" the info we'd normally get from
   //   hostDB
-  s->server_info.http_version                = HTTP_1_0;
-  s->server_info.keep_alive                  = HTTP_NO_KEEPALIVE;
-  s->host_db_info.app.http_data.http_version = HTTP_1_0;
+  s->server_info.http_version = HTTP_1_0;
+  s->server_info.keep_alive   = HTTP_NO_KEEPALIVE;
+  s->server_info.http_version = HTTP_1_0;
   s->server_info.dst_addr.setToAnyAddr(AF_INET); // must set an address or we can't set the port.
   s->server_info.dst_addr.network_order_port() = htons(s->hdr_info.client_request.port_get()); // this is the info that matters.
 
@@ -1783,19 +1784,19 @@ HttpTransact::PPDNSLookup(State *s)
 {
   TxnDebug("http_trans", "Entering HttpTransact::PPDNSLookup");
 
-  ink_assert(s->dns_info.looking_up == PARENT_PROXY);
-  if (!s->dns_info.lookup_success) {
+  ink_assert(s->dns_info.looking_up == ResolveInfo::PARENT_PROXY);
+  if (!s->dns_info.resolved_p) {
     // Mark parent as down due to resolving failure
     markParentDown(s);
     // DNS lookup of parent failed, find next parent or o.s.
-    if (find_server_and_update_current_info(s) == HttpTransact::HOST_NONE) {
-      ink_assert(s->current.request_to == HOST_NONE);
+    if (find_server_and_update_current_info(s) == ResolveInfo::HOST_NONE) {
+      ink_assert(s->current.request_to == ResolveInfo::HOST_NONE);
       handle_parent_died(s);
       return;
     }
 
     if (!s->current.server->dst_addr.isValid()) {
-      if (s->current.request_to == PARENT_PROXY) {
+      if (s->current.request_to == ResolveInfo::PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
       } else if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
         // We ran out of parents but parent configuration allows us to go to Origin Server directly
@@ -1803,16 +1804,16 @@ HttpTransact::PPDNSLookup(State *s)
         return;
       } else {
         // We could be out of parents here if all the parents failed DNS lookup
-        ink_assert(s->current.request_to == HOST_NONE);
+        ink_assert(s->current.request_to == ResolveInfo::HOST_NONE);
         handle_parent_died(s);
       }
       return;
     }
   } else {
     // lookup succeeded, open connection to p.p.
-    ats_ip_copy(&s->parent_info.dst_addr, s->host_db_info.ip());
+    ats_ip_copy(&s->parent_info.dst_addr, s->dns_info.addr);
     s->parent_info.dst_addr.network_order_port() = htons(s->parent_result.port);
-    get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, &s->host_db_info);
+    get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, s->dns_info.active);
 
     char addrbuf[INET6_ADDRSTRLEN];
     TxnDebug("http_trans", "DNS lookup for successful IP: %s", ats_ip_ntop(&s->parent_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
@@ -1833,65 +1834,6 @@ HttpTransact::PPDNSLookup(State *s)
   }
   // what kind of a connection (raw, simple)
   s->next_action = how_to_open_connection(s);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Name       : ReDNSRoundRobin
-// Description: Called after we fail to contact part of a round-robin
-//              robin server set and we found a another ip address.
-//
-// Details    :
-//
-//
-//
-// Possible Next States From Here:
-// - HttpTransact::ORIGIN_SERVER_RAW_OPEN;
-// - HttpTransact::ORIGIN_SERVER_OPEN;
-// - HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
-//
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::ReDNSRoundRobin(State *s)
-{
-  ink_assert(s->current.server == &s->server_info);
-  ink_assert(s->current.server->had_connect_fail());
-
-  if (s->dns_info.lookup_success) {
-    // We using a new server now so clear the connection
-    //  failure mark
-    s->current.server->clear_connect_fail();
-
-    // Our ReDNS of the server succeeded so update the necessary
-    //  information and try again. Need to preserve the current port value if possible.
-    in_port_t server_port = s->current.server->dst_addr.host_order_port();
-    // Temporary check to make sure the port preservation can be depended upon. That should be the case
-    // because we get here only after trying a connection. Remove for 6.2.
-    ink_assert(s->current.server->dst_addr.isValid() && 0 != server_port);
-
-    ats_ip_copy(&s->server_info.dst_addr, s->host_db_info.ip());
-    s->server_info.dst_addr.network_order_port() = htons(server_port);
-    ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
-    get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
-
-    char addrbuf[INET6_ADDRSTRLEN];
-    TxnDebug("http_trans", "DNS lookup for O.S. successful IP: %s",
-             ats_ip_ntop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
-
-    s->next_action = how_to_open_connection(s);
-  } else {
-    // Our ReDNS failed so output the DNS failure error message
-    // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
-    build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", Dns_error_body);
-    s->cache_info.action = CACHE_DO_NO_ACTION;
-    s->next_action       = SM_ACTION_SEND_ERROR_CACHE_NOOP;
-    //  s->next_action = PROXY_INTERNAL_CACHE_NOOP;
-    char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
-    ts::bwprint(error_bw_buffer, "DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>"));
-    Log::error("%s", error_bw_buffer.c_str());
-  }
-
-  return;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1923,29 +1865,22 @@ HttpTransact::ReDNSRoundRobin(State *s)
 void
 HttpTransact::OSDNSLookup(State *s)
 {
-  ink_assert(s->dns_info.looking_up == ORIGIN_SERVER);
+  ink_assert(s->dns_info.looking_up == ResolveInfo::UpstreamResolveStyle::ORIGIN_SERVER);
 
   TxnDebug("http_trans", "Entering HttpTransact::OSDNSLookup");
 
-  // It's never valid to connect *to* INADDR_ANY, so let's reject the request now.
-  if (ats_is_ip_any(s->host_db_info.ip())) {
-    TxnDebug("http_trans", "Invalid request IP: INADDR_ANY");
-    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Bad Destination Address", "request#syntax_error");
-    SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-    TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
-  }
-
-  if (!s->dns_info.lookup_success) {
-    if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
-      /*
-       *  Transparent case: We tried to connect to client target address, failed and tried to use a different addr
-       *  No HostDB data, just keep on with the CTA.
+  if (!s->dns_info.resolved_p) {
+    if (ResolveInfo::OS_Addr::TRY_HOSTDB == s->dns_info.os_addr_style) {
+      /* Transparent case: We tried to connect to client target address, failed and tried to use a different addr
+       * but that failed to resolve therefore keep on with the CTA.
        */
-      s->dns_info.lookup_success = true;
-      s->dns_info.os_addr_style  = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
+      s->dns_info.addr.assign(s->state_machine->ua_txn->get_netvc()->get_local_addr()); // fetch CTA
+      s->dns_info.resolved_p    = true;
+      s->dns_info.os_addr_style = ResolveInfo::OS_Addr::USE_CLIENT;
       TxnDebug("http_seq", "DNS lookup unsuccessful, using client target address");
     } else {
       TxnDebug("http_seq", "DNS Lookup unsuccessful");
+      char const *log_msg;
 
       // Even with unsuccessful DNS lookup, return stale object from cache if applicable
       if (is_cache_hit(s->cache_lookup_result) && is_stale_cache_response_returnable(s)) {
@@ -1956,10 +1891,16 @@ HttpTransact::OSDNSLookup(State *s)
       }
       // output the DNS failure error message
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
-      // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
-      build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
+      if (!s->dns_info.record || s->dns_info.record->is_failed()) {
+        // Set to internal server error so later logging will pick up SQUID_LOG_ERR_DNS_FAIL
+        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Cannot find server.", "connect#dns_failed");
+        log_msg = "looking up";
+      } else {
+        build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_dead");
+        log_msg = "no valid server";
+      }
       char *url_str = s->hdr_info.client_request.url_string_get(&s->arena, nullptr);
-      ts::bwprint(error_bw_buffer, "DNS Error: looking up {}", ts::bwf::FirstOf(url_str, "<none>"));
+      ts::bwprint(error_bw_buffer, "DNS Error: {} {}", log_msg, ts::bwf::FirstOf(url_str, "<none>"));
       Log::error("%s", error_bw_buffer.c_str());
       // s->cache_info.action = CACHE_DO_NO_ACTION;
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
@@ -1968,43 +1909,43 @@ HttpTransact::OSDNSLookup(State *s)
   }
 
   // The dns lookup succeeded
-  ink_assert(s->dns_info.lookup_success);
+  ink_assert(s->dns_info.resolved_p);
   TxnDebug("http_seq", "DNS Lookup successful");
 
+  // It's never valid to connect *to* INADDR_ANY, so let's reject the request now.
+  if (ats_is_ip_any(s->dns_info.addr)) {
+    TxnDebug("http_trans", "[OSDNSLookup] Invalid request IP: INADDR_ANY");
+    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Bad Destination Address", "request#syntax_error");
+    SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+    TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
+  }
+
   // For the transparent case, nail down the kind of address we are really using
-  if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
+  if (ResolveInfo::OS_Addr::TRY_HOSTDB == s->dns_info.os_addr_style) {
     // We've backed off from a client supplied address and found some
     // HostDB addresses. We use those if they're different from the CTA.
     // In all cases we now commit to client or HostDB for our source.
-    if (s->host_db_info.round_robin) {
-      HostDBInfo *cta = s->host_db_info.rr()->select_next(&s->current.server->dst_addr.sa);
-      if (cta) {
-        // found another addr, lock in host DB.
-        s->host_db_info           = *cta;
-        s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB;
-      } else {
-        // nothing else there, continue with CTA.
-        s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
-      }
-    } else if (ats_ip_addr_eq(s->host_db_info.ip(), &s->server_info.dst_addr.sa)) {
-      s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
+    if (s->dns_info.set_active(&s->current.server->dst_addr.sa) && s->dns_info.select_next_rr()) {
+      s->dns_info.os_addr_style = ResolveInfo::OS_Addr::USE_HOSTDB;
     } else {
-      s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB;
+      // nothing else there, continue with CTA.
+      s->dns_info.set_active(nullptr);
+      s->dns_info.set_upstream_address(&s->current.server->dst_addr.sa);
+      s->dns_info.os_addr_style = ResolveInfo::OS_Addr::USE_CLIENT;
     }
   }
 
-  // Check to see if can fullfill expect requests based on the cached
-  // update some state variables with hostdb information that has
-  // been provided.
-  ats_ip_copy(&s->server_info.dst_addr, s->host_db_info.ip());
+  s->server_info.dst_addr.assign(s->dns_info.addr);
   // If the SRV response has a port number, we should honor it. Otherwise we do the port defined in remap
-  if (s->dns_info.srv_lookup_success) {
+  if (s->dns_info.resolved_p && s->dns_info.srv_port) {
     s->server_info.dst_addr.network_order_port() = htons(s->dns_info.srv_port);
-  } else if (!s->api_server_addr_set) {
+  } else if (s->dns_info.os_addr_style == ResolveInfo::OS_Addr::USE_API && 0 != ats_ip_port_cast(s->dns_info.addr)) {
+    // Nothing - port set via API and already copied over.
+  } else {
     s->server_info.dst_addr.network_order_port() = htons(s->hdr_info.client_request.port_get()); // now we can set the port.
   }
   ats_ip_copy(&s->request_data.dest_ip, &s->server_info.dst_addr);
-  get_ka_info_from_host_db(s, &s->server_info, &s->client_info, &s->host_db_info);
+  get_ka_info_from_host_db(s, &s->server_info, &s->client_info, s->dns_info.active);
 
   char addrbuf[INET6_ADDRSTRLEN];
   TxnDebug("http_trans", "DNS lookup for O.S. successful IP: %s",
@@ -2013,14 +1954,17 @@ HttpTransact::OSDNSLookup(State *s)
   if (s->redirect_info.redirect_in_process) {
     // If dns lookup was not successful, the code below will handle the error.
     RedirectEnabled::Action action = RedirectEnabled::Action::INVALID;
-    if (true == Machine::instance()->is_self(s->host_db_info.ip())) {
+    if (true == Machine::instance()->is_self(&s->dns_info.addr.sa)) {
       action = s->http_config_param->redirect_actions_self_action;
+      TxnDebug("http_trans", "[OSDNSLookup] Self action - %d.", int(action));
     } else {
       // Make sure the return value from contains is big enough for a void*.
       intptr_t x{intptr_t(RedirectEnabled::Action::INVALID)};
       ink_release_assert(s->http_config_param->redirect_actions_map != nullptr);
-      ink_release_assert(s->http_config_param->redirect_actions_map->contains(s->host_db_info.ip(), reinterpret_cast<void **>(&x)));
+      ink_release_assert(s->http_config_param->redirect_actions_map->contains(s->dns_info.addr, reinterpret_cast<void **>(&x)));
       action = static_cast<RedirectEnabled::Action>(x);
+      TxnDebug("http_trans", "[OSDNSLookup] Mapped action - %d for family %d.", int(action),
+               int(s->dns_info.active->data.ip.family()));
     }
 
     if (action == RedirectEnabled::Action::FOLLOW) {
@@ -2055,10 +1999,11 @@ HttpTransact::OSDNSLookup(State *s)
   // After SM_ACTION_DNS_LOOKUP, goto the saved action/state ORIGIN_SERVER_(RAW_)OPEN.
   // Should we skip the StartAccessControl()? why?
 
-  if (DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT == s->dns_info.os_addr_style ||
-      DNSLookupInfo::OS_Addr::OS_ADDR_USE_HOSTDB == s->dns_info.os_addr_style) {
-    // we've come back after already trying the server to get a better address
-    // and finished with all backtracking - return to trying the server.
+  if (ResolveInfo::OS_Addr::USE_CLIENT == s->dns_info.os_addr_style ||
+      ResolveInfo::OS_Addr::USE_HOSTDB == s->dns_info.os_addr_style) {
+    // we've come back after already trying the server to get a better address,
+    // or we're locked on a plugin supplied address.
+    // therefore no more backtracking - return to trying the server.
     TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
   } else if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' && s->parent_params->parent_table->hostMatch &&
              !s->http_config_param->no_dns_forward_to_parent) {
@@ -2233,14 +2178,14 @@ HttpTransact::LookupSkipOpenServer(State *s)
   // to a parent proxy or to the origin server.
   find_server_and_update_current_info(s);
 
-  if (s->current.request_to == PARENT_PROXY) {
+  if (s->current.request_to == ResolveInfo::PARENT_PROXY) {
     TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
   } else if (s->parent_result.result == PARENT_FAIL) {
     handle_parent_died(s);
     return;
   }
 
-  ink_assert(s->current.request_to == ORIGIN_SERVER);
+  ink_assert(s->current.request_to == ResolveInfo::ORIGIN_SERVER);
   // ink_assert(s->current.server->ip != 0);
 
   build_request(s, &s->hdr_info.client_request, &s->hdr_info.server_request, s->current.server->http_version);
@@ -2892,18 +2837,18 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     //  scheme & 2) If we skip down parents, every page
     //  we serve is potentially stale
     //
-    if (s->current.request_to == ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
+    if (s->current.request_to == ResolveInfo::ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
         is_stale_cache_response_returnable(s) == true) {
       server_up = false;
-      update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
+      update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, 0);
       TxnDebug("http_trans", "CacheOpenReadHit - server_down, returning stale document");
     }
     // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
     // there are no available parents (all down).
-    else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
+    else if (s->current.request_to == ResolveInfo::HOST_NONE && s->parent_result.result == PARENT_FAIL) {
       if (response_returnable == true && is_stale_cache_response_returnable(s) == true) {
         server_up = false;
-        update_current_info(&s->current, nullptr, UNDEFINED_LOOKUP, 0);
+        update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, 0);
         TxnDebug("http_trans", "CacheOpenReadHit - server_down, returning stale document");
       } else {
         handle_parent_died(s);
@@ -2926,14 +2871,14 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
           //  through.  The request will fail because of the
           //  missing ip but we won't take down the system
           //
-          if (s->current.request_to == PARENT_PROXY) {
+          if (s->current.request_to == ResolveInfo::PARENT_PROXY) {
             // Set ourselves up to handle pending revalidate issues
             //  after the PP DNS lookup
             ink_assert(s->pending_work == nullptr);
             s->pending_work = issue_revalidate;
 
             TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
-          } else if (s->current.request_to == ORIGIN_SERVER) {
+          } else if (s->current.request_to == ResolveInfo::ORIGIN_SERVER) {
             return CallOSDNSLookup(s);
           } else {
             handle_parent_died(s);
@@ -3352,12 +3297,12 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
       return;
     }
     if (!s->current.server->dst_addr.isValid()) {
-      ink_release_assert(s->parent_result.result == PARENT_DIRECT || s->current.request_to == PARENT_PROXY ||
+      ink_release_assert(s->parent_result.result == PARENT_DIRECT || s->current.request_to == ResolveInfo::PARENT_PROXY ||
                          s->http_config_param->no_dns_forward_to_parent != 0);
       if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 1) {
         return CallOSDNSLookup(s);
       }
-      if (s->current.request_to == PARENT_PROXY) {
+      if (s->current.request_to == ResolveInfo::PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, HttpTransact::PPDNSLookupAPICall);
       } else {
         handle_parent_died(s);
@@ -3466,7 +3411,7 @@ HttpTransact::HandleResponse(State *s)
 
   HTTP_INCREMENT_DYN_STAT(http_incoming_responses_stat);
 
-  ink_release_assert(s->current.request_to != UNDEFINED_LOOKUP);
+  ink_release_assert(s->current.request_to != ResolveInfo::UNDEFINED_LOOKUP);
   if (s->cache_info.action != CACHE_DO_WRITE) {
     ink_release_assert(s->cache_info.action != CACHE_DO_LOOKUP);
     ink_release_assert(s->cache_info.action != CACHE_DO_SERVE);
@@ -3483,10 +3428,10 @@ HttpTransact::HandleResponse(State *s)
   }
 
   switch (s->current.request_to) {
-  case PARENT_PROXY:
+  case ResolveInfo::PARENT_PROXY:
     handle_response_from_parent(s);
     break;
-  case ORIGIN_SERVER:
+  case ResolveInfo::ORIGIN_SERVER:
     handle_response_from_server(s);
     break;
   default:
@@ -3610,7 +3555,7 @@ HttpTransact::HandleStatPage(State *s)
 void
 HttpTransact::handle_response_from_parent(State *s)
 {
-  LookingUp_t next_lookup = UNDEFINED_LOOKUP;
+  auto next_lookup = ResolveInfo::UNDEFINED_LOOKUP;
   TxnDebug("http_trans", "(hrfp)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
 
@@ -3717,7 +3662,7 @@ HttpTransact::handle_response_from_parent(State *s)
         markParentDown(s);
       }
       s->parent_result.result = PARENT_FAIL;
-      next_lookup             = HOST_NONE;
+      next_lookup             = ResolveInfo::HOST_NONE;
     }
     break;
   }
@@ -3725,15 +3670,15 @@ HttpTransact::handle_response_from_parent(State *s)
   // We have either tried to find a new parent or failed over to the
   //   origin server
   switch (next_lookup) {
-  case PARENT_PROXY:
-    ink_assert(s->current.request_to == PARENT_PROXY);
+  case ResolveInfo::PARENT_PROXY:
+    ink_assert(s->current.request_to == ResolveInfo::PARENT_PROXY);
     TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookupAPICall);
     break;
-  case ORIGIN_SERVER:
+  case ResolveInfo::ORIGIN_SERVER:
     // Next lookup is Origin Server, try DNS for Origin Server
     return CallOSDNSLookup(s);
     break;
-  case HOST_NONE:
+  case ResolveInfo::HOST_NONE:
     // Check if content can be served from cache
     s->current.request_to = PARENT_PROXY;
     handle_server_connection_not_open(s);
@@ -3809,38 +3754,25 @@ HttpTransact::handle_response_from_server(State *s)
     if (is_request_retryable(s) && s->current.attempts < max_connect_retries) {
       // If this is a round robin DNS entry & we're tried configured
       //    number of times, we should try another node
-      if (DNSLookupInfo::OS_Addr::OS_ADDR_TRY_CLIENT == s->dns_info.os_addr_style) {
-        // attempt was based on client supplied server address. Try again
-        // using HostDB.
+      if (ResolveInfo::OS_Addr::TRY_CLIENT == s->dns_info.os_addr_style) {
+        // attempt was based on client supplied server address. Try again using HostDB.
         // Allow DNS attempt
-        s->dns_info.lookup_success = false;
+        s->dns_info.resolved_p = false;
         // See if we can get data from HostDB for this.
-        s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_TRY_HOSTDB;
+        s->dns_info.os_addr_style = ResolveInfo::OS_Addr::TRY_HOSTDB;
         // Force host resolution to have the same family as the client.
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
         ats_force_order_by_family(&s->current.server->dst_addr.sa, s->my_txn_conf().host_res_data.order);
         return CallOSDNSLookup(s);
-      } else if ((s->dns_info.srv_lookup_success || s->host_db_info.is_rr_elt()) &&
-                 (s->txn_conf->connect_attempts_rr_retries > 0) &&
-                 ((s->current.attempts + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
-        delete_server_rr_entry(s, max_connect_retries);
-        return;
       } else {
+        if ((s->txn_conf->connect_attempts_rr_retries > 0) &&
+            ((s->current.attempts + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
+          s->dns_info.select_next_rr();
+        }
         retry_server_connection_not_open(s, s->current.state, max_connect_retries);
         TxnDebug("http_trans", "Error. Retrying...");
         s->next_action = how_to_open_connection(s);
-
-        if (s->api_server_addr_set) {
-          // If the plugin set a server address, back up to the OS_DNS hook
-          // to let it try another one. Force OS_ADDR_USE_CLIENT so that
-          // in OSDNSLoopkup, we back up to how_to_open_connections which
-          // will tell HttpSM to connect the origin server.
-
-          s->dns_info.os_addr_style = DNSLookupInfo::OS_Addr::OS_ADDR_USE_CLIENT;
-          TRANSACT_RETURN(SM_ACTION_API_OS_DNS, OSDNSLookup);
-        }
-        return;
       }
     } else {
       error_log_connection_failure(s, s->current.state);
@@ -3861,35 +3793,6 @@ HttpTransact::handle_response_from_server(State *s)
   }
 
   return;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Name       : delete_server_rr_entry
-// Description:
-//
-// Details    :
-//
-//   connection to server failed mark down the server round robin entry
-//
-//
-// Possible Next States From Here:
-//
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransact::delete_server_rr_entry(State *s, int max_retries)
-{
-  char addrbuf[INET6_ADDRSTRLEN];
-
-  TxnDebug("http_trans", "[%d] failed to connect to %s", s->current.attempts,
-           ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
-  TxnDebug("http_trans", "marking rr entry down and finding next one");
-  ink_assert(s->current.server->had_connect_fail());
-  ink_assert(s->current.request_to == ORIGIN_SERVER);
-  ink_assert(s->current.server == &s->server_info);
-  update_dns_info(&s->dns_info, &s->current);
-  s->current.attempts++;
-  TxnDebug("http_trans", "attempts now: %d, max: %d", s->current.attempts, max_retries);
-  TRANSACT_RETURN(SM_ACTION_ORIGIN_SERVER_RR_MARK_DOWN, ReDNSRoundRobin);
 }
 
 void
@@ -4061,7 +3964,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
   ink_release_assert(s->current.state == CONNECTION_ALIVE);
 
   HTTPVersion real_version = s->state_machine->get_server_version(s->hdr_info.server_response);
-  if (real_version != s->host_db_info.app.http_data.http_version) {
+  if (real_version != s->dns_info.http_version) {
     // Need to update the hostdb
     s->updated_server_version = real_version;
     TxnDebug("http_trans", "Update hostdb history of server HTTP version 0x%x", s->updated_server_version.get_flat_version());
@@ -5291,22 +5194,22 @@ HttpTransact::get_ka_info_from_host_db(State *s, ConnectionAttributes *server_in
     break;
   }
 
-  if (force_http11 == true || (http11_if_hostdb == true && host_db_info->app.http_data.http_version == HTTP_1_1)) {
+  if (force_http11 == true || (http11_if_hostdb == true && host_db_info->http_version == HTTP_1_1)) {
     server_info->http_version = HTTP_1_1;
     server_info->keep_alive   = HTTP_KEEPALIVE;
-  } else if (host_db_info->app.http_data.http_version == HTTP_1_0) {
+  } else if (host_db_info->http_version == HTTP_1_0) {
     server_info->http_version = HTTP_1_0;
     server_info->keep_alive   = HTTP_KEEPALIVE;
-  } else if (host_db_info->app.http_data.http_version == HTTP_0_9) {
+  } else if (host_db_info->http_version == HTTP_0_9) {
     server_info->http_version = HTTP_0_9;
     server_info->keep_alive   = HTTP_NO_KEEPALIVE;
   } else {
     //////////////////////////////////////////////
     // not set yet for this host. set defaults. //
     //////////////////////////////////////////////
-    server_info->http_version                = HTTP_1_0;
-    server_info->keep_alive                  = HTTP_KEEPALIVE;
-    host_db_info->app.http_data.http_version = HTTP_1_0;
+    server_info->http_version  = HTTP_1_0;
+    server_info->keep_alive    = HTTP_KEEPALIVE;
+    host_db_info->http_version = HTTP_1_0;
   }
 
   /////////////////////////////
@@ -5852,7 +5755,7 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   // the expanded host for cache lookup, and //
   // the host ip for reverse proxy.          //
   /////////////////////////////////////////////
-  s->dns_info.looking_up  = ORIGIN_SERVER;
+  s->dns_info.looking_up  = ResolveInfo::ORIGIN_SERVER;
   s->dns_info.lookup_name = s->server_info.name;
 }
 
@@ -6248,7 +6151,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // host addresses, do not allow cache.  This may cause DNS cache poisoning
   // of other trafficserver clients. The flag is set in the
   // process_host_db_info method
-  if (!s->dns_info.lookup_validated && s->client_info.is_transparent) {
+  if (!s->dns_info.cta_validated_p && s->client_info.is_transparent) {
     TxnDebug("http_trans", "Lookup not validated.  Possible DNS cache poison.  Don't cache");
     return false;
   }
@@ -6638,7 +6541,7 @@ HttpTransact::will_this_request_self_loop(State *s)
   ////////////////////////////////////////
   // check if we are about to self loop //
   ////////////////////////////////////////
-  if (s->dns_info.lookup_success) {
+  if (s->dns_info.active) {
     TxnDebug("http_transact", "max_proxy_cycles = %d", max_proxy_cycles);
     if (max_proxy_cycles == 0) {
       in_port_t dst_port   = s->hdr_info.client_request.url_get()->port_get(); // going to this port.
@@ -6646,13 +6549,13 @@ HttpTransact::will_this_request_self_loop(State *s)
       // It's a loop if connecting to the same port as it already connected to the proxy and
       // it's a proxy address or the same address it already connected to.
       TxnDebug("http_transact", "dst_port = %d local_port = %d", dst_port, local_port);
-      if (dst_port == local_port && (ats_ip_addr_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa) ||
-                                     ats_ip_addr_eq(s->host_db_info.ip(), s->client_info.dst_addr))) {
+      if (dst_port == local_port && ((s->dns_info.active->data.ip == &Machine::instance()->ip.sa) ||
+                                     (s->dns_info.active->data.ip == s->client_info.dst_addr))) {
         switch (s->dns_info.looking_up) {
-        case ORIGIN_SERVER:
+        case ResolveInfo::ORIGIN_SERVER:
           TxnDebug("http_transact", "host ip and port same as local ip and port - bailing");
           break;
-        case PARENT_PROXY:
+        case ResolveInfo::PARENT_PROXY:
           TxnDebug("http_transact", "parent proxy ip and port same as local ip and port - bailing");
           break;
         default:
@@ -6883,7 +6786,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
     case KA_CONNECTION:
       ink_assert(s->current.server->keep_alive != HTTP_NO_KEEPALIVE);
       if (ver == HTTP_1_0) {
-        if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
+        if (s->current.request_to == ResolveInfo::PARENT_PROXY && parent_is_proxy(s)) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "keep-alive", 10);
         } else {
           heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "keep-alive", 10);
@@ -6897,7 +6800,7 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
       if (s->current.server->keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
         /* Had keep-alive */
         s->current.server->keep_alive = HTTP_NO_KEEPALIVE;
-        if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
+        if (s->current.request_to == ResolveInfo::PARENT_PROXY && parent_is_proxy(s)) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
         } else {
           ProxyTransaction *svr = s->state_machine->get_server_txn();
@@ -7809,7 +7712,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   if (outgoing_request->method_get_wksidx() == HTTP_WKSIDX_CONNECT) {
     // CONNECT method requires a target in the URL, so always force it from the Host header.
     outgoing_request->set_url_target_from_host_field();
-  } else if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
+  } else if (s->current.request_to == ResolveInfo::PARENT_PROXY && parent_is_proxy(s)) {
     // If we have a parent proxy set the URL target field.
     if (!outgoing_request->is_target_in_url()) {
       TxnDebug("http_trans", "adding target to URL for parent proxy");
@@ -8836,7 +8739,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   HTTP_SUM_DYN_STAT(http_user_agent_response_document_total_size_stat, user_agent_response_body_size);
 
   // proxy stats
-  if (s->current.request_to == HttpTransact::PARENT_PROXY) {
+  if (s->current.request_to == ResolveInfo::PARENT_PROXY) {
     HTTP_SUM_DYN_STAT(http_parent_proxy_request_total_bytes_stat,
                       origin_server_request_header_size + origin_server_request_body_size);
     HTTP_SUM_DYN_STAT(http_parent_proxy_response_total_bytes_stat,

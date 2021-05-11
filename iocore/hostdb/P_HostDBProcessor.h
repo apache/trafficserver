@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <shared_mutex>
+
 #include "I_HostDBProcessor.h"
 #include "tscore/TsBuffer.h"
 
@@ -51,7 +53,7 @@ extern int hostdb_ttl_mode;
 extern int hostdb_srv_enabled;
 
 // extern int hostdb_timestamp;
-extern int hostdb_sync_frequency;
+extern ts_seconds hostdb_sync_frequency;
 extern int hostdb_disable_reverse_lookup;
 
 // Static configuration information
@@ -73,26 +75,6 @@ enum HostDBMark {
     @return A static string.
  */
 extern const char *string_for(HostDBMark mark);
-
-inline unsigned int
-HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
-{
-  unsigned int zret = ~static_cast<unsigned int>(0);
-  if (ats_ip_are_compatible(lhs, rhs)) {
-    if (ats_is_ip4(lhs)) {
-      in_addr_t ip1 = ats_ip4_addr_cast(lhs);
-      in_addr_t ip2 = ats_ip4_addr_cast(rhs);
-      zret          = (ip1 >> 16) ^ ip1 ^ ip2 ^ (ip2 >> 16);
-    } else if (ats_is_ip6(lhs)) {
-      uint32_t const *ip1 = ats_ip_addr32_cast(lhs);
-      uint32_t const *ip2 = ats_ip_addr32_cast(rhs);
-      for (int i = 0; i < 4; ++i, ++ip1, ++ip2) {
-        zret ^= (*ip1 >> 16) ^ *ip1 ^ *ip2 ^ (*ip2 >> 16);
-      }
-    }
-  }
-  return zret & 0xFFFF;
-}
 
 //
 // Constants
@@ -170,21 +152,12 @@ extern RecRawStatBlock *hostdb_rsb;
 
 #define HOSTDB_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_s, -1);
 
-struct CmpConstBuffferCaseInsensitive {
-  bool
-  operator()(ts::ConstBuffer a, ts::ConstBuffer b) const
-  {
-    return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;
-  }
+struct HostFileRecord {
+  HostDBRecord::Handle record_4;
+  HostDBRecord::Handle record_6;
 };
 
-// Our own typedef for the host file mapping
-typedef std::map<ts::ConstBuffer, IpAddr, CmpConstBuffferCaseInsensitive> HostsFileMap;
-// A to hold a ref-counted map
-struct RefCountedHostsFileMap : public RefCountObj {
-  HostsFileMap hosts_file_map;
-  ats_scoped_str HostFileText;
-};
+using HostFileMap = std::unordered_map<ts::TextView, HostFileRecord, std::hash<std::string_view>>;
 
 //
 // HostDBCache (Private)
@@ -192,9 +165,11 @@ struct RefCountedHostsFileMap : public RefCountObj {
 struct HostDBCache {
   int start(int flags = 0);
   // Map to contain all of the host file overrides, initialize it to empty
-  Ptr<RefCountedHostsFileMap> hosts_file_ptr;
+  std::shared_ptr<HostFileMap> host_file;
+  std::shared_mutex host_file_mutex;
+
   // TODO: make ATS call a close() method or something on shutdown (it does nothing of the sort today)
-  RefCountCache<HostDBInfo> *refcountcache = nullptr;
+  RefCountCache<HostDBRecord> *refcountcache = nullptr;
 
   // TODO configurable number of items in the cache
   Queue<HostDBContinuation, Continuation::Link_link> *pending_dns = nullptr;
@@ -202,189 +177,9 @@ struct HostDBCache {
   Queue<HostDBContinuation, Continuation::Link_link> *remoteHostDBQueue = nullptr;
   HostDBCache();
   bool is_pending_dns_for_hash(const CryptoHash &hash);
+
+  std::shared_ptr<HostFileMap> acquire_host_file();
 };
-
-inline int
-HostDBRoundRobin::index_of(sockaddr const *ip)
-{
-  bool bad = (rrcount <= 0 || (unsigned int)rrcount > hostdb_round_robin_max_count || good <= 0 ||
-              (unsigned int)good > hostdb_round_robin_max_count);
-  if (bad) {
-    ink_assert(!"bad round robin size");
-    return -1;
-  }
-
-  for (int i = 0; i < good; i++) {
-    if (ats_ip_addr_eq(ip, info(i).ip())) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
-inline HostDBInfo *
-HostDBRoundRobin::find_ip(sockaddr const *ip)
-{
-  int idx = this->index_of(ip);
-  return idx < 0 ? nullptr : &info(idx);
-}
-
-inline HostDBInfo *
-HostDBRoundRobin::select_next(sockaddr const *ip)
-{
-  HostDBInfo *zret = nullptr;
-  if (good > 1) {
-    int idx = this->index_of(ip);
-    if (idx >= 0) {
-      idx  = (idx + 1) % good;
-      zret = &info(idx);
-    }
-  }
-  return zret;
-}
-
-inline HostDBInfo *
-HostDBRoundRobin::find_target(const char *target)
-{
-  bool bad = (rrcount <= 0 || (unsigned int)rrcount > hostdb_round_robin_max_count || good <= 0 ||
-              (unsigned int)good > hostdb_round_robin_max_count);
-  if (bad) {
-    ink_assert(!"bad round robin size");
-    return nullptr;
-  }
-
-  uint32_t key = makeHostHash(target);
-  for (int i = 0; i < good; i++) {
-    if (info(i).data.srv.key == key && !strcmp(target, info(i).srvname(this)))
-      return &info(i);
-  }
-  return nullptr;
-}
-
-inline HostDBInfo *
-HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, int32_t fail_window)
-{
-  bool bad = (rrcount <= 0 || (unsigned int)rrcount > hostdb_round_robin_max_count || good <= 0 ||
-              (unsigned int)good > hostdb_round_robin_max_count);
-
-  if (bad) {
-    ink_assert(!"bad round robin size");
-    return nullptr;
-  }
-
-  int best_any = 0;
-  int best_up  = -1;
-
-  // Basic round robin, increment current and mod with how many we have
-  if (HostDBProcessor::hostdb_strict_round_robin) {
-    Debug("hostdb", "Using strict round robin");
-    // Check that the host we selected is alive
-    for (int i = 0; i < good; i++) {
-      best_any = current++ % good;
-      if (info(best_any).is_alive(now, fail_window)) {
-        best_up = best_any;
-        break;
-      }
-    }
-  } else if (HostDBProcessor::hostdb_timed_round_robin > 0) {
-    Debug("hostdb", "Using timed round-robin for HTTP");
-    if ((now - timed_rr_ctime) > HostDBProcessor::hostdb_timed_round_robin) {
-      Debug("hostdb", "Timed interval expired.. rotating");
-      ++current;
-      timed_rr_ctime = now;
-    }
-    for (int i = 0; i < good; i++) {
-      best_any = (current + i) % good;
-      if (info(best_any).is_alive(now, fail_window)) {
-        best_up = best_any;
-        break;
-      }
-    }
-    Debug("hostdb", "Using %d for best_up", best_up);
-  } else {
-    Debug("hostdb", "Using default round robin");
-    unsigned int best_hash_any = 0;
-    unsigned int best_hash_up  = 0;
-    for (int i = 0; i < good; i++) {
-      sockaddr const *ip = info(i).ip();
-      unsigned int h     = HOSTDB_CLIENT_IP_HASH(client_ip, ip);
-      if (best_hash_any <= h) {
-        best_any      = i;
-        best_hash_any = h;
-      }
-      if (info(i).is_alive(now, fail_window)) {
-        if (best_hash_up <= h) {
-          best_up      = i;
-          best_hash_up = h;
-        }
-      }
-    }
-  }
-
-  if (best_up != -1) {
-    ink_assert(best_up >= 0 && best_up < good);
-    return &info(best_up);
-  } else {
-    ink_assert(best_any >= 0 && best_any < good);
-    return &info(best_any);
-  }
-}
-
-inline HostDBInfo *
-HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, int32_t fail_window)
-{
-  bool bad = (rrcount <= 0 || (unsigned int)rrcount > hostdb_round_robin_max_count || good <= 0 ||
-              (unsigned int)good > hostdb_round_robin_max_count);
-
-  if (bad) {
-    ink_assert(!"bad round robin size");
-    return nullptr;
-  }
-
-#ifdef DEBUG
-  for (int i = 1; i < good; ++i) {
-    ink_assert(info(i).data.srv.srv_priority >= info(i - 1).data.srv.srv_priority);
-  }
-#endif
-
-  int i           = 0;
-  int len         = 0;
-  uint32_t weight = 0, p = INT32_MAX;
-  HostDBInfo *result = nullptr;
-  HostDBInfo *infos[good];
-  do {
-    // if the real isn't alive-- exclude it from selection
-    if (!info(i).is_alive(now, fail_window)) {
-      continue;
-    }
-
-    if (info(i).data.srv.srv_priority <= p) {
-      p = info(i).data.srv.srv_priority;
-      weight += info(i).data.srv.srv_weight;
-      infos[len++] = &info(i);
-    } else
-      break;
-  } while (++i < good);
-
-  if (len == 0) { // all failed
-    result = &info(current++ % good);
-  } else if (weight == 0) { // srv weight is 0
-    result = infos[current++ % len];
-  } else {
-    uint32_t xx = rand->random() % weight;
-    for (i = 0; i < len - 1 && xx >= infos[i]->data.srv.srv_weight; ++i)
-      xx -= infos[i]->data.srv.srv_weight;
-
-    result = infos[i];
-  }
-
-  if (result) {
-    ink_strlcpy(target, result->srvname(this), MAXDNAME);
-    return result;
-  }
-  return nullptr;
-}
 
 //
 // Types
@@ -398,10 +193,9 @@ struct HostDBHash {
 
   CryptoHash hash; ///< The hash value.
 
-  const char *host_name = nullptr; ///< Host name.
-  int host_len          = 0;       ///< Length of @a _host_name
-  IpAddr ip;                       ///< IP address.
-  in_port_t port = 0;              ///< IP port (host order).
+  ts::TextView host_name; ///< Name of the host for the query.
+  IpAddr ip;              ///< IP address.
+  in_port_t port = 0;     ///< IP port (host order).
   /// DNS server. Not strictly part of the hash data but
   /// it's both used by @c HostDBContinuation and provides access to
   /// hash data. It's just handier to store it here for both uses.
@@ -418,20 +212,23 @@ struct HostDBHash {
   /** Assign a hostname.
       This updates the split DNS data as well.
   */
-  self &set_host(const char *name, int len);
+  self &set_host(ts::TextView name);
+  self &
+  set_host(char const *name)
+  {
+    return this->set_host(ts::TextView{name, strlen(name)});
+  }
 };
 
 //
 // Handles a HostDB lookup request
 //
-struct HostDBContinuation;
-typedef int (HostDBContinuation::*HostDBContHandler)(int, void *);
+using HostDBContHandler = int (HostDBContinuation::*)(int, void *);
 
 struct HostDBContinuation : public Continuation {
   Action action;
   HostDBHash hash;
-  //  IpEndpoint ip;
-  unsigned int ttl = 0;
+  ts_seconds ttl{0};
   //  HostDBMark db_mark; ///< Target type.
   /// Original IP address family style. Note this will disagree with
   /// @a hash.db_mark when doing a retry on an alternate family. The retry
@@ -440,9 +237,8 @@ struct HostDBContinuation : public Continuation {
   int dns_lookup_timeout      = DEFAULT_OPTIONS.timeout;
   Event *timeout              = nullptr;
   Continuation *from_cont     = nullptr;
-  HostDBApplicationInfo app;
-  int probe_depth            = 0;
-  size_t current_iterate_pos = 0;
+  int probe_depth             = 0;
+  size_t current_iterate_pos  = 0;
   //  char name[MAXDNAME];
   //  int namelen;
   char hash_host_name_store[MAXDNAME + 1]; // used as backing store for @a hash
@@ -452,7 +248,6 @@ struct HostDBContinuation : public Continuation {
 
   unsigned int missing : 1;
   unsigned int force_dns : 1;
-  unsigned int round_robin : 1;
 
   int probeEvent(int event, Event *e);
   int iterateEvent(int event, Event *e);
@@ -475,19 +270,23 @@ struct HostDBContinuation : public Continuation {
   {
     return hash.db_mark == HOSTDB_MARK_SRV;
   }
-  HostDBInfo *lookup_done(IpAddr const &ip, const char *aname, bool round_robin, unsigned int attl, SRVHosts *s = nullptr,
-                          HostDBInfo *r = nullptr);
-  int key_partition();
-  void remove_trigger_pending_dns();
-  int set_check_pending_dns();
 
-  HostDBInfo *insert(unsigned int attl);
+  Ptr<HostDBRecord>
+  lookup_done(const char *query_name, ts_seconds answer_ttl, SRVHosts *s = nullptr, Ptr<HostDBRecord> record = Ptr<HostDBRecord>{})
+  {
+    return this->lookup_done(ts::TextView{query_name, strlen(query_name)}, answer_ttl, s, record);
+  }
+
+  Ptr<HostDBRecord> lookup_done(ts::TextView query_name, ts_seconds answer_ttl, SRVHosts *s = nullptr,
+                                Ptr<HostDBRecord> record = Ptr<HostDBRecord>{});
+
+  int key_partition();
+  void remove_and_trigger_pending_dns();
+  int set_check_pending_dns();
 
   /** Optional values for @c init.
    */
   struct Options {
-    typedef Options self; ///< Self reference type.
-
     int timeout                 = 0;             ///< Timeout value. Default 0
     HostResStyle host_res_style = HOST_RES_NONE; ///< IP address family fallback. Default @c HOST_RES_NONE
     bool force_dns              = false;         ///< Force DNS lookup. Default @c false
@@ -500,7 +299,7 @@ struct HostDBContinuation : public Continuation {
   int make_get_message(char *buf, int len);
   int make_put_message(HostDBInfo *r, Continuation *c, char *buf, int len);
 
-  HostDBContinuation() : missing(false), force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
+  HostDBContinuation() : missing(false), force_dns(DEFAULT_OPTIONS.force_dns)
   {
     ink_zero(hash_host_name_store);
     ink_zero(hash.hash);
@@ -512,12 +311,6 @@ inline unsigned int
 master_hash(CryptoHash const &hash)
 {
   return static_cast<int>(hash[1] >> 32);
-}
-
-inline bool
-is_dotted_form_hostname(const char *c)
-{
-  return -1 != (int)ink_inet_addr(c);
 }
 
 inline Queue<HostDBContinuation> &

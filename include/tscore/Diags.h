@@ -188,6 +188,15 @@ is_dbg_ctl_enabled(DbgCtl const &ctl)
     }                                               \
   } while (false)
 
+#define Debug_bw(tag, fmt, ...)                                                             \
+  do {                                                                                      \
+    if (unlikely(diags->on())) {                                                            \
+      static const SourceLocation loc = MakeSourceLocation();                               \
+      static LogMessage log_message;                                                        \
+      log_message.debug(tag, loc, "%s", ts::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
+    }                                                                                       \
+  } while (0)
+
 // printf-like debug output.  First parameter must be tag (C-string literal, or otherwise
 // a constexpr returning char const pointer to null-terminated C-string).
 //
