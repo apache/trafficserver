@@ -458,7 +458,6 @@ ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
 {
   ts_lua_async_item *ai;
   ts_lua_cont_info *ci;
-  struct sockaddr const *addr;
   char cip[128];
   lua_State *L;
   ts_lua_coroutine *crt;
@@ -477,12 +476,13 @@ ts_lua_host_lookup_handler(TSCont contp, TSEvent event, void *edata)
   } else if (!edata) {
     lua_pushnil(L);
   } else {
-    TSHostLookupResult result = (TSHostLookupResult)edata;
-    addr                      = TSHostLookupResultAddrGet(result);
-    if (addr->sa_family == AF_INET) {
-      inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)addr)->sin_addr, cip, sizeof(cip));
+    struct sockaddr_storage addr;
+    TSHostLookupResult record = (TSHostLookupResult)edata;
+    TSHostLookupResultAddrGet(record, (struct sockaddr *)&addr);
+    if (addr.ss_family == AF_INET) {
+      inet_ntop(AF_INET, (const void *)&((struct sockaddr_in *)&addr)->sin_addr, cip, sizeof(cip));
     } else {
-      inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)addr)->sin6_addr, cip, sizeof(cip));
+      inet_ntop(AF_INET6, (const void *)&((struct sockaddr_in6 *)&addr)->sin6_addr, cip, sizeof(cip));
     }
     lua_pushstring(L, cip);
   }

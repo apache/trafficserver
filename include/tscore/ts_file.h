@@ -329,5 +329,12 @@ namespace file
 
   /* ------------------------------------------------------------------- */
 } // namespace file
+
+inline BufferWriter &
+bwformat(BufferWriter &w, BWFSpec const &spec, file::path const &path)
+{
+  return bwformat(w, spec, path.string());
+}
+
 } // namespace ts
 /* ------------------------------------------------------------------- */

@@ -5849,12 +5849,11 @@ TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const *addr)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  if (ats_ip_copy(&sm->t_state.server_info.dst_addr.sa, addr)) {
-    sm->t_state.api_server_addr_set = true;
+  if (sm->t_state.dns_info.set_upstream_address(addr)) {
+    sm->t_state.dns_info.os_addr_style = ResolveInfo::OS_Addr::USE_API;
     return TS_SUCCESS;
-  } else {
-    return TS_ERROR;
   }
+  return TS_ERROR;
 }
 
 void
@@ -7406,12 +7405,18 @@ TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
   return (TSAction)hostDBProcessor.getbyname_re(i, hostname, namelen);
 }
 
-sockaddr const *
-TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
+TSReturnCode
+TSHostLookupResultAddrGet(TSHostLookupResult lookup_result, sockaddr *dst)
 {
   sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
-  HostDBInfo *di = reinterpret_cast<HostDBInfo *>(lookup_result);
-  return di->ip();
+  HostDBRecord::Handle record{reinterpret_cast<HostDBRecord *>(lookup_result)};
+  if (record) {
+    auto info = record->rr_info();
+    sdk_assert(info.size() > 0);
+    info[0].data.ip.toSockAddr(dst);
+    return TS_SUCCESS;
+  }
+  return TS_ERROR;
 }
 
 /*
@@ -8452,6 +8457,9 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
 static void *
 _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overridableHttpConfig, MgmtConverter const *&conv)
 {
+  // External converters.
+  extern MgmtConverter const &HostDBDownServerCacheTimeConv;
+
   void *ret = nullptr;
   conv      = nullptr;
 
@@ -8607,7 +8615,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = _memberp_to_generic(&overridableHttpConfig->connect_attempts_timeout, conv);
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->down_server_timeout, conv);
+    conv = &HostDBDownServerCacheTimeConv;
+    ret  = &overridableHttpConfig->down_server_timeout;
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
     ret = _memberp_to_generic(&overridableHttpConfig->client_abort_threshold, conv);

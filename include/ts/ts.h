@@ -1918,7 +1918,14 @@ tsapi TSReturnCode TSPortDescriptorAccept(TSPortDescriptor, TSCont);
 /* --------------------------------------------------------------------------
    DNS Lookups */
 tsapi TSAction TSHostLookup(TSCont contp, const char *hostname, size_t namelen);
-tsapi struct sockaddr const *TSHostLookupResultAddrGet(TSHostLookupResult lookup_result);
+/** Retrieve an address from the host lookup.
+ *
+ * @param lookup_result Result handle passed to event callback.
+ * @param dst Destiation for copying the addres.
+ * @return @c TS_SUCCESS if the address was available and copied, @c TS_ERROR otherwise.
+ */
+tsapi TSReturnCode TSHostLookupResultAddrGet(TSHostLookupResult lookup_result, struct sockaddr *dst);
+
 /* TODO: Eventually, we might want something like this as well, but it requires
    support for building the HostDBInfo struct:
    tsapi void TSHostLookupResultSet(TSHttpTxn txnp, TSHostLookupResult result);
