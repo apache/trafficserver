@@ -2492,6 +2492,8 @@ HttpSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpSM : state_cache_open_write, event);
 
+  pending_action.try_clear(reinterpret_cast<Action *>(data));
+
   // Make sure we are on the "right" thread
   if (ua_txn) {
     pending_action = ua_txn->adjust_thread(this, event, data);
@@ -2611,6 +2613,8 @@ HttpSM::state_cache_open_read(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_cache_open_read, event);
   milestones[TS_MILESTONE_CACHE_OPEN_READ_END] = Thread::get_hrtime();
+
+  pending_action.try_clear(reinterpret_cast<Action *>(data));
 
   ink_assert(server_entry == nullptr);
   ink_assert(t_state.cache_info.object_read == nullptr);

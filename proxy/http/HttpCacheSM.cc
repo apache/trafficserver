@@ -283,6 +283,7 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
     return ACTION_RESULT_DONE;
   } else {
     ink_assert(pending_action != nullptr || write_locked == true);
+    captive_action.cancelled = false; // Make sure not cancelled before we hand it out
     return &captive_action;
   }
 }
@@ -375,6 +376,7 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
     return ACTION_RESULT_DONE;
   } else {
     ink_assert(pending_action != nullptr);
+    captive_action.cancelled = false; // Make sure not cancelled before we hand it out
     return &captive_action;
   }
 }
