@@ -996,36 +996,46 @@ struct CompNext {
   CompNext(std::string_view p, int const *n) : comp(p), next(n) {}
 };
 
-struct {
-  int count = 2;
+struct SubUnmatched {
+  SubUnmatched() = default; // Work-around for Intel compiler problem.
+  int count      = 2;
   CompNext o1{"ath", &sub_unmatched_path_id};
   CompNext o2{"path", &sub_unmatched_ppath_id};
-} const sub_unmatched;
+};
+SubUnmatched const sub_unmatched;
 
-struct {
+struct SubP {
+  SubP()    = default; // Work-around for Intel compiler problem.
   int count = 2;
   CompNext o1{"ath", &sub_path_id};
   CompNext o2{"path", &sub_ppath_id};
-} const sub_p;
+};
+SubP const sub_p;
 
-struct {
-  int count = 2;
+struct SubCrReq {
+  SubCrReq() = default; // Work-around for Intel compiler problem.
+  int count  = 2;
   CompNext o1{"url", &sub_req_url_id};
   CompNext o2{"purl", &sub_req_purl_id};
-} const sub_cr_req;
+};
+SubCrReq const sub_cr_req;
 
-struct {
+struct SubCr {
+  SubCr()   = default; // Work-around for Intel compiler problem.
   int count = 2;
   CompNext o1{"req_", &sub_cr_req.count};
   CompNext o2{"urlencode(", &sub_url_encode_id};
-} const sub_cr;
+};
+SubCr const sub_cr;
 
-struct {
+struct Sub {
+  Sub()     = default; // Work-around for Intel compiler problem.
   int count = 3;
   CompNext o1{"cr_", &sub_cr.count};
   CompNext o2{"p", &sub_p.count};
   CompNext o3{"unmatched_p", &sub_unmatched.count};
-} const sub;
+};
+Sub const sub;
 
 int
 sub_lookup(char const *targ, int targ_len)
