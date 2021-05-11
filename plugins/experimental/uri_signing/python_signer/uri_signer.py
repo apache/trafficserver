@@ -94,6 +94,9 @@ def main():
             else:
                 claimset["cdniets"] = 30
 
+    if "cdnistd" in config.keys():
+        claimset["cdnistd"] = config["cdnistd"]
+
     # process override args - simple
     if args.iss:
         claimset["iss"] = args.iss[0]
@@ -101,6 +104,8 @@ def main():
         claimset["exp"] = args.exp[0]
     if args.aud:
         claimset["aud"] = args.aud[0]
+    if args.cdnistd:
+        claimset["cdnistd"] = args.cdnistd[0]
 
     # process override args - complex
     if args.cdnistt:

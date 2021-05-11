@@ -328,7 +328,7 @@ check_auth:
   /* There has been a validated JWT found in either the cookie or url */
 
   struct signer *signer = config_signer((struct config *)ih);
-  char *cookie          = renew(jwt, signer->issuer, signer->jwk, signer->alg, package);
+  char *cookie          = renew(jwt, signer->issuer, signer->jwk, signer->alg, package, strip_uri, strip_ct);
   jwt_delete(jwt);
 
   if (cpi < max_cpi) {

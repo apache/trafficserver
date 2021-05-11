@@ -2,8 +2,9 @@
 	"iss": "Example Issuer",
 	"token_lifetime": 90,
 	"aud": "Caching Software",
-    "cdnistt": true,
-    "cdniets": 30,
+        "cdnistt": true,
+        "cdnistd": 2,
+        "cdniets": 30,
 	"keys": [
 		{
 			"alg": "HS256",
