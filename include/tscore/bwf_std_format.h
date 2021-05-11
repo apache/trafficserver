@@ -26,6 +26,7 @@
 #include <atomic>
 #include <array>
 #include <string_view>
+#include <chrono>
 #include "tscpp/util/TextView.h"
 #include "tscore/BufferWriterForward.h"
 
@@ -36,6 +37,20 @@ ts::BufferWriter &
 bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, atomic<T> const &v)
 {
   return ts::bwformat(w, spec, v.load());
+}
+
+template <typename Rep, typename Period>
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, chrono::duration<Rep, Period> const &d)
+{
+  return bwformat(w, spec, d.count());
+}
+
+template <typename Clock, typename Duration>
+ts::BufferWriter &
+bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, chrono::time_point<Clock, Duration> const &t)
+{
+  return bwformat(w, spec, t.time_since_epoch());
 }
 
 } // end namespace std
@@ -130,5 +145,4 @@ namespace bwf
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Errno const &e);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::Date const &date);
 BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, bwf::OptionalAffix const &opts);
-
 } // namespace ts

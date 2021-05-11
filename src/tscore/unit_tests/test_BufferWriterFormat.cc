@@ -284,9 +284,11 @@ TEST_CASE("bwstring", "[bwprint][bwstring]")
 
   ts::bwprint(s, fmt, 99999, text);
   REQUIRE(s == "99999 -- e99a18c428cb38d5f260853678922e03");
+  REQUIRE(strlen(s.c_str()) == text.size() + 9);
 
   ts::bwprint(s, "{} .. |{:,20}|", 32767, text);
   REQUIRE(s == "32767 .. |e99a18c428cb38d5f260|");
+  REQUIRE(strlen(s.c_str()) == 31);
 
   ts::LocalBufferWriter<128> bw;
   char buff[128];

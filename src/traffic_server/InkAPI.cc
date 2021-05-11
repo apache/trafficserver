@@ -5895,12 +5895,11 @@ TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const *addr)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  if (ats_ip_copy(&sm->t_state.server_info.dst_addr.sa, addr)) {
-    sm->t_state.api_server_addr_set = true;
+  if (sm->t_state.dns_info.set_upstream_address(addr)) {
+    sm->t_state.dns_info.os_addr_style = ResolveInfo::OS_Addr::USE_API;
     return TS_SUCCESS;
-  } else {
-    return TS_ERROR;
   }
+  return TS_ERROR;
 }
 
 void
@@ -7597,6 +7596,30 @@ TSNetAcceptNamedProtocol(TSCont contp, const char *protocol)
 }
 
 /* DNS Lookups */
+/// Context structure for the lookup callback to the plugin.
+struct TSResolveInfo {
+  IpEndpoint addr;                ///< Lookup result.
+  HostDBRecord *record = nullptr; ///< Record for the FQDN.
+};
+
+int
+TSHostLookupTrampoline(TSCont contp, TSEvent ev, void *data)
+{
+  auto c = reinterpret_cast<INKContInternal *>(contp);
+  // Set up the local context.
+  TSResolveInfo ri;
+  ri.record = static_cast<HostDBRecord *>(data);
+  if (ri.record) {
+    ri.record->rr_info()[0].data.ip.toSockAddr(ri.addr);
+  }
+  auto *target = reinterpret_cast<INKContInternal *>(c->mdata);
+  // Deliver the message.
+  target->handleEvent(ev, &ri);
+  // Cleanup.
+  c->destroy();
+  return TS_SUCCESS;
+};
+
 TSAction
 TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
 {
@@ -7606,16 +7629,23 @@ TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
-  INKContInternal *i = (INKContInternal *)contp;
-  return (TSAction)hostDBProcessor.getbyname_re(i, hostname, namelen);
+  // There is no place to store the actual sockaddr to which a pointer should be returned.
+  // therefore an intermediate continuation is created to intercept the reply from HostDB.
+  // Its handler can create the required sockaddr context on the stack and then forward
+  // the event to the plugin continuation. The sockaddr cannot be placed in the HostDB
+  // record because that is a shared object.
+  auto bouncer = INKContAllocator.alloc();
+  bouncer->init(&TSHostLookupTrampoline, reinterpret_cast<TSMutex>(reinterpret_cast<INKContInternal *>(contp)->mutex.get()));
+  bouncer->mdata = contp;
+  return (TSAction)hostDBProcessor.getbyname_re(bouncer, hostname, namelen);
 }
 
 sockaddr const *
 TSHostLookupResultAddrGet(TSHostLookupResult lookup_result)
 {
   sdk_assert(sdk_sanity_check_hostlookup_structure(lookup_result) == TS_SUCCESS);
-  HostDBInfo *di = reinterpret_cast<HostDBInfo *>(lookup_result);
-  return di->ip();
+  auto ri{reinterpret_cast<TSResolveInfo *>(lookup_result)};
+  return ri->addr.isValid() ? &ri->addr.sa : nullptr;
 }
 
 /*
@@ -8654,6 +8684,9 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
 static void *
 _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overridableHttpConfig, MgmtConverter const *&conv)
 {
+  // External converters.
+  extern MgmtConverter const &HostDBDownServerCacheTimeConv;
+
   void *ret = nullptr;
   conv      = nullptr;
 
@@ -8812,7 +8845,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     ret = _memberp_to_generic(&overridableHttpConfig->post_connect_attempts_timeout, conv);
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
-    ret = _memberp_to_generic(&overridableHttpConfig->down_server_timeout, conv);
+    conv = &HostDBDownServerCacheTimeConv;
+    ret  = &overridableHttpConfig->down_server_timeout;
     break;
   case TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD:
     ret = _memberp_to_generic(&overridableHttpConfig->client_abort_threshold, conv);

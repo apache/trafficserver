@@ -86,7 +86,6 @@ br_destroy(HttpSM &sm)
   }
   delete h->hdr;
   delete h->api_info;
-  ats_free(h->hostname_str);
 }
 
 void

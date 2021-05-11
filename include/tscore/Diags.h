@@ -159,6 +159,15 @@ extern Diags *diags;
     }                                                         \
   } while (0)
 
+#define Debug_bw(tag, fmt, ...)                                                             \
+  do {                                                                                      \
+    if (unlikely(diags->on())) {                                                            \
+      static const SourceLocation loc = MakeSourceLocation();                               \
+      static LogMessage log_message;                                                        \
+      log_message.debug(tag, loc, "%s", ts::bwprint(ts::bw_dbg, fmt, __VA_ARGS__).c_str()); \
+    }                                                                                       \
+  } while (0)
+
 /** Same as Debug above, but this allows a positive override of the tag
  * mechanism by a flag boolean.
  *
