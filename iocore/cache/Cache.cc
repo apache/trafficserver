@@ -1782,11 +1782,7 @@ Vol::dir_init_done(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
     ink_assert(!gvol[vol_no]);
     gvol[vol_no] = this;
     SET_HANDLER(&Vol::aggWrite);
-    if (fd == -1) {
-      cache->vol_initialized(false);
-    } else {
-      cache->vol_initialized(true);
-    }
+    cache->vol_initialized(fd != -1);
     return EVENT_DONE;
   }
 }
