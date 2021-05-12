@@ -19,15 +19,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Probably have to change these to your preferred installation directory
+# Update this as the draft we support updates.
+OPENSSL_BRANCH=${OPENSSL_BRANCH:-"OpenSSL_1_1_1g-quic-draft-29"}
+
+# Set these, if desired, to change these to your preferred installation
+# directory
 BASE=${BASE:-"/opt"}
-OPENSSL=${OPENSSL:-"${BASE}/openssl-quic"}
+OPENSSL_BASE=${OPENSSL_BASE:-"${BASE}/openssl-quic"}
+OPENSSL_PREFIX=${OPENSSL_PREFIX:-"${OPENSSL_BASE}-${OPENSSL_BRANCH}"}
 MAKE="make"
 
 # These are for Linux like systems, specially the LDFLAGS, also depends on dirs above
 CFLAGS=${CFLAGS:-"-O3 -g"}
 CXXFLAGS=${CXXFLAGS:-"-O3 -g"}
-LDFLAGS=${LDFLAGS:-"-Wl,-rpath=${OPENSSL}/lib"}
+LDFLAGS=${LDFLAGS:-"-Wl,-rpath=${OPENSSL_PREFIX}/lib"}
 
 if [ -e /etc/redhat-release ]; then
     MAKE="gmake"
@@ -54,11 +59,15 @@ fi
 
 # OpenSSL needs special hackery ... Only grabbing the branch we need here... Bryan has shit for network.
 echo "Building OpenSSL with QUIC support"
-[ ! -d openssl-quic ] && git clone -b OpenSSL_1_1_1g-quic-draft-32 --depth 1 https://github.com/tatsuhiro-t/openssl openssl-quic
+[ ! -d openssl-quic ] && git clone -b ${OPENSSL_BRANCH} --depth 1 https://github.com/tatsuhiro-t/openssl openssl-quic
 cd openssl-quic
-./config --prefix=${OPENSSL}
+./config --prefix=${OPENSSL_PREFIX}
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
+
+# The symlink target provides a more convenient path for the user while also
+# providing, in the symlink source, the precise draft of the OpenSSL build.
+sudo ln -sf ${OPENSSL_PREFIX} ${OPENSSL_BASE}
 cd ..
 
 # Then nghttp3
@@ -66,7 +75,7 @@ echo "Building nghttp3..."
 [ ! -d nghttp3 ] && git clone https://github.com/ngtcp2/nghttp3.git
 cd nghttp3
 autoreconf -if
-./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
 cd ..
@@ -76,7 +85,7 @@ echo "Building ngtcp2..."
 [ ! -d ngtcp2 ] && git clone https://github.com/ngtcp2/ngtcp2.git
 cd ngtcp2
 autoreconf -if
-./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
 cd ..
@@ -87,7 +96,7 @@ echo "Building nghttp2 ..."
 cd nghttp2
 git checkout --track -b quic origin/quic
 autoreconf -if
-./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+./configure --prefix=${BASE} PKG_CONFIG_PATH=${BASE}/lib/pkgconfig:${OPENSSL_PREFIX}/lib/pkgconfig CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
 cd ..
@@ -97,6 +106,6 @@ echo "Building curl ..."
 [ ! -d curl ] && git clone https://github.com/curl/curl.git
 cd curl
 autoreconf -i
-./configure --prefix=${BASE} --with-ssl=${OPENSSL} --with-nghttp2=${BASE} --with-nghttp3=${BASE} --with-ngtcp2=${BASE} CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+./configure --prefix=${BASE} --with-ssl=${OPENSSL_PREFIX} --with-nghttp2=${BASE} --with-nghttp3=${BASE} --with-ngtcp2=${BASE} CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
 ${MAKE} -j $(nproc)
 sudo ${MAKE} install
