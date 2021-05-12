@@ -333,8 +333,7 @@ HttpSessionManager::purge_keepalives()
 }
 
 HSMresult_t
-HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockaddr const *ip, const char *hostname,
-                                    ProxyTransaction *ua_txn, HttpSM *sm)
+HttpSessionManager::acquire_session(HttpSM *sm, sockaddr const *ip, const char *hostname, ProxyTransaction *ua_txn)
 {
   PoolableSession *to_return = nullptr;
   TSServerSessionSharingMatchMask match_style =

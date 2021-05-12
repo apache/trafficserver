@@ -5039,8 +5039,7 @@ HttpSM::do_http_server_open(bool raw)
     shared_result = httpSessionManager.acquire_session(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // ip + port
                                                        t_state.current.server->name,         // hostname
-                                                       ua_txn,                               // has ptr to bound ua sessions
-                                                       this                                  // sm
+                                                       ua_txn                                // has ptr to bound ua sessions
     );
 
     switch (shared_result) {
