@@ -454,10 +454,6 @@ Http2Stream::transaction_done()
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   super::transaction_done();
-  if (cross_thread_event) {
-    cross_thread_event->cancel();
-    cross_thread_event = nullptr;
-  }
 
   if (!closed) {
     do_io_close(); // Make sure we've been closed.  If we didn't close the _proxy_ssn session better still be open
@@ -865,6 +861,11 @@ Http2Stream::is_inactive_timeout_expired(ink_hrtime now)
 void
 Http2Stream::clear_io_events()
 {
+  if (cross_thread_event) {
+    cross_thread_event->cancel();
+    cross_thread_event = nullptr;
+  }
+
   if (read_event) {
     read_event->cancel();
     read_event = nullptr;
