@@ -463,6 +463,27 @@ IpAddr::toString(char *dest, size_t len) const
   return dest;
 }
 
+sockaddr *
+IpAddr::toSockAddr(sockaddr *dest) const
+{
+  if (AF_INET == _family) {
+    dest->sa_family         = AF_INET;
+    ats_ip4_addr_cast(dest) = _addr._ip4;
+#if HAVE_STRUCT_SOCKADDR_SA_LEN
+    dest->sa_len = sizeof(sockaddr_in);
+#endif
+  } else if (AF_INET6 == _family) {
+    dest->sa_family         = AF_INET6;
+    ats_ip6_addr_cast(dest) = _addr._ip6;
+#if HAVE_STRUCT_SOCKADDR_SA_LEN
+    dest->sa_len = sizeof(sockaddr_in6);
+#endif
+  } else {
+    dest->sa_family = AF_UNSPEC;
+  }
+  return dest;
+}
+
 bool
 IpAddr::isMulticast() const
 {
