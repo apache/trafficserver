@@ -592,6 +592,7 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
     bool first = true;
 
     while (field_loc) {
+      tmp = TSMimeHdrFieldNextDup(_bufp, _hdr_loc, field_loc);
       if (first) {
         first = false;
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(_bufp, _hdr_loc, field_loc, -1, val, val_len)) {
@@ -600,7 +601,6 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
       } else {
         TSMimeHdrFieldDestroy(_bufp, _hdr_loc, field_loc);
       }
-      tmp = TSMimeHdrFieldNextDup(_bufp, _hdr_loc, field_loc);
       TSHandleMLocRelease(_bufp, _hdr_loc, field_loc);
       field_loc = tmp;
     }
