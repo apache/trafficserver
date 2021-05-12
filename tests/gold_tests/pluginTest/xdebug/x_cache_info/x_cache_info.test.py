@@ -19,6 +19,7 @@ Test xdebug plugin X-Cache-Info header
 '''
 
 server = Test.MakeOriginServer("server")
+started = False
 
 request_header = {
     "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -45,30 +46,28 @@ ts.Disk.remap_config.AddLine(
     "regex_map http://three[0-9]+ http://127.0.0.1:{0}".format(server.Variables.Port)
 )
 
-tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.StartBefore(Test.Processes.server)
-tr.Processes.Default.Command = "cp {}/tcp_client.py {}/tcp_client.py".format(
-    Test.Variables.AtsTestToolsDir, Test.RunDirectory)
-tr.Processes.Default.ReturnCode = 0
+Test.Setup.Copy(f'{Test.Variables.AtsTestToolsDir}')
+
+files = ["none", "one", "two", "three"]
+
+for file in files:
+    Test.Setup.Copy(f'{Test.TestDirectory}/{file}.in')
 
 
 def sendMsg(msgFile):
-
+    global started
     tr = Test.AddTestRun()
-    tr.Processes.Default.Command = (
-        "( python {}/tcp_client.py 127.0.0.1 {} {}/{}.in".format(
-            Test.RunDirectory, ts.Variables.port, Test.TestDirectory, msgFile) +
-        " ; echo '======' ) | sed 's/:{}/:SERVER_PORT/' >>  {}/out.log 2>&1 ".format(
-            server.Variables.Port, Test.RunDirectory)
-    )
+    tr.Processes.Default.Command = f"( python3 tools/tcp_client.py 127.0.0.1 {ts.Variables.port} {msgFile}.in ; echo '======' ) | sed 's/:{server.Variables.Port}/:SERVER_PORT/' >>  out.log 2>&1"
     tr.Processes.Default.ReturnCode = 0
 
+    if not started:
+        tr.Processes.Default.StartBefore(Test.Processes.ts)
+        tr.Processes.Default.StartBefore(Test.Processes.server)
+        started = True
 
-sendMsg('none')
-sendMsg('one')
-sendMsg('two')
-sendMsg('three')
+
+for file in files:
+    sendMsg(file)
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = "echo test gold"
