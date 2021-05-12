@@ -2052,7 +2052,12 @@ SSLConnect(SSL *ssl)
 
       Debug("ssl.origin_session_cache", "origin session cache lookup key = %s", lookup_key.c_str());
 
-      sess = origin_sess_cache->get_session(lookup_key);
+      TLSSessionResumptionSupport *srs = TLSSessionResumptionSupport::getInstance(ssl);
+      ink_assert(srs);
+      if (srs) {
+        sess = srs->getOriginSession(ssl, lookup_key);
+      }
+
       if (sess) {
         SSL_set_session(ssl, sess);
       }
