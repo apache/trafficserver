@@ -94,6 +94,7 @@ public:
   const char *get_protocol_string() const override;
   int populate_protocol(std::string_view *result, int size) const override;
   const char *protocol_contains(std::string_view prefix) const override;
+  HTTPVersion get_version(HTTPHdr &hdr) const override;
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
 

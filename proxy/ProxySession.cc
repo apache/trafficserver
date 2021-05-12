@@ -255,6 +255,12 @@ ProxySession::protocol_contains(std::string_view tag_prefix) const
   return _vc ? _vc->protocol_contains(tag_prefix) : nullptr;
 }
 
+HTTPVersion
+ProxySession::get_version(HTTPHdr &hdr) const
+{
+  return hdr.version_get();
+}
+
 sockaddr const *
 ProxySession::get_remote_addr() const
 {

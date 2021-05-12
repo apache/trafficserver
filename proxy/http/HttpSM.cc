@@ -8302,3 +8302,9 @@ HttpSM::get_server_session() const
 {
   return server_session;
 }
+
+HTTPVersion
+HttpSM::get_server_version(HTTPHdr &hdr) const
+{
+  return this->server_session->get_version(hdr);
+}

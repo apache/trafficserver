@@ -175,6 +175,12 @@ Http3Session::~Http3Session()
   delete this->_remote_qpack;
 }
 
+HTTPVersion
+Http3Session::get_version(HTTPHdr &hdr) const
+{
+  return HTTP_3_0;
+}
+
 void
 Http3Session::increment_current_active_connections_stat()
 {
@@ -205,6 +211,12 @@ Http3Session::remote_qpack()
 Http09Session::~Http09Session()
 {
   this->_vc = nullptr;
+}
+
+HTTPVersion
+Http09Session::get_version(HTTPHdr &hdr) const
+{
+  return HTTP_0_9;
 }
 
 void

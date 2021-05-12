@@ -266,6 +266,8 @@ public:
   // the current active server session
   PoolableSession *get_server_session() const;
 
+  HTTPVersion get_server_version(HTTPHdr &hdr) const;
+
   ProxyTransaction *
   get_ua_txn()
   {

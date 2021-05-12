@@ -695,6 +695,12 @@ Http2ClientSession::protocol_contains(std::string_view prefix) const
   return retval;
 }
 
+HTTPVersion
+Http2ClientSession::get_version(HTTPHdr &hdr) const
+{
+  return HTTP_2_0;
+}
+
 void
 Http2ClientSession::add_url_to_pushed_table(const char *url, int url_len)
 {

@@ -72,6 +72,7 @@ public:
   ~Http3Session();
 
   // ProxySession interface
+  HTTPVersion get_version(HTTPHdr &hdr) const override;
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
 
@@ -95,6 +96,7 @@ public:
   ~Http09Session();
 
   // ProxySession interface
+  HTTPVersion get_version(HTTPHdr &hdr) const override;
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
 
