@@ -124,6 +124,7 @@ public:
 
   virtual int populate_protocol(std::string_view *result, int size) const;
   virtual const char *protocol_contains(std::string_view tag_prefix) const;
+  virtual HTTPVersion get_version(HTTPHdr &hdr) const;
 
   // Non-Virtual Methods
   NetVConnection *get_netvc() const;
