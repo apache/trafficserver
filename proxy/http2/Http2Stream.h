@@ -138,9 +138,7 @@ public:
   bool recv_end_stream = false;
   bool send_end_stream = false;
 
-  bool sent_request_header       = false;
   bool response_header_done      = false;
-  bool request_sent              = false;
   bool is_first_transaction_flag = false;
 
   HTTPHdr response_header;
@@ -210,13 +208,11 @@ private:
   std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
   int _recent_rwnd_increment_index           = 0;
 
-  Event *cross_thread_event      = nullptr;
-  Event *buffer_full_write_event = nullptr;
-
-  Event *read_event       = nullptr;
-  Event *write_event      = nullptr;
-  Event *_read_vio_event  = nullptr;
-  Event *_write_vio_event = nullptr;
+  Event *cross_thread_event = nullptr;
+  Event *read_event         = nullptr;
+  Event *write_event        = nullptr;
+  Event *_read_vio_event    = nullptr;
+  Event *_write_vio_event   = nullptr;
 };
 
 extern ClassAllocator<Http2Stream, true> http2StreamAllocator;
