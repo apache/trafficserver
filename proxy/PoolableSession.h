@@ -83,6 +83,8 @@ public:
 
   void set_netvc(NetVConnection *newvc);
 
+  virtual IOBufferReader *get_reader() = 0;
+
 private:
   // Sessions become if authentication headers
   //  are sent over them

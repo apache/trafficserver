@@ -206,7 +206,9 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
   //  if it closes on us.  We will get called back in the
   //  continuation for this bucket, ensuring we have the lock
   //  to remove the connection from our lists
-  ss->do_io_read(this, 0, nullptr);
+  //  Actually need to have a buffer here, otherwise the vc is
+  //  disabled
+  ss->do_io_read(this, 0, ss->get_reader()->mbuf);
 
   // Transfer control of the write side as well
   ss->do_io_write(this, 0, nullptr);
