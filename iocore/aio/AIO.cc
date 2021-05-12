@@ -379,18 +379,15 @@ aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
 static inline int
 cache_op(AIOCallbackInternal *op)
 {
-  bool read = (op->aiocb.aio_lio_opcode == LIO_READ);
+  using ActionFunc  = decltype(&pread);
+  ActionFunc action = op->aiocb.aio_lio_opcode == LIO_READ ? &pread : reinterpret_cast<ActionFunc>(&pwrite);
   for (; op; op = (AIOCallbackInternal *)op->then) {
     ink_aiocb *a = &op->aiocb;
     ssize_t err, res = 0;
 
     while (a->aio_nbytes - res > 0) {
       do {
-        if (read) {
-          err = pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
-        } else {
-          err = pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
-        }
+        err = (*action)(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
       } while ((err < 0) && (errno == EINTR || errno == ENOBUFS || errno == ENOMEM));
       if (err <= 0) {
         Warning("cache disk operation failed %s %zd %d\n", (a->aio_lio_opcode == LIO_READ) ? "READ" : "WRITE", err, errno);
