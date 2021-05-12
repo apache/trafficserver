@@ -45,28 +45,6 @@
     Debug("http_cache", "[%" PRId64 "] [%s, %s]", master_sm->sm_id, #state_name, HttpDebugNames::get_event_name(event)); \
   }
 
-HttpCacheAction::HttpCacheAction() {}
-
-void
-HttpCacheAction::cancel(Continuation *c)
-{
-  ink_assert(c == nullptr || c == sm->master_sm);
-  ink_assert(this->cancelled == 0);
-
-  this->cancelled = 1;
-  if (sm->pending_action) {
-    sm->pending_action->cancel();
-  }
-}
-
-HttpCacheSM::HttpCacheSM()
-  : Continuation(nullptr),
-
-    captive_action()
-
-{
-}
-
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpCacheSM::state_cache_open_read()
@@ -98,7 +76,6 @@ int
 HttpCacheSM::state_cache_open_read(int event, void *data)
 {
   STATE_ENTER(&HttpCacheSM::state_cache_open_read, event);
-  ink_assert(captive_action.cancelled == 0);
   pending_action = nullptr;
 
   switch (event) {
@@ -158,7 +135,6 @@ int
 HttpCacheSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpCacheSM::state_cache_open_write, event);
-  ink_assert(captive_action.cancelled == 0);
   pending_action                = nullptr;
   bool read_retry_on_write_fail = false;
 
@@ -196,8 +172,6 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     if (read_retry_on_write_fail || open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
       // Retry open write;
       open_write_cb = false;
-      // reset captive_action since HttpSM cancelled it
-      captive_action.cancelled = 0;
       do_schedule_in();
     } else {
       // The cache is hosed or full or something.
@@ -266,8 +240,6 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   } else {
     ink_assert(open_read_cb == false);
   }
-  // reset captive_action since HttpSM cancelled it during open read retry
-  captive_action.cancelled = 0;
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
   Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, this->http_params, this->read_pin_in_cache);
@@ -275,15 +247,16 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   if (action_handle != ACTION_RESULT_DONE) {
     pending_action = action_handle;
   }
+
   // Check to see if we've already called the user back
-  //  If we have then it's ACTION_RESULT_DONE, other wise
-  //  return our captive action and ensure that we are actually
-  //  doing something useful
+  //  If we have then it's ACTION_RESULT_DONE, otherwise
+  //  return the cacheProcessor action
   if (open_read_cb == true) {
+    ink_release_assert(action_handle == ACTION_RESULT_DONE);
     return ACTION_RESULT_DONE;
   } else {
     ink_assert(pending_action != nullptr || write_locked == true);
-    return &captive_action;
+    return pending_action == nullptr ? ACTION_RESULT_DONE : pending_action;
   }
 }
 
@@ -368,13 +341,12 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
     pending_action = action_handle;
   }
   // Check to see if we've already called the user back
-  //  If we have then it's ACTION_RESULT_DONE, other wise
-  //  return our captive action and ensure that we are actually
-  //  doing something useful
+  //  If we have then it's ACTION_RESULT_DONE, otherwise
+  //  return the action from the cacheProcessor
   if (open_write_cb == true) {
+    ink_release_assert(action_handle == ACTION_RESULT_DONE);
     return ACTION_RESULT_DONE;
   } else {
-    ink_assert(pending_action != nullptr);
-    return &captive_action;
+    return pending_action == nullptr ? ACTION_RESULT_DONE : pending_action;
   }
 }

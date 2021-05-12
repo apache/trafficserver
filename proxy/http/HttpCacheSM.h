@@ -41,28 +41,16 @@
 class HttpSM;
 class HttpCacheSM;
 
-struct HttpCacheAction : public Action {
-  HttpCacheAction();
-  void cancel(Continuation *c = nullptr) override;
-  void
-  init(HttpCacheSM *sm_arg)
-  {
-    sm = sm_arg;
-  };
-  HttpCacheSM *sm = nullptr;
-};
-
 class HttpCacheSM : public Continuation
 {
 public:
-  HttpCacheSM();
+  HttpCacheSM() : Continuation(nullptr) {}
 
   void
   init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex)
   {
     master_sm = sm_arg;
     mutex     = amutex;
-    captive_action.init(this);
   }
 
   Action *open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, const OverridableHttpConfigParams *params,
@@ -202,7 +190,6 @@ private:
   int state_cache_open_read(int event, void *data);
   int state_cache_open_write(int event, void *data);
 
-  HttpCacheAction captive_action;
   bool open_read_cb  = false;
   bool open_write_cb = false;
 
