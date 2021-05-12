@@ -446,6 +446,13 @@ SSLNetVConnection::read_raw_data()
     if (this->has_proxy_protocol(buffer, &r)) {
       Debug("proxyprotocol", "ssl has proxy protocol header");
       set_remote_addr(get_proxy_protocol_src_addr());
+      if (is_debug_tag_set("proxyprotocol")) {
+        IpEndpoint dst;
+        dst.sa = *(this->get_proxy_protocol_dst_addr());
+        ip_port_text_buffer ipb1;
+        ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
+        Debug("proxyprotocol", "ssl_has_proxy_v1, dest IP received [%s]", ipb1);
+      }
     } else {
       Debug("proxyprotocol", "proxy protocol was enabled, but required header was not present in the "
                              "transaction - closing connection");
