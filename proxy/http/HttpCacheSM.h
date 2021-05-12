@@ -50,6 +50,7 @@ struct HttpCacheAction : public Action {
     sm = sm_arg;
   };
   HttpCacheSM *sm = nullptr;
+  int err_code    = 0;
 };
 
 class HttpCacheSM : public Continuation

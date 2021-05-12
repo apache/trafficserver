@@ -2492,8 +2492,6 @@ HttpSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpSM : state_cache_open_write, event);
 
-  pending_action.try_clear(reinterpret_cast<Action *>(data));
-
   // Make sure we are on the "right" thread
   if (ua_txn) {
     pending_action = ua_txn->adjust_thread(this, event, data);
@@ -2504,6 +2502,8 @@ HttpSM::state_cache_open_write(int event, void *data)
     NetVConnection *vc = ua_txn->get_netvc();
     ink_release_assert(vc && vc->thread == this_ethread());
   }
+
+  pending_action.try_clear(reinterpret_cast<Action *>(data));
 
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_END] = Thread::get_hrtime();
   pending_action                                = nullptr;
@@ -2616,6 +2616,8 @@ HttpSM::state_cache_open_read(int event, void *data)
 
   pending_action.try_clear(reinterpret_cast<Action *>(data));
 
+  HttpCacheAction *cache_action = reinterpret_cast<HttpCacheAction *>(data);
+
   ink_assert(server_entry == nullptr);
   ink_assert(t_state.cache_info.object_read == nullptr);
 
@@ -2647,12 +2649,12 @@ HttpSM::state_cache_open_read(int event, void *data)
     pending_action = nullptr;
 
     SMDebug("http", "[%" PRId64 "] cache_open_read - CACHE_EVENT_OPEN_READ_FAILED with %s (%d)", sm_id,
-            InkStrerror(-(intptr_t)data), (int)(intptr_t)data);
+            InkStrerror(-cache_action->err_code), -cache_action->err_code);
 
     SMDebug("http", "[state_cache_open_read] open read failed.");
     // Inform HttpTransact somebody else is updating the document
     // HttpCacheSM already waited so transact should go ahead.
-    if ((intptr_t)data == -ECACHE_DOC_BUSY) {
+    if (cache_action->err_code == -ECACHE_DOC_BUSY) {
       t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_DOC_BUSY;
     } else {
       t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;

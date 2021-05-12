@@ -115,10 +115,11 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     }
     open_read_cb  = true;
     cache_read_vc = static_cast<CacheVConnection *>(data);
-    master_sm->handleEvent(event, data);
+    master_sm->handleEvent(event, &captive_action);
     break;
 
   case CACHE_EVENT_OPEN_READ_FAILED:
+    captive_action.err_code = reinterpret_cast<intptr_t>(data);
     if ((intptr_t)data == -ECACHE_DOC_BUSY) {
       // Somebody else is writing the object
       if (open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries) {
@@ -129,12 +130,12 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
         // Give up; the update didn't finish in time
         // HttpSM will inform HttpTransact to 'proxy-only'
         open_read_cb = true;
-        master_sm->handleEvent(event, data);
+        master_sm->handleEvent(event, &captive_action);
       }
     } else {
       // Simple miss in the cache.
       open_read_cb = true;
-      master_sm->handleEvent(event, data);
+      master_sm->handleEvent(event, &captive_action);
     }
     break;
 
@@ -175,7 +176,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     ink_assert(cache_write_vc == nullptr);
     cache_write_vc = static_cast<CacheVConnection *>(data);
     open_write_cb  = true;
-    master_sm->handleEvent(event, data);
+    master_sm->handleEvent(event, &captive_action);
     break;
 
   case CACHE_EVENT_OPEN_WRITE_FAILED:
@@ -211,8 +212,9 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
             "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
             "done retrying...",
             master_sm->sm_id, open_write_tries);
-      open_write_cb = true;
-      master_sm->handleEvent(event, data);
+      open_write_cb           = true;
+      captive_action.err_code = reinterpret_cast<intptr_t>(data);
+      master_sm->handleEvent(event, &captive_action);
     }
     break;
 
@@ -223,7 +225,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
             "falling back to read retry...",
             master_sm->sm_id, open_write_tries);
       open_read_cb = false;
-      master_sm->handleEvent(CACHE_EVENT_OPEN_READ, data);
+      master_sm->handleEvent(CACHE_EVENT_OPEN_READ, &captive_action);
     } else {
       Debug("http_cache",
             "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
@@ -359,7 +361,8 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   // Changed by YTS Team, yamsat Plugin
   if (open_write_tries > master_sm->redirection_tries &&
       open_write_tries > master_sm->t_state.txn_conf->max_cache_open_write_retries) {
-    master_sm->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, (void *)-ECACHE_DOC_BUSY);
+    captive_action.err_code = -ECACHE_DOC_BUSY;
+    master_sm->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, &captive_action);
     return ACTION_RESULT_DONE;
   }
 
