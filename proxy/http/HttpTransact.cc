@@ -4031,7 +4031,7 @@ HttpTransact::handle_forward_server_connection_open(State *s)
   if (real_version != s->host_db_info.app.http_data.http_version) {
     // Need to update the hostdb
     s->updated_server_version = real_version;
-    TxnDebug("http_trans", "Update hostdb history of server HTTP version 0x%x", s->updated_server_version);
+    TxnDebug("http_trans", "Update hostdb history of server HTTP version 0x%x", s->updated_server_version.get_flat_version());
   }
 
   s->state_machine->do_hostdb_update_if_necessary();
