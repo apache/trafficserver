@@ -54,6 +54,7 @@ HttpCacheAction::cancel(Continuation *c)
   ink_assert(this->cancelled == 0);
 
   this->cancelled = 1;
+  ink_release_assert(false);
   if (sm->pending_action) {
     sm->pending_action->cancel();
   }
@@ -98,8 +99,11 @@ int
 HttpCacheSM::state_cache_open_read(int event, void *data)
 {
   STATE_ENTER(&HttpCacheSM::state_cache_open_read, event);
-  ink_assert(captive_action.cancelled == 0);
   pending_action = nullptr;
+
+  if (captive_action.cancelled == 1) {
+    return VC_EVENT_CONT; // SM gave up on us
+  }
 
   switch (event) {
   case CACHE_EVENT_OPEN_READ:
@@ -158,8 +162,11 @@ int
 HttpCacheSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpCacheSM::state_cache_open_write, event);
-  ink_assert(captive_action.cancelled == 0);
-  pending_action                = nullptr;
+  pending_action = nullptr;
+
+  if (captive_action.cancelled == 1) {
+    return VC_EVENT_CONT; // SM gave up on us
+  }
   bool read_retry_on_write_fail = false;
 
   switch (event) {
@@ -196,8 +203,6 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     if (read_retry_on_write_fail || open_write_tries <= master_sm->t_state.txn_conf->max_cache_open_write_retries) {
       // Retry open write;
       open_write_cb = false;
-      // reset captive_action since HttpSM cancelled it
-      captive_action.cancelled = 0;
       do_schedule_in();
     } else {
       // The cache is hosed or full or something.
@@ -266,8 +271,6 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   } else {
     ink_assert(open_read_cb == false);
   }
-  // reset captive_action since HttpSM cancelled it during open read retry
-  captive_action.cancelled = 0;
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
   Action *action_handle = cacheProcessor.open_read(this, &key, this->read_request_hdr, this->http_params, this->read_pin_in_cache);
