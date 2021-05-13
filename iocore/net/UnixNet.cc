@@ -509,7 +509,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
       }
       int flags = get_ev_events(pd, x);
       if (flags & (EVENTIO_ERROR)) {
-        ne->set_error();
+        ne->set_error_from_socket();
       }
       if (flags & (EVENTIO_READ)) {
         ne->read.triggered = 1;
