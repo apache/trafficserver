@@ -417,7 +417,6 @@ protected:
    * we should create a new connection and then once we attach the session we'll mark it as private.
    */
   bool will_be_private_ss              = false;
-  int shared_session_retries           = 0;
   IOBufferReader *server_buffer_reader = nullptr;
 
   HttpTransformInfo transform_info;
