@@ -165,8 +165,6 @@ Http2Stream::main_event_handler(int event, void *edata)
     read_event = nullptr;
   } else if (e == write_event) {
     write_event = nullptr;
-  } else if (e == buffer_full_write_event) {
-    buffer_full_write_event = nullptr;
   }
 
   switch (event) {
@@ -873,11 +871,6 @@ Http2Stream::clear_io_events()
   if (write_event) {
     write_event->cancel();
     write_event = nullptr;
-  }
-
-  if (buffer_full_write_event) {
-    buffer_full_write_event->cancel();
-    buffer_full_write_event = nullptr;
   }
 
   if (this->_read_vio_event) {
