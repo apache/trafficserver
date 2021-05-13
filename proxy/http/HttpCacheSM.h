@@ -135,7 +135,13 @@ public:
   int
   get_volume_number()
   {
-    return cache_read_vc ? (cache_read_vc->get_volume_number()) : -1;
+    if (cache_read_vc) {
+      return cache_read_vc->get_volume_number();
+    } else if (cache_write_vc) {
+      return cache_write_vc->get_volume_number();
+    }
+
+    return -1;
   }
 
   const char *

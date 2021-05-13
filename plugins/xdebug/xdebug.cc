@@ -31,6 +31,7 @@
 #include <unistd.h>
 
 #include <ts/ts.h>
+#include "ts/experimental.h"
 #include "tscore/ink_defs.h"
 #include "tscpp/util/PostScript.h"
 #include "tscpp/util/TextView.h"
@@ -81,6 +82,7 @@ enum {
   XHEADER_X_REMAP          = 1u << 8,
   XHEADER_X_PROBE_HEADERS  = 1u << 9,
   XHEADER_X_PSELECT_KEY    = 1u << 10,
+  XHEADER_X_CACHE_INFO     = 1u << 11,
 };
 
 static TSCont XInjectHeadersCont  = nullptr;
@@ -172,6 +174,41 @@ done:
   }
 
   TSfree(strval.ptr);
+}
+
+static void
+InjectCacheInfoHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  TSMLoc dst = TS_NULL_MLOC;
+  TSMgmtInt volume;
+  const char *path;
+
+  TSDebug("xdebug", "attempting to inject X-Cache-Info header");
+
+  if ((path = TSHttpTxnCacheDiskPathGet(txn, nullptr)) == nullptr) {
+    goto done;
+  }
+
+  if (TSHttpTxnInfoIntGet(txn, TS_TXN_INFO_CACHE_VOLUME, &volume) != TS_SUCCESS) {
+    goto done;
+  }
+
+  // Create a new response header field.
+  dst = FindOrMakeHdrField(buffer, hdr, "X-Cache-Info", lengthof("X-Cache-Info"));
+  if (dst == TS_NULL_MLOC) {
+    goto done;
+  }
+
+  char value[1024];
+  snprintf(value, sizeof(value), "path=%s; volume=%" PRId64, path, volume);
+
+  // Now copy the CacheDisk info into the response header.
+  TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, value, std::strlen(value)) == TS_SUCCESS);
+
+done:
+  if (dst != TS_NULL_MLOC) {
+    TSHandleMLocRelease(buffer, hdr, dst);
+  }
 }
 
 static void
@@ -423,6 +460,10 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
     InjectCacheKeyHeader(txn, buffer, hdr);
   }
 
+  if (xheaders & XHEADER_X_CACHE_INFO) {
+    InjectCacheInfoHeader(txn, buffer, hdr);
+  }
+
   if (xheaders & XHEADER_X_CACHE) {
     InjectCacheHeader(txn, buffer, hdr);
   }
@@ -558,6 +599,8 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
 
       if (header_field_eq("x-cache-key", value, vsize)) {
         xheaders |= XHEADER_X_CACHE_KEY;
+      } else if (header_field_eq("x-cache-info", value, vsize)) {
+        xheaders |= XHEADER_X_CACHE_INFO;
       } else if (header_field_eq("x-milestones", value, vsize)) {
         xheaders |= XHEADER_X_MILESTONES;
       } else if (header_field_eq("x-cache", value, vsize)) {
