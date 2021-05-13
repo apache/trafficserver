@@ -208,7 +208,7 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
   //  to remove the connection from our lists
   //  Actually need to have a buffer here, otherwise the vc is
   //  disabled
-  ss->do_io_read(this, 0, ss->get_reader()->mbuf);
+  ss->do_io_read(this, INT64_MAX, ss->get_reader()->mbuf);
 
   // Transfer control of the write side as well
   ss->do_io_write(this, 0, nullptr);
