@@ -98,7 +98,6 @@ public:
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
 
-  void set_upgrade_context(HTTPHdr *h);
   void set_dying_event(int event);
   int get_dying_event() const;
   bool ready_to_free() const;
@@ -107,7 +106,6 @@ public:
   bool get_half_close_local_flag() const;
   bool is_url_pushed(const char *url, int url_len);
   void add_url_to_pushed_table(const char *url, int url_len);
-  int64_t write_buffer_size();
 
   // Record history from Http2ConnectionState
   void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
@@ -219,10 +217,4 @@ Http2ClientSession::is_url_pushed(const char *url, int url_len)
   }
 
   return _h2_pushed_urls->find(url) != _h2_pushed_urls->end();
-}
-
-inline int64_t
-Http2ClientSession::write_buffer_size()
-{
-  return write_buffer->max_read_avail();
 }
