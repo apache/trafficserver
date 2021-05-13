@@ -79,7 +79,7 @@ def HasCurlOption(self, option):
         return False
 
     return self.CheckOutput(
-        ['curl', '--help'],
+        ['curl', '--help', 'all'],
         default,
         "Curl needs to support option: {option}".format(option=option)
     )
