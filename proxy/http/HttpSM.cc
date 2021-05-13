@@ -2616,8 +2616,6 @@ HttpSM::state_cache_open_read(int event, void *data)
 
   pending_action.try_clear(reinterpret_cast<Action *>(data));
 
-  HttpCacheAction *cache_action = reinterpret_cast<HttpCacheAction *>(data);
-
   ink_assert(server_entry == nullptr);
   ink_assert(t_state.cache_info.object_read == nullptr);
 
@@ -2649,12 +2647,12 @@ HttpSM::state_cache_open_read(int event, void *data)
     pending_action = nullptr;
 
     SMDebug("http", "[%" PRId64 "] cache_open_read - CACHE_EVENT_OPEN_READ_FAILED with %s (%d)", sm_id,
-            InkStrerror(-cache_action->err_code), -cache_action->err_code);
+            InkStrerror(-cache_sm.get_last_error()), -cache_sm.get_last_error());
 
     SMDebug("http", "[state_cache_open_read] open read failed.");
     // Inform HttpTransact somebody else is updating the document
     // HttpCacheSM already waited so transact should go ahead.
-    if (cache_action->err_code == -ECACHE_DOC_BUSY) {
+    if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
       t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_DOC_BUSY;
     } else {
       t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;

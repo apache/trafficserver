@@ -54,7 +54,6 @@ HttpCacheAction::cancel(Continuation *c)
   ink_assert(this->cancelled == 0);
 
   this->cancelled = 1;
-  ink_release_assert(false);
   if (sm->pending_action) {
     sm->pending_action->cancel();
   }
@@ -99,6 +98,7 @@ int
 HttpCacheSM::state_cache_open_read(int event, void *data)
 {
   STATE_ENTER(&HttpCacheSM::state_cache_open_read, event);
+  ink_assert(captive_action.cancelled == 0);
   pending_action = nullptr;
 
   if (captive_action.cancelled == 1) {
@@ -119,7 +119,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     break;
 
   case CACHE_EVENT_OPEN_READ_FAILED:
-    captive_action.err_code = reinterpret_cast<intptr_t>(data);
+    err_code = reinterpret_cast<intptr_t>(data);
     if ((intptr_t)data == -ECACHE_DOC_BUSY) {
       // Somebody else is writing the object
       if (open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries) {
@@ -163,6 +163,7 @@ int
 HttpCacheSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(&HttpCacheSM::state_cache_open_write, event);
+  ink_assert(captive_action.cancelled == 0);
   pending_action = nullptr;
 
   if (captive_action.cancelled == 1) {
@@ -212,8 +213,8 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
             "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
             "done retrying...",
             master_sm->sm_id, open_write_tries);
-      open_write_cb           = true;
-      captive_action.err_code = reinterpret_cast<intptr_t>(data);
+      open_write_cb = true;
+      err_code      = reinterpret_cast<intptr_t>(data);
       master_sm->handleEvent(event, &captive_action);
     }
     break;
@@ -361,7 +362,7 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   // Changed by YTS Team, yamsat Plugin
   if (open_write_tries > master_sm->redirection_tries &&
       open_write_tries > master_sm->t_state.txn_conf->max_cache_open_write_retries) {
-    captive_action.err_code = -ECACHE_DOC_BUSY;
+    err_code = -ECACHE_DOC_BUSY;
     master_sm->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, &captive_action);
     return ACTION_RESULT_DONE;
   }
