@@ -266,8 +266,11 @@ struct CacheSync : public Continuation {
   Event *trigger        = nullptr;
   ink_hrtime start_time = 0;
   int mainEvent(int event, Event *e);
+#if TS_USE_MMAP
+  void aio_write(void *fd, char *b, int n, off_t o);
+#else
   void aio_write(int fd, char *b, int n, off_t o);
-
+#endif
   CacheSync() : Continuation(new_ProxyMutex()) { SET_HANDLER(&CacheSync::mainEvent); }
 };
 

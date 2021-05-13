@@ -51,8 +51,13 @@
 #define LOOKASIDE_SIZE 256
 #define EVACUATION_BUCKET_SIZE (2 * EVACUATION_SIZE) // 16MB
 #define RECOVERY_SIZE EVACUATION_SIZE                // 8MB
+#if TS_USE_MMAP
+#define AIO_NOT_IN_PROGRESS reinterpret_cast<void *>(-1)
+#define AIO_AGG_WRITE_IN_PROGRESS reinterpret_cast<void *>(-2)
+#else
 #define AIO_NOT_IN_PROGRESS -1
 #define AIO_AGG_WRITE_IN_PROGRESS -2
+#endif
 #define AUTO_SIZE_RAM_CACHE -1                               // 1-1 with directory size
 #define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeof(Doc)) // 1MB
 
@@ -123,8 +128,11 @@ struct Vol : public Continuation {
   char *path = nullptr;
   ats_scoped_str hash_text;
   CryptoHash hash_id;
+#if TS_USE_MMAP
+  void *fd = MAP_FAILED;
+#else
   int fd = -1;
-
+#endif
   char *raw_dir           = nullptr;
   Dir *dir                = nullptr;
   VolHeaderFooter *header = nullptr;

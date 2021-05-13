@@ -776,6 +776,9 @@ Vol::evac_range(off_t low, off_t high, int evac_phase)
       io.thread        = AIO_CALLBACK_THREAD_ANY;
       DDebug("cache_evac", "evac_range evacuating %X %d", (int)dir_tag(&first->dir), (int)dir_offset(&first->dir));
       SET_HANDLER(&Vol::evacuateDocReadDone);
+#if TS_USE_MMAP
+      io.mutex = mutex;
+#endif
       ink_assert(ink_aio_read(&io) >= 0);
       return -1;
     }

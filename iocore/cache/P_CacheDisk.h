@@ -88,15 +88,19 @@ struct CacheDisk : public Continuation {
   off_t skip              = 0;
   off_t num_usable_blocks = 0;
   int hw_sector_size      = 0;
-  int fd                  = -1;
-  off_t free_space        = 0;
-  off_t wasted_space      = 0;
-  DiskVol **disk_vols     = nullptr;
-  DiskVol *free_blocks    = nullptr;
-  int num_errors          = 0;
-  int cleared             = 0;
-  bool read_only_p        = false;
-  bool online             = true; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
+#if TS_USE_MMAP
+  void *fd = MAP_FAILED;
+#else
+  int fd = -1;
+#endif
+  off_t free_space     = 0;
+  off_t wasted_space   = 0;
+  DiskVol **disk_vols  = nullptr;
+  DiskVol *free_blocks = nullptr;
+  int num_errors       = 0;
+  int cleared          = 0;
+  bool read_only_p     = false;
+  bool online          = true; /* flag marking cache disk online or offline (because of too many failures or by the operator). */
 
   // Extra configuration values
   int forced_volume_num = -1;      ///< Volume number for this disk.
