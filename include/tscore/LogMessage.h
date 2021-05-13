@@ -60,18 +60,18 @@ public:
   LogMessage(std::chrono::milliseconds throttling_interval);
 
   /* TODO: Add BufferWriter overloads for these. */
-  void diag(const char *tag, SourceLocation const &loc, const char *fmt, ...);
-  void debug(const char *tag, SourceLocation const &loc, const char *fmt, ...);
-  void status(SourceLocation const &loc, const char *fmt, ...);
-  void note(SourceLocation const &loc, const char *fmt, ...);
-  void warning(SourceLocation const &loc, const char *fmt, ...);
-  void error(SourceLocation const &loc, const char *fmt, ...);
-  void fatal(SourceLocation const &loc, const char *fmt, ...);
-  void alert(SourceLocation const &loc, const char *fmt, ...);
-  void emergency(SourceLocation const &loc, const char *fmt, ...);
+  void diag(const char *tag, SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
+  void debug(const char *tag, SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
+  void status(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
+  void note(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
+  void warning(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
+  void error(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
+  void fatal(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
+  void alert(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
+  void emergency(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
 
-  void message(DiagsLevel level, SourceLocation const &loc, const char *fmt, ...);
-  void print(const char *tag, DiagsLevel level, SourceLocation const &loc, const char *fmt, ...);
+  void message(DiagsLevel level, SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
+  void print(const char *tag, DiagsLevel level, SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(5, 6);
 
   void diag_va(const char *tag, SourceLocation const &loc, const char *fmt, va_list args);
   void debug_va(const char *tag, SourceLocation const &loc, const char *fmt, va_list args);
