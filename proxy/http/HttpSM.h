@@ -262,16 +262,16 @@ public:
 
   void init(bool from_early_data = false);
 
-  void attach_client_session(ProxyTransaction *client_vc_arg, IOBufferReader *buffer_reader);
+  void attach_client_session(ProxyTransaction *client_vc_arg);
 
-  // Called by httpSessionManager so that we can reset
-  //  the session timeouts and initiate a read while
+  // Called after the network connection has been completed
+  //  to set the session timeouts and initiate a read while
   //  holding the lock for the server session
-  void attach_server_session(PoolableSession *s);
+  void attach_server_session();
 
-  // Used to read attributes of
-  // the current active server session
-  PoolableSession *get_server_session() const;
+  void set_server_txn(ProxyTransaction *txn);
+  void create_server_txn(NetVConnection *netvc, PoolableSession *new_session = nullptr);
+  PoolableSession *create_server_session(NetVConnection *netvc);
 
   HTTPVersion get_server_version(HTTPHdr &hdr) const;
 
@@ -279,6 +279,12 @@ public:
   get_ua_txn()
   {
     return ua_txn;
+  }
+
+  ProxyTransaction *
+  get_server_txn()
+  {
+    return server_txn;
   }
 
   // Called by transact.  Updates are fire and forget
@@ -406,30 +412,28 @@ protected:
 
   HttpVCTable vc_table;
 
-  HttpVCTableEntry *ua_entry = nullptr;
-
 public:
-  ProxyTransaction *ua_txn         = nullptr;
   BackgroundFill_t background_fill = BACKGROUND_FILL_NONE;
   void set_http_schedule(Continuation *);
   int get_http_schedule(int event, void *data);
 
   History<HISTORY_DEFAULT_SIZE> history;
 
+  ProxyTransaction *ua_txn = nullptr;
+
 protected:
-  IOBufferReader *ua_buffer_reader     = nullptr;
   IOBufferReader *ua_raw_buffer_reader = nullptr;
 
-  HttpVCTableEntry *server_entry     = nullptr;
-  Http1ServerSession *server_session = nullptr;
+  HttpVCTableEntry *ua_entry     = nullptr;
+  HttpVCTableEntry *server_entry = nullptr;
+  ProxyTransaction *server_txn   = nullptr;
 
   /* Because we don't want to take a session from a shared pool if we know that it will be private,
    * but we cannot set it to private until we have an attached server session.
    * So we use this variable to indicate that
    * we should create a new connection and then once we attach the session we'll mark it as private.
    */
-  bool will_be_private_ss              = false;
-  IOBufferReader *server_buffer_reader = nullptr;
+  bool will_be_private_ss = false;
 
   HttpTransformInfo transform_info;
   HttpTransformInfo post_transform_info;

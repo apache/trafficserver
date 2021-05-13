@@ -842,7 +842,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   // TODO H2 expand for HTTP/2 outbound
   proto_buf[n_proto++] = header->version_get().get_minor() == 0 ? IP_PROTO_TAG_HTTP_1_0 : IP_PROTO_TAG_HTTP_1_1;
 
-  auto ss = s->state_machine->get_server_session();
+  auto ss = s->state_machine->get_server_txn();
   if (ss) {
     n_proto += ss->populate_protocol(proto_buf.data() + n_proto, proto_buf.size() - n_proto);
   }

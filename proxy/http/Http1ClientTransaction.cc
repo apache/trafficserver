@@ -1,6 +1,6 @@
 /** @file
 
-  Http1Transaction.cc - The Transaction class for Http1*
+  Http1ClientTransaction.cc - The Client Transaction class for Http1*
 
   @section license License
 
@@ -21,23 +21,18 @@
   limitations under the License.
  */
 
-#include "Http1Transaction.h"
+#include "Http1ClientTransaction.h"
 #include "Http1ClientSession.h"
 #include "HttpSM.h"
 
 void
-Http1Transaction::release(IOBufferReader *r)
+Http1ClientTransaction::release()
 {
+  _proxy_ssn->clear_session_active();
 }
 
 void
-Http1Transaction::reset()
-{
-  _sm = nullptr;
-}
-
-void
-Http1Transaction::transaction_done()
+Http1ClientTransaction::transaction_done()
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   super_type::transaction_done();
@@ -47,7 +42,7 @@ Http1Transaction::transaction_done()
 }
 
 bool
-Http1Transaction::allow_half_open() const
+Http1ClientTransaction::allow_half_open() const
 {
   bool config_allows_it = (_sm) ? _sm->t_state.txn_conf->allow_half_open > 0 : true;
   if (config_allows_it) {
@@ -58,24 +53,13 @@ Http1Transaction::allow_half_open() const
 }
 
 void
-Http1Transaction::increment_client_transactions_stat()
+Http1ClientTransaction::increment_transactions_stat()
 {
   HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
 }
 
 void
-Http1Transaction::decrement_client_transactions_stat()
+Http1ClientTransaction::decrement_transactions_stat()
 {
   HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
-}
-
-//
-int
-Http1Transaction::get_transaction_id() const
-{
-  // For HTTP/1 there is only one on-going transaction at a time per session/connection.  Therefore, the transaction count can be
-  // presumed not to increase during the lifetime of a transaction, thus this function will return a consistent unique transaction
-  // identifier.
-  //
-  return _proxy_ssn->get_transact_count();
 }

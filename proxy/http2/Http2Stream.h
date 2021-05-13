@@ -60,7 +60,7 @@ public:
 
   int main_event_handler(int event, void *edata);
 
-  void release(IOBufferReader *r) override;
+  void release() override;
   void reenable(VIO *vio) override;
   void transaction_done() override;
 
@@ -101,8 +101,8 @@ public:
   bool is_inactive_timeout_expired(ink_hrtime now);
 
   bool is_first_transaction() const override;
-  void increment_client_transactions_stat() override;
-  void decrement_client_transactions_stat() override;
+  void increment_transactions_stat() override;
+  void decrement_transactions_stat() override;
   int get_transaction_id() const override;
   int get_transaction_priority_weight() const override;
   int get_transaction_priority_dependence() const override;

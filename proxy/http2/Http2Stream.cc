@@ -889,20 +889,20 @@ Http2Stream::clear_io_events()
 
 //  release and do_io_close are the same for the HTTP/2 protocol
 void
-Http2Stream::release(IOBufferReader *r)
+Http2Stream::release()
 {
   this->do_io_close();
 }
 
 void
-Http2Stream::increment_client_transactions_stat()
+Http2Stream::increment_transactions_stat()
 {
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
 }
 
 void
-Http2Stream::decrement_client_transactions_stat()
+Http2Stream::decrement_transactions_stat()
 {
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
 }

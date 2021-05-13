@@ -57,8 +57,8 @@ ProxyTransaction::new_transaction(bool from_early_data)
     }
   }
 
-  this->increment_client_transactions_stat();
-  _sm->attach_client_session(this, _reader);
+  this->increment_transactions_stat();
+  _sm->attach_client_session(this);
 }
 
 bool
@@ -181,7 +181,7 @@ void
 ProxyTransaction::transaction_done()
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  this->decrement_client_transactions_stat();
+  this->decrement_transactions_stat();
 }
 
 // Implement VConnection interface.
@@ -219,6 +219,24 @@ bool
 ProxyTransaction::has_request_body(int64_t request_content_length, bool is_chunked) const
 {
   return request_content_length > 0 || is_chunked;
+}
+
+bool
+ProxyTransaction::is_read_closed() const
+{
+  return false;
+}
+
+void
+ProxyTransaction::attach_transaction(HttpSM *attach_sm)
+{
+  _sm = attach_sm;
+}
+
+HTTPVersion
+ProxyTransaction::get_version(HTTPHdr &hdr) const
+{
+  return hdr.version_get();
 }
 
 bool
