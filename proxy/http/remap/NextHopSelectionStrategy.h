@@ -25,6 +25,7 @@
 
 #include "ts/parentselectdefs.h"
 #include "ParentSelection.h"
+#include "HttpTransact.h"
 
 #ifndef _NH_UNIT_TESTS_
 #define NH_Debug(tag, ...) Debug(tag, __VA_ARGS__)
@@ -240,8 +241,7 @@ public:
                    const time_t now = 0);
   bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr);
 
-  virtual bool responseIsRetryable(unsigned int current_retry_attempts, HTTPStatus response_code);
-  virtual bool onFailureMarkParentDown(HTTPStatus response_code);
+  virtual ParentRetry_t responseIsRetryable(int64_t sm_id, HttpTransact::CurrentInfo &current_info, HTTPStatus response_code);
 
   std::string strategy_name;
   bool go_direct           = true;
@@ -250,15 +250,17 @@ public:
   NHPolicyType policy_type = NH_UNDEFINED;
   NHSchemeType scheme      = NH_SCHEME_NONE;
   NHRingMode ring_mode     = NH_ALTERNATE_RING;
-  ResponseCodes resp_codes;
+  ResponseCodes resp_codes;     // simple retry codes
+  ResponseCodes markdown_codes; // unavailable server retry and markdown codes
   HealthChecks health_checks;
   NextHopHealthStatus passive_health;
   std::vector<std::vector<std::shared_ptr<HostRecord>>> host_groups;
-  uint32_t max_simple_retries = 1;
-  uint32_t groups             = 0;
-  uint32_t grp_index          = 0;
-  uint32_t hst_index          = 0;
-  uint32_t num_parents        = 0;
-  uint32_t distance           = 0; // index into the strategies list.
-  int max_retriers            = 1;
+  uint32_t max_simple_retries      = 1;
+  uint32_t max_unavailable_retries = 1;
+  uint32_t groups                  = 0;
+  uint32_t grp_index               = 0;
+  uint32_t hst_index               = 0;
+  uint32_t num_parents             = 0;
+  uint32_t distance                = 0; // index into the strategies list.
+  int max_retriers                 = 1;
 };
