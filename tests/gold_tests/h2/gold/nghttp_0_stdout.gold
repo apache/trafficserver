@@ -12,6 +12,5 @@
 ``
 [``] recv (stream_id=1) :status: 200
 ``
-[``] recv RST_STREAM frame <length=4, flags=0x00, stream_id=1>
-``(error_code=NO_ERROR(0x00))
+``; END_STREAM
 ``

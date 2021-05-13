@@ -29,7 +29,6 @@ Test.ContinueOnFail = True
 # ----
 # Setup Origin Server
 # ----
-microserver = Test.MakeOriginServer("microserver")
 httpbin = Test.MakeHttpBinServer("httpbin")
 
 # 128KB
@@ -37,15 +36,6 @@ post_body = "0123456789abcdef" * 8192
 post_body_file = open(os.path.join(Test.RunDirectory, "post_body"), "w")
 post_body_file.write(post_body)
 post_body_file.close()
-
-# For Test Case 0
-microserver.addResponse("sessionlog.json",
-                        {"headers": "POST /post HTTP/1.1\r\nHost: www.example.com\r\nTrailer: foo\r\n\r\n",
-                         "timestamp": "1469733493.993",
-                         "body": post_body},
-                        {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
-                            "timestamp": "1469733493.993",
-                            "body": ""})
 
 # ----
 # Setup ATS
@@ -59,7 +49,6 @@ ts.addDefaultSSLFiles()
 ts.Setup.CopyAs('rules/graceful_shutdown.conf', Test.RunDirectory)
 
 ts.Disk.remap_config.AddLines([
-    'map /post http://127.0.0.1:{0}/post'.format(microserver.Variables.Port),
     'map /httpbin/ http://127.0.0.1:{0}/ @plugin=header_rewrite.so @pparam={1}/graceful_shutdown.conf'.format(
         httpbin.Variables.Port, Test.RunDirectory)
 ])
@@ -82,13 +71,12 @@ ts.Disk.records_config.update({
 # Test Case 0: Trailer
 tr = Test.AddTestRun()
 tr.TimeOut = 10
-tr.Processes.Default.Command = "nghttp -v --no-dep 'https://127.0.0.1:{0}/post' --trailer 'foo: bar' -d 'post_body'".format(
-    ts.Variables.ssl_port)
+tr.Processes.Default.Command = f"nghttp -vn --no-dep 'https://127.0.0.1:{ts.Variables.ssl_port}/httpbin/post' --trailer 'foo: bar' -d 'post_body'"
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(microserver, ready=When.PortOpen(microserver.Variables.Port))
+tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stdout = "gold/nghttp_0_stdout.gold"
-tr.StillRunningAfter = microserver
+tr.StillRunningAfter = httpbin
 tr.StillRunningAfter = ts
 
 # Test Case 1: Graceful Shutdown
@@ -98,7 +86,6 @@ tr = Test.AddTestRun()
 tr.TimeOut = 10
 tr.Processes.Default.Command = f"nghttp -vn --no-dep 'https://127.0.0.1:{ts.Variables.ssl_port}/httpbin/drip?duration=3'"
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.StartBefore(httpbin, ready=When.PortOpen(httpbin.Variables.Port))
 tr.Processes.Default.Streams.stdout = "gold/nghttp_1_stdout.gold"
 tr.StillRunningAfter = httpbin
 tr.StillRunningAfter = ts
