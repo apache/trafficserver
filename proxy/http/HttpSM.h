@@ -197,7 +197,7 @@ public:
     return pending_action;
   }
   void
-  try_clear(Action *current_action)
+  clear_if_action_is(Action *current_action)
   {
     if (current_action == pending_action) {
       pending_action = nullptr;

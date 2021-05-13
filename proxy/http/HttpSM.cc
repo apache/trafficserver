@@ -2503,7 +2503,7 @@ HttpSM::state_cache_open_write(int event, void *data)
     ink_release_assert(vc && vc->thread == this_ethread());
   }
 
-  pending_action.try_clear(reinterpret_cast<Action *>(data));
+  pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
 
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_END] = Thread::get_hrtime();
   pending_action                                = nullptr;
@@ -2614,7 +2614,7 @@ HttpSM::state_cache_open_read(int event, void *data)
   STATE_ENTER(&HttpSM::state_cache_open_read, event);
   milestones[TS_MILESTONE_CACHE_OPEN_READ_END] = Thread::get_hrtime();
 
-  pending_action.try_clear(reinterpret_cast<Action *>(data));
+  pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
 
   ink_assert(server_entry == nullptr);
   ink_assert(t_state.cache_info.object_read == nullptr);
