@@ -75,6 +75,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
     bool first = true;
 
     while (field_loc) {
+      tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
       if (first) {
         first = false;
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, val, val_len)) {
@@ -83,7 +84,6 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
       } else {
         TSMimeHdrFieldDestroy(bufp, hdr_loc, field_loc);
       }
-      tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
       field_loc = tmp;
     }

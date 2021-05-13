@@ -156,6 +156,7 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
     bool first = true;
 
     while (fieldLoc) {
+      tmp = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
       if (first) {
         first = false;
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdrLoc, fieldLoc, -1, value, valuelen)) {
@@ -164,7 +165,6 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
       } else {
         TSMimeHdrFieldDestroy(bufp, hdrLoc, fieldLoc);
       }
-      tmp = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
       TSHandleMLocRelease(bufp, hdrLoc, fieldLoc);
       fieldLoc = tmp;
     }
