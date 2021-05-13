@@ -539,7 +539,6 @@ Http2Stream::initiating_close()
       }
     } else if (!sent_write_complete) {
       // Transaction is already gone or not started. Kill yourself
-      do_io_close();
       terminate_stream = true;
       terminate_if_possible();
     }
