@@ -76,7 +76,7 @@ public:
   void start() override;
 
   void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
-  IOBufferReader *get_reader();
+  IOBufferReader *get_reader() override;
   void attach_hostname(const char *hostname);
   IpEndpoint const &get_server_ip() const;
 
