@@ -32,11 +32,10 @@
     this->remember(MakeSourceLocation(), e, r); \
   }
 
-#define STATE_ENTER(state_name, event)                                                       \
-  do {                                                                                       \
-    REMEMBER(event, this->recursion)                                                         \
-    SsnDebug(this, "http2_cs", "[%" PRId64 "] [%s, %s]", this->connection_id(), #state_name, \
-             HttpDebugNames::get_event_name(event));                                         \
+#define STATE_ENTER(state_name, event)                                                                                  \
+  do {                                                                                                                  \
+    REMEMBER(event, this->recursion)                                                                                    \
+    SsnDebug(this, "http2_cs", "[%" PRId64 "] [%s, %s]", this->connection_id(), #state_name, get_vc_event_name(event)); \
   } while (0)
 
 #define Http2SsnDebug(fmt, ...) SsnDebug(this, "http2_cs", "[%" PRId64 "] " fmt, this->connection_id(), ##__VA_ARGS__)
@@ -45,6 +44,12 @@
   do {                                     \
     REMEMBER(NO_EVENT, this->recursion);   \
     this->session_handler = (handler);     \
+  } while (0)
+
+#define HTTP2_SET_SESSION_STATE(state)   \
+  do {                                   \
+    REMEMBER(NO_EVENT, this->recursion); \
+    session_state = (state);             \
   } while (0)
 
 ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator("http2ClientSessionAllocator");
@@ -60,18 +65,14 @@ copy_from_buffer_reader(void *dst, IOBufferReader *reader, unsigned nbytes)
   return end - static_cast<char *>(dst);
 }
 
-static int
-send_connection_event(Continuation *cont, int event, void *edata)
-{
-  SCOPED_MUTEX_LOCK(lock, cont->mutex, this_ethread());
-  return cont->handleEvent(event, edata);
-}
-
 Http2ClientSession::Http2ClientSession() : super() {}
 
 void
 Http2ClientSession::destroy()
 {
+  ink_assert(session_state == &Http2ClientSession::state_closed);
+  ink_assert(_vc == nullptr);
+
   if (!in_destroy) {
     in_destroy = true;
     REMEMBER(NO_EVENT, this->recursion)
@@ -81,21 +82,15 @@ Http2ClientSession::destroy()
   }
 }
 
+/**
+   Should be called from ProxySession::handle_api_return via destroy()
+ */
 void
 Http2ClientSession::free()
 {
-  if (_vc) {
-    _vc->do_io_close();
-    _vc = nullptr;
-  }
-
-  // Make sure the we are at the bottom of the stack
-  if (connection_state.is_recursing() || this->recursion != 0) {
-    // Note that we are ready to be cleaned up
-    // One of the event handlers will catch it
-    kill_me = true;
-    return;
-  }
+  // _vc should be closed before moving to state_closed
+  ink_assert(_vc == nullptr);
+  ink_assert(recursion == 0);
 
   REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session free");
@@ -103,6 +98,11 @@ Http2ClientSession::free()
   if (this->_reenable_event) {
     this->_reenable_event->cancel();
     this->_reenable_event = nullptr;
+  }
+
+  if (_graceful_shutdown_event) {
+    _graceful_shutdown_event->cancel();
+    _graceful_shutdown_event = nullptr;
   }
 
   // Don't free active ProxySession
@@ -156,8 +156,6 @@ Http2ClientSession::free()
     }
   }
 
-  ink_release_assert(this->_vc == nullptr);
-
   delete _h2_pushed_urls;
   this->connection_state.destroy();
 
@@ -172,10 +170,14 @@ Http2ClientSession::start()
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   SET_HANDLER(&Http2ClientSession::main_event_handler);
+  HTTP2_SET_SESSION_STATE(&Http2ClientSession::state_open);
   HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_read_connection_preface);
+  Http2SsnDebug("state_open");
 
-  VIO *read_vio = this->do_io_read(this, INT64_MAX, this->read_buffer);
-  write_vio     = this->do_io_write(this, INT64_MAX, this->_write_buffer_reader);
+  ink_assert(_vc != nullptr);
+
+  read_vio  = _vc->do_io_read(this, INT64_MAX, this->read_buffer);
+  write_vio = _vc->do_io_write(this, INT64_MAX, this->_write_buffer_reader);
 
   this->connection_state.init(this);
   this->connection_state.send_connection_preface();
@@ -200,8 +202,6 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->schedule_event = nullptr;
   this->mutex          = new_vc->mutex;
   this->in_destroy     = false;
-
-  this->connection_state.mutex = this->mutex;
 
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
   if (ssl_vc != nullptr) {
@@ -228,39 +228,58 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   do_api_callout(TS_HTTP_SSN_START_HOOK);
 }
 
-// XXX Currently, we don't have a half-closed state, but we will need to
-// implement that. After we send a GOAWAY, there
-// are scenarios where we would like to complete the outstanding streams.
-
-void
-Http2ClientSession::do_io_close(int alerrno)
+/**
+   Http2Session's VConnection APIs should not be called.
+   Because the relation of Http2Session and Http2Transaction is 1 to many.
+ */
+VIO *
+Http2ClientSession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  REMEMBER(NO_EVENT, this->recursion)
-  Http2SsnDebug("session closed");
+  ink_abort("Do NOT Call");
+  return nullptr;
+}
 
-  ink_assert(this->mutex->thread_holding == this_ethread());
-  send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
+VIO *
+Http2ClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *reader, bool owner)
+{
+  ink_abort("Do NOT Call");
+  return nullptr;
+}
 
-  this->connection_state.release_stream();
+/**
+   Actually, this should not be called. Because nobody call do_io_read() or do_io_write().
+   But this is called from ProxySession::handle_api_return() by just historical reason.
 
-  this->clear_session_active();
-
-  // Clean up the write VIO in case of inactivity timeout
-  this->do_io_write(this, 0, nullptr);
+   TODO: Get rid of do_io_close call from ProxySession
+ */
+void
+Http2ClientSession::do_io_close(int lerrno)
+{
+  REMEMBER(NO_EVENT, this->recursion);
+  handleEvent(VC_EVENT_ERROR);
 }
 
 void
-Http2ClientSession::set_half_close_local_flag(bool flag)
+Http2ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 {
-  if (!half_close_local && flag) {
-    Http2SsnDebug("session half-close local");
-  }
-  half_close_local = flag;
+  ink_abort("Do NOT Call");
+}
+
+void
+Http2ClientSession::reenable(VIO *vio)
+{
+  ink_abort("Do NOT Call");
 }
 
 int64_t
 Http2ClientSession::xmit(const Http2TxFrame &frame, bool flush)
 {
+  if (!is_state_writable()) {
+    Http2SsnDebug("unexpected state to xmit frame");
+    ink_assert(false);
+    return -1;
+  }
+
   int64_t len = frame.write_to(this->write_buffer);
   this->_pending_sending_data_size += len;
   // Force flush for some cases
@@ -289,97 +308,209 @@ Http2ClientSession::flush()
   }
 }
 
+/**
+   Continuation Handler
+ */
 int
 Http2ClientSession::main_event_handler(int event, void *edata)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
-  int retval;
-
-  recursion++;
 
   Event *e = static_cast<Event *>(edata);
   if (e == schedule_event) {
     schedule_event = nullptr;
   }
 
-  switch (event) {
-  case VC_EVENT_READ_COMPLETE:
-  case VC_EVENT_READ_READY: {
-    bool is_zombie = connection_state.get_zombie_event() != nullptr;
-    retval         = (this->*session_handler)(event, edata);
-    if (is_zombie && connection_state.get_zombie_event() != nullptr) {
-      Warning("Processed read event for zombie session %" PRId64, connection_id());
-    }
-    break;
-  }
-
-  case HTTP2_SESSION_EVENT_REENABLE:
-    // VIO will be reenableed in this handler
-    retval = (this->*session_handler)(VC_EVENT_READ_READY, static_cast<VIO *>(e->cookie));
-    // Clear the event after calling session_handler to not reschedule REENABLE in it
-    this->_reenable_event = nullptr;
-    break;
-
-  case VC_EVENT_ACTIVE_TIMEOUT:
-  case VC_EVENT_INACTIVITY_TIMEOUT:
-  case VC_EVENT_ERROR:
-  case VC_EVENT_EOS:
-    Http2SsnDebug("Closing event %d", event);
-    this->set_dying_event(event);
-    this->do_io_close();
-    retval = 0;
-    break;
-
-  case VC_EVENT_WRITE_READY:
-  case VC_EVENT_WRITE_COMPLETE:
-    this->connection_state.restart_streams();
-    if ((Thread::get_hrtime() >= this->_write_buffer_last_flush + HRTIME_MSECONDS(this->_write_time_threshold))) {
-      this->flush();
-    }
-    retval = 0;
-    break;
-
-  case HTTP2_SESSION_EVENT_XMIT:
-  default:
-    Http2SsnDebug("unexpected event=%d edata=%p", event, edata);
-    ink_release_assert(0);
-    retval = 0;
-    break;
-  }
-
-  if (!this->is_draining() && this->connection_state.get_shutdown_reason() == Http2ErrorCode::HTTP2_ERROR_MAX) {
-    this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NONE);
-  }
-
-  if (this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-    if (this->is_draining()) { // For a case we already checked Connection header and it didn't exist
-      Http2SsnDebug("Preparing for graceful shutdown because of draining state");
-      this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED);
-    } else if (this->connection_state.get_stream_error_rate() >
-               Http2::stream_error_rate_threshold) { // For a case many stream errors happened
-      ip_port_text_buffer ipb;
-      const char *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
-      SiteThrottledWarning("HTTP/2 session error client_ip=%s session_id=%" PRId64
-                           " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
-                           client_ip, connection_id(), this->connection_state.get_stream_error_rate(),
-                           Http2::stream_error_rate_threshold);
-      Http2SsnDebug("Preparing for graceful shutdown because of a high stream error rate");
-      cause_of_death = Http2SessionCod::HIGH_ERROR_RATE;
-      this->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM);
-    }
-  }
-
-  if (this->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NOT_INITIATED) {
-    send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_SHUTDOWN_INIT, this);
-  }
-
+  recursion++;
+  int retval = (this->*session_state)(event, edata);
   recursion--;
-  if (!connection_state.is_recursing() && this->recursion == 0 && kill_me) {
-    this->free();
+
+  if (recursion == 0 && session_state == &Http2ClientSession::state_closed) {
+    destroy();
   }
+
   return retval;
 }
 
+/**
+   Session State - Default state of handling VC events
+ */
+int
+Http2ClientSession::state_open(int event, void *edata)
+{
+  STATE_ENTER(state_open, event);
+
+  int res = EVENT_DONE;
+
+  switch (event) {
+  case HTTP2_SESSION_EVENT_REENABLE: {
+    res = _handle_ssn_reenable_event(event, edata);
+    break;
+  }
+  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_EOS: {
+    res = _handle_vc_event(event, edata);
+    break;
+  }
+  default:
+    Debug("unexpected event=%s (%d) edata=%p", get_vc_event_name(event), event, edata);
+    ink_assert(false);
+    break;
+  }
+
+  if (_should_start_graceful_shutdown()) {
+    HTTP2_SET_SESSION_STATE(&Http2ClientSession::state_graceful_shutdown);
+    connection_state.send_goaway_frame(INT32_MAX, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+
+    // After allowing time for any in-flight stream creation (at least one round-trip time),
+    _graceful_shutdown_event = this_ethread()->schedule_in_local(this, HRTIME_SECONDS(2), HTTP2_SESSION_EVENT_GRACEFUL_SHUTDOWN);
+  }
+
+  // Q: should we call _vc->add_to_keep_alive() if there is not stream?
+
+  return res;
+}
+
+/**
+   Session State - Waiting all transaction is done. When all tranraction is done, move to state_closed.
+
+   Read and Write operation will be processed like state_open, but we can't create any new stream in this state.
+ */
+int
+Http2ClientSession::state_graceful_shutdown(int event, void *edata)
+{
+  STATE_ENTER(state_graceful_shutdown, event);
+
+  int res = EVENT_DONE;
+
+  switch (event) {
+  case HTTP2_SESSION_EVENT_GRACEFUL_SHUTDOWN: {
+    REMEMBER(NO_EVENT, recursion);
+    _graceful_shutdown_event = nullptr;
+    Http2ErrorCode err       = connection_state.shutdown_reason;
+    if (err == Http2ErrorCode::HTTP2_ERROR_MAX) {
+      err = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+    }
+    connection_state.send_goaway_frame(connection_state.get_latest_stream_id_in(), err);
+    break;
+  }
+  case HTTP2_SESSION_EVENT_REENABLE: {
+    res = _handle_ssn_reenable_event(event, edata);
+    break;
+  }
+  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_EOS: {
+    res = _handle_vc_event(event, edata);
+    break;
+  }
+  default:
+    Debug("unexpected event=%s (%d) edata=%p", get_vc_event_name(event), event, edata);
+    ink_assert(false);
+  }
+
+  if (connection_state.get_client_stream_count() == 0 && !_write_buffer_reader->is_read_avail_more_than(0)) {
+    REMEMBER(event, recursion);
+    Http2SsnDebug("state_closed - all stream is gone");
+    _set_state_closed();
+  }
+
+  return res;
+}
+
+/**
+   Session State - Waiting all data (especially GOAWAY frame) in the _write_buffer is sent
+ */
+int
+Http2ClientSession::state_goaway(int event, void *edata)
+{
+  STATE_ENTER(state_goaway, event);
+
+  switch (event) {
+  case VC_EVENT_WRITE_READY: {
+    // do nothing
+    break;
+  }
+  case VC_EVENT_WRITE_COMPLETE:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_EOS: {
+    REMEMBER(event, recursion);
+    Http2SsnDebug("state_closed by %s (%d)", get_vc_event_name(event), event);
+    _set_state_closed();
+
+    break;
+  }
+  default:
+    Debug("unexpected event=%s (%d) edata=%p", get_vc_event_name(event), event, edata);
+    ink_assert(false);
+    break;
+  }
+
+  return EVENT_DONE;
+}
+
+/**
+   Session State - Waiting all transaction is done (especially for background fill)
+
+   No actual read nor write operation.
+ */
+int
+Http2ClientSession::state_aborted(int event, void *edata)
+{
+  STATE_ENTER(state_aborted, event);
+
+  switch (event) {
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT: {
+    REMEMBER(NO_EVENT, recursion);
+    Http2SsnDebug("state_closed by %s (%d)", get_vc_event_name(event), event);
+    _set_state_closed();
+
+    break;
+  }
+  default:
+    Debug("unexpected event=%s (%d) edata=%p", get_vc_event_name(event), event, edata);
+    ink_assert(false);
+    break;
+  }
+
+  return EVENT_DONE;
+}
+
+/**
+   Session State - Everything is done
+ */
+int
+Http2ClientSession::state_closed(int event, void *edata)
+{
+  STATE_ENTER(state_closed, event);
+
+  switch (event) {
+  default:
+    Debug("unexpected event=%s (%d) edata=%p", get_vc_event_name(event), event, edata);
+    ink_assert(false);
+    break;
+  }
+
+  return EVENT_DONE;
+}
+
+/**
+   Session Handler
+ */
 int
 Http2ClientSession::state_read_connection_preface(int event, void *edata)
 {
@@ -397,7 +528,7 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
 
     if (memcmp(HTTP2_CONNECTION_PREFACE, buf, nbytes) != 0) {
       Http2SsnDebug("invalid connection preface");
-      this->do_io_close();
+      handleEvent(VC_EVENT_ERROR);
       return 0;
     }
 
@@ -430,6 +561,9 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
   return 0;
 }
 
+/**
+   Session Handler
+ */
 int
 Http2ClientSession::state_start_frame_read(int event, void *edata)
 {
@@ -455,7 +589,7 @@ Http2ClientSession::do_start_frame_read(Http2ErrorCode &ret_error)
   this->cur_frame_from_early_data = false;
   if (!http2_parse_frame_header(make_iovec(buf), this->current_hdr)) {
     Http2SsnDebug("frame header parse failure");
-    this->do_io_close();
+    handleEvent(VC_EVENT_ERROR);
     return -1;
   }
 
@@ -492,6 +626,9 @@ Http2ClientSession::do_start_frame_read(Http2ErrorCode &ret_error)
   return 0;
 }
 
+/**
+   Session Handler
+ */
 int
 Http2ClientSession::state_complete_frame_read(int event, void *edata)
 {
@@ -542,14 +679,17 @@ Http2ClientSession::do_complete_frame_read()
 int
 Http2ClientSession::do_process_frame_read(int event, VIO *vio, bool inside_frame)
 {
+  if (!is_state_readable()) {
+    return EVENT_DONE;
+  }
+
   if (inside_frame) {
     do_complete_frame_read();
   }
 
-  while (this->_read_buffer_reader->read_avail() >= static_cast<int64_t>(HTTP2_FRAME_HEADER_LEN)) {
+  while (this->_read_buffer_reader->read_avail() >= static_cast<int64_t>(HTTP2_FRAME_HEADER_LEN) && is_state_readable()) {
     // Cancel reading if there was an error or connection is closed
-    if (connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_NO_ERROR) ||
-        connection_state.is_state_closed()) {
+    if (connection_state.tx_error_code.code != static_cast<uint32_t>(Http2ErrorCode::HTTP2_ERROR_NO_ERROR)) {
       Http2SsnDebug("reading a frame has been canceled (%u)", connection_state.tx_error_code.code);
       break;
     }
@@ -569,10 +709,7 @@ Http2ClientSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
     if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR || do_start_frame_read(err) < 0) {
       // send an error if specified.  Otherwise, just go away
       if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
-        if (!this->connection_state.is_state_closed()) {
-          this->connection_state.send_goaway_frame(this->connection_state.get_latest_stream_id_in(), err);
-          this->set_half_close_local_flag(true);
-        }
+        critical_error(err);
       }
       return 0;
     }
@@ -622,7 +759,7 @@ bool
 Http2ClientSession::_should_do_something_else()
 {
   // Do something else every 128 incoming frames if connection state isn't closed
-  return (this->_n_frame_read & 0x7F) == 0 && !connection_state.is_state_closed();
+  return (this->_n_frame_read & 0x7F) == 0 && !this->is_state_closed();
 }
 
 sockaddr const *
@@ -710,4 +847,267 @@ Http2ClientSession::add_url_to_pushed_table(const char *url, int url_len)
   if (_h2_pushed_urls->size() < Http2::push_diary_size) {
     _h2_pushed_urls->emplace(url);
   }
+}
+
+/**
+   Handling critical HTTP/2 error cases like PROTOCOL_ERROR
+
+   1). Send GOAWAY frame
+   2). move state_goaway state
+   3). indicate TXN(s) VC_EVENT_ERROR
+ */
+void
+Http2ClientSession::critical_error(Http2ErrorCode err)
+{
+  ink_release_assert(err != Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+
+  if (session_state == &Http2ClientSession::state_goaway || session_state == &Http2ClientSession::state_closed) {
+    return;
+  }
+
+  REMEMBER(NO_EVENT, recursion);
+  Http2SsnDebug("state_goaway by HTTP/2 error code=%d", (int)err);
+  _set_state_goaway(err);
+
+  // signal VC_EVENT_ERROR to txns
+  connection_state.cleanup_streams(VC_EVENT_ERROR);
+}
+
+/**
+   If there are no stream, add vc in the keep-alive queue
+
+   This may signal VC_EVENT_INACTIVITY_TIMEOUT and start closing VC and SSN
+ */
+void
+Http2ClientSession::add_to_keep_alive_queue()
+{
+  if (!is_active()) {
+    return;
+  }
+
+  if (connection_state.get_client_stream_count() != 0) {
+    return;
+  }
+
+  REMEMBER(NO_EVENT, this->recursion);
+  clear_session_active();
+
+  if (session_state == &Http2ClientSession::state_aborted) {
+    // mimicking VC_EVENT_INACTIVITY_TIMEOUT from NetHandler::add_to_keep_alive_queue()
+    handleEvent(VC_EVENT_INACTIVITY_TIMEOUT);
+    return;
+  }
+
+  Http2SsnDebug("keep-alive queue - no streams");
+
+  UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(_vc);
+  if (vc && vc->active_timeout_in == 0) {
+    // With heavy traffic ( - e.g. hitting proxy.config.net.max_connections_in limit), calling add_to_keep_alive_queue() could
+    // destroy connections in the keep_alive_queue include this vc. In that case, NetHandler raise VC_EVENT_INACTIVITY_TIMEOUT
+    // event to this ProxySession.
+    vc->add_to_keep_alive_queue();
+  }
+}
+
+bool
+Http2ClientSession::is_state_open() const
+{
+  return session_state == &Http2ClientSession::state_open;
+}
+
+bool
+Http2ClientSession::is_state_closed() const
+{
+  return session_state == &Http2ClientSession::state_closed;
+}
+
+bool
+Http2ClientSession::is_state_readable() const
+{
+  return session_state == &Http2ClientSession::state_open || session_state == &Http2ClientSession::state_graceful_shutdown;
+}
+
+bool
+Http2ClientSession::is_state_writable() const
+{
+  return session_state == &Http2ClientSession::state_open || session_state == &Http2ClientSession::state_graceful_shutdown ||
+         session_state == &Http2ClientSession::state_goaway;
+}
+
+/**
+   HTTP2_SESSION_EVENT_REENABLE handler for state_open & state_graceful_shutdown
+ */
+int
+Http2ClientSession::_handle_ssn_reenable_event(int event, void *edata)
+{
+  ink_assert(session_state == &Http2ClientSession::state_open || session_state == &Http2ClientSession::state_graceful_shutdown);
+  ink_assert(event == HTTP2_SESSION_EVENT_REENABLE);
+
+  if (edata == nullptr) {
+    return EVENT_DONE;
+  }
+
+  Event *e = static_cast<Event *>(edata);
+
+  // VIO will be reenableed in this handler
+  int res = (this->*session_handler)(VC_EVENT_READ_READY, static_cast<VIO *>(e->cookie));
+
+  // Clear the event after calling session_handler to not reschedule REENABLE in it
+  this->_reenable_event = nullptr;
+
+  return res;
+}
+
+/**
+   VC event handler for state_open & state_graceful_shutdown
+ */
+int
+Http2ClientSession::_handle_vc_event(int event, void *edata)
+{
+  ink_assert(session_state == &Http2ClientSession::state_open || session_state == &Http2ClientSession::state_graceful_shutdown);
+
+  int res = EVENT_DONE;
+
+  switch (event) {
+  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_COMPLETE: {
+    ink_assert(edata != nullptr);
+    ink_assert(edata == read_vio);
+
+    res = (this->*session_handler)(event, edata);
+
+    break;
+  }
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE: {
+    ink_assert(edata != nullptr);
+    ink_assert(edata == write_vio);
+
+    this->connection_state.restart_streams();
+    if ((Thread::get_hrtime() >= this->_write_buffer_last_flush + HRTIME_MSECONDS(this->_write_time_threshold))) {
+      this->flush();
+    }
+
+    break;
+  }
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT: {
+    dying_event = event;
+
+    REMEMBER(event, recursion);
+    Http2SsnDebug("state_goaway by %s (%d)", get_vc_event_name(event), event);
+    _set_state_goaway(Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR);
+
+    // signal timeout event to txns
+    connection_state.cleanup_streams(event);
+
+    break;
+  }
+  case VC_EVENT_ERROR:
+  case VC_EVENT_EOS: {
+    HTTP2_SET_SESSION_STATE(&Http2ClientSession::state_aborted);
+    Http2SsnDebug("state_aborted by %s (%d)", get_vc_event_name(event), event);
+
+    dying_event = event;
+
+    // No more read/write op
+    _vc->do_io_close();
+    _vc = nullptr;
+
+    // signal event to txns
+    connection_state.cleanup_streams(event);
+
+    if (connection_state.get_client_stream_count() == 0) {
+      REMEMBER(event, recursion);
+      Http2SsnDebug("state_closed by %s (%d) immediately", get_vc_event_name(event), event);
+      _set_state_closed();
+    }
+
+    break;
+  }
+  default:
+    Debug("unexpected event=%s (%d) edata=%p", get_vc_event_name(event), event, edata);
+    ink_assert(false);
+    break;
+  }
+
+  return res;
+}
+
+/**
+   Check if this session should start Graceful Shutdown or not
+ */
+bool
+Http2ClientSession::_should_start_graceful_shutdown()
+{
+  if (session_state != &Http2ClientSession::state_open) {
+    return false;
+  }
+
+  if (connection_state._graceful_shutdown_enabled) {
+    return true;
+  }
+
+  if (this->is_draining()) {
+    Http2SsnDebug("Preparing for graceful shutdown because of draining state");
+    return true;
+  }
+
+  // For a case many stream errors happened
+  if (this->connection_state.get_stream_error_rate() > Http2::stream_error_rate_threshold) {
+    ip_port_text_buffer ipb;
+    const char *client_ip = ats_ip_ntop(get_remote_addr(), ipb, sizeof(ipb));
+    SiteThrottledWarning("HTTP/2 session error client_ip=%s session_id=%" PRId64
+                         " closing a connection, because its stream error rate (%f) exceeded the threshold (%f)",
+                         client_ip, connection_id(), this->connection_state.get_stream_error_rate(),
+                         Http2::stream_error_rate_threshold);
+    Http2SsnDebug("Preparing for graceful shutdown because of a high stream error rate");
+    cause_of_death                   = Http2SessionCod::HIGH_ERROR_RATE;
+    connection_state.shutdown_reason = Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM;
+    return true;
+  }
+
+  return false;
+}
+
+/**
+   Set session_state state_goaway
+ */
+void
+Http2ClientSession::_set_state_goaway(Http2ErrorCode err)
+{
+  if (session_state == &Http2ClientSession::state_goaway || session_state == &Http2ClientSession::state_closed) {
+    return;
+  }
+
+  connection_state.send_goaway_frame(connection_state.get_latest_stream_id_in(), err);
+
+  // Disable read -  read is not needed by state_goaway
+  read_vio->done();
+
+  // Set nbyte to issue WRITE_COMPLETE event when the GOAWAY frame is sent
+  int64_t len       = _write_buffer_reader->read_avail();
+  write_vio->nbytes = write_vio->ndone + len;
+
+  HTTP2_SET_SESSION_STATE(&Http2ClientSession::state_goaway);
+}
+
+/**
+   Set session_state state_closed
+ */
+void
+Http2ClientSession::_set_state_closed()
+{
+  if (session_state == &Http2ClientSession::state_closed) {
+    return;
+  }
+
+  if (_vc != nullptr) {
+    _vc->do_io_close();
+    _vc = nullptr;
+  }
+
+  clear_session_active();
+
+  HTTP2_SET_SESSION_STATE(&Http2ClientSession::state_closed);
 }
