@@ -602,6 +602,7 @@ OperatorSetHeader::exec(const Resources &res) const
       bool first = true;
 
       while (field_loc) {
+        tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
         if (first) {
           first = false;
           if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
@@ -610,7 +611,6 @@ OperatorSetHeader::exec(const Resources &res) const
         } else {
           TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
         }
-        tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
         field_loc = tmp;
       }
