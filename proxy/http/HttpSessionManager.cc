@@ -147,7 +147,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
   to_return        = nullptr;
 
   if ((TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY & match_style) && !(TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style)) {
-    Debug("http_ss", "Search for host name only not IP.  Pool size %" PRId64, m_fqdn_pool.count());
+    Debug("http_ss", "Search for host name only not IP.  Pool size %zu", m_fqdn_pool.count());
     // This is broken out because only in this case do we check the host hash first. The range must be checked
     // to verify an upstream that matches port and SNI name is selected. Walk backwards to select oldest.
     in_port_t port = ats_ip_port_cast(addr);
