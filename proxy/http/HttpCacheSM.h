@@ -201,6 +201,12 @@ public:
     abort_write();
   }
 
+  inline int
+  get_last_error() const
+  {
+    return err_code;
+  }
+
 private:
   void do_schedule_in();
   Action *do_cache_open_read(const HttpCacheKey &);
@@ -229,4 +235,7 @@ private:
   // to keep track of multiple cache lookups
   int lookup_max_recursive = 0;
   int current_lookup_level = 0;
+
+  // last error from the cache subsystem
+  int err_code = 0;
 };

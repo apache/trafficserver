@@ -196,6 +196,13 @@ public:
   {
     return pending_action;
   }
+  void
+  clear_if_action_is(Action *current_action)
+  {
+    if (current_action == pending_action) {
+      pending_action = nullptr;
+    }
+  }
   ~PendingAction()
   {
     if (pending_action) {
