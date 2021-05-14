@@ -82,13 +82,10 @@ Http2Stream::~Http2Stream()
     // Make sure the stream is removed from the stream list and priority tree
     // In many cases, this has been called earlier, so this call is a no-op
     h2_proxy_ssn->connection_state.delete_stream(this);
-
     h2_proxy_ssn->connection_state.decrement_stream_count();
 
-    // Update session's stream counts, so it accurately goes into keep-alive state
-    h2_proxy_ssn->connection_state.release_stream();
-
-    // Do not access `_proxy_ssn` in below. It might be freed by `release_stream`.
+    // Do not access `_proxy_ssn` in below. It might be freed.
+    h2_proxy_ssn->add_to_keep_alive_queue();
   }
 
   // Clean up the write VIO in case of inactivity timeout
@@ -149,22 +146,26 @@ Http2Stream::main_event_handler(int event, void *edata)
   }
   ink_release_assert(this->_thread == this_ethread());
 
+  Http2StreamDebug("%s (%d)", get_vc_event_name(event), event);
+
   Event *e = static_cast<Event *>(edata);
   reentrancy_count++;
-  if (e == _read_vio_event) {
-    _read_vio_event = nullptr;
-    this->signal_read_event(e->callback_event);
-    return 0;
-  } else if (e == _write_vio_event) {
-    _write_vio_event = nullptr;
-    this->signal_write_event(e->callback_event);
-    return 0;
-  } else if (e == cross_thread_event) {
-    cross_thread_event = nullptr;
-  } else if (e == read_event) {
-    read_event = nullptr;
-  } else if (e == write_event) {
-    write_event = nullptr;
+  if (e != nullptr) {
+    if (e == _read_vio_event) {
+      _read_vio_event = nullptr;
+      this->signal_read_event(e->callback_event);
+      return 0;
+    } else if (e == _write_vio_event) {
+      _write_vio_event = nullptr;
+      this->signal_write_event(e->callback_event);
+      return 0;
+    } else if (e == cross_thread_event) {
+      cross_thread_event = nullptr;
+    } else if (e == read_event) {
+      read_event = nullptr;
+    } else if (e == write_event) {
+      write_event = nullptr;
+    }
   }
 
   switch (event) {
@@ -179,7 +180,7 @@ Http2Stream::main_event_handler(int event, void *edata)
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     _timeout.update_inactivity();
-    if (e->cookie == &write_vio) {
+    if (e && e->cookie == &write_vio) {
       if (write_vio.mutex && write_vio.cont && this->_sm) {
         this->signal_write_event(event);
       }
@@ -190,7 +191,7 @@ Http2Stream::main_event_handler(int event, void *edata)
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_READ_READY:
     _timeout.update_inactivity();
-    if (e->cookie == &read_vio) {
+    if (e && e->cookie == &read_vio) {
       if (read_vio.mutex && read_vio.cont && this->_sm) {
         signal_read_event(event);
       }
@@ -198,14 +199,26 @@ Http2Stream::main_event_handler(int event, void *edata)
       this->update_read_request(true);
     }
     break;
+  case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
-    if (e->cookie == &read_vio) {
+    if (e && e->cookie == &read_vio) {
       SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
-      read_vio.cont->handleEvent(VC_EVENT_EOS, &read_vio);
-    } else if (e->cookie == &write_vio) {
+      read_vio.cont->handleEvent(event, &read_vio);
+    } else if (e && e->cookie == &write_vio) {
       SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
-      write_vio.cont->handleEvent(VC_EVENT_EOS, &write_vio);
+      write_vio.cont->handleEvent(event, &write_vio);
     }
+
+    // This assuming stream on inbound side
+    // TODO: make appropriate state
+    if (recv_end_stream && write_vio.cont && write_vio.op == VIO::WRITE && write_vio.nbytes != 0) {
+      SCOPED_MUTEX_LOCK(lock, write_vio.cont->mutex, this_ethread());
+      write_vio.cont->handleEvent(event, &write_vio);
+    } else if (read_vio.cont && read_vio.op == VIO::READ) {
+      SCOPED_MUTEX_LOCK(lock, read_vio.cont->mutex, this_ethread());
+      read_vio.cont->handleEvent(event, &read_vio);
+    }
+
     break;
   }
   reentrancy_count--;
@@ -432,6 +445,12 @@ Http2Stream::do_io_close(int /* flags */)
     // by the time this is called from transaction_done.
     closed = true;
 
+    // Disable read/write
+    read_vio.op    = VIO::NONE;
+    read_vio.cont  = nullptr;
+    write_vio.op   = VIO::NONE;
+    write_vio.cont = nullptr;
+
     if (_proxy_ssn && this->is_client_state_writeable()) {
       // Make sure any trailing end of stream frames are sent
       // We will be removed at send_data_frames or closing connection phase
@@ -459,7 +478,7 @@ Http2Stream::transaction_done()
   if (!closed) {
     do_io_close(); // Make sure we've been closed.  If we didn't close the _proxy_ssn session better still be open
   }
-  ink_release_assert(closed || !static_cast<Http2ClientSession *>(_proxy_ssn)->connection_state.is_state_closed());
+  ink_release_assert(closed);
   _sm = nullptr;
 
   if (closed) {
@@ -660,8 +679,8 @@ Http2Stream::update_write_request(bool call_update)
         const char *value = field->value_get(&len);
         if (memcmp(HTTP_VALUE_CLOSE, value, HTTP_LEN_CLOSE) == 0) {
           SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->mutex, this_ethread());
-          if (h2_proxy_ssn->connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-            h2_proxy_ssn->connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+          if (h2_proxy_ssn->is_state_open()) {
+            h2_proxy_ssn->connection_state.enable_graceful_shutdown();
           }
         }
       }
@@ -784,7 +803,8 @@ Http2Stream::send_response_body(bool call_update)
 
   if (Http2::stream_priority_enabled) {
     SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->mutex, this_ethread());
-    h2_proxy_ssn->connection_state.schedule_stream(this);
+    h2_proxy_ssn->connection_state.dependency_tree->activate(priority_node);
+    h2_proxy_ssn->write_reenable();
     // signal_write_event() will be called from `Http2ConnectionState::send_data_frames_depends_on_priority()`
     // when write_vio is consumed
   } else {

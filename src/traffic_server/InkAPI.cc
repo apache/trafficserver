@@ -8223,7 +8223,7 @@ TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
 
   Http2ClientSession *ua_session = static_cast<Http2ClientSession *>(stream->get_proxy_ssn());
   SCOPED_MUTEX_LOCK(lock, ua_session->mutex, this_ethread());
-  if (ua_session->connection_state.is_state_closed() || ua_session->is_url_pushed(url, url_len)) {
+  if (ua_session->is_state_closed() || ua_session->is_url_pushed(url, url_len)) {
     url_obj.destroy();
     return TS_ERROR;
   }

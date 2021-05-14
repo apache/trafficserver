@@ -88,10 +88,6 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, id, "Received DATA frame");
 
-  if (cstate.get_zombie_event()) {
-    Warning("Data frame for zombied session %" PRId64, cstate.ua_session->connection_id());
-  }
-
   // If a DATA frame is received whose stream identifier field is 0x0, the
   // recipient MUST
   // respond with a connection error of type PROTOCOL_ERROR.
@@ -418,10 +414,6 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, stream_id, "Received PRIORITY frame");
 
-  if (cstate.get_zombie_event()) {
-    Warning("Priority frame for zombied session %" PRId64, cstate.ua_session->connection_id());
-  }
-
   // If a PRIORITY frame is received with a stream identifier of 0x0, the
   // recipient MUST respond with a connection error of type PROTOCOL_ERROR.
   if (stream_id == 0) {
@@ -565,10 +557,6 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, stream_id, "Received SETTINGS frame");
 
-  if (cstate.get_zombie_event()) {
-    Warning("Setting frame for zombied session %" PRId64, cstate.ua_session->connection_id());
-  }
-
   // Update SETTIGNS frame count per minute
   cstate.increment_received_settings_frame_count();
   // Close this connection if its SETTINGS frame count exceeds a limit
@@ -687,8 +675,6 @@ rcv_ping_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   Http2StreamDebug(cstate.ua_session, stream_id, "Received PING frame");
 
-  cstate.schedule_zombie_event();
-
   //  If a PING frame is received with a stream identifier field value other
   //  than 0x0, the recipient MUST respond with a connection error of type
   //  PROTOCOL_ERROR.
@@ -757,7 +743,8 @@ rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
                    static_cast<int>(goaway.error_code));
 
   cstate.rx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(goaway.error_code)};
-  cstate.ua_session->do_io_close();
+  // TODO: support remote peer started gracefull shutdown
+  cstate.ua_session->handleEvent(VC_EVENT_ERROR);
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
 }
@@ -1034,10 +1021,7 @@ Http2ConnectionSettings::indexof(Http2SettingsIdentifier id)
 ////////
 // Http2ConnectionState
 //
-Http2ConnectionState::Http2ConnectionState() : stream_list()
-{
-  SET_HANDLER(&Http2ConnectionState::main_event_handler);
-}
+Http2ConnectionState::Http2ConnectionState() : stream_list() {}
 
 void
 Http2ConnectionState::init(Http2ClientSession *ssn)
@@ -1051,7 +1035,7 @@ Http2ConnectionState::init(Http2ClientSession *ssn)
     dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
   }
 
-  _cop = ActivityCop<Http2Stream>(this->mutex, &stream_list, 1);
+  _cop = ActivityCop<Http2Stream>(ssn->mutex, &stream_list, 1);
   _cop.start();
 }
 
@@ -1068,7 +1052,7 @@ Http2ConnectionState::init(Http2ClientSession *ssn)
 void
 Http2ConnectionState::send_connection_preface()
 {
-  REMEMBER(NO_EVENT, this->recursion)
+  REMEMBER(NO_EVENT, 0);
 
   Http2ConnectionSettings configured_settings;
   configured_settings.settings_from_configs();
@@ -1081,45 +1065,26 @@ Http2ConnectionState::send_connection_preface()
   }
 }
 
+// TODO: move to the destructor
 void
 Http2ConnectionState::destroy()
 {
-  if (in_destroy) {
-    schedule_zombie_event();
-    return;
-  }
-  in_destroy = true;
-
   _cop.stop();
-
-  if (shutdown_cont_event) {
-    shutdown_cont_event->cancel();
-    shutdown_cont_event = nullptr;
-  }
-  cleanup_streams();
 
   delete local_hpack_handle;
   local_hpack_handle = nullptr;
+
   delete remote_hpack_handle;
   remote_hpack_handle = nullptr;
-  delete dependency_tree;
-  dependency_tree  = nullptr;
-  this->ua_session = nullptr;
 
-  if (fini_event) {
-    fini_event->cancel();
-  }
-  if (zombie_event) {
-    zombie_event->cancel();
-  }
-  // release the mutex after the events are cancelled and sessions are destroyed.
-  mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
+  delete dependency_tree;
+  dependency_tree = nullptr;
 }
 
 void
 Http2ConnectionState::rcv_frame(const Http2Frame *frame)
 {
-  REMEMBER(NO_EVENT, this->recursion);
+  REMEMBER(NO_EVENT, 0);
   const Http2StreamId stream_id = frame->header().streamid;
   Http2Error error;
 
@@ -1163,13 +1128,7 @@ Http2ConnectionState::rcv_frame(const Http2Frame *frame)
         Error("HTTP/2 connection error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s",
               static_cast<int>(error.code), client_ip, ua_session->connection_id(), stream_id, error.msg);
       }
-      this->send_goaway_frame(this->latest_streamid_in, error.code);
-      this->ua_session->set_half_close_local_flag(true);
-      if (fini_event == nullptr) {
-        fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
-      }
-
-      // The streams will be cleaned up by the HTTP2_SESSION_EVENT_FINI event
+      ua_session->critical_error(error.code);
       // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
     } else if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM) {
       if (error.msg) {
@@ -1179,104 +1138,6 @@ Http2ConnectionState::rcv_frame(const Http2Frame *frame)
       this->send_rst_stream_frame(stream_id, error.code);
     }
   }
-}
-
-int
-Http2ConnectionState::main_event_handler(int event, void *edata)
-{
-  if (edata == zombie_event) {
-    // zombie session is still around. Assert
-    ink_release_assert(zombie_event == nullptr);
-  } else if (edata == fini_event) {
-    fini_event = nullptr;
-  }
-  ++recursion;
-  switch (event) {
-  // Finalize HTTP/2 Connection
-  case HTTP2_SESSION_EVENT_FINI: {
-    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    REMEMBER(event, this->recursion);
-
-    ink_assert(this->fini_received == false);
-    this->fini_received = true;
-    cleanup_streams();
-    release_stream();
-    SET_HANDLER(&Http2ConnectionState::state_closed);
-  } break;
-
-  case HTTP2_SESSION_EVENT_XMIT: {
-    REMEMBER(event, this->recursion);
-    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-    send_data_frames_depends_on_priority();
-    _scheduled = false;
-  } break;
-
-  // Initiate a graceful shutdown
-  case HTTP2_SESSION_EVENT_SHUTDOWN_INIT: {
-    REMEMBER(event, this->recursion);
-    ink_assert(shutdown_state == HTTP2_SHUTDOWN_NOT_INITIATED);
-    shutdown_state = HTTP2_SHUTDOWN_INITIATED;
-    // [RFC 7540] 6.8.  GOAWAY
-    // A server that is attempting to gracefully shut down a
-    // connection SHOULD send an initial GOAWAY frame with the last stream
-    // identifier set to 2^31-1 and a NO_ERROR code.
-    send_goaway_frame(INT32_MAX, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
-    // After allowing time for any in-flight stream creation (at least one round-trip time),
-    shutdown_cont_event = this_ethread()->schedule_in((Continuation *)this, HRTIME_SECONDS(2), HTTP2_SESSION_EVENT_SHUTDOWN_CONT);
-  } break;
-
-  // Continue a graceful shutdown
-  case HTTP2_SESSION_EVENT_SHUTDOWN_CONT: {
-    REMEMBER(event, this->recursion);
-    ink_assert(shutdown_state == HTTP2_SHUTDOWN_INITIATED);
-    shutdown_cont_event = nullptr;
-    shutdown_state      = HTTP2_SHUTDOWN_IN_PROGRESS;
-    // [RFC 7540] 6.8.  GOAWAY
-    // ..., the server can send another GOAWAY frame with an updated last stream identifier
-    if (shutdown_reason == Http2ErrorCode::HTTP2_ERROR_MAX) {
-      shutdown_reason = Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
-    }
-    send_goaway_frame(latest_streamid_in, shutdown_reason);
-    // Stop creating new streams
-    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-    this->ua_session->set_half_close_local_flag(true);
-  } break;
-
-  default:
-    Http2ConDebug(ua_session, "unexpected event=%d edata=%p", event, edata);
-    ink_release_assert(0);
-    break;
-  }
-
-  --recursion;
-  if (recursion == 0 && ua_session && !ua_session->is_recursing()) {
-    if (this->ua_session->ready_to_free()) {
-      MUTEX_TRY_LOCK(lock, this->ua_session->mutex, this_ethread());
-      if (lock.is_locked()) {
-        this->ua_session->free();
-        // After the free, the Http2ConnectionState object is also freed.
-        // The Http2ConnectionState object is allocated within the Http2ClientSession object
-      }
-    }
-  }
-
-  return 0;
-}
-
-int
-Http2ConnectionState::state_closed(int event, void *edata)
-{
-  REMEMBER(event, this->recursion);
-
-  if (edata == zombie_event) {
-    // Zombie session is still around.  Assert!
-    ink_release_assert(zombie_event == nullptr);
-  } else if (edata == fini_event) {
-    fini_event = nullptr;
-  } else if (edata == shutdown_cont_event) {
-    shutdown_cont_event = nullptr;
-  }
-  return 0;
 }
 
 Http2Stream *
@@ -1289,8 +1150,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
     return nullptr;
   }
 
-  // In half_close state, TS doesn't create new stream. Because GOAWAY frame is sent to client
-  if (ua_session->get_half_close_local_flag()) {
+  if (!ua_session->is_state_open()) {
     error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
                        "refused to create new stream, because ua_session is in half_close state");
     return nullptr;
@@ -1353,11 +1213,6 @@ Http2ConnectionState::create_stream(Http2StreamId new_id, Http2Error &error)
   }
   ++total_client_streams_count;
 
-  if (zombie_event != nullptr) {
-    zombie_event->cancel();
-    zombie_event = nullptr;
-  }
-
   new_stream->mutex                     = new_ProxyMutex();
   new_stream->is_first_transaction_flag = get_stream_requests() == 0;
   increment_stream_requests();
@@ -1380,6 +1235,11 @@ Http2ConnectionState::find_stream(Http2StreamId id) const
 void
 Http2ConnectionState::restart_streams()
 {
+  if (Http2::stream_priority_enabled) {
+    send_data_frames_depends_on_priority();
+    return;
+  }
+
   Http2Stream *s = stream_list.head;
   if (s) {
     Http2Stream *end = s;
@@ -1445,9 +1305,24 @@ Http2ConnectionState::restart_receiving(Http2Stream *stream)
   this->send_window_update_frame(stream->get_id(), diff_size);
 }
 
+/**
+   Signal @event to TXN(s)
+ */
 void
-Http2ConnectionState::cleanup_streams()
+Http2ConnectionState::cleanup_streams(int event)
 {
+  switch (event) {
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_EOS:
+    // do nothing - expected events
+    break;
+  default:
+    ink_abort("unexpected event %d", event);
+    break;
+  }
+
   Http2Stream *s = stream_list.head;
   while (s) {
     Http2Stream *next = static_cast<Http2Stream *>(s->link.next);
@@ -1457,18 +1332,12 @@ Http2ConnectionState::cleanup_streams()
     if (this->tx_error_code.cls != ProxyErrorClass::NONE) {
       s->set_tx_error_code(this->tx_error_code);
     }
-    s->initiating_close();
+    {
+      SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
+      s->handleEvent(event);
+    }
     ink_assert(s != next);
     s = next;
-  }
-
-  if (!is_state_closed()) {
-    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-
-    UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
-    if (vc && vc->active_timeout_in == 0) {
-      vc->add_to_keep_alive_queue();
-    }
   }
 }
 
@@ -1476,7 +1345,6 @@ bool
 Http2ConnectionState::delete_stream(Http2Stream *stream)
 {
   ink_assert(nullptr != stream);
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   // If stream has already been removed from the list, just go on
   if (!stream_list.in(stream)) {
@@ -1484,7 +1352,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
   }
 
   Http2StreamDebug(ua_session, stream->get_id(), "Delete stream");
-  REMEMBER(NO_EVENT, this->recursion);
+  REMEMBER(NO_EVENT, 0);
 
   if (Http2::stream_priority_enabled) {
     Http2DependencyTree::Node *node = stream->priority_node;
@@ -1503,7 +1371,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
     stream->priority_node = nullptr;
   }
 
-  if (stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+  if (ua_session->is_state_writable() && stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
     send_rst_stream_frame(stream->get_id(), Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
   }
 
@@ -1524,45 +1392,6 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 }
 
 void
-Http2ConnectionState::release_stream()
-{
-  REMEMBER(NO_EVENT, this->recursion)
-
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  if (this->ua_session) {
-    ink_assert(this->mutex == ua_session->mutex);
-
-    if (total_client_streams_count == 0) {
-      if (fini_received) {
-        ua_session->clear_session_active();
-
-        // We were shutting down, go ahead and terminate the session
-        // this is a member of Http2ConnectionState and will be freed
-        // when ua_session is destroyed
-        ua_session->destroy();
-
-        // Can't do this because we just destroyed right here ^,
-        // or we can use a local variable to do it.
-        // ua_session = nullptr;
-      } else if (ua_session->is_active()) {
-        // If the number of clients is 0, HTTP2_SESSION_EVENT_FINI is not received or sent, and ua_session is active,
-        // then mark the connection as inactive
-        ua_session->clear_session_active();
-        UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(ua_session->get_netvc());
-        if (vc && vc->active_timeout_in == 0) {
-          // With heavy traffic, ua_session could be destroyed. Do not touch ua_session after this.
-          vc->add_to_keep_alive_queue();
-        }
-      } else {
-        schedule_zombie_event();
-      }
-    } else if (fini_received) {
-      schedule_zombie_event();
-    }
-  }
-}
-
-void
 Http2ConnectionState::update_initial_rwnd(Http2WindowSize new_size)
 {
   // Update stream level window sizes
@@ -1573,66 +1402,51 @@ Http2ConnectionState::update_initial_rwnd(Http2WindowSize new_size)
 }
 
 void
-Http2ConnectionState::schedule_stream(Http2Stream *stream)
-{
-  Http2StreamDebug(ua_session, stream->get_id(), "Scheduled");
-
-  Http2DependencyTree::Node *node = stream->priority_node;
-  ink_release_assert(node != nullptr);
-
-  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  dependency_tree->activate(node);
-
-  if (!_scheduled) {
-    _scheduled = true;
-
-    SET_HANDLER(&Http2ConnectionState::main_event_handler);
-    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
-  }
-}
-
-void
 Http2ConnectionState::send_data_frames_depends_on_priority()
 {
   Http2DependencyTree::Node *node = dependency_tree->top();
+  while (node && _client_rwnd > 0) {
+    Http2Stream *stream = static_cast<Http2Stream *>(node->t);
+    ink_release_assert(stream != nullptr);
 
-  // No node to send or no connection level window left
-  if (node == nullptr || _client_rwnd <= 0) {
-    return;
-  }
-
-  Http2Stream *stream = static_cast<Http2Stream *>(node->t);
-  ink_release_assert(stream != nullptr);
-  Http2StreamDebug(ua_session, stream->get_id(), "top node, point=%d", node->point);
-
-  size_t len                      = 0;
-  Http2SendDataFrameResult result = send_a_data_frame(stream, len);
-
-  switch (result) {
-  case Http2SendDataFrameResult::NO_ERROR: {
-    // No response body to send
-    if (len == 0 && !stream->is_write_vio_done()) {
-      dependency_tree->deactivate(node, len);
-    } else {
-      dependency_tree->update(node, len);
-
-      SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
-      stream->signal_write_event(true);
+    if (stream->is_closed() || stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+      dependency_tree->deactivate(node, 0);
+      node = dependency_tree->top();
+      continue;
     }
-    break;
-  }
-  case Http2SendDataFrameResult::DONE: {
-    dependency_tree->deactivate(node, len);
-    stream->initiating_close();
-    break;
-  }
-  default:
-    // When no stream level window left, deactivate node once and wait window_update frame
-    dependency_tree->deactivate(node, len);
-    break;
+
+    Http2StreamDebug(ua_session, stream->get_id(), "top node, point=%d", node->point);
+
+    size_t len                      = 0;
+    Http2SendDataFrameResult result = send_a_data_frame(stream, len);
+
+    switch (result) {
+    case Http2SendDataFrameResult::NO_ERROR: {
+      // No response body to send
+      if (len == 0 && !stream->is_write_vio_done()) {
+        dependency_tree->deactivate(node, len);
+      } else {
+        dependency_tree->update(node, len);
+
+        SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
+        stream->signal_write_event(true);
+      }
+      break;
+    }
+    case Http2SendDataFrameResult::DONE: {
+      dependency_tree->deactivate(node, len);
+      stream->initiating_close();
+      break;
+    }
+    default:
+      // When no stream level window left, deactivate node once and wait window_update frame
+      dependency_tree->deactivate(node, len);
+      break;
+    }
+
+    node = dependency_tree->top();
   }
 
-  this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
   return;
 }
 
@@ -1785,11 +1599,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 
   // Change stream state
   if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, flags)) {
-    this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
-    this->ua_session->set_half_close_local_flag(true);
-    if (fini_event == nullptr) {
-      fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
-    }
+    ua_session->critical_error(Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
 
     return;
   }
@@ -1924,7 +1734,7 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 void
 Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
 {
-  Http2StreamDebug(ua_session, id, "Send RST_STREAM frame");
+  Http2StreamDebug(ua_session, id, "Send RST_STREAM frame ec=%d", static_cast<int>(ec));
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_STREAM_ERRORS_COUNT, this_ethread());
@@ -1936,12 +1746,7 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   if (stream != nullptr) {
     stream->set_tx_error_code({ProxyErrorClass::TXN, static_cast<uint32_t>(ec)});
     if (!stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0)) {
-      this->send_goaway_frame(this->latest_streamid_in, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
-      this->ua_session->set_half_close_local_flag(true);
-      if (fini_event == nullptr) {
-        fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
-      }
-
+      ua_session->critical_error(Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR);
       return;
     }
   }
@@ -1995,7 +1800,7 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 {
   ink_assert(this->ua_session != nullptr);
 
-  Http2ConDebug(ua_session, "Send GOAWAY frame, last_stream_id: %d", id);
+  Http2ConDebug(ua_session, "Send GOAWAY frame, last_stream_id=%d ec=%d", id, static_cast<int>(ec));
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, this_ethread());
