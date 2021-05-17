@@ -1231,6 +1231,16 @@ struct IpAddr {
                  size_t len  ///< [in] Size of buffer.
   ) const;
 
+  /** Write the address to a socket address.
+   *
+   * @param dest Socket address to update.
+   * @return @a dest
+   *
+   * The address and family are updated. The port is unchanged. @a dest is assumed to be the
+   * appropriate underlying type for the family of @a this.
+   */
+  sockaddr *toSockAddr(sockaddr *dest) const;
+
   /// Equality.
   bool
   operator==(self const &that) const
