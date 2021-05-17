@@ -78,7 +78,7 @@ public:
   void free() override;
   bool is_chunked_encoding_supported() const override;
 
-  IOBufferReader *get_reader();
+  IOBufferReader *get_reader() override;
   IpEndpoint const &get_server_ip() const;
 
   ProxyTransaction *new_transaction() override;
