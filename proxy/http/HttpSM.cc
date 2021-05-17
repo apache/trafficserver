@@ -3657,13 +3657,14 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
 
     // Now that we have communicated the post body, turn off the inactivity timeout
     // until the server starts sending data back
-    if (ua_txn && t_state.hdr_info.request_content_length > 0) {
-      ua_txn->cancel_inactivity_timeout();
+    if (ua_txn) {
+      if (t_state.hdr_info.request_content_length > 0) {
+        ua_txn->cancel_inactivity_timeout();
+      }
+      // Initiate another read to catch aborts
+      ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
+      ua_entry->read_vio   = p->vc->do_io_read(this, INT64_MAX, ua_txn->get_reader()->mbuf);
     }
-
-    // Initiate another read to catch aborts
-    ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
-    ua_entry->read_vio   = p->vc->do_io_read(this, INT64_MAX, ua_txn->get_reader()->mbuf);
     break;
   default:
     ink_release_assert(0);
