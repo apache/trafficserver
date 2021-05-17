@@ -578,14 +578,23 @@ IntrusiveHashMap<H>::erase(iterator const &loc) -> iterator
 
 template <typename H>
 bool
-IntrusiveHashMap<H>::erase(value_type *value)
+IntrusiveHashMap<H>::erase(value_type *v)
 {
-  auto loc = this->find(value);
-  if (loc != this->end()) {
-    this->erase(loc);
-    return true;
+  ++(this->iterator_for(v)); // get around no const_iterator -> iterator.
+  Bucket *b         = this->bucket_for(H::key_of(v));
+  value_type *nv    = H::next_ptr(v);
+  value_type *limit = b->limit();
+  if (b->_v == v) {    // removed first element in bucket, update bucket
+    if (limit == nv) { // that was also the only element, deactivate bucket
+      _active_buckets.erase(b);
+      b->clear();
+    } else {
+      b->_v = nv;
+      --b->_count;
+    }
   }
-  return false;
+  _list.erase(v);
+  return true;
 }
 
 template <typename H>
