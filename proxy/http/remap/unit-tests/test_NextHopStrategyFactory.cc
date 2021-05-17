@@ -386,7 +386,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
         CHECK(strategy->ring_mode == NH_EXHAUST_RING);
         CHECK(strategy->groups == 2);
         CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(502));
+        CHECK(strategy->resp_codes.contains(402));
         CHECK(!strategy->resp_codes.contains(604));
         CHECK(strategy->health_checks.active == true);
         CHECK(strategy->health_checks.passive == true);
@@ -446,7 +446,7 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
           }
         }
         CHECK(strategy->resp_codes.contains(404));
-        CHECK(strategy->resp_codes.contains(503));
+        CHECK(strategy->resp_codes.contains(403));
         CHECK(!strategy->resp_codes.contains(604));
       }
     }
@@ -870,6 +870,9 @@ SCENARIO("factory tests loading yaml configs from a directory", "[loadConfig]")
         CHECK(strategy->resp_codes.contains(404));
         CHECK(strategy->resp_codes.contains(503));
         CHECK(!strategy->resp_codes.contains(604));
+        CHECK(!strategy->markdown_codes.contains(405));
+        CHECK(!strategy->markdown_codes.contains(502));
+        CHECK(!strategy->markdown_codes.contains(503));
       }
     }
 

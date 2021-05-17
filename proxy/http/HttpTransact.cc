@@ -380,15 +380,7 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
   }
   const url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
-    if (mp->strategy->responseIsRetryable(s->current.simple_retry_attempts, response_code)) {
-      if (mp->strategy->onFailureMarkParentDown(response_code)) {
-        return PARENT_RETRY_UNAVAILABLE_SERVER;
-      } else {
-        return PARENT_RETRY_SIMPLE;
-      }
-    } else {
-      return PARENT_RETRY_NONE;
-    }
+    return mp->strategy->responseIsRetryable(s->state_machine->sm_id, s->current, response_code);
   }
 
   if (s->parent_params && !s->parent_result.response_is_retryable(response_code)) {

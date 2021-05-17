@@ -108,7 +108,11 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
       if (failover_node["max_simple_retries"]) {
         max_simple_retries = failover_node["max_simple_retries"].as<int>();
       }
+      if (failover_node["max_unavailable_retries"]) {
+        max_unavailable_retries = failover_node["max_unavailable_retries"].as<int>();
+      }
 
+      // response codes for simple retry.
       YAML::Node resp_codes_node;
       if (failover_node["response_codes"]) {
         resp_codes_node = failover_node["response_codes"];
@@ -125,6 +129,24 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
             }
           }
           resp_codes.sort();
+        }
+      }
+      YAML::Node markdown_codes_node;
+      if (failover_node["markdown_codes"]) {
+        markdown_codes_node = failover_node["markdown_codes"];
+        if (markdown_codes_node.Type() != YAML::NodeType::Sequence) {
+          NH_Error("Error in the markdown_codes definition for the strategy named '%s', skipping markdown_codes.",
+                   strategy_name.c_str());
+        } else {
+          for (auto &&k : markdown_codes_node) {
+            auto code = k.as<int>();
+            if (code > 300 && code < 599) {
+              markdown_codes.add(code);
+            } else {
+              NH_Note("Skipping invalid markdown response code '%d' for the strategy named '%s'.", code, strategy_name.c_str());
+            }
+          }
+          markdown_codes.sort();
         }
       }
       YAML::Node health_check_node;
@@ -227,17 +249,27 @@ NextHopSelectionStrategy::nextHopExists(TSHttpTxn txnp, void *ih)
   return false;
 }
 
-bool
-NextHopSelectionStrategy::responseIsRetryable(unsigned int current_retry_attempts, HTTPStatus response_code)
+ParentRetry_t
+NextHopSelectionStrategy::responseIsRetryable(int64_t sm_id, HttpTransact::CurrentInfo &current_info, HTTPStatus response_code)
 {
-  return this->resp_codes.contains(response_code) && current_retry_attempts < this->max_simple_retries &&
-         current_retry_attempts < this->num_parents;
-}
+  unsigned sa = current_info.simple_retry_attempts;
+  unsigned ua = current_info.unavailable_server_retry_attempts;
 
-bool
-NextHopSelectionStrategy::onFailureMarkParentDown(HTTPStatus response_code)
-{
-  return static_cast<int>(response_code) >= 500 && static_cast<int>(response_code) <= 599;
+  NH_Debug(NH_DEBUG_TAG,
+           "[%" PRIu64 "] response_code %d, simple_retry_attempts: %d max_simple_retries: %d, unavailable_server_retry_attempts: "
+           "%d, max_unavailable_retries: %d",
+           sm_id, response_code, sa, this->max_simple_retries, ua, max_unavailable_retries);
+  if (this->resp_codes.contains(response_code) && sa < this->max_simple_retries && sa < this->num_parents) {
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_SIMPLE", sm_id, response_code);
+    return PARENT_RETRY_SIMPLE;
+  }
+  if (this->markdown_codes.contains(response_code) && ua < this->max_unavailable_retries && ua < this->num_parents) {
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] response code %d is retryable, returning PARENT_RETRY_UNAVAILABLE_SERVER", sm_id,
+             response_code);
+    return PARENT_RETRY_UNAVAILABLE_SERVER;
+  }
+  NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] response code %d is not retryable, returning PARENT_RETRY_NONE", sm_id, response_code);
+  return PARENT_RETRY_NONE;
 }
 
 namespace YAML

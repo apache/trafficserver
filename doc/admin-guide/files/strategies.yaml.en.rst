@@ -183,6 +183,7 @@ Each **strategy** in the list may using the following parameters::
 - **scheme** Indicates which scheme the strategy supports, *http* or *https*
   - **failover**: A map of **failover** information.
   - **max_simple_retries**: Part of the **failover** map and is an integer value of the maximum number of retries for a **simple retry** on the list of indicated response codes.  **simple retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the response codes configured for this strategy in the **failover** map.  If no failover response codes are configured, no **simple retry** is attempted.
+  - **max_unavailable_retries Part of the **failover** map and is an integer value of the maximum number of retries for a **unavailable retry** on the list of indicated markdown response codes.  **unavailable retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the markdown response codes configured for this strategy in the **failover** map.  If no failover markdown response codes are configured, no **unavailable retry** is attempted.  **unavailable retry** differs from **simple retry** in that if a failover for retry is done, the previously retried server is marked down for rety.
 
   - **ring_mode**: Part of the **failover** map. The host ring selection mode.  Use either **exhaust_ring** or **alternate_ring**
 
@@ -190,6 +191,7 @@ Each **strategy** in the list may using the following parameters::
    #. **alternate_ring**: retry hosts are selected from groups in an alternating group fashion.
 
   - **response_codes**: Part of the **failover** map.  This is a list of **http** response codes that may be used for **simple retry**.
+  - **markdown_codes**: Part of the **failover** map.  This is a list of **http** response codes that may be used for **unavailable retry** which will cause a parent markdown.
   - **health_check**: Part of the **failover** map.  A list of health checks. **passive** is the default and means that the state machine marks down **hosts** when a transaction timeout or connection error is detected.  **passive** is always used by the next hop strategies.  **active** means that some external process may actively health check the hosts using the defined **health check url** and mark them down using **traffic_ctl**.
 
 
@@ -211,6 +213,7 @@ Example:
         ring_mode: exhaust_ring
         response_codes:
           - 404
+        markdown_codes:
           - 503
         health_check:
           - passive
@@ -226,6 +229,7 @@ Example:
         ring_mode: exhaust_ring
         response_codes:
           - 404
+        markdown_codes:
           - 503
         health_check:
           - passive
