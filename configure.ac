@@ -1288,6 +1288,7 @@ AC_CHECK_FUNCS([ \
   BIO_sock_non_fatal_error \
   CRYPTO_set_mem_functions \
   HMAC_CTX_new \
+  EVP_MAC_CTX_new \
   X509_get0_signature \
   ERR_get_error_all \
 ])
