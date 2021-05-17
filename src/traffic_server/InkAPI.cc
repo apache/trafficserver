@@ -8730,6 +8730,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT:
     ret = _memberp_to_generic(&overridableHttpConfig->attach_server_session_to_client, conv);
     break;
+  case TS_CONFIG_HTTP_MAX_PROXY_CYCLES:
+    ret = _memberp_to_generic(&overridableHttpConfig->max_proxy_cycles, conv);
+    break;
   case TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT:
     ret = _memberp_to_generic(&overridableHttpConfig->websocket_inactive_timeout, conv);
     break;

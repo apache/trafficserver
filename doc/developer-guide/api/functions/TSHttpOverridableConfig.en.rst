@@ -77,6 +77,7 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_REFERER`                  :ts:cv:`proxy.config.http.anonymize_remove_referer`
 :c:macro:`TS_CONFIG_HTTP_ANONYMIZE_REMOVE_USER_AGENT`               :ts:cv:`proxy.config.http.anonymize_remove_user_agent`
 :c:macro:`TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT`           :ts:cv:`proxy.config.http.attach_server_session_to_client`
+:c:macro:`TS_CONFIG_HTTP_MAX_PROXY_CYCLES`                          :ts:cv:`proxy.config.http.max_proxy_cycles`
 :c:macro:`TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE`               :ts:cv:`proxy.config.http.auth_server_session_private`
 :c:macro:`TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT`            :ts:cv:`proxy.config.http.background_fill_active_timeout`
 :c:macro:`TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD`       :ts:cv:`proxy.config.http.background_fill_completed_threshold`

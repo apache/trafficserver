@@ -1030,6 +1030,35 @@ mptcp
    according to this setting then it will be used, otherwise it will be released to the pool and a different session
    selected or created.
 
+.. ts:cv:: CONFIG proxy.config.http.max_proxy_cycles INT 0
+   :overridable:
+
+   Control the proxy cycle detection function in the following manner --
+
+   If this setting is ``0``, then next hop is self IP address and port detection is active.
+
+   In addition, the proxy cycle detection using the Via string will declare a cycle if the current cache
+   appears one or more times in the Via string, i.e, > 0.
+
+   If this setting is ``1`` or more (N), then next hop is self IP address and port detection is inactive.
+
+   In addition, the proxy cycle detection using the Via string will declare a cycle if the current cache
+   appears more than N times in the Via string, i.e., > N.
+
+   Examples:
+
+   If the setting is ``0``, then the second time a request enters a cache it will have its own machine
+   identifier in the Via string once, so a cycle will be detected. So no cycles are allowed.
+
+   If the setting is ``1``, then the third time a request enters a cache it will have its own machine
+   identifier in the Via string twice, so a cycle will be detected. So one cycle is allowed.
+   The first cycle with two visits to the cache and one instance in the Via string is allowed.
+   The second cycle with three visits to the cache and two instances in the Via string is not allowed.
+
+   This setting allows an edge cache peering arrangement where an edge cache may forward a request to a
+   peer edge cache (possibly itself) a limited of times (usually once). Infinite loops are still detected
+   when the cycle allowance is exceeded.
+
 .. ts:cv:: CONFIG proxy.config.http.use_client_target_addr  INT 0
 
    For fully transparent ports use the same origin server address as the client.

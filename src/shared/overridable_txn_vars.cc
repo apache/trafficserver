@@ -120,6 +120,7 @@ const std::unordered_map<std::string_view, std::tuple<const TSOverridableConfigK
      {"proxy.config.http.transaction_active_timeout_out", {TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.background_fill_active_timeout", {TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.attach_server_session_to_client", {TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT, TS_RECORDDATATYPE_INT}},
+     {"proxy.config.http.max_proxy_cycles", {TS_CONFIG_HTTP_MAX_PROXY_CYCLES, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.cache.cache_responses_to_cookies",
       {TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES, TS_RECORDDATATYPE_INT}},
      {"proxy.config.http.keep_alive_no_activity_timeout_in",

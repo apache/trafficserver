@@ -1122,6 +1122,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.server_max_connections, "proxy.config.http.server_max_connections");
   HttpEstablishStaticConfigLongLong(c.max_websocket_connections, "proxy.config.http.websocket.max_number_of_connections");
   HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
+  HttpEstablishStaticConfigLongLong(c.oride.max_proxy_cycles, "proxy.config.http.max_proxy_cycles");
 
   HttpEstablishStaticConfigLongLong(c.http_request_line_max_size, "proxy.config.http.request_line_max_size");
   HttpEstablishStaticConfigLongLong(c.http_hdr_field_max_size, "proxy.config.http.header_field_max_size");
@@ -1404,6 +1405,7 @@ HttpConfig::reconfigure()
   params->max_websocket_connections             = m_master.max_websocket_connections;
   params->oride.outbound_conntrack              = m_master.oride.outbound_conntrack;
   params->oride.attach_server_session_to_client = m_master.oride.attach_server_session_to_client;
+  params->oride.max_proxy_cycles                = m_master.oride.max_proxy_cycles;
 
   params->http_request_line_max_size = m_master.http_request_line_max_size;
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
