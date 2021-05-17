@@ -104,7 +104,7 @@ HQTransaction::cancel_inactivity_timeout()
 }
 
 void
-HQTransaction::release(IOBufferReader *r)
+HQTransaction::release()
 {
   this->do_io_close();
   this->_sm = nullptr;
@@ -224,13 +224,13 @@ HQTransaction::get_transaction_id() const
 }
 
 void
-HQTransaction::increment_client_transactions_stat()
+HQTransaction::increment_transactions_stat()
 {
   // TODO
 }
 
 void
-HQTransaction::decrement_client_transactions_stat()
+HQTransaction::decrement_transactions_stat()
 {
   // TODO
 }
