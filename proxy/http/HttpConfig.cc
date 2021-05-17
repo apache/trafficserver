@@ -1287,8 +1287,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.send_100_continue_response, "proxy.config.http.send_100_continue_response");
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
 
-  HttpEstablishStaticConfigByte(c.keepalive_internal_vc, "proxy.config.http.keepalive_internal_vc");
-
   HttpEstablishStaticConfigByte(c.oride.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
@@ -1323,7 +1321,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.referer_format_redirect, "proxy.config.http.referer_format_redirect");
 
   HttpEstablishStaticConfigLongLong(c.oride.down_server_timeout, "proxy.config.http.down_server.cache_time");
-  HttpEstablishStaticConfigLongLong(c.oride.client_abort_threshold, "proxy.config.http.down_server.abort_threshold");
 
   // Negative caching and revalidation
   HttpEstablishStaticConfigByte(c.oride.negative_caching_enabled, "proxy.config.http.negative_caching_enabled");
@@ -1564,7 +1561,6 @@ HttpConfig::reconfigure()
 
   params->send_100_continue_response = INT_TO_BOOL(m_master.send_100_continue_response);
   params->disallow_post_100_continue = INT_TO_BOOL(m_master.disallow_post_100_continue);
-  params->keepalive_internal_vc      = INT_TO_BOOL(m_master.keepalive_internal_vc);
 
   params->oride.cache_open_write_fail_action = m_master.oride.cache_open_write_fail_action;
   if (params->oride.cache_open_write_fail_action == CACHE_WL_FAIL_ACTION_READ_RETRY) {
@@ -1616,8 +1612,7 @@ HttpConfig::reconfigure()
 
   params->strict_uri_parsing = INT_TO_BOOL(m_master.strict_uri_parsing);
 
-  params->oride.down_server_timeout    = m_master.oride.down_server_timeout;
-  params->oride.client_abort_threshold = m_master.oride.client_abort_threshold;
+  params->oride.down_server_timeout = m_master.oride.down_server_timeout;
 
   params->oride.negative_caching_enabled       = INT_TO_BOOL(m_master.oride.negative_caching_enabled);
   params->oride.negative_caching_lifetime      = m_master.oride.negative_caching_lifetime;

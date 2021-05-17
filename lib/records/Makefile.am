@@ -18,7 +18,7 @@
 
 include $(top_srcdir)/build/tidy.mk
 
-check_PROGRAMS = test_librecords
+check_PROGRAMS = test_librecords test_librecords_on_eventsystem
 
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
@@ -71,7 +71,7 @@ librecords_p_a_SOURCES = \
 TESTS = $(check_PROGRAMS)
 
 test_librecords_CPPFLAGS = $(AM_CPPFLAGS)\
-        -I$(abs_top_srcdir)/tests/include
+	-I$(abs_top_srcdir)/tests/include
 
 test_librecords_SOURCES = \
     unit_tests/unit_test_main.cc \
@@ -86,6 +86,21 @@ test_librecords_LDADD = \
 	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
 	@HWLOC_LIBS@ @LIBCAP@
 
+test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/tests/include
+
+test_librecords_on_eventsystem_SOURCES = \
+    unit_tests/unit_test_main_on_eventsystem.cc \
+	unit_tests/test_DynamicStats.cc
+
+test_librecords_on_eventsystem_LDADD = \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@HWLOC_LIBS@ @LIBCAP@
 
 clang-tidy-local: $(sort $(DIST_SOURCES))
 	$(CXX_Clang_Tidy)

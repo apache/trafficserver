@@ -38,6 +38,7 @@
 #include "P_OCSPStapling.h"
 #include "P_SSLSNI.h"
 #include "P_SSLConfig.h"
+#include "ProxyProtocol.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
 #include "SSLDynlock.h"
@@ -299,7 +300,24 @@ set_context_cert(SSL *ssl)
     IpEndpoint ip;
     int namelen = sizeof(ip);
 
-    if (0 == safe_getsockname(netvc->get_socket(), &ip.sa, &namelen)) {
+    if (netvc->get_is_proxy_protocol() && netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+      ip.sa = *(netvc->get_proxy_protocol_dst_addr());
+      ip_port_text_buffer ipb1;
+      ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
+      cc = lookup->find(ip);
+      if (is_debug_tag_set("proxyprotocol")) {
+        IpEndpoint src;
+        ip_port_text_buffer ipb2;
+        int ip_len = sizeof(src);
+
+        if (0 != safe_getpeername(netvc->get_socket(), &src.sa, &ip_len)) {
+          Debug("proxyprotocol", "Failed to get src ip, errno = [%d]", errno);
+          return EVENT_ERROR;
+        }
+        ats_ip_nptop(&src, ipb2, sizeof(ipb2));
+        Debug("proxyprotocol", "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, lookup->defaultContext());
+      }
+    } else if (0 == safe_getsockname(netvc->get_socket(), &ip.sa, &namelen)) {
       cc = lookup->find(ip);
     }
     if (cc) {
@@ -2034,7 +2052,12 @@ SSLConnect(SSL *ssl)
 
       Debug("ssl.origin_session_cache", "origin session cache lookup key = %s", lookup_key.c_str());
 
-      sess = origin_sess_cache->get_session(lookup_key);
+      TLSSessionResumptionSupport *srs = TLSSessionResumptionSupport::getInstance(ssl);
+      ink_assert(srs);
+      if (srs) {
+        sess = srs->getOriginSession(ssl, lookup_key);
+      }
+
       if (sess) {
         SSL_set_session(ssl, sess);
       }

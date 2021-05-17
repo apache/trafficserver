@@ -179,7 +179,7 @@ TestHttp1_1('www.forwarded-none.com')
 
 TestHttp1_1('www.forwarded-for.com')
 
-# Note:  forwaded-obsersver.py counts on the "by" tests being done in the order below.
+# Note:  forwarded-observer.py counts on the "by" tests being done in the order below.
 
 TestHttp1_1('www.forwarded-by-ip.com')
 TestHttp1_1('www.forwarded-by-unknown.com')

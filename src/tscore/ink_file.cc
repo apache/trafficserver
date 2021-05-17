@@ -56,11 +56,11 @@
 #include <linux/fs.h> /* for BLKGETSIZE.  sys/mount.h is another candidate */
 #endif
 
-typedef union {
+using ioctl_arg_t = union {
   uint64_t u64;
   uint32_t u32;
   off_t off;
-} ioctl_arg_t;
+};
 
 int
 ink_fputln(FILE *stream, const char *s)

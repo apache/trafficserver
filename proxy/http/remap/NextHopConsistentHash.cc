@@ -302,26 +302,34 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       host_stat = TS_HOST_STATUS_UP;
     }
   }
-  if (!pRec || (pRec && !pRec->available) || host_stat == TS_HOST_STATUS_DOWN) {
+  if (!pRec || (pRec && !pRec->available.load()) || host_stat == TS_HOST_STATUS_DOWN) {
     do {
-      // check if an unavailable server is now retryable, use it if it is.
-      if (pRec && !pRec->available && host_stat == TS_HOST_STATUS_UP) {
-        _now == 0 ? _now = time(nullptr) : _now = now;
+      // check if an unavailable server is now retryable, use it.
+      if (pRec && !pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
         // check if the host is retryable.  It's retryable if the retry window has elapsed
-        if ((pRec->failedAt + retry_time) < static_cast<unsigned>(_now)) {
-          nextHopRetry        = true;
-          result->last_parent = pRec->host_index;
-          result->last_lookup = pRec->group_index;
-          result->retry       = nextHopRetry;
-          result->result      = PARENT_SPECIFIED;
-          NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next hop %s is now retryable, marked it available.", sm_id, pRec->hostname.c_str());
-          break;
+        _now == 0 ? _now = time(nullptr) : _now = now;
+        if ((pRec->failedAt.load() + retry_time) < static_cast<unsigned>(_now)) {
+          if (pRec->retriers.fetch_add(1, std::memory_order_relaxed) < max_retriers) {
+            nextHopRetry        = true;
+            result->last_parent = pRec->host_index;
+            result->last_lookup = pRec->group_index;
+            result->retry       = nextHopRetry;
+            result->result      = PARENT_SPECIFIED;
+            NH_Debug(NH_DEBUG_TAG,
+                     "[%" PRIu64 "] next hop %s is now retryable, marked it available, retriers: %d, max_retriers: %d.", sm_id,
+                     pRec->hostname.c_str(), pRec->retriers.load(), max_retriers);
+            break;
+          } else {
+            pRec->retriers--;
+          }
         }
       }
       switch (ring_mode) {
       case NH_ALTERNATE_RING:
-        if (groups > 0) {
+        if (pRec && groups > 0) {
           cur_ring = (pRec->group_index + 1) % groups;
+        } else {
+          cur_ring = 0;
         }
         break;
       case NH_EXHAUST_RING:
@@ -348,9 +356,9 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
           }
         }
         NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Selected a new parent: %s, available: %s, wrapped: %s, lookups: %d.", sm_id,
-                 pRec->hostname.c_str(), (pRec->available) ? "true" : "false", (wrapped) ? "true" : "false", lookups);
+                 pRec->hostname.c_str(), (pRec->available.load()) ? "true" : "false", (wrapped) ? "true" : "false", lookups);
         // use available host.
-        if (pRec->available && host_stat == TS_HOST_STATUS_UP) {
+        if (pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
           break;
         }
       } else {
@@ -369,14 +377,14 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
         }
         break;
       }
-    } while (!pRec || (pRec && !pRec->available) || host_stat == TS_HOST_STATUS_DOWN);
+    } while (!pRec || (pRec && !pRec->available.load()) || host_stat == TS_HOST_STATUS_DOWN);
   }
 
   // ----------------------------------------------------------------------------------------------------
   // Validate and return the final result.
   // ----------------------------------------------------------------------------------------------------
 
-  if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available || result->retry)) {
+  if (pRec && host_stat == TS_HOST_STATUS_UP && (pRec->available.load() || result->retry)) {
     result->result      = PARENT_SPECIFIED;
     result->hostname    = pRec->hostname.c_str();
     result->last_parent = pRec->host_index;

@@ -1735,15 +1735,14 @@ int
 LogAccess::marshal_client_req_http_version(char *buf)
 {
   if (buf) {
-    int64_t major = 0;
-    int64_t minor = 0;
     if (m_client_request) {
       HTTPVersion versionObject = m_client_request->version_get();
-      major                     = HTTP_MAJOR(versionObject.m_version);
-      minor                     = HTTP_MINOR(versionObject.m_version);
+      marshal_int(buf, versionObject.get_major());
+      marshal_int((buf + INK_MIN_ALIGN), versionObject.get_minor());
+    } else {
+      marshal_int(buf, 0);
+      marshal_int((buf + INK_MIN_ALIGN), 0);
     }
-    marshal_int(buf, major);
-    marshal_int((buf + INK_MIN_ALIGN), minor);
   }
   return (2 * INK_MIN_ALIGN);
 }
@@ -1761,11 +1760,9 @@ LogAccess::marshal_client_req_protocol_version(char *buf)
   if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
     if (m_client_request) {
       HTTPVersion versionObject = m_client_request->version_get();
-      int64_t major             = HTTP_MAJOR(versionObject.m_version);
-      int64_t minor             = HTTP_MINOR(versionObject.m_version);
-      if (major == 1 && minor == 1) {
+      if (versionObject == HTTP_1_1) {
         protocol_str = "http/1.1";
-      } else if (major == 1 && minor == 0) {
+      } else if (versionObject == HTTP_1_0) {
         protocol_str = "http/1.0";
       } // else invalid http version
     } else {
@@ -1795,11 +1792,9 @@ LogAccess::marshal_server_req_protocol_version(char *buf)
   if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
     if (m_proxy_request) {
       HTTPVersion versionObject = m_proxy_request->version_get();
-      int64_t major             = HTTP_MAJOR(versionObject.m_version);
-      int64_t minor             = HTTP_MINOR(versionObject.m_version);
-      if (major == 1 && minor == 1) {
+      if (versionObject == HTTP_1_1) {
         protocol_str = "http/1.1";
-      } else if (major == 1 && minor == 0) {
+      } else if (versionObject == HTTP_1_0) {
         protocol_str = "http/1.0";
       } // else invalid http version
     } else {
@@ -2456,8 +2451,8 @@ LogAccess::marshal_server_resp_http_version(char *buf)
     int64_t major = 0;
     int64_t minor = 0;
     if (m_server_response) {
-      major = HTTP_MAJOR(m_server_response->version_get().m_version);
-      minor = HTTP_MINOR(m_server_response->version_get().m_version);
+      major = m_server_response->version_get().get_major();
+      minor = m_server_response->version_get().get_minor();
     }
     marshal_int(buf, major);
     marshal_int((buf + INK_MIN_ALIGN), minor);
@@ -2583,8 +2578,8 @@ LogAccess::marshal_cache_resp_http_version(char *buf)
     int64_t major = 0;
     int64_t minor = 0;
     if (m_cache_response) {
-      major = HTTP_MAJOR(m_cache_response->version_get().m_version);
-      minor = HTTP_MINOR(m_cache_response->version_get().m_version);
+      major = m_cache_response->version_get().get_major();
+      minor = m_cache_response->version_get().get_minor();
     }
     marshal_int(buf, major);
     marshal_int((buf + INK_MIN_ALIGN), minor);

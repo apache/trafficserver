@@ -17,7 +17,7 @@
  */
 #include <unistd.h>
 #include <getopt.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <ts/ts.h>
 #include <ts/remap.h>
 

@@ -51,8 +51,8 @@
 #define LOOKASIDE_SIZE 256
 #define EVACUATION_BUCKET_SIZE (2 * EVACUATION_SIZE) // 16MB
 #define RECOVERY_SIZE EVACUATION_SIZE                // 8MB
-#define AIO_NOT_IN_PROGRESS 0
-#define AIO_AGG_WRITE_IN_PROGRESS -1
+#define AIO_NOT_IN_PROGRESS -1
+#define AIO_AGG_WRITE_IN_PROGRESS -2
 #define AUTO_SIZE_RAM_CACHE -1                               // 1-1 with directory size
 #define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeof(Doc)) // 1MB
 

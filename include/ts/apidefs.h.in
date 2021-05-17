@@ -51,11 +51,65 @@
 #define tsapi
 #endif
 
+/** Apply printf format string compile-time argument checking to a function.
+ *
+ *
+ * For example, given the following function from DiagsTypes.h:
+ *
+ * @code
+ * class Diags {
+ *
+ * ...
+ *
+ * void
+ * print(
+ *     const char *tag,
+ *     DiagsLevel level,
+ *     const SourceLocation *loc,
+ *     const char *fmt,
+ *     ...) const;
+ *
+ * ...
+ *
+ * };
+ * @endcode
+ *
+ * This macro can be used to apply compiler checking for ... against the fmt
+ * argument like so:
+ *
+ *
+ * @code
+ * class Diags {
+ *
+ * ...
+ *
+ * void
+ * print(
+ *     const char *tag,
+ *     DiagsLevel level,
+ *     const SourceLocation *loc,
+ *     const char *fmt,
+ *     ...) const TS_PRINTFLIKE(5, 6);
+ *
+ * ...
+ *
+ * };
+ * @endcode
+ *
+ * Note in this case, (5, 6) rather than (4, 5) is passed because `this`
+ * counts as the implicit first parameter of this member function.
+ *
+ * @param[in] fmt_index The index of the format string argument, with argument
+ * indexing starting at 1.
+ *
+ * @param[in] arg_index The index of the first format argument string, with
+ * argument indexing starting at 1.
+ */
 #if !defined(TS_PRINTFLIKE)
 #if defined(__GNUC__) || defined(__clang__)
-#define TS_PRINTFLIKE(fmt, arg) __attribute__((format(printf, fmt, arg)))
+#define TS_PRINTFLIKE(fmt_index, arg_index) __attribute__((format(printf, fmt_index, arg_index)))
 #else
-#define TS_PRINTFLIKE(fmt, arg)
+#define TS_PRINTFLIKE(fmt_index, arg_index)
 #endif
 #endif
 
@@ -727,6 +781,7 @@ typedef enum {
   TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES,
   TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT,
   TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME,
+  // Should be removed for 10.0
   TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD,
   TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS,
   TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT,

@@ -42,10 +42,10 @@
 
 namespace
 {
-typedef enum parent_select_mode {
+using parent_select_mode_t = enum parent_select_mode {
   PS_DEFAULT,      // Default ATS parent selection mode
   PS_CACHEKEY_URL, // Set parent selection url to cache_key url
-} parent_select_mode_t;
+};
 
 struct pluginconfig {
   parent_select_mode_t ps_mode{PS_DEFAULT};
@@ -433,6 +433,7 @@ set_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len, const cha
     bool first = true;
 
     while (field_loc) {
+      tmp = TSMimeHdrFieldNextDup(buf, hdr_loc, field_loc);
       if (first) {
         first = false;
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(buf, hdr_loc, field_loc, -1, val, val_len)) {
@@ -441,7 +442,6 @@ set_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len, const cha
       } else {
         TSMimeHdrFieldDestroy(buf, hdr_loc, field_loc);
       }
-      tmp = TSMimeHdrFieldNextDup(buf, hdr_loc, field_loc);
       TSHandleMLocRelease(buf, hdr_loc, field_loc);
       field_loc = tmp;
     }

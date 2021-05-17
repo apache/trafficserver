@@ -31,6 +31,7 @@
 #define NH_Error(...) DiagsError(DL_Error, __VA_ARGS__)
 #define NH_Note(...) DiagsError(DL_Note, __VA_ARGS__)
 #define NH_Warn(...) DiagsError(DL_Warning, __VA_ARGS__)
+#define NH_GetConfig(v, n) REC_ReadConfigInteger(v, n)
 #else
 #include "unit-tests/nexthop_test_stubs.h"
 #endif /* _NH_UNIT_TESTS_ */
@@ -101,14 +102,15 @@ struct NHProtocol {
 struct HostRecord : ATSConsistentHashNode {
   std::mutex _mutex;
   std::string hostname;
-  time_t failedAt;
-  uint32_t failCount;
-  time_t upAt;
+  std::atomic<time_t> failedAt;
+  std::atomic<uint32_t> failCount;
+  std::atomic<time_t> upAt;
   float weight;
   std::string hash_string;
   int host_index;
   int group_index;
   std::vector<std::shared_ptr<NHProtocol>> protocols;
+  std::atomic<int> retriers = 0;
 
   // construct without locking the _mutex.
   HostRecord()
@@ -122,21 +124,23 @@ struct HostRecord : ATSConsistentHashNode {
     host_index  = -1;
     group_index = -1;
     available   = true;
+    retriers    = 0;
   }
 
   // copy constructor to avoid copying the _mutex.
   HostRecord(const HostRecord &o)
   {
     hostname    = o.hostname;
-    failedAt    = o.failedAt;
-    failCount   = o.failCount;
-    upAt        = o.upAt;
+    failedAt    = o.failedAt.load();
+    failCount   = o.failCount.load();
+    upAt        = o.upAt.load();
     weight      = o.weight;
     hash_string = o.hash_string;
     host_index  = -1;
     group_index = -1;
     available   = true;
     protocols   = o.protocols;
+    retriers    = o.available.load();
   }
 
   // assign without copying the _mutex.
@@ -144,14 +148,16 @@ struct HostRecord : ATSConsistentHashNode {
   operator=(const HostRecord &o)
   {
     hostname    = o.hostname;
-    failedAt    = o.failedAt;
-    upAt        = o.upAt;
+    failedAt    = o.failedAt.load();
+    failCount   = o.failCount.load();
+    upAt        = o.upAt.load();
     weight      = o.weight;
     hash_string = o.hash_string;
     host_index  = o.host_index;
     group_index = o.group_index;
     available   = o.available.load();
     protocols   = o.protocols;
+    retriers    = o.retriers.load();
     return *this;
   }
 
@@ -163,6 +169,9 @@ struct HostRecord : ATSConsistentHashNode {
       std::lock_guard<std::mutex> lock(_mutex);
       failedAt  = time(nullptr);
       available = false;
+      if (--retriers < 0) {
+        retriers = 0;
+      }
     }
   }
 
@@ -174,6 +183,7 @@ struct HostRecord : ATSConsistentHashNode {
       std::lock_guard<std::mutex> lock(_mutex);
       failedAt  = 0;
       failCount = 0;
+      retriers  = 0;
       upAt      = time(nullptr);
       available = true;
     }
@@ -250,4 +260,5 @@ public:
   uint32_t hst_index          = 0;
   uint32_t num_parents        = 0;
   uint32_t distance           = 0; // index into the strategies list.
+  int max_retriers            = 1;
 };

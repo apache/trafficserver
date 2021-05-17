@@ -135,7 +135,25 @@ public:
   int
   get_volume_number()
   {
-    return cache_read_vc ? (cache_read_vc->get_volume_number()) : -1;
+    if (cache_read_vc) {
+      return cache_read_vc->get_volume_number();
+    } else if (cache_write_vc) {
+      return cache_write_vc->get_volume_number();
+    }
+
+    return -1;
+  }
+
+  const char *
+  get_disk_path()
+  {
+    if (cache_read_vc) {
+      return cache_read_vc->get_disk_path();
+    } else if (cache_write_vc) {
+      return cache_write_vc->get_disk_path();
+    }
+
+    return nullptr;
   }
 
   inline void
@@ -183,6 +201,12 @@ public:
     abort_write();
   }
 
+  inline int
+  get_last_error() const
+  {
+    return err_code;
+  }
+
 private:
   void do_schedule_in();
   Action *do_cache_open_read(const HttpCacheKey &);
@@ -211,4 +235,7 @@ private:
   // to keep track of multiple cache lookups
   int lookup_max_recursive = 0;
   int current_lookup_level = 0;
+
+  // last error from the cache subsystem
+  int err_code = 0;
 };

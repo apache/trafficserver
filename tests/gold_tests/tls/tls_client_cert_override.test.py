@@ -68,6 +68,8 @@ ts.addSSLfile("ssl/signed2-bar.pem")
 ts.addSSLfile("ssl/signed-bar.key")
 
 ts.Disk.records_config.update({
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),

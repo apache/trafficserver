@@ -4047,7 +4047,7 @@ TSHttpHdrVersionGet(TSMBuffer bufp, TSMLoc obj)
 
   SET_HTTP_HDR(h, bufp, obj);
   HTTPVersion ver = h.version_get();
-  return ver.m_version;
+  return ver.get_flat_version();
 }
 
 TSReturnCode
@@ -4065,7 +4065,7 @@ TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc obj, int ver)
   }
 
   HTTPHdr h;
-  HTTPVersion version(ver);
+  HTTPVersion version{ver};
 
   SET_HTTP_HDR(h, bufp, obj);
   ink_assert(h.m_http->m_type == HDR_HEAP_OBJ_HTTP_HEADER);
@@ -5487,6 +5487,24 @@ TSHttpTxnIsWebsocket(TSHttpTxn txnp)
 
   HttpSM *sm = (HttpSM *)txnp;
   return sm->t_state.is_websocket;
+}
+
+const char *
+TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, int *length)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm       = reinterpret_cast<HttpSM *>(txnp);
+  char const *path = nullptr;
+
+  if (HttpCacheSM *c_sm = &(sm->get_cache_sm()); c_sm) {
+    path = c_sm->get_disk_path();
+  }
+  if (length) {
+    *length = path ? strlen(path) : 0;
+  }
+
+  return path;
 }
 
 TSReturnCode
@@ -7830,7 +7848,7 @@ char *
 TSMatcherReadIntoBuffer(char *file_name, int *file_len)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)file_name) == TS_SUCCESS);
-  return readIntoBuffer((char *)file_name, "TSMatcher", file_len);
+  return readIntoBuffer(file_name, "TSMatcher", file_len);
 }
 
 char *

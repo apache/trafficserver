@@ -283,7 +283,7 @@ http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity)
 {
   memset(&(hh->u), 0, sizeof(hh->u));
   hh->m_polarity    = polarity;
-  hh->m_version     = HTTP_VERSION(1, 0);
+  hh->m_version     = HTTP_1_0;
   hh->m_fields_impl = mime_hdr_create(heap);
   if (polarity == HTTP_TYPE_REQUEST) {
     hh->u.req.m_url_impl       = url_create(heap);
@@ -353,19 +353,19 @@ http_hdr_clone(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HdrHeap *d_heap)
   -------------------------------------------------------------------------*/
 
 static inline char *
-http_hdr_version_to_string(int32_t version, char *buf9)
+http_hdr_version_to_string(const HTTPVersion &version, char *buf9)
 {
-  ink_assert(HTTP_MAJOR(version) < 10);
-  ink_assert(HTTP_MINOR(version) < 10);
+  ink_assert(version.get_major() < 10);
+  ink_assert(version.get_minor() < 10);
 
   buf9[0] = 'H';
   buf9[1] = 'T';
   buf9[2] = 'T';
   buf9[3] = 'P';
   buf9[4] = '/';
-  buf9[5] = '0' + HTTP_MAJOR(version);
+  buf9[5] = '0' + version.get_major();
   buf9[6] = '.';
-  buf9[7] = '0' + HTTP_MINOR(version);
+  buf9[7] = '0' + version.get_minor();
   buf9[8] = '\0';
 
   return (buf9);
@@ -375,7 +375,7 @@ http_hdr_version_to_string(int32_t version, char *buf9)
   -------------------------------------------------------------------------*/
 
 int
-http_version_print(int32_t version, char *buf, int bufsize, int *bufindex, int *dumpoffset)
+http_version_print(const HTTPVersion &version, char *buf, int bufsize, int *bufindex, int *dumpoffset)
 {
 #define TRY(x) \
   if (!x)      \
@@ -541,7 +541,7 @@ http_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
   HTTPHdrImpl *obj = (HTTPHdrImpl *)raw;
 
   if (obj->m_polarity == HTTP_TYPE_REQUEST) {
-    Debug("http", "[TYPE: REQ, V: %04X, URL: %p, METHOD: \"%.*s\", METHOD_LEN: %d, FIELDS: %p]", obj->m_version,
+    Debug("http", "[TYPE: REQ, V: %04X, URL: %p, METHOD: \"%.*s\", METHOD_LEN: %d, FIELDS: %p]", obj->m_version.get_flat_version(),
           obj->u.req.m_url_impl, obj->u.req.m_len_method, (obj->u.req.m_ptr_method ? obj->u.req.m_ptr_method : "NULL"),
           obj->u.req.m_len_method, obj->m_fields_impl);
     if (recurse) {
@@ -553,9 +553,9 @@ http_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
       }
     }
   } else {
-    Debug("http", "[TYPE: RSP, V: %04X, STATUS: %d, REASON: \"%.*s\", REASON_LEN: %d, FIELDS: %p]", obj->m_version,
-          obj->u.resp.m_status, obj->u.resp.m_len_reason, (obj->u.resp.m_ptr_reason ? obj->u.resp.m_ptr_reason : "NULL"),
-          obj->u.resp.m_len_reason, obj->m_fields_impl);
+    Debug("http", "[TYPE: RSP, V: %04X, STATUS: %d, REASON: \"%.*s\", REASON_LEN: %d, FIELDS: %p]",
+          obj->m_version.get_flat_version(), obj->u.resp.m_status, obj->u.resp.m_len_reason,
+          (obj->u.resp.m_ptr_reason ? obj->u.resp.m_ptr_reason : "NULL"), obj->u.resp.m_len_reason, obj->m_fields_impl);
     if (recurse) {
       if (obj->m_fields_impl) {
         obj_describe(obj->m_fields_impl, recurse);
@@ -626,7 +626,7 @@ http_hdr_type_set(HTTPHdrImpl *hh, HTTPType type)
   -------------------------------------------------------------------------*/
 
 void
-http_hdr_version_set(HTTPHdrImpl *hh, int32_t ver)
+http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver)
 {
   hh->m_version = ver;
 }
@@ -929,7 +929,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
         goto slow_case;
       }
 
-      int32_t version = HTTP_VERSION(end[-5] - '0', end[-3] - '0');
+      HTTPVersion version{static_cast<uint8_t>(end[-5] - '0'), static_cast<uint8_t>(end[-3] - '0')};
 
       http_hdr_method_set(heap, hh, &(cur[0]), hdrtoken_wks_to_index(HTTP_METHOD_GET), 3, must_copy_strings);
       ink_assert(hh->u.req.m_url_impl != nullptr);
@@ -943,7 +943,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 
       end                    = real_end;
       parser->m_parsing_http = false;
-      if (version == HTTP_VERSION(0, 9)) {
+      if (version == HTTP_0_9) {
         return PARSE_RESULT_ERROR;
       }
 
@@ -1087,14 +1087,14 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       return err;
     }
 
-    int32_t version;
+    HTTPVersion version;
     if (version_start && version_end) {
       version = http_parse_version(version_start, version_end);
     } else {
       return PARSE_RESULT_ERROR;
     }
 
-    if (version == HTTP_VERSION(0, 9)) {
+    if (version == HTTP_0_9) {
       return PARSE_RESULT_ERROR;
     }
 
@@ -1270,7 +1270,7 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
         --reason_end;
       }
 
-      int32_t version   = HTTP_VERSION(cur[5] - '0', cur[7] - '0');
+      HTTPVersion version(cur[5] - '0', cur[7] - '0');
       HTTPStatus status = static_cast<HTTPStatus>((cur[9] - '0') * 100 + (cur[10] - '0') * 10 + (cur[11] - '0'));
 
       http_hdr_version_set(hh, version);
@@ -1379,10 +1379,9 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
       return PARSE_RESULT_ERROR;
     }
 
-    int32_t version;
-    version = http_parse_version(version_start, version_end);
+    HTTPVersion version = http_parse_version(version_start, version_end);
 
-    if (version == HTTP_VERSION(0, 9)) {
+    if (version == HTTP_0_9) {
       return PARSE_RESULT_ERROR;
     }
 
@@ -1429,14 +1428,14 @@ http_parse_status(const char *start, const char *end)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int32_t
+HTTPVersion
 http_parse_version(const char *start, const char *end)
 {
   int maj;
   int min;
 
   if ((end - start) < 8) {
-    return HTTP_VERSION(0, 9);
+    return HTTP_0_9;
   }
 
   if (((start[0] == 'H') || (start[0] == 'h')) && ((start[1] == 'T') || (start[1] == 't')) &&
@@ -1460,10 +1459,10 @@ http_parse_version(const char *start, const char *end)
       start += 1;
     }
 
-    return HTTP_VERSION(maj, min);
+    return HTTPVersion(maj, min);
   }
 
-  return HTTP_VERSION(0, 9);
+  return HTTP_0_9;
 }
 
 /*-------------------------------------------------------------------------
@@ -1779,6 +1778,30 @@ HTTPHdr::url_printed_length(unsigned normalization_flags)
     zret = m_url_cached.length_get(normalization_flags);
   }
   return zret;
+}
+
+// Look for headers that the proxy will need to be able to process
+// Return false if the proxy does not know how to process the header
+// Currently just looking at TRANSFER_ENCODING.  The proxy only knows how to
+// process the chunked action
+bool
+HTTPHdr::check_hdr_implements()
+{
+  bool retval = true;
+  MIMEField *transfer_encode =
+    mime_hdr_field_find(this->m_http->m_fields_impl, MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+  if (transfer_encode) {
+    int len;
+    const char *val;
+    do {
+      val = transfer_encode->value_get(&len);
+      if (len != 7 || 0 != strncasecmp(val, "chunked", len)) {
+        retval = false;
+      }
+      transfer_encode = transfer_encode->m_next_dup;
+    } while (retval && transfer_encode);
+  }
+  return retval;
 }
 
 /***********************************************************************

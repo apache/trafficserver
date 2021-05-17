@@ -21,7 +21,7 @@ let RECEIVED=8*RECEIVED
 
 EXPECTED=$((200 * 1024))
 
-echo "Exepcted=$EXPECTED"
-echo "Recieved=$RECEIVED"
+echo "Expected=$EXPECTED"
+echo "Received=$RECEIVED"
 
 (( RECEIVED == EXPECTED ))

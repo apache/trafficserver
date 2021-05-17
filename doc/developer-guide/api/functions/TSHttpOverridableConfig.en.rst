@@ -116,7 +116,6 @@ TSOverridableConfigKey Value                                        Configuratio
 :c:macro:`TS_CONFIG_HTTP_DEFAULT_BUFFER_SIZE`                       :ts:cv:`proxy.config.http.default_buffer_size`
 :c:macro:`TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK`                 :ts:cv:`proxy.config.http.default_buffer_water_mark`
 :c:macro:`TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS`                     :ts:cv:`proxy.config.http.doc_in_cache_skip_dns`
-:c:macro:`TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD`               :ts:cv:`proxy.config.http.down_server.abort_threshold`
 :c:macro:`TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME`                    :ts:cv:`proxy.config.http.down_server.cache_time`
 :c:macro:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`                      :ts:cv:`proxy.config.http.flow_control.enabled`
 :c:macro:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK`              :ts:cv:`proxy.config.http.flow_control.high_water`

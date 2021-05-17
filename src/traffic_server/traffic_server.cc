@@ -174,6 +174,16 @@ static int poll_timeout         = -1; // No value set.
 static int cmd_disable_freelist = 0;
 static bool signal_received[NSIG];
 
+/*
+To be able to attach with a debugger to traffic_server running in an Au test case, temporarily add the
+parameter block_for_debug=True to the call to Test.MakeATSProcess().  This means Au test will wait
+effectively indefinitely (10 hours) for traffic_server to initialize itself.  Run the modified Au test,
+attach the debugger to the traffic_server process, set one or more breakpoints, set the variable
+cmd_block to 0, then continue.  On linux, the command 'ps -ef | fgrep -e --block' will help identify the
+PID of the traffic_server process (second column of output).
+*/
+static int cmd_block = 0;
+
 // 1: the main thread delayed accepting, start accepting.
 // 0: delay accept, wait for cache initialization.
 // -1: cache is already initialized, don't delay.
@@ -217,6 +227,7 @@ static ArgumentDescription argument_descriptions[] = {
   {"bind_stderr", '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", nullptr},
   {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, nullptr, nullptr},
   {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, nullptr, nullptr},
+  {"block", '-', "block for debug attach", "T", &cmd_block, nullptr, nullptr},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION(),
   RUNROOT_ARGUMENT_DESCRIPTION(),
@@ -1752,6 +1763,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   command_flag  = command_flag || *command_string;
   command_index = find_cmd_index(command_string);
   command_valid = command_flag && command_index >= 0;
+
+  // Attach point when TS is blocked for debugging is in this loop.
+  //
+  while (cmd_block) {
+    sleep(1);
+  }
 
   ink_freelist_init_ops(cmd_disable_freelist, cmd_disable_pfreelist);
 

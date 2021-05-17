@@ -72,6 +72,7 @@ NetVCOptions::reset()
   sni_hostname                = nullptr;
   ssl_client_cert_name        = nullptr;
   ssl_client_private_key_name = nullptr;
+  outbound_sni_policy         = nullptr;
 }
 
 inline void

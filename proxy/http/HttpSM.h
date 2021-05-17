@@ -196,6 +196,13 @@ public:
   {
     return pending_action;
   }
+  void
+  clear_if_action_is(Action *current_action)
+  {
+    if (current_action == pending_action) {
+      pending_action = nullptr;
+    }
+  }
   ~PendingAction()
   {
     if (pending_action) {
@@ -265,6 +272,8 @@ public:
   // Used to read attributes of
   // the current active server session
   PoolableSession *get_server_session() const;
+
+  HTTPVersion get_server_version(HTTPHdr &hdr) const;
 
   ProxyTransaction *
   get_ua_txn()
@@ -415,7 +424,6 @@ protected:
    * we should create a new connection and then once we attach the session we'll mark it as private.
    */
   bool will_be_private_ss              = false;
-  int shared_session_retries           = 0;
   IOBufferReader *server_buffer_reader = nullptr;
 
   HttpTransformInfo transform_info;
@@ -517,7 +525,6 @@ protected:
   void handle_http_server_open();
   void handle_post_failure();
   void mark_host_failure(HostDBInfo *info, time_t time_down);
-  void mark_server_down_on_client_abort();
   void release_server_session(bool serve_from_cache = false);
   void set_ua_abort(HttpTransact::AbortState_t ua_abort, int event);
   int write_header_into_buffer(HTTPHdr *h, MIOBuffer *b);

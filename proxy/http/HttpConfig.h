@@ -660,7 +660,7 @@ struct OverridableHttpConfigParams {
   MgmtInt per_parent_connect_attempts = 2;
 
   MgmtInt down_server_timeout    = 300;
-  MgmtInt client_abort_threshold = 10;
+  MgmtInt client_abort_threshold = 1000;
 
   // open read failure retries.
   MgmtInt max_cache_open_read_retries = -1;
@@ -806,7 +806,6 @@ public:
 
   MgmtByte send_100_continue_response = 0;
   MgmtByte disallow_post_100_continue = 0;
-  MgmtByte keepalive_internal_vc      = 0;
 
   MgmtByte server_session_sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
 

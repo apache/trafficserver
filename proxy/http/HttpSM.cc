@@ -848,6 +848,12 @@ HttpSM::state_read_client_request_header(int event, void *data)
   case PARSE_RESULT_DONE:
     SMDebug("http", "[%" PRId64 "] done parsing client request header", sm_id);
 
+    if (!t_state.hdr_info.client_request.check_hdr_implements()) {
+      t_state.http_return_code = HTTP_STATUS_NOT_IMPLEMENTED;
+      call_transact_and_set_next_state(HttpTransact::BadRequest);
+      break;
+    }
+
     if (_from_early_data) {
       // Only allow early data for safe methods defined in RFC7231 Section 4.2.1.
       // https://tools.ietf.org/html/rfc7231#section-4.2.1
@@ -868,7 +874,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
     ua_txn->set_session_active();
 
-    if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1) &&
+    if (t_state.hdr_info.client_request.version_get() == HTTP_1_1 &&
         (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
          t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT) &&
         t_state.http_config_param->send_100_continue_response) {
@@ -1015,7 +1021,6 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
     if (ua_entry->read_vio) {
       ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     }
-    mark_server_down_on_client_abort();
     milestones[TS_MILESTONE_UA_CLOSE] = Thread::get_hrtime();
     set_ua_abort(HttpTransact::ABORTED, event);
 
@@ -1156,7 +1161,7 @@ HttpSM::state_read_push_response_header(int event, void *data)
   }
   // Don't allow 0.9 (unparsable headers) since TS doesn't
   //   cache 0.9 responses
-  if (state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
+  if (state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTP_0_9) {
     state = PARSE_RESULT_ERROR;
   }
 
@@ -2000,7 +2005,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
   // Don't allow HTTP 0.9 (unparsable headers) on resued connections.
   // And don't allow empty headers from closed connections
-  if ((state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9) &&
+  if ((state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTP_0_9 &&
        server_session->get_transact_count() > 1) ||
       (server_entry->eos && vio->ndone == 0)) {
     state = PARSE_RESULT_ERROR;
@@ -2051,6 +2056,13 @@ HttpSM::state_read_server_response_header(int event, void *data)
     // fallthrough
 
   case PARSE_RESULT_DONE:
+
+    if (!t_state.hdr_info.server_response.check_hdr_implements()) {
+      t_state.http_return_code = HTTP_STATUS_BAD_GATEWAY;
+      call_transact_and_set_next_state(HttpTransact::BadRequest);
+      break;
+    }
+
     SMDebug("http_seq", "Done parsing server response header");
 
     // Now that we know that we have all of the origin server
@@ -2491,6 +2503,8 @@ HttpSM::state_cache_open_write(int event, void *data)
     ink_release_assert(vc && vc->thread == this_ethread());
   }
 
+  pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
+
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_END] = Thread::get_hrtime();
   pending_action                                = nullptr;
 
@@ -2600,6 +2614,8 @@ HttpSM::state_cache_open_read(int event, void *data)
   STATE_ENTER(&HttpSM::state_cache_open_read, event);
   milestones[TS_MILESTONE_CACHE_OPEN_READ_END] = Thread::get_hrtime();
 
+  pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
+
   ink_assert(server_entry == nullptr);
   ink_assert(t_state.cache_info.object_read == nullptr);
 
@@ -2631,12 +2647,12 @@ HttpSM::state_cache_open_read(int event, void *data)
     pending_action = nullptr;
 
     SMDebug("http", "[%" PRId64 "] cache_open_read - CACHE_EVENT_OPEN_READ_FAILED with %s (%d)", sm_id,
-            InkStrerror(-(intptr_t)data), (int)(intptr_t)data);
+            InkStrerror(-cache_sm.get_last_error()), -cache_sm.get_last_error());
 
     SMDebug("http", "[state_cache_open_read] open read failed.");
     // Inform HttpTransact somebody else is updating the document
     // HttpCacheSM already waited so transact should go ahead.
-    if ((intptr_t)data == -ECACHE_DOC_BUSY) {
+    if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
       t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_DOC_BUSY;
     } else {
       t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;
@@ -4286,7 +4302,7 @@ HttpSM::do_hostdb_update_if_necessary()
     return;
   }
 
-  if (t_state.updated_server_version != HostDBApplicationInfo::HTTP_VERSION_UNDEFINED) {
+  if (t_state.updated_server_version != HTTP_INVALID) {
     // we may have incorrectly assumed that the hostdb had the wrong version of
     // http for the server because our first few connect attempts to the server
     // failed, causing us to downgrade our requests to a lower version and changing
@@ -4299,7 +4315,7 @@ HttpSM::do_hostdb_update_if_necessary()
       issue_update |= 1;
     }
 
-    t_state.updated_server_version = HostDBApplicationInfo::HTTP_VERSION_UNDEFINED;
+    t_state.updated_server_version = HTTP_INVALID;
   }
   // Check to see if we need to report or clear a connection failure
   if (t_state.current.server->had_connect_fail()) {
@@ -4592,7 +4608,7 @@ HttpSM::do_range_setup_if_necessary()
 
   t_state.range_setup = HttpTransact::RANGE_NONE;
 
-  if (t_state.method == HTTP_WKSIDX_GET && t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 1)) {
+  if (t_state.method == HTTP_WKSIDX_GET && t_state.hdr_info.client_request.version_get() == HTTP_1_1) {
     do_range_parse(field);
 
     if (t_state.range_setup == HttpTransact::RANGE_REQUESTED) {
@@ -4854,6 +4870,13 @@ HttpSM::get_outbound_sni() const
   using namespace ts::literals;
   ts::TextView zret;
   ts::TextView policy{t_state.txn_conf->ssl_client_sni_policy, ts::TextView::npos};
+
+  if (ua_txn) {
+    if (const NetVConnection *netvc = ua_txn->get_netvc(); netvc->options.outbound_sni_policy) {
+      policy.assign(netvc->options.outbound_sni_policy.get(), ts::TextView::npos);
+    }
+  }
+
   if (policy.empty() || !strcmp(policy, "host"_tv)) {
     // By default the host header field value is used for the SNI.
     int len;
@@ -5020,8 +5043,7 @@ HttpSM::do_http_server_open(bool raw)
     shared_result = httpSessionManager.acquire_session(this,                                 // state machine
                                                        &t_state.current.server->dst_addr.sa, // ip + port
                                                        t_state.current.server->name,         // hostname
-                                                       ua_txn,                               // has ptr to bound ua sessions
-                                                       this                                  // sm
+                                                       ua_txn                                // has ptr to bound ua sessions
     );
 
     switch (shared_result) {
@@ -5417,38 +5439,6 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
   case VC_EVENT_ERROR:
     t_state.client_info.state = HttpTransact::CONNECTION_ERROR;
     break;
-  }
-}
-
-void
-HttpSM::mark_server_down_on_client_abort()
-{
-  /////////////////////////////////////////////////////
-  //  Check see if the client aborted because the    //
-  //  origin server was too slow in sending the      //
-  //  response header.  If so, mark that             //
-  //  server as down so other clients won't try to   //
-  //  for revalidation or select it from a round     //
-  //  robin set                                      //
-  //                                                 //
-  //  Note: we do not want to mark parent            //
-  //  proxies as down with this metric because       //
-  //  that upstream proxy may be working but         //
-  //  the actual origin server is one that is hung   //
-  /////////////////////////////////////////////////////
-  if (t_state.current.request_to == HttpTransact::ORIGIN_SERVER && t_state.hdr_info.request_content_length <= 0) {
-    if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] != 0 && milestones[TS_MILESTONE_SERVER_FIRST_READ] == 0) {
-      // Check to see if client waited for the threshold
-      //  to declare the origin server as down
-      ink_hrtime wait = Thread::get_hrtime() - milestones[TS_MILESTONE_SERVER_FIRST_CONNECT];
-      if (wait < 0) {
-        wait = 0;
-      }
-      if (ink_hrtime_to_sec(wait) > t_state.txn_conf->client_abort_threshold) {
-        t_state.set_connect_fail(ETIMEDOUT);
-        do_hostdb_update_if_necessary();
-      }
-    }
   }
 }
 
@@ -6367,7 +6357,7 @@ HttpSM::setup_100_continue_transfer()
   IOBufferReader *buf_start = buf->alloc_reader();
 
   // First write the client response header into the buffer
-  ink_assert(t_state.client_info.http_version != HTTPVersion(0, 9));
+  ink_assert(t_state.client_info.http_version != HTTP_0_9);
   client_response_hdr_bytes = write_header_into_buffer(&t_state.hdr_info.client_response, buf);
   ink_assert(client_response_hdr_bytes > 0);
 
@@ -6742,7 +6732,7 @@ HttpSM::setup_server_transfer()
     }
   } else {
     if (t_state.current.server->transfer_encoding != HttpTransact::CHUNKED_ENCODING) {
-      if (t_state.client_info.http_version == HTTPVersion(0, 9)) {
+      if (t_state.client_info.http_version == HTTP_0_9) {
         action = TCA_PASSTHRU_DECHUNKED_CONTENT; // send as-is
       } else {
         action = TCA_CHUNK_CONTENT;
@@ -7446,13 +7436,7 @@ HttpSM::set_next_state()
                 ats_ip_ntop(addr, ipb, sizeof(ipb)));
       }
       ats_ip_copy(t_state.host_db_info.ip(), addr);
-      if (t_state.hdr_info.client_request.version_get() == HTTPVersion(0, 9)) {
-        t_state.host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_09;
-      } else if (t_state.hdr_info.client_request.version_get() == HTTPVersion(1, 0)) {
-        t_state.host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_10;
-      } else {
-        t_state.host_db_info.app.http_data.http_version = HostDBApplicationInfo::HTTP_VERSION_11;
-      }
+      t_state.host_db_info.app.http_data.http_version = t_state.hdr_info.client_request.version_get();
 
       t_state.dns_info.lookup_success = true;
       // cache this result so we don't have to unreliably duplicate the
@@ -8240,13 +8224,13 @@ HttpSM::server_protocol_contains(std::string_view tag_prefix) const
 std::string_view
 HttpSM::find_proto_string(HTTPVersion version) const
 {
-  if (version == HTTPVersion(2, 0)) {
+  if (version == HTTP_2_0) {
     return IP_PROTO_TAG_HTTP_2_0;
-  } else if (version == HTTPVersion(1, 1)) {
+  } else if (version == HTTP_1_1) {
     return IP_PROTO_TAG_HTTP_1_1;
-  } else if (version == HTTPVersion(1, 0)) {
+  } else if (version == HTTP_1_0) {
     return IP_PROTO_TAG_HTTP_1_0;
-  } else if (version == HTTPVersion(0, 9)) {
+  } else if (version == HTTP_0_9) {
     return IP_PROTO_TAG_HTTP_0_9;
   }
   return {};
@@ -8321,4 +8305,10 @@ PoolableSession *
 HttpSM::get_server_session() const
 {
   return server_session;
+}
+
+HTTPVersion
+HttpSM::get_server_version(HTTPHdr &hdr) const
+{
+  return this->server_session->get_version(hdr);
 }

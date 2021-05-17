@@ -247,7 +247,7 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
 #
-# Test 6: Verify correct protcol dumping of a TLS connection.
+# Test 6: Verify correct protocol dumping of a TLS connection.
 #
 tr = Test.AddTestRun("Verify the client protocol stack of a TLS session.")
 https_protocols = "tls,tcp,ip"
@@ -278,7 +278,7 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
 #
-# Test 7: Verify correct protcol dumping of TLS and HTTP/2 connections.
+# Test 7: Verify correct protocol dumping of TLS and HTTP/2 connections.
 #
 tr = Test.AddTestRun("Verify the client HTTP/2 protocol stack.")
 h2_protocols = "http,tls,tcp,ip"
@@ -308,7 +308,7 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
 #
-# Test 8: Verify correct protcol dumping of client-side TLS and server-side HTTP.
+# Test 8: Verify correct protocol dumping of client-side TLS and server-side HTTP.
 #
 tr = Test.AddTestRun("Verify the client TLS protocol stack.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)

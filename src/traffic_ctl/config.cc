@@ -369,8 +369,8 @@ CtrlEngine::config_status()
   CTRL_MGMT_CHECK(manager.fetch("proxy.node.config.restart_required.manager"));
 
   std::cout << CtrlMgmtRecordValue(version).c_str() << std::endl;
-  std::cout << "Started at " << timestr((time_t)starttime.as_int()).c_str();
-  std::cout << "Last reconfiguration at " << timestr((time_t)configtime.as_int()).c_str();
+  std::cout << "Started at " << timestr(static_cast<time_t>(starttime.as_int())).c_str();
+  std::cout << "Last reconfiguration at " << timestr(static_cast<time_t>(configtime.as_int())).c_str();
   std::cout << (reconfig.as_int() ? "Reconfiguration required" : "Configuration is current") << std::endl;
 
   if (proxy.as_int()) {

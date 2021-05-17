@@ -489,8 +489,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.down_server.cache_time", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.down_server.abort_threshold", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.http.negative_revalidating_enabled", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.negative_revalidating_lifetime", RECD_INT, "1800", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -884,6 +882,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.dns.max_dns_in_flight", RECD_INT, "2048", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.dns.max_tcp_continuous_failures", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.dns.validate_query_name", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.dns.splitDNS.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
@@ -1222,10 +1222,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.plugin.load_elevated", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_READ_ONLY}
   ,
-
-  // Interim configuration setting for obeying keepalive requests on internal
-  // (PluginVC) sessions. See TS-4960 and friends.
-  {RECT_LOCAL, "proxy.config.http.keepalive_internal_vc", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL},
 
   //##############################################################################
   //#

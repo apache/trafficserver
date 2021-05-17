@@ -20,7 +20,7 @@ Verify correct log retention behavior.
 import os
 
 Test.Summary = '''
-Test the enforcment of proxy.config.log.max_space_mb_for_logs.
+Test the enforcement of proxy.config.log.max_space_mb_for_logs.
 '''
 
 # This test is sensitive to timing issues, especially in the OS CI for some

@@ -35,7 +35,6 @@ ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
-    'proxy.config.http2.enabled': 1,    # this option is for VZM-internal only
     'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -54,7 +53,7 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
-# Using netcat as a cheapy origin server in case 1 so we can insert a delay in sending back the response.
+# Using netcat as a cheap origin server in case 1 so we can insert a delay in sending back the response.
 # Replaced microserver for cases 2 and 3 as well because I was getting python exceptions when running
 # microserver if chunked encoding headers were specified for the request headers
 

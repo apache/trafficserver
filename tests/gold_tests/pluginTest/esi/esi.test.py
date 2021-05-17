@@ -223,7 +223,7 @@ echo date('l jS \of F Y h:i:s A');
         zipped_body_disk_file.Exists = True
 
         # Now, unzip the file and make sure its size is the expected body.
-        tr = Test.AddTestRun("Verify the file uzips to the expected body.")
+        tr = Test.AddTestRun("Verify the file unzips to the expected body.")
         tr.Processes.Default.Command = "gunzip {}".format(gzipped_body_file)
         tr.Processes.Default.Ready = When.FileExists(unzipped_body_file)
         tr.Processes.Default.ReturnCode = 0
@@ -252,7 +252,7 @@ echo date('l jS \of F Y h:i:s A');
         gz_disk_file.Size = Testers.GreaterThan(0)
 
         # Now, unzip the file and make sure its size is the original 0 size body.
-        tr = Test.AddTestRun("Verify the file uzips to a zero sized file.")
+        tr = Test.AddTestRun("Verify the file unzips to a zero sized file.")
         tr.Processes.Default.Command = "gunzip {}".format(gzipped_empty_body)
         tr.Processes.Default.Ready = When.FileExists(empty_body_file)
         tr.Processes.Default.ReturnCode = 0

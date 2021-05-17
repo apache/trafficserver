@@ -479,7 +479,7 @@ struct ImageTransform : TransformationPlugin {
   {
     TSDebug(PLUGIN_TAG, "handleInputComplete");
 
-    threadPool_.emplace_back([this](void) {
+    threadPool_.emplace_back([this]() {
       magick::Image image;
       magick::Exception exception;
       magick::Wand wand;

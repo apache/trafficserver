@@ -35,7 +35,6 @@ ts = Test.MakeATSProcess("ts", enable_cache=False)
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'http|dns|redirect',
-    'proxy.config.http.redirection_enabled': 1,
     'proxy.config.http.number_of_redirections': 1,
     'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
     'proxy.config.dns.resolv_conf': 'NULL',

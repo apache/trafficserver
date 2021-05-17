@@ -46,8 +46,12 @@ server.addResponse("sessionlog.json",
                        "headers": "HTTP/1.1 200 OK\r\nTest: 3\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n",
                        "body": "Test 3"})
 
+nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
+
 ts.Disk.records_config.update({
     'proxy.config.net.connections_throttle': 100,
+    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+    'proxy.config.dns.resolv_conf': 'NULL'
 })
 # setup some config file for this server
 ts.Disk.remap_config.AddLine(
@@ -77,6 +81,7 @@ Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'field-test.log'),
 tr = Test.AddTestRun()
 # Wait for the micro server
 tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(nameserver)
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 

@@ -47,7 +47,7 @@ ts.addSSLfile("ssl/signer.key")
 dns.addRecords(records={"localhost": ["127.0.0.1"]})
 dns.addRecords(records={"one.testmatch": ["127.0.0.1"]})
 dns.addRecords(records={"two.example.one": ["127.0.0.1"]})
-# Need no remap rules.  Everything should be proccessed by sni
+# Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(
@@ -189,7 +189,7 @@ trreload.Processes.Default.Command = 'traffic_ctl config reload'
 trreload.Processes.Default.Env = ts.Env
 trreload.Processes.Default.ReturnCode = 0
 
-# Should termimate on traffic_server (not tunnel)
+# Should terminate on traffic_server (not tunnel)
 tr = Test.AddTestRun("foo.com no Tunnel-test")
 tr.StillRunningAfter = ts
 # Wait for the reload to complete by running the sni_reload_done test

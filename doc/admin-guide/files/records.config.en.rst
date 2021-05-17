@@ -1574,13 +1574,6 @@ Origin Server Connect Attempts
 
    Specifies how long (in seconds) |TS| remembers that an origin server was unreachable.
 
-.. ts:cv:: CONFIG proxy.config.http.down_server.abort_threshold INT 10
-   :reloadable:
-   :overridable:
-
-   The number of seconds before |TS| marks an origin server as unavailable after a client abandons a request
-   because the origin server was too slow in sending the response header.
-
 .. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
    :reloadable:
    :overridable:
@@ -2608,6 +2601,13 @@ DNS
    ``1`` TCP_RETRY: |TS| first UDP, retries with TCP if UDP response is truncated.
    ``2`` TCP_ONLY:  |TS| always talks to nameservers over TCP.
    ===== ======================================================================
+
+.. ts:cv:: CONFIG proxy.config.dns.max_tcp_continuous_failures INT 10
+
+   If DNS connection mode is TCP_RETRY, set the threshold of the continuous TCP
+   query failures count for the TCP connection, reset the TCP connection immediately
+   if the continuous TCP query failures conut over the threshold. If the threshold
+   is 0 (or less than 0) we close this feature.
 
 .. ts:cv:: CONFIG proxy.config.dns.max_dns_in_flight INT 2048
 
@@ -3914,7 +3914,6 @@ HTTP/2 Configuration
 
 .. ts:cv:: CONFIG proxy.config.http2.accept_no_activity_timeout INT 120
    :reloadable:
-   :overridable:
 
    Specifies how long |TS| keeps connections to clients open if no
    activity is received on the connection. Lowering this timeout can ease
@@ -3923,7 +3922,6 @@ HTTP/2 Configuration
 
 .. ts:cv:: CONFIG proxy.config.http2.no_activity_timeout_in INT 120
    :reloadable:
-   :overridable:
 
    Specifies how long |TS| keeps connections to clients open if a
    transaction stalls. Lowering this timeout can ease pressure on the proxy if

@@ -37,10 +37,13 @@ bwformat(ts::BufferWriter &w, ts::BWFSpec const &spec, atomic<T> const &v)
 {
   return ts::bwformat(w, spec, v.load());
 }
+
 } // end namespace std
 
 namespace ts
 {
+BufferWriter &bwformat(BufferWriter &w, BWFSpec const &spec, std::error_code const &ec);
+
 namespace bwf
 {
   using namespace std::literals; // enable ""sv

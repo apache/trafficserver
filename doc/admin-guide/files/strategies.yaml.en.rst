@@ -76,7 +76,7 @@ Example::
         - scheme: https
           port: 443
           health_check_url: https://192.168.1.1:443
-  	- &p2
+    - &p2
       host: p2.foo.com
       protocol:
         - scheme: http
@@ -98,14 +98,14 @@ The field definitions in the examples below are defined in the **hosts** section
 Example using **YAML** anchors and references::
 
   groups:
-  	- &g1
+    - &g1
       - <<: *p1
-      	weight: 1.5
+        weight: 1.5
       - <<: *p2
-      	weight: 0.5
-  	- &g2
+        weight: 0.5
+    - &g2
       - <<: *p3
-      	weight: 0.5
+        weight: 0.5
       - <<: *p4
         weight: 1.5
 
@@ -113,8 +113,7 @@ Explicitly defined Example, no **YAML** references::
 
   groups:
     - &g1
-      - p1
-        host: p1.foo.com
+      - host: p1.foo.com
         protocol:
           - scheme: http
             port: 80
@@ -123,8 +122,7 @@ Explicitly defined Example, no **YAML** references::
             port: 443
             health_check_url: https://192.168.1.1:443
         weight: 0.5
-      - p2
-        host: p2.foo.com
+      - host: p2.foo.com
         protocol:
           - scheme: http
             port: 80
@@ -134,8 +132,7 @@ Explicitly defined Example, no **YAML** references::
             health_check_url: https://192.168.1.2:443
         weight: 0.5
     - &g2
-      - p3
-        host: p3.foo.com
+      - host: p3.foo.com
         protocol:
           - scheme: http
             port: 80
@@ -144,8 +141,7 @@ Explicitly defined Example, no **YAML** references::
             port: 443
             health_check_url: https://192.168.1.3:443
         weight: 0.5
-      - p4
-        host: p4.foo.com
+      - host: p4.foo.com
         protocol:
           - scheme: http
             port: 80

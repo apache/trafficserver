@@ -240,7 +240,7 @@ cryptoMessageDigestGet(const char *digestType, const char *data, size_t dataLen,
 #else
   ctx = HMAC_CTX_new();
 #endif
-  if (!HMAC_Init_ex(ctx, key, keyLen, md, NULL)) {
+  if (!HMAC_Init_ex(ctx, key, keyLen, md, nullptr)) {
     AccessControlError("failed to create EVP message digest context: %s", cryptoErrStr(buffer, sizeof(buffer)));
     goto err;
   }

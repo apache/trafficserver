@@ -1,5 +1,5 @@
 '''
-Test correct handling of altenates via the Vary header.
+Test correct handling of alternates via the Vary header.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,7 +18,7 @@ Test correct handling of altenates via the Vary header.
 #  limitations under the License.
 
 Test.Summary = '''
-Test correct handling of altenates via the Vary header.
+Test correct handling of alternates via the Vary header.
 '''
 
 ts = Test.MakeATSProcess("ts")

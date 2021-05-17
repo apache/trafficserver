@@ -371,19 +371,18 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
   TSDebug(PLUGIN_NAME, "'%s' '%s' successfully created strategies in file %s num %d", remap_from, remap_to, config_file_path,
           int(file_strategies.size()));
 
-  std::unique_ptr<TSNextHopSelectionStrategy> strategy;
+  std::unique_ptr<TSNextHopSelectionStrategy> new_strategy;
 
-  for (auto it = file_strategies.begin(); it != file_strategies.end(); it++) {
-    TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance strategy file had strategy named '%s'", remap_from, remap_to,
-            it->first.c_str());
-    if (strncmp(strategy_name, it->first.c_str(), strlen(strategy_name)) != 0) {
+  for (auto &[name, strategy] : file_strategies) {
+    TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance strategy file had strategy named '%s'", remap_from, remap_to, name.c_str());
+    if (strncmp(strategy_name, name.c_str(), strlen(strategy_name)) != 0) {
       continue;
     }
-    TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance using '%s'", remap_from, remap_to, it->first.c_str());
-    strategy = std::move(it->second);
+    TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance using '%s'", remap_from, remap_to, name.c_str());
+    new_strategy = std::move(strategy);
   }
 
-  if (strategy.get() == nullptr) {
+  if (new_strategy.get() == nullptr) {
     TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance strategy '%s' not found in file '%s'", remap_from, remap_to, strategy_name,
             config_file_path);
     return TS_ERROR;
@@ -391,7 +390,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
 
   TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance successfully loaded strategy '%s' from '%s'.", remap_from, remap_to,
           strategy_name, config_file_path);
-  *ih = static_cast<void *>(strategy.release());
+  *ih = static_cast<void *>(new_strategy.release());
   return TS_SUCCESS;
 }
 

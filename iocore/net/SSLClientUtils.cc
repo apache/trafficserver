@@ -163,7 +163,7 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
   if (!sni_addr.empty()) {
     std::string lookup_key;
     ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
-    origin_sess_cache->insert_session(lookup_key, sess);
+    origin_sess_cache->insert_session(lookup_key, sess, ssl);
     return 1;
   } else {
     if (is_debug_tag_set("ssl.origin_session_cache")) {
@@ -221,7 +221,6 @@ SSLInitClientContext(const SSLConfigParams *params)
   }
 #endif
 
-  SSL_CTX_set_verify(client_ctx, SSL_VERIFY_PEER, verify_callback);
   SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(client_ctx, false);

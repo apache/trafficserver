@@ -102,23 +102,26 @@ ts.Disk.records_config.update({
     'proxy.config.http.normalize_ae': 0,
 })
 
+ts.Setup.Copy("compress.config")
+ts.Setup.Copy("compress2.config")
+
 ts.Disk.remap_config.AddLine(
     'map http://ae-0/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.TestDirectory)
+    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory)
 )
 ts.Disk.remap_config.AddLine(
     'map http://ae-1/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1' +
-    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.TestDirectory)
+    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory)
 )
 ts.Disk.remap_config.AddLine(
     'map http://ae-2/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
     ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2' +
-    ' @plugin=compress.so @pparam={}/compress2.config'.format(Test.TestDirectory)
+    ' @plugin=compress.so @pparam={}/compress2.config'.format(Test.RunDirectory)
 )
 ts.Disk.remap_config.AddLine(
     'map http://ae-3/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.TestDirectory)
+    ' @plugin=compress.so @pparam={}/compress.config'.format(Test.RunDirectory)
 )
 
 for i in range(3):
@@ -145,7 +148,7 @@ for i in range(3):
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Command = curl(ts, i, "deflate")
 
-# Test Aceept-Encoding normalization.
+# Test Accept-Encoding normalization.
 
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
@@ -191,7 +194,7 @@ tr.Processes.Default.Command = curl_post(ts, 3, "gzip")
 # compress_long.log contains all the output from the curl commands.  The tr removes the carriage returns for easier
 # readability.  Curl seems to have a bug, where it will neglect to output an end of line before outputing an HTTP
 # message header line.  The sed command is a work-around for this problem.  greplog.sh uses the grep command to
-# select HTTP request/response line that should be consitent every time the test runs.
+# select HTTP request/response line that should be consistent every time the test runs.
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0

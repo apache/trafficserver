@@ -22,7 +22,7 @@ Test.Summary = '''
 '''
 Test.SkipUnless(Condition.PluginExists('cookie_remap.so'))
 Test.ContinueOnFail = True
-Test.testName = "cookie_remap: cookie regex match and substition"
+Test.testName = "cookie_remap: cookie regex match and substitution"
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts")

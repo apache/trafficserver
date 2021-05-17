@@ -205,6 +205,12 @@ struct CacheVConnection : public VConnection {
     return -1;
   }
 
+  virtual const char *
+  get_disk_path() const
+  {
+    return nullptr;
+  }
+
   /** Test if the VC can support pread.
       @return @c true if @c do_io_pread will work, @c false if not.
   */

@@ -104,6 +104,8 @@ ts.Disk.ssl_multicert_config.AddLine(
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
 ts.Disk.records_config.update({
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -133,7 +135,7 @@ tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-# Should succed.  No message
+# Should succeed.  No message
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("default-permissive-fail")
@@ -247,7 +249,7 @@ ts.Disk.diags_log.Content += Testers.ContainsExpression(
 # name check failure for random.com
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     r"WARNING: SNI \(random.com\) not in certificate. Action=Continue server=127.0.0.1\(127.0.0.1\)",
-    "Warning on missing name for randome.com")
+    "Warning on missing name for random.com")
 # name check failure for bar.com
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     r"WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com\(127.0.0.1\)",

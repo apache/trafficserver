@@ -43,7 +43,6 @@ delay_get_ttfb = Test.Processes.Process(
 ts.Disk.records_config.update({
     'proxy.config.url_remap.remap_required': 1,
     'proxy.config.http.connect_attempts_timeout': 1,
-    'proxy.config.http.post_connect_attempts_timeout': 1,
     'proxy.config.http.connect_attempts_max_retries': 1,
     'proxy.config.http.transaction_no_activity_timeout_out': 4,
     'proxy.config.diags.debug.enabled': 0,
@@ -76,12 +75,12 @@ tr.StillRunningAfter = delay_post_connect
 tr.StillRunningAfter = Test.Processes.ts
 
 #  Should not catch the connect timeout.  Even though the first bytes are not sent until after the 2 second connect timeout
-#  Shoudl not retry the connection
+#  Should not retry the connection
 tr = Test.AddTestRun("tr-delayed-post")
 tr.Processes.Default.StartBefore(delay_post_ttfb, ready=When.PortOpen(Test.Variables.block_ttfb_port))
 tr.Processes.Default.Command = 'curl -H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/ttfb_blocked --tlsv1.2'.format(
     ts.Variables.port)
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("504 Connection Timed Out", "Conntect timeout")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("504 Connection Timed Out", "Connect timeout")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_post_ttfb
 
@@ -104,7 +103,7 @@ tr = Test.AddTestRun("tr-delayed-get")
 tr.Processes.Default.StartBefore(delay_get_ttfb, ready=When.PortOpen(Test.Variables.get_block_ttfb_port))
 tr.Processes.Default.Command = 'curl -H"Connection:close" -i http://127.0.0.1:{0}/get_ttfb_blocked --tlsv1.2'.format(
     ts.Variables.port)
-tr.Processes.Default.Streams.All = Testers.ContainsExpression("504 Connection Timed Out", "Conntect timeout")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("504 Connection Timed Out", "Connect timeout")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_get_ttfb
 
