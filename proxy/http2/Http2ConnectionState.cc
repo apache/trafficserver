@@ -973,6 +973,122 @@ static const http2_frame_dispatch frame_handlers[HTTP2_FRAME_TYPE_MAX] = {
   rcv_continuation_frame,  // HTTP2_FRAME_TYPE_CONTINUATION
 };
 
+////////
+// Http2ConnectionSettings
+//
+Http2ConnectionSettings::Http2ConnectionSettings()
+{
+  // 6.5.2.  Defined SETTINGS Parameters. These should generally not be
+  // modified,
+  // only if the protocol changes should these change.
+  settings[indexof(HTTP2_SETTINGS_ENABLE_PUSH)]            = HTTP2_ENABLE_PUSH;
+  settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = HTTP2_MAX_CONCURRENT_STREAMS;
+  settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = HTTP2_INITIAL_WINDOW_SIZE;
+  settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = HTTP2_MAX_FRAME_SIZE;
+  settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = HTTP2_HEADER_TABLE_SIZE;
+  settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = HTTP2_MAX_HEADER_LIST_SIZE;
+}
+
+void
+Http2ConnectionSettings::settings_from_configs()
+{
+  settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams_in;
+  settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = Http2::initial_window_size;
+  settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = Http2::max_frame_size;
+  settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = Http2::header_table_size;
+  settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = Http2::max_header_list_size;
+}
+
+unsigned
+Http2ConnectionSettings::get(Http2SettingsIdentifier id) const
+{
+  if (0 < id && id < HTTP2_SETTINGS_MAX) {
+    return this->settings[indexof(id)];
+  } else {
+    ink_assert(!"Bad Settings Identifier");
+  }
+
+  return 0;
+}
+
+unsigned
+Http2ConnectionSettings::set(Http2SettingsIdentifier id, unsigned value)
+{
+  if (0 < id && id < HTTP2_SETTINGS_MAX) {
+    return this->settings[indexof(id)] = value;
+  } else {
+    // Do nothing - 6.5.2 Unsupported parameters MUST be ignored
+  }
+
+  return 0;
+}
+
+unsigned
+Http2ConnectionSettings::indexof(Http2SettingsIdentifier id)
+{
+  ink_assert(0 < id && id < HTTP2_SETTINGS_MAX);
+
+  return id - 1;
+}
+
+////////
+// Http2ConnectionState
+//
+Http2ConnectionState::Http2ConnectionState() : stream_list()
+{
+  SET_HANDLER(&Http2ConnectionState::main_event_handler);
+}
+
+void
+Http2ConnectionState::init()
+{
+  this->_server_rwnd = Http2::initial_window_size;
+
+  local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
+  remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
+  if (Http2::stream_priority_enabled) {
+    dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
+  }
+
+  _cop = ActivityCop<Http2Stream>(this->mutex, &stream_list, 1);
+  _cop.start();
+}
+
+void
+Http2ConnectionState::destroy()
+{
+  if (in_destroy) {
+    schedule_zombie_event();
+    return;
+  }
+  in_destroy = true;
+
+  _cop.stop();
+
+  if (shutdown_cont_event) {
+    shutdown_cont_event->cancel();
+    shutdown_cont_event = nullptr;
+  }
+  cleanup_streams();
+
+  delete local_hpack_handle;
+  local_hpack_handle = nullptr;
+  delete remote_hpack_handle;
+  remote_hpack_handle = nullptr;
+  delete dependency_tree;
+  dependency_tree  = nullptr;
+  this->ua_session = nullptr;
+
+  if (fini_event) {
+    fini_event->cancel();
+  }
+  if (zombie_event) {
+    zombie_event->cancel();
+  }
+  // release the mutex after the events are cancelled and sessions are destroyed.
+  mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
+}
+
 int
 Http2ConnectionState::main_event_handler(int event, void *edata)
 {
