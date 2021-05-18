@@ -27,10 +27,8 @@
 #include "tscore/ink_platform.h"
 #include "tscore/MMH.h"
 
-#define MMH_X_SIZE 512
-
 /* BUG: INKqa11504: need it be to 64 bits...otherwise it overflows */
-static uint64_t MMH_x[MMH_X_SIZE + 8] = {
+uint64_t MMH_x[MMH_X_SIZE + 8] = {
   0x3ee18b32, 0x746d0d6b, 0x591be6a3, 0x760bd17f, 0x363c765d, 0x4bf3d5c5, 0x10f0510a, 0x39a84605, 0x2282b48f, 0x6903652e,
   0x1b491170, 0x1ab8407a, 0x776b8aa8, 0x5b126ffe, 0x5095db1a, 0x565fe90c, 0x3ae1f068, 0x73fdf0cb, 0x72f39a81, 0x6a40a4a3,
   0x4ef557fe, 0x360c1a2c, 0x4579b0ea, 0x61dfd174, 0x269b242f, 0x752d6298, 0x15f10fa3, 0x618b7ab3, 0x6699171f, 0x488f2c6c,
@@ -83,18 +81,6 @@ static uint64_t MMH_x[MMH_X_SIZE + 8] = {
   0x2f2a9185, 0x5873704b, 0x0a8c69bc, 0x06b49059, 0x49837c48, 0x4f90a2d0, 0x29ad7dd7, 0x3674be92, 0x46d5635f, 0x782758a2,
   0x721a2a75, 0x13427ca9, 0x20e03cc9, 0x5f884596, 0x19dc210f, 0x066c954d, 0x52f43f40, 0x5d9c256f, 0x7f0acaae, 0x1e186b81,
   0x55e9920f, 0x0e4f77b2, 0x6700ec53, 0x268837c0, 0x554ce08b, 0x4284e695, 0x2127e806, 0x384cb53b, 0x51076b2f, 0x23f9eb15};
-
-// We don't need this generator in release.
-#ifdef TEST
-// generator for above
-static void
-ink_init_MMH()
-{
-  srand48(13); // must remain the same!
-  for (int i = 0; i < MMH_X_SIZE; i++)
-    MMH_x[i] = lrand48();
-}
-#endif /* TEST */
 
 int
 ink_code_incr_MMH_init(MMH_CTX *ctx)
@@ -380,116 +366,3 @@ MMHContext::finalize(CryptoHash &hash)
 {
   return 0 == ink_code_incr_MMH_final(hash.u8, &_ctx);
 }
-
-#ifdef TEST
-
-#define TEST_COLLISIONS 10000000
-
-static int
-xxcompar(uint32_t **x, uint32_t **y)
-{
-  for (int i = 0; i < 4; i++) {
-    if (x[i] > y[i])
-      return 1;
-    if (x[i] < y[i])
-      return -1;
-  }
-  return 0;
-}
-
-typedef uint32_t i4_t[4];
-i4_t *xxh;
-double *xf;
-
-main()
-{
-  union {
-    unsigned char hash[16];
-    uint32_t h[4];
-  } h;
-
-  xxh = (i4_t *)ats_malloc(4 * sizeof(uint32_t) * TEST_COLLISIONS);
-  xf  = (double *)ats_malloc(sizeof(double) * TEST_COLLISIONS);
-
-  printf("test collisions\n");
-  char *sc1 = "http://npdev:19080/1.6664000000/4000";
-  char *sc2 = "http://npdev:19080/1.8666000000/4000";
-  char *sc3 = "http://:@npdev/1.6664000000/4000;?";
-  char *sc4 = "http://:@npdev/1.8666000000/4000;?";
-  ink_code_MMH((unsigned char *)sc1, strlen(sc1), h.hash);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-  ink_code_MMH((unsigned char *)sc2, strlen(sc2), h.hash);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-  ink_code_MMH((unsigned char *)sc3, strlen(sc3), h.hash);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-  ink_code_MMH((unsigned char *)sc4, strlen(sc4), h.hash);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-
-  srand48(time(nullptr));
-  for (int xx = 0; xx < TEST_COLLISIONS; xx++) {
-    char xs[256];
-    xf[xx] = drand48();
-    sprintf(xs, "http://@npdev/%16.14f/4000;?", xf[xx]);
-    ink_code_MMH((unsigned char *)xs, strlen(xs), (unsigned char *)&xxh[xx]);
-  }
-  qsort(xxh, TEST_COLLISIONS, 16, xxcompar);
-  for (int xy = 0; xy < TEST_COLLISIONS - 1; xy++) {
-    if (xxh[xy][0] == xxh[xy + 1][0] && xxh[xy][1] == xxh[xy + 1][1] && xxh[xy][2] == xxh[xy + 1][2] &&
-        xxh[xy][3] == xxh[xy + 1][3])
-      printf("********** collision %d\n", xy);
-  }
-
-  unsigned char *s  = (unsigned char *)MMH_x;
-  int l             = sizeof(MMH_x);
-  unsigned char *s1 = (unsigned char *)ats_malloc(l + 3);
-  s1 += 1;
-  memcpy(s1, s, l);
-  unsigned char *s2 = (unsigned char *)ats_malloc(l + 3);
-  s2 += 2;
-  memcpy(s2, s, l);
-  unsigned char *s3 = (unsigned char *)ats_malloc(l + 3);
-  s3 += 3;
-  memcpy(s3, s, l);
-
-  printf("test alignment\n");
-  ink_code_MMH(s, l, h.hash);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-  ink_code_MMH(s1, l, h.hash);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-  ink_code_MMH(s2, l, h.hash);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-  ink_code_MMH(s3, l, h.hash);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-
-  int i = 0;
-  MMH_CTX c;
-  unsigned char *t = s;
-  printf("test chunking\n");
-  ink_code_incr_MMH_init(&c);
-  for (i = 0; i < 24; i++) {
-    ink_code_incr_MMH_update(&c, (char *)t, i);
-    t += i;
-  }
-  ink_code_incr_MMH_final((char *)h.hash, &c);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-  int q = t - s;
-  ink_code_MMH(s, q, h.hash);
-  printf("%X %X %X %X\n", h.h[0], h.h[1], h.h[2], h.h[3]);
-
-  FILE *fp = fopen("/kernel/genunix", "r");
-  char x[4096];
-  int hist[256];
-  memset(hist, 0, sizeof(hist));
-  size_t xx;
-  while (((xx = fread(x, 1, 128, fp)) == 128)) {
-    ink_code_MMH((unsigned char *)x, 128, h.hash);
-    hist[h.h[0] & 255]++;
-  }
-  for (int z = 0; z < 256; z++) {
-    printf("%6d ", hist[z]);
-    if (!(z % 7))
-      printf("\n");
-  }
-}
-
-#endif

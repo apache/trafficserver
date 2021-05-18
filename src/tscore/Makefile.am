@@ -189,7 +189,8 @@ test_tscore_SOURCES = \
 	unit_tests/test_Tokenizer.cc \
 	unit_tests/test_ts_file.cc \
 	unit_tests/test_Version.cc \
-	unit_tests/test_Errata.cc
+	unit_tests/test_Errata.cc \
+	unit_tests/test_MMH.cc
 
 if HAS_HKDF
 test_tscore_SOURCES += \
