@@ -199,6 +199,12 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
 
+  if (vc->has_error()) {
+    vc->lerrno = vc->error;
+    vc->readSignalAndUpdate(VC_EVENT_ERROR);
+    return;
+  }
+
   // It is possible that the closed flag got set from HttpSessionManager in the
   // global session pool case.  If so, the closed flag should be stable once we get the
   // s->vio.mutex (the global session pool mutex).
@@ -365,6 +371,12 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
   if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.get()) {
     write_reschedule(nh, vc);
+    return;
+  }
+
+  if (vc->has_error()) {
+    vc->lerrno = vc->error;
+    write_signal_and_update(VC_EVENT_ERROR, vc);
     return;
   }
 
