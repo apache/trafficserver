@@ -55,6 +55,9 @@ public:
   // Close when EventIO close;
   virtual int close() = 0;
 
+  bool has_error() const;
+  void set_error_from_socket();
+
   // get fd
   virtual int get_fd()                   = 0;
   virtual Ptr<ProxyMutex> &get_mutex()   = 0;
@@ -65,6 +68,7 @@ public:
   NetState write{};
 
   int closed     = 0;
+  int error      = 0;
   NetHandler *nh = nullptr;
 
   ink_hrtime inactivity_timeout_in      = 0;
@@ -94,3 +98,16 @@ public:
     } f;
   };
 };
+
+inline bool
+NetEvent::has_error() const
+{
+  return error != 0;
+}
+
+inline void
+NetEvent::set_error_from_socket()
+{
+  socklen_t errlen = sizeof(error);
+  getsockopt(this->get_fd(), SOL_SOCKET, SO_ERROR, (void *)&error, &errlen);
+}
