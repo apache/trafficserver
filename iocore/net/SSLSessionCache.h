@@ -187,15 +187,15 @@ class SSLOriginSession
 {
 public:
   std::string key;
-  Ptr<IOBufferData> asn1_data; /* this is the ASN1 representation of the SSL_CTX */
-  size_t len_asn1_data;
-  Ptr<IOBufferData> extra_data;
+  SSL_SESSION *session;
+  ssl_curve_id curve_id;
 
-  SSLOriginSession(const std::string &lookup_key, const Ptr<IOBufferData> &ssl_asn1_data, size_t len_asn1,
-                   Ptr<IOBufferData> &exdata)
-    : key(lookup_key), asn1_data(ssl_asn1_data), len_asn1_data(len_asn1), extra_data(exdata)
+  SSLOriginSession(const std::string &lookup_key, SSL_SESSION *sess, ssl_curve_id curve)
+    : key(lookup_key), session(sess), curve_id(curve)
   {
   }
+
+  ~SSLOriginSession() { SSL_SESSION_free(session); }
 
   LINK(SSLOriginSession, link);
 };
@@ -207,7 +207,7 @@ public:
   ~SSLOriginSessionCache();
 
   void insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl);
-  bool get_session(const std::string &lookup_key, SSL_SESSION **sess, ssl_session_cache_exdata **data);
+  bool get_session(const std::string &lookup_key, SSL_SESSION **sess, ssl_curve_id *curve);
 
 private:
   void remove_oldest_session(const std::unique_lock<std::shared_mutex> &lock);
