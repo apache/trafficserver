@@ -26,6 +26,4 @@
 namespace ts
 {
 thread_local std::mt19937_64 Random::_engine{std::random_device{}()};
-thread_local std::uniform_int_distribution<uint64_t> Random::_dist_int{0, UINT64_MAX};
-thread_local std::uniform_real_distribution<double> Random::_dist_real{0, 1};
 }; // namespace ts

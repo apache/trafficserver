@@ -33,13 +33,15 @@ public:
   static uint64_t
   random()
   {
-    return _dist_int(_engine);
+    std::uniform_int_distribution<uint64_t> dist{0, UINT64_MAX};
+    return dist(_engine);
   }
 
   static double
   drandom()
   {
-    return _dist_real(_engine);
+    std::uniform_real_distribution<double> dist{0, 1};
+    return dist(_engine);
   }
 
   static void
@@ -50,7 +52,5 @@ public:
 
 private:
   thread_local static std::mt19937_64 _engine;
-  thread_local static std::uniform_int_distribution<uint64_t> _dist_int;
-  thread_local static std::uniform_real_distribution<double> _dist_real;
 };
 }; // namespace ts
