@@ -161,7 +161,7 @@ TEST_CASE("1", "[JWSParsingTest]")
 
   SECTION("JWT Parsing with unsupported value for cdnistd claim")
   {
-    REQUIRE(!jwt_parsing_helper("{\"cdniets\":30,\"cdnistt\":1,\"cdnistd\":4,\"iss\":\"Content Access "
+    REQUIRE(!jwt_parsing_helper("{\"cdniets\":30,\"cdnistt\":1,\"cdnistd\":-2,\"iss\":\"Content Access "
                                 "Manager\",\"cdniuc\":\"uri-regex:http://foobar.local/testDir/*\"}"));
   }
   fprintf(stderr, "\n");

@@ -27,6 +27,8 @@ The config file should be a JSON object that contains the following:
   - `cdniets`: Must be set if using cdnistt. Provides means of setting Expiry Times when generating subsequent tokens. It denotes
     the number of seconds to be added to the time at which the JWT is verified that gives the value of the Expiry Time claim of the
     next signed JWT.
+  - `cdnistd`: Integer value representing number of path segments that renewal token cookies should valid for. This is used when
+     generating the path attribute of the cookies containing renewal tokens.
   - `keys`: A list of json objects, each one representing a key. Each key should have the following attributes:
       - `alg`: The Cryptographic algorithm to be used with the key.
       - `kid`: The key identifier
