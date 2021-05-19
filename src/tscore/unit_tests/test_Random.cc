@@ -48,5 +48,5 @@ TEST_CASE("test random", "[libts][random]")
     x.random();
   }
   diff = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start);
-  std::cout << (double)diff.count() / 1000000 << " ns per Random::random()" << std::endl;
+  std::cout << (double)diff.count() / 1000000 << " ns per InkRand::random()" << std::endl;
 }
