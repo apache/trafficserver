@@ -151,7 +151,6 @@ AC_SUBST([build_number])
 #
 # Debug
 #
-
 AC_MSG_CHECKING([whether to enable debugging])
 AC_ARG_ENABLE([debug],
   [AS_HELP_STRING([--enable-debug],[turn on debugging])],
@@ -167,6 +166,15 @@ AC_ARG_ENABLE([mime-sanity-check],
   [enable_mime_sanity_check=no]
 )
 AC_MSG_RESULT([$enable_mime_sanity_check])
+
+AC_MSG_CHECKING([whether to enable all asserts, a cheaper debug])
+AC_ARG_ENABLE([all-asserts],
+  [AS_HELP_STRING([--enable-all-asserts],[turn on all code asserts, both debug and release])],
+  [],
+  [enable_all_asserts=no]
+)
+AC_MSG_RESULT([$enable_all_asserts])
+
 
 # Enable code coverage instrumentation only if requested by the user.
 AC_MSG_CHECKING([whether to code coverage])
@@ -969,12 +977,16 @@ if test "x${enable_debug}" = "xyes"; then
   TS_ADDTO(AM_CFLAGS, [${cc_oflag_dbg}])
   TS_ADDTO(AM_CXXFLAGS, [${cxx_oflag_dbg}])
   TS_ADDTO(AM_CPPFLAGS, [-DDEBUG -D_DEBUG])
-  if test "x${enable_mime_sanity_check}" = "xyes"; then
-    TS_ADDTO(AM_CPPFLAGS, [-DENABLE_MIME_SANITY_CHECK])
-  fi
 else
   TS_ADDTO(AM_CFLAGS, [${cc_oflag_opt}])
   TS_ADDTO(AM_CXXFLAGS, [${cxx_oflag_opt}])
+fi
+
+if test "x${enable_mime_sanity_check}" = "xyes"; then
+  TS_ADDTO(AM_CPPFLAGS, [-DENABLE_MIME_SANITY_CHECK])
+fi
+if test "x${enable_all_asserts}" = "xyes"; then
+  TS_ADDTO(AM_CPPFLAGS, [-DENABLE_ALL_ASSERTS])
 fi
 
 # Flags for ASAN
