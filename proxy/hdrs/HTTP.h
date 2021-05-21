@@ -102,7 +102,7 @@ enum HTTPWarningCode {
   HTTP_WARNING_CODE_MISC_WARNING           = 199
 };
 
-/* squild log codes
+/* squid log codes
    There is code (e.g. logstats) that depends on these errors coming at the end of this enum */
 enum SquidLogCode {
   SQUID_LOG_EMPTY                     = '0',
@@ -160,13 +160,13 @@ enum SquidLogCode {
   SQUID_LOG_ERR_UNKNOWN               = 'Z'
 };
 
-// squild log subcodes
+// squid log subcodes
 enum SquidSubcode {
   SQUID_SUBCODE_EMPTY                     = '0',
   SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED = '1',
 };
 
-/* squid hieratchy codes */
+/* squid hierarchy codes */
 enum SquidHierarchyCode {
   SQUID_HIER_EMPTY                           = '0',
   SQUID_HIER_NONE                            = '1',
