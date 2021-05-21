@@ -2080,7 +2080,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
     // if exceeded limit deallocate postdata buffers and disable redirection
-    if (!(enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections))) {
+    if (!(enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections))) {
       this->disable_redirect();
     }
 
@@ -7768,11 +7768,11 @@ HttpSM::set_next_state()
 void
 HttpSM::do_redirect()
 {
-  SMDebug("http_redirect", "[HttpSM::do_redirect]");
-  if (!enable_redirection || redirection_tries > t_state.txn_conf->number_of_redirections) {
+  SMDebug("http_redirect", "[HttpSM::do_redirect] enable_redirection %u", enable_redirection);
+  if (!enable_redirection || redirection_tries >= t_state.txn_conf->number_of_redirections) {
     this->postbuf_clear();
 
-    if (enable_redirection && redirection_tries > t_state.txn_conf->number_of_redirections) {
+    if (enable_redirection && redirection_tries >= t_state.txn_conf->number_of_redirections) {
       t_state.squid_codes.subcode = SQUID_SUBCODE_NUM_REDIRECTIONS_EXCEEDED;
     }
 
@@ -8117,7 +8117,7 @@ HttpSM::is_private()
 inline bool
 HttpSM::is_redirect_required()
 {
-  bool redirect_required = (enable_redirection && (redirection_tries <= t_state.txn_conf->number_of_redirections) &&
+  bool redirect_required = (enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections) &&
                             !HttpTransact::is_fresh_cache_hit(t_state.cache_lookup_result));
 
   SMDebug("http_redirect", "is_redirect_required %u", redirect_required);
