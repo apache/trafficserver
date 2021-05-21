@@ -83,15 +83,18 @@ TEST_CASE("MMH", "[libts][MMH]")
       printf("********** collision %d\n", xy);
   }
 
-  unsigned char *s  = (unsigned char *)MMH_x;
-  int l             = sizeof(MMH_x);
-  unsigned char *s1 = (unsigned char *)ats_malloc(l + 3);
+  unsigned char *s       = (unsigned char *)MMH_x;
+  int l                  = sizeof(MMH_x);
+  unsigned char *s1      = (unsigned char *)ats_malloc(l + 4);
+  unsigned char *free_s1 = s1;
   s1 += 1;
   memcpy(s1, s, l);
-  unsigned char *s2 = (unsigned char *)ats_malloc(l + 3);
+  unsigned char *s2      = (unsigned char *)ats_malloc(l + 4);
+  unsigned char *free_s2 = s2;
   s2 += 2;
   memcpy(s2, s, l);
-  unsigned char *s3 = (unsigned char *)ats_malloc(l + 3);
+  unsigned char *s3      = (unsigned char *)ats_malloc(l + 4);
+  unsigned char *free_s3 = s3;
   s3 += 3;
   memcpy(s3, s, l);
 
@@ -136,4 +139,9 @@ TEST_CASE("MMH", "[libts][MMH]")
     if (!(z % 7))
       printf("\n");
   }
+  printf("\n");
+
+  ats_free(free_s1);
+  ats_free(free_s2);
+  ats_free(free_s3);
 }
