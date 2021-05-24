@@ -2349,8 +2349,6 @@ ParseResult
 MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, bool eof_p, ScanType scan_type)
 {
   ParseResult zret = PARSE_RESULT_CONT;
-  // Need this for handling dangling CR.
-  static const char RAW_CR{ParseRules::CHAR_CR};
 
   auto text = input;
   while (PARSE_RESULT_CONT == zret && !text.empty()) {
@@ -2368,7 +2366,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
         }
       } else if (ParseRules::is_lf(*text)) {
         ++text;
-        zret = PARSE_RESULT_DONE; // Required by regression test.
+        zret = PARSE_RESULT_ERROR; // lone LF
       } else {
         // consume this character in the next state.
         m_state = MIME_PARSE_INSIDE;
@@ -2380,10 +2378,7 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
         ++text;
         zret = PARSE_RESULT_DONE;
       } else {
-        // This really should be an error (spec doesn't permit lone CR) but the regression tests
-        // require it.
-        this->append(TextView(&RAW_CR, 1)); // This is to fix a core dump of the icc 19.1 compiler when {&RAW_CR, 1} is used
-        m_state = MIME_PARSE_INSIDE;
+        zret = PARSE_RESULT_ERROR; // lone CR
       }
       break;
     case MIME_PARSE_INSIDE: {
