@@ -18,13 +18,14 @@ Implement the Proxy Verifier test server extension.
 #  limitations under the License.
 
 import os
+
 from ports import get_port
-from verifier_common import create_address_argument
+from verifier_common import create_address_argument, substitute_context_in_replay_file
 
 
 def _configure_server(obj, process, name, replay_path, http_ports=None, https_ports=None,
                       http3_ports=None, ssl_cert='', ca_cert='', verbose=True,
-                      other_args=''):
+                      other_args='', context=None):
     """
     Configure the provided process to run a verifier-server command.
 
@@ -119,8 +120,13 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
             command += ' --ca-certs "{}" '.format(run_ca_cert)
 
     if replay_path:
-        # Create a copy of the replay directory in the run directory.
+        if context:
+            # replace the passed replay file with the new one generated using the passed
+            # context
+            replay_path = substitute_context_in_replay_file(process, replay_path, context)
+
         run_replay_path = os.path.join(server_dir, os.path.basename(replay_path))
+        # Create a copy of the replay directory in the run directory.
         process.Setup.Copy(replay_path, run_replay_path, CopyLogic.SoftFiles)
         command += "{} ".format(run_replay_path)
 
@@ -141,7 +147,7 @@ def _configure_server(obj, process, name, replay_path, http_ports=None, https_po
 
 def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
                               https_ports=None, http3_ports=None, ssl_cert='',
-                              ca_cert='', verbose=True, other_args=''):
+                              ca_cert='', verbose=True, other_args='', context=None):
     """
     Create a verifier-server process for the Test.
 
@@ -174,19 +180,30 @@ def MakeVerifierServerProcess(test, name, replay_path, http_ports=None,
 
         other_args: (str) Any other arbitrary options to pass to verifier-server.
 
+        context: Any dictionary-like object with keys that match the placeholders
+                 in the replay file.
+                 Template strings support $-based substitutions in the
+                 replay file.
+                 You can refer to https://docs.python.org/3/library/string.html#template-strings
+                 for more information how to add template strings to the replay file.
     Raises:
         ValueError if https_ports is non-empty and a valid ssl_cert could not
             be derived.
+            If context substitution is expected to be done but a directory is passed as a
+            replay_path.
+        OSError in case of any issues related to I/O error, ie: File Not found for the replay
+            file when a context substitution is expected.
+        KeyError if placeholders are missing from the mapping between context and the replay file.
     """
     server = test.Processes.Process(name)
     _configure_server(test, server, name, replay_path, http_ports, https_ports,
-                      http3_ports, ssl_cert, ca_cert, verbose, other_args)
+                      http3_ports, ssl_cert, ca_cert, verbose, other_args, context)
     return server
 
 
 def AddVerifierServerProcess(run, name, replay_path, http_ports=None,
                              https_ports=None, http3_ports=None, ssl_cert='',
-                             ca_cert='', verbose=True, other_args=''):
+                             ca_cert='', verbose=True, other_args='', context=None):
     """
     Create a verifier-server process and configure it for the given TestRun.
 
@@ -201,7 +218,7 @@ def AddVerifierServerProcess(run, name, replay_path, http_ports=None,
 
     server = run.Processes.Process(name)
     _configure_server(run, server, name, replay_path, http_ports, https_ports,
-                      http3_ports, ssl_cert, ca_cert, verbose, other_args)
+                      http3_ports, ssl_cert, ca_cert, verbose, other_args, context)
 
     client = run.Processes.Default
     client.StartBefore(server)
