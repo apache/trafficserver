@@ -3265,8 +3265,6 @@ HttpTransact::handle_cache_write_lock(State *s)
       ink_assert(s->next_action == SM_ACTION_DNS_LOOKUP);
       return;
     }
-
-    TRANSACT_RETURN(next, nullptr);
   }
 }
 
