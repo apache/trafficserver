@@ -29,6 +29,7 @@
 // ring mode strings
 constexpr std::string_view alternate_rings = "alternate_ring";
 constexpr std::string_view exhaust_rings   = "exhaust_ring";
+constexpr std::string_view peering_rings   = "peering_ring";
 
 // health check strings
 constexpr std::string_view active_health_check  = "active";
@@ -89,6 +90,10 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
       ignore_self_detect = n["ignore_self_detect"].as<bool>();
     }
 
+    if (n["cache_peer_result"]) {
+      cache_peer_result = n["cache_peer_result"].as<bool>();
+    }
+
     // failover node.
     YAML::Node failover_node;
     if (n["failover"]) {
@@ -99,6 +104,8 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
           ring_mode = NH_ALTERNATE_RING;
         } else if (ring_mode_val == exhaust_rings) {
           ring_mode = NH_EXHAUST_RING;
+        } else if (ring_mode_val == peering_rings) {
+          ring_mode = NH_PEERING_RING;
         } else {
           ring_mode = NH_ALTERNATE_RING;
           NH_Note("Invalid 'ring_mode' value, '%s', for the strategy named '%s', using default '%s'.", ring_mode_val.c_str(),
@@ -219,6 +226,17 @@ NextHopSelectionStrategy::Init(const YAML::Node &n)
   } catch (std::exception &ex) {
     NH_Note("Error parsing the strategy named '%s' due to '%s', this strategy will be ignored.", strategy_name.c_str(), ex.what());
     return false;
+  }
+
+  if (ring_mode == NH_PEERING_RING) {
+    if (groups != 2) {
+      NH_Error("ring mode is '%s', requires two host groups (peering group and an upstream group).", peering_rings.data());
+      return false;
+    }
+    if (policy_type != NH_CONSISTENT_HASH) {
+      NH_Error("ring mode '%s', is only implemented for a 'consistent_hash' policy.", peering_rings.data());
+      return false;
+    }
   }
 
   return true;

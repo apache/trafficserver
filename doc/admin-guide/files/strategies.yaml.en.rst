@@ -180,15 +180,17 @@ Each **strategy** in the list may using the following parameters::
 
 - **go_direct** - A boolean value indicating whether a transaction may bypass proxies and go direct to the origin. Defaults to **true**
 - **parent_is_proxy**: A boolean value which indicates if the groups of hosts are proxy caches or origins.  **true** (default) means all the hosts used in the remap are |TS| caches.  **false** means the hosts are origins that the next hop strategies may use for load balancing and/or failover.
+- **cache_peer_result** - A boolean value that is only used when the **policy** is 'consistent_hash' and a **peering_ring** mode is used for the strategy. When set to true, the default, all responses from upstream and peer endpoints are allowed to be cached.  Setting this to false will disable caching responses received from a peer host. Only responses from upstream origins or parents will be cached for this strategy.
 - **scheme** Indicates which scheme the strategy supports, *http* or *https*
   - **failover**: A map of **failover** information.
   - **max_simple_retries**: Part of the **failover** map and is an integer value of the maximum number of retries for a **simple retry** on the list of indicated response codes.  **simple retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the response codes configured for this strategy in the **failover** map.  If no failover response codes are configured, no **simple retry** is attempted.
   - **max_unavailable_retries Part of the **failover** map and is an integer value of the maximum number of retries for a **unavailable retry** on the list of indicated markdown response codes.  **unavailable retry** is used to retry an upstream request using another upstream server if the response received on from the original upstream request matches any of the markdown response codes configured for this strategy in the **failover** map.  If no failover markdown response codes are configured, no **unavailable retry** is attempted.  **unavailable retry** differs from **simple retry** in that if a failover for retry is done, the previously retried server is marked down for rety.
 
-  - **ring_mode**: Part of the **failover** map. The host ring selection mode.  Use either **exhaust_ring** or **alternate_ring**
+  - **ring_mode**: Part of the **failover** map. The host ring selection mode.  Use either **exhaust_ring**,  **alternate_ring** or **peering_ring**
 
    #. **exhaust_ring**: when a host normally selected by the policy fails, another host is selected from the same group.  A new group is not selected until all hosts on the previous group have been exhausted
    #. **alternate_ring**: retry hosts are selected from groups in an alternating group fashion.
+   #. **peering_ring** This mode is only implemented for a policy of **consistent_hash** and requires that two host groups are defined. The first host group is a list of peer caches and "this" host itself, the second group is a list of upstream caches.  Parents are always selected from the peer list however, if the selected parent is "this" host itself a new parent from the upstream list is chosen.  In addition, if any peer host is unreachable or times out, a host from the upstream list is chosen for retries.
 
   - **response_codes**: Part of the **failover** map.  This is a list of **http** response codes that may be used for **simple retry**.
   - **markdown_codes**: Part of the **failover** map.  This is a list of **http** response codes that may be used for **unavailable retry** which will cause a parent markdown.
