@@ -623,12 +623,36 @@ http_hdr_type_set(HTTPHdrImpl *hh, HTTPType type)
 }
 
 /*-------------------------------------------------------------------------
+  RFC2616 specifies that HTTP version is of the format <major>.<minor>
+  in the request line.  However, the features supported and in use are
+  for versions 1.0, 1.1 and 2.0 (with HTTP/3.0 being developed). HTTP/2.0
+  and HTTP/3.0 are both negotiated using ALPN over TLS and not via the HTTP
+  request line thus leaving the versions supported on the request line to be
+  HTTP/1.0 and HTTP/1.1 alone. This utility checks if the HTTP Version
+  received in the request line is one of these and returns false otherwise
   -------------------------------------------------------------------------*/
 
-void
+bool
+is_version_supported(const uint8_t major, const uint8_t minor)
+{
+  if (major == 1) {
+    return minor == 1 || minor == 0;
+  }
+
+  return false;
+}
+
+bool
+is_http_hdr_version_supported(const HTTPVersion &http_version)
+{
+  return is_version_supported(http_version.get_major(), http_version.get_minor());
+}
+
+bool
 http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver)
 {
   hh->m_version = ver;
+  return is_version_supported(ver.get_major(), ver.get_minor());
 }
 
 /*-------------------------------------------------------------------------
@@ -939,13 +963,12 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       if (err < 0) {
         return err;
       }
-      http_hdr_version_set(hh, version);
+      if (!http_hdr_version_set(hh, version)) {
+        return PARSE_RESULT_ERROR;
+      }
 
       end                    = real_end;
       parser->m_parsing_http = false;
-      if (version == HTTP_0_9) {
-        return PARSE_RESULT_ERROR;
-      }
 
       ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof,
                                           false, max_hdr_field_size);
@@ -1094,11 +1117,9 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       return PARSE_RESULT_ERROR;
     }
 
-    if (version == HTTP_0_9) {
+    if (!http_hdr_version_set(hh, version)) {
       return PARSE_RESULT_ERROR;
     }
-
-    http_hdr_version_set(hh, version);
 
     end                    = real_end;
     parser->m_parsing_http = false;

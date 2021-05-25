@@ -424,7 +424,7 @@ inkcoreapi int http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hh, char *buf, int buf
 
 void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 
-inkcoreapi void http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver);
+inkcoreapi bool http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver);
 
 const char *http_hdr_method_get(HTTPHdrImpl *hh, int *length);
 inkcoreapi void http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
@@ -461,6 +461,8 @@ const char*            http_parse_cache_directive (const char **buf);
 HTTPValRange*          http_parse_range (const char *buf, Arena *arena);
 */
 HTTPValTE *http_parse_te(const char *buf, int len, Arena *arena);
+
+inkcoreapi bool is_http_hdr_version_supported(const HTTPVersion &http_version);
 
 class IOBufferReader;
 
