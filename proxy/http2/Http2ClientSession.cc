@@ -437,7 +437,7 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
 
   STATE_ENTER(&Http2ClientSession::state_start_frame_read, event);
   ink_assert(event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_READ_READY);
-  return state_process_frame_read(event, vio, false);
+  return do_process_frame_read(event, vio, false);
 }
 
 int
@@ -513,7 +513,7 @@ Http2ClientSession::state_complete_frame_read(int event, void *edata)
   }
   Http2SsnDebug("completed frame read, %" PRId64 " bytes available", this->_read_buffer_reader->read_avail());
 
-  return state_process_frame_read(event, vio, true);
+  return do_process_frame_read(event, vio, true);
 }
 
 int
@@ -539,7 +539,7 @@ Http2ClientSession::do_complete_frame_read()
 }
 
 int
-Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_frame)
+Http2ClientSession::do_process_frame_read(int event, VIO *vio, bool inside_frame)
 {
   if (inside_frame) {
     do_complete_frame_read();
