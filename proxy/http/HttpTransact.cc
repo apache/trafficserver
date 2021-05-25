@@ -818,6 +818,10 @@ HttpTransact::BadRequest(State *s)
     status                = s->http_return_code;
     reason                = "Field not implemented";
     body_factory_template = "transcoding#unsupported";
+    break;
+  case HTTP_STATUS_HTTPVER_NOT_SUPPORTED:
+    status = s->http_return_code;
+    reason = "Unsupported HTTP Version";
   default:
     break;
   }
