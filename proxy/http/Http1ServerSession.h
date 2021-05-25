@@ -78,7 +78,7 @@ public:
   void free() override;
   bool is_chunked_encoding_supported() const override;
 
-  IOBufferReader *get_reader() override;
+  IOBufferReader *get_remote_reader() override;
   IpEndpoint const &get_server_ip() const;
 
   ProxyTransaction *new_transaction() override;
@@ -113,7 +113,7 @@ extern ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator;
 // INLINE
 
 inline IOBufferReader *
-Http1ServerSession::get_reader()
+Http1ServerSession::get_remote_reader()
 {
   return _reader;
 };

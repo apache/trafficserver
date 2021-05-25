@@ -97,7 +97,7 @@ public:
   // singleton that keeps track of the connection counts.
   OutboundConnTrack::Group *conn_track_group = nullptr;
 
-  virtual IOBufferReader *get_reader() = 0;
+  virtual IOBufferReader *get_remote_reader() = 0;
 
 private:
   // Sessions become if authentication headers

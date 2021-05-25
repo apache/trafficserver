@@ -489,7 +489,7 @@ Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transa
     //  have it call the client session back.  This IO also prevent
     //  the server net conneciton from calling back a dead sm
     SET_HANDLER(&Http1ClientSession::state_keep_alive);
-    slave_ka_vio = ssession->do_io_read(this, INT64_MAX, ssession->get_reader()->mbuf);
+    slave_ka_vio = ssession->do_io_read(this, INT64_MAX, ssession->get_remote_reader()->mbuf);
     ink_assert(slave_ka_vio != ka_vio);
 
     // Transfer control of the write side as well

@@ -49,7 +49,6 @@ public:
   virtual void set_inactivity_timeout(ink_hrtime timeout_in);
   virtual void cancel_inactivity_timeout();
   virtual void cancel_active_timeout();
-  virtual bool is_read_closed() const;
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
@@ -130,7 +129,7 @@ public:
   //
   HttpSessionAccept::Options upstream_outbound_options; // overwritable copy of options
 
-  IOBufferReader *get_reader();
+  IOBufferReader *get_remote_reader();
 
 protected:
   ProxySession *_proxy_ssn = nullptr;
@@ -285,7 +284,7 @@ ProxyTransaction::adjust_thread(Continuation *cont, int event, void *data)
 }
 
 inline IOBufferReader *
-ProxyTransaction::get_reader()
+ProxyTransaction::get_remote_reader()
 {
   return _reader;
 }

@@ -67,16 +67,16 @@ public:
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_cert(HttpSM *sm, NetVConnection *netvc);
-  void removeSession(PoolableSession *ssn);
-  void addSession(PoolableSession *ssn);
-  void testSession(PoolableSession *ssn);
   int
   count() const
   {
     return m_ip_pool.count();
   }
 
-protected:
+private:
+  void removeSession(PoolableSession *ssn);
+  void addSession(PoolableSession *ssn);
+
   using IPTable   = IntrusiveHashMap<PoolableSession::IPLinkage>;
   using FQDNTable = IntrusiveHashMap<PoolableSession::FQDNLinkage>;
 

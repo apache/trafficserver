@@ -269,9 +269,8 @@ public:
   //  holding the lock for the server session
   void attach_server_session();
 
-  void set_server_txn(ProxyTransaction *txn);
-  void create_server_txn(NetVConnection *netvc, PoolableSession *new_session = nullptr);
   PoolableSession *create_server_session(NetVConnection *netvc);
+  bool create_server_txn(PoolableSession *new_session);
 
   HTTPVersion get_server_version(HTTPHdr &hdr) const;
 

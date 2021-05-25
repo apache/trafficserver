@@ -100,40 +100,37 @@ Http1ServerSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 void
 Http1ServerSession::do_io_close(int alerrno)
 {
-  if (state == SSN_CLOSED) { // Already been closed
-    if (transact_count == released_transactions) {
-      this->destroy();
+  // Only do the close bookkeeping 1 time
+  if (state != SSN_CLOSED) {
+    ts::LocalBufferWriter<256> w;
+    bool debug_p = is_debug_tag_set("http_ss");
+
+    state = SSN_CLOSED;
+
+    if (debug_p) {
+      w.print("[{}] session close: nevtc {:x}", con_id, _vc);
     }
-    return;
+
+    HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
+    HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
+
+    // Update upstream connection tracking data if present.
+    this->release_outbound_connection_tracking();
+
+    if (debug_p) {
+      Debug("http_ss", "%.*s", static_cast<int>(w.size()), w.data());
+    }
+
+    if (_vc) {
+      _vc->do_io_close(alerrno);
+    }
+    _vc = nullptr;
+
+    if (to_parent_proxy) {
+      HTTP_DECREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);
+    }
   }
 
-  ts::LocalBufferWriter<256> w;
-  bool debug_p = is_debug_tag_set("http_ss");
-
-  state = SSN_CLOSED;
-
-  if (debug_p) {
-    w.print("[{}] session close: nevtc {:x}", con_id, _vc);
-  }
-
-  HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
-  HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
-
-  // Update upstream connection tracking data if present.
-  this->release_outbound_connection_tracking();
-
-  if (debug_p) {
-    Debug("http_ss", "%.*s", static_cast<int>(w.size()), w.data());
-  }
-
-  if (_vc) {
-    _vc->do_io_close(alerrno);
-  }
-  _vc = nullptr;
-
-  if (to_parent_proxy) {
-    HTTP_DECREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);
-  }
   if (transact_count == released_transactions) {
     this->destroy();
   }
@@ -254,6 +251,6 @@ Http1ServerSession::new_transaction()
   state = SSN_IN_USE;
   transact_count++;
   ink_release_assert(transact_count == (released_transactions + 1));
-  trans.set_reader(this->get_reader());
+  trans.set_reader(this->get_remote_reader());
   return &trans;
 }
