@@ -60,6 +60,19 @@ enum class Http2SsnMilestone {
 
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
+/**
+   @startuml
+   title HTTP/2 Session Handler - state of reading HTTP/2 frame
+   hide empty description
+
+   [*]                           --> state_read_connection_preface : start()
+   state_read_connection_preface --> state_start_frame_read        : receive connection preface
+   state_start_frame_read        --> state_start_frame_read        : do_complete_frame_read()
+   state_start_frame_read        --> state_complete_frame_read     : reading HTTP/2 frame is halfway but no data in the buffer
+   state_complete_frame_read     --> state_start_frame_read        : do_complete_frame_read()
+
+   @enduml
+ */
 class Http2ClientSession : public ProxySession
 {
 public:
@@ -123,15 +136,16 @@ public:
 private:
   int main_event_handler(int, void *);
 
+  // SessionHandler(s) - state of reading frame
   int state_read_connection_preface(int, void *);
   int state_start_frame_read(int, void *);
-  int do_start_frame_read(Http2ErrorCode &ret_error);
   int state_complete_frame_read(int, void *);
+
+  // state_start_frame_read and state_complete_frame_read are set up as session event handler.
+  // Both feed into do_process_frame_read which may iterate if there are multiple frames ready on the wire
+  int do_process_frame_read(int event, VIO *vio, bool inside_frame);
+  int do_start_frame_read(Http2ErrorCode &ret_error);
   int do_complete_frame_read();
-  // state_start_frame_read and state_complete_frame_read are set up as
-  // event handler.  Both feed into state_process_frame_read which may iterate
-  // if there are multiple frames ready on the wire
-  int state_process_frame_read(int event, VIO *vio, bool inside_frame);
 
   bool _should_do_something_else();
 
