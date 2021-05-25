@@ -33,6 +33,7 @@
 
 #include <cstring>
 #include <cmath>
+#include <thread>
 
 #include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
@@ -307,6 +308,10 @@ SSLConfigParams::initialize()
 
   configFilePath = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
   REC_ReadConfigInteger(configExitOnLoadError, "proxy.config.ssl.server.multicert.exit_on_load_fail");
+  REC_ReadConfigInteger(configLoadConcurrency, "proxy.config.ssl.server.multicert.concurrency");
+  if (configLoadConcurrency < 0) {
+    configLoadConcurrency = std::thread::hardware_concurrency();
+  }
 
   REC_ReadConfigStringAlloc(ssl_server_private_key_path, "proxy.config.ssl.server.private_key.path");
   set_paths_helper(ssl_server_private_key_path, nullptr, &serverKeyPathOnly, nullptr);

@@ -49,6 +49,9 @@
 #include <unistd.h>
 #include <termios.h>
 #include <vector>
+#include <tuple>
+#include <algorithm>
+#include <thread>
 
 #include <openssl/asn1.h>
 #include <openssl/bio.h>
@@ -1531,7 +1534,7 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
 }
 
 /**
-   Insert SSLCertContext (SSL_CTX ans options) into SSLCertLookup with key.
+   Insert SSLCertContext (SSL_CTX and options) into SSLCertLookup with key.
    Do NOT call SSL_CTX_set_* functions from here. SSL_CTX should be set up by SSLMultiCertConfigLoader::init_server_ssl_ctx().
  */
 bool
@@ -1601,6 +1604,12 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
 {
   bool inserted                        = false;
   shared_ssl_ticket_key_block keyblock = nullptr;
+
+  // This may be obsessively large critical section to lock, but there is code written in many places
+  // which were not intended to be reentrant. The importan / expensive part to avoid locking around is
+  // the actual loading of the cert, which happens just before this.
+  ink_mutex_acquire(&m_mutex);
+
   // Load the session ticket key if session tickets are not disabled
   if (sslMultCertSettings->session_ticket_enabled != 0) {
     keyblock = shared_ssl_ticket_key_block(ssl_context_enable_tickets(ctx.get(), nullptr), ticket_block_free);
@@ -1636,6 +1645,9 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
       inserted = true;
     }
   }
+
+  // Release the mutex now, we should be in the clear.
+  ink_mutex_release(&m_mutex);
 
   if (inserted) {
     if (SSLConfigParams::init_ssl_ctx_cb) {
@@ -1721,22 +1733,49 @@ ssl_extract_certificate(const matcher_line *line_info, SSLMultiCertConfigParams 
   return true;
 }
 
+// This is a helper function to make it easier to parallelize the configuration parsing. This
+// can be called directly over the entire range, or from stl::thread CTOR, with sub-ranges.
+void
+SSLMultiCertConfigLoader::_load_lines(SSLCertLookup *lookup, SSLConfigLines::const_iterator begin,
+                                      SSLConfigLines::const_iterator end)
+{
+  const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
+  const SSLConfigParams *params  = this->_params;
+
+  for (auto it = begin; it != end; ++it) {
+    auto &&[line, line_num]                              = *it;
+    shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
+    const char *errPtr;
+    matcher_line line_info;
+
+    errPtr = parseConfigLine(line, &line_info, &sslCertTags);
+    Debug("ssl", "currently parsing %s", line);
+    if (errPtr != nullptr) {
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s", __func__, params->configFilePath,
+                       line_num, errPtr);
+    } else {
+      if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
+        // There must be a certificate specified unless the tunnel action is set
+        if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
+          this->_store_ssl_ctx(lookup, sslMultiCertSettings);
+        } else {
+          Warning("No ssl_cert_name specified and no tunnel action set");
+        }
+      }
+    }
+  }
+}
+
 bool
 SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
 {
-  const SSLConfigParams *params = this->_params;
-
-  char *tok_state   = nullptr;
-  char *line        = nullptr;
-  unsigned line_num = 0;
-  matcher_line line_info;
-
-  const matcher_tags sslCertTags = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false};
-
   Note("%s loading ...", ts::filename::SSL_MULTICERT);
+  Debug("ssl", "%s loading ...", ts::filename::SSL_MULTICERT);
 
+  const SSLConfigParams *params = this->_params;
   std::error_code ec;
   std::string content{ts::file::load(ts::file::path{params->configFilePath}, ec)};
+
   if (ec) {
     switch (ec.value()) {
     case ENOENT:
@@ -1754,6 +1793,13 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
   REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
   ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0);
 
+  // Store all the lines in the list, slightly clunky but lets us parallelize this if allowed
+  // ToDo: Maybe change the parser here to use a more C++'ish line parser rather than tokLine()...
+  char *line        = nullptr;
+  unsigned line_num = 0;
+  char *tok_state   = nullptr;
+  SSLConfigLines single_lines;
+
   line = tokLine(content.data(), &tok_state);
   while (line != nullptr) {
     line_num++;
@@ -1764,27 +1810,34 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
     }
 
     if (*line != '\0' && *line != '#') {
-      shared_SSLMultiCertConfigParams sslMultiCertSettings = std::make_shared<SSLMultiCertConfigParams>();
-      const char *errPtr;
+      single_lines.push_back(std::make_tuple(line, line_num));
+    }
+    line = tokLine(nullptr, &tok_state);
+  }
 
-      errPtr = parseConfigLine(line, &line_info, &sslCertTags);
-      Debug("ssl", "currently parsing %s", line);
-      if (errPtr != nullptr) {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s: discarding %s entry at line %d: %s", __func__, params->configFilePath,
-                         line_num, errPtr);
-      } else {
-        if (ssl_extract_certificate(&line_info, sslMultiCertSettings.get())) {
-          // There must be a certificate specified unless the tunnel action is set
-          if (sslMultiCertSettings->cert || sslMultiCertSettings->opt != SSLCertContextOption::OPT_TUNNEL) {
-            this->_store_ssl_ctx(lookup, sslMultiCertSettings);
-          } else {
-            Warning("No ssl_cert_name specified and no tunnel action set");
-          }
-        }
-      }
+  // Process all the lines if we're not running parallelization on multiple threads
+  if (params->configLoadConcurrency > 0) {
+    std::size_t bucket_size = std::max(1u, static_cast<unsigned>(single_lines.size() / params->configLoadConcurrency));
+    SSLConfigLines::const_iterator current = std::as_const(single_lines).begin();
+    std::list<std::thread> threads;
+    std::size_t num_lines = single_lines.size();
+
+    while (num_lines > 0) {
+      SSLConfigLines::const_iterator last = current + std::min(num_lines, bucket_size);
+
+      num_lines -= std::min(bucket_size, num_lines);
+      threads.push_back(std::thread(&SSLMultiCertConfigLoader::_load_lines, this, lookup, current, last));
+      current = last;
     }
 
-    line = tokLine(nullptr, &tok_state);
+    // Wait for all the threads to finish their tasks.
+    for (std::thread &th : threads) {
+      if (th.joinable())
+        th.join();
+    }
+    ink_assert(num_lines == 0); // Make sure no lines where not processed...
+  } else {
+    this->_load_lines(lookup, single_lines.begin(), single_lines.end());
   }
 
   // We *must* have a default context even if it can't possibly work. The default context is used to

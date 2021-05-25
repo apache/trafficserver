@@ -3463,6 +3463,13 @@ SSL Termination
    :file:`ssl_multicert.config` file successfully load.  If false (``0``), SSL certificate
    load failures will not prevent |TS| from starting.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.concurrency INT 0
+
+   If set to a non-zero value, allow the loading and reloading of
+   :file:`ssl_multicert.config` to be parallelized. The value specifies the
+   concurrency, i.e. how many threads will process the file in parallel. A
+   value of ``-1`` means to create one thread for each core.
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.cert.path STRING /config
 
    The location of the SSL certificates and chains used for accepting

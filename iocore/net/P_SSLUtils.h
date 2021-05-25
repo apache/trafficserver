@@ -60,8 +60,8 @@ public:
   struct CertLoadData {
     std::vector<std::string> cert_names_list, key_list, ca_list, ocsp_list;
   };
-  SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
-  virtual ~SSLMultiCertConfigLoader(){};
+  SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) { ink_mutex_init(&m_mutex); }
+  virtual ~SSLMultiCertConfigLoader() { ink_mutex_destroy(&m_mutex); };
 
   bool load(SSLCertLookup *lookup);
 
@@ -89,8 +89,12 @@ protected:
                              std::set<std::string> &names);
 
 private:
-  virtual const char *_debug_tag() const;
+  using SSLConfigLines = std::vector<std::tuple<char *, unsigned>>;
+
   bool _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &ssl_multi_cert_params);
+  void _load_lines(SSLCertLookup *lookup, SSLConfigLines::const_iterator begin, SSLConfigLines::const_iterator end);
+
+  virtual const char *_debug_tag() const;
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
   virtual bool _setup_session_cache(SSL_CTX *ctx);
   virtual bool _setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings);
@@ -103,6 +107,8 @@ private:
   virtual bool _set_info_callback(SSL_CTX *ctx);
   virtual bool _set_npn_callback(SSL_CTX *ctx);
   virtual bool _set_alpn_callback(SSL_CTX *ctx);
+
+  ink_mutex m_mutex; // Mutex around concurrent loading / reloading of multicert configurations
 };
 
 // Create a new SSL server context fully configured (cert and keys are optional).
