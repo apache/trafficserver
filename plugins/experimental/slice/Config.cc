@@ -112,7 +112,6 @@ Config::fromArgs(int const argc, char const *const argv[])
     {const_cast<char *>("exclude-regex"), required_argument, nullptr, 'e'},
     {const_cast<char *>("include-regex"), required_argument, nullptr, 'i'},
     {const_cast<char *>("ref-relative"), no_argument, nullptr, 'l'},
-    {const_cast<char *>("throttle"), no_argument, nullptr, 'o'},
     {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
     {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
     {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
@@ -181,10 +180,6 @@ Config::fromArgs(int const argc, char const *const argv[])
     case 'l': {
       m_reftype = RefType::Relative;
       DEBUG_LOG("Reference slice relative to request (not slice block 0)");
-    } break;
-    case 'o': {
-      m_throttle = true;
-      DEBUG_LOG("Enabling internal block throttling");
     } break;
     case 'p': {
       int const secsread = atoi(optarg);
