@@ -64,3 +64,10 @@ tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nhost: bob\r\ntransfer-
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'gold/bad_te_value.gold'
+
+# TRACE request with a body
+tr = Test.AddTestRun("Trace request with a body")
+tr.Processes.Default.Command = 'printf "TRACE /foo HTTP/1.1\r\nHost : bob\r\nContent-length:2\r\n\r\nokGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
