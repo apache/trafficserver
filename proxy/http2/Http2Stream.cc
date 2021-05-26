@@ -194,11 +194,14 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
     return;
   }
 
-  if (this->recv_end_stream) {
-    this->read_vio.nbytes = bufindex;
-    this->signal_read_event(VC_EVENT_READ_COMPLETE);
-  } else {
-    this->signal_read_event(VC_EVENT_READ_READY);
+  // Is the _sm ready to process the header?
+  if (this->read_vio.nbytes > 0) {
+    if (this->recv_end_stream) {
+      this->read_vio.nbytes = bufindex;
+      this->signal_read_event(VC_EVENT_READ_COMPLETE);
+    } else {
+      this->signal_read_event(VC_EVENT_READ_READY);
+    }
   }
 }
 
