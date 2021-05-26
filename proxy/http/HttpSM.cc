@@ -473,11 +473,8 @@ HttpSM::state_add_to_list(int event, void * /* data ATS_UNUSED */)
     if (ua_entry->read_vio) {
       // Seems like ua_entry->read_vio->disable(); should work, but that was
       // not sufficient to stop the state machine from processing IO events until the
-      // TXN_START hooks had completed
-      // Preserve the current read cont and mutex
-      NetVConnection *netvc = ((ProxyTransaction *)ua_entry->vc)->get_netvc();
-      ink_assert(netvc != nullptr);
-      ua_entry->read_vio = ua_entry->vc->do_io_read(netvc->read_vio_cont(), 0, nullptr);
+      // TXN_START hooks had completed.  Just set the number of bytes to read to 0
+      ua_entry->read_vio = ua_entry->vc->do_io_read(this, 0, nullptr);
     }
     return EVENT_CONT;
   }
