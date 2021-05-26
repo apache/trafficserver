@@ -1073,6 +1073,15 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     }
     version_start = cur;
 
+    // Make sure we didn't lose any characters between the method and the version
+    GETPREV(parse_url);
+    while (cur != method_end) {
+      if (!ParseRules::is_ws(*cur)) {
+        return PARSE_RESULT_ERROR;
+      }
+      GETPREV(parse_url);
+    }
+
   parse_url:
     url_start = method_end + 1;
     if (version_start) {
