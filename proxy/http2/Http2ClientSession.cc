@@ -523,7 +523,8 @@ Http2ClientSession::do_complete_frame_read()
   ink_release_assert(this->_read_buffer_reader->read_avail() >= this->current_hdr.length);
 
   Http2Frame frame(this->current_hdr, this->_read_buffer_reader, this->cur_frame_from_early_data);
-  send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_RECV, &frame);
+  connection_state.rcv_frame(&frame);
+
   // Check whether data is read from early data
   if (this->read_from_early_data > 0) {
     this->read_from_early_data -=

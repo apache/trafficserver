@@ -1089,6 +1089,71 @@ Http2ConnectionState::destroy()
   mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
 }
 
+void
+Http2ConnectionState::rcv_frame(const Http2Frame *frame)
+{
+  REMEMBER(NO_EVENT, this->recursion);
+  const Http2StreamId stream_id = frame->header().streamid;
+  Http2Error error;
+
+  // [RFC 7540] 5.5. Extending HTTP/2
+  //   Implementations MUST discard frames that have unknown or unsupported types.
+  if (frame->header().type >= HTTP2_FRAME_TYPE_MAX) {
+    Http2StreamDebug(ua_session, stream_id, "Discard a frame which has unknown type, type=%x", frame->header().type);
+    return;
+  }
+
+  // We need to be careful here, certain frame types are not safe over 0-rtt, tentative for now.
+  // DATA:          NO
+  // HEADERS:       YES (safe http methods only, can only be checked after parsing the payload).
+  // PRIORITY:      YES
+  // RST_STREAM:    NO
+  // SETTINGS:      YES
+  // PUSH_PROMISE:  NO
+  // PING:          YES
+  // GOAWAY:        NO
+  // WINDOW_UPDATE: YES
+  // CONTINUATION:  YES (safe http methods only, same as HEADERS frame).
+  if (frame->is_from_early_data() &&
+      (frame->header().type == HTTP2_FRAME_TYPE_DATA || frame->header().type == HTTP2_FRAME_TYPE_RST_STREAM ||
+       frame->header().type == HTTP2_FRAME_TYPE_PUSH_PROMISE || frame->header().type == HTTP2_FRAME_TYPE_GOAWAY)) {
+    Http2StreamDebug(ua_session, stream_id, "Discard a frame which is received from early data and has type=%x",
+                     frame->header().type);
+    return;
+  }
+
+  if (frame_handlers[frame->header().type]) {
+    error = frame_handlers[frame->header().type](*this, *frame);
+  } else {
+    error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "no handler");
+  }
+
+  if (error.cls != Http2ErrorClass::HTTP2_ERROR_CLASS_NONE) {
+    ip_port_text_buffer ipb;
+    const char *client_ip = ats_ip_ntop(ua_session->get_remote_addr(), ipb, sizeof(ipb));
+    if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION) {
+      if (error.msg) {
+        Error("HTTP/2 connection error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s",
+              static_cast<int>(error.code), client_ip, ua_session->connection_id(), stream_id, error.msg);
+      }
+      this->send_goaway_frame(this->latest_streamid_in, error.code);
+      this->ua_session->set_half_close_local_flag(true);
+      if (fini_event == nullptr) {
+        fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
+      }
+
+      // The streams will be cleaned up by the HTTP2_SESSION_EVENT_FINI event
+      // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
+    } else if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM) {
+      if (error.msg) {
+        Error("HTTP/2 stream error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s", static_cast<int>(error.code),
+              client_ip, ua_session->connection_id(), stream_id, error.msg);
+      }
+      this->send_rst_stream_frame(stream_id, error.code);
+    }
+  }
+}
+
 int
 Http2ConnectionState::main_event_handler(int event, void *edata)
 {
@@ -1144,72 +1209,6 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     send_data_frames_depends_on_priority();
     _scheduled = false;
-  } break;
-
-  // Parse received HTTP/2 frames
-  case HTTP2_SESSION_EVENT_RECV: {
-    REMEMBER(event, this->recursion);
-    const Http2Frame *frame       = static_cast<Http2Frame *>(edata);
-    const Http2StreamId stream_id = frame->header().streamid;
-    Http2Error error;
-
-    // [RFC 7540] 5.5. Extending HTTP/2
-    //   Implementations MUST discard frames that have unknown or unsupported types.
-    if (frame->header().type >= HTTP2_FRAME_TYPE_MAX) {
-      Http2StreamDebug(ua_session, stream_id, "Discard a frame which has unknown type, type=%x", frame->header().type);
-      break;
-    }
-
-    // We need to be careful here, certain frame types are not safe over 0-rtt, tentative for now.
-    // DATA:          NO
-    // HEADERS:       YES (safe http methods only, can only be checked after parsing the payload).
-    // PRIORITY:      YES
-    // RST_STREAM:    NO
-    // SETTINGS:      YES
-    // PUSH_PROMISE:  NO
-    // PING:          YES
-    // GOAWAY:        NO
-    // WINDOW_UPDATE: YES
-    // CONTINUATION:  YES (safe http methods only, same as HEADERS frame).
-    if (frame->is_from_early_data() &&
-        (frame->header().type == HTTP2_FRAME_TYPE_DATA || frame->header().type == HTTP2_FRAME_TYPE_RST_STREAM ||
-         frame->header().type == HTTP2_FRAME_TYPE_PUSH_PROMISE || frame->header().type == HTTP2_FRAME_TYPE_GOAWAY)) {
-      Http2StreamDebug(ua_session, stream_id, "Discard a frame which is received from early data and has type=%x",
-                       frame->header().type);
-      break;
-    }
-
-    if (frame_handlers[frame->header().type]) {
-      error = frame_handlers[frame->header().type](*this, *frame);
-    } else {
-      error = Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "no handler");
-    }
-
-    if (error.cls != Http2ErrorClass::HTTP2_ERROR_CLASS_NONE) {
-      ip_port_text_buffer ipb;
-      const char *client_ip = ats_ip_ntop(ua_session->get_remote_addr(), ipb, sizeof(ipb));
-      if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION) {
-        if (error.msg) {
-          Error("HTTP/2 connection error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s",
-                static_cast<int>(error.code), client_ip, ua_session->connection_id(), stream_id, error.msg);
-        }
-        this->send_goaway_frame(this->latest_streamid_in, error.code);
-        this->ua_session->set_half_close_local_flag(true);
-        if (fini_event == nullptr) {
-          fini_event = this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_FINI);
-        }
-
-        // The streams will be cleaned up by the HTTP2_SESSION_EVENT_FINI event
-        // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
-      } else if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM) {
-        if (error.msg) {
-          Error("HTTP/2 stream error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s", static_cast<int>(error.code),
-                client_ip, ua_session->connection_id(), stream_id, error.msg);
-        }
-        this->send_rst_stream_frame(stream_id, error.code);
-      }
-    }
-
   } break;
 
   // Initiate a gracefull shutdown
