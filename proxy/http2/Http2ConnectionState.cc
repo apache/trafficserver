@@ -1040,8 +1040,9 @@ Http2ConnectionState::Http2ConnectionState() : stream_list()
 }
 
 void
-Http2ConnectionState::init()
+Http2ConnectionState::init(Http2ClientSession *ssn)
 {
+  ua_session         = ssn;
   this->_server_rwnd = Http2::initial_window_size;
 
   local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
@@ -1052,6 +1053,32 @@ Http2ConnectionState::init()
 
   _cop = ActivityCop<Http2Stream>(this->mutex, &stream_list, 1);
   _cop.start();
+}
+
+/**
+   Send connection preface
+
+   The client connection preface is HTTP2_CONNECTION_PREFACE.
+   The server connection preface consists of a potentially emptry SETTINGS frame.
+
+   Details in [RFC 7540] 3.5. HTTP/2 Connection Preface
+
+   TODO: send client connection preface if the connection is outbound
+ */
+void
+Http2ConnectionState::send_connection_preface()
+{
+  REMEMBER(NO_EVENT, this->recursion)
+
+  Http2ConnectionSettings configured_settings;
+  configured_settings.settings_from_configs();
+  configured_settings.set(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, _adjust_concurrent_stream());
+
+  send_settings_frame(configured_settings);
+
+  if (server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) > HTTP2_INITIAL_WINDOW_SIZE) {
+    send_window_update_frame(0, server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - HTTP2_INITIAL_WINDOW_SIZE);
+  }
 }
 
 void
@@ -1100,33 +1127,6 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   }
   ++recursion;
   switch (event) {
-  // Initialize HTTP/2 Connection
-  case HTTP2_SESSION_EVENT_INIT: {
-    ink_assert(this->ua_session == nullptr);
-    this->ua_session = static_cast<Http2ClientSession *>(edata);
-    REMEMBER(event, this->recursion);
-
-    // [RFC 7540] 3.5. HTTP/2 Connection Preface. Upon establishment of a TCP connection and
-    // determination that HTTP/2 will be used by both peers, each endpoint MUST
-    // send a connection preface as a final confirmation ... The server
-    // connection
-    // preface consists of a potentially empty SETTINGS frame.
-
-    // Load the server settings from the records.config / RecordsConfig.cc
-    // settings.
-    Http2ConnectionSettings configured_settings;
-    configured_settings.settings_from_configs();
-    configured_settings.set(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, _adjust_concurrent_stream());
-
-    send_settings_frame(configured_settings);
-
-    if (server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) > HTTP2_INITIAL_WINDOW_SIZE) {
-      send_window_update_frame(0, server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - HTTP2_INITIAL_WINDOW_SIZE);
-    }
-
-    break;
-  }
-
   // Finalize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_FINI: {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
