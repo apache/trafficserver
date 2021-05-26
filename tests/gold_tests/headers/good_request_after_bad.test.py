@@ -27,6 +27,7 @@ ts = Test.MakeATSProcess("ts", enable_cache=True)
 
 ts.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
                                'proxy.config.diags.debug.enabled': 0,
+Test.ContinueOnFail = True
                                })
 
 server = Test.MakeOriginServer("server")
@@ -91,3 +92,12 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     r"HTTP/1.1 501 Unsupported method \('TRACE'\)",
     "microserver does not support TRACE")
+
+# Mixed case method name;  Should fail but ATS is treating gET as GET
+tr = Test.AddTestRun("mixed case method")
+tr.Processes.Default.Command = 'printf "gET / HTTP/1.1\r\nHost:bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = 'gold/bad_method.gold'
+
+

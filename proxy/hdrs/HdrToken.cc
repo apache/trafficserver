@@ -549,6 +549,30 @@ hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_strin
 }
 
 /*-------------------------------------------------------------------------
+  Have to work around that methods are case insensitive while the DFA is
+  case insensitive.
+  -------------------------------------------------------------------------*/
+
+int
+hdrtoken_method_tokenize(const char *string, int string_len)
+{
+  const char *string_out;
+  int retval = -1;
+  if (hdrtoken_is_wks(string)) {
+    retval = hdrtoken_wks_to_index(string);
+    return retval;
+  }
+  retval = hdrtoken_tokenize(string, string_len, &string_out);
+  if (retval >= 0) {
+    if (strncmp(string, string_out, string_len) != 0) {
+      // Not a case match
+      retval = -1;
+    }
+  }
+  return retval;
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int
