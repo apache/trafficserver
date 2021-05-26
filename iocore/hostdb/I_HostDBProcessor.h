@@ -49,7 +49,7 @@
 //
 // Data
 //
-class HostDBContinuation;
+struct HostDBContinuation;
 struct ResolveInfo;
 
 //
@@ -290,7 +290,7 @@ HostDBInfo::invalidate()
  */
 class HostDBRecord : public RefCountObj
 {
-  friend class HostDBContinuation;
+  friend struct HostDBContinuation;
   friend struct ShowHostDB;
   using self_type = HostDBRecord;
 
@@ -819,7 +819,7 @@ inline bool
 ResolveInfo::mark_active_server_alive()
 {
   if (zombie_p && active) {
-    active->mark_up();
+    return active->mark_up();
   }
   zombie_p = false;
   return false;

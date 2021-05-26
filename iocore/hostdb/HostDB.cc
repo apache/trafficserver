@@ -999,13 +999,13 @@ HostDBContinuation::lookup_done(TextView query_name, ts_seconds answer_ttl, SRVH
     record->ip_timeout_interval = std::clamp(answer_ttl, ts_seconds(1), ts_seconds(HOST_DB_MAX_TTL));
 
     if (is_byname()) {
-      Debug("hostdb", "done %.*s TTL %ld", int(hash.host_name.size()), hash.host_name.data(), answer_ttl.count());
+      Debug_bw("hostdb", "done {} TTL {}", hash.host_name, answer_ttl);
     } else if (is_srv()) {
       ink_assert(srv && srv->hosts.size() && srv->hosts.size() <= hostdb_round_robin_max_count);
 
       record->record_type = HostDBType::SRV;
     } else {
-      Debug("hostdb", "done '%.*s' TTL %ld", int(query_name.size()), query_name.data(), answer_ttl.count());
+      Debug_bw("hostdb", "done {} TTL {}", hash.host_name, answer_ttl);
       record->record_type = HostDBType::HOST;
     }
   }
@@ -1175,8 +1175,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
             }
           }
         }
-
-        Debug("dns_srv", "inserted SRV RR record [%s] into HostDB with TTL: %ld seconds", t->host, ttl.count());
+        // Archetypical example - "%zd" doesn't work on FreeBSD, "%ld" doesn't work on Ubuntu, "%lld" doesn't work on Fedora.
+        Debug_bw("dns_srv", "inserted SRV RR record [{}] into HostDB with TTL: {} seconds", t->host, ttl);
       }
     } else { // Otherwise this is a regular dns response
       unsigned idx = 0;
@@ -1467,33 +1467,33 @@ HostDBContinuation::do_dns()
         }
       }
     }
+  }
 
-    if (hostdb_lookup_timeout) {
-      timeout = mutex->thread_holding->schedule_in(this, HRTIME_SECONDS(hostdb_lookup_timeout));
-    } else {
-      timeout = nullptr;
-    }
-    if (set_check_pending_dns()) {
-      DNSProcessor::Options opt;
-      opt.timeout        = dns_lookup_timeout;
-      opt.host_res_style = host_res_style_for(hash.db_mark);
-      SET_HANDLER((HostDBContHandler)&HostDBContinuation::dnsEvent);
-      if (is_byname()) {
-        if (hash.dns_server) {
-          opt.handler = hash.dns_server->x_dnsH;
-        }
-        pending_action = dnsProcessor.gethostbyname(this, hash.host_name, opt);
-      } else if (is_srv()) {
-        Debug("dns_srv", "SRV lookup of %.*s", int(hash.host_name.size()), hash.host_name.data());
-        pending_action = dnsProcessor.getSRVbyname(this, hash.host_name, opt);
-      } else {
-        ip_text_buffer ipb;
-        Debug("hostdb", "DNS IP %s", hash.ip.toString(ipb, sizeof ipb));
-        pending_action = dnsProcessor.gethostbyaddr(this, &hash.ip, opt);
+  if (hostdb_lookup_timeout) {
+    timeout = mutex->thread_holding->schedule_in(this, HRTIME_SECONDS(hostdb_lookup_timeout));
+  } else {
+    timeout = nullptr;
+  }
+  if (set_check_pending_dns()) {
+    DNSProcessor::Options opt;
+    opt.timeout        = dns_lookup_timeout;
+    opt.host_res_style = host_res_style_for(hash.db_mark);
+    SET_HANDLER((HostDBContHandler)&HostDBContinuation::dnsEvent);
+    if (is_byname()) {
+      if (hash.dns_server) {
+        opt.handler = hash.dns_server->x_dnsH;
       }
+      pending_action = dnsProcessor.gethostbyname(this, hash.host_name, opt);
+    } else if (is_srv()) {
+      Debug("dns_srv", "SRV lookup of %.*s", int(hash.host_name.size()), hash.host_name.data());
+      pending_action = dnsProcessor.getSRVbyname(this, hash.host_name, opt);
     } else {
-      SET_HANDLER((HostDBContHandler)&HostDBContinuation::dnsPendingEvent);
+      ip_text_buffer ipb;
+      Debug("hostdb", "DNS IP %s", hash.ip.toString(ipb, sizeof ipb));
+      pending_action = dnsProcessor.gethostbyaddr(this, &hash.ip, opt);
     }
+  } else {
+    SET_HANDLER((HostDBContHandler)&HostDBContinuation::dnsPendingEvent);
   }
 }
 
@@ -2011,6 +2011,12 @@ std::atomic<bool> HostDBFileUpdateActive{false};
  */
 using HostAddrMap = std::unordered_map<std::string_view, std::tuple<std::vector<IpAddr>, std::vector<IpAddr>>>;
 
+namespace
+{
+constexpr unsigned IPV4_IDX = 0;
+constexpr unsigned IPV6_IDX = 1;
+} // namespace
+
 static void
 ParseHostLine(TextView line, HostAddrMap &map)
 {
@@ -2026,9 +2032,9 @@ ParseHostLine(TextView line, HostAddrMap &map)
   while (!line.ltrim_if(&isspace).empty()) {
     TextView name = line.take_prefix_if(&isspace);
     if (addr.isIp6()) {
-      std::get<1>(map[name]).push_back(addr);
+      std::get<IPV6_IDX>(map[name]).push_back(addr);
     } else if (addr.isIp4()) {
-      std::get<0>(map[name]).push_back(addr);
+      std::get<IPV4_IDX>(map[name]).push_back(addr);
     }
   }
 }
@@ -2037,7 +2043,6 @@ void
 ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_interval_parse)
 {
   std::shared_ptr<HostFileMap> map;
-  std::string dbg;
 
   // Test and set for update in progress.
   bool flag = false;
@@ -2045,7 +2050,7 @@ ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_inter
     Debug("hostdb", "Skipped load of host file because update already in progress");
     return;
   }
-  Debug("hostdb", "%s", ts::bwprint(dbg, R"(Loading host file "{}")", path).c_str());
+  Debug_bw("hostdb", R"(Loading host file "{}")", path);
 
   if (!path.empty()) {
     std::error_code ec;
@@ -2061,7 +2066,7 @@ ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_inter
         ParseHostLine(line, addr_map);
       }
       // @a map should be loaded with all of the data, create the records.
-      map.reset(new HostFileMap);
+      map = std::make_shared<HostFileMap>();
       // Common loading function for creating a record from the address vector.
       auto loader = [](TextView key, std::vector<IpAddr> const &v) -> HostDBRecord::Handle {
         HostDBRecord::Handle record{HostDBRecord::alloc(key, v.size())};
@@ -2073,7 +2078,7 @@ ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_inter
         }
         return record;
       };
-      // Walk the host file map and create the corresponding records.
+      // Walk the temporary map and create the corresponding records for the persistent map.
       for (auto const &[key, value] : addr_map) {
         // Bit of subtlety to be able to search records with a view and not a string - the key
         // must point at stable memory for the name, which is available in the record itself.
@@ -2081,14 +2086,14 @@ ParseHostFile(ts::file::path const &path, ts_seconds hostdb_hostfile_check_inter
         // It doesn't matter if it's the IPv4 or IPv6 record that's used, both are stable and equal
         // to each other.
         // IPv4
-        if (auto const &v = std::get<0>(value); v.size() > 0) {
+        if (auto const &v = std::get<IPV4_IDX>(value); v.size() > 0) {
           auto r                          = loader(key, v);
           (*map)[r->name_view()].record_4 = r;
         }
         // IPv6
-        if (auto const &v = std::get<1>(value); v.size() > 0) {
+        if (auto const &v = std::get<IPV6_IDX>(value); v.size() > 0) {
           auto r                          = loader(key, v);
-          (*map)[r->name_view()].record_4 = r;
+          (*map)[r->name_view()].record_6 = r;
         }
       }
 

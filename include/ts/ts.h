@@ -1921,7 +1921,7 @@ tsapi TSAction TSHostLookup(TSCont contp, const char *hostname, size_t namelen);
 /** Retrieve an address from the host lookup.
  *
  * @param lookup_result Result handle passed to event callback.
- * @param dst Destiation for copying the addres.
+ * @param dst Destination for copying the address.
  * @return @c TS_SUCCESS if the address was available and copied, @c TS_ERROR otherwise.
  */
 tsapi TSReturnCode TSHostLookupResultAddrGet(TSHostLookupResult lookup_result, struct sockaddr *dst);

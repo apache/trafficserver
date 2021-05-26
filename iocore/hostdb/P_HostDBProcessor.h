@@ -222,8 +222,7 @@ struct HostDBHash {
 //
 // Handles a HostDB lookup request
 //
-struct HostDBContinuation;
-typedef int (HostDBContinuation::*HostDBContHandler)(int, void *);
+using HostDBContHandler = int (HostDBContinuation::*)(int, void *);
 
 struct HostDBContinuation : public Continuation {
   Action action;

@@ -1867,7 +1867,7 @@ HttpSM::state_http_server_open(int event, void *data)
     NetVConnection *netvc        = static_cast<NetVConnection *>(data);
     UnixNetVConnection *vc       = static_cast<UnixNetVConnection *>(data);
     PoolableSession *new_session = this->create_server_session(netvc);
-    if (t_state.current.request_to == HttpTransact::PARENT_PROXY) {
+    if (t_state.current.request_to == ResolveInfo::PARENT_PROXY) {
       new_session->to_parent_proxy = true;
       HTTP_INCREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);
       HTTP_INCREMENT_DYN_STAT(http_total_parent_proxy_connections_stat);
@@ -5345,13 +5345,13 @@ HttpSM::mark_host_failure(ResolveInfo *info, ts_time time_down)
           if (info->active->last_failure.load() == TS_TIME_ZERO) {
             char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, nullptr);
             int host_len;
-        const char *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
-        std::string_view host_name{host_name_ptr, size_t(host_len)};
-        Log::error("%s", lbw()
+            const char *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
+            std::string_view host_name{host_name_ptr, size_t(host_len)};
+            Log::error("%s", lbw()
                                .clip(1)
                                .print("CONNECT : {::s} connecting to {} for host='{}' url='{}' marking down",
                                       ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr,
-                                      host_name,ts::bwf::FirstOf(url_str, "<none>"))
+                                      host_name, ts::bwf::FirstOf(url_str, "<none>"))
                                .extend(1)
                                .write('\0')
                                .data());
