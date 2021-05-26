@@ -53,7 +53,7 @@ QUICCertConfig::reconfigure()
   SSLCertLookup *lookup = new SSLCertLookup();
 
   QUICMultiCertConfigLoader loader(params);
-  loader.load(lookup);
+  loader.load(lookup, 0 == _config_id);
 
   _config_id = configProcessor.set(_config_id, lookup);
 }

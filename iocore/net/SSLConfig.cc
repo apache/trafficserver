@@ -505,7 +505,7 @@ SSLCertificateConfig::reconfigure()
   }
 
   SSLMultiCertConfigLoader loader(params);
-  loader.load(lookup);
+  loader.load(lookup, 0 == configid); // The flag indicates if this is a first time load or not
 
   if (!lookup->is_valid) {
     retStatus = false;

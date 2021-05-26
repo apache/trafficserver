@@ -63,7 +63,7 @@ public:
   SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) { ink_mutex_init(&m_mutex); }
   virtual ~SSLMultiCertConfigLoader() { ink_mutex_destroy(&m_mutex); };
 
-  bool load(SSLCertLookup *lookup);
+  bool load(SSLCertLookup *lookup, bool firstLoad);
 
   virtual SSL_CTX *default_server_ssl_ctx();
   virtual SSL_CTX *init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings,
