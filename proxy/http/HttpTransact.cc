@@ -849,6 +849,7 @@ HttpTransact::BadRequest(State *s)
   }
 
   build_error_response(s, status, reason, body_factory_template);
+  s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -8071,6 +8072,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
       retry_after = ret_tmp;
     }
     s->congestion_control_crat = retry_after;
+  } else if (status_code == HTTP_STATUS_BAD_REQUEST) {
+    // Close the client connection after a malformed request
+    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   }
 
   // Add a bunch of headers to make sure that caches between
