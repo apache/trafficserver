@@ -1,0 +1,9 @@
+``
+< HTTP/1.1 302 Redirect
+< location: http://c.test:``
+``
+< HTTP/1.1 200 OK
+< date: ``
+< Age: ``
+< Server: ATS/``
+``
