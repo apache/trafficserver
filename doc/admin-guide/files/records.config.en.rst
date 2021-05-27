@@ -959,7 +959,7 @@ mptcp
                  of the origin server matches.
    ``host``      Re-use server sessions, checking that the fully qualified
                  domain name matches. In addition, if the session uses TLS, it also
-                 checks that the current transaction's host header value matchs the session's SNI.
+                 checks that the current transaction's host header value matches the session's SNI.
    ``both``      Equivalent to ``host,ip``.
    ``hostonly``  Check that the fully qualified domain name matches.
    ``sni``       Check that the SNI of the session matches the SNI that would be used to

@@ -311,5 +311,5 @@ more widely. Those are described on this page.
    .. member:: int32_t stream_dependency
 
       The stream dependency. Per spec, see RFC 7540 section 6.2, this is 31
-      bits. We use a signed 32 bit stucture to store either a valid dependency
+      bits. We use a signed 32 bit structure to store either a valid dependency
       or -1 if the stream has no dependency.

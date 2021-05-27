@@ -1074,7 +1074,7 @@ Fragments can also be evacuated through *hit evacuation*. This is configured by
 :ts:cv:`proxy.config.cache.hit_evacuate_size_limit`. When a fragment is read it
 is checked to see if it is close and in front of the write cursor, close being
 less than the specified percent of the size of the stripe. If set at the default
-value of 10, then if the fragment is withing 10% of the size of the stripe, it
+value of 10, then if the fragment is within 10% of the size of the stripe, it
 is marked for evacuation. This is cleared if the write cursor passes through the
 fragment while it remains open (as all open objects are evacuated). If, when the
 object is closed, the fragment is still marked then it is placed in the
