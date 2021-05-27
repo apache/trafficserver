@@ -4341,13 +4341,13 @@ Sockets
 .. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_in STRING ""
 
    This directive will override the congestion control algorithm for incoming
-   connections (accept sockets). On linux the allowed values are typically
+   connections (accept sockets). On Linux, the allowed values are typically
    specified in a space separated list in /proc/sys/net/ipv4/tcp_allowed_congestion_control
 
 .. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_out STRING ""
 
    This directive will override the congestion control algorithm for outgoing
-   connections (connect sockets). On linux the allowed values are typically
+   connections (connect sockets). On Linux, the allowed values are typically
    specified in a space separated list in /proc/sys/net/ipv4/tcp_allowed_congestion_control
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_in INT 0
@@ -4503,7 +4503,7 @@ Sockets
 
    Enable (1) the use of huge pages on supported platforms. (Currently only Linux)
 
-   You must also enable hugepages at the OS level. In a modern linux Kernel
+   You must also enable hugepages at the OS level. In modern Linux kernels,
    this can be done by setting ``/proc/sys/vm/nr_overcommit_hugepages`` to a
    sufficiently large value. It is reasonable to use (system
    memory/hugepage size) because these pages are only created on demand.
@@ -4535,8 +4535,8 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.allocator.dontdump_iobuffers INT 1
 
    Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
-   platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP
-   with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
+   platforms.  (Currently only Linux).  IO buffers are allocated with the MADV_DONTDUMP
+   with madvise() on Linux platforms that support MADV_DONTDUMP.  Enabled by default.
 
 .. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
 
