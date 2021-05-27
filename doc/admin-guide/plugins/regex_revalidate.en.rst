@@ -78,7 +78,7 @@ Inside your revalidation rules configuration, each rule line is defined as a
 regular expression followed by an integer which expresses the epoch time at
 which the rule will expire::
 
-    <regular expression> <rule expiry, as seconds since epoch>
+    <regular expression> <rule expiry, as seconds since epoch> [type MISS or default STALE]
 
 Blank lines and lines beginning with a ``#`` character are ignored.
 
@@ -96,6 +96,16 @@ Every rule must have an expiration associated with it. The rule expiration is
 expressed as an integer of seconds since epoch (equivalent to the return value
 of :manpage:`time(2)`), after which the forced revalidation will no longer
 occur.
+
+Type
+----
+
+By default any matching asset will have its cache lookup status changed
+from HIT_FRESH to HIT_STALE.  By adding an extra keyword MISS at the end
+of a line the asset will be marked MISS instead, forcing a refetch from
+the parent. *Use with care* as this will increase bandwidth to the parent.
+During configuration reload, any rule which changes it type will be
+reloaded and treated as a new rule.
 
 Caveats
 =======
@@ -128,3 +138,6 @@ in |TS| until 6:47:27 AM on Saturday, November 14th, 2015 (UTC)::
 
 Note the escaping of the ``.`` metacharacter in the rule's regular expression.
 
+Alternatively the following rule would case a refetch from the parent::
+
+    http://origin\.tld/images/foo\.jpg 1447483647 MISS

@@ -45,12 +45,33 @@
 #define LOG_ROLL_INTERVAL 86400
 #define LOG_ROLL_OFFSET 0
 
+static char const *const RESULT_MISS    = "MISS";
+static char const *const RESULT_STALE   = "STALE";
+static char const *const RESULT_UNKNOWN = "UNKNOWN";
+
+static char const *const
+strForResult(TSCacheLookupResult const result)
+{
+  switch (result) {
+  case TS_CACHE_LOOKUP_MISS:
+    return RESULT_MISS;
+    break;
+  case TS_CACHE_LOOKUP_HIT_STALE:
+    return RESULT_STALE;
+    break;
+  default:
+    return RESULT_UNKNOWN;
+    break;
+  }
+}
+
 typedef struct invalidate_t {
   const char *regex_text;
   pcre *regex;
   pcre_extra *regex_extra;
   time_t epoch;
   time_t expiry;
+  TSCacheLookupResult new_result;
   struct invalidate_t *next;
 } invalidate_t;
 
@@ -69,6 +90,7 @@ init_invalidate_t(invalidate_t *i)
   i->regex_extra = NULL;
   i->epoch       = 0;
   i->expiry      = 0;
+  i->new_result  = TS_CACHE_LOOKUP_HIT_STALE;
   i->next        = NULL;
   return i;
 }
@@ -139,6 +161,7 @@ copy_invalidate_t(invalidate_t *i)
   iptr->regex_extra = pcre_study(iptr->regex, 0, &errptr); // Assuming no errors since this worked before :-/
   iptr->epoch       = i->epoch;
   iptr->expiry      = i->expiry;
+  iptr->new_result  = i->new_result;
   iptr->next        = NULL;
   return iptr;
 }
@@ -177,7 +200,8 @@ prune_config(invalidate_t **i)
     ilast = NULL;
     while (iptr) {
       if (difftime(iptr->expiry, now) < 0) {
-        TSDebug(LOG_PREFIX, "Removing %s expiry: %d now: %d", iptr->regex_text, (int)iptr->expiry, (int)now);
+        TSDebug(LOG_PREFIX, "Removing %s expiry: %d type: %s now: %d", iptr->regex_text, (int)iptr->expiry,
+                strForResult(iptr->new_result), (int)now);
         if (ilast) {
           ilast->next = iptr->next;
           free_invalidate_t(iptr);
@@ -229,18 +253,27 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
       TSDebug(LOG_PREFIX, "Could not open %s for reading", path);
       return false;
     }
-    config_re = pcre_compile("^([^#].+?)\\s+(\\d+)\\s*$", 0, &errptr, &erroffset, NULL);
+    config_re = pcre_compile("^([^#].+?)\\s+(\\d+)(\\s+(\\w+))?\\s*$", 0, &errptr, &erroffset, NULL);
     while (fgets(line, LINE_MAX, fs) != NULL) {
       ln++;
       TSDebug(LOG_PREFIX, "Processing: %d %s", ln, line);
       rc = pcre_exec(config_re, NULL, line, strlen(line), 0, 0, ovector, OVECTOR_SIZE);
-      if (rc == 3) {
+      if (3 <= rc) {
         i = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
         init_invalidate_t(i);
         pcre_get_substring(line, ovector, rc, 1, &i->regex_text);
         i->epoch  = now;
         i->expiry = atoi(line + ovector[4]);
         i->regex  = pcre_compile(i->regex_text, 0, &errptr, &erroffset, NULL);
+        if (5 == rc) {
+          char const *const type = line + ovector[8];
+          if (0 == strncasecmp(type, RESULT_MISS, strlen(RESULT_MISS))) {
+            TSDebug(LOG_PREFIX, "Regex line set to result type %s: '%s'", RESULT_MISS, i->regex_text);
+            i->new_result = TS_CACHE_LOOKUP_MISS;
+          } else if (0 != strncasecmp(type, RESULT_STALE, strlen(RESULT_STALE))) {
+            TSDebug(LOG_PREFIX, "Unknown regex line result type '%s', using default '%s' '%s'", type, RESULT_STALE, i->regex_text);
+          }
+        }
         if (i->expiry <= i->epoch) {
           TSDebug(LOG_PREFIX, "Rule is already expired!");
           free_invalidate_t(i);
@@ -251,7 +284,8 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
           i->regex_extra = pcre_study(i->regex, 0, &errptr);
           if (!*ilist) {
             *ilist = i;
-            TSDebug(LOG_PREFIX, "Created new list and Loaded %s %d %d", i->regex_text, (int)i->epoch, (int)i->expiry);
+            TSDebug(LOG_PREFIX, "Created new list and Loaded %s %d %d %s", i->regex_text, (int)i->epoch, (int)i->expiry,
+                    strForResult(i->new_result));
           } else {
             iptr = *ilist;
             while (1) {
@@ -260,6 +294,11 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
                   TSDebug(LOG_PREFIX, "Updating duplicate %s", i->regex_text);
                   iptr->epoch  = i->epoch;
                   iptr->expiry = i->expiry;
+                }
+                if (iptr->new_result != i->new_result) {
+                  TSDebug(LOG_PREFIX, "Resetting duplicate due to type change %s", i->regex_text);
+                  iptr->new_result = i->new_result;
+                  iptr->epoch      = now;
                 }
                 free_invalidate_t(i);
                 i = NULL;
@@ -272,7 +311,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
             }
             if (i) {
               iptr->next = i;
-              TSDebug(LOG_PREFIX, "Loaded %s %d %d", i->regex_text, (int)i->epoch, (int)i->expiry);
+              TSDebug(LOG_PREFIX, "Loaded %s %d %d %s", i->regex_text, (int)i->epoch, (int)i->expiry, strForResult(i->new_result));
             }
           }
         }
@@ -302,9 +341,11 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
   if (i) {
     iptr = i;
     while (iptr) {
-      TSDebug(LOG_PREFIX, "%s epoch: %d expiry: %d", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry);
+      char const *const typestr = strForResult(i->new_result);
+      TSDebug(LOG_PREFIX, "%s epoch: %d expiry: %d result: %s", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry, typestr);
       if (pstate->log) {
-        TSTextLogObjectWrite(pstate->log, "%s epoch: %d expiry: %d", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry);
+        TSTextLogObjectWrite(pstate->log, "%s epoch: %d expiry: %d result: %s", iptr->regex_text, (int)iptr->epoch,
+                             (int)iptr->expiry, typestr);
       }
       iptr = iptr->next;
     }
@@ -419,9 +460,9 @@ main_handler(TSCont cont, TSEvent event, void *edata)
               url = TSHttpTxnEffectiveUrlStringGet(txn, &url_len);
             }
             if (pcre_exec(iptr->regex, iptr->regex_extra, url, url_len, 0, 0, NULL, 0) >= 0) {
-              TSHttpTxnCacheLookupStatusSet(txn, TS_CACHE_LOOKUP_HIT_STALE);
+              TSHttpTxnCacheLookupStatusSet(txn, iptr->new_result);
+              TSDebug(LOG_PREFIX, "Forced revalidate - %.*s %s", url_len, url, strForResult(iptr->new_result));
               iptr = NULL;
-              TSDebug(LOG_PREFIX, "Forced revalidate - %.*s", url_len, url);
             }
           }
           if (iptr) {
