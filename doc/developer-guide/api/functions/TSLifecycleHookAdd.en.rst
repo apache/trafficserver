@@ -40,7 +40,7 @@ specified by :arg:`id`. Lifecycle hooks are based on the Traffic Server
 process, not on any specific transaction or session. These will typically be
 called only once during the execution of the Traffic Server process and
 therefore should be added in :func:`TSPluginInit` (which could itself be
-considered a lifecyle hook). Unlike other hooks, lifecycle hooks may not have a
+considered a lifecycle hook). Unlike other hooks, lifecycle hooks may not have a
 well defined ordering and use of them should not assume that one of the hooks
 is always called before another unless specifically mentioned.
 

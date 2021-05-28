@@ -200,7 +200,7 @@ created with twice the space of the last :class:`HdrHeap` in the list and added 
 try.
 
 Once space is found for the object, the base members of :class:`HdrHeapObjImpl` are initialized with
-the objec type and size, with the :arg:`m_obj_flags` set to 0.
+the object type and size, with the :arg:`m_obj_flags` set to 0.
 
 Serialization
 -------------

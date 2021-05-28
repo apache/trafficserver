@@ -57,7 +57,7 @@ PIP installs
       Support for using `plantuml <http://plantuml.com/PlantUML_Language_Reference_Guide.pdf>`__ inline.
 
    sphinx-intl
-      Internation support, which is needed if a non-English version is built. Currently a Japanese
+      International support, which is needed if a non-English version is built. Currently a Japanese
       (``JA``) version is available.
 
    These should be also installed using `pipenv

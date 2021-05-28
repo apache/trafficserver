@@ -132,7 +132,7 @@ Definition
 Collection
     The key name of the collection in the returned JSON data from the
     :ref:`admin-plugins-stats-over-http` plugin. For most statistics, this is the
-    literal sting :literal:`global`. *Required*
+    literal string :literal:`global`. *Required*
 
 Statistic Name
     The exact and full name of the statistic. *Required*

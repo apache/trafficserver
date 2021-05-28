@@ -429,7 +429,7 @@ RANDOM
 
     cond %{RANDOM:<n>} <operand>
 
-Generates a random integer from ``0`` up to (but not including) ``<n>``. Mathmatically, ``[0,n)`` or ``0 <= r < n``.
+Generates a random integer from ``0`` up to (but not including) ``<n>``. Mathematically, ``[0,n)`` or ``0 <= r < n``.
 
 STATUS
 ~~~~~~
