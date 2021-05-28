@@ -32,6 +32,24 @@
 
 #define modulePrefix "[ReverseProxy]"
 
+static RecRawStatBlock *remap_rsb = nullptr;
+static uint32_t max_remap_stats   = 256;
+
+static void
+register_remap_stats()
+{
+  if (remap_rsb != nullptr) {
+    return;
+  }
+
+  remap_rsb = RecAllocateRawStatBlock(static_cast<int>(max_remap_stats + 1));
+
+  for (size_t id = 1; id <= max_remap_stats; id++) {
+    std::string name = "remap.rule." + std::to_string(id);
+    RecRegisterRawStat(remap_rsb, RECT_PROCESS, name.c_str(), RECD_COUNTER, RECP_NON_PERSISTENT, id, RecRawStatSyncSum);
+  }
+}
+
 /**
   Determines where we are in a situation where a virtual path is
   being mapped to a server home page. If it is, we set a special flag
@@ -80,6 +98,8 @@ UrlRewrite::load()
   }
 
   REC_ReadConfigInteger(reverse_proxy, "proxy.config.reverse_proxy.enabled");
+
+  REC_ReadConfigInteger(max_remap_stats, "proxy.config.stat_remap.max_stats_allowed");
 
   /* Initialize the plugin factory */
   pluginFactory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
@@ -688,6 +708,10 @@ UrlRewrite::BuildTable(const char *path)
     forward_mappings_with_recv_port.hash_lookup.reset(nullptr);
   }
 
+  if (zret == 0) {
+    register_remap_stats();
+  }
+
   return zret;
 }
 
@@ -766,6 +790,16 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url, int reques
     Debug("url_rewrite", "Using regex mapping with rank %d", (mapping_container.getMapping())->getRank());
     retval = true;
   }
+
+  if (retval) {
+    int id = 1 + (mapping_container.getMapping())->getRank();
+    if ((size_t)id < max_remap_stats) {
+      RecIncrRawStatSum(remap_rsb, this_ethread(), id, 1);
+    } else {
+      Debug("url_rewrite", "can't update stat, too many remap rules, max_stats configured %u, remap id %d", max_remap_stats, id);
+    }
+  }
+
   return retval;
 }
 
