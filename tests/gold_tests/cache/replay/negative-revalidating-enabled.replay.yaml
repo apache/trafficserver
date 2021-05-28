@@ -26,6 +26,9 @@ meta:
 sessions:
 - transactions:
 
+  #
+  # Test 1: Negative revalidating for a cached content-length response.
+  #
   - client-request:
       method: "GET"
       version: "1.1"
@@ -34,7 +37,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 1 ]
+        - [ uuid, 11 ]
 
     # Populate the cache with a 200 response.
     server-response:
@@ -57,7 +60,7 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 2 ]
+        - [ uuid, 12 ]
 
       # Give cache IO enough time to finish.
       delay: 100ms
@@ -69,7 +72,6 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 32 ]
-        - [ Cache-Control, max-age=2 ]
 
     # Again, we should serve this out of the cache.
     proxy-response:
@@ -85,7 +87,113 @@ sessions:
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 3 ]
+        - [ uuid, 13 ]
+
+      # Make sure the item is stale per it's 2 second max-age.
+      delay: 4s
+
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+
+    # With negative_revalidating enabled, the cached response should be served
+    # even though it is stale.
+    proxy-response:
+      status: 200
+
+  # Verify that max_stale_age is respected.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/reques_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 14 ]
+
+          # After this delay, the item is 8 seconds old. This makes it:
+          #  6 seconds beyond the server's max-age of 2 seconds and
+          #  2 seconds beyond ATS's max_stale_age of 6 seconds.
+      delay: 4s
+
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+
+    # negative_revalidating is enabled, but now the cached item is older than
+    # max_stale_age.
+    proxy-response:
+      status: 503
+
+  #
+  # Test 2: Negative revalidating for a cached chunk encoded response.
+  #
+  # This serves as a Regression test for:
+  # https://github.com/apache/trafficserver/issues/7880
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /HTTP/p
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 21 ]
+
+    # Populate the cache with a 200, chunked response.
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ cache-control, max-age=2 ]
+        - [ Transfer-Encoding, chunked ]
+
+      content:
+        size: 2072
+
+    proxy-response:
+      status: 200
+
+  # Verify we serve the 200 OK out of the cache if it is not stale.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /HTTP/p
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 22 ]
+
+    # This should not reach the origin server.
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+
+    # Again, we should serve this out of the cache.
+    proxy-response:
+      status: 200
+
+  # Verify that with negative_revalidating enabled, we serve the 200 OK out of
+  # the cache even though it is stale (but younger than max_stale_age).
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /HTTP/p
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 23 ]
 
       # Make sure the item is stale per it's 2 second max-age.
       delay: 4s
@@ -107,12 +215,11 @@ sessions:
   - client-request:
       method: "GET"
       version: "1.1"
-      scheme: "http"
-      url: /path/reques_item
+      url: /HTTP/p
       headers:
         fields:
         - [ Host, example.com ]
-        - [ uuid, 4 ]
+        - [ uuid, 24 ]
 
           # After this delay, the item is 8 seconds old. This makes it:
           #  6 seconds beyond the server's max-age of 2 seconds and
@@ -125,7 +232,6 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 32 ]
-        - [ Cache-Control, max-age=2 ]
 
     # negative_revalidating is enabled, but now the cached item is older than
     # max_stale_age.
