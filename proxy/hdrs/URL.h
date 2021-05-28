@@ -220,6 +220,8 @@ ParseResult url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, cons
                            bool verify_host_characters);
 ParseResult url_parse_http_regex(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
 
+bool url_is_compliant(const char *start, const char *end);
+
 char *url_unescapify(Arena *arena, const char *str, int length);
 
 void unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &state);
