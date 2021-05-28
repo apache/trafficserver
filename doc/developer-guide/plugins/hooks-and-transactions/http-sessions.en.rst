@@ -49,7 +49,7 @@ Use the session hooks to get a handle to a session (an ``TSHttpSsn``
 object). If you want your plugin to be called back for each transaction
 within the session, then use ``TSHttpSsnHookAdd``.
 
-**Note:** you must reenable the session with ``TSHttpSsnReenable`` after
+**Note:** you must re-enable the session with ``TSHttpSsnReenable`` after
 processing a session hook.
 
 The session hook functions are listed below:

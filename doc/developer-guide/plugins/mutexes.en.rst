@@ -339,7 +339,7 @@ case only, it's safe to access data shared between ``txnp`` and
 HTTP transaction ``txnp`` is the only one that will call back
 ``txn_contp``, and you are guaranteed that ``txn_contp`` will be called
 back only one hook at a time. After processing is finished,
-``txn_contp`` will reenable ``txnp``.
+``txn_contp`` will re-enable ``txnp``.
 
 In all other cases, you should create a mutex with the continuation. In
 general, a lock is needed when you're using iocore APIs or any other API

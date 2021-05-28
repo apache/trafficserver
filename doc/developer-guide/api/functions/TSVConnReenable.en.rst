@@ -33,17 +33,17 @@ Synopsis
 Description
 ===========
 
-Reenable the SSL connection :arg:`svc`. If a plugin hook is called, ATS
+Re-enable the SSL connection :arg:`svc`. If a plugin hook is called, ATS
 processing on that connection will not resume until this is invoked for that
 connection.
 
 If the server is running OpenSSL 1.0.2, the plugin writer can pause SSL handshake
 processing at the certificate callback  by not reenabling the connection.
 Running an OpenSSL versions older than 1.0.2, the handshake processing in
-``SSL_accept`` will not be stopped even if the SNI callback does not reenable
+``SSL_accept`` will not be stopped even if the SNI callback does not re-enable
 the connection.
 
-Additional processing could reenable the virtual connection causing the
+Additional processing could re-enable the virtual connection causing the
 ``SSL_accept`` to be called again to complete the handshake exchange.  In the
 case of a blind tunnel conversion, the SSL handshake will never be completed by
 Traffic Server.

@@ -179,7 +179,7 @@ Cache key structure and related plugin parameters
 ^^^^^^^^^^^^^^^
 
 * If no query related plugin parameters are used, the query string is included in the `cache key`.
-* ``--exclude-params`` (default: empty list) - comma-separated list of query params to be excluded in the `cache key`. If the list is empty then no exlusions are applied (no query parameters will be excluded from the `cache key`). The exclude list overrides the include list.
+* ``--exclude-params`` (default: empty list) - comma-separated list of query params to be excluded in the `cache key`. If the list is empty then no exclusions are applied (no query parameters will be excluded from the `cache key`). The exclude list overrides the include list.
 * ``--include-params`` (default: empty list) - comma-separated list of query params to be allow-listed in the `cache key`. If the list is empty then no allow-list is applied (all query parameters will be included in the `cache key`).
 * ``--include-match-params`` (default: empty list) - regular expression matching query parameter names which will be allowed in the `cache key`.
 * ``--exclude-match-params`` (default: empty list) - regular expression matching query parameter names which will be excluded in the `cache key`.

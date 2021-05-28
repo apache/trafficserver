@@ -69,7 +69,7 @@ expressions, and unique rules for match. E.g.::
     .*\.ogg  deny   US
 
 Note that the default in the case of no matches on the regular
-expressions is to "allow" the request. This can be overriden, see next
+expressions is to "allow" the request. This can be overridden, see next
 use case.
 
 3. You can also combine 1) and 2), and provide defaults in the

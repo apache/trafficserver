@@ -68,7 +68,7 @@ Glossary
       cache volume on a specific cache span is a :term:`cache stripe`.
 
    cache stripe
-      A homogenous, persistent store for the cache in a single
+      A homogeneous, persistent store for the cache in a single
       :term:`cache span`. A stripe always resides entirely on a single physical
       device and is treated as an undifferentiated span of bytes. This is the
       smallest independent unit of storage.

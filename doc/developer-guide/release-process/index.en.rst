@@ -94,7 +94,7 @@ Distribute
 ==========
 
 The release candidate files should be uploaded to some public storage. Your
-personal storage on *people.apach.org* is a reasonable location to use.
+personal storage on *people.apache.org* is a reasonable location to use.
 
 Send the release candidate announcement to the *users* and *dev* mailing
 lists, noting that it is a release *candidate* and providing a link to the

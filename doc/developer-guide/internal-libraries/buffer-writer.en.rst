@@ -437,7 +437,7 @@ reasonable without the programmer needing to be explicit.
       = ===============
 
    For several specializations the hexadecimal format is taken to indicate printing the value as if
-   it were a hexidecimal value, in effect providing a hex dump of the value. This is the case for
+   it were a hexadecimal value, in effect providing a hex dump of the value. This is the case for
    :code:`std::string_view` and therefore a hex dump of an object can be done by creating a
    :code:`std::string_view` covering the data and then printing it with :code:`{:x}`.
 

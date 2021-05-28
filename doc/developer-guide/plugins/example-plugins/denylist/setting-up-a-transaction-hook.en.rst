@@ -62,11 +62,11 @@ following things happen:
    order to add a transaction hook, you need a handle to the transaction
    being processed.
 
-#. The transaction is reenabled using ``TSHttpTxnReenable`` with
+#. The transaction is re-enabled using ``TSHttpTxnReenable`` with
    ``TS_EVENT_HTTP_ERROR`` as its event argument. Reenabling with an
    error event tells the HTTP state machine to stop the transaction and
    jump to the "send response header" state. Notice that if the
-   requested site is not listed, then the transaction is reenabled
+   requested site is not listed, then the transaction is re-enabled
    with the ``TS_EVENT_HTTP_CONTINUE`` event.
 
 #. The string and ``TSMLoc`` data stored in the marshal buffer ``bufp`` is
@@ -75,10 +75,10 @@ following things happen:
    handles before re-enabling the transaction.
 
 In general, whenever the plugin is doing something to a transaction, it
-must reenable the transaction when it is finished. In other words: every
+must re-enable the transaction when it is finished. In other words: every
 time your handler function handles a transaction event, it must call
 ``TSHttpTxnReenable`` when it is finished. Similarly, after your plugin
 handles session events (``TS_EVENT_HTTP_SSN_START`` and
-``TS_EVENT_HTTP_SSN_CLOSE``), it must reenable the session with
+``TS_EVENT_HTTP_SSN_CLOSE``), it must re-enable the session with
 ``TSHttpSsnReenable``. Reenabling the transaction twice in the same
 plugin routine is a bad error.

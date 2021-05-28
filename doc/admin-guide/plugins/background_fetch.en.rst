@@ -78,7 +78,7 @@ The contents of the config-file could be as below::
 
    The ``include`` configuration directive is only used when there is a corresponding ``exclude`` to exempt.
    For example, a single line directive, ``include Host example.com`` would not make the plugin
-   *only* act on example.com. To acheive classic allow (only) lists, one would need to have a broad
+   *only* act on example.com. To achieve classic allow (only) lists, one would need to have a broad
    exclude line, such as::
 
       exclude Host *

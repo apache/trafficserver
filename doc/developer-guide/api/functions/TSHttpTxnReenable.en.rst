@@ -41,6 +41,6 @@ The plugin tells the transaction :arg:`txnp` to either continue
 
 .. important::
 
-   You must always reenable the HTTP transaction after the processing of
-   each transaction event.  However, never reenable twice.  Reenabling
+   You must always re-enable the HTTP transaction after the processing of
+   each transaction event.  However, never re-enable twice.  Reenabling
    twice is a serious error.
