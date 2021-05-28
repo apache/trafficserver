@@ -93,7 +93,7 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     r"HTTP/1.1 501 Unsupported method \('TRACE'\)",
     "microserver does not support TRACE")
 
-# Mixed case method name;  Should fail but ATS is treating gET as GET
+# Methods are case sensitive. Verify that "gET" is not confused with "GET".
 tr = Test.AddTestRun("mixed case method")
 tr.Processes.Default.Command = 'printf "gET / HTTP/1.1\r\nHost:bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
     ts.Variables.port)
