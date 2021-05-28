@@ -341,7 +341,7 @@ list_config(plugin_state_t *pstate, invalidate_t *i)
   if (i) {
     iptr = i;
     while (iptr) {
-      char const *const typestr = strForResult(i->new_result);
+      char const *const typestr = strForResult(iptr->new_result);
       TSDebug(LOG_PREFIX, "%s epoch: %d expiry: %d result: %s", iptr->regex_text, (int)iptr->epoch, (int)iptr->expiry, typestr);
       if (pstate->log) {
         TSTextLogObjectWrite(pstate->log, "%s epoch: %d expiry: %d result: %s", iptr->regex_text, (int)iptr->epoch,
