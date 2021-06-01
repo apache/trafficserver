@@ -4287,6 +4287,21 @@ HttpSM::do_hostdb_reverse_lookup()
   return;
 }
 
+bool
+HttpSM::track_connect_fail() const
+{
+  bool retval = false;
+  if (t_state.current.server->had_connect_fail()) {
+    // What does our policy say?
+    if (t_state.txn_conf->connect_dead_policy == 2) { // Any connection error through TLS handshake
+      retval = true;
+    } else if (t_state.txn_conf->connect_dead_policy == 1) { // Any connection error through TCP
+      retval = t_state.current.server->connect_result != -ENET_SSL_CONNECT_FAILED;
+    }
+  }
+  return retval;
+}
+
 void
 HttpSM::do_hostdb_update_if_necessary()
 {
@@ -4319,7 +4334,7 @@ HttpSM::do_hostdb_update_if_necessary()
     t_state.updated_server_version = HTTP_INVALID;
   }
   // Check to see if we need to report or clear a connection failure
-  if (t_state.current.server->had_connect_fail()) {
+  if (track_connect_fail()) {
     issue_update |= 1;
     mark_host_failure(&t_state.host_db_info, t_state.client_request_time);
   } else {
@@ -5371,11 +5386,14 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
     if (info->app.http_data.fail_count >= t_state.txn_conf->connect_attempts_rr_retries) {
       if (info->app.http_data.last_failure == 0) {
         char *url_str = t_state.hdr_info.client_request.url_string_get(&t_state.arena, nullptr);
+        int host_len;
+        const char *host_name_ptr = t_state.unmapped_url.host_get(&host_len);
+        std::string_view host_name{host_name_ptr, size_t(host_len)};
         Log::error("%s", lbw()
                            .clip(1)
-                           .print("CONNECT Error: {} connecting to {} for '{}' marking down",
+                           .print("CONNECT: {::s} connecting to {} for host='{}' url='{}' marking down",
                                   ts::bwf::Errno(t_state.current.server->connect_result), t_state.current.server->dst_addr,
-                                  ts::bwf::FirstOf(url_str, "<none>"))
+                                  host_name, ts::bwf::FirstOf(url_str, "<none>"))
                            .extend(1)
                            .write('\0')
                            .data());

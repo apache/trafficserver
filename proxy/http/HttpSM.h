@@ -286,6 +286,11 @@ public:
   //  directly from transact
   void do_hostdb_update_if_necessary();
 
+  // Look at the configured policy and the current server connect_result
+  // to deterine whether this connection attempt should contribute to the
+  // dead server count
+  bool track_connect_fail() const;
+
   // Called by transact. Decide if cached response supports Range and
   // setup Range transfomration if so.
   // return true when the Range is unsatisfiable

@@ -908,6 +908,20 @@ HttpTransact::OriginDead(State *s)
   TxnDebug("http_trans", "origin server is marked down");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
   build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
+  HTTP_INCREMENT_DYN_STAT(http_dead_server_no_requests);
+  char *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
+  int host_len;
+  const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
+  std::string_view host_name{host_name_ptr, size_t(host_len)};
+  Log::error("%s", lbw()
+                     .clip(1)
+                     .print("CONNECT: dead server no request to {} for host='{}' url='{}'", s->current.server->dst_addr, host_name,
+                            ts::bwf::FirstOf(url_str, "<none>"))
+                     .extend(1)
+                     .write('\0')
+                     .data());
+  s->arena.str_free(url_str);
+
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -3874,21 +3888,26 @@ void
 HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
 {
   char addrbuf[INET6_ADDRSTRLEN];
-
   TxnDebug("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
            ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
-  //////////////////////////////////////////
-  // on the first connect attempt failure //
-  // record the failue                   //
-  //////////////////////////////////////////
-  if (0 == s->current.attempts) {
-    char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
-    Log::error("CONNECT: first attempt could not connect [%s] to %s for '%s' connect_result=%d src_port=%d cause_of_death_errno=%d",
-               HttpDebugNames::get_server_state_name(conn_state),
-               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>",
-               s->current.server->connect_result, ntohs(s->current.server->src_addr.port()), s->cause_of_death_errno);
-    s->arena.str_free(url_string);
+  if (s->current.server->had_connect_fail()) {
+    char *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
+    int host_len;
+    const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
+    std::string_view host_name{host_name_ptr, size_t(host_len)};
+    Log::error("%s", lbw()
+                       .clip(1)
+                       .print("CONNECT: attempt fail [{}] to {} for host='{}' "
+                              "connection_result={::s} error={::s} attempts={} url='{}'",
+                              HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
+                              ts::bwf::Errno(s->current.server->connect_result), ts::bwf::Errno(s->cause_of_death_errno),
+                              s->current.attempts, ts::bwf::FirstOf(url_str, "<none>"))
+                       .extend(1)
+                       .write('\0')
+                       .data());
+
+    s->arena.str_free(url_str);
   }
 }
 
