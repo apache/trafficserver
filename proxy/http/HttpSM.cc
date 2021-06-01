@@ -906,6 +906,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     } else if (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_TRACE) {
       // Trace with request body is not allowed
       call_transact_and_set_next_state(HttpTransact::BadRequest);
+      return 0;
     } else {
       // Disable further I/O on the client since there could
       //  be body that we are tunneling POST/PUT/CONNECT or
