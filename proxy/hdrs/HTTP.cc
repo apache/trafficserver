@@ -1056,19 +1056,19 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     }
     goto parse_url;
   parse_version4:
-    if ((*cur != 'P') && (*cur != 'p')) {
+    if (*cur != 'P') {
       goto parse_url;
     }
     GETPREV(parse_url);
-    if ((*cur != 'T') && (*cur != 't')) {
+    if (*cur != 'T') {
       goto parse_url;
     }
     GETPREV(parse_url);
-    if ((*cur != 'T') && (*cur != 't')) {
+    if (*cur != 'T') {
       goto parse_url;
     }
     GETPREV(parse_url);
-    if ((*cur != 'H') && (*cur != 'h')) {
+    if (*cur != 'H') {
       goto parse_url;
     }
     version_start = cur;
@@ -1318,19 +1318,19 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     reason_end    = nullptr;
 
     version_start = cur = line_start;
-    if ((*cur != 'H') && (*cur != 'h')) {
+    if (*cur != 'H') {
       goto eoh;
     }
     GETNEXT(eoh);
-    if ((*cur != 'T') && (*cur != 't')) {
+    if (*cur != 'T') {
       goto eoh;
     }
     GETNEXT(eoh);
-    if ((*cur != 'T') && (*cur != 't')) {
+    if (*cur != 'T') {
       goto eoh;
     }
     GETNEXT(eoh);
-    if ((*cur != 'P') && (*cur != 'p')) {
+    if (*cur != 'P') {
       goto eoh;
     }
     GETNEXT(eoh);
@@ -1459,8 +1459,7 @@ http_parse_version(const char *start, const char *end)
     return HTTP_0_9;
   }
 
-  if (((start[0] == 'H') || (start[0] == 'h')) && ((start[1] == 'T') || (start[1] == 't')) &&
-      ((start[2] == 'T') || (start[2] == 't')) && ((start[3] == 'P') || (start[3] == 'p')) && (start[4] == '/')) {
+  if ((start[0] == 'H') && (start[1] == 'T') && (start[2] == 'T') && (start[3] == 'P') && (start[4] == '/')) {
     start += 5;
 
     maj = 0;
