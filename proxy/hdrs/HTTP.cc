@@ -1088,11 +1088,6 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     }
     url_end += 1;
 
-    // Make sure we didn't pickup odd characters in the url between the method and version
-    if (!url_is_compliant(url_start, url_end)) {
-      return PARSE_RESULT_ERROR;
-    }
-
   done:
     if (!method_start || !method_end) {
       return PARSE_RESULT_ERROR;

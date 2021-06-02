@@ -26,7 +26,7 @@ Test.ContinueOnFail = True
 ts = Test.MakeATSProcess("ts", enable_cache=True)
 
 ts.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
-                               'proxy.config.diags.debug.enabled': 1
+                               'proxy.config.diags.debug.enabled': 1,
                                })
 
 server = Test.MakeOriginServer("server")

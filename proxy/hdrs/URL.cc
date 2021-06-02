@@ -1194,12 +1194,6 @@ url_is_strictly_compliant(const char *start, const char *end)
 } // namespace UrlImpl
 using namespace UrlImpl;
 
-bool
-url_is_compliant(const char *start, const char *end)
-{
-  return url_is_strictly_compliant(start, end);
-}
-
 ParseResult
 url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, bool strict_uri_parsing,
           bool verify_host_characters)

@@ -1211,7 +1211,7 @@ mptcp
    An arbitrary string value that, if set, will be used to replace any request
    ``User-Agent`` header.
 
-.. ts:cv:: CONFIG proxy.config.http.strict_uri_parsing INT 0
+.. ts:cv:: CONFIG proxy.config.http.strict_uri_parsing INT 1
 
    Enables (``1``) or disables (``0``) |TS| to return a 400 Bad Request
    if client's request URI includes character which is not RFC 3986 compliant
