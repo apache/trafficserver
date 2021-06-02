@@ -1694,39 +1694,40 @@ SSLNetVConnection::callHooks(TSEvent eventId)
   Debug("ssl", "sslHandshakeHookState=%d eventID=%d", this->sslHandshakeHookState, eventId);
 
   // Move state if it is appropriate
-  switch (this->sslHandshakeHookState) {
-  case HANDSHAKE_HOOKS_PRE:
-  case HANDSHAKE_HOOKS_OUTBOUND_PRE:
-    if (eventId == TS_EVENT_SSL_CLIENT_HELLO) {
-      this->sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_HELLO;
-    } else if (eventId == TS_EVENT_SSL_SERVERNAME) {
-      this->sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
-    } else if (eventId == TS_EVENT_SSL_VERIFY_SERVER) {
-      this->sslHandshakeHookState = HANDSHAKE_HOOKS_VERIFY_SERVER;
-    } else if (eventId == TS_EVENT_SSL_CERT) {
-      this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
+  if (eventId == TS_EVENT_VCONN_CLOSE) {
+    // Regardless of state, if the connection is closing, then transition to
+    // the DONE state. This will trigger us to call the appropriate cleanup
+    // routines.
+    this->sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
+  } else {
+    switch (this->sslHandshakeHookState) {
+    case HANDSHAKE_HOOKS_PRE:
+    case HANDSHAKE_HOOKS_OUTBOUND_PRE:
+      if (eventId == TS_EVENT_SSL_CLIENT_HELLO) {
+        this->sslHandshakeHookState = HANDSHAKE_HOOKS_CLIENT_HELLO;
+      } else if (eventId == TS_EVENT_SSL_SERVERNAME) {
+        this->sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
+      } else if (eventId == TS_EVENT_SSL_VERIFY_SERVER) {
+        this->sslHandshakeHookState = HANDSHAKE_HOOKS_VERIFY_SERVER;
+      } else if (eventId == TS_EVENT_SSL_CERT) {
+        this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
+      }
+      break;
+    case HANDSHAKE_HOOKS_CLIENT_HELLO:
+      if (eventId == TS_EVENT_SSL_SERVERNAME) {
+        this->sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
+      } else if (eventId == TS_EVENT_SSL_CERT) {
+        this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
+      }
+      break;
+    case HANDSHAKE_HOOKS_SNI:
+      if (eventId == TS_EVENT_SSL_CERT) {
+        this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
+      }
+      break;
+    default:
+      break;
     }
-    break;
-  case HANDSHAKE_HOOKS_CLIENT_HELLO:
-    if (eventId == TS_EVENT_SSL_SERVERNAME) {
-      this->sslHandshakeHookState = HANDSHAKE_HOOKS_SNI;
-    } else if (eventId == TS_EVENT_SSL_CERT) {
-      this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
-    } else if (eventId == TS_EVENT_VCONN_CLOSE) {
-      // Jump to the end
-      this->sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
-    }
-    break;
-  case HANDSHAKE_HOOKS_SNI:
-    if (eventId == TS_EVENT_SSL_CERT) {
-      this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
-    } else if (eventId == TS_EVENT_VCONN_CLOSE) {
-      // Jump to the end
-      this->sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
-    }
-    break;
-  default:
-    break;
   }
 
   // Look for hooks associated with the event
