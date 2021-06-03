@@ -189,15 +189,17 @@ struct ParentResult {
   bool retry;
   bool chash_init[MAX_GROUP_RINGS] = {false};
   TSHostStatus first_choice_status = TSHostStatus::TS_HOST_STATUS_INIT;
+  bool do_not_cache_response       = false;
 
   void
   reset()
   {
     ink_zero(*this);
-    line_number   = -1;
-    result        = PARENT_UNDEFINED;
-    mapWrapped[0] = false;
-    mapWrapped[1] = false;
+    line_number           = -1;
+    result                = PARENT_UNDEFINED;
+    mapWrapped[0]         = false;
+    mapWrapped[1]         = false;
+    do_not_cache_response = false;
   }
 
   bool

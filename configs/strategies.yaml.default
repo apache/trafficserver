@@ -95,15 +95,24 @@
 #     hash_key: hostname # optional key to use for Hashing. Enum of 'url' or 'uri' or 'hostname' or 'path' or 'path+query' or 'cache_key' or 'path+fragment'
 #     go_direct: true # transactions may routed directly to the origin true/false default is true.
 #     parent_is_proxy: false  # next hop hosts  are origin servers when set to 'false', defaults to true and indicates next hop hosts are ats cache's.
+#     cache_peer_result: true # only used when the 'ring_mode' is set to 'peering_ring' and the policy is 'consistent_hash'.  The default value is
+#                        true which means to always allow caching responses.  When set to 'false' reponses received from peer hosts will not be
+#                        cached, only responses received from upstream parents or origins will be cached.
 #     groups: # groups of hosts, these groups are used as rings in consistent hash and arrays of host groups for round_robin.
 #       - *g1
 #       - *g2
 #     scheme: http
 #     failover:
 #       max_simple_retries: 2 # default is 1, indicates the maximum number of simple retries for the listed response codes.
-#       ring_mode: exhaust_ring # enumerated as exhaust_ring or alternate_ring
+#       ring_mode: exhaust_ring # enumerated as exhaust_ring, alternate_ring, or peering_ring
 #           #1) in 'exhaust_ring' mode all the servers in a ring are exhausted before failing over to secondary ring
 #           #2) in 'alternate_ring' mode causes the failover to another server in secondary ring.
+#           #3) 'peering_ring' is implemented for only a policy of 'consistent_hash' and requires that the strategy
+#               has two host groups defined.  The first group is the 'peer' group of caches that also includes this host
+#               itself.  The second group is the 'upstream' group of caches.  All parent host lookups are looked up from
+#               the peer group using consistent hashing.  If the resolved parent is "this" host, a new parent from the
+#               upstream list using consistent hashing will be chosen instead.  If any of the peer caches are
+#               unreachable or timeout, a new parent is chosen from the upstream list for retries.
 #       response_codes: # defines the responses codes for failover in exhaust_ring mode
 #         - 404
 #         - 502

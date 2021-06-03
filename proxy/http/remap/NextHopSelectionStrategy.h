@@ -64,7 +64,7 @@ enum NHPolicyType {
 
 enum NHSchemeType { NH_SCHEME_NONE = 0, NH_SCHEME_HTTP, NH_SCHEME_HTTPS };
 
-enum NHRingMode { NH_ALTERNATE_RING = 0, NH_EXHAUST_RING };
+enum NHRingMode { NH_ALTERNATE_RING = 0, NH_EXHAUST_RING, NH_PEERING_RING };
 
 enum NH_HHealthCheck { NH_ACTIVE, NH_PASSIVE };
 
@@ -247,6 +247,7 @@ public:
   bool go_direct           = true;
   bool parent_is_proxy     = true;
   bool ignore_self_detect  = false;
+  bool cache_peer_result   = true;
   NHPolicyType policy_type = NH_UNDEFINED;
   NHSchemeType scheme      = NH_SCHEME_NONE;
   NHRingMode ring_mode     = NH_ALTERNATE_RING;

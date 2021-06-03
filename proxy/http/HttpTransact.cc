@@ -3637,6 +3637,12 @@ HttpTransact::handle_response_from_parent(State *s)
     if (s->parent_result.retry) {
       markParentUp(s);
     }
+    // the next hop strategy is configured not
+    // to cache a response from a next hop peer.
+    if (s->parent_result.do_not_cache_response) {
+      TxnDebug("http_trans", "response is from a next hop peer, do not cache.");
+      s->cache_info.action = CACHE_DO_NO_ACTION;
+    }
     handle_forward_server_connection_open(s);
     break;
   case PARENT_RETRY:
