@@ -216,9 +216,9 @@ ArgParser::get_error() const
 }
 
 void
-ArgParser::add_description(std::string descr)
+ArgParser::add_description(std::string const &descr)
 {
-  description = std::move(descr);
+  description = descr;
 }
 //=========================== Command class ================================
 ArgParser::Command::Command() {}

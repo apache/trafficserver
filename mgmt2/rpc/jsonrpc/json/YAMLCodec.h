@@ -57,64 +57,56 @@ class yamlcpp_json_decoder
 
     try {
       // try the id first so we can use for a possible error.
-      {
-        // All this may be obsolete if we decided to accept only strings.
-        if (auto id = node["id"]) {
-          if (id.IsNull()) {
-            // if it's present, it should be valid.
-            return {request, error::RPCErrorCode::NullId};
-          }
-
-          try {
-            request.id = id.as<std::string>();
-          } catch (YAML::Exception const &) {
-            return {request, error::RPCErrorCode::InvalidIdType};
-          }
-        } // else ->  it's fine, could be a notification.
-      }
-      // version
-      {
-        if (auto version = node["jsonrpc"]) {
-          try {
-            request.jsonrpc = version.as<std::string>();
-
-            if (request.jsonrpc != specs::JSONRPC_VERSION) {
-              return {request, error::RPCErrorCode::InvalidVersion};
-            }
-          } catch (YAML::Exception const &ex) {
-            return {request, error::RPCErrorCode::InvalidVersionType};
-          }
-        } else {
-          return {request, error::RPCErrorCode::MissingVersion};
+      // All this may be obsolete if we decided to accept only strings.
+      if (auto id = node["id"]) {
+        if (id.IsNull()) {
+          // if it's present, it should be valid.
+          return {request, error::RPCErrorCode::NullId};
         }
+
+        try {
+          request.id = id.as<std::string>();
+        } catch (YAML::Exception const &) {
+          return {request, error::RPCErrorCode::InvalidIdType};
+        }
+      } // else ->  it's fine, could be a notification.
+      // version
+      if (auto version = node["jsonrpc"]) {
+        try {
+          request.jsonrpc = version.as<std::string>();
+
+          if (request.jsonrpc != specs::JSONRPC_VERSION) {
+            return {request, error::RPCErrorCode::InvalidVersion};
+          }
+        } catch (YAML::Exception const &ex) {
+          return {request, error::RPCErrorCode::InvalidVersionType};
+        }
+      } else {
+        return {request, error::RPCErrorCode::MissingVersion};
       }
       // method
-      {
-        if (auto method = node["method"]) {
-          try {
-            request.method = method.as<std::string>();
-          } catch (YAML::Exception const &ex) {
-            return {request, error::RPCErrorCode::InvalidMethodType};
-          }
-        } else {
-          return {request, error::RPCErrorCode::MissingMethod};
+      if (auto method = node["method"]) {
+        try {
+          request.method = method.as<std::string>();
+        } catch (YAML::Exception const &ex) {
+          return {request, error::RPCErrorCode::InvalidMethodType};
         }
+      } else {
+        return {request, error::RPCErrorCode::MissingMethod};
       }
       // params
-      {
-        if (auto params = node["params"]) {
-          // TODO: check schema.
-          switch (params.Type()) {
-          case YAML::NodeType::Map:
-          case YAML::NodeType::Sequence:
-            break;
-          default:
-            return {request, error::RPCErrorCode::InvalidParamType};
-          }
-          request.params = std ::move(params);
+      if (auto params = node["params"]) {
+        // TODO: check schema.
+        switch (params.Type()) {
+        case YAML::NodeType::Map:
+        case YAML::NodeType::Sequence:
+          break;
+        default:
+          return {request, error::RPCErrorCode::InvalidParamType};
         }
-        // else -> params can be omitted
+        request.params = std ::move(params);
       }
+      // else -> params can be omitted
     } catch (std::exception const &e) {
       // we want to keep the request as we will respond with a message.
       return {request, error::RPCErrorCode::PARSE_ERROR};

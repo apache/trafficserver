@@ -251,7 +251,7 @@ public:
   std::string get_error() const;
 
   // Add App's description.
-  void add_description(std::string descr);
+  void add_description(std::string const &descr);
 
 protected:
   // Converted from 'const char **argv' for the use of parsing and help
