@@ -4949,9 +4949,9 @@ TSHttpTxnServerVConnGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   if (sm != nullptr) {
-    PoolableSession *ss = sm->get_server_session();
-    if (ss != nullptr) {
-      vconn = reinterpret_cast<TSVConn>(ss->get_netvc());
+    ProxyTransaction *st = sm->get_server_txn();
+    if (st != nullptr) {
+      vconn = reinterpret_cast<TSVConn>(st->get_netvc());
     }
   }
   return vconn;
@@ -5823,17 +5823,15 @@ TSHttpTxnOutgoingAddrGet(TSHttpTxn txnp)
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
 
-  PoolableSession *ssn = sm->get_server_session();
-  if (ssn == nullptr) {
-    return nullptr;
+  const sockaddr *retval = nullptr;
+  ProxyTransaction *ssn  = sm->get_server_txn();
+  if (ssn != nullptr) {
+    NetVConnection *vc = ssn->get_netvc();
+    if (vc != nullptr) {
+      retval = vc->get_local_addr();
+    }
   }
-
-  NetVConnection *vc = ssn->get_netvc();
-  if (vc == nullptr) {
-    return nullptr;
-  }
-
-  return vc->get_local_addr();
+  return retval;
 }
 
 sockaddr const *
@@ -5957,14 +5955,12 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the mark on an active server session
-  if (nullptr != sm->ua_txn) {
-    PoolableSession *ssn = sm->ua_txn->get_server_session();
-    if (nullptr != ssn) {
-      NetVConnection *vc = ssn->get_netvc();
-      if (vc != nullptr) {
-        vc->options.packet_mark = (uint32_t)mark;
-        vc->apply_options();
-      }
+  ProxyTransaction *ssn = sm->get_server_txn();
+  if (nullptr != ssn) {
+    NetVConnection *vc = ssn->get_netvc();
+    if (vc != nullptr) {
+      vc->options.packet_mark = (uint32_t)mark;
+      vc->apply_options();
     }
   }
 
@@ -5999,14 +5995,12 @@ TSHttpTxnServerPacketTosSet(TSHttpTxn txnp, int tos)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the tos on an active server session
-  if (nullptr != sm->ua_txn) {
-    PoolableSession *ssn = sm->ua_txn->get_server_session();
-    if (nullptr != ssn) {
-      NetVConnection *vc = ssn->get_netvc();
-      if (vc != nullptr) {
-        vc->options.packet_tos = (uint32_t)tos;
-        vc->apply_options();
-      }
+  ProxyTransaction *ssn = sm->get_server_txn();
+  if (nullptr != ssn) {
+    NetVConnection *vc = ssn->get_netvc();
+    if (vc != nullptr) {
+      vc->options.packet_tos = (uint32_t)tos;
+      vc->apply_options();
     }
   }
 
@@ -6041,14 +6035,12 @@ TSHttpTxnServerPacketDscpSet(TSHttpTxn txnp, int dscp)
   HttpSM *sm = (HttpSM *)txnp;
 
   // change the tos on an active server session
-  if (nullptr != sm->ua_txn) {
-    PoolableSession *ssn = sm->ua_txn->get_server_session();
-    if (nullptr != ssn) {
-      NetVConnection *vc = ssn->get_netvc();
-      if (vc != nullptr) {
-        vc->options.packet_tos = (uint32_t)dscp << 2;
-        vc->apply_options();
-      }
+  ProxyTransaction *ssn = sm->get_server_txn();
+  if (nullptr != ssn) {
+    NetVConnection *vc = ssn->get_netvc();
+    if (vc != nullptr) {
+      vc->options.packet_tos = (uint32_t)dscp << 2;
+      vc->apply_options();
     }
   }
 
@@ -7829,18 +7821,16 @@ TSHttpTxnServerFdGet(TSHttpTxn txnp, int *fdp)
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
   *fdp       = -1;
 
-  PoolableSession *ss = sm->get_server_session();
-  if (ss == nullptr) {
-    return TS_ERROR;
+  TSReturnCode retval  = TS_ERROR;
+  ProxyTransaction *ss = sm->get_server_txn();
+  if (ss != nullptr) {
+    NetVConnection *vc = ss->get_netvc();
+    if (vc != nullptr) {
+      *fdp   = vc->get_socket();
+      retval = TS_SUCCESS;
+    }
   }
-
-  NetVConnection *vc = ss->get_netvc();
-  if (vc == nullptr) {
-    return TS_ERROR;
-  }
-
-  *fdp = vc->get_socket();
-  return TS_SUCCESS;
+  return retval;
 }
 
 /* Matcher Utils */

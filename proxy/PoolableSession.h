@@ -33,9 +33,11 @@ class PoolableSession : public ProxySession
 public:
   enum PooledState {
     INIT,
-    SSN_IN_USE,  // actively in use
-    KA_RESERVED, // stuck to client
-    KA_POOLED,   // free for reuse
+    SSN_IN_USE,    // actively in use
+    KA_RESERVED,   // stuck to client
+    KA_POOLED,     // free for reuse
+    SSN_CLOSED,    // Session ready to be freed
+    SSN_TO_RELEASE // Session reaady to be released
   };
 
   /// Hash map descriptor class for IP map.
@@ -72,18 +74,30 @@ public:
   TSServerSessionSharingMatchMask sharing_match = TS_SERVER_SESSION_SHARING_MATCH_MASK_NONE;
   TSServerSessionSharingPoolType sharing_pool   = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
 
-  // Keep track of connection limiting and a pointer to the
-  // singleton that keeps track of the connection counts.
-  OutboundConnTrack::Group *conn_track_group = nullptr;
+  void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
+  void release_outbound_connection_tracking();
+
+  void attach_hostname(const char *hostname);
 
   void set_active();
   bool is_active();
   void set_private(bool new_private = true);
   bool is_private() const;
 
-  void set_netvc(NetVConnection *newvc);
+  virtual void set_netvc(NetVConnection *newvc);
 
-  virtual IOBufferReader *get_reader() = 0;
+  // Used to determine whether the session is for parent proxy
+  // it is session to origin server
+  // We need to determine whether a closed connection was to
+  // close parent proxy to update the
+  // proxy.process.http.current_parent_proxy_connections
+  bool to_parent_proxy = false;
+
+  // Keep track of connection limiting and a pointer to the
+  // singleton that keeps track of the connection counts.
+  OutboundConnTrack::Group *conn_track_group = nullptr;
+
+  virtual IOBufferReader *get_remote_reader() = 0;
 
 private:
   // Sessions become if authentication headers
@@ -191,4 +205,35 @@ inline bool
 PoolableSession::FQDNLinkage::equal(CryptoHash const &lhs, CryptoHash const &rhs)
 {
   return lhs == rhs;
+}
+
+inline void
+PoolableSession::enable_outbound_connection_tracking(OutboundConnTrack::Group *group)
+{
+  ink_assert(nullptr == conn_track_group);
+  conn_track_group = group;
+}
+
+inline void
+PoolableSession::release_outbound_connection_tracking()
+{
+  // Update upstream connection tracking data if present.
+  if (conn_track_group) {
+    if (conn_track_group->_count >= 0) {
+      (conn_track_group->_count)--;
+      conn_track_group = nullptr;
+    } else {
+      // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
+      Error("[http_ss] [%" PRId64 "] number of connections should be greater than or equal to zero: %u", con_id,
+            conn_track_group->_count.load());
+    }
+  }
+}
+
+inline void
+PoolableSession::attach_hostname(const char *hostname)
+{
+  if (CRYPTO_HASH_ZERO == hostname_hash) {
+    CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
+  }
 }

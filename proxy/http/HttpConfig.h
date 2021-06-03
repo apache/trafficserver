@@ -352,6 +352,16 @@ enum {
 
   http_dead_server_no_requests,
 
+  http_origin_reuse,
+  http_origin_not_found,
+  http_origin_reuse_fail,
+  http_origin_make_new,
+  http_origin_no_sharing,
+  http_origin_body,
+  http_origin_private,
+  http_origin_close_private,
+  http_origin_raw,
+
   http_stat_count
 };
 

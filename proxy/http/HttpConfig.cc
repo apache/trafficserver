@@ -393,6 +393,25 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_shutdown.tunnel_abort", RECD_INT, RECP_NON_PERSISTENT,
                      (int)http_origin_shutdown_tunnel_abort, RecRawStatSyncCount);
 
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.reuse", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_reuse, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.not_found", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_not_found, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.reuse_fail", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_reuse_fail, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.make_new", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_make_new, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.no_sharing", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_no_sharing, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.body", RECD_INT, RECP_NON_PERSISTENT, (int)http_origin_body,
+                     RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.private", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_private, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.close_private", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_origin_close_private, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin.raw", RECD_INT, RECP_NON_PERSISTENT, (int)http_origin_raw,
+                     RecRawStatSyncCount);
+
   // Upstream current connections stats
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.current_parent_proxy_connections", RECD_INT, RECP_NON_PERSISTENT,
                      (int)http_current_parent_proxy_connections_stat, RecRawStatSyncSum);

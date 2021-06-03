@@ -73,7 +73,10 @@ public:
     return m_ip_pool.count();
   }
 
-protected:
+private:
+  void removeSession(PoolableSession *ssn);
+  void addSession(PoolableSession *ssn);
+
   using IPTable   = IntrusiveHashMap<PoolableSession::IPLinkage>;
   using FQDNTable = IntrusiveHashMap<PoolableSession::FQDNLinkage>;
 

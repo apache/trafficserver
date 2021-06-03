@@ -593,7 +593,7 @@ Http2ClientSession::do_process_frame_read(int event, VIO *vio, bool inside_frame
   }
 
   // If the client hasn't shut us down, reenable
-  if (!this->is_client_closed()) {
+  if (!this->is_peer_closed()) {
     vio->reenable();
   }
   return 0;
