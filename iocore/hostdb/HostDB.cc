@@ -2267,8 +2267,8 @@ HostDBRecord::serve_stale_but_revalidate() const
   // hostdb_serve_stale_but_revalidate == number of seconds
   // ip_interval() is the number of seconds between now() and when the entry was inserted
   if ((ip_timeout_interval + ts_seconds(hostdb_serve_stale_but_revalidate)) > ip_interval()) {
-    Debug("hostdb", "serving stale entry %ld | %d | %ld as requested by config", ip_timeout_interval.count(),
-          hostdb_serve_stale_but_revalidate, ip_interval().count());
+    Debug_bw("hostdb", "serving stale entry {} | {} | {} as requested by config", ip_timeout_interval,
+             hostdb_serve_stale_but_revalidate, ip_interval());
     return true;
   }
 
