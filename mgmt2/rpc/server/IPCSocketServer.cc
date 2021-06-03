@@ -284,6 +284,12 @@ IPCSocketServer::bind(std::error_code &ec)
     ec = std::make_error_code(static_cast<std::errc>(errno));
     return;
   }
+
+  mode_t mode = _conf.restrictedAccessApi ? 00700 : 00777;
+  if (chmod(_conf.sockPathName.c_str(), mode) < 0) {
+    ec = std::make_error_code(static_cast<std::errc>(errno));
+    return;
+  }
 }
 
 void
@@ -485,7 +491,9 @@ template <> struct convert<rpc::comm::IPCSocketServer::Config> {
     if (auto n = node[config::MAX_RETRY_ON_TR_ERROR_KEY_STR]) {
       rhs.maxRetriesOnTransientErrors = n.as<int>();
     }
-
+    if (auto n = node[config::RESTRICTED_API]) {
+      rhs.restrictedAccessApi = n.as<bool>();
+    }
     return true;
   }
 };

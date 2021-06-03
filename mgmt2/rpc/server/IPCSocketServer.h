@@ -110,12 +110,14 @@ protected: // unit test access
     static constexpr auto LOCK_PATH_NAME_KEY_STR{"lock_path_name"};
     static constexpr auto BACKLOG_KEY_STR{"backlog"};
     static constexpr auto MAX_RETRY_ON_TR_ERROR_KEY_STR{"max_retry_on_transient_errors"};
+    static constexpr auto RESTRICTED_API{"restricted_api"};
     // is it safe to call Layout now?
     std::string sockPathName;
     std::string lockPathName;
 
     int backlog{5};
     int maxRetriesOnTransientErrors{64};
+    bool restrictedAccessApi{false};
   };
 
   friend struct YAML::convert<rpc::comm::IPCSocketServer::Config>;
