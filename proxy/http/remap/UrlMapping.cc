@@ -95,6 +95,13 @@ url_mapping::Print() const
          _plugin_inst_list.size());
 }
 
+std::string
+url_mapping::PrintRemapHitCount()
+{
+  std::string result = "{\"fromURL\": \"" + remapKey + "\", \"hit_count\": " + std::to_string(_hitCount) + "}";
+  return result;
+}
+
 /**
  *
  **/

@@ -182,6 +182,48 @@ UrlRewrite::PrintStore(const MappingsStore &store) const
   }
 }
 
+std::string
+UrlRewrite::PrintRemapHits()
+{
+  std::string result;
+  result += PrintRemapHitsStore(forward_mappings);
+  result += PrintRemapHitsStore(reverse_mappings);
+  result += PrintRemapHitsStore(permanent_redirects);
+  result += PrintRemapHitsStore(temporary_redirects);
+  result += PrintRemapHitsStore(forward_mappings_with_recv_port);
+
+  if (result.size() > 2) {
+    result.pop_back(); // remove the trailing \n
+    result.pop_back(); // remove the trailing ,
+    result = "{\"list\": [\n" + result + " \n]}";
+  }
+
+  return result;
+}
+
+/** Debugging method. */
+std::string
+UrlRewrite::PrintRemapHitsStore(MappingsStore &store)
+{
+  std::string result;
+  if (store.hash_lookup) {
+    for (auto &it : *store.url_mapping_list) {
+      result += it.second->PrintRemapHitCount();
+      result += ",\n";
+    }
+  }
+
+  if (!store.regex_list.empty()) {
+    forl_LL(RegexMapping, list_iter, store.regex_list)
+    {
+      result += list_iter->url_map->PrintRemapHitCount();
+      result += ",\n";
+    }
+  }
+
+  return result;
+}
+
 /**
   If a remapping is found, returns a pointer to it otherwise NULL is
   returned.
@@ -551,11 +593,12 @@ UrlRewrite::_addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMap
   bool retval;
 
   new_mapping->setRank(count); // Use the mapping rules number count for rank
+  new_mapping->setRemapKey();  // Used for remap hit stats
   if (is_cur_mapping_regex) {
     store.regex_list.enqueue(reg_map);
     retval = true;
   } else {
-    retval = TableInsert(store.hash_lookup, new_mapping, src_host);
+    retval = TableInsert(store.hash_lookup, store.url_mapping_list, new_mapping, src_host);
   }
   if (retval) {
     ++count;
@@ -608,9 +651,10 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
   bool success;
 
   if (maptype == FORWARD_MAP_WITH_RECV_PORT) {
-    success = TableInsert(forward_mappings_with_recv_port.hash_lookup, mapping, src_host);
+    success =
+      TableInsert(forward_mappings_with_recv_port.hash_lookup, forward_mappings_with_recv_port.url_mapping_list, mapping, src_host);
   } else {
-    success = TableInsert(forward_mappings.hash_lookup, mapping, src_host);
+    success = TableInsert(forward_mappings.hash_lookup, forward_mappings.url_mapping_list, mapping, src_host);
   }
 
   if (success) {
@@ -697,8 +741,14 @@ UrlRewrite::BuildTable(const char *path)
 
 */
 bool
-UrlRewrite::TableInsert(std::unique_ptr<URLTable> &h_table, url_mapping *mapping, const char *src_host)
+UrlRewrite::TableInsert(std::unique_ptr<URLTable> &h_table, std::unique_ptr<URLMappingTable> &h_mapping_table, url_mapping *mapping,
+                        const char *src_host)
 {
+  if (!h_mapping_table) {
+    h_mapping_table.reset(new URLMappingTable);
+  }
+  h_mapping_table->emplace(mapping->getRemapKey(), mapping);
+
   if (!h_table) {
     h_table.reset(new URLTable);
   }
@@ -765,6 +815,9 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url, int reques
                           mapping_container)) {
     Debug("url_rewrite", "Using regex mapping with rank %d", (mapping_container.getMapping())->getRank());
     retval = true;
+  }
+  if (retval) {
+    (mapping_container.getMapping())->incrementCount();
   }
   return retval;
 }

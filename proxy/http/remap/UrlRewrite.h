@@ -59,8 +59,9 @@ enum mapping_type {
 class UrlRewrite : public RefCountObj
 {
 public:
-  using URLTable = std::unordered_map<std::string, UrlMappingPathIndex *>;
-  UrlRewrite()   = default;
+  using URLTable        = std::unordered_map<std::string, UrlMappingPathIndex *>;
+  using URLMappingTable = std::unordered_map<std::string, url_mapping *>;
+  UrlRewrite()          = default;
   ~UrlRewrite() override;
 
   /** Load the configuration.
@@ -136,6 +137,7 @@ public:
 
   struct MappingsStore {
     std::unique_ptr<URLTable> hash_lookup;
+    std::unique_ptr<URLMappingTable> url_mapping_list;
     RegexMappingList regex_list;
     bool
     empty()
@@ -146,6 +148,8 @@ public:
 
   void PerformACLFiltering(HttpTransact::State *s, url_mapping *mapping);
   void PrintStore(const MappingsStore &store) const;
+  std::string PrintRemapHits();
+  std::string PrintRemapHitsStore(MappingsStore &store);
 
   void
   DestroyStore(MappingsStore &store)
@@ -158,7 +162,8 @@ public:
   bool InsertMapping(mapping_type maptype, url_mapping *new_mapping, RegexMapping *reg_map, const char *src_host,
                      bool is_cur_mapping_regex);
 
-  bool TableInsert(std::unique_ptr<URLTable> &h_table, url_mapping *mapping, const char *src_host);
+  bool TableInsert(std::unique_ptr<URLTable> &h_table, std::unique_ptr<URLMappingTable> &h_mapping_table, url_mapping *mapping,
+                   const char *src_host);
 
   MappingsStore forward_mappings;
   MappingsStore reverse_mappings;
