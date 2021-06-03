@@ -228,8 +228,6 @@ Http1ServerSession ::release_transaction()
       // The session was successfully put into the session
       //    manager and it will manage it
       // (Note: should never get HSM_NOT_FOUND here)
-      // Set our state to KA for stat issues
-      state = KA_POOLED;
       ink_assert(r == HSM_DONE);
       // If the session got picked up immediately by another thread the transact_count could be greater
       ink_release_assert(transact_count >= released_transactions);
