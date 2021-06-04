@@ -96,9 +96,9 @@ groups:
       weight: 0.25
     - <<: *p2
       weight: 0.25
-    - <<: *p2
-      weight: 0.25
     - <<: *p3
+      weight: 0.25
+    - <<: *p4
       weight: 0.25
   - &g2
     - <<: *m1
@@ -121,6 +121,8 @@ strategies:
       max_simple_retries: 2
       ring_mode:
         peering_ring
+      self:
+        p3.bar.com
       response_codes: # defines the responses codes for failover in exhaust_ring mode
         - 404
       health_check: # specifies the list of healthchecks that should be considered for failover. A list of enums: 'passive' or 'active'

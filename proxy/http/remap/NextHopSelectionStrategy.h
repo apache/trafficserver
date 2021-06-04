@@ -113,6 +113,7 @@ struct HostRecord : ATSConsistentHashNode {
   std::string hash_string;
   int host_index;
   int group_index;
+  bool self = false;
   std::vector<std::shared_ptr<NHProtocol>> protocols;
   std::atomic<int> retriers = 0;
 
