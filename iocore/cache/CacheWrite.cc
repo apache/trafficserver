@@ -109,6 +109,10 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         CacheHTTPInfo *info = write_vector->get(0);
         HTTPHdr *request    = info->request_get();
         if (request->valid()) {
+          // Marking the request's target as dirty will guarantee that the
+          // internal members of the request used for printing the URL will be
+          // coherent and valid by the time it is printed.
+          request->mark_target_dirty();
           // In contrast to url_string_get, this url_print interface doesn't
           // use HTTPHdr's m_heap which is not valid at this point because the
           // HttpSM is most likely gone.
