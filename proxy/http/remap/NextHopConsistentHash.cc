@@ -212,6 +212,8 @@ NextHopConsistentHash::getHashKey(uint64_t sm_id, HttpRequestData *hrdata, ATSHa
 void
 NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
 {
+  uint32_t const NO_RING_USE_POST_REMAP = uint32_t(0) - 1;
+
   HttpSM *sm                   = reinterpret_cast<HttpSM *>(txnp);
   ParentResult *result         = &sm->t_state.parent_result;
   HttpRequestData request_info = sm->t_state.request_data;
@@ -232,7 +234,6 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
   TSHostStatus host_stat           = TSHostStatus::TS_HOST_STATUS_INIT;
   HostStatRec *hst                 = nullptr;
   Machine *machine                 = Machine::instance();
-  ;
 
   if (result->line_number == -1 && result->result == PARENT_UNDEFINED) {
     firstcall = true;
@@ -259,10 +260,14 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       }
       break;
     case NH_PEERING_RING:
-      ink_assert(groups == 2);
-      // look for the next parent on the
-      // upstream ring.
-      result->last_group = cur_ring = 1;
+      if (groups == 1) {
+        result->last_group = cur_ring = NO_RING_USE_POST_REMAP;
+      } else {
+        ink_assert(groups == 2);
+        // look for the next parent on the
+        // upstream ring.
+        result->last_group = cur_ring = 1;
+      }
       break;
     case NH_EXHAUST_RING:
     default:
@@ -275,125 +280,135 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     }
   }
 
-  // Do the initial parent look-up.
-  hash_key = getHashKey(sm_id, &request_info, &hash);
+  if (cur_ring != NO_RING_USE_POST_REMAP) {
+    // Do the initial parent look-up.
+    hash_key = getHashKey(sm_id, &request_info, &hash);
 
-  do { // search until we've selected a different parent if !firstcall
-    std::shared_ptr<ATSConsistentHash> r = rings[cur_ring];
-    hostRec               = chash_lookup(r, hash_key, &result->chashIter[cur_ring], &wrapped, &hash, &result->chash_init[cur_ring],
-                           &result->mapWrapped[cur_ring], sm_id);
-    wrap_around[cur_ring] = wrapped;
-    lookups++;
-    // the 'available' flag is maintained in 'host_groups' and not the hash ring.
-    if (hostRec) {
-      pRec = host_groups[hostRec->group_index][hostRec->host_index];
-      if (firstcall) {
-        hst                         = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
-        result->first_choice_status = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
-        // if peering and the selected host is myself, change rings and search for an upstream
-        // parent.
-        if (ring_mode == NH_PEERING_RING && machine->is_self(pRec->hostname)) {
-          // switch to the upstream ring.
-          cur_ring = 1;
-          continue;
-        }
-        break;
-      }
-    } else {
-      pRec = nullptr;
-    }
-  } while (pRec && result->hostname && strcmp(pRec->hostname.c_str(), result->hostname) == 0);
-
-  NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Initial parent lookups: %d", sm_id, lookups);
-
-  // ----------------------------------------------------------------------------------------------------
-  // Validate initial parent look-up and perform additional look-ups if required.
-  // ----------------------------------------------------------------------------------------------------
-
-  hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
-  host_stat = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
-  // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-  // ignore the down status and mark it as available
-  if ((pRec && ignore_self_detect) && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
-    if (hst->reasons == Reason::SELF_DETECT) {
-      host_stat = TS_HOST_STATUS_UP;
-    }
-  }
-  if (!pRec || (pRec && !pRec->available.load()) || host_stat == TS_HOST_STATUS_DOWN) {
-    do {
-      // check if an unavailable server is now retryable, use it.
-      if (pRec && !pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
-        // check if the host is retryable.  It's retryable if the retry window has elapsed
-        _now == 0 ? _now = time(nullptr) : _now = now;
-        if ((pRec->failedAt.load() + retry_time) < static_cast<unsigned>(_now)) {
-          NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next hop %s, retriers: %d", sm_id, pRec->hostname.c_str(), pRec->retriers());
-          if (pRec->retriers.inc(max_retriers)) {
-            nextHopRetry        = true;
-            result->last_parent = pRec->host_index;
-            result->last_lookup = pRec->group_index;
-            result->retry       = nextHopRetry;
-            result->result      = PARENT_SPECIFIED;
-            NH_Debug(NH_DEBUG_TAG,
-                     "[%" PRIu64 "] next hop %s is now retryable, marked it available, retriers: %d, max_retriers: %d.", sm_id,
-                     pRec->hostname.c_str(), pRec->retriers(), max_retriers);
-            break;
-          }
-        }
-      }
-      switch (ring_mode) {
-      case NH_ALTERNATE_RING:
-        if (pRec && groups > 0) {
-          cur_ring = (pRec->group_index + 1) % groups;
-        } else {
-          cur_ring = 0;
-        }
-        break;
-      case NH_EXHAUST_RING:
-      default:
-        if (wrap_around[cur_ring] && groups > 1) {
-          cur_ring = (cur_ring + 1) % groups;
-        }
-        break;
-      }
+    do { // search until we've selected a different parent if !firstcall
       std::shared_ptr<ATSConsistentHash> r = rings[cur_ring];
       hostRec = chash_lookup(r, hash_key, &result->chashIter[cur_ring], &wrapped, &hash, &result->chash_init[cur_ring],
                              &result->mapWrapped[cur_ring], sm_id);
       wrap_around[cur_ring] = wrapped;
       lookups++;
+      // the 'available' flag is maintained in 'host_groups' and not the hash ring.
       if (hostRec) {
-        pRec      = host_groups[hostRec->group_index][hostRec->host_index];
-        hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
-        host_stat = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
-        // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-        // ignore the down status and mark it as available
-        if ((pRec && ignore_self_detect) && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
-          if (hst->reasons == Reason::SELF_DETECT) {
-            host_stat = TS_HOST_STATUS_UP;
+        pRec = host_groups[hostRec->group_index][hostRec->host_index];
+        if (firstcall) {
+          hst                         = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
+          result->first_choice_status = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
+          // if peering and the selected host is myself, change rings and search for an upstream
+          // parent.
+          if (ring_mode == NH_PEERING_RING && (pRec->self || machine->is_self(pRec->hostname.c_str()))) {
+            if (groups == 1) {
+              // use host from post-remap URL
+              cur_ring = NO_RING_USE_POST_REMAP;
+              pRec     = nullptr;
+            } else {
+              // switch to the upstream ring.
+              cur_ring = 1;
+              continue;
+            }
           }
-        }
-        NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Selected a new parent: %s, available: %s, wrapped: %s, lookups: %d.", sm_id,
-                 pRec->hostname.c_str(), (pRec->available.load()) ? "true" : "false", (wrapped) ? "true" : "false", lookups);
-        // use available host.
-        if (pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
           break;
         }
       } else {
         pRec = nullptr;
       }
-      bool all_wrapped = true;
-      for (uint32_t c = 0; c < groups; c++) {
-        if (wrap_around[c] == false) {
-          all_wrapped = false;
+    } while (pRec && result->hostname && strcmp(pRec->hostname.c_str(), result->hostname) == 0);
+
+    NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Initial parent lookups: %d", sm_id, lookups);
+
+    // ----------------------------------------------------------------------------------------------------
+    // Validate initial parent look-up and perform additional look-ups if required.
+    // ----------------------------------------------------------------------------------------------------
+
+    if (cur_ring != NO_RING_USE_POST_REMAP) {
+      hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
+      host_stat = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
+      // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
+      // ignore the down status and mark it as available
+      if ((pRec && ignore_self_detect) && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
+        if (hst->reasons == Reason::SELF_DETECT) {
+          host_stat = TS_HOST_STATUS_UP;
         }
       }
-      if (all_wrapped) {
-        NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] No available parents.", sm_id);
-        if (pRec) {
-          pRec = nullptr;
-        }
-        break;
+      if (!pRec || (pRec && !pRec->available.load()) || host_stat == TS_HOST_STATUS_DOWN) {
+        do {
+          // check if an unavailable server is now retryable, use it.
+          if (pRec && !pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
+            // check if the host is retryable.  It's retryable if the retry window has elapsed
+            _now == 0 ? _now = time(nullptr) : _now = now;
+            if ((pRec->failedAt.load() + retry_time) < static_cast<unsigned>(_now)) {
+              NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next hop %s, retriers: %d", sm_id, pRec->hostname.c_str(), pRec->retriers());
+              if (pRec->retriers.inc(max_retriers)) {
+                nextHopRetry        = true;
+                result->last_parent = pRec->host_index;
+                result->last_lookup = pRec->group_index;
+                result->retry       = nextHopRetry;
+                result->result      = PARENT_SPECIFIED;
+                NH_Debug(NH_DEBUG_TAG,
+                         "[%" PRIu64 "] next hop %s is now retryable, marked it available, retriers: %d, max_retriers: %d.", sm_id,
+                         pRec->hostname.c_str(), pRec->retriers(), max_retriers);
+                break;
+              }
+            }
+          }
+          switch (ring_mode) {
+          case NH_ALTERNATE_RING:
+            if (pRec && groups > 0) {
+              cur_ring = (pRec->group_index + 1) % groups;
+            } else {
+              cur_ring = 0;
+            }
+            break;
+          case NH_EXHAUST_RING:
+          default:
+            if (wrap_around[cur_ring] && groups > 1) {
+              cur_ring = (cur_ring + 1) % groups;
+            }
+            break;
+          }
+          std::shared_ptr<ATSConsistentHash> r = rings[cur_ring];
+          hostRec = chash_lookup(r, hash_key, &result->chashIter[cur_ring], &wrapped, &hash, &result->chash_init[cur_ring],
+                                 &result->mapWrapped[cur_ring], sm_id);
+          wrap_around[cur_ring] = wrapped;
+          lookups++;
+          if (hostRec) {
+            pRec      = host_groups[hostRec->group_index][hostRec->host_index];
+            hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
+            host_stat = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
+            // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
+            // ignore the down status and mark it as available
+            if ((pRec && ignore_self_detect) && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
+              if (hst->reasons == Reason::SELF_DETECT) {
+                host_stat = TS_HOST_STATUS_UP;
+              }
+            }
+            NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] Selected a new parent: %s, available: %s, wrapped: %s, lookups: %d.", sm_id,
+                     pRec->hostname.c_str(), (pRec->available.load()) ? "true" : "false", (wrapped) ? "true" : "false", lookups);
+            // use available host.
+            if (pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
+              break;
+            }
+          } else {
+            pRec = nullptr;
+          }
+          bool all_wrapped = true;
+          for (uint32_t c = 0; c < groups; c++) {
+            if (wrap_around[c] == false) {
+              all_wrapped = false;
+            }
+          }
+          if (all_wrapped) {
+            NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] No available parents.", sm_id);
+            if (pRec) {
+              pRec = nullptr;
+            }
+            break;
+          }
+        } while (!pRec || (pRec && !pRec->available.load()) || host_stat == TS_HOST_STATUS_DOWN);
       }
-    } while (!pRec || (pRec && !pRec->available.load()) || host_stat == TS_HOST_STATUS_DOWN);
+    }
   }
 
   // ----------------------------------------------------------------------------------------------------

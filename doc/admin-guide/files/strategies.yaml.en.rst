@@ -190,12 +190,21 @@ Each **strategy** in the list may using the following parameters::
 
    #. **exhaust_ring**: when a host normally selected by the policy fails, another host is selected from the same group.  A new group is not selected until all hosts on the previous group have been exhausted
    #. **alternate_ring**: retry hosts are selected from groups in an alternating group fashion.
-   #. **peering_ring** This mode is only implemented for a policy of **consistent_hash** and requires that two host groups are defined. The first host group is a list of peer caches and "this" host itself, the second group is a list of upstream caches.  Parents are always selected from the peer list however, if the selected parent is "this" host itself a new parent from the upstream list is chosen.  In addition, if any peer host is unreachable or times out, a host from the upstream list is chosen for retries.
+   #. **peering_ring**: This mode is only implemented for a policy of **consistent_hash** and requires that one or two
+      host groups are defined. The first host group is a list of peer caches and "this" host itself, the (optional) second
+      group is a list of upstream caches. Parents are always selected from the peer list however, if the selected parent is
+      "this" host itself a new parent from the upstream list is chosen. If the second group is omitted, and **go_direct**
+      is **true**, the upstream "list" has one element,
+      the host in the remapped URL. In addition, if any peer host is unreachable or times out, a host from the upstream
+      list is chosen for retries. Because the peer hosts may at times not have consistent up/down markings for the other
+      peers, requests may be looped sometimes. So it's best to use :ts:cv:`proxy.config.http.insert_request_via_str` and :ts:cv:`proxy.config.http.max_proxy_cycles` to stop looping.
 
   - **response_codes**: Part of the **failover** map.  This is a list of **http** response codes that may be used for **simple retry**.
   - **markdown_codes**: Part of the **failover** map.  This is a list of **http** response codes that may be used for **unavailable retry** which will cause a parent markdown.
   - **health_check**: Part of the **failover** map.  A list of health checks. **passive** is the default and means that the state machine marks down **hosts** when a transaction timeout or connection error is detected.  **passive** is always used by the next hop strategies.  **active** means that some external process may actively health check the hosts using the defined **health check url** and mark them down using **traffic_ctl**.
-
+  - **self**: Part of the **failover** map.  This can only be used when **ring_mode** is **peering_ring**.  This is the hostname of the host in the (first) group of peers that is the local host |TS| runs on.
+    (**self** should only be necessary when the local hostname can only be translated to an IP address
+    with a DNS lookup.)
 
 Example:
 ::
