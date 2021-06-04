@@ -310,7 +310,6 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   } else {
     r = 0;
   }
-  ink_release_assert(!vc->has_error());
 
   // Signal read ready, check if user is not done
   if (r) {
@@ -332,6 +331,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       }
     }
   }
+  ink_release_assert(!vc->has_error());
   // If here are is no more room, or nothing to do, disable the connection
   if (s->vio.ntodo() <= 0 || !s->enabled || !buf.writer()->write_avail()) {
     read_disable(nh, vc);
