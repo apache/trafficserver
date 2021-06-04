@@ -199,12 +199,6 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
 
-  if (vc->has_error()) {
-    vc->lerrno = vc->error;
-    vc->readSignalAndUpdate(VC_EVENT_ERROR);
-    return;
-  }
-
   // It is possible that the closed flag got set from HttpSessionManager in the
   // global session pool case.  If so, the closed flag should be stable once we get the
   // s->vio.mutex (the global session pool mutex).
@@ -316,6 +310,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   } else {
     r = 0;
   }
+  ink_release_assert(!vc->has_error());
 
   // Signal read ready, check if user is not done
   if (r) {
