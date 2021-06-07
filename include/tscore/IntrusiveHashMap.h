@@ -578,9 +578,9 @@ IntrusiveHashMap<H>::erase(iterator const &loc) -> iterator
 
 template <typename H>
 bool
-IntrusiveHashMap<H>::erase(value_type *value)
+IntrusiveHashMap<H>::erase(value_type *v)
 {
-  auto loc = this->find(value);
+  auto loc = this->iterator_for(v);
   if (loc != this->end()) {
     this->erase(loc);
     return true;
