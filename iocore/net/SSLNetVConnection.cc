@@ -282,7 +282,7 @@ SSLNetVConnection::_ssl_read_from_net(EThread *lthread, int64_t &ret)
     Debug("ssl", "amount_to_read=%" PRId64, amount_to_read);
     char *current_block = buf.writer()->end();
     ink_release_assert(current_block != nullptr);
-    sslErr = this->_ssl_read_buffer(this->ssl, current_block, amount_to_read, nread);
+    sslErr = this->_ssl_read_buffer(current_block, amount_to_read, nread);
 
     Debug("ssl", "nread=%" PRId64, nread);
 
@@ -824,7 +824,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     try_to_write       = l;
     num_really_written = 0;
     Debug("v_ssl", "b=%p l=%" PRId64, current_block, l);
-    err = this->_ssl_write_buffer(ssl, current_block, l, num_really_written);
+    err = this->_ssl_write_buffer(current_block, l, num_really_written);
 
     // We wrote all that we thought we should
     if (num_really_written > 0) {
@@ -1261,7 +1261,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     } // Still data in the BIO
   }
 
-  ssl_error_t ssl_error = this->_ssl_accept(ssl);
+  ssl_error_t ssl_error = this->_ssl_accept();
 #if TS_USE_TLS_ASYNC
   if (ssl_error == SSL_ERROR_WANT_ASYNC) {
     // Do we need to set up the async eventfd?  Or is it already registered?
@@ -1489,7 +1489,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     }
   }
 
-  ssl_error = this->_ssl_connect(ssl);
+  ssl_error = this->_ssl_connect();
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (is_debug_tag_set("ssl")) {
@@ -1990,7 +1990,7 @@ SSLNetVConnection::_get_tls_curve() const
 }
 
 ssl_error_t
-SSLNetVConnection::_ssl_accept(SSL *ssl)
+SSLNetVConnection::_ssl_accept()
 {
   ERR_clear_error();
 
@@ -2064,7 +2064,7 @@ SSLNetVConnection::_ssl_accept(SSL *ssl)
 }
 
 ssl_error_t
-SSLNetVConnection::_ssl_connect(SSL *ssl)
+SSLNetVConnection::_ssl_connect()
 {
   ERR_clear_error();
 
@@ -2111,7 +2111,7 @@ SSLNetVConnection::_ssl_connect(SSL *ssl)
 }
 
 ssl_error_t
-SSLNetVConnection::_ssl_write_buffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten)
+SSLNetVConnection::_ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &nwritten)
 {
   nwritten = 0;
 
@@ -2158,7 +2158,7 @@ SSLNetVConnection::_ssl_write_buffer(SSL *ssl, const void *buf, int64_t nbytes, 
 }
 
 ssl_error_t
-SSLNetVConnection::_ssl_read_buffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread)
+SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
 {
   nread = 0;
 
