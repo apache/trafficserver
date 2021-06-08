@@ -91,27 +91,27 @@ for i in range(num_nh):
     # s.AddLine(f"          health_check_url: http://next_hop{i}:{ts_nh[i].Variables.port}")
     s.AddLine(f"      weight: 1.0")
 s.AddLines([
-"strategies:",
-"  - strategy: the-strategy",
-"    policy: consistent_hash",
-"    hash_key: path",
-"    go_direct: false",
-"    parent_is_proxy: true",
-"    ignore_self_detect: true",
-"    groups:",
-"      - *g1",
-"    scheme: http"])
+    "strategies:",
+    "  - strategy: the-strategy",
+    "    policy: consistent_hash",
+    "    hash_key: path",
+    "    go_direct: false",
+    "    parent_is_proxy: true",
+    "    ignore_self_detect: true",
+    "    groups:",
+    "      - *g1",
+    "    scheme: http"])
 
 # Fallover not currently tested.
 #
-#s.AddLines([
-#"    fallover:",
-#"      max_simple_retries: 2",
-#"      ring_mode: exhaust_ring",
-#"      response_codes:",
-#"        - 404",
-#"      health_check:",
-#"        - passive"])
+# s.AddLines([
+# "    fallover:",
+# "      max_simple_retries: 2",
+# "      ring_mode: exhaust_ring",
+# "      response_codes:",
+# "        - 404",
+# "      health_check:",
+# "        - passive"])
 
 ts.Disk.remap_config.AddLine(
     "map http://dummy.com http://not_used @strategy=the-strategy"
