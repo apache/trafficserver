@@ -767,7 +767,7 @@ ts_lua_http_is_aborted(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
-  //bool client_abort = false;
+  bool client_abort = false;
   if (TSHttpTxnAborted(http_ctx->txnp, &client_abort)) {
     lua_pushnumber(L, 1);
   } else {
