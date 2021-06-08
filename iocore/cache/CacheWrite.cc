@@ -195,7 +195,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
    - f.update. Used only if the write_vector needs to be written to disk.
      Used to set the length of the alternate to total_len.
    - write_vector. Used only if frag_type == CACHE_FRAG_TYPE_HTTP &&
-     (f.use_fist_key || f.evac_vector) is set. Write_vector is written to disk
+     (f.use_first_key || f.evac_vector) is set. Write_vector is written to disk
    - alternate_index. Used only if write_vector needs to be written to disk.
      Used to find out the VC's alternate in the write_vector and set its
      length to tatal_len.
