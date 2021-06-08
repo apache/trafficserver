@@ -330,10 +330,6 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         return;
       }
     }
-  } else if (vc->has_error()) {
-    vc->lerrno = vc->error;
-    read_signal_and_update(VC_EVENT_ERROR, vc);
-    return;
   }
 
   // If here are is no more room, or nothing to do, disable the connection
