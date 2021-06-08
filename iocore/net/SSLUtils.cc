@@ -1066,6 +1066,7 @@ SSLInitializeLibrary()
   ALPNSupport::initialize();
   TLSSessionResumptionSupport::initialize();
   TLSSNISupport::initialize();
+  TLSEarlyDataSupport::initialize();
 
   open_ssl_initialized = true;
 }

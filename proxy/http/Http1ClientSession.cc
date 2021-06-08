@@ -38,7 +38,8 @@
 #include "Plugin.h"
 #include "PoolableSession.h"
 
-#include "P_SSLNetVConnection.h"
+#include "TLSBasicSupport.h"
+#include "TLSEarlyDataSupport.h"
 
 #define HttpSsnDebug(fmt, ...) SsnDebug(this, "http_cs", fmt, __VA_ARGS__)
 
@@ -140,9 +141,9 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   trans.mutex = mutex; // Share this mutex with the transaction
   in_destroy  = false;
 
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
-  if (ssl_vc != nullptr) {
-    read_from_early_data = ssl_vc->read_from_early_data;
+  TLSEarlyDataSupport *eds = dynamic_cast<TLSEarlyDataSupport *>(new_vc);
+  if (eds != nullptr) {
+    read_from_early_data = eds->get_early_data_len();
     Debug("ssl_early_data", "read_from_early_data = %" PRId64, read_from_early_data);
   }
 
@@ -533,7 +534,7 @@ bool
 Http1ClientSession::allow_half_open() const
 {
   // Only allow half open connections if the not over TLS
-  return (_vc && dynamic_cast<SSLNetVConnection *>(_vc) == nullptr);
+  return (_vc && dynamic_cast<TLSBasicSupport *>(_vc) == nullptr);
 }
 
 void

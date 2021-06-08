@@ -218,6 +218,7 @@ SSLNetVConnection::_bindSSLObject()
   ALPNSupport::bind(this->ssl, this);
   TLSSessionResumptionSupport::bind(this->ssl, this);
   TLSSNISupport::bind(this->ssl, this);
+  TLSEarlyDataSupport::bind(this->ssl, this);
 }
 
 void
@@ -228,6 +229,7 @@ SSLNetVConnection::_unbindSSLObject()
   ALPNSupport::unbind(this->ssl);
   TLSSessionResumptionSupport::unbind(this->ssl);
   TLSSNISupport::unbind(this->ssl);
+  TLSEarlyDataSupport::unbind(this->ssl);
 }
 
 static void
@@ -991,16 +993,18 @@ SSLNetVConnection::free(EThread *t)
 
   ats_free(tunnel_host);
 
-  if (early_data_reader != nullptr) {
-    early_data_reader->dealloc();
+#if TS_HAS_TLS_EARLY_DATA
+  if (_early_data_reader != nullptr) {
+    _early_data_reader->dealloc();
   }
 
-  if (early_data_buf != nullptr) {
-    free_MIOBuffer(early_data_buf);
+  if (_early_data_buf != nullptr) {
+    free_MIOBuffer(_early_data_buf);
   }
 
-  early_data_reader = nullptr;
-  early_data_buf    = nullptr;
+  _early_data_reader = nullptr;
+  _early_data_buf    = nullptr;
+#endif
 
   clear();
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
@@ -2009,7 +2013,7 @@ SSLNetVConnection::_ssl_accept()
   int ssl_error = SSL_ERROR_NONE;
 
 #if TS_HAS_TLS_EARLY_DATA
-  if (SSLConfigParams::server_max_early_data > 0 && !this->early_data_finish) {
+  if (SSLConfigParams::server_max_early_data > 0 && !this->_early_data_finish) {
     size_t nread;
 
     while (true) {
@@ -2023,12 +2027,12 @@ SSLNetVConnection::_ssl_accept()
         break;
       } else {
         if (nread > 0) {
-          if (this->early_data_buf == nullptr) {
-            this->early_data_buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_16K);
-            this->early_data_reader = this->early_data_buf->alloc_reader();
+          if (this->_early_data_buf == nullptr) {
+            this->_early_data_buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_16K);
+            this->_early_data_reader = this->_early_data_buf->alloc_reader();
           }
           block->fill(nread);
-          this->early_data_buf->append_block(block);
+          this->_early_data_buf->append_block(block);
           SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
 
           if (is_debug_tag_set("ssl_early_data_show_received")) {
@@ -2040,10 +2044,10 @@ SSLNetVConnection::_ssl_accept()
         }
 
         if (ret == SSL_READ_EARLY_DATA_FINISH) {
-          this->early_data_finish = true;
+          this->_early_data_finish = true;
           Debug("ssl_early_data", "SSL_READ_EARLY_DATA_FINISH: size = %lu", nread);
 
-          if (this->early_data_reader == nullptr || this->early_data_reader->read_avail() == 0) {
+          if (this->_early_data_reader == nullptr || this->_early_data_reader->read_avail() == 0) {
             Debug("ssl_early_data", "no data in early data buffer");
             ERR_clear_error();
             ret = SSL_accept(ssl);
@@ -2183,13 +2187,13 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
 #if TS_HAS_TLS_EARLY_DATA
   if (SSL_version(ssl) >= TLS1_3_VERSION) {
     int64_t early_data_len = 0;
-    if (this->early_data_reader != nullptr) {
-      early_data_len = this->early_data_reader->read_avail();
+    if (this->_early_data_reader != nullptr) {
+      early_data_len = this->_early_data_reader->read_avail();
     }
 
     if (early_data_len > 0) {
       Debug("ssl_early_data", "Reading from early data buffer.");
-      this->read_from_early_data += this->early_data_reader->read(buf, nbytes < early_data_len ? nbytes : early_data_len);
+      this->_increment_early_data_len(this->_early_data_reader->read(buf, nbytes < early_data_len ? nbytes : early_data_len));
 
       if (nbytes < early_data_len) {
         nread = nbytes;
@@ -2200,7 +2204,7 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
       return SSL_ERROR_NONE;
     }
 
-    if (SSLConfigParams::server_max_early_data > 0 && !this->early_data_finish) {
+    if (SSLConfigParams::server_max_early_data > 0 && !this->_early_data_finish) {
       Debug("ssl_early_data", "More early data to read.");
       ssl_error_t ssl_error = SSL_ERROR_NONE;
       size_t read_bytes     = 0;
@@ -2213,7 +2217,7 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
         Debug("ssl_early_data", "Error reading early data: %s", ERR_error_string(ERR_get_error(), nullptr));
       } else {
         if ((nread = read_bytes) > 0) {
-          this->read_from_early_data += read_bytes;
+          this->_increment_early_data_len(read_bytes);
           SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
           if (is_debug_tag_set("ssl_early_data_show_received")) {
             std::string early_data_str(reinterpret_cast<char *>(buf), nread);
@@ -2222,7 +2226,7 @@ SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
         }
 
         if (ret == SSL_READ_EARLY_DATA_FINISH) {
-          this->early_data_finish = true;
+          this->_early_data_finish = true;
           Debug("ssl_early_data", "SSL_READ_EARLY_DATA_FINISH: size = %" PRId64, nread);
         } else {
           Debug("ssl_early_data", "SSL_READ_EARLY_DATA_SUCCESS: size = %" PRId64, nread);
