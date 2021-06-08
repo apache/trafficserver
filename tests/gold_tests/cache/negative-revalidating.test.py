@@ -27,7 +27,7 @@ Test the negative revalidating feature.
 ts = Test.MakeATSProcess("ts-negative-revalidating-disabled")
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
+    'proxy.config.diags.debug.tags': 'http|cache',
     'proxy.config.http.insert_age_in_response': 0,
 
     'proxy.config.http.negative_revalidating_enabled': 0,
@@ -50,7 +50,7 @@ tr.StillRunningAfter = ts
 ts = Test.MakeATSProcess("ts-negative-revalidating-enabled")
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http',
+    'proxy.config.diags.debug.tags': 'http|cache',
     'proxy.config.http.insert_age_in_response': 0,
 
     # Negative revalidating is on by default. Verify this by leaving out the
