@@ -350,10 +350,10 @@ DirectRPCCommand::DirectRPCCommand(ts::Arguments args) : CtrlCommand(args)
 }
 
 bool
-DirectRPCCommand::validate_input(std::string_view in) const
+DirectRPCCommand::validate_input(std::string const &in) const
 {
   // validate the input
-  YAML::Node content = YAML::Load(in.data());
+  YAML::Node content = YAML::Load(in);
   if (content.Type() != YAML::NodeType::Map && content.Type() != YAML::NodeType::Sequence) {
     return false;
   }

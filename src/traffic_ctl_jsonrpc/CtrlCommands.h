@@ -167,7 +167,7 @@ private:
   void get_rpc_api();
   void read_from_input();
   /// run a YAML validation on the input.
-  bool validate_input(std::string_view in) const;
+  bool validate_input(std::string const &in) const;
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class ServerCommand : public CtrlCommand
