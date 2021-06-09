@@ -559,8 +559,7 @@ struct ResolveInfo {
   /// This is the "resolved" address if @a resolved_p is @c true.
   IpEndpoint addr;
 
-  int attempts = 0;            ///< Number of connection attempts.
-  ts_seconds fail_window{300}; ///< Down server blackout time (txn overridable)
+  int attempts = 0; ///< Number of connection attempts.
 
   char const *lookup_name             = nullptr;
   char srv_hostname[MAXDNAME]         = {0};

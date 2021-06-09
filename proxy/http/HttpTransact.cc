@@ -1815,7 +1815,7 @@ HttpTransact::PPDNSLookup(State *s)
     }
   } else {
     // lookup succeeded, open connection to p.p.
-    //    ats_ip_copy(&s->parent_info.dst_addr, s->host_db_info.ip());
+    ats_ip_copy(&s->parent_info.dst_addr, s->dns_info.addr);
     s->parent_info.dst_addr.port() = htons(s->parent_result.port);
     get_ka_info_from_host_db(s, &s->parent_info, &s->client_info, s->dns_info.active);
 

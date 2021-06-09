@@ -2272,7 +2272,7 @@ HttpSM::process_hostdb_info(HostDBRecord *record)
     t_state.dns_info.inbound_remote_addr = &t_state.client_info.src_addr.sa;
     if (!use_client_addr) {
       t_state.dns_info.set_active(
-        record->select_best_http(ts_clock::now(), t_state.dns_info.fail_window, t_state.dns_info.inbound_remote_addr));
+        record->select_best_http(ts_clock::now(), t_state.txn_conf->down_server_timeout, t_state.dns_info.inbound_remote_addr));
     } else {
       // if use_client_target_addr is set, make sure the client addr is in the results pool
       t_state.dns_info.cta_validated_p = true;
