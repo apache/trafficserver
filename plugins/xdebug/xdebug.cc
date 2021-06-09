@@ -83,6 +83,7 @@ enum {
   XHEADER_X_PROBE_HEADERS  = 1u << 9,
   XHEADER_X_PSELECT_KEY    = 1u << 10,
   XHEADER_X_CACHE_INFO     = 1u << 11,
+  XHEADER_X_EFFECTIVE_URL  = 1u << 12,
 };
 
 static TSCont XInjectHeadersCont  = nullptr;
@@ -377,6 +378,34 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 }
 
 static void
+InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  TSMLoc dst = TS_NULL_MLOC;
+
+  struct {
+    char *ptr;
+    int len;
+  } strval = {nullptr, 0};
+
+  TSDebug("xdebug", "attempting to inject X-Effective-URL header");
+
+  strval.ptr = TSHttpTxnEffectiveUrlStringGet(txn, &strval.len);
+
+  if (strval.ptr != nullptr && strval.len > 0) {
+    dst = FindOrMakeHdrField(buffer, hdr, "X-Effective-URL", lengthof("X-Effective-URL"));
+    if (dst != TS_NULL_MLOC) {
+      TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
+    }
+  }
+
+  if (dst != TS_NULL_MLOC) {
+    TSHandleMLocRelease(buffer, hdr, dst);
+  }
+
+  TSfree(strval.ptr);
+}
+
+static void
 InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
   TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Transaction-ID", lengthof("X-Transaction-ID"));
@@ -482,6 +511,10 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 
   if (xheaders & XHEADER_X_REMAP) {
     InjectRemapHeader(txn, buffer, hdr);
+  }
+
+  if (xheaders & XHEADER_X_EFFECTIVE_URL) {
+    InjectEffectiveURLHeader(txn, buffer, hdr);
   }
 
   // intentionally placed after all injected headers.
@@ -649,6 +682,8 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
           snprintf(newVal, sizeof(newVal), "fwd=%" PRIiMAX, fwdCnt - 1);
           TSMimeHdrFieldValueStringSet(buffer, hdr, field, i, newVal, std::strlen(newVal));
         }
+      } else if (header_field_eq("x-effective-url", value, vsize)) {
+        xheaders |= XHEADER_X_EFFECTIVE_URL;
       } else {
         TSDebug("xdebug", "ignoring unrecognized debug tag '%.*s'", vsize, value);
       }
