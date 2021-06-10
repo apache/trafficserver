@@ -39,6 +39,18 @@ ts.Disk.records_config.update({
     'proxy.config.http.redirect.actions': 'self:follow',  # redirects to self are not followed by default
 })
 
+ts.Disk.logging_yaml.AddLines(
+    '''
+logging:
+  formats:
+    - name: custom
+      format: "client_url=%<cqu> cache_result: code=%<crc> subcode=%<crsc>"
+  logs:
+    - filename: the_log
+      format: custom
+'''.split("\n")
+)
+
 Test.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, 'tcp_client.py'))
 
 redirect_request_header = {"headers": "GET /redirect HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "5678", "body": ""}
@@ -149,5 +161,16 @@ for status, phrase in sorted({
     tr.StillRunningAfter = dns
     tr.Processes.Default.Streams.stdout = "gold/redirect.gold"
     tr.Processes.Default.ReturnCode = 0
+
+Test.Setup.Copy('wait_for_log.sh')
+
+tr = Test.AddTestRun("wait_for_log")
+tr.Processes.Default.Command = (
+    './wait_for_log.sh {} {}'.format(
+        os.path.join(ts.Variables.LOGDIR, 'the_log.log'), redirect_serv.Variables.Port
+    )
+)
+tr.Processes.Default.Streams.stdout = "gold/redirect_log.gold"
+tr.Processes.Default.ReturnCode = 0
 
 Test.Setup.Copy(data_path)
