@@ -531,6 +531,14 @@ Network
 Local Manager
 =============
 
+.. ts:cv:: CONFIG proxy.node.config.manager_log_filename STRING manager.log
+
+   The name of the file to which :program:`traffic_manager` logs will be emitted.
+
+   If this is set to ``stdout`` or ``stderr``, then all :program:`traffic_manager`
+   logging will go to the stdout or stderr stream, respectively.
+
+
 .. ts:cv:: CONFIG proxy.config.admin.user_id STRING nobody
 
    Designates the non-privileged account to run the :program:`traffic_server`
@@ -3152,6 +3160,8 @@ Logging Configuration
 Diagnostic Logging Configuration
 ================================
 
+.. _DiagnosticOutputConfigurationVariables:
+
 .. ts:cv:: CONFIG proxy.config.diags.output.diag STRING E
 .. ts:cv:: CONFIG proxy.config.diags.output.debug STRING E
 .. ts:cv:: CONFIG proxy.config.diags.output.status STRING L
@@ -3173,7 +3183,8 @@ Diagnostic Logging Configuration
    ``O`` Log to standard output.
    ``E`` Log to standard error.
    ``S`` Log to syslog.
-   ``L`` Log to :file:`diags.log`.
+   ``L`` Log to :file:`diags.log` (with the filename configurable via
+         :ts:cv:`proxy.config.diags.logfile.filename`).
    ===== ======================================================================
 
 .. topic:: Example
@@ -3230,6 +3241,25 @@ Diagnostic Logging Configuration
    For details about how log throttling works, see
    :ts:cv:`log.throttling_interval_msec
    <proxy.config.log.proxy.config.log.throttling_interval_msec>`.
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile.filename STRING diags.log
+
+   The name of the file to which |TS| diagnostic logs will be emitted. For
+   information on the diagnostic log file, see :file:`diags.log`. For the
+   configurable parameters concerning what log content is emitted to
+   :file:`diags.log`, see the :ref:`Diagnostic Output Configuration Variables
+   <DiagnosticOutputConfigurationVariables>` above.
+
+   If this is set to ``stdout`` or ``stderr``, then all diagnostic logging will
+   go to the stdout or stderr stream, respectively.
+
+.. ts:cv:: CONFIG proxy.config.error.logfile.filename STRING error.log
+
+   The name of the file to which |TS| transaction error logs will be emitted.
+   For more information on these log messages, see :file:`error.log`.
+
+   If this is set to ``stdout`` or ``stderr``, then all transaction error
+   logging will go to the stdout or stderr stream, respectively.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile_perm STRING rw-r--r--
 

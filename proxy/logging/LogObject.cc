@@ -155,11 +155,13 @@ LogObject::~LogObject()
 //
 // This function generates an object filename according to the following rules:
 //
-// 1.- if no extension is given, add .log for ascii logs, and .blog for
+// 1.- 'stdout' and 'stderr' are treated as special strings indicating file
+//     descriptors for the stdout and stderr streams.
+// 2.- if no extension is given, add .log for ascii logs, and .blog for
 //     binary logs
-// 2.- if an extension is given, then do not modify filename and use that
+// 3.- if an extension is given, then do not modify filename and use that
 //     extension regardless of type of log
-// 3.- if there is a '.' at the end of the name, then do not add an extension
+// 4.- if there is a '.' at the end of the name, then do not add an extension
 //     and remove the '.'. To have a dot at the end of the filename, specify
 //     two ('..').
 //
@@ -167,6 +169,18 @@ void
 LogObject::generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format)
 {
   ink_assert(log_dir && basename);
+
+  std::string_view basename_sv{basename};
+  if (basename_sv == "stdout" || basename_sv == "stderr") {
+    int buffer_size = basename_sv.length() + 1; // Include the null terminator.
+
+    m_filename = static_cast<char *>(ats_malloc(buffer_size));
+    m_basename = static_cast<char *>(ats_malloc(buffer_size));
+
+    strncpy(m_filename, basename, buffer_size);
+    strncpy(m_basename, basename, buffer_size);
+    return;
+  }
 
   int i = -1, len = 0;
   char c;
@@ -261,6 +275,10 @@ LogObject::set_filter_list(const LogFilterList &list, bool copy)
 uint64_t
 LogObject::compute_signature(LogFormat *format, char *filename, unsigned int flags)
 {
+  std::string_view filename_sv{filename};
+  if (filename_sv == "stdout" || filename_sv == "stderr") {
+    return 0;
+  }
   char *fl           = format->fieldlist();
   char *ps           = format->printf_str();
   uint64_t signature = 0;
@@ -983,14 +1001,17 @@ LogObjectManager::_filename_resolution_abort(const char *filename)
 }
 
 bool
-LogObjectManager::_has_internal_filename_conflict(const char *filename, LogObjectList &objects)
+LogObjectManager::_has_internal_filename_conflict(std::string_view filename, LogObjectList &objects)
 {
+  if (filename == "stdout" || filename == "stderr") {
+    return false;
+  }
   for (auto &object : objects) {
     // an internal conflict exists if two objects request the
     // same filename, regardless of the object signatures, since
     // two objects writing to the same file would produce a
     // log with duplicate entries and non monotonic timestamps
-    if (strcmp(object->get_full_filename(), filename) == 0) {
+    if (filename == object->get_full_filename()) {
       return true;
     }
   }

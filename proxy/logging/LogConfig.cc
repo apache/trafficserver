@@ -79,6 +79,7 @@ LogConfig::setup_default_values()
   max_secs_per_buffer   = 5;
   max_space_mb_for_logs = 100;
   max_space_mb_headroom = 10;
+  error_log_filename    = ats_strdup("error.log");
   logfile_perm          = 0644;
   logfile_dir           = ats_strdup(".");
 
@@ -163,6 +164,12 @@ LogConfig::read_configuration_variables()
   if (ptr != nullptr) {
     ats_free(hostname);
     hostname = ptr;
+  }
+
+  ptr = REC_ConfigReadString("proxy.config.error.logfile.filename");
+  if (ptr != nullptr) {
+    ats_free(error_log_filename);
+    error_log_filename = ptr;
   }
 
   ats_free(logfile_dir);
@@ -292,6 +299,7 @@ LogConfig::LogConfig() : m_partition_space_left(static_cast<int64_t>(UINT_MAX))
 
 LogConfig::~LogConfig()
 {
+  ats_free(error_log_filename);
   ats_free(logfile_dir);
 }
 
@@ -321,9 +329,9 @@ LogConfig::init(LogConfig *prev_config)
 
     Debug("log", "creating predefined error log object");
 
-    errlog = new LogObject(this, fmt.get(), logfile_dir, "error.log", LOG_FILE_ASCII, nullptr, rolling_enabled, preproc_threads,
-                           rolling_interval_sec, rolling_offset_hr, rolling_size_mb, /* auto_created */ false, rolling_max_count,
-                           rolling_min_count);
+    errlog = new LogObject(this, fmt.get(), logfile_dir, error_log_filename, LOG_FILE_ASCII, nullptr, rolling_enabled,
+                           preproc_threads, rolling_interval_sec, rolling_offset_hr, rolling_size_mb, /* auto_created */ false,
+                           rolling_max_count, rolling_min_count);
 
     log_object_manager.manage_object(errlog);
     errlog->set_fmt_timestamps();
@@ -367,6 +375,7 @@ LogConfig::display(FILE *fd)
   fprintf(fd, "   hostname = %s\n", hostname);
   fprintf(fd, "   logfile_dir = %s\n", logfile_dir);
   fprintf(fd, "   logfile_perm = 0%o\n", logfile_perm);
+  fprintf(fd, "   error_log_filename = %s\n", error_log_filename);
 
   fprintf(fd, "   preproc_threads = %d\n", preproc_threads);
   fprintf(fd, "   rolling_enabled = %d\n", rolling_enabled);
@@ -454,6 +463,7 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.max_secs_per_buffer",
     "proxy.config.log.max_space_mb_for_logs",
     "proxy.config.log.max_space_mb_headroom",
+    "proxy.config.log.error_log_filename",
     "proxy.config.log.logfile_perm",
     "proxy.config.log.hostname",
     "proxy.config.log.logfile_dir",
