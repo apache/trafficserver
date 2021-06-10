@@ -53,6 +53,18 @@ public:
 
   virtual ~Trie() { Clear(); }
 
+  using const_iterator = typename Queue<T>::const_iterator;
+  const_iterator
+  begin() const
+  {
+    return m_value_list.begin();
+  }
+  const_iterator
+  end() const
+  {
+    return m_value_list.end();
+  }
+
 private:
   static const int N_NODE_CHILDREN = 256;
 
