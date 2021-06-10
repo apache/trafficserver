@@ -58,9 +58,7 @@
 // Log global objects
 inkcoreapi LogObject *Log::error_log = nullptr;
 LogFieldList Log::global_field_list;
-LogFormat *Log::global_scrap_format = nullptr;
-LogObject *Log::global_scrap_object = nullptr;
-Log::LoggingMode Log::logging_mode  = LOG_MODE_NONE;
+Log::LoggingMode Log::logging_mode = LOG_MODE_NONE;
 
 // Flush thread stuff
 EventNotify *Log::preproc_notify;
@@ -241,17 +239,11 @@ Log::periodic_tasks(long time_now)
       if (error_log) {
         error_log->roll_files(time_now);
       }
-      if (global_scrap_object) {
-        global_scrap_object->roll_files(time_now);
-      }
       Log::config->log_object_manager.roll_files(time_now);
       Log::config->roll_log_files_now = false;
     } else {
       if (error_log) {
         error_log->roll_files(time_now);
-      }
-      if (global_scrap_object) {
-        global_scrap_object->roll_files(time_now);
       }
       Log::config->log_object_manager.roll_files(time_now);
     }
@@ -1085,14 +1077,6 @@ Log::init_when_enabled()
     }
 
     LogConfig::register_mgmt_callbacks();
-    // setup global scrap object
-    //
-    global_scrap_format = MakeTextLogFormat();
-    global_scrap_object =
-      new LogObject(Log::config, global_scrap_format, Log::config->logfile_dir, "scrapfile.log", LOG_FILE_BINARY, nullptr,
-                    Log::config->rolling_enabled, Log::config->preproc_threads, Log::config->rolling_interval_sec,
-                    Log::config->rolling_offset_hr, Log::config->rolling_size_mb,
-                    /* auto create */ false, Log::config->rolling_max_count, Log::config->rolling_min_count);
 
     // create the flush thread
     create_threads();
