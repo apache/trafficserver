@@ -2380,9 +2380,6 @@ ResolveInfo::set_active(HostDBInfo *info)
   if (info) {
     addr.assign(active->data.ip);
     resolved_p = true;
-    if (info->last_fail_time() != TS_TIME_ZERO) {
-      zombie_p = true;
-    }
     return true;
   }
   resolved_p = false;

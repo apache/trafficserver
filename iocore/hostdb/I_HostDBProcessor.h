@@ -583,9 +583,6 @@ struct ResolveInfo {
    * not in the DNS pool */
   bool cta_validated_p = true;
 
-  /// If the target was selected while failed.
-  bool zombie_p = false;
-
   bool set_active(HostDBInfo *info);
 
   bool set_active(sockaddr const *s);
@@ -817,11 +814,7 @@ ResolveInfo::set_active(sockaddr const *s)
 inline bool
 ResolveInfo::mark_active_server_alive()
 {
-  if (zombie_p && active) {
-    return active->mark_up();
-  }
-  zombie_p = false;
-  return false;
+  return active->mark_up();
 }
 
 inline bool
