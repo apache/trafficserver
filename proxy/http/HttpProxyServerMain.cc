@@ -27,6 +27,7 @@
 #include "HttpSessionAccept.h"
 #include "ReverseProxy.h"
 #include "HttpSessionManager.h"
+#include "remap/RemapHitCount.h"
 #ifdef USE_HTTP_DEBUG_LISTS
 #include "Http1ClientSession.h"
 #endif
@@ -374,6 +375,7 @@ start_HttpProxyServer()
 
   // Set up stat page for http connection count
   statPagesManager.register_http("connection_count", register_ShowConnectionCount);
+  statPagesManager.register_http("remap_hits", register_ShowRemapHitCount);
 
   // Alert plugins that connections will be accepted.
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_READY_HOOK);

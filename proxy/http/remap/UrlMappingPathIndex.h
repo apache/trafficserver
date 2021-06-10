@@ -38,6 +38,7 @@ public:
   bool Insert(url_mapping *mapping);
   url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
   void Print() const;
+  std::string PrintUrlMappingPathIndex() const;
 
 private:
   typedef Trie<url_mapping> UrlMappingTrie;
