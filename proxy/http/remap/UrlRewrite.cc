@@ -182,6 +182,47 @@ UrlRewrite::PrintStore(const MappingsStore &store) const
   }
 }
 
+std::string
+UrlRewrite::PrintRemapHits()
+{
+  std::string result;
+  result += PrintRemapHitsStore(forward_mappings);
+  result += PrintRemapHitsStore(reverse_mappings);
+  result += PrintRemapHitsStore(permanent_redirects);
+  result += PrintRemapHitsStore(temporary_redirects);
+  result += PrintRemapHitsStore(forward_mappings_with_recv_port);
+
+  if (result.size() > 2) {
+    result.pop_back(); // remove the trailing \n
+    result.pop_back(); // remove the trailing ,
+    result = "{\"list\": [\n" + result + " \n]}";
+  }
+
+  return result;
+}
+
+/** Debugging method. */
+std::string
+UrlRewrite::PrintRemapHitsStore(MappingsStore &store)
+{
+  std::string result;
+  if (store.hash_lookup) {
+    for (auto &it : *store.hash_lookup) {
+      result += it.second->PrintUrlMappingPathIndex();
+    }
+  }
+
+  if (!store.regex_list.empty()) {
+    forl_LL(RegexMapping, list_iter, store.regex_list)
+    {
+      result += list_iter->url_map->PrintRemapHitCount();
+      result += ",\n";
+    }
+  }
+
+  return result;
+}
+
 /**
   If a remapping is found, returns a pointer to it otherwise NULL is
   returned.
@@ -551,6 +592,7 @@ UrlRewrite::_addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMap
   bool retval;
 
   new_mapping->setRank(count); // Use the mapping rules number count for rank
+  new_mapping->setRemapKey();  // Used for remap hit stats
   if (is_cur_mapping_regex) {
     store.regex_list.enqueue(reg_map);
     retval = true;
@@ -765,6 +807,9 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url, int reques
                           mapping_container)) {
     Debug("url_rewrite", "Using regex mapping with rank %d", (mapping_container.getMapping())->getRank());
     retval = true;
+  }
+  if (retval) {
+    (mapping_container.getMapping())->incrementCount();
   }
   return retval;
 }
