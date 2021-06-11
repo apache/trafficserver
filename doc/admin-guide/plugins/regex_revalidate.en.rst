@@ -70,6 +70,18 @@ config file changes are checked are only when ``traffic_ctl config reload`` is r
 
     regex_revalidate.so -d -c <path to rules> -l <path to log>
 
+The configuration parameter `--state-file` or `-f` may be used to configure
+the plugin to maintain a state file with the last loaded configuration.
+Normally when ATS restarts the epoch times of all rules are reset to
+the first config file load time which will cause all matching assets to
+issue new IMS requests to their parents for mathing rules.
+
+This option allows the revalidate rule "epoch" times to be retained between ATS
+restarts.  This state file by default is placed in var/trafficserver/<filename>
+but an absolute path may be specified as well. Syntax is as follows::
+
+    regex_revalidate.so -d -c <path to rules> -f <path to state file>
+
 
 Revalidation Rules
 ==================
@@ -126,6 +138,14 @@ While new rules are added dynamically (the configuration file is checked every
 currently lead to that rule being removed from the running plugin. In these
 cases, if the rule must be taken out of service, a service restart may be
 necessary.
+
+State File
+----------
+
+The state file is not meant to be edited but is of the format::
+
+<regular expression> <rule epoch> <rule expiry> <type>
+
 
 Examples
 ========
