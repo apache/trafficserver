@@ -40,6 +40,7 @@
 #include "tscore/runroot.h"
 #include "tscore/Filenames.h"
 #include "tscore/ts_file.h"
+#include "tscore/Tracing.h"
 
 #include "ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 
@@ -522,6 +523,13 @@ update_debug_client_ip(const char * /*name ATS_UNUSED */, RecDataT /* data_type 
                        void * /* data_type ATS_UNUSED */)
 {
   set_debug_ip(data.rec_string);
+  return 0;
+}
+
+static int
+update_tracing_enabled(const char *, RecDataT, RecData data, void *cookie)
+{
+  static_cast<Tracing *>(cookie)->enable(static_cast<int>(data.rec_int));
   return 0;
 }
 
@@ -1719,6 +1727,23 @@ bind_outputs(const char *bind_stdout_p, const char *bind_stderr_p)
   }
 }
 
+int
+init_tracing()
+{
+  bool available = false;
+
+  // Tracing object itself is always available so we can check if tracing is enabled
+  tracing = std::make_unique<Tracing>();
+
+  if (available) {
+    tracing->enable(REC_ConfigReadInteger("proxy.config.tracing.enabled"));
+    REC_RegisterConfigUpdateFunc("proxy.config.tracing.enabled", update_tracing_enabled, tracing.get());
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 //
 // Main
 //
@@ -1913,6 +1938,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     }
   }
 #endif
+
+  if (init_tracing() == 1) {
+    Note("tracing available");
+  }
 
   // setup callback for tracking remap included files
   load_remap_file_cb = load_config_file_callback;

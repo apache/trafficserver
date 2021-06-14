@@ -45,6 +45,11 @@ ProxyTransaction::new_transaction(bool from_early_data)
   // connection re-use
 
   ink_release_assert(_proxy_ssn != nullptr);
+
+  if (tracing->is_enabled()) {
+    this->_tracer = tracing->make_tracer("ProxyTransaction");
+  }
+
   _sm = THREAD_ALLOC(httpSMAllocator, this_thread());
   _sm->init(from_early_data);
   HttpTxnDebug("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", _proxy_ssn->connection_id(),
@@ -184,6 +189,11 @@ ProxyTransaction::transaction_done()
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   this->decrement_transactions_stat();
+
+  if (this->_tracer) {
+    tracing->delete_tracer(this->_tracer);
+    this->_tracer = nullptr;
+  }
 }
 
 // Implement VConnection interface.

@@ -122,6 +122,7 @@ libtscore_la_SOURCES = \
 	LogMessage.cc \
 	Throttler.cc \
 	Tokenizer.cc \
+	Tracing.cc \
 	ts_file.cc \
 	Version.cc \
 	X509HostnameValidator.cc

@@ -1504,6 +1504,14 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.quic.congestion_control.persistent_congestion_threshold", RECD_INT, "3", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[\\.0-9]+$", RECA_NULL}
   ,
 
+  //############
+  //#
+  //# Tracing
+  //#
+  //############
+  {RECT_CONFIG, "proxy.config.tracing.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL}
+  ,
+
   //# Add LOCAL Records Here
   {RECT_LOCAL, "proxy.local.incoming_ip_to_bind", RECD_STRING, nullptr, RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
