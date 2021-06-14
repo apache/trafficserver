@@ -127,11 +127,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   }
 
   // Reserve a TXN slot for storing the calculated URL hash key
-  if (TS_SUCCESS != TSUserArgIndexNameLookup(TS_USER_ARGS_TXN, PLUGIN_NAME, &TXN_ARG_IDX, nullptr)) {
-    if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "cache_promote URL hash key", &TXN_ARG_IDX)) {
-      strncpy(errbuf, "[tsremap_init] - Failed to reserve the TXN user argument slot", errbuf_size - 1);
-      return TS_ERROR;
-    }
+  if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "cache_promote URL hash key", &TXN_ARG_IDX)) {
+    strncpy(errbuf, "[tsremap_init] - Failed to reserve the TXN user argument slot", errbuf_size - 1);
+    return TS_ERROR;
   }
 
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized, TXN_IDX = %d", TXN_ARG_IDX);
