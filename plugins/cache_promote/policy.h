@@ -84,6 +84,12 @@ public:
     return "";
   }
 
+  // Cleanup any internal state / memory that may be in use
+  virtual void
+  cleanup(TSHttpTxn txnp)
+  {
+  }
+
   // These are for any policy that also wants to count byters are a promotion criteria
   virtual bool
   countBytes() const

@@ -118,6 +118,18 @@ public:
     return _label + ";LRU=b:" + std::to_string(_buckets) + ",h:" + std::to_string(_hits) + ",B:" + std::to_string(_bytes);
   }
 
+  void
+  cleanup(TSHttpTxn txnp) override
+  {
+    LRUHash *hash = static_cast<LRUHash *>(TSUserArgGet(txnp, TXN_ARG_IDX));
+
+    // Delete the hash, and remove the pointer from the TXN user arg slot (to be safe)
+    if (hash) {
+      delete hash;
+      TSUserArgSet(txnp, TXN_ARG_IDX, nullptr);
+    }
+  }
+
 private:
   unsigned _buckets  = 1000;
   unsigned _hits     = 10;

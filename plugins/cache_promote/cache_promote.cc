@@ -64,6 +64,9 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
             if (config->getPolicy()->countBytes()) {
               // Need to schedule this continuation for read-response-header-hook as well.
               TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
+              // This is needed to make sure that we free any data retained in the TXN slot even if the
+              // transaction is terminated early.
+              TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
             }
             TSHttpTxnServerRespNoStoreSet(txnp, 1);
           }
@@ -89,6 +92,10 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
   // This is the event when we want to count the bytes cache miss as well as hits
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     config->getPolicy()->addBytes(txnp);
+    break;
+
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    config->getPolicy()->cleanup(txnp);
     break;
 
   // Should not happen

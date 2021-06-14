@@ -219,10 +219,6 @@ LRUPolicy::addBytes(TSHttpTxn txnp)
       }
     }
     TSMutexUnlock(_lock);
-
-    // Delete the hash, and remove the pointer from the TXN user arg slot (to be safe)
-    delete hash;
-    TSUserArgSet(txnp, TXN_ARG_IDX, nullptr);
   }
 }
 
