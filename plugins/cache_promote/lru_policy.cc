@@ -125,14 +125,37 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
   if (_map.end() != map_it) {
     auto &[map_key, map_val]             = *map_it;
     auto &[val_key, val_hits, val_bytes] = *(map_it->second);
+    bool cacheable                       = false;
+    TSMBuffer request;
+    TSMLoc req_hdr;
 
     // This is beacuse compilers before gcc 8 aren't smart enough to ignore the unused structured bindings
     (void)val_key;
 
+    // We check that the request is cacheable, we will still count the request, but if not cacheable, we
+    // leave it in the LRU such that a subsequent request that is cacheable can properly promote.
+    if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
+      int method_len     = 0;
+      const char *method = TSHttpHdrMethodGet(request, req_hdr, &method_len);
+
+      if (TS_HTTP_METHOD_GET == method) { // Only allow GET requests (for now) to actually do the promotion
+        TSMLoc range = TSMimeHdrFieldFind(request, req_hdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+
+        if (TS_NULL_MLOC != range) { // Found a Range: header, not cacheable
+          TSHandleMLocRelease(request, req_hdr, range);
+        } else {
+          cacheable = true;
+        }
+      }
+      TSDebug(PLUGIN_NAME, "The request is %s", cacheable ? "cacheable" : "not cacheable");
+      TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
+    }
+
     // We have an entry in the LRU
     TSAssert(_list_size > 0); // mismatch in the LRUs hash and list, shouldn't happen
     incrementStat(_lru_hit_id, 1);
-    if (++val_hits >= _hits || (_bytes > 0 && val_bytes > _bytes)) {
+    ++val_hits; // Increment hits, bytes are incremented elsewhere
+    if (cacheable && (val_hits >= _hits || (_bytes > 0 && val_bytes > _bytes))) {
       // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
       TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
       _freelist.splice(_freelist.begin(), _list, map_val);
