@@ -70,7 +70,7 @@ LogConfig::setup_default_values()
 {
   const unsigned int bufSize = 512;
   char name[bufSize];
-  if (!gethostname(name, bufSize)) {
+  if (gethostname(name, bufSize) == -1) {
     ink_strlcpy(name, "unknown_host_name", sizeof(name));
   }
   hostname = ats_strdup(name);
@@ -160,7 +160,7 @@ LogConfig::read_configuration_variables()
   ats_free(ptr);
 
   ptr = REC_ConfigReadString("proxy.config.log.hostname");
-  if (ptr != nullptr) {
+  if (ptr != nullptr && std::string_view(ptr) != "localhost") {
     ats_free(hostname);
     hostname = ptr;
   }

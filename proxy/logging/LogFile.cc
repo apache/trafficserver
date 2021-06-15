@@ -73,7 +73,9 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
 {
   if (m_file_format != LOG_FILE_PIPE) {
     m_log = new BaseLogFile(name, m_signature);
-    m_log->set_hostname(Machine::instance()->hostname);
+    // Use Log::config->hostname rather than Machine::instance()->hostname
+    // because the former is reloadable.
+    m_log->set_hostname(Log::config->hostname);
   } else {
     m_log = nullptr;
   }
