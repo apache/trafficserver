@@ -27,16 +27,12 @@ The URL functions can create, copy, retrieve or delete entire URLs; they
 can also retrieve or modify parts of URLs, such as port or scheme
 information.
 
-The general form of an Internet URL is:
-
-::
+The general form of an Internet URL is::
 
        scheme://user:password@host:port/stuff
 
 The URL data structure includes support for two specific types of
-internet URLs. HTTP URLs have the form:
-
-::
+internet URLs. HTTP URLs have the form::
 
        http://user:password@host:port/path;params?query#fragment
 
@@ -49,82 +45,66 @@ instance, the function that retrieves the host portion of a URL is named
 To facilitate fast comparisons and reduce storage size, Traffic Server
 defines several preallocated scheme names.
 
-.. c:var:: TS_URL_SCHEME_FILE
-   "file"
+"file"
+   .. c:var:: char const * TS_URL_SCHEME_FILE
+   .. c:var:: int TS_URL_LEN_FILE
 
-.. c:var:: TS_URL_LEN_FILE
+"ftp"
+   .. c:var:: char const * TS_URL_SCHEME_FTP
+   .. c:var:: int TS_URL_LEN_FTP
 
-.. c:var:: TS_URL_SCHEME_FTP
-   "ftp"
+"gopher"
+   .. c:var:: char const * TS_URL_SCHEME_GOPHER
+   .. c:var:: int TS_URL_LEN_GOPHER
 
-.. c:var:: TS_URL_LEN_FTP
+"http"
+   .. c:var:: char const * TS_URL_SCHEME_HTTP
+   .. c:var:: int TS_URL_LEN_HTTP
 
-.. c:var:: TS_URL_SCHEME_GOPHER
-   "gopher"
+"https"
+   .. c:var:: char const * TS_URL_SCHEME_HTTPS
+   .. c:var:: int TS_URL_LEN_HTTPS
 
-.. c:var:: TS_URL_LEN_GOPHER
+"mailto"
+   .. c:var:: char const * TS_URL_SCHEME_MAILTO
+   .. c:var:: int TS_URL_LEN_MAILTO
 
-.. c:var:: TS_URL_SCHEME_HTTP
-   "http"
+"news"
+   .. c:var:: char const * TS_URL_SCHEME_NEWS
+   .. c:var:: int TS_URL_LEN_NEWS
 
-.. c:var:: TS_URL_LEN_HTTP
+"nntp"
+   .. c:var:: char const * TS_URL_SCHEME_NNTP
+   .. c:var:: int TS_URL_LEN_NNTP
 
-.. c:var:: TS_URL_SCHEME_HTTPS
-   "https"
+"prospero"
+   .. c:var:: char const * TS_URL_SCHEME_PROSPERO
+   .. c:var:: int TS_URL_LEN_PROSPERO
 
-.. c:var:: TS_URL_LEN_HTTPS
+"telnet"
+   .. c:var:: char const * TS_URL_SCHEME_TELNET
+   .. c:var:: int TS_URL_LEN_TELNET
 
-.. c:var:: TS_URL_SCHEME_MAILTO
-   "mailto"
+"wais"
+   .. c:var:: char const * TS_URL_SCHEME_WAIS
+   .. c:var:: int TS_URL_LEN_WAIS
 
-.. c:var:: TS_URL_LEN_MAILTO
+"ws"
+   .. c:var:: char const * TS_URL_SCHEME_WS
+   .. c:var:: int TS_URL_LEN_WS
 
-.. c:var:: TS_URL_SCHEME_NEWS
-   "news"
+"wss"
+   .. c:var:: char const * TS_URL_SCHEME_WSS
+   .. c:var:: int TS_URL_LEN_WSS
 
-.. c:var:: TS_URL_LEN_NEWS
-
-.. c:var:: TS_URL_SCHEME_NNTP
-   "nntp"
-
-.. c:var:: TS_URL_LEN_NNTP
-
-.. c:var:: TS_URL_SCHEME_PROSPERO
-   "prospero"
-
-.. c:var:: TS_URL_LEN_PROSPERO
-
-.. c:var:: TS_URL_SCHEME_TELNET
-   "telnet"
-
-.. c:var:: TS_URL_LEN_TELNET
-
-.. c:var:: TS_URL_SCHEME_WAIS
-   "wais"
-
-.. c:var:: TS_URL_LEN_WAIS
-
-.. c:var:: TS_URL_SCHEME_WS
-   "ws"
-
-.. c:var:: TS_URL_LEN_WS
-
-.. c:var:: TS_URL_SCHEME_WSS
-   "wss"
-
-.. c:var:: TS_URL_LEN_WSS
-
-The scheme names above are defined in ``ts.h`` as ``const`` ``char*``
-strings. When Traffic Server sets the scheme portion of the URL (or any
-portion for that matter), it quickly checks to see if the new value is
-one of the known values. If it is, then it stores a pointer into a
-global table (instead of storing the known value in the marshal buffer).
-The scheme values listed above are also pointers into this table. This
-allows simple pointer comparison of the value returned from
-``TSUrlSchemeGet`` or ``TSUrlRawSchemeGet`` with one of the values
-listed above. You should use the Traffic Server-defined values when
-referring to one of the known schemes, since doing so can prevent the
-possibility of spelling errors.
+The scheme names above are defined in ``apidefs.h``. When Traffic Server sets the scheme portion of
+the URL (or any portion for that matter), it quickly checks to see if the new value is one of the
+known values. If it is, then it stores a pointer into a global table (instead of storing the known
+value in the marshal buffer). The scheme values listed above are also pointers into this table. This
+allows simple pointer comparison of the value returned from ``TSUrlSchemeGet`` or
+``TSUrlRawSchemeGet`` with one of the values listed above. You should use the Traffic Server-defined
+values when referring to one of the known schemes, since doing so can prevent the possibility of
+spelling errors.
 
 Traffic Server **URL functions** are listed below:
 

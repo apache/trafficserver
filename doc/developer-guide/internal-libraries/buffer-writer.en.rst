@@ -343,15 +343,16 @@ will work with just the format ``{}``. In a sense, ``{}`` serves the same functi
 :code:`auto` does for programming - the compiler knows the type, it should be able to do something
 reasonable without the programmer needing to be explicit.
 
-.. productionList:: Format
+.. productionlist:: format
    format: "{" [name] [":" [specifier] [":" extension]] "}"
    name: index | ICHAR+
    index: non-negative integer
+   specifier: <see below>
    extension: ICHAR*
    ICHAR: a printable ASCII character except for '{', '}', ':'
 
-:token:`name`
-   The :token:`name` of the argument to use. This can be a non-negative integer in which case it is
+:token:`~format:name`
+   The name of the argument to use. This can be a non-negative integer in which case it is
    the zero based index of the argument to the method call. E.g. ``{0}`` means the first argument
    and ``{2}`` is the third argument after the format.
 
@@ -359,7 +360,7 @@ reasonable without the programmer needing to be explicit.
 
       ``bw.print("{1} {0}", 'a', 'b')`` => ``b a``
 
-   The :token:`name` can be omitted in which case it is treated as an index in parallel to the
+   The name can be omitted in which case it is treated as an index in parallel to the
    position in the format string. Only the position in the format string matters, not what names
    other format elements may have used.
 
@@ -376,10 +377,10 @@ reasonable without the programmer needing to be explicit.
    Alphanumeric names refer to values in a global table. These will be described in more detail
    someday. Such names, however, do not count in terms of default argument indexing.
 
-:token:`specifier`
+:token:`~format:specifier`
    Basic formatting control.
 
-   .. productionList:: specifier
+   .. productionlist:: spec
       specifier: [[fill]align][sign]["#"]["0"][[min][.precision][,max][type]]
       fill: fill-char | URI-char
       URI-char: "%" hex-digit hex-digit
@@ -392,13 +393,13 @@ reasonable without the programmer needing to be explicit.
       type: type: "g" | "s" | "S" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
       hex-digit: "0" .. "9" | "a" .. "f" | "A" .. "F"
 
-   The output is placed in a field that is at least :token:`min` wide and no more than :token:`max` wide. If
-   the output is less than :token:`min` then
+   The output is placed in a field that is at least :token:`~spec:min` wide and no more than
+   :token:`~spec:max` wide. If the output is less than :token:`~spec:min` then
 
-      *  The :token:`fill` character is used for the extra space required. This can be an explicit
-         character or a URI encoded one (to allow otherwise reserved characters).
+      *  The :token:`~spec:fill` character is used for the extra space required. This can be an
+         explicit character or a URI encoded one (to allow otherwise reserved characters).
 
-      *  The output is shifted according to the :token:`align`.
+      *  The output is shifted according to the :token:`~spec:align`.
 
          <
             Align to the left, fill to the right.
@@ -412,14 +413,15 @@ reasonable without the programmer needing to be explicit.
          =
             Numerically align, putting the fill between the sign character and the value.
 
-   The output is clipped by :token:`max` width characters and by the end of the buffer.
-   :token:`precision` is used by floating point values to specify the number of places of precision.
+   The output is clipped by :token:`~spec:max` width characters and by the end of the buffer.
+   :token:`~spec:precision` is used by floating point values to specify the number of places of
+   precision.
 
-   :token:`type` is used to indicate type specific formatting. For integers it indicates the output
-   radix and if ``#`` is present the radix is prefix is generated (one of ``0xb``, ``0``, ``0x``).
-   Format types of the same letter are equivalent, varying only in the character case used for
-   output. Most commonly 'x' prints values in lower cased hexadecimal (:code:`0x1337beef`) while 'X'
-   prints in upper case hexadecimal (:code:`0X1337BEEF`). Note there is no upper case decimal or
+   :token:`~spec:type` is used to indicate type specific formatting. For integers it indicates the
+   output radix and if ``#`` is present the radix is prefix is generated (one of ``0xb``, ``0``,
+   ``0x``). Format types of the same letter are equivalent, varying only in the character case used
+   for output. Most commonly 'x' prints values in lower cased hexadecimal (:code:`0x1337beef`) while
+   'X' prints in upper case hexadecimal (:code:`0X1337BEEF`). Note there is no upper case decimal or
    octal type because case is irrelevant for those.
 
       = ===============
@@ -446,7 +448,7 @@ reasonable without the programmer needing to be explicit.
    type 's' yields ``true` or ``false``. The upper case form, 'S', applies only in these cases where the
    formatter generates the text, it does not apply to normally text based values unless specifically noted.
 
-:token:`extension`
+:token:`~format:extension`
    Text (excluding braces) that is passed to the type specific formatter function. This can be used
    to provide extensions for specific argument types (e.g., IP addresses). The base logic ignores it
    but passes it on to the formatting function which can then behave different based on the
@@ -540,9 +542,9 @@ User Defined Formatting
 To get the full benefit of type safe formatting it is necessary to provide type specific formatting
 functions which are called when a value of that type is formatted. This is how type specific
 knowledge such as the names of enumeration values are encoded in a single location. Additional type
-specific formatting can be provided via the :token:`extension` field. Without this, special formatting
-requires extra functions and additional work at the call site, rather than a single consolidated
-formatting function.
+specific formatting can be provided via the :token:`~format:extension` field. Without this, special
+formatting requires extra functions and additional work at the call site, rather than a single
+consolidated formatting function.
 
 To provide a formatter for a type :code:`V` the function :code:`bwformat` is overloaded. The signature
 would look like this::
@@ -656,11 +658,11 @@ These are types for which there exists a type specific BWF formatter.
    'p' or 'P'
       The pointer and length value of the view in lower ('p') or upper ('P') case.
 
-   The :token:`precision` is interpreted specially for this type to mean "skip :token:`precision`
-   initial characters". When combined with :token:`max` this allows a mechanism for printing
-   substrings of the :code:`std::string_view`. For instance, to print the 10th through 20th characters
-   the format ``{:.10,20}`` would suffice. Given the method :code:`substr` for :code:`std::string_view`
-   is cheap, it's unclear how useful this is.
+   The :token:`~spec:precision` is interpreted specially for this type to mean "skip
+   :token:`~spec:precision` initial characters". When combined with :token:`~spec:max` this allows a
+   mechanism for printing substrings of the :code:`std::string_view`. For instance, to print the
+   10th through 20th characters the format ``{:.10,20}`` would suffice. Given the method
+   :code:`substr` for :code:`std::string_view` is cheap, it's unclear how useful this is.
 
 :code:`sockaddr const*`
    The IP address is printed. Fill is used to fill in address segments if provided, not to the

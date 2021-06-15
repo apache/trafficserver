@@ -76,56 +76,56 @@ it receives:
 The following table lists events and the corresponding type of
 `void* data` passed to handler functions:
 
-============================================ =========================================== ==========================
-Event                                        Event Sender                                Data Type
-============================================ =========================================== ==========================
-:data:`TS_EVENT_HTTP_READ_REQUEST_HDR`       :data:`TS_HTTP_READ_REQUEST_HDR_HOOK`       :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_PRE_REMAP`              :data:`TS_HTTP_PRE_REMAP_HOOK`              :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_OS_DNS`                 :data:`TS_HTTP_OS_DNS_HOOK`                 :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_SEND_REQUEST_HDR`       :data:`TS_HTTP_SEND_REQUEST_HDR_HOOK`       :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_READ_CACHE_HDR`         :data:`TS_HTTP_READ_CACHE_HDR_HOOK`         :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_READ_RESPONSE_HDR`      :data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`      :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_SEND_RESPONSE_HDR`      :data:`TS_HTTP_SEND_RESPONSE_HDR_HOOK`      :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_SELECT_ALT`             :data:`TS_HTTP_SELECT_ALT_HOOK`             :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_TXN_START`              :data:`TS_HTTP_TXN_START_HOOK`              :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_TXN_CLOSE`              :data:`TS_HTTP_TXN_CLOSE_HOOK`              :type:`TSHttpTxn`
-:data:`TS_EVENT_HTTP_SSN_START`              :data:`TS_HTTP_SSN_START_HOOK`              :type:`TSHttpSsn`
-:data:`TS_EVENT_HTTP_SSN_CLOSE`              :data:`TS_HTTP_SSN_CLOSE_HOOK`              :type:`TSHttpSsn`
-:data:`TS_EVENT_NONE`
-:data:`TS_EVENT_CACHE_LOOKUP_COMPLETE`       :data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`  :type:`TSHttpTxn`
-:data:`TS_EVENT_IMMEDIATE`                   :func:`TSVConnClose`
-                                             :func:`TSVIOReenable`
-                                             :func:`TSContScheduleOnPool`
-                                             :func:`TSContScheduleOnThread`
-:data:`TS_EVENT_IMMEDIATE`                   :data:`TS_HTTP_REQUEST_TRANSFORM_HOOK`
-:data:`TS_EVENT_IMMEDIATE`                   :data:`TS_HTTP_RESPONSE_TRANSFORM_HOOK`
-:data:`TS_EVENT_CACHE_OPEN_READ`             :func:`TSCacheRead`                         Cache VC
-:data:`TS_EVENT_CACHE_OPEN_READ_FAILED`      :func:`TSCacheRead`                         TS_CACHE_ERROR code
-:data:`TS_EVENT_CACHE_OPEN_WRITE`            :func:`TSCacheWrite`                        Cache VC
-:data:`TS_EVENT_CACHE_OPEN_WRITE_FAILED`     :func:`TSCacheWrite`                        TS_CACHE_ERROR code
-:data:`TS_EVENT_CACHE_REMOVE`                :func:`TSCacheRemove`
-:data:`TS_EVENT_CACHE_REMOVE_FAILED`         :func:`TSCacheRemove`                       TS_CACHE_ERROR code
-:data:`TS_EVENT_NET_ACCEPT`                  :func:`TSNetAccept`                         :type:`TSNetVConnection`
-                                             :func:`TSHttpTxnServerIntercept`
-                                             :func:`TSHttpTxnIntercept`
-:data:`TS_EVENT_NET_ACCEPT_FAILED`           :func:`TSNetAccept`
-                                             :func:`TSHttpTxnServerIntercept`
-                                             :func:`TSHttpTxnIntercept`
-:data:`TS_EVENT_HOST_LOOKUP`                 :func:`TSHostLookup`                        :type:`TSHostLookupResult`
-:data:`TS_EVENT_TIMEOUT`                     :func:`TSContScheduleOnPool`
-                                             :func:`TSContScheduleOnThread`
-:data:`TS_EVENT_ERROR`
-:data:`TS_EVENT_VCONN_READ_READY`            :func:`TSVConnRead`                         :type:`TSVIO`
-:data:`TS_EVENT_VCONN_WRITE_READY`           :func:`TSVConnWrite`                        :type:`TSVIO`
-:data:`TS_EVENT_VCONN_READ_COMPLETE`         :func:`TSVConnRead`                         :type:`TSVIO`
-:data:`TS_EVENT_VCONN_WRITE_COMPLETE`        :func:`TSVConnWrite`                        :type:`TSVIO`
-:data:`TS_EVENT_VCONN_EOS`                   :func:`TSVConnRead`                         :type:`TSVIO`
-:data:`TS_EVENT_NET_CONNECT`                 :func:`TSNetConnect`                        :type:`TSVConn`
-:data:`TS_EVENT_NET_CONNECT_FAILED`          :func:`TSNetConnect`                        :type:`TSVConn`
-:data:`TS_EVENT_HTTP_CONTINUE`
-:data:`TS_EVENT_HTTP_ERROR`
-:data:`TS_EVENT_MGMT_UPDATE`                 :func:`TSMgmtUpdateRegister`
-============================================ =========================================== ==========================
+============================================= ============================================ ==========================
+Event                                         Event Sender                                 Data Type
+============================================= ============================================ ==========================
+:macro:`TS_EVENT_HTTP_READ_REQUEST_HDR`       :macro:`TS_HTTP_READ_REQUEST_HDR_HOOK`       :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_PRE_REMAP`              :macro:`TS_HTTP_PRE_REMAP_HOOK`              :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_OS_DNS`                 :macro:`TS_HTTP_OS_DNS_HOOK`                 :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_SEND_REQUEST_HDR`       :macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK`       :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_READ_CACHE_HDR`         :macro:`TS_HTTP_READ_CACHE_HDR_HOOK`         :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_READ_RESPONSE_HDR`      :macro:`TS_HTTP_READ_RESPONSE_HDR_HOOK`      :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_SEND_RESPONSE_HDR`      :macro:`TS_HTTP_SEND_RESPONSE_HDR_HOOK`      :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_SELECT_ALT`             :macro:`TS_HTTP_SELECT_ALT_HOOK`             :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_TXN_START`              :macro:`TS_HTTP_TXN_START_HOOK`              :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_TXN_CLOSE`              :macro:`TS_HTTP_TXN_CLOSE_HOOK`              :type:`TSHttpTxn`
+:macro:`TS_EVENT_HTTP_SSN_START`              :macro:`TS_HTTP_SSN_START_HOOK`              :type:`TSHttpSsn`
+:macro:`TS_EVENT_HTTP_SSN_CLOSE`              :macro:`TS_HTTP_SSN_CLOSE_HOOK`              :type:`TSHttpSsn`
+:macro:`TS_EVENT_NONE`
+:macro:`TS_EVENT_CACHE_LOOKUP_COMPLETE`       :macro:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`  :type:`TSHttpTxn`
+:macro:`TS_EVENT_IMMEDIATE`                   :func:`TSVConnClose`
+                                              :func:`TSVIOReenable`
+                                              :func:`TSContScheduleOnPool`
+                                              :func:`TSContScheduleOnThread`
+:macro:`TS_EVENT_IMMEDIATE`                   :macro:`TS_HTTP_REQUEST_TRANSFORM_HOOK`
+:macro:`TS_EVENT_IMMEDIATE`                   :macro:`TS_HTTP_RESPONSE_TRANSFORM_HOOK`
+:macro:`TS_EVENT_CACHE_OPEN_READ`             :func:`TSCacheRead`                          Cache VC
+:macro:`TS_EVENT_CACHE_OPEN_READ_FAILED`      :func:`TSCacheRead`                          TS_CACHE_ERROR code
+:macro:`TS_EVENT_CACHE_OPEN_WRITE`            :func:`TSCacheWrite`                         Cache VC
+:macro:`TS_EVENT_CACHE_OPEN_WRITE_FAILED`     :func:`TSCacheWrite`                         TS_CACHE_ERROR code
+:macro:`TS_EVENT_CACHE_REMOVE`                :func:`TSCacheRemove`
+:macro:`TS_EVENT_CACHE_REMOVE_FAILED`         :func:`TSCacheRemove`                        TS_CACHE_ERROR code
+:macro:`TS_EVENT_NET_ACCEPT`                  :func:`TSNetAccept`                          :type:`TSNetVConnection`
+                                              :func:`TSHttpTxnServerIntercept`
+                                              :func:`TSHttpTxnIntercept`
+:macro:`TS_EVENT_NET_ACCEPT_FAILED`           :func:`TSNetAccept`
+                                              :func:`TSHttpTxnServerIntercept`
+                                              :func:`TSHttpTxnIntercept`
+:macro:`TS_EVENT_HOST_LOOKUP`                 :func:`TSHostLookup`                         :type:`TSHostLookupResult`
+:macro:`TS_EVENT_TIMEOUT`                     :func:`TSContScheduleOnPool`
+                                              :func:`TSContScheduleOnThread`
+:macro:`TS_EVENT_ERROR`
+:macro:`TS_EVENT_VCONN_READ_READY`            :func:`TSVConnRead`                          :type:`TSVIO`
+:macro:`TS_EVENT_VCONN_WRITE_READY`           :func:`TSVConnWrite`                         :type:`TSVIO`
+:macro:`TS_EVENT_VCONN_READ_COMPLETE`         :func:`TSVConnRead`                          :type:`TSVIO`
+:macro:`TS_EVENT_VCONN_WRITE_COMPLETE`        :func:`TSVConnWrite`                         :type:`TSVIO`
+:macro:`TS_EVENT_VCONN_EOS`                   :func:`TSVConnRead`                          :type:`TSVIO`
+:macro:`TS_EVENT_NET_CONNECT`                 :func:`TSNetConnect`                         :type:`TSVConn`
+:macro:`TS_EVENT_NET_CONNECT_FAILED`          :func:`TSNetConnect`                         :type:`TSVConn`
+:macro:`TS_EVENT_HTTP_CONTINUE`
+:macro:`TS_EVENT_HTTP_ERROR`
+:macro:`TS_EVENT_MGMT_UPDATE`                 :func:`TSMgmtUpdateRegister`
+============================================= ============================================ ==========================
 
 The continuation functions are listed below:
 

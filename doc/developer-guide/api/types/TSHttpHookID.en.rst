@@ -28,73 +28,73 @@ Synopsis
 
     #include <ts/apidefs.h>
 
-.. c:type:: TSHttpHookID
-
 Enum typedef defining the possible :ref:`developer-plugins-hooks` for setting
 up :ref:`developer-plugins-continuations` callbacks.
 
 Enumeration Members
 ===================
 
-.. c:macro:: TSHttpHookID TS_HTTP_READ_REQUEST_HDR_HOOK
+.. c:enum:: TSHttpHookID
 
-.. c:macro:: TSHttpHookID TS_HTTP_OS_DNS_HOOK
+   .. c:enumerator:: TS_HTTP_READ_REQUEST_HDR_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_SEND_REQUEST_HDR_HOOK
+   .. c:enumerator:: TS_HTTP_OS_DNS_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_READ_CACHE_HDR_HOOK
+   .. c:enumerator:: TS_HTTP_SEND_REQUEST_HDR_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_READ_RESPONSE_HDR_HOOK
+   .. c:enumerator:: TS_HTTP_READ_CACHE_HDR_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_SEND_RESPONSE_HDR_HOOK
+   .. c:enumerator:: TS_HTTP_READ_RESPONSE_HDR_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_REQUEST_TRANSFORM_HOOK
+   .. c:enumerator:: TS_HTTP_SEND_RESPONSE_HDR_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_RESPONSE_TRANSFORM_HOOK
+   .. c:enumerator:: TS_HTTP_REQUEST_TRANSFORM_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_SELECT_ALT_HOOK
+   .. c:enumerator:: TS_HTTP_RESPONSE_TRANSFORM_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_TXN_START_HOOK
+   .. c:enumerator:: TS_HTTP_SELECT_ALT_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_TXN_CLOSE_HOOK
+   .. c:enumerator:: TS_HTTP_TXN_START_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_SSN_START_HOOK
+   .. c:enumerator:: TS_HTTP_TXN_CLOSE_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_SSN_CLOSE_HOOK
+   .. c:enumerator:: TS_HTTP_SSN_START_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
+   .. c:enumerator:: TS_HTTP_SSN_CLOSE_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_PRE_REMAP_HOOK
+   .. c:enumerator:: TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_POST_REMAP_HOOK
+   .. c:enumerator:: TS_HTTP_PRE_REMAP_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_RESPONSE_CLIENT_HOOK
+   .. c:enumerator:: TS_HTTP_POST_REMAP_HOOK
 
-.. c:macro:: TSHttpHookID TS_SSL_FIRST_HOOK
+   .. c:enumerator:: TS_HTTP_RESPONSE_CLIENT_HOOK
 
-.. c:macro:: TSHttpHookID TS_VCONN_START_HOOK
+   .. c:enumerator:: TS_SSL_FIRST_HOOK
 
-.. c:macro:: TSHttpHookID TS_VCONN_OUTBOUND_START_HOOK
+   .. c:enumerator:: TS_VCONN_START_HOOK
 
-.. c:macro:: TSHttpHookID TS_VCONN_CLOSE_HOOK
+   .. c:enumerator:: TS_VCONN_OUTBOUND_START_HOOK
 
-.. c:macro:: TSHttpHookID TS_VCONN_OUTBOUND_CLOSE_HOOK
+   .. c:enumerator:: TS_VCONN_CLOSE_HOOK
 
-.. c:macro:: TSHttpHookID TS_SSL_CLIENT_HELLO_HOOK
+   .. c:enumerator:: TS_VCONN_OUTBOUND_CLOSE_HOOK
 
-.. c:macro:: TSHttpHookID TS_SSL_SNI_HOOK
+   .. c:enumerator:: TS_SSL_CLIENT_HELLO_HOOK
 
-.. c:macro:: TSHttpHookID TS_SSL_CERT_HOOK
+   .. c:enumerator:: TS_SSL_SNI_HOOK
 
-.. c:macro:: TSHttpHookID TS_SSL_SERVERNAME_HOOK
+   .. c:enumerator:: TS_SSL_CERT_HOOK
 
-.. c:macro:: TSHttpHookID TS_SSL_VERIFY_CLIENT_HOOK
+   .. c:enumerator:: TS_SSL_SERVERNAME_HOOK
 
-.. c:macro:: TSHttpHookID TS_SSL_VERIFY_SERVER_HOOK
+   .. c:enumerator:: TS_SSL_VERIFY_CLIENT_HOOK
 
-.. c:macro:: TSHttpHookID TS_SSL_LAST_HOOK
+   .. c:enumerator:: TS_SSL_VERIFY_SERVER_HOOK
 
-.. c:macro:: TSHttpHookID TS_HTTP_LAST_HOOK
+   .. c:enumerator:: TS_SSL_LAST_HOOK
+
+   .. c:enumerator:: TS_HTTP_LAST_HOOK
 
 Description
 ===========

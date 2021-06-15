@@ -38,7 +38,7 @@ Description
 Return Values
 =============
 
-Returns a :type:`int64_t` as the unique ID
+Returns a :code:`int64_t` as the unique ID
 
 See also
 ========

@@ -24,7 +24,7 @@ Test whether a request is internally-generated.
 Synopsis
 ========
 
-.. code-block:: cpp
+.. code-block:: c
 
     #include <ts/ts.h>
 
@@ -43,7 +43,7 @@ was originated within Traffic Server.
 Return Values
 =============
 
-Both these APIs return a :type:`int`, indicating whether the
+Both these APIs return a :code:`int`, indicating whether the
 request was internal (:literal:`1`) or not (:literal:`0`).
 
 Examples

@@ -65,10 +65,9 @@ LOCAL_CONFIG = os.path.join(os.environ['PWD'], "ext", "local-config.py")
 with open(LOCAL_CONFIG) as f:
     exec(compile(f.read(), LOCAL_CONFIG, 'exec'))
 
-if version_info >= (1, 4):
-    extensions.append('sphinx.ext.imgmath')
-else:
-    extensions.append('sphinx.ext.pngmath')
+if version_info < (3, 0):
+    print("Documentation requires Sphinx 3.0 or later.")
+    exit(1)
 
 # XXX Disabling docxygen for now, since it make RTD documentation builds time
 # out, eg. https://readthedocs.org/projects/trafficserver/builds/3525976/
@@ -172,16 +171,18 @@ pygments_style = 'default'
 #modindex_common_prefix = []
 
 nitpicky = True
-nitpick_ignore = [('c:type', 'int64_t'),
-                  ('c:type', 'bool'),
-                  ('c:type', 'sockaddr'),
+nitpick_ignore = [('c:identifier', 'int64_t'),
+                  ('c:identifier', 'uint64_t'),
+                  ('c:identifier', 'uint8_t'),
+                  ('c:identifier', 'int32_t'),
+                  ('c:identifier', 'size_t'),
+                  ('c:identifier', 'ssize_t'),
+                  ('c:identifier', 'sockaddr'),
+                  ('c:identifier', 'time_t'),
                   ('cpp:identifier', 'T'),  # template arg
                   ('cpp:identifier', 'F'),  # template arg
                   ('cpp:identifier', 'Args'),  # variadic template arg
                   ('cpp:identifier', 'Rest'),  # variadic template arg
-                  ('c:type', 'uint64_t'),
-                  ('c:type', 'uint8_t'),
-                  ('c:type', 'int32_t')
                   ]
 
 # Autolink issue references.

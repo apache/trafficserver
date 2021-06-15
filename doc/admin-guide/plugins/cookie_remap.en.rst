@@ -32,7 +32,7 @@ Cookie Based Routing Inside TrafficServer Using cookie_remap
 
     * `Comments <#comments>`_
     * `cookie: X|X.Y <#cookie-xxy>`_
-    * `target: purl <#purl>`_
+    * `target: puri <#purl>`_
     * `operation: exists|not exists|string|regex|bucket <#operation-existsnot-existsstringregexbucket>`_
     * `match: str <#match-str>`_
     * `regex: str <#regex-str>`_
@@ -126,15 +126,15 @@ cookie: X|X.Y
 This sub-operation is testing against the X cookie or X.Y cookie where X.Y denotes the X cookie, sub cookie Y
 e.g
 
+.. code-block:: text
 
-.. raw:: html
-
-   <pre>
    A=ACOOKIE;B=data&f=fsub&z=zsub;
-   A will operate on ACOOKIE
-   B will operate on data&f=fsub&z=zsub
-   B.f will operate on fsub
-   </pre>
+
+A will operate on ``ACOOKIE``
+
+B will operate on ``data&f=fsub&z=zsub``
+
+B.f will operate on ``fsub``
 
 target: puri
 ^^^^^^^^^^^^

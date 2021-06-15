@@ -37,34 +37,34 @@ requested info. For example, cache related info may be available only at or afte
 
 The :c:type:`TSHttpTxnInfoKey` currently supports the below integer-based info about a transaction
 
-.. c:type:: TSHttpTxnInfoKey
+.. c:enum:: TSHttpTxnInfoKey
 
-   .. c:member:: TS_TXN_INFO_CACHE_HIT_RAM
+   .. c:enumerator:: TS_TXN_INFO_CACHE_HIT_RAM
 
-      This info is available at or after :c:member:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. A value of :literal:`1` indicates that the response
+      This info is available at or after :c:macro:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. A value of :literal:`1` indicates that the response
       is returned from RAM cache. A value of :literal:`0` indicates otherwise.
 
-   .. c:member:: TS_TXN_INFO_CACHE_COMPRESSED_IN_RAM
+   .. c:enumerator:: TS_TXN_INFO_CACHE_COMPRESSED_IN_RAM
 
-      This info is available at or after :c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. A value of 1 indicates that the response
+      This info is available at or after :c:macro:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. A value of 1 indicates that the response
       is returned from RAM cache and is compressed. A value of 0 indicates otherwise.
 
-   .. c:member:: TS_TXN_INFO_CACHE_HIT_RWW
+   .. c:enumerator:: TS_TXN_INFO_CACHE_HIT_RWW
 
       This info is available at or after :c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. A value of 1 indicates that the response
       is returned via Read-While-Writer functionality. A value of 0 indicates otherwise.
 
-   .. c:member:: TS_TXN_INFO_CACHE_OPEN_READ_TRIES
+   .. c:enumerator:: TS_TXN_INFO_CACHE_OPEN_READ_TRIES
 
       This info is available at or after :c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. The value indicates the number of cache open
       read reattempts made by the transaction on cache open read failure.
 
-   .. c:member:: TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES
+   .. c:enumerator:: TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES
 
       This info is available at or after :c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. The value indicates the number of cache open
       write reattempts made by the transaction on cache open write failure.
 
-   .. c:member:: TS_TXN_INFO_CACHE_VOLUME
+   .. c:enumerator:: TS_TXN_INFO_CACHE_VOLUME
 
       This info is available at or after :c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. The value indicates the cache volume ID used
       for the cache object associated with the transaction.
