@@ -73,7 +73,7 @@ ts.Disk.records_config.update({
     'proxy.config.http.cache.http': 0,
     'proxy.config.http.uncacheable_requests_bypass_parent': 0,
     'proxy.config.http.no_dns_just_forward_to_parent': 1,
-    'proxy.config.http.parent_proxy.mark_down_hostdb': 1,
+    'proxy.config.http.parent_proxy.mark_down_hostdb': 0,
     'proxy.config.http.parent_proxy.self_detect': 0,
 })
 

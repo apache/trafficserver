@@ -26,6 +26,7 @@
 #include "tscore/HashSip.h"
 #include "HttpSM.h"
 #include "I_Machine.h"
+#include "YamlCfg.h"
 #include "NextHopConsistentHash.h"
 
 // hash_key strings.
@@ -63,7 +64,7 @@ NextHopConsistentHash::~NextHopConsistentHash()
 }
 
 bool
-NextHopConsistentHash::Init(const YAML::Node &n)
+NextHopConsistentHash::Init(ts::Yaml::Map &n)
 {
   ATSHash64Sip24 hash;
 
