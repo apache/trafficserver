@@ -41,7 +41,7 @@ appendEncoded(String &target, const char *s, size_t len)
     return;
   }
 
-  char tmp[len * 2];
+  char tmp[len * 3 + 1];
   size_t written;
 
   /* The default table does not encode the comma, so we need to use our own table here. */
