@@ -36,6 +36,7 @@ Changes with Apache Traffic Server 9.1.0
   #6215 - Do not reenable txnp with TS_EVENT_HTTP_ERROR if received TS_EVENT_HTTP_TXN_CLOSE event
   #6220 - Correct handle the value return from mgmt socket read and write (#6220)
   #6221 - Docker builds do not need build numbers in workspace
+  #6241 - Make Allocator.h less silly (no creepy "proto" object).
   #6254 - H1 txn new
   #6258 - Initial revision of .lgtm.yml config file
   #6271 - LGTM: fixes a shadowed variable in ParentSelection::PreprocessParents().
@@ -213,6 +214,7 @@ Changes with Apache Traffic Server 9.1.0
   #7289 - Enable all h2spec test
   #7291 - Add failed state to hostdb to better track failing origins
   #7292 - Allow disabling SO_MARK and IP_TOS usage
+  #7307 - fix DNS spike issue for TCP_RETRY mode
   #7311 - Traffic Dump: Fix stream-id printing after first transaction.
   #7323 - Updates the Dockerfile with more packages
   #7325 - AuTest for Split DNS
@@ -237,6 +239,7 @@ Changes with Apache Traffic Server 9.1.0
   #7383 - Unused code: HostDBContinuation::removeEvent
   #7384 - Remove a special treatment for SSLNetVC in migrateToCurrentThread()
   #7387 - API - Add new api function TSHttpTxnServerSsnTransactionCount()
+  #7389 - Apple Silicon macOS support
   #7391 - [Docs] Fix build warnings
   #7392 - Eliminate dangling pointer into stack space.
   #7393 - Add compression support to stats_over_http
@@ -272,6 +275,7 @@ Changes with Apache Traffic Server 9.1.0
   #7466 - Change atoi to atol, causing obvious issues on what needs to be int64's
   #7470 - Experimental Cache fill plugin
   #7473 - Adjust so transfer-encoding header can be treated hop-by-hop
+  #7482 - Add basic type aliases for std::chrono types to ink_time.h for future use.
   #7485 - PR to prevent thundering parent retries.
   #7488 - Avoid -Warray-bounds on PROXY Protocol Builder
   #7491 - Add new log field for negotiated ALPN Protocol ID with the client
@@ -285,10 +289,12 @@ Changes with Apache Traffic Server 9.1.0
   #7516 - Adding TCP Info header support to header rewrite
   #7518 - Updates the Dockerfile for debian
   #7522 - Make the H3 build script work properly on Debian platforms
+  #7523 - Makes sure the types are correct, avoiding compiler warnings
   #7532 - Fix asserts in multiplexer plugin.
   #7533 - Add server_name option to proxy.config.ssl.client.sni_policy
   #7535 - Convert the inactive_client_timeout test to use Proxy Verifier
   #7539 - Fix the schedule AuTest for 9.1.x: use PrepareTestPlugin
+  #7540 - Remove extra verify-callback
   #7545 - For TSHttpHdrEffectiveUrlBufGet(), include scheme for request to server URL.
   #7550 - Fix ja3_fingerprint configure syntax
   #7567 - Remove ProxyTransaction::set_proxy_ssn
@@ -297,9 +303,12 @@ Changes with Apache Traffic Server 9.1.0
   #7571 - Tidy up session/transaction destruction process
   #7572 - FQ pacing plugin memory leak fix
   #7580 -  Refine connection failure logging and messages and eliminate spurious connection errors
+  #7584 - Call constructors and destructors for H1/2 Session/Transaction via ClassAllocator
+  #7586 - Fix crash in open_close_h2
   #7588 - Build the test library for tls_engine consistently
   #7589 - Add gold test for remap config .include directive.
   #7591 - Use return values to fix ubuntu release build error
+  #7600 - Fix double destuct on Http2Stream termination
   #7601 - Update -with-profile and add some profiling documentation
   #7608 - Set pcre_malloc/free function pointers in core main() only.
   #7619 - Use standard isdigit library function
@@ -311,6 +320,7 @@ Changes with Apache Traffic Server 9.1.0
   #7630 - Add default implementation for allow_half_open
   #7631 - Fix HttpSessionManager::acquireSession from previous rebase error
   #7633 - Updating documentation for negative_revalidating_lifetime
+  #7662 - Refine Inline.cc carveout for arm64 darwin builds
   #7667 - Add class to normalize handling of pending action
   #7679 - Add close header normalize openclose test
   #7680 - Add sqpv log field for server protocol
@@ -320,6 +330,8 @@ Changes with Apache Traffic Server 9.1.0
   #7714 - Propagate TLS errors
   #7724 - if transaction status non-success, bypass intercept plugin
   #7727 - header_rewrite: Allow for relative path to geo database files
+  #7732 - Add overload for memcpy to take a destination buffer and source string_view / TextView
+  #7736 - Augment test cases for tls_verify_override test
   #7742 - Adding DNS TTL AuTests.
   #7743 - Add a chunked disabled test.
   #7746 - header_rewrite: Various fixes for MaxMind support
@@ -327,3 +339,29 @@ Changes with Apache Traffic Server 9.1.0
   #7748 - Remove proxy.config.http.down_server.abort_threshold
   #7753 - Make when_to_revalidate setting available on HTTPS
   #7766 - Clean up HTTP version processing
+  #7772 - Apply log throttling to HTTP/2 session error rate messages
+  #7783 - Adds new TS API TSHttpTxnCacheDiskPathGet
+  #7784 - Adds new X-Cache-Info header to the xdebug plugin
+  #7790 - Fix MLoc assert caused by s3auth
+  #7797 - HTTP: clean up the http_hdr_describe format error
+  #7806 - TSHttpTxnCacheDiskPathGet - tighten up the code a bit.
+  #7807 - Address assert on captive_action
+  #7809 - Save and propagate epoll network error
+  #7828 - Fix so EOS are delivered to sessions in the pool
+  #7830 - Fix a format specifier for size_t
+  #7834 - AuTest: use exteneded help output to determine curl feature support
+  #7835 - Remove unused member from HttpSM
+  #7840 - Fixed warning in gcc 11 about array not being initalized
+  #7842 - Extra braces for clang 5 / ubuntu 16.04 on array initialization
+  #7858 - Adds a new --enable-all-asserts configure option
+  #7892 - Reset Http1Transaction before adding vc to keep_alive_queue
+  #7894 - Set accept_options of Http1Transaction in Http1ClientSession::new_con…
+  #7896 - Fixed spelling mistakes in the docs
+  #7898 - docs: fix capitalization of Linux
+  #7904 - Ensure the HTTP portion of the protocol string is upper case
+  #7911 - Add a basic Au test using strategies.yaml, with consistent hashing.
+  #7914 - Add Au test for strategies.yaml, with consistent hashing, with fallover.
+  #7923 - Adjust vc read errors
+  #7929 - Satisfy ci/jenkins/bin/clang-format.sh
+  #7935 - Remove scrap log object dead code
+  #7940 - Pin Sphinx to 3.x to unblock `make html`
