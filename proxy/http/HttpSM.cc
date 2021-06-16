@@ -899,6 +899,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
       }
     }
 
+    // Call to ensure the content-length and transfer_encoding elements in client_request are filled in
+    HttpTransact::set_client_request_state(&t_state, &t_state.hdr_info.client_request);
+
     if (t_state.hdr_info.client_request.get_content_length() == 0 &&
         t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING) {
       // Enable further IO to watch for client aborts
