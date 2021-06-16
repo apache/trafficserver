@@ -1,0 +1,15 @@
+- server_id: 1
+  address: 127.0.0.1
+  port: 10001
+- server_id: 2
+  address: 127.0.0.1
+  port: 10002
+- server_id: 3
+  address: 127.0.0.1
+  port: 10003
+- server_id: 4
+  address: 127.0.0.1
+  port: 10004
+- server_id: 5
+  address: 127.0.0.1
+  port: 10005

@@ -1,0 +1,9 @@
+server_id: 1
+address: 127.0.0.1
+port: 10001
+key_update_interval: 3600
+server_list_file: /abs/path/to/server_list.yaml
+root_cert_file: /abs/path/to/ca.pem
+server_cert_file: /abs/path/to/server.pem
+server_key_file: /abs/path/to/server.key
+cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=localhost

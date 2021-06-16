@@ -107,6 +107,10 @@ if BUILD_SSL_SESSION_REUSE_PLUGIN
 include experimental/ssl_session_reuse/Makefile.inc
 endif
 
+if BUILD_STEK_SHARE_PLUGIN
+include experimental/stek_share/Makefile.inc
+endif
+
 if HAS_KYOTOCABINET
 include experimental/cache_key_genid/Makefile.inc
 endif
