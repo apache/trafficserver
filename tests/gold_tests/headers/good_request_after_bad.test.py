@@ -27,7 +27,7 @@ ts = Test.MakeATSProcess("ts", enable_cache=True)
 
 ts.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
                                'proxy.config.diags.debug.enabled': 0,
-Test.ContinueOnFail = True
+                               Test.ContinueOnFail=True
                                })
 
 server = Test.MakeOriginServer("server")
@@ -99,5 +99,3 @@ tr.Processes.Default.Command = 'printf "gET / HTTP/1.1\r\nHost:bob\r\n\r\nGET / 
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'gold/bad_method.gold'
-
-
