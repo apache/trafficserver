@@ -62,14 +62,14 @@ get_good_random(char *buffer, int size, int need_good_entropy)
 } /* STEK_GetRandom() */
 
 int
-create_new_stek(struct ssl_ticket_key_t *return_stek, int global_key, int entropy_ensured)
+create_new_stek(ssl_ticket_key_t *return_stek, int global_key, int entropy_ensured)
 {
   /* Create a new Session-Ticket-Encryption-Key and places it into buffer provided
    * return -1 on failure, 0 on success.
    * if boolean global_key is set (inidcating it's the global key space),
      will get global key lock before setting */
 
-  struct ssl_ticket_key_t new_key; // tmp local buffer
+  ssl_ticket_key_t new_key; // tmp local buffer
 
   /* We create key in local buff to minimize lock time on global,
    * because entropy ensuring can take a very long time e.g. 2 seconds per byte of entropy*/
@@ -83,12 +83,12 @@ create_new_stek(struct ssl_ticket_key_t *return_stek, int global_key, int entrop
   if (global_key) {
     ssl_key_lock.lock();
   }
-  std::memcpy(return_stek, &new_key, sizeof(struct ssl_ticket_key_t));
+  std::memcpy(return_stek, &new_key, SSL_TICKET_KEY_SIZE);
   if (global_key) {
     ssl_key_lock.unlock();
   }
 
-  std::memset(&new_key, 0, sizeof(struct ssl_ticket_key_t)); // keep our stack clean
+  std::memset(&new_key, 0, SSL_TICKET_KEY_SIZE); // keep our stack clean
 
   return 0; /* success */
 }

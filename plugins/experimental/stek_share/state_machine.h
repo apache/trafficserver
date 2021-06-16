@@ -50,7 +50,7 @@ public:
     void *byte_array = bs_data.get_bytes(len);
     TSDebug(PLUGIN, "commit %lu: %s", log_idx, hex_str(std::string(reinterpret_cast<char *>(byte_array), len)).c_str());
 
-    assert(len == sizeof(struct ssl_ticket_key_t));
+    assert(len == SSL_TICKET_KEY_SIZE);
 
     {
       std::lock_guard<std::mutex> l(stek_lock_);
@@ -75,11 +75,17 @@ public:
     return received_stek_;
   }
 
-  std::shared_ptr<struct ssl_ticket_key_t>
+  void
+  applying_stek()
+  {
+    received_stek_ = false;
+  }
+
+  std::shared_ptr<ssl_ticket_key_t>
   get_stek()
   {
     std::lock_guard<std::mutex> l(stek_lock_);
-    std::shared_ptr<struct ssl_ticket_key_t> key = std::make_shared<struct ssl_ticket_key_t>(stek_);
+    std::shared_ptr<ssl_ticket_key_t> key = std::make_shared<ssl_ticket_key_t>(stek_);
 
     return key;
   }
@@ -101,13 +107,22 @@ public:
   read_logical_snp_obj(nuraft::snapshot &s, void *&user_snp_ctx, uint64_t obj_id, nuraft::ptr<nuraft::buffer> &data_out,
                        bool &is_last_obj)
   {
-    // Put dummy data.
-    data_out = nuraft::buffer::alloc(sizeof(int32_t));
-    nuraft::buffer_serializer bs(data_out);
-    bs.put_i32(0);
+    TSDebug(PLUGIN, "read snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
 
     is_last_obj = true;
-    return 0;
+
+    {
+      std::lock_guard<std::mutex> l(snapshot_lock_);
+      if (snapshot_ == nullptr || snapshot_->snapshot_->get_last_log_idx() != s.get_last_log_idx()) {
+        data_out = nullptr;
+        return -1;
+      } else {
+        data_out = nuraft::buffer::alloc(sizeof(int) + SSL_TICKET_KEY_SIZE);
+        nuraft::buffer_serializer bs(data_out);
+        bs.put_bytes(reinterpret_cast<const void *>(&snapshot_->stek_), SSL_TICKET_KEY_SIZE);
+        return 0;
+      }
+    }
   }
 
   void
@@ -115,7 +130,24 @@ public:
   {
     TSDebug(PLUGIN, "save snapshot %lu term %lu object ID %lu", s.get_last_log_idx(), s.get_last_log_term(), obj_id);
 
-    // Request next object.
+    size_t len = 0;
+    nuraft::buffer_serializer bs_data(data);
+    void *byte_array = bs_data.get_bytes(len);
+
+    assert(len == SSL_TICKET_KEY_SIZE);
+
+    ssl_ticket_key_t local_stek;
+    std::memcpy(&local_stek, byte_array, len);
+
+    nuraft::ptr<nuraft::buffer> snp_buf  = s.serialize();
+    nuraft::ptr<nuraft::snapshot> ss     = nuraft::snapshot::deserialize(*snp_buf);
+    nuraft::ptr<struct snapshot_ctx> ctx = nuraft::cs_new<struct snapshot_ctx>(ss, local_stek);
+
+    {
+      std::lock_guard<std::mutex> l(snapshot_lock_);
+      snapshot_ = ctx;
+    }
+
     obj_id++;
   }
 
@@ -124,13 +156,16 @@ public:
   {
     TSDebug(PLUGIN, "apply snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
 
-    // Clone snapshot from "s".
     {
-      std::lock_guard<std::mutex> l(last_snapshot_lock_);
-      nuraft::ptr<nuraft::buffer> snp_buf = s.serialize();
-      last_snapshot_                      = nuraft::snapshot::deserialize(*snp_buf);
+      std::lock_guard<std::mutex> l(snapshot_lock_);
+      if (snapshot_ != nullptr) {
+        std::lock_guard<std::mutex> ll(stek_lock_);
+        std::memcpy(&stek_, &snapshot_->stek_, SSL_TICKET_KEY_SIZE);
+        return true;
+      } else {
+        return false;
+      }
     }
-    return true;
   }
 
   void
@@ -142,8 +177,11 @@ public:
   last_snapshot()
   {
     // Just return the latest snapshot.
-    std::lock_guard<std::mutex> l(last_snapshot_lock_);
-    return last_snapshot_;
+    std::lock_guard<std::mutex> l(snapshot_lock_);
+    if (snapshot_ != nullptr) {
+      return snapshot_->snapshot_;
+    }
+    return nullptr;
   }
 
   uint64_t
@@ -157,30 +195,44 @@ public:
   {
     TSDebug(PLUGIN, "create snapshot %lu term %lu", s.get_last_log_idx(), s.get_last_log_term());
 
-    // Clone snapshot from "s".
+    ssl_ticket_key_t local_stek;
     {
-      std::lock_guard<std::mutex> l(last_snapshot_lock_);
-      nuraft::ptr<nuraft::buffer> snp_buf = s.serialize();
-      last_snapshot_                      = nuraft::snapshot::deserialize(*snp_buf);
+      std::lock_guard<std::mutex> l(stek_lock_);
+      std::memcpy(&local_stek, &stek_, SSL_TICKET_KEY_SIZE);
     }
+
+    nuraft::ptr<nuraft::buffer> snp_buf  = s.serialize();
+    nuraft::ptr<nuraft::snapshot> ss     = nuraft::snapshot::deserialize(*snp_buf);
+    nuraft::ptr<struct snapshot_ctx> ctx = nuraft::cs_new<struct snapshot_ctx>(ss, local_stek);
+
+    {
+      std::lock_guard<std::mutex> l(snapshot_lock_);
+      snapshot_ = ctx;
+    }
+
     nuraft::ptr<std::exception> except(nullptr);
     bool ret = true;
     when_done(ret, except);
   }
 
 private:
+  struct snapshot_ctx {
+    snapshot_ctx(nuraft::ptr<nuraft::snapshot> &s, ssl_ticket_key_t key) : snapshot_(s), stek_(key) {}
+    nuraft::ptr<nuraft::snapshot> snapshot_;
+    ssl_ticket_key_t stek_;
+  };
+
   // Last committed Raft log number.
   std::atomic<uint64_t> last_committed_idx_;
 
-  // Last snapshot.
-  nuraft::ptr<nuraft::snapshot> last_snapshot_;
+  nuraft::ptr<struct snapshot_ctx> snapshot_;
 
-  // Mutex for last snapshot.
-  std::mutex last_snapshot_lock_;
+  // Mutex for snapshot.
+  std::mutex snapshot_lock_;
 
   std::atomic<bool> received_stek_ = false;
 
-  struct ssl_ticket_key_t stek_;
+  ssl_ticket_key_t stek_;
 
   std::mutex stek_lock_;
 };
