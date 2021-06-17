@@ -508,7 +508,7 @@ public:
   void version_set(HTTPVersion version);
 
   const char *method_get(int *length);
-  int method_get_wksidx();
+  int method_get_wksidx() const;
   void method_set(const char *value, int length);
 
   URL *url_create(URL *url);
@@ -957,7 +957,7 @@ HTTPHdr::method_get(int *length)
 }
 
 inline int
-HTTPHdr::method_get_wksidx()
+HTTPHdr::method_get_wksidx() const
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);

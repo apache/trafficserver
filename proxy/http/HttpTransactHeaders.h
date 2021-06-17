@@ -56,6 +56,7 @@ public:
   static bool downgrade_request(bool *origin_server_keep_alive, HTTPHdr *outgoing_request);
   static bool is_method_safe(int method);
   static bool is_method_idempotent(int method);
+  static bool is_status_an_error_response(HTTPStatus response_code);
 
   static void generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes);
 
