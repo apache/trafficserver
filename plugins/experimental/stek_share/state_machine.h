@@ -76,9 +76,10 @@ public:
       return false;
     }
 
+    received_stek_ = false;
+
     if (std::memcmp(curr_stek, &stek_, SSL_TICKET_KEY_SIZE != 0)) {
       std::memcpy(curr_stek, &stek_, SSL_TICKET_KEY_SIZE);
-      received_stek_ = false;
       return true;
     }
 
