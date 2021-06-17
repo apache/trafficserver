@@ -144,10 +144,10 @@ public:
     ink_zero(dest_ip);
   }
 
-  HTTPHdr *hdr          = nullptr;
-  char *hostname_str    = nullptr;
-  HttpApiInfo *api_info = nullptr;
-  time_t xact_start     = 0;
+  HTTPHdr *hdr             = nullptr;
+  char const *hostname_str = nullptr;
+  HttpApiInfo *api_info    = nullptr;
+  time_t xact_start        = 0;
   IpEndpoint src_ip;
   IpEndpoint dest_ip;
   uint16_t incoming_port                = 0;
