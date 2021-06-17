@@ -1,0 +1,10 @@
+``
+> GET / HTTP/``
+> Host: www.default304.test
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/`` 304``
+< date: ``
+< server: ATS/``
+``
