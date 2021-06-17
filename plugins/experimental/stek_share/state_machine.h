@@ -55,9 +55,8 @@ public:
     {
       std::lock_guard<std::mutex> l(stek_lock_);
       std::memcpy(&stek_, byte_array, len);
+      received_stek_ = true;
     }
-
-    received_stek_ = true;
 
     // Update last committed index number.
     last_committed_idx_ = log_idx;
@@ -70,24 +69,20 @@ public:
   }
 
   bool
-  received_stek()
-  {
-    return received_stek_;
-  }
-
-  void
-  applying_stek()
-  {
-    received_stek_ = false;
-  }
-
-  std::shared_ptr<ssl_ticket_key_t>
-  get_stek()
+  received_stek(ssl_ticket_key_t *curr_stek)
   {
     std::lock_guard<std::mutex> l(stek_lock_);
-    std::shared_ptr<ssl_ticket_key_t> key = std::make_shared<ssl_ticket_key_t>(stek_);
+    if (!received_stek_) {
+      return false;
+    }
 
-    return key;
+    if (std::memcmp(curr_stek, &stek_, SSL_TICKET_KEY_SIZE != 0)) {
+      std::memcpy(curr_stek, &stek_, SSL_TICKET_KEY_SIZE);
+      received_stek_ = false;
+      return true;
+    }
+
+    return false;
   }
 
   void
@@ -161,6 +156,7 @@ public:
       if (snapshot_ != nullptr) {
         std::lock_guard<std::mutex> ll(stek_lock_);
         std::memcpy(&stek_, &snapshot_->stek_, SSL_TICKET_KEY_SIZE);
+        received_stek_ = true;
         return true;
       } else {
         return false;
@@ -230,7 +226,7 @@ private:
   // Mutex for snapshot.
   std::mutex snapshot_lock_;
 
-  std::atomic<bool> received_stek_ = false;
+  bool received_stek_ = false;
 
   ssl_ticket_key_t stek_;
 

@@ -311,12 +311,9 @@ stek_updater(void *arg)
       }
       init_key_time = 0;
     } else {
-      init_key_time                              = 0;
-      auto sm                                    = dynamic_cast<STEKShareSM *>(stek_share_server.sm_.get());
-      std::shared_ptr<ssl_ticket_key_t> new_stek = sm->get_stek();
-      if (sm->received_stek() && std::memcmp(&curr_stek, new_stek.get(), SSL_TICKET_KEY_SIZE != 0)) {
-        sm->applying_stek();
-        std::memcpy(&curr_stek, new_stek.get(), SSL_TICKET_KEY_SIZE);
+      init_key_time = 0;
+      auto sm       = dynamic_cast<STEKShareSM *>(stek_share_server.sm_.get());
+      if (sm->received_stek(&curr_stek)) {
         TSSslTicketKeyUpdate(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE);
         stek_share_server.last_updated_ = time(nullptr);
         TSDebug(PLUGIN, "Received new STEK: %s",
