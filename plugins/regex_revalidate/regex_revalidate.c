@@ -51,6 +51,50 @@ static char const *const RESULT_MISS    = "MISS";
 static char const *const RESULT_STALE   = "STALE";
 static char const *const RESULT_UNKNOWN = "UNKNOWN";
 
+static int stat_id_stale                 = TS_ERROR;
+static char const *const stat_name_stale = "plugin.regex_revalidate.stale";
+static int stat_id_miss                  = TS_ERROR;
+static char const *const stat_name_miss  = "plugin.regex_revalidate.miss";
+
+static void
+create_stats()
+{
+  if (TS_ERROR == stat_id_stale && TS_ERROR == TSStatFindName(stat_name_stale, &stat_id_stale)) {
+    stat_id_stale = TSStatCreate(stat_name_stale, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+    if (TS_ERROR != stat_id_stale) {
+      TSDebug(PLUGIN_NAME, "Created stat '%s'", stat_name_stale);
+    }
+  }
+
+  if (TS_ERROR == stat_id_miss && TS_ERROR == TSStatFindName(stat_name_miss, &stat_id_miss)) {
+    stat_id_miss = TSStatCreate(stat_name_miss, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+    if (TS_ERROR != stat_id_miss) {
+      TSDebug(PLUGIN_NAME, "Created stat '%s'", stat_name_miss);
+    }
+  }
+}
+
+static void
+increment_stat(TSCacheLookupResult const result)
+{
+  switch (result) {
+  case TS_CACHE_LOOKUP_MISS:
+    if (TS_ERROR != stat_id_miss) {
+      TSStatIntIncrement(stat_id_miss, 1);
+      TSDebug(PLUGIN_NAME, "Incrementing stat '%s'", stat_name_miss);
+    }
+    break;
+  case TS_CACHE_LOOKUP_HIT_STALE:
+    if (TS_ERROR != stat_id_stale) {
+      TSStatIntIncrement(stat_id_stale, 1);
+      TSDebug(PLUGIN_NAME, "Incrementing stat '%s'", stat_name_stale);
+    }
+    break;
+  default:
+    break;
+  }
+}
+
 static char const *const
 strForResult(TSCacheLookupResult const result)
 {
@@ -585,6 +629,7 @@ main_handler(TSCont cont, TSEvent event, void *edata)
             }
             if (pcre_exec(iptr->regex, iptr->regex_extra, url, url_len, 0, 0, NULL, 0) >= 0) {
               TSHttpTxnCacheLookupStatusSet(txn, iptr->new_result);
+              increment_stat(iptr->new_result);
               TSDebug(PLUGIN_NAME, "Forced revalidate - %.*s %s", url_len, url, strForResult(iptr->new_result));
               iptr = NULL;
             }
@@ -699,6 +744,8 @@ TSPluginInit(int argc, const char *argv[])
   } else {
     TSDebug(PLUGIN_NAME, "Plugin registration succeeded");
   }
+
+  create_stats();
 
   main_cont = TSContCreate(main_handler, NULL);
   TSContDataSet(main_cont, (void *)pstate);
