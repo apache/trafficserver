@@ -1921,10 +1921,9 @@ tsapi TSAction TSHostLookup(TSCont contp, const char *hostname, size_t namelen);
 /** Retrieve an address from the host lookup.
  *
  * @param lookup_result Result handle passed to event callback.
- * @param dst Destination for copying the address.
- * @return @c TS_SUCCESS if the address was available and copied, @c TS_ERROR otherwise.
+ * @return A @c sockaddr with the address if successful, a @c nullptr if not.
  */
-tsapi TSReturnCode TSHostLookupResultAddrGet(TSHostLookupResult lookup_result, struct sockaddr *dst);
+tsapi struct sockaddr const *TSHostLookupResultAddrGet(TSHostLookupResult lookup_result);
 
 /* TODO: Eventually, we might want something like this as well, but it requires
    support for building the HostDBInfo struct:
