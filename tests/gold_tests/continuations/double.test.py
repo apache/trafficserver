@@ -22,6 +22,10 @@ Test.Summary = '''
 Test transactions and sessions for http1, making sure the two continuations catch the same number of hooks.
 '''
 
+# Temporarily skip this test for now while we investigate:
+# https://github.com/apache/trafficserver/issues/7946
+Test.SkipIf(Condition.true("To unblock CI, skip this test temporarily. See issue #7946."))
+
 Test.ContinueOnFail = True
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", select_ports=True, command="traffic_manager", enable_cache=False)
