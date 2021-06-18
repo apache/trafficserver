@@ -1,5 +1,8 @@
 name: Mark stale issues and pull requests
 
+# Documentation
+# https://github.com/marketplace/actions/close-stale-issues
+
 on:
   push:
     paths:
@@ -9,9 +12,7 @@ on:
 
 jobs:
   stale:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/stale@v3
       with:
@@ -20,8 +21,10 @@ jobs:
         stale-pr-message: 'This pull request has been automatically marked as stale because it has not had recent activity. Marking it stale to flag it for further consideration by the community.'
         stale-issue-label: 'Stale'
         stale-pr-label: 'Stale'
+        exempt-issue-labels: 'In Progress'
+        exempt-pr-labels: 'In Progress'
         days-before-pr-stale: 90
         days-before-issue-stale: 365
-        days-before-pr-close: -1
+        days-before-pr-close: 7
         days-before-issue-close: -1
-        debug-only: true
+        debug-only: false
