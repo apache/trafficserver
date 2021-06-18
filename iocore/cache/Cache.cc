@@ -574,17 +574,12 @@ CacheProcessor::start_internal(int flags)
   ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED == (int)CACHE_EVENT_SCAN_OPERATION_BLOCKED);
   ink_assert((int)TS_EVENT_CACHE_SCAN_OPERATION_FAILED == (int)CACHE_EVENT_SCAN_OPERATION_FAILED);
   ink_assert((int)TS_EVENT_CACHE_SCAN_DONE == (int)CACHE_EVENT_SCAN_DONE);
-
 #if AIO_MODE == AIO_MODE_NATIVE
-  int etype            = ET_NET;
-  int n_netthreads     = eventProcessor.n_threads_for_type[etype];
-  EThread **netthreads = eventProcessor.eventthread[etype];
-  for (int i = 0; i < n_netthreads; ++i) {
-    netthreads[i]->diskHandler = new DiskHandler();
-    netthreads[i]->schedule_imm(netthreads[i]->diskHandler);
+  for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {
+    et->diskHandler = new DiskHandler();
+    et->schedule_imm(et->diskHandler);
   }
 #endif
-
   start_internal_flags = flags;
   clear                = !!(flags & PROCESSOR_RECONFIGURE) || auto_clear_flag;
   fix                  = !!(flags & PROCESSOR_FIX);
