@@ -66,13 +66,31 @@ ConfigUpdateCbTable::invoke(const char * /* name ATS_UNUSED */)
 }
 
 struct Machine {
+  Machine();
+  ~Machine();
   static Machine *instance();
+  char *hostname = nullptr;
+
+private:
+  static Machine _instance;
 };
+
+Machine Machine::_instance;
+
+Machine::Machine()
+{
+  hostname = ats_strdup("test.host.com");
+}
+
+Machine::~Machine()
+{
+  ats_free(hostname);
+}
+
 Machine *
 Machine::instance()
 {
-  ink_release_assert(false);
-  return nullptr;
+  return &_instance;
 }
 
 NetAccept *

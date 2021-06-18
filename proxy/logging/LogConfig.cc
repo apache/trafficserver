@@ -23,6 +23,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/I_Layout.h"
+#include "I_Machine.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -68,13 +69,7 @@
 void
 LogConfig::setup_default_values()
 {
-  const unsigned int bufSize = 512;
-  char name[bufSize];
-  if (gethostname(name, bufSize) == -1) {
-    ink_strlcpy(name, "unknown_host_name", sizeof(name));
-  }
-  hostname = ats_strdup(name);
-
+  hostname              = ats_strdup(Machine::instance()->hostname);
   log_buffer_size       = static_cast<int>(10 * LOG_KILOBYTE);
   max_secs_per_buffer   = 5;
   max_space_mb_for_logs = 100;
