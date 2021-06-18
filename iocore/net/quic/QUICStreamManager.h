@@ -40,6 +40,7 @@ class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
 {
 public:
   QUICStreamManager(QUICContext *context, QUICApplicationMap *app_map);
+  ~QUICStreamManager();
 
   void init_flow_control_params(const std::shared_ptr<const QUICTransportParameters> &local_tp,
                                 const std::shared_ptr<const QUICTransportParameters> &remote_tp);
