@@ -73,7 +73,7 @@ init_raft(nuraft::ptr<nuraft::state_machine> sm_instance)
 
   // ASIO options.
   nuraft::asio_service::options asio_opts;
-  asio_opts.thread_pool_size_ = 4;
+  asio_opts.thread_pool_size_ = stek_share_server.asio_thread_pool_size_;
   asio_opts.enable_ssl_       = true;
   asio_opts.verify_sn_        = cert_verification;
   asio_opts.root_cert_file_   = stek_share_server.root_cert_file_;
@@ -82,18 +82,12 @@ init_raft(nuraft::ptr<nuraft::state_machine> sm_instance)
 
   // Raft parameters.
   nuraft::raft_params params;
-  params.heart_beat_interval_          = 100;
-  params.election_timeout_lower_bound_ = 200;
-  params.election_timeout_upper_bound_ = 400;
-
-  // Upto 5 logs will be preserved ahead the last snapshot.
-  params.reserved_log_items_ = 5;
-
-  // Snapshot will be created for every 5 log appends.
-  params.snapshot_distance_ = 5;
-
-  // Client timeout: 3000 ms.
-  params.client_req_timeout_ = 3000;
+  params.heart_beat_interval_          = stek_share_server.heart_beat_interval_;
+  params.election_timeout_lower_bound_ = stek_share_server.election_timeout_lower_bound_;
+  params.election_timeout_upper_bound_ = stek_share_server.election_timeout_upper_bound_;
+  params.reserved_log_items_           = stek_share_server.reserved_log_items_;
+  params.snapshot_distance_            = stek_share_server.snapshot_distance_;
+  params.client_req_timeout_           = stek_share_server.client_req_timeout_;
 
   // According to this method, "append_log" function should be handled differently.
   params.return_method_ = CALL_TYPE;
@@ -143,6 +137,34 @@ set_server_info(int argc, const char *argv[])
   }
 
   stek_share_server.endpoint_ = stek_share_server.addr_ + ":" + std::to_string(stek_share_server.port_);
+
+  if (server_conf["asio_thread_pool_size"]) {
+    stek_share_server.asio_thread_pool_size_ = server_conf["asio_thread_pool_size"].as<size_t>();
+  }
+
+  if (server_conf["heart_beat_interval"]) {
+    stek_share_server.heart_beat_interval_ = server_conf["heart_beat_interval"].as<int>();
+  }
+
+  if (server_conf["election_timeout_lower_bound"]) {
+    stek_share_server.election_timeout_lower_bound_ = server_conf["election_timeout_lower_bound"].as<int>();
+  }
+
+  if (server_conf["election_timeout_upper_bound"]) {
+    stek_share_server.election_timeout_upper_bound_ = server_conf["election_timeout_upper_bound"].as<int>();
+  }
+
+  if (server_conf["reserved_log_items"]) {
+    stek_share_server.reserved_log_items_ = server_conf["reserved_log_items"].as<int>();
+  }
+
+  if (server_conf["snapshot_distance"]) {
+    stek_share_server.snapshot_distance_ = server_conf["snapshot_distance"].as<int>();
+  }
+
+  if (server_conf["client_req_timeout"]) {
+    stek_share_server.client_req_timeout_ = server_conf["client_req_timeout"].as<int>();
+  }
 
   if (server_conf["key_update_interval"]) {
     stek_share_server.key_update_interval_ = server_conf["key_update_interval"].as<int>();

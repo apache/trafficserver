@@ -30,6 +30,25 @@ public:
   {
     last_updated_    = 0;
     current_log_idx_ = 0;
+
+    // Default ASIO thread pool size: 4.
+    asio_thread_pool_size_ = 4;
+
+    // Default heart beat interval: 100 ms.
+    heart_beat_interval_ = 100;
+
+    // Default election timeout: 200~400 ms.
+    election_timeout_lower_bound_ = 200;
+    election_timeout_upper_bound_ = 400;
+
+    // Upto 5 logs will be preserved ahead the last snapshot.
+    reserved_log_items_ = 5;
+
+    // Snapshot will be created for every 5 log appends.
+    snapshot_distance_ = 5;
+
+    // Client timeout: 3000 ms.
+    client_req_timeout_ = 3000;
   }
 
   void
@@ -74,6 +93,19 @@ public:
   time_t last_updated_;
 
   uint64_t current_log_idx_;
+
+  size_t asio_thread_pool_size_;
+
+  int heart_beat_interval_;
+
+  int election_timeout_lower_bound_;
+  int election_timeout_upper_bound_;
+
+  int reserved_log_items_;
+
+  int snapshot_distance_;
+
+  int client_req_timeout_;
 
   // TLS related stuff.
   std::string root_cert_file_;
