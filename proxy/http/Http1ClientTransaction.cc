@@ -28,6 +28,10 @@
 void
 Http1ClientTransaction::release()
 {
+  // Turn off reading until we are done with the SM
+  // At that point the transaction/session with either be closed
+  // or be put into keep alive state to wait from the next transaction
+  this->do_io_read(this, 0, nullptr);
   _proxy_ssn->clear_session_active();
 }
 
