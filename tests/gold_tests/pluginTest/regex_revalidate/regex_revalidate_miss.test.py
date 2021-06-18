@@ -38,8 +38,8 @@ server = Test.MakeOriginServer("server")
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", command="traffic_manager")
 
-# **testname is required**
-#testName = "regex_reval"
+Test.testName = "regex_revalidate_miss"
+Test.Setup.Copy("metrics_miss.sh")
 
 # default root
 request_header_0 = {"headers":
@@ -220,11 +220,19 @@ ps.ReturnCode = 0
 ps.TimeOut = 5
 tr.TimeOut = 5
 
-# 8 Test - Cache stale
+# 10 Test - Cache stale
 tr = Test.AddTestRun("Cache stale path1")
 ps = tr.Processes.Default
 tr.DelayStart = 5
 ps.Command = curl_and_args + ' http://ats/path1'
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
+tr.StillRunningAfter = ts
+
+# 11 Stats check
+tr = Test.AddTestRun("Check stats")
+tr.DelayStart = 5
+tr.Processes.Default.Command = "bash -c ./metrics_miss.sh"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts

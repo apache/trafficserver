@@ -40,6 +40,8 @@ regular expression against your origin URLs permits. Thus, individual cache
 objects may have rules created for them, or entire path prefixes, or even any
 cache objects with a particular file extension.
 
+Revalidate count  stats for MISS and STALE are recorded under plugins
+
 Installation
 ============
 
