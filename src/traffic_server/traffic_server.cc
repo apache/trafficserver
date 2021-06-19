@@ -1943,7 +1943,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   } else if (HttpConfig::m_master.inbound_ip6.isValid()) {
     machine_addr.assign(HttpConfig::m_master.inbound_ip6);
   }
-  Machine::init(nullptr, &machine_addr.sa);
+  char *hostname = REC_ConfigReadString("proxy.config.log.hostname");
+  if (hostname != nullptr && std::string_view(hostname) == "localhost") {
+    // The default value was used. Let Machine::init derive the hostname.
+    hostname = nullptr;
+  }
+  Machine::init(hostname, &machine_addr.sa);
+  ats_free(hostname);
 
   RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->uuid.getString(),
                         RECP_NON_PERSISTENT);

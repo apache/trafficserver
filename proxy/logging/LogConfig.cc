@@ -23,6 +23,7 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/I_Layout.h"
+#include "I_Machine.h"
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -68,13 +69,7 @@
 void
 LogConfig::setup_default_values()
 {
-  const unsigned int bufSize = 512;
-  char name[bufSize];
-  if (!gethostname(name, bufSize)) {
-    ink_strlcpy(name, "unknown_host_name", sizeof(name));
-  }
-  hostname = ats_strdup(name);
-
+  hostname              = ats_strdup(Machine::instance()->hostname);
   log_buffer_size       = static_cast<int>(10 * LOG_KILOBYTE);
   max_secs_per_buffer   = 5;
   max_space_mb_for_logs = 100;
@@ -160,7 +155,7 @@ LogConfig::read_configuration_variables()
   ats_free(ptr);
 
   ptr = REC_ConfigReadString("proxy.config.log.hostname");
-  if (ptr != nullptr) {
+  if (ptr != nullptr && std::string_view(ptr) != "localhost") {
     ats_free(hostname);
     hostname = ptr;
   }
