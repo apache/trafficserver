@@ -1201,6 +1201,17 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     int content_length_len         = 0;
     const char *content_length_val = content_length_field->value_get(&content_length_len);
 
+    // RFC 7230 section 3.3.2
+    // Content-Length = 1*DIGIT
+    //
+    // If the content-length value contains a non-numeric value, the header is invalid
+    for (int i = 0; i < content_length_len; i++) {
+      if (!isdigit(content_length_val[i])) {
+        Debug("http", "Content-Length value contains non-digit, returning parse error");
+        return PARSE_RESULT_ERROR;
+      }
+    }
+
     while (content_length_field->has_dups()) {
       int content_length_len_2         = 0;
       const char *content_length_val_2 = content_length_field->m_next_dup->value_get(&content_length_len_2);
