@@ -540,28 +540,33 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
 
   // Collect log & stats information. We've already verified that the netvc is !nullptr above,
   // and netvc == ua_txn->get_netvc().
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
 
   is_internal       = netvc->get_is_internal_request();
   mptcp_state       = netvc->get_mptcp_state();
   client_tcp_reused = !(ua_txn->is_first_transaction());
 
-  if (ssl_vc != nullptr) {
+  if (auto tbs = dynamic_cast<TLSBasicSupport *>(netvc)) {
     client_connection_is_ssl = true;
-    client_ssl_reused        = ssl_vc->getSSLSessionCacheHit();
-    const char *protocol     = ssl_vc->get_tls_protocol_name();
+    const char *protocol     = tbs->get_tls_protocol_name();
     client_sec_protocol      = protocol ? protocol : "-";
-    const char *cipher       = ssl_vc->get_tls_cipher_suite();
+    const char *cipher       = tbs->get_tls_cipher_suite();
     client_cipher_suite      = cipher ? cipher : "-";
-    const char *curve        = ssl_vc->get_tls_curve();
+    const char *curve        = tbs->get_tls_curve();
     client_curve             = curve ? curve : "-";
-    client_alpn_id           = ssl_vc->get_negotiated_protocol_id();
 
     if (!client_tcp_reused) {
       // Copy along the TLS handshake timings
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = ssl_vc->get_tls_handshake_begin_time();
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = ssl_vc->get_tls_handshake_end_time();
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
+      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
     }
+  }
+
+  if (auto as = dynamic_cast<ALPNSupport *>(netvc)) {
+    client_alpn_id = as->get_negotiated_protocol_id();
+  }
+
+  if (auto tsrs = dynamic_cast<TLSSessionResumptionSupport *>(netvc)) {
+    client_ssl_reused = tsrs->getSSLSessionCacheHit();
   }
 
   const char *protocol_str = client_vc->get_protocol_string();
@@ -603,6 +608,7 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
 
   // Prepare raw reader which will live until we are sure this is HTTP indeed
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
   if (is_transparent_passthrough_allowed() || (ssl_vc && ssl_vc->decrypt_tunnel())) {
     ua_raw_buffer_reader = ua_txn->get_remote_reader()->clone();
   }
