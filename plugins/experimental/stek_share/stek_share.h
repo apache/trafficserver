@@ -41,7 +41,7 @@ public:
     election_timeout_lower_bound_ = 200;
     election_timeout_upper_bound_ = 400;
 
-    // Upto 5 logs will be preserved ahead the last snapshot.
+    // Up to 5 logs will be preserved ahead the last snapshot.
     reserved_log_items_ = 5;
 
     // Snapshot will be created for every 5 log appends.
