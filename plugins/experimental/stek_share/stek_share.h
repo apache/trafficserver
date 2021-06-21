@@ -23,6 +23,8 @@ limitations under the License.
 
 #include <libnuraft/nuraft.hxx>
 
+#include "stek_utils.h"
+
 class STEKShareServer
 {
 public:
@@ -49,6 +51,8 @@ public:
 
     // Client timeout: 3000 ms.
     client_req_timeout_ = 3000;
+
+    std::memset(ticket_keys_, 0, SSL_TICKET_KEY_SIZE * 2);
   }
 
   void
@@ -112,4 +116,6 @@ public:
   std::string server_cert_file_;
   std::string server_key_file_;
   std::string cert_verify_str_;
+
+  ssl_ticket_key_t ticket_keys_[2];
 };

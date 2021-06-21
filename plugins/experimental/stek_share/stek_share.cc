@@ -298,10 +298,13 @@ stek_updater(void *arg)
 
   // Initial key to use before syncing up.
   if (create_new_stek(&curr_stek, 0, 1) == 0) {
+    std::memcpy(&stek_share_server.ticket_keys_[0], &curr_stek, SSL_TICKET_KEY_SIZE);
+    TSSslTicketKeyUpdate(reinterpret_cast<char *>(stek_share_server.ticket_keys_), SSL_TICKET_KEY_SIZE);
+
+    init_key_time = time(nullptr);
+
     TSDebug(PLUGIN, "Generated initial STEK: %s",
             hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
-    TSSslTicketKeyUpdate(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE);
-    init_key_time = time(nullptr);
   } else {
     TSFatal("Failed to create new STEK.");
   }
@@ -320,23 +323,31 @@ stek_updater(void *arg)
         TSDebug(PLUGIN, "Using initial STEK: %s",
                 hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
         append_log(reinterpret_cast<const void *>(&curr_stek), SSL_TICKET_KEY_SIZE);
+
       } else if (time(nullptr) - stek_share_server.last_updated_ >= stek_share_server.key_update_interval_) {
         if (create_new_stek(&curr_stek, 0, 1) == 0) {
-          TSSslTicketKeyUpdate(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE);
+          std::memcpy(&stek_share_server.ticket_keys_[1], &stek_share_server.ticket_keys_[0], SSL_TICKET_KEY_SIZE);
+          std::memcpy(&stek_share_server.ticket_keys_[0], &curr_stek, SSL_TICKET_KEY_SIZE);
+          TSSslTicketKeyUpdate(reinterpret_cast<char *>(stek_share_server.ticket_keys_), SSL_TICKET_KEY_SIZE * 2);
           stek_share_server.last_updated_ = time(nullptr);
         } else {
           TSFatal("Failed to create new STEK.");
         }
+
+        append_log(reinterpret_cast<const void *>(&curr_stek), SSL_TICKET_KEY_SIZE);
+
         TSDebug(PLUGIN, "Generated new STEK: %s",
                 hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
-        append_log(reinterpret_cast<const void *>(&curr_stek), SSL_TICKET_KEY_SIZE);
       }
       init_key_time = 0;
+
     } else {
       init_key_time = 0;
       auto sm       = dynamic_cast<STEKShareSM *>(stek_share_server.sm_.get());
       if (sm->received_stek(&curr_stek)) {
-        TSSslTicketKeyUpdate(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE);
+        std::memcpy(&stek_share_server.ticket_keys_[1], &stek_share_server.ticket_keys_[0], SSL_TICKET_KEY_SIZE);
+        std::memcpy(&stek_share_server.ticket_keys_[0], &curr_stek, SSL_TICKET_KEY_SIZE);
+        TSSslTicketKeyUpdate(reinterpret_cast<char *>(stek_share_server.ticket_keys_), SSL_TICKET_KEY_SIZE * 2);
         stek_share_server.last_updated_ = time(nullptr);
         TSDebug(PLUGIN, "Received new STEK: %s",
                 hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
