@@ -266,7 +266,10 @@ Name                   Type        Description
 ====================== =========== =================================================
 filename               string      The name of the logfile relative to the default
                                    logging directory (set with
-                                   :ts:cv:`proxy.config.log.logfile_dir`).
+                                   :ts:cv:`proxy.config.log.logfile_dir`). If
+                                   this is set to ``stdout`` or ``stderr``,
+                                   then the stdout or stderr stream will be
+                                   logged to, respectively.
 format                 string      a string with a valid named format specification.
 header                 string      If present, emitted as the first line of each
                                    new log file.

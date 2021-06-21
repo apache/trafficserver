@@ -249,7 +249,6 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
                          bool use_records)
   : callbacks_established(false), diags_log(nullptr), _diags(nullptr)
 {
-  char diags_logpath[PATH_NAME_MAX];
   ats_scoped_str logpath;
 
   ////////////////////////////////////////////////////////////////////
@@ -275,7 +274,16 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
     ::exit(1);
   }
 
-  ink_filepath_make(diags_logpath, sizeof(diags_logpath), logpath, filename);
+  std::string diags_logpath{filename};
+  // "stdout" and "stderr" are treated specially by BaseLogFile and are used to
+  // write to the stdout and stderr streams, respectively. If the caller
+  // specified these, we don't prepend any path and simply pass those strings
+  // as such to BaseLogFile.
+  if (diags_logpath != "stdout" && diags_logpath != "stderr") {
+    char buf[PATH_NAME_MAX];
+    ink_filepath_make(buf, sizeof(buf), logpath, filename);
+    diags_logpath = std::string(buf);
+  }
 
   // Grab rolling intervals from configuration
   // TODO error check these values
@@ -296,14 +304,14 @@ DiagsConfig::DiagsConfig(std::string_view prefix_string, const char *filename, c
   ats_free(output_perm);
 
   // Set up diags, FILE streams are opened in Diags constructor
-  diags_log = new BaseLogFile(diags_logpath);
+  diags_log = new BaseLogFile(diags_logpath.c_str());
   _diags    = new Diags(prefix_string, tags, actions, diags_log, diags_perm_parsed, output_perm_parsed);
   ::diags   = _diags;
   _diags->config_roll_diagslog(static_cast<RollingEnabledValues>(diags_log_roll_enable), diags_log_roll_int, diags_log_roll_size);
   _diags->config_roll_outputlog(static_cast<RollingEnabledValues>(output_log_roll_enable), output_log_roll_int,
                                 output_log_roll_size);
 
-  Status("opened %s", diags_logpath);
+  Status("opened %s", diags_logpath.c_str());
 
   register_diags_callbacks();
 

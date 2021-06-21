@@ -228,6 +228,8 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.diags.logfile_perm", RECD_STRING, "rw-r--r--", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.diags.logfile.filename", RECD_STRING, "diags.log", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
+  ,
   // diags.log rotation, default is 0 (aka rolling turned off) to preserve compatibility
   {RECT_CONFIG, "proxy.config.diags.logfile.rolling_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
@@ -236,6 +238,8 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.diags.logfile.rolling_size_mb", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_STR, "^0*[1-9][0-9]*$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.diags.logfile.rolling_min_count", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^0*[1-9][0-9]*$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.error.logfile.filename", RECD_STRING, "error.log", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
   ,
 
   //##############################################################################
@@ -1275,6 +1279,9 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.node.config.manager_exponential_sleep_ceiling", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.node.config.manager_retry_cap", RECD_INT, "5", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  //# manager: log filename
+  {RECT_CONFIG, "proxy.node.config.manager_log_filename", RECD_STRING, "manager.log", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[^[:space:]]+$", RECA_NULL}
   ,
 
   //#
