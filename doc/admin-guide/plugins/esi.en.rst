@@ -1,4 +1,5 @@
 .. _admin-plugins-esi:
+.. include:: ../../common.defs
 
 ESI Plugin
 **********
@@ -42,7 +43,7 @@ Supported ESI tags:
     esi:except
     <!--esi ... -->
 
-extended ESI tags: *esi:special-include*
+Extended ESI tags: ``esi:special-include``
 
 Supported variables:
 
@@ -59,62 +60,63 @@ Note: the name is the key name such as "username", "id" etc. For cookie support 
 name;subkey, such as "l;u", "l;t" etc. e.g. such cookie string: l=u=test&t=1350952328, the value of
 $(HTTP_COOKIE{"l;u"}) is test and the value of $(HTTP_COOKIE{"l;t"}) is 1350952328
 
-Compile and Installation
-========================
+Compilation and Installation
+============================
 
-This plugin is only built if the configure option ::
-
-    --enable-experimental-plugins
-
-is given at build time. Note that this plugin is built and installed in combination with the combo handler module, since
-they share common code.
+This plugin is considered stable and is included with |TS| by default. There
+are no special steps necessary for it to be built and installed.
 
 Enabling ESI
 ============
 
-1. First we need to set up /usr/local/etc/trafficserver/plugin.config and make sure the following line is present.
+1. First, enable the ESI plugin by adding an entry for it in :file:`plugin.config`. Here is an example of such an entry
+   without passing any optional arguments to ESI:
 
 ::
 
     esi.so
 
-2. There are four options you can add to the above.
+2. There are four optional arguments that can be passed to the above ``esi.so`` entry:
 
-- ``--private-response`` will add private cache control and expires header to the processed ESI document.
-- ``--packed-node-support`` will enable the support for using packed node, which will improve the performance of parsing
-  cached ESI document.
-- ``--disable-gzip-output`` will disable gzipped output, which will NOT gzip the output anyway.
+- ``--private-response`` will add private cache control and expires headers to the processed ESI document.
+- ``--packed-node-support`` will enable the support for using the packed node feature, which will improve the
+  performance of parsing cached ESI document. As mentioned below, this option is not extensively tested and is therefore
+  not recommended for production environments
+- ``--disable-gzip-output`` will disable gzipped output for output which would **not** already be gzipeed anyway.
 - ``--first-byte-flush`` will enable the first byte flush feature, which will flush content to users as soon as the entire
-  ESI document is received and parsed without all ESI includes fetched (the flushing will stop at the ESI include markup
-  till that include is fetched).
+  ESI document is received and parsed without all ESI includes fetched. The flushing will stop at the ESI include markup
+  till that include is fetched.
 
-3. HTTP_COOKIE variable supported is turned off by default. You can turn it on with '-f' or '-handler option'
+3. ``HTTP_COOKIE`` variable support is turned off by default. It can be turned on with ``-f <handler_config>`` or
+   ``-handler <handler_config>``. For example:
 
 ::
 
     esi.so -f handler.conf
 
-And inside handler.conf you can provide the list of cookie name that is allowed.
+The ``handler.conf`` file then contains the list of allowed cookie names. For example, to allow the ``A`` and ``LOGIN``
+cookies, the file will look like the following:
 
 ::
 
     allowlistCookie A
     allowlistCookie LOGIN
 
-We can also allow all cookie for HTTP_COOKIE variable by using a wildcard character. e.g.
+You can also allow all cookies for ``HTTP_COOKIE`` variable by using a wildcard character. For example:
 
 ::
 
     allowlistCookie *
 
-4. We need a mapping for origin server response that contains the ESI markup. Assume that the ATS server is abc.com. And your origin server is xyz.com and the response containing ESI markup is http://xyz.com/esi.php. We will need
-   the following line in /usr/local/etc/trafficserver/remap.config
+4. An entry in :file:`remap.config` will be needed to map to the orginer server providing the ESI response. Assume that
+   the ATS proxy is ``abc.com``, your origin server is ``xyz.com``, and the URI containing ESI markup is
+   ``http://xyz.com/esi.php``. In this case, the following line in :file:`remap.config` will be needed:
 
 ::
 
     map http://abc.com/esi.php http://xyz.com/esi.php
 
-5. Your response should contain ESI markup and a response header of 'X-Esi: 1'. e.g. using PHP,
+5. Your response should contain ESI markup and a response header of ``X-Esi: 1``. Here is a PHP example:
 
 ::
 
@@ -125,20 +127,21 @@ We can also allow all cookie for HTTP_COOKIE variable by using a wildcard charac
     </body>
     </html>
 
-6. You will need a mapping for the src of the ESI include in remap.config if it is not already present.
+6. You will also need a mapping for the resource in the ESI include (``http://abc.com/date.php`` in this case) in
+   :file:`remap.config` if it is not already present:
 
 ::
 
     map http://abc.com/date.php http://xyz.com/date.php
 
-Or if both your ESI response and the ESI include comes from the same origin server, you can have the following line in
-remap.config instead to replace separate map rules for date.php and esi.php
+Or if both your ESI response and the ESI include comes from the same origin server, your :file:`remap.config` entry can
+have the following single generic rule for all resources instead of separate rules for ``date.php`` and ``esi.php``:
 
 ::
 
     map http://abc.com/ http://xyz.com/
 
-7. Here is a sample PHP for date.php
+7. Here is sample PHP content for ``date.php``:
 
 ::
 
@@ -147,27 +150,28 @@ remap.config instead to replace separate map rules for date.php and esi.php
     echo date('l jS \of F Y h:i:s A');
     ?>
 
-Useful Note
-===========
+Useful Notes
+============
 
-1. You can provide proper cache control header and the ESI response and ESI include response can be cached separately.
-   It is extremely useful for rendering page with multiple modules. The page layout can be a ESI response with multiple
-   ESI includes, each for a different module. The page layout ESI response can be cached and each individual ESI
-   included can also be cached with a different duration.
+1. With proper cache control headers for each, the ESI response and the ESI include responses can be cached separately.
+   This is extremely useful for rendering a page with multiple modules. The page layout can be an ESI response with
+   multiple ESI includes, each for a different module. Thus |TS| can have a single cached entry for the page layout ESI response
+   while each individual ESI included responses can also be cached separately, each with a different duration per their
+   cache-control headers.
 
-2. You should run the plugin without using "packed node support" because it is not fully tested.
+2. We do **not** recommend running the plugin with "packed node support" because it is not fully tested.
 
 Differences from Spec - http://www.w3.org/TR/esi-lang
 =====================================================
 
-1. <esi:include> does not support "alt" and "onerror" attributes
+1. ``<esi:include>`` does not support "alt" and "onerror" attributes.
 
-2. <esi:inline> is not supported
+2. ``<esi:inline>`` is not supported.
 
-3. You cannot have <esi:try> inside another <esi:try>
+3. You cannot have ``<esi:try>`` inside another ``<esi:try>``.
 
-4. HTTP_USER_AGENT variable is not supported
+4. ``HTTP_USER_AGENT`` variable is not supported.
 
-5. HTTP_COOKIE supports fetching for sub-key
+5. ``HTTP_COOKIE`` supports fetching for sub-key.
 
-6. HTTP_HEADER supports accessing request headers as variables except "Cookie"
+6. ``HTTP_HEADER`` supports accessing request headers as variables except "Cookie".
