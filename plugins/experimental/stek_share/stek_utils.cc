@@ -1,6 +1,6 @@
 /** @file
 
-  ssl_key_utils.cc - Deal with STEK
+  stek_utils.cc - Deal with STEK
 
   @section license License
 
@@ -36,7 +36,7 @@
 #include "stek_utils.h"
 #include "common.h"
 
-// Lock for when changing Session-Ticket-Encrypt-Key
+// Lock for when changing STEK
 std::mutex ssl_key_lock;
 
 int
@@ -58,8 +58,7 @@ get_good_random(char *buffer, int size, int need_good_entropy)
   fclose(fp);
 
   return ((numread == size) ? 0 /* success*/ : -1 /*failure*/);
-
-} /* STEK_GetRandom() */
+}
 
 int
 create_new_stek(ssl_ticket_key_t *return_stek, int global_key, int entropy_ensured)

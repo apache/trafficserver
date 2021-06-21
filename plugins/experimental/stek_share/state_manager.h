@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 **************************************************************************/
 
+// This file is based on the example code from https://github.com/eBay/NuRaft/tree/master/examples
+
 #pragma once
 
 #include <libnuraft/nuraft.hxx>
@@ -44,16 +46,12 @@ public:
   nuraft::ptr<nuraft::cluster_config>
   load_config()
   {
-    // Just return in-memory data in this example.
-    // May require reading from disk here, if it has been written to disk.
     return saved_config_;
   }
 
   void
   save_config(const nuraft::cluster_config &config)
   {
-    // Just keep in memory in this example.
-    // Need to write to disk here, if want to make it durable.
     nuraft::ptr<nuraft::buffer> buf = config.serialize();
     saved_config_                   = nuraft::cluster_config::deserialize(*buf);
   }
@@ -61,8 +59,6 @@ public:
   void
   save_state(const nuraft::srv_state &state)
   {
-    // Just keep in memory in this example.
-    // Need to write to disk here, if want to make it durable.
     nuraft::ptr<nuraft::buffer> buf = state.serialize();
     saved_state_                    = nuraft::srv_state::deserialize(*buf);
   }
@@ -70,8 +66,6 @@ public:
   nuraft::ptr<nuraft::srv_state>
   read_state()
   {
-    // Just return in-memory data in this example.
-    // May require reading from disk here, if it has been written to disk.
     return saved_state_;
   }
 

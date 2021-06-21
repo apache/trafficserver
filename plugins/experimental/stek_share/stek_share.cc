@@ -1,19 +1,26 @@
-/************************************************************************
-Copyright 2017-2019 eBay Inc.
-Author/Developer(s): Jung-Sang Ahn
+/** @file
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+  stek_share.cc
 
-    https://www.apache.org/licenses/LICENSE-2.0
+  @section license License
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-**************************************************************************/
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+ */
 
 #include <iostream>
 #include <fstream>
@@ -318,13 +325,18 @@ stek_updater(void *arg)
     }
 
     if (stek_share_server.raft_instance_->is_leader()) {
+      // We only need to generate new STEK if this server is the leader.
+      // Otherwise we wake up every 10 seconds to see whether a new STEK has been received.
       if (init_key_time != 0 && time(nullptr) - init_key_time < stek_share_server.key_update_interval_) {
+        // If we got here after starting up, that means the initial key is still valid and we can send it to everyone else.
         stek_share_server.last_updated_ = init_key_time;
         TSDebug(PLUGIN, "Using initial STEK: %s",
                 hex_str(std::string(reinterpret_cast<char *>(&curr_stek), SSL_TICKET_KEY_SIZE)).c_str());
         append_log(reinterpret_cast<const void *>(&curr_stek), SSL_TICKET_KEY_SIZE);
 
       } else if (time(nullptr) - stek_share_server.last_updated_ >= stek_share_server.key_update_interval_) {
+        // Create a new key as the last one has expired.
+        // Move the old key from ticket_keys_[0] to ticket_keys_[1], then put the new key in ticket_keys_[0].
         if (create_new_stek(&curr_stek, 0, 1) == 0) {
           std::memcpy(&stek_share_server.ticket_keys_[1], &stek_share_server.ticket_keys_[0], SSL_TICKET_KEY_SIZE);
           std::memcpy(&stek_share_server.ticket_keys_[0], &curr_stek, SSL_TICKET_KEY_SIZE);
@@ -344,7 +356,10 @@ stek_updater(void *arg)
     } else {
       init_key_time = 0;
       auto sm       = dynamic_cast<STEKShareSM *>(stek_share_server.sm_.get());
+
+      // Check whether we received a new key.
       if (sm->received_stek(&curr_stek)) {
+        // Move the old key from ticket_keys_[0] to ticket_keys_[1], then put the new key in ticket_keys_[0].
         std::memcpy(&stek_share_server.ticket_keys_[1], &stek_share_server.ticket_keys_[0], SSL_TICKET_KEY_SIZE);
         std::memcpy(&stek_share_server.ticket_keys_[0], &curr_stek, SSL_TICKET_KEY_SIZE);
         TSSslTicketKeyUpdate(reinterpret_cast<char *>(stek_share_server.ticket_keys_), SSL_TICKET_KEY_SIZE * 2);

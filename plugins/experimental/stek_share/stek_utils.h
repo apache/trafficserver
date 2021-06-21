@@ -1,6 +1,6 @@
 /** @file
 
-  stek.h - a containuer of connection objects
+  stek_utils.h
 
   @section license License
 
@@ -21,6 +21,7 @@
   limitations under the License.
 
  */
+
 #pragma once
 
 /* STEK - Session Ticket Encryption Key stuff */

@@ -15,6 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 **************************************************************************/
 
+// This file is based on the example code from https://github.com/eBay/NuRaft/tree/master/examples
+
 #pragma once
 
 #include <deque>
