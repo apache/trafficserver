@@ -48,6 +48,6 @@ public:
   NextHopConsistentHash() = delete;
   NextHopConsistentHash(const std::string_view name, const NHPolicyType &policy) : NextHopSelectionStrategy(name, policy) {}
   ~NextHopConsistentHash();
-  bool Init(const YAML::Node &n);
+  bool Init(ts::Yaml::Map &n);
   void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) override;
 };

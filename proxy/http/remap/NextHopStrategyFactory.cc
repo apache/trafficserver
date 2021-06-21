@@ -29,14 +29,14 @@
 #include "NextHopStrategyFactory.h"
 #include "NextHopConsistentHash.h"
 #include "NextHopRoundRobin.h"
+#include <YamlCfg.h>
 
-NextHopStrategyFactory::NextHopStrategyFactory(const char *file)
+NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
 {
   YAML::Node config;
   YAML::Node strategies;
   std::stringstream doc;
   std::unordered_set<std::string> include_once;
-  std::string_view fn = file;
 
   // strategy policies.
   constexpr std::string_view consistent_hash = "consistent_hash";
@@ -46,12 +46,12 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file)
   constexpr std::string_view latched         = "latched";
 
   strategies_loaded    = true;
-  const char *basename = fn.substr(fn.find_last_of('/') + 1).data();
+  const char *basename = std::string_view(fn).substr(fn.find_last_of('/') + 1).data();
 
   // load the strategies yaml config file.
   try {
     NH_Note("%s loading ...", basename);
-    loadConfigFile(fn.data(), doc, include_once);
+    loadConfigFile(fn.c_str(), doc, include_once);
 
     config = YAML::Load(doc);
     if (config.IsNull()) {
@@ -66,9 +66,9 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file)
     }
     // loop through the strategies document.
     for (auto &&strategie : strategies) {
-      YAML::Node strategy = strategie;
-      auto name           = strategy["strategy"].as<std::string>();
-      auto policy         = strategy["policy"];
+      ts::Yaml::Map strategy{strategie};
+      auto name   = strategy["strategy"].as<std::string>();
+      auto policy = strategy["policy"];
       if (!policy) {
         NH_Error("No policy is defined for the strategy named '%s', this strategy will be ignored.", name.c_str());
         continue;
@@ -92,6 +92,7 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file)
                  name.c_str());
       } else {
         createStrategy(name, policy_type, strategy);
+        strategy.done();
       }
     }
   } catch (std::exception &ex) {
@@ -109,7 +110,7 @@ NextHopStrategyFactory::~NextHopStrategyFactory()
 }
 
 void
-NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyType policy_type, const YAML::Node &node)
+NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyType policy_type, ts::Yaml::Map &node)
 {
   std::shared_ptr<NextHopSelectionStrategy> strat;
   std::shared_ptr<NextHopRoundRobin> strat_rr;
@@ -118,6 +119,7 @@ NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyTy
   strat = strategyInstance(name.c_str());
   if (strat != nullptr) {
     NH_Note("A strategy named '%s' has already been loaded and another will not be created.", name.data());
+    node.bad();
     return;
   }
 

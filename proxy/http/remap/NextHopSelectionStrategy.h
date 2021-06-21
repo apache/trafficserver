@@ -39,10 +39,13 @@
 
 constexpr const char *NH_DEBUG_TAG = "next_hop";
 
-namespace YAML
+namespace ts
 {
-class Node;
+namespace Yaml
+{
+  class Map;
 }
+} // namespace ts
 
 enum NHCmd { NH_MARK_UP, NH_MARK_DOWN };
 
@@ -235,7 +238,7 @@ public:
   NextHopSelectionStrategy();
   NextHopSelectionStrategy(const std::string_view &name, const NHPolicyType &type);
   virtual ~NextHopSelectionStrategy(){};
-  bool Init(const YAML::Node &n);
+  bool Init(ts::Yaml::Map &n);
   virtual void findNextHop(TSHttpTxn txnp, void *ih = nullptr, time_t now = 0) = 0;
   void markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                    const time_t now = 0);
