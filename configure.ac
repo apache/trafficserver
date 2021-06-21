@@ -1302,6 +1302,7 @@ AC_CHECK_FUNCS([ \
   HMAC_CTX_new \
   X509_get0_signature \
   ERR_get_error_all \
+  SHA1 \
 ])
 
 AC_CHECK_FUNC([ASN1_STRING_get0_data], [],

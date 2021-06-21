@@ -42,12 +42,20 @@ LRUHash::initFromUrl(TSHttpTxn txnp)
       char *url   = TSUrlStringGet(reqp, c_url, &url_len);
 
       if (url && url_len > 0) {
+        // SHA1() is deprecated on OpenSSL 3, but it's faster than its replacement.
+#ifdef HAVE_SHA1
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         SHA_CTX sha;
 
         SHA1_Init(&sha);
-        TSDebug(PLUGIN_NAME, "LRUHash::initFromUrl(%.*s%s)", url_len > 100 ? 100 : url_len, url, url_len > 100 ? "..." : "");
         SHA1_Update(&sha, url, url_len);
         SHA1_Final(_hash, &sha);
+#pragma GCC diagnostic pop
+#else
+        EVP_Digest(url, url_len, _hash, nullptr, EVP_sha1(), nullptr);
+#endif
+        TSDebug(PLUGIN_NAME, "LRUHash::initFromUrl(%.*s%s)", url_len > 100 ? 100 : url_len, url, url_len > 100 ? "..." : "");
         TSfree(url);
         ret = true;
       }
