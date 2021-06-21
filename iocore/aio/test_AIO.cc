@@ -422,12 +422,9 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   main_thread->set_specific();
 
 #if AIO_MODE == AIO_MODE_NATIVE
-  int etype            = ET_NET;
-  int n_netthreads     = eventProcessor.n_threads_for_type[etype];
-  EThread **netthreads = eventProcessor.eventthread[etype];
-  for (int i = 0; i < n_netthreads; ++i) {
-    netthreads[i]->diskHandler = new DiskHandler();
-    netthreads[i]->schedule_imm(netthreads[i]->diskHandler);
+  for (EThread *et : eventProcessor.active_group_threads(ET_NET)) {
+    et->diskHandler = new DiskHandler();
+    et->schedule_imm(et->diskHandler);
   }
 #endif
 
