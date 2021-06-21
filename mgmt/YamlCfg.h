@@ -43,7 +43,7 @@ namespace Yaml
     explicit Map(YAML::Node map);
 
     // Get the node for a key.  Throw a YAML::Exception if 'key' is not in the map.  The node for each key in the
-    // map must be gotten at least once.  The lifetime of he char array referenced by passed key must be as long
+    // map must be gotten at least once.  The lifetime of the char array referenced by passed key must be as long
     // as this instance.
     //
     YAML::Node operator[](std::string_view key);
