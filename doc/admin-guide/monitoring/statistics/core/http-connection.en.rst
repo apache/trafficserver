@@ -168,6 +168,21 @@ HTTP/2
 
    Represents the current number of HTTP/2 active connections from client to the |TS|.
 
+.. ts:stat:: global proxy.process.http2.total_server_connections integer
+   :type: counter
+
+   Represents the total number of HTTP/2 connections from |TS| to the origin.
+
+.. ts:stat:: global proxy.process.http2.current_server_connections integer
+   :type: gauge
+
+   Represents the current number of HTTP/2 connections from |TS| to the origin.
+
+.. ts:stat:: global proxy.process.http2.current_active_server_connections integer
+   :type: gauge
+
+   Represents the current number of HTTP/2 active connections from |TS| to the origin.
+
 .. ts:stat:: global proxy.process.http2.connection_errors integer
    :type: counter
 

@@ -110,6 +110,8 @@ countof(const T (&)[N])
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED)
 #endif
 
+#define MAX_ALPN_STRING 30
+
 /* Variables
  */
 extern int debug_level;

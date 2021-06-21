@@ -1,6 +1,6 @@
 /** @file
 
-  Http2ClientSession.
+  Http2ServerSession.
 
   @section license License
 
@@ -29,13 +29,15 @@
 #include "tscore/ink_inet.h"
 #include "tscore/History.h"
 #include "Milestones.h"
+#include "PoolableSession.h"
 
-class Http2ClientSession : public ProxySession, public Http2CommonSession
+class Http2ServerSession : public PoolableSession, public Http2CommonSession
 {
 public:
-  using super = ProxySession; ///< Parent type.
+  using super          = PoolableSession; ///< Parent type.
+  using SessionHandler = int (Http2ServerSession::*)(int, void *);
 
-  Http2ClientSession();
+  Http2ServerSession();
 
   /////////////////////
   // Methods
@@ -49,6 +51,11 @@ public:
   void destroy() override;
   void release(ProxyTransaction *trans) override;
   void free() override;
+  ProxyTransaction *new_transaction() override;
+
+  void add_session() override;
+  void test_session() override;
+  void remove_session();
 
   ////////////////////
   // Accessors
@@ -61,20 +68,28 @@ public:
   HTTPVersion get_version(HTTPHdr &hdr) const override;
   void increment_current_active_connections_stat() override;
   void decrement_current_active_connections_stat() override;
-
-  void set_no_activity_timeout() override;
+  IOBufferReader *get_remote_reader() override;
 
   ProxySession *get_proxy_session() override;
 
   // noncopyable
-  Http2ClientSession(Http2ClientSession &) = delete;
-  Http2ClientSession &operator=(const Http2ClientSession &) = delete;
+  Http2ServerSession(Http2ServerSession &) = delete;
+  Http2ServerSession &operator=(const Http2ServerSession &) = delete;
+
+  bool is_multiplexing() const override;
+  bool is_outbound() const override;
+
+  void set_netvc(NetVConnection *netvc) override;
+
+  void set_no_activity_timeout() override;
 
 private:
   int main_event_handler(int, void *);
 
   IpEndpoint cached_client_addr;
   IpEndpoint cached_local_addr;
+
+  bool in_session_table = false;
 };
 
-extern ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator;
+extern ClassAllocator<Http2ServerSession> http2ServerSessionAllocator;

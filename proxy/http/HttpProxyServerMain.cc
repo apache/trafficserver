@@ -49,6 +49,9 @@
 
 HttpSessionAccept *plugin_http_accept             = nullptr;
 HttpSessionAccept *plugin_http_transparent_accept = nullptr;
+extern std::function<PoolableSession *()> Create_h1_server_session;
+extern std::function<PoolableSession *()> Create_h2_server_session;
+extern std::map<int, std::function<ProxySession *()>> ProtocolSessionCreateMap;
 
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
 static Ptr<ProxyMutex> ssl_plugin_mutex;
@@ -216,6 +219,9 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
     probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP2, new Http2SessionAccept(accept_opt));
   }
+  ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_0, Create_h1_server_session});
+  ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_1, Create_h1_server_session});
+  ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_2_0, Create_h2_server_session});
 
   if (port.isSSL()) {
     SSLNextProtocolAccept *ssl = new SSLNextProtocolAccept(probe, port.m_transparent_passthrough);

@@ -69,7 +69,7 @@ tr.Processes.Default.StartBefore(delay_post_connect, ready=When.PortOpen(Test.Va
 tr.Processes.Default.Command = 'curl -H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/connect_blocked --tlsv1.2'.format(
     ts.Variables.port)
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "HTTP/1.1 502 connect failed", "Connect failed")
+    "HTTP/1.1 502 Connection timed out", "Connect failed")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_post_connect
 tr.StillRunningAfter = Test.Processes.ts
@@ -93,7 +93,7 @@ tr.Processes.Default.StartBefore(delay_get_connect, ready=When.PortOpen(Test.Var
 tr.Processes.Default.Command = 'curl -H"Connection:close" -i http://127.0.0.1:{0}/get_connect_blocked --tlsv1.2'.format(
     ts.Variables.port)
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "HTTP/1.1 502 connect failed", "Connect failed")
+    "HTTP/1.1 502 Connection timed out", "Connect failed")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_get_connect
 

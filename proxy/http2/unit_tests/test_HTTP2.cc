@@ -108,8 +108,8 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 
     // check
     CHECK_THAT(buf, Catch::StartsWith("GET https://trafficserver.apache.org/index.html HTTP/1.1\r\n"
-                                      "Host: trafficserver.apache.org\r\n"
                                       "User-Agent: foobar\r\n"
+                                      "Host: trafficserver.apache.org\r\n"
                                       "\r\n"));
   }
 
