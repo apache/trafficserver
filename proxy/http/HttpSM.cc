@@ -876,26 +876,26 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
     if (t_state.hdr_info.client_request.version_get() == HTTP_1_1 &&
         (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
-         t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT) &&
-        t_state.http_config_param->send_100_continue_response) {
+         t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT)) {
       int len            = 0;
       const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
-      // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
-      // immediately, before receive the real response from original server.
       if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
-        int64_t alloc_index = buffer_size_to_index(len_100_continue_response, t_state.http_config_param->max_payload_iobuf_index);
-        if (ua_entry->write_buffer) {
-          free_MIOBuffer(ua_entry->write_buffer);
-          ua_entry->write_buffer = nullptr;
+        // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
+        // immediately, before receive the real response from original server.
+        if (t_state.http_config_param->send_100_continue_response) {
+          int64_t alloc_index = buffer_size_to_index(len_100_continue_response, t_state.http_config_param->max_payload_iobuf_index);
+          if (ua_entry->write_buffer) {
+            free_MIOBuffer(ua_entry->write_buffer);
+            ua_entry->write_buffer = nullptr;
+          }
+          ua_entry->write_buffer    = new_MIOBuffer(alloc_index);
+          IOBufferReader *buf_start = ua_entry->write_buffer->alloc_reader();
+          SMDebug("http_seq", "send 100 Continue response to client");
+          int64_t nbytes      = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
+          ua_entry->write_vio = ua_txn->do_io_write(this, nbytes, buf_start);
+        } else {
+          t_state.hdr_info.client_request.m_100_continue_required = true;
         }
-        ua_entry->write_buffer    = new_MIOBuffer(alloc_index);
-        IOBufferReader *buf_start = ua_entry->write_buffer->alloc_reader();
-
-        t_state.hdr_info.client_request.m_100_continue_required = true;
-
-        SMDebug("http_seq", "send 100 Continue response to client");
-        int64_t nbytes      = ua_entry->write_buffer->write(str_100_continue_response, len_100_continue_response);
-        ua_entry->write_vio = ua_txn->do_io_write(this, nbytes, buf_start);
       }
     }
 
@@ -1035,12 +1035,12 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
     break;
   case VC_EVENT_WRITE_READY:
     // 100-continue handler
-    ink_assert(t_state.hdr_info.client_request.m_100_continue_required);
+    ink_assert(t_state.hdr_info.client_request.m_100_continue_required || t_state.http_config_param->send_100_continue_response);
     ua_entry->write_vio->reenable();
     break;
   case VC_EVENT_WRITE_COMPLETE:
     // 100-continue handler
-    ink_assert(t_state.hdr_info.client_request.m_100_continue_required);
+    ink_assert(t_state.hdr_info.client_request.m_100_continue_required || t_state.http_config_param->send_100_continue_response);
     if (ua_entry->write_buffer) {
       ink_assert(ua_entry->write_vio && !ua_entry->write_vio->ntodo());
       free_MIOBuffer(ua_entry->write_buffer);
@@ -2147,7 +2147,12 @@ HttpSM::state_send_server_request_header(int event, void *data)
       if (post_transform_info.vc) {
         setup_transform_to_server_transfer();
       } else {
-        do_setup_post_tunnel(HTTP_SERVER_VC);
+        // Go ahead and set up the post tunnel if we are not waiting for a 100 response
+        if (!t_state.hdr_info.client_request.m_100_continue_required) {
+          do_setup_post_tunnel(HTTP_SERVER_VC);
+        } else {
+          setup_server_read_response_header();
+        }
       }
     } else {
       // It's time to start reading the response
@@ -2946,7 +2951,7 @@ HttpSM::tunnel_handler_100_continue(int event, void *data)
       t_state.hdr_info.server_response.create(HTTP_TYPE_RESPONSE);
       handle_server_setup_error(VC_EVENT_EOS, server_entry->read_vio);
     } else {
-      setup_server_read_response_header();
+      do_setup_post_tunnel(HTTP_SERVER_VC);
     }
   } else {
     terminate_sm = true;
