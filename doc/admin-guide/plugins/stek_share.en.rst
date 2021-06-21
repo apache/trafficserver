@@ -35,22 +35,24 @@ How It Works
 This plugin implements the `Raft consensus algorithm <https://raft.github.io/>` to decide on a leader. The leader will
 periodically create a new STEK key and share it with all other ATS boxes in the group. When the plugin starts up, it
 will automatically join the cluster of all other ATS boxes in the group, which will also automatically elect a leader.
-The plugin uses the `TSSslTicketKeyUpdate` call to update ATS with the latest STEK it has received.
+The plugin uses the `TSSslTicketKeyUpdate` call to update ATS with the latest two STEK's it has received.
 
 All communication are encrypted. All the ATS boxes participating in the STEK sharing must have access to the cert/key pair.
+
+Note that since the this plugin only updates STEK every few hours, all Raft related stuff are kept in memory, and some code is
+borrowed from the examples from `NuRaft library <https://github.com/eBay/NuRaft>` that is used in this plugin.
 
 
 Building
 ========
 
-This plugin uses `NuRaft library <https://github.com/eBay/NuRaft>`for leader election and communication.
+This plugin uses `NuRaft library <https://github.com/eBay/NuRaft>` for leader election and communication.
 The NuRaft library must be installed for this plugin to build. It can be specified by the `--with-nuraft` argument to configure.
 
-This plugin also uses `YAML-CPP library <https://github.com/jbeder/yaml-cpp>` for configuration files.
+This plugin also uses `YAML-CPP library <https://github.com/jbeder/yaml-cpp>` for reading the configuration file.
 The YAML-CPP library must be installed for this plugin to build. It can be specified by the `--with-yaml-cpp` argument to configure.
 
 As part of the experimental plugs, the `--enable-experimental-plugins` option must also be given to configure to build this plugin.
-
 
 
 Config File
