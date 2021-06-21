@@ -127,7 +127,7 @@ def make_headers_frame(method, path='', stream_id=0x01):
             headers.append((':path', '/early_post'))
 
     headers.extend([
-        (':scheme', 'http'),
+        (':scheme', 'https'),
         (':authority', '127.0.0.1'),
         ('host', '127.0.0.1'),
         ('accept', '*/*')
