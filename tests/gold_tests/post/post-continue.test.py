@@ -124,7 +124,7 @@ test_run = Test.AddTestRun("http2 POST small body with Expect header")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "Expect: 100-continue" -d "small body" -k https://127.0.0.1:{0}/post'.format(
     ts.Variables.ssl_port)
 test_run.Processes.Default.Streams.All = "gold/post-h2.gold"
-test_run.Processes.Default.Streams.All += Testers.ContainsExpression("expect: 100-continue", "Has expect header")
+test_run.Processes.Default.Streams.All += Testers.ContainsExpression("xpect: 100-continue", "Has expect header")
 test_run.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/2 100", "Has Expect header")
 test_run.StillRunningAfter = httpbin
 test_run.StillRunningAfter = ts
@@ -134,7 +134,7 @@ test_run = Test.AddTestRun("http2 POST large body with Expect header")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "Expect: 100-continue" -d @big_post_body -k https://127.0.0.1:{0}/post'.format(
     ts.Variables.ssl_port)
 test_run.Processes.Default.Streams.All = "gold/post-h2.gold"
-test_run.Processes.Default.Streams.All += Testers.ContainsExpression("expect: 100-continue", "Has expect header")
+test_run.Processes.Default.Streams.All += Testers.ContainsExpression("xpect: 100-continue", "Has expect header")
 test_run.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/2 100", "Has Expect header")
 test_run.StillRunningAfter = httpbin
 test_run.StillRunningAfter = ts
@@ -144,7 +144,7 @@ test_run = Test.AddTestRun("http2 POST small body w/o Expect header")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "Expect: " -d "small body" -k https://127.0.0.1:{0}/post'.format(
     ts.Variables.ssl_port)
 test_run.Processes.Default.Streams.All = "gold/post-h2.gold"
-test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("expect: 100-continue", "Has expect header")
+test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("xpect: 100-continue", "Has expect header")
 test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("HTTP/2 100", "Has Expect header")
 test_run.StillRunningAfter = httpbin
 test_run.StillRunningAfter = ts
@@ -154,7 +154,7 @@ test_run = Test.AddTestRun("http2 POST large body w/o Expect header")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "Expect: " -d @big_post_body -k https://127.0.0.1:{0}/post'.format(
     ts.Variables.ssl_port)
 test_run.Processes.Default.Streams.All = "gold/post-h2.gold"
-test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("expect: 100-continue", "Has expect header")
+test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("xpect: 100-continue", "Has expect header")
 test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("HTTP/2 100", "Has Expect header")
 test_run.StillRunningAfter = httpbin
 test_run.StillRunningAfter = ts
@@ -206,7 +206,7 @@ test_run = Test.AddTestRun("http2 POST small body with Expect header")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "Expect: 100-continue" -d "small body" -k https://127.0.0.1:{0}/post'.format(
     ts2.Variables.ssl_port)
 test_run.Processes.Default.Streams.All = "gold/post-h2.gold"
-test_run.Processes.Default.Streams.All += Testers.ContainsExpression("expect: 100-continue", "Has expect header")
+test_run.Processes.Default.Streams.All += Testers.ContainsExpression("xpect: 100-continue", "Has expect header")
 test_run.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/2 100", "Has Expect header")
 test_run.StillRunningAfter = httpbin
 test_run.StillRunningAfter = ts2
@@ -216,7 +216,7 @@ test_run = Test.AddTestRun("http2 POST large body with Expect header")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "Expect: 100-continue" -d @big_post_body -k https://127.0.0.1:{0}/post'.format(
     ts2.Variables.ssl_port)
 test_run.Processes.Default.Streams.All = "gold/post-h2.gold"
-test_run.Processes.Default.Streams.All += Testers.ContainsExpression("expect: 100-continue", "Has expect header")
+test_run.Processes.Default.Streams.All += Testers.ContainsExpression("xpect: 100-continue", "Has expect header")
 test_run.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/2 100", "Has Expect header")
 test_run.StillRunningAfter = httpbin
 test_run.StillRunningAfter = ts2
@@ -226,7 +226,7 @@ test_run = Test.AddTestRun("http2 POST small body w/o Expect header")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "Expect: " -d "small body" -k https://127.0.0.1:{0}/post'.format(
     ts2.Variables.ssl_port)
 test_run.Processes.Default.Streams.All = "gold/post-h2.gold"
-test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("expect: 100-continue", "Has expect header")
+test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("xpect: 100-continue", "Has expect header")
 test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("HTTP/2 100", "Has Expect header")
 test_run.StillRunningAfter = httpbin
 test_run.StillRunningAfter = ts2
@@ -236,7 +236,7 @@ test_run = Test.AddTestRun("http2 POST large body w/o Expect header")
 test_run.Processes.Default.Command = 'curl -v -o /dev/null --http2 -H "Expect: " -d @big_post_body -k https://127.0.0.1:{0}/post'.format(
     ts2.Variables.ssl_port)
 test_run.Processes.Default.Streams.All = "gold/post-h2.gold"
-test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("expect: 100-continue", "Has expect header")
+test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("xpect: 100-continue", "Has expect header")
 test_run.Processes.Default.Streams.All += Testers.ExcludesExpression("HTTP/2 100", "Has Expect header")
 test_run.StillRunningAfter = httpbin
 test_run.StillRunningAfter = ts2
