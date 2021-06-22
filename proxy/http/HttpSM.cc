@@ -2276,6 +2276,7 @@ HttpSM::process_hostdb_info(HostDBRecord *record)
     } else {
       // if use_client_target_addr is set, make sure the client addr is in the results pool
       t_state.dns_info.cta_validated_p = true;
+      t_state.dns_info.record          = record; // Cache this but do not make it active.
       if (record->find(t_state.dns_info.addr) == nullptr) {
         SMDebug("http", "use_client_target_addr == 1. Client specified address is not in the pool, not validated.");
         t_state.dns_info.cta_validated_p = false;

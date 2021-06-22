@@ -280,7 +280,7 @@ struct HostDBContinuation : public Continuation {
                                 Ptr<HostDBRecord> record = Ptr<HostDBRecord>{});
 
   int key_partition();
-  void remove_trigger_pending_dns();
+  void remove_and_trigger_pending_dns();
   int set_check_pending_dns();
 
   /** Optional values for @c init.
