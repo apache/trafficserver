@@ -85,7 +85,10 @@ with upstream transactions and not sessions.
 ``ResolveInfo`` may contain a reference to a HostDB record, which preserves the record even if it is
 replaced due to DNS queries in other transactions. The record is not required as the resolution
 information can be supplied directly without DNS or HostDB, e.g. a plugin sets the upstream address
-explicitly.
+explicitly. The ``resolved_p`` flag indicates if the current information is valid and ready to be
+used or not. A result of this is there is no longer a specific holder for API provided addresses -
+the interface now puts the address in the ``ResolveInfo`` and marks it as resolved. This prevents
+further DNS / HostDB lookups and the address is used as is.
 
 Issues
 ======
@@ -104,7 +107,7 @@ There is still some work to be done in future PRs.
 
 *  The fail window and the zombie window should be separate values. It is quite reasonable to want
    to configure a very short fail window (possibly 0) with a moderately long zombie window so that
-   connections can immediately start going upstream, but not very fast.
+   probing connections can immediately start going upstream at a low rate.
 
 *  Failing an upstream should be more loosely connected to transactions. Currently there is a one
    to one relationship where failure is defined as the failure of a specific transaction to connect.
@@ -116,22 +119,30 @@ There is still some work to be done in future PRs.
 *  Parallel DNS requests should be supported. This is for both cross family requests and for split
    DNS.
 
+*  It would be nice to be able to do the probing connections to an upstream using synthetic requests
+   instead of burning actual user requests. What would be needed is a handoff from ATS to the probe
+   to indicate a particular upstream is considered down, at which point active health checks are done
+   until the upstream is once again alive, at which point this is handed off back to ATS.
+
 History
 =======
 
 This version has several major architectural changes from the previous version.
 
-*  The data is split into records and info, not handled as a variant of a single data type.
+*  The data is split into records and info, not handled as a variant of a single data type. This
+   provides a noticeable simplification of the code.
 
 *  Single and multiple address results are treated identically - a singleton is simply a multiple
-   of size 1. This was a major simplification of the implementation.
-
-*  State information has been promoted to atomics and updates are immediate rather than scheduled.
-
-*  Internal timing information is stored in ``std::chrono`` data types instead of internal types.
+   of size 1. This yeilds a major simplification of the implementation.
 
 *  Connections are throttled to dead upstreams, allowing only a single connection attempt per fail
    window timing until a connection succeeds.
+
+*  Timing information is stored in ``std::chrono`` data types instead of proprietary types.
+
+*  State information has been promoted to atomics and updates are immediate rather than scheduled.
+   This also means the data in the state machine is a reference to a shared object, not a local copy.
+   The promotion was necessary to coordinate zombie connections to dead upstreams across transactions.
 
 *  The "resolve key" is now a separate data object from the HTTP request. This is a subtle but
    major change. The effect is requests can be routed to different upstreams without changing
