@@ -369,6 +369,12 @@ stek_updater(void *arg)
       }
     }
     // print_status();
+
+    // Wakeup every 10 seconds to check whether there is a new key to use.
+    // We do this because if a server is lagging behind, either by loosing connection or joining late,
+    // that server might receive multiple keys (the ones it missed) when it reconnects. Since we only need the
+    // most recent one, and to save time, we check back every 10 seconds in hope that the barrage of incoming
+    // keys has finished, and if not the second time around it'll definitely has.
     std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 
