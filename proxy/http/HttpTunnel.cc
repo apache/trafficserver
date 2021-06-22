@@ -498,6 +498,22 @@ HttpTunnel::kill_tunnel()
   this->reset();
 }
 
+void
+HttpTunnel::abort_tunnel()
+{
+  active = false;
+  deallocate_buffers();
+#ifdef DEBUG
+  for (auto &producer : producers) {
+    producer.alive = false;
+  }
+  for (auto &consumer : consumers) {
+    consumer.alive = false;
+  }
+#endif
+  reset();
+}
+
 HttpTunnelProducer *
 HttpTunnel::alloc_producer()
 {

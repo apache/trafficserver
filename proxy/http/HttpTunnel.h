@@ -273,6 +273,7 @@ public:
 
   void init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex);
   void reset();
+  void abort_tunnel();
   void kill_tunnel();
   bool
   is_tunnel_active() const
