@@ -7619,9 +7619,12 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   // HttpTransactHeaders::convert_request(outgoing_version, outgoing_request); // commented out this idea
 
+  URL *url = outgoing_request->url_get();
+  // Remove fragment from upstream URL
+  url->fragment_set(NULL, 0);
+
   // Check whether a Host header field is missing from a 1.0 or 1.1 request.
   if (outgoing_version != HTTPVersion(0, 9) && !outgoing_request->presence(MIME_PRESENCE_HOST)) {
-    URL *url = outgoing_request->url_get();
     int host_len;
     const char *host = url->host_get(&host_len);
 

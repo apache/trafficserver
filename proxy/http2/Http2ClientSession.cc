@@ -82,11 +82,6 @@ Http2ClientSession::destroy()
 void
 Http2ClientSession::free()
 {
-  if (this->_reenable_event) {
-    this->_reenable_event->cancel();
-    this->_reenable_event = nullptr;
-  }
-
   if (h2_pushed_urls) {
     this->h2_pushed_urls = ink_hash_table_destroy(this->h2_pushed_urls);
   }
@@ -106,6 +101,11 @@ Http2ClientSession::free()
 
   REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session free");
+
+  if (this->_reenable_event) {
+    this->_reenable_event->cancel();
+    this->_reenable_event = nullptr;
+  }
 
   // Don't free active ProxySession
   ink_release_assert(is_active() == false);
@@ -653,8 +653,8 @@ Http2ClientSession::remember(const SourceLocation &location, int event, int reen
 bool
 Http2ClientSession::_should_do_something_else()
 {
-  // Do something else every 128 incoming frames
-  return (this->_n_frame_read & 0x7F) == 0;
+  // Do something else every 128 incoming frames if connection state isn't closed
+  return (this->_n_frame_read & 0x7F) == 0 && !connection_state.is_state_closed();
 }
 
 int64_t
