@@ -1276,9 +1276,15 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
                     AC_MSG_RESULT([no])
                   ])
 
+AC_ARG_ENABLE([quic],
+  AS_HELP_STRING([--disable-quic], [disable QUIC support]), [
+    enable_quic=no
+  ], [])
 AM_CONDITIONAL([ENABLE_QUIC], [test "x$enable_quic" = "xyes"])
 TS_ARG_ENABLE_VAR([use], [quic])
 AC_SUBST(use_quic)
+AC_MSG_CHECKING([whether QUIC is enabled])
+AC_MSG_RESULT([$enable_quic])
 
 # Check for OCSP
 TS_CHECK_CRYPTO_OCSP
