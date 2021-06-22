@@ -257,7 +257,6 @@ SSLInitializeStatistics()
       RecRegisterRawStat(ssl_rsb, RECT_PROCESS, statName.c_str(), RECD_INT, RECP_NON_PERSISTENT,
                          (int)ssl_cipher_stats_start + index, RecRawStatSyncSum);
       SSL_CLEAR_DYN_STAT((int)ssl_cipher_stats_start + index);
-      Debug("ssl", "registering SSL cipher metric '%s'", statName.c_str());
     }
   }
 
