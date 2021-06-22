@@ -2421,11 +2421,7 @@ QUICNetVConnection::_handle_periodic_ack_event()
 SSL *
 QUICNetVConnection::_get_ssl_object() const
 {
-  auto tls = dynamic_cast<QUICTLS *>(this->_hs_protocol);
-  if (tls) {
-    return tls->ssl_handle();
-  }
-  return nullptr;
+  return static_cast<QUICTLS *>(this->_hs_protocol)->ssl_handle();
 }
 
 ssl_curve_id
