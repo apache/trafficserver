@@ -116,7 +116,7 @@ test_run.StillRunningAfter = httpbin
 
 # Test Case 3: Expect 100-Continue
 test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = "curl -vs -k --http2 https://127.0.0.1:{0}/post --data 'key=value' -H 'Expect: 100-continue' --expect100-timeout 1 --max-time 5 | {1}".format(
+test_run.Processes.Default.Command = "curl -vs -k --http2 https://127.0.0.1:{0}/post --data 'key=value' -H 'Expect: 100-continue' --max-time 5 | {1}".format(
     ts.Variables.ssl_port, json_printer)
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_3_stdout.gold"
