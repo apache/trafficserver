@@ -1,2 +1,29 @@
 Changes with Apache Traffic Server 8.1.2
   #7352 - Clear call_sm on tunnel reset
+  #7371 - Set thread mutex to the DNSHandler mutex of SplitDNS (#7321)
+  #7401 - Fix unnecessary addition of Expires header
+  #7462 - Update to the new MicroServer 1.0.6 release
+  #7609 - Remove UnixNetVConnection::startEvent - not actually called.
+  #7649 - Fixing DNS local_ipv* config option (#7507)
+  #7650 - Add a check for compress response for 304
+  #7652 - CacheRead: clear dir entry if doc is found to be truncated
+  #7654 - Updating documentation for negative_revalidating_lifetime
+  #7655 - Remove inline for detail::cache::CacheData::idAddr
+  #7658 - Update server_response_body_bytes when background fill worked (#7621)
+  #7659 - Do not provide a stale negative cache (#7422)
+  #7660 - Fix out of bounds access error in jtest (#7526)
+  #7698 - Do NOT kill tunnel if it has any consumer besides HT_HTTP_CLIENT (#7641)
+  #7715 - 8.1.x timeout fixes
+  #7738 - Increase the maximum slice block size from 32MB to 128MB (#7709)
+  #7759 - create a new cache status RWW_HIT (#7670)
+  #7763 - API to retrieve NoStore set by plugins (#7439)
+  #7764 - Experimental Cache fill plugin (#7470)
+  #7781 - doc: header_rewrite random function not inclusive (backport #7760)
+  #7810 - Adjust connection timeout for TLS
+  #7857 - Update bootstrap autest version to match the rest of autest
+  #7881 - slice: add in throttle by default code which includes a serious bug t…
+  #7906 - Add thread yeield to avoid busy waiting in LogObject::_checkout_write(). (#7576)
+  #7908 - Fix the final consumer write size from unchunked to chunked tunnel
+  #7971 - Fixes
+  #7975 - Revert "Adjust connection timeout for TLS"
+  #7977 - Revert "8.1.x timeout fixes"
