@@ -114,16 +114,6 @@ char const *name_of(HostDBType t);
 struct HostDBInfo {
   using self_type = HostDBInfo; ///< Self reference type.
 
-  /// State of this upstream target.
-  enum Status : uint8_t {
-    /// Ready for connections, no failure.
-    ALIVE = 0,
-    /// Dead but past blackout time - limit to single connection attempts.
-    ZOMBIE = 1,
-    /// Dead, no connections allowed.
-    DEAD = 2,
-  };
-
   /// Default constructor.
   HostDBInfo() = default;
 
