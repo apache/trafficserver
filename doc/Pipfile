@@ -22,7 +22,16 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-sphinx = "2.0.1"
+
+# The latest 4.x sphinx release, currently 4.0.2, fails `make html`.  For
+# details, see: https://github.com/apache/trafficserver/issues/7938
+#
+# The 3.x releases build fine, however. So we currently pin to that.
+#
+# Once that issue, either with sphinx or our docs, is resolved, then we should
+# unpin sphinx by setting the following to "*".
+sphinx = "==3.*"
+
 sphinx-rtd-theme = "*"
 sphinxcontrib-plantuml = "*"
 # i18n
