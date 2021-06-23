@@ -57,7 +57,7 @@ extensions = [
 ]
 
 # Contains values that are dependent on configure.ac.
-execfile('ext/local-config.py')
+exec(compile(open('ext/local-config.py', "rb").read(), 'ext/local-config.py', 'exec'))
 
 if version_info >= (1, 4):
     extensions.append('sphinx.ext.imgmath')
@@ -83,8 +83,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Apache Traffic Server'
-copyright = u'{}, dev@trafficserver.apache.org'.format(date.today().year)
+project = 'Apache Traffic Server'
+copyright = '{}, dev@trafficserver.apache.org'.format(date.today().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -114,7 +114,7 @@ gettext_compact = False
 # Generate .mo files just in time
 if os.environ.get('READTHEDOCS') == 'True':
     import polib
-    print "Generating .mo files",
+    print("Generating .mo files", end=' ')
     for locale_dir in locale_dirs:
         for path, dummy, filenames in os.walk(locale_dir):
             for filename in filenames:
@@ -124,7 +124,7 @@ if os.environ.get('READTHEDOCS') == 'True':
                     mo_file = base + ".mo"
                     po = polib.pofile(po_file)
                     po.save_as_mofile(fpath=mo_file)
-    print "done"
+    print("done")
 else:
     # On RedHat-based distributions, install the python-sphinx_rtd_theme package
     # to get an end result tht looks more like readthedoc.org.
@@ -203,17 +203,17 @@ class Inliner(states.Inliner):
         # Copied from states.Inliner.init_customizations().
         # In Docutils 0.13 these are locals.
         if not hasattr(self, 'start_string_prefix'):
-            self.start_string_prefix = (u'(^|(?<=\\s|[%s%s]))' %
+            self.start_string_prefix = ('(^|(?<=\\s|[%s%s]))' %
                                         (punctuation_chars.openers,
                                          punctuation_chars.delimiters))
         if not hasattr(self, 'end_string_suffix'):
-            self.end_string_suffix = (u'($|(?=\\s|[\x00%s%s%s]))' %
+            self.end_string_suffix = ('($|(?=\\s|[\x00%s%s%s]))' %
                                       (punctuation_chars.closing_delimiters,
                                        punctuation_chars.delimiters,
                                        punctuation_chars.closers))
 
         issue = re.compile(
-            ur'''
+            r'''
       {start_string_prefix}
       TS-\d+
       {end_string_suffix}'''.format(
@@ -352,8 +352,8 @@ elif tags.has('latex_paper'):
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'ApacheTrafficServer.tex', u'Apache Traffic Server Documentation',
-     u'dev@trafficserver.apache.org', 'manual'),
+    ('index', 'ApacheTrafficServer.tex', 'Apache Traffic Server Documentation',
+     'dev@trafficserver.apache.org', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -445,8 +445,8 @@ manpage.ManualPageTranslator = ManualPageTranslator
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'ApacheTrafficServer', u'Apache Traffic Server Documentation',
-     u'dev@trafficserver.apache.org', 'ApacheTrafficServer', 'One line description of project.',
+    ('index', 'ApacheTrafficServer', 'Apache Traffic Server Documentation',
+     'dev@trafficserver.apache.org', 'ApacheTrafficServer', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -462,10 +462,10 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u'Apache Traffic Server'
-epub_author = u'dev@trafficserver.apache.org'
-epub_publisher = u'dev@trafficserver.apache.org'
-epub_copyright = u'2013, dev@trafficserver.apache.org'
+epub_title = 'Apache Traffic Server'
+epub_author = 'dev@trafficserver.apache.org'
+epub_publisher = 'dev@trafficserver.apache.org'
+epub_copyright = '2013, dev@trafficserver.apache.org'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.
