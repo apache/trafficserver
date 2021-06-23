@@ -90,6 +90,44 @@ used or not. A result of this is there is no longer a specific holder for API pr
 the interface now puts the address in the ``ResolveInfo`` and marks it as resolved. This prevents
 further DNS / HostDB lookups and the address is used as is.
 
+Resolution Style
+----------------
+
+.. cpp:enum:: OS_Addr
+
+   Metadata about the source of the resolved address.'
+
+   .. cpp:enumerator:: TRY_DEFAULT
+
+      Use default resolution. This is the initial state.
+
+   .. cpp:enumerator:: TRY_HOSTDB
+
+      Use HostDB to resolve the target key.
+
+   .. cpp:enumerator:: TRY_CLIENT
+
+      Use the client supplied target address. This is used for transparent connections - the upstream
+      address is obtained from the inbound connection. May fail over to HostDB.
+
+   .. cpp:enumerator:: USE_HOSTDB
+
+      Use HostDB to resolve the target key.
+
+   .. cpp:enumerator:: USE_CLIENT
+
+      Use the client supplied target address.
+
+   .. cpp:enumerator:: USE_API
+
+      Use the address provided via the plugin API.
+
+   The parallel values for using HostDB and the client target address are to control fail over on
+   connection failure. The ``TRY_`` values can fail over to another style, but the ``USE_`` values
+   cannot. This prevents cycles of style changes by having any ``TRY_`` value fail over to a
+   ``USE_`` value, at which point it can no longer change. Note there is no ``TRY_API`` - if a
+   plugin sets the upstream address that is locked in.
+
 Issues
 ======
 
