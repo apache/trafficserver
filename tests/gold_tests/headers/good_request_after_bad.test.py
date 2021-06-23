@@ -27,9 +27,9 @@ ts = Test.MakeATSProcess("ts", enable_cache=True)
 
 ts.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
                                'proxy.config.diags.debug.enabled': 0,
-                               Test.ContinueOnFail=True
                                })
 
+Test.ContinueOnFail = True
 server = Test.MakeOriginServer("server")
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {
