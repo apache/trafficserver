@@ -995,6 +995,7 @@ public:
   static void add_client_ip_to_outgoing_request(State *s, HTTPHdr *request);
   static RequestError_t check_request_validity(State *s, HTTPHdr *incoming_hdr);
   static ResponseError_t check_response_validity(State *s, HTTPHdr *incoming_hdr);
+  static void set_client_request_state(State *s, HTTPHdr *incoming_hdr);
   static bool delete_all_document_alternates_and_return(State *s, bool cache_hit);
   static bool does_client_request_permit_cached_response(const OverridableHttpConfigParams *p, CacheControlResult *c, HTTPHdr *h,
                                                          char *via_string);

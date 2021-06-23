@@ -5289,6 +5289,9 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
 HttpTransact::RequestError_t
 HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 {
+  // Called also on receiving request.  Not sure if we need to call this again in case
+  // the transfer-encoding and content-length headers changed
+  set_client_request_state(s, incoming_hdr);
   if (incoming_hdr == nullptr) {
     return NON_EXISTANT_REQUEST_HEADER;
   }
@@ -5311,44 +5314,6 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 
   int scheme = incoming_url->scheme_get_wksidx();
   int method = incoming_hdr->method_get_wksidx();
-
-  // Check for chunked encoding
-  if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
-    MIMEField *field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
-    if (field) {
-      HdrCsvIter enc_val_iter;
-      int enc_val_len;
-      const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
-
-      while (enc_value) {
-        const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
-        if (wks_value == HTTP_VALUE_CHUNKED) {
-          s->client_info.transfer_encoding = CHUNKED_ENCODING;
-          break;
-        }
-        enc_value = enc_val_iter.get_next(&enc_val_len);
-      }
-    }
-  }
-
-  /////////////////////////////////////////////////////
-  // get request content length                      //
-  // To avoid parsing content-length twice, we set   //
-  // s->hdr_info.request_content_length here rather  //
-  // than in initialize_state_variables_from_request //
-  /////////////////////////////////////////////////////
-  if (method != HTTP_WKSIDX_TRACE) {
-    if (incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-      s->hdr_info.request_content_length = incoming_hdr->get_content_length();
-    } else {
-      s->hdr_info.request_content_length = HTTP_UNDEFINED_CL; // content length less than zero is invalid
-    }
-
-    TxnDebug("http_trans", "[init_stat_vars_from_req] set req cont length to %" PRId64, s->hdr_info.request_content_length);
-
-  } else {
-    s->hdr_info.request_content_length = 0;
-  }
 
   if (!((scheme == URL_WKSIDX_HTTP) && (method == HTTP_WKSIDX_GET))) {
     if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS && method != HTTP_WKSIDX_CONNECT &&
@@ -5426,6 +5391,47 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
   }
 
   return NO_REQUEST_HEADER_ERROR;
+}
+
+void
+HttpTransact::set_client_request_state(State *s, HTTPHdr *incoming_hdr)
+{
+  if (incoming_hdr == nullptr) {
+    return;
+  }
+
+  // Set transfer_encoding value
+  if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
+    MIMEField *field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    if (field) {
+      HdrCsvIter enc_val_iter;
+      int enc_val_len;
+      const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
+
+      while (enc_value) {
+        const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
+        if (wks_value == HTTP_VALUE_CHUNKED) {
+          s->client_info.transfer_encoding = CHUNKED_ENCODING;
+          break;
+        }
+        enc_value = enc_val_iter.get_next(&enc_val_len);
+      }
+    }
+  }
+
+  /////////////////////////////////////////////////////
+  // get request content length                      //
+  // To avoid parsing content-length twice, we set   //
+  // s->hdr_info.request_content_length here rather  //
+  // than in initialize_state_variables_from_request //
+  /////////////////////////////////////////////////////
+  if (incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+    s->hdr_info.request_content_length = incoming_hdr->get_content_length();
+  } else {
+    s->hdr_info.request_content_length = HTTP_UNDEFINED_CL; // content length less than zero is invalid
+  }
+
+  TxnDebug("http_trans", "[set_client_request_state] set req cont length to %" PRId64, s->hdr_info.request_content_length);
 }
 
 HttpTransact::ResponseError_t

@@ -22,6 +22,7 @@ import os
 Test.Summary = '''
 Verify that request following a ill-formed request is not processed
 '''
+Test.ContinueOnFail = True
 ts = Test.MakeATSProcess("ts", enable_cache=True)
 
 ts.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
@@ -64,3 +65,29 @@ tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nhost: bob\r\ntransfer-
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'gold/bad_te_value.gold'
+
+# TRACE request with a body
+tr = Test.AddTestRun("Trace request with a body")
+tr.Processes.Default.Command = 'printf "TRACE /foo HTTP/1.1\r\nHost: bob\r\nContent-length:2\r\n\r\nokGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
+
+tr = Test.AddTestRun("Trace request with a chunked body")
+tr.Processes.Default.Command = 'printf "TRACE /foo HTTP/1.1\r\nHost: bob\r\ntransfer-encoding: chunked\r\n\r\n2\r\nokGGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
+
+tr = Test.AddTestRun("Trace request with a chunked body via curl")
+tr.Processes.Default.Command = 'curl -v --http1.1 --header "Transfer-Encoding: chunked" -d aaa -X TRACE -k http://127.0.0.1:{}/foo'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = 'gold/bad_good_request.gold'
+
+tr = Test.AddTestRun("Trace request via curl")
+tr.Processes.Default.Command = 'curl -v --http1.1 -X TRACE -k http://127.0.0.1:{}/bar'.format(ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    r"HTTP/1.1 501 Unsupported method \('TRACE'\)",
+    "microserver does not support TRACE")
