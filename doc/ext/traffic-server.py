@@ -31,7 +31,7 @@ from docutils.parsers import rst
 from docutils.parsers.rst import directives
 from sphinx.domains import Domain, ObjType, std
 from sphinx.roles import XRefRole
-from sphinx.locale import l_, _
+from sphinx.locale import _
 import sphinx
 
 import subprocess
@@ -301,8 +301,8 @@ class TrafficServerDomain(Domain):
     data_version = 2
 
     object_types = {
-        'cv': ObjType(l_('configuration variable'), 'cv'),
-        'stat': ObjType(l_('statistic'), 'stat')
+        'cv': ObjType(_('configuration variable'), 'cv'),
+        'stat': ObjType(_('statistic'), 'stat')
     }
 
     directives = {
@@ -459,9 +459,5 @@ def setup(app):
 
     # this lets us do :ts:git:`<file_path>` and link to the file on github
     app.add_role_to_domain('ts', 'git', make_github_link)
-
-    # Types that we want the C domain to consider built in
-    for word in EXTERNAL_TYPES:
-        sphinx.domains.c.CObject.stopwords.add(word)
 
     app.connect('missing-reference', xref_cleanup)
