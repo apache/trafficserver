@@ -144,19 +144,19 @@ public:
     }
   }
 
-  void delayHeader(TSHttpTxn txpn, std::chrono::microseconds delay) const;
+  void delayHeader(TSHttpTxn txpn, std::chrono::milliseconds delay) const;
   void retryAfter(TSHttpTxn txpn, unsigned after) const;
 
   // Continuation creation and scheduling
   void setupQueueCont();
 
   void
-  setupTxnCont(void *ih, TSHttpTxn txnp, TSHttpHookID hook)
+  setupTxnCont(TSHttpTxn txnp, TSHttpHookID hook)
   {
     TSCont cont = TSContCreate(rate_limit_cont, nullptr);
     TSReleaseAssert(cont);
 
-    TSContDataSet(cont, ih);
+    TSContDataSet(cont, this);
     TSHttpTxnHookAdd(txnp, hook, cont);
   }
 

@@ -121,14 +121,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       if (!limiter->max_queue || limiter->full()) {
         // We are running at limit, and the queue has reached max capacity, give back an error and be done.
         TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
-        limiter->setupTxnCont(ih, txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+        limiter->setupTxnCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
         TSDebug(PLUGIN_NAME, "Rejecting request, we're at capacity and queue is full");
       } else {
-        limiter->setupTxnCont(ih, txnp, TS_HTTP_POST_REMAP_HOOK);
+        limiter->setupTxnCont(txnp, TS_HTTP_POST_REMAP_HOOK);
         TSDebug(PLUGIN_NAME, "Adding rate limiting hook, we are at capacity");
       }
     } else {
-      limiter->setupTxnCont(ih, txnp, TS_HTTP_TXN_CLOSE_HOOK);
+      limiter->setupTxnCont(txnp, TS_HTTP_TXN_CLOSE_HOOK);
       TSDebug(PLUGIN_NAME, "Adding txn-close hook, we're not at capacity");
     }
   }
