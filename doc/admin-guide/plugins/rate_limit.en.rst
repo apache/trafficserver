@@ -30,6 +30,10 @@ The limit counters and queues are per remap rule only, i.e. there is
 (currently) no way to group transaction limits from different remap rules
 into a single rate limiter.
 
+This plugin can be used as a global plugin, with the same set of
+configurations. This could be useful to put in sanity thresholds for all
+
+
 All configuration is done via :file:`remap.config`, and the following options
 are available:
 

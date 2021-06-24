@@ -23,35 +23,8 @@
 
 #include "limiter.h"
 
-///////////////////////////////////////////////////////////////////////////////
-// Setup stuff for the remap plugin
-//
-TSReturnCode
-TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
-{
-  if (!api_info) {
-    strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
-    return TS_ERROR;
-  }
-
-  if (api_info->tsremap_version < TSREMAP_VERSION) {
-    snprintf(errbuf, errbuf_size - 1, "[TSRemapInit] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
-             (api_info->tsremap_version & 0xffff));
-    return TS_ERROR;
-  }
-
-  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
-  return TS_SUCCESS;
-}
-
-void
-TSRemapDeleteInstance(void *ih)
-{
-  delete static_cast<RateLimiter *>(ih);
-}
-
-TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+RateLimiter *
+createConfig(int argc, const char *argv[])
 {
   static const struct option longopt[] = {
     {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
@@ -66,10 +39,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   RateLimiter *limiter = new RateLimiter();
   TSReleaseAssert(limiter);
-  // argv contains the "to" and "from" URLs. Skip the first so that the
-  // second one poses as the program name.
-  --argc;
-  ++argv;
 
   while (true) {
     int opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
@@ -100,6 +69,97 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   limiter->setupQueueCont();
+
+  return limiter;
+}
+///////////////////////////////////////////////////////////////////////////////
+// Initialize the InkAPI plugin for the global hooks we support.
+//
+RateLimiter *gLimiter = nullptr;
+
+static int
+globalCont(TSCont contp, TSEvent event, void *edata)
+{
+  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+
+  if (!gLimiter->reserve()) {
+    if (!gLimiter->max_queue || gLimiter->full()) {
+      // We are running at limit, and the queue has reached max capacity, give back an error and be done.
+      TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(gLimiter->error));
+      gLimiter->setupTxnCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+      TSDebug(PLUGIN_NAME, "Rejecting request, we're at capacity and queue is full");
+    } else {
+      gLimiter->setupTxnCont(txnp, TS_HTTP_POST_REMAP_HOOK);
+      TSDebug(PLUGIN_NAME, "Adding rate limiting hook, we are at capacity");
+    }
+  } else {
+    gLimiter->setupTxnCont(txnp, TS_HTTP_TXN_CLOSE_HOOK);
+    TSDebug(PLUGIN_NAME, "Adding txn-close hook, we're not at capacity");
+  }
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
+void
+TSPluginInit(int argc, const char *argv[])
+{
+  TSPluginRegistrationInfo info;
+
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
+
+  if (TS_SUCCESS != TSPluginRegister(&info)) {
+    TSError("[%s] plugin registration failed", PLUGIN_NAME);
+    return;
+  }
+
+  if (!gLimiter) {
+    TSCont contp = TSContCreate(globalCont, nullptr);
+
+    gLimiter = createConfig(argc, argv);
+    TSHttpHookAdd(TS_HTTP_PRE_REMAP_HOOK, contp);
+
+    TSDebug(PLUGIN_NAME, "Added global active_in limiter rule (limit=%u, queue=%u, error=%u", gLimiter->limit, gLimiter->max_queue,
+            gLimiter->error);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Setup stuff for the remap plugin
+//
+TSReturnCode
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+{
+  if (!api_info) {
+    strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
+    return TS_ERROR;
+  }
+
+  if (api_info->tsremap_version < TSREMAP_VERSION) {
+    snprintf(errbuf, errbuf_size - 1, "[TSRemapInit] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
+             (api_info->tsremap_version & 0xffff));
+    return TS_ERROR;
+  }
+
+  TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
+  return TS_SUCCESS;
+}
+
+void
+TSRemapDeleteInstance(void *ih)
+{
+  delete static_cast<RateLimiter *>(ih);
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+{
+  // argv contains the "to" and "from" URLs. Skip the first so that the
+  // second one poses as the program name.
+  --argc;
+  ++argv;
+  RateLimiter *limiter = createConfig(argc, const_cast<const char **>(argv));
 
   TSDebug(PLUGIN_NAME, "Added active_in limiter rule (limit=%u, queue=%u, error=%u", limiter->limit, limiter->max_queue,
           limiter->error);

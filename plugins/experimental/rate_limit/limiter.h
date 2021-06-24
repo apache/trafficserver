@@ -97,6 +97,7 @@ public:
   bool
   full() const
   {
+    printf("Size is %d and max_queue is %d\n", (int)_size, (int)max_queue);
     return (_size == max_queue);
   }
 
