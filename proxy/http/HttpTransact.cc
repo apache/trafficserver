@@ -1998,7 +1998,7 @@ HttpTransact::OSDNSLookup(State *s)
   // Should we skip the StartAccessControl()? why?
 
   if (ResolveInfo::OS_Addr::USE_CLIENT == s->dns_info.os_addr_style ||
-      ResolveInfo::OS_Addr::USE_HOSTDB == s->dns_info.os_addr_style || ResolveInfo::OS_Addr::USE_API == s->dns_info.os_addr_style) {
+      ResolveInfo::OS_Addr::USE_HOSTDB == s->dns_info.os_addr_style) {
     // we've come back after already trying the server to get a better address,
     // or we're locked on a plugin supplied address.
     // therefore no more backtracking - return to trying the server.

@@ -2361,13 +2361,11 @@ HostDBRecord::find(sockaddr const *addr)
 bool
 ResolveInfo::resolve_immediate()
 {
-  ts::LocalBufferWriter<256> bw;
-
   if (resolved_p) {
     // nothing - already resolved.
   } else if (IpAddr tmp; TS_SUCCESS == tmp.load(lookup_name)) {
-    bw.print("[resolve_immediate] success - FQDN '{}' is a valid IP address.", lookup_name);
-    Debug("hostdb", "%.*s", int(bw.size()), bw.data());
+    ts::bwprint(ts::bw_dbg, "[resolve_immediate] success - FQDN '{}' is a valid IP address.", lookup_name);
+    Debug("hostdb", "%s", ts::bw_dbg.c_str());
     addr.assign(tmp);
     resolved_p = true;
   }
