@@ -31,7 +31,7 @@ from docutils.parsers import rst
 from docutils.parsers.rst import directives
 from sphinx.domains import Domain, ObjType, std
 from sphinx.roles import XRefRole
-from sphinx.locale import l_, _
+from sphinx.locale import _
 import sphinx
 
 import subprocess
@@ -301,8 +301,8 @@ class TrafficServerDomain(Domain):
     data_version = 2
 
     object_types = {
-        'cv': ObjType(l_('configuration variable'), 'cv'),
-        'stat': ObjType(l_('statistic'), 'stat')
+        'cv': ObjType(_('configuration variable'), 'cv'),
+        'stat': ObjType(_('statistic'), 'stat')
     }
 
     directives = {
