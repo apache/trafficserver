@@ -37,7 +37,7 @@
 #include "HttpConfig.h"
 #include "IPAllow.h"
 #include "ProxySession.h"
-#include "Http1Transaction.h"
+#include "Http1ClientTransaction.h"
 
 #ifdef USE_HTTP_DEBUG_LISTS
 extern ink_mutex debug_cs_list_mutex;
@@ -73,8 +73,8 @@ public:
   bool allow_half_open() const;
   void set_half_close_flag(bool flag) override;
   bool get_half_close_flag() const override;
-  bool is_chunked_encoding_supported() const override;
   int get_transact_count() const override;
+  bool is_chunked_encoding_supported() const override;
   virtual bool is_outbound_transparent() const;
 
   PoolableSession *get_server_session() const override;
@@ -86,7 +86,7 @@ public:
 private:
   Http1ClientSession(Http1ClientSession &);
 
-  void new_transaction();
+  ProxyTransaction *new_transaction() override;
 
   int state_keep_alive(int event, void *data);
   int state_slave_keep_alive(int event, void *data);
@@ -126,7 +126,7 @@ public:
   /// Set outbound connection to transparent.
   bool f_outbound_transparent = false;
 
-  Http1Transaction trans;
+  Http1ClientTransaction trans;
 };
 
 extern ClassAllocator<Http1ClientSession, true> http1ClientSessionAllocator;

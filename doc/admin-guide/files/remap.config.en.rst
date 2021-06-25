@@ -363,7 +363,7 @@ be verified for validity.  If the "~" symbol was specified before referer
 regular expression, it means that the request with a matching referer header
 will be redirected to redirectURL. It can be used to create a so-called
 negative referer list.  If "*" was used as a referer regular expression -
-all referers are allowed.  Various combinations of "*" and "~" in a referer
+all referrers are allowed.  Various combinations of "*" and "~" in a referer
 list can be used to create different filtering rules.
 
 map_with_referer Examples
@@ -379,7 +379,7 @@ Explanation: Referer header must be in the request, only ".*\.bar\.com" and "www
 
    map_with_referer http://y.foo.bar.com/x/yy/  http://foo.bar.com/x/yy/ http://games.bar.com/new_games * ~.*\.evil\.com
 
-Explanation: Referer header must be in the request but all referers are allowed except ".*\.evil\.com".
+Explanation: Referer header must be in the request but all referrers are allowed except ".*\.evil\.com".
 
 ::
 

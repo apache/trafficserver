@@ -133,7 +133,7 @@ Types
 
    .. function:: start(const char * name, void * stack, size_t stacksize, ThreadFunction const &f)
 
-      Start the underyling thread. It is given the name :arg:`name`. If :arg:`stack` is
+      Start the underlying thread. It is given the name :arg:`name`. If :arg:`stack` is
       :code:`nullptr` then a stack is allocated for it of size :arg:`stacksize`. Once the thread is
       started, :arg:`f` is invoked in the context of the thread if non :code:`nullptr`, otherwise
       the method :func:`Thread::execute` is called. The thread execution returns immediately after

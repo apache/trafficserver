@@ -44,6 +44,9 @@ server = Test.MakeOriginServer("server")
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
+Test.testName = "regex_revalidate"
+Test.Setup.Copy("metrics.sh")
+
 # default root
 request_header_0 = {"headers":
                     "GET / HTTP/1.1\r\n" +
@@ -263,4 +266,12 @@ tr.DelayStart = 5
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path2a'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_reval-stale.gold"
+tr.StillRunningAfter = ts
+
+# 12 Stats check
+tr = Test.AddTestRun("Check stats")
+tr.DelayStart = 5
+tr.Processes.Default.Command = "bash -c ./metrics.sh"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts

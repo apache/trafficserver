@@ -36,7 +36,7 @@ public:
   NextHopRoundRobin(const std::string_view &name, const NHPolicyType &policy) : NextHopSelectionStrategy(name, policy) {}
   ~NextHopRoundRobin();
   bool
-  Init(const YAML::Node &n)
+  Init(ts::Yaml::Map &n)
   {
     return NextHopSelectionStrategy::Init(n);
   }

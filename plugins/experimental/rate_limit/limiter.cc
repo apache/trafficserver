@@ -30,7 +30,7 @@ RateLimiter::queue_process_cont(TSCont cont, TSEvent event, void *edata)
   // Try to enable some queued txns (if any) if there are slots available
   while (limiter->size() > 0 && limiter->reserve()) {
     auto [txnp, contp, start_time]  = limiter->pop();
-    std::chrono::microseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
+    std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
     limiter->delayHeader(txnp, delay);
     TSDebug(PLUGIN_NAME, "Enabling queued txn after %ldms", static_cast<long>(delay.count()));
@@ -112,7 +112,7 @@ RateLimiter::setupQueueCont()
 // for logging, and other types of metrics.
 //
 void
-RateLimiter::delayHeader(TSHttpTxn txnp, std::chrono::microseconds delay) const
+RateLimiter::delayHeader(TSHttpTxn txnp, std::chrono::milliseconds delay) const
 {
   if (header.size() > 0) {
     TSMLoc hdr_loc   = nullptr;
@@ -122,6 +122,7 @@ RateLimiter::delayHeader(TSHttpTxn txnp, std::chrono::microseconds delay) const
     if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
         if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, static_cast<int>(delay.count()))) {
+          TSDebug(PLUGIN_NAME, "Added client request header; %s: %d", header.c_str(), static_cast<int>(delay.count()));
           TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
         }
         TSHandleMLocRelease(bufp, hdr_loc, field_loc);

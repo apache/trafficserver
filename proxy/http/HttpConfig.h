@@ -350,6 +350,18 @@ enum {
   http_origin_shutdown_cleanup_entry,
   http_origin_shutdown_tunnel_abort,
 
+  http_dead_server_no_requests,
+
+  http_origin_reuse,
+  http_origin_not_found,
+  http_origin_reuse_fail,
+  http_origin_make_new,
+  http_origin_no_sharing,
+  http_origin_body,
+  http_origin_private,
+  http_origin_close_private,
+  http_origin_raw,
+
   http_stat_count
 };
 
@@ -494,6 +506,7 @@ struct OverridableHttpConfigParams {
   MgmtByte fwd_proxy_auth_to_parent           = 0;
   MgmtByte uncacheable_requests_bypass_parent = 1;
   MgmtByte attach_server_session_to_client    = 0;
+  MgmtInt max_proxy_cycles                    = 0;
 
   MgmtByte forward_connect_method = 0;
 
@@ -650,6 +663,8 @@ struct OverridableHttpConfigParams {
   MgmtInt connect_attempts_max_retries_dead_server = 3;
   MgmtInt connect_attempts_rr_retries              = 3;
   MgmtInt connect_attempts_timeout                 = 30;
+
+  MgmtInt connect_dead_policy = 2;
 
   ////////////////////////////////////
   // parent proxy connect attempts //

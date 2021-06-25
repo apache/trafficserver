@@ -40,6 +40,8 @@ regular expression against your origin URLs permits. Thus, individual cache
 objects may have rules created for them, or entire path prefixes, or even any
 cache objects with a particular file extension.
 
+Revalidate count  stats for MISS and STALE are recorded under plugins
+
 Installation
 ============
 
@@ -70,6 +72,18 @@ config file changes are checked are only when ``traffic_ctl config reload`` is r
 
     regex_revalidate.so -d -c <path to rules> -l <path to log>
 
+The configuration parameter `--state-file` or `-f` may be used to configure
+the plugin to maintain a state file with the last loaded configuration.
+Normally when ATS restarts the epoch times of all rules are reset to
+the first config file load time which will cause all matching assets to
+issue new IMS requests to their parents for mathing rules.
+
+This option allows the revalidate rule "epoch" times to be retained between ATS
+restarts.  This state file by default is placed in var/trafficserver/<filename>
+but an absolute path may be specified as well. Syntax is as follows::
+
+    regex_revalidate.so -d -c <path to rules> -f <path to state file>
+
 
 Revalidation Rules
 ==================
@@ -78,7 +92,7 @@ Inside your revalidation rules configuration, each rule line is defined as a
 regular expression followed by an integer which expresses the epoch time at
 which the rule will expire::
 
-    <regular expression> <rule expiry, as seconds since epoch>
+    <regular expression> <rule expiry, as seconds since epoch> [type MISS or default STALE]
 
 Blank lines and lines beginning with a ``#`` character are ignored.
 
@@ -96,6 +110,16 @@ Every rule must have an expiration associated with it. The rule expiration is
 expressed as an integer of seconds since epoch (equivalent to the return value
 of :manpage:`time(2)`), after which the forced revalidation will no longer
 occur.
+
+Type
+----
+
+By default any matching asset will have its cache lookup status changed
+from HIT_FRESH to HIT_STALE.  By adding an extra keyword MISS at the end
+of a line the asset will be marked MISS instead, forcing a refetch from
+the parent. *Use with care* as this will increase bandwidth to the parent.
+During configuration reload, any rule which changes it type will be
+reloaded and treated as a new rule.
 
 Caveats
 =======
@@ -117,6 +141,14 @@ currently lead to that rule being removed from the running plugin. In these
 cases, if the rule must be taken out of service, a service restart may be
 necessary.
 
+State File
+----------
+
+The state file is not meant to be edited but is of the format::
+
+<regular expression> <rule epoch> <rule expiry> <type>
+
+
 Examples
 ========
 
@@ -128,3 +160,6 @@ in |TS| until 6:47:27 AM on Saturday, November 14th, 2015 (UTC)::
 
 Note the escaping of the ``.`` metacharacter in the rule's regular expression.
 
+Alternatively the following rule would case a refetch from the parent::
+
+    http://origin\.tld/images/foo\.jpg 1447483647 MISS

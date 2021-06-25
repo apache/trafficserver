@@ -195,13 +195,6 @@ class MockQUICConnectionInfoProvider : public QUICConnectionInfoProvider
     return NET_VCONNECTION_OUT;
   }
 
-  int
-  select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                       unsigned inlen) const override
-  {
-    return SSL_TLSEXT_ERR_OK;
-  }
-
   bool
   is_closed() const override
   {
@@ -511,13 +504,6 @@ public:
   negotiated_application_name() const override
   {
     return negotiated_application_name_sv;
-  }
-
-  int
-  select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                       unsigned inlen) const override
-  {
-    return SSL_TLSEXT_ERR_OK;
   }
 
   int _transmit_count   = 0;

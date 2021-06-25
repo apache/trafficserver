@@ -657,8 +657,6 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
-
-  TSContDestroy(config->getCont());
   delete config;
 }
 

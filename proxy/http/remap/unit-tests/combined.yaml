@@ -89,10 +89,15 @@ strategies:
         exhaust_ring # enumerated as exhaust_ring or alternate_ring
         #1) in 'exhaust_ring' mode all the servers in a ring are exhausted before failing over to secondary ring
         #2) in 'alternate_ring' mode causes the failover to another server in secondary ring.
-      response_codes: # defines the responses codes for failover in exhaust_ring mode
+      response_codes: # defines the responses codes for simple retry failover in
         - 404
+        - 402
+        - 403
+      markdown_codes: # defines the response codes for unavailble server retry
+        - 405
         - 502
         - 503
+
       health_check: # specifies the list of healthchecks that should be considered for failover. A list of enums: 'passive' or 'active'
         - passive
         - active

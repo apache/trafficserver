@@ -531,6 +531,14 @@ Network
 Local Manager
 =============
 
+.. ts:cv:: CONFIG proxy.node.config.manager_log_filename STRING manager.log
+
+   The name of the file to which :program:`traffic_manager` logs will be emitted.
+
+   If this is set to ``stdout`` or ``stderr``, then all :program:`traffic_manager`
+   logging will go to the stdout or stderr stream, respectively.
+
+
 .. ts:cv:: CONFIG proxy.config.admin.user_id STRING nobody
 
    Designates the non-privileged account to run the :program:`traffic_server`
@@ -959,7 +967,7 @@ mptcp
                  of the origin server matches.
    ``host``      Re-use server sessions, checking that the fully qualified
                  domain name matches. In addition, if the session uses TLS, it also
-                 checks that the current transaction's host header value matchs the session's SNI.
+                 checks that the current transaction's host header value matches the session's SNI.
    ``both``      Equivalent to ``host,ip``.
    ``hostonly``  Check that the fully qualified domain name matches.
    ``sni``       Check that the SNI of the session matches the SNI that would be used to
@@ -1029,6 +1037,35 @@ mptcp
    :ts:cv:`proxy.config.http.server_session_sharing.match` value. If the server session matches the next transaction
    according to this setting then it will be used, otherwise it will be released to the pool and a different session
    selected or created.
+
+.. ts:cv:: CONFIG proxy.config.http.max_proxy_cycles INT 0
+   :overridable:
+
+   Control the proxy cycle detection function in the following manner --
+
+   If this setting is ``0``, then next hop is self IP address and port detection is active.
+
+   In addition, the proxy cycle detection using the Via string will declare a cycle if the current cache
+   appears one or more times in the Via string, i.e, > 0.
+
+   If this setting is ``1`` or more (N), then next hop is self IP address and port detection is inactive.
+
+   In addition, the proxy cycle detection using the Via string will declare a cycle if the current cache
+   appears more than N times in the Via string, i.e., > N.
+
+   Examples:
+
+   If the setting is ``0``, then the second time a request enters a cache it will have its own machine
+   identifier in the Via string once, so a cycle will be detected. So no cycles are allowed.
+
+   If the setting is ``1``, then the third time a request enters a cache it will have its own machine
+   identifier in the Via string twice, so a cycle will be detected. So one cycle is allowed.
+   The first cycle with two visits to the cache and one instance in the Via string is allowed.
+   The second cycle with three visits to the cache and two instances in the Via string is not allowed.
+
+   This setting allows an edge cache peering arrangement where an edge cache may forward a request to a
+   peer edge cache (possibly itself) a limited of times (usually once). Infinite loops are still detected
+   when the cycle allowance is exceeded.
 
 .. ts:cv:: CONFIG proxy.config.http.use_client_target_addr  INT 0
 
@@ -1467,8 +1504,8 @@ Origin Server Connect Attempts
 
    The maximum number of connection retries |TS| can make when the origin server is not responding.
    Each retry attempt lasts for `proxy.config.http.connect_attempts_timeout`_ seconds.  Once the maximum number of retries is
-   reached, the origin is marked dead.  After this, the setting  `proxy.config.http.connect_attempts_max_retries_dead_server`_
-   is used to limit the number of retry attempts to the known dead origin.
+   reached, the origin is marked dead (as controlled by `proxy.config.http.connect.dead.policy`_.  After this, the setting
+   `proxy.config.http.connect_attempts_max_retries_dead_server`_ is used to limit the number of retry attempts to the known dead origin.
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT 1
    :reloadable:
@@ -1477,6 +1514,13 @@ Origin Server Connect Attempts
    Maximum number of connection attempts |TS| can make while an origin is marked dead per request.  Typically this value is smaller than
    `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the dead origin.
    The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
+
+.. ts:cv:: CONFIG proxy.config.http.connect.dead.policy INT 2
+   :overridable:
+
+   Controls what origin server connection failures contribute to marking a server dead. When set to 2, any connection failure during the TCP and TLS
+   handshakes will contribute to marking the server dead. When set to 1, only TCP handshake failures will contribute to marking a server dead.
+   When set to 0, no connection failures will be used towards marking a server dead.
 
 .. ts:cv:: CONFIG proxy.config.http.server_max_connections INT 0
    :reloadable:
@@ -3116,6 +3160,8 @@ Logging Configuration
 Diagnostic Logging Configuration
 ================================
 
+.. _DiagnosticOutputConfigurationVariables:
+
 .. ts:cv:: CONFIG proxy.config.diags.output.diag STRING E
 .. ts:cv:: CONFIG proxy.config.diags.output.debug STRING E
 .. ts:cv:: CONFIG proxy.config.diags.output.status STRING L
@@ -3137,7 +3183,8 @@ Diagnostic Logging Configuration
    ``O`` Log to standard output.
    ``E`` Log to standard error.
    ``S`` Log to syslog.
-   ``L`` Log to :file:`diags.log`.
+   ``L`` Log to :file:`diags.log` (with the filename configurable via
+         :ts:cv:`proxy.config.diags.logfile.filename`).
    ===== ======================================================================
 
 .. topic:: Example
@@ -3194,6 +3241,25 @@ Diagnostic Logging Configuration
    For details about how log throttling works, see
    :ts:cv:`log.throttling_interval_msec
    <proxy.config.log.proxy.config.log.throttling_interval_msec>`.
+
+.. ts:cv:: CONFIG proxy.config.diags.logfile.filename STRING diags.log
+
+   The name of the file to which |TS| diagnostic logs will be emitted. For
+   information on the diagnostic log file, see :file:`diags.log`. For the
+   configurable parameters concerning what log content is emitted to
+   :file:`diags.log`, see the :ref:`Diagnostic Output Configuration Variables
+   <DiagnosticOutputConfigurationVariables>` above.
+
+   If this is set to ``stdout`` or ``stderr``, then all diagnostic logging will
+   go to the stdout or stderr stream, respectively.
+
+.. ts:cv:: CONFIG proxy.config.error.logfile.filename STRING error.log
+
+   The name of the file to which |TS| transaction error logs will be emitted.
+   For more information on these log messages, see :file:`error.log`.
+
+   If this is set to ``stdout`` or ``stderr``, then all transaction error
+   logging will go to the stdout or stderr stream, respectively.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile_perm STRING rw-r--r--
 
@@ -4363,13 +4429,13 @@ Sockets
 .. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_in STRING ""
 
    This directive will override the congestion control algorithm for incoming
-   connections (accept sockets). On linux the allowed values are typically
+   connections (accept sockets). On Linux, the allowed values are typically
    specified in a space separated list in /proc/sys/net/ipv4/tcp_allowed_congestion_control
 
 .. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_out STRING ""
 
    This directive will override the congestion control algorithm for outgoing
-   connections (connect sockets). On linux the allowed values are typically
+   connections (connect sockets). On Linux, the allowed values are typically
    specified in a space separated list in /proc/sys/net/ipv4/tcp_allowed_congestion_control
 
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_in INT 0
@@ -4525,7 +4591,7 @@ Sockets
 
    Enable (1) the use of huge pages on supported platforms. (Currently only Linux)
 
-   You must also enable hugepages at the OS level. In a modern linux Kernel
+   You must also enable hugepages at the OS level. In modern Linux kernels,
    this can be done by setting ``/proc/sys/vm/nr_overcommit_hugepages`` to a
    sufficiently large value. It is reasonable to use (system
    memory/hugepage size) because these pages are only created on demand.
@@ -4557,8 +4623,8 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.allocator.dontdump_iobuffers INT 1
 
    Enable (1) the exclusion of IO buffers from core files when ATS crashes on supported
-   platforms.  (Currently only linux).  IO buffers are allocated with the MADV_DONTDUMP
-   with madvise() on linux platforms that support MADV_DONTDUMP.  Enabled by default.
+   platforms.  (Currently only Linux).  IO buffers are allocated with the MADV_DONTDUMP
+   with madvise() on Linux platforms that support MADV_DONTDUMP.  Enabled by default.
 
 .. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
 

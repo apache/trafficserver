@@ -29,7 +29,7 @@ public:
   bool doPromote(TSHttpTxn /* txnp ATS_UNUSED */) override
   {
     TSDebug(PLUGIN_NAME, "ChancePolicy::doPromote(%f)", getSample());
-    incrementStat(promoted_id, 1);
+    incrementStat(_promoted_id, 1);
 
     return true;
   }
@@ -51,9 +51,9 @@ public:
   {
     std::string_view remap_identifier                 = remap_id;
     const std::tuple<std::string_view, int *> stats[] = {
-      {"cache_hits", &cache_hits_id},
-      {"promoted", &promoted_id},
-      {"total_requests", &total_requests_id},
+      {"cache_hits", &_cache_hits_id},
+      {"promoted", &_promoted_id},
+      {"total_requests", &_total_requests_id},
     };
 
     if (nullptr == remap_id) {

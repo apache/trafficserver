@@ -41,6 +41,13 @@ QUICStreamManager::QUICStreamManager(QUICContext *context, QUICApplicationMap *a
   }
 }
 
+QUICStreamManager::~QUICStreamManager()
+{
+  for (auto stream = stream_list.pop(); stream != nullptr; stream = stream_list.pop()) {
+    _stream_factory.delete_stream(stream);
+  }
+}
+
 std::vector<QUICFrameType>
 QUICStreamManager::interests()
 {

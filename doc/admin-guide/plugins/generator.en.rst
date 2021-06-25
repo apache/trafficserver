@@ -21,10 +21,10 @@ Generator Plugin
   under the License.
 
 The `Generator` allows testing of synthetic workloads by generating
-HTTP responses of various sizes. The size and cacheability of the
-response is specified by the first two components of the requested
-URL path. This plugin only supports the ``GET`` and ``HEAD`` HTTP
-methods.
+HTTP responses of various sizes and receiving POST bodies. The size
+and cacheability of the response is specified by the first two components
+of the requested URL path. This plugin supports the ``GET``, ``HEAD``,
+and ``POST`` HTTP methods.
 
 +---------------+----------------------------------------------------------------+
 |Path component | Description                                                    |
@@ -81,3 +81,6 @@ The `Generator` plugin can return responses as large as you like::
 
   $ curl -o /dev/null -x 127.0.0.1:8080 http://workload.example.com/cache/$((10 * 1024 * 1024))/$RANDOM
 
+The `Generator` plugin can also receive POST requests::
+
+  $ curl -o /dev/null -x 127.0.0.1:8080 -d @/etc/hosts http://workload.example.com/

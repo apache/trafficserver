@@ -1,0 +1,82 @@
+result->result: PARENT_SPECIFIED Chosen parent: next_hop6
+not firstcall, line_number: 0, result: PARENT_SPECIFIED
+result->result: PARENT_SPECIFIED Chosen parent: next_hop4
+result->result: PARENT_SPECIFIED Chosen parent: next_hop2
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+not firstcall, line_number: 0, result: PARENT_SPECIFIED
+result->result: PARENT_SPECIFIED Chosen parent: next_hop5
+result->result: PARENT_SPECIFIED Chosen parent: next_hop4
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop2
+result->result: PARENT_SPECIFIED Chosen parent: next_hop5
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+not firstcall, line_number: 0, result: PARENT_SPECIFIED
+result->result: PARENT_SPECIFIED Chosen parent: next_hop4
+result->result: PARENT_SPECIFIED Chosen parent: next_hop5
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+not firstcall, line_number: 0, result: PARENT_SPECIFIED
+result->result: PARENT_SPECIFIED Chosen parent: next_hop2
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+not firstcall, line_number: 0, result: PARENT_SPECIFIED
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop2
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+not firstcall, line_number: 0, result: PARENT_SPECIFIED
+result->result: PARENT_SPECIFIED Chosen parent: next_hop2
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+not firstcall, line_number: 0, result: PARENT_SPECIFIED
+result->result: PARENT_SPECIFIED Chosen parent: next_hop4
+result->result: PARENT_SPECIFIED Chosen parent: next_hop7
+result->result: PARENT_SPECIFIED Chosen parent: next_hop5
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop5
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+not firstcall, line_number: 0, result: PARENT_SPECIFIED
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop7
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+not firstcall, line_number: 0, result: PARENT_SPECIFIED
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop6
+result->result: PARENT_SPECIFIED Chosen parent: next_hop2
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+result->result: PARENT_SPECIFIED Chosen parent: next_hop4
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop2
+result->result: PARENT_SPECIFIED Chosen parent: next_hop5
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+result->result: PARENT_SPECIFIED Chosen parent: next_hop5
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop2
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop0
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+result->result: PARENT_SPECIFIED Chosen parent: next_hop7
+result->result: PARENT_SPECIFIED Chosen parent: next_hop5
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop1
+result->result: PARENT_SPECIFIED Chosen parent: next_hop5
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3
+result->result: PARENT_SPECIFIED Chosen parent: next_hop7
+result->result: PARENT_SPECIFIED Chosen parent: next_hop3

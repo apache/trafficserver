@@ -126,7 +126,7 @@ ServerSessionPool::validate_cert(HttpSM *sm, NetVConnection *netvc)
   // a new connection.
   //
   if (sm->t_state.scheme == URL_WKSIDX_HTTPS) {
-    const char *session_cert       = netvc->options.ssl_client_cert_name.get();
+    const char *session_cert       = netvc->options.ssl_client_cert_name;
     std::string_view proposed_cert = sm->get_outbound_cert();
     Debug("http_ss", "validate_cert proposed_cert=%.*s, cert=%s", static_cast<int>(proposed_cert.size()), proposed_cert.data(),
           session_cert);
@@ -165,9 +165,9 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     }
     if (zret == HSM_DONE) {
       to_return = first;
-      HTTP_DECREMENT_DYN_STAT(http_pooled_server_connections_stat);
-      m_fqdn_pool.erase(first);
-      m_ip_pool.erase(to_return);
+      this->removeSession(to_return);
+    } else if (first != m_fqdn_pool.end()) {
+      Debug("http_ss", "Failed find entry due to name mismatch %s", sm->t_state.current.server->name);
     }
   } else if (TS_SERVER_SESSION_SHARING_MATCH_MASK_IP & match_style) { // matching is not disabled.
     auto first = m_ip_pool.find(addr);
@@ -190,9 +190,7 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
     }
     if (zret == HSM_DONE) {
       to_return = first;
-      HTTP_DECREMENT_DYN_STAT(http_pooled_server_connections_stat);
-      m_ip_pool.erase(first);
-      m_fqdn_pool.erase(to_return);
+      this->removeSession(to_return);
     }
   }
   return zret;
@@ -208,7 +206,7 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
   //  to remove the connection from our lists
   //  Actually need to have a buffer here, otherwise the vc is
   //  disabled
-  ss->do_io_read(this, INT64_MAX, ss->get_reader()->mbuf);
+  ss->do_io_read(this, INT64_MAX, ss->get_remote_reader()->mbuf);
 
   // Transfer control of the write side as well
   ss->do_io_write(this, 0, nullptr);
@@ -217,10 +215,7 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
   ss->set_inactivity_timeout(ss->get_netvc()->get_inactivity_timeout());
   ss->set_active_timeout(ss->get_netvc()->get_active_timeout());
   // put it in the pools.
-  m_ip_pool.insert(ss);
-  m_fqdn_pool.insert(ss);
-
-  HTTP_INCREMENT_DYN_STAT(http_pooled_server_connections_stat);
+  this->addSession(ss);
 
   Debug("http_ss",
         "[%" PRId64 "] [release session] "
@@ -287,12 +282,10 @@ ServerSessionPool::eventHandler(int event, void *data)
             HttpDebugNames::get_event_name(event));
       ink_assert(s->state == PoolableSession::KA_POOLED);
       // Out of the pool! Now!
-      m_ip_pool.erase(spot);
-      m_fqdn_pool.erase(s);
+      this->removeSession(s);
       // Drop connection on this end.
       s->do_io_close();
       found = true;
-      HTTP_DECREMENT_DYN_STAT(http_pooled_server_connections_stat);
       break;
     }
   }
@@ -364,7 +357,7 @@ HttpSessionManager::acquire_session(HttpSM *sm, sockaddr const *ip, const char *
          ServerSessionPool::validate_cert(sm, to_return->get_netvc()))) {
       Debug("http_ss", "[%" PRId64 "] [acquire session] returning attached session ", to_return->connection_id());
       to_return->state = PoolableSession::SSN_IN_USE;
-      sm->attach_server_session(to_return);
+      sm->create_server_txn(to_return);
       return HSM_DONE;
     }
     // Release this session back to the main session pool and
@@ -450,11 +443,16 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
     }
 
     if (to_return) {
-      Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
-      to_return->state = PoolableSession::SSN_IN_USE;
-      // the attach_server_session will issue the do_io_read under the sm lock
-      sm->attach_server_session(to_return);
-      retval = HSM_DONE;
+      if (sm->create_server_txn(to_return)) {
+        Debug("http_ss", "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
+        to_return->state = PoolableSession::SSN_IN_USE;
+        retval           = HSM_DONE;
+      } else {
+        Debug("http_ss", "[%" PRId64 "] [acquire session] failed to get transaction on session from shared pool",
+              to_return->connection_id());
+        to_return->do_io_close();
+        retval = HSM_RETRY;
+      }
     }
   }
   return retval;
@@ -483,4 +481,42 @@ HttpSessionManager::release_session(PoolableSession *to_release)
   }
 
   return released_p ? HSM_DONE : HSM_RETRY;
+}
+
+void
+ServerSessionPool::removeSession(PoolableSession *to_remove)
+{
+  EThread *ethread = this_ethread();
+  SCOPED_MUTEX_LOCK(lock, mutex, ethread);
+  char peer_ip[INET6_ADDRPORTSTRLEN];
+  if (is_debug_tag_set("http_ss")) {
+    ats_ip_nptop(to_remove->get_remote_addr(), peer_ip, sizeof(peer_ip));
+    Debug("http_ss", "Remove session %p %s m_fqdn_pool size=%zu m_ip_pool_size=%zu", to_remove, peer_ip, m_fqdn_pool.count(),
+          m_ip_pool.count());
+  }
+  m_fqdn_pool.erase(to_remove);
+  if (m_ip_pool.erase(to_remove)) {
+    HTTP_DECREMENT_DYN_STAT(http_pooled_server_connections_stat);
+  }
+  if (is_debug_tag_set("http_ss")) {
+    Debug("http_ss", "After Remove session %p m_fqdn_pool size=%zu m_ip_pool_size=%zu", to_remove, m_fqdn_pool.count(),
+          m_ip_pool.count());
+  }
+}
+
+void
+ServerSessionPool::addSession(PoolableSession *ss)
+{
+  EThread *ethread = this_ethread();
+  SCOPED_MUTEX_LOCK(lock, mutex, ethread);
+  // put it in the pools.
+  m_ip_pool.insert(ss);
+  m_fqdn_pool.insert(ss);
+  HTTP_INCREMENT_DYN_STAT(http_pooled_server_connections_stat);
+
+  if (is_debug_tag_set("http_ss")) {
+    char peer_ip[INET6_ADDRPORTSTRLEN];
+    ats_ip_nptop(ss->get_remote_addr(), peer_ip, sizeof(peer_ip));
+    Debug("http_ss", "[%" PRId64 "] [add session] session placed into shared pool under ip %s", ss->connection_id(), peer_ip);
+  }
 }

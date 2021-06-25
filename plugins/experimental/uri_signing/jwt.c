@@ -52,7 +52,6 @@ parse_jwt(json_t *raw)
   }
 
   struct jwt *jwt = malloc(sizeof *jwt);
-  jwt->raw        = raw;
   jwt->iss        = json_string_value(json_object_get(raw, "iss"));
   jwt->sub        = json_string_value(json_object_get(raw, "sub"));
   jwt->aud        = json_object_get(raw, "aud");
@@ -78,7 +77,6 @@ jwt_delete(struct jwt *jwt)
   }
 
   json_decref(jwt->aud);
-  json_decref(jwt->raw);
   free(jwt);
 }
 
@@ -141,7 +139,7 @@ jwt_validate(struct jwt *jwt)
     return false;
   }
 
-  if (jwt->cdnistd != 0) {
+  if (jwt->cdnistd < 0) {
     PluginDebug("Initial JWT Failure: unsupported value for cdnistd: %d", jwt->cdnistd);
     return false;
   }
@@ -263,7 +261,7 @@ void
 renew_copy_raw(json_t *new_json, const char *name, json_t *old_json)
 {
   if (old_json) {
-    json_object_set_new(new_json, name, old_json);
+    json_object_set(new_json, name, old_json);
   }
 }
 
@@ -283,7 +281,7 @@ renew_copy_integer(json_t *new_json, const char *name, double old)
 }
 
 char *
-renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const char *package)
+renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const char *package, const char *uri, size_t uri_ct)
 {
   char *s = NULL;
   if (jwt->cdnistt != 1) {
@@ -294,6 +292,65 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
   if (jwt->cdniets == 0) {
     PluginDebug("Not renewing jwt, cdniets == 0");
     return NULL;
+  }
+
+  int buff_ct = uri_ct + 2;
+  int normal_err;
+  char *normal_uri = (char *)TSmalloc(buff_ct);
+  memset(normal_uri, 0, buff_ct);
+
+  normal_err = normalize_uri(uri, uri_ct, normal_uri, buff_ct);
+
+  if (normal_err) {
+    goto fail_normal;
+  }
+
+  /* Determine Path String Based on cdnistd claim */
+  size_t normal_size     = strlen(normal_uri);
+  const char *path_start = normal_uri;
+  const char *path_end   = NULL;
+  const char *uri_end    = normal_uri + normal_size;
+  char *path_string      = NULL;
+  size_t path_size       = normal_size + 1;
+
+  path_string = (char *)TSmalloc(path_size);
+  memset(path_string, 0, path_size);
+  PluginDebug("Renewing JWT. Stripped URI: %s", uri);
+
+  if (jwt->cdnistd == 0) {
+    PluginDebug("STD is 0 - Setting Cookie Path to Path=/");
+    snprintf(path_string, 2, "%s", "/");
+  } else {
+    PluginDebug("STD is greater than 0. Calculating Path");
+    int slash_count = 0;
+    /* Search for 3rd '/' to mark start of path */
+    while (path_start != uri_end && slash_count < 3) {
+      ++path_start;
+      if (*path_start == '/') {
+        slash_count++;
+      }
+    }
+    if (path_start == uri_end) {
+      PluginDebug("STD is greater than number of path segments. Cannot Renew Token!");
+      goto fail_path;
+    }
+    PluginDebug("Searching through path: %s", path_start);
+    /* Now search through path for cdnistd number of segments */
+    slash_count = 0;
+    path_end    = path_start + 1;
+    while (path_end != uri_end && slash_count < jwt->cdnistd) {
+      ++path_end;
+      if (*path_end == '/') {
+        slash_count++;
+      }
+    }
+    if (path_end == uri_end) {
+      PluginDebug("STD is greater than number of path segments. Cannot Renew Token!");
+      goto fail_path;
+    }
+    path_size = path_end - path_start + 1;
+    snprintf(path_string, path_size, "%s", path_start);
+    PluginDebug("Setting Cookie Path to %s", path_string);
   }
 
   json_t *new_json = json_object();
@@ -348,15 +405,20 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
     goto fail_jws;
   }
 
-  const char *fmt = "%s=%s";
+  const char *fmt = "%s=%s; Path=%s";
   size_t s_ct;
-  s = malloc(s_ct = (1 + snprintf(NULL, 0, fmt, package, jws_str)));
-  snprintf(s, s_ct, fmt, package, jws_str);
+  s = malloc(s_ct = (1 + snprintf(NULL, 0, fmt, package, jws_str, path_string)));
+  snprintf(s, s_ct, fmt, package, jws_str, path_string);
+  PluginDebug("Cookie returned from renew function: %s", s);
 fail_jws:
   cjose_jws_release(jws);
 fail_hdr:
   cjose_header_release(hdr);
 fail_json:
   free(pt);
+fail_path:
+  TSfree(path_string);
+fail_normal:
+  TSfree(normal_uri);
   return s;
 }

@@ -150,7 +150,7 @@ Below is an overview of the null transform plugin:
 
 10. If there is more data left to read ( if ndone < nbytes), then the
     ``handle_transform`` function wakes up the downstream vconnection
-    with a reenable and wakes up the upstream vconnection by sending it
+    with a re-enable and wakes up the upstream vconnection by sending it
     ``WRITE_READY``:
 
     .. code-block:: c
@@ -167,7 +167,7 @@ Below is an overview of the null transform plugin:
     The process of passing data through the transformation is
     illustrated in the following diagram. The downstream vconnections
     send ``WRITE_READY`` events when they need more data; when data is
-    available, the upstream vconnections reenable the downstream
+    available, the upstream vconnections re-enable the downstream
     vconnections. In this instance, the ``TSVIOReenable`` function sends
     ``TS_EVENT_IMMEDIATE``.
 
@@ -182,7 +182,7 @@ Below is an overview of the null transform plugin:
 11. If the ``handle_transform`` function finds there is no more data to
     read, then it sets ``nbytes`` to ``ndone`` on the output
     (downstream) VIO and wakes up the output vconnection with a
-    reenable. It then triggers the end of the write operation from the
+    re-enable. It then triggers the end of the write operation from the
     upstream vconnection by sending the upstream vconnection a
     ``WRITE_COMPLETE`` event.
 

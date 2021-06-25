@@ -91,7 +91,7 @@ RemapConfigs::parse_inline(const char *arg)
   value = std::string(sep + 1, std::distance(sep + 1, arg + strlen(arg)));
 
   if (TSHttpTxnConfigFind(key.c_str(), -1 /* len */, &name, &type) != TS_SUCCESS) {
-    TSError("[%s] Invalid configuration variable '%s'", PLUGIN_NAME, key.c_str());
+    TSWarning("[%s] Invalid configuration variable '%s'", PLUGIN_NAME, key.c_str());
     return true;
   }
 

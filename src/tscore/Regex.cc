@@ -111,7 +111,7 @@ Regex::get_capture_count()
 bool
 Regex::exec(std::string_view const &str)
 {
-  std::array<int, DEFAULT_GROUP_COUNT * 3> ovector = {0};
+  std::array<int, DEFAULT_GROUP_COUNT * 3> ovector = {{0}};
   return this->exec(str, ovector.data(), ovector.size());
 }
 

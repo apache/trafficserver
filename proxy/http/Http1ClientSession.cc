@@ -61,6 +61,8 @@ ClassAllocator<Http1ClientSession, true> http1ClientSessionAllocator("http1Clien
 
 Http1ClientSession::Http1ClientSession() : super(), trans(this) {}
 
+//
+// Will only close the connection if do_io_close has been called previously (to set read_state to HCS_CLOSED
 void
 Http1ClientSession::destroy()
 {
@@ -86,12 +88,16 @@ Http1ClientSession::release_transaction()
   if (transact_count == released_transactions) {
     // Make sure we previously called release() or do_io_close() on the session
     ink_release_assert(read_state != HCS_INIT);
-    if (read_state == HCS_ACTIVE_READER) {
+    if (is_active()) {
       // (in)active timeout
       do_io_close(HTTP_ERRNO);
+    } else if (read_state == HCS_ACTIVE_READER) {
+      release(&trans); // Put back to keep-alive state
     } else {
       destroy();
     }
+  } else {
+    ink_release_assert(transact_count == released_transactions);
   }
 }
 
@@ -188,7 +194,9 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   _reader     = reader ? reader : read_buffer->alloc_reader();
+
   trans.set_reader(_reader);
+  trans.upstream_outbound_options = *accept_options;
 
   _handle_if_ssl(new_vc);
 
@@ -207,6 +215,9 @@ void
 Http1ClientSession::do_io_close(int alerrno)
 {
   if (read_state == HCS_CLOSED) {
+    if (transact_count == released_transactions) {
+      this->destroy();
+    }
     return; // Don't double call session close
   }
   if (read_state == HCS_ACTIVE_READER) {
@@ -255,8 +266,6 @@ Http1ClientSession::do_io_close(int alerrno)
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     read_state = HCS_CLOSED;
 
-    // Can go ahead and close the netvc now, but keeping around the session object
-    // until all the transactions are closed
     if (_vc) {
       _vc->do_io_close();
       _vc = nullptr;
@@ -345,11 +354,21 @@ Http1ClientSession::state_keep_alive(int event, void *data)
 {
   // Route the event.  It is either for vc or
   //  the origin server slave vc
-  if (data && data == slave_ka_vio) {
-    return state_slave_keep_alive(event, data);
-  } else {
-    ink_assert(data && data == ka_vio);
-    ink_assert(read_state == HCS_KEEP_ALIVE);
+  if (data) {
+    if (data == slave_ka_vio) {
+      return state_slave_keep_alive(event, data);
+    } else if (data == schedule_event) {
+      schedule_event = nullptr;
+    } else {
+      ink_assert(data && data == ka_vio);
+      ink_assert(read_state == HCS_KEEP_ALIVE);
+    }
+  }
+
+  // If we got here due to a network I/O event directly, go ahead and cancel any remaining schedule events
+  if (schedule_event) {
+    schedule_event->cancel();
+    schedule_event = nullptr;
   }
 
   STATE_ENTER(&Http1ClientSession::state_keep_alive, event, data);
@@ -385,8 +404,6 @@ Http1ClientSession::state_keep_alive(int event, void *data)
 void
 Http1ClientSession::release(ProxyTransaction *trans)
 {
-  ink_assert(read_state == HCS_ACTIVE_READER || read_state == HCS_INIT);
-
   // When release is called from start() to read the first transaction, get_sm()
   // will return null.
   HttpSM *sm                = trans->get_sm();
@@ -401,13 +418,15 @@ Http1ClientSession::release(ProxyTransaction *trans)
     this->do_io_write(this, 0, nullptr);
   }
 
+  h1trans->reset();
+
   // Check to see there is remaining data in the
   //  buffer.  If there is, spin up a new state
   //  machine to process it.  Otherwise, issue an
   //  IO to wait for new data
+  /*  Start the new transaction once we finish completely the current transaction and unroll the stack */
   bool more_to_read = this->_reader->is_read_avail_more_than(0);
   if (more_to_read) {
-    h1trans->reset();
     HttpSsnDebug("[%" PRId64 "] data already in buffer, starting new transaction", con_id);
     new_transaction();
   } else {
@@ -418,26 +437,27 @@ Http1ClientSession::release(ProxyTransaction *trans)
     ink_assert(slave_ka_vio != ka_vio);
 
     if (_vc) {
+      // Under heavy traffic ( - e.g. hitting proxy.config.net.max_connections_in limit), calling add_to_keep_alive_queue()
+      // could free this _vc, session, and transaction.
       _vc->cancel_active_timeout();
       _vc->add_to_keep_alive_queue();
     }
-    h1trans->reset();
   }
 }
 
-void
+ProxyTransaction *
 Http1ClientSession::new_transaction()
 {
   // If the client connection terminated during API callouts we're done.
   if (nullptr == _vc) {
     this->do_io_close(); // calls the SSN_CLOSE hooks to match the SSN_START hooks.
-    return;
+    return nullptr;
   }
 
   if (!_vc->add_to_active_queue()) {
     // no room in the active queue close the connection
     this->do_io_close();
-    return;
+    return nullptr;
   }
 
   // Defensive programming, make sure nothing persists across
@@ -449,6 +469,7 @@ Http1ClientSession::new_transaction()
   transact_count++;
 
   trans.new_transaction(read_from_early_data > 0 ? true : false);
+  return &trans;
 }
 
 bool
@@ -468,7 +489,7 @@ Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transa
     //  have it call the client session back.  This IO also prevent
     //  the server net conneciton from calling back a dead sm
     SET_HANDLER(&Http1ClientSession::state_keep_alive);
-    slave_ka_vio = ssession->do_io_read(this, INT64_MAX, ssession->get_reader()->mbuf);
+    slave_ka_vio = ssession->do_io_read(this, INT64_MAX, ssession->get_remote_reader()->mbuf);
     ink_assert(slave_ka_vio != ka_vio);
 
     // Transfer control of the write side as well

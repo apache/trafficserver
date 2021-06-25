@@ -1,7 +1,7 @@
 URI Signing Plugin
 ==================
 
-This remap plugin implements the draft URI Signing protocol documented [here](https://tools.ietf.org/html/draft-ietf-cdni-uri-signing-16):
+This remap plugin implements the draft URI Signing protocol documented [here](https://tools.ietf.org/html/draft-ietf-cdni-uri-signing-21):
 
 It takes a single argument: the name of a config file that contains key information.
 
@@ -130,7 +130,7 @@ The following claims are understood:
   - `cdniuc`: Validated last, after key verificationD. **Only `regex` is supported!**
   - `cdniets`: If cdnistt is 1, this must be present and non-zero.
   - `cdnistt`: If present, must be 1.
-  - `cdnistd`: If present, must be 0.
+  - `cdnistd`: Renewal token cookies will have cdnistd path segments of the request in their path attribute.
 
 ### Unsupported Claims
 

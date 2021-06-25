@@ -29,6 +29,7 @@
 #include "tscore/ink_config.h"
 #include "AclFiltering.h"
 #include "URL.h"
+#include "RemapHitCount.h"
 #include "RemapPluginInfo.h"
 #include "PluginFactory.h"
 #include "tscore/Regex.h"
@@ -93,6 +94,7 @@ public:
   }
 
   void Print() const;
+  std::string PrintRemapHitCount() const;
 
   int from_path_len = 0;
   URL fromURL;
@@ -112,6 +114,8 @@ public:
   acl_filter_rule *filter            = nullptr; // acl filtering (list of rules)
   LINK(url_mapping, link);                      // For use with the main Queue linked list holding all the mapping
   std::shared_ptr<NextHopSelectionStrategy> strategy = nullptr;
+  std::string remapKey;
+  std::atomic<uint64_t> _hitCount = 0; // counter can overflow
 
   int
   getRank() const
@@ -123,6 +127,24 @@ public:
   {
     _rank = rank;
   };
+
+  void
+  setRemapKey()
+  {
+    remapKey = fromURL.string_get_ref();
+  }
+
+  const std::string &
+  getRemapKey()
+  {
+    return remapKey;
+  }
+
+  void
+  incrementCount()
+  {
+    _hitCount++;
+  }
 
 private:
   std::vector<RemapPluginInst *> _plugin_inst_list;

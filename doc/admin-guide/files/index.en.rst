@@ -86,3 +86,9 @@ Configuration Files
 
 :doc:`volume.config.en`
     Defines cache space usage by individual protocols.
+
+.. note::
+
+   Currently the YAML parsing library has a bug where line number counting
+   (for error messages) ignores comment lines that start with **#**.  A
+   work-around is to put a space before the **#**.

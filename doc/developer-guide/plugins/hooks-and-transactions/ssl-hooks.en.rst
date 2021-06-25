@@ -40,7 +40,7 @@ The following actions are valid from these callbacks.
 
   * Fetch the SSL object associated with the connection - :c:func:`TSVConnSslConnectionGet`
   * Set a connection to blind tunnel - :c:func:`TSVConnTunnel`
-  * Reenable the ssl connection - :c:func:`TSVConnReenable`
+  * Re-enable the ssl connection - :c:func:`TSVConnReenable`
   * Find SSL context by name - :c:func:`TSSslContextFindByName`
   * Find SSL context by address - :c:func:`TSSslContextFindByAddr`
   * Determine whether the TSVConn is really representing a SSL connection - :c:func:`TSVConnIsSsl`
@@ -63,7 +63,7 @@ TS_VCONN_CLOSE_HOOK
 ------------------------
 
 This hook is invoked after the SSL handshake is done and when the IO is closing. The TSVConnArgs
-should be cleaned up here. A callback at this point must reenable.
+should be cleaned up here. A callback at this point must re-enable.
 
 TS_SSL_CLIENT_HELLO_HOOK
 ------------------------
@@ -145,7 +145,7 @@ TS_VCONN_OUTBOUND_CLOSE_HOOK
 -----------------------------
 
 This hook is invoked after the SSL handshake is done and right before the outbound connection
-closes.  A callback at this point must reenable.
+closes.  A callback at this point must re-enable.
 
 TLS Inbound Hook State Diagram
 ------------------------------

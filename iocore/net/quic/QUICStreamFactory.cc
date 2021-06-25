@@ -26,30 +26,20 @@
 #include "QUICUnidirectionalStream.h"
 #include "QUICStreamFactory.h"
 
-ClassAllocator<QUICBidirectionalStream> quicBidiStreamAllocator("quicBidiStreamAllocator");
-ClassAllocator<QUICSendStream> quicSendStreamAllocator("quicSendStreamAllocator");
-ClassAllocator<QUICReceiveStream> quicReceiveStreamAllocator("quicReceiveStreamAllocator");
-
 QUICStream *
 QUICStreamFactory::create(QUICStreamId sid, uint64_t local_max_stream_data, uint64_t remote_max_stream_data)
 {
   QUICStream *stream = nullptr;
   switch (QUICTypeUtil::detect_stream_direction(sid, this->_info->direction())) {
   case QUICStreamDirection::BIDIRECTIONAL:
-    // TODO Free the stream somewhere
-    stream = THREAD_ALLOC(quicBidiStreamAllocator, this_ethread());
-    new (stream) QUICBidirectionalStream(this->_rtt_provider, this->_info, sid, local_max_stream_data, remote_max_stream_data);
+    stream = new QUICBidirectionalStream(this->_rtt_provider, this->_info, sid, local_max_stream_data, remote_max_stream_data);
     break;
   case QUICStreamDirection::SEND:
-    // TODO Free the stream somewhere
-    stream = THREAD_ALLOC(quicSendStreamAllocator, this_ethread());
-    new (stream) QUICSendStream(this->_info, sid, remote_max_stream_data);
+    stream = new QUICSendStream(this->_info, sid, remote_max_stream_data);
     break;
   case QUICStreamDirection::RECEIVE:
     // server side
-    // TODO Free the stream somewhere
-    stream = THREAD_ALLOC(quicReceiveStreamAllocator, this_ethread());
-    new (stream) QUICReceiveStream(this->_rtt_provider, this->_info, sid, local_max_stream_data);
+    stream = new QUICReceiveStream(this->_rtt_provider, this->_info, sid, local_max_stream_data);
     break;
   default:
     ink_assert(false);
@@ -62,23 +52,5 @@ QUICStreamFactory::create(QUICStreamId sid, uint64_t local_max_stream_data, uint
 void
 QUICStreamFactory::delete_stream(QUICStream *stream)
 {
-  if (!stream) {
-    return;
-  }
-
-  stream->~QUICStream();
-  switch (stream->direction()) {
-  case QUICStreamDirection::BIDIRECTIONAL:
-    THREAD_FREE(static_cast<QUICBidirectionalStream *>(stream), quicBidiStreamAllocator, this_thread());
-    break;
-  case QUICStreamDirection::SEND:
-    THREAD_FREE(static_cast<QUICSendStream *>(stream), quicSendStreamAllocator, this_thread());
-    break;
-  case QUICStreamDirection::RECEIVE:
-    THREAD_FREE(static_cast<QUICReceiveStream *>(stream), quicReceiveStreamAllocator, this_thread());
-    break;
-  default:
-    ink_assert(false);
-    break;
-  }
+  delete stream;
 }

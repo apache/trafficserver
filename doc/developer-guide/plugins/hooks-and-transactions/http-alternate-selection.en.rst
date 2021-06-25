@@ -57,7 +57,7 @@ by a call to ``TSHttpAltInfoQualitySet``.
 
 .. note::
 
-   HTTP SM does not have to be reenabled using ``TSHttpTxnReenable`` or any
+   HTTP SM does not have to be re-enabled using ``TSHttpTxnReenable`` or any
    other APIs; just return from the function.
 
 The sample code below shows how to call the alternate APIs.

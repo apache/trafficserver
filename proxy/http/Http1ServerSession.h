@@ -37,6 +37,7 @@
 #include "HttpConnectionCount.h"
 #include "HttpProxyAPIEnums.h"
 #include "PoolableSession.h"
+#include "Http1ServerTransaction.h"
 
 class HttpSM;
 class MIOBuffer;
@@ -53,7 +54,7 @@ class Http1ServerSession : public PoolableSession
   using super_type = PoolableSession;
 
 public:
-  Http1ServerSession() : super_type() {}
+  Http1ServerSession();
   Http1ServerSession(self_type const &) = delete;
   self_type &operator=(self_type const &) = delete;
   ~Http1ServerSession()                   = default;
@@ -62,7 +63,7 @@ public:
   // Methods
   void release(ProxyTransaction *) override;
   void destroy() override;
-  void free() override;
+  void release_transaction();
 
   // VConnection Methods
   void do_io_close(int lerrno = -1) override;
@@ -74,23 +75,18 @@ public:
   void decrement_current_active_connections_stat() override;
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
   void start() override;
+  void free() override;
+  bool is_chunked_encoding_supported() const override;
 
-  void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
-  IOBufferReader *get_reader() override;
-  void attach_hostname(const char *hostname);
+  IOBufferReader *get_remote_reader() override;
   IpEndpoint const &get_server_ip() const;
+
+  ProxyTransaction *new_transaction() override;
 
   ////////////////////
   // Variables
 
   int transact_count = 0;
-
-  // Used to determine whether the session is for parent proxy
-  // it is session to origin server
-  // We need to determine whether a closed connection was to
-  // close parent proxy to update the
-  // proxy.process.http.current_parent_proxy_connections
-  bool to_parent_proxy = false;
 
   // The ServerSession owns the following buffer which use
   //   for parsing the headers.  The server session needs to
@@ -104,7 +100,11 @@ public:
 private:
   int magic = HTTP_SS_MAGIC_DEAD;
 
-  IOBufferReader *buf_reader = nullptr;
+  IOBufferReader *_reader = nullptr;
+
+  int released_transactions = 0;
+
+  Http1ServerTransaction trans;
 };
 
 extern ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator;
@@ -112,16 +112,8 @@ extern ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator;
 ////////////////////////////////////////////
 // INLINE
 
-inline void
-Http1ServerSession::attach_hostname(const char *hostname)
-{
-  if (CRYPTO_HASH_ZERO == hostname_hash) {
-    CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
-  }
-}
-
 inline IOBufferReader *
-Http1ServerSession::get_reader()
+Http1ServerSession::get_remote_reader()
 {
-  return buf_reader;
+  return _reader;
 };

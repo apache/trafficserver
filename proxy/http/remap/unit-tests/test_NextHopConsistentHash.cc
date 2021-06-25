@@ -620,3 +620,33 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
     }
   }
 }
+
+// jjr
+//
+SCENARIO("Testing NextHopConsistentHash using a peering ring_mode.")
+{
+  // We need this to build a HdrHeap object in build_request();
+  // No thread setup, forbid use of thread local allocators.
+  cmd_disable_pfreelist = true;
+  // Get all of the HTTP WKS items populated.
+  http_init();
+
+  GIVEN("Loading the consistent-hash-tests.yaml config for 'consistent_hash' tests.")
+  {
+    std::shared_ptr<NextHopSelectionStrategy> strategy;
+    NextHopStrategyFactory nhf(TS_SRC_DIR "unit-tests/peering.yaml");
+    strategy = nhf.strategyInstance("peering-group-1");
+
+    WHEN("the config is loaded.")
+    {
+      THEN("then testing consistent hash.")
+      {
+        REQUIRE(nhf.strategies_loaded == true);
+        REQUIRE(strategy != nullptr);
+        REQUIRE(strategy->groups == 2);
+        REQUIRE(strategy->ring_mode == NH_PEERING_RING);
+        REQUIRE(strategy->policy_type == NH_CONSISTENT_HASH);
+      }
+    }
+  }
+}

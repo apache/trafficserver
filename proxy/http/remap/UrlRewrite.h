@@ -146,6 +146,8 @@ public:
 
   void PerformACLFiltering(HttpTransact::State *s, url_mapping *mapping);
   void PrintStore(const MappingsStore &store) const;
+  std::string PrintRemapHits();
+  std::string PrintRemapHitsStore(MappingsStore &store);
 
   void
   DestroyStore(MappingsStore &store)

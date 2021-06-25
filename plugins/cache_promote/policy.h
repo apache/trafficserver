@@ -23,6 +23,8 @@
 #include "ts/ts.h"
 #include "ts/remap.h"
 
+extern int TXN_ARG_IDX;
+
 #define MAX_STAT_LENGTH (1 << 8)
 extern const char *PLUGIN_NAME;
 
@@ -57,7 +59,7 @@ public:
   void
   decrementStat(const int stat, const int amount)
   {
-    if (stats_enabled) {
+    if (_stats_enabled) {
       TSStatIntDecrement(stat, amount);
     }
   }
@@ -65,7 +67,7 @@ public:
   void
   incrementStat(const int stat, const int amount)
   {
-    if (stats_enabled) {
+    if (_stats_enabled) {
       TSStatIntIncrement(stat, amount);
     }
   }
@@ -82,6 +84,24 @@ public:
     return "";
   }
 
+  // Cleanup any internal state / memory that may be in use
+  virtual void
+  cleanup(TSHttpTxn txnp)
+  {
+  }
+
+  // These are for any policy that also wants to count byters are a promotion criteria
+  virtual bool
+  countBytes() const
+  {
+    return false;
+  }
+
+  virtual void
+  addBytes(TSHttpTxn txnp)
+  {
+  }
+
   bool doSample() const;
   int create_stat(std::string_view name, std::string_view remap_identifier);
 
@@ -92,14 +112,11 @@ public:
   virtual bool stats_add(const char *remap_id) = 0;
 
   // when true stats are incremented.
-  bool stats_enabled    = false;
-  int cache_hits_id     = -1;
-  int promoted_id       = -1;
-  int total_requests_id = -1;
+  bool _stats_enabled    = false;
+  int _cache_hits_id     = -1;
+  int _promoted_id       = -1;
+  int _total_requests_id = -1;
 
 private:
   float _sample = 0.0;
-
-protected:
-  std::string _label = "";
 };

@@ -84,11 +84,6 @@ Http2ClientSession::destroy()
 void
 Http2ClientSession::free()
 {
-  if (this->_reenable_event) {
-    this->_reenable_event->cancel();
-    this->_reenable_event = nullptr;
-  }
-
   if (_vc) {
     _vc->do_io_close();
     _vc = nullptr;
@@ -104,6 +99,11 @@ Http2ClientSession::free()
 
   REMEMBER(NO_EVENT, this->recursion)
   Http2SsnDebug("session free");
+
+  if (this->_reenable_event) {
+    this->_reenable_event->cancel();
+    this->_reenable_event = nullptr;
+  }
 
   // Don't free active ProxySession
   ink_release_assert(is_active() == false);
@@ -241,10 +241,7 @@ Http2ClientSession::do_io_close(int alerrno)
   ink_assert(this->mutex->thread_holding == this_ethread());
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
 
-  {
-    SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-    this->connection_state.release_stream();
-  }
+  this->connection_state.release_stream();
 
   this->clear_session_active();
 
@@ -440,7 +437,7 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
 
   STATE_ENTER(&Http2ClientSession::state_start_frame_read, event);
   ink_assert(event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_READ_READY);
-  return state_process_frame_read(event, vio, false);
+  return do_process_frame_read(event, vio, false);
 }
 
 int
@@ -516,7 +513,7 @@ Http2ClientSession::state_complete_frame_read(int event, void *edata)
   }
   Http2SsnDebug("completed frame read, %" PRId64 " bytes available", this->_read_buffer_reader->read_avail());
 
-  return state_process_frame_read(event, vio, true);
+  return do_process_frame_read(event, vio, true);
 }
 
 int
@@ -542,7 +539,7 @@ Http2ClientSession::do_complete_frame_read()
 }
 
 int
-Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_frame)
+Http2ClientSession::do_process_frame_read(int event, VIO *vio, bool inside_frame)
 {
   if (inside_frame) {
     do_complete_frame_read();
@@ -571,7 +568,6 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
     if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR || do_start_frame_read(err) < 0) {
       // send an error if specified.  Otherwise, just go away
       if (err > Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
-        SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
         if (!this->connection_state.is_state_closed()) {
           this->connection_state.send_goaway_frame(this->connection_state.get_latest_stream_id_in(), err);
           this->set_half_close_local_flag(true);
@@ -597,7 +593,7 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
   }
 
   // If the client hasn't shut us down, reenable
-  if (!this->is_client_closed()) {
+  if (!this->is_peer_closed()) {
     vio->reenable();
   }
   return 0;
@@ -624,8 +620,8 @@ Http2ClientSession::remember(const SourceLocation &location, int event, int reen
 bool
 Http2ClientSession::_should_do_something_else()
 {
-  // Do something else every 128 incoming frames
-  return (this->_n_frame_read & 0x7F) == 0;
+  // Do something else every 128 incoming frames if connection state isn't closed
+  return (this->_n_frame_read & 0x7F) == 0 && !connection_state.is_state_closed();
 }
 
 sockaddr const *

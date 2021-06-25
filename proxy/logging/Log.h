@@ -190,8 +190,6 @@ public:
   static LogConfig *config;
   static LogFieldList global_field_list;
   static std::unordered_map<std::string, LogField *> field_symbol_hash;
-  static LogFormat *global_scrap_format;
-  static LogObject *global_scrap_object;
   static LoggingMode logging_mode;
 
   // logging thread stuff

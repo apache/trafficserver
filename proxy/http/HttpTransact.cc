@@ -380,15 +380,7 @@ response_is_retryable(HttpTransact::State *s, HTTPStatus response_code)
   }
   const url_mapping *mp = s->url_map.getMapping();
   if (mp && mp->strategy) {
-    if (mp->strategy->responseIsRetryable(s->current.simple_retry_attempts, response_code)) {
-      if (mp->strategy->onFailureMarkParentDown(response_code)) {
-        return PARENT_RETRY_UNAVAILABLE_SERVER;
-      } else {
-        return PARENT_RETRY_SIMPLE;
-      }
-    } else {
-      return PARENT_RETRY_NONE;
-    }
+    return mp->strategy->responseIsRetryable(s->state_machine->sm_id, s->current, response_code);
   }
 
   if (s->parent_params && !s->parent_result.response_is_retryable(response_code)) {
@@ -848,11 +840,16 @@ HttpTransact::BadRequest(State *s)
     status                = s->http_return_code;
     reason                = "Field not implemented";
     body_factory_template = "transcoding#unsupported";
+    break;
+  case HTTP_STATUS_HTTPVER_NOT_SUPPORTED:
+    status = s->http_return_code;
+    reason = "Unsupported HTTP Version";
   default:
     break;
   }
 
   build_error_response(s, status, reason, body_factory_template);
+  s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -912,6 +909,20 @@ HttpTransact::OriginDead(State *s)
   TxnDebug("http_trans", "origin server is marked down");
   bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
   build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
+  HTTP_INCREMENT_DYN_STAT(http_dead_server_no_requests);
+  char *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
+  int host_len;
+  const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
+  std::string_view host_name{host_name_ptr, size_t(host_len)};
+  Log::error("%s", lbw()
+                     .clip(1)
+                     .print("CONNECT: dead server no request to {} for host='{}' url='{}'", s->current.server->dst_addr, host_name,
+                            ts::bwf::FirstOf(url_str, "<none>"))
+                     .extend(1)
+                     .write('\0')
+                     .data());
+  s->arena.str_free(url_str);
+
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, nullptr);
 }
 
@@ -3273,8 +3284,6 @@ HttpTransact::handle_cache_write_lock(State *s)
       ink_assert(s->next_action == SM_ACTION_DNS_LOOKUP);
       return;
     }
-
-    TRANSACT_RETURN(next, nullptr);
   }
 }
 
@@ -3627,6 +3636,12 @@ HttpTransact::handle_response_from_parent(State *s)
     if (s->parent_result.retry) {
       markParentUp(s);
     }
+    // the next hop strategy is configured not
+    // to cache a response from a next hop peer.
+    if (s->parent_result.do_not_cache_response) {
+      TxnDebug("http_trans", "response is from a next hop peer, do not cache.");
+      s->cache_info.action = CACHE_DO_NO_ACTION;
+    }
     handle_forward_server_connection_open(s);
     break;
   case PARENT_RETRY:
@@ -3878,21 +3893,26 @@ void
 HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
 {
   char addrbuf[INET6_ADDRSTRLEN];
-
   TxnDebug("http_trans", "[%d] failed to connect [%d] to %s", s->current.attempts, conn_state,
            ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
-  //////////////////////////////////////////
-  // on the first connect attempt failure //
-  // record the failue                   //
-  //////////////////////////////////////////
-  if (0 == s->current.attempts) {
-    char *url_string = s->hdr_info.client_request.url_string_get(&s->arena);
-    Log::error("CONNECT: first attempt could not connect [%s] to %s for '%s' connect_result=%d src_port=%d cause_of_death_errno=%d",
-               HttpDebugNames::get_server_state_name(conn_state),
-               ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>",
-               s->current.server->connect_result, ntohs(s->current.server->src_addr.port()), s->cause_of_death_errno);
-    s->arena.str_free(url_string);
+  if (s->current.server->had_connect_fail()) {
+    char *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
+    int host_len;
+    const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
+    std::string_view host_name{host_name_ptr, size_t(host_len)};
+    Log::error("%s", lbw()
+                       .clip(1)
+                       .print("CONNECT: attempt fail [{}] to {} for host='{}' "
+                              "connection_result={::s} error={::s} attempts={} url='{}'",
+                              HttpDebugNames::get_server_state_name(conn_state), s->current.server->dst_addr, host_name,
+                              ts::bwf::Errno(s->current.server->connect_result), ts::bwf::Errno(s->cause_of_death_errno),
+                              s->current.attempts, ts::bwf::FirstOf(url_str, "<none>"))
+                       .extend(1)
+                       .write('\0')
+                       .data());
+
+    s->arena.str_free(url_str);
   }
 }
 
@@ -5324,6 +5344,9 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
 HttpTransact::RequestError_t
 HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 {
+  // Called also on receiving request.  Not sure if we need to call this again in case
+  // the transfer-encoding and content-length headers changed
+  set_client_request_state(s, incoming_hdr);
   if (incoming_hdr == nullptr) {
     return NON_EXISTANT_REQUEST_HEADER;
   }
@@ -5346,44 +5369,6 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
 
   int scheme = incoming_url->scheme_get_wksidx();
   int method = incoming_hdr->method_get_wksidx();
-
-  // Check for chunked encoding
-  if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
-    MIMEField *field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
-    if (field) {
-      HdrCsvIter enc_val_iter;
-      int enc_val_len;
-      const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
-
-      while (enc_value) {
-        const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
-        if (wks_value == HTTP_VALUE_CHUNKED) {
-          s->client_info.transfer_encoding = CHUNKED_ENCODING;
-          break;
-        }
-        enc_value = enc_val_iter.get_next(&enc_val_len);
-      }
-    }
-  }
-
-  /////////////////////////////////////////////////////
-  // get request content length                      //
-  // To avoid parsing content-length twice, we set   //
-  // s->hdr_info.request_content_length here rather  //
-  // than in initialize_state_variables_from_request //
-  /////////////////////////////////////////////////////
-  if (method != HTTP_WKSIDX_TRACE) {
-    if (incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
-      s->hdr_info.request_content_length = incoming_hdr->get_content_length();
-    } else {
-      s->hdr_info.request_content_length = HTTP_UNDEFINED_CL; // content length less than zero is invalid
-    }
-
-    TxnDebug("http_trans", "[init_stat_vars_from_req] set req cont length to %" PRId64, s->hdr_info.request_content_length);
-
-  } else {
-    s->hdr_info.request_content_length = 0;
-  }
 
   if (!((scheme == URL_WKSIDX_HTTP) && (method == HTTP_WKSIDX_GET))) {
     if (scheme != URL_WKSIDX_HTTP && scheme != URL_WKSIDX_HTTPS && method != HTTP_WKSIDX_CONNECT &&
@@ -5461,6 +5446,47 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
   }
 
   return NO_REQUEST_HEADER_ERROR;
+}
+
+void
+HttpTransact::set_client_request_state(State *s, HTTPHdr *incoming_hdr)
+{
+  if (incoming_hdr == nullptr) {
+    return;
+  }
+
+  // Set transfer_encoding value
+  if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
+    MIMEField *field = incoming_hdr->field_find(MIME_FIELD_TRANSFER_ENCODING, MIME_LEN_TRANSFER_ENCODING);
+    if (field) {
+      HdrCsvIter enc_val_iter;
+      int enc_val_len;
+      const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
+
+      while (enc_value) {
+        const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
+        if (wks_value == HTTP_VALUE_CHUNKED) {
+          s->client_info.transfer_encoding = CHUNKED_ENCODING;
+          break;
+        }
+        enc_value = enc_val_iter.get_next(&enc_val_len);
+      }
+    }
+  }
+
+  /////////////////////////////////////////////////////
+  // get request content length                      //
+  // To avoid parsing content-length twice, we set   //
+  // s->hdr_info.request_content_length here rather  //
+  // than in initialize_state_variables_from_request //
+  /////////////////////////////////////////////////////
+  if (incoming_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+    s->hdr_info.request_content_length = incoming_hdr->get_content_length();
+  } else {
+    s->hdr_info.request_content_length = HTTP_UNDEFINED_CL; // content length less than zero is invalid
+  }
+
+  TxnDebug("http_trans", "[set_client_request_state] set req cont length to %" PRId64, s->hdr_info.request_content_length);
 }
 
 HttpTransact::ResponseError_t
@@ -6546,35 +6572,48 @@ HttpTransact::process_quick_http_filter(State *s, int method)
 bool
 HttpTransact::will_this_request_self_loop(State *s)
 {
+  // The self-loop detection for this ATS node will allow up to max_proxy_cycles
+  // (each time it sees it returns to itself it is one cycle) before declaring a self-looping condition detected.
+  // If max_proxy_cycles is > 0 then then next-hop is disabled since --
+  //   * if first cycle then it is alright okay
+  //   * if not first cycle then will be detected by via string checking the next time that
+  //     it enters the node
+  int max_proxy_cycles = s->txn_conf->max_proxy_cycles;
+
   ////////////////////////////////////////
   // check if we are about to self loop //
   ////////////////////////////////////////
   if (s->dns_info.lookup_success) {
-    in_port_t dst_port   = s->hdr_info.client_request.url_get()->port_get(); // going to this port.
-    in_port_t local_port = s->client_info.dst_addr.host_order_port();        // already connected proxy port.
-    // It's a loop if connecting to the same port as it already connected to the proxy and
-    // it's a proxy address or the same address it already connected to.
-    if (dst_port == local_port && (ats_ip_addr_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa) ||
-                                   ats_ip_addr_eq(s->host_db_info.ip(), s->client_info.dst_addr))) {
-      switch (s->dns_info.looking_up) {
-      case ORIGIN_SERVER:
-        TxnDebug("http_transact", "host ip and port same as local ip and port - bailing");
-        break;
-      case PARENT_PROXY:
-        TxnDebug("http_transact", "parent proxy ip and port same as local ip and port - bailing");
-        break;
-      default:
-        TxnDebug("http_transact", "unknown's ip and port same as local ip and port - bailing");
-        break;
+    TxnDebug("http_transact", "max_proxy_cycles = %d", max_proxy_cycles);
+    if (max_proxy_cycles == 0) {
+      in_port_t dst_port   = s->hdr_info.client_request.url_get()->port_get(); // going to this port.
+      in_port_t local_port = s->client_info.dst_addr.host_order_port();        // already connected proxy port.
+      // It's a loop if connecting to the same port as it already connected to the proxy and
+      // it's a proxy address or the same address it already connected to.
+      TxnDebug("http_transact", "dst_port = %d local_port = %d", dst_port, local_port);
+      if (dst_port == local_port && (ats_ip_addr_eq(s->host_db_info.ip(), &Machine::instance()->ip.sa) ||
+                                     ats_ip_addr_eq(s->host_db_info.ip(), s->client_info.dst_addr))) {
+        switch (s->dns_info.looking_up) {
+        case ORIGIN_SERVER:
+          TxnDebug("http_transact", "host ip and port same as local ip and port - bailing");
+          break;
+        case PARENT_PROXY:
+          TxnDebug("http_transact", "parent proxy ip and port same as local ip and port - bailing");
+          break;
+        default:
+          TxnDebug("http_transact", "unknown's ip and port same as local ip and port - bailing");
+          break;
+        }
+        SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
+        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
+        return true;
       }
-      SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
-      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Cycle Detected", "request#cycle_detected");
-      return true;
     }
 
     // Now check for a loop using the Via string.
-    const char *uuid     = Machine::instance()->uuid.getString();
+    int count            = 0;
     MIMEField *via_field = s->hdr_info.client_request.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
+    std::string_view uuid{Machine::instance()->uuid.getString()};
 
     while (via_field) {
       // No need to waste cycles comma separating the via values since we want to do a match anywhere in the
@@ -6582,15 +6621,27 @@ HttpTransact::will_this_request_self_loop(State *s)
       int via_len;
       const char *via_string = via_field->value_get(&via_len);
 
-      if (via_string && ptr_len_str(via_string, via_len, uuid)) {
-        SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
-        TxnDebug("http_transact", "Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string, s->http_config_param->proxy_hostname,
-                 uuid, s->http_config_param->proxy_request_via_string);
-        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected");
-        return true;
+      if ((count <= max_proxy_cycles) && via_string) {
+        std::string_view current{via_field->value_get()};
+        std::string_view::size_type offset;
+        TxnDebug("http_transact", "Incoming via: \"%.*s\" --has-- (%s[%s] (%s))", via_len, via_string,
+                 s->http_config_param->proxy_hostname, uuid.data(), s->http_config_param->proxy_request_via_string);
+        while ((count <= max_proxy_cycles) && (std::string_view::npos != (offset = current.find(uuid)))) {
+          current.remove_prefix(offset + TS_UUID_STRING_LEN);
+          count++;
+          TxnDebug("http_transact", "count = %d current = %.*s", count, static_cast<int>(current.length()), current.data());
+        }
       }
 
       via_field = via_field->m_next_dup;
+    }
+    if (count > max_proxy_cycles) {
+      TxnDebug("http_transact", "count = %d > max_proxy_cycles = %d : detected loop", count, max_proxy_cycles);
+      SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_LOOP_DETECTED);
+      build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected");
+      return true;
+    } else {
+      TxnDebug("http_transact", "count = %d <= max_proxy_cycles = %d : allowing loop", count, max_proxy_cycles);
     }
   }
   return false;
@@ -7684,9 +7735,12 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   // HttpTransactHeaders::convert_request(outgoing_version, outgoing_request); // commented out this idea
 
+  URL *url = outgoing_request->url_get();
+  // Remove fragment from upstream URL
+  url->fragment_set(NULL, 0);
+
   // Check whether a Host header field is missing from a 1.0 or 1.1 request.
   if (outgoing_version != HTTP_0_9 && !outgoing_request->presence(MIME_PRESENCE_HOST)) {
-    URL *url = outgoing_request->url_get();
     int host_len;
     const char *host = url->host_get(&host_len);
 
@@ -8050,6 +8104,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
       retry_after = ret_tmp;
     }
     s->congestion_control_crat = retry_after;
+  } else if (status_code == HTTP_STATUS_BAD_REQUEST) {
+    // Close the client connection after a malformed request
+    s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   }
 
   // Add a bunch of headers to make sure that caches between

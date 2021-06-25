@@ -53,6 +53,7 @@ struct AIOCallbackInternal : public AIOCallback {
   AIOCallbackInternal()
   {
     memset((void *)&(this->aiocb), 0, sizeof(this->aiocb));
+    this->aiocb.aio_fildes = -1;
     SET_HANDLER(&AIOCallbackInternal::io_complete);
   }
 };

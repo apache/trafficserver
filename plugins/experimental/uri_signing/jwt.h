@@ -22,7 +22,6 @@
 #include <jansson.h>
 
 struct jwt {
-  json_t *raw;
   const char *iss;
   const char *sub;
   json_t *aud;
@@ -45,4 +44,5 @@ bool jwt_check_aud(json_t *aud, const char *id);
 bool jwt_check_uri(const char *cdniuc, const char *uri);
 
 struct _cjose_jwk_int;
-char *renew(struct jwt *jwt, const char *iss, struct _cjose_jwk_int *jwk, const char *alg, const char *package);
+char *renew(struct jwt *jwt, const char *iss, struct _cjose_jwk_int *jwk, const char *alg, const char *package, const char *uri,
+            size_t uri_ct);

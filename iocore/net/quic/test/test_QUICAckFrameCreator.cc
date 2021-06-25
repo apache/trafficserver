@@ -152,7 +152,9 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     ack_manager.update(level, 1, 1, false);
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
 
-    CHECK(ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0) != nullptr);
+    QUICFrame *frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    CHECK(frame != nullptr);
+    frame->~QUICFrame();
 
     ack_manager.update(level, 2, 1, false);
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == false);
@@ -160,7 +162,9 @@ TEST_CASE("QUICAckFrameManager should send", "[quic]")
     ack_manager.update(level, 3, 1, false);
     CHECK(ack_manager.will_generate_frame(level, 0, true, 0) == true);
 
-    CHECK(ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0) != nullptr);
+    frame = ack_manager.generate_frame(frame_buf, level, UINT16_MAX, UINT16_MAX, 0, 0);
+    CHECK(frame != nullptr);
+    frame->~QUICFrame();
   }
 
   SECTION("QUIC delay too much time", "[quic]")

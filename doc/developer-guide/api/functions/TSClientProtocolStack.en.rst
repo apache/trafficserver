@@ -76,7 +76,7 @@ the actual number of elements in the protocol stack will be returned. If this is
 be sufficient to hold all of the elements and the function called again with updated :arg:`count`
 and :arg:`result`. In practice the maximum number of elements is almost certain to be less
 than 10 which therefore should suffice. These functions return :const:`TS_SUCCESS` on success and
-:const:`TS_ERROR` on failure which should only occurr if :arg:`txnp` or :arg:`ssnp` are invalid.
+:const:`TS_ERROR` on failure which should only occur if :arg:`txnp` or :arg:`ssnp` are invalid.
 
 The :func:`TSHttpTxnClientProtocolStackContains`, :func:`TSHttpSsnClientProtocolStackContains`, and :func:`TSHttpTxnServerProtocolStackContains`
 functions are provided for the convenience when only the presence of a protocol is of interest, not

@@ -352,7 +352,7 @@ public:
   ink_mutex *_APImutex; // synchronize access to array of API objects
 private:
   int _manage_object(LogObject *log_object, bool is_api_object, int maxConflicts);
-  static bool _has_internal_filename_conflict(const char *filename, LogObjectList &objects);
+  static bool _has_internal_filename_conflict(std::string_view filename, LogObjectList &objects);
   int _solve_filename_conflicts(LogObject *log_obj, int maxConflicts);
   int _solve_internal_filename_conflicts(LogObject *log_obj, int maxConflicts, int fileNum = 0);
   void _filename_resolution_abort(const char *fname);

@@ -109,6 +109,10 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         CacheHTTPInfo *info = write_vector->get(0);
         HTTPHdr *request    = info->request_get();
         if (request->valid()) {
+          // Marking the request's target as dirty will guarantee that the
+          // internal members of the request used for printing the URL will be
+          // coherent and valid by the time it is printed.
+          request->mark_target_dirty();
           // In contrast to url_string_get, this url_print interface doesn't
           // use HTTPHdr's m_heap which is not valid at this point because the
           // HttpSM is most likely gone.
@@ -195,7 +199,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
    - f.update. Used only if the write_vector needs to be written to disk.
      Used to set the length of the alternate to total_len.
    - write_vector. Used only if frag_type == CACHE_FRAG_TYPE_HTTP &&
-     (f.use_fist_key || f.evac_vector) is set. Write_vector is written to disk
+     (f.use_first_key || f.evac_vector) is set. Write_vector is written to disk
    - alternate_index. Used only if write_vector needs to be written to disk.
      Used to find out the VC's alternate in the write_vector and set its
      length to tatal_len.

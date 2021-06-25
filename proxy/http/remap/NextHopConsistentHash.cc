@@ -25,6 +25,8 @@
 
 #include "tscore/HashSip.h"
 #include "HttpSM.h"
+#include "I_Machine.h"
+#include "YamlCfg.h"
 #include "NextHopConsistentHash.h"
 
 // hash_key strings.
@@ -62,7 +64,7 @@ NextHopConsistentHash::~NextHopConsistentHash()
 }
 
 bool
-NextHopConsistentHash::Init(const YAML::Node &n)
+NextHopConsistentHash::Init(ts::Yaml::Map &n)
 {
   ATSHash64Sip24 hash;
 
@@ -112,7 +114,7 @@ NextHopConsistentHash::Init(const YAML::Node &n)
       p->group_index = host_groups[i][j]->group_index;
       p->host_index  = host_groups[i][j]->host_index;
       hash_ring->insert(p, p->weight, &hash);
-      NH_Debug(NH_DEBUG_TAG, "Loading hash rings - ring: %d, host record: %d, name: %s, hostname: %s, stategy: %s", i, j, p->name,
+      NH_Debug(NH_DEBUG_TAG, "Loading hash rings - ring: %d, host record: %d, name: %s, hostname: %s, strategy: %s", i, j, p->name,
                p->hostname.c_str(), strategy_name.c_str());
     }
     hash.clear();
@@ -229,6 +231,8 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
   HostStatus &pStatus              = HostStatus::instance();
   TSHostStatus host_stat           = TSHostStatus::TS_HOST_STATUS_INIT;
   HostStatRec *hst                 = nullptr;
+  Machine *machine                 = Machine::instance();
+  ;
 
   if (result->line_number == -1 && result->result == PARENT_UNDEFINED) {
     firstcall = true;
@@ -253,6 +257,12 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       } else {
         cur_ring = result->last_group;
       }
+      break;
+    case NH_PEERING_RING:
+      ink_assert(groups == 2);
+      // look for the next parent on the
+      // upstream ring.
+      result->last_group = cur_ring = 1;
       break;
     case NH_EXHAUST_RING:
     default:
@@ -280,6 +290,13 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       if (firstcall) {
         hst                         = (pRec) ? pStatus.getHostStatus(pRec->hostname.c_str()) : nullptr;
         result->first_choice_status = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
+        // if peering and the selected host is myself, change rings and search for an upstream
+        // parent.
+        if (ring_mode == NH_PEERING_RING && machine->is_self(pRec->hostname.c_str())) {
+          // switch to the upstream ring.
+          cur_ring = 1;
+          continue;
+        }
         break;
       }
     } else {
@@ -399,6 +416,13 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       break;
     }
     result->retry = nextHopRetry;
+    // if using a peering ring mode and the parent selected came from the 'peering' group,
+    // cur_ring == 0, then if the config allows it, set the flag to not cache the result.
+    if (ring_mode == NH_PEERING_RING && !cache_peer_result && cur_ring == 0) {
+      result->do_not_cache_response = true;
+      NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] setting do not cache response from a peer per config: %s", sm_id,
+               (result->do_not_cache_response) ? "true" : "false");
+    }
     ink_assert(result->hostname != nullptr);
     ink_assert(result->port != 0);
     NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] result->result: %s Chosen parent: %s.%d", sm_id, ParentResultStr[result->result],

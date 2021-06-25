@@ -51,10 +51,10 @@ public:
   void set_inactivity_timeout(ink_hrtime timeout_in) override;
   void cancel_inactivity_timeout() override;
   void transaction_done() override;
-  void release(IOBufferReader *r) override;
+  void release() override;
   int get_transaction_id() const override;
-  void increment_client_transactions_stat() override;
-  void decrement_client_transactions_stat() override;
+  void increment_transactions_stat() override;
+  void decrement_transactions_stat() override;
 
   // VConnection interface
   virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;

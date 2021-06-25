@@ -8661,6 +8661,7 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.cache.max_open_write_retries",
    "proxy.config.http.redirect_use_orig_cache_key",
    "proxy.config.http.attach_server_session_to_client",
+   "proxy.config.http.max_proxy_cycles",
    "proxy.config.websocket.no_activity_timeout",
    "proxy.config.websocket.active_timeout",
    "proxy.config.http.uncacheable_requests_bypass_parent",
@@ -8692,7 +8693,8 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.ssl.client.sni_policy",
    "proxy.config.ssl.client.private_key.filename",
    "proxy.config.ssl.client.CA.cert.filename",
-   "proxy.config.hostdb.ip_resolve"}};
+   "proxy.config.hostdb.ip_resolve",
+   "proxy.config.http.connect.dead.policy"}};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {

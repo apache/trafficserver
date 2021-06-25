@@ -623,12 +623,36 @@ http_hdr_type_set(HTTPHdrImpl *hh, HTTPType type)
 }
 
 /*-------------------------------------------------------------------------
+  RFC2616 specifies that HTTP version is of the format <major>.<minor>
+  in the request line.  However, the features supported and in use are
+  for versions 1.0, 1.1 and 2.0 (with HTTP/3.0 being developed). HTTP/2.0
+  and HTTP/3.0 are both negotiated using ALPN over TLS and not via the HTTP
+  request line thus leaving the versions supported on the request line to be
+  HTTP/1.0 and HTTP/1.1 alone. This utility checks if the HTTP Version
+  received in the request line is one of these and returns false otherwise
   -------------------------------------------------------------------------*/
 
-void
+bool
+is_version_supported(const uint8_t major, const uint8_t minor)
+{
+  if (major == 1) {
+    return minor == 1 || minor == 0;
+  }
+
+  return false;
+}
+
+bool
+is_http_hdr_version_supported(const HTTPVersion &http_version)
+{
+  return is_version_supported(http_version.get_major(), http_version.get_minor());
+}
+
+bool
 http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver)
 {
   hh->m_version = ver;
+  return is_version_supported(ver.get_major(), ver.get_minor());
 }
 
 /*-------------------------------------------------------------------------
@@ -939,13 +963,12 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       if (err < 0) {
         return err;
       }
-      http_hdr_version_set(hh, version);
+      if (!http_hdr_version_set(hh, version)) {
+        return PARSE_RESULT_ERROR;
+      }
 
       end                    = real_end;
       parser->m_parsing_http = false;
-      if (version == HTTP_0_9) {
-        return PARSE_RESULT_ERROR;
-      }
 
       ParseResult ret = mime_parser_parse(&parser->m_mime_parser, heap, hh->m_fields_impl, start, end, must_copy_strings, eof,
                                           false, max_hdr_field_size);
@@ -1033,19 +1056,19 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     }
     goto parse_url;
   parse_version4:
-    if ((*cur != 'P') && (*cur != 'p')) {
+    if (*cur != 'P') {
       goto parse_url;
     }
     GETPREV(parse_url);
-    if ((*cur != 'T') && (*cur != 't')) {
+    if (*cur != 'T') {
       goto parse_url;
     }
     GETPREV(parse_url);
-    if ((*cur != 'T') && (*cur != 't')) {
+    if (*cur != 'T') {
       goto parse_url;
     }
     GETPREV(parse_url);
-    if ((*cur != 'H') && (*cur != 'h')) {
+    if (*cur != 'H') {
       goto parse_url;
     }
     version_start = cur;
@@ -1094,11 +1117,9 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       return PARSE_RESULT_ERROR;
     }
 
-    if (version == HTTP_0_9) {
+    if (!http_hdr_version_set(hh, version)) {
       return PARSE_RESULT_ERROR;
     }
-
-    http_hdr_version_set(hh, version);
 
     end                    = real_end;
     parser->m_parsing_http = false;
@@ -1179,6 +1200,17 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
     // status code and then close the connection
     int content_length_len         = 0;
     const char *content_length_val = content_length_field->value_get(&content_length_len);
+
+    // RFC 7230 section 3.3.2
+    // Content-Length = 1*DIGIT
+    //
+    // If the content-length value contains a non-numeric value, the header is invalid
+    for (int i = 0; i < content_length_len; i++) {
+      if (!isdigit(content_length_val[i])) {
+        Debug("http", "Content-Length value contains non-digit, returning parse error");
+        return PARSE_RESULT_ERROR;
+      }
+    }
 
     while (content_length_field->has_dups()) {
       int content_length_len_2         = 0;
@@ -1297,19 +1329,19 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
     reason_end    = nullptr;
 
     version_start = cur = line_start;
-    if ((*cur != 'H') && (*cur != 'h')) {
+    if (*cur != 'H') {
       goto eoh;
     }
     GETNEXT(eoh);
-    if ((*cur != 'T') && (*cur != 't')) {
+    if (*cur != 'T') {
       goto eoh;
     }
     GETNEXT(eoh);
-    if ((*cur != 'T') && (*cur != 't')) {
+    if (*cur != 'T') {
       goto eoh;
     }
     GETNEXT(eoh);
-    if ((*cur != 'P') && (*cur != 'p')) {
+    if (*cur != 'P') {
       goto eoh;
     }
     GETNEXT(eoh);
@@ -1438,8 +1470,7 @@ http_parse_version(const char *start, const char *end)
     return HTTP_0_9;
   }
 
-  if (((start[0] == 'H') || (start[0] == 'h')) && ((start[1] == 'T') || (start[1] == 't')) &&
-      ((start[2] == 'T') || (start[2] == 't')) && ((start[3] == 'P') || (start[3] == 'p')) && (start[4] == '/')) {
+  if ((start[0] == 'H') && (start[1] == 'T') && (start[2] == 'T') && (start[3] == 'P') && (start[4] == '/')) {
     start += 5;
 
     maj = 0;
