@@ -177,8 +177,8 @@ Http2ClientSession::start()
   VIO *read_vio = this->do_io_read(this, INT64_MAX, this->read_buffer);
   write_vio     = this->do_io_write(this, INT64_MAX, this->_write_buffer_reader);
 
-  this->connection_state.init();
-  send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_INIT, this);
+  this->connection_state.init(this);
+  this->connection_state.send_connection_preface();
 
   if (this->_read_buffer_reader->is_read_avail_more_than(0)) {
     this->handleEvent(VC_EVENT_READ_READY, read_vio);

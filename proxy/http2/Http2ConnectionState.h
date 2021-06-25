@@ -89,7 +89,8 @@ public:
   Http2ConnectionSettings server_settings;
   Http2ConnectionSettings client_settings;
 
-  void init();
+  void init(Http2ClientSession *ssn);
+  void send_connection_preface();
   void destroy();
 
   // Event handlers
