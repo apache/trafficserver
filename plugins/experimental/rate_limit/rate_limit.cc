@@ -21,64 +21,64 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 
+#include <openssl/ssl.h>
+
 #include "limiter.h"
+#include "utilities.h"
 
-RateLimiter *
-createConfig(int argc, const char *argv[])
-{
-  static const struct option longopt[] = {
-    {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
-    {const_cast<char *>("queue"), required_argument, nullptr, 'q'},
-    {const_cast<char *>("error"), required_argument, nullptr, 'e'},
-    {const_cast<char *>("retry"), required_argument, nullptr, 'r'},
-    {const_cast<char *>("header"), required_argument, nullptr, 'h'},
-    {const_cast<char *>("maxage"), required_argument, nullptr, 'm'},
-    // EOF
-    {nullptr, no_argument, nullptr, '\0'},
-  };
-
-  RateLimiter *limiter = new RateLimiter();
-  TSReleaseAssert(limiter);
-
-  while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
-
-    switch (opt) {
-    case 'l':
-      limiter->limit = strtol(optarg, nullptr, 10);
-      break;
-    case 'q':
-      limiter->max_queue = strtol(optarg, nullptr, 10);
-      break;
-    case 'e':
-      limiter->error = strtol(optarg, nullptr, 10);
-      break;
-    case 'r':
-      limiter->retry = strtol(optarg, nullptr, 10);
-      break;
-    case 'm':
-      limiter->max_age = std::chrono::milliseconds(strtol(optarg, nullptr, 10));
-      break;
-    case 'h':
-      limiter->header = optarg;
-      break;
-    }
-    if (opt == -1) {
-      break;
-    }
-  }
-
-  limiter->setupQueueCont();
-
-  return limiter;
-}
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the InkAPI plugin for the global hooks we support.
 //
 RateLimiter *gLimiter = nullptr;
 
+///////////////////////////////////////////////////////////////////////////////
+// Initialize the InkAPI plugin for the global hooks we support.
+//
 static int
-globalCont(TSCont contp, TSEvent event, void *edata)
+globalSNICont(TSCont contp, TSEvent event, void *edata)
+{
+  switch (event) {
+  case TS_EVENT_SSL_CLIENT_HELLO: {
+    auto vc                   = static_cast<TSVConn>(edata);
+    TSSslConnection ssl_conn  = TSVConnSslConnectionGet(vc);
+    SSL *ssl                  = reinterpret_cast<SSL *>(ssl_conn);
+    std::string_view sni_name = getSNI(ssl);
+
+    TSDebug(PLUGIN_NAME, "CLIENT_HELLO on %.*s", static_cast<int>(sni_name.length()), sni_name.data());
+
+    if (!gLimiter->reserve()) {
+      if (!gLimiter->max_queue || gLimiter->full()) {
+        // We are running at limit, and the queue has reached max capacity, give back an error and be done.
+        TSVConnReenableEx(vc, TS_EVENT_ERROR);
+        TSDebug(PLUGIN_NAME, "Rejecting connection, we're at capacity and queue is full");
+
+        return TS_ERROR;
+      } else {
+        // ToDo: queue the VC here, do not re-enable
+        TSDebug(PLUGIN_NAME, "Queueing the VC, we are at capacity");
+      }
+    } else {
+      // Not at limit on the handshake, we can re-enable
+      TSVConnReenable(vc);
+    }
+    break;
+  }
+  case TS_EVENT_HTTP_SSN_CLOSE:
+    gLimiter->release();
+    TSHttpSsnReenable(static_cast<TSHttpSsn>(edata), TS_EVENT_HTTP_CONTINUE);
+    break;
+  default:
+    TSDebug(PLUGIN_NAME, "Unknown event %d", static_cast<int>(event));
+    TSError("Unknown event in %s", PLUGIN_NAME);
+    break;
+  }
+
+  return TS_EVENT_CONTINUE;
+}
+
+#if 0
+static int
+globalHostCont(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
@@ -99,6 +99,7 @@ globalCont(TSCont contp, TSEvent event, void *edata)
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   return 0;
 }
+#endif
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -115,10 +116,13 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (!gLimiter) {
-    TSCont contp = TSContCreate(globalCont, nullptr);
+    // TSCont host_cont = TSContCreate(globalHostCont, nullptr);
+    TSCont sni_cont = TSContCreate(globalSNICont, nullptr);
 
     gLimiter = createConfig(argc, argv);
-    TSHttpHookAdd(TS_HTTP_PRE_REMAP_HOOK, contp);
+    // TSHttpHookAdd(TS_HTTP_PRE_REMAP_HOOK, host_cont);
+    TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
+    TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, sni_cont);
 
     TSDebug(PLUGIN_NAME, "Added global active_in limiter rule (limit=%u, queue=%u, error=%u", gLimiter->limit, gLimiter->max_queue,
             gLimiter->error);

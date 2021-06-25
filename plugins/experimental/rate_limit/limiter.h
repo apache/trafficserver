@@ -15,6 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
+
 #include <deque>
 #include <tuple>
 #include <climits>
@@ -23,11 +25,13 @@
 #include <chrono>
 #include <cstring>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 
 #include <ts/ts.h>
 
 constexpr char const PLUGIN_NAME[] = "rate_limit";
-constexpr auto QUEUE_DELAY_TIME    = std::chrono::milliseconds{100}; // Examine the queue every 100ms
+constexpr auto QUEUE_DELAY_TIME    = std::chrono::milliseconds{200}; // Examine the queue every 200ms
 
 using QueueTime = std::chrono::time_point<std::chrono::system_clock>;
 using QueueItem = std::tuple<TSHttpTxn, TSCont, QueueTime>;
@@ -52,7 +56,7 @@ public:
     TSMutexDestroy(_active_lock);
   }
 
-  // Reserve / release a slot from the active connect limits. Reserve will return
+  // Reserve / release a slot from the active resource limits. Reserve will return
   // false if we are unable to reserve a slot.
   bool
   reserve()
@@ -97,7 +101,6 @@ public:
   bool
   full() const
   {
-    printf("Size is %d and max_queue is %d\n", (int)_size, (int)max_queue);
     return (_size == max_queue);
   }
 
@@ -159,6 +162,16 @@ public:
 
     TSContDataSet(cont, this);
     TSHttpTxnHookAdd(txnp, hook, cont);
+  }
+
+  void
+  setupSsnCont(TSHttpSsn ssnp, TSHttpHookID hook)
+  {
+    TSCont cont = TSContCreate(rate_limit_cont, nullptr);
+    TSReleaseAssert(cont);
+
+    TSContDataSet(cont, this);
+    TSHttpSsnHookAdd(ssnp, hook, cont);
   }
 
   // These are the configurable portions of this limiter, public so sue me.
