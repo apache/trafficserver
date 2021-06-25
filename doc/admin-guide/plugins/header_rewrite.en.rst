@@ -418,7 +418,7 @@ values, such as year, month etc.
     %{NOW:MONTH}     Current month (0-11, 0 == January)
     %{NOW:DAY}       Current day of the month (1-31)
     %{NOW:HOUR}      Current hour (0-23, in the 24h system)
-    %{NOW:MIN}       Current minute (0-59}
+    %{NOW:MINUTE}    Current minute (0-59}
     %{NOW:WEEKDAY}   Current weekday (0-6, 0 == Sunday)
     %{NOW:YEARDAY}   Current day of the year (0-365, 0 == Jan 1st)
 
