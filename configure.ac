@@ -849,7 +849,7 @@ case $host_os_def in
       #  #279 is "controlling expression is constant" (which is e.g. TSReleaseAssert(!"Unexpected Event");
       common_opt="-pipe -Wall -wd873 -wd279"
       debug_opt="-g $common_opt"
-      release_opt="-g $common_opt $optimization_flags -axsse4.2 -fno-strict-aliasing"
+      release_opt="-g $common_opt $optimizing_flags -axsse4.2 -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
     ])
 
