@@ -1196,6 +1196,8 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
     if (connections[cnum].ssl == NULL) {
       (void)fprintf(stderr, "%s: failed to create SSL\n", argv0);
       ERR_print_errors_fp(stderr);
+      close_connection(cnum);
+      return;
     }
     SSL_set_fd(connections[cnum].ssl, connections[cnum].conn_fd);
     r = SSL_connect(connections[cnum].ssl);
@@ -2812,7 +2814,7 @@ close_connection(int cnum)
     ev.data.u32 = cnum;
     if (epoll_ctl(epfd, EPOLL_CTL_DEL, connections[cnum].conn_fd, &ev) < 0)
       perror("epoll delete fd");
-    if (urls[connections[cnum].url_num].protocol == PROTO_HTTPS)
+    if (urls[connections[cnum].url_num].protocol == PROTO_HTTPS && connections[cnum].ssl != NULL)
       SSL_free(connections[cnum].ssl);
     (void)close(connections[cnum].conn_fd);
   } else {
