@@ -1577,6 +1577,11 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
 {
   Debug("ssl", "Handshake reenable from state=%d", sslHandshakeHookState);
 
+  // Mark as error to stop the Handshake
+  if (event == TS_EVENT_ERROR) {
+    sslHandshakeStatus = SSL_HANDSHAKE_ERROR;
+  }
+
   switch (sslHandshakeHookState) {
   case HANDSHAKE_HOOKS_PRE_INVOKE:
     sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
@@ -1592,9 +1597,6 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
     break;
   case HANDSHAKE_HOOKS_VERIFY_SERVER:
   case HANDSHAKE_HOOKS_CLIENT_CERT:
-    if (event == TS_EVENT_ERROR) {
-      sslHandshakeStatus = SSL_HANDSHAKE_ERROR;
-    }
     break;
   default:
     break;
