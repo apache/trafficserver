@@ -78,9 +78,10 @@ public:
   static bool set_session_id_context(SSL_CTX *ctx, const SSLConfigParams *params,
                                      const SSLMultiCertConfigParams *sslMultCertSettings);
 
-  static bool index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, const char *sni_name);
   static int check_server_cert_now(X509 *cert, const char *certname);
   static void clear_pw_references(SSL_CTX *ssl_ctx);
+
+  bool update_ssl_ctx(const std::string &secret_name);
 
 protected:
   const SSLConfigParams *_params;
@@ -90,7 +91,9 @@ protected:
 
 private:
   virtual const char *_debug_tag() const;
-  bool _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &ssl_multi_cert_params);
+  virtual bool _store_ssl_ctx(SSLCertLookup *lookup, shared_SSLMultiCertConfigParams ssl_multi_cert_params);
+  bool _prep_ssl_ctx(const shared_SSLMultiCertConfigParams sslMultCertSettings, SSLMultiCertConfigLoader::CertLoadData &data,
+                     std::set<std::string> &common_names, std::unordered_map<int, std::set<std::string>> &unique_names);
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
   virtual bool _setup_session_cache(SSL_CTX *ctx);
   virtual bool _setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings);
