@@ -61,7 +61,7 @@ response_header_0 = {"headers":
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
 
 reval_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'reval.conf')
-reval_state_path = os.path.join(ts.Variables.RUNTIMEDIR, 'reval.state')
+reval_state_path = os.path.join(Test.Variables.RUNTIMEDIR, 'reval.state')
 
 # Configure ATS server
 ts.Disk.plugin_config.AddLine(
@@ -109,6 +109,8 @@ ts.Disk.File(reval_conf_path, typename="ats:config").AddLines([
     path0_rule, path1_rule,
 ])
 
+ts.chownForATSProcess(reval_state_path)
+
 ts.Disk.remap_config.AddLine(
     f"map http://ats/ http://127.0.0.1:{server.Variables.Port}"
 )
@@ -120,11 +122,21 @@ ts.Disk.records_config.update({
     'proxy.config.http.wait_for_cache': 1,
 })
 
+
+# This TestRun creates the state file so it exists when the ts process's Setup
+# logic is run so that it can be chowned at that point.
+tr = Test.AddTestRun("Populate the regex_revalidate state file")
+tr.Processes.Default.Command = f'touch {reval_state_path}'
+
 # Start ATS and evaluate the new state file
 tr = Test.AddTestRun("Initial load, state merged")
 ps = tr.Processes.Default
 ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-ps.StartBefore(Test.Processes.ts)
+
+# Note the ready condition: wait for ATS to modify the contents
+# of the file from dummy to path1.
+ps.StartBefore(Test.Processes.ts, ready=When.FileContains(reval_state_path, "path0"))
+
 ps.Command = 'cat ' + reval_state_path
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.GoldFile(gold_path_good)
