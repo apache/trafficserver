@@ -17,13 +17,18 @@
  */
 #pragma once
 
-#include <string>
-#include <string_view>
-#include <chrono>
-#include <openssl/ssl.h>
+#include "limiter.h"
 
-constexpr char const PLUGIN_NAME[] = "rate_limit";
+///////////////////////////////////////////////////////////////////////////////
+// TXN based limiters, for remap.config plugin instances.
+//
+class TxnRateLimiter : public RateLimiter<TSHttpTxn>
+{
+public:
+  void setupCont(TSHttpTxn txnp, TSHttpHookID hook);
+  bool initialize(int argc, const char *argv[]);
 
-std::string_view getSNI(SSL *ssl);
-void delayHeader(TSHttpTxn txnp, std::string &header, std::chrono::milliseconds delay);
-void retryAfter(TSHttpTxn txnp, unsigned retry);
+  std::string header = "";  // Header to put the latency metrics in, e.g. @RateLimit-Delay
+  unsigned error     = 429; // Error code when we decide not to allow a txn to be processed (e.g. queue full)
+  unsigned retry     = 0;   // If > 0, we will also send a Retry-After: header with this retry value
+};

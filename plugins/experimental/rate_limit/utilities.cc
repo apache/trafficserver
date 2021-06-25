@@ -15,67 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <unistd.h>
-#include <getopt.h>
-#include <cstdlib>
-
 #include <ts/ts.h>
 #include <ts/remap.h>
 
-#include <openssl/ssl.h>
-
 #include "utilities.h"
-#include "limiter.h"
-
-RateLimiter *
-createConfig(int argc, const char *argv[])
-{
-  static const struct option longopt[] = {
-    {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
-    {const_cast<char *>("queue"), required_argument, nullptr, 'q'},
-    {const_cast<char *>("error"), required_argument, nullptr, 'e'},
-    {const_cast<char *>("retry"), required_argument, nullptr, 'r'},
-    {const_cast<char *>("header"), required_argument, nullptr, 'h'},
-    {const_cast<char *>("maxage"), required_argument, nullptr, 'm'},
-    // EOF
-    {nullptr, no_argument, nullptr, '\0'},
-  };
-
-  RateLimiter *limiter = new RateLimiter();
-  TSReleaseAssert(limiter);
-
-  while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
-
-    switch (opt) {
-    case 'l':
-      limiter->limit = strtol(optarg, nullptr, 10);
-      break;
-    case 'q':
-      limiter->max_queue = strtol(optarg, nullptr, 10);
-      break;
-    case 'e':
-      limiter->error = strtol(optarg, nullptr, 10);
-      break;
-    case 'r':
-      limiter->retry = strtol(optarg, nullptr, 10);
-      break;
-    case 'm':
-      limiter->max_age = std::chrono::milliseconds(strtol(optarg, nullptr, 10));
-      break;
-    case 'h':
-      limiter->header = optarg;
-      break;
-    }
-    if (opt == -1) {
-      break;
-    }
-  }
-
-  limiter->setupQueueCont();
-
-  return limiter;
-}
 
 std::string_view
 getSNI(SSL *ssl)
@@ -111,4 +54,54 @@ getSNI(SSL *ssl)
   }
 
   return std::string_view(servername, len);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Add a header with the delay imposed on this transaction. This can be used
+// for logging, and other types of metrics.
+//
+void
+delayHeader(TSHttpTxn txnp, std::string &header, std::chrono::milliseconds delay)
+{
+  if (header.size() > 0) {
+    TSMLoc hdr_loc   = nullptr;
+    TSMBuffer bufp   = nullptr;
+    TSMLoc field_loc = nullptr;
+
+    if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc)) {
+      if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header.c_str(), header.size(), &field_loc)) {
+        if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, static_cast<int>(delay.count()))) {
+          TSDebug(PLUGIN_NAME, "Added client request header; %s: %d", header.c_str(), static_cast<int>(delay.count()));
+          TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+        }
+        TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      }
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Add a header with the delay imposed on this transaction. This can be used
+// for logging, and other types of metrics.
+//
+void
+retryAfter(TSHttpTxn txnp, unsigned retry)
+{
+  if (retry > 0) {
+    TSMLoc hdr_loc   = nullptr;
+    TSMBuffer bufp   = nullptr;
+    TSMLoc field_loc = nullptr;
+
+    if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
+      if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Retry-After", 11, &field_loc)) {
+        if (TS_SUCCESS == TSMimeHdrFieldValueIntSet(bufp, hdr_loc, field_loc, -1, retry)) {
+          TSDebug(PLUGIN_NAME, "Added a Retry-After: %u", retry);
+          TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+        }
+        TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      }
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    }
+  }
 }

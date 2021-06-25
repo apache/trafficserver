@@ -19,28 +19,25 @@
 
 #include <deque>
 #include <tuple>
-#include <climits>
 #include <atomic>
-#include <cstdio>
 #include <chrono>
-#include <cstring>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 
 #include <ts/ts.h>
 
-constexpr char const PLUGIN_NAME[] = "rate_limit";
-constexpr auto QUEUE_DELAY_TIME    = std::chrono::milliseconds{200}; // Examine the queue every 200ms
+#include "utilities.h"
 
-using QueueTime = std::chrono::time_point<std::chrono::system_clock>;
-using QueueItem = std::tuple<TSHttpTxn, TSCont, QueueTime>;
+constexpr auto QUEUE_DELAY_TIME = std::chrono::milliseconds{200}; // Examine the queue every 200ms
+using QueueTime                 = std::chrono::time_point<std::chrono::system_clock>;
 
 ///////////////////////////////////////////////////////////////////////////////
-// Configuration object for a rate limiting remap rule.
+// Base class for all limiters
 //
-class RateLimiter
+template <class T> class RateLimiter
 {
+  using QueueItem = std::tuple<T, TSCont, QueueTime>;
+
 public:
   RateLimiter() : _queue_lock(TSMutexCreate()), _active_lock(TSMutexCreate()) {}
 
@@ -66,7 +63,7 @@ public:
     if (_active < limit) {
       ++_active;
       TSMutexUnlock(_active_lock); // Reduce the critical section, release early
-      TSDebug(PLUGIN_NAME, "Reserving a slot, active txns == %u", active());
+      TSDebug(PLUGIN_NAME, "Reserving a slot, active entities == %u", active());
       return true;
     } else {
       TSMutexUnlock(_active_lock);
@@ -80,7 +77,7 @@ public:
     TSMutexLock(_active_lock);
     --_active;
     TSMutexUnlock(_active_lock);
-    TSDebug(PLUGIN_NAME, "Releasing a slot, active txns == %u", active());
+    TSDebug(PLUGIN_NAME, "Releasing a slot, active entities == %u", active());
   }
 
   // Current size of the active_in connections
@@ -105,12 +102,12 @@ public:
   }
 
   void
-  push(TSHttpTxn txnp, TSCont cont)
+  push(T elem, TSCont cont)
   {
     QueueTime now = std::chrono::system_clock::now();
 
     TSMutexLock(_queue_lock);
-    _queue.push_front(std::make_tuple(txnp, cont, now));
+    _queue.push_front(std::make_tuple(elem, cont, now));
     ++_size;
     TSMutexUnlock(_queue_lock);
   }
@@ -132,7 +129,7 @@ public:
   }
 
   bool
-  hasOldTxn(QueueTime now) const
+  hasOldEntity(QueueTime now) const
   {
     TSMutexLock(_queue_lock);
     if (!_queue.empty()) {
@@ -148,49 +145,25 @@ public:
     }
   }
 
-  void delayHeader(TSHttpTxn txpn, std::chrono::milliseconds delay) const;
-  void retryAfter(TSHttpTxn txpn, unsigned after) const;
-
   // Continuation creation and scheduling
-  void setupQueueCont();
-
-  void
-  setupTxnCont(TSHttpTxn txnp, TSHttpHookID hook)
-  {
-    TSCont cont = TSContCreate(rate_limit_cont, nullptr);
-    TSReleaseAssert(cont);
-
-    TSContDataSet(cont, this);
-    TSHttpTxnHookAdd(txnp, hook, cont);
-  }
-
-  void
-  setupSsnCont(TSHttpSsn ssnp, TSHttpHookID hook)
-  {
-    TSCont cont = TSContCreate(rate_limit_cont, nullptr);
-    TSReleaseAssert(cont);
-
-    TSContDataSet(cont, this);
-    TSHttpSsnHookAdd(ssnp, hook, cont);
-  }
+  void setupCont(T ptr, TSHttpHookID hook);
+  bool initialize(int argc, const char *argv[]);
 
   // These are the configurable portions of this limiter, public so sue me.
   unsigned limit                    = 100;      // Arbitrary default, probably should be a required config
   unsigned max_queue                = UINT_MAX; // No queue limit, but if sets will give an immediate error if at max
-  unsigned error                    = 429;      // Error code when we decide not to allow a txn to be processed (e.g. queue full)
-  unsigned retry                    = 0;        // If > 0, we will also send a Retry-After: header with this retry value
   std::chrono::milliseconds max_age = std::chrono::milliseconds::zero(); // Max age (ms) in the queue
-  std::string header; // Header to put the latency metrics in, e.g. @RateLimit-Delay
 
 private:
-  static int queue_process_cont(TSCont cont, TSEvent event, void *edata);
-  static int rate_limit_cont(TSCont cont, TSEvent event, void *edata);
-
   std::atomic<unsigned> _active = 0; // Current active number of txns. This has to always stay <= limit above
   std::atomic<unsigned> _size   = 0; // Current size of the pending queue of txns. This should aim to be < _max_queue
 
   TSMutex _queue_lock, _active_lock; // Resource locks
-  std::deque<QueueItem> _queue;      // Queue for the pending TXN's
-  TSCont _queue_cont = nullptr;      // Continuation processing the queue periodically
-  TSAction _action   = nullptr;      // The action associated with the queue continuation, needed to shut it down
+  std::deque<QueueItem> _queue;      // Queue for the pending TXN's. ToDo: Should also move (see below)
+
+protected:
+  // ToDo: Once we start sharing the queue continuation across many limiter instances, these need to move.
+  // I imagine we'd have a member pointing to the shared queue manager / continuation.
+  TSCont _queue_cont = nullptr; // Continuation processing the queue periodically
+  TSAction _action   = nullptr; // The action associated with the queue continuation, needed to shut it down
 };
