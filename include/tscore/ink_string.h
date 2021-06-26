@@ -241,6 +241,8 @@ ptr_len_ncasecmp(const char *p1, int l1, const char *str, int n)
 inline int
 ptr_len_casecmp(const char *p1, int l1, const char *str)
 {
+#ifndef __clang_analyzer__
+
   while (l1 > 0) {
     if (*str == '\0') {
       return 1;
@@ -270,6 +272,8 @@ ptr_len_casecmp(const char *p1, int l1, const char *str)
   } else {
     return -1;
   }
+
+#endif
 }
 
 // char* ptr_len_pbrk(const char* p1, int l1, const char* str)
@@ -302,6 +306,8 @@ ptr_len_pbrk(const char *p1, int l1, const char *str)
 inline int
 ink_small_itoa(int val, char *buf, int buf_len)
 {
+#ifndef __clang_analyzer__
+
   ink_assert(buf_len > 5);
   ink_assert((val >= 0) && (val < 100000));
 
@@ -341,6 +347,8 @@ ink_small_itoa(int val, char *buf, int buf_len)
     buf[0] = '0' + (val % 10);
     return 5;
   }
+
+#endif
 }
 
 inline int
