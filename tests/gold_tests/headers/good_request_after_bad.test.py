@@ -50,18 +50,16 @@ tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nHost: bob\r\n\r\n" | n
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("space after header name")
-tr.Processes.Default.Command = 'printf "GET /foo HTTP/1.1\r\nHost : bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
+tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nHost : bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
 
-# invalid version number
-tr = Test.AddTestRun("Invalid protocol version number")
-tr.Processes.Default.Command = 'printf "GET / HTTP/1.9\r\nHost:bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
+tr = Test.AddTestRun("Bad protocol number")
+tr.Processes.Default.Command = 'printf "GET / HTTP/11.1\r\nhost: bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'gold/bad_protocol_number.gold'
-
 
 tr = Test.AddTestRun("Unsupported Transfer Encoding value")
 tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nhost: bob\r\ntransfer-encoding: random\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
