@@ -17,7 +17,12 @@
 */
 #pragma once
 
+#include "tscore/ink_defs.h"
+
 #include <openssl/sha.h>
+#ifndef HAVE_SHA1
+#include <openssl/evp.h>
+#endif
 #include <cstring>
 #include <unordered_map>
 #include <list>
