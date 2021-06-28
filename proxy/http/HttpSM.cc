@@ -545,28 +545,31 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   mptcp_state       = netvc->get_mptcp_state();
   client_tcp_reused = !(ua_txn->is_first_transaction());
 
-  if (auto tbs = dynamic_cast<TLSBasicSupport *>(netvc)) {
-    client_connection_is_ssl = true;
-    const char *protocol     = tbs->get_tls_protocol_name();
-    client_sec_protocol      = protocol ? protocol : "-";
-    const char *cipher       = tbs->get_tls_cipher_suite();
-    client_cipher_suite      = cipher ? cipher : "-";
-    const char *curve        = tbs->get_tls_curve();
-    client_curve             = curve ? curve : "-";
+  // PoC of avoiding RTTI on plaintext http
+  if (static_cast<HttpProxyPort::TransportType>(netvc->attributes) != HttpProxyPort::TransportType::TRANSPORT_DEFAULT) {
+    if (auto tbs = dynamic_cast<TLSBasicSupport *>(netvc)) {
+      client_connection_is_ssl = true;
+      const char *protocol     = tbs->get_tls_protocol_name();
+      client_sec_protocol      = protocol ? protocol : "-";
+      const char *cipher       = tbs->get_tls_cipher_suite();
+      client_cipher_suite      = cipher ? cipher : "-";
+      const char *curve        = tbs->get_tls_curve();
+      client_curve             = curve ? curve : "-";
 
-    if (!client_tcp_reused) {
-      // Copy along the TLS handshake timings
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
-      milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
+      if (!client_tcp_reused) {
+        // Copy along the TLS handshake timings
+        milestones[TS_MILESTONE_TLS_HANDSHAKE_START] = tbs->get_tls_handshake_begin_time();
+        milestones[TS_MILESTONE_TLS_HANDSHAKE_END]   = tbs->get_tls_handshake_end_time();
+      }
     }
-  }
 
-  if (auto as = dynamic_cast<ALPNSupport *>(netvc)) {
-    client_alpn_id = as->get_negotiated_protocol_id();
-  }
+    if (auto as = dynamic_cast<ALPNSupport *>(netvc)) {
+      client_alpn_id = as->get_negotiated_protocol_id();
+    }
 
-  if (auto tsrs = dynamic_cast<TLSSessionResumptionSupport *>(netvc)) {
-    client_ssl_reused = tsrs->getSSLSessionCacheHit();
+    if (auto tsrs = dynamic_cast<TLSSessionResumptionSupport *>(netvc)) {
+      client_ssl_reused = tsrs->getSSLSessionCacheHit();
+    }
   }
 
   const char *protocol_str = client_vc->get_protocol_string();
@@ -607,10 +610,12 @@ HttpSM::attach_client_session(ProxyTransaction *client_vc)
   t_state.hdr_info.client_request.destroy();
   t_state.hdr_info.client_request.create(HTTP_TYPE_REQUEST);
 
-  // Prepare raw reader which will live until we are sure this is HTTP indeed
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-  if (is_transparent_passthrough_allowed() || (ssl_vc && ssl_vc->decrypt_tunnel())) {
-    ua_raw_buffer_reader = ua_txn->get_remote_reader()->clone();
+  if (t_state.client_info.port_attribute != HttpProxyPort::TransportType::TRANSPORT_DEFAULT) {
+    // Prepare raw reader which will live until we are sure this is HTTP indeed
+    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+    if (is_transparent_passthrough_allowed() || (ssl_vc && ssl_vc->decrypt_tunnel())) {
+      ua_raw_buffer_reader = ua_txn->get_remote_reader()->clone();
+    }
   }
 
   // We first need to run the transaction start hook.  Since
@@ -1510,21 +1515,23 @@ plugins required to work with sni_routing.
       u.scheme_set(URL_SCHEME_TUNNEL, URL_LEN_TUNNEL);
       t_state.hdr_info.client_request.url_set(&u);
 
-      NetVConnection *netvc     = ua_txn->get_netvc();
-      SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+      if (t_state.client_info.port_attribute != HttpProxyPort::TransportType::TRANSPORT_DEFAULT) {
+        NetVConnection *netvc     = ua_txn->get_netvc();
+        SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
 
-      if (ssl_vc && ssl_vc->has_tunnel_destination()) {
-        const char *tunnel_host = ssl_vc->get_tunnel_host();
-        t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
-        ushort tunnel_port = ssl_vc->get_tunnel_port();
-        if (tunnel_port > 0) {
-          t_state.hdr_info.client_request.url_get()->port_set(tunnel_port);
-        } else {
+        if (ssl_vc && ssl_vc->has_tunnel_destination()) {
+          const char *tunnel_host = ssl_vc->get_tunnel_host();
+          t_state.hdr_info.client_request.url_get()->host_set(tunnel_host, strlen(tunnel_host));
+          ushort tunnel_port = ssl_vc->get_tunnel_port();
+          if (tunnel_port > 0) {
+            t_state.hdr_info.client_request.url_get()->port_set(tunnel_port);
+          } else {
+            t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
+          }
+        } else if (ssl_vc) {
+          t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
           t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
         }
-      } else if (ssl_vc) {
-        t_state.hdr_info.client_request.url_get()->host_set(ssl_vc->get_server_name(), strlen(ssl_vc->get_server_name()));
-        t_state.hdr_info.client_request.url_get()->port_set(netvc->get_local_port());
       }
     }
   // FALLTHROUGH
@@ -1672,9 +1679,14 @@ HttpSM::handle_api_return()
 {
   switch (t_state.api_next_action) {
   case HttpTransact::SM_ACTION_API_SM_START: {
-    NetVConnection *netvc     = ua_txn->get_netvc();
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-    bool forward_dest         = ssl_vc != nullptr && ssl_vc->decrypt_tunnel();
+    bool forward_dest = false;
+
+    if (t_state.client_info.port_attribute != HttpProxyPort::TransportType::TRANSPORT_DEFAULT) {
+      NetVConnection *netvc     = ua_txn->get_netvc();
+      SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
+      forward_dest              = ssl_vc != nullptr && ssl_vc->decrypt_tunnel();
+    }
+
     if (t_state.client_info.port_attribute == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || forward_dest) {
       setup_blind_tunnel_port();
     } else {

@@ -276,6 +276,10 @@ ProxySession::get_local_addr()
 void
 ProxySession::_handle_if_ssl(NetVConnection *new_vc)
 {
+  if (static_cast<HttpProxyPort::TransportType>(new_vc->attributes) == HttpProxyPort::TransportType::TRANSPORT_DEFAULT) {
+    return;
+  }
+
   auto ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
   if (ssl_vc) {
     _ssl = std::make_unique<SSLProxySession>();
