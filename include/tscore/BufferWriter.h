@@ -854,10 +854,10 @@ std::string &
 bwprintv(std::string &s, ts::TextView fmt, std::tuple<Args...> const &args)
 {
   auto len = s.size(); // remember initial size
-  size_t n = ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).printv(fmt, std::move(args)).extent();
+  size_t n = ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).printv(fmt, args).extent();
   s.resize(n);   // always need to resize - if shorter, must clip pre-existing text.
   if (n > len) { // dropped data, try again.
-    ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).printv(fmt, std::move(args));
+    ts::FixedBufferWriter(const_cast<char *>(s.data()), s.size()).printv(fmt, args);
   }
   return s;
 }
