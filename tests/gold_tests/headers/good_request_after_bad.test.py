@@ -24,7 +24,7 @@ Verify that request following a ill-formed request is not processed
 '''
 Test.ContinueOnFail = True
 ts = Test.MakeATSProcess("ts", enable_cache=True)
-
+Test.ContinueOnFail = True
 ts.Disk.records_config.update({'proxy.config.diags.debug.tags': 'http',
                                'proxy.config.diags.debug.enabled': 0,
                                })
@@ -103,3 +103,10 @@ tr.Processes.Default.Command = 'printf "gET / HTTP/1.1\r\nHost:bob\r\n\r\nGET / 
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = 'gold/bad_method.gold'
+
+# mangled termination
+tr = Test.AddTestRun("mangled line termination")
+tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nHost:bob\r\n \r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
+    ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
