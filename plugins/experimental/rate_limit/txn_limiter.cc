@@ -80,7 +80,7 @@ txn_queue_cont(TSCont cont, TSEvent event, void *edata)
   }
 
   // Kill any queued txns if they are too old
-  if (limiter->max_age > std::chrono::milliseconds::zero() && limiter->size() > 0) {
+  if (limiter->size() > 0 && limiter->max_age > std::chrono::milliseconds::zero()) {
     now = std::chrono::system_clock::now(); // Update the "now", for some extra accuracy
 
     while (limiter->size() > 0 && limiter->hasOldEntity(now)) {
@@ -158,7 +158,7 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
 // Sets up a transaction based continuation for this transaction.
 //
 void
-TxnRateLimiter::setupCont(TSHttpTxn txnp, TSHttpHookID hook)
+TxnRateLimiter::setupTxnCont(TSHttpTxn txnp, TSHttpHookID hook)
 {
   TSCont cont = TSContCreate(txn_limit_cont, nullptr);
   TSReleaseAssert(cont);

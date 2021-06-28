@@ -19,16 +19,15 @@
 
 #include "limiter.h"
 
+int sni_limit_cont(TSCont contp, TSEvent event, void *edata);
+
 ///////////////////////////////////////////////////////////////////////////////
-// TXN based limiters, for remap.config plugin instances.
+// SNI based limiters, for global (pligin.config) instance(s).
 //
-class TxnRateLimiter : public RateLimiter<TSHttpTxn>
+class SniRateLimiter : public RateLimiter<TSVConn>
 {
 public:
-  void setupTxnCont(TSHttpTxn txnp, TSHttpHookID hook);
+  int vc_idx = -1;
+  // void setupCont(TSHttpTxn txnp, TSHttpHookID hook);
   bool initialize(int argc, const char *argv[]);
-
-  std::string header = "";  // Header to put the latency metrics in, e.g. @RateLimit-Delay
-  unsigned error     = 429; // Error code when we decide not to allow a txn to be processed (e.g. queue full)
-  unsigned retry     = 0;   // If > 0, we will also send a Retry-After: header with this retry value
 };

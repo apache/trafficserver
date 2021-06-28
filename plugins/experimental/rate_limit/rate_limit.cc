@@ -24,54 +24,13 @@
 #include <openssl/ssl.h>
 
 #include "txn_limiter.h"
+#include "sni_limiter.h"
 #include "utilities.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-// Initialize the InkAPI plugin for the global hooks we support.
-//
-static int
-globalSNICont(TSCont contp, TSEvent event, void *edata)
-{
-  TxnRateLimiter *limiter = static_cast<TxnRateLimiter *>(TSContDataGet(contp));
-
-  switch (event) {
-  case TS_EVENT_SSL_CLIENT_HELLO: {
-    auto vc                   = static_cast<TSVConn>(edata);
-    TSSslConnection ssl_conn  = TSVConnSslConnectionGet(vc);
-    SSL *ssl                  = reinterpret_cast<SSL *>(ssl_conn);
-    std::string_view sni_name = getSNI(ssl);
-
-    TSDebug(PLUGIN_NAME, "CLIENT_HELLO on %.*s", static_cast<int>(sni_name.length()), sni_name.data());
-
-    if (!limiter->reserve()) {
-      if (!limiter->max_queue || limiter->full()) {
-        // We are running at limit, and the queue has reached max capacity, give back an error and be done.
-        TSVConnReenableEx(vc, TS_EVENT_ERROR);
-        TSDebug(PLUGIN_NAME, "Rejecting connection, we're at capacity and queue is full");
-
-        return TS_ERROR;
-      } else {
-        // ToDo: queue the VC here, do not re-enable
-        TSDebug(PLUGIN_NAME, "Queueing the VC, we are at capacity");
-      }
-    } else {
-      // Not at limit on the handshake, we can re-enable
-      TSVConnReenable(vc);
-    }
-    break;
-  }
-  case TS_EVENT_HTTP_SSN_CLOSE:
-    limiter->release();
-    TSHttpSsnReenable(static_cast<TSHttpSsn>(edata), TS_EVENT_HTTP_CONTINUE);
-    break;
-  default:
-    TSDebug(PLUGIN_NAME, "Unknown event %d", static_cast<int>(event));
-    TSError("Unknown event in %s", PLUGIN_NAME);
-    break;
-  }
-
-  return TS_EVENT_CONTINUE;
-}
+// As a global plugin, things works a little difference since we don't setup
+// per transaction or via remap.config.
+static int gVCIdx = -1;
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -87,10 +46,12 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
+  TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "VConn state information", &gVCIdx);
+
   if (argc > 1) {
-    if (!strcasecmp(argv[1], "SNI")) {
-      TSCont sni_cont         = TSContCreate(globalSNICont, nullptr);
-      TxnRateLimiter *limiter = new TxnRateLimiter();
+    if (!strncasecmp(argv[1], "SNI=", 4)) {
+      TSCont sni_cont         = TSContCreate(sni_limit_cont, nullptr);
+      SniRateLimiter *limiter = new SniRateLimiter();
 
       --argc; // Skip the "SNI" portion of course when parsing the real parameters
       ++argv;
@@ -99,16 +60,14 @@ TSPluginInit(int argc, const char *argv[])
       TSReleaseAssert(limiter);
 
       limiter->initialize(argc, argv);
+      limiter->vc_idx = gVCIdx;
       TSContDataSet(sni_cont, limiter);
       TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
-      TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, sni_cont);
+      TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
 
-      // TSHttpHookAdd(TS_HTTP_PRE_REMAP_HOOK, host_cont);
-      // TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
-
-      TSDebug(PLUGIN_NAME, "Added global active_in limiter rule (limit=%u, queue=%u, error=%u", limiter->limit, limiter->max_queue,
-              limiter->error);
-    } else if (!strcasecmp(argv[1], "HOST")) {
+      TSDebug(PLUGIN_NAME, "Added global SNI limiter rule (limit=%u, queue=%u, max_age=%ldms)", limiter->limit, limiter->max_queue,
+              static_cast<long>(limiter->max_age.count()));
+    } else if (!strncasecmp(argv[1], "HOST=", 5)) {
       // TODO: Do we need to implement this ?? Or can we just defer this to the remap version?
       --argc; // Skip the "HOST" arg of course when parsing the real parameters
       ++argv;
@@ -162,8 +121,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   limiter->initialize(argc, const_cast<const char **>(argv));
   *ih = static_cast<void *>(limiter);
 
-  TSDebug(PLUGIN_NAME, "Added active_in limiter rule (limit=%u, queue=%u, error=%u", limiter->limit, limiter->max_queue,
-          limiter->error);
+  TSDebug(PLUGIN_NAME, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u)", limiter->limit,
+          limiter->max_queue, static_cast<long>(limiter->max_age.count()), limiter->error);
 
   return TS_SUCCESS;
 }
@@ -181,14 +140,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       if (!limiter->max_queue || limiter->full()) {
         // We are running at limit, and the queue has reached max capacity, give back an error and be done.
         TSHttpTxnStatusSet(txnp, static_cast<TSHttpStatus>(limiter->error));
-        limiter->setupCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+        limiter->setupTxnCont(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK);
         TSDebug(PLUGIN_NAME, "Rejecting request, we're at capacity and queue is full");
       } else {
-        limiter->setupCont(txnp, TS_HTTP_POST_REMAP_HOOK);
+        limiter->setupTxnCont(txnp, TS_HTTP_POST_REMAP_HOOK);
         TSDebug(PLUGIN_NAME, "Adding rate limiting hook, we are at capacity");
       }
     } else {
-      limiter->setupCont(txnp, TS_HTTP_TXN_CLOSE_HOOK);
+      limiter->setupTxnCont(txnp, TS_HTTP_TXN_CLOSE_HOOK);
       TSDebug(PLUGIN_NAME, "Adding txn-close hook, we're not at capacity");
     }
   }

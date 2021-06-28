@@ -145,8 +145,7 @@ public:
     }
   }
 
-  // Continuation creation and scheduling
-  void setupCont(T ptr, TSHttpHookID hook);
+  // Initialize a new instance of this rate limiter
   bool initialize(int argc, const char *argv[]);
 
   // These are the configurable portions of this limiter, public so sue me.
