@@ -417,6 +417,7 @@ QUICNetVConnection::start()
     this->_ack_frame_manager.set_ack_delay_exponent(this->_quic_config->ack_delay_exponent_out());
     this->_hs_protocol       = this->_setup_handshake_protocol(this->_quic_config->client_ssl_ctx());
     this->_handshake_handler = new QUICHandshake(this->_initial_version, this, this->_hs_protocol);
+    this->_record_tls_handshake_begin_time();
     this->_handshake_handler->start(tp_config, &this->_packet_factory, this->_quic_config->vn_exercise_enabled());
     this->_handshake_handler->do_handshake();
     this->_ack_frame_manager.set_max_ack_delay(this->_quic_config->max_ack_delay_out());
@@ -495,6 +496,8 @@ QUICNetVConnection::free(EThread *t)
   */
   this->_context->trigger(QUICContext::CallbackEvent::CONNECTION_CLOSE);
   ALPNSupport::clear();
+  TLSSessionResumptionSupport::clear();
+  TLSBasicSupport::clear();
   this->_packet_handler->close_connection(this);
 }
 
@@ -1222,6 +1225,7 @@ QUICNetVConnection::_state_handshake_process_initial_packet(const QUICInitialPac
     if (this->_quic_config->quantum_readiness_test_enabled_in()) {
       tp_config.add_tp(QUANTUM_TEST_ID, QUANTUM_TEST_VALUE, sizeof(QUANTUM_TEST_VALUE));
     }
+    this->_record_tls_handshake_begin_time();
     error = this->_handshake_handler->start(tp_config, packet, &this->_packet_factory, this->_alt_con_manager->preferred_address());
 
     // If version negotiation was failed and VERSION NEGOTIATION packet was sent, nothing to do.
@@ -2118,6 +2122,7 @@ QUICNetVConnection::_switch_to_established_state()
   if (this->_complete_handshake_if_possible() == 0) {
     QUICConDebug("Enter state_connection_established");
     QUICConDebug("Negotiated cipher suite: %s", this->_handshake_handler->negotiated_cipher_suite());
+    this->_record_tls_handshake_end_time();
 
     SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_connection_established);
 
@@ -2296,6 +2301,7 @@ QUICNetVConnection::_setup_handshake_protocol(const shared_SSL_CTX &ctx)
   QUICTLS *tls = new QUICTLS(this->_pp_key_info, ctx.get(), this->direction(), this->options,
                              this->_quic_config->client_session_file(), this->_quic_config->client_keylog_file());
   SSL_set_ex_data(tls->ssl_handle(), QUIC::ssl_quic_qc_index, static_cast<QUICConnection *>(this));
+  TLSBasicSupport::bind(tls->ssl_handle(), this);
   TLSSessionResumptionSupport::bind(tls->ssl_handle(), this);
   ALPNSupport::bind(tls->ssl_handle(), this);
 
@@ -2409,6 +2415,22 @@ QUICNetVConnection::_handle_periodic_ack_event()
     // we have ack to send
     // FIXME: should sent depend on socket event.
     this->_schedule_packet_write_ready();
+  }
+}
+
+SSL *
+QUICNetVConnection::_get_ssl_object() const
+{
+  return static_cast<QUICTLS *>(this->_hs_protocol)->ssl_handle();
+}
+
+ssl_curve_id
+QUICNetVConnection::_get_tls_curve() const
+{
+  if (this->getSSLSessionCacheHit()) {
+    return this->getSSLCurveNID();
+  } else {
+    return SSLGetCurveNID(this->_get_ssl_object());
   }
 }
 
