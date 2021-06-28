@@ -103,34 +103,67 @@ ts3.Disk.records_config.update({
     'proxy.config.ssl.server.session_ticket.enable': 1,
 })
 
+
+def check_session(ev, test):
+    retval = False
+    f = open(test.GetContent(ev), 'r')
+    err = "Session ids match"
+    if not f:
+        err = "Failed to open {0}".format(openssl_output)
+        return (retval, "Check that session ids match", err)
+
+    content = f.read()
+    match = re.findall('Session-ID: ([0-9A-F]+)', content)
+
+    if match:
+        if all(i == j for i, j in zip(match, match[1:])):
+            err = "{0} reused successfully {1} times".format(match[0], len(match) - 1)
+            retval = True
+        else:
+            err = "Session is not being reused as expected"
+    else:
+        err = "Didn't find session id"
+    return (retval, "Check that session ids match", err)
+
+
 tr = Test.AddTestRun("TLSv1.2 Session ID")
 tr.Command = \
     'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_out {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
     'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1}' \
     .format(ts1.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess.dat'))
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts1)
-tr.Processes.Default.Streams.All = Testers.ContainsExpression('Reused, TLSv', '')
-tr.Processes.Default.Streams.All += Testers.ContainsExpression('Protocol  : TLSv1.2', '')
+tr.Processes.Default.Streams.All.Content = Testers.Lambda(check_session)
 tr.StillRunningAfter = server
 
-tr = Test.AddTestRun("TLSv1.2 Session Ticket")
-tr.Command = \
+tr1 = Test.AddTestRun("TLSv1.2 Session Ticket")
+tr1.Command = \
     'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1} && ' \
     'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {1}' \
     .format(ts2.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess.dat'))
-tr.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts2)
-tr.Processes.Default.Streams.All = Testers.ContainsExpression('Reused, TLSv', '')
-tr.Processes.Default.Streams.All += Testers.ContainsExpression('Protocol  : TLSv1.2', '')
-tr.StillRunningAfter = server
+tr1.ReturnCode = 0
+tr1.Processes.Default.StartBefore(ts2)
+tr1.Processes.Default.Streams.All.Content = Testers.Lambda(check_session)
+tr1.StillRunningAfter = server
 
-tr = Test.AddTestRun("Disabled Session Cache")
-tr.Command = \
+tr2 = Test.AddTestRun("Disabled Session Cache")
+tr2.Command = \
     'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_out {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
+    'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1} && ' \
     'echo -e "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -no_ticket -sess_in {1}' \
     .format(ts3.Variables.ssl_port, os.path.join(Test.RunDirectory, 'sess.dat'))
-tr.ReturnCode = 0
-tr.Processes.Default.StartBefore(ts3)
-tr.Processes.Default.Streams.All = Testers.ExcludesExpression('Reused', '')
+tr2.ReturnCode = 0
+tr2.Processes.Default.StartBefore(ts3)
+tr2.Processes.Default.Streams.All = Testers.ExcludesExpression('Reused', '')
