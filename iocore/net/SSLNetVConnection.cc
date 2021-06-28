@@ -1099,16 +1099,15 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
           caCertFilePath = Layout::get()->relative_to(params->clientCACertPath, options.ssl_client_ca_cert_name);
         }
         sharedCTX =
-          params->getCTX(certFilePath.c_str(), keyFilePath.empty() ? nullptr : keyFilePath.c_str(),
-                         caCertFilePath.empty() ? params->clientCACertFilename : caCertFilePath.c_str(), params->clientCACertPath);
+          params->getCTX(certFilePath, keyFilePath, caCertFilePath.empty() ? params->clientCACertFilename : caCertFilePath.c_str(),
+                         params->clientCACertPath);
       } else if (options.ssl_client_ca_cert_name) {
         std::string caCertFilePath = Layout::get()->relative_to(params->clientCACertPath, options.ssl_client_ca_cert_name);
         sharedCTX = params->getCTX(params->clientCertPath, params->clientKeyPath, caCertFilePath.c_str(), params->clientCACertPath);
       } else if (nps && !nps->client_cert_file.empty()) {
         // If no overrides available, try the available nextHopProperty by reading from context mappings
         sharedCTX =
-          params->getCTX(nps->client_cert_file.c_str(), nps->client_key_file.empty() ? nullptr : nps->client_key_file.c_str(),
-                         params->clientCACertFilename, params->clientCACertPath);
+          params->getCTX(nps->client_cert_file, nps->client_key_file, params->clientCACertFilename, params->clientCACertPath);
       } else { // Just stay with the values passed down from the SM for verify
         clientCTX = params->client_ctx.get();
       }
@@ -1577,6 +1576,11 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
 {
   Debug("ssl", "Handshake reenable from state=%d", sslHandshakeHookState);
 
+  // Mark as error to stop the Handshake
+  if (event == TS_EVENT_ERROR) {
+    sslHandshakeStatus = SSL_HANDSHAKE_ERROR;
+  }
+
   switch (sslHandshakeHookState) {
   case HANDSHAKE_HOOKS_PRE_INVOKE:
     sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
@@ -1592,9 +1596,6 @@ SSLNetVConnection::reenable(NetHandler *nh, int event)
     break;
   case HANDSHAKE_HOOKS_VERIFY_SERVER:
   case HANDSHAKE_HOOKS_CLIENT_CERT:
-    if (event == TS_EVENT_ERROR) {
-      sslHandshakeStatus = SSL_HANDSHAKE_ERROR;
-    }
     break;
   default:
     break;

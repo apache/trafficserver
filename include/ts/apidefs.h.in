@@ -437,6 +437,7 @@ typedef enum {
   TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK,
   TS_LIFECYCLE_MSG_HOOK,
   TS_LIFECYCLE_TASK_THREADS_READY_HOOK,
+  TS_LIFECYCLE_SSL_SECRET_HOOK,
   TS_LIFECYCLE_SHUTDOWN_HOOK,
   TS_LIFECYCLE_LAST_HOOK
 } TSLifecycleHookID;
@@ -551,6 +552,7 @@ typedef enum {
   TS_EVENT_SSL_VERIFY_SERVER = 60205,
   TS_EVENT_SSL_VERIFY_CLIENT = 60206,
   TS_EVENT_SSL_CLIENT_HELLO  = 60207,
+  TS_EVENT_SSL_SECRET        = 60208,
 
   TS_EVENT_MGMT_UPDATE = 60300
 } TSEvent;
@@ -1030,6 +1032,13 @@ typedef struct TSSslSessionID_s {
   size_t len;
   char bytes[TS_SSL_MAX_SSL_SESSION_ID_LENGTH];
 } TSSslSessionID;
+
+typedef struct TSSecretID_s {
+  const char *cert_name;
+  size_t cert_name_len;
+  const char *key_name;
+  size_t key_name_len;
+} TSSecretID;
 
 /* --------------------------------------------------------------------------
    Init */

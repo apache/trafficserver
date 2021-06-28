@@ -96,9 +96,7 @@ SNIConfigParams::loadSNIConfig()
         nps->prop.client_key_file = Layout::get()->relative_to(params->clientKeyPathOnly, item.client_key.data());
       }
 
-      params->getCTX(nps->prop.client_cert_file.c_str(),
-                     nps->prop.client_key_file.empty() ? nullptr : nps->prop.client_key_file.c_str(), params->clientCACertFilename,
-                     params->clientCACertPath);
+      params->getCTX(nps->prop.client_cert_file, nps->prop.client_key_file, params->clientCACertFilename, params->clientCACertPath);
     }
 
     nps->setGlobName(item.fqdn);

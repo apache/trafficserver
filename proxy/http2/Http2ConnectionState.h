@@ -34,6 +34,7 @@
 #include "Http2FrequencyCounter.h"
 
 class Http2ClientSession;
+class Http2Frame;
 
 enum class Http2SendDataFrameResult {
   NO_ERROR = 0,
@@ -89,8 +90,10 @@ public:
   Http2ConnectionSettings server_settings;
   Http2ConnectionSettings client_settings;
 
-  void init();
+  void init(Http2ClientSession *ssn);
+  void send_connection_preface();
   void destroy();
+  void rcv_frame(const Http2Frame *frame);
 
   // Event handlers
   int main_event_handler(int, void *);

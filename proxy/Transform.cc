@@ -850,6 +850,10 @@ RangeTransform::transform_to_range()
   int64_t prev_end = 0;
   int64_t *done_byte;
 
+  if (m_current_range >= m_num_range_fields) {
+    return;
+  }
+
   end       = &m_ranges[m_current_range]._end;
   done_byte = &m_ranges[m_current_range]._done_byte;
   start     = &m_ranges[m_current_range]._start;

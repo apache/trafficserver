@@ -143,6 +143,7 @@ libinknet_a_SOURCES = \
 	P_Socks.h \
 	P_SSLCertLookup.h \
 	P_SSLConfig.h \
+        P_SSLSecret.h \
 	P_SSLNetAccept.h \
 	P_SSLNetProcessor.h \
 	P_SSLNetVConnection.h \
@@ -171,6 +172,7 @@ libinknet_a_SOURCES = \
 	SSLClientCoordinator.cc \
 	SSLClientUtils.cc \
 	SSLConfig.cc \
+        SSLSecret.cc \
 	SSLDiags.cc \
 	SSLInternal.cc \
 	SSLNetAccept.cc \
