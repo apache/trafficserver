@@ -139,15 +139,3 @@ protected:
   std::ptrdiff_t _parameters_offset(const uint8_t *buf) const override;
   int _validate_parameters(QUICVersion version) const override;
 };
-
-class QUICTransportParametersHandler
-{
-public:
-  static constexpr int TRANSPORT_PARAMETER_ID = 0xffa5;
-
-  static int add(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char **out, size_t *outlen, X509 *x,
-                 size_t chainidx, int *al, void *add_arg);
-  static void free(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *out, void *add_arg);
-  static int parse(SSL *s, unsigned int ext_type, unsigned int context, const unsigned char *in, size_t inlen, X509 *x,
-                   size_t chainidx, int *al, void *parse_arg);
-};

@@ -50,7 +50,6 @@ using QUICFrameId      = uint64_t;
 // Note: Prefix for drafts (0xff000000) + draft number
 // Note: Fix "Supported Version" field in test case of QUICPacketFactory_Create_VersionNegotiationPacket
 // Note: Fix QUIC_ALPN_PROTO_LIST in QUICConfig.cc
-// Note: Change ExtensionType (QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID) if it's changed
 constexpr QUICVersion QUIC_SUPPORTED_VERSIONS[] = {
   0xff00001d,
   0xff00001b,

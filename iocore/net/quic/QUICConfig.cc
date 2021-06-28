@@ -53,17 +53,6 @@ quic_new_ssl_ctx()
   // QUIC Transport Parameters are accessible with SSL_set_quic_transport_params and SSL_get_peer_quic_transport_params
 #endif
 
-#ifdef SSL_MODE_QUIC_HACK
-  // tatsuhiro-t's custom OpenSSL for QUIC draft-13
-  // https://github.com/tatsuhiro-t/openssl/tree/quic-draft-13
-  SSL_CTX_set_mode(ssl_ctx, SSL_MODE_QUIC_HACK);
-  SSL_CTX_add_custom_ext(ssl_ctx, QUICTransportParametersHandler::TRANSPORT_PARAMETER_ID,
-                         SSL_EXT_TLS_ONLY | SSL_EXT_CLIENT_HELLO | SSL_EXT_TLS1_3_ENCRYPTED_EXTENSIONS,
-                         &QUICTransportParametersHandler::add, &QUICTransportParametersHandler::free, nullptr,
-                         &QUICTransportParametersHandler::parse, nullptr);
-
-#endif
-
   return ssl_ctx;
 }
 
@@ -93,11 +82,9 @@ quic_init_client_ssl_ctx(const QUICConfigParams *params)
     SSL_CTX_sess_set_new_cb(ssl_ctx.get(), QUIC::ssl_client_new_session);
   }
 
-#ifdef SSL_MODE_QUIC_HACK
   if (params->client_keylog_file() != nullptr) {
     SSL_CTX_set_keylog_callback(ssl_ctx.get(), QUIC::ssl_client_keylog_cb);
   }
-#endif
 
   return ssl_ctx;
 }
