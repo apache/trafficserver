@@ -49,7 +49,9 @@ class ImageTransform : public TransformationPlugin
 {
 public:
   ImageTransform(Transaction &transaction, ImageEncoding input_image_type, ImageEncoding transform_image_type)
-    : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION), _input_image_type(input_image_type), _transform_image_type(transform_image_type)
+    : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION),
+      _input_image_type(input_image_type),
+      _transform_image_type(transform_image_type)
   {
     TransformationPlugin::registerHook(HOOK_READ_RESPONSE_HEADERS);
   }
@@ -59,7 +61,7 @@ public:
   {
     if (_transform_image_type == ImageEncoding::webp) {
       transaction.getServerResponse().getHeaders()["Content-Type"] = "image/webp";
-    } 
+    }
     if (_transform_image_type == ImageEncoding::jpeg) {
       transaction.getServerResponse().getHeaders()["Content-Type"] = "image/jpeg";
     }
@@ -119,7 +121,7 @@ public:
 private:
   std::stringstream _img;
   ImageEncoding _input_image_type;
-  ImageEncoding _transform_image_type; 
+  ImageEncoding _transform_image_type;
 };
 
 class GlobalHookPlugin : public GlobalPlugin
@@ -129,23 +131,22 @@ public:
   void
   handleReadResponseHeaders(Transaction &transaction) override
   {
-
     // This variable stores the incoming image type
     ImageEncoding input_image_type = ImageEncoding::unknown;
 
     // This method tries to optimize the amount of string searching at the expense of double checking some of the booleans
 
     std::string ctype = transaction.getServerResponse().getHeaders().values("Content-Type");
-  
+
     // Test to if in this transaction we might want to convert jpeg or png to webp
     bool transaction_convert_to_webp = false;
     if (config_convert_to_webp == true) {
       if (ctype.find("image/jpeg") != std::string::npos) {
-        input_image_type = ImageEncoding::jpeg;
+        input_image_type            = ImageEncoding::jpeg;
         transaction_convert_to_webp = true;
       }
       if (ctype.find("image/png") != std::string::npos) {
-        input_image_type = ImageEncoding::png;
+        input_image_type            = ImageEncoding::png;
         transaction_convert_to_webp = true;
       }
     }
