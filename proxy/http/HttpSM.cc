@@ -1998,6 +1998,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   switch (event) {
   case VC_EVENT_EOS:
     server_entry->eos = true;
+    t_state.set_connect_fail(EPIPE);
 
   // Fall through
   case VC_EVENT_READ_READY:
@@ -2006,8 +2007,14 @@ HttpSM::state_read_server_response_header(int event, void *data)
     break;
 
   case VC_EVENT_ERROR:
+    t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
+    // Error handling function
+    handle_server_setup_error(event, data);
+    return 0;
+
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
+    t_state.set_connect_fail(ETIMEDOUT);
     // Error handling function
     handle_server_setup_error(event, data);
     return 0;
@@ -2052,6 +2059,13 @@ HttpSM::state_read_server_response_header(int event, void *data)
     server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
     milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = Thread::get_hrtime();
+
+    // If there is a post body in transit, give up on it
+    if (tunnel.is_tunnel_alive()) {
+      tunnel.abort_tunnel();
+      // Make sure client connection is closed when we are done in case there is cruft left over
+      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+    }
   }
 
   switch (state) {
@@ -2114,13 +2128,6 @@ HttpSM::state_read_server_response_header(int event, void *data)
     // if exceeded limit deallocate postdata buffers and disable redirection
     if (!(enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections))) {
       this->disable_redirect();
-    }
-
-    // If there is a post body in transit, give up on it
-    if (tunnel.is_tunnel_alive()) {
-      tunnel.abort_tunnel();
-      // Make sure client connection is closed when we are done in case there is cruft left over
-      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
     }
 
     // Go ahead and process the hooks assuming any body tunnel has already completed
