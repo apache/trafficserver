@@ -210,23 +210,22 @@ OperatorSetDestination::exec(const Resources &res) const
 
     case URL_QUAL_QUERY:
       _value.append_value(value, res);
-      if (value.empty()) {
-        TSDebug(PLUGIN_NAME, "Would set destination QUERY to an empty value, skipping");
-      } else {
-        // 1.6.4--Support for preserving QSA in case of set-destination
-        if (get_oper_modifiers() & OPER_QSA) {
-          int query_len     = 0;
-          const char *query = TSUrlHttpQueryGet(bufp, url_m_loc, &query_len);
-          TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
-          // std::string connector = (value.find("?") == std::string::npos)? "?" : "&";
-          value.append("&");
-          value.append(query, query_len);
-        }
 
-        const_cast<Resources &>(res).changed_url = true;
-        TSUrlHttpQuerySet(bufp, url_m_loc, value.c_str(), value.size());
-        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with QUERY: %s", value.c_str());
+      // If QSA grab existing query, check if new is empty
+      // if not then append &, finally append existing params
+      if (get_oper_modifiers() & OPER_QSA) {
+        int query_len     = 0;
+        const char *query = TSUrlHttpQueryGet(bufp, url_m_loc, &query_len);
+        TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
+        if (!value.empty()) {
+          value.append("&");
+        }
+        value.append(query, query_len);
       }
+
+      const_cast<Resources &>(res).changed_url = true;
+      TSUrlHttpQuerySet(bufp, url_m_loc, value.c_str(), value.size());
+      TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with QUERY: %s", value.c_str());
       break;
 
     case URL_QUAL_PORT:
