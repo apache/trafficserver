@@ -175,11 +175,10 @@ TLSSessionResumptionSupport::getSession(SSL *ssl, const unsigned char *id, int l
 SSL_SESSION *
 TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &lookup_key)
 {
-  SSL_SESSION *session             = nullptr;
-  ssl_session_cache_exdata *exdata = nullptr;
-  if (origin_sess_cache->get_session(lookup_key, &session, &exdata)) {
+  SSL_SESSION *session = nullptr;
+  ssl_curve_id curve   = 0;
+  if (origin_sess_cache->get_session(lookup_key, &session, &curve)) {
     ink_assert(session);
-    ink_assert(exdata);
 
     // Double check the timeout
     if (is_ssl_session_timed_out(session)) {
@@ -188,7 +187,7 @@ TLSSessionResumptionSupport::getOriginSession(SSL *ssl, const std::string &looku
     } else {
       SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_hit);
       this->_setSSLSessionCacheHit(true);
-      this->_setSSLCurveNID(exdata->curve);
+      this->_setSSLCurveNID(curve);
     }
   } else {
     SSL_INCREMENT_DYN_STAT(ssl_origin_session_cache_miss);
