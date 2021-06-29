@@ -29,6 +29,7 @@
 #include "P_VConnection.h"
 #include "P_QUICNetVConnection.h"
 #include "QUICDebugNames.h"
+#include "QUICStreamVCAdapter.h"
 
 #include "Http3Session.h"
 #include "Http3Transaction.h"
@@ -54,40 +55,68 @@ Http09App::~Http09App()
   delete this->_ssn;
 }
 
+void
+Http09App::on_new_stream(QUICStream &stream)
+{
+  auto ret   = this->_streams.emplace(stream.id(), stream);
+  auto &info = ret.first->second;
+
+  switch (stream.direction()) {
+  case QUICStreamDirection::BIDIRECTIONAL:
+    info.setup_read_vio(this);
+    info.setup_write_vio(this);
+    break;
+  case QUICStreamDirection::SEND:
+    info.setup_write_vio(this);
+    break;
+  case QUICStreamDirection::RECEIVE:
+    info.setup_read_vio(this);
+    break;
+  default:
+    ink_assert(false);
+    break;
+  }
+
+  stream.set_io_adapter(&info.adapter);
+}
+
 int
 Http09App::main_event_handler(int event, Event *data)
 {
   Debug(debug_tag_v, "[%s] %s (%d)", this->_qc->cids().data(), get_vc_event_name(event), event);
 
-  VIO *vio                = reinterpret_cast<VIO *>(data);
-  QUICStreamIO *stream_io = this->_find_stream_io(vio);
+  VIO *vio                     = reinterpret_cast<VIO *>(data->cookie);
+  QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
 
-  if (stream_io == nullptr) {
+  if (adapter == nullptr) {
     Debug(debug_tag, "[%s] Unknown Stream", this->_qc->cids().data());
     return -1;
   }
 
-  QUICStreamId stream_id = stream_io->stream_id();
+  bool is_bidirectional = adapter->stream().is_bidirectional();
+
+  QUICStreamId stream_id = adapter->stream().id();
   Http09Transaction *txn = static_cast<Http09Transaction *>(this->_ssn->get_transaction(stream_id));
 
-  uint8_t dummy;
   switch (event) {
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
-    if (!stream_io->is_bidirectional()) {
+    if (!is_bidirectional) {
       // FIXME Ignore unidirectional streams for now
       break;
     }
-    if (stream_io->peek(&dummy, 1)) {
-      if (txn == nullptr) {
-        txn = new Http09Transaction(this->_ssn, stream_io);
-        SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
 
+    if (txn == nullptr) {
+      if (auto ret = this->_streams.find(stream_id); ret != this->_streams.end()) {
+        txn = new Http09Transaction(this->_ssn, ret->second);
+        SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
         txn->new_transaction();
       } else {
-        SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
-        txn->handleEvent(event);
+        ink_assert(!"Stream info should exist");
       }
+    } else {
+      SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
+      txn->handleEvent(event);
     }
     break;
   case VC_EVENT_WRITE_READY:

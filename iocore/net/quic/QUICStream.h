@@ -37,6 +37,9 @@
 #include "QUICFrameRetransmitter.h"
 #include "QUICDebugNames.h"
 
+class QUICStreamAdapter;
+class QUICStreamStateListener;
+
 /**
  * @brief QUIC Stream
  * TODO: This is similar to Http2Stream. Need to think some integration.
@@ -53,6 +56,14 @@ public:
   const QUICConnectionInfoProvider *connection_info() const;
   bool is_bidirectional() const;
   QUICOffset final_offset() const;
+
+  /**
+   * Set an adapter to read/write data from/to this stream
+   *
+   * This is an interface for QUICApplication. An application can set an adapter
+   * to access data in the  way the applications wants.
+   */
+  void set_io_adapter(QUICStreamAdapter *adapter);
 
   /*
    * QUICApplication need to call one of these functions when it process VC_EVENT_*
@@ -74,6 +85,8 @@ public:
   virtual void stop_sending(QUICStreamErrorUPtr error);
   virtual void reset(QUICStreamErrorUPtr error);
 
+  void set_state_listener(QUICStreamStateListener *listener);
+
   LINK(QUICStream, link);
 
 protected:
@@ -82,41 +95,23 @@ protected:
   QUICOffset _send_offset                      = 0;
   QUICOffset _reordered_bytes                  = 0;
 
+  QUICStreamAdapter *_adapter              = nullptr;
+  QUICStreamStateListener *_state_listener = nullptr;
+
+  virtual void _on_adapter_updated(){};
+
+  void _notify_state_change();
+
   void _records_rst_stream_frame(QUICEncryptionLevel level, const QUICRstStreamFrame &frame);
   void _records_stream_frame(QUICEncryptionLevel level, const QUICStreamFrame &frame);
   void _records_stop_sending_frame(QUICEncryptionLevel level, const QUICStopSendingFrame &frame);
   void _records_crypto_frame(QUICEncryptionLevel level, const QUICCryptoFrame &frame);
 };
 
-// This is VConnection class for VIO operation.
-class QUICStreamVConnection : public VConnection, public QUICStream
+class QUICStreamStateListener
 {
 public:
-  QUICStreamVConnection(QUICConnectionInfoProvider *cinfo, QUICStreamId sid) : VConnection(nullptr), QUICStream(cinfo, sid)
-  {
-    mutex = new_ProxyMutex();
-  }
-
-  QUICStreamVConnection() : VConnection(nullptr) {}
-  virtual ~QUICStreamVConnection();
-
-  LINK(QUICStreamVConnection, link);
-
-protected:
-  virtual int64_t _process_read_vio();
-  virtual int64_t _process_write_vio();
-  void _signal_read_event();
-  void _signal_write_event();
-  void _signal_read_eos_event();
-  Event *_send_tracked_event(Event *, int, VIO *);
-
-  void _write_to_read_vio(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin);
-
-  VIO _read_vio;
-  VIO _write_vio;
-
-  Event *_read_event  = nullptr;
-  Event *_write_event = nullptr;
+  virtual void on_stream_state_close(const QUICStream *stream) = 0;
 };
 
 #define QUICStreamDebug(fmt, ...)                                                                        \

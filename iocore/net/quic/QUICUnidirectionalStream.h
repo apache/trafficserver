@@ -25,7 +25,7 @@
 
 #include "QUICStream.h"
 
-class QUICSendStream : public QUICStreamVConnection
+class QUICSendStream : public QUICStream
 {
 public:
   QUICSendStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid, uint64_t send_max_stream_data);
@@ -44,13 +44,6 @@ public:
   virtual QUICConnectionErrorUPtr recv(const QUICMaxStreamDataFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame) override;
 
-  // Implement VConnection Interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
-
   void reset(QUICStreamErrorUPtr error) override;
 
   QUICOffset largest_offset_sent() const override;
@@ -62,7 +55,7 @@ private:
   bool _is_transfer_complete = false;
   bool _is_reset_complete    = false;
 
-  QUICTransferProgressProviderVIO _progress_vio = {this->_read_vio};
+  QUICTransferProgressProviderSA _progress_sa;
 
   QUICRemoteStreamFlowController _remote_flow_controller;
 
@@ -73,7 +66,7 @@ private:
   void _on_frame_lost(QUICFrameInformationUPtr &info) override;
 };
 
-class QUICReceiveStream : public QUICStreamVConnection, public QUICTransferProgressProvider
+class QUICReceiveStream : public QUICStream, public QUICTransferProgressProvider
 {
 public:
   QUICReceiveStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
@@ -93,13 +86,6 @@ public:
   virtual QUICConnectionErrorUPtr recv(const QUICStreamFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame) override;
-
-  // Implement VConnection Interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
 
   // QUICTransferProgressProvider
   bool is_transfer_goal_set() const override;

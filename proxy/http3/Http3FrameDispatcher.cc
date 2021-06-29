@@ -41,7 +41,7 @@ Http3FrameDispatcher::add_handler(Http3FrameHandler *handler)
 }
 
 Http3ErrorUPtr
-Http3FrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
+Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, IOBufferReader &reader, uint64_t &nread)
 {
   std::shared_ptr<const Http3Frame> frame(nullptr);
   Http3ErrorUPtr error = Http3ErrorUPtr(new Http3NoError());
@@ -50,7 +50,8 @@ Http3FrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
   while (true) {
     // Read a length of Type field and hopefully a length of Length field too
     uint8_t head[16];
-    int64_t read_len = stream_io.peek(head, 16);
+    auto p           = reader.memcpy(head, 16);
+    int64_t read_len = p - reinterpret_cast<char *>(head);
     Debug("v_http3", "reading H3 frame: state=%d read_len=%" PRId64, this->_reading_state, read_len);
 
     if (this->_reading_state == READING_TYPE_LEN) {
@@ -87,19 +88,21 @@ Http3FrameDispatcher::on_read_ready(QUICStreamIO &stream_io, uint64_t &nread)
     if (this->_reading_state == READING_PAYLOAD) {
       // Create a frame
       // Type field length + Length field length + Payload length
-      size_t frame_len = this->_reading_frame_type_len + this->_reading_frame_length_len + this->_reading_frame_payload_len;
-      frame            = this->_frame_factory.fast_create(stream_io, frame_len);
+      size_t frame_len   = this->_reading_frame_type_len + this->_reading_frame_length_len + this->_reading_frame_payload_len;
+      auto cloned_reader = reader.clone();
+      frame              = this->_frame_factory.fast_create(*cloned_reader, frame_len);
+      cloned_reader->dealloc();
       if (frame == nullptr) {
         break;
       }
 
       // Consume buffer if frame is created
       nread += frame_len;
-      stream_io.consume(frame_len);
+      reader.consume(frame_len);
 
       // Dispatch
       Http3FrameType type = frame->type();
-      Debug("http3", "[RX] [%d] | %s size=%zu", stream_io.stream_id(), Http3DebugNames::frame_type(type), frame_len);
+      Debug("http3", "[RX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(type), frame_len);
       std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
       for (auto h : handlers) {
         error = h->handle_frame(frame);

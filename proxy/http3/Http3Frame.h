@@ -42,7 +42,7 @@ public:
   uint64_t total_length() const;
   uint64_t length() const;
   Http3FrameType type() const;
-  virtual void store(uint8_t *buf, size_t *len) const;
+  virtual Ptr<IOBufferBlock> to_io_buffer_block() const;
   virtual void reset(const uint8_t *buf, size_t len);
   static int length(const uint8_t *buf, size_t buf_len, uint64_t &length);
   static Http3FrameType type(const uint8_t *buf, size_t buf_len);
@@ -59,7 +59,7 @@ public:
   Http3UnknownFrame() : Http3Frame() {}
   Http3UnknownFrame(const uint8_t *buf, size_t len);
 
-  void store(uint8_t *buf, size_t *len) const override;
+  Ptr<IOBufferBlock> to_io_buffer_block() const override;
 
 protected:
   const uint8_t *_buf = nullptr;
@@ -77,7 +77,7 @@ public:
   Http3DataFrame(const uint8_t *buf, size_t len);
   Http3DataFrame(ats_unique_buf payload, size_t payload_len);
 
-  void store(uint8_t *buf, size_t *len) const override;
+  Ptr<IOBufferBlock> to_io_buffer_block() const override;
   void reset(const uint8_t *buf, size_t len) override;
 
   const uint8_t *payload() const;
@@ -100,7 +100,7 @@ public:
   Http3HeadersFrame(const uint8_t *buf, size_t len);
   Http3HeadersFrame(ats_unique_buf header_block, size_t header_block_len);
 
-  void store(uint8_t *buf, size_t *len) const override;
+  Ptr<IOBufferBlock> to_io_buffer_block() const override;
   void reset(const uint8_t *buf, size_t len) override;
 
   const uint8_t *header_block() const;
@@ -130,7 +130,7 @@ public:
     Http3SettingsId::NUM_PLACEHOLDERS,
   };
 
-  void store(uint8_t *buf, size_t *len) const override;
+  Ptr<IOBufferBlock> to_io_buffer_block() const override;
   void reset(const uint8_t *buf, size_t len) override;
 
   bool is_valid() const;
@@ -223,7 +223,7 @@ public:
    * This works almost the same as create() but it reuses created objects for performance.
    * If you create a frame object which has the same frame type that you created before, the object will be reset by new data.
    */
-  std::shared_ptr<const Http3Frame> fast_create(QUICStreamIO &stream_io, size_t frame_len);
+  std::shared_ptr<const Http3Frame> fast_create(IOBufferReader &reader, size_t frame_len);
   std::shared_ptr<const Http3Frame> fast_create(const uint8_t *buf, size_t len);
 
   /*

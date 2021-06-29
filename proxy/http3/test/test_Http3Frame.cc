@@ -90,7 +90,11 @@ TEST_CASE("Store DATA Frame", "[http3]")
     Http3DataFrame data_frame(std::move(payload1), 4);
     CHECK(data_frame.length() == 4);
 
-    data_frame.store(buf, &len);
+    auto ibb = data_frame.to_io_buffer_block();
+    IOBufferReader reader;
+    reader.block = ibb.get();
+    len          = reader.read_avail();
+    reader.read(buf, sizeof(buf));
     CHECK(len == 6);
     CHECK(memcmp(buf, expected1, len) == 0);
   }
@@ -115,7 +119,11 @@ TEST_CASE("Store HEADERS Frame", "[http3]")
     Http3HeadersFrame hdrs_frame(std::move(header_block), 4);
     CHECK(hdrs_frame.length() == 4);
 
-    hdrs_frame.store(buf, &len);
+    auto ibb = hdrs_frame.to_io_buffer_block();
+    IOBufferReader reader;
+    reader.block = ibb.get();
+    len          = reader.read_avail();
+    reader.read(buf, sizeof(buf));
     CHECK(len == 6);
     CHECK(memcmp(buf, expected1, len) == 0);
   }
@@ -169,7 +177,11 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    settings_frame.store(buf, &len);
+    auto ibb = settings_frame.to_io_buffer_block();
+    IOBufferReader reader;
+    reader.block = ibb.get();
+    len          = reader.read_avail();
+    reader.read(buf, sizeof(buf));
     CHECK(len == sizeof(expected));
     CHECK(memcmp(buf, expected, len) == 0);
   }
@@ -190,7 +202,11 @@ TEST_CASE("Store SETTINGS Frame", "[http3]")
 
     uint8_t buf[32] = {0};
     size_t len;
-    settings_frame.store(buf, &len);
+    auto ibb = settings_frame.to_io_buffer_block();
+    IOBufferReader reader;
+    reader.block = ibb.get();
+    len          = reader.read_avail();
+    reader.read(buf, sizeof(buf));
     CHECK(len == sizeof(expected));
     CHECK(memcmp(buf, expected, len) == 0);
   }
