@@ -124,7 +124,7 @@ class LogFilenamesTest:
         tr = Test.AddTestRun(f'Run traffic for: {description}')
         tr.Processes.Default.Command = (
             f'curl http://127.0.0.1:{self.ts.Variables.port}/some/path --verbose --next '
-            f'curl http://127.0.0.1:{self.ts.Variables.port}/server/down --verbose'
+            f'http://127.0.0.1:{self.ts.Variables.port}/server/down --verbose'
         )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.ts)
