@@ -42,7 +42,7 @@ class SSLNetVConnection;
 
 typedef int ssl_error_t;
 
-#ifndef OPENSSL_IS_BORING
+#ifndef OPENSSL_IS_BORINGSSL
 typedef int ssl_curve_id;
 #else
 typedef uint16_t ssl_curve_id;
