@@ -98,18 +98,24 @@ ALPNSupport::select_next_protocol(SSL *ssl, const unsigned char **out, unsigned 
 {
   const unsigned char *npnptr = nullptr;
   unsigned int npnsize        = 0;
-  if (this->getNPN(&npnptr, &npnsize)) {
+  int retval                  = SSL_TLSEXT_ERR_ALERT_FATAL;
+
+  if (this->getNPN(&npnptr, &npnsize) && npnsize > 0) {
     // SSL_select_next_proto chooses the first server-offered protocol that appears in the clients protocol set, ie. the
     // server selects the protocol. This is a n^2 search, so it's preferable to keep the protocol set short.
     if (SSL_select_next_proto(const_cast<unsigned char **>(out), outlen, npnptr, npnsize, in, inlen) == OPENSSL_NPN_NEGOTIATED) {
       Debug("ssl", "selected ALPN protocol %.*s", (int)(*outlen), *out);
-      return SSL_TLSEXT_ERR_OK;
+      retval = SSL_TLSEXT_ERR_OK;
+    } else {
+      *out    = nullptr;
+      *outlen = 0;
     }
+  } else {
+    *out    = nullptr;
+    *outlen = 0;
+    retval  = SSL_TLSEXT_ERR_NOACK;
   }
-
-  *out    = nullptr;
-  *outlen = 0;
-  return SSL_TLSEXT_ERR_NOACK;
+  return retval;
 }
 
 void
