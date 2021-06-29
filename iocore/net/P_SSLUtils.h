@@ -51,6 +51,15 @@ typedef uint16_t ssl_curve_id;
 // Return the SSL Curve ID associated to the specified SSL connection
 ssl_curve_id SSLGetCurveNID(SSL *ssl);
 
+enum class SSLCertContextType;
+
+struct SSLLoadingContext {
+  SSL_CTX *ctx;
+  SSLCertContextType ctx_type;
+
+  explicit SSLLoadingContext(SSL_CTX *c, SSLCertContextType ctx_type) : ctx(c), ctx_type(ctx_type) {}
+};
+
 /**
     @brief Load SSL certificates from ssl_multicert.config and setup SSLCertLookup for SSLCertificateConfig
  */
@@ -59,6 +68,7 @@ class SSLMultiCertConfigLoader
 public:
   struct CertLoadData {
     std::vector<std::string> cert_names_list, key_list, ca_list, ocsp_list;
+    std::vector<SSLCertContextType> cert_type_list;
   };
   SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
   virtual ~SSLMultiCertConfigLoader(){};
@@ -66,15 +76,21 @@ public:
   bool load(SSLCertLookup *lookup);
 
   virtual SSL_CTX *default_server_ssl_ctx();
-  virtual SSL_CTX *init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings,
-                                       std::set<std::string> &names);
 
-  static bool load_certs(SSL_CTX *ctx, CertLoadData const &data, const SSLConfigParams *params,
+  virtual std::vector<SSLLoadingContext> init_server_ssl_ctx(CertLoadData const &data,
+                                                             const SSLMultiCertConfigParams *sslMultCertSettings,
+                                                             std::set<std::string> &names);
+
+  static bool load_certs(SSL_CTX *ctx, const std::vector<std::string> &cert_names_list,
+                         const std::vector<std::string> &key_names_list, CertLoadData const &data, const SSLConfigParams *params,
                          const SSLMultiCertConfigParams *sslMultCertSettings);
+
   bool load_certs_and_cross_reference_names(std::vector<X509 *> &cert_list, CertLoadData &data, const SSLConfigParams *params,
                                             const SSLMultiCertConfigParams *sslMultCertSettings,
                                             std::set<std::string> &common_names,
-                                            std::unordered_map<int, std::set<std::string>> &unique_names);
+                                            std::unordered_map<int, std::set<std::string>> &unique_names,
+                                            SSLCertContextType *certType);
+
   static bool set_session_id_context(SSL_CTX *ctx, const SSLConfigParams *params,
                                      const SSLMultiCertConfigParams *sslMultCertSettings);
 
@@ -87,7 +103,7 @@ protected:
   const SSLConfigParams *_params;
 
   bool _store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings, shared_SSL_CTX ctx,
-                             std::set<std::string> &names);
+                             SSLCertContextType ctx_type, std::set<std::string> &names);
 
 private:
   virtual const char *_debug_tag() const;
