@@ -36,6 +36,14 @@ Options
 
 .. option:: -B TAGS, --action_tags TAGS
 
+.. option:: --bind_stdout FILE
+
+The file to which the stdout stream for |TS| will be bound.
+
+.. option:: --bind_stderr FILE
+
+The file to which the stderr stream for |TS| will be bound.
+
 .. option:: -C 'CMD [ARGS]', --command 'CMD [ARGS]'
 
 Run a |TS| maintenance command. These commands perform various administrative
