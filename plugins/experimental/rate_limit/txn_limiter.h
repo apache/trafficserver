@@ -18,6 +18,7 @@
 #pragma once
 
 #include "limiter.h"
+#include "ts/ts.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // TXN based limiters, for remap.config plugin instances.

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "limiter.h"
+#include "ts/ts.h"
 
 int sni_limit_cont(TSCont contp, TSEvent event, void *edata);
 
@@ -27,7 +28,14 @@ int sni_limit_cont(TSCont contp, TSEvent event, void *edata);
 class SniRateLimiter : public RateLimiter<TSVConn>
 {
 public:
-  int vc_idx = -1;
-  // void setupCont(TSHttpTxn txnp, TSHttpHookID hook);
+  SniRateLimiter() {}
+
+  SniRateLimiter(const SniRateLimiter &src)
+  {
+    limit     = src.limit;
+    max_queue = src.max_queue;
+    max_age   = src.max_age;
+  }
+
   bool initialize(int argc, const char *argv[]);
 };

@@ -15,10 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ts/ts.h>
-#include <ts/remap.h>
 
+#include "tscore/ink_config.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
 #include "utilities.h"
+
+// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
+#if TS_USE_HELLO_CB
 
 std::string_view
 getSNI(SSL *ssl)
@@ -55,6 +59,8 @@ getSNI(SSL *ssl)
 
   return std::string_view(servername, len);
 }
+
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Add a header with the delay imposed on this transaction. This can be used

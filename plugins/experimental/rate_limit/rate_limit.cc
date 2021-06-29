@@ -16,21 +16,24 @@
  * limitations under the License.
  */
 #include <unistd.h>
-#include <getopt.h>
 #include <cstdlib>
-#include <ts/ts.h>
-#include <ts/remap.h>
 
-#include <openssl/ssl.h>
-
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "tscore/ink_config.h"
 #include "txn_limiter.h"
-#include "sni_limiter.h"
 #include "utilities.h"
+
+// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
+#if TS_USE_HELLO_CB
+
+#include "sni_selector.h"
+#include "sni_limiter.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // As a global plugin, things works a little difference since we don't setup
 // per transaction or via remap.config.
-static int gVCIdx = -1;
+extern int gVCIdx;
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -50,23 +53,23 @@ TSPluginInit(int argc, const char *argv[])
 
   if (argc > 1) {
     if (!strncasecmp(argv[1], "SNI=", 4)) {
-      TSCont sni_cont         = TSContCreate(sni_limit_cont, nullptr);
-      SniRateLimiter *limiter = new SniRateLimiter();
-
-      --argc; // Skip the "SNI" portion of course when parsing the real parameters
-      ++argv;
+      TSCont sni_cont       = TSContCreate(sni_limit_cont, nullptr);
+      SniSelector *selector = new SniSelector();
 
       TSReleaseAssert(sni_cont);
-      TSReleaseAssert(limiter);
+      TSContDataSet(sni_cont, selector);
 
-      limiter->initialize(argc, argv);
-      limiter->vc_idx = gVCIdx;
-      TSContDataSet(sni_cont, limiter);
+      // Have to skip the first one, which is considered the 'program' name
+      --argc;
+      ++argv;
+
+      size_t num_sni = selector->factory(argv[0] + 4, argc, argv);
+      TSDebug(PLUGIN_NAME, "Finished loading %zu SNIs", num_sni);
+
       TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
       TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
 
-      TSDebug(PLUGIN_NAME, "Added global SNI limiter rule (limit=%u, queue=%u, max_age=%ldms)", limiter->limit, limiter->max_queue,
-              static_cast<long>(limiter->max_age.count()));
+      selector->setupQueueCont(); // Start the queue processing continuation
     } else if (!strncasecmp(argv[1], "HOST=", 5)) {
       // TODO: Do we need to implement this ?? Or can we just defer this to the remap version?
       --argc; // Skip the "HOST" arg of course when parsing the real parameters
@@ -79,6 +82,8 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] Usage: rate_limit.so SNI|HOST [option arguments]", PLUGIN_NAME);
   }
 }
+
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Setup stuff for the remap plugin

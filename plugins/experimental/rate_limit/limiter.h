@@ -22,10 +22,9 @@
 #include <atomic>
 #include <chrono>
 #include <string>
-#include <unordered_map>
 
-#include <ts/ts.h>
-
+#include "tscore/ink_config.h"
+#include "ts/ts.h"
 #include "utilities.h"
 
 constexpr auto QUEUE_DELAY_TIME = std::chrono::milliseconds{200}; // Examine the queue every 200ms
@@ -152,6 +151,7 @@ public:
   unsigned limit                    = 100;      // Arbitrary default, probably should be a required config
   unsigned max_queue                = UINT_MAX; // No queue limit, but if sets will give an immediate error if at max
   std::chrono::milliseconds max_age = std::chrono::milliseconds::zero(); // Max age (ms) in the queue
+  std::string description           = "";
 
 private:
   std::atomic<unsigned> _active = 0; // Current active number of txns. This has to always stay <= limit above

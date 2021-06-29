@@ -32,7 +32,6 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_TXN_CLOSE:
-    TSDebug(PLUGIN_NAME, "Event = TS_EVENT_HTTP_TXN_CLOSE");
     limiter->release();
     TSContDestroy(cont); // We are done with this continuation now
     TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
@@ -40,13 +39,11 @@ txn_limit_cont(TSCont cont, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_HTTP_POST_REMAP:
-    TSDebug(PLUGIN_NAME, "Event = TS_EVENT_HTTP_POST_REMAP");
     limiter->push(static_cast<TSHttpTxn>(edata), cont);
     return TS_EVENT_NONE;
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR: // This is only applicable when we set an error in remap
-    TSDebug(PLUGIN_NAME, "Event = TS_EVENT_HTTP_SEND_RESPONSE_HDR");
     retryAfter(static_cast<TSHttpTxn>(edata), limiter->retry);
     TSContDestroy(cont); // We are done with this continuation now
     TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
