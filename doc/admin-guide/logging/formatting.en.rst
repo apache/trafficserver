@@ -811,17 +811,20 @@ paths), from transactions processed by |TS|.
 ===== ============== ==========================================================
 Field Source         Description
 ===== ============== ==========================================================
-cqu   Proxy Request  URI of the client request to |TS| (a subset of cqtx_). In
-                     reverse proxy mode, |TS| logs the rewritten/mapped URL
-                     (according to the rules in :file:`remap.config`), not the
-                     pristine/unmapped URL.
-cquc  Client Request Canonical URL from the client request to |TS|. This field
+cqu   Proxy Request  URL of the proxy request from |TS| to the origin. If a
+                     remap rule is used (:file:`remap.config`), the original
+                     client URL is replaced with the URL in the target of the
+                     remap rule.
+cquc  Proxy Request  Canonical URL from the proxy request to origin. This field
                      differs from cqu_ by having its contents URL-escaped
                      (spaces and various other characters are replaced by
                      percent-escaped entity codes).
-cqup  Proxy Request  Path component from the remapped client request.
-cqus  Client Request URL scheme from the client request.
+cqup  Proxy Request  Path component from the proxy request.
+cqus  Proxy Request  URL scheme from the proxy request.
 cquuc Client Request Canonical (prior to remapping) effective URL from client request.
+                     It is possible that plugins prior to the remap phase have
+                     changed the client request, so this field may not match the
+                     original incoming client request.
 cquup Client Request Canonical (prior to remapping) path component from the
                      client request. Compare with cqup_.
 cquuh Client Request Unmapped URL host from the client request.
