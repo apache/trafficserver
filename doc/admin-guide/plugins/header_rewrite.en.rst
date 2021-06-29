@@ -689,6 +689,18 @@ used as its replacement. You must supply a non-zero length value, otherwise
 this operator will be an effective no-op (though a warning will be emitted to
 the logs if debugging is enabled).
 
+rm-destination
+~~~~~~~~~~~~~~
+::
+
+  rm-destination <part>
+
+Removes individual components of the remapped destination's address. When
+changing the remapped destination, ``<part>`` should be used to indicate the
+component that is being modified (see `URL Parts`_). Currently the only valid
+parts for rm-destination are QUERY, PATH, and PORT.
+
+
 set-header
 ~~~~~~~~~~
 ::
@@ -1204,3 +1216,11 @@ could each be tagged with a consistent name to make finding logs easier.::
    set-header @PropertyName "someproperty"
 
 (Then in :file:`logging.yaml`, log ``%<{@PropertyName}cqh>``)
+
+Remove Client Query Parameters
+------------------------------------
+
+The following ruleset removes any query parameters set by the client.::
+
+   cond %{REMAP_PSEUDO_HOOK}
+   rm-destination QUERY
