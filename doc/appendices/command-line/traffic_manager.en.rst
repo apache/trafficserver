@@ -41,6 +41,14 @@ Description
 .. option:: --recordsConf FILE
 .. option:: --tsArgs ARGUMENTS
 .. option:: --maxRecords RECORDS
+.. option:: --bind_stdout FILE
+
+The file to which the stdout stream for :program:`traffic_manager` will be bound.
+
+.. option:: --bind_stderr FILE
+
+The file to which the stderr stream for :program:`traffic_manager` will be bound.
+
 .. option:: --version
 
 Signals

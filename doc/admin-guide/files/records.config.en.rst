@@ -213,13 +213,25 @@ System Variables
 
 .. ts:cv:: CONFIG proxy.config.output.logfile  STRING traffic.out
 
-   The name and location of the file that contains warnings, status messages, and error messages produced by the |TS|
-   processes. If no path is specified, then |TS| creates the file in its logging directory.
+   This is used for log rolling configuration so |TS| knows the path of the
+   output file that should be rolled. This configuration takes the name of the
+   file receiving :program:`traffic_server` and :program:`traffic_manager`
+   process output that is set via the ``--bind_stdout`` and ``--bind_stderr``
+   :ref:`command-line options <traffic_server>`.
+   :ts:cv:`proxy.config.output.logfile` is used only to identify the name of
+   the output file for log rolling purposes and does not override the values
+   set via ``--bind_stdout`` and ``--bind_stderr``.
 
+   If a filename is passed to this option, then it will be interpreted relative
+   to :ts:cv:`proxy.config.log.logfile_dir`. If a different location is desired,
+   then pass an absolute path to this configuration.
 
 .. ts:cv:: CONFIG proxy.config.output.logfile_perm STRING rw-r--r--
 
-   The log file permissions. The standard UNIX file permissions are used (owner, group, other). Permissible values are:
+   The log file permissions for the file receiving |TS| output, the path of
+   which is configured via the ``--bind_stdout`` and ``--bind_stderr``
+   :ref:`command-line options <traffic_server>`.  The standard UNIX file
+   permissions are used (owner, group, other). Permissible values are:
 
    ===== ======================================================================
    Value Description
