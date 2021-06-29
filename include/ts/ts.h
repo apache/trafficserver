@@ -2363,10 +2363,11 @@ tsapi TSReturnCode TSAIOThreadNumSet(int thread_num);
 
 /**
     Check if transaction was aborted (due client/server errors etc.)
+    Client_abort is set as True, in case the abort was caused by the Client.
 
     @return 1 if transaction was aborted
 */
-tsapi TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp);
+tsapi TSReturnCode TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort);
 
 tsapi TSVConn TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp);
 tsapi TSVConn TSVConnFdCreate(int fd);

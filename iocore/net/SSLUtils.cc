@@ -950,6 +950,8 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *ke
       }
     }
   }
+#else
+  void *e = nullptr;
 #endif
   if (pkey == nullptr) {
     scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));

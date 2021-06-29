@@ -1164,6 +1164,12 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
       SSL_load_error_strings();
       SSL_library_init();
       ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+      if (ssl_ctx == NULL) {
+        (void)fprintf(stderr, "%s: failed to create SSL_CTX\n", argv0);
+        ERR_print_errors_fp(stderr);
+        return;
+      }
+
       /* For some reason this does not seem to work, but indications are that it should...
          Maybe something with how we create connections? TODO: Fix it... */
       SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, cert_verify_callback);
@@ -1187,6 +1193,12 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
     if (flags != -1)
       (void)fcntl(connections[cnum].conn_fd, F_SETFL, flags & ~(int)O_NDELAY);
     connections[cnum].ssl = SSL_new(ssl_ctx);
+    if (connections[cnum].ssl == NULL) {
+      (void)fprintf(stderr, "%s: failed to create SSL\n", argv0);
+      ERR_print_errors_fp(stderr);
+      close_connection(cnum);
+      return;
+    }
     SSL_set_fd(connections[cnum].ssl, connections[cnum].conn_fd);
     r = SSL_connect(connections[cnum].ssl);
     if (r <= 0) {
@@ -2802,7 +2814,7 @@ close_connection(int cnum)
     ev.data.u32 = cnum;
     if (epoll_ctl(epfd, EPOLL_CTL_DEL, connections[cnum].conn_fd, &ev) < 0)
       perror("epoll delete fd");
-    if (urls[connections[cnum].url_num].protocol == PROTO_HTTPS)
+    if (urls[connections[cnum].url_num].protocol == PROTO_HTTPS && connections[cnum].ssl != NULL)
       SSL_free(connections[cnum].ssl);
     (void)close(connections[cnum].conn_fd);
   } else {
