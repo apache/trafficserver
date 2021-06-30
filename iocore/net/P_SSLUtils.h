@@ -124,12 +124,6 @@ void SSLInitializeLibrary();
 // Initialize SSL library based on configuration settings
 void SSLPostConfigInitialize();
 
-// Wrapper functions to SSL I/O routines
-ssl_error_t SSLWriteBuffer(SSL *ssl, const void *buf, int64_t nbytes, int64_t &nwritten);
-ssl_error_t SSLReadBuffer(SSL *ssl, void *buf, int64_t nbytes, int64_t &nread);
-ssl_error_t SSLAccept(SSL *ssl);
-ssl_error_t SSLConnect(SSL *ssl);
-
 // Attach a SSL NetVC back pointer to a SSL session.
 void SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc);
 

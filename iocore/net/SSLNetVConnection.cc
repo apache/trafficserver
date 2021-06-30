@@ -254,10 +254,10 @@ debug_certificate_name(const char *msg, X509_NAME *name)
   BIO_free(bio);
 }
 
-static int
-ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
+int
+SSLNetVConnection::_ssl_read_from_net(EThread *lthread, int64_t &ret)
 {
-  NetState *s            = &sslvc->read;
+  NetState *s            = &this->read;
   MIOBufferAccessor &buf = s->vio.buffer;
   int event              = SSL_READ_ERROR_NONE;
   int64_t bytes_read     = 0;
@@ -282,7 +282,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     Debug("ssl", "amount_to_read=%" PRId64, amount_to_read);
     char *current_block = buf.writer()->end();
     ink_release_assert(current_block != nullptr);
-    sslErr = SSLReadBuffer(sslvc->ssl, current_block, amount_to_read, nread);
+    sslErr = this->_ssl_read_buffer(current_block, amount_to_read, nread);
 
     Debug("ssl", "nread=%" PRId64, nread);
 
@@ -296,7 +296,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       bytes_read += nread;
       if (nread > 0) {
         buf.writer()->fill(nread); // Tell the buffer, we've used the bytes
-        sslvc->netActivity(lthread);
+        this->netActivity(lthread);
       }
       break;
     case SSL_ERROR_WANT_WRITE:
@@ -340,7 +340,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       ERR_error_string_n(e, buf, sizeof(buf));
       event = SSL_READ_ERROR;
       ret   = errno;
-      SSL_CLR_ERR_INCR_DYN_STAT(sslvc, ssl_error_ssl, "errno=%d", errno);
+      SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "errno=%d", errno);
     } break;
     } // switch
   }   // while
@@ -349,7 +349,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     Debug("ssl", "bytes_read=%" PRId64, bytes_read);
 
     s->vio.ndone += bytes_read;
-    sslvc->netActivity(lthread);
+    this->netActivity(lthread);
 
     ret = bytes_read;
 
@@ -357,7 +357,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     event = (s->vio.ntodo() <= 0) ? SSL_READ_COMPLETE : SSL_READ_READY;
     if (sslErr == SSL_ERROR_NONE && s->vio.ntodo() > 0) {
       // We stopped with data on the wire (to avoid overbuffering).  Make sure we are triggered
-      sslvc->read.triggered = 1;
+      this->read.triggered = 1;
     }
   } else { // if( bytes_read > 0 )
 #if defined(_DEBUG)
@@ -679,7 +679,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   // this comment if you know
   int ssl_read_errno = 0;
   do {
-    ret = ssl_read_from_net(this, lthread, r);
+    ret = this->_ssl_read_from_net(lthread, r);
     if (ret == SSL_READ_READY || ret == SSL_READ_ERROR_NONE) {
       bytes += r;
     }
@@ -824,7 +824,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     try_to_write       = l;
     num_really_written = 0;
     Debug("v_ssl", "b=%p l=%" PRId64, current_block, l);
-    err = SSLWriteBuffer(ssl, current_block, l, num_really_written);
+    err = this->_ssl_write_buffer(current_block, l, num_really_written);
 
     // We wrote all that we thought we should
     if (num_really_written > 0) {
@@ -1261,7 +1261,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     } // Still data in the BIO
   }
 
-  ssl_error_t ssl_error = SSLAccept(ssl);
+  ssl_error_t ssl_error = this->_ssl_accept();
 #if TS_USE_TLS_ASYNC
   if (ssl_error == SSL_ERROR_WANT_ASYNC) {
     // Do we need to set up the async eventfd?  Or is it already registered?
@@ -1489,7 +1489,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     }
   }
 
-  ssl_error = SSLConnect(ssl);
+  ssl_error = this->_ssl_connect();
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (is_debug_tag_set("ssl")) {
@@ -1987,4 +1987,252 @@ SSLNetVConnection::_get_tls_curve() const
   } else {
     return SSLGetCurveNID(ssl);
   }
+}
+
+ssl_error_t
+SSLNetVConnection::_ssl_accept()
+{
+  ERR_clear_error();
+
+  int ret       = 0;
+  int ssl_error = SSL_ERROR_NONE;
+
+#if TS_HAS_TLS_EARLY_DATA
+  if (SSLConfigParams::server_max_early_data > 0 && !this->early_data_finish) {
+    size_t nread;
+
+    while (true) {
+      IOBufferBlock *block = new_IOBufferBlock();
+      block->alloc(BUFFER_SIZE_INDEX_16K);
+      ret = SSL_read_early_data(ssl, block->buf(), index_to_buffer_size(BUFFER_SIZE_INDEX_16K), &nread);
+
+      if (ret == SSL_READ_EARLY_DATA_ERROR) {
+        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_ERROR");
+        block->free();
+        break;
+      } else {
+        if (nread > 0) {
+          if (this->early_data_buf == nullptr) {
+            this->early_data_buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_16K);
+            this->early_data_reader = this->early_data_buf->alloc_reader();
+          }
+          block->fill(nread);
+          this->early_data_buf->append_block(block);
+          SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
+
+          if (is_debug_tag_set("ssl_early_data_show_received")) {
+            std::string early_data_str(reinterpret_cast<char *>(block->buf()), nread);
+            Debug("ssl_early_data_show_received", "Early data buffer: \n%s", early_data_str.c_str());
+          }
+        } else {
+          block->free();
+        }
+
+        if (ret == SSL_READ_EARLY_DATA_FINISH) {
+          this->early_data_finish = true;
+          Debug("ssl_early_data", "SSL_READ_EARLY_DATA_FINISH: size = %lu", nread);
+
+          if (this->early_data_reader == nullptr || this->early_data_reader->read_avail() == 0) {
+            Debug("ssl_early_data", "no data in early data buffer");
+            ERR_clear_error();
+            ret = SSL_accept(ssl);
+          }
+          break;
+        }
+        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_SUCCESS: size = %lu", nread);
+      }
+    }
+  } else {
+    ret = SSL_accept(ssl);
+  }
+#else
+  ret = SSL_accept(ssl);
+#endif
+
+  if (ret > 0) {
+    return SSL_ERROR_NONE;
+  }
+  ssl_error = SSL_get_error(ssl, ret);
+  if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.accept")) {
+    char buf[512];
+    unsigned long e = ERR_peek_last_error();
+    ERR_error_string_n(e, buf, sizeof(buf));
+    Debug("ssl.error.accept", "SSL accept returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, buf);
+  }
+
+  return ssl_error;
+}
+
+ssl_error_t
+SSLNetVConnection::_ssl_connect()
+{
+  ERR_clear_error();
+
+  SSL_SESSION *sess = SSL_get_session(ssl);
+  if (!sess && SSLConfigParams::origin_session_cache == 1 && SSLConfigParams::origin_session_cache_size > 0) {
+    std::string sni_addr = get_sni_addr(ssl);
+    if (!sni_addr.empty()) {
+      std::string lookup_key;
+      ts::bwprint(lookup_key, "{}:{}:{}", sni_addr.c_str(), SSL_get_SSL_CTX(ssl), get_verify_str(ssl));
+
+      Debug("ssl.origin_session_cache", "origin session cache lookup key = %s", lookup_key.c_str());
+
+      sess = this->getOriginSession(ssl, lookup_key);
+      if (sess) {
+        SSL_set_session(ssl, sess);
+      }
+    }
+  }
+
+  int ret = SSL_connect(ssl);
+
+  if (ret > 0) {
+    if (sess && SSL_session_reused(ssl)) {
+      SSL_INCREMENT_DYN_STAT(ssl_origin_session_reused_count);
+      if (is_debug_tag_set("ssl.origin_session_cache")) {
+        Debug("ssl.origin_session_cache", "reused session to origin server = %p", sess);
+      }
+    } else {
+      if (is_debug_tag_set("ssl.origin_session_cache")) {
+        Debug("ssl.origin_session_cache", "new session to origin server = %p", sess);
+      }
+    }
+    return SSL_ERROR_NONE;
+  }
+  int ssl_error = SSL_get_error(ssl, ret);
+  if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.connect")) {
+    char buf[512];
+    unsigned long e = ERR_peek_last_error();
+    ERR_error_string_n(e, buf, sizeof(buf));
+    Debug("ssl.error.connect", "SSL connect returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, buf);
+  }
+
+  return ssl_error;
+}
+
+ssl_error_t
+SSLNetVConnection::_ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &nwritten)
+{
+  nwritten = 0;
+
+  if (unlikely(nbytes == 0)) {
+    return SSL_ERROR_NONE;
+  }
+  ERR_clear_error();
+
+  int ret;
+#if TS_HAS_TLS_EARLY_DATA
+  if (SSL_version(ssl) >= TLS1_3_VERSION) {
+    if (SSL_is_init_finished(ssl)) {
+      ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
+    } else {
+      size_t nwrite;
+      ret = SSL_write_early_data(ssl, buf, static_cast<size_t>(nbytes), &nwrite);
+      if (ret == 1) {
+        ret = nwrite;
+      }
+    }
+  } else {
+    ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
+  }
+#else
+  ret = SSL_write(ssl, buf, static_cast<int>(nbytes));
+#endif
+
+  if (ret > 0) {
+    nwritten = ret;
+    BIO *bio = SSL_get_wbio(ssl);
+    if (bio != nullptr) {
+      (void)BIO_flush(bio);
+    }
+    return SSL_ERROR_NONE;
+  }
+  int ssl_error = SSL_get_error(ssl, ret);
+  if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.write")) {
+    char tempbuf[512];
+    unsigned long e = ERR_peek_last_error();
+    ERR_error_string_n(e, tempbuf, sizeof(tempbuf));
+    Debug("ssl.error.write", "SSL write returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, tempbuf);
+  }
+  return ssl_error;
+}
+
+ssl_error_t
+SSLNetVConnection::_ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread)
+{
+  nread = 0;
+
+  if (unlikely(nbytes == 0)) {
+    return SSL_ERROR_NONE;
+  }
+  ERR_clear_error();
+
+#if TS_HAS_TLS_EARLY_DATA
+  if (SSL_version(ssl) >= TLS1_3_VERSION) {
+    int64_t early_data_len = 0;
+    if (this->early_data_reader != nullptr) {
+      early_data_len = this->early_data_reader->read_avail();
+    }
+
+    if (early_data_len > 0) {
+      Debug("ssl_early_data", "Reading from early data buffer.");
+      this->read_from_early_data += this->early_data_reader->read(buf, nbytes < early_data_len ? nbytes : early_data_len);
+
+      if (nbytes < early_data_len) {
+        nread = nbytes;
+      } else {
+        nread = early_data_len;
+      }
+
+      return SSL_ERROR_NONE;
+    }
+
+    if (SSLConfigParams::server_max_early_data > 0 && !this->early_data_finish) {
+      Debug("ssl_early_data", "More early data to read.");
+      ssl_error_t ssl_error = SSL_ERROR_NONE;
+      size_t read_bytes     = 0;
+
+      int ret = SSL_read_early_data(ssl, buf, static_cast<size_t>(nbytes), &read_bytes);
+
+      if (ret == SSL_READ_EARLY_DATA_ERROR) {
+        Debug("ssl_early_data", "SSL_READ_EARLY_DATA_ERROR");
+        ssl_error = SSL_get_error(ssl, ret);
+        Debug("ssl_early_data", "Error reading early data: %s", ERR_error_string(ERR_get_error(), nullptr));
+      } else {
+        if ((nread = read_bytes) > 0) {
+          this->read_from_early_data += read_bytes;
+          SSL_INCREMENT_DYN_STAT(ssl_early_data_received_count);
+          if (is_debug_tag_set("ssl_early_data_show_received")) {
+            std::string early_data_str(reinterpret_cast<char *>(buf), nread);
+            Debug("ssl_early_data_show_received", "Early data buffer: \n%s", early_data_str.c_str());
+          }
+        }
+
+        if (ret == SSL_READ_EARLY_DATA_FINISH) {
+          this->early_data_finish = true;
+          Debug("ssl_early_data", "SSL_READ_EARLY_DATA_FINISH: size = %" PRId64, nread);
+        } else {
+          Debug("ssl_early_data", "SSL_READ_EARLY_DATA_SUCCESS: size = %" PRId64, nread);
+        }
+      }
+
+      return ssl_error;
+    }
+  }
+#endif
+
+  int ret = SSL_read(ssl, buf, static_cast<int>(nbytes));
+  if (ret > 0) {
+    nread = ret;
+    return SSL_ERROR_NONE;
+  }
+  int ssl_error = SSL_get_error(ssl, ret);
+  if (ssl_error == SSL_ERROR_SSL && is_debug_tag_set("ssl.error.read")) {
+    char tempbuf[512];
+    unsigned long e = ERR_peek_last_error();
+    ERR_error_string_n(e, tempbuf, sizeof(tempbuf));
+    Debug("ssl.error.read", "SSL read returned %d, ssl_error=%d, ERR_get_error=%ld (%s)", ret, ssl_error, e, tempbuf);
+  }
+
+  return ssl_error;
 }
