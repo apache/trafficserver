@@ -2085,6 +2085,14 @@ HttpTransact::OSDNSLookup(State *s)
       } else if (s->cache_lookup_result == CACHE_LOOKUP_MISS || s->cache_info.action == CACHE_DO_NO_ACTION) {
         TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
         // DNS lookup is done if the lookup failed and need to call Handle Cache Open Read Miss
+      } else if (s->cache_info.action == CACHE_PREPARE_TO_WRITE && s->http_config_param->cache_post_method == 1 &&
+                 s->method == HTTP_WKSIDX_POST) {
+        // By virtue of being here, we are intending to forward the request on
+        // to the server. If we marked this as CACHE_PREPARE_TO_WRITE and this
+        // is a POST request whose response we intend to write, then we have to
+        // proceed from here by calling the function that handles this as a
+        // miss.
+        TRANSACT_RETURN(SM_ACTION_API_OS_DNS, HandleCacheOpenReadMiss);
       } else {
         build_error_response(s, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Invalid Cache Lookup result", "default");
         Log::error("HTTP: Invalid CACHE LOOKUP RESULT : %d", s->cache_lookup_result);
@@ -3093,7 +3101,8 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
   // fall through
   default:
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_HIT_SERVED);
-    if (s->method == HTTP_WKSIDX_GET || s->api_resp_cacheable == true) {
+    if (s->method == HTTP_WKSIDX_GET || (s->http_config_param->cache_post_method == 1 && s->method == HTTP_WKSIDX_POST) ||
+        s->api_resp_cacheable == true) {
       // send back the full document to the client.
       TxnDebug("http_trans", "[build_response_from_cache] Match! Serving full document.");
       s->cache_info.action = CACHE_DO_SERVE;
@@ -3323,7 +3332,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   if (GET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP) == ' ') {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
   }
-  // We do a cache lookup for DELETE and PUT requests as well.
+  // We do a cache lookup for some non-GET requests as well.
   // We must, however, not cache the responses to these requests.
   if (does_method_require_cache_copy_deletion(s->http_config_param, s->method) && s->api_req_cacheable == false) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
@@ -4475,10 +4484,11 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     // cacheability of server response, and request method
     // precondition: s->cache_info.action is one of the following
     // CACHE_DO_UPDATE, CACHE_DO_WRITE, or CACHE_DO_DELETE
+    int const server_request_method = s->hdr_info.server_request.method_get_wksidx();
     if (s->api_server_response_no_store) {
       s->cache_info.action = CACHE_DO_NO_ACTION;
     } else if (s->api_server_response_ignore && server_response_code == HTTP_STATUS_OK &&
-               s->hdr_info.server_request.method_get_wksidx() == HTTP_WKSIDX_HEAD) {
+               server_request_method == HTTP_WKSIDX_HEAD) {
       s->api_server_response_ignore = false;
       ink_assert(s->cache_info.object_read);
       base_response        = s->cache_info.object_read->response_get();
@@ -4495,7 +4505,21 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       } else if (s->www_auth_content == CACHE_AUTH_STALE && server_response_code == HTTP_STATUS_UNAUTHORIZED) {
         s->cache_info.action = CACHE_DO_NO_ACTION;
       } else if (!cacheable) {
-        s->cache_info.action = CACHE_DO_DELETE;
+        if (HttpTransactHeaders::is_status_an_error_response(server_response_code) &&
+            !HttpTransactHeaders::is_method_safe(server_request_method)) {
+          // Only delete the cache entry if the response is successful. For
+          // unsuccessful responses, the transaction doesn't invalidate our
+          // entry. This behavior complies with RFC 7234, section 4.4 which
+          // stipulates that the entry only need be invalidated for non-error
+          // responses:
+          //
+          //    A cache MUST invalidate the effective request URI (Section 5.5 of
+          //    [RFC7230]) when it receives a non-error response to a request
+          //    with a method whose safety is unknown.
+          s->cache_info.action = CACHE_DO_NO_ACTION;
+        } else {
+          s->cache_info.action = CACHE_DO_DELETE;
+        }
       } else if (s->method == HTTP_WKSIDX_HEAD) {
         s->cache_info.action = CACHE_DO_DELETE;
       } else {
@@ -4513,7 +4537,19 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       }
 
     } else if (s->cache_info.action == CACHE_DO_DELETE) {
-      // do nothing
+      if (!cacheable && HttpTransactHeaders::is_status_an_error_response(server_response_code) &&
+          !HttpTransactHeaders::is_method_safe(server_request_method)) {
+        // Only delete the cache entry if the response is successful. For
+        // unsuccessful responses, the transaction doesn't invalidate our
+        // entry. This behavior complies with RFC 7234, section 4.4 which
+        // stipulates that the entry only need be invalidated for non-error
+        // responses:
+        //
+        //    A cache MUST invalidate the effective request URI (Section 5.5 of
+        //    [RFC7230]) when it receives a non-error response to a request
+        //    with a method whose safety is unknown.
+        s->cache_info.action = CACHE_DO_NO_ACTION;
+      }
 
     } else {
       ink_assert(!("cache action inconsistent with current state"));
@@ -5922,6 +5958,18 @@ HttpTransact::is_cache_response_returnable(State *s)
   }
 
   if (!HttpTransactHeaders::is_method_cacheable(s->http_config_param, s->method) && s->api_resp_cacheable == false) {
+    SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
+    SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
+    return false;
+  }
+  // We may be caching responses to methods other than GET, such as POST. Make
+  // sure that our cached resource has a method that matches the incoming
+  // requests's method. If not, then we cannot reply with the cached resource.
+  // That is, we cannot reply to an incoming GET request with a response to a
+  // previous POST request.
+  int const client_request_method = s->hdr_info.client_request.method_get_wksidx();
+  int const cached_request_method = s->cache_info.object_read->request_get()->method_get_wksidx();
+  if (client_request_method != cached_request_method) {
     SET_VIA_STRING(VIA_CACHE_RESULT, VIA_IN_CACHE_NOT_ACCEPTABLE);
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_METHOD);
     return false;
