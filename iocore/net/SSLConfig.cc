@@ -84,7 +84,6 @@ bool SSLConfigParams::server_allow_early_data_params = false;
 int SSLConfigParams::async_handshake_enabled = 0;
 char *SSLConfigParams::engine_conf_file      = nullptr;
 
-static std::unique_ptr<ConfigUpdateHandler<SSLCertificateConfig>> sslCertUpdate;
 static std::unique_ptr<ConfigUpdateHandler<SSLTicketKeyConfig>> sslTicketKey;
 
 SSLConfigParams::SSLConfigParams()
@@ -514,12 +513,6 @@ SSLConfig::load_release(SSLConfigParams *params)
 bool
 SSLCertificateConfig::startup()
 {
-  sslCertUpdate.reset(new ConfigUpdateHandler<SSLCertificateConfig>());
-  sslCertUpdate->attach("proxy.config.ssl.server.multicert.filename");
-  sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
-  sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
-  sslCertUpdate->attach("proxy.config.ssl.server.cert_chain.filename");
-  sslCertUpdate->attach("proxy.config.ssl.server.session_ticket.enable");
   // Exit if there are problems on the certificate loading and the
   // proxy.config.ssl.server.multicert.exit_on_load_fail is true
   SSLConfig::scoped_config params;
