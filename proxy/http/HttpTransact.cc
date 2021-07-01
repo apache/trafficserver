@@ -2032,7 +2032,7 @@ HttpTransact::OSDNSLookup(State *s)
       } else {
         // Invalid server response, since we can't copy it we are going to reject
         TxnDebug("http_trans", "[OSDNSLookup] Invalid server response. Rejecting.");
-        Error("Invalid server response. Rejecting.");
+        Error("Invalid server response. Rejecting. IP: %s", ats_ip_ntop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
       }
       build_error_response(s, HTTP_STATUS_FORBIDDEN, nullptr, "request#syntax_error");
       SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
