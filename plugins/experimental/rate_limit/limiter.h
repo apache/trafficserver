@@ -40,14 +40,8 @@ template <class T> class RateLimiter
 public:
   RateLimiter() : _queue_lock(TSMutexCreate()), _active_lock(TSMutexCreate()) {}
 
-  ~RateLimiter()
+  virtual ~RateLimiter()
   {
-    if (_action) {
-      TSActionCancel(_action);
-    }
-    if (_queue_cont) {
-      TSContDestroy(_queue_cont);
-    }
     TSMutexDestroy(_queue_lock);
     TSMutexDestroy(_active_lock);
   }
@@ -159,10 +153,4 @@ private:
 
   TSMutex _queue_lock, _active_lock; // Resource locks
   std::deque<QueueItem> _queue;      // Queue for the pending TXN's. ToDo: Should also move (see below)
-
-protected:
-  // ToDo: Once we start sharing the queue continuation across many limiter instances, these need to move.
-  // I imagine we'd have a member pointing to the shared queue manager / continuation.
-  TSCont _queue_cont = nullptr; // Continuation processing the queue periodically
-  TSAction _action   = nullptr; // The action associated with the queue continuation, needed to shut it down
 };
