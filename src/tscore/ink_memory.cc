@@ -131,14 +131,6 @@ ats_free_null(void *ptr)
   return nullptr;
 } /* End ats_free_null */
 
-void
-ats_memalign_free(void *ptr)
-{
-  if (likely(ptr)) {
-    free(ptr);
-  }
-}
-
 // This effectively makes mallopt() a no-op (currently) when tcmalloc
 // or jemalloc is used. This might break our usage for increasing the
 // number of mmap areas (ToDo: Do we still really need that??).

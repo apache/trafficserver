@@ -24,24 +24,22 @@
 #include "tscore/ink_assert.h"
 #include "tscore/ink_align.h"
 #include "tscore/JeAllocator.h"
+#include "tscore/Diags.h"
 
 namespace jearena
 {
-JemallocNodumpAllocator::JemallocNodumpAllocator()
-{
-  extend_and_setup_arena();
-}
-
-#ifdef JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
-
-extent_hooks_t JemallocNodumpAllocator::extent_hooks_;
-extent_alloc_t *JemallocNodumpAllocator::original_alloc_ = nullptr;
+#if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
+extent_alloc_t *JemallocNodumpAllocator::original_alloc = nullptr;
+extent_hooks_t JemallocNodumpAllocator::extent_hooks;
+std::shared_mutex JemallocNodumpAllocator::je_mutex;
+std::unordered_map<pthread_t, unsigned int> JemallocNodumpAllocator::arenas;
+std::unordered_map<unsigned int, int> JemallocNodumpAllocator::arena_flags;
 
 void *
 JemallocNodumpAllocator::alloc(extent_hooks_t *extent, void *new_addr, size_t size, size_t alignment, bool *zero, bool *commit,
-                               unsigned arena_ind)
+                               unsigned int arena_id)
 {
-  void *result = original_alloc_(extent, new_addr, size, alignment, zero, commit, arena_ind);
+  void *result = original_alloc(extent, new_addr, size, alignment, zero, commit, arena_id);
 
   if (result != nullptr) {
     // Seems like we don't really care if the advice went through
@@ -52,44 +50,52 @@ JemallocNodumpAllocator::alloc(extent_hooks_t *extent, void *new_addr, size_t si
   return result;
 }
 
-#endif /* JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED */
-
-bool
-JemallocNodumpAllocator::extend_and_setup_arena()
+unsigned int
+JemallocNodumpAllocator::extend_and_setup_arena(pthread_t thread_id)
 {
-#ifdef JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
-  size_t arena_index_len_ = sizeof(arena_index_);
-  if (auto ret = mallctl("arenas.create", &arena_index_, &arena_index_len_, nullptr, 0)) {
+  unsigned int arena_id;
+  size_t arena_id_len = sizeof(arena_id);
+  if (auto ret = mallctl("arenas.create", &arena_id, &arena_id_len, nullptr, 0)) {
     ink_abort("Unable to extend arena: %s", std::strerror(ret));
   }
-  flags_ = MALLOCX_ARENA(arena_index_) | MALLOCX_TCACHE_NONE;
+
+  int flags = MALLOCX_ARENA(arena_id) | MALLOCX_TCACHE_NONE;
 
   // Read the existing hooks
-  const auto key = "arena." + std::to_string(arena_index_) + ".extent_hooks";
+  const auto key = "arena." + std::to_string(arena_id) + ".extent_hooks";
   extent_hooks_t *hooks;
   size_t hooks_len = sizeof(hooks);
   if (auto ret = mallctl(key.c_str(), &hooks, &hooks_len, nullptr, 0)) {
     ink_abort("Unable to get the hooks: %s", std::strerror(ret));
   }
-  if (original_alloc_ == nullptr) {
-    original_alloc_ = hooks->alloc;
-  } else {
-    ink_release_assert(original_alloc_ == hooks->alloc);
+
+  {
+    std::unique_lock lock(je_mutex);
+    if (original_alloc == nullptr) {
+      original_alloc = hooks->alloc;
+    } else {
+      ink_release_assert(original_alloc == hooks->alloc);
+    }
+
+    // Set the custom hook
+    if (extent_hooks.alloc != &JemallocNodumpAllocator::alloc) {
+      extent_hooks       = *hooks;
+      extent_hooks.alloc = &JemallocNodumpAllocator::alloc;
+    }
+    extent_hooks_t *new_hooks = &extent_hooks;
+    if (auto ret = mallctl(key.c_str(), nullptr, nullptr, &new_hooks, sizeof(new_hooks))) {
+      ink_abort("Unable to set the hooks: %s", std::strerror(ret));
+    }
+
+    Debug("JeAllocator", "arena \"%ud\" created", arena_id);
+
+    arenas[thread_id]     = arena_id;
+    arena_flags[arena_id] = flags;
   }
 
-  // Set the custom hook
-  extent_hooks_             = *hooks;
-  extent_hooks_.alloc       = &JemallocNodumpAllocator::alloc;
-  extent_hooks_t *new_hooks = &extent_hooks_;
-  if (auto ret = mallctl(key.c_str(), nullptr, nullptr, &new_hooks, sizeof(new_hooks))) {
-    ink_abort("Unable to set the hooks: %s", std::strerror(ret));
-  }
-
-  return true;
-#else  /* JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED */
-  return false;
-#endif /* JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED */
+  return arena_id;
 }
+#endif /* JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED */
 
 /**
  * This will retain the original functionality if
@@ -98,12 +104,29 @@ JemallocNodumpAllocator::extend_and_setup_arena()
 void *
 JemallocNodumpAllocator::allocate(InkFreeList *f)
 {
-  void *newp = nullptr;
+#if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
+  int flags           = 0;
+  pthread_t thread_id = pthread_self();
+  {
+    std::shared_lock lock(je_mutex);
+    unsigned int arena_id = 0;
+    auto arena            = arenas.find(thread_id);
+    if (unlikely(arena == arenas.end())) {
+      lock.unlock();
+      arena_id = extend_and_setup_arena(thread_id);
+      lock.lock();
+    } else {
+      arena_id = arena->second;
+    }
+    flags = arena_flags.find(arena_id)->second;
+  }
+#endif
 
+  void *newp = nullptr;
   if (f->advice) {
-#ifdef JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
+#if JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
     if (likely(f->type_size > 0)) {
-      int flags = flags_ | MALLOCX_ALIGN(f->alignment);
+      flags |= MALLOCX_ALIGN(f->alignment);
       if (unlikely((newp = mallocx(f->type_size, flags)) == nullptr)) {
         ink_abort("couldn't allocate %u bytes", f->type_size);
       }
@@ -118,26 +141,6 @@ JemallocNodumpAllocator::allocate(InkFreeList *f)
     newp = ats_memalign(f->alignment, f->type_size);
   }
   return newp;
-}
-
-/**
- * This will retain the original functionality if
- * !defined(JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED)
- */
-void
-JemallocNodumpAllocator::deallocate(InkFreeList *f, void *ptr)
-{
-  if (f->advice) {
-#ifdef JEMALLOC_NODUMP_ALLOCATOR_SUPPORTED
-    if (likely(ptr)) {
-      dallocx(ptr, flags_);
-    }
-#else
-    ats_memalign_free(ptr);
-#endif
-  } else {
-    ats_memalign_free(ptr);
-  }
 }
 
 JemallocNodumpAllocator &

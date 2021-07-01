@@ -989,7 +989,7 @@ sync_cache_dir_on_shutdown()
         if (buf_huge) {
           ats_free_hugepage(buf, buflen);
         } else {
-          ats_memalign_free(buf);
+          ats_free(buf);
         }
         buf = nullptr;
       }
@@ -1024,7 +1024,7 @@ sync_cache_dir_on_shutdown()
     if (buf_huge) {
       ats_free_hugepage(buf, buflen);
     } else {
-      ats_memalign_free(buf);
+      ats_free(buf);
     }
     buf = nullptr;
   }
@@ -1045,7 +1045,7 @@ Lrestart:
       if (buf_huge) {
         ats_free_hugepage(buf, buflen);
       } else {
-        ats_memalign_free(buf);
+        ats_free(buf);
       }
       buflen   = 0;
       buf      = nullptr;
@@ -1122,7 +1122,7 @@ Lrestart:
           if (buf_huge) {
             ats_free_hugepage(buf, buflen);
           } else {
-            ats_memalign_free(buf);
+            ats_free(buf);
           }
           buf = nullptr;
         }
