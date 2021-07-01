@@ -26,7 +26,7 @@ Traffic Server Debugging APIs.
 Synopsis
 ========
 
-.. code-block:: cpp
+.. code-block:: c
 
     #include <ts/ts.h>
 
@@ -47,8 +47,8 @@ Synopsis
 .. function:: const char* TSHttpServerStateNameLookup(TSServerState state)
 .. function:: const char* TSHttpHookNameLookup(TSHttpHookID hook)
 .. function:: const char* TSHttpEventNameLookup(TSEvent event)
-.. macro:: void TSAssert( ... )
-.. macro:: void TSReleaseAssert( ... )
+.. macro:: TSAssert( ... )
+.. macro:: TSReleaseAssert( ... )
 
 diags.log
 =========

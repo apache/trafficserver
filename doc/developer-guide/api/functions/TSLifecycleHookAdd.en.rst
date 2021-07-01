@@ -26,7 +26,7 @@ TSLifecycleHookAdd
 Synopsis
 ========
 
-.. code-block:: cpp
+.. code-block:: c
 
     #include <ts/ts.h>
 
@@ -120,21 +120,21 @@ Types
 
       Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_SHUTDOWN` and ``NULL`` data.
 
-.. c:type:: TSPluginMsg
+.. c:struct:: TSPluginMsg
 
-   The format of the data for the plugin message event :c:data:`TS_EVENT_LIFECYCLE_MSG`.
+   The data for the plugin message event :c:data:`TS_EVENT_LIFECYCLE_MSG`.
 
-.. c:member:: const char * TSPluginMsg::tag
+   .. c:var:: const char * tag
 
-   The tag of the message. This is a null terminated string.
+      The tag of the message. This is a null terminated string.
 
-.. c:member:: const void * TSPluginMsg::data
+   .. c:var:: const void * data
 
-   Message data (payload). This is a raw slab of bytes - no structure is guaranteed.
+      Message data (payload). This is a raw slab of bytes - no structure is guaranteed.
 
-.. c:member:: size_t TSPluginMsg::data_size
+   .. c:var:: size_t data_size
 
-   The size of :member:`TSPluginMsg::data`.
+      The number of valid bytes pointed at by :var:`TSPluginMsg.data`.
 
 Ordering
 ========

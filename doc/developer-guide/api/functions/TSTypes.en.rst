@@ -221,11 +221,11 @@ more widely. Those are described on this page.
 
    An enum for the supported types of user arguments.
 
-.. type:: TSUuidVersion
+.. enum:: TSUuidVersion
 
    A version value for at :type:`TSUuid`.
 
-   .. member:: TS_UUID_V4
+   .. enumerator:: TS_UUID_V4
 
       A version 4 UUID. Currently only this value is used.
 

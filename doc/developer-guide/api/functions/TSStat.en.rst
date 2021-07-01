@@ -28,7 +28,7 @@ in contrast to processing log files.
 Synopsis
 ========
 
-.. code-block:: cpp
+.. code-block:: c
 
     #include <ts/ts.h>
 
@@ -49,10 +49,10 @@ Description
 A plugin statistic is created by :func:`TSStatCreate`. The :arg:`name` must be globally unique and
 should follow the standard dotted tag form. To avoid collisions and for easy of use the first tag
 should be the plugin name or something easily derived from it. Currently only integers are supported
-therefore :arg:`type` must be :macro:`TS_RECORDDATATYPE_INT`. The return value is the index of the
-statistic. In general this should work but if it doesn't it will :code:`assert`. In particular,
-creating the same statistic twice will fail in this way, which can happen if statistics are created
-as part of or based on configuration files and |TS| is reloaded.
+therefore :arg:`type` must be :enumerator:`~TSRecordDataType.TS_RECORDDATATYPE_INT`. The return value is
+the index of the statistic. In general this should work but if it doesn't it will :code:`assert`. In
+particular, creating the same statistic twice will fail in this way, which can happen if statistics
+are created as part of or based on configuration files and |TS| is reloaded.
 
 :func:`TSStatFindName` locates a statistic by :arg:`name`. If found the function returns
 :const:`TS_SUCCESS` and the value pointed at by :arg:`idx_ptr` is updated to be the index of the
@@ -65,7 +65,8 @@ decrease it by :arg:`value`.
 A group of records can be examined via :func:`TSRecordDump`. A set of records is specified and the
 iterated over. For each record in the set the callbac :arg:`callback` is invoked.
 
-The records are specified by the :c:type:`TSRecordType`. This this is :c:macro:`TS_RECORDTYPE_NULL` then all records are examined. The callback is passed
+The records are specified by the :enum:`TSRecordType`. If this is
+:enumerator:`~TSRecordType.TS_RECORDTYPE_NULL` then all records are examined. The callback is passed
 
    :arg:`type`
       The record type.

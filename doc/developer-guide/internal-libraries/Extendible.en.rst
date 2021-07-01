@@ -170,8 +170,10 @@ which simplifies the code using it. Also this provides compile errors for common
 Inheritance
 -----------
 
-   Unfortunately it is non-trivial handle multiple |Extendible| super types in the same inheritance tree.
-   :func:`template<> create()` handles allocation and initialization of the entire `Derived` class, but it is dependent on each class defining :code:`using super_type = *some_super_class*;` so that it recurse through the classes.
+Unfortunately it is non-trivial handle multiple |Extendible| super types in the same inheritance
+tree. :func:`template<> create()` handles allocation and initialization of the entire `Derived`
+class, but it is dependent on each class defining :code:`using super_type = *some_super_class*;` so
+that it recurse through the classes.
 
 .. code-block:: cpp
 
@@ -245,7 +247,7 @@ Namespace `ext`
    :tparam Derived_t: The Derived class to allocate.
 
 .. function:: template<typename Derived_t, typename Field_t> \
-   bool fieldAdd(FieldId\<Derived_t, Field_t> & field_id, std::string const & field_name)
+   bool fieldAdd(FieldId<Derived_t, Field_t> & field_id, std::string const & field_name)
 
    Declare a new |FieldId| for Derived_t.
 
@@ -253,7 +255,7 @@ Namespace `ext`
    :tparam Field_t: The type of the field.
 
 .. function:: template<typename Derived_t, typename Field_t> \
-   bool fieldFind(FieldId\<Derived_t, Field_t> & field_id, std::string const & field_name)
+   bool fieldFind(FieldId<Derived_t, Field_t> & field_id, std::string const & field_name)
 
    Find an existing |FieldId| for Derived_t.
 
@@ -261,7 +263,7 @@ Namespace `ext`
    :tparam Field_t: The type of the field.
 
 .. function:: template<typename T, typename Derived_t,  typename Field_t> \
-   auto const get(T const &, FieldId\<Derived_t,Field_t>)
+   auto const get(T const &, FieldId<Derived_t,Field_t>)
 
    Returns T const& value from the field stored in the |Extendible| allocation.
 
@@ -270,7 +272,7 @@ Namespace `ext`
    :tparam Field_t: The type of the field.
 
 .. function:: template<typename T, typename Derived_t, typename Field_t> \
-   auto set(T &, FieldId\<Derived_t,Field_t>)
+   T & set(T &, FieldId<Derived_t,Field_t>)
 
    Returns T & value from the field stored in |Extendible| allocation.
 

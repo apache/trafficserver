@@ -86,94 +86,93 @@ OpTypes
 
 Possible operations or messages that can be sent between TM and remote clients.
 
-.. cpp:type:: OpType
+.. cpp:enum:: OpType
 
-.. c:macro:: RECORD_SET
+   .. cpp:enumerator:: RECORD_SET
 
-.. c:macro:: RECORD_GET
+   .. cpp:enumerator:: RECORD_GET
 
-.. c:macro:: PROXY_STATE_GET
+   .. cpp:enumerator:: PROXY_STATE_GET
 
-.. c:macro:: PROXY_STATE_SET
+   .. cpp:enumerator:: PROXY_STATE_SET
 
-.. c:macro:: RECONFIGURE
+   .. cpp:enumerator:: RECONFIGURE
 
-.. c:macro:: RESTART
+   .. cpp:enumerator:: RESTART
 
-.. c:macro:: BOUNCE
+   .. cpp:enumerator:: BOUNCE
 
-.. c:macro:: EVENT_RESOLVE
+   .. cpp:enumerator:: EVENT_RESOLVE
 
-.. c:macro:: EVENT_GET_MLT
+   .. cpp:enumerator:: EVENT_GET_MLT
 
-.. c:macro:: EVENT_ACTIVE
+   .. cpp:enumerator:: EVENT_ACTIVE
 
-.. c:macro:: EVENT_REG_CALLBACK,
+   .. cpp:enumerator:: EVENT_REG_CALLBACK
 
-.. c:macro:: EVENT_UNREG_CALLBACK
+   .. cpp:enumerator:: EVENT_UNREG_CALLBACK
 
-.. c:macro:: EVENT_NOTIFY
+   .. cpp:enumerator:: EVENT_NOTIFY
 
-.. c:macro:: STATS_RESET_NODE
+   .. cpp:enumerator:: STATS_RESET_NODE
 
-.. c:macro:: STORAGE_DEVICE_CMD_OFFLINE
+   .. cpp:enumerator:: STORAGE_DEVICE_CMD_OFFLINE
 
-.. c:macro:: RECORD_MATCH_GET
+   .. cpp:enumerator:: RECORD_MATCH_GET
 
-.. c:macro:: API_PING
+   .. cpp:enumerator:: API_PING
 
-.. c:macro:: SERVER_BACKTRACE
+   .. cpp:enumerator:: SERVER_BACKTRACE
 
-.. c:macro:: RECORD_DESCRIBE_CONFIG
+   .. cpp:enumerator:: RECORD_DESCRIBE_CONFIG
 
-.. c:macro:: LIFECYCLE_MESSAGE
+   .. cpp:enumerator:: LIFECYCLE_MESSAGE
 
-.. c:macro:: UNDEFINED_OP
+   .. cpp:enumerator:: UNDEFINED_OP
 
 
 TSMgmtError
 ===========
-.. cpp:type:: TSMgmtError
+.. cpp:enum:: TSMgmtError
 
-.. c:macro:: TS_ERR_OKAY
+   .. cpp:enumerator:: TS_ERR_OKAY
 
-.. c:macro:: TS_ERR_READ_FILE
+   .. cpp:enumerator:: TS_ERR_READ_FILE
 
-.. c:macro:: TS_ERR_WRITE_FILE
+   .. cpp:enumerator:: TS_ERR_WRITE_FILE
 
-.. c:macro:: TS_ERR_PARSE_CONFIG_RULE
+   .. cpp:enumerator:: TS_ERR_PARSE_CONFIG_RULE
 
-.. c:macro:: TS_ERR_INVALID_CONFIG_RULE
+   .. cpp:enumerator:: TS_ERR_INVALID_CONFIG_RULE
 
-.. c:macro:: TS_ERR_NET_ESTABLISH
+   .. cpp:enumerator:: TS_ERR_NET_ESTABLISH
 
-.. c:macro:: TS_ERR_NET_READ
+   .. cpp:enumerator:: TS_ERR_NET_READ
 
-.. c:macro:: TS_ERR_NET_WRITE
+   .. cpp:enumerator:: TS_ERR_NET_WRITE
 
-.. c:macro:: TS_ERR_NET_EOF
+   .. cpp:enumerator:: TS_ERR_NET_EOF
 
-.. c:macro:: TS_ERR_NET_TIMEOUT
+   .. cpp:enumerator:: TS_ERR_NET_TIMEOUT
 
-.. c:macro:: TS_ERR_SYS_CALL
+   .. cpp:enumerator:: TS_ERR_SYS_CALL
 
-.. c:macro:: TS_ERR_PARAMS
+   .. cpp:enumerator:: TS_ERR_PARAMS
 
-.. c:macro:: TS_ERR_NOT_SUPPORTED
+   .. cpp:enumerator:: TS_ERR_NOT_SUPPORTED
 
-.. c:macro:: TS_ERR_PERMISSION_DENIED
+   .. cpp:enumerator:: TS_ERR_PERMISSION_DENIED
 
-.. c:macro:: TS_ERR_FAIL
-
+   .. cpp:enumerator:: TS_ERR_FAIL
 
 MgmtMarshallType
 ================
-.. cpp:type:: MgmtMarshallType
+.. cpp:enum:: MgmtMarshallType
 
-.. c:macro:: MGMT_MARSHALL_INT
+   .. cpp:enumerator:: MGMT_MARSHALL_INT
 
-.. c:macro:: MGMT_MARSHALL_LONG
+   .. cpp:enumerator:: MGMT_MARSHALL_LONG
 
-.. c:macro:: MGMT_MARSHALL_STRING
+   .. cpp:enumerator:: MGMT_MARSHALL_STRING
 
-.. c:macro:: MGMT_MARSHALL_DATA
+   .. cpp:enumerator:: MGMT_MARSHALL_DATA

@@ -26,7 +26,7 @@ Traffic Server remap plugin entry points.
 Synopsis
 ========
 
-.. code-block:: cpp
+.. code-block:: c
 
     #include <ts/ts.h>
     #include <ts/remap.h>
@@ -89,45 +89,45 @@ For further information, see :ref:`developer-plugins-remap`.
 Types
 =====
 
-.. type:: TSRemapStatus
+.. enum:: TSRemapStatus
 
-    Status return value for remap callback.
+   Status return value for remap callback.
 
-    .. macro:: TSREMAP_DID_REMAP
+   .. enumerator:: TSREMAP_DID_REMAP
 
-        The remap callback modified the request.
+      The remap callback modified the request.
 
-    .. macro:: TSREMAP_DID_REMAP_STOP
+   .. enumerator:: TSREMAP_DID_REMAP_STOP
 
-        The remap callback modified the request and that no more remapping callbacks should be invoked.
+      The remap callback modified the request and that no more remapping callbacks should be invoked.
 
-    .. macro:: TSREMAP_NO_REMAP
+   .. enumerator:: TSREMAP_NO_REMAP
 
-        The remap callback did not modify the request.
+      The remap callback did not modify the request.
 
-    .. macro:: TSREMAP_NO_REMAP_STOP
+   .. enumerator:: TSREMAP_NO_REMAP_STOP
 
-        The remap callback did not modify the request and that no further remapping
-        callbacks should be invoked.
+      The remap callback did not modify the request and that no further remapping
+      callbacks should be invoked.
 
-    .. macro:: TSREMAP_ERROR
+   .. enumerator:: TSREMAP_ERROR
 
-        The remapping attempt in general failed and the transaction should fail with an
-        error return to the user agent.
+      The remapping attempt in general failed and the transaction should fail with an
+      error return to the user agent.
 
-.. type:: TSRemapReloadStatus
+.. enum:: TSRemapReloadStatus
 
-    .. macro:: TSREMAP_CONFIG_RELOAD_FAILURE
+   .. enumerator:: TSREMAP_CONFIG_RELOAD_FAILURE
 
-        Notify the plugin that configuration parsing failed.
+      Notify the plugin that configuration parsing failed.
 
-    .. macro:: TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED
+   .. enumerator:: TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_USED
 
-        Configuration parsing succeeded and plugin was used by the new configuration.
+      Configuration parsing succeeded and plugin was used by the new configuration.
 
-    .. macro:: TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED
+   .. enumerator:: TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED
 
-        Configuration parsing succeeded but plugin was NOT used by the new configuration.
+      Configuration parsing succeeded but plugin was NOT used by the new configuration.
 
 Return Values
 =============
