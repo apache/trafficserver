@@ -164,6 +164,17 @@ OperatorSetDestination::initialize(Parser &p)
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
 }
 
+// OperatorRMDestination
+void
+OperatorRMDestination::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _url_qual = parse_url_qualifier(p.get_arg());
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+}
+
 void
 OperatorSetDestination::exec(const Resources &res) const
 {
@@ -270,6 +281,54 @@ OperatorSetDestination::exec(const Resources &res) const
   } else {
     TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!",
             res.bufp, res.hdr_loc, res._rri);
+  }
+}
+
+void
+OperatorRMDestination::exec(const Resources &res) const
+{
+  if (res._rri || (res.bufp && res.hdr_loc)) {
+    // Default empty string to delete components
+    static std::string value = "";
+
+    // Determine which TSMBuffer and TSMLoc to use
+    TSMBuffer bufp;
+    TSMLoc url_m_loc;
+    if (res._rri) {
+      bufp      = res._rri->requestBufp;
+      url_m_loc = res._rri->requestUrl;
+    } else {
+      bufp = res.bufp;
+      if (TSHttpHdrUrlGet(res.bufp, res.hdr_loc, &url_m_loc) != TS_SUCCESS) {
+        TSDebug(PLUGIN_NAME, "TSHttpHdrUrlGet was unable to return the url m_loc");
+        return;
+      }
+    }
+
+    // Never set an empty destination value (I don't think that ever makes sense?)
+    switch (_url_qual) {
+    case URL_QUAL_PATH:
+      const_cast<Resources &>(res).changed_url = true;
+      TSUrlPathSet(bufp, url_m_loc, value.c_str(), value.size());
+      TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() deleting PATH");
+      break;
+    case URL_QUAL_QUERY:
+      const_cast<Resources &>(res).changed_url = true;
+      TSUrlHttpQuerySet(bufp, url_m_loc, value.c_str(), value.size());
+      TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() deleting QUERY");
+      break;
+    case URL_QUAL_PORT:
+      const_cast<Resources &>(res).changed_url = true;
+      TSUrlPortSet(bufp, url_m_loc, 0);
+      TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() deleting PORT");
+      break;
+    default:
+      TSDebug(PLUGIN_NAME, "RM Destination %i has no handler", _url_qual);
+      break;
+    }
+  } else {
+    TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
+            res.hdr_loc, res._rri);
   }
 }
 

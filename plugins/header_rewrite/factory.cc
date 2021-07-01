@@ -47,6 +47,8 @@ operator_factory(const std::string &op)
     o = new OperatorSetStatusReason();
   } else if (op == "set-destination") {
     o = new OperatorSetDestination();
+  } else if (op == "rm-destination") {
+    o = new OperatorRMDestination();
   } else if (op == "set-redirect") {
     o = new OperatorSetRedirect();
   } else if (op == "timeout-out") {
