@@ -53,7 +53,6 @@ are available:
    The default queue size is `UINT_MAX`, which is essentially unlimited.
 
 .. option:: --error
-
    An optional HTTP status error code, to be used together with the
    :option:`--queue` option above. The default is `429`.
 
@@ -82,27 +81,27 @@ Examples
 
 This example shows a simple rate limiting of `128` concurrently active client
 transactions, with a maximum queue size of `256`. The default of HTTP status
-code `429` is used when queue is full.
+code `429` is used when queue is full. ::
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=rate_limit.so @pparam=--limit=128 @pparam=--queue=256
 
 
 This example would put a hard transaction (in) limit to 256, with no backoff
-queue, and add a header with the transaction delay if it was queued:
+queue, and add a header with the transaction delay if it was queued: ::
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=rate_limit.so @pparam=--limit=256 @pparam=--queue=0 \
       @pparam=--header=@RateLimit-Delay
 
 This final example will limit the active transaction, queue size, and also
-add a `Retry-After` header once the queue is full and we return a `429` error:
+add a `Retry-After` header once the queue is full and we return a `429` error: ::
 
     map http://cdn.example.com/ http://some-server.example.com \
       @plugin=rate_limit.so @pparam=--limit=256 @pparam=--queue=1024 \
       @pparam=--retry=3600 @pparam=--header=@RateLimit-Delay
 
-In this case, the response would look like this when the queue is full:
+In this case, the response would look like this when the queue is full: ::
 
     HTTP/1.1 429 Too Many Requests
     Date: Fri, 26 Mar 2021 22:42:38 GMT
