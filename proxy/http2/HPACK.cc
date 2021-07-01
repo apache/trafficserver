@@ -461,17 +461,18 @@ HpackDynamicTable::_evict_overflowed_entries()
     return;
   }
 
-  for (auto h = this->_headers.rbegin(); h != this->_headers.rend(); ++h) {
+  while (!this->_headers.empty()) {
+    auto h = this->_headers.back();
     int name_len, value_len;
-    (*h)->name_get(&name_len);
-    (*h)->value_get(&value_len);
+    h->name_get(&name_len);
+    h->value_get(&value_len);
 
     this->_current_size -= ADDITIONAL_OCTETS + name_len + value_len;
 
     if (this->_mhdr_old && this->_mhdr_old->fields_count() != 0) {
-      this->_mhdr_old->field_delete(*h, false);
+      this->_mhdr_old->field_delete(h, false);
     } else {
-      this->_mhdr->field_delete(*h, false);
+      this->_mhdr->field_delete(h, false);
     }
 
     this->_headers.pop_back();
