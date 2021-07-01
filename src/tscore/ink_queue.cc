@@ -327,11 +327,9 @@ freelist_free(InkFreeList *f, void *item)
 static void
 malloc_free(InkFreeList *f, void *item)
 {
-  if (f->alignment) {
-    jna.deallocate(f, item);
-  } else {
-    ats_free(item);
-  }
+  // Avoid compiler warnings
+  (void)f;
+  ats_free(item);
 }
 
 void
@@ -396,18 +394,12 @@ malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
   void *next;
 
   // Avoid compiler warnings
+  (void)f;
   (void)tail;
 
-  if (f->alignment) {
-    for (size_t i = 0; i < num_item && item; ++i, item = next) {
-      next = *static_cast<void **>(item); // find next item before freeing current item
-      jna.deallocate(f, item);
-    }
-  } else {
-    for (size_t i = 0; i < num_item && item; ++i, item = next) {
-      next = *static_cast<void **>(item); // find next item before freeing current item
-      ats_free(item);
-    }
+  for (size_t i = 0; i < num_item && item; ++i, item = next) {
+    next = *static_cast<void **>(item); // find next item before freeing current item
+    ats_free(item);
   }
 }
 
