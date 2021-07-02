@@ -36,9 +36,9 @@ autoreconf -fi && ./configure --enable-docs || exit 1
 
 cd doc
 
-echo "Building English version"
+echo "Building English version with warnings treated as errors"
 rm -rf docbuild/html
-${ATS_MAKE} -e SPHINXOPTS="-D language='en'" html
+${ATS_MAKE} -e SPHINXOPTS="-W -D language='en'" html
 [ $? != 0 ] && exit 1
 
 # Only continue with the rsync and JA build if we're on the official docs updates
