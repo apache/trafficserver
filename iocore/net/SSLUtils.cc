@@ -867,8 +867,9 @@ SSLPostConfigInitialize()
 
     OPENSSL_load_builtin_modules();
     if (CONF_modules_load_file(SSLConfigParams::engine_conf_file, nullptr, 0) <= 0) {
-      Error("FATAL: error loading engine configuration file %s", SSLConfigParams::engine_conf_file);
-      // ERR_print_errors_fp(stderr);
+      char err_buf[256] = {0};
+      ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+      Error("Could not load SSL engine configuration file %s: %s", SSLConfigParams::engine_conf_file, err_buf);
     }
   }
 }
