@@ -1773,6 +1773,11 @@ TS_CHECK_JEMALLOC
 TS_CHECK_TCMALLOC
 
 #
+# Check for opentracing
+TS_CHECK_OPENTRACING
+TS_ARG_ENABLE_VAR([use], [opentracing])
+
+#
 # Check for libreadline/libedit
 AX_LIB_READLINE
 

@@ -116,6 +116,11 @@ extern "C" int plock(int);
 #include <gperftools/profiler.h>
 #include <gperftools/heap-profiler.h>
 #endif
+#if TS_USE_OPENTRACING
+#include <opentracing/dynamic_load.h>
+#include <fstream>
+static opentracing::expected<opentracing::DynamicTracingLibraryHandle, std::error_code> ot_lib;
+#endif
 
 //
 // Global Data
@@ -1734,6 +1739,38 @@ init_tracing()
 
   // Tracing object itself is always available so we can check if tracing is enabled
   tracing = std::make_unique<Tracing>();
+
+#if TS_USE_OPENTRACING
+  char ot_lib_path[PATH_NAME_MAX] = {0};
+  REC_ReadConfigString(ot_lib_path, "proxy.config.opentracing.lib", PATH_NAME_MAX);
+  if (strlen(ot_lib_path) != 0) {
+    std::string ot_error_message;
+    ot_lib = opentracing::DynamicallyLoadTracingLibrary(ot_lib_path, ot_error_message);
+    if (!ot_lib) {
+      Error("Failed to load tracing library: %s", ot_error_message.c_str());
+      ::exit(1);
+    }
+
+    ats_scoped_str ot_config_path(RecConfigReadConfigPath("proxy.config.opentracing.config", ""));
+    std::ifstream in(ot_config_path, std::ios::in | std::ios::binary);
+    std::string ot_config;
+    if (in) {
+      std::ostringstream contents;
+      contents << in.rdbuf();
+      in.close();
+      ot_config = contents.str();
+    }
+
+    auto &tracer_factory = ot_lib->tracer_factory();
+    auto tracer          = tracer_factory.MakeTracer(ot_config.c_str(), ot_error_message);
+    if (!tracer) {
+      Error("Failed to inintialize tracer: %s", ot_error_message.c_str());
+      ::exit(1);
+    }
+    opentracing::Tracer::InitGlobal(std::static_pointer_cast<opentracing::Tracer>(*tracer));
+    available = true;
+  }
+#endif
 
   if (available) {
     tracing->enable(REC_ConfigReadInteger("proxy.config.tracing.enabled"));

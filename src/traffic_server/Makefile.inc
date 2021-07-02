@@ -91,6 +91,7 @@ traffic_server_traffic_server_LDADD = \
 	@OPENSSL_LIBS@ \
 	@YAMLCPP_LIBS@ \
 	@BORINGOCSP_LIBS@ \
+	@OPENTRACING_LIBS@ \
 	-lm
 
 if IS_DARWIN

@@ -62,5 +62,6 @@ traffic_quic_traffic_quic_LDADD = \
 	@YAMLCPP_LIBS@ \
 	@OPENSSL_LIBS@ \
 	@BORINGOCSP_LIBS@ \
+	@OPENTRACING_LIBS@ \
 	@LIBPCRE@
 

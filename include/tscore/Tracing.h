@@ -29,6 +29,9 @@
 #include "tscore/ink_assert.h"
 #include "tscore/ink_config.h"
 
+#if TS_USE_OPENTRACING
+#include "tscore/Tracing_opentracing.h"
+#else
 using TRACER = int;
 inline void
 tracing_tag(TRACER &out, std::string_view name, std::string_view value)
@@ -64,6 +67,7 @@ inline void
 tracing_delete(TRACER *tracer)
 {
 }
+#endif
 
 class Tracing
 {
