@@ -203,21 +203,27 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
           std::string &rv = txn_state->range_value;
           rv.assign(hdr_value, length);
           DEBUG_LOG("length: %d, txn_state->range_value: %s", length, rv.c_str());
-          req_url              = TSHttpTxnEffectiveUrlStringGet(txnp, &url_length);
-          cache_key_url_length = snprintf(cache_key_url, 8192, "%s-%s", req_url, rv.c_str());
-          DEBUG_LOG("Rewriting cache URL for %s to %s", req_url, cache_key_url);
-          if (req_url != nullptr) {
-            TSfree(req_url);
-          }
-
           if (nullptr != pc) {
+            if (pc->modify_cache_key || PS_DEFAULT != pc->ps_mode) {
+              req_url              = TSHttpTxnEffectiveUrlStringGet(txnp, &url_length);
+              cache_key_url_length = snprintf(cache_key_url, 8192, "%s-%s", req_url, rv.c_str());
+              DEBUG_LOG("Forming new cache URL for '%s': '%s'", req_url, cache_key_url);
+              if (req_url != nullptr) {
+                TSfree(req_url);
+              }
+            }
+
             // set the cache key if configured to.
-            if (pc->modify_cache_key && TS_SUCCESS != TSCacheUrlSet(txnp, cache_key_url, cache_key_url_length)) {
-              ERROR_LOG("failed to change the cache url to %s.", cache_key_url);
-              ERROR_LOG("Disabling cache for this transaction to avoid cache poisoning.");
-              TSHttpTxnServerRespNoStoreSet(txnp, 1);
-              TSHttpTxnRespCacheableSet(txnp, 0);
-              TSHttpTxnReqCacheableSet(txnp, 0);
+            if (pc->modify_cache_key) {
+              if (TS_SUCCESS == TSCacheUrlSet(txnp, cache_key_url, cache_key_url_length)) {
+                DEBUG_LOG("Setting cache key to '%s'", cache_key_url);
+              } else {
+                ERROR_LOG("failed to change the cache url to '%s'", cache_key_url);
+                ERROR_LOG("Disabling cache for this transaction to avoid cache poisoning.");
+                TSHttpTxnServerRespNoStoreSet(txnp, 1);
+                TSHttpTxnRespCacheableSet(txnp, 0);
+                TSHttpTxnReqCacheableSet(txnp, 0);
+              }
             }
 
             // Optionally set the parent_selection_url to the cache_key url or path
@@ -230,7 +236,7 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
                 if (TS_SUCCESS == TSUrlCreate(hdr_buf, &ps_loc) &&
                     TS_PARSE_DONE == TSUrlParse(hdr_buf, ps_loc, &start, end) && // This should always succeed.
                     TS_SUCCESS == TSHttpTxnParentSelectionUrlSet(txnp, hdr_buf, ps_loc)) {
-                  DEBUG_LOG("Set Parent Selection URL to cache_key_url: %s", cache_key_url);
+                  DEBUG_LOG("Setting Parent Selection URL to '%s'", cache_key_url);
                   TSHandleMLocRelease(hdr_buf, TS_NULL_MLOC, ps_loc);
                 }
               }
@@ -638,6 +644,6 @@ TSPluginInit(int argc, const char *argv[])
     ERROR_LOG("failed to create the transaction continuation handler.");
     return;
   } else {
-    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, txnp_cont);
+    TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, txnp_cont);
   }
 }
