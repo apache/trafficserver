@@ -187,6 +187,26 @@ more widely. Those are described on this page.
 
       Flag for using the remapped URL as an explicit redirection. This can be set by the remap plugin.
 
+.. type:: TSSecretID
+
+   Contains the data for a TLS certificate and key.
+
+   .. member:: const char * cert_name;
+
+      The TLS certificate name.
+
+   .. member:: size_t cert_name_len;
+
+      The length of the TLS certificate name.
+
+   .. member:: const char * key_name;
+
+      The name of the TLS key.
+
+   .. member:: size_t key_name_len;
+
+      The length of the name of the TLS key.
+
 .. type:: TSSslX509
 
     This type represents the :code:`X509` object created from an SSL certificate.

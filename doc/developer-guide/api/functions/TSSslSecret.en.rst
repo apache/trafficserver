@@ -34,7 +34,7 @@ Description
 
 :func:`TSSslSecretSet` updates the current secret map. Generally the secret name corresponds to the name of a certificate or a key.
 Future creation of SSL_CTX objects that use the secret will use the newly specified data. It can be useful to call this function
-from the :data:`TS_LIFECYCLE_SSL_SECRET_HOOK`.
+from the :cpp:enumerator:`TS_LIFECYCLE_SSL_SECRET_HOOK`.
 
 TSSslSecretGet
 **************
@@ -67,7 +67,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSReturnCode TSSslSecretGet(const char * secret_name, int secret_name_length)
+.. function:: TSReturnCode TSSslSecretUpdate(const char * secret_name, int secret_name_length)
 
 Description
 ===========
