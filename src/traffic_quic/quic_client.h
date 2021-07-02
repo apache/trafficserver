@@ -61,6 +61,13 @@ private:
   std::function<void()> _on_complete;
 };
 
+class ReqGenerator : public Continuation
+{
+public:
+  ReqGenerator();
+  int main_event_handler(int event, Event *data);
+};
+
 class QUICClient : public Continuation
 {
 public:
@@ -81,6 +88,8 @@ class Http09ClientApp : public QUICApplication
 public:
   Http09ClientApp(QUICNetVConnection *qvc, const QUICClientConfig *config);
 
+  void on_new_stream(QUICStream &stream) override;
+
   void start();
   int main_event_handler(int event, Event *data);
 
@@ -89,6 +98,7 @@ private:
 
   const QUICClientConfig *_config = nullptr;
   const char *_filename           = nullptr;
+  std::unordered_map<QUICStreamId, QUICStreamVCAdapter::IOInfo> _streams;
 };
 
 class Http3ClientApp : public Http3App
@@ -106,6 +116,7 @@ private:
   void _do_http_request();
 
   RespHandler *_resp_handler      = nullptr;
+  ReqGenerator *_req_generator    = nullptr;
   const QUICClientConfig *_config = nullptr;
 
   MIOBuffer *_req_buf  = nullptr;

@@ -33,6 +33,7 @@
 #include "MIME.h"
 #include "HTTP.h"
 #include "QUICApplication.h"
+#include "QUICStreamVCAdapter.h"
 #include "QUICConnection.h"
 
 class HTTPHdr;
@@ -47,6 +48,8 @@ class QPACK : public QUICApplication
 public:
   QPACK(QUICConnection *qc, uint32_t max_header_list_size, uint16_t max_table_size, uint16_t max_blocking_streams);
   virtual ~QPACK();
+
+  void on_new_stream(QUICStream &stream) override;
 
   int event_handler(int event, Event *data);
 
@@ -66,8 +69,8 @@ public:
 
   int cancel(uint64_t stream_id);
 
-  void set_encoder_stream(QUICStreamIO *stream_io);
-  void set_decoder_stream(QUICStreamIO *stream_io);
+  void set_encoder_stream(QUICStreamId id);
+  void set_decoder_stream(QUICStreamId id);
 
   void update_max_header_list_size(uint32_t max_header_list_size);
   void update_max_table_size(uint16_t max_table_size);
@@ -266,21 +269,21 @@ private:
   void _update_reference_counts(uint64_t stream_id);
 
   // Encoder Stream
-  int _read_insert_with_name_ref(QUICStreamIO &stream_io, bool &is_static, uint16_t &index, Arena &arena, char **value,
+  int _read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
                                  uint16_t &value_len);
-  int _read_insert_without_name_ref(QUICStreamIO &stream_io, Arena &arena, char **name, uint16_t &name_len, char **value,
+  int _read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, uint16_t &name_len, char **value,
                                     uint16_t &value_len);
-  int _read_duplicate(QUICStreamIO &stream_io, uint16_t &index);
-  int _read_dynamic_table_size_update(QUICStreamIO &stream_io, uint16_t &max_size);
+  int _read_duplicate(IOBufferReader &reader, uint16_t &index);
+  int _read_dynamic_table_size_update(IOBufferReader &reader, uint16_t &max_size);
   int _write_insert_with_name_ref(uint16_t index, bool dynamic, const char *value, uint16_t value_len);
   int _write_insert_without_name_ref(const char *name, int name_len, const char *value, uint16_t value_len);
   int _write_duplicate(uint16_t index);
   int _write_dynamic_table_size_update(uint16_t max_size);
 
   // Decoder Stream
-  int _read_table_state_synchronize(QUICStreamIO &stream_io, uint16_t &insert_count);
-  int _read_header_acknowledgement(QUICStreamIO &stream_io, uint64_t &stream_id);
-  int _read_stream_cancellation(QUICStreamIO &stream_io, uint64_t &stream_id);
+  int _read_table_state_synchronize(IOBufferReader &reader, uint16_t &insert_count);
+  int _read_header_acknowledgement(IOBufferReader &reader, uint64_t &stream_id);
+  int _read_stream_cancellation(IOBufferReader &reader, uint64_t &stream_id);
   int _write_table_state_synchronize(uint16_t insert_count);
   int _write_header_acknowledgement(uint64_t stream_id);
   int _write_stream_cancellation(uint64_t stream_id);
@@ -317,13 +320,13 @@ private:
   uint16_t _calc_postbase_index_from_absolute_index(uint16_t base_index, uint16_t absolute_index);
   void _attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len, bool never_index);
 
-  int _on_read_ready(QUICStreamIO &stream_io);
-  int _on_decoder_stream_read_ready(QUICStreamIO &stream_io);
-  int _on_encoder_stream_read_ready(QUICStreamIO &stream_io);
+  int _on_read_ready(VIO *vio);
+  int _on_decoder_stream_read_ready(IOBufferReader &reader);
+  int _on_encoder_stream_read_ready(IOBufferReader &reader);
 
-  int _on_write_ready(QUICStreamIO &stream_io);
-  int _on_decoder_write_ready(QUICStreamIO &stream_io);
-  int _on_encoder_write_ready(QUICStreamIO &stream_io);
+  int _on_write_ready(VIO *vio);
+  int _on_decoder_write_ready(MIOBuffer &writer);
+  int _on_encoder_write_ready(MIOBuffer &writer);
 
   // Stream numbers
   // FIXME How are these stream ids negotiated? In interop, encoder stream id have to be 0 and decoder stream id must not be used.

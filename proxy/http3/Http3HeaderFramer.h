@@ -39,7 +39,7 @@ public:
   Http3HeaderFramer(Http3Transaction *transaction, VIO *source, QPACK *qpack, uint64_t stream_id);
 
   // Http3FrameGenerator
-  Http3FrameUPtr generate_frame(uint16_t max_size) override;
+  Http3FrameUPtr generate_frame() override;
   bool is_done() const override;
 
 private:

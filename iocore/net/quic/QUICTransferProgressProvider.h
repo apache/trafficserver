@@ -21,9 +21,10 @@
  *  limitations under the License.
  */
 
-#include "I_VIO.h"
-
 #pragma once
+
+class VIO;
+class QUICStreamAdapter;
 
 class QUICTransferProgressProvider
 {
@@ -40,34 +41,29 @@ public:
   }
 };
 
+class QUICTransferProgressProviderSA : public QUICTransferProgressProvider
+{
+public:
+  void set_stream_adapter(QUICStreamAdapter *adapter);
+
+  bool is_transfer_goal_set() const override;
+  uint64_t transfer_progress() const override;
+  uint64_t transfer_goal() const override;
+  bool is_cancelled() const override;
+
+private:
+  QUICStreamAdapter *_adapter;
+};
+
 class QUICTransferProgressProviderVIO : public QUICTransferProgressProvider
 {
 public:
   QUICTransferProgressProviderVIO(VIO &vio) : _vio(vio) {}
 
-  bool
-  is_transfer_goal_set() const
-  {
-    return this->_vio.nbytes != INT64_MAX;
-  }
-
-  uint64_t
-  transfer_progress() const
-  {
-    return this->_vio.ndone;
-  }
-
-  uint64_t
-  transfer_goal() const
-  {
-    return this->_vio.nbytes;
-  }
-
-  bool
-  is_cancelled() const
-  {
-    return false;
-  }
+  bool is_transfer_goal_set() const override;
+  uint64_t transfer_progress() const override;
+  uint64_t transfer_goal() const override;
+  bool is_cancelled() const override;
 
 private:
   VIO &_vio;

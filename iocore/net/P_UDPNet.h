@@ -42,13 +42,18 @@ static inline PollCont *get_UDPPollCont(EThread *);
 
 class UDPNetHandler;
 
-struct UDPNetProcessorInternal : public UDPNetProcessor {
+class UDPNetProcessorInternal : public UDPNetProcessor
+{
+public:
   int start(int n_udp_threads, size_t stacksize) override;
   void udp_read_from_net(UDPNetHandler *nh, UDPConnection *uc);
   int udp_callback(UDPNetHandler *nh, UDPConnection *uc, EThread *thread);
 
   off_t pollCont_offset;
   off_t udpNetHandler_offset;
+
+private:
+  IOBufferBlock *_receive_ioblock_chain = nullptr;
 };
 
 extern UDPNetProcessorInternal udpNetInternal;

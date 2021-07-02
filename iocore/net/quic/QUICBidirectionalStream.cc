@@ -22,116 +22,23 @@
  */
 
 #include "QUICBidirectionalStream.h"
+#include "QUICStreamAdapter.h"
 
 //
 // QUICBidirectionalStream
 //
 QUICBidirectionalStream::QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                                                  uint64_t recv_max_stream_data, uint64_t send_max_stream_data)
-  : QUICStreamVConnection(cinfo, sid),
+  : QUICStream(cinfo, sid),
     _remote_flow_controller(send_max_stream_data, _id),
     _local_flow_controller(rtt_provider, recv_max_stream_data, _id),
     _flow_control_buffer_size(recv_max_stream_data),
-    _state(nullptr, &this->_progress_vio, this, nullptr)
+    _state(nullptr, &this->_progress_sa, this, nullptr)
 {
-  SET_HANDLER(&QUICBidirectionalStream::state_stream_open);
-
   QUICStreamFCDebug("[LOCAL] %" PRIu64 "/%" PRIu64, this->_local_flow_controller.current_offset(),
                     this->_local_flow_controller.current_limit());
   QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
                     this->_remote_flow_controller.current_limit());
-}
-
-int
-QUICBidirectionalStream::state_stream_open(int event, void *data)
-{
-  QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
-  QUICErrorUPtr error = nullptr;
-
-  switch (event) {
-  case VC_EVENT_READ_READY:
-  case VC_EVENT_READ_COMPLETE: {
-    int64_t len = this->_process_read_vio();
-    if (len > 0) {
-      this->_signal_read_event();
-    }
-
-    break;
-  }
-  case VC_EVENT_WRITE_READY:
-  case VC_EVENT_WRITE_COMPLETE: {
-    int64_t len = this->_process_write_vio();
-    if (len > 0) {
-      this->_signal_write_event();
-    }
-
-    break;
-  }
-  case VC_EVENT_EOS:
-  case VC_EVENT_ERROR:
-  case VC_EVENT_INACTIVITY_TIMEOUT:
-  case VC_EVENT_ACTIVE_TIMEOUT: {
-    // TODO
-    ink_assert(false);
-    break;
-  }
-  default:
-    QUICStreamDebug("unknown event");
-    ink_assert(false);
-  }
-
-  // FIXME error is always nullptr
-  if (error != nullptr) {
-    if (error->cls == QUICErrorClass::TRANSPORT) {
-      QUICStreamDebug("QUICError: %s (%u), %s (0x%x)", QUICDebugNames::error_class(error->cls),
-                      static_cast<unsigned int>(error->cls), QUICDebugNames::error_code(error->code),
-                      static_cast<unsigned int>(error->code));
-    } else {
-      QUICStreamDebug("QUICError: %s (%u), APPLICATION ERROR (0x%x)", QUICDebugNames::error_class(error->cls),
-                      static_cast<unsigned int>(error->cls), static_cast<unsigned int>(error->code));
-    }
-    if (dynamic_cast<QUICStreamError *>(error.get()) != nullptr) {
-      // Stream Error
-      QUICStreamErrorUPtr serror = QUICStreamErrorUPtr(static_cast<QUICStreamError *>(error.get()));
-      this->reset(std::move(serror));
-    } else {
-      // Connection Error
-      // TODO Close connection (Does this really happen?)
-    }
-  }
-
-  return EVENT_DONE;
-}
-
-int
-QUICBidirectionalStream::state_stream_closed(int event, void *data)
-{
-  QUICVStreamDebug("%s (%d)", get_vc_event_name(event), event);
-
-  switch (event) {
-  case VC_EVENT_READ_READY:
-  case VC_EVENT_READ_COMPLETE: {
-    // ignore
-    break;
-  }
-  case VC_EVENT_WRITE_READY:
-  case VC_EVENT_WRITE_COMPLETE: {
-    // ignore
-    break;
-  }
-  case VC_EVENT_EOS:
-  case VC_EVENT_ERROR:
-  case VC_EVENT_INACTIVITY_TIMEOUT:
-  case VC_EVENT_ACTIVE_TIMEOUT: {
-    // TODO
-    ink_assert(false);
-    break;
-  }
-  default:
-    ink_assert(false);
-  }
-
-  return EVENT_DONE;
 }
 
 bool
@@ -168,7 +75,6 @@ QUICConnectionErrorUPtr
 QUICBidirectionalStream::recv(const QUICStreamFrame &frame)
 {
   ink_assert(_id == frame.stream_id());
-  ink_assert(this->_read_vio.op == VIO::READ);
 
   // Check stream state - Do this first before accept the frame
   if (!this->_state.is_allowed_to_receive(frame)) {
@@ -202,9 +108,11 @@ QUICBidirectionalStream::recv(const QUICStreamFrame &frame)
     last_offset  = stream_frame->offset();
     last_length  = stream_frame->data_length();
 
-    this->_write_to_read_vio(stream_frame->offset(), reinterpret_cast<uint8_t *>(stream_frame->data()->start()),
-                             stream_frame->data_length(), stream_frame->has_fin_flag());
-    this->_state.update_with_receiving_frame(*new_frame);
+    this->_adapter->write(stream_frame->offset(), reinterpret_cast<uint8_t *>(stream_frame->data()->start()),
+                          stream_frame->data_length(), stream_frame->has_fin_flag());
+    if (this->_state.update_with_receiving_frame(*new_frame)) {
+      this->_notify_state_change();
+    }
 
     delete new_frame;
     new_frame = this->_received_stream_frame_buffer.pop();
@@ -218,7 +126,7 @@ QUICBidirectionalStream::recv(const QUICStreamFrame &frame)
                       this->_local_flow_controller.current_limit());
   }
 
-  this->_signal_read_event();
+  this->_adapter->encourge_read();
 
   return nullptr;
 }
@@ -230,10 +138,7 @@ QUICBidirectionalStream::recv(const QUICMaxStreamDataFrame &frame)
   QUICStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
                     this->_remote_flow_controller.current_limit());
 
-  int64_t len = this->_process_write_vio();
-  if (len > 0) {
-    this->_signal_write_event();
-  }
+  this->_adapter->encourge_write();
 
   return nullptr;
 }
@@ -249,7 +154,9 @@ QUICBidirectionalStream::recv(const QUICStreamDataBlockedFrame &frame)
 QUICConnectionErrorUPtr
 QUICBidirectionalStream::recv(const QUICStopSendingFrame &frame)
 {
-  this->_state.update_with_receiving_frame(frame);
+  if (this->_state.update_with_receiving_frame(frame)) {
+    this->_notify_state_change();
+  }
   this->_reset_reason = QUICStreamErrorUPtr(new QUICStreamError(this, QUIC_APP_ERROR_CODE_STOPPING));
   // We received and processed STOP_SENDING frame, so return NO_ERROR here
   return nullptr;
@@ -258,97 +165,11 @@ QUICBidirectionalStream::recv(const QUICStopSendingFrame &frame)
 QUICConnectionErrorUPtr
 QUICBidirectionalStream::recv(const QUICRstStreamFrame &frame)
 {
-  this->_state.update_with_receiving_frame(frame);
-  this->_signal_read_eos_event();
+  if (this->_state.update_with_receiving_frame(frame)) {
+    this->_notify_state_change();
+  }
+  this->_adapter->notify_eos();
   return nullptr;
-}
-
-// this->_read_vio.nbytes should be INT64_MAX until receive FIN flag
-VIO *
-QUICBidirectionalStream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
-{
-  if (buf) {
-    this->_read_vio.buffer.writer_for(buf);
-  } else {
-    this->_read_vio.buffer.clear();
-  }
-
-  this->_read_vio.mutex     = c ? c->mutex : this->mutex;
-  this->_read_vio.cont      = c;
-  this->_read_vio.nbytes    = nbytes;
-  this->_read_vio.ndone     = 0;
-  this->_read_vio.vc_server = this;
-  this->_read_vio.op        = VIO::READ;
-
-  this->_process_read_vio();
-  this->_send_tracked_event(this->_read_event, VC_EVENT_READ_READY, &this->_read_vio);
-
-  return &this->_read_vio;
-}
-
-VIO *
-QUICBidirectionalStream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
-{
-  if (buf) {
-    this->_write_vio.buffer.reader_for(buf);
-  } else {
-    this->_write_vio.buffer.clear();
-  }
-
-  this->_write_vio.mutex     = c ? c->mutex : this->mutex;
-  this->_write_vio.cont      = c;
-  this->_write_vio.nbytes    = nbytes;
-  this->_write_vio.ndone     = 0;
-  this->_write_vio.vc_server = this;
-  this->_write_vio.op        = VIO::WRITE;
-
-  this->_process_write_vio();
-  this->_send_tracked_event(this->_write_event, VC_EVENT_WRITE_READY, &this->_write_vio);
-
-  return &this->_write_vio;
-}
-
-void
-QUICBidirectionalStream::do_io_close(int lerrno)
-{
-  SET_HANDLER(&QUICBidirectionalStream::state_stream_closed);
-
-  this->_read_vio.buffer.clear();
-  this->_read_vio.nbytes = 0;
-  this->_read_vio.op     = VIO::NONE;
-  this->_read_vio.cont   = nullptr;
-
-  this->_write_vio.buffer.clear();
-  this->_write_vio.nbytes = 0;
-  this->_write_vio.op     = VIO::NONE;
-  this->_write_vio.cont   = nullptr;
-}
-
-void
-QUICBidirectionalStream::do_io_shutdown(ShutdownHowTo_t howto)
-{
-  ink_assert(false); // unimplemented yet
-  return;
-}
-
-void
-QUICBidirectionalStream::reenable(VIO *vio)
-{
-  if (vio->op == VIO::READ) {
-    QUICVStreamDebug("read_vio reenabled");
-
-    int64_t len = this->_process_read_vio();
-    if (len > 0) {
-      this->_signal_read_event();
-    }
-  } else if (vio->op == VIO::WRITE) {
-    QUICVStreamDebug("write_vio reenabled");
-
-    int64_t len = this->_process_write_vio();
-    if (len > 0) {
-      this->_signal_write_event();
-    }
-  }
 }
 
 bool
@@ -361,9 +182,9 @@ QUICBidirectionalStream::will_generate_frame(QUICEncryptionLevel level, size_t c
   if (!this->is_retransmited_frame_queue_empty()) {
     return true;
   }
-  if (this->_write_vio.op != VIO::NONE && this->_write_vio.get_reader()->is_read_avail_more_than(0)) {
+  if (this->_adapter && this->_adapter->unread_len() > 0) {
     return true;
-  };
+  }
   return false;
 }
 
@@ -386,7 +207,9 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
       return nullptr;
     }
     this->_records_rst_stream_frame(level, *static_cast<QUICRstStreamFrame *>(frame));
-    this->_state.update_with_sending_frame(*frame);
+    if (this->_state.update_with_sending_frame(*frame)) {
+      this->_notify_state_change();
+    }
     this->_is_reset_sent = true;
     return frame;
   }
@@ -400,7 +223,9 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
       return nullptr;
     }
     this->_records_stop_sending_frame(level, *static_cast<QUICStopSendingFrame *>(frame));
-    this->_state.update_with_sending_frame(*frame);
+    if (this->_state.update_with_sending_frame(*frame)) {
+      this->_notify_state_change();
+    }
     this->_is_stop_sending_sent = true;
     return frame;
   }
@@ -412,91 +237,87 @@ QUICBidirectionalStream::generate_frame(uint8_t *buf, QUICEncryptionLevel level,
     return frame;
   }
 
-  if (this->_write_vio.op != VIO::NONE && this->_state.is_allowed_to_send(QUICFrameType::STREAM)) {
-    SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
+  if (!this->_adapter || !this->_state.is_allowed_to_send(QUICFrameType::STREAM)) {
+    return frame;
+  }
 
-    uint64_t maximum_data_size = 0;
-    if (maximum_frame_size <= MAX_STREAM_FRAME_OVERHEAD) {
-      return frame;
-    }
-    maximum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
+  uint64_t maximum_data_size = 0;
+  if (maximum_frame_size <= MAX_STREAM_FRAME_OVERHEAD) {
+    return frame;
+  }
+  maximum_data_size = maximum_frame_size - MAX_STREAM_FRAME_OVERHEAD;
 
-    bool pure_fin = false;
-    bool fin      = false;
-    if ((this->_write_vio.nbytes != 0 || this->_write_vio.nbytes != INT64_MAX) &&
-        this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset)) {
-      // Pure FIN stream should be sent regardless status of remote flow controller, because the length is zero.
-      pure_fin = true;
-      fin      = true;
-    }
+  bool pure_fin = false;
+  bool fin      = false;
+  if (this->_adapter->is_eos()) {
+    // Pure FIN stream should be sent regardless status of remote flow controller, because the length is zero.
+    pure_fin = true;
+    fin      = true;
+  }
 
-    uint64_t len           = 0;
-    IOBufferReader *reader = this->_write_vio.get_reader();
-    if (!pure_fin) {
-      uint64_t data_len = reader->block_read_avail();
-      if (data_len == 0) {
-        return frame;
-      }
-
-      // Check Connection/Stream level credit only if the generating STREAM frame is not pure fin
-      uint64_t stream_credit = this->_remote_flow_controller.credit();
-      if (stream_credit == 0) {
-        // STREAM_DATA_BLOCKED
-        frame =
-          this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
-        return frame;
-      }
-
-      if (connection_credit == 0) {
-        // BLOCKED - BLOCKED frame will be sent by connection level remote flow controller
-        return frame;
-      }
-
-      len = std::min(data_len, std::min(maximum_data_size, std::min(stream_credit, connection_credit)));
-
-      // data_len, maximum_data_size, stream_credit and connection_credit are already checked they're larger than 0
-      ink_assert(len != 0);
-
-      if (this->_write_vio.nbytes == static_cast<int64_t>(this->_send_offset + len)) {
-        fin = true;
-      }
-    }
-
-    Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(reader->get_current_block()->clone());
-    block->consume(reader->start_offset);
-    block->_end = std::min(block->start() + len, block->_buf_end);
-    ink_assert(static_cast<uint64_t>(block->read_avail()) == len);
-
-    // STREAM - Pure FIN or data length is lager than 0
-    // FIXME has_length_flag and has_offset_flag should be configurable
-    frame = QUICFrameFactory::create_stream_frame(buf, block, this->_id, this->_send_offset, fin, true, true,
-                                                  this->_issue_frame_id(), this);
-    if (!this->_state.is_allowed_to_send(*frame)) {
-      QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
+  uint64_t len = 0;
+  if (!pure_fin) {
+    uint64_t data_len = this->_adapter->unread_len();
+    if (data_len == 0) {
       return frame;
     }
 
-    if (!pure_fin) {
-      int ret = this->_remote_flow_controller.update(this->_send_offset + len);
-      // We cannot cancel sending the frame after updating the flow controller
-
-      // Calling update always success, because len is always less than stream_credit
-      ink_assert(ret == 0);
-
-      QUICVStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
-                         this->_remote_flow_controller.current_limit());
-      if (this->_remote_flow_controller.current_offset() == this->_remote_flow_controller.current_limit()) {
-        QUICStreamDebug("Flow Controller will block sending a STREAM frame");
-      }
-
-      reader->consume(len);
-      this->_send_offset += len;
-      this->_write_vio.ndone += len;
+    // Check Connection/Stream level credit only if the generating STREAM frame is not pure fin
+    uint64_t stream_credit = this->_remote_flow_controller.credit();
+    if (stream_credit == 0) {
+      // STREAM_DATA_BLOCKED
+      frame =
+        this->_remote_flow_controller.generate_frame(buf, level, UINT16_MAX, maximum_frame_size, current_packet_size, seq_num);
+      return frame;
     }
-    this->_records_stream_frame(level, *static_cast<QUICStreamFrame *>(frame));
 
-    this->_signal_write_event();
-    this->_state.update_with_sending_frame(*frame);
+    if (connection_credit == 0) {
+      // BLOCKED - BLOCKED frame will be sent by connection level remote flow controller
+      return frame;
+    }
+
+    len = std::min(data_len, std::min(maximum_data_size, std::min(stream_credit, connection_credit)));
+
+    // data_len, maximum_data_size, stream_credit and connection_credit are already checked they're larger than 0
+    ink_assert(len != 0);
+
+    if (this->_adapter->total_len() == this->_send_offset + len) {
+      fin = true;
+    }
+  }
+
+  Ptr<IOBufferBlock> block = this->_adapter->read(len);
+  ink_assert(static_cast<uint64_t>(block->read_avail()) == len);
+
+  // STREAM - Pure FIN or data length is lager than 0
+  // FIXME has_length_flag and has_offset_flag should be configurable
+  frame = QUICFrameFactory::create_stream_frame(buf, block, this->_id, this->_send_offset, fin, true, true, this->_issue_frame_id(),
+                                                this);
+  if (!this->_state.is_allowed_to_send(*frame)) {
+    QUICStreamDebug("Canceled sending %s frame due to the stream state", QUICDebugNames::frame_type(frame->type()));
+    return frame;
+  }
+
+  if (!pure_fin) {
+    int ret = this->_remote_flow_controller.update(this->_send_offset + len);
+    // We cannot cancel sending the frame after updating the flow controller
+
+    // Calling update always success, because len is always less than stream_credit
+    ink_assert(ret == 0);
+
+    QUICVStreamFCDebug("[REMOTE] %" PRIu64 "/%" PRIu64, this->_remote_flow_controller.current_offset(),
+                       this->_remote_flow_controller.current_limit());
+    if (this->_remote_flow_controller.current_offset() == this->_remote_flow_controller.current_limit()) {
+      QUICStreamDebug("Flow Controller will block sending a STREAM frame");
+    }
+
+    this->_send_offset += len;
+  }
+  this->_records_stream_frame(level, *static_cast<QUICStreamFrame *>(frame));
+
+  this->_adapter->encourge_write();
+  if (this->_state.update_with_sending_frame(*frame)) {
+    this->_notify_state_change();
   }
 
   return frame;
@@ -522,7 +343,9 @@ QUICBidirectionalStream::_on_frame_acked(QUICFrameInformationUPtr &info)
     break;
   }
 
-  this->_state.update_on_ack();
+  if (this->_state.update_on_ack()) {
+    this->_notify_state_change();
+  }
 }
 
 void
@@ -564,13 +387,17 @@ QUICBidirectionalStream::reset(QUICStreamErrorUPtr error)
 void
 QUICBidirectionalStream::on_read()
 {
-  this->_state.update_on_read();
+  if (this->_state.update_on_read()) {
+    this->_notify_state_change();
+  }
 }
 
 void
 QUICBidirectionalStream::on_eos()
 {
-  this->_state.update_on_eos();
+  if (this->_state.update_on_eos()) {
+    this->_notify_state_change();
+  }
 }
 
 QUICOffset
@@ -583,4 +410,10 @@ QUICOffset
 QUICBidirectionalStream::largest_offset_sent() const
 {
   return this->_remote_flow_controller.current_offset();
+}
+
+void
+QUICBidirectionalStream::_on_adapter_updated()
+{
+  this->_progress_sa.set_stream_adapter(this->_adapter);
 }

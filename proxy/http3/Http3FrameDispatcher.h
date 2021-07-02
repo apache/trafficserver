@@ -28,10 +28,12 @@
 #include "Http3FrameHandler.h"
 #include <vector>
 
+class QUICStreamVCAdapter;
+
 class Http3FrameDispatcher
 {
 public:
-  Http3ErrorUPtr on_read_ready(QUICStreamIO &stream_io, uint64_t &nread);
+  Http3ErrorUPtr on_read_ready(QUICStreamId stream_id, IOBufferReader &reader, uint64_t &nread);
 
   void add_handler(Http3FrameHandler *handler);
 

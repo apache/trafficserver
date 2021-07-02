@@ -75,8 +75,8 @@ QUICPacketFactory::create(uint8_t *packet_buf, UDPConnection *udp_con, IpEndpoin
 
   QUICPacketType type;
   QUICVersion version;
-  QUICConnectionId dcid;
-  QUICConnectionId scid;
+  QUICConnectionId dcid = QUICConnectionId::ZERO();
+  QUICConnectionId scid = QUICConnectionId::ZERO();
   QUICPacketNumber packet_number;
   QUICKeyPhase key_phase;
 

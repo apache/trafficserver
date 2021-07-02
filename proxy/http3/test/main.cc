@@ -32,6 +32,8 @@
 #include "RecordsConfig.h"
 #include "Http3Config.h"
 
+#define TEST_THREADS 1
+
 struct EventProcessorListener : Catch::TestEventListenerBase {
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
 
@@ -47,6 +49,12 @@ struct EventProcessorListener : Catch::TestEventListenerBase {
     Layout::create();
     RecProcessInit(RECM_STAND_ALONE);
     LibRecordsConfigInit();
+
+    ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
+    eventProcessor.start(TEST_THREADS);
+
+    Thread *main_thread = new EThread;
+    main_thread->set_specific();
 
     Http3Config::startup();
   }
