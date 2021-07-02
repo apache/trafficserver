@@ -44,7 +44,7 @@ endif # BUILD_MANPAGES
 # see https://media.readthedocs.org/pdf/sphinx/1.6.3/sphinx.pdf
 # section 24.3.2 around page 247, third item for 'NotImplementedError', so this is kind of useless.
 
-ALLSPHINXOPTS   = $(SPHINXOPTS)
+ALLSPHINXOPTS   = $(SPHINXOPTS) -W
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(SPHINXOPTS)
 
