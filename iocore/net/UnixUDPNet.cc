@@ -131,7 +131,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
   unsigned max_niov = 32;
 
   struct msghdr msg;
-  Ptr<IOBufferBlock> chain, next_chain;
+  IOBufferBlock *next_chain;
   struct iovec tiovec[max_niov];
   int64_t size_index  = BUFFER_SIZE_INDEX_2K;
   int64_t buffer_size = BUFFER_SIZE_FOR_INDEX(size_index);
@@ -145,14 +145,14 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
 
     // build struct iov
     // reuse the block in chain if available
-    b    = chain.get();
+    b    = this->_receive_ioblock_chain;
     last = nullptr;
     for (niov = 0; niov < max_niov; niov++) {
       if (b == nullptr) {
         b = new_IOBufferBlock();
         b->alloc(size_index);
         if (last == nullptr) {
-          chain = b;
+          this->_receive_ioblock_chain = b;
         } else {
           last->next = b;
         }
@@ -191,7 +191,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
 
     // fill the IOBufferBlock chain
     int64_t saved = r;
-    b             = chain.get();
+    b             = this->_receive_ioblock_chain;
     while (b && saved > 0) {
       if (saved > buffer_size) {
         b->fill(buffer_size);
@@ -200,7 +200,7 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
       } else {
         b->fill(saved);
         saved      = 0;
-        next_chain = b->next.get();
+        next_chain = b->next.detach();
         b->next    = nullptr;
       }
     }
@@ -236,14 +236,15 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
     }
 
     // create packet
-    UDPPacket *p = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), chain);
+    Ptr<IOBufferBlock> wrapped_chain = make_ptr<IOBufferBlock>(this->_receive_ioblock_chain);
+    UDPPacket *p                     = new_incoming_UDPPacket(ats_ip_sa_cast(&fromaddr), ats_ip_sa_cast(&toaddr), wrapped_chain);
     p->setConnection(uc);
     // queue onto the UDPConnection
     uc->inQueue.push((UDPPacketInternal *)p);
 
     // reload the unused block
-    chain      = next_chain;
-    next_chain = nullptr;
+    this->_receive_ioblock_chain = next_chain;
+    next_chain                   = nullptr;
     iters++;
   } while (r > 0);
   if (iters >= 1) {
