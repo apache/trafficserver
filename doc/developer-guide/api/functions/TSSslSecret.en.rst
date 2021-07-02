@@ -67,7 +67,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSReturnCode TSSslSecretUpdate(const char * secret_name, int secret_name_length)
+.. function:: TSReturnCode TSSslSecretGet(const char * secret_name, int secret_name_length)
 
 Description
 ===========
