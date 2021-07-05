@@ -201,22 +201,24 @@ Http2Stream::main_event_handler(int event, void *edata)
     break;
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
-    if (e && e->cookie == &read_vio) {
-      SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
-      read_vio.cont->handleEvent(event, &read_vio);
-    } else if (e && e->cookie == &write_vio) {
-      SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
-      write_vio.cont->handleEvent(event, &write_vio);
-    }
-
-    // This assuming stream on inbound side
-    // TODO: make appropriate state
-    if (recv_end_stream && write_vio.cont && write_vio.op == VIO::WRITE && write_vio.nbytes != 0) {
-      SCOPED_MUTEX_LOCK(lock, write_vio.cont->mutex, this_ethread());
-      write_vio.cont->handleEvent(event, &write_vio);
-    } else if (read_vio.cont && read_vio.op == VIO::READ) {
-      SCOPED_MUTEX_LOCK(lock, read_vio.cont->mutex, this_ethread());
-      read_vio.cont->handleEvent(event, &read_vio);
+    if (e != nullptr) {
+      if (e->cookie == &read_vio) {
+        SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
+        read_vio.cont->handleEvent(event, &read_vio);
+      } else if (e->cookie == &write_vio) {
+        SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
+        write_vio.cont->handleEvent(event, &write_vio);
+      }
+    } else {
+      // This assuming stream on inbound side
+      // TODO: make appropriate state
+      if (recv_end_stream && write_vio.cont && write_vio.op == VIO::WRITE && write_vio.nbytes != 0) {
+        SCOPED_MUTEX_LOCK(lock, write_vio.cont->mutex, this_ethread());
+        write_vio.cont->handleEvent(event, &write_vio);
+      } else if (read_vio.cont && read_vio.op == VIO::READ) {
+        SCOPED_MUTEX_LOCK(lock, read_vio.cont->mutex, this_ethread());
+        read_vio.cont->handleEvent(event, &read_vio);
+      }
     }
 
     break;
