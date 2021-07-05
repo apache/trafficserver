@@ -72,15 +72,24 @@ TLSSNISupport::perform_sni_action()
   return SSL_TLSEXT_ERR_OK;
 }
 
-#if TS_USE_HELLO_CB
 void
-TLSSNISupport::on_client_hello(SSL *ssl, int *al, void *arg)
+#ifndef OPENSSL_IS_BORINGSSL
+TLSSNISupport::on_client_hello(SSL *ssl, int *al, void *arg);
+#else
+TLSSNISupport::on_client_hello(const SSL_CLIENT_HELLO *client_hello)
+#endif
 {
   const char *servername = nullptr;
   const unsigned char *p;
   size_t remaining, len;
+
   // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
-  if (SSL_client_hello_get0_ext(ssl, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
+#ifdef OPENSSL_IS_BORINGSSL
+  if (SSL_early_callback_ctx_extension_get(client_hello, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2)
+#else
+  if (SSL_client_hello_get0_ext(ssl, TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2)
+#endif
+  {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
     /* Extract the length of the supplied list of names. */
     len = *(p++) << 8;
@@ -108,7 +117,6 @@ TLSSNISupport::on_client_hello(SSL *ssl, int *al, void *arg)
     this->_set_sni_server_name(std::string_view(servername, len));
   }
 }
-#endif
 
 void
 TLSSNISupport::on_servername(SSL *ssl, int *al, void *arg)
