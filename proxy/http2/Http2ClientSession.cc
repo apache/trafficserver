@@ -465,7 +465,8 @@ Http2ClientSession::state_goaway(int event, void *edata)
 /**
    Session State - Waiting all transaction is done (especially for background fill)
 
-   No actual read nor write operation.
+   The NetVC raised EOS or ERROR, but keep it until all transaction is done. ( Do NOT call vc->do_io_close() and set it nullptr )
+   Because HttpSM assumes it's alive until everything is done.
  */
 int
 Http2ClientSession::state_aborted(int event, void *edata)
@@ -479,6 +480,16 @@ Http2ClientSession::state_aborted(int event, void *edata)
     Http2SsnDebug("state_closed by %s (%d)", get_vc_event_name(event), event);
     _set_state_closed();
 
+    break;
+  }
+  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE:
+  case VC_EVENT_ERROR:
+  case VC_EVENT_EOS: {
+    // do nothing
+    Debug("unexpected event=%s (%d) edata=%p", get_vc_event_name(event), event, edata);
     break;
   }
   default:
@@ -1009,10 +1020,6 @@ Http2ClientSession::_handle_vc_event(int event, void *edata)
     Http2SsnDebug("state_aborted by %s (%d)", get_vc_event_name(event), event);
 
     dying_event = event;
-
-    // No more read/write op
-    _vc->do_io_close();
-    _vc = nullptr;
 
     // signal event to txns
     connection_state.cleanup_streams(event);
