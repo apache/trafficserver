@@ -40,8 +40,10 @@ public:
 
   int perform_sni_action();
   // Callback functions for OpenSSL libraries
-#if TS_USE_HELLO_CB
+#ifndef OPENSSL_IS_BORINGSSL
   void on_client_hello(SSL *ssl, int *al, void *arg);
+#else
+  void on_client_hello(const SSL_CLIENT_HELLO *client_hello);
 #endif
   void on_servername(SSL *ssl, int *al, void *arg);
 

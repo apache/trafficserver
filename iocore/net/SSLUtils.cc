@@ -422,6 +422,41 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
   }
   return SSL_CLIENT_HELLO_SUCCESS;
 }
+
+#else
+static ssl_select_cert_result_t
+ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
+{
+  SSL *s = client_hello->ssl;
+  TLSSNISupport *snis = TLSSNISupport::getInstance(s);
+
+  if (snis) {
+    snis->on_client_hello(client_hello);
+    int ret = snis->perform_sni_action();
+    if (ret != SSL_TLSEXT_ERR_OK) {
+      return ssl_select_cert_error;
+    }
+  } else {
+    // This error suggests either of these:
+    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
+    // 2) Call back on stale netvc
+    Debug("ssl.error", "ssl_client_hello_callback was called unexpectedly");
+    return ssl_select_cert_error;
+  }
+
+  SSLNetVConnection *netvc = SSLNetVCAccess(s);
+  if (!netvc || netvc->ssl != s) {
+    Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
+    return ssl_select_cert_error;
+  }
+
+  bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+
+  if (!reenabled) {
+    return ssl_select_cert_retry;
+  }
+  return ssl_select_cert_success;
+}
 #endif
 
 /**
@@ -475,13 +510,6 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
   TLSSNISupport *snis = TLSSNISupport::getInstance(ssl);
   if (snis) {
     snis->on_servername(ssl, al, arg);
-#if !TS_USE_HELLO_CB
-    // Only call the SNI actions here if not already performed in the HELLO_CB
-    int ret = snis->perform_sni_action();
-    if (ret != SSL_TLSEXT_ERR_OK) {
-      return SSL_TLSEXT_ERR_ALERT_FATAL;
-    }
-#endif
   } else {
     // This error suggests either of these:
     // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
@@ -1113,18 +1141,21 @@ SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
   // Make sure the callbacks are set
 #ifndef OPENSSL_IS_BORINGSSL
   SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, nullptr);
+
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
 #else
   SSL_CTX_set_select_certificate_cb(ctx, [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
-    SSL_CTX *ctx = SSL_get_SSL_CTX(client_hello->ssl);
-    Debug("ssl", "SSL_CTX_set_select_certificate_cb: %p", ctx);
+    if (ssl_client_hello_callback(client_hello) == ssl_select_cert_error) {
+      return ssl_select_cert_error;
+    }
+
     return ssl_cert_callback(client_hello->ssl, (void *)client_hello) == 1 ? ssl_select_cert_success : ssl_select_cert_error;
   });
 #endif
 
-  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
-
 #if TS_USE_HELLO_CB
   SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
+#else
 #endif
 }
 
