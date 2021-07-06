@@ -45,7 +45,7 @@ public:
     std::string text; // for error messages.
     ts::LocalBufferWriter<BUFFER_SIZE> bw;
     try {
-      auto resp = _client.connect();
+      _client.connect();
       if (_client.is_connected()) {
         _client.send(req);
         auto ret = _client.read(bw);

@@ -43,6 +43,33 @@
 #include "rpc/jsonrpc/JsonRPCManager.h"
 #include "rpc/server/IPCSocketServer.h"
 
+namespace
+{
+constexpr size_t MAX_REQUEST_BUFFER_SIZE{32001};
+
+// Quick check for errors(base on the errno);
+bool check_for_transient_errors();
+
+// Check poll's return and validate against the passed function.
+template <typename Func>
+bool
+poll_on_socket(Func &&check_poll_return, std::chrono::milliseconds timeout, int fd)
+{
+  struct pollfd poll_fd;
+  poll_fd.fd     = fd;
+  poll_fd.events = POLLIN; // when data is ready.
+  int poll_ret;
+  do {
+    poll_ret = poll(&poll_fd, 1, timeout.count());
+  } while (check_poll_return(poll_ret));
+
+  if (!(poll_fd.revents & POLLIN)) {
+    return false;
+  }
+  return true;
+}
+} // namespace
+
 namespace rpc::comm
 {
 static constexpr auto logTag = "rpc.net";
@@ -71,15 +98,15 @@ IPCSocketServer::init()
   // this.
   if (_conf.sockPathName.empty() || _conf.sockPathName.size() > sizeof _serverAddr.sun_path) {
     Debug(logTag, "Invalid unix path name, check the size.");
-    return std::make_error_code(static_cast<std::errc>(EINVAL));
+    return std::make_error_code(static_cast<std::errc>(ENAMETOOLONG));
   }
 
-  std::error_code ec;
+  std::error_code ec; // Flag possible errors.
 
-  create_socket(ec);
-  if (ec) {
+  if (this->create_socket(ec); ec) {
     return ec;
   }
+
   Debug(logTag, "Using %s as socket path.", _conf.sockPathName.c_str());
   _serverAddr.sun_family = AF_UNIX;
   std::strncpy(_serverAddr.sun_path, _conf.sockPathName.c_str(), sizeof(_serverAddr.sun_path) - 1);
@@ -98,45 +125,30 @@ IPCSocketServer::init()
 }
 
 bool
-IPCSocketServer::wait_for_new_client(int timeout) const
+IPCSocketServer::poll_for_new_client(std::chrono::milliseconds timeout) const
 {
-  auto keep_polling = [&](int pfd) -> bool {
+  auto check_poll_return = [&](int pfd) -> bool {
     if (!_running.load()) {
       return false;
     }
-    // A value of 0 indicates that the call timed out and no file descriptors were ready
     if (pfd < 0) {
       switch (errno) {
       case EINTR:
       case EAGAIN:
         return true;
       default:
-        Warning("Error while waiting %s", std::strerror(errno));
         return false;
       }
-    }
-    if (pfd > 0) {
+    } else if (pfd > 0) {
       // ready.
       return false;
+    } else {
+      // time out, try again
+      return true;
     }
-
-    // timeout, try again
-    return true;
   };
 
-  struct pollfd poll_fd;
-  poll_fd.fd     = _socket;
-  poll_fd.events = POLLIN; // when data is ready.
-  int poll_ret;
-  do {
-    poll_ret = poll(&poll_fd, 1, timeout);
-  } while (keep_polling(poll_ret));
-
-  if (!(poll_fd.revents & POLLIN)) {
-    return false;
-  }
-
-  return true;
+  return poll_on_socket(check_poll_return, timeout, this->_socket);
 }
 
 void
@@ -144,11 +156,10 @@ IPCSocketServer::run()
 {
   _running.store(true);
 
-  ts::LocalBufferWriter<32000> bw;
+  ts::LocalBufferWriter<MAX_REQUEST_BUFFER_SIZE> bw;
   while (_running) {
     // poll till socket it's ready.
-
-    if (!this->wait_for_new_client()) {
+    if (!this->poll_for_new_client()) {
       if (_running.load()) {
         Warning("ups, we've got an issue.");
       }
@@ -159,21 +170,19 @@ IPCSocketServer::run()
     if (auto fd = this->accept(ec); !ec) {
       Client client{fd};
 
-      if (auto ret = client.read_all(bw); ret) {
-        // we will load the yaml node twice using the YAMLParserChecker, ok for now.
+      if (auto [ok, errStr] = client.read_all(bw); ok) {
         const auto json = std::string{bw.data(), bw.size()};
         if (auto response = rpc::JsonRPCManager::instance().handle_call(json); response) {
           // seems a valid response.
-          const bool success = client.write(*response);
-          if (!success) {
-            Debug(logTag, "Error sending the response: %s", std ::strerror(errno));
+          if (client.write(*response, ec); ec) {
+            Debug(logTag, "Error sending the response: %s", ec.message().c_str());
           }
         } // it was a notification.
       } else {
-        Debug(logTag, "We couldn't read it all");
+        Debug(logTag, "Error detected while reading: %s", errStr.c_str());
       }
     } else {
-      Debug(logTag, "Something happened %s", ec.message().c_str());
+      Debug(logTag, "Error while accepting a new connection on the socket: %s", ec.message().c_str());
     }
 
     bw.reset();
@@ -195,44 +204,10 @@ IPCSocketServer::stop()
 void
 IPCSocketServer::create_socket(std::error_code &ec)
 {
-  for (int retries = 0; retries < _conf.maxRetriesOnTransientErrors; retries++) {
-    _socket = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (_socket >= 0) {
-      break;
-    }
-    if (!check_for_transient_errors()) {
-      ec = std::make_error_code(static_cast<std::errc>(errno));
-      break;
-    }
-  }
+  _socket = socket(AF_UNIX, SOCK_STREAM, 0);
 
   if (_socket < 0) {
-    // seems that we have reched the max retries.
-    ec = InternalError::MAX_TRANSIENT_ERRORS_HANDLED;
-  }
-}
-
-bool
-IPCSocketServer::check_for_transient_errors() const
-{
-  switch (errno) {
-  case EINTR:
-  case EAGAIN:
-
-#ifdef ENOMEM
-  case ENOMEM:
-#endif
-
-#ifdef ENOBUF
-  case ENOBUF:
-#endif
-
-#if defined(EWOULDBLOCK) && (EWOULDBLOCK != EAGAIN)
-  case EWOULDBLOCK:
-#endif
-    return true;
-  default:
-    return false;
+    ec = std::make_error_code(static_cast<std::errc>(errno));
   }
 }
 
@@ -280,7 +255,7 @@ IPCSocketServer::bind(std::error_code &ec)
   unlink(_conf.sockPathName.c_str());
 
   ret = ::bind(_socket, (struct sockaddr *)&_serverAddr, sizeof(struct sockaddr_un));
-  if (ret != 0) {
+  if (ret < 0) {
     ec = std::make_error_code(static_cast<std::errc>(errno));
     return;
   }
@@ -295,7 +270,7 @@ IPCSocketServer::bind(std::error_code &ec)
 void
 IPCSocketServer::listen(std::error_code &ec)
 {
-  if (::listen(_socket, _conf.backlog) != 0) {
+  if (::listen(_socket, _conf.backlog) < 0) {
     ec = std::make_error_code(static_cast<std::errc>(errno));
     return;
   }
@@ -311,43 +286,21 @@ IPCSocketServer::close()
 }
 //// client
 
-namespace detail
-{
-  template <typename T> struct MessageParser {
-    static bool
-    is_complete(std::string const &str)
-    {
-      return false;
-    }
-  };
-
-  template <> struct MessageParser<rpc::comm::IPCSocketServer::Client::yamlparser> {
-    static bool
-    is_complete(std::string const &data)
-    {
-      try {
-        [[maybe_unused]] auto const &node = YAML::Load(data);
-        // TODO: if we follow this approach, keep in mind we can re-use the already parsed node. Using a lightweigh json SM is
-        // another option.
-      } catch (std::exception const &ex) {
-        return false;
-      }
-      return true;
-    }
-  };
-} // namespace detail
-
 IPCSocketServer::Client::Client(int fd) : _fd{fd} {}
 IPCSocketServer::Client::~Client()
 {
   this->close();
 }
 
+// ---------------- client --------------
 bool
-IPCSocketServer::Client::wait_for_data(int timeout) const
+IPCSocketServer::Client::poll_for_data(std::chrono::milliseconds timeout) const
 {
-  auto keep_polling = [&](int pfd) -> bool {
-    if (pfd < 0) {
+  auto check_poll_return = [&](int pfd) -> bool {
+    if (pfd > 0) {
+      // something is ready.
+      return false;
+    } else if (pfd < 0) {
       switch (errno) {
       case EINTR:
       case EAGAIN:
@@ -355,29 +308,12 @@ IPCSocketServer::Client::wait_for_data(int timeout) const
       default:
         return false;
       }
-    } else if (pfd > 0) {
-      // TODO : merge this together
-      // done waiting, data is ready.
+    } else { // timeout
       return false;
-    } else {
-      return false /*timeout*/;
     }
-    // return timeout > 0 ? true : false /*timeout*/;
   };
 
-  struct pollfd poll_fd;
-  poll_fd.fd     = this->_fd;
-  poll_fd.events = POLLIN; // when data is ready.
-  int poll_ret;
-  do {
-    poll_ret = poll(&poll_fd, 1, timeout);
-  } while (keep_polling(poll_ret));
-
-  if (!(poll_fd.revents & POLLIN)) {
-    return false;
-  }
-
-  return true;
+  return poll_on_socket(check_poll_return, timeout, this->_fd);
 }
 
 void
@@ -395,68 +331,48 @@ IPCSocketServer::Client::read(ts::MemSpan<char> span) const
   return ::read(_fd, span.data(), span.size());
 }
 
-bool
+std::tuple<bool, std::string>
 IPCSocketServer::Client::read_all(ts::FixedBufferWriter &bw) const
 {
-  if (!this->wait_for_data()) {
-    return false;
-  }
-
-  using MsgParser = detail::MessageParser<MessageParserLogic>;
+  std::string buff;
   while (bw.remaining() > 0) {
-    const ssize_t ret = this->read({bw.auxBuffer(), bw.remaining()});
-
-    if (ret > 0) {
-      // already read.
-      bw.fill(ret);
-      std::string msg{bw.data(), bw.size()}; // TODO: improve. make the parser to work with a bw.
-      if (!MsgParser::is_complete(msg)) {
-        // we need more data, we check the buffer if we have space.
-        if (bw.remaining() > 0) {
-          // if so, then we will read again, there is a false positive scenario where it could be that the
-          // json is invalid and the message is done, so, we will try again.
-          if (!this->wait_for_data()) {
-            Debug(logTag, "Timeout when reading again.");
-            // no more data in the wire.
-            // We will let the parser to respond with an invalid json if it's the case.
-            return true;
-          }
-          // it could be legit, keep reading.
-          continue;
-        } else {
-          // message buffer is full and we are flag to keep reading, throw this request away.
-          Debug(logTag, "Buffer is full: %ld", bw.size());
-          break;
-        }
+    auto ret = read({bw.auxBuffer(), bw.remaining()});
+    if (ret < 0) {
+      if (check_for_transient_errors()) {
+        continue;
       } else {
-        // all seems ok, we have a valid message, so we return true;
-        return true;
+        return {false, ts::bwprint(buff, "Error reading the socket: {}", ts::bwf::Errno{})};
       }
-    } else {
+    }
+
+    if (ret == 0) {
       if (bw.size()) {
-        // seems that we read some data, but there is no more available.
-        // let the rpc json parser fail?
-        // TODO: think on this scenario for a bit.
-        Note("Data was read, but seems not good.");
+        return {false, ts::bwprint(buff, "Peer disconnected after reading {} bytes.", bw.size())};
       }
+      return {false, ts::bwprint(buff, "Peer disconnected. EOF")};
+    }
+    bw.fill(ret);
+    if (bw.remaining() > 0) {
+      using namespace std::chrono_literals;
+      if (!this->poll_for_data(1ms)) {
+        return {true, buff};
+      }
+      continue;
+    } else {
+      ts::bwprint(buff, "Buffer is full, we hit the limit: {}", bw.capacity());
       break;
     }
   }
 
-  // we fail.
-  return false;
+  return {false, buff};
 }
 
-bool
-IPCSocketServer::Client::write(std::string const &data) const
+void
+IPCSocketServer::Client::write(std::string const &data, std::error_code &ec) const
 {
-  // TODO: broken pipe if client closes the socket. Add a test
   if (::write(_fd, data.c_str(), data.size()) < 0) {
-    Debug(logTag, "Error sending the response: %s", std ::strerror(errno));
-    return false;
+    ec = std::make_error_code(static_cast<std::errc>(errno));
   }
-
-  return true;
 }
 IPCSocketServer::Config::Config()
 {
@@ -498,3 +414,30 @@ template <> struct convert<rpc::comm::IPCSocketServer::Config> {
   }
 };
 } // namespace YAML
+
+namespace
+{
+bool
+check_for_transient_errors()
+{
+  switch (errno) {
+  case EINTR:
+  case EAGAIN:
+
+#ifdef ENOMEM
+  case ENOMEM:
+#endif
+
+#ifdef ENOBUF
+  case ENOBUF:
+#endif
+
+#if defined(EWOULDBLOCK) && (EWOULDBLOCK != EAGAIN)
+  case EWOULDBLOCK:
+#endif
+    return true;
+  default:
+    return false;
+  }
+}
+} // namespace

@@ -42,9 +42,8 @@ namespace rpc::comm
 /// Very basic and straight forward implementation of an unix socket domain. The implementation
 /// follows the \link BaseCommInterface.
 ///
-/// Message completion is checked base on the \link MessageParserLigic implementation. As we are not using any
-/// user defined protocol more than the defined json, we keep reading till we find a well-formed json or the buffer if full.
-///
+/// @note The server will keep reading the client's requests till the buffer is full or there is no more data in the wire.
+///       Buffer size = 32k
 class IPCSocketServer : public BaseCommInterface
 {
   ///
@@ -53,18 +52,11 @@ class IPCSocketServer : public BaseCommInterface
   /// When client goes out of scope it will close the socket. If you want to keep the socket connected, you need to keep
   /// the client object around.
   struct Client {
-    // Convenience definitons to implement the message boundary logic.
-    struct yamlparser;
-    using MessageParserLogic = yamlparser;
-
     /// @param fd Peer's socket.
     Client(int fd);
     /// Destructor will close the socket(if opened);
     ~Client();
 
-    /// Wait for data to be ready for reading.
-    /// @return true if the data is ready, false otherwise.
-    bool wait_for_data(int timeout = 1000) const;
     /// Close the passed socket (if opened);
     void close();
     /// Reads from the socket, this function calls the system read function.
@@ -72,15 +64,19 @@ class IPCSocketServer : public BaseCommInterface
     ssize_t read(ts::MemSpan<char> span) const;
     /// Function that reads all the data available in the socket, it will validate the data on every read if there is more than
     /// a single chunk.
-    /// This function relies on \link MessageParser::is_complete implementation.
     /// The size of the buffer to be read is not defined in this function, but rather passed in the @c bw parameter.
-    /// @return false if any error, true otherwise.
-    bool read_all(ts::FixedBufferWriter &bw) const;
+    /// @return A tuple with a boolean flag indicating if the operation did success or not, in case of any error, a text will
+    /// be added with a description.
+    std::tuple<bool, std::string> read_all(ts::FixedBufferWriter &bw) const;
     /// Write the the socket with the passed data.
-    /// @return false if any error, true otherwise.
-    bool write(std::string const &data) const;
+    /// @return std::error_code.
+    void write(std::string const &data, std::error_code &ec) const;
+    bool is_connected() const;
 
   private:
+    /// Wait for data to be ready for reading.
+    /// @return true if the data is ready, false otherwise.
+    bool poll_for_data(std::chrono::milliseconds timeout) const;
     int _fd; ///< connected peer's socket.
   };
 
@@ -125,9 +121,7 @@ protected: // unit test access
 
 private:
   inline static const std::string _name = "Local Socket";
-  // TODO: 1000 what? add units.
-  bool wait_for_new_client(int timeout = 1000) const;
-  bool check_for_transient_errors() const;
+  bool poll_for_new_client(std::chrono::milliseconds timeout = std::chrono::milliseconds(1000)) const;
   void create_socket(std::error_code &ec);
 
   int accept(std::error_code &ec) const;

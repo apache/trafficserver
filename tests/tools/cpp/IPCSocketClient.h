@@ -75,12 +75,6 @@ struct IPCSocketClient {
     return *this;
   }
 
-  bool
-  is_connected()
-  {
-    return _state == State::CONNECTED;
-  }
-
   self_reference
   send(std::string_view data)
   {
@@ -146,6 +140,12 @@ struct IPCSocketClient {
       ::close(_sock);
       _sock = -1;
     }
+  }
+
+  bool
+  is_connected() const
+  {
+    return _state == State::CONNECTED;
   }
 
 protected:

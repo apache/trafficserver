@@ -134,17 +134,24 @@ struct ScopedLocalSocket : IPCSocketClient {
 
   template <std::size_t N>
   void
-  send_in_chunks_with_wait(std::string_view data, std::chrono::milliseconds wait_between_write)
+  send_in_chunks(std::string_view data, int disconnect_after_chunk_n = -1)
   {
     assert(_state == State::CONNECTED || _state == State::SENT);
 
+    int chunk_number{1};
     auto chunks = chunk<N>(data);
     for (auto &&part : chunks) {
       if (::write(_sock, part.c_str(), part.size()) < 0) {
         Debug(logTag, "error sending message :%s", std ::strerror(errno));
         break;
       }
-      std::this_thread::sleep_for(wait_between_write);
+
+      if (disconnect_after_chunk_n == chunk_number) {
+        Debug(logTag, "Disconnecting it after chunk %d", chunk_number);
+        super::disconnect();
+        return;
+      }
+      ++chunk_number;
     }
     _state = State::SENT;
   }
@@ -153,12 +160,13 @@ struct ScopedLocalSocket : IPCSocketClient {
   std::string
   read()
   {
-    ts::LocalBufferWriter<32000> bw;
-    auto ret = super::read(bw);
-    if (ret == ReadStatus::OK) {
-      return {bw.data(), bw.size()};
+    if (_state != State::DISCONNECTED) {
+      ts::LocalBufferWriter<32000> bw;
+      auto ret = super::read(bw);
+      if (ret == ReadStatus::OK) {
+        return {bw.data(), bw.size()};
+      }
     }
-
     return {};
   }
   // small wrapper function to deal with the bw.
@@ -293,19 +301,18 @@ TEST_CASE("Basic message sending to a running server", "[socket]")
   REQUIRE(rpc::remove_handler("do_nothing"));
 }
 
-TEST_CASE("Sending a message bigger than the internal server's buffer.", "[buffer][error]")
+TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "[buffer][error]")
 {
   REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
 
-  SECTION("The Server message buffer size same as socket buffer")
+  SECTION("Message larger than the the accepted size.")
   {
-    const int S{64000};
+    const int S{32000}; // + the rest of the json message.
     auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": {"msg":")" + random_string(S) + R"("}, "id":"EfGh-1"})"};
     REQUIRE_NOTHROW([&]() {
       ScopedLocalSocket rpc_client;
       auto resp = rpc_client.query(json);
       REQUIRE(resp.empty());
-      REQUIRE(rpc_client.is_connected() == false);
     }());
   }
 
@@ -344,9 +351,55 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
       ScopedLocalSocket rpc_client;
       using namespace std::chrono_literals;
       rpc_client.connect();
-      rpc_client.send_in_chunks_with_wait<3>(json, 10ms);
+      rpc_client.send_in_chunks<3>(json);
       auto resp = rpc_client.read();
       REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "chunk-parts-3"})");
+    }());
+  }
+  REQUIRE(rpc::remove_handler("do_nothing"));
+}
+
+TEST_CASE("Test with chunks - disconnect after second part", "[socket][chunks]")
+{
+  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
+
+  SECTION("Sending request by chunks")
+  {
+    const int S{4000};
+    auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) +
+              R"("}, "id": "chunk-parts-3-2"})"};
+
+    REQUIRE_NOTHROW([&]() {
+      ScopedLocalSocket rpc_client;
+      using namespace std::chrono_literals;
+      rpc_client.connect();
+      rpc_client.send_in_chunks<3>(json, 2);
+      // read will fail.
+      auto resp = rpc_client.read();
+      REQUIRE(resp == "");
+    }());
+  }
+  REQUIRE(rpc::remove_handler("do_nothing"));
+}
+
+TEST_CASE("Test with chunks - incomplete message", "[socket][chunks]")
+{
+  REQUIRE(rpc::add_handler("do_nothing", &do_nothing));
+
+  SECTION("Sending request by chunks, broken message")
+  {
+    const int S{50};
+    auto json{R"({"jsonrpc": "2.0", "method": "do_nothing", "params": { "msg": ")" + random_string(S) +
+              R"("}, "id": "chunk-parts-3)"};
+    //                                  ^  missing-> "}
+
+    REQUIRE_NOTHROW([&]() {
+      ScopedLocalSocket rpc_client;
+      using namespace std::chrono_literals;
+      rpc_client.connect();
+      rpc_client.send_in_chunks<3>(json);
+      auto resp = rpc_client.read();
+      REQUIRE(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
     }());
   }
   REQUIRE(rpc::remove_handler("do_nothing"));
