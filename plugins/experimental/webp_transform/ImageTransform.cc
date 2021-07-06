@@ -49,7 +49,7 @@ public:
   handleReadResponseHeaders(Transaction &transaction) override
   {
     transaction.getServerResponse().getHeaders()["Content-Type"] = "image/webp";
-    transaction.getServerResponse().getHeaders()["Vary"]         = "Content-Type"; // to have a separate cache entry.
+    transaction.getServerResponse().getHeaders()["Vary"]         = "Accept"; // to have a separate cache entry.
 
     TS_DEBUG(TAG, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
     transaction.resume();
