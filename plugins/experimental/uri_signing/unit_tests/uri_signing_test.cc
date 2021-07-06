@@ -571,7 +571,7 @@ TEST_CASE("7", "[TestsConfig]")
 
   SECTION("Config Loading ID Field")
   {
-    struct config *cfg = read_config("experimental/uri_signing/unit_tests/testConfig.config");
+    struct config *cfg = read_config(SRCDIR "/experimental/uri_signing/unit_tests/testConfig.config");
     REQUIRE(cfg != NULL);
     REQUIRE(strcmp(config_get_id(cfg), "tester") == 0);
     config_delete(cfg);
@@ -603,7 +603,7 @@ jws_validation_helper(const char *url, const char *package, struct config *cfg)
 TEST_CASE("8", "[TestsWithConfig]")
 {
   INFO("TEST 8, Tests Involving Validation with Config");
-  struct config *cfg = read_config("experimental/uri_signing/unit_tests/testConfig.config");
+  struct config *cfg = read_config(SRCDIR "/experimental/uri_signing/unit_tests/testConfig.config");
 
   SECTION("Validation of Valid Aud String in JWS")
   {
