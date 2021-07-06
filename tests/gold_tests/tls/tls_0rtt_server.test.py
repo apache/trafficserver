@@ -20,7 +20,10 @@ Test.Summary = '''
 Test ATS TLSv1.3 0-RTT support
 '''
 
-Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
+Test.SkipUnless(
+    Condition.HasOpenSSLVersion('1.1.1'),
+    Condition.IsOpenSSL(),
+)
 
 ts = Test.MakeATSProcess('ts', enable_tls=True)
 server = Test.MakeOriginServer('server')
