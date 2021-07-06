@@ -29,10 +29,36 @@ def HasOpenSSLVersion(self, version):
     openssl_str = json.loads(json_data)['openssl_str']
     exe_ver = re.search(r'\d\.\d\.\d', openssl_str).group(0)
     if exe_ver == '':
-        raise ValueError("Error determining version of openssl library needed by traffic_server executable")
+        raise ValueError("Error determining version of OpenSSL library needed by traffic_server executable")
     return self.Condition(
         lambda: exe_ver >= version,
-        "openssl library version is " + exe_ver + ", must be at least " + version
+        "OpenSSL library version is " + exe_ver + ", must be at least " + version
+    )
+
+
+def IsBoringSSL(self):
+    output = subprocess.check_output(
+        os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True
+    )
+    json_data = output.decode('utf-8')
+    openssl_str = json.loads(json_data)['openssl_str']
+    return self.Condition(
+        # OpenSSL 1.1.1 (compatible; BoringSSL)
+        lambda: "compatible; BoringSSL" in openssl_str,
+        "SSL library is not BoringSSL"
+    )
+
+
+def IsOpenSSL(self):
+    output = subprocess.check_output(
+        os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True
+    )
+    json_data = output.decode('utf-8')
+    openssl_str = json.loads(json_data)['openssl_str']
+    return self.Condition(
+        # OpenSSL 1.1.1k  25 Mar 2021
+        lambda: "OpenSSL" in openssl_str and "compatible; BoringSSL" not in openssl_str,
+        "SSL library is not OpenSSL"
     )
 
 
@@ -104,6 +130,8 @@ def PluginExists(self, pluginname):
 
 
 ExtendCondition(HasOpenSSLVersion)
+ExtendCondition(IsBoringSSL)
+ExtendCondition(IsOpenSSL)
 ExtendCondition(HasATSFeature)
 ExtendCondition(HasCurlVersion)
 ExtendCondition(HasCurlFeature)
