@@ -16,12 +16,74 @@
  * limitations under the License.
  */
 #include <unistd.h>
-#include <getopt.h>
 #include <cstdlib>
-#include <ts/ts.h>
-#include <ts/remap.h>
 
-#include "limiter.h"
+#include "ts/ts.h"
+#include "ts/remap.h"
+#include "tscore/ink_config.h"
+#include "txn_limiter.h"
+#include "utilities.h"
+
+// Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
+#if TS_USE_HELLO_CB
+
+#include "sni_selector.h"
+#include "sni_limiter.h"
+
+///////////////////////////////////////////////////////////////////////////////
+// As a global plugin, things works a little difference since we don't setup
+// per transaction or via remap.config.
+extern int gVCIdx;
+
+void
+TSPluginInit(int argc, const char *argv[])
+{
+  TSPluginRegistrationInfo info;
+
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
+
+  if (TS_SUCCESS != TSPluginRegister(&info)) {
+    TSError("[%s] plugin registration failed", PLUGIN_NAME);
+    return;
+  }
+
+  TSUserArgIndexReserve(TS_USER_ARGS_VCONN, PLUGIN_NAME, "VConn state information", &gVCIdx);
+
+  if (argc > 1) {
+    if (!strncasecmp(argv[1], "SNI=", 4)) {
+      TSCont sni_cont       = TSContCreate(sni_limit_cont, nullptr);
+      SniSelector *selector = new SniSelector();
+
+      TSReleaseAssert(sni_cont);
+      TSContDataSet(sni_cont, selector);
+
+      // Have to skip the first one, which is considered the 'program' name
+      --argc;
+      ++argv;
+
+      size_t num_sni = selector->factory(argv[0] + 4, argc, argv);
+      TSDebug(PLUGIN_NAME, "Finished loading %zu SNIs", num_sni);
+
+      TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, sni_cont);
+      TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, sni_cont);
+
+      selector->setupQueueCont(); // Start the queue processing continuation
+    } else if (!strncasecmp(argv[1], "HOST=", 5)) {
+      // TODO: Do we need to implement this ?? Or can we just defer this to the remap version?
+      --argc; // Skip the "HOST" arg of course when parsing the real parameters
+      ++argv;
+      // TSCont host_cont = TSContCreate(globalHostCont, nullptr);
+    } else {
+      TSError("[%s] unknown global limiter type: %s", PLUGIN_NAME, argv[1]);
+    }
+  } else {
+    TSError("[%s] Usage: rate_limit.so SNI|HOST [option arguments]", PLUGIN_NAME);
+  }
+}
+
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Setup stuff for the remap plugin
@@ -47,63 +109,25 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 void
 TSRemapDeleteInstance(void *ih)
 {
-  delete static_cast<RateLimiter *>(ih);
+  delete static_cast<TxnRateLimiter *>(ih);
 }
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  static const struct option longopt[] = {
-    {const_cast<char *>("limit"), required_argument, nullptr, 'l'},
-    {const_cast<char *>("queue"), required_argument, nullptr, 'q'},
-    {const_cast<char *>("error"), required_argument, nullptr, 'e'},
-    {const_cast<char *>("retry"), required_argument, nullptr, 'r'},
-    {const_cast<char *>("header"), required_argument, nullptr, 'h'},
-    {const_cast<char *>("maxage"), required_argument, nullptr, 'm'},
-    // EOF
-    {nullptr, no_argument, nullptr, '\0'},
-  };
+  TxnRateLimiter *limiter = new TxnRateLimiter();
 
-  RateLimiter *limiter = new RateLimiter();
-  TSReleaseAssert(limiter);
   // argv contains the "to" and "from" URLs. Skip the first so that the
   // second one poses as the program name.
   --argc;
   ++argv;
 
-  while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
-
-    switch (opt) {
-    case 'l':
-      limiter->limit = strtol(optarg, nullptr, 10);
-      break;
-    case 'q':
-      limiter->max_queue = strtol(optarg, nullptr, 10);
-      break;
-    case 'e':
-      limiter->error = strtol(optarg, nullptr, 10);
-      break;
-    case 'r':
-      limiter->retry = strtol(optarg, nullptr, 10);
-      break;
-    case 'm':
-      limiter->max_age = std::chrono::milliseconds(strtol(optarg, nullptr, 10));
-      break;
-    case 'h':
-      limiter->header = optarg;
-      break;
-    }
-    if (opt == -1) {
-      break;
-    }
-  }
-
-  limiter->setupQueueCont();
-
-  TSDebug(PLUGIN_NAME, "Added active_in limiter rule (limit=%u, queue=%u, error=%u", limiter->limit, limiter->max_queue,
-          limiter->error);
+  TSReleaseAssert(limiter);
+  limiter->initialize(argc, const_cast<const char **>(argv));
   *ih = static_cast<void *>(limiter);
+
+  TSDebug(PLUGIN_NAME, "Added active_in limiter rule (limit=%u, queue=%u, max-age=%ldms, error=%u)", limiter->limit,
+          limiter->max_queue, static_cast<long>(limiter->max_age.count()), limiter->error);
 
   return TS_SUCCESS;
 }
@@ -114,7 +138,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
-  RateLimiter *limiter = static_cast<RateLimiter *>(ih);
+  TxnRateLimiter *limiter = static_cast<TxnRateLimiter *>(ih);
 
   if (limiter) {
     if (!limiter->reserve()) {
