@@ -1984,21 +1984,25 @@ HttpSM::state_http_server_open(int event, void *data)
 int
 HttpSM::state_read_server_response_header(int event, void *data)
 {
-  if (data == server_entry->write_vio) {
+  STATE_ENTER(&HttpSM::state_read_server_response_header, event);
+  // If we had already received EOS, just go away. We would sometimes see
+  // a WRITE event appear after receiving EOS from the server connection
+  if (server_entry->eos) {
+    return 0;
+  } else if (data == server_entry->write_vio) {
     return this->state_send_server_request_header(event, data);
   }
-  STATE_ENTER(&HttpSM::state_read_server_response_header, event);
+
+  ink_assert(server_entry->eos != true);
   ink_assert(server_entry->read_vio == (VIO *)data);
   ink_assert(t_state.current.server->state == HttpTransact::STATE_UNDEFINED);
   ink_assert(t_state.current.state == HttpTransact::STATE_UNDEFINED);
 
   int bytes_used = 0;
-  VIO *vio       = static_cast<VIO *>(data);
 
   switch (event) {
   case VC_EVENT_EOS:
     server_entry->eos = true;
-    t_state.set_connect_fail(EPIPE);
 
   // Fall through
   case VC_EVENT_READ_READY:
@@ -2007,14 +2011,8 @@ HttpSM::state_read_server_response_header(int event, void *data)
     break;
 
   case VC_EVENT_ERROR:
-    t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
-    // Error handling function
-    handle_server_setup_error(event, data);
-    return 0;
-
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
-    t_state.set_connect_fail(ETIMEDOUT);
     // Error handling function
     handle_server_setup_error(event, data);
     return 0;
@@ -2046,7 +2044,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   // And don't allow empty headers from closed connections
   if ((state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTP_0_9 &&
        server_txn->get_transaction_id() > 1) ||
-      (server_entry->eos && vio->ndone == 0)) {
+      (server_entry->eos && state == PARSE_RESULT_CONT)) { // No more data will be coming
     state = PARSE_RESULT_ERROR;
   }
   // Check to see if we are over the hdr size limit
@@ -2065,6 +2063,8 @@ HttpSM::state_read_server_response_header(int event, void *data)
       tunnel.abort_tunnel();
       // Make sure client connection is closed when we are done in case there is cruft left over
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+      // Similarly the server connection should also be closed
+      t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
     }
   }
 
@@ -2158,6 +2158,7 @@ HttpSM::state_send_server_request_header(int event, void *data)
   if (server_entry->read_vio == data) {
     return this->state_read_server_response_header(event, data);
   }
+  ink_assert(server_entry->eos == false);
   ink_assert(server_entry->write_vio == (VIO *)data);
   STATE_ENTER(&HttpSM::state_send_server_request_header, event);
 

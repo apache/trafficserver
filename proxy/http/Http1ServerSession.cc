@@ -207,6 +207,7 @@ Http1ServerSession ::release_transaction()
       HTTP_INCREMENT_DYN_STAT(http_origin_close_private);
     }
     this->do_io_close();
+    ink_release_assert(transact_count == released_transactions);
   } else if (state == SSN_TO_RELEASE) {
     _vc->control_flags.set_flags(0);
 

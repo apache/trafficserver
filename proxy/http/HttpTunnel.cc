@@ -468,20 +468,14 @@ void
 HttpTunnel::reset()
 {
   ink_assert(active == false);
+#ifdef DEBUG
   for (auto &producer : producers) {
     ink_assert(producer.alive == false);
-    if (producer.alive && producer.vc) {
-      producer.vc->do_io_read(this, 0, nullptr);
-    }
-    producer.alive = false;
   }
   for (auto &consumer : consumers) {
     ink_assert(consumer.alive == false);
-    if (consumer.alive && consumer.vc) {
-      consumer.vc->do_io_write(this, 0, nullptr);
-    }
-    consumer.alive = false;
   }
+#endif
 
   call_sm       = false;
   num_producers = 0;
@@ -509,14 +503,18 @@ HttpTunnel::abort_tunnel()
 {
   active = false;
   deallocate_buffers();
-#ifdef DEBUG
   for (auto &producer : producers) {
+    if (producer.alive && producer.vc) {
+      producer.vc->do_io_read(this, 0, nullptr);
+    }
     producer.alive = false;
   }
   for (auto &consumer : consumers) {
+    if (consumer.alive && consumer.vc) {
+      consumer.vc->do_io_write(this, 0, nullptr);
+    }
     consumer.alive = false;
   }
-#endif
   reset();
 }
 
