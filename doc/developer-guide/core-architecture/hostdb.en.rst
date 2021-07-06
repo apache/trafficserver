@@ -90,6 +90,9 @@ used or not. A result of this is there is no longer a specific holder for API pr
 the interface now puts the address in the ``ResolveInfo`` and marks it as resolved. This prevents
 further DNS / HostDB lookups and the address is used as is.
 
+The upstream port is a bit tricky and should be cleaned up. Currently value in ``srv_port``
+determines the port if set. If not, then the port in ``addr`` is used.
+
 Resolution Style
 ----------------
 
