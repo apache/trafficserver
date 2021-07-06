@@ -174,7 +174,7 @@ template <> struct convert<YamlSNIConfig::Item> {
     }
 
     if (node[TS_verify_client_ca_certs]) {
-#if !defined(SSL_set1_verify_cert_store)
+#if !TS_HAS_VERIFY_CERT_STORE
       // TS was compiled with an older version of the OpenSSL interface, that doesn't have
       // SSL_set1_verify_cert_store().  We need this macro in order to set the CA certs for verifying clients
       // after the client sends the SNI server name.

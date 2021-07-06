@@ -1292,6 +1292,9 @@ TS_CHECK_EARLY_DATA
 # Check for openssl session ticket support
 TS_CHECK_SESSION_TICKET
 
+# Check for openssl verify cert store support
+TS_CHECK_VERIFY_CERT_STORE
+
 saved_LIBS="$LIBS"
 TS_ADDTO([LIBS], ["$OPENSSL_LIBS"])
 
