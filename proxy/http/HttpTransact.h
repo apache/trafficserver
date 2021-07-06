@@ -830,7 +830,6 @@ public:
       url_map.clear();
       arena.reset();
       unmapped_url.clear();
-      //      hostdb_entry.clear();
       dns_info.~ResolveInfo();
       outbound_conn_track_state.clear();
 

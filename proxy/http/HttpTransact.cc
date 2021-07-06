@@ -1937,6 +1937,8 @@ HttpTransact::OSDNSLookup(State *s)
   // If the SRV response has a port number, we should honor it. Otherwise we do the port defined in remap
   if (s->dns_info.resolved_p && s->dns_info.srv_port) {
     s->server_info.dst_addr.port() = htons(s->dns_info.srv_port);
+  } else if (s->dns_info.os_addr_style == ResolveInfo::OS_Addr::USE_API && 0 != ats_ip_port_cast(s->dns_info.addr)) {
+    // Nothing - port set via API and already copied over.
   } else {
     s->server_info.dst_addr.port() = htons(s->hdr_info.client_request.port_get()); // now we can set the port.
   }

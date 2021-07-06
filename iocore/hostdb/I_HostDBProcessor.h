@@ -539,7 +539,8 @@ struct ResolveInfo {
     USE_API      ///< Use the API provided address.
   };
 
-  ResolveInfo() = default;
+  ResolveInfo()  = default;
+  ~ResolveInfo() = default;
 
   /// Keep a reference to the base HostDB object, so it doesn't get GC'd.
   Ptr<HostDBRecord> record;
@@ -554,8 +555,7 @@ struct ResolveInfo {
   char const *lookup_name             = nullptr;
   char srv_hostname[MAXDNAME]         = {0};
   const sockaddr *inbound_remote_addr = nullptr; ///< Remote address of inbound client - used for hashing.
-  //  const sockaddr *client_target_addr  = nullptr; ///< Set if trying a transparent connection.
-  in_port_t srv_port = 0; ///< Port from SRV lookup or API call.
+  in_port_t srv_port                  = 0;       ///< Port from SRV lookup or API call.
 
   OS_Addr os_addr_style           = OS_Addr::TRY_DEFAULT;
   HostResStyle host_res_style     = HOST_RES_IPV4;

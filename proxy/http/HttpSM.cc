@@ -2263,7 +2263,6 @@ HttpSM::process_hostdb_info(HostDBRecord *record)
     NetVConnection *vc = ua_txn ? ua_txn->get_netvc() : nullptr;
     if (vc) {
       t_state.dns_info.set_upstream_address(vc->get_local_addr());
-      t_state.dns_info.srv_port      = ats_ip_port_cast(vc->get_local_addr());
       t_state.dns_info.os_addr_style = ResolveInfo::OS_Addr::TRY_CLIENT;
     }
   }
