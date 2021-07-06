@@ -31,17 +31,17 @@ AC_ARG_WITH([jemalloc], [AC_HELP_STRING([--with-jemalloc=DIR], [use a specific j
     case "$withval" in
       yes)
         jemalloc_base_dir="/usr"
-        AC_MSG_CHECKING(checking for jemalloc includes standard directories)
-	;;
+        AC_MSG_NOTICE(checking for jemalloc includes and libs in standard directories)
+        ;;
       *":"*)
         jemalloc_include="`echo $withval |sed -e 's/:.*$//'`"
         jemalloc_ldflags="`echo $withval |sed -e 's/^.*://'`"
-        AC_MSG_CHECKING(checking for jemalloc includes in $jemalloc_include libs in $jemalloc_ldflags)
+        AC_MSG_NOTICE(checking for jemalloc includes in $jemalloc_include and libs in $jemalloc_ldflags)
         ;;
       *)
         jemalloc_include="$withval/include"
         jemalloc_ldflags="$withval/lib"
-        AC_MSG_CHECKING(checking for jemalloc includes in $withval)
+        AC_MSG_NOTICE(checking for jemalloc includes in $jemalloc_include and libs in $jemalloc_ldflags)
         ;;
     esac
   fi
@@ -68,8 +68,20 @@ if test "$enable_jemalloc" != "no"; then
     AC_CHECK_HEADERS(jemalloc/jemalloc.h, [jemalloc_have_headers=1])
   fi
   if test "$jemalloc_have_headers" != "0"; then
-    jemalloch=1
+    AC_RUN_IFELSE([
+      AC_LANG_PROGRAM(
+        [#include <jemalloc/jemalloc.h>],
+        [
+          #if (JEMALLOC_VERSION_MAJOR == 0)
+          exit(1);
+          #endif
+        ]
+      )],
+      [jemalloch=1],
+      [AC_MSG_ERROR(jemalloc has bogus version)]
+    )
   else
+    AC_MSG_WARN([jemalloc not found])
     CPPFLAGS=$saved_cppflags
     LDFLAGS=$saved_ldflags
   fi

@@ -35,7 +35,7 @@ namespace ts
 /** Base class for ATS exception.
     Clients should subclass as appropriate. This is intended to carry
     pre-allocated text along so that it can be thrown without any
-    addditional memory allocation.
+    additional memory allocation.
 */
 class Exception
 {

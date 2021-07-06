@@ -29,6 +29,7 @@
 #include "P_SSLNetVConnection.h"
 #include "P_SSLNextProtocolSet.h"
 #include "I_IOBuffer.h"
+#include "records/I_RecHttp.h"
 
 class SSLNextProtocolAccept : public SessionAccept
 {
@@ -43,13 +44,10 @@ public:
   // lifetime is at least as long as that of the acceptor.
   bool registerEndpoint(const char *protocol, Continuation *handler);
 
-  // Unregister the handler. Returns false if this protocol is not registered
-  // or if it is not registered for the specified handler.
-  bool unregisterEndpoint(const char *protocol, Continuation *handler);
+  void enableProtocols(const SessionProtocolSet &protos);
 
   SLINK(SSLNextProtocolAccept, link);
   SSLNextProtocolSet *getProtoSet();
-  SSLNextProtocolSet *cloneProtoSet();
 
   // noncopyable
   SSLNextProtocolAccept(const SSLNextProtocolAccept &) = delete;            // disabled
@@ -61,6 +59,7 @@ private:
   MIOBuffer *buffer; // XXX do we really need this?
   Continuation *endpoint;
   SSLNextProtocolSet protoset;
+  SessionProtocolSet protoenabled;
   bool transparent_passthrough;
 
   friend struct SSLNextProtocolTrampoline;

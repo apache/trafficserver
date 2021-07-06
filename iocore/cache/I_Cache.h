@@ -62,9 +62,8 @@ typedef HTTPInfo CacheHTTPInfo;
 struct CacheProcessor : public Processor {
   CacheProcessor()
     : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
-      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
-      cb_after_init(nullptr),
-      wait_for_cache(0)
+      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION)
+
   {
   }
 
@@ -87,7 +86,7 @@ struct CacheProcessor : public Processor {
   Action *scan(Continuation *cont, char *hostname = nullptr, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
   Action *lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   inkcoreapi Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request,
-                               OverridableHttpConfigParams *params, time_t pin_in_cache = (time_t)0,
+                               const OverridableHttpConfigParams *params, time_t pin_in_cache = (time_t)0,
                                CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, CacheHTTPHdr *request, CacheHTTPInfo *old_info,
                      time_t pin_in_cache = (time_t)0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
@@ -159,8 +158,8 @@ struct CacheProcessor : public Processor {
   ts::VersionNumber min_stripe_version;
   ts::VersionNumber max_stripe_version;
 
-  CALLBACK_FUNC cb_after_init;
-  int wait_for_cache;
+  CALLBACK_FUNC cb_after_init = nullptr;
+  int wait_for_cache          = 0;
 };
 
 inline void
@@ -190,12 +189,10 @@ struct CacheVConnection : public VConnection {
   virtual void set_http_info(CacheHTTPInfo *info)  = 0;
   virtual void get_http_info(CacheHTTPInfo **info) = 0;
 
-  virtual bool is_ram_cache_hit() const           = 0;
-  virtual bool set_disk_io_priority(int priority) = 0;
-  virtual int get_disk_io_priority()              = 0;
-  virtual bool set_pin_in_cache(time_t t)         = 0;
-  virtual time_t get_pin_in_cache()               = 0;
-  virtual int64_t get_object_size()               = 0;
+  virtual bool is_ram_cache_hit() const   = 0;
+  virtual bool set_pin_in_cache(time_t t) = 0;
+  virtual time_t get_pin_in_cache()       = 0;
+  virtual int64_t get_object_size()       = 0;
   virtual bool
   is_compressed_in_ram() const
   {
@@ -206,6 +203,12 @@ struct CacheVConnection : public VConnection {
   get_volume_number() const
   {
     return -1;
+  }
+
+  virtual const char *
+  get_disk_path() const
+  {
+    return nullptr;
   }
 
   /** Test if the VC can support pread.

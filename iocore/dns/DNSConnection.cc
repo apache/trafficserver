@@ -27,6 +27,7 @@
   Commonality across all platforms -- move out as required.
 
 **************************************************************************/
+#include <tscore/ink_defs.h>
 #include "P_DNS.h"
 #include "P_DNSConnection.h"
 #include "P_DNSProcessor.h"
@@ -40,8 +41,6 @@
 #define FIRST_RANDOM_PORT (16000)
 #define LAST_RANDOM_PORT (60000)
 
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
-
 DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 
 //
@@ -49,7 +48,7 @@ DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 //
 
 DNSConnection::DNSConnection()
-  : fd(NO_FD), num(0), generator((uint32_t)((uintptr_t)time(nullptr) ^ (uintptr_t)this)), handler(nullptr)
+  : fd(NO_FD), generator(static_cast<uint32_t>(static_cast<uintptr_t>(time(nullptr)) ^ (uintptr_t)this))
 {
   memset(&ip, 0, sizeof(ip));
 }
@@ -81,7 +80,7 @@ DNSConnection::trigger()
 
   // Since the periodic check is removed, we need to call
   // this when it's triggered by EVENTIO_DNS_CONNECTION.
-  // The handler should be pionting to DNSHandler::mainEvent.
+  // The handler should be pointing to DNSHandler::mainEvent.
   // We can schedule an immediate event or call the handler
   // directly, and since both arguments are not being used
   // passing in 0 and nullptr will do the job.
@@ -140,24 +139,13 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
 
   if (opt._bind_random_port) {
     int retries = 0;
-    IpEndpoint bind_addr;
-    size_t bind_size = 0;
-    memset(&bind_addr, 0, sizeof bind_addr);
-    bind_addr.sa.sa_family = af;
-    if (AF_INET6 == af) {
-      bind_addr.sin6.sin6_addr = in6addr_any;
-      bind_size                = sizeof bind_addr.sin6;
-    } else {
-      bind_addr.sin.sin_addr.s_addr = INADDR_ANY;
-      bind_size                     = sizeof bind_addr.sin;
-    }
     while (retries++ < 10000) {
       ip_port_text_buffer b;
       uint32_t p                      = generator.random();
       p                               = static_cast<uint16_t>((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
       ats_ip_port_cast(&bind_addr.sa) = htons(p); // stuff port in sockaddr.
       Debug("dns", "random port = %s", ats_ip_nptop(&bind_addr.sa, b, sizeof b));
-      if ((res = socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto)) < 0) {
+      if (socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto) < 0) {
         continue;
       }
       goto Lok;

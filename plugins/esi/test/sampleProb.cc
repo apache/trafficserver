@@ -129,7 +129,7 @@ isAttemptReq(string URL, FailureData &data)
       // cout<<"Failure:"<<passFail[i].first<< "Total"<< (passFail[i].first+passFail[i].second )<<endl;
       if (passFail[i].first > 0) {
         avg += passFail[i].first / (passFail[i].first + passFail[i].second);
-        // cout<<"Prob of faillure:"<<passFail[i].first/(passFail[i].first+passFail[i].second)<<endl;
+        // cout<<"Prob of failure:"<<passFail[i].first/(passFail[i].first+passFail[i].second)<<endl;
       }
     }
 

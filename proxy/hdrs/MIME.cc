@@ -28,11 +28,15 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <cctype>
+#include <algorithm>
 #include "MIME.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"
 #include "HdrUtils.h"
 #include "HttpCompat.h"
+
+using ts::TextView;
 
 /***********************************************************************
  *                                                                     *
@@ -152,6 +156,7 @@ const char *MIME_FIELD_FORWARDED;
 const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
 const char *MIME_FIELD_SEC_WEBSOCKET_VERSION;
 const char *MIME_FIELD_HTTP2_SETTINGS;
+const char *MIME_FIELD_EARLY_DATA;
 
 const char *MIME_VALUE_BYTES;
 const char *MIME_VALUE_CHUNKED;
@@ -268,6 +273,7 @@ int MIME_LEN_FORWARDED;
 int MIME_LEN_SEC_WEBSOCKET_KEY;
 int MIME_LEN_SEC_WEBSOCKET_VERSION;
 int MIME_LEN_HTTP2_SETTINGS;
+int MIME_LEN_EARLY_DATA;
 
 int MIME_WKSIDX_ACCEPT;
 int MIME_WKSIDX_ACCEPT_CHARSET;
@@ -347,6 +353,7 @@ int MIME_WKSIDX_FORWARDED;
 int MIME_WKSIDX_SEC_WEBSOCKET_KEY;
 int MIME_WKSIDX_SEC_WEBSOCKET_VERSION;
 int MIME_WKSIDX_HTTP2_SETTINGS;
+int MIME_WKSIDX_EARLY_DATA;
 
 /***********************************************************************
  *                                                                     *
@@ -481,6 +488,8 @@ mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
     return;
   }
 
+  ink_assert(mh);
+
   mime_hdr_presence_set(mh, field->m_wks_idx);
 
   slot_id = hdrtoken_index_to_slotid(field->m_wks_idx);
@@ -557,6 +566,8 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
   uint32_t slot_index, index;
   uint64_t masksum;
 
+  ink_assert(mh != nullptr);
+
   masksum     = 0;
   slot_index  = 0;
   last_fblock = nullptr;
@@ -619,8 +630,9 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
         if (field->m_next_dup) {
           bool found = false;
           for (blk = &(mh->m_first_fblock); blk != nullptr; blk = blk->m_next) {
-            const char *addr = (const char *)(field->m_next_dup);
-            if ((addr >= (const char *)(blk)) && (addr < (const char *)(blk) + sizeof(MIMEFieldBlockImpl))) {
+            const char *addr = reinterpret_cast<const char *>(field->m_next_dup);
+            if ((addr >= reinterpret_cast<const char *>(blk)) &&
+                (addr < reinterpret_cast<const char *>(blk) + sizeof(MIMEFieldBlockImpl))) {
               found = true;
               break;
             }
@@ -737,11 +749,10 @@ mime_init()
     MIME_FIELD_X_ID                      = hdrtoken_string_to_wks("X-ID");
     MIME_FIELD_X_FORWARDED_FOR           = hdrtoken_string_to_wks("X-Forwarded-For");
     MIME_FIELD_FORWARDED                 = hdrtoken_string_to_wks("Forwarded");
-
-    MIME_FIELD_SEC_WEBSOCKET_KEY     = hdrtoken_string_to_wks("Sec-WebSocket-Key");
-    MIME_FIELD_SEC_WEBSOCKET_VERSION = hdrtoken_string_to_wks("Sec-WebSocket-Version");
-
-    MIME_FIELD_HTTP2_SETTINGS = hdrtoken_string_to_wks("HTTP2-Settings");
+    MIME_FIELD_SEC_WEBSOCKET_KEY         = hdrtoken_string_to_wks("Sec-WebSocket-Key");
+    MIME_FIELD_SEC_WEBSOCKET_VERSION     = hdrtoken_string_to_wks("Sec-WebSocket-Version");
+    MIME_FIELD_HTTP2_SETTINGS            = hdrtoken_string_to_wks("HTTP2-Settings");
+    MIME_FIELD_EARLY_DATA                = hdrtoken_string_to_wks("Early-Data");
 
     MIME_LEN_ACCEPT                    = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT);
     MIME_LEN_ACCEPT_CHARSET            = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_CHARSET);
@@ -818,11 +829,10 @@ mime_init()
     MIME_LEN_X_ID                      = hdrtoken_wks_to_length(MIME_FIELD_X_ID);
     MIME_LEN_X_FORWARDED_FOR           = hdrtoken_wks_to_length(MIME_FIELD_X_FORWARDED_FOR);
     MIME_LEN_FORWARDED                 = hdrtoken_wks_to_length(MIME_FIELD_FORWARDED);
-
-    MIME_LEN_SEC_WEBSOCKET_KEY     = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_KEY);
-    MIME_LEN_SEC_WEBSOCKET_VERSION = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_VERSION);
-
-    MIME_LEN_HTTP2_SETTINGS = hdrtoken_wks_to_length(MIME_FIELD_HTTP2_SETTINGS);
+    MIME_LEN_SEC_WEBSOCKET_KEY         = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_KEY);
+    MIME_LEN_SEC_WEBSOCKET_VERSION     = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_VERSION);
+    MIME_LEN_HTTP2_SETTINGS            = hdrtoken_wks_to_length(MIME_FIELD_HTTP2_SETTINGS);
+    MIME_LEN_EARLY_DATA                = hdrtoken_wks_to_length(MIME_FIELD_EARLY_DATA);
 
     MIME_WKSIDX_ACCEPT                    = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT);
     MIME_WKSIDX_ACCEPT_CHARSET            = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_CHARSET);
@@ -901,6 +911,7 @@ mime_init()
     MIME_WKSIDX_SEC_WEBSOCKET_KEY         = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_KEY);
     MIME_WKSIDX_SEC_WEBSOCKET_VERSION     = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_VERSION);
     MIME_WKSIDX_HTTP2_SETTINGS            = hdrtoken_wks_to_index(MIME_FIELD_HTTP2_SETTINGS);
+    MIME_WKSIDX_EARLY_DATA                = hdrtoken_wks_to_index(MIME_FIELD_EARLY_DATA);
 
     MIME_VALUE_BYTES                = hdrtoken_string_to_wks("bytes");
     MIME_VALUE_CHUNKED              = hdrtoken_string_to_wks("chunked");
@@ -975,12 +986,12 @@ mime_init_date_format_table()
   int m = 0, d = 0, y = 0;
 
   time(&now_secs);
-  now_days   = (int)(now_secs / (60 * 60 * 24));
+  now_days   = static_cast<int>(now_secs / (60 * 60 * 24));
   first_days = now_days - 366;
   last_days  = now_days + 366;
   num_days   = last_days - first_days + 1;
 
-  _days_to_mdy_fast_lookup_table           = (MDY *)ats_malloc(num_days * sizeof(MDY));
+  _days_to_mdy_fast_lookup_table           = static_cast<MDY *>(ats_malloc(num_days * sizeof(MDY)));
   _days_to_mdy_fast_lookup_table_first_day = first_days;
   _days_to_mdy_fast_lookup_table_last_day  = last_days;
 
@@ -1112,8 +1123,8 @@ mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHea
   ink_assert(((char *)&(s_mh->m_first_fblock.m_field_slots[MIME_FIELD_BLOCK_SLOTS]) - (char *)s_mh) == sizeof(struct MIMEHdrImpl));
 
   int top             = s_mh->m_first_fblock.m_freetop;
-  char *end           = (char *)&(s_mh->m_first_fblock.m_field_slots[top]);
-  int bytes_below_top = end - (char *)s_mh;
+  char *end           = reinterpret_cast<char *>(&(s_mh->m_first_fblock.m_field_slots[top]));
+  int bytes_below_top = end - reinterpret_cast<char *>(s_mh);
 
   // copies useful part of enclosed first block too
   memcpy(d_mh, s_mh, bytes_below_top);
@@ -1564,6 +1575,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
 void
 mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
 {
+  ink_assert(mh);
   MIMEField *next_dup = field->m_next_dup;
 
   // If this field is already detached, there's nothing to do. There must
@@ -1633,20 +1645,8 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
 {
   if (delete_all_dups) {
     while (field) {
-      // NOTE: we pass zero to field_detach for detach_all_dups
-      //       since this loop will already detach each dup
       MIMEField *next = field->m_next_dup;
-
-      heap->free_string(field->m_ptr_name, field->m_len_name);
-      heap->free_string(field->m_ptr_value, field->m_len_value);
-
-      MIME_HDR_SANITY_CHECK(mh);
-      mime_hdr_field_detach(mh, field, false);
-
-      MIME_HDR_SANITY_CHECK(mh);
-      mime_field_destroy(mh, field);
-
-      MIME_HDR_SANITY_CHECK(mh);
+      mime_hdr_field_delete(heap, mh, field, false);
       field = next;
     }
   } else {
@@ -1658,6 +1658,32 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
 
     MIME_HDR_SANITY_CHECK(mh);
     mime_field_destroy(mh, field);
+
+    MIMEFieldBlockImpl *prev_block = nullptr;
+    bool can_destroy_block         = true;
+    for (auto fblock = &(mh->m_first_fblock); fblock != nullptr; fblock = fblock->m_next) {
+      if (prev_block != nullptr) {
+        if (fblock->m_freetop == MIME_FIELD_BLOCK_SLOTS && fblock->contains(field)) {
+          // Check if fields in all slots are deleted
+          for (auto &m_field_slot : fblock->m_field_slots) {
+            if (m_field_slot.m_readiness != MIME_FIELD_SLOT_READINESS_DELETED) {
+              can_destroy_block = false;
+              break;
+            }
+          }
+          // Destroy a block and maintain the chain
+          if (can_destroy_block) {
+            prev_block->m_next = fblock->m_next;
+            _mime_field_block_destroy(heap, fblock);
+            if (prev_block->m_next == nullptr) {
+              mh->m_fblock_list_tail = prev_block;
+            }
+          }
+          break;
+        }
+      }
+      prev_block = fblock;
+    }
   }
 
   MIME_HDR_SANITY_CHECK(mh);
@@ -1754,7 +1780,7 @@ MIMEField::value_get_index(const char *value, int length) const
 
   // if field doesn't support commas and there is just one instance, just compare the value
   if (!this->supports_commas() && !this->has_dups()) {
-    if (this->m_len_value == (uint32_t)length && strncasecmp(value, this->m_ptr_value, length) == 0) {
+    if (this->m_len_value == static_cast<uint32_t>(length) && strncasecmp(value, this->m_ptr_value, length) == 0) {
       retval = 0;
     }
   } else {
@@ -1831,7 +1857,7 @@ mime_field_value_get_comma_val(const MIMEField *field, int *length, int idx)
     mime_field_value_get_comma_list(field, &list);
     str = list.get_idx(idx);
     if (str != nullptr) {
-      *length = (int)(str->len);
+      *length = static_cast<int>(str->len);
       return str->str;
     } else {
       *length = 0;
@@ -2069,7 +2095,7 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   if (extended_len <= sizeof(temp_buf)) {
     temp_ptr = temp_buf;
   } else {
-    temp_ptr = (char *)ats_malloc(extended_len);
+    temp_ptr = static_cast<char *>(ats_malloc(extended_len));
   }
 
   // (7) construct new extended token
@@ -2250,24 +2276,22 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
   }
 
   if (field) {
-    ts::ConstBuffer b(field->m_ptr_value, field->m_len_value);
-    ts::ConstBuffer host, port;
+    ts::TextView b{field->m_ptr_value, static_cast<size_t>(field->m_len_value)};
+    ts::TextView host, port;
 
     if (b) {
-      const char *x;
-
       if ('[' == *b) {
-        x = static_cast<const char *>(memchr(b._ptr, ']', b._size));
-        if (x && b.contains(x + 1) && ':' == x[1]) {
-          host = b.splitOn(x + 1);
+        auto idx = b.find(']');
+        if (idx <= b.size() && b[idx + 1] == ':') {
+          host = b.take_prefix_at(idx + 1);
           port = b;
         } else {
           host = b;
         }
       } else {
-        x = static_cast<const char *>(memchr(b._ptr, ':', b._size));
+        auto x = b.split_prefix_at(':');
         if (x) {
-          host = b.splitOn(x);
+          host = x;
           port = b;
         } else {
           host = b;
@@ -2276,18 +2300,18 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
 
       if (host) {
         if (host_ptr) {
-          *host_ptr = host._ptr;
+          *host_ptr = host.data();
         }
         if (host_len) {
-          *host_len = static_cast<int>(host._size);
+          *host_len = static_cast<int>(host.size());
         }
       }
       if (port) {
         if (port_ptr) {
-          *port_ptr = port._ptr;
+          *port_ptr = port.data();
         }
         if (port_len) {
-          *port_len = static_cast<int>(port._size);
+          *port_len = static_cast<int>(port.size());
         }
       }
     } else {
@@ -2302,215 +2326,161 @@ MIMEHdr::get_host_port_values(const char **host_ptr, ///< Pointer to host.
  *                          P A R S E R                                *
  *                                                                     *
  ***********************************************************************/
+
 void
-_mime_scanner_init(MIMEScanner *scanner)
+MIMEScanner::init()
 {
-  scanner->m_line        = nullptr;
-  scanner->m_line_size   = 0;
-  scanner->m_line_length = 0;
-  scanner->m_state       = MIME_PARSE_BEFORE;
+  m_state = INITIAL_PARSE_STATE;
+  // Ugly, but required because of how proxy allocation works - that leaves the instance in a
+  // random state, so even assigning to it can crash. Because this method substitutes for a real
+  // constructor in the proxy allocation system, call the CTOR here. Any memory that gets allocated
+  // is supposed to be cleaned up by calling @c clear on this object.
+  new (&m_line) std::string;
 }
 
-//////////////////////////////////////////////////////
-// init     first time structure setup              //
-// clear    resets an already-initialized structure //
-//////////////////////////////////////////////////////
-void
-mime_scanner_init(MIMEScanner *scanner)
+MIMEScanner &
+MIMEScanner::append(TextView text)
 {
-  _mime_scanner_init(scanner);
-}
-
-// clear is to reset an already initialized structure
-void
-mime_scanner_clear(MIMEScanner *scanner)
-{
-  ats_free(scanner->m_line);
-  _mime_scanner_init(scanner);
-}
-
-void
-mime_scanner_append(MIMEScanner *scanner, const char *data, int data_size)
-{
-  int free_size = scanner->m_line_size - scanner->m_line_length;
-
-  //////////////////////////////////////////////////////
-  // if not enough space, allocate or grow the buffer //
-  //////////////////////////////////////////////////////
-  if (data_size > free_size) {       // need to allocate/grow the buffer
-    if (scanner->m_line_size == 0) { // buffer should be at least 128 bytes
-      scanner->m_line_size = 128;
-    }
-
-    while (free_size < data_size) { // grow buffer by powers of 2
-      scanner->m_line_size *= 2;
-      free_size = scanner->m_line_size - scanner->m_line_length;
-    }
-
-    if (scanner->m_line == nullptr) { // if no buffer yet, allocate one
-      scanner->m_line = (char *)ats_malloc(scanner->m_line_size);
-    } else {
-      scanner->m_line = (char *)ats_realloc(scanner->m_line, scanner->m_line_size);
-    }
-  }
-  ////////////////////////////////////////////////
-  // append new data onto the end of the buffer //
-  ////////////////////////////////////////////////
-
-  memcpy(&(scanner->m_line[scanner->m_line_length]), data, data_size);
-  scanner->m_line_length += data_size;
+  m_line += text;
+  return *this;
 }
 
 ParseResult
-mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input_e, const char **output_s, const char **output_e,
-                 bool *output_shares_raw_input,
-                 bool raw_input_eof, ///< All data has been received for this header.
-                 int raw_input_scan_type)
+MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, bool eof_p, ScanType scan_type)
 {
-  const char *raw_input_c, *lf_ptr;
   ParseResult zret = PARSE_RESULT_CONT;
   // Need this for handling dangling CR.
-  static const char RAW_CR = ParseRules::CHAR_CR;
+  static const char RAW_CR{ParseRules::CHAR_CR};
 
-  ink_assert((raw_input_s != nullptr) && (*raw_input_s != nullptr));
-  ink_assert(raw_input_e != nullptr);
-
-  raw_input_c = *raw_input_s;
-
-  while (PARSE_RESULT_CONT == zret && raw_input_c < raw_input_e) {
-    ptrdiff_t runway = raw_input_e - raw_input_c; // remaining input.
-    switch (S->m_state) {
+  auto text = input;
+  while (PARSE_RESULT_CONT == zret && !text.empty()) {
+    switch (m_state) {
     case MIME_PARSE_BEFORE: // waiting to find a field.
-      if (ParseRules::is_cr(*raw_input_c)) {
-        ++raw_input_c;
-        if (runway >= 2 && ParseRules::is_lf(*raw_input_c)) {
+      m_line.resize(0);     // any caller should already be done with the buffer
+      if (ParseRules::is_cr(*text)) {
+        ++text;
+        if (!text.empty() && ParseRules::is_lf(*text)) {
           // optimize a bit - this happens >99% of the time after a CR.
-          ++raw_input_c;
+          ++text;
           zret = PARSE_RESULT_DONE;
         } else {
-          S->m_state = MIME_PARSE_FOUND_CR;
+          m_state = MIME_PARSE_FOUND_CR;
         }
-      } else if (ParseRules::is_lf(*raw_input_c)) {
-        ++raw_input_c;
+      } else if (ParseRules::is_lf(*text)) {
+        ++text;
         zret = PARSE_RESULT_DONE; // Required by regression test.
       } else {
         // consume this character in the next state.
-        S->m_state = MIME_PARSE_INSIDE;
+        m_state = MIME_PARSE_INSIDE;
       }
       break;
     case MIME_PARSE_FOUND_CR:
-      // Looking for a field and found a CR, which should mean terminating
-      // the header. Note that we've left the CR in the input so we have
-      // to skip over it.
-      if (ParseRules::is_lf(*raw_input_c)) {
-        // Header terminated.
-        ++raw_input_c;
+      // Looking for a field and found a CR, which should mean terminating the header.
+      if (ParseRules::is_lf(*text)) {
+        ++text;
         zret = PARSE_RESULT_DONE;
       } else {
-        // This really should be an error (spec doesn't permit lone CR)
-        // but the regression tests require it.
-        mime_scanner_append(S, &RAW_CR, 1);
-        S->m_state = MIME_PARSE_INSIDE;
+        // This really should be an error (spec doesn't permit lone CR) but the regression tests
+        // require it.
+        this->append(TextView(&RAW_CR, 1)); // This is to fix a core dump of the icc 19.1 compiler when {&RAW_CR, 1} is used
+        m_state = MIME_PARSE_INSIDE;
       }
       break;
-    case MIME_PARSE_INSIDE:
-      lf_ptr = static_cast<const char *>(memchr(raw_input_c, ParseRules::CHAR_LF, runway));
-      if (lf_ptr) {
-        raw_input_c = lf_ptr + 1;
-        if (MIME_SCANNER_TYPE_LINE == raw_input_scan_type) {
-          zret       = PARSE_RESULT_OK;
-          S->m_state = MIME_PARSE_BEFORE;
+    case MIME_PARSE_INSIDE: {
+      auto lf_off = text.find(ParseRules::CHAR_LF);
+      if (lf_off != TextView::npos) {
+        text.remove_prefix(lf_off + 1); // drop up to and including LF
+        if (LINE == scan_type) {
+          zret    = PARSE_RESULT_OK;
+          m_state = MIME_PARSE_BEFORE;
         } else {
-          S->m_state = MIME_PARSE_AFTER;
+          m_state = MIME_PARSE_AFTER; // looking for line folding.
         }
-      } else {
-        raw_input_c = raw_input_e; // grab all that's available.
+      } else { // no EOL, consume all text without changing state.
+        text.remove_prefix(text.size());
       }
-      break;
+    } break;
     case MIME_PARSE_AFTER:
-      // After a LF. Might be the end or a continuation.
-      if (ParseRules::is_ws(*raw_input_c)) {
-        char *unfold = const_cast<char *>(raw_input_c - 1);
-
-        *unfold-- = ' ';
+      // After a LF, the next line might be a continuation / folded line. That's indicated by a
+      // starting whitespace. If that's the case, back up over the preceding CR/LF with space and
+      // pretend it's the same line.
+      if (ParseRules::is_ws(*text)) { // folded line.
+        char *unfold = const_cast<char *>(text.data() - 1);
+        *unfold--    = ' ';
         if (ParseRules::is_cr(*unfold)) {
           *unfold = ' ';
         }
-        S->m_state = MIME_PARSE_INSIDE; // back inside the field.
+        m_state = MIME_PARSE_INSIDE; // back inside the field.
       } else {
-        S->m_state = MIME_PARSE_BEFORE; // field terminated.
-        zret       = PARSE_RESULT_OK;
+        m_state = MIME_PARSE_BEFORE; // field terminated.
+        zret    = PARSE_RESULT_OK;
       }
       break;
     }
   }
 
-  ptrdiff_t data_size = raw_input_c - *raw_input_s;
+  TextView parsed_text{input.data(), text.data()};
+  bool save_parsed_text_p = !parsed_text.empty();
 
   if (PARSE_RESULT_CONT == zret) {
-    // data ran out before we got a clear final result.
-    // There a number of things we need to check and possibly adjust
-    // that result. It's less complex to do this cleanup than handle
-    // in the parser state machine.
-    if (raw_input_eof) {
+    // data ran out before we got a clear final result. There a number of things we need to check
+    // and possibly adjust that result. It's less complex to do this cleanup than handle all of
+    // these checks in the parser state machine.
+    if (eof_p) {
       // Should never return PARSE_CONT if we've hit EOF.
-      if (0 == data_size) {
+      if (parsed_text.empty()) {
         // all input previously consumed. If we're between fields, that's cool.
-        if (MIME_PARSE_INSIDE != S->m_state) {
-          S->m_state = MIME_PARSE_BEFORE; // probably not needed...
-          zret       = PARSE_RESULT_DONE;
+        if (MIME_PARSE_INSIDE != m_state) {
+          m_state = MIME_PARSE_BEFORE; // probably not needed...
+          zret    = PARSE_RESULT_DONE;
         } else {
           zret = PARSE_RESULT_ERROR; // unterminated field.
         }
-      } else if (MIME_PARSE_AFTER == S->m_state) {
-        // Special case it seems - need to accept the final field
-        // even if there's no header terminating CR LF. We check for
-        // absolute end of input because otherwise this might be
-        // a multiline field where we haven't seen the next leading space.
-        S->m_state = MIME_PARSE_BEFORE;
-        zret       = PARSE_RESULT_OK;
+      } else if (MIME_PARSE_AFTER == m_state) {
+        // Special case it seems - need to accept the final field even if there's no header
+        // terminating CR LF. This is only reasonable after absolute end of input (EOF) because
+        // otherwise this might be a multiline field where we haven't seen the next leading space.
+        m_state = MIME_PARSE_BEFORE;
+        zret    = PARSE_RESULT_OK;
       } else {
         // Partial input, no field / line CR LF
         zret = PARSE_RESULT_ERROR; // Unterminated field.
       }
-    } else if (data_size) {
-      if (MIME_PARSE_INSIDE == S->m_state) {
+    } else if (!parsed_text.empty()) {
+      if (MIME_PARSE_INSIDE == m_state) {
         // Inside a field but more data is expected. Save what we've got.
-        mime_scanner_append(S, *raw_input_s, data_size);
-        data_size = 0; // Don't append again.
-      } else if (MIME_PARSE_AFTER == S->m_state) {
+        this->append(parsed_text);  // Do this here to force appending.
+        save_parsed_text_p = false; // don't double append.
+      } else if (MIME_PARSE_AFTER == m_state) {
         // After a field but we still have data. Need to parse it too.
-        S->m_state = MIME_PARSE_BEFORE;
-        zret       = PARSE_RESULT_OK;
+        m_state = MIME_PARSE_BEFORE;
+        zret    = PARSE_RESULT_OK;
       }
     }
   }
 
-  if (data_size && S->m_line_length) {
+  if (save_parsed_text_p && !m_line.empty()) {
     // If we're already accumulating, continue to do so if we have data.
-    mime_scanner_append(S, *raw_input_s, data_size);
+    this->append(parsed_text);
   }
-  // No sharing if we've accumulated data (really, force this to make compiler shut up).
-  *output_shares_raw_input = 0 == S->m_line_length;
 
   // adjust out arguments.
+  output_shares_input = true;
   if (PARSE_RESULT_CONT != zret) {
-    if (0 != S->m_line_length) {
-      *output_s        = S->m_line;
-      *output_e        = *output_s + S->m_line_length;
-      S->m_line_length = 0;
+    if (!m_line.empty()) {
+      output              = m_line; // cleared when called with state MIME_PARSE_BEFORE
+      output_shares_input = false;
     } else {
-      *output_s = *raw_input_s;
-      *output_e = raw_input_c;
+      output = parsed_text;
     }
   }
 
-  // Make sure there are no '\0' in the input scanned so far
-  if (zret != PARSE_RESULT_ERROR && memchr(*raw_input_s, '\0', raw_input_c - *raw_input_s) != nullptr) {
+  // Make sure there are no null characters in the input scanned so far
+  if (zret != PARSE_RESULT_ERROR && TextView::npos != parsed_text.find('\0')) {
     zret = PARSE_RESULT_ERROR;
   }
 
-  *raw_input_s = raw_input_c; // mark input consumed.
+  input.remove_prefix(parsed_text.size());
   return zret;
 }
 
@@ -2528,34 +2498,23 @@ _mime_parser_init(MIMEParser *parser)
 void
 mime_parser_init(MIMEParser *parser)
 {
-  mime_scanner_init(&parser->m_scanner);
+  parser->m_scanner.init();
   _mime_parser_init(parser);
 }
 
 void
 mime_parser_clear(MIMEParser *parser)
 {
-  mime_scanner_clear(&parser->m_scanner);
+  parser->m_scanner.clear();
   _mime_parser_init(parser);
 }
 
 ParseResult
 mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char **real_s, const char *real_e,
-                  bool must_copy_strings, bool eof)
+                  bool must_copy_strings, bool eof, bool remove_ws_from_field_name, size_t max_hdr_field_size)
 {
   ParseResult err;
   bool line_is_real;
-  const char *colon;
-  const char *line_c;
-  const char *line_s = nullptr;
-  const char *line_e = nullptr;
-  const char *field_name_first;
-  const char *field_name_last;
-  const char *field_value_first;
-  const char *field_value_last;
-  const char *field_line_first;
-  const char *field_line_last;
-  int field_name_length, field_value_length;
 
   MIMEScanner *scanner = &parser->m_scanner;
 
@@ -2564,22 +2523,23 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // get a name:value line, with all continuation lines glued into one line //
     ////////////////////////////////////////////////////////////////////////////
 
-    err = mime_scanner_get(scanner, real_s, real_e, &line_s, &line_e, &line_is_real, eof, MIME_SCANNER_TYPE_FIELD);
+    TextView text{*real_s, real_e};
+    TextView parsed;
+    err     = scanner->get(text, parsed, line_is_real, eof, MIMEScanner::FIELD);
+    *real_s = text.data();
     if (err != PARSE_RESULT_OK) {
       return err;
     }
-
-    line_c = line_s;
 
     //////////////////////////////////////////////////
     // if got a LF or CR on its own, end the header //
     //////////////////////////////////////////////////
 
-    if ((line_e - line_c >= 2) && (line_c[0] == ParseRules::CHAR_CR) && (line_c[1] == ParseRules::CHAR_LF)) {
+    if ((parsed.size() >= 2) && (parsed[0] == ParseRules::CHAR_CR) && (parsed[1] == ParseRules::CHAR_LF)) {
       return PARSE_RESULT_DONE;
     }
 
-    if ((line_e - line_c >= 1) && (line_c[0] == ParseRules::CHAR_LF)) {
+    if ((parsed.size() >= 1) && (parsed[0] == ParseRules::CHAR_LF)) {
       return PARSE_RESULT_DONE;
     }
 
@@ -2587,27 +2547,23 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // find pointers into the name:value field //
     /////////////////////////////////////////////
 
-    field_line_first = line_c;
-    field_line_last  = line_e - 1;
-
-    // find name first
-    field_name_first = line_c;
     /**
      * Fix for INKqa09141. The is_token function fails for '@' character.
      * Header names starting with '@' signs are valid headers. Hence we
      * have to add one more check to see if the first parameter is '@'
      * character then, the header name is valid.
      **/
-    if ((!ParseRules::is_token(*field_name_first)) && (*field_name_first != '@')) {
+    if ((!ParseRules::is_token(*parsed)) && (*parsed != '@')) {
       continue; // toss away garbage line
     }
 
     // find name last
-    colon = (char *)memchr(line_c, ':', (line_e - line_c));
-    if (!colon) {
+    auto field_value = parsed; // need parsed as is later on.
+    auto field_name  = field_value.split_prefix_at(':');
+    if (field_name.empty()) {
       continue; // toss away garbage line
     }
-    field_name_last = colon - 1;
+
     // RFC7230 section 3.2.4:
     // No whitespace is allowed between the header field-name and colon.  In
     // the past, differences in the handling of such whitespace have led to
@@ -2615,57 +2571,51 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // server MUST reject any received request message that contains
     // whitespace between a header field-name and colon with a response code
     // of 400 (Bad Request).
-    if ((field_name_last >= field_name_first) && is_ws(*field_name_last)) {
-      return PARSE_RESULT_ERROR;
+    // A proxy MUST remove any such whitespace from a response message before
+    // forwarding the message downstream.
+    bool raw_print_field = true;
+    if (is_ws(field_name.back())) {
+      if (!remove_ws_from_field_name) {
+        return PARSE_RESULT_ERROR;
+      }
+      field_name.rtrim_if(&ParseRules::is_ws);
+      raw_print_field = false;
     }
 
     // find value first
-    field_value_first = colon + 1;
-    while ((field_value_first < line_e) && is_ws(*field_value_first)) {
-      ++field_value_first;
-    }
+    field_value.ltrim_if(&ParseRules::is_ws);
+    field_value.rtrim_if(&ParseRules::is_wslfcr);
 
-    // find_value_last
-    field_value_last = line_e - 1;
-    while ((field_value_last >= field_value_first) && ParseRules::is_wslfcr(*field_value_last)) {
-      --field_value_last;
-    }
-
-    field_name_length  = (int)(field_name_last - field_name_first + 1);
-    field_value_length = (int)(field_value_last - field_value_first + 1);
-
-    // Make sure the name or value is not longer than 64K
-    if (field_name_length >= UINT16_MAX || field_value_length >= UINT16_MAX) {
+    // Make sure the name + value is not longer than configured max_hdr_field_size
+    if (field_name.size() + field_value.size() > max_hdr_field_size) {
       return PARSE_RESULT_ERROR;
     }
 
-    int total_line_length = (int)(field_line_last - field_line_first + 1);
+    //    int total_line_length = (int)(field_line_last - field_line_first + 1);
 
     //////////////////////////////////////////////////////////////////////
     // if we can't leave the name & value in the real buffer, copy them //
     //////////////////////////////////////////////////////////////////////
 
     if (must_copy_strings || (!line_is_real)) {
-      int length     = total_line_length;
-      char *dup      = heap->duplicate_str(field_name_first, length);
-      intptr_t delta = dup - field_name_first;
-
-      field_name_first += delta;
-      field_value_first += delta;
+      char *dup       = heap->duplicate_str(parsed.data(), parsed.size());
+      ptrdiff_t delta = dup - parsed.data();
+      field_name.assign(field_name.data() + delta, field_name.size());
+      field_value.assign(field_value.data() + delta, field_value.size());
     }
     ///////////////////////
     // tokenize the name //
     ///////////////////////
 
-    int field_name_wks_idx = hdrtoken_tokenize(field_name_first, field_name_length);
+    int field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size());
 
     ///////////////////////////////////////////
     // build and insert the new field object //
     ///////////////////////////////////////////
 
     MIMEField *field = mime_field_create(heap, mh);
-    mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name_first, field_name_length, field_value_first,
-                              field_value_length, true, total_line_length, false);
+    mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name.data(), field_name.size(), field_value.data(),
+                              field_value.size(), raw_print_field, parsed.size(), false);
     mime_hdr_field_attach(mh, field, 1, nullptr);
   }
 }
@@ -2676,7 +2626,7 @@ mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
   MIMEFieldBlockImpl *fblock;
   MIMEHdrImpl *obj = (MIMEHdrImpl *)raw;
 
-  Debug("http", "\n\t[PBITS: 0x%08X%08X, SLACC: 0x%04X%04X%04X%04X, HEADBLK: %p, TAILBLK: %p]",
+  Debug("http", "\t[PBITS: 0x%08X%08X, SLACC: 0x%04X%04X%04X%04X, HEADBLK: %p, TAILBLK: %p]",
         (uint32_t)((obj->m_presence_bits >> 32) & (TOK_64_CONST(0xFFFFFFFF))),
         (uint32_t)((obj->m_presence_bits >> 0) & (TOK_64_CONST(0xFFFFFFFF))), obj->m_slot_accelerators[0],
         obj->m_slot_accelerators[1], obj->m_slot_accelerators[2], obj->m_slot_accelerators[3], &(obj->m_first_fblock),
@@ -2782,11 +2732,12 @@ mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start
   return 1;
 }
 
-int
-mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+namespace
 {
-  int copy_l;
-
+int
+mime_mem_print_(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout,
+                int (*char_transform)(int char_in))
+{
   if (buf_start == nullptr) { // this case should only be used by test_header
     ink_release_assert(buf_index_inout == nullptr);
     ink_release_assert(buf_chars_to_skip_inout == nullptr);
@@ -2796,7 +2747,6 @@ mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, in
     return 1;
   }
 
-  ink_assert(buf_start != nullptr);
   ink_assert(src_d != nullptr);
 
   if (*buf_chars_to_skip_inout > 0) {
@@ -2810,12 +2760,33 @@ mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, in
     }
   }
 
-  copy_l = std::min(buf_length - *buf_index_inout, src_l);
+  int copy_l = std::min(buf_length - *buf_index_inout, src_l);
   if (copy_l > 0) {
-    memcpy(buf_start + *buf_index_inout, src_d, copy_l);
+    buf_start += *buf_index_inout;
+    std::transform(src_d, src_d + copy_l, buf_start, char_transform);
     *buf_index_inout += copy_l;
   }
   return (src_l == copy_l);
+}
+
+int
+to_same_char(int ch)
+{
+  return ch;
+}
+
+} // end anonymous namespace
+
+int
+mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+{
+  return mime_mem_print_(src_d, src_l, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, to_same_char);
+}
+
+int
+mime_mem_print_lc(const char *src_d, int src_l, char *buf_start, int buf_length, int *buf_index_inout, int *buf_chars_to_skip_inout)
+{
+  return mime_mem_print_(src_d, src_l, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout, std::tolower);
 }
 
 int
@@ -3030,15 +3001,15 @@ mime_format_date(char *buffer, time_t value)
 
   buf = buffer;
 
-  sec = (int)(value % 60);
+  sec = static_cast<int>(value % 60);
   value /= 60;
-  min = (int)(value % 60);
+  min = static_cast<int>(value % 60);
   value /= 60;
-  hour = (int)(value % 24);
+  hour = static_cast<int>(value % 24);
   value /= 24;
 
   /* Jan 1, 1970 was a Thursday */
-  wday = (int)((4 + value) % 7);
+  wday = static_cast<int>((4 + value) % 7);
 
 /* value is days since Jan 1, 1970 */
 #if MIME_FORMAT_DATE_USE_LOOKUP_TABLE
@@ -3140,12 +3111,18 @@ mime_parse_int(const char *buf, const char *end)
     return 0;
   }
 
-  if (is_digit(*buf)) // fast case
-  {
+  if (is_digit(*buf)) { // fast case
     num = *buf++ - '0';
     while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) + (*buf++ - '0');
+      if (num != INT_MAX) {
+        int new_num = (num * 10) + (*buf++ - '0');
+
+        num = (new_num < num ? INT_MAX : new_num); // Check for overflow
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
     }
+
     return num;
   } else {
     num      = 0;
@@ -3162,7 +3139,13 @@ mime_parse_int(const char *buf, const char *end)
     // NOTE: we first compute the value as negative then correct the
     // sign back to positive. This enables us to correctly parse MININT.
     while ((buf != end) && is_digit(*buf)) {
-      num = (num * 10) - (*buf++ - '0');
+      if (num != INT_MIN) {
+        int new_num = (num * 10) - (*buf++ - '0');
+
+        num = (new_num > num ? INT_MIN : new_num); // Check for overflow, so to speak, see above re: negative
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
     }
 
     if (!negative) {
@@ -3407,7 +3390,7 @@ mime_parse_date(const char *buf, const char *end)
   int mday;
 
   if (!buf) {
-    return (time_t)0;
+    return static_cast<time_t>(0);
   }
 
   while ((buf != end) && is_ws(*buf)) {
@@ -3416,24 +3399,24 @@ mime_parse_date(const char *buf, const char *end)
 
   if ((buf != end) && is_digit(*buf)) { // NNTP date
     if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
     if (!mime_parse_month(buf, end, &tp.tm_mon)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
     if (!mime_parse_year(buf, end, &tp.tm_year)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
     if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
   } else if (end && (end - buf >= 29) && (buf[3] == ',')) {
     if (!mime_parse_rfc822_date_fastcase(buf, end - buf, &tp)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
   } else {
     if (!mime_parse_day(buf, end, &tp.tm_wday)) {
-      return (time_t)0;
+      return static_cast<time_t>(0);
     }
 
     while ((buf != end) && is_ws(*buf)) {
@@ -3443,31 +3426,31 @@ mime_parse_date(const char *buf, const char *end)
     if ((buf != end) && ((*buf == ',') || is_digit(*buf))) {
       // RFC 822 or RFC 850 time format
       if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_month(buf, end, &tp.tm_mon)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_year(buf, end, &tp.tm_year)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
-      // ignore timezone specifier...should always be GMT anways
+      // ignore timezone specifier...should always be GMT anyways
     } else {
       // ANSI C's asctime format
       if (!mime_parse_month(buf, end, &tp.tm_mon)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_time(buf, end, &tp.tm_hour, &tp.tm_min, &tp.tm_sec)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
       if (!mime_parse_year(buf, end, &tp.tm_year)) {
-        return (time_t)0;
+        return static_cast<time_t>(0);
       }
     }
   }
@@ -3478,10 +3461,10 @@ mime_parse_date(const char *buf, const char *end)
 
   // what should we do?
   if (year > 137) {
-    return (time_t)INT_MAX;
+    return static_cast<time_t>(INT_MAX);
   }
   if (year < 70) {
-    return (time_t)0;
+    return static_cast<time_t>(0);
   }
 
   mday += days[month];
@@ -3497,7 +3480,7 @@ mime_parse_date(const char *buf, const char *end)
   return t;
 }
 
-int
+bool
 mime_parse_day(const char *&buf, const char *end, int *day)
 {
   const char *e;
@@ -3513,14 +3496,14 @@ mime_parse_day(const char *&buf, const char *end, int *day)
 
   *day = day_names_dfa->match({buf, size_t(e - buf)});
   if (*day < 0) {
-    return 0;
+    return false;
   } else {
     buf = e;
-    return 1;
+    return true;
   }
 }
 
-int
+bool
 mime_parse_month(const char *&buf, const char *end, int *month)
 {
   const char *e;
@@ -3536,20 +3519,20 @@ mime_parse_month(const char *&buf, const char *end, int *month)
 
   *month = month_names_dfa->match({buf, size_t(e - buf)});
   if (*month < 0) {
-    return 0;
+    return false;
   } else {
     buf = e;
-    return 1;
+    return true;
   }
 }
 
-int
+bool
 mime_parse_mday(const char *&buf, const char *end, int *mday)
 {
   return mime_parse_integer(buf, end, mday);
 }
 
-int
+bool
 mime_parse_year(const char *&buf, const char *end, int *year)
 {
   int val;
@@ -3559,7 +3542,7 @@ mime_parse_year(const char *&buf, const char *end, int *year)
   }
 
   if ((buf == end) || (*buf == '\0')) {
-    return 0;
+    return false;
   }
 
   val = 0;
@@ -3576,59 +3559,88 @@ mime_parse_year(const char *&buf, const char *end, int *year)
 
   *year = val;
 
-  return 1;
+  return true;
 }
 
-int
+bool
 mime_parse_time(const char *&buf, const char *end, int *hour, int *min, int *sec)
 {
   if (!mime_parse_integer(buf, end, hour)) {
-    return 0;
+    return false;
   }
   if (!mime_parse_integer(buf, end, min)) {
-    return 0;
+    return false;
   }
   if (!mime_parse_integer(buf, end, sec)) {
-    return 0;
+    return false;
   }
-  return 1;
+  return true;
 }
 
-// TODO: Do we really need mime_parse_int() and mime_parse_integer() ? I know
-// they have slightly different prototypes, but still...
-int
+// This behaves slightly different than mime_parse_int(), int that we actually
+// return a "bool" for success / failure on "reasonable" parsing. This kinda
+// dumb, because we have two interfaces, where one does not move along the
+// buf pointer, but this one does (and the ones using this function do).
+bool
 mime_parse_integer(const char *&buf, const char *end, int *integer)
 {
-  int val;
-  bool negative;
-
-  negative = false;
-
   while ((buf != end) && *buf && !is_digit(*buf) && (*buf != '-')) {
     buf += 1;
   }
 
   if ((buf == end) || (*buf == '\0')) {
-    return 0;
+    return false;
   }
 
-  if (*buf == '-') {
-    negative = true;
-    buf += 1;
-  }
+  int32_t num;
+  bool negative;
 
-  val = 0;
-  while ((buf != end) && is_digit(*buf)) {
-    val = (val * 10) + (*buf++ - '0');
-  }
+  // This code is copied verbatim from mime_parse_int ... Sigh. Maybe amc is right, and
+  // we really need to clean this up. But, as such, we should redo all these interfaces,
+  // and that's a big undertaking (and we'd want to move these strings all to string_view's).
+  if (is_digit(*buf)) { // fast case
+    num = *buf++ - '0';
+    while ((buf != end) && is_digit(*buf)) {
+      if (num != INT_MAX) {
+        int new_num = (num * 10) + (*buf++ - '0');
 
-  if (negative) {
-    *integer = -val;
+        num = (new_num < num ? INT_MAX : new_num); // Check for overflow
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
+    }
   } else {
-    *integer = val;
+    num      = 0;
+    negative = false;
+
+    while ((buf != end) && ParseRules::is_space(*buf)) {
+      buf += 1;
+    }
+
+    if ((buf != end) && (*buf == '-')) {
+      negative = true;
+      buf += 1;
+    }
+    // NOTE: we first compute the value as negative then correct the
+    // sign back to positive. This enables us to correctly parse MININT.
+    while ((buf != end) && is_digit(*buf)) {
+      if (num != INT_MIN) {
+        int new_num = (num * 10) - (*buf++ - '0');
+
+        num = (new_num > num ? INT_MIN : new_num); // Check for overflow, so to speak, see above re: negative
+      } else {
+        ++buf; // Skip the remaining (valid) digits since we reached MAX/MIN_INT
+      }
+    }
+
+    if (!negative) {
+      num = -num;
+    }
   }
 
-  return 1;
+  *integer = num;
+
+  return true;
 }
 
 /***********************************************************************

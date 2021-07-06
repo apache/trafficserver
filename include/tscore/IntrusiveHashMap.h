@@ -298,7 +298,7 @@ protected:
 
   Bucket *bucket_for(key_type key);
 
-  ExpansionPolicy _expansion_policy{DEFAULT_EXPANSION_POLICY}; ///< When to exand the table.
+  ExpansionPolicy _expansion_policy{DEFAULT_EXPANSION_POLICY}; ///< When to expand the table.
   size_t _expansion_limit{DEFAULT_EXPANSION_LIMIT};            ///< Limit value for expansion.
 
   // noncopyable
@@ -343,6 +343,9 @@ IntrusiveHashMap<H>::Bucket::clear()
   _v       = nullptr;
   _count   = 0;
   _mixed_p = false;
+  // These can be left set during an expansion, when the bucket did have elements before but not
+  // after. Therefore make sure they are cleared.
+  _link._next = _link._prev = nullptr;
 }
 
 template <typename H>
@@ -536,16 +539,6 @@ IntrusiveHashMap<H>::insert(value_type *v)
     if (spot != bucket->_v) {
       mixed_p = true; // found some other key, it's going to be mixed.
     }
-    if (spot != limit) {
-      // If an equal key was found, walk past those to insert at the upper end of the range.
-      do {
-        spot = H::next_ptr(spot);
-      } while (spot != limit && H::equal(key, H::key_of(spot)));
-      if (spot != limit) { // something not equal past last equivalent, it's going to be mixed.
-        mixed_p = true;
-      }
-    }
-
     _list.insert_before(spot, v);
     if (spot == bucket->_v) { // added before the bucket start, update the start.
       bucket->_v = v;
@@ -585,9 +578,9 @@ IntrusiveHashMap<H>::erase(iterator const &loc) -> iterator
 
 template <typename H>
 bool
-IntrusiveHashMap<H>::erase(value_type *value)
+IntrusiveHashMap<H>::erase(value_type *v)
 {
-  auto loc = this->find(value);
+  auto loc = this->iterator_for(v);
   if (loc != this->end()) {
     this->erase(loc);
     return true;

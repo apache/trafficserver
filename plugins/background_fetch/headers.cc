@@ -75,6 +75,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
     bool first = true;
 
     while (field_loc) {
+      tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
       if (first) {
         first = false;
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, val, val_len)) {
@@ -83,7 +84,6 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
       } else {
         TSMimeHdrFieldDestroy(bufp, hdr_loc, field_loc);
       }
-      tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
       TSHandleMLocRelease(bufp, hdr_loc, field_loc);
       field_loc = tmp;
     }
@@ -100,7 +100,6 @@ dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
   TSIOBuffer output_buffer;
   TSIOBufferReader reader;
   TSIOBufferBlock block;
-  const char *block_start;
   int64_t block_avail;
 
   output_buffer = TSIOBufferCreate();
@@ -112,7 +111,7 @@ dump_headers(TSMBuffer bufp, TSMLoc hdr_loc)
   /* We need to loop over all the buffer blocks, there can be more than 1 */
   block = TSIOBufferReaderStart(reader);
   do {
-    block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
+    const char *block_start = TSIOBufferBlockReadStart(block, reader, &block_avail);
     if (block_avail > 0) {
       TSDebug(PLUGIN_NAME, "Headers are:\n%.*s", static_cast<int>(block_avail), block_start);
     }

@@ -55,7 +55,7 @@ It is this class that provides support for using :class:`Continuation` instances
 overrides the :func:`Thread::execute` method to gain control after the underlying thread is started.
 This method executes a single continuation at thread start. If the thread is :enumerator:
 
-`ThreadType::DEDICATED` it returns after invoking the start continuation. No join is exectuted, the
+`ThreadType::DEDICATED` it returns after invoking the start continuation. No join is executed, the
 presumption is the start continuation will run until process termination. This mechanism is used
 because it is, from the |TS| point of view, the easiest to use because of the common support of
 continuations.
@@ -82,7 +82,7 @@ form
 
 .. code-block:: cpp
 
-   int ET_GROUP; // global variable, where "GROUP" is repalced by the actual group / type name.
+   int ET_GROUP; // global variable, where "GROUP" is replaced by the actual group / type name.
    int n_group_threads = 3; // Want 3 of these threads by default, possibly changed by configuration options.
    constexpr size_t GROUP_STACK_SIZE = DEFAULT_STACK_SIZE; // stack size for each thread.
    void Group_Thread_Init(EThread*); // function to perform per thread local initialization.
@@ -96,7 +96,7 @@ The function :code:`Group_Thread_Init` can be replaced with a continuation if th
 convenient. One advantage of a continuation is additional data (via :arg:`cookie`) can be provide
 during thread initialization.
 
-If there is no thread initializatoin needed, this can be compressed in to a single call
+If there is no thread initialization needed, this can be compressed in to a single call
 
 .. code-block:: cpp
 
@@ -117,7 +117,7 @@ Types
 
 .. var:: EventType ET_NET
 
-   A synonymn for :var:`ET_CALL`.
+   A synonym for :var:`ET_CALL`.
 
 .. var:: EventProcessor eventProcessor
 
@@ -133,7 +133,7 @@ Types
 
    .. function:: start(const char * name, void * stack, size_t stacksize, ThreadFunction const &f)
 
-      Start the underyling thread. It is given the name :arg:`name`. If :arg:`stack` is
+      Start the underlying thread. It is given the name :arg:`name`. If :arg:`stack` is
       :code:`nullptr` then a stack is allocated for it of size :arg:`stacksize`. Once the thread is
       started, :arg:`f` is invoked in the context of the thread if non :code:`nullptr`, otherwise
       the method :func:`Thread::execute` is called. The thread execution returns immediately after
@@ -160,7 +160,7 @@ Types
 
    .. enumerator:: DEDICATED
 
-      A thread which executes only the start contiuation and then exits.
+      A thread which executes only the start continuation and then exits.
 
    .. enumerator:: REGULAR
 

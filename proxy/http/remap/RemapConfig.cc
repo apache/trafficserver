@@ -31,7 +31,10 @@
 #include "tscore/ink_cap.h"
 #include "tscore/ink_file.h"
 #include "tscore/Tokenizer.h"
+#include "tscore/ts_file.h"
+#include "tscore/Filenames.h"
 #include "IPAllow.h"
+#include "PluginFactory.h"
 
 #define modulePrefix "[ReverseProxy]"
 
@@ -74,12 +77,12 @@ static void
 clear_xstr_array(char *v[], size_t vsize)
 {
   for (unsigned i = 0; i < vsize; i++) {
-    v[i] = (char *)ats_free_null(v[i]);
+    v[i] = static_cast<char *>(ats_free_null(v[i]));
   }
 }
 
 BUILD_TABLE_INFO::BUILD_TABLE_INFO()
-  : remap_optflg(0), paramc(0), argc(0), ip_allow_check_enabled_p(true), accept_check_p(true), rules_list(nullptr), rewrite(nullptr)
+
 {
   memset(this->paramv, 0, sizeof(this->paramv));
   memset(this->argv, 0, sizeof(this->argv));
@@ -163,7 +166,6 @@ parse_define_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbu
 {
   bool flg;
   acl_filter_rule *rp;
-  acl_filter_rule **rpp;
   const char *cstr = nullptr;
 
   if (bti->paramc < 2) {
@@ -181,6 +183,7 @@ parse_define_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbu
   // coverity[alloc_arg]
   if ((cstr = remap_validate_filter_args(&rp, (const char **)bti->argv, bti->argc, errbuf, errbufsize)) == nullptr && rp) {
     if (flg) { // new filter - add to list
+      acl_filter_rule **rpp = nullptr;
       Debug("url_rewrite", "[parse_directive] new rule \"%s\" was created", bti->paramv[1]);
       for (rpp = &bti->rules_list; *rpp; rpp = &((*rpp)->next)) {
         ;
@@ -297,7 +300,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
   if (success) {
     // register the included file with the management subsystem so that we can correctly
     // reload them when they change
-    load_remap_file_cb((const char *)path);
+    load_remap_file_cb(ts::filename::REMAP, path);
   } else {
     snprintf(errbuf, errbufsize, "failed to parse included file %s", path);
     return (const char *)errbuf;
@@ -315,7 +318,7 @@ parse_include_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errb
     return (const char *)errbuf;
   }
 
-  for (unsigned i = 1; i < (unsigned)bti->paramc; ++i) {
+  for (unsigned i = 1; i < static_cast<unsigned>(bti->paramc); ++i) {
     ats_scoped_str path;
     const char *errmsg = nullptr;
 
@@ -400,7 +403,7 @@ remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize)
   const char *directive = nullptr;
 
   // Check arguments
-  if (unlikely(!bti || !errbuf || errbufsize <= 0 || !bti->paramc || (directive = bti->paramv[0]) == nullptr)) {
+  if (unlikely(!bti || !errbuf || errbufsize == 0 || !bti->paramc || (directive = bti->paramv[0]) == nullptr)) {
     Debug("url_rewrite", "[parse_directive] Invalid argument(s)");
     return "Invalid argument(s)";
   }
@@ -420,8 +423,6 @@ const char *
 remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int argc, char *errStrBuf, size_t errStrBufSize)
 {
   acl_filter_rule *rule;
-  unsigned long ul;
-  const char *argptr;
   src_ip_info_t *ipi;
   int i, j;
   bool new_rule_flg = false;
@@ -450,9 +451,11 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
   }
 
   for (i = 0; i < argc; i++) {
+    unsigned long ul;
     bool hasarg;
 
-    if ((ul = remap_check_option((const char **)&argv[i], 1, 0, nullptr, &argptr)) == 0) {
+    const char *argptr;
+    if ((ul = remap_check_option(&argv[i], 1, 0, nullptr, &argptr)) == 0) {
       Debug("url_rewrite", "[validate_filter_args] Unknown remap option - %s", argv[i]);
       snprintf(errStrBuf, errStrBufSize, "Unknown option - \"%s\"", argv[i]);
       errStrBuf[errStrBufSize - 1] = 0;
@@ -690,6 +693,14 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
           idx = i;
         }
         ret_flags |= REMAP_OPTFLG_INTERNAL;
+      } else if (!strncasecmp(argv[i], "strategy=", 9)) {
+        if ((findmode & REMAP_OPTFLG_STRATEGY) != 0) {
+          idx = i;
+        }
+        if (argptr) {
+          *argptr = &argv[i][9];
+        }
+        ret_flags |= REMAP_OPTFLG_STRATEGY;
       } else {
         Warning("ignoring invalid remap option '%s'", argv[i]);
       }
@@ -708,24 +719,29 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
   return ret_flags;
 }
 
-int
+/**
+ * @brief loads a remap plugin
+ *
+ * @pparam mp url mapping
+ * @pparam errbuf error buffer
+ * @pparam errbufsize size of the error buffer
+ * @pparam jump_to_argc
+ * @pparam plugin_found_at
+ * @return success - true, failure - false
+ */
+bool
 remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, int errbufsize, int jump_to_argc,
-                  int *plugin_found_at)
+                  int *plugin_found_at, UrlRewrite *rewrite)
 {
-  TSRemapInterface ri;
-  struct stat stat_buf;
-  remap_plugin_info *pi;
-  char *c, *err, tmpbuf[2048], default_path[PATH_NAME_MAX];
+  char *c, *err;
   const char *new_argv[1024];
-  char *parv[1024];
-  int idx = 0, retcode = 0;
-  int parc = 0;
-
+  char *pargv[1024];
+  int idx          = 0;
+  int parc         = 0;
   *plugin_found_at = 0;
 
-  memset(parv, 0, sizeof(parv));
+  memset(pargv, 0, sizeof(pargv));
   memset(new_argv, 0, sizeof(new_argv));
-  tmpbuf[0] = 0;
 
   ink_assert((unsigned)argc < countof(new_argv));
 
@@ -738,138 +754,40 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     }
     argv = &new_argv[0];
     if (!remap_check_option(argv, argc, REMAP_OPTFLG_PLUGIN, &idx)) {
-      return -1;
+      return false;
     }
   } else {
     if (unlikely(!mp || (remap_check_option(argv, argc, REMAP_OPTFLG_PLUGIN, &idx) & REMAP_OPTFLG_PLUGIN) == 0)) {
       snprintf(errbuf, errbufsize, "Can't find remap plugin keyword or \"url_mapping\" is nullptr");
-      return -1; /* incorrect input data - almost impossible case */
+      return false; /* incorrect input data - almost impossible case */
     }
   }
 
   if (unlikely((c = (char *)strchr(argv[idx], (int)'=')) == nullptr || !(*(++c)))) {
     snprintf(errbuf, errbufsize, "Can't find remap plugin file name in \"@%s\"", argv[idx]);
-    return -2; /* incorrect input data */
-  }
-
-  if (stat(c, &stat_buf) != 0) {
-    ats_scoped_str plugin_default_path(RecConfigReadPluginDir());
-
-    // Try with the plugin path instead
-    if (strlen(c) + strlen(plugin_default_path) > (PATH_NAME_MAX - 1)) {
-      Debug("remap_plugin", "way too large a path specified for remap plugin");
-      return -3;
-    }
-
-    snprintf(default_path, PATH_NAME_MAX, "%s/%s", static_cast<char *>(plugin_default_path), c);
-    Debug("remap_plugin", "attempting to stat default plugin path: %s", default_path);
-
-    if (stat(default_path, &stat_buf) == 0) {
-      Debug("remap_plugin", "stat successful on %s using that", default_path);
-      c = &default_path[0];
-    } else {
-      snprintf(errbuf, errbufsize, "Can't find remap plugin file \"%s\"", c);
-      return -3;
-    }
+    return false; /* incorrect input data */
   }
 
   Debug("remap_plugin", "using path %s for plugin", c);
 
-  if (!remap_pi_list || (pi = remap_pi_list->find_by_path(c)) == nullptr) {
-    pi = new remap_plugin_info(c);
-    if (!remap_pi_list) {
-      remap_pi_list = pi;
-    } else {
-      remap_pi_list->add_to_list(pi);
-    }
-    Debug("remap_plugin", "New remap plugin info created for \"%s\"", c);
-
-    {
-      uint32_t elevate_access = 0;
-      REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
-      ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
-
-      if ((pi->dlh = dlopen(c, RTLD_NOW)) == nullptr) {
-#if defined(freebsd) || defined(openbsd)
-        err = (char *)dlerror();
-#else
-        err = dlerror();
-#endif
-        snprintf(errbuf, errbufsize, "Can't load plugin \"%s\" - %s", c, err ? err : "Unknown dlopen() error");
-        return -4;
-      }
-      pi->fp_tsremap_init = reinterpret_cast<remap_plugin_info::_tsremap_init *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT));
-      pi->fp_tsremap_config_reload =
-        reinterpret_cast<remap_plugin_info::_tsremap_config_reload *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_CONFIG_RELOAD));
-      pi->fp_tsremap_done = reinterpret_cast<remap_plugin_info::_tsremap_done *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE));
-      pi->fp_tsremap_new_instance =
-        reinterpret_cast<remap_plugin_info::_tsremap_new_instance *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE));
-      pi->fp_tsremap_delete_instance =
-        reinterpret_cast<remap_plugin_info::_tsremap_delete_instance *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE));
-      pi->fp_tsremap_do_remap = reinterpret_cast<remap_plugin_info::_tsremap_do_remap *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP));
-      pi->fp_tsremap_os_response =
-        reinterpret_cast<remap_plugin_info::_tsremap_os_response *>(dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE));
-
-      if (!pi->fp_tsremap_init) {
-        snprintf(errbuf, errbufsize, R"(Can't find "%s" function in remap plugin "%s")", TSREMAP_FUNCNAME_INIT, c);
-        retcode = -10;
-      } else if (!pi->fp_tsremap_new_instance && pi->fp_tsremap_delete_instance) {
-        snprintf(errbuf, errbufsize,
-                 R"(Can't find "%s" function in remap plugin "%s" which is required if "%s" function exists)",
-                 TSREMAP_FUNCNAME_NEW_INSTANCE, c, TSREMAP_FUNCNAME_DELETE_INSTANCE);
-        retcode = -11;
-      } else if (!pi->fp_tsremap_do_remap) {
-        snprintf(errbuf, errbufsize, R"(Can't find "%s" function in remap plugin "%s")", TSREMAP_FUNCNAME_DO_REMAP, c);
-        retcode = -12;
-      } else if (pi->fp_tsremap_new_instance && !pi->fp_tsremap_delete_instance) {
-        snprintf(errbuf, errbufsize,
-                 R"(Can't find "%s" function in remap plugin "%s" which is required if "%s" function exists)",
-                 TSREMAP_FUNCNAME_DELETE_INSTANCE, c, TSREMAP_FUNCNAME_NEW_INSTANCE);
-        retcode = -13;
-      }
-      if (retcode) {
-        if (errbuf && errbufsize > 0) {
-          Debug("remap_plugin", "%s", errbuf);
-        }
-        dlclose(pi->dlh);
-        pi->dlh = nullptr;
-        return retcode;
-      }
-      memset(&ri, 0, sizeof(ri));
-      ri.size            = sizeof(ri);
-      ri.tsremap_version = TSREMAP_VERSION;
-
-      if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
-        snprintf(errbuf, errbufsize, "Failed to initialize plugin \"%s\": %s", pi->path,
-                 tmpbuf[0] ? tmpbuf : "Unknown plugin error");
-        return -5;
-      }
-    } // done elevating access
-    Debug("remap_plugin", "Remap plugin \"%s\" - initialization completed", c);
-  }
-
-  if (!pi->dlh) {
-    snprintf(errbuf, errbufsize, "Can't load plugin \"%s\"", c);
-    return -6;
-  }
-
+  /* Prepare remap plugin parameters from the config */
   if ((err = mp->fromURL.string_get(nullptr)) == nullptr) {
     snprintf(errbuf, errbufsize, "Can't load fromURL from URL class");
-    return -7;
+    return false;
   }
-  parv[parc++] = ats_strdup(err);
+  pargv[parc++] = ats_strdup(err);
   ats_free(err);
 
-  if ((err = mp->toUrl.string_get(nullptr)) == nullptr) {
+  if ((err = mp->toURL.string_get(nullptr)) == nullptr) {
     snprintf(errbuf, errbufsize, "Can't load toURL from URL class");
-    return -7;
+    return false;
   }
-  parv[parc++] = ats_strdup(err);
+  pargv[parc++] = ats_strdup(err);
   ats_free(err);
 
   bool plugin_encountered = false;
   // how many plugin parameters we have for this remapping
-  for (idx = 0; idx < argc && parc < (int)(countof(parv) - 1); idx++) {
+  for (idx = 0; idx < argc && parc < static_cast<int>(countof(pargv) - 1); idx++) {
     if (plugin_encountered && !strncasecmp("plugin=", argv[idx], 7) && argv[idx][7]) {
       *plugin_found_at = idx;
       break; // if there is another plugin, lets deal with that later
@@ -880,7 +798,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     }
 
     if (!strncasecmp("pparam=", argv[idx], 7) && argv[idx][7]) {
-      parv[parc++] = const_cast<char *>(&(argv[idx][7]));
+      pargv[parc++] = const_cast<char *>(&(argv[idx][7]));
     }
   }
 
@@ -889,43 +807,34 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     Debug("url_rewrite", "Argument %d: %s", k, argv[k]);
   }
 
-  Debug("url_rewrite", "Viewing parsed plugin parameters for %s: [%d]", pi->path, *plugin_found_at);
+  Debug("url_rewrite", "Viewing parsed plugin parameters for %s: [%d]", c, *plugin_found_at);
   for (int k = 0; k < parc; k++) {
-    Debug("url_rewrite", "Argument %d: %s", k, parv[k]);
+    Debug("url_rewrite", "Argument %d: %s", k, pargv[k]);
   }
 
-  Debug("remap_plugin", "creating new plugin instance");
+  RemapPluginInst *pi = nullptr;
+  std::string error;
+  {
+    uint32_t elevate_access = 0;
+    REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
+    ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-  void *ih         = nullptr;
-  TSReturnCode res = TS_SUCCESS;
-  if (pi->fp_tsremap_new_instance) {
-#if (!defined(kfreebsd) && defined(freebsd)) || defined(darwin)
-    optreset = 1;
-#endif
-#if defined(__GLIBC__)
-    optind = 0;
-#else
-    optind = 1;
-#endif
-    opterr = 0;
-    optarg = nullptr;
+    pi = rewrite->pluginFactory.getRemapPlugin(ts::file::path(const_cast<const char *>(c)), parc, pargv, error,
+                                               isPluginDynamicReloadEnabled());
+  } // done elevating access
 
-    res = pi->fp_tsremap_new_instance(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
+  bool result = true;
+  if (nullptr == pi) {
+    snprintf(errbuf, errbufsize, "%s", error.c_str());
+    result = false;
+  } else {
+    mp->add_plugin_instance(pi);
   }
 
-  Debug("remap_plugin", "done creating new plugin instance");
+  ats_free(pargv[0]); // fromURL
+  ats_free(pargv[1]); // toURL
 
-  ats_free(parv[0]); // fromURL
-  ats_free(parv[1]); // toURL
-
-  if (res != TS_SUCCESS) {
-    snprintf(errbuf, errbufsize, "Failed to create instance for plugin \"%s\": %s", c, tmpbuf[0] ? tmpbuf : "Unknown plugin error");
-    return -8;
-  }
-
-  mp->add_plugin(pi, ih);
-
-  return 0;
+  return result;
 }
 /** will process the regex mapping configuration and create objects in
     output argument reg_map. It assumes existing data in reg_map is
@@ -939,7 +848,6 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   const char *to_host;
   int to_host_len;
   int substitution_id;
-  int substitution_count = 0;
   int captures;
 
   reg_map->to_url_host_template     = nullptr;
@@ -966,13 +874,9 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
     goto lFail;
   }
 
-  to_host = new_mapping->toUrl.host_get(&to_host_len);
+  to_host = new_mapping->toURL.host_get(&to_host_len);
   for (int i = 0; i < (to_host_len - 1); ++i) {
     if (to_host[i] == '$') {
-      if (substitution_count > UrlRewrite::MAX_REGEX_SUBS) {
-        Warning("Cannot have more than %d substitutions in mapping with host [%s]", UrlRewrite::MAX_REGEX_SUBS, from_host_lower);
-        goto lFail;
-      }
       substitution_id = to_host[i + 1] - '0';
       if ((substitution_id < 0) || (substitution_id > captures)) {
         Warning("Substitution id [%c] has no corresponding capture pattern in regex [%s]", to_host[i + 1], from_host_lower);
@@ -987,7 +891,7 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   // so the regex itself is stored in fromURL.host; string to match
   // will be in the request; string to use for substitutions will be
   // in this buffer
-  str                               = new_mapping->toUrl.host_get(&str_index); // reusing str and str_index
+  str                               = new_mapping->toURL.host_get(&str_index); // reusing str and str_index
   reg_map->to_url_host_template_len = str_index;
   reg_map->to_url_host_template     = static_cast<char *>(ats_malloc(str_index));
   memcpy(reg_map->to_url_host_template, str, str_index);
@@ -1039,15 +943,16 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   bool is_cur_mapping_regex;
   const char *type_id_str;
 
-  ats_scoped_str file_buf(readIntoBuffer(path, modulePrefix, nullptr));
-  if (!file_buf) {
-    Warning("can't load remapping configuration file %s", path);
+  std::error_code ec;
+  std::string content{ts::file::load(ts::file::path{path}, ec)};
+  if (ec.value()) {
+    Warning("Failed to open remapping configuration file %s - %s", path, strerror(ec.value()));
     return false;
   }
 
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");
 
-  for (cur_line = tokLine(file_buf, &tok_state, '\\'); cur_line != nullptr;) {
+  for (cur_line = tokLine(content.data(), &tok_state, '\\'); cur_line != nullptr;) {
     reg_map      = nullptr;
     new_mapping  = nullptr;
     errStrBuf[0] = 0;
@@ -1058,7 +963,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       ++cur_line;
     }
 
-    if ((cur_line_size = strlen((char *)cur_line)) <= 0) {
+    if ((cur_line_size = strlen(cur_line)) <= 0) {
       cur_line = tokLine(nullptr, &tok_state, '\\');
       ++cln;
       continue;
@@ -1071,7 +976,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       --cur_line_tmp;
     }
 
-    if ((cur_line_size = strlen((char *)cur_line)) <= 0 || *cur_line == '#' || *cur_line == '\0') {
+    if (strlen(cur_line) <= 0 || *cur_line == '#' || *cur_line == '\0') {
       cur_line = tokLine(nullptr, &tok_state, '\\');
       ++cln;
       continue;
@@ -1082,8 +987,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     tok_count = whiteTok.Initialize(cur_line, (SHARE_TOKS | ALLOW_SPACES));
 
     for (int j = 0; j < tok_count; j++) {
-      if (((char *)whiteTok[j])[0] == '@') {
-        if (((char *)whiteTok[j])[1]) {
+      if ((const_cast<char *>(whiteTok[j]))[0] == '@') {
+        if ((const_cast<char *>(whiteTok[j]))[1]) {
           bti->argv[bti->argc++] = ats_strdup(&(((char *)whiteTok[j])[1]));
         }
       } else {
@@ -1145,7 +1050,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     new_mapping = new url_mapping();
 
     // apply filter rules if we have to
-    if ((errStr = process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf))) != nullptr) {
+    if (process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf)) != nullptr) {
       errStr = errStrBuf;
       goto MAP_ERROR;
     }
@@ -1156,11 +1061,10 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     new_mapping->map_id = 0;
     if ((bti->remap_optflg & REMAP_OPTFLG_MAP_ID) != 0) {
       int idx = 0;
-      char *c;
       int ret = remap_check_option((const char **)bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
       if (ret & REMAP_OPTFLG_MAP_ID) {
-        c                   = strchr(bti->argv[idx], (int)'=');
-        new_mapping->map_id = (unsigned int)atoi(++c);
+        char *c             = strchr(bti->argv[idx], static_cast<int>('='));
+        new_mapping->map_id = static_cast<unsigned int>(atoi(++c));
       }
     }
 
@@ -1177,12 +1081,13 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     }
 
     new_mapping->fromURL.create(nullptr);
-    rparse = new_mapping->fromURL.parse_no_path_component_breakdown(tmp, length);
+    rparse = new_mapping->fromURL.parse_regex(tmp, length);
 
     map_from_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_RESULT_DONE) {
-      errStr = "malformed From URL";
+      snprintf(errStrBuf, sizeof(errStrBuf), "malformed From URL: %.*s", length, tmp);
+      errStr = errStrBuf;
       goto MAP_ERROR;
     }
 
@@ -1191,12 +1096,13 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     map_to_start = map_to;
     tmp          = map_to;
 
-    new_mapping->toUrl.create(nullptr);
-    rparse                   = new_mapping->toUrl.parse_no_path_component_breakdown(tmp, length);
+    new_mapping->toURL.create(nullptr);
+    rparse                   = new_mapping->toURL.parse_no_host_check(std::string_view(tmp, length));
     map_to_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_RESULT_DONE) {
-      errStr = "malformed To URL";
+      snprintf(errStrBuf, sizeof(errStrBuf), "malformed To URL: %.*s", length, tmp);
+      errStr = errStrBuf;
       goto MAP_ERROR;
     }
 
@@ -1208,7 +1114,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       fromScheme                        = new_mapping->fromURL.scheme_get(&fromSchemeLen);
       new_mapping->wildcard_from_scheme = true;
     }
-    toScheme = new_mapping->toUrl.scheme_get(&toSchemeLen);
+    toScheme = new_mapping->toURL.scheme_get(&toSchemeLen);
 
     // Include support for HTTPS scheme
     // includes support for FILE scheme
@@ -1241,7 +1147,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             char refinfo_error_buf[1024];
             bool refinfo_error = false;
 
-            ri = new referer_info((char *)bti->paramv[j - 1], &refinfo_error, refinfo_error_buf, sizeof(refinfo_error_buf));
+            ri = new referer_info(bti->paramv[j - 1], &refinfo_error, refinfo_error_buf, sizeof(refinfo_error_buf));
             if (refinfo_error) {
               snprintf(errStrBuf, sizeof(errStrBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s", modulePrefix,
                        bti->paramv[j - 1], cln + 1, refinfo_error_buf);
@@ -1287,7 +1193,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       }
     }
 
-    toHost = new_mapping->toUrl.host_get(&toHostLen);
+    toHost = new_mapping->toURL.host_get(&toHostLen);
     if (toHost == nullptr || toHostLen <= 0) {
       errStr = "The remap destinations require a hostname";
       goto MAP_ERROR;
@@ -1302,7 +1208,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     // been removed.
 
     if (unlikely(fromHostLen >= (int)sizeof(fromHost_lower_buf))) {
-      fromHost_lower = (fromHost_lower_ptr = (char *)ats_malloc(fromHostLen + 1));
+      fromHost_lower = (fromHost_lower_ptr = static_cast<char *>(ats_malloc(fromHostLen + 1)));
     } else {
       fromHost_lower = &fromHost_lower_buf[0];
     }
@@ -1346,8 +1252,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             u_mapping->fromURL.create(nullptr);
             u_mapping->fromURL.copy(&new_mapping->fromURL);
             u_mapping->fromURL.host_set(ipb, strlen(ipb));
-            u_mapping->toUrl.create(nullptr);
-            u_mapping->toUrl.copy(&new_mapping->toUrl);
+            u_mapping->toURL.create(nullptr);
+            u_mapping->toURL.copy(&new_mapping->toURL);
 
             if (bti->paramv[3] != nullptr) {
               u_mapping->tag = ats_strdup(&(bti->paramv[3][0]));
@@ -1365,6 +1271,25 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       }
     }
 
+    // check for a 'strategy' and if wire it up if one exists.
+    if ((bti->remap_optflg & REMAP_OPTFLG_STRATEGY) != 0 &&
+        (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
+      const char *strategy = strchr(bti->argv[0], static_cast<int>('='));
+      if (strategy == nullptr) {
+        errStr = "missing 'strategy' name argument, unable to add mapping rule";
+        goto MAP_ERROR;
+      } else {
+        strategy++;
+        new_mapping->strategy = bti->rewrite->strategyFactory->strategyInstance(strategy);
+        if (!new_mapping->strategy) {
+          snprintf(errStrBuf, sizeof(errStrBuf), "no strategy named '%s' is defined in the config", strategy);
+          errStr = errStrBuf;
+          goto MAP_ERROR;
+        }
+        Debug("url_rewrite_regex", "mapped the 'strategy' named %s", strategy);
+      }
+    }
+
     // Check "remap" plugin options and load .so object
     if ((bti->remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 &&
         (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
@@ -1373,8 +1298,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         int jump_to_argc    = 0;
 
         // this loads the first plugin
-        if (remap_load_plugin((const char **)bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0,
-                              &plugin_found_at)) {
+        if (!remap_load_plugin((const char **)bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at,
+                               bti->rewrite)) {
           Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
           errStr = errStrBuf;
           goto MAP_ERROR;
@@ -1382,8 +1307,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         // this loads any subsequent plugins (if present)
         while (plugin_found_at) {
           jump_to_argc += plugin_found_at;
-          if (remap_load_plugin((const char **)bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc,
-                                &plugin_found_at)) {
+          if (!remap_load_plugin((const char **)bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), jump_to_argc,
+                                 &plugin_found_at, bti->rewrite)) {
             Debug("remap_plugin", "Remap plugin load error - %s", errStrBuf[0] ? errStrBuf : "Unknown error");
             errStr = errStrBuf;
             goto MAP_ERROR;
@@ -1398,7 +1323,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       goto MAP_ERROR;
     }
 
-    fromHost_lower_ptr = (char *)ats_free_null(fromHost_lower_ptr);
+    fromHost_lower_ptr = static_cast<char *>(ats_free_null(fromHost_lower_ptr));
 
     cur_line = tokLine(nullptr, &tok_state, '\\');
     ++cln;
@@ -1424,11 +1349,16 @@ remap_parse_config(const char *path, UrlRewrite *rewrite)
 {
   BUILD_TABLE_INFO bti;
 
-  // If this happens to be a config reload, the list of loaded remap plugins is non-empty, and we
-  // can signal all these plugins that a reload has begun.
-  if (remap_pi_list) {
-    remap_pi_list->indicate_reload();
-  }
+  /* If this happens to be a config reload, the list of loaded remap plugins is non-empty, and we
+   * can signal all these plugins that a reload has begun. */
+  rewrite->pluginFactory.indicatePreReload();
+
   bti.rewrite = rewrite;
-  return remap_parse_config_bti(path, &bti);
+  bool status = remap_parse_config_bti(path, &bti);
+
+  /* Now after we parsed the configuration and (re)loaded plugins and plugin instances
+   * accordingly notify all plugins that we are done */
+  rewrite->pluginFactory.indicatePostReload(status);
+
+  return status;
 }

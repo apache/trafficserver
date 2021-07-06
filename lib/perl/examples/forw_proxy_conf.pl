@@ -18,7 +18,6 @@
 
 use Apache::TS::Config::Records;
 
-
 ############################################################################
 # Simple script, to show some minimum configuration changes typical for
 # a forward proxy.
@@ -26,16 +25,16 @@ my $fn = $ARGV[0] || "/usr/local/etc/trafficserver/records.config";
 my $recedit = new Apache::TS::Config::Records(file => $fn);
 
 # Definitely tweak the memory config
-$recedit->set(conf => "proxy.config.cache.ram_cache.size",  val => "2048M");
+$recedit->set(conf => "proxy.config.cache.ram_cache.size", val => "2048M");
 
 # These puts the server in forward proxy mode only.
-$recedit->set(conf => "proxy.config.url_remap.remap_required",  val => "0");
-$recedit->set(conf => "proxy.config.reverse_proxy.enabled",  val => "0");
+$recedit->set(conf => "proxy.config.url_remap.remap_required", val => "0");
+$recedit->set(conf => "proxy.config.reverse_proxy.enabled",    val => "0");
 
 # Fine tuning, you might or might not want these
 $recedit->set(conf => "proxy.config.http.transaction_active_timeout_in", val => "1800");
-$recedit->set(conf => "proxy.config.dns.dedicated_thread", val => "1");
-$recedit->set(conf => "proxy.config.http.normalize_ae_gzip", val => "1");
+$recedit->set(conf => "proxy.config.dns.dedicated_thread",               val => "1");
+$recedit->set(conf => "proxy.config.http.normalize_ae_gzip",             val => "1");
 
 # Write out the new config file (this won't overwrite your config
 $recedit->write(file => "$fn.new");

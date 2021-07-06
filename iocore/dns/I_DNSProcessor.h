@@ -23,16 +23,17 @@
 
 #pragma once
 
+#include "tscore/ink_resolver.h"
 #include "SRV.h"
 
-const int DOMAIN_SERVICE_PORT        = NAMESERVER_PORT;
-const int DEFAULT_DOMAIN_NAME_SERVER = 0;
+const int DOMAIN_SERVICE_PORT = NAMESERVER_PORT;
 
-const int MAX_DNS_PACKET_LEN = 8192;
-const int DNS_RR_MAX_COUNT   = (MAX_DNS_PACKET_LEN - HFIXEDSZ + RRFIXEDSZ - 1) / RRFIXEDSZ;
-const int DNS_MAX_ALIASES    = DNS_RR_MAX_COUNT;
-const int DNS_MAX_ADDRS      = DNS_RR_MAX_COUNT;
-const int DNS_HOSTBUF_SIZE   = MAX_DNS_PACKET_LEN;
+const int MAX_DNS_REQUEST_LEN  = NS_PACKETSZ;
+const int MAX_DNS_RESPONSE_LEN = 65536;
+const int DNS_RR_MAX_COUNT     = (MAX_DNS_RESPONSE_LEN - HFIXEDSZ + RRFIXEDSZ - 1) / RRFIXEDSZ;
+const int DNS_MAX_ALIASES      = DNS_RR_MAX_COUNT;
+const int DNS_MAX_ADDRS        = DNS_RR_MAX_COUNT;
+const int DNS_HOSTBUF_SIZE     = MAX_DNS_RESPONSE_LEN;
 
 /**
   All buffering required to handle a DNS receipt. For asynchronous DNS,
@@ -41,10 +42,10 @@ const int DNS_HOSTBUF_SIZE   = MAX_DNS_PACKET_LEN;
 
 */
 struct HostEnt : RefCountObj {
-  struct hostent ent           = {.h_name = nullptr, .h_aliases = nullptr, .h_addrtype = 0, .h_length = 0, .h_addr_list = nullptr};
-  uint32_t ttl                 = 0;
-  int packet_size              = 0;
-  char buf[MAX_DNS_PACKET_LEN] = {0};
+  struct hostent ent = {.h_name = nullptr, .h_aliases = nullptr, .h_addrtype = 0, .h_length = 0, .h_addr_list = nullptr};
+  uint32_t ttl       = 0;
+  int packet_size    = 0;
+  char buf[MAX_DNS_RESPONSE_LEN]         = {0};
   u_char *host_aliases[DNS_MAX_ALIASES]  = {nullptr};
   u_char *h_addr_ptrs[DNS_MAX_ADDRS + 1] = {nullptr};
   u_char hostbuf[DNS_HOSTBUF_SIZE]       = {0};
@@ -58,42 +59,56 @@ extern EventType ET_DNS;
 
 struct DNSHandler;
 
+/** Data for a DNS query.
+ * This is either a name for a standard query or an IP address for reverse DNS.
+ * Its type should be indicated by other parameters, generally the query type.
+ * - T_PTR: IP Address
+ * - T_A, T_SRV: Name
+ */
+union DNSQueryData {
+  std::string_view name; ///< Look up a name.
+  IpAddr const *addr;    ///< Reverse DNS lookup.
+
+  DNSQueryData(std::string_view tv) : name(tv) {}
+  DNSQueryData(IpAddr const *a) : addr(a) {}
+};
+
 struct DNSProcessor : public Processor {
   // Public Interface
   //
 
   /// Options for host name resolution.
   struct Options {
-    typedef Options self; ///< Self reference type.
+    using self_type = Options; ///< Self reference type.
 
     /// Query handler to use.
     /// Default: single threaded handler.
-    DNSHandler *handler;
+    DNSHandler *handler = nullptr;
     /// Query timeout value.
     /// Default: @c DEFAULT_DNS_TIMEOUT (or as set in records.config)
-    int timeout; ///< Timeout value for request.
+    int timeout = 0; ///< Timeout value for request.
     /// Host resolution style.
     /// Default: IPv4, IPv6 ( @c HOST_RES_IPV4 )
-    HostResStyle host_res_style;
+    HostResStyle host_res_style = HOST_RES_IPV4;
 
     /// Default constructor.
     Options();
 
     /// Set @a handler option.
     /// @return This object.
-    self &setHandler(DNSHandler *handler);
+    self_type &setHandler(DNSHandler *handler);
 
     /// Set @a timeout option.
     /// @return This object.
-    self &setTimeout(int timeout);
+    self_type &setTimeout(int timeout);
 
     /// Set host query @a style option.
     /// @return This object.
-    self &setHostResStyle(HostResStyle style);
+    self_type &setHostResStyle(HostResStyle style);
 
     /// Reset to default constructed values.
     /// @return This object.
-    self &reset();
+    self_type &reset();
   };
 
   // DNS lookup
@@ -103,8 +118,9 @@ struct DNSProcessor : public Processor {
   //
 
   Action *gethostbyname(Continuation *cont, const char *name, Options const &opt);
+  Action *gethostbyname(Continuation *cont, std::string_view name, Options const &opt);
   Action *getSRVbyname(Continuation *cont, const char *name, Options const &opt);
-  Action *gethostbyname(Continuation *cont, const char *name, int len, Options const &opt);
+  Action *getSRVbyname(Continuation *cont, std::string_view name, Options const &opt);
   Action *gethostbyaddr(Continuation *cont, IpAddr const *ip, Options const &opt);
 
   // Processor API
@@ -121,8 +137,8 @@ struct DNSProcessor : public Processor {
 
   // private:
   //
-  EThread *thread;
-  DNSHandler *handler;
+  EThread *thread     = nullptr;
+  DNSHandler *handler = nullptr;
   ts_imp_res_state l_res;
   IpEndpoint local_ipv6;
   IpEndpoint local_ipv4;
@@ -134,7 +150,7 @@ struct DNSProcessor : public Processor {
       For address resolution ( @a type is @c T_PTR ), @a x should be a
       @c sockaddr cast to  @c char @c const* .
    */
-  Action *getby(const char *x, int len, int type, Continuation *cont, Options const &opt);
+  Action *getby(DNSQueryData x, int type, Continuation *cont, Options const &opt);
 
   void dns_init();
 };
@@ -151,28 +167,34 @@ extern DNSProcessor dnsProcessor;
 inline Action *
 DNSProcessor::getSRVbyname(Continuation *cont, const char *name, Options const &opt)
 {
-  return getby(name, 0, T_SRV, cont, opt);
+  return getby(std::string_view(name), T_SRV, cont, opt);
+}
+
+inline Action *
+DNSProcessor::getSRVbyname(Continuation *cont, std::string_view name, Options const &opt)
+{
+  return getby(name, T_SRV, cont, opt);
 }
 
 inline Action *
 DNSProcessor::gethostbyname(Continuation *cont, const char *name, Options const &opt)
 {
-  return getby(name, 0, T_A, cont, opt);
+  return getby(std::string_view(name), T_A, cont, opt);
 }
 
 inline Action *
-DNSProcessor::gethostbyname(Continuation *cont, const char *name, int len, Options const &opt)
+DNSProcessor::gethostbyname(Continuation *cont, std::string_view name, Options const &opt)
 {
-  return getby(name, len, T_A, cont, opt);
+  return getby(name, T_A, cont, opt);
 }
 
 inline Action *
 DNSProcessor::gethostbyaddr(Continuation *cont, IpAddr const *addr, Options const &opt)
 {
-  return getby(reinterpret_cast<const char *>(addr), 0, T_PTR, cont, opt);
+  return getby(addr, T_PTR, cont, opt);
 }
 
-inline DNSProcessor::Options::Options() : handler(nullptr), timeout(0), host_res_style(HOST_RES_IPV4) {}
+inline DNSProcessor::Options::Options() {}
 
 inline DNSProcessor::Options &
 DNSProcessor::Options::setHandler(DNSHandler *h)

@@ -16,13 +16,13 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
+from twisted.internet import error, protocol, reactor, tcp
+from twisted.web import http
+
 print '''1..1 shortChunkedEncodingDisconnect
 # The proxy closes the client connection and doesn't send a final
 # chunk if the origin disconnects without sending one, before the
 # proxy sends the response headers'''
-
-from twisted.internet import error, protocol, reactor, tcp
-from twisted.web import http
 
 
 def callback():

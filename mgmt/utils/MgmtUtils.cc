@@ -53,11 +53,11 @@ mgmt_use_syslog()
 int
 mgmt_readline(int soc, char *buf, int maxlen)
 {
-  int n = 0, rc;
+  int n = 0;
   char c;
 
   for (; n < maxlen; n++) {
-    rc = read_socket(soc, &c, 1);
+    int rc = read_socket(soc, &c, 1);
     if (rc == 1) {
       *buf++ = c;
       if (c == '\n') {
@@ -70,11 +70,7 @@ mgmt_readline(int soc, char *buf, int maxlen)
         break;
       }
     } else if (rc == 0) {
-      if (n == 1) { /* EOF */
-        return 0;
-      } else {
-        break;
-      }
+      return n;
     } else { /* Error */
       if (errno == ECONNRESET || errno == EPIPE) {
         return n ? n : 0;
@@ -105,24 +101,39 @@ mgmt_readline(int soc, char *buf, int maxlen)
 int
 mgmt_writeline(int soc, const char *data, int nbytes)
 {
-  int nleft, nwritten, n;
+  int nleft, n = 0;
   const char *tmp = data;
 
   nleft = nbytes;
   while (nleft > 0) {
-    nwritten = write_socket(soc, tmp, nleft);
-    if (nwritten <= 0) { /* Error or nothing written */
+    int nwritten = write_socket(soc, tmp, nleft);
+    if (nwritten == 0) { // Nothing written
+      mgmt_sleep_msec(1);
+      continue;
+    } else if (nwritten < 0) { // Error
+      if (mgmt_transient_error()) {
+        mgmt_sleep_msec(1);
+        continue;
+      }
+
       return nwritten;
     }
     nleft -= nwritten;
     tmp += nwritten;
   }
 
-  if ((n = write_socket(soc, "\n", 1)) <= 0) { /* Terminating newline */
-    if (n < 0) {
+  while (n != 1) {
+    n = write_socket(soc, "\n", 1); /* Terminating newline */
+    if (n == 0) {
+      mgmt_sleep_msec(1);
+      continue;
+    } else if (n < 0) { // Error
+      if (mgmt_transient_error()) {
+        mgmt_sleep_msec(1);
+        continue;
+      }
+
       return n;
-    } else {
-      return (nbytes - nleft);
     }
   }
 
@@ -141,13 +152,13 @@ mgmt_writeline(int soc, const char *data, int nbytes)
 int
 mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
 {
-  int err        = 0;
   char *p        = buf;
   int bytes_read = 0;
 
   while (bytes_to_read > 0) {
-    err = read_socket(fd, p, bytes_to_read);
+    int err = read_socket(fd, p, bytes_to_read);
     if (err == 0) {
+      // return 0 if partial read.
       return err;
     } else if (err < 0) {
       // Turn ECONNRESET into EOF.
@@ -183,14 +194,16 @@ mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
 int
 mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
 {
-  int err           = 0;
   char *p           = buf;
   int bytes_written = 0;
 
   while (bytes_to_write > 0) {
-    err = write_socket(fd, p, bytes_to_write);
+    int err = write_socket(fd, p, bytes_to_write);
     if (err == 0) {
-      return err;
+      // Where this volume of IEEE Std 1003.1-2001 requires -1 to be returned and errno set to [EAGAIN],
+      // most historical implementations return zero for write(2)
+      mgmt_sleep_msec(1);
+      continue;
     } else if (err < 0) {
       if (mgmt_transient_error()) {
         mgmt_sleep_msec(1);
@@ -272,7 +285,6 @@ void
 mgmt_fatal(const int lerrno, const char *message_format, ...)
 {
   va_list ap;
-  char extended_format[4096], message[4096];
 
   va_start(ap, message_format);
 
@@ -283,6 +295,7 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
 
     FatalV(message_format, ap);
   } else {
+    char extended_format[4096], message[4096];
     snprintf(extended_format, sizeof(extended_format), "FATAL ==> %s", message_format);
     vsprintf(message, extended_format, ap);
 
@@ -336,7 +349,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
   int fakeSocket;            // a temporary socket to pass to ioctl
   struct ifconf ifc;         // ifconf information
   char *ifbuf;               // ifconf buffer
-  struct ifreq *ifr, *ifend; // pointer to individual inferface info
+  struct ifreq *ifr, *ifend; // pointer to individual interface info
   int lastlen;
   int len;
 
@@ -353,7 +366,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
   lastlen = 0;
   len     = 128 * sizeof(struct ifreq); // initial buffer size guess
   for (;;) {
-    ifbuf = (char *)ats_malloc(len);
+    ifbuf = static_cast<char *>(ats_malloc(len));
     memset(ifbuf, 0, len); // prevent UMRs
     ifc.ifc_len = len;
     ifc.ifc_buf = ifbuf;
@@ -373,11 +386,11 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
 
   found = false;
   // Loop through the list of interfaces
-  ifend = (struct ifreq *)(ifc.ifc_buf + ifc.ifc_len);
+  ifend = reinterpret_cast<struct ifreq *>(ifc.ifc_buf + ifc.ifc_len);
   for (ifr = ifc.ifc_req; ifr < ifend;) {
     if (ifr->ifr_addr.sa_family == AF_INET && strcmp(ifr->ifr_name, intrName) == 0) {
       // Get the address of the interface
-      if (ioctl(fakeSocket, SIOCGIFADDR, (char *)ifr) < 0) {
+      if (ioctl(fakeSocket, SIOCGIFADDR, reinterpret_cast<char *>(ifr)) < 0) {
         mgmt_log("[getAddrForIntr] Unable obtain address for network interface %s\n", intrName);
       } else {
         // Only look at the address if it an internet address
@@ -398,7 +411,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
 #if defined(freebsd) || defined(darwin)
     ifr = (struct ifreq *)((char *)&ifr->ifr_addr + ifr->ifr_addr.sa_len);
 #else
-    ifr = (struct ifreq *)(((char *)ifr) + sizeof(*ifr));
+    ifr = reinterpret_cast<struct ifreq *>((reinterpret_cast<char *>(ifr)) + sizeof(*ifr));
 #endif
   }
   ats_free(ifbuf);
@@ -420,7 +433,7 @@ mgmt_sortipaddrs(int num, struct in_addr **list)
 
   min   = (list[0])->s_addr;
   entry = list[0];
-  while (i < num && (tmp = (struct in_addr *)list[i]) != nullptr) {
+  while (i < num && (tmp = list[i]) != nullptr) {
     i++;
     if (min > tmp->s_addr) {
       min   = tmp->s_addr;

@@ -24,7 +24,9 @@ TSHttpTxnServerAddrSet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const* addr)
 

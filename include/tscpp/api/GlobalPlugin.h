@@ -33,7 +33,7 @@ struct GlobalPluginState;
  * @brief The interface used when creating a GlobalPlugin.
  *
  * A GlobalPlugin is a Plugin that will fire for a given hook on all Transactions.
- * In otherwords, a GlobalPlugin is not tied to a specific plugin, a Transaction
+ * In other words, a GlobalPlugin is not tied to a specific plugin, a Transaction
  * specific plugin would be a TransactionPlugin.
  *
  * Depending on the
@@ -60,9 +60,9 @@ public:
   /**
    * registerHook is the mechanism used to attach a global hook.
    *
-   * \note Whenever you register a hook you must have the appropriate callback definied in your GlobalPlugin
+   * \note Whenever you register a hook you must have the appropriate callback defined in your GlobalPlugin
    *  see HookType and Plugin for the correspond HookTypes and callback methods. If you fail to implement the
-   *  callback, a default implmentation will be used that will only resume the Transaction.
+   *  callback, a default implementation will be used that will only resume the Transaction.
    *
    * @param HookType the type of hook you wish to register
    * @see HookType

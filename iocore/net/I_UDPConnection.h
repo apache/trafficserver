@@ -49,7 +49,7 @@ public:
   SOCKET getFd();
   void setBinding(struct sockaddr const *);
   void setBinding(const IpAddr &, in_port_t);
-  inkcoreapi int getBinding(struct sockaddr *);
+  inkcoreapi bool getBinding(struct sockaddr *);
 
   void destroy();
   int shouldDestroy();
@@ -73,7 +73,7 @@ public:
      <br>
      cont->handleEvent(NET_EVENT_DATAGRAM_READ_READY, Queue&lt;UDPPacketInternal&gt; *) on incoming packets.
 
-     @return Action* Always returns ACTION_RESULT_NONE.  Can't be
+     @return Action* Always returns nullptr.  Can't be
      cancelled via this Action.
      @param c continuation to be called back
    */
@@ -83,11 +83,9 @@ public:
   void AddRef();
   int GetRefCount();
 
-  int getPortNum(void);
+  int getPortNum();
 
   int GetSendGenerationNumber(); // const
-  void SetLastSentPktTSSeqNum(int64_t sentSeqNum);
-  int64_t cancel();
   void setContinuation(Continuation *c);
 
   /**

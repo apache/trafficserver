@@ -43,7 +43,7 @@ public:
   INKContInternal();
   INKContInternal(TSEventFunc funcp, TSMutex mutexp);
 
-  void init(TSEventFunc funcp, TSMutex mutexp);
+  void init(TSEventFunc funcp, TSMutex mutexp, void *context = 0);
   virtual void destroy();
 
   void handle_event_count(int event);
@@ -60,6 +60,7 @@ public:
   int m_closed;
   int m_deletable;
   int m_deleted;
+  void *m_context;
   // INKqa07670: Nokia memory leak bug fix
   INKContInternalMagic_t m_free_magic;
 };
@@ -132,7 +133,6 @@ tsapi TSMutex TSMutexCreateInternal(void);
 tsapi int TSMutexCheck(TSMutex mutex);
 
 /* IOBuffer */
-tsapi void TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64_t length);
 tsapi int64_t TSIOBufferBlockDataSizeGet(TSIOBufferBlock blockp);
 tsapi void TSIOBufferBlockDestroy(TSIOBufferBlock blockp);
 typedef void *INKUDPPacket;

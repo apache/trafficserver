@@ -41,9 +41,9 @@ public:
     TSContDataSet(_cont, static_cast<void *>(this));
   }
 
-  // Create "empty" continuation, can only be populated by move assignement.
+  // Create "empty" continuation, can only be populated by move assignment.
   //
-  Continuation() : _cont(nullptr) {}
+  Continuation() {}
 
   TSCont
   asTSCont() const
@@ -131,7 +131,7 @@ public:
   }
 
 protected:
-  // Distinct continuation behavior is acheived by overriding this function in a derived continutation type.
+  // Distinct continuation behavior is achieved by overriding this function in a derived continuation type.
   //
   virtual int _run(TSEvent event, void *edata) = 0;
 
@@ -139,7 +139,7 @@ protected:
   //
   static int _generalEventFunc(TSCont cont, TSEvent event, void *edata);
 
-  TSCont _cont;
+  TSCont _cont = nullptr;
 };
 
 } // end namespace atscppapi

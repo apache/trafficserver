@@ -93,7 +93,7 @@
 		</common_name>
 		<documentation>
 			<doc_link name='trafficserver.apache.org'
-				uri='http://trafficserver.apache.org/docs' />
+				uri='https://docs.trafficserver.apache.org/en/latest/' />
 		</documentation>
 	</template>
 </service>

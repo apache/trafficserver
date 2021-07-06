@@ -40,15 +40,15 @@
 #include "I_VIO.h"
 
 class Event;
-class UnixNetVConnection;
+class NetEvent;
 
 struct NetState {
-  int enabled;
+  int enabled = 0;
   VIO vio;
-  Link<UnixNetVConnection> ready_link;
-  SLink<UnixNetVConnection> enable_link;
-  int in_enabled_list;
-  int triggered;
+  Link<NetEvent> ready_link;
+  SLink<NetEvent> enable_link;
+  int in_enabled_list = 0;
+  int triggered       = 0;
 
-  NetState() : enabled(0), vio(VIO::NONE), in_enabled_list(0), triggered(0) {}
+  NetState() : vio(VIO::NONE) {}
 };

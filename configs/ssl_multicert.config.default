@@ -21,7 +21,7 @@
 # dest_ip=ADDRESS
 #   The IP (v4 or v6) address that the certificate should be presented
 #   on. This is now only used as a fallback in the case that the TLS
-#   SubjectNameIndication extension is not supported. If ADDRESS is
+#   ServerNameIndication extension is not supported. If ADDRESS is
 #   '*', the certificate will be used as the default fallback if no
 #   other match can be made.
 #

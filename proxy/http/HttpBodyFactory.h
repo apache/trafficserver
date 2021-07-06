@@ -33,7 +33,7 @@
   The HttpBodyFactory can build a message body for each response type.
   The user can create custom message body text for each type (stored
   in a text file directory), containing templates with space-holders for
-  variables which are inline-substituted with curent values.  The resulting
+  variables which are inline-substituted with current values.  The resulting
   body is dynamically allocated and returned.
 
   The major data types implemented in this file are:

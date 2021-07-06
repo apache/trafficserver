@@ -127,7 +127,7 @@ make_vol_map(Vol *d)
   off_t start_offset = d->vol_offset_to_offset(0);
   off_t vol_len      = d->vol_relative_length(start_offset);
   size_t map_len     = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
-  char *vol_map      = (char *)ats_malloc(map_len);
+  char *vol_map      = static_cast<char *>(ats_malloc(map_len));
 
   memset(vol_map, 0, map_len);
 
@@ -187,7 +187,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     fragment            = 1;
     scan_vol_map        = make_vol_map(vol);
     io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, vol->vol_offset_to_offset(0));
-    if (io.aiocb.aio_offset >= (off_t)(vol->skip + vol->len)) {
+    if (io.aiocb.aio_offset >= static_cast<off_t>(vol->skip + vol->len)) {
       goto Lnext_vol;
     }
     io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
@@ -198,24 +198,25 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     goto Lread;
   }
 
-  if ((size_t)io.aio_result != (size_t)io.aiocb.aio_nbytes) {
+  if (static_cast<size_t>(io.aio_result) != io.aiocb.aio_nbytes) {
     result = (void *)-ECACHE_READ_FAIL;
     goto Ldone;
   }
 
-  doc = (Doc *)(buf->data() + offset);
+  doc = reinterpret_cast<Doc *>(buf->data() + offset);
   // If there is data in the buffer before the start that is from a partial object read previously
   // Fix things as if we read it this time.
   if (scan_fix_buffer_offset) {
     io.aio_result += scan_fix_buffer_offset;
     io.aiocb.aio_nbytes += scan_fix_buffer_offset;
     io.aiocb.aio_offset -= scan_fix_buffer_offset;
-    io.aiocb.aio_buf       = (char *)io.aiocb.aio_buf - scan_fix_buffer_offset;
+    io.aiocb.aio_buf       = static_cast<char *>(io.aiocb.aio_buf) - scan_fix_buffer_offset;
     scan_fix_buffer_offset = 0;
   }
-  while ((off_t)((char *)doc - buf->data()) + next_object_len < (off_t)io.aiocb.aio_nbytes) {
+  while (static_cast<off_t>(reinterpret_cast<char *>(doc) - buf->data()) + next_object_len <
+         static_cast<off_t>(io.aiocb.aio_nbytes)) {
     might_need_overlap_read = false;
-    doc                     = (Doc *)((char *)doc + next_object_len);
+    doc                     = reinterpret_cast<Doc *>(reinterpret_cast<char *>(doc) + next_object_len);
     next_object_len         = vol->round_to_approx_size(doc->len);
     int i;
     bool changed;
@@ -236,12 +237,12 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         goto Lskip;
       }
       if (!dir_agg_valid(vol, &dir) || !dir_head(&dir) ||
-          (vol->vol_offset(&dir) != io.aiocb.aio_offset + ((char *)doc - buf->data()))) {
+          (vol->vol_offset(&dir) != io.aiocb.aio_offset + (reinterpret_cast<char *>(doc) - buf->data()))) {
         continue;
       }
       break;
     }
-    if (doc->data() - buf->data() > (int)io.aiocb.aio_nbytes) {
+    if (doc->data() - buf->data() > static_cast<int>(io.aiocb.aio_nbytes)) {
       might_need_overlap_read = true;
       goto Lskip;
     }
@@ -320,7 +321,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         cacheProcessor.remove(this, &doc->first_key, CACHE_FRAG_TYPE_HTTP, hname, hlen);
         return EVENT_CONT;
       } else {
-        offset          = (char *)doc - buf->data();
+        offset          = reinterpret_cast<char *>(doc) - buf->data();
         write_len       = 0;
         frag_type       = CACHE_FRAG_TYPE_HTTP;
         f.use_first_key = 1;
@@ -339,17 +340,19 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   vector.clear();
   // If we had an object that went past the end of the buffer, and it is small enough to fix,
   // fix it.
-  if (might_need_overlap_read && ((off_t)((char *)doc - buf->data()) + next_object_len > (off_t)io.aiocb.aio_nbytes) &&
+  if (might_need_overlap_read &&
+      (static_cast<off_t>(reinterpret_cast<char *>(doc) - buf->data()) + next_object_len >
+       static_cast<off_t>(io.aiocb.aio_nbytes)) &&
       next_object_len > 0) {
-    off_t partial_object_len = io.aiocb.aio_nbytes - ((char *)doc - buf->data());
+    off_t partial_object_len = io.aiocb.aio_nbytes - (reinterpret_cast<char *>(doc) - buf->data());
     // Copy partial object to beginning of the buffer.
-    memmove(buf->data(), (char *)doc, partial_object_len);
+    memmove(buf->data(), reinterpret_cast<char *>(doc), partial_object_len);
     io.aiocb.aio_offset += io.aiocb.aio_nbytes;
     io.aiocb.aio_nbytes    = SCAN_BUF_SIZE - partial_object_len;
     io.aiocb.aio_buf       = buf->data() + partial_object_len;
     scan_fix_buffer_offset = partial_object_len;
   } else { // Normal case, where we ended on a object boundary.
-    io.aiocb.aio_offset += ((char *)doc - buf->data()) + next_object_len;
+    io.aiocb.aio_offset += (reinterpret_cast<char *>(doc) - buf->data()) + next_object_len;
     Debug("cache_scan_truss", "next %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
     io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, io.aiocb.aio_offset);
     Debug("cache_scan_truss", "next_in_map %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
@@ -367,7 +370,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
 Lread:
   io.aiocb.aio_fildes = vol->fd;
-  if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(vol->skip + vol->len)) {
+  if (static_cast<off_t>(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > static_cast<off_t>(vol->skip + vol->len)) {
     io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
   }
   offset = 0;
@@ -439,8 +442,8 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     Debug("cache_scan", "got writer lock");
     Dir *l = nullptr;
     Dir d;
-    Doc *doc = (Doc *)(buf->data() + offset);
-    offset   = (char *)doc - buf->data() + vol->round_to_approx_size(doc->len);
+    Doc *doc = reinterpret_cast<Doc *>(buf->data() + offset);
+    offset   = reinterpret_cast<char *>(doc) - buf->data() + vol->round_to_approx_size(doc->len);
     // if the doc contains some data, then we need to create
     // a new directory entry for this fragment. Remember the
     // offset and the key in earliest_key

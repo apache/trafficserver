@@ -43,7 +43,7 @@ public:
   Pattern();
   virtual ~Pattern();
 
-  bool init(const String &pattern, const String &replacenemt, bool replace);
+  bool init(const String &pattern, const String &replacement, bool replace);
   bool init(const String &config);
   bool empty() const;
   bool match(const String &subject);
@@ -56,16 +56,16 @@ private:
   bool compile();
   void pcreFree();
 
-  pcre *_re;          /**< @brief PCRE compiled info structure, computed during initialization */
-  pcre_extra *_extra; /**< @brief PCRE study data block, computed during initialization */
+  pcre *_re          = nullptr; /**< @brief PCRE compiled info structure, computed during initialization */
+  pcre_extra *_extra = nullptr; /**< @brief PCRE study data block, computed during initialization */
 
   String _pattern;     /**< @brief PCRE pattern string, containing PCRE patterns and capturing groups. */
   String _replacement; /**< @brief PCRE replacement string, containing $0..$9 to be replaced with content of the capturing groups */
 
-  bool _replace; /**< @brief true if a replacement is needed, false if not, this is to distinguish between an empty replacement
-                    string and no replacement needed case */
+  bool _replace = false; /**< @brief true if a replacement is needed, false if not, this is to distinguish between an empty
+                    replacement string and no replacement needed case */
 
-  int _tokenCount;              /**< @brief number of replacements $0..$9 found in the replacement string if not empty */
+  int _tokenCount = 0;          /**< @brief number of replacements $0..$9 found in the replacement string if not empty */
   int _tokens[TOKENCOUNT];      /**< @brief replacement index 0..9, since they can be used in the replacement string in any order */
   int _tokenOffset[TOKENCOUNT]; /**< @brief replacement offset inside the replacement string */
 };
@@ -76,7 +76,7 @@ private:
 class MultiPattern
 {
 public:
-  MultiPattern(const String name = "") : _name(name) {}
+  MultiPattern(const String &name = "") : _name(name) {}
   virtual ~MultiPattern();
 
   bool empty() const;
@@ -106,14 +106,14 @@ public:
    * @param subject subject string
    * @return return false if any of the patterns matches, true otherwise.
    */
-  virtual bool
-  match(const String &subject) const
+  bool
+  match(const String &subject) const override
   {
     return !MultiPattern::match(subject);
   }
 
-  virtual bool
-  match(const String &subject, String &pattern) const
+  bool
+  match(const String &subject, String &pattern) const override
   {
     return !MultiPattern::match(subject, pattern);
   }

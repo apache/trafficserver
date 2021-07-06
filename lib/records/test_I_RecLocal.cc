@@ -74,7 +74,6 @@ Test01()
 {
   g_config_update_result = 0;
   printf("\n[Test01: Callback Tests]\n");
-  int failures = 0;
 
   printf("  [RecRegisterConfigUpdateCb]\n");
 
@@ -139,7 +138,6 @@ Test02()
 {
   g_config_update_result = 0;
   printf("\n[Test02: Callback (Multi-lock) Test]\n");
-  int failures = 0;
 
   printf("  [RecRegisterConfigUpdateCb]\n");
 
@@ -193,7 +191,7 @@ main(int argc, char **argv)
 
   // test
   Test01(); // Local callbacks
-  Test02(); // Local callbacks -- mulit-lock
+  Test02(); // Local callbacks -- multi-lock
   Test03(); // RecTree
 
   while (true) {

@@ -168,10 +168,6 @@ msgstr ""
 msgid ":ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`"
 msgstr ":ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`"
 
-#: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:86
-msgid ":ts:cv:`proxy.config.http.server_tcp_init_cwnd`"
-msgstr ""
-
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:87
 msgid ":ts:cv:`proxy.config.http.send_http11_requests`"
 msgstr ""
@@ -269,10 +265,6 @@ msgstr ":ts:cv:`proxy.config.http.cache.heuristic_min_lifetime`"
 #, fuzzy
 msgid ":ts:cv:`proxy.config.websocket.active_timeout`"
 msgstr ":ts:cv:`proxy.config.http.cache.heuristic_min_lifetime`"
-
-#: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:112
-msgid ":ts:cv:`proxy.config.http.origin_max_connections`"
-msgstr ""
 
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:113
 msgid ":ts:cv:`proxy.config.http.connect_attempts_max_retries`"

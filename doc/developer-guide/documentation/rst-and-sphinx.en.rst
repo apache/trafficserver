@@ -28,7 +28,7 @@ final rendered forms. While not entirely dissimilar to other plain text markup
 formats like Markdown, RST provides additional functionality for defining
 internal links between documents, producing tables of contents, and indices.
 Additionally, RST works in hand with Sphinx for providing advanced features
-such as markup domains, of which this documenentation makes extensive use.
+such as markup domains, of which this documentation makes extensive use.
 
 Both |RST| and Sphinx have official documentation resources which detail their
 full capabilities and all markup options, as well as methods of extending them

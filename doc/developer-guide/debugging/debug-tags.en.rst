@@ -72,7 +72,7 @@ Server behavior for testing and analysis.
 
 The debug tag setting (``-T`` and ``proxy.config.diags.debug.tags``) is a
 anchored regular expression against which the tag for a specific debug
-message is matched. This means the value "http" matches debug emssages
+message is matched. This means the value "http" matches debug messages
 with the tag "http" but also "http\_seq" and "http\_trans". If you want
 multiple tags then use a pipe symbol to separate the tags. For example
 "http\_tproxy\|dns\|hostdb" will match any of the message tags

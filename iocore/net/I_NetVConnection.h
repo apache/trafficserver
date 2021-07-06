@@ -21,8 +21,12 @@
   limitations under the License.
 
  */
-
 #pragma once
+
+#include "ProxyProtocol.h"
+
+#include <string_view>
+#include <optional>
 
 #include "tscore/ink_inet.h"
 #include "I_Action.h"
@@ -32,7 +36,6 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 #include "ts/apidefs.h"
-#include <string_view>
 #include "YamlSNIConfig.h"
 #include "tscpp/util/TextView.h"
 #include "tscore/IpMap.h"
@@ -173,12 +176,20 @@ struct NetVCOptions {
   static uint32_t const SOCK_OPT_LINGER_ON = 4;
   /// Value for TCP Fast open @c sockopt_flags
   static uint32_t const SOCK_OPT_TCP_FAST_OPEN = 8;
+  /// Value for SO_MARK @c sockopt_flags
+  static uint32_t const SOCK_OPT_PACKET_MARK = 16;
+  /// Value for IP_TOS @c sockopt_flags
+  static uint32_t const SOCK_OPT_PACKET_TOS = 32;
 
   uint32_t packet_mark;
   uint32_t packet_tos;
 
   EventType etype;
 
+  /** ALPN protocol-lists. The format is OpenSSL protocol-lists format (vector of 8-bit length-prefixed, byte strings)
+      https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_alpn_protos.html
+   */
+  std::string_view alpn_protos;
   /** Server name to use for SNI data on an outbound connection.
    */
   ats_scoped_str sni_servername;
@@ -187,10 +198,18 @@ struct NetVCOptions {
    */
   ats_scoped_str ssl_servername;
 
+  /** Server host name from client's request to use for SNI data on an outbound connection.
+   */
+  ats_scoped_str sni_hostname;
+
+  /** Outbound sni policy which overrides proxy.ssl.client.sni_policy
+   */
+  ats_scoped_str outbound_sni_policy;
+
   /**
    * Client certificate to use in response to OS's certificate request
    */
-  const char *ssl_client_cert_name = nullptr;
+  ats_scoped_str ssl_client_cert_name;
   /*
    * File containing private key matching certificate
    */
@@ -203,6 +222,8 @@ struct NetVCOptions {
    * Directory containing CA certs for verifying origin's cert
    */
   const char *ssl_client_ca_cert_path = nullptr;
+
+  bool tls_upstream = false;
 
   /// Reset all values to defaults.
 
@@ -224,6 +245,7 @@ struct NetVCOptions {
 
   NetVCOptions() { reset(); }
   ~NetVCOptions() {}
+
   /** Set the SNI server name.
       A local copy is made of @a name.
   */
@@ -240,6 +262,18 @@ struct NetVCOptions {
     }
     return *this;
   }
+
+  self &
+  set_ssl_client_cert_name(const char *name)
+  {
+    if (name) {
+      ssl_client_cert_name = ats_strdup(name);
+    } else {
+      ssl_client_cert_name = nullptr;
+    }
+    return *this;
+  }
+
   self &
   set_ssl_servername(const char *name)
   {
@@ -252,21 +286,37 @@ struct NetVCOptions {
   }
 
   self &
+  set_sni_hostname(const char *name, size_t len)
+  {
+    IpEndpoint ip;
+
+    // Literal IPv4 and IPv6 addresses are not permitted in "HostName".(rfc6066#section-3)
+    if (name && len && ats_ip_pton(std::string_view(name, len), &ip) != 0) {
+      sni_hostname = ats_strndup(name, len);
+    } else {
+      sni_hostname = nullptr;
+    }
+    return *this;
+  }
+
+  self &
   operator=(self const &that)
   {
     if (&that != this) {
       /*
        * It is odd but necessary to null the scoped string pointer here
-       * and then explicitly call release on them in the string assignements
+       * and then explicitly call release on them in the string assignments
        * below.
        * We a memcpy from that to this.  This will put that's string pointers into
        * this's memory.  Therefore we must first explicitly null out
        * this's original version of the string.  The release after the
        * memcpy removes the extra reference to that's copy of the string
-       * Removing the release will eventualy cause a double free crash
+       * Removing the release will eventually cause a double free crash
        */
-      sni_servername = nullptr; // release any current name.
-      ssl_servername = nullptr;
+      sni_servername       = nullptr; // release any current name.
+      ssl_servername       = nullptr;
+      sni_hostname         = nullptr;
+      ssl_client_cert_name = nullptr;
       memcpy(static_cast<void *>(this), &that, sizeof(self));
       if (that.sni_servername) {
         sni_servername.release(); // otherwise we'll free the source string.
@@ -275,6 +325,14 @@ struct NetVCOptions {
       if (that.ssl_servername) {
         ssl_servername.release(); // otherwise we'll free the source string.
         this->ssl_servername = ats_strdup(that.ssl_servername);
+      }
+      if (that.sni_hostname) {
+        sni_hostname.release(); // otherwise we'll free the source string.
+        this->sni_hostname = ats_strdup(that.sni_hostname);
+      }
+      if (that.ssl_client_cert_name) {
+        this->ssl_client_cert_name.release(); // otherwise we'll free the source string.
+        this->ssl_client_cert_name = ats_strdup(that.ssl_client_cert_name);
       }
     }
     return *this;
@@ -302,17 +360,9 @@ struct NetVCOptions {
   stream IO to be done based on a single read or write call.
 
 */
-class NetVConnection : public AnnotatedVConnection
+class NetVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS_VCONN>
 {
 public:
-  // How many bytes have been queued to the OS for sending by haven't been sent yet
-  // Not all platforms support this, and if they don't we'll return -1 for them
-  virtual int64_t
-  outstanding()
-  {
-    return -1;
-  };
-
   /**
      Initiates read. Thread safe, may be called when not handling
      an event from the NetVConnection, or the NetVConnection creation
@@ -339,6 +389,12 @@ public:
   */
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override = 0;
 
+  virtual Continuation *
+  read_vio_cont()
+  {
+    return nullptr;
+  }
+
   /**
     Initiates write. Thread-safe, may be called when not handling
     an event from the NetVConnection, or the NetVConnection creation
@@ -357,7 +413,7 @@ public:
       </tr>
       <tr>
         <td>c->handleEvent(VC_EVENT_ERROR, vio)</td>
-        <td>signified that error occured during write.</td>
+        <td>signified that error occurred during write.</td>
       </tr>
     </table>
 
@@ -367,7 +423,7 @@ public:
     when it is destroyed.
 
     @param c continuation to be called back after (partial) write
-    @param nbytes no of bytes to write, if unknown msut be set to INT64_MAX
+    @param nbytes no of bytes to write, if unknown must be set to INT64_MAX
     @param buf source of data
     @param owner
     @return vio pointer
@@ -375,13 +431,18 @@ public:
   */
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override = 0;
 
+  virtual Continuation *
+  write_vio_cont()
+  {
+    return nullptr;
+  }
   /**
     Closes the vconnection. A state machine MUST call do_io_close()
-    when it has finished with a VConenction. do_io_close() indicates
+    when it has finished with a VConnection. do_io_close() indicates
     that the VConnection can be deallocated. After a close has been
     called, the VConnection and underlying processor must NOT send
     any more events related to this VConnection to the state machine.
-    Likeswise, state machine must not access the VConnectuion or
+    Likewise, state machine must not access the VConnection or
     any returned VIOs after calling close. lerrno indicates whether
     a close is a normal close or an abort. The difference between
     a normal close and an abort depends on the underlying type of
@@ -400,7 +461,7 @@ public:
     IO_SHUTDOWN_READWRITE. Once a side of a VConnection is shutdown,
     no further I/O can be done on that side of the connections and
     the underlying processor MUST NOT send any further events
-    (INCLUDING TIMOUT EVENTS) to the state machine. The state machine
+    (INCLUDING TIMEOUT EVENTS) to the state machine. The state machine
     MUST NOT use any VIOs from a shutdown side of a connection.
     Even if both sides of a connection are shutdown, the state
     machine MUST still call do_io_close() when it wishes the
@@ -427,6 +488,15 @@ public:
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
 
   /**
+    Return the server name that is appropriate for the network VC type
+  */
+  virtual const char *
+  get_server_name() const
+  {
+    return nullptr;
+  }
+
+  /**
     Cancels a scheduled send_OOB. Part of the message could have
     been sent already. Not callbacks to the cont are made after
     this call. The Action returned by send_OOB should not be accessed
@@ -437,7 +507,7 @@ public:
 
   ////////////////////////////////////////////////////////////
   // Set the timeouts associated with this connection.      //
-  // active_timeout is for the total elasped time of        //
+  // active_timeout is for the total elapsed time of        //
   // the connection.                                        //
   // inactivity_timeout is the elapsed time from the time   //
   // a read or a write was scheduled during which the       //
@@ -460,7 +530,7 @@ public:
     that it does not keep any connections open for a really long
     time.
 
-    Timeout symantics:
+    Timeout semantics:
 
     Should a timeout occur, the state machine for the read side of
     the NetVConnection is signaled first assuming that a read has
@@ -498,7 +568,9 @@ public:
     is currently active. See section on timeout semantics above.
 
    */
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in)         = 0;
+  virtual void set_default_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual bool is_default_inactivity_timeout()                       = 0;
 
   /**
     Clears the active timeout. No active timeouts will be sent until
@@ -555,6 +627,7 @@ public:
 
   /** Returns local sockaddr storage. */
   sockaddr const *get_local_addr();
+  IpEndpoint const &get_local_endpoint();
 
   /** Returns local ip.
       @deprecated get_local_addr() should be used instead for AF_INET6 compatibility.
@@ -598,6 +671,34 @@ public:
     return netvc_context;
   }
 
+  /**
+   * Returns true if the network protocol
+   * supports a client provided SNI value
+   */
+  virtual bool
+  support_sni() const
+  {
+    return false;
+  }
+
+  virtual const char *
+  get_sni_servername() const
+  {
+    return nullptr;
+  }
+
+  virtual bool
+  peer_provided_cert() const
+  {
+    return false;
+  }
+
+  virtual int
+  provided_cert() const
+  {
+    return 0;
+  }
+
   /** Structure holding user options. */
   NetVCOptions options;
 
@@ -612,8 +713,8 @@ public:
   // is enabled by SocksProxy
   SocksAddrType socks_addr;
 
-  unsigned int attributes;
-  EThread *thread;
+  unsigned int attributes = 0;
+  EThread *thread         = nullptr;
 
   /// PRIVATE: The public interface is VIO::reenable()
   void reenable(VIO *vio) override = 0;
@@ -634,9 +735,6 @@ public:
 
   virtual SOCKET get_socket() = 0;
 
-  /** Set the TCP initial congestion window */
-  virtual int set_tcp_init_cwnd(int init_cwnd) = 0;
-
   /** Set the TCP congestion control algorithm */
   virtual int set_tcp_congestion_control(int side) = 0;
 
@@ -648,6 +746,9 @@ public:
 
   /** Set remote sock addr struct. */
   virtual void set_remote_addr(const sockaddr *) = 0;
+
+  /** Set the MPTCP state for this connection */
+  virtual void set_mptcp_state() = 0;
 
   // for InkAPI
   bool
@@ -668,6 +769,14 @@ public:
   {
     return is_transparent;
   }
+
+  /// Get the MPTCP state of the VC.
+  std::optional<bool>
+  get_mptcp_state() const
+  {
+    return mptcp_state;
+  }
+
   /// Set the transparency state.
   void
   set_is_transparent(bool state = true)
@@ -704,142 +813,67 @@ public:
   NetVConnection(const NetVConnection &) = delete;
   NetVConnection &operator=(const NetVConnection &) = delete;
 
-  enum class ProxyProtocolVersion {
-    UNDEFINED,
-    V1,
-    V2,
-  };
-
-  enum class ProxyProtocolData {
-    UNDEFINED,
-    SRC,
-    DST,
-  };
-
-  int
-  set_proxy_protocol_addr(const ProxyProtocolData src_or_dst, ts::TextView &ip_addr_str)
-  {
-    int ret = -1;
-
-    if (src_or_dst == ProxyProtocolData::SRC) {
-      ret = ats_ip_pton(ip_addr_str, &pp_info.src_addr);
-    } else {
-      ret = ats_ip_pton(ip_addr_str, &pp_info.dst_addr);
-    }
-    return ret;
-  }
-
-  int
-  set_proxy_protocol_src_addr(ts::TextView src)
-  {
-    return set_proxy_protocol_addr(ProxyProtocolData::SRC, src);
-  }
-
-  int
-  set_proxy_protocol_dst_addr(ts::TextView src)
-  {
-    return set_proxy_protocol_addr(ProxyProtocolData::DST, src);
-  }
-
-  int
-  set_proxy_protocol_port(const ProxyProtocolData src_or_dst, in_port_t port)
-  {
-    if (src_or_dst == ProxyProtocolData::SRC) {
-      pp_info.src_addr.port() = htons(port);
-    } else {
-      pp_info.dst_addr.port() = htons(port);
-    }
-    return port;
-  }
-
-  int
-  set_proxy_protocol_src_port(in_port_t port)
-  {
-    return set_proxy_protocol_port(ProxyProtocolData::SRC, port);
-  }
-
-  int
-  set_proxy_protocol_dst_port(in_port_t port)
-  {
-    return set_proxy_protocol_port(ProxyProtocolData::DST, port);
-  }
-
-  void
-  set_proxy_protocol_version(const ProxyProtocolVersion ver)
-  {
-    pp_info.proxy_protocol_version = ver;
-  }
-
   ProxyProtocolVersion
-  get_proxy_protocol_version()
+  get_proxy_protocol_version() const
   {
-    return pp_info.proxy_protocol_version;
+    return pp_info.version;
   }
 
-  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData);
+  sockaddr const *get_proxy_protocol_addr(const ProxyProtocolData) const;
 
   sockaddr const *
-  get_proxy_protocol_src_addr()
+  get_proxy_protocol_src_addr() const
   {
     return get_proxy_protocol_addr(ProxyProtocolData::SRC);
   }
 
   uint16_t
-  get_proxy_protocol_src_port()
+  get_proxy_protocol_src_port() const
   {
     return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::SRC));
   }
 
   sockaddr const *
-  get_proxy_protocol_dst_addr()
+  get_proxy_protocol_dst_addr() const
   {
     return get_proxy_protocol_addr(ProxyProtocolData::DST);
   }
 
   uint16_t
-  get_proxy_protocol_dst_port()
+  get_proxy_protocol_dst_port() const
   {
     return ats_ip_port_host_order(this->get_proxy_protocol_addr(ProxyProtocolData::DST));
   };
 
-  struct ProxyProtocol {
-    ProxyProtocolVersion proxy_protocol_version = ProxyProtocolVersion::UNDEFINED;
-    uint16_t ip_family;
-    IpEndpoint src_addr;
-    IpEndpoint dst_addr;
-  };
+  void set_proxy_protocol_info(const ProxyProtocol &src);
+  const ProxyProtocol &get_proxy_protocol_info() const;
 
-  ProxyProtocol pp_info;
+  bool has_proxy_protocol(IOBufferReader *);
+  bool has_proxy_protocol(char *, int64_t *);
 
 protected:
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
+  ProxyProtocol pp_info;
 
-  bool got_local_addr;
-  bool got_remote_addr;
+  bool got_local_addr  = false;
+  bool got_remote_addr = false;
 
-  bool is_internal_request;
+  bool is_internal_request = false;
   /// Set if this connection is transparent.
-  bool is_transparent;
+  bool is_transparent = false;
   /// Set if proxy protocol is enabled
-  bool is_proxy_protocol;
+  bool is_proxy_protocol = false;
+  /// This is essentially a tri-state, we leave it undefined to mean no MPTCP support
+  std::optional<bool> mptcp_state;
   /// Set if the next write IO that empties the write buffer should generate an event.
-  int write_buffer_empty_event;
+  int write_buffer_empty_event = 0;
   /// NetVConnection Context.
-  NetVConnectionContext_t netvc_context;
+  NetVConnectionContext_t netvc_context = NET_VCONNECTION_UNSET;
 };
 
-inline NetVConnection::NetVConnection()
-  : AnnotatedVConnection(nullptr),
-    attributes(0),
-    thread(nullptr),
-    got_local_addr(false),
-    got_remote_addr(false),
-    is_internal_request(false),
-    is_transparent(false),
-    is_proxy_protocol(false),
-    write_buffer_empty_event(0),
-    netvc_context(NET_VCONNECTION_UNSET)
+inline NetVConnection::NetVConnection() : VConnection(nullptr)
+
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

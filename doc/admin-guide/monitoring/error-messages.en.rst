@@ -46,7 +46,7 @@ Process Warnings
 
 ``Connect by disallowed client <IP address>, closing``
    The specified client is not allowed to connect to Traffic Server;
-   the client IP address is not listed in the ``ip_allow.config`` file.
+   the client IP address is not listed in the ``ip_allow.yaml`` file.
 
 ``Could not rename log <filename> to <rolled filename>``
    System error when renaming log file during roll.
@@ -78,11 +78,11 @@ Process Warnings
 Alarm Messages
 ==============
 
-``[Rollback::Rollback] Config file is read-only: <filename>``
+``[ConfigManager::ConfigManager] Config file is read-only: <filename>``
    Go to the Traffic Server ``config`` directory and check the
    indicated file permissions; change if necessary.
 
-``[Rollback::Rollback] Unable to read or write config file <filename>``
+``[ConfigManager::ConfigManager] Unable to read or write config file <filename>``
    Go to the Traffic Server ``config`` directory and make sure the
    indicated file exists. Check permissions and modify if necessary.
 
@@ -177,7 +177,7 @@ with corresponding HTTP response codes and customizable files.
    ``timeout#inactivity``
 
 ``Content Length Required``
-   ``400``
+   ``411``
    Could not process this request because ``Content-Length`` was not specified.
    ``request#no_content_length``
 
@@ -311,4 +311,10 @@ with corresponding HTTP response codes and customizable files.
    Cannot perform your request for the document ``URL`` because the
    protocol scheme is unknown.
    ``request#scheme_unsupported``
+
+``URI Too Long``
+   ``414``
+   Could not process this request because the request uri
+   was too long ..
+   ``request#uri_len_too_long``
 

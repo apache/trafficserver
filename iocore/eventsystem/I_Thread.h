@@ -99,6 +99,7 @@ public:
     processors and you should not modify it directly.
 
   */
+  // NOLINTNEXTLINE(modernize-use-nullptr)
   ink_thread tid = 0;
 
   /**
@@ -109,7 +110,7 @@ public:
   */
   Ptr<ProxyMutex> mutex;
 
-  void set_specific();
+  virtual void set_specific();
 
   inkcoreapi static ink_thread_key thread_data_key;
 
@@ -117,10 +118,12 @@ public:
   ProxyAllocator eventAllocator;
   ProxyAllocator netVCAllocator;
   ProxyAllocator sslNetVCAllocator;
+  ProxyAllocator quicNetVCAllocator;
   ProxyAllocator http1ClientSessionAllocator;
   ProxyAllocator http2ClientSessionAllocator;
   ProxyAllocator http2StreamAllocator;
-  ProxyAllocator http1ServerSessionAllocator;
+  ProxyAllocator quicClientSessionAllocator;
+  ProxyAllocator httpServerSessionAllocator;
   ProxyAllocator hdrHeapAllocator;
   ProxyAllocator strHeapAllocator;
   ProxyAllocator cacheVConnectionAllocator;
@@ -146,7 +149,7 @@ public:
       This gets a cached copy of the time so it is very fast and reasonably accurate.
       The cached time is updated every time the actual operating system time is fetched which is
       at least every 10ms and generally more frequently.
-      @note The cached copy shared among threads which means the cached copy is udpated
+      @note The cached copy shared among threads which means the cached copy is updated
       for all threads if any thread updates it.
   */
   static ink_hrtime get_hrtime();

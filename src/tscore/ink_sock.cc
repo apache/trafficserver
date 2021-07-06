@@ -50,7 +50,7 @@ check_valid_sockaddr(sockaddr *sa, char *file, int line)
   if (port > 20000) {
     cerr << "[byteordering] In " << file << ", line " << line << " the IP port ";
     cerr << "was found to be " << port << "(in host byte order).\n";
-    cerr << "[byteordering] This seems inplausible, so check for byte order problems\n";
+    cerr << "[byteordering] This seems implausible, so check for byte order problems\n";
   }
 }
 #else
@@ -72,7 +72,7 @@ safe_getsockopt(int s, int level, int optname, char *optval, int *optlevel)
 {
   int r;
   do {
-    r = getsockopt(s, level, optname, optval, (socklen_t *)optlevel);
+    r = getsockopt(s, level, optname, optval, reinterpret_cast<socklen_t *>(optlevel));
   } while (r < 0 && (errno == EAGAIN || errno == EINTR));
   return r;
 }
@@ -121,25 +121,6 @@ int
 safe_blocking(int fd)
 {
   return safe_clr_fl(fd, O_NONBLOCK);
-}
-
-int
-write_ready(int fd, int timeout_msec)
-{
-  struct pollfd p;
-  p.events = POLLOUT;
-  p.fd     = fd;
-  int r    = poll(&p, 1, timeout_msec);
-  if (r <= 0) {
-    return r;
-  }
-  if (p.revents & (POLLERR | POLLNVAL)) {
-    return -1;
-  }
-  if (p.revents & (POLLOUT | POLLHUP)) {
-    return 1;
-  }
-  return 0;
 }
 
 int
@@ -197,7 +178,7 @@ safe_getsockname(int s, struct sockaddr *name, int *namelen)
 {
   int r;
   do {
-    r = getsockname(s, name, (socklen_t *)namelen);
+    r = getsockname(s, name, reinterpret_cast<socklen_t *>(namelen));
   } while (r < 0 && (errno == EAGAIN || errno == EINTR));
   return r;
 }
@@ -207,7 +188,7 @@ safe_getpeername(int s, struct sockaddr *name, int *namelen)
 {
   int r;
   do {
-    r = getpeername(s, name, (socklen_t *)namelen);
+    r = getpeername(s, name, reinterpret_cast<socklen_t *>(namelen));
   } while (r < 0 && (errno == EAGAIN || errno == EINTR));
   return r;
 }
@@ -312,7 +293,7 @@ bind_unix_domain_socket(const char *path, mode_t mode)
     goto fail;
   }
 
-  if (bind(sockfd, (struct sockaddr *)&sockaddr, socklen) < 0) {
+  if (bind(sockfd, reinterpret_cast<struct sockaddr *>(&sockaddr), socklen) < 0) {
     goto fail;
   }
 

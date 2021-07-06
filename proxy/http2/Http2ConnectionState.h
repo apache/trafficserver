@@ -24,17 +24,23 @@
 #pragma once
 
 #include <atomic>
+
+#include "NetTimeout.h"
+
 #include "HTTP2.h"
 #include "HPACK.h"
 #include "Http2Stream.h"
 #include "Http2DependencyTree.h"
+#include "Http2FrequencyCounter.h"
 
 class Http2ClientSession;
+class Http2Frame;
 
 enum class Http2SendDataFrameResult {
   NO_ERROR = 0,
   NO_WINDOW,
   NO_PAYLOAD,
+  NOT_WRITE_AVAIL,
   ERROR,
   DONE,
 };
@@ -44,62 +50,15 @@ enum Http2ShutdownState { HTTP2_SHUTDOWN_NONE, HTTP2_SHUTDOWN_NOT_INITIATED, HTT
 class Http2ConnectionSettings
 {
 public:
-  Http2ConnectionSettings()
-  {
-    // 6.5.2.  Defined SETTINGS Parameters. These should generally not be
-    // modified,
-    // only if the protocol changes should these change.
-    settings[indexof(HTTP2_SETTINGS_ENABLE_PUSH)]            = HTTP2_ENABLE_PUSH;
-    settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = HTTP2_MAX_CONCURRENT_STREAMS;
-    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = HTTP2_INITIAL_WINDOW_SIZE;
-    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = HTTP2_MAX_FRAME_SIZE;
-    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = HTTP2_HEADER_TABLE_SIZE;
-    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = HTTP2_MAX_HEADER_LIST_SIZE;
-  }
+  Http2ConnectionSettings();
 
-  void
-  settings_from_configs()
-  {
-    settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams_in;
-    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = Http2::initial_window_size;
-    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = Http2::max_frame_size;
-    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = Http2::header_table_size;
-    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = Http2::max_header_list_size;
-  }
-
-  unsigned
-  get(Http2SettingsIdentifier id) const
-  {
-    if (0 < id && id < HTTP2_SETTINGS_MAX) {
-      return this->settings[indexof(id)];
-    } else {
-      ink_assert(!"Bad Settings Identifier");
-    }
-
-    return 0;
-  }
-
-  unsigned
-  set(Http2SettingsIdentifier id, unsigned value)
-  {
-    if (0 < id && id < HTTP2_SETTINGS_MAX) {
-      return this->settings[indexof(id)] = value;
-    } else {
-      ink_assert(!"Bad Settings Identifier");
-    }
-
-    return 0;
-  }
+  void settings_from_configs();
+  unsigned get(Http2SettingsIdentifier id) const;
+  unsigned set(Http2SettingsIdentifier id, unsigned value);
 
 private:
   // Settings ID is 1-based, so convert it to a 0-based index.
-  static unsigned
-  indexof(Http2SettingsIdentifier id)
-  {
-    ink_assert(0 < id && id < HTTP2_SETTINGS_MAX);
-
-    return id - 1;
-  }
+  static unsigned indexof(Http2SettingsIdentifier id);
 
   unsigned settings[HTTP2_SETTINGS_MAX - 1];
 };
@@ -113,7 +72,11 @@ private:
 class Http2ConnectionState : public Continuation
 {
 public:
-  Http2ConnectionState() : stream_list() { SET_HANDLER(&Http2ConnectionState::main_event_handler); }
+  Http2ConnectionState();
+
+  // noncopyable
+  Http2ConnectionState(const Http2ConnectionState &) = delete;
+  Http2ConnectionState &operator=(const Http2ConnectionState &) = delete;
 
   ProxyError rx_error_code;
   ProxyError tx_error_code;
@@ -121,44 +84,16 @@ public:
   HpackHandle *local_hpack_handle  = nullptr;
   HpackHandle *remote_hpack_handle = nullptr;
   DependencyTree *dependency_tree  = nullptr;
+  ActivityCop<Http2Stream> _cop;
 
   // Settings.
   Http2ConnectionSettings server_settings;
   Http2ConnectionSettings client_settings;
 
-  void
-  init()
-  {
-    local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
-    remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
-    dependency_tree     = new DependencyTree(Http2::max_concurrent_streams_in);
-  }
-
-  void
-  destroy()
-  {
-    if (shutdown_cont_event) {
-      shutdown_cont_event->cancel();
-    }
-    cleanup_streams();
-
-    delete local_hpack_handle;
-    local_hpack_handle = nullptr;
-    delete remote_hpack_handle;
-    remote_hpack_handle = nullptr;
-    delete dependency_tree;
-    dependency_tree  = nullptr;
-    this->ua_session = nullptr;
-
-    if (fini_event) {
-      fini_event->cancel();
-    }
-    if (zombie_event) {
-      zombie_event->cancel();
-    }
-    // release the mutex after the events are cancelled and sessions are destroyed.
-    mutex = nullptr; // magic happens - assigning to nullptr frees the ProxyMutex
-  }
+  void init(Http2ClientSession *ssn);
+  void send_connection_preface();
+  void destroy();
+  void rcv_frame(const Http2Frame *frame);
 
   // Event handlers
   int main_event_handler(int, void *);
@@ -169,61 +104,25 @@ public:
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
   bool delete_stream(Http2Stream *stream);
-  void release_stream(Http2Stream *stream);
+  void release_stream();
   void cleanup_streams();
-
+  void restart_receiving(Http2Stream *stream);
   void update_initial_rwnd(Http2WindowSize new_size);
 
-  Http2StreamId
-  get_latest_stream_id_in() const
-  {
-    return latest_streamid_in;
-  }
-
-  Http2StreamId
-  get_latest_stream_id_out() const
-  {
-    return latest_streamid_out;
-  }
-
-  int
-  get_stream_requests() const
-  {
-    return stream_requests;
-  }
-
-  void
-  increment_stream_requests()
-  {
-    stream_requests++;
-  }
+  Http2StreamId get_latest_stream_id_in() const;
+  Http2StreamId get_latest_stream_id_out() const;
+  int get_stream_requests() const;
+  void increment_stream_requests();
 
   // Continuated header decoding
-  Http2StreamId
-  get_continued_stream_id() const
-  {
-    return continued_stream_id;
-  }
-  void
-  set_continued_stream_id(Http2StreamId stream_id)
-  {
-    continued_stream_id = stream_id;
-  }
-  void
-  clear_continued_stream_id()
-  {
-    continued_stream_id = 0;
-  }
+  Http2StreamId get_continued_stream_id() const;
+  void set_continued_stream_id(Http2StreamId stream_id);
+  void clear_continued_stream_id();
 
-  uint32_t
-  get_client_stream_count() const
-  {
-    return client_streams_in_count;
-  }
-
-  // Connection level window size
-  ssize_t client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
-  ssize_t server_rwnd = Http2::initial_window_size;
+  uint32_t get_client_stream_count() const;
+  void decrement_stream_count();
+  double get_stream_error_rate() const;
+  Http2ErrorCode get_shutdown_reason() const;
 
   // HTTP/2 frame sender
   void schedule_stream(Http2Stream *stream);
@@ -231,67 +130,38 @@ public:
   void send_data_frames(Http2Stream *stream);
   Http2SendDataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
-  void send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
+  bool send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_settings_frame(const Http2ConnectionSettings &new_settings);
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);
   void send_goaway_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_window_update_frame(Http2StreamId id, uint32_t size);
 
-  bool
-  is_state_closed() const
-  {
-    return ua_session == nullptr || fini_received;
-  }
+  bool is_state_closed() const;
+  bool is_recursing() const;
+  bool is_valid_streamid(Http2StreamId id) const;
 
-  bool
-  is_recursing() const
-  {
-    return recursion > 0;
-  }
+  Http2ShutdownState get_shutdown_state() const;
+  void set_shutdown_state(Http2ShutdownState state, Http2ErrorCode reason = Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
 
-  bool
-  is_valid_streamid(Http2StreamId id) const
-  {
-    if (http2_is_client_streamid(id)) {
-      return id <= get_latest_stream_id_in();
-    } else {
-      return id <= get_latest_stream_id_out();
-    }
-  }
+  Event *get_zombie_event();
+  void schedule_zombie_event();
 
-  Http2ShutdownState
-  get_shutdown_state() const
-  {
-    return shutdown_state;
-  }
+  void increment_received_settings_count(uint32_t count);
+  uint32_t get_received_settings_count();
+  void increment_received_settings_frame_count();
+  uint32_t get_received_settings_frame_count();
+  void increment_received_ping_frame_count();
+  uint32_t get_received_ping_frame_count();
+  void increment_received_priority_frame_count();
+  uint32_t get_received_priority_frame_count();
 
-  void
-  set_shutdown_state(Http2ShutdownState state)
-  {
-    shutdown_state = state;
-  }
-
-  // noncopyable
-  Http2ConnectionState(const Http2ConnectionState &) = delete;
-  Http2ConnectionState &operator=(const Http2ConnectionState &) = delete;
-
-  Event *
-  get_zombie_event()
-  {
-    return zombie_event;
-  }
-
-  void
-  schedule_zombie_event()
-  {
-    if (Http2::zombie_timeout_in) { // If we have zombie debugging enabled
-      if (zombie_event) {
-        zombie_event->cancel();
-      }
-      zombie_event = this_ethread()->schedule_in(this, HRTIME_SECONDS(Http2::zombie_timeout_in));
-    }
-  }
+  ssize_t client_rwnd() const;
+  Http2ErrorCode increment_client_rwnd(size_t amount);
+  Http2ErrorCode decrement_client_rwnd(size_t amount);
+  ssize_t server_rwnd() const;
+  Http2ErrorCode increment_server_rwnd(size_t amount);
+  Http2ErrorCode decrement_server_rwnd(size_t amount);
 
 private:
   unsigned _adjust_concurrent_stream();
@@ -310,11 +180,26 @@ private:
   // Counter for current active streams which is started by client
   std::atomic<uint32_t> client_streams_in_count = 0;
 
-  // Counter for current acive streams which is started by server
+  // Counter for current active streams which is started by server
   std::atomic<uint32_t> client_streams_out_count = 0;
 
   // Counter for current active streams and streams in the process of shutting down
   std::atomic<uint32_t> total_client_streams_count = 0;
+
+  // Counter for stream errors ATS sent
+  uint32_t stream_error_count = 0;
+
+  // Connection level window size
+  ssize_t _client_rwnd = HTTP2_INITIAL_WINDOW_SIZE;
+  ssize_t _server_rwnd = 0;
+
+  std::vector<size_t> _recent_rwnd_increment = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
+  int _recent_rwnd_increment_index           = 0;
+
+  Http2FrequencyCounter _received_settings_counter;
+  Http2FrequencyCounter _received_settings_frame_counter;
+  Http2FrequencyCounter _received_ping_frame_counter;
+  Http2FrequencyCounter _received_priority_frame_counter;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS
@@ -326,9 +211,139 @@ private:
   Http2StreamId continued_stream_id = 0;
   bool _scheduled                   = false;
   bool fini_received                = false;
+  bool in_destroy                   = false;
   int recursion                     = 0;
   Http2ShutdownState shutdown_state = HTTP2_SHUTDOWN_NONE;
+  Http2ErrorCode shutdown_reason    = Http2ErrorCode::HTTP2_ERROR_MAX;
   Event *shutdown_cont_event        = nullptr;
   Event *fini_event                 = nullptr;
   Event *zombie_event               = nullptr;
 };
+
+///////////////////////////////////////////////
+// INLINE
+//
+inline Http2StreamId
+Http2ConnectionState::get_latest_stream_id_in() const
+{
+  return latest_streamid_in;
+}
+
+inline Http2StreamId
+Http2ConnectionState::get_latest_stream_id_out() const
+{
+  return latest_streamid_out;
+}
+
+inline int
+Http2ConnectionState::get_stream_requests() const
+{
+  return stream_requests;
+}
+
+inline void
+Http2ConnectionState::increment_stream_requests()
+{
+  stream_requests++;
+}
+
+// Continuated header decoding
+inline Http2StreamId
+Http2ConnectionState::get_continued_stream_id() const
+{
+  return continued_stream_id;
+}
+
+inline void
+Http2ConnectionState::set_continued_stream_id(Http2StreamId stream_id)
+{
+  continued_stream_id = stream_id;
+}
+
+inline void
+Http2ConnectionState::clear_continued_stream_id()
+{
+  continued_stream_id = 0;
+}
+
+inline uint32_t
+Http2ConnectionState::get_client_stream_count() const
+{
+  return client_streams_in_count;
+}
+
+inline void
+Http2ConnectionState::decrement_stream_count()
+{
+  --total_client_streams_count;
+}
+
+inline double
+Http2ConnectionState::get_stream_error_rate() const
+{
+  int total = get_stream_requests();
+
+  if (total >= (1 / Http2::stream_error_rate_threshold)) {
+    return (double)stream_error_count / (double)total;
+  } else {
+    return 0;
+  }
+}
+
+inline Http2ErrorCode
+Http2ConnectionState::get_shutdown_reason() const
+{
+  return shutdown_reason;
+}
+
+inline bool
+Http2ConnectionState::is_state_closed() const
+{
+  return ua_session == nullptr || fini_received;
+}
+
+inline bool
+Http2ConnectionState::is_recursing() const
+{
+  return recursion > 0;
+}
+
+inline bool
+Http2ConnectionState::is_valid_streamid(Http2StreamId id) const
+{
+  if (http2_is_client_streamid(id)) {
+    return id <= get_latest_stream_id_in();
+  } else {
+    return id <= get_latest_stream_id_out();
+  }
+}
+
+inline Http2ShutdownState
+Http2ConnectionState::get_shutdown_state() const
+{
+  return shutdown_state;
+}
+
+inline void
+Http2ConnectionState::set_shutdown_state(Http2ShutdownState state, Http2ErrorCode reason)
+{
+  shutdown_state  = state;
+  shutdown_reason = reason;
+}
+
+inline Event *
+Http2ConnectionState::get_zombie_event()
+{
+  return zombie_event;
+}
+
+inline void
+Http2ConnectionState::schedule_zombie_event()
+{
+  if (Http2::zombie_timeout_in) { // If we have zombie debugging enabled
+    if (zombie_event) {
+      zombie_event->cancel();
+    }
+    zombie_event = this_ethread()->schedule_in(this, HRTIME_SECONDS(Http2::zombie_timeout_in));
+  }
+}

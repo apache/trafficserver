@@ -1,5 +1,5 @@
 '''
-Test the 408 reponse header.
+Test the 408 response header.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,7 +18,6 @@ Test the 408 reponse header.
 #  limitations under the License.
 
 import os
-import subprocess
 
 Test.Summary = '''
 Check 408 response header for protocol stack data.
@@ -40,7 +39,7 @@ ts.Disk.remap_config.AddLine(
     'map http://{0} http://127.0.0.1:{1}'.format(HTTP_408_HOST, server.Variables.Port)
 )
 
-TIMEOUT=2
+TIMEOUT = 2
 ts.Disk.records_config.update({
     'proxy.config.http.transaction_no_activity_timeout_in': TIMEOUT,
 })
@@ -51,8 +50,8 @@ Test.Setup.Copy('data')
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.Command = 'python tcp_client.py 127.0.0.1 {0} {1} --delay-after-send {2}'\
-        .format(ts.Variables.port, 'data/{0}.txt'.format(HTTP_408_HOST), TIMEOUT + 2)
+tr.Processes.Default.Command = 'python3 tcp_client.py 127.0.0.1 {0} {1} --delay-after-send {2}'\
+    .format(ts.Variables.port, 'data/{0}.txt'.format(HTTP_408_HOST), TIMEOUT + 2)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = "http408.gold"

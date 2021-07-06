@@ -190,8 +190,8 @@ hash是jtest、ats里无处不在的，如何让hash互相影响，甚至测试h
       -N, --alternates        int   0         Number of Alternates
       -e, --client_rate       int   0         Clients Per Sec
       -o, --abort_retry_speed int   0         Abort/Retry Speed
-      - , --abort_retry_bytes int   0         Abort/Retry Threshhold (bytes)
-      - , --abort_retry_secs  int   5         Abort/Retry Threshhold (secs)
+      - , --abort_retry_bytes int   0         Abort/Retry Threshold (bytes)
+      - , --abort_retry_secs  int   5         Abort/Retry Threshold (secs)
       -W, --reload_rate       dbl   0.000     Reload Rate
 
 * -D，用于生成url的随机数，如果有多个jtest并发运行，可以对这个随机的seed进行区分以控制cache的多小等

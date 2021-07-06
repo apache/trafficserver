@@ -40,6 +40,8 @@ static lua_State *ts_lua_new_state();
 static void ts_lua_init_registry(lua_State *L);
 static void ts_lua_init_globals(lua_State *L);
 static void ts_lua_inject_ts_api(lua_State *L);
+static ts_lua_ctx_stats *ts_lua_create_ctx_stats();
+static void ts_lua_destroy_ctx_stats(ts_lua_ctx_stats *stats);
 
 int
 ts_lua_create_vm(ts_lua_main_ctx *arr, int n)
@@ -58,6 +60,7 @@ ts_lua_create_vm(ts_lua_main_ctx *arr, int n)
     arr[i].gref   = luaL_ref(L, LUA_REGISTRYINDEX); /* L[REG][gref] = L[GLOBAL] */
     arr[i].lua    = L;
     arr[i].mutexp = TSMutexCreate();
+    arr[i].stats  = ts_lua_create_ctx_stats();
   }
 
   return 0;
@@ -68,11 +71,26 @@ ts_lua_destroy_vm(ts_lua_main_ctx *arr, int n)
 {
   int i;
   lua_State *L;
+  TSMutex mutexp;
+  ts_lua_ctx_stats *stats;
 
   for (i = 0; i < n; i++) {
     L = arr[i].lua;
-    if (L)
+    if (L) {
       lua_close(L);
+      arr[i].lua = NULL;
+    }
+    mutexp = arr[i].mutexp;
+    if (mutexp) {
+      TSMutexDestroy(mutexp);
+      arr[i].mutexp = NULL;
+    }
+
+    stats = arr[i].stats;
+    if (stats) {
+      ts_lua_destroy_ctx_stats(stats);
+      arr[i].stats = NULL;
+    }
   }
 
   return;
@@ -96,6 +114,29 @@ ts_lua_new_state()
   ts_lua_init_globals(L);
 
   return L;
+}
+
+ts_lua_ctx_stats *
+ts_lua_create_ctx_stats()
+{
+  ts_lua_ctx_stats *stats = NULL;
+
+  stats = TSmalloc(sizeof(ts_lua_ctx_stats));
+  memset(stats, 0, sizeof(ts_lua_ctx_stats));
+
+  stats->mutexp = TSMutexCreate();
+
+  return stats;
+}
+
+void
+ts_lua_destroy_ctx_stats(ts_lua_ctx_stats *stats)
+{
+  if (stats) {
+    TSMutexDestroy(stats->mutexp);
+    stats->mutexp = NULL;
+    TSfree(stats);
+  }
 }
 
 ts_lua_instance_conf *
@@ -264,8 +305,6 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY */
 
-    lua_gc(L, LUA_GCCOLLECT, 0);
-
     TSMutexUnlock(arr[i].mutexp);
   }
 
@@ -305,8 +344,6 @@ ts_lua_del_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
 
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY  */
-
-    lua_gc(L, LUA_GCCOLLECT, 0);
 
     TSMutexUnlock(arr[i].mutexp);
   }
@@ -368,8 +405,6 @@ ts_lua_reload_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n)
 
     lua_newtable(L);
     lua_replace(L, LUA_GLOBALSINDEX); /* L[GLOBAL] = EMPTY */
-
-    lua_gc(L, LUA_GCCOLLECT, 0);
 
     TSMutexUnlock(arr[i].mutexp);
   }
@@ -501,6 +536,17 @@ ts_lua_create_async_ctx(lua_State *L, ts_lua_cont_info *hci, int n)
   crt->lua  = l;
   crt->ref  = luaL_ref(L, LUA_REGISTRYINDEX);
 
+  // update thread stats
+  ts_lua_main_ctx *const main_ctx = crt->mctx;
+  ts_lua_ctx_stats *const stats   = main_ctx->stats;
+
+  TSMutexLock(stats->mutexp);
+  ++stats->threads;
+  if (stats->threads_max < stats->threads) {
+    stats->threads_max = stats->threads;
+  }
+  TSMutexUnlock(stats->mutexp);
+
   // replace the param; start with 2 because first two params are not needed
   for (i = 2; i < n; i++) {
     lua_pushvalue(L, i + 1);
@@ -517,6 +563,14 @@ ts_lua_destroy_async_ctx(ts_lua_http_ctx *http_ctx)
   ts_lua_cont_info *ci;
 
   ci = &http_ctx->cinfo;
+
+  // update thread stats
+  ts_lua_main_ctx *const main_ctx = ci->routine.mctx;
+  ts_lua_ctx_stats *const stats   = main_ctx->stats;
+
+  TSMutexLock(stats->mutexp);
+  --stats->threads;
+  TSMutexUnlock(stats->mutexp);
 
   ts_lua_release_cont_info(ci);
   TSfree(http_ctx);
@@ -580,6 +634,16 @@ ts_lua_create_http_ctx(ts_lua_main_ctx *main_ctx, ts_lua_instance_conf *conf)
   crt->lua  = l;
   crt->mctx = main_ctx;
 
+  // update thread stats
+  ts_lua_ctx_stats *const stats = main_ctx->stats;
+
+  TSMutexLock(stats->mutexp);
+  ++stats->threads;
+  if (stats->threads_max < stats->threads) {
+    stats->threads_max = stats->threads;
+  }
+  TSMutexUnlock(stats->mutexp);
+
   http_ctx->instance_conf = conf;
 
   ts_lua_set_http_ctx(l, http_ctx);
@@ -622,6 +686,14 @@ ts_lua_destroy_http_ctx(ts_lua_http_ctx *http_ctx)
     TSHandleMLocRelease(http_ctx->cached_response_bufp, TS_NULL_MLOC, http_ctx->cached_response_hdrp);
     TSMBufferDestroy(http_ctx->cached_response_bufp);
   }
+
+  // update thread stats
+  ts_lua_main_ctx *const main_ctx = ci->routine.mctx;
+  ts_lua_ctx_stats *const stats   = main_ctx->stats;
+
+  TSMutexLock(stats->mutexp);
+  --stats->threads;
+  TSMutexUnlock(stats->mutexp);
 
   ts_lua_release_cont_info(ci);
   TSfree(http_ctx);
@@ -806,6 +878,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
   rc = ret = 0;
 
   TSMutexLock(main_ctx->mutexp);
+
   ts_lua_set_cont_info(L, ci);
 
   switch (event) {
@@ -856,6 +929,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     // to allow API(s) to fetch the pointers again when it re-enters the hook
     if (http_ctx->client_response_hdrp != NULL) {
       TSHandleMLocRelease(http_ctx->client_response_bufp, TS_NULL_MLOC, http_ctx->client_response_hdrp);
+      http_ctx->client_response_bufp = NULL;
       http_ctx->client_response_hdrp = NULL;
     }
 
@@ -863,6 +937,12 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
 
     if (lua_type(L, -1) == LUA_TFUNCTION) {
       ret = lua_resume(L, 0);
+    }
+
+    if (http_ctx->client_response_hdrp != NULL) {
+      TSHandleMLocRelease(http_ctx->client_response_bufp, TS_NULL_MLOC, http_ctx->client_response_hdrp);
+      http_ctx->client_response_bufp = NULL;
+      http_ctx->client_response_hdrp = NULL;
     }
 
     break;
@@ -916,7 +996,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     lua_getglobal(L, TS_LUA_FUNCTION_TXN_CLOSE);
     if (lua_type(L, -1) == LUA_TFUNCTION) {
       if (lua_pcall(L, 0, 1, 0)) {
-        TSError("[ts_lua] lua_pcall failed: %s", lua_tostring(L, -1));
+        TSError("[ts_lua][%s] lua_pcall failed: %s", __FUNCTION__, lua_tostring(L, -1));
       }
     }
 
@@ -945,13 +1025,28 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     break;
 
   default: // coroutine failed
-    TSError("[ts_lua] lua_resume failed: %s", lua_tostring(L, -1));
+    TSError("[ts_lua][%s] lua_resume failed: %s", __FUNCTION__, lua_tostring(L, -1));
     rc = -1;
     lua_pop(L, 1);
     break;
   }
 
+  // current memory in use by this state
+  int const gc_kb = lua_getgccount(L);
+
   TSMutexUnlock(main_ctx->mutexp);
+
+  // collect state memory stats
+  ts_lua_ctx_stats *const stats = main_ctx->stats;
+
+  TSMutexLock(stats->mutexp);
+  if (gc_kb != stats->gc_kb) {
+    stats->gc_kb = gc_kb;
+    if (stats->gc_kb_max < stats->gc_kb) {
+      stats->gc_kb_max = stats->gc_kb;
+    }
+  }
+  TSMutexUnlock(stats->mutexp);
 
   if (rc == 0) {
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);

@@ -1,0 +1,163 @@
+{
+  "meta": {
+    "version": "1.0"
+  },
+  "sessions": [
+    {
+      "protocols": [
+        "tcp",
+        "ipv6"
+      ],
+      "transactions": [
+        {
+          "uuid": "smoke",
+          "client-request": {
+            "version": "1.1",
+            "scheme": "http",
+            "method": "GET",
+            "url": "http://example.one/",
+            "headers": {
+              "fields": [
+                [
+                  "Host",
+                  "example.one"
+                ],
+                [
+                  "uuid",
+                  "smoke"
+                ]
+              ]
+            }
+          },
+          "proxy-request": {
+            "version": "1.1",
+            "scheme": "http",
+            "method": "GET",
+            "url": "http://example.one/",
+            "headers": {
+              "fields": [
+                [
+                  "uuid",
+                  "smoke"
+                ]
+              ]
+            }
+          },
+          "server-response": {
+            "status": 200,
+            "reason": "OK",
+            "content": {
+              "size": 6128
+            },
+            "headers": {
+              "fields": [
+                [
+                  "Host",
+                  "example.one"
+                ],
+                [
+                  "uuid",
+                  "smoke"
+                ],
+                [
+                  "Content-Length",
+                  "6128"
+                ],
+                [
+                  "Connection",
+                  "close"
+                ]
+              ]
+            }
+          },
+          "proxy-response": {
+            "status": 200,
+            "reason": "OK",
+            "content": {
+              "size": 6128
+            },
+            "headers": {
+              "fields": [
+                [ "Content-Length", 6128 ]
+              ]
+            }
+          }
+        },
+        {
+          "uuid": "180",
+          "client-request": {
+            "version": "1.1",
+            "scheme": "http",
+            "method": "GET",
+            "url": "http://example.one/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E;param0004=00006E;param0005=00007E;param0006=00008E;param0007=00009E;param0008=0000AE;param0009=0000BE;param0010=0000CE;param0011=0000DE;param0012=0000EE;param0013=0000FE;param0014=00010E;param0015=00011E;param0016=00012E;param0017=00013E;param0018=00014E;param0019=00015E;param0020=00016E;param0021=00017E;param0022=00018E;param0023=00019E;param0024=0001AE;param0025=0001BE;param0026=0001CE;param0027=0001DE;param0028=0001EE;param0029=0001FE;param0030=00020E;param0031=00021E;param0032=00022E;param0033=00023E;param0034=00024E;param0035=00025E;param0036=00026E;param0037=00027E;param0038=00028E;param0039=00029E;param0040=0002AE;param0041=0002BE;param0042=0002CE;param0043=0002DE;param0044=0002EE;param0045=0002FE;param0046=00030E;param0047=00031E;param0048=00032E;param0049=00033E;param0050=00034E;param0051=00035E;param0052=00036E;param0053=00037E;param0054=00038E;param0055=00039E;param0056=0003AE;param0057=0003BE;param0058=0003CE;param0059=0003DE;param0060=0003EE;param0061=0003FE;param0062=00040E;param0063=00041E;param0064=00042E;param0065=00043E;param0066=00044E;param0067=00045E;param0068=00046E;param0069=00047E;param0070=00048E;param0071=00049E;param0072=0004AE;param0073=0004BE;param0074=0004CE;param0075=0004DE;param0076=0004EE;param0077=0004FE;param0078=00050E;param0079=00051E;param0080=00052E;param0081=00053E;param0082=00054E;param0083=00055E;param0084=00056E;param0085=00057E;param0086=00058E;param0087=00059E;param0088=0005AE;param0089=0005BE;param0090=0005CE;param0091=0005DE;param0092=0005EE;param0093=0005FE;param0094=00060E;param0095=00061E;param0096=00062E;param0097=00063E;param0098=00064E;param0099=00065E;param0100=00066E;param0101=00067E;param0102=00068E;param0103=00069E;param0104=0006AE;param0105=0006BE;param0106=0006CE;param0107=0006DE;param0108=0006EE;param0109=0006FE;param0110=00070E;param0111=00071E;param0112=00072E;param0113=00073E;param0114=00074E;param0115=00075E;param0116=00076E;param0117=00077E;param0118=00078E;param0119=00079E;param0120=0007AE;param0121=0007BE;param0122=0007CE;param0123=0007DE;param0124=0007EE;param0125=0007FE;param0126=00080E;param0127=00081E;param0128=00082E;param0129=00083E;param0130=00084E;param0131=00085E;param0132=00086E;param0133=00087E;param0134=00088E;param0135=00089E;param0136=0008AE;param0137=0008BE;param0138=0008CE;param0139=0008DE;param0140=0008EE;param0141=0008FE;param0142=00090E;param0143=00091E;param0144=00092E;param0145=00093E;param0146=00094E;param0147=00095E;param0148=00096E;param0149=00097E;param0150=00098E;param0151=00099E;param0152=0009AE;param0153=0009BE;param0154=0009CE;param0155=0009DE;param0156=0009EE;param0157=0009FE;param0158=000A0E;param0159=000A1E;param0160=000A2E;param0161=000A3E;param0162=000A4E;param0163=000A5E;param0164=000A6E;param0165=000A7E;param0166=000A8E;param0167=000A9E;param0168=000AAE;param0169=000ABE;param0170=000ACE;param0171=000ADE;param0172=000AEE;param0173=000AFE;param0174=000B0E;param0175=000B1E;param0176=000B2E;param0177=000B3E;param0178=000B4E;param0179=000B5E",
+            "headers": {
+              "fields": [
+                [
+                  "Host",
+                  "example.one"
+                ],
+                [
+                  "uuid",
+                  "180"
+                ]
+              ]
+            }
+          },
+          "proxy-request": {
+            "version": "1.1",
+            "scheme": "http",
+            "method": "GET",
+            "url": "http://example.one/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E;param0004=00006E;param0005=00007E;param0006=00008E;param0007=00009E;param0008=0000AE;param0009=0000BE;param0010=0000CE;param0011=0000DE;param0012=0000EE;param0013=0000FE;param0014=00010E;param0015=00011E;param0016=00012E;param0017=00013E;param0018=00014E;param0019=00015E;param0020=00016E;param0021=00017E;param0022=00018E;param0023=00019E;param0024=0001AE;param0025=0001BE;param0026=0001CE;param0027=0001DE;param0028=0001EE;param0029=0001FE;param0030=00020E;param0031=00021E;param0032=00022E;param0033=00023E;param0034=00024E;param0035=00025E;param0036=00026E;param0037=00027E;param0038=00028E;param0039=00029E;param0040=0002AE;param0041=0002BE;param0042=0002CE;param0043=0002DE;param0044=0002EE;param0045=0002FE;param0046=00030E;param0047=00031E;param0048=00032E;param0049=00033E;param0050=00034E;param0051=00035E;param0052=00036E;param0053=00037E;param0054=00038E;param0055=00039E;param0056=0003AE;param0057=0003BE;param0058=0003CE;param0059=0003DE;param0060=0003EE;param0061=0003FE;param0062=00040E;param0063=00041E;param0064=00042E;param0065=00043E;param0066=00044E;param0067=00045E;param0068=00046E;param0069=00047E;param0070=00048E;param0071=00049E;param0072=0004AE;param0073=0004BE;param0074=0004CE;param0075=0004DE;param0076=0004EE;param0077=0004FE;param0078=00050E;param0079=00051E;param0080=00052E;param0081=00053E;param0082=00054E;param0083=00055E;param0084=00056E;param0085=00057E;param0086=00058E;param0087=00059E;param0088=0005AE;param0089=0005BE;param0090=0005CE;param0091=0005DE;param0092=0005EE;param0093=0005FE;param0094=00060E;param0095=00061E;param0096=00062E;param0097=00063E;param0098=00064E;param0099=00065E;param0100=00066E;param0101=00067E;param0102=00068E;param0103=00069E;param0104=0006AE;param0105=0006BE;param0106=0006CE;param0107=0006DE;param0108=0006EE;param0109=0006FE;param0110=00070E;param0111=00071E;param0112=00072E;param0113=00073E;param0114=00074E;param0115=00075E;param0116=00076E;param0117=00077E;param0118=00078E;param0119=00079E;param0120=0007AE;param0121=0007BE;param0122=0007CE;param0123=0007DE;param0124=0007EE;param0125=0007FE;param0126=00080E;param0127=00081E;param0128=00082E;param0129=00083E;param0130=00084E;param0131=00085E;param0132=00086E;param0133=00087E;param0134=00088E;param0135=00089E;param0136=0008AE;param0137=0008BE;param0138=0008CE;param0139=0008DE;param0140=0008EE;param0141=0008FE;param0142=00090E;param0143=00091E;param0144=00092E;param0145=00093E;param0146=00094E;param0147=00095E;param0148=00096E;param0149=00097E;param0150=00098E;param0151=00099E;param0152=0009AE;param0153=0009BE;param0154=0009CE;param0155=0009DE;param0156=0009EE;param0157=0009FE;param0158=000A0E;param0159=000A1E;param0160=000A2E;param0161=000A3E;param0162=000A4E;param0163=000A5E;param0164=000A6E;param0165=000A7E;param0166=000A8E;param0167=000A9E;param0168=000AAE;param0169=000ABE;param0170=000ACE;param0171=000ADE;param0172=000AEE;param0173=000AFE;param0174=000B0E;param0175=000B1E;param0176=000B2E;param0177=000B3E;param0178=000B4E;param0179=000B5E",
+            "headers": {
+              "fields": [
+                [
+                  "uuid",
+                  "180"
+                ]
+              ]
+            }
+          },
+          "server-response": {
+            "status": 200,
+            "reason": "OK",
+            "content": {
+              "size": 6128
+            },
+            "headers": {
+              "fields": [
+                [
+                  "Host",
+                  "example.one"
+                ],
+                [
+                  "uuid",
+                  "180"
+                ],
+                [
+                  "Content-Length",
+                  "6128"
+                ],
+                [
+                  "Connection",
+                  "close"
+                ]
+              ]
+            }
+          },
+          "proxy-response": {
+            "status": 200,
+            "reason": "OK",
+            "content": {
+              "size": 6128
+            },
+            "headers": {
+              "fields": [
+                [ "Content-Length", 6128 ]
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

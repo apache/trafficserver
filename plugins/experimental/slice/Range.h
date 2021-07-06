@@ -29,12 +29,12 @@
 
 struct Range {
 public:
-  static int64_t constexpr maxval = (std::numeric_limits<int64_t>::max() >> 2);
+  static int64_t constexpr maxval = (std::numeric_limits<int64_t>::max() / 2);
 
-  int64_t m_beg;
-  int64_t m_end; // half open
+  int64_t m_beg{-1};
+  int64_t m_end{-1}; // half open
 
-  Range() : m_beg(-1), m_end(-1) {}
+  Range() {}
   explicit Range(int64_t const begin, int64_t const end) : m_beg(begin), m_end(end) {}
 
   bool isValid() const;
@@ -55,6 +55,10 @@ public:
   /** block number of first range block
    */
   int64_t firstBlockFor(int64_t const blockbytes) const;
+
+  /** block number of last (inclusive) range block
+   */
+  int64_t lastBlockFor(int64_t const blockbytes) const;
 
   /** block intersection
    */

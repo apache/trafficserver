@@ -98,7 +98,6 @@ void *ats_realloc(void *ptr, size_t size);
 void *ats_memalign(size_t alignment, size_t size);
 void ats_free(void *ptr);
 void *ats_free_null(void *ptr);
-void ats_memalign_free(void *ptr);
 int ats_mallopt(int param, int value);
 
 int ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
@@ -109,7 +108,7 @@ void *ats_track_malloc(size_t size, uint64_t *stat);
 void *ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat);
 void ats_track_free(void *ptr, uint64_t *stat);
 
-static inline size_t __attribute__((const)) ats_pagesize(void)
+static inline size_t __attribute__((const)) ats_pagesize()
 {
   static size_t page_size;
 
@@ -140,6 +139,8 @@ char *_xstrdup(const char *str, int length, const char *path);
 #endif
 
 #ifdef __cplusplus
+
+#include <memory>
 
 // this is to help with migration to a std::string issue with older code that
 // expects char* being copied. As more code moves to std::string, this can be
@@ -589,7 +590,11 @@ public:
     return *this;
   }
 
-  T *operator->() const { return *this; }
+  T *
+  operator->() const
+  {
+    return *this;
+  }
 };
 
 /** Combine two strings as file paths.
@@ -618,4 +623,15 @@ path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
 
   return x.release();
 }
+
+struct ats_unique_buf_deleter {
+  void
+  operator()(uint8_t *p)
+  {
+    ats_free(p);
+  }
+};
+using ats_unique_buf = std::unique_ptr<uint8_t[], ats_unique_buf_deleter>;
+ats_unique_buf ats_unique_malloc(size_t size);
+
 #endif /* __cplusplus */

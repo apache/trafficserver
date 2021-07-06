@@ -20,7 +20,6 @@
 #include "jwt.h"
 #include "match.h"
 #include "normalize.h"
-#include "ts/ts.h"
 #include <jansson.h>
 #include <cjose/cjose.h>
 #include <math.h>
@@ -53,10 +52,9 @@ parse_jwt(json_t *raw)
   }
 
   struct jwt *jwt = malloc(sizeof *jwt);
-  jwt->raw        = raw;
   jwt->iss        = json_string_value(json_object_get(raw, "iss"));
   jwt->sub        = json_string_value(json_object_get(raw, "sub"));
-  jwt->aud        = json_string_value(json_object_get(raw, "aud"));
+  jwt->aud        = json_object_get(raw, "aud");
   jwt->exp        = parse_number(json_object_get(raw, "exp"));
   jwt->nbf        = parse_number(json_object_get(raw, "nbf"));
   jwt->iat        = parse_number(json_object_get(raw, "iat"));
@@ -77,7 +75,8 @@ jwt_delete(struct jwt *jwt)
   if (!jwt) {
     return;
   }
-  json_decref(jwt->raw);
+
+  json_decref(jwt->aud);
   free(jwt);
 }
 
@@ -98,12 +97,6 @@ unsupported_string_claim(const char *str)
 }
 
 bool
-unsupported_date_claim(double t)
-{
-  return isnan(t);
-}
-
-bool
 jwt_validate(struct jwt *jwt)
 {
   if (!jwt) {
@@ -116,18 +109,13 @@ jwt_validate(struct jwt *jwt)
     return false;
   }
 
-  if (!unsupported_string_claim(jwt->aud)) {
-    PluginDebug("Initial JWT Failure: aud unsupported");
-    return false;
-  }
-
   if (now() > jwt->exp) {
     PluginDebug("Initial JWT Failure: expired token");
     return false;
   }
 
-  if (!unsupported_date_claim(jwt->nbf)) {
-    PluginDebug("Initial JWT Failure: nbf unsupported");
+  if (now() < jwt->nbf) {
+    PluginDebug("Initial JWT Failure: nbf claim violated");
     return false;
   }
 
@@ -151,7 +139,7 @@ jwt_validate(struct jwt *jwt)
     return false;
   }
 
-  if (jwt->cdnistd != 0) {
+  if (jwt->cdnistd < 0) {
     PluginDebug("Initial JWT Failure: unsupported value for cdnistd: %d", jwt->cdnistd);
     return false;
   }
@@ -160,12 +148,54 @@ jwt_validate(struct jwt *jwt)
 }
 
 bool
+jwt_check_aud(json_t *aud, const char *id)
+{
+  if (!aud) {
+    return true;
+  }
+  if (!id) {
+    return false;
+  }
+  /* If aud is a string, do a simple string comparison */
+  const char *aud_str = json_string_value(aud);
+  if (aud_str) {
+    PluginDebug("Checking aud %s agaisnt token aud string \"%s\"", id, aud_str);
+    /* Both strings will be null terminated per jansson docs */
+    if (strcmp(aud_str, id) == 0) {
+      return true;
+    }
+    return false;
+  }
+  PluginDebug("Checking aud %s agaisnt token aud array", id);
+  /* If aud is an array, check all items */
+  if (json_is_array(aud)) {
+    size_t index;
+    json_t *aud_item;
+    json_array_foreach(aud, index, aud_item)
+    {
+      aud_str = json_string_value(aud_item);
+      if (aud_str) {
+        if (strcmp(aud_str, id) == 0) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+bool
 jwt_check_uri(const char *cdniuc, const char *uri)
 {
   static const char CONT_URI_HASH_STR[]  = "hash";
   static const char CONT_URI_REGEX_STR[] = "regex";
 
-  if (!cdniuc || !*cdniuc || !uri) {
+  /* If cdniuc is not provided, skip uri check */
+  if (!cdniuc || !*cdniuc) {
+    return true;
+  }
+
+  if (!uri) {
     return false;
   }
 
@@ -173,13 +203,13 @@ jwt_check_uri(const char *cdniuc, const char *uri)
   int uri_ct  = strlen(uri);
   int buff_ct = uri_ct + 2;
   int err;
-  char normal_uri[buff_ct];
-
+  char *normal_uri = (char *)TSmalloc(buff_ct);
   memset(normal_uri, 0, buff_ct);
+
   err = normalize_uri(uri, uri_ct, normal_uri, buff_ct);
 
   if (err) {
-    return false;
+    goto fail_jwt;
   }
 
   const char *kind = cdniuc, *container = cdniuc;
@@ -187,27 +217,35 @@ jwt_check_uri(const char *cdniuc, const char *uri)
     ++container;
   }
   if (!*container) {
-    return false;
+    goto fail_jwt;
   }
   ++container;
 
   size_t len = container - kind;
+  bool status;
   PluginDebug("Comparing with match kind \"%.*s\" on \"%s\" to normalized URI \"%s\"", (int)len - 1, kind, container, normal_uri);
   switch (len) {
   case sizeof CONT_URI_HASH_STR:
     if (!strncmp(CONT_URI_HASH_STR, kind, len - 1)) {
-      return match_hash(container, normal_uri);
+      status = match_hash(container, normal_uri);
+      TSfree(normal_uri);
+      return status;
     }
     PluginDebug("Expected kind %s, but did not find it in \"%.*s\"", CONT_URI_HASH_STR, (int)len - 1, kind);
     break;
   case sizeof CONT_URI_REGEX_STR:
     if (!strncmp(CONT_URI_REGEX_STR, kind, len - 1)) {
-      return match_regex(container, normal_uri);
+      status = match_regex(container, normal_uri);
+      TSfree(normal_uri);
+      return status;
     }
     PluginDebug("Expected kind %s, but did not find it in \"%.*s\"", CONT_URI_REGEX_STR, (int)len - 1, kind);
     break;
   }
   PluginDebug("Unknown match kind \"%.*s\"", (int)len - 1, kind);
+
+fail_jwt:
+  TSfree(normal_uri);
   return false;
 }
 
@@ -216,6 +254,14 @@ renew_copy_string(json_t *new_json, const char *name, const char *old)
 {
   if (old) {
     json_object_set_new(new_json, name, json_string(old));
+  }
+}
+
+void
+renew_copy_raw(json_t *new_json, const char *name, json_t *old_json)
+{
+  if (old_json) {
+    json_object_set(new_json, name, old_json);
   }
 }
 
@@ -235,7 +281,7 @@ renew_copy_integer(json_t *new_json, const char *name, double old)
 }
 
 char *
-renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const char *package)
+renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const char *package, const char *uri, size_t uri_ct)
 {
   char *s = NULL;
   if (jwt->cdnistt != 1) {
@@ -248,19 +294,81 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
     return NULL;
   }
 
+  int buff_ct = uri_ct + 2;
+  int normal_err;
+  char *normal_uri = (char *)TSmalloc(buff_ct);
+  memset(normal_uri, 0, buff_ct);
+
+  normal_err = normalize_uri(uri, uri_ct, normal_uri, buff_ct);
+
+  if (normal_err) {
+    goto fail_normal;
+  }
+
+  /* Determine Path String Based on cdnistd claim */
+  size_t normal_size     = strlen(normal_uri);
+  const char *path_start = normal_uri;
+  const char *path_end   = NULL;
+  const char *uri_end    = normal_uri + normal_size;
+  char *path_string      = NULL;
+  size_t path_size       = normal_size + 1;
+
+  path_string = (char *)TSmalloc(path_size);
+  memset(path_string, 0, path_size);
+  PluginDebug("Renewing JWT. Stripped URI: %s", uri);
+
+  if (jwt->cdnistd == 0) {
+    PluginDebug("STD is 0 - Setting Cookie Path to Path=/");
+    snprintf(path_string, 2, "%s", "/");
+  } else {
+    PluginDebug("STD is greater than 0. Calculating Path");
+    int slash_count = 0;
+    /* Search for 3rd '/' to mark start of path */
+    while (path_start != uri_end && slash_count < 3) {
+      ++path_start;
+      if (*path_start == '/') {
+        slash_count++;
+      }
+    }
+    if (path_start == uri_end) {
+      PluginDebug("STD is greater than number of path segments. Cannot Renew Token!");
+      goto fail_path;
+    }
+    PluginDebug("Searching through path: %s", path_start);
+    /* Now search through path for cdnistd number of segments */
+    slash_count = 0;
+    path_end    = path_start + 1;
+    while (path_end != uri_end && slash_count < jwt->cdnistd) {
+      ++path_end;
+      if (*path_end == '/') {
+        slash_count++;
+      }
+    }
+    if (path_end == uri_end) {
+      PluginDebug("STD is greater than number of path segments. Cannot Renew Token!");
+      goto fail_path;
+    }
+    path_size = path_end - path_start + 1;
+    snprintf(path_string, path_size, "%s", path_start);
+    PluginDebug("Setting Cookie Path to %s", path_string);
+  }
+
   json_t *new_json = json_object();
   renew_copy_string(new_json, "iss", iss); /* use issuer of new signing key */
   renew_copy_string(new_json, "sub", jwt->sub);
-  renew_copy_string(new_json, "aud", jwt->aud);
+  renew_copy_raw(new_json, "aud", jwt->aud);
   renew_copy_real(new_json, "exp", now() + jwt->cdniets); /* expire ets seconds hence */
   renew_copy_real(new_json, "nbf", jwt->nbf);
   renew_copy_real(new_json, "iat", now()); /* issued now */
   renew_copy_string(new_json, "jti", jwt->jti);
+  renew_copy_string(new_json, "cdniuc", jwt->cdniuc);
   renew_copy_integer(new_json, "cdniv", jwt->cdniv);
   renew_copy_integer(new_json, "cdniets", jwt->cdniets);
   renew_copy_integer(new_json, "cdnistt", jwt->cdnistt);
+  renew_copy_integer(new_json, "cdnistd", jwt->cdnistd);
 
   char *pt = json_dumps(new_json, JSON_COMPACT);
+  json_decref(new_json);
 
   cjose_header_t *hdr = cjose_header_new(NULL);
   if (!hdr) {
@@ -297,15 +405,20 @@ renew(struct jwt *jwt, const char *iss, cjose_jwk_t *jwk, const char *alg, const
     goto fail_jws;
   }
 
-  const char *fmt = "%s=%s";
+  const char *fmt = "%s=%s; Path=%s";
   size_t s_ct;
-  s = malloc(s_ct = (1 + snprintf(NULL, 0, fmt, package, jws_str)));
-  snprintf(s, s_ct, fmt, package, jws_str);
+  s = malloc(s_ct = (1 + snprintf(NULL, 0, fmt, package, jws_str, path_string)));
+  snprintf(s, s_ct, fmt, package, jws_str, path_string);
+  PluginDebug("Cookie returned from renew function: %s", s);
 fail_jws:
   cjose_jws_release(jws);
 fail_hdr:
   cjose_header_release(hdr);
 fail_json:
   free(pt);
+fail_path:
+  TSfree(path_string);
+fail_normal:
+  TSfree(normal_uri);
   return s;
 }

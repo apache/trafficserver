@@ -38,35 +38,39 @@ use strict;
 use warnings;
 use Getopt::Long;
 
-my($file1, $file2, $in_files, $help);
+my ($file1, $file2, $in_files, $help);
 my %file1_settings;
 my %file2_settings;
 my $diff_metrics;
 
-usage() if (@ARGV < 1 or
-            !GetOptions(
-            'f=s@' => \$in_files,
-            'm' => \$diff_metrics,
-            'help|?' => \$help) or
-            defined $help);
+usage()
+  if (
+    @ARGV < 1
+    or !GetOptions(
+        'f=s@'   => \$in_files,
+        'm'      => \$diff_metrics,
+        'help|?' => \$help
+    )
+    or defined $help
+  );
 
 # Input file is mandatory
 die "\nTwo input files must be specified to compare\n"
-   unless defined $in_files;
+  unless defined $in_files;
 
 # Print the usage
 sub usage
 {
-  print "Unknown option: @_\n" if (@_);
-  print "Provide 2 files to compare configs or metrics.\n";
-  print "By default this tool will diff only configs,\n";
-  print "to get diff of metrics pass -m flag\n\n";
-  print "Usage: compare_records.pl -m -f <filename1> -f <filename2>\n";
-  print "   -m to diff the metrics\n";
-  print "   -h for help\n\n";
-  print "where the files are generated with e.g.\n\n";
-  print "    \$ traffic_ctl config match .\n";
-  exit;
+    print "Unknown option: @_\n" if (@_);
+    print "Provide 2 files to compare configs or metrics.\n";
+    print "By default this tool will diff only configs,\n";
+    print "to get diff of metrics pass -m flag\n\n";
+    print "Usage: compare_records.pl -m -f <filename1> -f <filename2>\n";
+    print "   -m to diff the metrics\n";
+    print "   -h for help\n\n";
+    print "where the files are generated with e.g.\n\n";
+    print "    \$ traffic_ctl config match .\n";
+    exit;
 }
 
 my @file_list = @$in_files;
@@ -76,89 +80,88 @@ my $in_file2 = $file_list[1];
 
 # Open input files
 if (defined $in_file1) {
-  open $file1, $in_file1 or die "Could not open $in_file1: $!";
+    open $file1, $in_file1 or die "Could not open $in_file1: $!";
 }
 if (defined $in_file2) {
-  open $file2, $in_file2 or die "Could not open $in_file2: $!";
+    open $file2, $in_file2 or die "Could not open $in_file2: $!";
 }
 
 # Read input files
 while (my $setting = <$file1>) {
-  chomp $setting;
-  my($record, $value) = split(/:/, $setting);
-  if (defined $diff_metrics) {
-    # Obtain only metrics, excluding configs
-    if ($record !~ /proxy.config/) {
-      $file1_settings{$record} = $value;
+    chomp $setting;
+    my ($record, $value) = split(/:/, $setting);
+    if (defined $diff_metrics) {
+        # Obtain only metrics, excluding configs
+        if ($record !~ /proxy.config/) {
+            $file1_settings{$record} = $value;
+        }
+    } else {
+        # Obtain only configs
+        if ($record =~ /proxy.config/) {
+            $file1_settings{$record} = $value;
+        }
     }
-  } else {
-    # Obtain only configs
-    if ($record =~ /proxy.config/) {
-      $file1_settings{$record} = $value;
-    }
-  }
 }
 close $file1;
 
 while (my $setting = <$file2>) {
-  chomp $setting;
-  my($record, $value) = split(/:/, $setting);
-  if (defined $diff_metrics) {
-    # Obtain only metrics, excluding configs
-    if ($record !~ /proxy.config/) {
-      $file2_settings{$record} = $value;
+    chomp $setting;
+    my ($record, $value) = split(/:/, $setting);
+    if (defined $diff_metrics) {
+        # Obtain only metrics, excluding configs
+        if ($record !~ /proxy.config/) {
+            $file2_settings{$record} = $value;
+        }
+    } else {
+        # Obtain only configs
+        if ($record =~ /proxy.config/) {
+            $file2_settings{$record} = $value;
+        }
     }
-  } else {
-    # Obtain only configs
-    if ($record =~ /proxy.config/) {
-      $file2_settings{$record} = $value;
-    }
-  }
 }
 close $file2;
 
 # Subroutine to compare configs/metrics and obtain common and difference between them
 sub compare_configs_or_metrics
 {
-  my($records1, $records2, $file) = @_;
-  my %common_settings;
-  my %diff_settings;
-  my %settings1 = %$records1;
-  my %settings2 = %$records2;
+    my ($records1, $records2, $file) = @_;
+    my %common_settings;
+    my %diff_settings;
+    my %settings1 = %$records1;
+    my %settings2 = %$records2;
 
-  foreach my $record(sort keys %settings1) {
-    if ($settings2{$record}) {
-      $common_settings{$record} = $settings1{$record};
-    } else {
-      $diff_settings{$record} = $settings1{$record};
+    foreach my $record (sort keys %settings1) {
+        if ($settings2{$record}) {
+            $common_settings{$record} = $settings1{$record};
+        } else {
+            $diff_settings{$record} = $settings1{$record};
+        }
     }
-  }
 
-  print "####################################################################################\n";
-  print "Configs/metrics found only in $file\n";
-  print "####################################################################################\n";
-  foreach my $key(sort keys %diff_settings)
-  {
-    print "$key\n";
-  }
-  return (\%common_settings);
+    print "####################################################################################\n";
+    print "Configs/metrics found only in $file\n";
+    print "####################################################################################\n";
+    foreach my $key (sort keys %diff_settings) {
+        print "$key\n";
+    }
+    return (\%common_settings);
 }
 
 # Subroutine to obtain changes in default values among common configs/metrics
 sub compare_default_values
 {
-  my($records1, $records2) = @_;
-  my %settings1 = %$records1;
-  my %settings2 = %$records2;
+    my ($records1, $records2) = @_;
+    my %settings1 = %$records1;
+    my %settings2 = %$records2;
 
-  foreach my $record(sort keys %settings1) {
-    if (defined $settings1{$record} && $settings2{$record}) {
-      if ($settings1{$record} ne $settings2{$record}) {
-        # Values doesn't match
-        print "$record default value changed from $settings1{$record} -> $settings2{$record}\n";
-      }
+    foreach my $record (sort keys %settings1) {
+        if (defined $settings1{$record} && $settings2{$record}) {
+            if ($settings1{$record} ne $settings2{$record}) {
+                # Values doesn't match
+                print "$record default value changed from $settings1{$record} -> $settings2{$record}\n";
+            }
+        }
     }
-  }
 }
 
 # Obtain common configs/metrics between two files
@@ -171,9 +174,8 @@ my %common1_settings = %$common1;
 print "####################################################################################\n";
 print "Common configs/metrics between $in_file1 and $in_file2\n";
 print "####################################################################################\n";
-foreach my $key(sort keys %common2_settings)
-{
-  print "$key\n";
+foreach my $key (sort keys %common2_settings) {
+    print "$key\n";
 }
 
 # Compare common configs/metrics and obtain changes in default values

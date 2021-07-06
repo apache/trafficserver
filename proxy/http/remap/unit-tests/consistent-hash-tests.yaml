@@ -1,0 +1,366 @@
+# @file
+#
+#  Unit test data consistent-hash-tests.yaml file for testing the NextHopStrategyFactory
+#
+#  @section license License
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+#  @section details Details
+#
+#
+# unit testing strategies for NextHopConsistentHash.
+#
+strategies:
+  - strategy: "consistent-hash-1"
+    policy: consistent_hash
+    hash_key: path
+    groups:
+      - &g1
+        - host: p1.foo.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.1.1:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.1.1:443
+          weight: 1.0
+        - host: p2.foo.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.1.2:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.1.2:443
+          weight: 1.0
+      - &g2
+        - host: s1.bar.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.2.1:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.2.1:443
+          weight: 1.0
+        - host: s2.bar.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.2.2:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.2.2:443
+          weight: 1.0
+      - &g3
+        - host: q1.bar.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.3.1:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.3.1:443
+          weight: 1.0
+        - host: q2.bar.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.3.2:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.3.2:443
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 502
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "consistent-hash-2"
+    policy: consistent_hash
+    hash_key: path
+    go_direct: false
+    groups:
+      - &g1
+        - host: c1.foo.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.1.1:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.1.1:443
+          weight: 1.0
+        - host: c2.foo.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.1.2:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.1.2:443
+          weight: 1.0
+      - &g2
+        - host: c3.bar.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.2.1:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.2.1:443
+          weight: 1.0
+        - host: c4.bar.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.2.2:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.2.2:443
+          weight: 1.0
+      - &g3
+        - host: c5.bar.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.3.1:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.3.1:443
+          weight: 1.0
+        - host: c6.bar.com
+          protocol:
+            - scheme: http
+              port: 80
+              health_check_url: http://192.168.3.2:80
+            - scheme: https
+              port: 443
+              health_check_url: https://192.168.3.2:443
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: alternate_ring
+      response_codes:
+        - 404
+        - 502
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "ignore-self-detect-false"
+    policy: consistent_hash
+    ignore_self_detect: false
+    hash_key: path
+    groups:
+      - &g1
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8000
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8001
+          weight: 1.0
+      - &g2
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8002
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8003
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "ignore-self-detect-true"
+    policy: consistent_hash
+    ignore_self_detect: true
+    hash_key: path
+    groups:
+      - &g1
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8000
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8001
+          weight: 1.0
+      - &g2
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8002
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8003
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "ignore-self-detect-true"
+    policy: consistent_hash
+    ignore_self_detect: true
+    hash_key: path
+    groups:
+      - &g1
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8000
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8001
+          weight: 1.0
+      - &g2
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8002
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8003
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "same-host-different-port"
+    policy: consistent_hash
+    ignore_self_detect: true
+    hash_key: path
+    groups:
+      - &g1
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8000
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8001
+          weight: 1.0
+      - &g2
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8002
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8003
+          weight: 1.0
+      - &g3
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8004
+          weight: 1.0
+        - host: localhost
+          protocol:
+            - scheme: http
+              port: 8005
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active
+  - strategy: "hash-string-override"
+    policy: consistent_hash
+    ignore_self_detect: true
+    hash_key: path
+    groups:
+      - &hso0
+        - host: foo.test
+          hash_string: one
+          protocol:
+            - scheme: http
+              port: 80
+          weight: 1.0
+        - host: bar.test
+          hash_string: two
+          protocol:
+            - scheme: http
+              port: 80
+          weight: 1.0
+      - &hso1
+        - host: baz.test
+          hash_string: three
+          protocol:
+            - scheme: http
+              port: 80
+          weight: 1.0
+        - host: bat.test
+          hash_string: four
+          protocol:
+            - scheme: http
+              port: 80
+          weight: 1.0
+    scheme: http
+    failover:
+      ring_mode: exhaust_ring
+      response_codes:
+        - 404
+        - 503
+      health_check:
+        - passive
+        - active

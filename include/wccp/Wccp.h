@@ -22,9 +22,10 @@
 
 #pragma once
 
-#include "tscore/TsBuffer.h"
-#include <tsconfig/Errata.h>
 #include <memory.h>
+
+#include "tscore/TsBuffer.h"
+#include "tscore/Errata.h"
 #include "tscore/ink_defs.h"
 #include "tscore/ink_memory.h"
 // Nasty, defining this with no prefix. The value is still available
@@ -33,6 +34,8 @@
 
 // INADDR_ANY
 #include <netinet/in.h>
+
+#include <string_view>
 
 /// WCCP Support.
 namespace wccp
@@ -184,7 +187,7 @@ public:
 
   /// Get a port value.
   uint16_t getPort(int idx ///< Index of target port.
-                   ) const;
+  ) const;
   /// Set a port value.
   self &setPort(int idx,      ///< Index of port.
                 uint16_t port ///< Value for port.
@@ -246,16 +249,13 @@ public:
   int getSocket() const;
 
   /// Use MD5 based security with @a key.
-  void useMD5Security(char const *key ///< Shared hash key.
-  );
-  /// Use MD5 based security with @a key.
-  void useMD5Security(ts::ConstBuffer const &key ///< Shared hash key.
+  void useMD5Security(std::string_view const key ///< Shared hash key.
   );
 
   /// Perform house keeping, including sending outbound messages.
   int housekeeping();
 
-  /// Recieve and process a message on the socket.
+  /// Receive and process a message on the socket.
   /// @return 0 for success, -ERRNO on system error.
   ts::Rv<int> handleMessage();
 
@@ -292,7 +292,7 @@ public:
   /// Default constructor.
   Cache();
   /// Destructor
-  ~Cache();
+  ~Cache() override;
 
   /// Define services from a configuration file.
   ts::Errata loadServicesFromFile(char const *path ///< Path to file.
@@ -308,7 +308,7 @@ public:
       - @c ServiceGroup::CONFLICT if the service doesn't match the existing service.
    */
   Service defineServiceGroup(ServiceGroup const &svc, ///< Service group description.
-                             ServiceGroup::Result *result = 0);
+                             ServiceGroup::Result *result = nullptr);
 
   /** Add a seed router to the service group.
 
@@ -335,7 +335,7 @@ protected:
   /// Get the current implementation instance cast to correct type.
   ImplType const *impl() const;
   /// Create a new implementation instance.
-  super::ImplType *make();
+  super::ImplType *make() override;
 };
 
 /** Hold a reference to a service group in this end point.
@@ -372,8 +372,8 @@ public:
 
 private:
   Service(Cache const &cache, detail::cache::GroupData &group);
-  Cache m_cache;                     ///< Parent cache.
-  detail::cache::GroupData *m_group; ///< Service Group data.
+  Cache m_cache;                               ///< Parent cache.
+  detail::cache::GroupData *m_group = nullptr; ///< Service Group data.
   friend class Cache;
 };
 
@@ -387,7 +387,7 @@ public:
   /// Default constructor
   Router();
   /// Destructor.
-  ~Router();
+  ~Router() override;
 
   /// Transmit pending messages.
   int sendPendingMessages();
@@ -398,7 +398,7 @@ protected:
   /// Get the current implementation instance cast to correct type.
   ImplType *impl();
   /// Create a new implementation instance.
-  super::ImplType *make();
+  super::ImplType *make() override;
 };
 
 // ------------------------------------------------------
@@ -499,15 +499,10 @@ ServiceGroup::clearPorts()
   return *this;
 }
 
-inline Cache::Service::Service() : m_group(0) {}
+inline Cache::Service::Service() {}
 
 inline Cache::Service::Service(Cache const &cache, detail::cache::GroupData &group) : m_cache(cache), m_group(&group) {}
 
-inline void
-EndPoint::useMD5Security(char const *key)
-{
-  this->useMD5Security(ts::ConstBuffer(key, strlen(key)));
-}
 // ------------------------------------------------------
 
 } // namespace wccp

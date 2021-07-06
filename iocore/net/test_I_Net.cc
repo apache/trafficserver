@@ -29,7 +29,6 @@
 /*
  * Choose a net test application
  */
-//#include "NetTest-http-server.c"
 #include "NetTest-simple-proxy.c"
 
 int

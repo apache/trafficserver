@@ -59,7 +59,7 @@ msgstr ""
 msgid ""
 "If the request is a cache miss on the parent, then the parent retrieves the "
 "content from the origin server (or from another cache, depending on the "
-"parent’s configuration). The parent caches the content and then sends a "
+"parent's configuration). The parent caches the content and then sends a "
 "copy to Traffic Server (its child), where it is cached and served to the "
 "client."
 msgstr ""
@@ -122,12 +122,6 @@ msgid ""
 "origin server for the request is http://origin.example.com; the parent node "
 "is ``parent1.example.com``, and the child node is configured as a reverse "
 "proxy."
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:143
-msgid ""
-"Enable the parent caching option by adjusting :ts:cv:`proxy.config.http."
-"parent_proxy_routing_enable` in :file:`records.config`. ::"
 msgstr ""
 
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:57

@@ -9,7 +9,7 @@
 
       http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or ageed to in writing, software
+  Unless required by applicable law or agreed to in writing, software
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
@@ -169,7 +169,7 @@ struct EVPContext {
     EVP_MD_CTX_destroy(context);
   }
 
-  EVPContext(void) : context(EVP_MD_CTX_create()) { assert(nullptr != context); }
+  EVPContext() : context(EVP_MD_CTX_create()) { assert(nullptr != context); }
 };
 
 struct EVPKey {
@@ -181,10 +181,10 @@ struct EVPKey {
     EVP_PKEY_free(key);
   }
 
-  EVPKey(void) : key(EVP_PKEY_new()) { assert(nullptr != key); }
+  EVPKey() : key(EVP_PKEY_new()) { assert(nullptr != key); }
 
   bool
-  assign(const char *const k) const
+  assign(char *k) const
   {
     assert(nullptr != k);
     const int rc = EVP_PKEY_assign_RSA(key, k);
@@ -196,7 +196,7 @@ struct EVPKey {
   bool
   assign(T &t)
   {
-    return assign(reinterpret_cast<const char *>(t));
+    return assign(reinterpret_cast<char *>(t));
   }
 };
 
@@ -250,7 +250,7 @@ struct Exception {
     info = DestroyExceptionInfo(info);
   }
 
-  Exception(void) : info(AcquireExceptionInfo()) { assert(nullptr != info); }
+  Exception() : info(AcquireExceptionInfo()) { assert(nullptr != info); }
 };
 
 struct Image {
@@ -262,12 +262,12 @@ struct Image {
     info = DestroyImageInfo(info);
   }
 
-  Image(void) : info(AcquireImageInfo()) { assert(nullptr != info); }
+  Image() : info(AcquireImageInfo()) { assert(nullptr != info); }
 };
 
 struct Wand {
   MagickWand *wand;
-  void *blob;
+  void *blob = nullptr;
 
   ~Wand()
   {
@@ -278,17 +278,17 @@ struct Wand {
     }
   }
 
-  Wand(void) : wand(NewMagickWand()), blob(nullptr) { assert(nullptr != wand); }
+  Wand() : wand(NewMagickWand()) { assert(nullptr != wand); }
 
   void
-  clear(void) const
+  clear() const
   {
     assert(nullptr != wand);
     ClearMagickWand(wand);
   }
 
   std::string_view
-  get(void)
+  get()
   {
     assert(nullptr != wand);
     std::size_t length = 0;
@@ -336,7 +336,7 @@ struct Wand {
 struct Core {
   ~Core() { MagickCoreTerminus(); }
 
-  Core(void) { MagickCoreGenesis("/tmp", MagickFalse); }
+  Core() { MagickCoreGenesis("/tmp", MagickFalse); }
 };
 
 } // namespace magick
@@ -352,7 +352,9 @@ struct QueryMap {
 
   QueryMap(std::string &&s) : content_(s) { parse(); }
 
-  template <typename T> const Vector &operator[](T &&k) const
+  template <typename T>
+  const Vector &
+  operator[](T &&k) const
   {
     const auto iterator = map_.find(k);
     if (iterator != map_.end()) {
@@ -362,7 +364,7 @@ struct QueryMap {
   }
 
   void
-  parse(void)
+  parse()
   {
     std::string_view key;
     std::size_t i = 0, j = 0;
@@ -454,7 +456,7 @@ QueryParameterToArguments(CharVector &v)
 }
 
 struct ImageTransform : TransformationPlugin {
-  ~ImageTransform() override {}
+  ~ImageTransform() override = default;
 
   ImageTransform(Transaction &t, CharVector &&a, CharPointerVector &&m, ThreadPool &p)
     : TransformationPlugin(t, TransformationPlugin::RESPONSE_TRANSFORMATION),
@@ -473,11 +475,11 @@ struct ImageTransform : TransformationPlugin {
   }
 
   void
-  handleInputComplete(void) override
+  handleInputComplete() override
   {
     TSDebug(PLUGIN_TAG, "handleInputComplete");
 
-    threadPool_.emplace_back([this](void) {
+    threadPool_.emplace_back([this]() {
       magick::Image image;
       magick::Exception exception;
       magick::Wand wand;
@@ -512,10 +514,10 @@ struct ImageTransform : TransformationPlugin {
 
 struct GlobalHookPlugin : GlobalPlugin {
   magick::Core core_;
-  magick::EVPKey *key_;
+  magick::EVPKey *key_ = nullptr;
   ThreadPool threadPool_;
 
-  ~GlobalHookPlugin()
+  ~GlobalHookPlugin() override
   {
     if (nullptr != key_) {
       delete key_;
@@ -523,7 +525,7 @@ struct GlobalHookPlugin : GlobalPlugin {
     }
   }
 
-  GlobalHookPlugin(const char *const f = nullptr) : key_(nullptr), threadPool_(2)
+  GlobalHookPlugin(const char *const f = nullptr) : threadPool_(2)
   {
     if (nullptr != f) {
       assert(0 < strlen(f));

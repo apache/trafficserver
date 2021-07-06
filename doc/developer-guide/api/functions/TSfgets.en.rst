@@ -24,7 +24,9 @@ TSfgets
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: char* TSfgets(TSFile filep, char * buf, size_t length)
 

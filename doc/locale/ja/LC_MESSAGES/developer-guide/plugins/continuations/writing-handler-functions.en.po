@@ -229,8 +229,8 @@ msgid ":data:`TS_EVENT_IMMEDIATE`"
 msgstr ":data:`TS_EVENT_IMMEDIATE`"
 
 #: ../../../developer-guide/plugins/continuations/writing-handler-functions.en.rst:90
-msgid ":func:`TSVConnClose` :func:`TSVIOReenable` :func:`TSContSchedule`"
-msgstr ":func:`TSVConnClose` :func:`TSVIOReenable` :func:`TSContSchedule`"
+msgid ":func:`TSVConnClose` :func:`TSVIOReenable` :func:`TSContScheduleOnPool`"
+msgstr ":func:`TSVConnClose` :func:`TSVIOReenable` :func:`TSContScheduleOnPool`"
 
 #: ../../../developer-guide/plugins/continuations/writing-handler-functions.en.rst:93
 msgid ":data:`TS_HTTP_REQUEST_TRANSFORM_HOOK`"
@@ -329,8 +329,8 @@ msgstr ":data:`TS_EVENT_TIMEOUT`"
 
 #: ../../../developer-guide/plugins/continuations/writing-handler-functions.en.rst:108
 #: ../../../developer-guide/plugins/continuations/writing-handler-functions.en.rst:130
-msgid ":func:`TSContSchedule`"
-msgstr ":func:`TSContSchedule`"
+msgid ":func:`TSContScheduleOnPool`"
+msgstr ":func:`TSContScheduleOnPool`"
 
 #: ../../../developer-guide/plugins/continuations/writing-handler-functions.en.rst:109
 msgid ":data:`TS_EVENT_ERROR`"

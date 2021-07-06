@@ -26,7 +26,9 @@ Traffic Server TLS server context.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSSslContext TSSslContextFindByName(const char * name)
 
@@ -36,7 +38,7 @@ Description
 ===========
 
 :func:`TSSslContextFindByName` searches for a SSL server context
-created from :file:`ssl_multicert.config`, matchingg against the
+created from :file:`ssl_multicert.config`, matching against the
 server :arg:`name`.
 
 :func:`TSSslContextFindByAddr` searches for a SSL server context

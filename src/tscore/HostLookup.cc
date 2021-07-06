@@ -49,7 +49,7 @@ namespace
 bool
 domaincmp(string_view hostname, string_view domain)
 {
-  // Check to see if were passed emtpy strings for either
+  // Check to see if were passed empty strings for either
   //  argument.  Empty strings do not match anything
   //
   if (domain.empty() || hostname.empty()) {
@@ -150,7 +150,7 @@ hostcmp(string_view lhs, string_view rhs)
 //   '_' is also included although it is not in the spec (RFC 883)
 //
 //   Uppercase and lowercase "a-z" both map to same indexes
-//     since hostnames are not case sensative
+//     since hostnames are not case sensitive
 //
 //   Illegal characters map to 255
 //
@@ -177,7 +177,7 @@ static const unsigned char asciiToTable[256] = {
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
 
-// Number of legal characters in the acssiToTable array
+// Number of legal characters in the asciiToTable array
 static const int numLegalChars = 38;
 
 // struct CharIndexBlock
@@ -193,7 +193,7 @@ struct CharIndexBlock {
 };
 
 // class CharIndex - A constant time string matcher intended for
-//    short strings in a sparsely populated DNS paritition
+//    short strings in a sparsely populated DNS partition
 //
 //    Creates a look up table for character in data string
 //
@@ -211,7 +211,7 @@ struct CharIndexBlock {
 //                             -----------         ------------
 //                           0 |    |    |         |    |     |
 //                           . |    |    |         |    |     |
-//    CharIndexBlock           . |    |    |         |    |     |
+//    CharIndexBlock         . |    |    |         |    |     |
 //    ----------             . |    |    |         |    |     |
 //  0 |   |    |             . |    |    |   |-->23| ptr|  0  |  (ptr is to the
 //  . |   |    |   |-------->25| 0  |   -----|     |    |     |   hostBranch for
@@ -277,8 +277,9 @@ CharIndex::~CharIndex()
 {
   // clean up the illegal key table.
   if (illegalKey) {
-    for (auto spot = illegalKey->begin(), limit = illegalKey->end(); spot != limit; delete &*(spot++))
-      ; // empty
+    for (auto &item : *illegalKey) {
+      delete item.second;
+    }
   }
 }
 
@@ -300,7 +301,7 @@ CharIndex::Insert(string_view match_data, HostBranch *toInsert)
       illegalKey.reset(new Table);
     }
     toInsert->key = match_data;
-    illegalKey->emplace(match_data, toInsert);
+    illegalKey->emplace(toInsert->key, toInsert);
   } else {
     while (true) {
       index = asciiToTable[static_cast<unsigned char>(match_data.front())];
@@ -387,13 +388,15 @@ CharIndex::end() -> iterator
   return {};
 }
 
-auto CharIndex::iterator::operator-> () -> value_type *
+auto
+CharIndex::iterator::operator->() -> value_type *
 {
   ink_assert(state.block != nullptr); // clang!
   return state.block->array[state.index].branch;
 }
 
-auto CharIndex::iterator::operator*() -> value_type &
+auto
+CharIndex::iterator::operator*() -> value_type &
 {
   ink_assert(state.block != nullptr); // clang!
   return *(state.block->array[state.index].branch);
@@ -427,9 +430,14 @@ CharIndex::iterator::advance() -> self_type &
       break;
     } else if (state.block->array[state.index].block != nullptr) {
       // There is a lower level block to iterate over, store our current state and descend
-      q[cur_level++] = state;
-      state.block    = state.block->array[state.index].block.get();
-      state.index    = 0;
+      if (static_cast<int>(q.size()) <= cur_level) {
+        q.push_back(state);
+      } else {
+        q[cur_level] = state;
+      }
+      cur_level++;
+      state.block = state.block->array[state.index].block.get();
+      state.index = 0;
     } else {
       ++state.index;
     }
@@ -458,7 +466,7 @@ CharIndex::iterator::operator!=(const self_type &that) const
 
 // class HostArray
 //
-//   Is a fixed size array for holding HostBrach*
+//   Is a fixed size array for holding HostBranch*
 //   Allows only sequential access to data
 //
 
@@ -555,8 +563,9 @@ HostBranch::~HostBranch()
     break;
   case HOST_HASH: {
     HostTable *ht = next_level._table;
-    for (auto spot = ht->begin(), limit = ht->end(); spot != limit; delete &*(spot++)) {
-    } // empty
+    for (auto &item : *ht) {
+      delete item.second;
+    }
     delete ht;
   } break;
   case HOST_INDEX: {
@@ -578,13 +587,13 @@ HostBranch::~HostBranch()
 HostLookup::HostLookup(string_view name) : matcher_name(name) {}
 
 void
-HostLookup::Print()
+HostLookup::Print() const
 {
   Print([](void *) -> void {});
 }
 
 void
-HostLookup::Print(PrintFunc const &f)
+HostLookup::Print(PrintFunc const &f) const
 {
   PrintHostBranch(&root, f);
 }
@@ -596,7 +605,7 @@ HostLookup::Print(PrintFunc const &f)
 //     and print out each element
 //
 void
-HostLookup::PrintHostBranch(HostBranch *hb, PrintFunc const &f)
+HostLookup::PrintHostBranch(const HostBranch *hb, PrintFunc const &f) const
 {
   for (auto curIndex : hb->leaf_indices) {
     auto &leaf{leaf_array[curIndex]};
@@ -656,7 +665,7 @@ HostLookup::TableNewLevel(HostBranch *from, string_view level_data)
 // HostBranch* HostLookup::InsertBranch(HostBranch* insert_to, const char* level_data)
 //
 //
-//    Abstrction to place a new node for level_data below node
+//    Abstraction to place a new node for level_data below node
 //      insert to.  Inserts into any of the data types used by
 //      by class HostMatcher
 //
@@ -674,10 +683,10 @@ HostLookup::InsertBranch(HostBranch *insert_in, string_view level_data)
     ink_release_assert(0);
     break;
   case HostBranch::HOST_HASH:
-    insert_in->next_level._table->emplace(level_data, new_branch);
+    insert_in->next_level._table->emplace(new_branch->key, new_branch);
     break;
   case HostBranch::HOST_INDEX:
-    insert_in->next_level._index->Insert(level_data, new_branch);
+    insert_in->next_level._index->Insert(new_branch->key, new_branch);
     break;
   case HostBranch::HOST_ARRAY: {
     auto array = insert_in->next_level._array;
@@ -685,9 +694,9 @@ HostLookup::InsertBranch(HostBranch *insert_in, string_view level_data)
       // The array is out of space, time to move to a hash table
       auto ha = insert_in->next_level._array;
       auto ht = new HostTable;
-      ht->emplace(level_data, new_branch);
+      ht->emplace(new_branch->key, new_branch);
       for (auto &item : *array) {
-        ht->emplace(item.match_data, item.branch);
+        ht->emplace(item.branch->key, item.branch);
       }
       // Ring out the old, ring in the new
       delete ha;
@@ -784,15 +793,15 @@ HostLookup::TableInsert(string_view match_data, int index, bool domain_record)
   //         leaf node to make sure we have a match
   if (domain_record == false) {
     if (match.empty()) {
-      leaf_array[index].type = HostLeaf::HOST_PARTIAL;
-    } else {
       leaf_array[index].type = HostLeaf::HOST_COMPLETE;
+    } else {
+      leaf_array[index].type = HostLeaf::HOST_PARTIAL;
     }
   } else {
     if (match.empty()) {
-      leaf_array[index].type = HostLeaf::DOMAIN_PARTIAL;
-    } else {
       leaf_array[index].type = HostLeaf::DOMAIN_COMPLETE;
+    } else {
+      leaf_array[index].type = HostLeaf::DOMAIN_PARTIAL;
     }
   }
 

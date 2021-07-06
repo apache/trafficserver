@@ -47,10 +47,21 @@ struct HttpHeader {
   TSMLoc const m_lochdr;
 
   explicit HttpHeader(TSMBuffer buffer, TSMLoc lochdr) : m_buffer(buffer), m_lochdr(lochdr) {}
+
   bool
   isValid() const
   {
     return nullptr != m_buffer && nullptr != m_lochdr;
+  }
+
+  int
+  byteSize() const
+  {
+    if (isValid()) {
+      return TSHttpHdrLengthGet(m_buffer, m_lochdr);
+    } else {
+      return 0;
+    }
   }
 
   // TS_HTTP_TYPE_UNKNOWN, TS_HTTP_TYPE_REQUEST, TS_HTTP_TYPE_RESPONSE
@@ -70,6 +81,16 @@ struct HttpHeader {
   {
     return getCharPtr(TSHttpHdrMethodGet, len);
   }
+
+  // request method version
+  int
+  version() const
+  {
+    return TSHttpHdrVersionGet(m_buffer, m_lochdr);
+  }
+
+  // Returns string representation of the url. Caller gets ownership!
+  char *urlString(int *const urllen) const;
 
   // host
   char const *
@@ -92,11 +113,12 @@ struct HttpHeader {
   // returns false if header invalid or something went wrong with removal.
   bool removeKey(char const *const key, int const keylen);
 
+  // retrieves header value as a char*
   bool valueForKey(char const *const keystr, int const keylen,
                    char *const valstr,  // <-- return string value
                    int *const vallen,   // <-- pass in capacity, returns len of string
-                   int const index = -1 // sets all values
-                   ) const;
+                   int const index = -1 // retrieves all values
+  ) const;
 
   /**
     Sets or adds a key/value
@@ -104,6 +126,12 @@ struct HttpHeader {
   bool setKeyVal(char const *const key, int const keylen, char const *const val, int const vallen,
                  int const index = -1 // sets all values
   );
+
+  // retrieves header value as a time_t
+  bool timeForKey(char const *const keystr, int const keylen, time_t *const timeval) const;
+
+  // sets header value as a time_t
+  bool setKeyTime(char const *const key, int const keylen, time_t const timeval);
 
   /** dump header into provided char buffer
    */
@@ -195,7 +223,8 @@ struct HdrMgr {
      TSHttpHdrParseResp
     Call this multiple times if necessary.
   */
-  TSParseResult populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc);
+  TSParseResult populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc,
+                             int64_t *const consumed);
 
   bool
   isValid() const

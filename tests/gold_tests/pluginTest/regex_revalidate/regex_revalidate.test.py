@@ -22,7 +22,7 @@ Test.Summary = '''
 Test a basic regex_revalidate
 '''
 
-## Test description:
+# Test description:
 # Load up cache, ensure fresh
 # Create regex reval rule, config reload:
 #  ensure item is staled only once.
@@ -33,7 +33,6 @@ Test a basic regex_revalidate
 # A rule's expiry can't be changed after the fact!
 
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.PluginExists('regex_revalidate.so'),
     Condition.PluginExists('xdebug.so')
 )
@@ -43,82 +42,82 @@ Test.ContinueOnFail = False
 server = Test.MakeOriginServer("server")
 
 # Define ATS and configure
-ts = Test.MakeATSProcess("ts", command="traffic_manager")
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
-#**testname is required**
-#testName = "regex_reval"
+Test.testName = "regex_revalidate"
+Test.Setup.Copy("metrics.sh")
 
 # default root
 request_header_0 = {"headers":
-    "GET / HTTP/1.1\r\n" +
-    "Host: www.example.com\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "",
-}
+                    "GET / HTTP/1.1\r\n" +
+                    "Host: www.example.com\r\n" +
+                    "\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": "",
+                    }
 
 response_header_0 = {"headers":
-    "HTTP/1.1 200 OK\r\n" +
-    "Connection: close\r\n" +
-    "Cache-Control: max-age=300\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "xxx",
-}
+                     "HTTP/1.1 200 OK\r\n" +
+                     "Connection: close\r\n" +
+                     "Cache-Control: max-age=300\r\n" +
+                     "\r\n",
+                     "timestamp": "1469733493.993",
+                     "body": "xxx",
+                     }
 
 # cache item path1
 request_header_1 = {"headers":
-    "GET /path1 HTTP/1.1\r\n" +
-    "Host: www.example.com\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""
-}
+                    "GET /path1 HTTP/1.1\r\n" +
+                    "Host: www.example.com\r\n" +
+                    "\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""
+                    }
 response_header_1 = {"headers":
-    "HTTP/1.1 200 OK\r\n" +
-    "Connection: close\r\n" +
-    'Etag: "path1"\r\n' +
-    "Cache-Control: max-age=600,public\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "abc"
-}
+                     "HTTP/1.1 200 OK\r\n" +
+                     "Connection: close\r\n" +
+                     'Etag: "path1"\r\n' +
+                     "Cache-Control: max-age=600,public\r\n" +
+                     "\r\n",
+                     "timestamp": "1469733493.993",
+                     "body": "abc"
+                     }
 
 # cache item path1a
 request_header_2 = {"headers":
-    "GET /path1a HTTP/1.1\r\n" +
-    "Host: www.example.com\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""
-}
+                    "GET /path1a HTTP/1.1\r\n" +
+                    "Host: www.example.com\r\n" +
+                    "\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""
+                    }
 response_header_2 = {"headers":
-    "HTTP/1.1 200 OK\r\n" +
-    "Connection: close\r\n" +
-    'Etag: "path1a"\r\n' +
-    "Cache-Control: max-age=600,public\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "cde"
-}
+                     "HTTP/1.1 200 OK\r\n" +
+                     "Connection: close\r\n" +
+                     'Etag: "path1a"\r\n' +
+                     "Cache-Control: max-age=600,public\r\n" +
+                     "\r\n",
+                     "timestamp": "1469733493.993",
+                     "body": "cde"
+                     }
 
 # cache item path2a
 request_header_3 = {"headers":
-    "GET /path2a HTTP/1.1\r\n" +
-    "Host: www.example.com\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""
-}
+                    "GET /path2a HTTP/1.1\r\n" +
+                    "Host: www.example.com\r\n" +
+                    "\r\n",
+                    "timestamp": "1469733493.993",
+                    "body": ""
+                    }
 response_header_3 = {"headers":
-    "HTTP/1.1 200 OK\r\n" +
-    "Connection: close\r\n" +
-    'Etag: "path2a"\r\n' +
-    "Cache-Control: max-age=900,public\r\n" +
-    "\r\n",
-    "timestamp": "1469733493.993",
-    "body": "efg"
-}
+                     "HTTP/1.1 200 OK\r\n" +
+                     "Connection: close\r\n" +
+                     'Etag: "path2a"\r\n' +
+                     "Cache-Control: max-age=900,public\r\n" +
+                     "\r\n",
+                     "timestamp": "1469733493.993",
+                     "body": "efg"
+                     }
 
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
 server.addResponse("sessionlog.json", request_header_1, response_header_1)
@@ -136,9 +135,9 @@ curl_and_args = 'curl -s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com
 
 path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
 
-# Define first revistion for when trafficserver starts
+# Define first revision for when trafficserver starts
 ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines([
-    "# Empty\n"    
+    "# Empty\n"
 ])
 
 ts.Disk.remap_config.AddLine(
@@ -149,18 +148,15 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'regex_revalidate',
-#    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.http.cache.http': 1,
-    'proxy.config.http.wait_for_cache': 1,
+    #    'proxy.config.diags.debug.enabled': 0,
     'proxy.config.http.insert_age_in_response': 0,
     'proxy.config.http.response_via_str': 3,
-    'proxy.config.http.server_ports': '{}'.format(ts.Variables.port),
 })
 
 # 0 Test - Load cache (miss) (path1)
 tr = Test.AddTestRun("Cache miss path1")
 tr.Processes.Default.StartBefore(server)
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=1)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path1'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_reval-miss.gold"
@@ -270,4 +266,12 @@ tr.DelayStart = 5
 tr.Processes.Default.Command = curl_and_args + ' http://127.0.0.1:{}/path2a'.format(ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_reval-stale.gold"
+tr.StillRunningAfter = ts
+
+# 12 Stats check
+tr = Test.AddTestRun("Check stats")
+tr.DelayStart = 5
+tr.Processes.Default.Command = "bash -c ./metrics.sh"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts

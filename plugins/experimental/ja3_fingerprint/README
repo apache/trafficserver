@@ -1,0 +1,26 @@
+ATS (Apache Traffic Server) JA3 Fingerprint Plugin
+
+General description
+--------------------
+1. JA3
+This plugin looks at all incoming SSL/TLS clientHello and calculates JA3 fingerprint for each client.
+It then performs
+1) logging JA3 string and its MD5 hash to `ja3_fingerprint.log` in the standard logging directory;
+2) appending `X-JA3-Sig` and/or `X-JA3-Raw` headers to upstream request (depending on the config)
+
+The log file format is as follows:
+
+[time] [client IP] [JA3 string] [MD5 Hash]
+
+2. plugin.config
+In plugin.config, supply name of the plugin and options
+Example: ja3_fingerprint.so --ja3raw --ja3log
+Add flag --ja3raw if `X-JA3-Raw` is desired other than only `X-JA3-Sig`.
+Add flag --ja3log if local logging in standard logging directory is desired.
+
+3. remap.config
+This plugin can also be used as a remap plugin. For each remap rule, add plugin and parameter field. For example:
+map http://from.com http://to.com @plugin=ja3_fingerprint.so [@pparam=--ja3raw] [@pparam=--ja3log]
+
+4. Requirement
+Won't compile against OpenSSL 1.1.0 due to APIs and opaque structures.

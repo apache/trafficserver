@@ -38,6 +38,7 @@ class UrlRewrite;
 #define REMAP_OPTFLG_ACTION 0x0020u           /* "action=" option (used for ACL filtering) */
 #define REMAP_OPTFLG_INTERNAL 0x0040u         /* only allow internal requests to hit this remap */
 #define REMAP_OPTFLG_IN_IP 0x0080u            /* "in_ip=" option (used for ACL filtering)*/
+#define REMAP_OPTFLG_STRATEGY 0x0100u         /* "strategy=" the name of the nexthop selection strategy */
 #define REMAP_OPTFLG_MAP_ID 0x0800u           /* associate a map ID with this rule */
 #define REMAP_OPTFLG_INVERT 0x80000000u       /* "invert" the rule (for src_ip at least) */
 #define REMAP_OPTFLG_ALL_FILTERS (REMAP_OPTFLG_METHOD | REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_ACTION | REMAP_OPTFLG_INTERNAL)
@@ -46,16 +47,16 @@ struct BUILD_TABLE_INFO {
   BUILD_TABLE_INFO();
   ~BUILD_TABLE_INFO();
 
-  unsigned long remap_optflg;
-  int paramc;
-  int argc;
+  unsigned long remap_optflg = 0;
+  int paramc                 = 0;
+  int argc                   = 0;
   char *paramv[BUILD_TABLE_MAX_ARGS];
   char *argv[BUILD_TABLE_MAX_ARGS];
 
-  bool ip_allow_check_enabled_p;
-  bool accept_check_p;
-  acl_filter_rule *rules_list; // all rules defined in config files as .define_filter foobar @src_ip=.....
-  UrlRewrite *rewrite;         // Pointer to the UrlRewrite object we are parsing for.
+  bool ip_allow_check_enabled_p = true;
+  bool accept_check_p           = true;
+  acl_filter_rule *rules_list   = nullptr; // all rules defined in config files as .define_filter foobar @src_ip=.....
+  UrlRewrite *rewrite           = nullptr; // Pointer to the UrlRewrite object we are parsing for.
 
   // Clear the argument vector.
   void reset();
@@ -75,6 +76,6 @@ unsigned long remap_check_option(const char **argv, int argc, unsigned long find
 
 bool remap_parse_config(const char *path, UrlRewrite *rewrite);
 
-typedef void (*load_remap_file_func)(const char *);
+typedef void (*load_remap_file_func)(const char *, const char *);
 
 extern load_remap_file_func load_remap_file_cb;

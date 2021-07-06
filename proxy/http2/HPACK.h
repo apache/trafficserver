@@ -26,8 +26,10 @@
 #include "tscore/ink_platform.h"
 #include "tscore/Diags.h"
 #include "HTTP.h"
+#include "../hdrs/XPACK.h"
 
-#include <vector>
+#include <deque>
+#include <string_view>
 
 // It means that any header field can be compressed/decompressed by ATS
 const static int HPACK_ERROR_COMPRESSION_ERROR   = -1;
@@ -55,10 +57,14 @@ enum class HpackMatch {
 
 // Result of looking for a header field in IndexingTable
 struct HpackLookupResult {
-  HpackLookupResult() : index(0), index_type(HpackIndex::NONE), match_type(HpackMatch::NONE) {}
-  int index;
-  HpackIndex index_type;
-  HpackMatch match_type;
+  uint32_t index        = 0;
+  HpackIndex index_type = HpackIndex::NONE;
+  HpackMatch match_type = HpackMatch::NONE;
+};
+
+struct HpackHeaderField {
+  std::string_view name;
+  std::string_view value;
 };
 
 class MIMEFieldWrapper
@@ -105,66 +111,65 @@ private:
 class HpackDynamicTable
 {
 public:
-  HpackDynamicTable(uint32_t size) : _current_size(0), _maximum_size(size)
-  {
-    _mhdr = new MIMEHdr();
-    _mhdr->create();
-  }
+  explicit HpackDynamicTable(uint32_t size);
+  ~HpackDynamicTable();
 
-  ~HpackDynamicTable()
-  {
-    _headers.clear();
-    _mhdr->fields_clear();
-    _mhdr->destroy();
-    delete _mhdr;
-  }
+  // noncopyable
+  HpackDynamicTable(HpackDynamicTable &) = delete;
+  HpackDynamicTable &operator=(const HpackDynamicTable &) = delete;
 
   const MIMEField *get_header_field(uint32_t index) const;
-  void add_header_field(const MIMEField *field);
+  void add_header_field(const HpackHeaderField &header);
 
+  HpackLookupResult lookup(const HpackHeaderField &header) const;
   uint32_t maximum_size() const;
   uint32_t size() const;
-  bool update_maximum_size(uint32_t new_size);
+  void update_maximum_size(uint32_t new_size);
 
   uint32_t length() const;
 
 private:
-  uint32_t _current_size;
-  uint32_t _maximum_size;
+  void _evict_overflowed_entries();
+  void _mime_hdr_gc();
 
-  MIMEHdr *_mhdr;
-  std::vector<MIMEField *> _headers;
+  uint32_t _current_size = 0;
+  uint32_t _maximum_size = 0;
+
+  MIMEHdr *_mhdr     = nullptr;
+  MIMEHdr *_mhdr_old = nullptr;
+  std::deque<MIMEField *> _headers;
 };
 
 // [RFC 7541] 2.3. Indexing Table
 class HpackIndexingTable
 {
 public:
-  HpackIndexingTable(uint32_t size) { _dynamic_table = new HpackDynamicTable(size); }
-  ~HpackIndexingTable() { delete _dynamic_table; }
-  HpackLookupResult lookup(const MIMEFieldWrapper &field) const;
-  HpackLookupResult lookup(const char *name, int name_len, const char *value, int value_len) const;
+  explicit HpackIndexingTable(uint32_t size) : _dynamic_table(size){};
+  ~HpackIndexingTable() {}
+
+  // noncopyable
+  HpackIndexingTable(HpackIndexingTable &) = delete;
+  HpackIndexingTable &operator=(const HpackIndexingTable &) = delete;
+
+  HpackLookupResult lookup(const HpackHeaderField &header) const;
   int get_header_field(uint32_t index, MIMEFieldWrapper &header_field) const;
 
-  void add_header_field(const MIMEField *field);
+  void add_header_field(const HpackHeaderField &header);
   uint32_t maximum_size() const;
   uint32_t size() const;
-  bool update_maximum_size(uint32_t new_size);
+  void update_maximum_size(uint32_t new_size);
 
 private:
-  HpackDynamicTable *_dynamic_table;
+  HpackDynamicTable _dynamic_table;
 };
 
 // Low level interfaces
-int64_t encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n);
-int64_t decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n);
-int64_t encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, size_t value_len);
-int64_t decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end);
 int64_t encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index);
-int64_t encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
+int64_t encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t *buf_end, const HpackHeaderField &header,
                                                       uint32_t index, HpackIndexingTable &indexing_table, HpackField type);
-int64_t encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
+int64_t encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf_end, const HpackHeaderField &header,
                                                   HpackIndexingTable &indexing_table, HpackField type);
+
 int64_t decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
                                     HpackIndexingTable &indexing_table);
 int64_t decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,

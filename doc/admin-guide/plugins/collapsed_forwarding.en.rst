@@ -79,14 +79,14 @@ on the error by using an internal redirect follow back to itself, essentially
 blocking the request until a response arrives, at which point, relies on
 read-while-writer feature to start downloading the object to all waiting
 clients. The following config parameters are assumed to be set for this
-plugin to work::
+plugin to work:
 
-:ts:cv:`proxy.config.http.cache.open_write_fail_action`        1
-:ts:cv:`proxy.config.cache.enable_read_while_writer`           1
-:ts:cv:`proxy.config.http.number_of_redirections`             10
-:ts:cv:`proxy.config.http.redirect_use_orig_cache_key`         1
-:ts:cv:`proxy.config.http.background_fill_active_timeout`      0
-:ts:cv:`proxy.config.http.background_fill_completed_threshold` 0
+- :ts:cv:`proxy.config.http.cache.open_write_fail_action`        ``1``
+- :ts:cv:`proxy.config.cache.enable_read_while_writer`           ``1``
+- :ts:cv:`proxy.config.http.number_of_redirections`             ``10``
+- :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`         ``1``
+- :ts:cv:`proxy.config.http.background_fill_active_timeout`      ``0``
+- :ts:cv:`proxy.config.http.background_fill_completed_threshold` ``0``
 
 Additionally, given that collapsed forwarding works based on cache write
 lock failure detection, the plugin requires cache to be enabled and ready.
@@ -115,12 +115,12 @@ Read-While-Writer (RWW), Stale-While-Revalidate (SWR) etc each very effective
 dealing with a majority of the use cases that can result in the
 Thundering herd problem.
 
-For a large scale Video Streaming scenario, there’s a combination of a
+For a large scale Video Streaming scenario, there's a combination of a
 large number of revalidations (e.g. media playlists) and cache misses
-(e.g. media segments) that occur for the same file. Traffic Server’s
+(e.g. media segments) that occur for the same file. Traffic Server's
 RWW works great in collapsing the concurrent requests in such a scenario,
-however, as described in ``_admin-configuration-reducing-origin-requests``,
-Traffic Server’s implementation of RWW has a significant limitation, which
+however, as described in :ref:`admin-configuration-reducing-origin-requests`,
+Traffic Server's implementation of RWW has a significant limitation, which
 restricts its ability to invoke RWW only when the response headers are
 already received. This means that any number of concurrent requests for
 the same file that are received before the response headers arrive are
@@ -143,7 +143,7 @@ the Other hand, if the lookup is successful, meaning, the dirent
 exists for the generated cache key, Traffic Server tries to obtain
 a read lock on the cache object to be able to serve it from the cache.
 If the read lock is not successful (possibly, due to the fact that
-the object’s being written to at that same instant and the response
+the object's being written to at that same instant and the response
 headers are not in the cache yet), Traffic Server then moves to the
 next step of trying to obtain an exclusive write lock. If the write
 lock is already held exclusively by another request (transaction), the
@@ -185,6 +185,4 @@ retries, allowing to be able to initiate RWW, whenever the response headers
 are received for the request that was allowed to go to the Origin.
 
 
-More details are available at
-
-https://docs.trafficserver.apache.org/en/6.0.x/admin/http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd
+More details are available at :ref:`admin-configuration-reducing-origin-requests`

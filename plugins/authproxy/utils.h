@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#pragma once
+
 #include <ts/ts.h>
 #include <netinet/in.h>
 #include <memory>
@@ -43,9 +45,8 @@ struct HttpIoBuffer {
   TSIOBufferReader reader;
 
   explicit HttpIoBuffer(TSIOBufferSizeIndex size = TS_IOBUFFER_SIZE_INDEX_32K)
+    : buffer(TSIOBufferSizedCreate(size)), reader(TSIOBufferReaderAlloc(buffer))
   {
-    this->buffer = TSIOBufferSizedCreate(size);
-    this->reader = TSIOBufferReaderAlloc(this->buffer);
   }
 
   ~HttpIoBuffer()
@@ -102,16 +103,7 @@ unsigned HttpGetContentLength(TSMBuffer mbuf, TSMLoc mhdr);
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, const char *value);
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, unsigned value);
 
-// Get the origin server name for the given request. Takes the URL and the Host
-// header into account (preferring the former).
-bool HttpGetOriginHost(TSMBuffer mbuf, TSMLoc mhdr, char *name, size_t namelen);
-
 // Dump the given HTTP header to the debug log.
 void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
-
-// Return the sockaddr port (if any);
-uint16_t SockaddrGetPort(const sockaddr *saddr);
-// Return a pointer to the sockaddr address.
-const void *SockaddrGetAddress(const sockaddr *saddr);
 
 // vim: set ts=4 sw=4 et :

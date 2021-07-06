@@ -26,7 +26,7 @@
    HttpPages.cc
 
    Description:
-       Data structurs and stat page generators for http info
+       Data structures and stat page generators for http info
 
 
  ****************************************************************************/
@@ -45,12 +45,12 @@ HttpPagesHandler::HttpPagesHandler(Continuation *cont, HTTPHdr *header)
   int length;
 
   url     = header->url_get();
-  request = (char *)url->path_get(&length);
+  request = const_cast<char *>(url->path_get(&length));
   request = arena.str_store(request, length);
 
   if (strncmp(request, "sm_details", sizeof("sm_details")) == 0) {
     arena.str_free(request);
-    request = (char *)url->query_get(&length);
+    request = const_cast<char *>(url->query_get(&length));
     request = arena.str_store(request, length);
     SET_HANDLER(&HttpPagesHandler::handle_smdetails);
 
@@ -67,7 +67,7 @@ HttpPagesHandler::extract_id(const char *query)
   char *p;
   int64_t id;
 
-  p = (char *)strstr(query, "id=");
+  p = const_cast<char *>(strstr(query, "id="));
   if (!p) {
     return -1;
   }
@@ -134,16 +134,16 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
       // Col 3 - ndone
       resp_begin_column();
       if (producer.alive && producer.read_vio) {
-        resp_add("%d", producer.read_vio->ndone);
+        resp_add("%" PRId64, producer.read_vio->ndone);
       } else {
-        resp_add("%d", producer.bytes_read);
+        resp_add("%" PRId64, producer.bytes_read);
       }
       resp_end_column();
 
       // Col 4 - nbytes
       resp_begin_column();
       if (producer.alive && producer.read_vio) {
-        resp_add("%d", producer.read_vio->nbytes);
+        resp_add("%" PRId64, producer.read_vio->nbytes);
       } else {
         resp_add("-");
       }
@@ -173,16 +173,16 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
       // Col 3 - ndone
       resp_begin_column();
       if (consumer.alive && consumer.write_vio) {
-        resp_add("%d", consumer.write_vio->ndone);
+        resp_add("%" PRId64, consumer.write_vio->ndone);
       } else {
-        resp_add("%d", consumer.bytes_written);
+        resp_add("%" PRId64, consumer.bytes_written);
       }
       resp_end_column();
 
       // Col 4 - nbytes
       resp_begin_column();
       if (consumer.alive && consumer.write_vio) {
-        resp_add("%d", consumer.write_vio->nbytes);
+        resp_add("%" PRId64, consumer.write_vio->nbytes);
       } else {
         resp_add("-");
       }
@@ -191,7 +191,7 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
       // Col 5 - read avail
       resp_begin_column();
       if (consumer.alive && consumer.buffer_reader) {
-        resp_add("%d", consumer.buffer_reader->read_avail());
+        resp_add("%" PRId64, consumer.buffer_reader->read_avail());
       } else {
         resp_add("-");
       }
@@ -220,11 +220,11 @@ HttpPagesHandler::dump_history(HttpSM *sm)
     resp_end_column();
 
     resp_begin_column();
-    resp_add("%u", (unsigned int)sm->history[i].event);
+    resp_add("%u", static_cast<unsigned int>(sm->history[i].event));
     resp_end_column();
 
     resp_begin_column();
-    resp_add("%d", (int)sm->history[i].reentrancy);
+    resp_add("%d", static_cast<int>(sm->history[i].reentrancy));
     resp_end_column();
 
     resp_end_row();

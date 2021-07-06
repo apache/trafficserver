@@ -183,8 +183,8 @@ ConfigElements::noIncludeExcludeRules() const
 
 ConfigElements::~ConfigElements()
 {
-  for (auto it = _captures.begin(); it != _captures.end(); it++) {
-    delete it->second;
+  for (auto &_capture : _captures) {
+    delete _capture.second;
   }
 }
 
@@ -274,11 +274,11 @@ makeConfigPath(const String &path)
 /**
  * @brief a helper function which loads the classifier from files.
  * @param args classname + filename in '<classname>:<filename>' format.
- * @param blacklist true - load as a blacklist classifier, false - whitelist.
+ * @param denylist true - load as a denylist classifier, false - allowlist.
  * @return true if successful, false otherwise.
  */
 bool
-Configs::loadClassifiers(const String &args, bool blacklist)
+Configs::loadClassifiers(const String &args, bool denylist)
 {
   static const char *EXPECTED_FORMAT = "<classname>:<filename>";
 
@@ -310,7 +310,7 @@ Configs::loadClassifiers(const String &args, bool blacklist)
   }
 
   MultiPattern *multiPattern;
-  if (blacklist) {
+  if (denylist) {
     multiPattern = new NonMatchingMultiPattern(classname);
   } else {
     multiPattern = new MultiPattern(classname);
@@ -341,11 +341,11 @@ Configs::loadClassifiers(const String &args, bool blacklist)
     p = new Pattern();
 
     if (nullptr != p && p->init(regex)) {
-      if (blacklist) {
-        CacheKeyDebug("Added pattern '%s' to black list '%s'", regex.c_str(), classname.c_str());
+      if (denylist) {
+        CacheKeyDebug("Added pattern '%s' to deny list '%s'", regex.c_str(), classname.c_str());
         multiPattern->add(p);
       } else {
-        CacheKeyDebug("Added pattern '%s' to white list '%s'", regex.c_str(), classname.c_str());
+        CacheKeyDebug("Added pattern '%s' to allow list '%s'", regex.c_str(), classname.c_str());
         multiPattern->add(p);
       }
     } else {
@@ -385,8 +385,8 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     {const_cast<char *>("include-headers"), optional_argument, nullptr, 'g'},
     {const_cast<char *>("include-cookies"), optional_argument, nullptr, 'h'},
     {const_cast<char *>("ua-capture"), optional_argument, nullptr, 'i'},
-    {const_cast<char *>("ua-whitelist"), optional_argument, nullptr, 'j'},
-    {const_cast<char *>("ua-blacklist"), optional_argument, nullptr, 'k'},
+    {const_cast<char *>("ua-allowlist"), optional_argument, nullptr, 'j'},
+    {const_cast<char *>("ua-denylist"), optional_argument, nullptr, 'k'},
     {const_cast<char *>("static-prefix"), optional_argument, nullptr, 'l'},
     {const_cast<char *>("capture-prefix"), optional_argument, nullptr, 'm'},
     {const_cast<char *>("capture-prefix-uri"), optional_argument, nullptr, 'n'},
@@ -396,7 +396,10 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     {const_cast<char *>("remove-path"), optional_argument, nullptr, 'r'},
     {const_cast<char *>("separator"), optional_argument, nullptr, 's'},
     {const_cast<char *>("uri-type"), optional_argument, nullptr, 't'},
-    {const_cast<char *>("capture-header"), optional_argument, nullptr, 'u'},
+    {const_cast<char *>("key-type"), optional_argument, nullptr, 'u'},
+    {const_cast<char *>("capture-header"), optional_argument, nullptr, 'v'},
+    {const_cast<char *>("canonical-prefix"), optional_argument, nullptr, 'w'},
+    /* reserve 'z' for 'config' files */
     {nullptr, 0, nullptr, 0},
   };
 
@@ -411,7 +414,7 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
 
   for (;;) {
     int opt;
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
 
     if (opt == -1) {
       break;
@@ -449,15 +452,15 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
         status = false;
       }
       break;
-    case 'j': /* ua-whitelist */
-      if (!loadClassifiers(optarg, /* blacklist = */ false)) {
-        CacheKeyError("failed to load User-Agent pattern white-list '%s'", optarg);
+    case 'j': /* ua-allowlist */
+      if (!loadClassifiers(optarg, /* denylist = */ false)) {
+        CacheKeyError("failed to load User-Agent pattern allow-list '%s'", optarg);
         status = false;
       }
       break;
-    case 'k': /* ua-blacklist */
-      if (!loadClassifiers(optarg, /* blacklist = */ true)) {
-        CacheKeyError("failed to load User-Agent pattern black-list '%s'", optarg);
+    case 'k': /* ua-denylist */
+      if (!loadClassifiers(optarg, /* denylist = */ true)) {
+        CacheKeyError("failed to load User-Agent pattern deny-list '%s'", optarg);
         status = false;
       }
       break;
@@ -501,8 +504,14 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
     case 't': /* uri-type */
       setUriType(optarg);
       break;
-    case 'u': /* capture-header */
+    case 'u': /* key-type */
+      setKeyType(optarg);
+      break;
+    case 'v': /* capture-header */
       _headers.addCapture(optarg);
+      break;
+    case 'w': /* canonical-prefix */
+      _canonicalPrefix = isTrue(optarg);
       break;
     }
   }
@@ -520,6 +529,10 @@ Configs::init(int argc, const char *argv[], bool perRemapConfig)
 bool
 Configs::finalize()
 {
+  if (_keyTypes.empty()) {
+    CacheKeyDebug("setting cache key");
+    _keyTypes = {CACHE_KEY};
+  }
   return _query.finalize() && _headers.finalize() && _cookies.finalize();
 }
 
@@ -533,6 +546,12 @@ bool
 Configs::pathToBeRemoved()
 {
   return _pathToBeRemoved;
+}
+
+bool
+Configs::canonicalPrefix()
+{
+  return _canonicalPrefix;
 }
 
 void
@@ -567,8 +586,63 @@ Configs::setUriType(const char *arg)
   }
 }
 
+void
+Configs::setKeyType(const char *arg)
+{
+  if (nullptr != arg) {
+    StringVector types;
+    ::commaSeparateString<StringVector>(types, arg);
+
+    for (auto type : types) {
+      if (9 == type.length() && 0 == strncasecmp(type.c_str(), "cache_key", 9)) {
+        _keyTypes.insert(CacheKeyKeyType::CACHE_KEY);
+        CacheKeyDebug("setting cache key");
+      } else if (20 == type.length() && 0 == strncasecmp(type.c_str(), "parent_selection_url", 20)) {
+        _keyTypes.insert(CacheKeyKeyType::PARENT_SELECTION_URL);
+        CacheKeyDebug("setting parent selection URL");
+      } else {
+        CacheKeyError("unrecognized key type '%s', using default 'cache_key'", arg);
+      }
+    }
+  } else {
+    CacheKeyError("found an empty key type, using default 'cache_key'");
+  }
+}
+
 CacheKeyUriType
 Configs::getUriType()
 {
   return _uriType;
+}
+
+CacheKeyKeyTypeSet &
+Configs::getKeyType()
+{
+  return _keyTypes;
+}
+
+const char *
+getCacheKeyUriTypeName(CacheKeyUriType type)
+{
+  switch (type) {
+  case REMAP:
+    return "remap";
+  case PRISTINE:
+    return "pristine";
+  default:
+    return "unknown";
+  }
+}
+
+const char *
+getCacheKeyKeyTypeName(CacheKeyKeyType type)
+{
+  switch (type) {
+  case CACHE_KEY:
+    return "cache key";
+  case PARENT_SELECTION_URL:
+    return "parent selection url";
+  default:
+    return "unknown";
+  }
 }

@@ -24,6 +24,7 @@
 #include "tscore/ink_platform.h"
 #include "P_Cache.h"
 #include "tscore/I_Layout.h"
+#include "tscore/Filenames.h"
 #include "tscore/ink_file.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/SimpleTokenizer.h"
@@ -36,7 +37,6 @@
 //
 // Store
 //
-
 const char Store::VOLUME_KEY[]           = "volume";
 const char Store::HASH_BASE_STRING_KEY[] = "id";
 
@@ -46,7 +46,7 @@ make_span_error(int error)
   switch (error) {
   case ENOENT:
     return SPAN_ERROR_NOT_FOUND;
-  case EPERM: /* fallthru */
+  case EPERM: /* fallthrough */
   case EACCES:
     return SPAN_ERROR_NO_ACCESS;
   default:
@@ -72,7 +72,7 @@ span_file_typename(mode_t st_mode)
 }
 
 Ptr<ProxyMutex> tmp_p;
-Store::Store() : n_disks_in_config(0), n_disks(0), disk(nullptr) {}
+Store::Store() {}
 
 void
 Store::add(Span *ds)
@@ -120,7 +120,7 @@ Store::free(Store &s)
 void
 Store::sort()
 {
-  Span **vec = (Span **)alloca(sizeof(Span *) * n_disks);
+  Span **vec = static_cast<Span **>(alloca(sizeof(Span *) * n_disks));
   memset(vec, 0, sizeof(Span *) * n_disks);
   for (unsigned i = 0; i < n_disks; i++) {
     vec[i]  = disk[i];
@@ -213,7 +213,7 @@ Span::errorstr(span_error_t serr)
     return "unsupported cache file type";
   case SPAN_ERROR_MEDIA_PROBE:
     return "failed to probe device geometry";
-  case SPAN_ERROR_UNKNOWN: /* fallthru */
+  case SPAN_ERROR_UNKNOWN: /* fallthrough */
   default:
     return "unknown error";
   }
@@ -225,7 +225,7 @@ Span::path(char *filename, int64_t *aoffset, char *buf, int buflen)
   ink_assert(!aoffset);
   Span *ds = this;
 
-  if ((strlen(ds->pathname) + strlen(filename) + 2) > (size_t)buflen) {
+  if ((strlen(ds->pathname) + strlen(filename) + 2) > static_cast<size_t>(buflen)) {
     return -1;
   }
   if (!ds->file_pathname) {
@@ -325,11 +325,13 @@ Store::read_config()
   Span *sd = nullptr, *cur = nullptr;
   Span *ns;
   ats_scoped_fd fd;
-  ats_scoped_str storage_path(RecConfigReadConfigPath("proxy.config.cache.storage_filename", "storage.config"));
+  ats_scoped_str storage_path(RecConfigReadConfigPath(nullptr, ts::filename::STORAGE));
 
+  Note("%s loading ...", ts::filename::STORAGE);
   Debug("cache_init", "Store::read_config, fd = -1, \"%s\"", (const char *)storage_path);
   fd = ::open(storage_path, O_RDONLY);
   if (fd < 0) {
+    Error("%s failed to load", ts::filename::STORAGE);
     return Result::failure("open %s: %s", (const char *)storage_path, strerror(errno));
   }
 
@@ -367,8 +369,10 @@ Store::read_config()
     const char *e;
     while (nullptr != (e = tokens.getNext())) {
       if (ParseRules::is_digit(*e)) {
-        if ((size = ink_atoi64(e)) <= 0) {
+        const char *end;
+        if ((size = ink_atoi64(e, &end)) <= 0 || *end != '\0') {
           delete sd;
+          Error("%s failed to load", ts::filename::STORAGE);
           return Result::failure("failed to parse size '%s'", e);
         }
       } else if (0 == strncasecmp(HASH_BASE_STRING_KEY, e, sizeof(HASH_BASE_STRING_KEY) - 1)) {
@@ -386,6 +390,7 @@ Store::read_config()
         }
         if (!*e || !ParseRules::is_digit(*e) || 0 >= (volume_num = ink_atoi(e))) {
           delete sd;
+          Error("%s failed to load", ts::filename::STORAGE);
           return Result::failure("failed to parse volume number '%s'", e);
         }
       }
@@ -437,6 +442,8 @@ Store::read_config()
   sd = nullptr; // these are all used.
   sort();
 
+  Note("%s finished loading", ts::filename::STORAGE);
+
   return Result::ok();
 }
 
@@ -446,7 +453,7 @@ Store::write_config_data(int fd) const
   for (unsigned i = 0; i < n_disks; i++) {
     for (Span *sd = disk[i]; sd; sd = sd->link.next) {
       char buf[PATH_NAME_MAX + 64];
-      snprintf(buf, sizeof(buf), "%s %" PRId64 "\n", sd->pathname.get(), (int64_t)sd->blocks * (int64_t)STORE_BLOCK_SIZE);
+      snprintf(buf, sizeof(buf), "%s %" PRId64 "\n", sd->pathname.get(), sd->blocks * static_cast<int64_t>(STORE_BLOCK_SIZE));
       if (ink_file_fd_writestring(fd, buf) == -1) {
         return (-1);
       }
@@ -531,7 +538,7 @@ Span::init(const char *path, int64_t size)
     break;
 
   case S_IFDIR:
-    if ((int64_t)(vbuf.f_frsize * vbuf.f_bavail) < size) {
+    if (static_cast<int64_t>(vbuf.f_frsize * vbuf.f_bavail) < size) {
       Warning("not enough free space for cache %s '%s'", span_file_typename(sbuf.st_mode), path);
       // Just warn for now; let the cache open fail later.
     }
@@ -550,7 +557,7 @@ Span::init(const char *path, int64_t size)
   case S_IFREG:
     if (size > 0 && sbuf.st_size < size) {
       int64_t needed = size - sbuf.st_size;
-      if ((int64_t)(vbuf.f_frsize * vbuf.f_bavail) < needed) {
+      if (static_cast<int64_t>(vbuf.f_frsize * vbuf.f_bavail) < needed) {
         Warning("not enough free space for cache %s '%s'", span_file_typename(sbuf.st_mode), path);
         // Just warn for now; let the cache open fail later.
       }
@@ -581,7 +588,7 @@ Span::init(const char *path, int64_t size)
   }
 
   // A directory span means we will end up with a file, otherwise, we get what we asked for.
-  this->set_mmapable(ink_file_is_mmappable(S_ISDIR(sbuf.st_mode) ? (mode_t)S_IFREG : sbuf.st_mode));
+  this->set_mmapable(ink_file_is_mmappable(S_ISDIR(sbuf.st_mode) ? static_cast<mode_t>(S_IFREG) : sbuf.st_mode));
   this->pathname = ats_strdup(path);
 
   Debug("cache_init", "initialized span '%s'", this->pathname.get());
@@ -646,7 +653,7 @@ void
 Store::spread_alloc(Store &s, unsigned int blocks, bool mmapable)
 {
   //
-  // Count the eligable disks..
+  // Count the eligible disks..
   //
   int mmapable_disks = 0;
   for (unsigned k = 0; k < n_disks; k++) {
@@ -732,7 +739,7 @@ Store::try_realloc(Store &s, Store &diff)
 }
 
 //
-// Stupid grab first availabled space allocator
+// Stupid grab first available space allocator
 //
 void
 Store::alloc(Store &s, unsigned int blocks, bool one_only, bool mmapable)
@@ -775,7 +782,7 @@ Span::write(int fd) const
     return (-1);
   }
 
-  snprintf(buf, sizeof(buf), "%d\n", (int)is_mmapable());
+  snprintf(buf, sizeof(buf), "%d\n", static_cast<int>(is_mmapable()));
   if (ink_file_fd_writestring(fd, buf) == -1) {
     return (-1);
   }
@@ -901,7 +908,7 @@ Store::read(int fd, char *aname)
     return (-1);
   }
 
-  disk = (Span **)ats_malloc(sizeof(Span *) * n_disks);
+  disk = static_cast<Span **>(ats_malloc(sizeof(Span *) * n_disks));
   if (!disk) {
     return -1;
   }
@@ -958,7 +965,7 @@ void
 Store::dup(Store &s)
 {
   s.n_disks = n_disks;
-  s.disk    = (Span **)ats_malloc(sizeof(Span *) * n_disks);
+  s.disk    = static_cast<Span **>(ats_malloc(sizeof(Span *) * n_disks));
   for (unsigned i = 0; i < n_disks; i++) {
     s.disk[i] = disk[i]->dup();
   }

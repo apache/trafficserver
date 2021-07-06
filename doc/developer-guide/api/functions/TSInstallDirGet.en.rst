@@ -27,7 +27,9 @@ Return Traffic Server installation directories.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: const char * TSInstallDirGet(void)
 .. function:: const char * TSConfigDirGet(void)
@@ -60,7 +62,7 @@ To load a file that is located in the Traffic Server configuration directory::
     char * path;
     asprintf(&path, "%s/example.conf", TSConfigDirGet());
 
-See Slso
+See Also
 ========
 
 :manpage:`TSAPI(3ts)`

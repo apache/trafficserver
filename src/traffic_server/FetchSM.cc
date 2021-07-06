@@ -359,12 +359,17 @@ void
 FetchSM::get_info_from_buffer(IOBufferReader *reader)
 {
   char *buf, *info;
+  IOBufferBlock *blk;
   int64_t read_avail, read_done;
 
   if (!reader) {
     client_bytes = 0;
     return;
   }
+
+  /* Read the data out of the reader */
+  if (reader->block != NULL)
+    reader->skip_empty_blocks();
 
   read_avail = reader->read_avail();
   Debug(DEBUG_TAG, "[%s] total avail %" PRId64, __FUNCTION__, read_avail);
@@ -376,21 +381,44 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
   info            = (char *)ats_malloc(sizeof(char) * (read_avail + 1));
   client_response = info;
 
-  // To maintain backwards compatability we don't allow chunking when it's not streaming.
-  if (!(fetch_flags & TS_FETCH_FLAGS_STREAM) || !check_chunked()) {
+  blk = reader->block.get();
+
+  // This is the equivalent of TSIOBufferBlockReadStart()
+  buf       = blk->start() + reader->start_offset;
+  read_done = blk->read_avail() - reader->start_offset;
+
+  if (header_done == 0 && read_done > 0) {
+    int bytes_used = 0;
+    header_done    = true;
+    if (client_response_hdr.parse_resp(&http_parser, reader, &bytes_used, 0) == PARSE_RESULT_DONE) {
+      if ((bytes_used > 0) && (bytes_used <= read_avail)) {
+        memcpy(info, buf, bytes_used);
+        info += bytes_used;
+        client_bytes += bytes_used;
+      }
+    } else {
+      Error("Failed to parse headers in FetchSM buffer");
+    }
+    // adjust the read_avail
+    read_avail -= bytes_used;
+  }
+
+  // Send the body without dechunk when neither streaming nor dechunk flag is set
+  // Or when the body is not chunked
+  if (!((fetch_flags & TS_FETCH_FLAGS_STREAM) || (fetch_flags & TS_FETCH_FLAGS_DECHUNK)) || !check_chunked()) {
     /* Read the data out of the reader */
     while (read_avail > 0) {
       if (reader->block) {
         reader->skip_empty_blocks();
       }
 
-      IOBufferBlock *blk = reader->block.get();
+      blk = reader->block.get();
 
       // This is the equivalent of TSIOBufferBlockReadStart()
       buf       = blk->start() + reader->start_offset;
       read_done = blk->read_avail() - reader->start_offset;
 
-      if (read_done > 0) {
+      if ((read_done > 0) && ((read_done <= read_avail))) {
         memcpy(info, buf, read_done);
         reader->consume(read_done);
         read_avail -= read_done;
@@ -425,7 +453,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
       buf       = blk->start() + reader->start_offset;
       read_done = blk->read_avail() - reader->start_offset;
 
-      if (read_done > 0) {
+      if ((read_done > 0) && (read_done <= read_avail)) {
         memcpy(info, buf, read_done);
         reader->consume(read_done);
         read_avail -= read_done;
@@ -673,7 +701,7 @@ FetchSM::ext_read_data(char *buf, size_t len)
     memcpy(&buf[already], start, need);
     already += need;
 
-    if (already >= (int64_t)len) {
+    if (already >= static_cast<int64_t>(len)) {
       break;
     }
 

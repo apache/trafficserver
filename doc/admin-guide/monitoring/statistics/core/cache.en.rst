@@ -168,12 +168,22 @@ Cache
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.background_fill_current_count integer
+   :type: gauge
    :ungathered:
+
+   Represents the current number of background fill
+
+.. ts:stat:: global proxy.process.http.background_fill_total_count integer
+   :type: counter
+   :ungathered:
+
+   Represents the total number of background fill
 
 .. ts:stat:: global proxy.process.http.cache_deletes integer
 .. ts:stat:: global proxy.process.http.cache_hit_fresh integer
 .. ts:stat:: global proxy.process.http.cache_hit_ims integer
 .. ts:stat:: global proxy.process.http.cache_hit_mem_fresh integer
+.. ts:stat:: global proxy.process.http.cache_hit_rww integer
 .. ts:stat:: global proxy.process.http.cache_hit_revalidated integer
 .. ts:stat:: global proxy.process.http.cache_hit_stale_served integer
 .. ts:stat:: global proxy.process.http.cache_lookups integer
@@ -223,4 +233,3 @@ Cache
 .. ts:stat:: global proxy.process.http.tcp_refresh_miss_count_stat integer
 .. ts:stat:: global proxy.process.http.tcp_refresh_miss_origin_server_bytes_stat integer
 .. ts:stat:: global proxy.process.http.tcp_refresh_miss_user_agent_bytes_stat integer
-

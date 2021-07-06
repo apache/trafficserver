@@ -27,6 +27,12 @@
 #include <iosfwd>
 
 #include "tscore/ink_assert.h"
+
+#if defined(UNIT_TEST_BUFFER_WRITER)
+#undef ink_assert
+#define ink_assert ink_release_assert
+#endif
+
 #include "tscore/BufferWriter.h"
 
 #if !defined(UNIT_TEST_BUFFER_WRITER)
@@ -42,7 +48,7 @@ class MIOBufferWriter : public ts::BufferWriter
   using self_type = MIOBufferWriter; ///< Self reference type.
 
 public:
-  MIOBufferWriter(MIOBuffer *miob) : _miob(miob) {}
+  explicit MIOBufferWriter(MIOBuffer *miob) : _miob(miob) {}
 
   self_type &write(const void *data_, size_t length) override;
 

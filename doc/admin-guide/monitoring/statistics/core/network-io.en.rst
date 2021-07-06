@@ -60,7 +60,23 @@ Network I/O
 .. ts:stat:: global proxy.process.net.connections_currently_open integer
    :type: counter
 
+.. ts:stat:: global proxy.process.net.connections_throttled_in integer
+   :type: counter
+
+.. ts:stat:: global proxy.process.net.connections_throttled_out integer
+   :type: counter
+
+.. ts:stat:: global proxy.process.net.max.requests_throttled_in integer
+   :type: counter
+
 .. ts:stat:: global proxy.process.net.default_inactivity_timeout_applied integer
+   The total number of connections that had no transaction or connection level timer running on them and
+   had to fallback to the catch-all 'default_inactivity_timeout'
+   :type: counter
+.. ts:stat:: global proxy.process.net.default_inactivity_timeout_count integer
+   The total number of connections that were cleaned up due to 'default_inactivity_timeout'
+   :type: counter
+
 .. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_count integer
 .. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_total integer
 .. ts:stat:: global proxy.process.net.inactivity_cop_lock_acquire_failure integer

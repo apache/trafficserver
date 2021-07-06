@@ -256,7 +256,94 @@ template <class C, class L = typename C::Link_link> struct DLL {
   }
 
   DLL() : head(nullptr) {}
+
+  /// STL compliant iterator.
+  class iterator : public std::forward_iterator_tag
+  {
+    friend DLL;
+    using self_type = iterator; ///< Self reference type.
+    C *_spot        = nullptr;  ///< Current location in the list.
+  public:
+    /// STL compliance type definitions.
+    /// @{
+    using size_type  = size_t;
+    using value_type = C;
+    using pointer    = C *;
+    using reference  = C &;
+    /// @}
+
+    iterator() = default; ///< Construct empty iteratgor.
+
+    /// Dereference operator.
+    C &operator*();
+
+    /// Indirection operator.
+    C *operator->();
+
+    /// Pre-increment.
+    self_type &operator++();
+
+    /// Post-increment.
+    self_type operator++(int);
+
+    /// Equality.
+    bool operator==(self_type const &that);
+
+    /// Inequality.
+    bool operator!=(self_type const &that);
+
+  protected:
+    /// Construct for a specific element.
+    iterator(C *spot) : _spot(spot) {}
+  };
+
+  iterator begin();
+  iterator end();
+
+  class const_iterator : public std::forward_iterator_tag
+  {
+    friend DLL;
+    using self_type = const_iterator;
+    C *_spot        = nullptr; ///< Current location in the list.
+  public:
+    /// STL compliance type definitions.
+    /// @{
+    using size_type  = size_t;
+    using value_type = C const;
+    using pointer    = C const *;
+    using reference  = C const &;
+    /// @}
+
+    const_iterator() = default; ///< Construct empty iterator.
+    /// Convert from iterator to constant iterator.
+    const_iterator(iterator spot) : _spot(spot._spot) {}
+
+    /// Dereference operator.
+    C const &operator*();
+
+    /// Indirection operator.
+    C const *operator->();
+
+    /// Pre-increment.
+    self_type &operator++();
+
+    /// Post-increment.
+    self_type operator++(int);
+
+    /// Equality.
+    bool operator==(self_type const &that);
+
+    /// Inequality.
+    bool operator!=(self_type const &that);
+
+  protected:
+    const_iterator(C *spot) : _spot(spot) {}
+  };
+
+  const_iterator begin() const;
+  const_iterator end() const;
 };
+
 #define DList(_c, _f) DLL<_c, _c::Link##_##_f>
 #define DListM(_c, _m, _ml, _l) DLL<_c, _c::Link##_##_ml##_##_l>
 
@@ -314,6 +401,124 @@ DLL<C, L>::insert(C *e, C *after)
   next(after) = e;
   if (next(e))
     prev(next(e)) = e;
+}
+
+template <class C, class L>
+auto
+DLL<C, L>::begin() -> iterator
+{
+  return iterator{head};
+}
+
+template <class C, class L>
+auto
+DLL<C, L>::end() -> iterator
+{
+  return iterator{};
+}
+
+template <class C, class L>
+auto
+DLL<C, L>::begin() const -> const_iterator
+{
+  return const_iterator{head};
+}
+template <class C, class L>
+
+auto
+DLL<C, L>::end() const -> const_iterator
+{
+  return const_iterator{};
+}
+
+template <class C, class L>
+C &
+DLL<C, L>::iterator::operator*()
+{
+  return *_spot;
+}
+
+template <class C, class L>
+C *
+DLL<C, L>::iterator::operator->()
+{
+  return _spot;
+}
+
+template <class C, class L>
+auto
+DLL<C, L>::iterator::operator++() -> self_type &
+{
+  _spot = next(_spot);
+  return *this;
+}
+
+template <class C, class L>
+auto
+DLL<C, L>::iterator::operator++(int) -> self_type
+{
+  self_type zret{*this};
+  ++*this;
+  return zret;
+}
+
+template <class C, class L>
+bool
+DLL<C, L>::iterator::operator==(DLL::iterator::self_type const &that)
+{
+  return _spot == that._spot;
+}
+
+template <class C, class L>
+bool
+DLL<C, L>::iterator::operator!=(DLL::iterator::self_type const &that)
+{
+  return _spot != that._spot;
+}
+
+template <class C, class L>
+C const &
+DLL<C, L>::const_iterator::operator*()
+{
+  return *_spot;
+}
+
+template <class C, class L>
+C const *
+DLL<C, L>::const_iterator::operator->()
+{
+  return _spot;
+}
+
+template <class C, class L>
+auto
+DLL<C, L>::const_iterator::operator++() -> self_type &
+{
+  _spot = next(_spot);
+  return *this;
+}
+
+template <class C, class L>
+auto
+DLL<C, L>::const_iterator::operator++(int) -> self_type
+{
+  self_type zret{*this};
+  ++*this;
+  return zret;
+}
+
+template <class C, class L>
+bool
+DLL<C, L>::const_iterator::operator==(DLL::const_iterator::self_type const &that)
+{
+  return _spot == that._spot;
+}
+
+template <class C, class L>
+bool
+DLL<C, L>::const_iterator::operator!=(DLL::const_iterator::self_type const &that)
+{
+  return _spot != that._spot;
 }
 
 //
@@ -506,8 +711,8 @@ template <class C, class L = typename C::Link_link> struct SortableQueue : publi
 //
 
 template <class C, class L = typename C::Link_link> struct CountQueue : public Queue<C, L> {
-  int size;
-  inline CountQueue(void) : size(0) {}
+  int size = 0;
+  inline CountQueue() {}
   inline void push(C *e);
   inline C *pop();
   inline void enqueue(C *e);

@@ -232,10 +232,6 @@ msgstr ""
 msgid "snd_ssthresh"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:48
-msgid "ssn_close"
-msgstr ""
-
 #: ../../admin-guide/plugins/tcpinfo.en.rst:69
 #: ../../admin-guide/plugins/tcpinfo.en.rst:81
 msgid "timestamp"

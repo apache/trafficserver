@@ -137,13 +137,12 @@ setup_watchers(int fd)
   HCFileInfo *conf     = g_config;
   HCDirEntry *head_dir = NULL, *last_dir = NULL, *dir;
   char fname[MAX_PATH_LEN];
-  char *dname;
 
   while (conf) {
     conf->wd = inotify_add_watch(fd, conf->fname, IN_DELETE_SELF | IN_CLOSE_WRITE | IN_ATTRIB);
     TSDebug(PLUGIN_NAME, "Setting up a watcher for %s", conf->fname);
     strncpy(fname, conf->fname, MAX_PATH_LEN);
-    dname = dirname(fname);
+    char *dname = dirname(fname);
     /* Make sure to only watch each directory once */
     if (!(dir = find_direntry(dname, head_dir))) {
       TSDebug(PLUGIN_NAME, "Setting up a watcher for directory %s", dname);
@@ -171,9 +170,7 @@ setup_watchers(int fd)
 static void *
 hc_thread(void *data ATS_UNUSED)
 {
-  int fd = inotify_init();
-  HCDirEntry *dirs;
-  int len;
+  int fd              = inotify_init();
   HCFileData *fl_head = NULL;
   char buffer[INOTIFY_BUFLEN];
   struct timeval last_free, now;
@@ -188,7 +185,7 @@ hc_thread(void *data ATS_UNUSED)
 
     gettimeofday(&now, NULL);
     /* Read the inotify events, blocking until we get something */
-    len = read(fd, buffer, INOTIFY_BUFLEN);
+    int len = read(fd, buffer, INOTIFY_BUFLEN);
 
     /* The fl_head is a linked list of previously released data entries. They
        are ordered "by time", so once we find one that is scheduled for deletion,
@@ -206,7 +203,7 @@ hc_thread(void *data ATS_UNUSED)
         do {
           HCFileData *next = fdata->_next;
 
-          TSDebug(PLUGIN_NAME, "Cleaning up entry from frelist");
+          TSDebug(PLUGIN_NAME, "Cleaning up entry from freelist");
           TSfree(fdata);
           fdata = next;
         } while (fdata);
@@ -255,14 +252,6 @@ hc_thread(void *data ATS_UNUSED)
         i += sizeof(struct inotify_event) + event->len;
       }
     }
-  }
-
-  /* Cleanup, in case we later exit this thread ... */
-  while (dirs) {
-    HCDirEntry *d = dirs;
-
-    dirs = dirs->_next;
-    TSfree(d);
   }
 
   return NULL; /* Yeah, that never happens */
@@ -321,14 +310,14 @@ parse_configs(const char *fname)
 
   while (!feof(fd)) {
     char *str, *save;
-    int state = 0;
     char *ok = NULL, *miss = NULL, *mime = NULL;
 
     finfo = TSmalloc(sizeof(HCFileInfo));
     memset(finfo, 0, sizeof(HCFileInfo));
 
     if (fgets(buf, sizeof(buf) - 1, fd)) {
-      str = strtok_r(buf, SEPARATORS, &save);
+      str       = strtok_r(buf, SEPARATORS, &save);
+      int state = 0;
       while (NULL != str) {
         if (strlen(str) > 0) {
           switch (state) {
@@ -458,7 +447,7 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
     }
     TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
     TSVIOReenable(my_state->write_vio);
-  } else if (TS_EVENT_VCONN_WRITE_COMPLETE) {
+  } else if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
     cleanup(contp, my_state);
   } else if (event == TS_EVENT_ERROR) {
     TSError("[healthchecks] hc_process_write: Received TS_EVENT_ERROR");
@@ -477,7 +466,7 @@ hc_process_accept(TSCont contp, HCState *my_state)
   my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
-/* Imlement the server intercept */
+/* Implement the server intercept */
 static int
 hc_intercept(TSCont contp, TSEvent event, void *edata)
 {
@@ -512,7 +501,7 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
     int path_len     = 0;
     const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
-    /* Short circuit the / path, common case, and we won't allow healthecks on / */
+    /* Short circuit the / path, common case, and we won't allow healthchecks on / */
     if (!path || !path_len) {
       goto cleanup;
     }

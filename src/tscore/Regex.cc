@@ -28,9 +28,9 @@
 #include "tscore/ink_memory.h"
 #include "tscore/Regex.h"
 
-#ifdef PCRE_CONFIG_JIT
+#if defined(PCRE_CONFIG_JIT) && !defined(darwin) // issue with macOS Catalina and pcre 8.43
 struct RegexThreadKey {
-  RegexThreadKey() { ink_thread_key_create(&this->key, (void (*)(void *)) & pcre_jit_stack_free); }
+  RegexThreadKey() { ink_thread_key_create(&this->key, reinterpret_cast<void (*)(void *)>(&pcre_jit_stack_free)); }
   ink_thread_key key;
 };
 
@@ -41,7 +41,7 @@ get_jit_stack(void *data ATS_UNUSED)
 {
   pcre_jit_stack *jit_stack;
 
-  if ((jit_stack = (pcre_jit_stack *)ink_thread_getspecific(k.key)) == nullptr) {
+  if ((jit_stack = static_cast<pcre_jit_stack *>(ink_thread_getspecific(k.key))) == nullptr) {
     jit_stack = pcre_jit_stack_alloc(ats_pagesize(), 1024 * 1024); // 1 page min and 1MB max
     ink_thread_setspecific(k.key, (void *)jit_stack);
   }
@@ -82,13 +82,13 @@ Regex::compile(const char *pattern, const unsigned flags)
     return false;
   }
 
-#ifdef PCRE_CONFIG_JIT
+#if defined(PCRE_CONFIG_JIT) && !defined(darwin) // issue with macOS Catalina and pcre 8.43
   study_opts |= PCRE_STUDY_JIT_COMPILE;
 #endif
 
   regex_extra = pcre_study(regex, study_opts, &error);
 
-#ifdef PCRE_CONFIG_JIT
+#if defined(PCRE_CONFIG_JIT) && !defined(darwin) // issue with macOS Catalina and pcre 8.43
   if (regex_extra) {
     pcre_assign_jit_stack(regex_extra, &get_jit_stack, nullptr);
   }
@@ -111,7 +111,7 @@ Regex::get_capture_count()
 bool
 Regex::exec(std::string_view const &str)
 {
-  std::array<int, DEFAULT_GROUP_COUNT * 3> ovector;
+  std::array<int, DEFAULT_GROUP_COUNT * 3> ovector = {{0}};
   return this->exec(str, ovector.data(), ovector.size());
 }
 
@@ -127,7 +127,7 @@ Regex::exec(std::string_view const &str, int *ovector, int ovecsize)
 Regex::~Regex()
 {
   if (regex_extra) {
-#ifdef PCRE_CONFIG_JIT
+#if defined(PCRE_CONFIG_JIT) && !defined(darwin) // issue with macOS Catalina and pcre 8.43
     pcre_free_study(regex_extra);
 #else
     pcre_free(regex_extra);

@@ -87,7 +87,7 @@ public:
   {
     switch (m_logfile->m_file_format) {
     case LOG_FILE_BINARY:
-      logbuffer = (LogBuffer *)m_data;
+      logbuffer = static_cast<LogBuffer *>(m_data);
       LogBuffer::destroy(logbuffer);
       break;
     case LOG_FILE_ASCII:
@@ -110,6 +110,10 @@ public:
 class Log
 {
 public:
+  // Prevent creation of any instances of this class.
+  //
+  Log() = delete;
+
   enum ReturnCodeFlags {
     LOG_OK = 1,
     SKIP   = 2,
@@ -132,11 +136,8 @@ public:
 
   enum ConfigFlags {
     NO_REMOTE_MANAGEMENT = 1,
-    STANDALONE_COLLATOR  = 2,
     LOGCAT               = 4,
   };
-
-  enum CollationMode { NO_COLLATION = 0, COLLATION_HOST, N_COLLATION_MODES };
 
   enum RollingEnabledValues {
     NO_ROLLING = 0,
@@ -156,21 +157,21 @@ public:
   static void init(int configFlags = 0);
   static void init_fields();
 
-  inkcoreapi static bool
+  static bool
   transaction_logging_enabled()
   {
     return (logging_mode == LOG_MODE_FULL || logging_mode == LOG_MODE_TRANSACTIONS);
   }
 
-  inkcoreapi static bool
+  static bool
   error_logging_enabled()
   {
     return (logging_mode == LOG_MODE_FULL || logging_mode == LOG_MODE_ERRORS);
   }
 
-  inkcoreapi static int access(LogAccess *lad);
-  inkcoreapi static int va_error(const char *format, va_list ap);
-  inkcoreapi static int error(const char *format, ...) TS_PRINTFLIKE(1, 2);
+  static int access(LogAccess *lad);
+  static int va_error(const char *format, va_list ap);
+  static int error(const char *format, ...) TS_PRINTFLIKE(1, 2);
 
   /////////////////////////////////////////////////////////////////////////
   // 'Wire tracing' enabled by source ip or by percentage of connections //
@@ -180,12 +181,15 @@ public:
   static void trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char *format_string, va_list ap);
 
   // public data members
-  inkcoreapi static LogObject *error_log;
+  static LogObject *error_log;
+  /** The latest fully initialized LogConfig.
+   *
+   * This is the safe, fully initialed LogConfig object to query against when
+   * performing logging operations.
+   */
   static LogConfig *config;
   static LogFieldList global_field_list;
   static std::unordered_map<std::string, LogField *> field_symbol_hash;
-  static LogFormat *global_scrap_format;
-  static LogObject *global_scrap_object;
   static LoggingMode logging_mode;
 
   // logging thread stuff
@@ -195,28 +199,23 @@ public:
   static InkAtomicList *flush_data_list;
   static void *flush_thread_main(void *args);
 
-  // collation thread stuff
-  static EventNotify collate_notify;
-  static ink_thread collate_thread;
-  static int collation_preproc_threads;
-  static int collation_accept_file_descriptor;
-  static int collation_port;
-  static void *collate_thread_main(void *args);
-  static LogObject *match_logobject(LogBufferHeader *header);
+  static int preproc_threads;
 
   // reconfiguration stuff
   static void change_configuration();
+
   static int handle_logging_mode_change(const char *name, RecDataT data_type, RecData data, void *cookie);
   static int handle_periodic_tasks_int_change(const char *name, RecDataT data_type, RecData data, void *cookie);
 
-  Log(); // shut up stupid DEC C++ compiler
+  /** Check each log file path to see whether it exists and re-open if not.
+   *
+   * This is called when an external log rotation entity has moved log files to
+   * rolled names. This checks whether the original log file exists and, if
+   * not, closes the file descriptor and re-opens the file.
+   */
+  static int handle_log_rotation_request();
 
   friend void RegressionTest_LogObjectManager_Transfer(RegressionTest *, int, int *);
-
-  // noncopyable
-  // -- member functions that are not allowed --
-  Log(const Log &rhs) = delete;
-  Log &operator=(const Log &rhs) = delete;
 
 private:
   static void periodic_tasks(long time_now);
@@ -226,8 +225,15 @@ private:
   static int init_status;
   static int config_flags;
   static bool logging_mode_changed;
+  static bool log_rotate_signal_received;
   static uint32_t periodic_tasks_interval;
 };
+
+static inline bool
+LogThrottlingIsValid(int throttling_val)
+{
+  return throttling_val >= 0;
+}
 
 static inline bool
 LogRollingEnabledIsValid(int enabled)

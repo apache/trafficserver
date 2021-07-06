@@ -25,7 +25,7 @@
 #pragma once
 
 #include <algorithm> /* transform() */
-#include <cstddef>   /* soze_t */
+#include <cstddef>   /* size_t */
 #include <string>    /* std::string */
 #include <sstream>   /* std::stringstream */
 #include <map>       /* std::map */
@@ -36,6 +36,7 @@
 typedef std::string String;
 typedef std::set<std::string> StringSet;
 typedef std::map<std::string, std::string> StringMap;
+typedef std::multimap<std::string, std::string> HeaderMultiMap;
 
 class HeaderIterator;
 

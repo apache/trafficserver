@@ -1,0 +1,8 @@
+``
+> GET http://localhost:``/candy HTTP/1.1
+> Host: www.notls.com``
+> User-Agent: curl/``
+> Accept: */*
+``
+< Server: ATS/``
+``

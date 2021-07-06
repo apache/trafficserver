@@ -49,7 +49,7 @@ The following events can be sent to this callback
 
 .. macro:: TS_EVENT_SSL_SESSION_GET
 
-   Sent after a session has been fetched from the SSL session cache by a client request.  The plugin could update additional logginc and statistics.
+   Sent after a session has been fetched from the SSL session cache by a client request.  The plugin could update additional logging and statistics.
 
 .. macro:: TS_EVENT_SSL_SESSION_REMOVE
 

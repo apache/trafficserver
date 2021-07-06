@@ -54,11 +54,13 @@
 
 /*  Enable this to get printf() style warnings on the Inktomi functions. */
 /* #define PRINTFLIKE(IDX, FIRST)  __attribute__((format (printf, IDX, FIRST))) */
+/** For further information, see the doxygen comments for TS_PRINTFLIKE in
+ * include/ts/apidefs.h.in */
 #if !defined(TS_PRINTFLIKE)
 #if defined(__GNUC__) || defined(__clang__)
-#define TS_PRINTFLIKE(fmt, arg) __attribute__((format(printf, fmt, arg)))
+#define TS_PRINTFLIKE(fmt_index, arg_index) __attribute__((format(printf, fmt_index, arg_index)))
 #else
-#define TS_PRINTFLIKE(fmt, arg)
+#define TS_PRINTFLIKE(fmt_index, arg_index)
 #endif
 #endif
 

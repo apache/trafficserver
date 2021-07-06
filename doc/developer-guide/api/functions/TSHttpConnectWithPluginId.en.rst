@@ -29,7 +29,9 @@ as if it came from a client.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSVConn TSHttpConnectWithPluginId(sockaddr const * addr, char const * tag, int64_t id)
 
@@ -43,7 +45,7 @@ stack via the loopback interface.
 
 :arg:`addr`
    This is the network address of the target of the connection.
-   This includes the port which should be stored in the :c:type:`sockaddr`
+   This includes the port which should be stored in the :code:`sockaddr`
    structure pointed at by :arg:`addr`.
 
 :arg:`tag`

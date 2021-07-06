@@ -40,7 +40,6 @@
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
-#include "LogHost.h"
 #include "LogBuffer.h"
 #include "LogObject.h"
 #include "LogConfig.h"
@@ -65,7 +64,7 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
   if (format_str) {
     const char *tag                = " %<phn>";
     const size_t m_format_str_size = strlen(format_str) + (m_tagging_on ? strlen(tag) : 0) + 1;
-    m_format_str                   = (char *)ats_malloc(m_format_str_size);
+    m_format_str                   = static_cast<char *>(ats_malloc(m_format_str_size));
     ink_strlcpy(m_format_str, format_str, m_format_str_size);
     if (m_tagging_on) {
       Note("Log tagging enabled, adding %%<phn> field at the end of "
@@ -115,7 +114,7 @@ LogFormat::id_from_name(const char *name)
      * This problem is only known to occur on Linux which
      * is a 32-bit OS.
      */
-    id = (int32_t)hash.fold() & 0x7fffffff;
+    id = static_cast<int32_t>(hash.fold()) & 0x7fffffff;
 #else
     id = (int32_t)hash.fold();
 #endif
@@ -140,7 +139,7 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
     m_valid = false;
   } else {
     if (m_aggregate) {
-      m_agg_marshal_space = (char *)ats_malloc(m_field_count * INK_MIN_ALIGN);
+      m_agg_marshal_space = static_cast<char *>(ats_malloc(m_field_count * INK_MIN_ALIGN));
     }
 
     if (m_name_str) {
@@ -199,32 +198,6 @@ LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval
   // A LOG_FORMAT_TEXT is a log without a format string, everything else is a LOG_FORMAT_CUSTOM. It's possible that we could get
   // rid of log types altogether, but LogFile currently tests whether a format is a LOG_FORMAT_TEXT format ...
   m_format_type = format_str ? LOG_FORMAT_CUSTOM : LOG_FORMAT_TEXT;
-}
-
-//-----------------------------------------------------------------------------
-// This constructor is used only in Log::match_logobject
-//
-// It is awkward because it does not take a format_str but a fieldlist_str
-// and a printf_str. These should be derived from a format_str but a
-// LogBufferHeader does not store the format_str, if it did, we could probably
-// delete this.
-//
-LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec)
-  : m_interval_sec(0),
-    m_interval_next(0),
-    m_agg_marshal_space(nullptr),
-    m_valid(false),
-    m_name_str(nullptr),
-    m_name_id(0),
-    m_fieldlist_str(nullptr),
-    m_fieldlist_id(0),
-    m_field_count(0),
-    m_printf_str(nullptr),
-    m_aggregate(false),
-    m_format_str(nullptr)
-{
-  init_variables(name, fieldlist_str, printf_str, interval_sec);
-  m_format_type = LOG_FORMAT_CUSTOM;
 }
 
 /*-------------------------------------------------------------------------
@@ -570,11 +543,11 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
 // 1) Octal representation: '\abc', for example: '\060'
 //    0 < (a*8^2 + b*8 + c) < 255
 //
-// 2) Hex representation: '\xab', for exampe: '\x3A'
+// 2) Hex representation: '\xab', for example: '\x3A'
 //    0 < (a*16 + b) < 255
 //
 // Return -1 if the beginning four characters are not valid
-// escape sequence, otherwise reutrn unsigned char value of the
+// escape sequence, otherwise return unsigned char value of the
 // escape sequence in the string.
 //
 // NOTE: The value of escape sequence should be greater than 0
@@ -599,9 +572,9 @@ LogFormat::parse_escape_string(const char *str, int len)
     return -1;
   }
 
-  a = (unsigned char)str[start + 1];
-  b = (unsigned char)str[start + 2];
-  c = (unsigned char)str[start + 3];
+  a = static_cast<unsigned char>(str[start + 1]);
+  b = static_cast<unsigned char>(str[start + 2]);
+  c = static_cast<unsigned char>(str[start + 3]);
 
   if (isdigit(a) && isdigit(b)) {
     sum = (a - '0') * 64 + (b - '0') * 8 + (c - '0');
@@ -670,9 +643,9 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   // each is guaranteed to be smaller (or the same size) as the format
   // string.
   //
-  unsigned len = (unsigned)::strlen(format_str);
-  *printf_str  = (char *)ats_malloc(len + 1);
-  *fields_str  = (char *)ats_malloc(len + 1);
+  unsigned len = static_cast<unsigned>(::strlen(format_str));
+  *printf_str  = static_cast<char *>(ats_malloc(len + 1));
+  *fields_str  = static_cast<char *>(ats_malloc(len + 1));
 
   unsigned printf_pos  = 0;
   unsigned fields_pos  = 0;
@@ -719,10 +692,10 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
 
         if (escape_char == '\\') {
           start += 1;
-          (*printf_str)[printf_pos++] = (char)escape_char;
+          (*printf_str)[printf_pos++] = static_cast<char>(escape_char);
         } else if (escape_char >= 0) {
           start += 3;
-          (*printf_str)[printf_pos++] = (char)escape_char;
+          (*printf_str)[printf_pos++] = static_cast<char>(escape_char);
         } else {
           memcpy(&(*printf_str)[printf_pos], &format_str[start], stop - start + 1);
           printf_pos += stop - start + 1;
@@ -737,10 +710,10 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
 
       if (escape_char == '\\') {
         start += 1;
-        (*printf_str)[printf_pos++] = (char)escape_char;
+        (*printf_str)[printf_pos++] = static_cast<char>(escape_char);
       } else if (escape_char >= 0) {
         start += 3;
-        (*printf_str)[printf_pos++] = (char)escape_char;
+        (*printf_str)[printf_pos++] = static_cast<char>(escape_char);
       } else {
         (*printf_str)[printf_pos++] = format_str[start];
       }
@@ -785,7 +758,7 @@ LogFormat::display(FILE *fd)
   LogFormatList
   -------------------------------------------------------------------------*/
 
-LogFormatList::LogFormatList() {}
+LogFormatList::LogFormatList() = default;
 
 LogFormatList::~LogFormatList()
 {

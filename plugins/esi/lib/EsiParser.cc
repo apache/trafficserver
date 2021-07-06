@@ -171,10 +171,6 @@ EsiParser::_compareData(const string &data, size_t pos, const char *str, int str
         return COMPLETE_MATCH;
       }
     } else {
-      /*
-      _debugLog(_debug_tag, "[%s] string [%.*s] is not equal to data at position %d",
-                __FUNCTION__, str_len, str, pos);
-      */
       return NO_MATCH;
     }
   }
@@ -597,7 +593,7 @@ EsiParser::clear()
   _parse_start_pos = -1;
 }
 
-EsiParser::~EsiParser() {}
+EsiParser::~EsiParser() = default;
 
 inline void
 EsiParser::_adjustPointers(DocNodeList::iterator node_iter, DocNodeList::iterator end, const char *ext_data_ptr,

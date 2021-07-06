@@ -55,7 +55,7 @@ static const std::array<const std::string_view, 6> FILTER_HEADERS{
 // Hold the global background fetch state. This is currently shared across all
 // configurations, as a singleton. ToDo: Would it ever make sense to do this
 // per remap rule? Maybe for per-remap logging ??
-typedef std::unordered_map<std::string, bool> OutstandingRequests;
+using OutstandingRequests = std::unordered_map<std::string, bool>;
 
 class BgFetchState
 {
@@ -220,7 +220,7 @@ private:
 // This needs the txnp temporarily, so it can copy the pristine request
 // URL. The txnp is not used once initialize() returns.
 //
-// Upon succesful completion, the struct should be ready to start a
+// Upon successful completion, the struct should be ready to start a
 // background fetch.
 bool
 BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
@@ -370,7 +370,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     // Debug info for this particular bg fetch (put all debug in here please)
     if (TSIsDebugTagSet(PLUGIN_NAME)) {
       char buf[INET6_ADDRSTRLEN];
-      const sockaddr *sockaddress = (const sockaddr *)&data->client_ip;
+      const sockaddr *sockaddress = reinterpret_cast<const sockaddr *>(&data->client_ip);
 
       switch (sockaddress->sa_family) {
       case AF_INET:
@@ -391,7 +391,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
     // Setup the NetVC for background fetch
     TSAssert(nullptr == data->vc);
-    if ((data->vc = TSHttpConnectWithPluginId((sockaddr *)&data->client_ip, PLUGIN_NAME, 0)) != nullptr) {
+    if ((data->vc = TSHttpConnectWithPluginId(reinterpret_cast<sockaddr *>(&data->client_ip), PLUGIN_NAME, 0)) != nullptr) {
       TSHttpHdrPrint(data->mbuf, data->hdr_loc, data->req_io_buf);
       // We never send a body with the request. ToDo: Do we ever need to support that ?
       TSIOBufferWrite(data->req_io_buf, "\r\n", 2);
@@ -531,9 +531,9 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
           TSDebug(PLUGIN_NAME, "Testing: response status code: %d?", status);
           if (TS_HTTP_STATUS_PARTIAL_CONTENT == status || (config->allow304() && TS_HTTP_STATUS_NOT_MODIFIED == status)) {
             // Everything looks good so far, add a TXN hook for SEND_RESPONSE_HDR
-            TSCont contp = TSContCreate(cont_check_cacheable, nullptr);
+            TSCont localcontp = TSContCreate(cont_check_cacheable, nullptr);
 
-            TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+            TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, localcontp);
           }
           // Release the response MLoc
           TSHandleMLocRelease(response, TS_NULL_MLOC, resp_hdr);
@@ -657,8 +657,6 @@ void
 TSRemapDeleteInstance(void *ih)
 {
   BgFetchConfig *config = static_cast<BgFetchConfig *>(ih);
-
-  TSContDestroy(config->getCont());
   delete config;
 }
 
@@ -678,7 +676,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &req_hdrs)) {
     TSMLoc field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
 
-    if (!field_loc) { // Less common case, but also allow If-Range header to triger, but only if Range not present
+    if (!field_loc) { // Less common case, but also allow If-Range header to trigger, but only if Range not present
       field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_IF_RANGE, TS_MIME_LEN_IF_RANGE);
     }
 

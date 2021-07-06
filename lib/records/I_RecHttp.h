@@ -29,8 +29,9 @@
 #include "ts/apidefs.h"
 #include "tscore/ink_assert.h"
 #include "tscore/IpMap.h"
+#include "tscore/MemArena.h"
 #include <algorithm>
-#include <vector>
+#include <array>
 
 /// Load default inbound IP addresses from the configuration file.
 void RecHttpLoadIp(const char *name, ///< Name of value in configuration file.
@@ -48,18 +49,17 @@ void RecHttpLoadIpMap(const char *name, ///< Name of value in configuration file
 */
 class SessionProtocolSet
 {
-  typedef SessionProtocolSet self; ///< Self reference type.
+  using self_type = SessionProtocolSet; ///< Self reference type.
   /// Storage for the set - a bit vector.
-  uint32_t m_bits;
+  uint32_t m_bits = 0;
 
 public:
-  // The right way.
-  //  static int const MAX = sizeof(m_bits) * CHAR_BIT;
-  // The RHEL5/gcc 4.1.2 way
-  static int const MAX = sizeof(uint32_t) * 8;
+  static constexpr int MAX = sizeof(m_bits) * CHAR_BIT;
+
   /// Default constructor.
   /// Constructs and empty set.
-  SessionProtocolSet() : m_bits(0) {}
+  SessionProtocolSet() = default;
+
   uint32_t
   indexToMask(int idx) const
   {
@@ -72,9 +72,10 @@ public:
   {
     m_bits |= this->indexToMask(idx);
   }
+
   /// Mark all the protocols in @a that as present in @a this.
   void
-  markIn(self const &that)
+  markIn(self_type const &that)
   {
     m_bits |= that.m_bits;
   }
@@ -86,7 +87,7 @@ public:
   }
   /// Mark the protocols in @a that as not in @a this.
   void
-  markOut(self const &that)
+  markOut(self_type const &that)
   {
     m_bits &= ~(that.m_bits);
   }
@@ -98,7 +99,7 @@ public:
   }
   /// Test if all the protocols in @a that are in @a this protocol set.
   bool
-  contains(self const &that) const
+  contains(self_type const &that) const
   {
     return that.m_bits == (that.m_bits & m_bits);
   }
@@ -117,7 +118,7 @@ public:
 
   /// Check for intersection.
   bool
-  intersects(self const &that)
+  intersects(self_type const &that)
   {
     return 0 != (m_bits & that.m_bits);
   }
@@ -131,7 +132,7 @@ public:
 
   /// Equality (identical sets).
   bool
-  operator==(self const &that) const
+  operator==(self_type const &that) const
   {
     return m_bits == that.m_bits;
   }
@@ -142,57 +143,68 @@ extern SessionProtocolSet HTTP_PROTOCOL_SET;
 extern SessionProtocolSet HTTP2_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
+extern SessionProtocolSet DEFAULT_QUIC_SESSION_PROTOCOL_SET;
 
 const char *RecNormalizeProtoTag(const char *tag);
 
 /** Registered session protocol names.
 
-    We do this to avoid lots of string compares. By normalizing the
-    string names we can just compare their indices in this table.
+    We do this to avoid lots of string compares. By normalizing the string names we can just compare
+    their indices in this table.
 
-    @internal To simplify the implementation we limit the maximum
-    number of strings to 32. That will be sufficient for the forseeable
-    future. We can come back to this if it ever becomes a problem.
+    @internal To simplify the implementation we limit the maximum number of strings to 32. That will
+    be sufficient for the foreseeable future. We can come back to this if it ever becomes a problem.
 
-    @internal Because we have so few strings we just use a linear search.
-    If the size gets much larger we should consider doing something more
-    clever.
+    @internal Because we have so few strings we just use a linear search. If the size gets much
+    larger we should consider doing something more clever.
+
+    @internal This supports providing constant strings because those strings are exported to the
+    C API and this logic @b must return exactly those pointers.
 */
 class SessionProtocolNameRegistry
 {
 public:
-  static int const MAX     = SessionProtocolSet::MAX; ///< Maximum # of registered names.
-  static int const INVALID = -1;                      ///< Normalized invalid index value.
+  static int constexpr MAX     = SessionProtocolSet::MAX; ///< Maximum # of registered names.
+  static int constexpr INVALID = -1;                      ///< Normalized invalid index value.
+
+  static std::string_view convert_openssl_alpn_wire_format(int index);
+
+  using TextView = ts::TextView;
 
   /// Default constructor.
   /// Creates empty registry with no names.
-  SessionProtocolNameRegistry();
-
-  /// Destructor.
-  /// Cleans up strings.
-  ~SessionProtocolNameRegistry();
+  SessionProtocolNameRegistry() = default;
 
   /** Get the index for @a name, registering it if needed.
       The name is copied internally.
       @return The index for the registered @a name.
   */
-  int toIndex(const char *name);
+  int toIndex(TextView name);
 
   /** Get the index for @a name, registering it if needed.
       The caller @b guarantees @a name is persistent and immutable.
       @return The index for the registered @a name.
   */
-  int toIndexConst(const char *name);
+  int toIndexConst(TextView name);
 
   /** Convert a @a name to an index.
       @return The index for @a name or @c INVALID if it is not registered.
   */
-  int indexFor(const char *name) const;
+  int indexFor(TextView name) const;
 
   /** Convert an @a index to the corresponding name.
       @return A pointer to the name or @c nullptr if the index isn't registered.
   */
-  const char *nameFor(int index) const;
+  TextView nameFor(int index) const;
+
+  /** Convert an @a index to the corresponding name in OpenSSL ALPN wire format.
+
+      OpenSSL ALPN wire format (vector of non-empty, 8-bit length-prefixed, byte strings)
+      https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_alpn_protos.html
+
+      @return A pointer to the name or @c nullptr if the index isn't registered.
+  */
+  static TextView wireNameFor(int index);
 
   /// Mark protocols as present in @a sp_set based on the names in @a value.
   /// The names can be separated by ;/|,: and space.
@@ -201,11 +213,9 @@ public:
   void markIn(const char *value, SessionProtocolSet &sp_set);
 
 protected:
-  unsigned int m_n;         ///< Index of first unused slot.
-  const char *m_names[MAX]; ///< Pointers to registered names.
-  uint8_t m_flags[MAX];     ///< Flags for each name.
-
-  static uint8_t const F_ALLOCATED = 0x1; ///< Flag for allocated by this instance.
+  int m_n = 0; ///< Index of first unused slot.
+  std::array<TextView, MAX> m_names;
+  ts::MemArena m_arena; ///< Storage for non-constant strings.
 };
 
 extern SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
@@ -238,23 +248,24 @@ public:
     TRANSPORT_COMPRESSED,   ///< Compressed HTTP.
     TRANSPORT_BLIND_TUNNEL, ///< Blind tunnel (no processing).
     TRANSPORT_SSL,          ///< SSL connection.
-    TRANSPORT_PLUGIN        /// < Protocol plugin connection
+    TRANSPORT_PLUGIN,       /// < Protocol plugin connection
+    TRANSPORT_QUIC,         ///< SSL connection.
   };
 
-  int m_fd;             ///< Pre-opened file descriptor if present.
-  TransportType m_type; ///< Type of connection.
-  in_port_t m_port;     ///< Port on which to listen.
-  uint8_t m_family;     ///< IP address family.
+  int m_fd;                                 ///< Pre-opened file descriptor if present.
+  TransportType m_type = TRANSPORT_DEFAULT; ///< Type of connection.
+  in_port_t m_port     = 0;                 ///< Port on which to listen.
+  uint8_t m_family     = AF_INET;           ///< IP address family.
   /// True if proxy protocol is required on incoming requests.
-  bool m_proxy_protocol;
+  bool m_proxy_protocol = false;
   /// True if inbound connects (from client) are transparent.
-  bool m_inbound_transparent_p;
+  bool m_inbound_transparent_p = false;
   /// True if outbound connections (to origin servers) are transparent.
-  bool m_outbound_transparent_p;
+  bool m_outbound_transparent_p = false;
   // True if transparent pass-through is enabled on this port.
-  bool m_transparent_passthrough;
+  bool m_transparent_passthrough = false;
   /// True if MPTCP is enabled on this port.
-  bool m_mptcp;
+  bool m_mptcp = false;
   /// Local address for inbound connections (listen address).
   IpAddr m_inbound_ip;
   /// Local address for outbound connections (to origin server).
@@ -283,6 +294,9 @@ public:
   /// Check for SSL port.
   bool isSSL() const;
 
+  /// Check for QUIC port.
+  bool isQUIC() const;
+
   /// Check for SSL port.
   bool isPlugin() const;
 
@@ -308,6 +322,15 @@ public:
   /// Check for SSL ports.
   /// @return @c true if any global port is an SSL port.
   static bool hasSSL();
+
+  /// Check for QUIC ports.
+  /// @return @c true if any port in @a ports is an QUIC port.
+  static bool hasQUIC(Group const &ports ///< Ports to check.
+  );
+
+  /// Check for QUIC ports.
+  /// @return @c true if any global port is an QUIC port.
+  static bool hasQUIC();
 
   /** Load all relevant configuration data.
 
@@ -400,6 +423,7 @@ public:
   static const char *const OPT_TRANSPARENT_FULL;        ///< Full transparency.
   static const char *const OPT_TRANSPARENT_PASSTHROUGH; ///< Pass-through non-HTTP.
   static const char *const OPT_SSL;                     ///< SSL (experimental)
+  static const char *const OPT_QUIC;                    ///< QUIC (experimental)
   static const char *const OPT_PROXY_PROTO;             ///< Proxy Protocol
   static const char *const OPT_PLUGIN;                  ///< Protocol Plugin handle (experimental)
   static const char *const OPT_BLIND_TUNNEL;            ///< Blind tunnel.
@@ -432,6 +456,11 @@ inline bool
 HttpProxyPort::isSSL() const
 {
   return TRANSPORT_SSL == m_type;
+}
+inline bool
+HttpProxyPort::isQUIC() const
+{
+  return TRANSPORT_QUIC == m_type;
 }
 inline bool
 HttpProxyPort::isPlugin() const
@@ -475,6 +504,11 @@ inline bool
 HttpProxyPort::hasSSL()
 {
   return self::hasSSL(m_global);
+}
+inline bool
+HttpProxyPort::hasQUIC()
+{
+  return self::hasQUIC(m_global);
 }
 inline const HttpProxyPort *
 HttpProxyPort::findHttp(uint16_t family)

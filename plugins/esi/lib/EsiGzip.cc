@@ -30,9 +30,9 @@ using std::string;
 using namespace EsiLib;
 
 EsiGzip::EsiGzip(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-  : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0)
+  : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0), _crc(0)
 {
-  // Zlib _zstrm varibles are initialized when they are required in runDeflateLoop
+  // Zlib _zstrm variables are initialized when they are required in runDeflateLoop
   // coverity[uninit_member]
   // coverity[uninit_ctor]
 }
@@ -71,21 +71,13 @@ runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata)
 bool
 EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
 {
+  const auto initial_cdata_size = cdata.size();
   if (_downstream_length == 0) {
     cdata.assign(GZIP_HEADER_SIZE, 0); // reserving space for the header
     cdata[0] = MAGIC_BYTE_1;
     cdata[1] = MAGIC_BYTE_2;
     cdata[2] = Z_DEFLATED;
     cdata[9] = OS_TYPE;
-
-    //_zstrm.zalloc = Z_NULL;
-    //_zstrm.zfree = Z_NULL;
-    //_zstrm.opaque = Z_NULL;
-    // if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS,
-    //               ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
-    //  _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
-    //  return false;
-    //}
 
     _crc = crc32(0, Z_NULL, 0);
   }
@@ -111,10 +103,9 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
       return false;
     }
     _crc = crc32(_crc, reinterpret_cast<const Bytef *>(data), data_len);
-    _downstream_length += cdata.size();
     _total_data_length += data_len;
   }
-
+  _downstream_length += cdata.size() - initial_cdata_size;
   deflateEnd(&_zstrm);
 
   return true;
@@ -123,6 +114,17 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
 bool
 EsiGzip::stream_finish(std::string &cdata, int &downstream_length)
 {
+  if (_downstream_length == 0) {
+    // We need to run encode first to get the gzip header inserted.
+    if (!stream_encode(nullptr, 0, cdata)) {
+      return false;
+    }
+  }
+  // Note that a call to stream_encode will update cdata to apply the gzip
+  // header and that call itself will update _downstream_length. Since we don't
+  // want to double count the gzip header bytes, we capture initial_cdata_size
+  // here after any possible call to stream_encode above.
+  const auto initial_cdata_size = cdata.size();
   char buf[BUF_SIZE];
 
   _zstrm.zalloc = Z_NULL;
@@ -145,7 +147,7 @@ EsiGzip::stream_finish(std::string &cdata, int &downstream_length)
   }
   append(cdata, static_cast<uint32_t>(_crc));
   append(cdata, static_cast<int32_t>(_total_data_length));
-  _downstream_length += cdata.size();
+  _downstream_length += cdata.size() - initial_cdata_size;
   downstream_length = _downstream_length;
   return true;
 }

@@ -26,7 +26,9 @@ Create a TSVConn from a socket.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSVConn TSVConnFdCreate(int fd)
 
@@ -47,12 +49,12 @@ is returned, the socket is unchanged and the caller must close it.
 Examples
 ========
 
-The example below is excerpted from `example/intercept/intercept.cc`
+The example below is excerpted from `example/plugins/c-api/intercept/intercept.cc`
 in the Traffic Server source distribution. It demonstrates how to
 use :func:`TSVConnFdCreate` to construct a :type:`TSVConn` from a
 connected socket.
 
-.. literalinclude:: ../../../../example/intercept/intercept.cc
+.. literalinclude:: ../../../../example/plugins/c-api/intercept/intercept.cc
   :language: c
   :lines: 288-336
 

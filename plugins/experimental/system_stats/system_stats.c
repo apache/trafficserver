@@ -49,7 +49,7 @@
 // Load Average Strings
 #define LOAD_AVG_ONE_MIN "plugin." PLUGIN_NAME ".loadavg.one"
 #define LOAD_AVG_FIVE_MIN "plugin." PLUGIN_NAME ".loadavg.five"
-#define LOAD_AVG_TEN_MIN "plugin." PLUGIN_NAME ".loadavg.ten"
+#define LOAD_AVG_FIFTEEN_MIN "plugin." PLUGIN_NAME ".loadavg.fifteen"
 
 // Process Strings
 #define CURRENT_PROCESSES "plugin." PLUGIN_NAME ".current_processes"
@@ -61,6 +61,16 @@
 #define NET_STATS_DIR "/sys/class/net"
 #define STATISTICS_DIR "statistics"
 
+// Used for matching to slave (old name) and lower (new name) symlinks
+// in a bonded interface
+// This way we can report things like plugin.net.bond0.slave_dev1.speed
+#define SLAVE "slave_"
+#define LOWER "lower_"
+
+// Dir name for slave/lower interfaces that are bond members. This dir houses
+// port information we may want such as the up/down streams port state
+#define BONDING_SLAVE_DIR "bonding_slave"
+
 static int
 statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
 {
@@ -68,8 +78,8 @@ statAdd(const char *name, TSRecordDataType record_type, TSMutex create_mutex)
 
   TSMutexLock(create_mutex);
 
-  if (TS_ERROR == TSStatFindName((const char *)name, &stat_id)) {
-    stat_id = TSStatCreate((const char *)name, record_type, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+  if (TS_ERROR == TSStatFindName(name, &stat_id)) {
+    stat_id = TSStatCreate(name, record_type, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     if (stat_id == TS_ERROR) {
       TSDebug(DEBUG_TAG, "Error creating stat_name: %s", name);
     } else {
@@ -108,7 +118,7 @@ getFile(const char *filename, char *buffer, int bufferSize)
 }
 
 static void
-statSet(const char *name, int value, TSMutex stat_creation_mutex)
+statSet(const char *name, long value, TSMutex stat_creation_mutex)
 {
   int stat_id = statAdd(name, TS_RECORDDATATYPE_INT, stat_creation_mutex);
   if (stat_id != TS_ERROR) {
@@ -117,7 +127,7 @@ statSet(const char *name, int value, TSMutex stat_creation_mutex)
 }
 
 static void
-setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry, const char *subdir)
+setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry, const char *subdir, bool subdirstatname)
 {
   char sysfs_name[PATH_MAX];
   char stat_name[255];
@@ -133,9 +143,13 @@ setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry
   }
 
   // Generate the ATS stats name
-  snprintf(&stat_name[0], sizeof(stat_name), "%s%s.%s", NET_STATS, interface, entry);
+  if (subdirstatname) {
+    snprintf(&stat_name[0], sizeof(stat_name), "%s%s.%s.%s", NET_STATS, interface, subdir, entry);
+  } else {
+    snprintf(&stat_name[0], sizeof(stat_name), "%s%s.%s", NET_STATS, interface, entry);
+  }
 
-  // Determine if this is a toplevel netdev stat, or one from stastistics.
+  // Determine if this is a toplevel netdev stat, or one from statistics.
   if (subdir == NULL) {
     snprintf(&sysfs_name[0], sizeof(sysfs_name), "%s/%s/%s", NET_STATS_DIR, interface, entry);
   } else {
@@ -145,8 +159,40 @@ setNetStat(TSMutex stat_creation_mutex, const char *interface, const char *entry
   if (getFile(&sysfs_name[0], &data[0], sizeof(data)) < 0) {
     TSDebug(DEBUG_TAG, "Error reading file %s", sysfs_name);
   } else {
-    statSet(stat_name, atoi(data), stat_creation_mutex);
+    statSet(stat_name, atol(data), stat_creation_mutex);
   }
+}
+
+static void
+setBondingStat(TSMutex stat_creation_mutex, const char *interface)
+{
+  char infdir[PATH_MAX];
+  struct dirent *dent;
+
+  memset(&infdir[0], 0, sizeof(infdir));
+
+  if (interface == NULL) {
+    TSError("%s: NULL interface", DEBUG_TAG);
+    return;
+  }
+
+  snprintf(&infdir[0], sizeof(infdir), "%s/%s", NET_STATS_DIR, interface);
+  DIR *localdir = opendir(infdir);
+
+  while ((dent = readdir(localdir)) != NULL) {
+    if (((strncmp(SLAVE, dent->d_name, strlen(SLAVE)) == 0) || (strncmp(LOWER, dent->d_name, strlen(LOWER)) == 0)) &&
+        (dent->d_type == DT_LNK)) {
+      // We have a symlink starting with slave or lower, get its speed
+      setNetStat(stat_creation_mutex, interface, "speed", dent->d_name, true);
+    }
+
+    if (strncmp(BONDING_SLAVE_DIR, dent->d_name, strlen(BONDING_SLAVE_DIR)) == 0 && (dent->d_type != DT_LNK)) {
+      setNetStat(stat_creation_mutex, interface, "ad_actor_oper_port_state", dent->d_name, false);
+      setNetStat(stat_creation_mutex, interface, "ad_partner_oper_port_state", dent->d_name, false);
+    }
+  }
+
+  closedir(localdir);
 }
 
 static int
@@ -160,35 +206,37 @@ netStatsInfo(TSMutex stat_creation_mutex)
   }
 
   while ((dent = readdir(srcdir)) != NULL) {
-    if (strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0 || strcmp(dent->d_name, "lo") == 0) {
+    if (strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0 || (dent->d_type != DT_LNK)) {
       continue;
     }
 
-    setNetStat(stat_creation_mutex, dent->d_name, "speed", NULL);
-    setNetStat(stat_creation_mutex, dent->d_name, "collisions", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "multicast", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_bytes", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_compressed", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_crc_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_dropped", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_fifo_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_frame_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_length_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_missed_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_nohandler", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_over_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "rx_packets", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_aborted_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_bytes", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_carrier_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_compressed", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_dropped", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_fifo_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_heartbeat_errors", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_packets", STATISTICS_DIR);
-    setNetStat(stat_creation_mutex, dent->d_name, "tx_window_errors", STATISTICS_DIR);
+    setNetStat(stat_creation_mutex, dent->d_name, "speed", NULL, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "collisions", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "multicast", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_bytes", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_compressed", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_crc_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_dropped", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_fifo_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_frame_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_length_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_missed_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_nohandler", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_over_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "rx_packets", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_aborted_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_bytes", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_carrier_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_compressed", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_dropped", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_fifo_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_heartbeat_errors", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_packets", STATISTICS_DIR, false);
+    setNetStat(stat_creation_mutex, dent->d_name, "tx_window_errors", STATISTICS_DIR, false);
+
+    setBondingStat(stat_creation_mutex, dent->d_name);
   }
 
   closedir(srcdir);
@@ -206,7 +254,7 @@ getStats(TSMutex stat_creation_mutex)
 
   statSet(LOAD_AVG_ONE_MIN, info.loads[0], stat_creation_mutex);
   statSet(LOAD_AVG_FIVE_MIN, info.loads[1], stat_creation_mutex);
-  statSet(LOAD_AVG_TEN_MIN, info.loads[2], stat_creation_mutex);
+  statSet(LOAD_AVG_FIFTEEN_MIN, info.loads[2], stat_creation_mutex);
   statSet(CURRENT_PROCESSES, info.procs, stat_creation_mutex);
 #endif // #ifdef HAVE_SYS_SYSINFO_H
   netStatsInfo(stat_creation_mutex);

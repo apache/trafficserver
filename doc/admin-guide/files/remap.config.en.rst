@@ -87,12 +87,12 @@ Traffic Server recognizes three space-delimited fields: ``type``,
        notify the browser of the URL change for the current request only
        (by returning an HTTP status code 307).
 
-       .. note: use the ``regex_`` prefix to indicate that the line has a regular expression (regex).
+       .. note:: use the ``regex_`` prefix to indicate that the line has a regular expression (regex).
 
 .. _remap-config-format-target:
 
 ``target``
-    Enter the origin ("from") URL. You can enter up to four components: ::
+    Enter the request ("from") URL. You can enter up to four components: ::
 
         scheme://host:port/path_prefix
 
@@ -101,11 +101,13 @@ Traffic Server recognizes three space-delimited fields: ``type``,
 .. _remap-config-format-replacement:
 
 ``replacement``
-    Enter the origin ("from") URL. You can enter up to four components: ::
+    Enter the origin ("to") URL. You can enter up to four components: ::
 
         scheme://host:port/path_prefix
 
     where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``.
+
+   .. note:: A remap rule for requests that upgrade from HTTP to WebSocket still require a remap rule with the ``ws`` or ``wss`` scheme.
 
 
 .. _remap-config-precedence:
@@ -117,7 +119,7 @@ Remap rules are not processed top-down, but based on an internal
 priority. Once these rules are executed we pick the first match
 based on configuration file parse order.
 
-1. ``map_with_recv_port`` and ```regex_map_with_recv_port```
+1. ``map_with_recv_port`` and ``regex_map_with_recv_port``
 #. ``map`` and ``regex_map`` and ``reverse_map``
 #. ``redirect`` and ``redirect_temporary``
 #. ``regex_redirect`` and ``regex_redirect_temporary``
@@ -361,7 +363,7 @@ be verified for validity.  If the "~" symbol was specified before referer
 regular expression, it means that the request with a matching referer header
 will be redirected to redirectURL. It can be used to create a so-called
 negative referer list.  If "*" was used as a referer regular expression -
-all referers are allowed.  Various combinations of "*" and "~" in a referer
+all referrers are allowed.  Various combinations of "*" and "~" in a referer
 list can be used to create different filtering rules.
 
 map_with_referer Examples
@@ -377,7 +379,7 @@ Explanation: Referer header must be in the request, only ".*\.bar\.com" and "www
 
    map_with_referer http://y.foo.bar.com/x/yy/  http://foo.bar.com/x/yy/ http://games.bar.com/new_games * ~.*\.evil\.com
 
-Explanation: Referer header must be in the request but all referers are allowed except ".*\.evil\.com".
+Explanation: Referer header must be in the request but all referrers are allowed except ".*\.evil\.com".
 
 ::
 
@@ -414,7 +416,7 @@ Acl Filters
 ===========
 
 Acl filters can be created to control access of specific remap lines. The markup
-is very similar to that of :file:`ip_allow.config`, with slight changes to
+is very similar to that of :file:`ip_allow.yaml`, with slight changes to
 accommodate remap markup
 
 Examples
@@ -478,6 +480,13 @@ mapping rules. (It is activated before any mappings and is never
 deactivated.) The filter `local_only` will only be applied to the
 second mapping.
 
+NextHop Selection Strategies
+============================
+
+You may configure Nexthop or Parent hierarchical caching rules by remap using the
+**@strategy** tag.  See :doc:`../configuration/hierarchical-caching.en` and :doc:`strategies.yaml.en`
+for configuration details and examples.
+
 Including Additional Remap Files
 ================================
 
@@ -524,4 +533,4 @@ The file `two.example.com.config` contains::
 
   .activatefilter allow_purge
   map http://two.example.com http://origin-two.example.com
-  .deactivatefilter dallowpurge
+  .deactivatefilter allow_purge

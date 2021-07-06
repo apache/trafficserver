@@ -16,8 +16,59 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import subprocess
+import json
+import re
+
+
 def HasOpenSSLVersion(self, version):
-    return self.EnsureVersion(["openssl","version"],min_version=version)
+    output = subprocess.check_output(
+        os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True
+    )
+    json_data = output.decode('utf-8')
+    openssl_str = json.loads(json_data)['openssl_str']
+    exe_ver = re.search(r'\d\.\d\.\d', openssl_str).group(0)
+    if exe_ver == '':
+        raise ValueError("Error determining version of OpenSSL library needed by traffic_server executable")
+    return self.Condition(
+        lambda: exe_ver >= version,
+        "OpenSSL library version is " + exe_ver + ", must be at least " + version
+    )
+
+
+def IsBoringSSL(self):
+    output = subprocess.check_output(
+        os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True
+    )
+    json_data = output.decode('utf-8')
+    openssl_str = json.loads(json_data)['openssl_str']
+    return self.Condition(
+        # OpenSSL 1.1.1 (compatible; BoringSSL)
+        lambda: "compatible; BoringSSL" in openssl_str,
+        "SSL library is not BoringSSL"
+    )
+
+
+def IsOpenSSL(self):
+    output = subprocess.check_output(
+        os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True
+    )
+    json_data = output.decode('utf-8')
+    openssl_str = json.loads(json_data)['openssl_str']
+    return self.Condition(
+        # OpenSSL 1.1.1k  25 Mar 2021
+        lambda: "OpenSSL" in openssl_str and "compatible; BoringSSL" not in openssl_str,
+        "SSL library is not OpenSSL"
+    )
+
+
+def HasCurlVersion(self, version):
+    return self.EnsureVersion(["curl", "--version"], min_version=version)
+
+
+def HasProxyVerifierVersion(self, version):
+    return self.EnsureVersion(["verifier-client", "--version"], min_version=version)
+
 
 def HasCurlFeature(self, feature):
 
@@ -42,24 +93,47 @@ def HasCurlFeature(self, feature):
     )
 
 
+def HasCurlOption(self, option):
+    def default(output):
+        tag = option.lower()
+        for line in output.splitlines():
+            line = line.lower()
+            tokens = line.split()
+            for t in tokens:
+                if t == tag:
+                    return True
+        return False
+
+    return self.CheckOutput(
+        ['curl', '--help', 'all'],
+        default,
+        "Curl needs to support option: {option}".format(option=option)
+    )
+
+
 def HasATSFeature(self, feature):
 
     val = self.Variables.get(feature, None)
 
     return self.Condition(
-        lambda: val == True,
+        lambda: val,
         "ATS feature not enabled: {feature}".format(feature=feature)
     )
 
-#test if a plugin exists in the libexec folder
+# test if a plugin exists in the libexec folder
+
+
 def PluginExists(self, pluginname):
 
     path = os.path.join(self.Variables.PLUGINDIR, pluginname)
-    return self.Condition(lambda: os.path.isfile(path) == True, path + " not found." )
+    return self.Condition(lambda: os.path.isfile(path), path + " not found.")
 
 
 ExtendCondition(HasOpenSSLVersion)
+ExtendCondition(IsBoringSSL)
+ExtendCondition(IsOpenSSL)
 ExtendCondition(HasATSFeature)
+ExtendCondition(HasCurlVersion)
 ExtendCondition(HasCurlFeature)
+ExtendCondition(HasCurlOption)
 ExtendCondition(PluginExists)
-

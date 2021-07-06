@@ -16,7 +16,7 @@
 
 Name: trafficserver
 Description: The @PACKAGE_NAME@ caching HTTP proxy server
-URL: http://trafficserver.apache.org/
+URL: https://trafficserver.apache.org/
 Version: @PACKAGE_VERSION@
 
 prefix=@prefix@

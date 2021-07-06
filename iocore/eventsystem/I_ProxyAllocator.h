@@ -30,6 +30,9 @@
 *****************************************************************************/
 #pragma once
 
+#include <new>
+#include <utility>
+
 #include "tscore/ink_platform.h"
 
 class EThread;
@@ -39,90 +42,57 @@ extern int thread_freelist_low_watermark;
 extern int cmd_disable_pfreelist;
 
 struct ProxyAllocator {
-  int allocated;
-  void *freelist;
+  int allocated  = 0;
+  void *freelist = nullptr;
 
-  ProxyAllocator() : allocated(0), freelist(nullptr) {}
+  ProxyAllocator() {}
 };
 
-template <class C>
-inline C *
-thread_alloc(ClassAllocator<C> &a, ProxyAllocator &l)
+template <class CAlloc, typename... Args>
+typename CAlloc::Value_type *
+thread_alloc(CAlloc &a, ProxyAllocator &l, Args &&... args)
 {
   if (!cmd_disable_pfreelist && l.freelist) {
-    C *v       = (C *)l.freelist;
-    l.freelist = *(C **)l.freelist;
+    void *v    = l.freelist;
+    l.freelist = *reinterpret_cast<void **>(l.freelist);
     --(l.allocated);
-    *(void **)v = *(void **)&a.proto.typeObject;
-    return v;
+    ::new (v) typename CAlloc::Value_type(std::forward<Args>(args)...);
+    return static_cast<typename CAlloc::Value_type *>(v);
   }
-  return a.alloc();
+  return a.alloc(std::forward<Args>(args)...);
 }
 
-template <class C>
-inline C *
-thread_alloc_init(ClassAllocator<C> &a, ProxyAllocator &l)
-{
-  if (!cmd_disable_pfreelist && l.freelist) {
-    C *v       = (C *)l.freelist;
-    l.freelist = *(C **)l.freelist;
-    --(l.allocated);
-    memcpy((void *)v, (void *)&a.proto.typeObject, sizeof(C));
-    return v;
-  }
-  return a.alloc();
-}
-
-template <class C>
-inline void
-thread_free(ClassAllocator<C> &a, C *p)
-{
-  a.free(p);
-}
-
-static inline void
-thread_free(Allocator &a, void *p)
-{
-  a.free_void(p);
-}
-
-template <class C>
-inline void
-thread_freeup(ClassAllocator<C> &a, ProxyAllocator &l)
-{
-  C *head      = (C *)l.freelist;
-  C *tail      = (C *)l.freelist;
-  size_t count = 0;
-  while (l.freelist && l.allocated > thread_freelist_low_watermark) {
-    tail       = (C *)l.freelist;
-    l.freelist = *(C **)l.freelist;
-    --(l.allocated);
-    ++count;
-  }
-
-  if (unlikely(count == 1)) {
-    a.free(tail);
-  } else if (count > 0) {
-    a.free_bulk(head, tail, count);
-  }
-
-  ink_assert(l.allocated >= thread_freelist_low_watermark);
-}
+class Allocator;
 
 void *thread_alloc(Allocator &a, ProxyAllocator &l);
 void thread_freeup(Allocator &a, ProxyAllocator &l);
 
-#define THREAD_ALLOC(_a, _t) thread_alloc(::_a, _t->_a)
-#define THREAD_ALLOC_INIT(_a, _t) thread_alloc_init(::_a, _t->_a)
+#if 1
+
+// Potentially empty varaiable arguments -- non-standard GCC way
+//
+#define THREAD_ALLOC(_a, _t, ...) thread_alloc(::_a, _t->_a, ##__VA_ARGS__)
+#define THREAD_ALLOC_INIT(_a, _t, ...) thread_alloc(::_a, _t->_a, ##__VA_ARGS__)
+
+#else
+
+// Potentially empty varaiable arguments -- Standard C++20 way
+//
+#define THREAD_ALLOC(_a, _t, ...) thread_alloc(::_a, _t->_a __VA_OPT__(, ) __VA_ARGS__)
+#define THREAD_ALLOC_INIT(_a, _t, ...) thread_alloc(::_a, _t->_a __VA_OPT__(, ) __VA_ARGS__)
+
+#endif
+
 #define THREAD_FREE(_p, _a, _t)                              \
-  if (!cmd_disable_pfreelist) {                              \
-    do {                                                     \
+  do {                                                       \
+    ::_a.destroy_if_enabled(_p);                             \
+    if (!cmd_disable_pfreelist) {                            \
       *(char **)_p    = (char *)_t->_a.freelist;             \
       _t->_a.freelist = _p;                                  \
       _t->_a.allocated++;                                    \
       if (_t->_a.allocated > thread_freelist_high_watermark) \
-        thread_freeup(::_a, _t->_a);                         \
-    } while (0);                                             \
-  } else {                                                   \
-    thread_free(::_a, _p);                                   \
-  }
+        thread_freeup(::_a.raw(), _t->_a);                   \
+    } else {                                                 \
+      ::_a.raw().free_void(_p);                              \
+    }                                                        \
+  } while (0)

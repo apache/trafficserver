@@ -23,7 +23,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/HashMD5.h"
 
-ATSHashMD5::ATSHashMD5() : md_len(0), finalized(false)
+ATSHashMD5::ATSHashMD5()
 {
   ctx     = EVP_MD_CTX_new();
   int ret = EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);

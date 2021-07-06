@@ -18,13 +18,11 @@ Tests 304 responses
 #  limitations under the License.
 
 import os
+import sys
 
 Test.Summary = '''
 Tests 304 responses
 '''
-
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-Test.SkipUnless(Condition.HasProgram("sed", "grep needs to be installed on system for this test to work"))
 
 ts = Test.MakeATSProcess("ts")
 server = Test.MakeOriginServer("server")
@@ -46,12 +44,12 @@ ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine(
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')
 
-tr = Test.AddTestRun("Test domain {0}".format(DEFAULT_304_HOST))
+tr = Test.AddTestRun(f"Test domain {DEFAULT_304_HOST}")
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 
-cmd_tpl = "python tcp_client.py 127.0.0.1 {0} {1} | grep -v '^Date: '| grep -v '^Server: ATS/' | sed 's;ApacheTrafficServer\/[^ ]*;VERSION;'"
-tr.Processes.Default.Command = cmd_tpl.format(ts.Variables.port, 'data/{0}_get.txt'.format(DEFAULT_304_HOST))
+cmd_tpl = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{DEFAULT_304_HOST}_get.txt"
+tr.Processes.Default.Command = cmd_tpl
 tr.Processes.Default.TimeOut = 5  # seconds
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/http-304.gold"

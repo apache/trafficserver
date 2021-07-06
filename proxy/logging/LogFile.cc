@@ -27,6 +27,10 @@
 
  ***************************************************************************/
 
+#include <vector>
+#include <string>
+#include <algorithm>
+
 #include "tscore/ink_platform.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/ink_file.h"
@@ -35,10 +39,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <libgen.h>
 
 #include "P_EventSystem.h"
 #include "I_Machine.h"
-#include "LogSock.h"
 
 #include "tscore/BaseLogFile.h"
 #include "LogField.h"
@@ -46,7 +50,6 @@
 #include "LogFormat.h"
 #include "LogBuffer.h"
 #include "LogFile.h"
-#include "LogHost.h"
 #include "LogObject.h"
 #include "LogUtils.h"
 #include "LogConfig.h"
@@ -60,16 +63,19 @@
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size,
-                 size_t max_line_size)
+                 size_t max_line_size, int pipe_buffer_size)
   : m_file_format(format),
     m_name(ats_strdup(name)),
     m_header(ats_strdup(header)),
     m_signature(signature),
-    m_max_line_size(max_line_size)
+    m_max_line_size(max_line_size),
+    m_pipe_buffer_size(pipe_buffer_size)
 {
   if (m_file_format != LOG_FILE_PIPE) {
     m_log = new BaseLogFile(name, m_signature);
-    m_log->set_hostname(Machine::instance()->hostname);
+    // Use Log::config->hostname rather than Machine::instance()->hostname
+    // because the former is reloadable.
+    m_log->set_hostname(Log::config->hostname);
   } else {
     m_log = nullptr;
   }
@@ -94,6 +100,7 @@ LogFile::LogFile(const LogFile &copy)
     m_signature(copy.m_signature),
     m_ascii_buffer_size(copy.m_ascii_buffer_size),
     m_max_line_size(copy.m_max_line_size),
+    m_pipe_buffer_size(copy.m_pipe_buffer_size),
     m_fd(copy.m_fd)
 {
   ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
@@ -113,6 +120,12 @@ LogFile::LogFile(const LogFile &copy)
 LogFile::~LogFile()
 {
   Debug("log-file", "entering LogFile destructor, this=%p", this);
+
+  // close_file() checks whether a file is open before attempting to close, so
+  // this is safe to call even if a file had not been opened. Further, calling
+  // close_file() here ensures that we do not leak file descriptors.
+  close_file();
+
   delete m_log;
   ats_free(m_header);
   ats_free(m_name);
@@ -182,6 +195,30 @@ LogFile::open_file()
       Debug("log-file", "no readers for pipe %s", m_name);
       return LOG_FILE_NO_PIPE_READERS;
     }
+
+#ifdef F_GETPIPE_SZ
+    // adjust pipe size if necessary
+    if (m_pipe_buffer_size) {
+      long pipe_size = static_cast<long>(fcntl(m_fd, F_GETPIPE_SZ));
+      if (pipe_size == -1) {
+        Error("Get pipe size failed for pipe %s: %s", m_name, strerror(errno));
+      } else {
+        Debug("log-file", "Previous buffer size for pipe %s: %ld", m_name, pipe_size);
+      }
+
+      int ret = fcntl(m_fd, F_SETPIPE_SZ, m_pipe_buffer_size);
+      if (ret == -1) {
+        Error("Set pipe size failed for pipe %s to size %d: %s", m_name, m_pipe_buffer_size, strerror(errno));
+      }
+
+      pipe_size = static_cast<long>(fcntl(m_fd, F_GETPIPE_SZ));
+      if (pipe_size == -1) {
+        Error("Get pipe size after setting it failed for pipe %s: %s", m_name, strerror(errno));
+      } else {
+        Debug("log-file", "New buffer size for pipe %s: %ld", m_name, pipe_size);
+      }
+    }
+#endif // F_GETPIPE_SZ
   } else {
     if (m_log) {
       int status = m_log->open_file(Log::config->logfile_perm);
@@ -223,18 +260,100 @@ LogFile::close_file()
 {
   if (is_open()) {
     if (m_file_format == LOG_FILE_PIPE) {
-      ::close(m_fd);
-      Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
+      if (::close(m_fd)) {
+        Error("Error closing LogFile %s: %s.", m_name, strerror(errno));
+      } else {
+        Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
+        RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
+      }
       m_fd = -1;
     } else if (m_log) {
-      m_log->close_file();
-      Debug("log-file", "LogFile %s is closed", m_log->get_name());
+      if (m_log->close_file()) {
+        Error("Error closing LogFile %s: %s.", m_log->get_name(), strerror(errno));
+      } else {
+        Debug("log-file", "LogFile %s is closed", m_log->get_name());
+        RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
+      }
     } else {
       Warning("LogFile %s is open but was not closed", m_name);
     }
   }
+}
 
-  RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
+struct RolledFile {
+  RolledFile(const std::string &name, time_t mtime) : _name(name), _mtime(mtime) {}
+  std::string _name;
+  time_t _mtime;
+};
+
+/**
+ * @brief trim rolled files to max number of rolled files, older first
+ *
+ * @param rolling_max_count - limit to which rolled files will be trimmed
+ * @return true if success, false if failure
+ */
+bool
+LogFile::trim_rolled(size_t rolling_max_count)
+{
+  /* man: "dirname() may modify the contents of path, so it may be
+   * desirable to pass a copy when calling one of these functions." */
+  char *name = ats_strdup(m_name);
+  std::string logfile_dir(::dirname((name)));
+  ats_free(name);
+
+  /* Check logging directory access */
+  int err;
+  do {
+    err = access(logfile_dir.c_str(), R_OK | W_OK | X_OK);
+  } while ((err < 0) && (errno == EINTR));
+
+  if (err < 0) {
+    Error("Error accessing logging directory %s: %s.", logfile_dir.c_str(), strerror(errno));
+    return false;
+  }
+
+  /* Open logging directory */
+  DIR *ld = ::opendir(logfile_dir.c_str());
+  if (ld == nullptr) {
+    Error("Error opening logging directory %s to collect trim candidates: %s.", logfile_dir.c_str(), strerror(errno));
+    return false;
+  }
+
+  /* Collect the rolled file names from the logging directory that match the specified log file name */
+  std::vector<RolledFile> rolled;
+  char path[MAXPATHLEN];
+  struct dirent *entry;
+  while ((entry = readdir(ld))) {
+    struct stat sbuf;
+    snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir.c_str(), entry->d_name);
+    int sret = ::stat(path, &sbuf);
+    if (sret != -1 && S_ISREG(sbuf.st_mode)) {
+      int name_len = strlen(m_name);
+      int path_len = strlen(path);
+      if (path_len > name_len && 0 == ::strncmp(m_name, path, name_len) && LogFile::rolled_logfile(entry->d_name)) {
+        rolled.push_back(RolledFile(path, sbuf.st_mtime));
+      }
+    }
+  }
+
+  ::closedir(ld);
+
+  bool result = true;
+  std::sort(rolled.begin(), rolled.end(), [](const RolledFile &a, const RolledFile &b) { return a._mtime > b._mtime; });
+  if (rolling_max_count < rolled.size()) {
+    for (auto it = rolled.begin() + rolling_max_count; it != rolled.end(); it++) {
+      const RolledFile &file = *it;
+      if (unlink(file._name.c_str()) < 0) {
+        Error("unable to auto-delete rolled logfile %s: %s.", file._name.c_str(), strerror(errno));
+        result = false;
+      } else {
+        Debug("log-file", "rolled logfile, %s, was auto-deleted", file._name.c_str());
+      }
+    }
+  }
+
+  rolled.clear();
+  return result;
 }
 
 /*-------------------------------------------------------------------------
@@ -244,7 +363,7 @@ LogFile::close_file()
  * Return 1 if file rolled, 0 otherwise
 -------------------------------------------------------------------------*/
 int
-LogFile::roll(long interval_start, long interval_end)
+LogFile::roll(long interval_start, long interval_end, bool reopen_after_rolling)
 {
   if (m_log) {
     // Due to commit 346b419 the BaseLogFile::close_file() is no longer called within BaseLogFile::roll().
@@ -258,12 +377,49 @@ LogFile::roll(long interval_start, long interval_end)
     // Since these two methods of using BaseLogFile are not compatible, we perform the logging log file specific
     // close file operation here within the containing LogFile object.
     if (m_log->roll(interval_start, interval_end)) {
-      m_log->close_file();
+      if (m_log->close_file()) {
+        Error("Error closing LogFile %s: %s.", m_log->get_name(), strerror(errno));
+      }
+
+      if (reopen_after_rolling) {
+        /* If we re-open now log file will be created even if there is nothing being logged */
+        m_log->open_file();
+      }
+
       return 1;
     }
   }
 
   return 0;
+}
+
+/*-------------------------------------------------------------------------
+  LogFile::reopen_if_moved
+
+  Check whether the file at the log's filename exists and, if not, close
+  the current file descriptor and reopen it. This function can be used to
+  facilitate external log rotation mechanisms which will move the original
+  file to a rolled filename. Logging will happen to that same file
+  descriptor until this function is called, at which point the non-existent
+  original file will be detected, the file descriptor will be closed, and
+  the log file will be re-opened.
+
+  Returns True if the file was re-opened, false otherwise.
+  -------------------------------------------------------------------------*/
+bool
+LogFile::reopen_if_moved()
+{
+  if (!m_name) {
+    return false;
+  }
+  if (LogFile::exists(m_name)) {
+    return false;
+  }
+
+  // Both of the following log if there are problems.
+  close_file();
+  open_file();
+  return true;
 }
 
 /*-------------------------------------------------------------------------
@@ -374,7 +530,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type = (LogFormatType)buffer_header->format_type;
+    format_type = static_cast<LogFormatType>(buffer_header->format_type);
 
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str    = buffer_header->fmt_printf();
@@ -441,7 +597,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type   = (LogFormatType)buffer_header->format_type;
+    format_type   = static_cast<LogFormatType>(buffer_header->format_type);
     fieldlist_str = buffer_header->fmt_fieldlist();
     printf_str    = buffer_header->fmt_printf();
     break;
@@ -458,9 +614,9 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
     fmt_buf_bytes   = 0;
 
     if (m_file_format == LOG_FILE_PIPE) {
-      ascii_buffer = (char *)ats_malloc(m_max_line_size);
+      ascii_buffer = static_cast<char *>(ats_malloc(m_max_line_size));
     } else {
-      ascii_buffer = (char *)ats_malloc(m_ascii_buffer_size);
+      ascii_buffer = static_cast<char *>(ats_malloc(m_ascii_buffer_size));
     }
 
     // fill the buffer with as many records as possible
@@ -551,7 +707,7 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 #else
     wvec[0].iov_base = (void *)data;
 #endif
-    wvec[0].iov_len = (size_t)len;
+    wvec[0].iov_len = static_cast<size_t>(len);
 
     if (data[len - 1] != '\n') {
 #if defined(solaris)
@@ -559,12 +715,12 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 #else
       wvec[1].iov_base = (void *)"\n";
 #endif
-      wvec[1].iov_len = (size_t)1;
+      wvec[1].iov_len = static_cast<size_t>(1);
       vcnt++;
     }
 
-    if ((bytes_this_write = (int)::writev(fd, (const struct iovec *)wvec, vcnt)) < 0) {
-      Warning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
+    if ((bytes_this_write = static_cast<int>(::writev(fd, (const struct iovec *)wvec, vcnt))) < 0) {
+      SiteThrottledWarning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
     } else {
       total_bytes = bytes_this_write;
     }
@@ -592,7 +748,7 @@ LogFile::check_fd()
     //
     // It's time to see if the file really exists.  If we can't see
     // the file (via access), then we'll close our descriptor and
-    // attept to re-open it, which will create the file if it's not
+    // attempt to re-open it, which will create the file if it's not
     // there.
     //
     if (m_name && !LogFile::exists(m_name)) {

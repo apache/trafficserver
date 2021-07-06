@@ -28,7 +28,7 @@ to and from all parts of the world. Information is free, abundant, and
 accessible. Unfortunately, global data networking can also be a
 nightmare for IT professionals as they struggle with overloaded servers
 and congested networks. It can be challenging to consistently and
-reliably accommodate society’s growing data demands.
+reliably accommodate society's growing data demands.
 
 |TS| is a high-performance web proxy cache that improves
 network efficiency and performance by caching frequently-accessed
@@ -58,10 +58,10 @@ content as those requests travel to the destined web server (origin
 server). If |TS| contains the requested content, then it
 serves the content directly. If the requested content is not available
 from cache, then |TS| acts as a proxy: it obtains the content
-from the origin server on the user’s behalf and also keeps a copy to
+from the origin server on the user's behalf and also keeps a copy to
 satisfy future requests.
 
-|TS| provides explicit proxy caching, in which the user’s
+|TS| provides explicit proxy caching, in which the user's
 client software must be configured to send requests directly to Traffic
 Server. Explicit proxy caching is described in the :ref:`explicit-proxy-caching`
 chapter.
@@ -75,7 +75,7 @@ section.
 -----------------------
 
 As a reverse proxy, |TS| is configured to be the origin server
-to which the user is trying to connect (typically, the origin server’s
+to which the user is trying to connect (typically, the origin server's
 advertised hostname resolves to |TS|, which acts as the real
 origin server). The reverse proxy feature is also called server
 acceleration. Reverse proxy is described in more detail in
@@ -165,15 +165,15 @@ bindings in memory, DNS traffic is reduced.
 |TS| Processes
 --------------
 
-|TS| contains three processes that work together to serve
+|TS| contains two processes that work together to serve
 requests and manage, control, and monitor the health of the system.
 
--  The :program:`traffic_server` process is the transaction processing engine
+#. The :program:`traffic_server` process is the transaction processing engine
    of |TS|. It is responsible for accepting connections,
    processing protocol requests, and serving documents from the cache or
    origin server.
 
--  The :program:`traffic_manager` process is the command and control facility
+#. The :program:`traffic_manager` process is the command and control facility
    of the |TS|, responsible for launching, monitoring, and
    reconfiguring the :program:`traffic_server` process. The :program:`traffic_manager`
    process is also responsible for the proxy autoconfiguration port, the
@@ -186,14 +186,6 @@ requests and manage, control, and monitor the health of the system.
    saved in the connection queue and processed in first-come,
    first-served order. This connection queueing shields users from any
    server restart downtime.
-
-The figure below illustrates the |TS| processes.
-
-.. figure:: ../static/images/admin/process.jpg
-   :align: center
-   :alt: Illustration of the |TS| Processes
-
-   Illustration of the |TS| Processes
 
 Administration Tools
 --------------------

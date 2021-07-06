@@ -39,20 +39,20 @@ enum {
 };
 
 struct socks_conf_struct {
-  int socks_needed;
-  int server_connect_timeout;
-  int socks_timeout;
-  unsigned char default_version;
-  char *user_name_n_passwd;
-  int user_name_n_passwd_len;
+  int socks_needed              = 0;
+  int server_connect_timeout    = 0;
+  int socks_timeout             = 100;
+  unsigned char default_version = 5;
+  char *user_name_n_passwd      = nullptr;
+  int user_name_n_passwd_len    = 0;
 
-  int per_server_connection_attempts;
-  int connection_attempts;
+  int per_server_connection_attempts = 1;
+  int connection_attempts            = 0;
 
   // the following ports are used by SocksProxy
-  int accept_enabled;
-  int accept_port;
-  unsigned short http_port;
+  int accept_enabled       = 0;
+  int accept_port          = 0;
+  unsigned short http_port = 1080;
 
 #ifdef SOCKS_WITH_TS
   IpMap ip_map;
@@ -63,17 +63,7 @@ struct socks_conf_struct {
 #endif
 
   socks_conf_struct()
-    : socks_needed(0),
-      server_connect_timeout(0),
-      socks_timeout(100),
-      default_version(5),
-      user_name_n_passwd(nullptr),
-      user_name_n_passwd_len(0),
-      per_server_connection_attempts(1),
-      connection_attempts(0),
-      accept_enabled(0),
-      accept_port(0),
-      http_port(1080)
+
   {
 #if !defined(SOCKS_WITH_TS)
     memset(&server_addr, 0, sizeof(server_addr));

@@ -24,7 +24,9 @@ TSHttpHdrTypeGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSHttpType TSHttpHdrTypeGet(TSMBuffer bufp, TSMLoc offset)
 

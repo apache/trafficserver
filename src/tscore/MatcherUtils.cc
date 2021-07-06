@@ -44,7 +44,7 @@
 //   off the heap (via ats_malloc() )  Returns a pointer to the buffer
 //   is successful and nullptr otherwise.
 //
-//  CALLEE is responsibled for deallocating the buffer via ats_free()
+//  CALLEE is responsible for deallocating the buffer via ats_free()
 //
 char *
 readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr)
@@ -84,7 +84,7 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
   // Allocate a buffer large enough to hold the entire file
   //   File size should be small and this makes it easy to
   //   do two passes on the file
-  file_buf = (char *)ats_malloc(file_size + 1);
+  file_buf = static_cast<char *>(ats_malloc(file_size + 1));
   // Null terminate the buffer so that string operations will work
   file_buf[file_size] = '\0';
 
@@ -144,7 +144,7 @@ unescapifyStr(char *buffer)
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      *write    = (char)strtol(subStr, (char **)nullptr, 16);
+      *write    = static_cast<char>(strtol(subStr, (char **)nullptr, 16));
       read++;
       write++;
     } else if (*read == '+') {
@@ -495,7 +495,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
     case PARSE_VAL:
       if (inQuote == true) {
         if (*s == '\\') {
-          // The next character is esacped
+          // The next character is escaped
           //
           // To remove the escaped character
           // we need to copy

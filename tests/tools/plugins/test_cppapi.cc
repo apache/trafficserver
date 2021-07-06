@@ -58,7 +58,7 @@ f()
 
   oss << tv;
 
-  ALWAYS_ASSERT(ts::memcmp(ts::TextView(oss.str()), tv) == 0)
+  ALWAYS_ASSERT(memcmp(ts::TextView(oss.str()), tv) == 0)
 }
 
 TEST(f)
@@ -115,9 +115,15 @@ f()
   ALWAYS_ASSERT(c2.asTSCont() != nullptr)
   ALWAYS_ASSERT(c2.mutex() == m)
 
+  // clang-analyzer warns about use-after-move for the following, but the
+  // atscppapi::Continuation API is designed to support use after move and this
+  // test intentionally exercises this behavior. Thus we disable clang-analyzer
+  // for this code.
+#ifndef __clang_analyzer__
   ALWAYS_ASSERT(!c)
   ALWAYS_ASSERT(c.asTSCont() == nullptr)
   ALWAYS_ASSERT(c.mutex() == nullptr)
+#endif
 
   TestCont c3;
 
@@ -131,9 +137,13 @@ f()
   ALWAYS_ASSERT(c3.asTSCont() != nullptr)
   ALWAYS_ASSERT(c3.mutex() == m)
 
+  // See the user-after-move comment above for the reason we disable
+  // clang-analyzer here.
+#ifndef __clang_analyzer__
   ALWAYS_ASSERT(!c2)
   ALWAYS_ASSERT(c2.asTSCont() == nullptr)
   ALWAYS_ASSERT(c2.mutex() == nullptr)
+#endif
 
   c3.destroy();
 

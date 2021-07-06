@@ -42,30 +42,64 @@ if [ ! -x "$FORMAT" ]; then
     exit 1
 fi
 
+source "$GIT_TOP/tools/autopep8.sh"
+if [ ! -d ${AUTOPEP8_VENV} ]
+then
+    echo "Run \"make autopep8\""
+    exit 1
+fi
+source ${AUTOPEP8_VENV}/bin/activate
+
+
 # Where to store the patch
-patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
-trap "rm -f $patch_file" 0 1 2 3 5 15
+clang_patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
+autopep8_patch_file=$(mktemp -t autopep8.XXXXXXXXXX)
+trap "rm -f $clang_patch_file $autopep8_patch_file" 0 1 2 3 5 15
 
 # Loop over all files that are changed, and produce a diff file
-git diff-index --cached --diff-filter=ACMR --name-only HEAD | while read file; do
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/yamlcpp" | while read file; do
     case "$file" in
 	*.cc | *.c | *.h | *.h.in)
-	    ${FORMAT} "$file" | diff -u "$file" - >> "$patch_file"
+	    ${FORMAT} "$file" | diff -u "$file" - >> "$clang_patch_file"
 	    ;;
+        # Keep this list of Python extensions the same with the list of
+        # extensions searched for in the toosl/autopep8.sh script.
+        *.py | *.cli.ext | *.test.ext)
+            autopep8 \
+                --ignore-local-config \
+                --exclude ${GIT_TOP}/lib/yamlcpp \
+                --max-line-length 132 \
+                --aggressive \
+                --aggressive \
+                --diff \
+                "$file" >> "$autopep8_patch_file"
     esac
 done
 
-if [ -s "$patch_file" ] ; then
+if [ -s "$clang_patch_file" ] ; then
     echo "The commit is not accepted, because clang-format does not match current"
     echo "requirements. Easiest to fix this is to run:"
     echo
     echo "    $ make -j clang-format"
     exit 1
+else
+    echo "This commit complies with the current clang-format indentation rules."
+    echo
 fi
 
-echo "This commit complies with the current clang-format indentation rules."
-echo
+
+if [ -s "$autopep8_patch_file" ] ; then
+    echo "The commit is not accepted because autopep8 reports issues with it."
+    echo "The easiest way to fix this is to run:"
+    echo
+    echo "    $ make autopep8"
+    exit 1
+else
+    echo "This commit complies with the current autopep8 formatting rules."
+    echo
+fi
 
 # Cleanup before exit
-rm -f "$patch_file"
+deactivate
+rm -f "$clang_patch_file" "$autopep8_patch_file"
 exit 0

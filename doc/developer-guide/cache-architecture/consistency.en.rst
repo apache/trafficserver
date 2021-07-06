@@ -163,7 +163,7 @@ identical. Plugins can change the cache key, or not, depending on any data in
 the request header. For instance, not changing the cache key if the request is
 not in the ``doc`` directory. If distinguishing servers is important, that can
 easily be pulled from the request URL and used in the synthetic cache key. The
-implementor is free to extract all relevant elements for use in the cache key.
+implementer is free to extract all relevant elements for use in the cache key.
 
 While there is no explicit requirement that the synthetic cache key be based on
 the HTTP request header, in practice it is generally necessary due to the

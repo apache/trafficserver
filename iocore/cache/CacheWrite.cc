@@ -98,6 +98,41 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       if (od->move_resident_alt && get_alternate_index(write_vector, od->single_doc_key) == 0) {
         od->move_resident_alt = false;
       }
+      if (cache_config_log_alternate_eviction) {
+        // Initially there was an attempt to make alternate eviction a log
+        // field. However it was discovered this could not work because this
+        // code, in which alternates are evicted, happens during the processing
+        // of IO which happens after transaction logs are emitted and after the
+        // HttpSM is destructed. Instead, therefore, alternate eviction logging
+        // was implemented for diags.log with the
+        // proxy.config.cache.log.alternate.eviction toggle.
+        CacheHTTPInfo *info = write_vector->get(0);
+        HTTPHdr *request    = info->request_get();
+        if (request->valid()) {
+          // Marking the request's target as dirty will guarantee that the
+          // internal members of the request used for printing the URL will be
+          // coherent and valid by the time it is printed.
+          request->mark_target_dirty();
+          // In contrast to url_string_get, this url_print interface doesn't
+          // use HTTPHdr's m_heap which is not valid at this point because the
+          // HttpSM is most likely gone.
+          int url_length = request->url_printed_length();
+          ats_scoped_mem<char> url_text;
+          url_text   = static_cast<char *>(ats_malloc(url_length + 1));
+          int index  = 0;
+          int offset = 0;
+          // url_print does not NULL terminate, so url_length instead of url_length + 1.
+          int ret                    = request->url_print(url_text.get(), url_length, &index, &offset);
+          url_text.get()[url_length] = '\0';
+          if (ret == 0) {
+            Note("Could not print URL of evicted alternate.");
+          } else {
+            Status("The maximum number of alternates was exceeded for a resource. "
+                   "An alternate was evicted for URL: %.*s",
+                   url_length, url_text.get());
+          }
+        }
+      }
       write_vector->remove(0, true);
     }
     if (vec) {
@@ -105,15 +140,17 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
          called iff the update is a header only update so the fragment
          data should remain valid.
       */
-      if (alternate_index >= 0) {
+      // If we are not in header only updating case. Don't copy fragments.
+      if (alternate_index >= 0 &&
+          ((total_len == 0 && alternate.get_frag_offset_count() == 0) && !(f.allow_empty_doc && this->vio.nbytes == 0))) {
         alternate.copy_frag_offsets_from(write_vector->get(alternate_index));
       }
       alternate_index = write_vector->insert(&alternate, alternate_index);
     }
 
     if (od->move_resident_alt && first_buf.get() && !od->has_multiple_writers()) {
-      Doc *doc         = (Doc *)first_buf->data();
-      int small_doc    = (int64_t)doc->data_len() < (int64_t)cache_config_alt_rewrite_max_size;
+      Doc *doc         = reinterpret_cast<Doc *>(first_buf->data());
+      int small_doc    = static_cast<int64_t>(doc->data_len()) < static_cast<int64_t>(cache_config_alt_rewrite_max_size);
       int have_res_alt = doc->key == od->single_doc_key;
       // if the new alternate is not written with the vector
       // then move the old one with the vector
@@ -162,7 +199,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
    - f.update. Used only if the write_vector needs to be written to disk.
      Used to set the length of the alternate to total_len.
    - write_vector. Used only if frag_type == CACHE_FRAG_TYPE_HTTP &&
-     (f.use_fist_key || f.evac_vector) is set. Write_vector is written to disk
+     (f.use_first_key || f.evac_vector) is set. Write_vector is written to disk
    - alternate_index. Used only if write_vector needs to be written to disk.
      Used to find out the VC's alternate in the write_vector and set its
      length to tatal_len.
@@ -346,7 +383,7 @@ Vol::aggWriteDone(int event, Event *e)
     Dir del_dir;
     dir_clear(&del_dir);
     for (int done = 0; done < agg_buf_pos;) {
-      Doc *doc = (Doc *)(agg_buffer + done);
+      Doc *doc = reinterpret_cast<Doc *>(agg_buffer + done);
       dir_set_offset(&del_dir, header->write_pos + done);
       dir_delete(&doc->key, this, &del_dir);
       done += round_to_approx_size(doc->len);
@@ -358,7 +395,7 @@ Vol::aggWriteDone(int event, Event *e)
   CacheVC *c = nullptr;
   while ((c = sync.dequeue())) {
     if (UINT_WRAP_LTE(c->write_serial + 2, header->write_serial)) {
-      c->initial_thread->schedule_imm_signal(c, AIO_EVENT_DONE);
+      eventProcessor.schedule_imm(c, ET_CALL, AIO_EVENT_DONE);
     } else {
       sync.push(c); // put it back on the front
       break;
@@ -395,12 +432,12 @@ CacheVC::evacuateReadHead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
   // The evacuator vc shares the lock with the volition mutex
   ink_assert(vol->mutex->thread_holding == this_ethread());
   cancel_trigger();
-  Doc *doc                     = (Doc *)buf->data();
+  Doc *doc                     = reinterpret_cast<Doc *>(buf->data());
   CacheHTTPInfo *alternate_tmp = nullptr;
   if (!io.ok()) {
     goto Ldone;
   }
-  // a directory entry which is nolonger valid may have been overwritten
+  // a directory entry which is no longer valid may have been overwritten
   if (!dir_valid(vol, &dir)) {
     last_collision = nullptr;
     goto Lcollision;
@@ -458,7 +495,7 @@ int
 CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   ink_assert(vol->mutex->thread_holding == this_ethread());
-  Doc *doc = (Doc *)buf->data();
+  Doc *doc = reinterpret_cast<Doc *>(buf->data());
   DDebug("cache_evac", "evacuateDocDone %X o %d p %d new_o %d new_p %d", (int)key.slice32(0), (int)dir_offset(&overwrite_dir),
          (int)dir_phase(&overwrite_dir), (int)dir_offset(&dir), (int)dir_phase(&dir));
   int i = dir_evac_bucket(&overwrite_dir);
@@ -500,7 +537,7 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         dir_overwrite(&doc->key, vol, &dir, &overwrite_dir);
       }
       // if the tag in the overwrite_dir matches the first_key in the
-      // document, then it has to be the vector. We gaurantee that
+      // document, then it has to be the vector. We guarantee that
       // the first_key and the earliest_key will never collide (see
       // Cache::open_write). Once we know its the vector, we can
       // safely overwrite the first_key in the directory.
@@ -519,7 +556,7 @@ CacheVC::evacuateDocDone(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           }
           if (dir_overwrite(&doc->first_key, vol, &dir, &overwrite_dir)) {
             int64_t o = dir_offset(&overwrite_dir), n = dir_offset(&dir);
-            vol->ram_cache->fixup(&doc->first_key, (uint32_t)(o >> 32), (uint32_t)o, (uint32_t)(n >> 32), (uint32_t)n);
+            vol->ram_cache->fixup(&doc->first_key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
           }
         } else {
           DDebug("cache_evac", "evacuating earliest: %X %d", (int)doc->key.slice32(0), (int)dir_offset(&overwrite_dir));
@@ -588,10 +625,10 @@ Vol::evacuateWrite(CacheVC *evacuator, int event, Event *e)
 {
   // push to front of aggregation write list, so it is written first
 
-  evacuator->agg_len = round_to_approx_size(((Doc *)evacuator->buf->data())->len);
+  evacuator->agg_len = round_to_approx_size((reinterpret_cast<Doc *>(evacuator->buf->data()))->len);
   agg_todo_size += evacuator->agg_len;
   /* insert the evacuator after all the other evacuators */
-  CacheVC *cur   = (CacheVC *)agg.head;
+  CacheVC *cur   = static_cast<CacheVC *>(agg.head);
   CacheVC *after = nullptr;
   for (; cur && cur->f.evacuator; cur = (CacheVC *)cur->link.next) {
     after = cur;
@@ -611,7 +648,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
   ink_assert(is_io_in_progress());
   set_io_not_in_progress();
   ink_assert(mutex->thread_holding == this_ethread());
-  Doc *doc = (Doc *)doc_evacuator->buf->data();
+  Doc *doc = reinterpret_cast<Doc *>(doc_evacuator->buf->data());
   CacheKey next_key;
   EvacuationBlock *b = nullptr;
   if (doc->magic != DOC_MAGIC) {
@@ -633,7 +670,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
   if (!b) {
     goto Ldone;
   }
-  if ((b->f.pinned && !b->readers) && doc->pinned < (uint32_t)(Thread::get_hrtime() / HRTIME_SECOND)) {
+  if ((b->f.pinned && !b->readers) && doc->pinned < static_cast<uint32_t>(Thread::get_hrtime() / HRTIME_SECOND)) {
     goto Ldone;
   }
 
@@ -677,7 +714,7 @@ Vol::evacuateDocReadDone(int event, Event *e)
     b->f.unused = 87;
   }
   // if the tag in the c->dir does match the first_key in the
-  // document, then it has to be the earliest fragment. We gaurantee that
+  // document, then it has to be the earliest fragment. We guarantee that
   // the first_key and the earliest_key will never collide (see
   // Cache::open_write).
   if (!dir_head(&b->dir) || !dir_compare_tag(&b->dir, &doc->first_key)) {
@@ -718,7 +755,7 @@ Vol::evac_range(off_t low, off_t high, int evac_phase)
       io.aiocb.aio_fildes = fd;
       io.aiocb.aio_nbytes = dir_approx_size(&first->dir);
       io.aiocb.aio_offset = this->vol_offset(&first->dir);
-      if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(skip + len)) {
+      if (static_cast<off_t>(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > static_cast<off_t>(skip + len)) {
         io.aiocb.aio_nbytes = skip + len - io.aiocb.aio_offset;
       }
       doc_evacuator                = new_DocEvacuator(io.aiocb.aio_nbytes, this);
@@ -743,7 +780,7 @@ agg_copy(char *p, CacheVC *vc)
   off_t o  = vol->header->write_pos + vol->agg_buf_pos;
 
   if (!vc->f.evacuator) {
-    Doc *doc                   = (Doc *)p;
+    Doc *doc                   = reinterpret_cast<Doc *>(p);
     IOBufferBlock *res_alt_blk = nullptr;
 
     uint32_t len = vc->write_len + vc->header_len + vc->frag_len + sizeof(Doc);
@@ -770,7 +807,7 @@ agg_copy(char *p, CacheVC *vc)
     doc->checksum                        = DOC_NO_CHECKSUM;
     if (vc->pin_in_cache) {
       dir_set_pinned(&vc->dir, 1);
-      doc->pinned = (uint32_t)(Thread::get_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
+      doc->pinned = static_cast<uint32_t>(Thread::get_hrtime() / HRTIME_SECOND) + vc->pin_in_cache;
     } else {
       dir_set_pinned(&vc->dir, 0);
       doc->pinned = 0;
@@ -780,7 +817,13 @@ agg_copy(char *p, CacheVC *vc)
       if (doc->data_len() || vc->f.allow_empty_doc) {
         doc->key = vc->earliest_key;
       } else { // the vector is being written by itself
-        prev_CacheKey(&doc->key, &vc->earliest_key);
+        if (vc->earliest_key == zero_key) {
+          do {
+            rand_CacheKey(&doc->key, vc->vol->mutex);
+          } while (DIR_MASK_TAG(doc->key.slice32(2)) == DIR_MASK_TAG(vc->first_key.slice32(2)));
+        } else {
+          prev_CacheKey(&doc->key, &vc->earliest_key);
+        }
       }
       dir_set_head(&vc->dir, true);
     } else {
@@ -790,7 +833,7 @@ agg_copy(char *p, CacheVC *vc)
 
     if (vc->f.rewrite_resident_alt) {
       ink_assert(vc->f.use_first_key);
-      Doc *res_doc   = (Doc *)vc->first_buf->data();
+      Doc *res_doc   = reinterpret_cast<Doc *>(vc->first_buf->data());
       res_alt_blk    = new_IOBufferBlock(vc->first_buf, res_doc->data_len(), sizeof(Doc) + res_doc->hlen);
       doc->key       = res_doc->key;
       doc->total_len = res_doc->data_len();
@@ -846,7 +889,7 @@ agg_copy(char *p, CacheVC *vc)
     }
     if (cache_config_enable_checksum) {
       doc->checksum = 0;
-      for (char *b = doc->hdr(); b < (char *)doc + doc->len; b++) {
+      for (char *b = doc->hdr(); b < reinterpret_cast<char *>(doc) + doc->len; b++) {
         doc->checksum += *b;
       }
     }
@@ -861,7 +904,7 @@ agg_copy(char *p, CacheVC *vc)
     return vc->agg_len;
   } else {
     // for evacuated documents, copy the data, and update directory
-    Doc *doc = (Doc *)vc->buf->data();
+    Doc *doc = reinterpret_cast<Doc *>(vc->buf->data());
     int l    = vc->vol->round_to_approx_size(doc->len);
     {
       ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex.get();
@@ -979,7 +1022,7 @@ Vol::aggWrite(int event, void * /* e ATS_UNUSED */)
 
 Lagain:
   // calculate length of aggregated write
-  for (c = (CacheVC *)agg.head; c;) {
+  for (c = static_cast<CacheVC *>(agg.head); c;) {
     int writelen = c->agg_len;
     // [amc] this is checked multiple places, on here was it strictly less.
     ink_assert(writelen <= AGG_SIZE);
@@ -1019,11 +1062,7 @@ Lagain:
       ink_assert(false);
       while ((c = agg.dequeue())) {
         agg_todo_size -= c->agg_len;
-        if (c->initial_thread != nullptr) {
-          c->initial_thread->schedule_imm_signal(c, AIO_EVENT_DONE);
-        } else {
-          eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
-        }
+        eventProcessor.schedule_imm(c, ET_CALL, AIO_EVENT_DONE);
       }
       return EVENT_CONT;
     }
@@ -1056,7 +1095,7 @@ Lagain:
     ink_assert(sync.head);
     int l       = round_to_approx_size(sizeof(Doc));
     agg_buf_pos = l;
-    Doc *d      = (Doc *)agg_buffer;
+    Doc *d      = reinterpret_cast<Doc *>(agg_buffer);
     memset(static_cast<void *>(d), 0, sizeof(Doc));
     d->magic        = DOC_MAGIC;
     d->len          = l;
@@ -1086,10 +1125,8 @@ Lwait:
   while ((c = tocall.dequeue())) {
     if (event == EVENT_CALL && c->mutex->thread_holding == mutex->thread_holding) {
       ret = EVENT_RETURN;
-    } else if (c->initial_thread != nullptr) {
-      c->initial_thread->schedule_imm_signal(c, AIO_EVENT_DONE);
     } else {
-      eventProcessor.schedule_imm_signal(c, ET_CALL, AIO_EVENT_DONE);
+      eventProcessor.schedule_imm(c, ET_CALL, AIO_EVENT_DONE);
     }
   }
   return ret;
@@ -1369,7 +1406,9 @@ CacheVC::openWriteWriteDone(int event, Event *e)
 static inline int
 target_fragment_size()
 {
-  return cache_config_target_fragment_size - sizeof(Doc);
+  uint64_t value = cache_config_target_fragment_size - sizeof(Doc);
+  ink_release_assert(value <= MAX_FRAG_SIZE);
+  return value;
 }
 
 int
@@ -1397,7 +1436,7 @@ Lagain:
       return EVENT_CONT;
     }
   }
-  int64_t ntodo       = (int64_t)(vio.ntodo() + length);
+  int64_t ntodo       = static_cast<int64_t>(vio.ntodo() + length);
   int64_t total_avail = vio.buffer.reader()->read_avail();
   int64_t avail       = total_avail;
   int64_t towrite     = avail + length;
@@ -1418,7 +1457,7 @@ Lagain:
     vio.ndone += avail;
     total_len += avail;
   }
-  length = (uint64_t)towrite;
+  length = static_cast<uint64_t>(towrite);
   if (length > target_fragment_size() && (length < target_fragment_size() + target_fragment_size() / 4)) {
     write_len = target_fragment_size();
   } else {
@@ -1466,7 +1505,7 @@ CacheVC::openWriteOverwrite(int event, Event *e)
     if (!io.ok()) {
       goto Ldone;
     }
-    doc = (Doc *)buf->data();
+    doc = reinterpret_cast<Doc *>(buf->data());
     if (!(doc->first_key == first_key)) {
       goto Lcollision;
     }
@@ -1518,7 +1557,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
     }
 
     if (event == AIO_EVENT_DONE) { // vector read done
-      Doc *doc = (Doc *)buf->data();
+      Doc *doc = reinterpret_cast<Doc *>(buf->data());
       if (!io.ok()) {
         err = ECACHE_READ_FAIL;
         goto Lfailure;
@@ -1671,7 +1710,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
   c->f.overwrite      = (options & CACHE_WRITE_OPT_OVERWRITE) != 0;
   c->f.close_complete = (options & CACHE_WRITE_OPT_CLOSE_COMPLETE) != 0;
   c->f.sync           = (options & CACHE_WRITE_OPT_SYNC) == CACHE_WRITE_OPT_SYNC;
-  c->pin_in_cache     = (uint32_t)apin_in_cache;
+  c->pin_in_cache     = static_cast<uint32_t>(apin_in_cache);
 
   if ((res = c->vol->open_write_lock(c, false, 1)) > 0) {
     // document currently being written, abort
@@ -1771,7 +1810,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
     c->base_stat = cache_write_active_stat;
   }
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
-  c->pin_in_cache = (uint32_t)apin_in_cache;
+  c->pin_in_cache = static_cast<uint32_t>(apin_in_cache);
 
   {
     CACHE_TRY_LOCK(lock, c->vol->mutex, cont->mutex->thread_holding);

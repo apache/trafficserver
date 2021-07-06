@@ -17,12 +17,75 @@
 #  limitations under the License.
 
 import json
-import subprocess
+import os
+from os.path import dirname
 import pprint
+import subprocess
+import shutil
+
+PROXY_VERIFIER_VERSION_FILENAME = 'proxy-verifier-version.txt'
+
+test_root = dirname(dirname(AutestSitePath))
+repo_root = dirname(test_root)
 
 if Arguments.ats_bin is not None:
     # Add environment variables
     ENV['ATS_BIN'] = Arguments.ats_bin
+
+if Arguments.build_root is not None:
+    ENV['BUILD_ROOT'] = Arguments.build_root
+else:
+    # Assume the build root is the same directory tree as the test location.
+    ENV['BUILD_ROOT'] = repo_root
+
+host.WriteVerbose(['ats'], "Test build root: {}:".format(ENV['BUILD_ROOT']))
+
+proxy_verifer_version_file = os.path.join(test_root, PROXY_VERIFIER_VERSION_FILENAME)
+proxy_verifer_version = open(proxy_verifer_version_file, "rt").read().strip()
+
+if Arguments.proxy_verifier_bin is not None:
+    ENV['VERIFIER_BIN'] = Arguments.proxy_verifier_bin
+    host.WriteVerbose(
+        ['ats'],
+        "Expecting Proxy Verifier to be in user-supplied bin path: ",
+        ENV['VERIFIER_BIN'])
+else:
+    # No Verifier bin path was specified. First see if a Proxy Verifier was
+    # unpacked as a part of preparing for this test.
+    unpack_bin = os.path.join(test_root, 'proxy-verifier', 'unpack', proxy_verifer_version, 'bin')
+    if os.path.exists(os.path.join(unpack_bin, 'verifier-client')):
+        ENV['VERIFIER_BIN'] = unpack_bin
+        host.WriteVerbose(
+            ['ats'],
+            "Using locally unpacked Proxy Verifier: ",
+            ENV['VERIFIER_BIN'])
+    else:
+        # Finally check the PATH.
+        path_search = shutil.which('verifier-client')
+        if path_search is not None:
+            ENV['VERIFIER_BIN'] = dirname(path_search)
+            host.WriteVerbose(
+                ['ats'],
+                "Using Proxy Verifier found in PATH: ",
+                ENV['VERIFIER_BIN'])
+        else:
+            prepare_proxy_verifier_path = os.path.join(test_root, "prepare_proxy_verifier.sh")
+            host.WriteError("Could not find Proxy Verifier binaries. "
+                            "Try running: ", prepare_proxy_verifier_path)
+
+required_pv_version = Version(proxy_verifer_version[1:])
+verifier_client = os.path.join(ENV['VERIFIER_BIN'], 'verifier-client')
+pv_version_out = subprocess.check_output([verifier_client, "--version"])
+pv_version = Version(pv_version_out.decode("utf-8").split()[1])
+if pv_version < required_pv_version:
+    host.WriteError(
+        f"Proxy Verifier at {verifier_client} is too old. "
+        f"Version required: {required_pv_version}, version found: {pv_version}")
+else:
+    host.WriteVerbose(
+        ['ats'],
+        f"Proxy Verifier at {verifier_client} has version: {pv_version}")
+
 
 if ENV['ATS_BIN'] is not None:
     # Add variables for Tests
@@ -36,7 +99,7 @@ if ENV['ATS_BIN'] is not None:
         hint = ''
         if os.path.isfile(os.path.join(ENV['ATS_BIN'], 'bin', 'traffic_layout')):
             hint = "\nDid you mean '--ats-bin {}'?".\
-                format(os.path.join(ENV['ATS_BIN'],'bin'))
+                format(os.path.join(ENV['ATS_BIN'], 'bin'))
         host.WriteError("traffic_layout is not found. Aborting tests - Bad build or install.{}".format(hint), show_stack=False)
     try:
         out = subprocess.check_output([traffic_layout, "--json"])
@@ -78,7 +141,13 @@ if ENV['ATS_BIN'] is not None:
                 host.WriteError("tsxs is broken. Aborting tests", show_stack=False)
     host.WriteVerbose(['ats'], "Traffic server build flags:\n", pprint.pformat(out))
     Variables.update(out)
-Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '../../tools')
+
+Variables.AtsExampleDir = os.path.join(AutestSitePath, '..', '..', '..', 'example')
+Variables.AtsTestToolsDir = os.path.join(AutestSitePath, '..', '..', 'tools')
+Variables.VerifierBinPath = ENV['VERIFIER_BIN']
+Variables.BuildRoot = ENV['BUILD_ROOT']
+Variables.AtsTestPluginsDir = os.path.join(Variables.BuildRoot, 'tests', 'tools', 'plugins', '.libs')
+Variables.AtsBuildGoldTestsDir = os.path.join(Variables.BuildRoot, 'tests', 'gold_tests')
 
 # modify delay times as we always have to kill Trafficserver
 # no need to wait

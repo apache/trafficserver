@@ -102,7 +102,7 @@ Acl::country_id_by_addr(const sockaddr *addr) const
 }
 #endif /* HAVE_GEOIP_H */
 
-// This is the rest of the ACL baseclass, which is the same for all underlying Geo libraries.
+// This is the rest of the ACL base class, which is the same for all underlying Geo libraries.
 void
 Acl::read_html(const char *fn)
 {

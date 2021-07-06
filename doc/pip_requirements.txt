@@ -1,5 +1,0 @@
-# For parsing Doxygen XML output, to add links from an API description
-# to the source code for that object
-lxml
-
-polib>=1.0.3

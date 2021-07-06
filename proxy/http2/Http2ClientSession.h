@@ -27,8 +27,11 @@
 #include "Plugin.h"
 #include "ProxySession.h"
 #include "Http2ConnectionState.h"
+#include "Http2Frame.h"
 #include <string_view>
 #include "tscore/ink_inet.h"
+#include "tscore/History.h"
+#include "Milestones.h"
 
 // Name                       Edata                 Description
 // HTTP2_SESSION_EVENT_INIT   Http2ClientSession *  HTTP/2 session is born
@@ -42,307 +45,190 @@
 #define HTTP2_SESSION_EVENT_XMIT (HTTP2_SESSION_EVENTS_START + 4)
 #define HTTP2_SESSION_EVENT_SHUTDOWN_INIT (HTTP2_SESSION_EVENTS_START + 5)
 #define HTTP2_SESSION_EVENT_SHUTDOWN_CONT (HTTP2_SESSION_EVENTS_START + 6)
+#define HTTP2_SESSION_EVENT_REENABLE (HTTP2_SESSION_EVENTS_START + 7)
+
+enum class Http2SessionCod : int {
+  NOT_PROVIDED,
+  HIGH_ERROR_RATE,
+};
+
+enum class Http2SsnMilestone {
+  OPEN = 0,
+  CLOSE,
+  LAST_ENTRY,
+};
 
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
-// To support Upgrade: h2c
-struct Http2UpgradeContext {
-  Http2UpgradeContext() : req_header(nullptr) {}
-  ~Http2UpgradeContext()
-  {
-    if (req_header) {
-      req_header->clear();
-      delete req_header;
-    }
-  }
+/**
+   @startuml
+   title HTTP/2 Session Handler - state of reading HTTP/2 frame
+   hide empty description
 
-  // Modified request header
-  HTTPHdr *req_header;
+   [*]                           --> state_read_connection_preface : start()
+   state_read_connection_preface --> state_start_frame_read        : receive connection preface
+   state_start_frame_read        --> state_start_frame_read        : do_complete_frame_read()
+   state_start_frame_read        --> state_complete_frame_read     : reading HTTP/2 frame is halfway but no data in the buffer
+   state_complete_frame_read     --> state_start_frame_read        : do_complete_frame_read()
 
-  // Decoded HTTP2-Settings Header Field
-  Http2ConnectionSettings client_settings;
-};
-
-class Http2Frame
-{
-public:
-  Http2Frame(const Http2FrameHeader &h, IOBufferReader *r)
-  {
-    this->hdr      = h;
-    this->ioreader = r;
-  }
-
-  Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags)
-  {
-    this->hdr      = {0, (uint8_t)type, flags, streamid};
-    this->ioreader = nullptr;
-  }
-
-  IOBufferReader *
-  reader() const
-  {
-    return ioreader;
-  }
-
-  const Http2FrameHeader &
-  header() const
-  {
-    return this->hdr;
-  }
-
-  // Allocate an IOBufferBlock for payload of this frame.
-  void
-  alloc(int index)
-  {
-    this->ioblock = new_IOBufferBlock();
-    this->ioblock->alloc(index);
-  }
-
-  // Return the writeable buffer space for frame payload
-  IOVec
-  write()
-  {
-    return make_iovec(this->ioblock->end(), this->ioblock->write_avail());
-  }
-
-  // Once the frame has been serialized, update the payload length of frame header.
-  void
-  finalize(size_t nbytes)
-  {
-    if (this->ioblock) {
-      ink_assert((int64_t)nbytes <= this->ioblock->write_avail());
-      this->ioblock->fill(nbytes);
-
-      this->hdr.length = this->ioblock->size();
-    }
-  }
-
-  void
-  xmit(MIOBuffer *iobuffer)
-  {
-    // Write frame header
-    uint8_t buf[HTTP2_FRAME_HEADER_LEN];
-    http2_write_frame_header(hdr, make_iovec(buf));
-    iobuffer->write(buf, sizeof(buf));
-
-    // Write frame payload
-    // It could be empty (e.g. SETTINGS frame with ACK flag)
-    if (ioblock && ioblock->read_avail() > 0) {
-      iobuffer->append_block(this->ioblock.get());
-    }
-  }
-
-  int64_t
-  size()
-  {
-    if (ioblock) {
-      return HTTP2_FRAME_HEADER_LEN + ioblock->size();
-    } else {
-      return HTTP2_FRAME_HEADER_LEN;
-    }
-  }
-
-  // noncopyable
-  Http2Frame(Http2Frame &) = delete;
-  Http2Frame &operator=(const Http2Frame &) = delete;
-
-private:
-  Http2FrameHeader hdr;       // frame header
-  Ptr<IOBufferBlock> ioblock; // frame payload
-  IOBufferReader *ioreader;
-};
-
+   @enduml
+ */
 class Http2ClientSession : public ProxySession
 {
 public:
-  typedef ProxySession super; ///< Parent type.
-  typedef int (Http2ClientSession::*SessionHandler)(int, void *);
+  using super          = ProxySession; ///< Parent type.
+  using SessionHandler = int (Http2ClientSession::*)(int, void *);
 
   Http2ClientSession();
 
-  // Implement ProxySession interface.
+  /////////////////////
+  // Methods
+
+  // Implement VConnection interface
+  void do_io_close(int lerrno = -1) override;
+
+  // Implement ProxySession interface
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
   void start() override;
   void destroy() override;
+  void release(ProxyTransaction *trans) override;
   void free() override;
-  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
 
-  bool
-  ready_to_free() const
-  {
-    return kill_me;
-  }
+  // more methods
+  void write_reenable();
+  int64_t xmit(const Http2TxFrame &frame, bool flush = true);
+  void flush();
 
-  // Implement VConnection interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
-                   bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
+  ////////////////////
+  // Accessors
+  sockaddr const *get_remote_addr() const override;
+  sockaddr const *get_local_addr() override;
+  int get_transact_count() const override;
+  const char *get_protocol_string() const override;
+  int populate_protocol(std::string_view *result, int size) const override;
+  const char *protocol_contains(std::string_view prefix) const override;
+  HTTPVersion get_version(HTTPHdr &hdr) const override;
+  void increment_current_active_connections_stat() override;
+  void decrement_current_active_connections_stat() override;
 
-  NetVConnection *
-  get_netvc() const override
-  {
-    return client_vc;
-  }
-
-  sockaddr const *
-  get_client_addr() override
-  {
-    return client_vc ? client_vc->get_remote_addr() : &cached_client_addr.sa;
-  }
-
-  sockaddr const *
-  get_local_addr() override
-  {
-    return client_vc ? client_vc->get_local_addr() : &cached_local_addr.sa;
-  }
-
-  void
-  write_reenable()
-  {
-    write_vio->reenable();
-  }
-
-  void set_upgrade_context(HTTPHdr *h);
-
-  const Http2UpgradeContext &
-  get_upgrade_context() const
-  {
-    return upgrade_context;
-  }
-
-  int
-  get_transact_count() const override
-  {
-    return connection_state.get_stream_requests();
-  }
-
-  void
-  release(ProxyTransaction *trans) override
-  {
-  }
-
-  Http2ConnectionState connection_state;
-  void
-  set_dying_event(int event)
-  {
-    dying_event = event;
-  }
-
-  int
-  get_dying_event() const
-  {
-    return dying_event;
-  }
-
-  bool
-  is_recursing() const
-  {
-    return recursion > 0;
-  }
-
-  const char *
-  get_protocol_string() const override
-  {
-    return "http/2";
-  }
-
-  int
-  populate_protocol(std::string_view *result, int size) const override
-  {
-    int retval = 0;
-    if (size > retval) {
-      result[retval++] = IP_PROTO_TAG_HTTP_2_0;
-      if (size > retval) {
-        retval += super::populate_protocol(result + retval, size - retval);
-      }
-    }
-    return retval;
-  }
-
-  const char *
-  protocol_contains(std::string_view prefix) const override
-  {
-    const char *retval = nullptr;
-
-    if (prefix.size() <= IP_PROTO_TAG_HTTP_2_0.size() && strncmp(IP_PROTO_TAG_HTTP_2_0.data(), prefix.data(), prefix.size()) == 0) {
-      retval = IP_PROTO_TAG_HTTP_2_0.data();
-    } else {
-      retval = super::protocol_contains(prefix);
-    }
-    return retval;
-  }
-
-  void increment_current_active_client_connections_stat() override;
-  void decrement_current_active_client_connections_stat() override;
-
+  void set_dying_event(int event);
+  int get_dying_event() const;
+  bool ready_to_free() const;
+  bool is_recursing() const;
   void set_half_close_local_flag(bool flag);
-  bool
-  get_half_close_local_flag() const
-  {
-    return half_close_local;
-  }
+  bool get_half_close_local_flag() const;
+  bool is_url_pushed(const char *url, int url_len);
+  void add_url_to_pushed_table(const char *url, int url_len);
 
-  bool
-  is_url_pushed(const char *url, int url_len)
-  {
-    return h2_pushed_urls.find(url) != h2_pushed_urls.end();
-  }
+  // Record history from Http2ConnectionState
+  void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
 
-  void
-  add_url_to_pushed_table(const char *url, int url_len)
-  {
-    if (h2_pushed_urls.size() < Http2::push_diary_size) {
-      h2_pushed_urls.emplace(url);
-    }
-  }
-
-  int64_t
-  write_buffer_size()
-  {
-    return write_buffer->max_read_avail();
-  }
+  int64_t write_avail();
 
   // noncopyable
   Http2ClientSession(Http2ClientSession &) = delete;
   Http2ClientSession &operator=(const Http2ClientSession &) = delete;
 
+  ///////////////////
+  // Variables
+  Http2ConnectionState connection_state;
+
 private:
   int main_event_handler(int, void *);
 
+  // SessionHandler(s) - state of reading frame
   int state_read_connection_preface(int, void *);
   int state_start_frame_read(int, void *);
-  int do_start_frame_read(Http2ErrorCode &ret_error);
   int state_complete_frame_read(int, void *);
-  int do_complete_frame_read();
-  // state_start_frame_read and state_complete_frame_read are set up as
-  // event handler.  Both feed into state_process_frame_read which may iterate
-  // if there are multiple frames ready on the wire
-  int state_process_frame_read(int event, VIO *vio, bool inside_frame);
 
-  int64_t total_write_len        = 0;
+  // state_start_frame_read and state_complete_frame_read are set up as session event handler.
+  // Both feed into do_process_frame_read which may iterate if there are multiple frames ready on the wire
+  int do_process_frame_read(int event, VIO *vio, bool inside_frame);
+  int do_start_frame_read(Http2ErrorCode &ret_error);
+  int do_complete_frame_read();
+
+  bool _should_do_something_else();
+
+  ////////
+  // Variables
   SessionHandler session_handler = nullptr;
-  NetVConnection *client_vc      = nullptr;
-  MIOBuffer *read_buffer         = nullptr;
-  IOBufferReader *sm_reader      = nullptr;
-  MIOBuffer *write_buffer        = nullptr;
-  IOBufferReader *sm_writer      = nullptr;
-  Http2FrameHeader current_hdr   = {0, 0, 0, 0};
+
+  MIOBuffer *read_buffer              = nullptr;
+  IOBufferReader *_read_buffer_reader = nullptr;
+
+  VIO *write_vio                       = nullptr;
+  MIOBuffer *write_buffer              = nullptr;
+  IOBufferReader *_write_buffer_reader = nullptr;
+
+  Http2FrameHeader current_hdr        = {0, 0, 0, 0};
+  uint32_t _write_size_threshold      = 0;
+  uint32_t _write_time_threshold      = 100;
+  ink_hrtime _write_buffer_last_flush = 0;
 
   IpEndpoint cached_client_addr;
   IpEndpoint cached_local_addr;
 
-  // For Upgrade: h2c
-  Http2UpgradeContext upgrade_context;
+  History<HISTORY_DEFAULT_SIZE> _history;
+  Milestones<Http2SsnMilestone, static_cast<size_t>(Http2SsnMilestone::LAST_ENTRY)> _milestones;
 
-  VIO *write_vio        = nullptr;
-  int dying_event       = 0;
-  bool kill_me          = false;
-  bool half_close_local = false;
-  int recursion         = 0;
+  int dying_event                = 0;
+  bool kill_me                   = false;
+  Http2SessionCod cause_of_death = Http2SessionCod::NOT_PROVIDED;
+  bool half_close_local          = false;
+  int recursion                  = 0;
 
-  std::unordered_set<std::string> h2_pushed_urls;
+  std::unordered_set<std::string> *_h2_pushed_urls = nullptr;
+
+  Event *_reenable_event = nullptr;
+  int _n_frame_read      = 0;
+
+  uint32_t _pending_sending_data_size = 0;
+
+  int64_t read_from_early_data   = 0;
+  bool cur_frame_from_early_data = false;
 };
 
-extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;
+extern ClassAllocator<Http2ClientSession, true> http2ClientSessionAllocator;
+
+///////////////////////////////////////////////
+// INLINE
+
+inline bool
+Http2ClientSession::ready_to_free() const
+{
+  return kill_me;
+}
+
+inline void
+Http2ClientSession::set_dying_event(int event)
+{
+  dying_event = event;
+}
+
+inline int
+Http2ClientSession::get_dying_event() const
+{
+  return dying_event;
+}
+
+inline bool
+Http2ClientSession::is_recursing() const
+{
+  return recursion > 0;
+}
+
+inline bool
+Http2ClientSession::get_half_close_local_flag() const
+{
+  return half_close_local;
+}
+
+inline bool
+Http2ClientSession::is_url_pushed(const char *url, int url_len)
+{
+  if (_h2_pushed_urls == nullptr) {
+    return false;
+  }
+
+  return _h2_pushed_urls->find(url) != _h2_pushed_urls->end();
+}

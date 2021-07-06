@@ -101,13 +101,13 @@ becomes::
            "format string", args...));
 
 By hiding the length tracking and checking, the result is a simple linear sequence of output chunks,
-making the logic much eaier to follow.
+making the logic much easier to follow.
 
 Usage
 +++++
 
 The header files are divided in to two variants. :ts:git:`include/tscore/BufferWriter.h` provides the basic
-capabilities of buffer output control. :ts:git:`include/tscore/BufferWriterFormat.h` provides the basic
+capabilities of buffer output control. :ts:git:`include/tscore/BufferWriterForward.h` provides the basic
 :ref:`formatted output mechanisms <bw-formatting>`, primarily the implementation and ancillary
 classes for :class:`BWFSpec` which is used to build formatters.
 
@@ -134,7 +134,7 @@ needs to be specified and therefore can simply be a constant without the overhea
 to maintain consistency. The choice between :class:`LocalBufferWriter` and :class:`FixedBufferWriter`
 comes down to the owner of the buffer - the former has its own buffer while the latter operates on
 a buffer owned by some other object. Therefore if the buffer is declared locally, use
-:class:`LocalBufferWriter` and if the buffer is recevied from an external source (such as via a
+:class:`LocalBufferWriter` and if the buffer is received from an external source (such as via a
 function parameter) use :class:`FixedBufferWriter`.
 
 Writing
@@ -273,7 +273,7 @@ Formatted Output
 ++++++++++++++++
 
 The base :class:`BufferWriter` was made to provide memory safety for formatted output. Support for
-formmatted output was made to provide *type* safety. The implementation deduces the types of the
+formatted output was made to provide *type* safety. The implementation deduces the types of the
 arguments to be formatted and handles them in a type specific and safe way.
 
 The formatting style is of the "prefix" or "printf" style - the format is specified first and then
@@ -314,7 +314,7 @@ As a result of these benefits there has been other work on similar projects, to 
 :code:`printf` a better mechanism. Unfortunately most of these are rather project specific and don't
 suit the use case in |TS|. The two best options, `Boost.Format
 <https://www.boost.org/doc/libs/1_64_0/libs/format/>`__ and `fmt <https://github.com/fmtlib/fmt>`__,
-while good, are also not quite close enough to outweight the benefits of a version specifically
+while good, are also not quite close enough to outweigh the benefits of a version specifically
 tuned for |TS|. ``Boost.Format`` is not acceptable because of the Boost footprint. ``fmt`` has the
 problem of depending on C++ stream operators and therefore not having the required level of
 performance or memory characteristics. Its main benefit, of reusing stream operators, doesn't apply
@@ -343,15 +343,16 @@ will work with just the format ``{}``. In a sense, ``{}`` serves the same functi
 :code:`auto` does for programming - the compiler knows the type, it should be able to do something
 reasonable without the programmer needing to be explicit.
 
-.. productionList:: Format
+.. productionlist:: format
    format: "{" [name] [":" [specifier] [":" extension]] "}"
    name: index | ICHAR+
    index: non-negative integer
+   specifier: <see below>
    extension: ICHAR*
    ICHAR: a printable ASCII character except for '{', '}', ':'
 
-:token:`name`
-   The :token:`name` of the argument to use. This can be a non-negative integer in which case it is
+:token:`~format:name`
+   The name of the argument to use. This can be a non-negative integer in which case it is
    the zero based index of the argument to the method call. E.g. ``{0}`` means the first argument
    and ``{2}`` is the third argument after the format.
 
@@ -359,7 +360,7 @@ reasonable without the programmer needing to be explicit.
 
       ``bw.print("{1} {0}", 'a', 'b')`` => ``b a``
 
-   The :token:`name` can be omitted in which case it is treated as an index in parallel to the
+   The name can be omitted in which case it is treated as an index in parallel to the
    position in the format string. Only the position in the format string matters, not what names
    other format elements may have used.
 
@@ -376,10 +377,10 @@ reasonable without the programmer needing to be explicit.
    Alphanumeric names refer to values in a global table. These will be described in more detail
    someday. Such names, however, do not count in terms of default argument indexing.
 
-:token:`specifier`
+:token:`~format:specifier`
    Basic formatting control.
 
-   .. productionList:: specifier
+   .. productionlist:: spec
       specifier: [[fill]align][sign]["#"]["0"][[min][.precision][,max][type]]
       fill: fill-char | URI-char
       URI-char: "%" hex-digit hex-digit
@@ -392,13 +393,13 @@ reasonable without the programmer needing to be explicit.
       type: type: "g" | "s" | "S" | "x" | "X" | "d" | "o" | "b" | "B" | "p" | "P"
       hex-digit: "0" .. "9" | "a" .. "f" | "A" .. "F"
 
-   The output is placed in a field that is at least :token:`min` wide and no more than :token:`max` wide. If
-   the output is less than :token:`min` then
+   The output is placed in a field that is at least :token:`~spec:min` wide and no more than
+   :token:`~spec:max` wide. If the output is less than :token:`~spec:min` then
 
-      *  The :token:`fill` character is used for the extra space required. This can be an explicit
-         character or a URI encoded one (to allow otherwise reserved characters).
+      *  The :token:`~spec:fill` character is used for the extra space required. This can be an
+         explicit character or a URI encoded one (to allow otherwise reserved characters).
 
-      *  The output is shifted according to the :token:`align`.
+      *  The output is shifted according to the :token:`~spec:align`.
 
          <
             Align to the left, fill to the right.
@@ -412,14 +413,15 @@ reasonable without the programmer needing to be explicit.
          =
             Numerically align, putting the fill between the sign character and the value.
 
-   The output is clipped by :token:`max` width characters and by the end of the buffer.
-   :token:`precision` is used by floating point values to specify the number of places of precision.
+   The output is clipped by :token:`~spec:max` width characters and by the end of the buffer.
+   :token:`~spec:precision` is used by floating point values to specify the number of places of
+   precision.
 
-   :token:`type` is used to indicate type specific formatting. For integers it indicates the output
-   radix and if ``#`` is present the radix is prefix is generated (one of ``0xb``, ``0``, ``0x``).
-   Format types of the same letter are equivalent, varying only in the character case used for
-   output. Most commonly 'x' prints values in lower cased hexadecimal (:code:`0x1337beef`) while 'X'
-   prints in upper case hexadecimal (:code:`0X1337BEEF`). Note there is no upper case decimal or
+   :token:`~spec:type` is used to indicate type specific formatting. For integers it indicates the
+   output radix and if ``#`` is present the radix is prefix is generated (one of ``0xb``, ``0``,
+   ``0x``). Format types of the same letter are equivalent, varying only in the character case used
+   for output. Most commonly 'x' prints values in lower cased hexadecimal (:code:`0x1337beef`) while
+   'X' prints in upper case hexadecimal (:code:`0X1337BEEF`). Note there is no upper case decimal or
    octal type because case is irrelevant for those.
 
       = ===============
@@ -437,7 +439,7 @@ reasonable without the programmer needing to be explicit.
       = ===============
 
    For several specializations the hexadecimal format is taken to indicate printing the value as if
-   it were a hexidecimal value, in effect providing a hex dump of the value. This is the case for
+   it were a hexadecimal value, in effect providing a hex dump of the value. This is the case for
    :code:`std::string_view` and therefore a hex dump of an object can be done by creating a
    :code:`std::string_view` covering the data and then printing it with :code:`{:x}`.
 
@@ -446,7 +448,7 @@ reasonable without the programmer needing to be explicit.
    type 's' yields ``true` or ``false``. The upper case form, 'S', applies only in these cases where the
    formatter generates the text, it does not apply to normally text based values unless specifically noted.
 
-:token:`extension`
+:token:`~format:extension`
    Text (excluding braces) that is passed to the type specific formatter function. This can be used
    to provide extensions for specific argument types (e.g., IP addresses). The base logic ignores it
    but passes it on to the formatting function which can then behave different based on the
@@ -488,8 +490,8 @@ Some examples, comparing :code:`snprintf` and :func:`BufferWriter::print`. ::
 Enumerations become easier. Note in this case argument indices are used in order to print both a
 name and a value for the enumeration. A key benefit here is the lack of need for a developer to know
 the specific free function or method needed to do the name lookup. In this case,
-:code:`HttpDebugNuames::get_server_state_name`. Rather than every developer having to memorize the
-assocation between the type and the name lookup function, or grub through the code hoping for an
+:code:`HttpDebugNames::get_server_state_name`. Rather than every developer having to memorize the
+association between the type and the name lookup function, or grub through the code hoping for an
 example, the compiler is told once and henceforth does the lookup. The internal implementation of
 this is :ref:`here <bwf-http-debug-name-example>` ::
 
@@ -540,9 +542,9 @@ User Defined Formatting
 To get the full benefit of type safe formatting it is necessary to provide type specific formatting
 functions which are called when a value of that type is formatted. This is how type specific
 knowledge such as the names of enumeration values are encoded in a single location. Additional type
-specific formatting can be provided via the :token:`extension` field. Without this, special formatting
-requires extra functions and additional work at the call site, rather than a single consolidated
-formatting function.
+specific formatting can be provided via the :token:`~format:extension` field. Without this, special
+formatting requires extra functions and additional work at the call site, rather than a single
+consolidated formatting function.
 
 To provide a formatter for a type :code:`V` the function :code:`bwformat` is overloaded. The signature
 would look like this::
@@ -550,7 +552,7 @@ would look like this::
    BufferWriter& ts::bwformat(BufferWriter& w, BWFSpec const& spec, V const& v)
 
 :arg:`w` is the output and :arg:`spec` the parsed specifier, including the extension (if any). The
-calling framework will handle basic alignment as per :arg:`spec` therfore the overload does not need
+calling framework will handle basic alignment as per :arg:`spec` therefore the overload does not need
 to unless the alignment requirements are more detailed (e.g. integer alignment operations) or
 performance is critical. In the latter case the formatter should make sure to use at least the
 minimum width in order to disable any additional alignment operation.
@@ -656,11 +658,11 @@ These are types for which there exists a type specific BWF formatter.
    'p' or 'P'
       The pointer and length value of the view in lower ('p') or upper ('P') case.
 
-   The :token:`precision` is interpreted specially for this type to mean "skip :token:`precision`
-   initial characters". When combined with :token:`max` this allows a mechanism for printing
-   substrings of the :code:`std::string_view`. For instance, to print the 10th through 20th characters
-   the format ``{:.10,20}`` would suffice. Given the method :code:`substr` for :code:`std::string_view`
-   is cheap, it's unclear how useful this is.
+   The :token:`~spec:precision` is interpreted specially for this type to mean "skip
+   :token:`~spec:precision` initial characters". When combined with :token:`~spec:max` this allows a
+   mechanism for printing substrings of the :code:`std::string_view`. For instance, to print the
+   10th through 20th characters the format ``{:.10,20}`` would suffice. Given the method
+   :code:`substr` for :code:`std::string_view` is cheap, it's unclear how useful this is.
 
 :code:`sockaddr const*`
    The IP address is printed. Fill is used to fill in address segments if provided, not to the
@@ -812,10 +814,10 @@ These are the existing format classes in header file ``bfw_std_format.h``. All a
       As previous except the epoch is the current epoch at the time the constructor is invoked.
       Therefore if the current time is to be printed the default constructor can be used.
 
-   When used the format specification can take an extention of "local" which formats the time as
+   When used the format specification can take an extension of "local" which formats the time as
    local time. Otherwise it is GMT. ``w.print("{}", Date("%H:%M"));`` will print the hour and minute
    as GMT values. ``w.print("{::local}", Date("%H:%M"));`` will When used the format specification
-   can take an extention of "local" which formats the time as local time. Otherwise it is GMT.
+   can take an extension of "local" which formats the time as local time. Otherwise it is GMT.
    ``w.print("{}", Date("%H:%M"));`` will print the hour and minute as GMT values.
    ``w.print("{::local}", Date("%H:%M"));`` will print the hour and minute in the local time zone.
    ``w.print("{::gmt}"), ...);`` will output in GMT if additional explicitness is desired.
@@ -885,7 +887,7 @@ For example, to have the same output as the normal diagnostic messages with a ti
    bw.print("{timestamp} {ts-thread} Counter is {}", counter);
 
 Note that even though no argument is provided the global names do not count as part of the argument
-indexing, therefore the preceeding example could be written as::
+indexing, therefore the preceding example could be written as::
 
    bw.print("{timestamp} {ts-thread} Counter is {0}", counter);
 
@@ -962,7 +964,7 @@ Reference
    .. function:: BufferWriter & fill(size_t n)
 
       Increase the output size by :arg:`n` without changing the buffer contents. This is used in
-      conjuction with :func:`BufferWriter::auxBuffer` after writing output to the buffer returned by
+      conjunction with :func:`BufferWriter::auxBuffer` after writing output to the buffer returned by
       that method. If this method is not called then such output will not be counted by
       :func:`BufferWriter::size` and will be overwritten by subsequent output.
 

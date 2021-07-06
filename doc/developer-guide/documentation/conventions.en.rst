@@ -64,7 +64,7 @@ Bracketed Monospace
     Example::
 
         To examine a performance statistic of a running |TS| instance, you may
-        run the comand ``traffic_ctl metric get <name>``, replacing ``<name>`` with
+        run the command ``traffic_ctl metric get <name>``, replacing ``<name>`` with
         the statistic you wish to examine.
 
 Ellipsis
@@ -87,7 +87,7 @@ Notes
 Important Notes
     The use of ``.. important::`` callout blocks should be limited only to those
     situations in which critical information needs to be prominently displayed.
-    Suitable use would include noting that resizing a cache voiume will result
+    Suitable use would include noting that resizing a cache volume will result
     in |TS| resetting the cache contents to empty when the service is started.
     This is information that may not be obvious, or safe to assume, for the
     reader but which can significantly (and negatively) impact the use and
@@ -114,7 +114,7 @@ Definition Lists
     any series of terms need to be explained outside of the formal glossary.
 
 Ordered Lists
-    Explicityly numbered ordered lists should be avoided. |RST| provides two
+    Explicitly numbered ordered lists should be avoided. |RST| provides two
     methods of marking up ordered, numbered lists, and the automatic numbering
     form should be used in all cases where surrounding paragraphs do not need
     to reference individual list entries.
@@ -135,7 +135,7 @@ the cell content cannot be wrapped because there are no breaking spaces present
 underscores, dashes, and so no, but no whitespace), the table may still require
 overflowing into the page margin. Whenever possible, please try to avoid the
 use of tables when presenting information that will lead to this, as it greatly
-hampers readibility on smaller screens, especially tablets and mobile devices.
+hampers readability on smaller screens, especially tablets and mobile devices.
 Alternatives such as a definition list may be better suited to the content.
 
 Tables may be marked up using any of the |RST| styles, though it is generally
@@ -152,7 +152,7 @@ and shortcut listing in the file ``doc/common.defs``. This file should be
 included by all |RST| source files after the standard project copyright notice.
 
 The file should always be included using a relative path from the current file's
-location. Any commonly or repeatedly used abbreviations, especialy those of
+location. Any commonly or repeatedly used abbreviations, especially those of
 product, company, or person names, should be added to the definitions file as
 useful to avoid repetitive typing and ensure accurate spellings or legal usage.
 
@@ -206,7 +206,7 @@ resource, that reference is more ideally integrated as a standard |RST|
 reference.
 
 For more descriptive content that might have been included as a footnote, it is
-less disruptive and more useful to choose between reformullating the text to
+less disruptive and more useful to choose between reformatting the text to
 simply include the additional wording, or consider the use of an inline note
 block.
 

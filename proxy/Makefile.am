@@ -18,7 +18,12 @@
 
 include $(top_srcdir)/build/tidy.mk
 
+include private/Makefile.inc
+
 SUBDIRS = hdrs shared http http2 logging
+if ENABLE_QUIC
+SUBDIRS += http3
+endif
 
 noinst_LIBRARIES = libproxy.a
 
@@ -27,17 +32,21 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/include \
 	-I$(abs_top_srcdir)/lib \
 	-I$(abs_srcdir)/http \
+	-I$(abs_srcdir)/http2 \
+	-I$(abs_srcdir)/http3 \
 	-I$(abs_srcdir)/logging \
 	-I$(abs_srcdir)/http/remap \
 	-I$(abs_srcdir)/hdrs \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/lib/yamlcpp/include \
 	$(TS_INCLUDES)
 
 noinst_HEADERS = \
 	Show.h
 
 libproxy_a_SOURCES = \
+	$(PRIVATE_SOURCES_) \
 	CacheControl.cc \
 	CacheControl.h \
 	ControlBase.cc \
@@ -61,6 +70,7 @@ libproxy_a_SOURCES = \
 	ProtocolProbeSessionAccept.h \
 	ProxySession.cc \
 	ProxySession.h \
+	PoolableSession.h \
 	ProxyTransaction.cc \
 	ProxyTransaction.h \
 	ReverseProxy.cc \
@@ -164,3 +174,6 @@ install-data-hook:
 		chown -R $(pkgsysuser):$(pkgsysgroup) $(DESTDIR)$(pkgsysconfdir) $(DESTDIR)$(pkgdatadir);\
 	fi
 	-echo "<TS_VERSION> $(PACKAGE_VERSION)" > $(DESTDIR)$(pkgsysconfdir)/trafficserver-release
+
+clang-tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

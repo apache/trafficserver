@@ -36,7 +36,7 @@ of operating systems and common distribution releases.
 
    -- `VagrantUp website <https://www.vagrantup.com/about.html>`_
 
-Vagrant can be used in combination with any of the popular configurtion
+Vagrant can be used in combination with any of the popular configuration
 management and automation tools, such as `Chef <https://www.chef.io/chef/>`_,
 `Puppet <https://puppetlabs.com/>`_, `Ansible <http://www.ansible.com/home>`_,
 and more. The Vagrantfile included in the |TS| repository happens to make use

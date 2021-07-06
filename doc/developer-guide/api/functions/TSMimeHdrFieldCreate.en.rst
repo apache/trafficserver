@@ -24,7 +24,9 @@ TSMimeHdrFieldCreate
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc hdr, TSMLoc * out)
 .. function:: TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc hdr, const char * name, int name_len, TSMLoc * out)
@@ -41,7 +43,7 @@ in a header, usually via :func:`TSMimeHdrFieldNameSet`. It is almost always more
 :func:`TSMimeHdrFieldCreateNamed` which combines these two steps, creating the field and then
 setting the name to :arg:`name`.
 
-For both functions a reference to the new field is returned via arg:`out`.
+For both functions a reference to the new field is returned via :arg:`out`.
 
 The field created is not in a header even though it is in the same buffer. It can be added to a
 header with :func:`TSMimeHdrFieldAppend`. The field also has no value, only a name. If a value is

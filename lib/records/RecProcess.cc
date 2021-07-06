@@ -188,15 +188,8 @@ struct sync_cont : public Continuation {
   int
   sync(int /* event */, Event * /* e */)
   {
-    RecBool disabled = false;
-    RecGetRecordBool("proxy.config.disable_configuration_modification", &disabled);
-
     send_push_message();
     RecSyncStatsFile();
-
-    if (!disabled && RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
-      RecWriteConfigFile(m_tb);
-    }
 
     Debug("statsproc", "sync_cont() processed");
 
@@ -231,7 +224,7 @@ void
 RecMessageInit()
 {
   ink_assert(g_mode_type != RECM_NULL);
-  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, RecMessageRecvThis, nullptr);
+  pmgmt->registerMgmtCallback(MGMT_EVENT_LIBRECORDS, &RecMessageRecvThis);
   message_initialized_p = true;
 }
 
@@ -300,9 +293,9 @@ RecSignalManager(int id, const char *msg, size_t msgsize)
 }
 
 int
-RecRegisterManagerCb(int _signal, RecManagerCb _fn, void *_data)
+RecRegisterManagerCb(int _signal, RecManagerCb const &_fn)
 {
-  return pmgmt->registerMgmtCallback(_signal, _fn, _data);
+  return pmgmt->registerMgmtCallback(_signal, _fn);
 }
 
 //-------------------------------------------------------------------------
@@ -322,7 +315,7 @@ RecMessageSend(RecMessage *msg)
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg->o_end = msg->o_write;
     msg_size   = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, (char *)msg, msg_size);
+    pmgmt->signalManager(MGMT_SIGNAL_LIBRECORDS, reinterpret_cast<char *>(msg), msg_size);
   }
 
   return REC_ERR_OKAY;

@@ -78,7 +78,7 @@ what the function does:
 
    -  If the transformation vconnection has been closed, then
       ``append_transform`` calls ``my_data_destroy`` to destroy the
-      vonnection.
+      vconnection.
 
    -  If ``append_transform`` receives an error event, then it calls
       back the continuation to let it know it has completed the write

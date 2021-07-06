@@ -1,0 +1,6 @@
+# leaks in test_X509HostnameValidator
+leak:libcrypto.so.1.1
+# for OpenSSL 1.0.2:
+leak:CRYPTO_malloc
+leak:CRYPTO_realloc
+leak:ConsCell

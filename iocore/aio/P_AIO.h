@@ -53,6 +53,7 @@ struct AIOCallbackInternal : public AIOCallback {
   AIOCallbackInternal()
   {
     memset((void *)&(this->aiocb), 0, sizeof(this->aiocb));
+    this->aiocb.aio_fildes = -1;
     SET_HANDLER(&AIOCallbackInternal::io_complete);
   }
 };
@@ -85,25 +86,20 @@ struct AIOCallbackInternal : public AIOCallback {
 
   int io_complete(int event, void *data);
 
-  AIOCallbackInternal()
-  {
-    aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
-    SET_HANDLER(&AIOCallbackInternal::io_complete);
-  }
+  AIOCallbackInternal() { SET_HANDLER(&AIOCallbackInternal::io_complete); }
 };
 
 struct AIO_Reqs {
-  Que(AIOCallback, link) aio_todo;      /* queue for holding non-http requests */
-  Que(AIOCallback, link) http_aio_todo; /* queue for http requests */
-                                        /* Atomic list to temporarily hold the request if the
-                                           lock for a particular queue cannot be acquired */
+  Que(AIOCallback, link) aio_todo; /* queue for AIO operations */
+                                   /* Atomic list to temporarily hold the request if the
+                                      lock for a particular queue cannot be acquired */
   ASLL(AIOCallbackInternal, alink) aio_temp_list;
   ink_mutex aio_mutex;
   ink_cond aio_cond;
-  int index           = 0; /* position of this struct in the aio_reqs array */
-  int pending         = 0; /* number of outstanding requests on the disk */
-  int queued          = 0; /* total number of aio_todo and http_todo requests */
-  int filedes         = 0; /* the file descriptor for the requests */
+  int index           = 0;  /* position of this struct in the aio_reqs array */
+  int pending         = 0;  /* number of outstanding requests on the disk */
+  int queued          = 0;  /* total number of aio_todo requests */
+  int filedes         = -1; /* the file descriptor for the requests or status IO_NOT_IN_PROGRESS */
   int requests_queued = 0;
 };
 

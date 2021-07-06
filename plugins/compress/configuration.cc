@@ -21,11 +21,14 @@
   limitations under the License.
  */
 
+#include "ink_autoconf.h"
 #include "configuration.h"
 #include <fstream>
 #include <algorithm>
 #include <vector>
 #include <fnmatch.h>
+
+#include "debug_macros.h"
 
 namespace Gzip
 {
@@ -46,7 +49,7 @@ ltrim_if(string &s, int (*fp)(int))
 void
 rtrim_if(string &s, int (*fp)(int))
 {
-  for (ssize_t i = (ssize_t)s.size() - 1; i >= 0; i--) {
+  for (ssize_t i = static_cast<ssize_t>(s.size()) - 1; i >= 0; i--) {
     if (fp(s[i])) {
       s.erase(i, 1);
     } else {
@@ -102,6 +105,7 @@ enum ParserState {
   kParseRemoveAcceptEncoding,
   kParseEnable,
   kParseCache,
+  kParseRangeRequest,
   kParseFlush,
   kParseAllow,
   kParseMinimumContentLength
@@ -110,7 +114,6 @@ enum ParserState {
 void
 Configuration::add_host_configuration(HostConfiguration *hc)
 {
-  hc->hold(); // We hold a lease on the HostConfig while it's in this container
   host_configurations_.push_back(hc);
 }
 
@@ -152,16 +155,7 @@ Configuration::find(const char *host, int host_length)
     }
   }
 
-  host_configuration->hold(); // Hold a lease
   return host_configuration;
-}
-
-void
-Configuration::release_all()
-{
-  for (auto &host_configuration : host_configurations_) {
-    host_configuration->release();
-  }
 }
 
 bool
@@ -204,7 +198,10 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
 
   for (StringContainer::iterator it = compressible_content_types_.begin(); it != compressible_content_types_.end(); ++it) {
     const char *match_string = it->c_str();
-    bool exclude             = match_string[0] == '!';
+    if (match_string == nullptr) {
+      continue;
+    }
+    bool exclude = match_string[0] == '!';
 
     if (exclude) {
       ++match_string; // skip '!'
@@ -351,6 +348,8 @@ Configuration::Parse(const char *path)
           state = kParseEnable;
         } else if (token == "cache") {
           state = kParseCache;
+        } else if (token == "range-request") {
+          state = kParseRangeRequest;
         } else if (token == "flush") {
           state = kParseFlush;
         } else if (token == "supported-algorithms") {
@@ -381,6 +380,10 @@ Configuration::Parse(const char *path)
         break;
       case kParseCache:
         current_host_configuration->set_cache(token == "true");
+        state = kParseStart;
+        break;
+      case kParseRangeRequest:
+        current_host_configuration->set_range_request(token == "true");
         state = kParseStart;
         break;
       case kParseFlush:

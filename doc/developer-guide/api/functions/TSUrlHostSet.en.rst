@@ -27,7 +27,9 @@ Traffic Server URL component manipulation API.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSUrlHostSet(TSMBuffer bufp, TSMLoc offset, const char * value, int length)
 .. function:: TSReturnCode TSUrlSchemeSet(TSMBuffer bufp, TSMLoc offset, const char * value, int length)

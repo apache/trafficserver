@@ -20,7 +20,7 @@ state "LocalManager\nruns in traffic_manager main event loop" as traffic_manager
         state "poll socket" as tm_poll_sock : ""mgmt_select""
         state "new connection" as tm_new_process : register new client socket fd\nto start getting msgs from\nclient
         state "new message" as tm_new_message : new message from process
-        state "handle msg" as tm_handle_msg : ""handleMgmtMsgFromProcesses"" will\noften ""signalAlarm"" with recieved\nmsg_id
+        state "handle msg" as tm_handle_msg : ""handleMgmtMsgFromProcesses"" will\noften ""signalAlarm"" with received\nmsg_id
 
         tm_poll_sock -d-> tm_new_process : new process trying to connect
         tm_poll_sock -d-> tm_new_message : msg from ""traffic_server""

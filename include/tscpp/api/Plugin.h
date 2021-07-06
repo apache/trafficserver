@@ -18,7 +18,7 @@
 /**
  * @file Plugin.h
  *
- * @brief Contains the base interface used in creating Global and Transaciton plugins.
+ * @brief Contains the base interface used in creating Global and Transaction plugins.
  * \note This interface can never be implemented directly, it should be implemented
  *   through extending GlobalPlugin, TransactionPlugin, or TransformationPlugin.
  */
@@ -49,16 +49,17 @@ public:
    * and TransactionPlugin::registerHook().
    */
   enum HookType {
-    HOOK_READ_REQUEST_HEADERS_PRE_REMAP = 0, /**< This hook will be fired before remap has occured. */
-    HOOK_READ_REQUEST_HEADERS_POST_REMAP,    /**< This hook will be fired directly after remap has occured. */
+    HOOK_READ_REQUEST_HEADERS_PRE_REMAP = 0, /**< This hook will be fired before remap has occurred. */
+    HOOK_READ_REQUEST_HEADERS_POST_REMAP,    /**< This hook will be fired directly after remap has occurred. */
     HOOK_SEND_REQUEST_HEADERS,               /**< This hook will be fired right before request headers are sent to the origin */
     HOOK_READ_RESPONSE_HEADERS, /**< This hook will be fired right after response headers have been read from the origin */
     HOOK_SEND_RESPONSE_HEADERS, /**< This hook will be fired right before the response headers are sent to the client */
     HOOK_OS_DNS,                /**< This hook will be fired right after the OS DNS lookup */
     HOOK_READ_REQUEST_HEADERS,  /**< This hook will be fired after the request is read. */
     HOOK_READ_CACHE_HEADERS,    /**< This hook will be fired after the CACHE hdrs. */
-    HOOK_CACHE_LOOKUP_COMPLETE, /**< This hook will be fired after caceh lookup complete. */
-    HOOK_SELECT_ALT             /**< This hook will be fired after select alt. */
+    HOOK_CACHE_LOOKUP_COMPLETE, /**< This hook will be fired after cache lookup complete. */
+    HOOK_TXN_CLOSE, /**< This hook will be fired after send response headers, only for TransactionPlugins::registerHook()!. */
+    HOOK_SELECT_ALT /**< This hook will be fired after select alt. */
   };
 
   /**
@@ -138,6 +139,15 @@ public:
    */
   virtual void
   handleReadCacheLookupComplete(Transaction &transaction)
+  {
+    transaction.resume();
+  };
+
+  /**
+   * This method must be implemented when you hook HOOK_TXN_CLOSE
+   */
+  virtual void
+  handleTxnClose(Transaction &transaction)
   {
     transaction.resume();
   };

@@ -30,7 +30,7 @@
 class HeaderIterator
 {
 public:
-  HeaderIterator(const StringMap::iterator &it) { _it = it; }
+  HeaderIterator(const HeaderMultiMap::iterator &it) { _it = it; }
   HeaderIterator(const HeaderIterator &i) { _it = i._it; }
   ~HeaderIterator() {}
   HeaderIterator &
@@ -69,7 +69,7 @@ public:
     *len = _it->second.length();
     return _it->second.c_str();
   }
-  StringMap::iterator _it;
+  HeaderMultiMap::iterator _it;
 };
 
 /* Define a mock API to be used in unit-tests */
@@ -115,13 +115,13 @@ public:
   String _host;
   String _path;
   String _query;
-  StringMap _headers;
+  HeaderMultiMap _headers;
 };
 
 /* Expose the following methods only to the unit tests */
 String base16Encode(const char *in, size_t inLen);
 String uriEncode(const String &in, bool isObjectName = false);
-String uriDecode(const String &in);
+bool isUriEncoded(const String &in, bool isObjectName = false);
 String lowercase(const char *in, size_t inLen);
 const char *trimWhiteSpaces(const char *in, size_t inLen, size_t &newLen);
 

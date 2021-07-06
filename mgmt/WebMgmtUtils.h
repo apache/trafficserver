@@ -62,9 +62,9 @@ bool varFloatFromName(const char *varName, RecFloat *value);
 bool varCounterFromName(const char *varName, RecCounter *value);
 bool varDataFromName(RecDataT varType, const char *varName, RecData *value);
 
-// No conversion done.  varName must represnt a value of the appropriate
+// No conversion done.  varName must represent a value of the appropriate
 //  type
-// Default arguement "convert" added to allow great flexiblity in type checking
+// Default argument "convert" added to allow great flexibility in type checking
 bool varSetInt(const char *varName, RecInt value, bool convert = false);
 bool varSetCounter(const char *varName, RecCounter value, bool convert = false);
 bool varSetFloat(const char *varName, RecFloat value, bool convert = false);

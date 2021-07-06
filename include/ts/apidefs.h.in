@@ -43,7 +43,7 @@
  */
 
 #include <stdbool.h>
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -51,11 +51,65 @@
 #define tsapi
 #endif
 
+/** Apply printf format string compile-time argument checking to a function.
+ *
+ *
+ * For example, given the following function from DiagsTypes.h:
+ *
+ * @code
+ * class Diags {
+ *
+ * ...
+ *
+ * void
+ * print(
+ *     const char *tag,
+ *     DiagsLevel level,
+ *     const SourceLocation *loc,
+ *     const char *fmt,
+ *     ...) const;
+ *
+ * ...
+ *
+ * };
+ * @endcode
+ *
+ * This macro can be used to apply compiler checking for ... against the fmt
+ * argument like so:
+ *
+ *
+ * @code
+ * class Diags {
+ *
+ * ...
+ *
+ * void
+ * print(
+ *     const char *tag,
+ *     DiagsLevel level,
+ *     const SourceLocation *loc,
+ *     const char *fmt,
+ *     ...) const TS_PRINTFLIKE(5, 6);
+ *
+ * ...
+ *
+ * };
+ * @endcode
+ *
+ * Note in this case, (5, 6) rather than (4, 5) is passed because `this`
+ * counts as the implicit first parameter of this member function.
+ *
+ * @param[in] fmt_index The index of the format string argument, with argument
+ * indexing starting at 1.
+ *
+ * @param[in] arg_index The index of the first format argument string, with
+ * argument indexing starting at 1.
+ */
 #if !defined(TS_PRINTFLIKE)
 #if defined(__GNUC__) || defined(__clang__)
-#define TS_PRINTFLIKE(fmt, arg) __attribute__((format(printf, fmt, arg)))
+#define TS_PRINTFLIKE(fmt_index, arg_index) __attribute__((format(printf, fmt_index, arg_index)))
 #else
-#define TS_PRINTFLIKE(fmt, arg)
+#define TS_PRINTFLIKE(fmt_index, arg_index)
 #endif
 #endif
 
@@ -196,6 +250,7 @@ typedef enum {
   TS_HTTP_STATUS_PRECONDITION_REQUIRED           = 428,
   TS_HTTP_STATUS_TOO_MANY_REQUESTS               = 429,
   TS_HTTP_STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
+  TS_HTTP_STATUS_UNAVAILABLE_FOR_LEGAL_REASONS   = 451,
   TS_HTTP_STATUS_INTERNAL_SERVER_ERROR           = 500,
   TS_HTTP_STATUS_NOT_IMPLEMENTED                 = 501,
   TS_HTTP_STATUS_BAD_GATEWAY                     = 502,
@@ -283,9 +338,10 @@ typedef enum {
   // Putting the SSL hooks in the same enum space
   // So both sets of hooks can be set by the same Hook function
   TS_SSL_FIRST_HOOK,
-  TS_VCONN_START_HOOK = TS_SSL_FIRST_HOOK,
+  TS_VCONN_START_HOOK      = TS_SSL_FIRST_HOOK,
   TS_VCONN_PRE_ACCEPT_HOOK = TS_VCONN_START_HOOK, // Deprecated but compatible for now.
   TS_VCONN_CLOSE_HOOK,
+  TS_SSL_CLIENT_HELLO_HOOK,
   TS_SSL_SNI_HOOK,
   TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
   TS_SSL_SERVERNAME_HOOK,
@@ -381,6 +437,7 @@ typedef enum {
   TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK,
   TS_LIFECYCLE_MSG_HOOK,
   TS_LIFECYCLE_TASK_THREADS_READY_HOOK,
+  TS_LIFECYCLE_SSL_SECRET_HOOK,
   TS_LIFECYCLE_SHUTDOWN_HOOK,
   TS_LIFECYCLE_LAST_HOOK
 } TSLifecycleHookID;
@@ -393,90 +450,90 @@ typedef enum {
 
  */
 typedef enum {
-  TS_EVENT_NONE                                 = 0,
-  TS_EVENT_IMMEDIATE                            = 1,
-  TS_EVENT_TIMEOUT                              = 2,
-  TS_EVENT_ERROR                                = 3,
-  TS_EVENT_CONTINUE                             = 4,
+  TS_EVENT_NONE      = 0,
+  TS_EVENT_IMMEDIATE = 1,
+  TS_EVENT_TIMEOUT   = 2,
+  TS_EVENT_ERROR     = 3,
+  TS_EVENT_CONTINUE  = 4,
 
-  TS_EVENT_VCONN_READ_READY                     = 100,
-  TS_EVENT_VCONN_WRITE_READY                    = 101,
-  TS_EVENT_VCONN_READ_COMPLETE                  = 102,
-  TS_EVENT_VCONN_WRITE_COMPLETE                 = 103,
-  TS_EVENT_VCONN_EOS                            = 104,
-  TS_EVENT_VCONN_INACTIVITY_TIMEOUT             = 105,
-  TS_EVENT_VCONN_ACTIVE_TIMEOUT                 = 106,
-  TS_EVENT_VCONN_START                          = 107,
-  TS_EVENT_VCONN_CLOSE                          = 108,
-  TS_EVENT_VCONN_OUTBOUND_START                 = 109,
-  TS_EVENT_VCONN_OUTBOUND_CLOSE                 = 110,
-  TS_EVENT_VCONN_PRE_ACCEPT                     = TS_EVENT_VCONN_START, // Deprecated but still compatible
+  TS_EVENT_VCONN_READ_READY         = 100,
+  TS_EVENT_VCONN_WRITE_READY        = 101,
+  TS_EVENT_VCONN_READ_COMPLETE      = 102,
+  TS_EVENT_VCONN_WRITE_COMPLETE     = 103,
+  TS_EVENT_VCONN_EOS                = 104,
+  TS_EVENT_VCONN_INACTIVITY_TIMEOUT = 105,
+  TS_EVENT_VCONN_ACTIVE_TIMEOUT     = 106,
+  TS_EVENT_VCONN_START              = 107,
+  TS_EVENT_VCONN_CLOSE              = 108,
+  TS_EVENT_VCONN_OUTBOUND_START     = 109,
+  TS_EVENT_VCONN_OUTBOUND_CLOSE     = 110,
+  TS_EVENT_VCONN_PRE_ACCEPT         = TS_EVENT_VCONN_START, // Deprecated but still compatible
 
-  TS_EVENT_NET_CONNECT                          = 200,
-  TS_EVENT_NET_CONNECT_FAILED                   = 201,
-  TS_EVENT_NET_ACCEPT                           = 202,
-  TS_EVENT_NET_ACCEPT_FAILED                    = 204,
+  TS_EVENT_NET_CONNECT        = 200,
+  TS_EVENT_NET_CONNECT_FAILED = 201,
+  TS_EVENT_NET_ACCEPT         = 202,
+  TS_EVENT_NET_ACCEPT_FAILED  = 204,
 
-  TS_EVENT_INTERNAL_206                         = 206,
-  TS_EVENT_INTERNAL_207                         = 207,
-  TS_EVENT_INTERNAL_208                         = 208,
-  TS_EVENT_INTERNAL_209                         = 209,
-  TS_EVENT_INTERNAL_210                         = 210,
-  TS_EVENT_INTERNAL_211                         = 211,
-  TS_EVENT_INTERNAL_212                         = 212,
+  TS_EVENT_INTERNAL_206 = 206,
+  TS_EVENT_INTERNAL_207 = 207,
+  TS_EVENT_INTERNAL_208 = 208,
+  TS_EVENT_INTERNAL_209 = 209,
+  TS_EVENT_INTERNAL_210 = 210,
+  TS_EVENT_INTERNAL_211 = 211,
+  TS_EVENT_INTERNAL_212 = 212,
 
-  TS_EVENT_HOST_LOOKUP                          = 500,
+  TS_EVENT_HOST_LOOKUP = 500,
 
-  TS_EVENT_CACHE_OPEN_READ                      = 1102,
-  TS_EVENT_CACHE_OPEN_READ_FAILED               = 1103,
-  TS_EVENT_CACHE_OPEN_WRITE                     = 1108,
-  TS_EVENT_CACHE_OPEN_WRITE_FAILED              = 1109,
-  TS_EVENT_CACHE_REMOVE                         = 1112,
-  TS_EVENT_CACHE_REMOVE_FAILED                  = 1113,
-  TS_EVENT_CACHE_SCAN                           = 1120,
-  TS_EVENT_CACHE_SCAN_FAILED                    = 1121,
-  TS_EVENT_CACHE_SCAN_OBJECT                    = 1122,
-  TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED         = 1123,
-  TS_EVENT_CACHE_SCAN_OPERATION_FAILED          = 1124,
-  TS_EVENT_CACHE_SCAN_DONE                      = 1125,
-  TS_EVENT_CACHE_LOOKUP                         = 1126,
-  TS_EVENT_CACHE_READ                           = 1127,
-  TS_EVENT_CACHE_DELETE                         = 1128,
-  TS_EVENT_CACHE_WRITE                          = 1129,
-  TS_EVENT_CACHE_WRITE_HEADER                   = 1130,
-  TS_EVENT_CACHE_CLOSE                          = 1131,
-  TS_EVENT_CACHE_LOOKUP_READY                   = 1132,
-  TS_EVENT_CACHE_LOOKUP_COMPLETE                = 1133,
-  TS_EVENT_CACHE_READ_READY                     = 1134,
-  TS_EVENT_CACHE_READ_COMPLETE                  = 1135,
+  TS_EVENT_CACHE_OPEN_READ              = 1102,
+  TS_EVENT_CACHE_OPEN_READ_FAILED       = 1103,
+  TS_EVENT_CACHE_OPEN_WRITE             = 1108,
+  TS_EVENT_CACHE_OPEN_WRITE_FAILED      = 1109,
+  TS_EVENT_CACHE_REMOVE                 = 1112,
+  TS_EVENT_CACHE_REMOVE_FAILED          = 1113,
+  TS_EVENT_CACHE_SCAN                   = 1120,
+  TS_EVENT_CACHE_SCAN_FAILED            = 1121,
+  TS_EVENT_CACHE_SCAN_OBJECT            = 1122,
+  TS_EVENT_CACHE_SCAN_OPERATION_BLOCKED = 1123,
+  TS_EVENT_CACHE_SCAN_OPERATION_FAILED  = 1124,
+  TS_EVENT_CACHE_SCAN_DONE              = 1125,
+  TS_EVENT_CACHE_LOOKUP                 = 1126,
+  TS_EVENT_CACHE_READ                   = 1127,
+  TS_EVENT_CACHE_DELETE                 = 1128,
+  TS_EVENT_CACHE_WRITE                  = 1129,
+  TS_EVENT_CACHE_WRITE_HEADER           = 1130,
+  TS_EVENT_CACHE_CLOSE                  = 1131,
+  TS_EVENT_CACHE_LOOKUP_READY           = 1132,
+  TS_EVENT_CACHE_LOOKUP_COMPLETE        = 1133,
+  TS_EVENT_CACHE_READ_READY             = 1134,
+  TS_EVENT_CACHE_READ_COMPLETE          = 1135,
 
-  TS_EVENT_INTERNAL_1200                        = 1200,
+  TS_EVENT_INTERNAL_1200 = 1200,
 
-  TS_EVENT_SSL_SESSION_GET                      = 2000,
-  TS_EVENT_SSL_SESSION_NEW                      = 2001,
-  TS_EVENT_SSL_SESSION_REMOVE                   = 2002,
+  TS_EVENT_SSL_SESSION_GET    = 2000,
+  TS_EVENT_SSL_SESSION_NEW    = 2001,
+  TS_EVENT_SSL_SESSION_REMOVE = 2002,
 
-  TS_EVENT_AIO_DONE                             = 3900,
+  TS_EVENT_AIO_DONE = 3900,
 
-  TS_EVENT_HTTP_CONTINUE                        = 60000,
-  TS_EVENT_HTTP_ERROR                           = 60001,
-  TS_EVENT_HTTP_READ_REQUEST_HDR                = 60002,
-  TS_EVENT_HTTP_OS_DNS                          = 60003,
-  TS_EVENT_HTTP_SEND_REQUEST_HDR                = 60004,
-  TS_EVENT_HTTP_READ_CACHE_HDR                  = 60005,
-  TS_EVENT_HTTP_READ_RESPONSE_HDR               = 60006,
-  TS_EVENT_HTTP_SEND_RESPONSE_HDR               = 60007,
-  TS_EVENT_HTTP_REQUEST_TRANSFORM               = 60008,
-  TS_EVENT_HTTP_RESPONSE_TRANSFORM              = 60009,
-  TS_EVENT_HTTP_SELECT_ALT                      = 60010,
-  TS_EVENT_HTTP_TXN_START                       = 60011,
-  TS_EVENT_HTTP_TXN_CLOSE                       = 60012,
-  TS_EVENT_HTTP_SSN_START                       = 60013,
-  TS_EVENT_HTTP_SSN_CLOSE                       = 60014,
-  TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE           = 60015,
-  TS_EVENT_HTTP_PRE_REMAP                       = 60016,
-  TS_EVENT_HTTP_POST_REMAP                      = 60017,
-  TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE         = 60018,
+  TS_EVENT_HTTP_CONTINUE                = 60000,
+  TS_EVENT_HTTP_ERROR                   = 60001,
+  TS_EVENT_HTTP_READ_REQUEST_HDR        = 60002,
+  TS_EVENT_HTTP_OS_DNS                  = 60003,
+  TS_EVENT_HTTP_SEND_REQUEST_HDR        = 60004,
+  TS_EVENT_HTTP_READ_CACHE_HDR          = 60005,
+  TS_EVENT_HTTP_READ_RESPONSE_HDR       = 60006,
+  TS_EVENT_HTTP_SEND_RESPONSE_HDR       = 60007,
+  TS_EVENT_HTTP_REQUEST_TRANSFORM       = 60008,
+  TS_EVENT_HTTP_RESPONSE_TRANSFORM      = 60009,
+  TS_EVENT_HTTP_SELECT_ALT              = 60010,
+  TS_EVENT_HTTP_TXN_START               = 60011,
+  TS_EVENT_HTTP_TXN_CLOSE               = 60012,
+  TS_EVENT_HTTP_SSN_START               = 60013,
+  TS_EVENT_HTTP_SSN_CLOSE               = 60014,
+  TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE   = 60015,
+  TS_EVENT_HTTP_PRE_REMAP               = 60016,
+  TS_EVENT_HTTP_POST_REMAP              = 60017,
+  TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE = 60018,
 
   TS_EVENT_LIFECYCLE_PORTS_INITIALIZED          = 60100,
   TS_EVENT_LIFECYCLE_PORTS_READY                = 60101,
@@ -487,15 +544,17 @@ typedef enum {
   TS_EVENT_LIFECYCLE_TASK_THREADS_READY         = 60106,
   TS_EVENT_LIFECYCLE_SHUTDOWN                   = 60107,
 
-  TS_EVENT_INTERNAL_60200                       = 60200,
-  TS_EVENT_INTERNAL_60201                       = 60201,
-  TS_EVENT_INTERNAL_60202                       = 60202,
-  TS_EVENT_SSL_CERT                             = 60203,
-  TS_EVENT_SSL_SERVERNAME                       = 60204,
-  TS_EVENT_SSL_VERIFY_SERVER                    = 60205,
-  TS_EVENT_SSL_VERIFY_CLIENT                    = 60206,
+  TS_EVENT_INTERNAL_60200    = 60200,
+  TS_EVENT_INTERNAL_60201    = 60201,
+  TS_EVENT_INTERNAL_60202    = 60202,
+  TS_EVENT_SSL_CERT          = 60203,
+  TS_EVENT_SSL_SERVERNAME    = 60204,
+  TS_EVENT_SSL_VERIFY_SERVER = 60205,
+  TS_EVENT_SSL_VERIFY_CLIENT = 60206,
+  TS_EVENT_SSL_CLIENT_HELLO  = 60207,
+  TS_EVENT_SSL_SECRET        = 60208,
 
-  TS_EVENT_MGMT_UPDATE                          = 60300
+  TS_EVENT_MGMT_UPDATE = 60300
 } TSEvent;
 #define TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP TS_EVENT_HTTP_PRE_REMAP /* backwards compat */
 
@@ -595,24 +654,6 @@ typedef enum {
   AFTER_BODY,
 } TSFetchWakeUpOptions;
 
-#ifndef _HTTP_PROXY_API_ENUMS_H_
-#define _HTTP_PROXY_API_ENUMS_H_
-/// Server session sharing values - match
-/// Must be identical to definition in HttpProxyAPIEnums.h
-typedef enum {
-  TS_SERVER_SESSION_SHARING_MATCH_NONE,
-  TS_SERVER_SESSION_SHARING_MATCH_BOTH,
-  TS_SERVER_SESSION_SHARING_MATCH_IP,
-  TS_SERVER_SESSION_SHARING_MATCH_HOST
-} TSServerSessionSharingMatchType;
-
-/// Server session sharing values - pool
-/// Must be identical to definition in HttpProxyAPIEnums.h
-typedef enum {
-  TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
-  TS_SERVER_SESSION_SHARING_POOL_THREAD,
-} TSServerSessionSharingPoolType;
-
 /// Values for per server outbound connection tracking group definition.
 /// See proxy.config.http.per_server.match
 typedef enum {
@@ -621,7 +662,6 @@ typedef enum {
   TS_SERVER_OUTBOUND_MATCH_HOST,
   TS_SERVER_OUTBOUND_MATCH_BOTH
 } TSOutboundConnectionMatchType;
-#endif
 
 /* librecords types */
 
@@ -716,7 +756,6 @@ typedef enum {
   TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP,
   TS_CONFIG_HTTP_RESPONSE_SERVER_ENABLED,
   TS_CONFIG_HTTP_INSERT_SQUID_X_FORWARDED_FOR,
-  TS_CONFIG_HTTP_SERVER_TCP_INIT_CWND,
   TS_CONFIG_HTTP_SEND_HTTP11_REQUESTS,
   TS_CONFIG_HTTP_CACHE_HTTP,
   TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE,
@@ -743,8 +782,8 @@ typedef enum {
   TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER,
   TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES,
   TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT,
-  TS_CONFIG_HTTP_POST_CONNECT_ATTEMPTS_TIMEOUT,
   TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME,
+  // Should be removed for 10.0
   TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD,
   TS_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS,
   TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT,
@@ -781,6 +820,7 @@ typedef enum {
   TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES,
   TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY,
   TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT,
+  TS_CONFIG_HTTP_MAX_PROXY_CYCLES,
   TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT,
   TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT,
   TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT,
@@ -792,10 +832,6 @@ typedef enum {
   TS_CONFIG_SSL_CLIENT_CERT_FILENAME = TS_CONFIG_SSL_CERT_FILENAME,
   TS_CONFIG_SSL_CERT_FILEPATH,
   TS_CONFIG_PARENT_FAILURES_UPDATE_HOSTDB,
-  TS_CONFIG_HTTP_CACHE_ENABLE_DEFAULT_VARY_HEADER,
-  TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_TEXT,
-  TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_IMAGES,
-  TS_CONFIG_HTTP_CACHE_VARY_DEFAULT_OTHER,
   TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_MISMATCH,
   TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_LANGUAGE_MISMATCH,
   TS_CONFIG_HTTP_CACHE_IGNORE_ACCEPT_ENCODING_MISMATCH,
@@ -803,20 +839,22 @@ typedef enum {
   TS_CONFIG_HTTP_PARENT_PROXY_FAIL_THRESHOLD,
   TS_CONFIG_HTTP_PARENT_PROXY_RETRY_TIME,
   TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS,
-  TS_CONFIG_HTTP_PARENT_CONNECT_ATTEMPT_TIMEOUT,
   TS_CONFIG_HTTP_NORMALIZE_AE,
   TS_CONFIG_HTTP_INSERT_FORWARDED,
+  TS_CONFIG_HTTP_PROXY_PROTOCOL_OUT,
   TS_CONFIG_HTTP_ALLOW_MULTI_RANGE,
   TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED,
   TS_CONFIG_HTTP_ALLOW_HALF_OPEN,
+  TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS,
   TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX,
   TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH,
-  TS_CONFIG_SSL_CLIENT_VERIFY_SERVER,
   TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY,
   TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES,
   TS_CONFIG_SSL_CLIENT_SNI_POLICY,
   TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME,
   TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME,
+  TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE,
+  TS_CONFIG_HTTP_CONNECT_DEAD_POLICY,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
@@ -826,9 +864,7 @@ typedef enum {
   TS_THREAD_POOL_NET,
   TS_THREAD_POOL_TASK,
   /* unlikely you should use these */
-  TS_THREAD_POOL_SSL,
   TS_THREAD_POOL_DNS,
-  TS_THREAD_POOL_REMAP,
   TS_THREAD_POOL_UDP
 } TSThreadPool;
 
@@ -882,6 +918,53 @@ typedef enum {
   TS_MGMT_SOURCE_ENV       ///< Process environment variable.
 } TSMgmtSource;
 
+/// The User Arg type, used for Txn/Ssn/VConn user argument slots
+typedef enum {
+  TS_USER_ARGS_TXN,   ///< Transaction based.
+  TS_USER_ARGS_SSN,   ///< Session based
+  TS_USER_ARGS_VCONN, ///< VConnection based
+  TS_USER_ARGS_GLB,   ///< Global based
+  TS_USER_ARGS_COUNT  ///< Fake enum, # of valid entries.
+} TSUserArgType;
+
+/** An enumeration of HTTP version types for the priority functions that behave
+ * differently across HTTP protocols. */
+typedef enum {
+  HTTP_PRIORITY_TYPE_HTTP_UNSPECIFIED = 1,
+  HTTP_PRIORITY_TYPE_HTTP_2,
+  HTTP_PRIORITY_TYPE_HTTP_3,
+} TSHttpPriorityType;
+
+/** The abstract type of the various HTTP priority implementations. */
+typedef struct {
+  /** The reference to the concrete HTTP priority implementation. This will be
+   * a value from TSHttpPriorityType. */
+  uint8_t priority_type;
+  /** The space allocated for the concrete priority implementation.
+   *
+   * Note that this has to take padding into account. There is a static_assert
+   * in InkAPI.cc to verify that TSHttpPriority is at least as large as
+   * TSHttp2Priority. As other structures are added that are represented by
+   * TSHttpPriority add more static_asserts to verify that TSHttpPriority is as
+   * large as it needs to be.
+   */
+  uint8_t data[7];
+} TSHttpPriority;
+
+/** A structure for HTTP/2 priority.
+ *
+ * For an explanation of these terms with respect to HTTP/2, see RFC 7540,
+ * section 5.3.
+ */
+typedef struct {
+  uint8_t priority_type; /** HTTP_PROTOCOL_TYPE_HTTP_2 */
+  uint8_t weight;
+  /** The stream dependency. Per spec, see RFC 7540 section 6.2, this is 31
+   * bits. We use a signed 32 bit stucture to store either a valid dependency
+   * or -1 if the stream has no dependency. */
+  int32_t stream_dependency;
+} TSHttp2Priority;
+
 typedef struct tsapi_file *TSFile;
 
 typedef struct tsapi_mloc *TSMLoc;
@@ -896,6 +979,7 @@ typedef struct tsapi_httpparser *TSHttpParser;
 typedef struct tsapi_cachekey *TSCacheKey;
 typedef struct tsapi_cachehttpinfo *TSCacheHttpInfo;
 typedef struct tsapi_cachetxn *TSCacheTxn;
+typedef struct tsapi_x509_store_ctx *TSSslVerifyCTX;
 
 typedef struct tsapi_port *TSPortDescriptor;
 typedef struct tsapi_vio *TSVIO;
@@ -915,7 +999,8 @@ typedef struct tsapi_bufferreader *TSIOBufferReader;
 typedef struct tsapi_hostlookupresult *TSHostLookupResult;
 typedef struct tsapi_aiocallback *TSAIOCallback;
 typedef struct tsapi_net_accept *TSAcceptor;
-typedef struct tsapi_protocol_set *TSNextProtocolSet;
+
+typedef struct tsapi_fetchsm *TSFetchSM;
 
 typedef void *(*TSThreadFunc)(void *data);
 typedef int (*TSEventFunc)(TSCont contp, TSEvent event, void *edata);
@@ -947,6 +1032,13 @@ typedef struct TSSslSessionID_s {
   size_t len;
   char bytes[TS_SSL_MAX_SSL_SESSION_ID_LENGTH];
 } TSSslSessionID;
+
+typedef struct TSSecretID_s {
+  const char *cert_name;
+  size_t cert_name_len;
+  const char *key_name;
+  size_t key_name_len;
+} TSSecretID;
 
 /* --------------------------------------------------------------------------
    Init */
@@ -1238,11 +1330,17 @@ extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_0_9;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_0;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_1;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_2_0;
+extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_3;
+extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_3_D27;
+extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_QUIC;
+extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D27;
 
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1;
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0;
+extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_3;
+extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC;
 
 extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP;
 extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
@@ -1250,6 +1348,8 @@ extern tsapi const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
 extern tsapi const char *const TS_PROTO_TAG_HTTP_1_0;
 extern tsapi const char *const TS_PROTO_TAG_HTTP_1_1;
 extern tsapi const char *const TS_PROTO_TAG_HTTP_2_0;
+extern tsapi const char *const TS_PROTO_TAG_HTTP_3;
+extern tsapi const char *const TS_PROTO_TAG_HTTP_QUIC;
 extern tsapi const char *const TS_PROTO_TAG_TLS_1_3;
 extern tsapi const char *const TS_PROTO_TAG_TLS_1_2;
 extern tsapi const char *const TS_PROTO_TAG_TLS_1_1;
@@ -1267,7 +1367,27 @@ extern tsapi const char *const TS_PROTO_TAG_IPV6;
     the TSMLoc is obtained by a call to TSHttpTxnClientReqGet(),
 
  */
-extern tsapi const TSMLoc TS_NULL_MLOC;
+#define TS_NULL_MLOC ((TSMLoc)0)
+
+/* --------------------------------------------------------------------------
+   HostStatus types */
+
+typedef enum {
+  TS_HOST_STATUS_INIT,
+  TS_HOST_STATUS_DOWN,
+  TS_HOST_STATUS_UP,
+} TSHostStatus;
+
+/* MUST match proxy/HostStatus.h Reason.
+ * If a value is added here, it MUST be added there with the same value.
+ */
+typedef enum {
+  TS_HOST_STATUS_ACTIVE      = 0x1,
+  TS_HOST_STATUS_LOCAL       = 0x2,
+  TS_HOST_STATUS_MANUAL      = 0x4,
+  TS_HOST_STATUS_SELF_DETECT = 0x8,
+  TS_HOST_STATUS_ALL         = 0xf,
+} TSHostStatusReason;
 
 /* --------------------------------------------------------------------------
    Interface for the UUID APIs. https://www.ietf.org/rfc/rfc4122.txt. */
@@ -1283,6 +1403,13 @@ typedef enum {
 #define TS_UUID_STRING_LEN 36
 #define TS_CRUUID_STRING_LEN (TS_UUID_STRING_LEN + 19 + 1) /* UUID-len + len(uint64_t) + '-' */
 typedef struct tsapi_uuid *TSUuid;
+
+#ifdef __cplusplus
+namespace ts
+{
+  static const int NO_FD = -1; ///< No or invalid file descriptor.
+}
+#endif
 
 #ifdef __cplusplus
 }

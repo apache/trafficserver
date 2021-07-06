@@ -1186,22 +1186,6 @@ msgstr "Traffic Server が代替をキャッシュするように設定するに
 msgid "Edit the following variables in :file:`records.config`:"
 msgstr ":file:`records.config` の次の変数を編集してください :"
 
-#: ../../../admin-guide/configuration/cache-basics.en.rst:607
-msgid ":ts:cv:`proxy.config.http.cache.enable_default_vary_headers`"
-msgstr ":ts:cv:`proxy.config.http.cache.enable_default_vary_headers`"
-
-#: ../../../admin-guide/configuration/cache-basics.en.rst:608
-msgid ":ts:cv:`proxy.config.http.cache.vary_default_text`"
-msgstr ":ts:cv:`proxy.config.http.cache.vary_default_text`"
-
-#: ../../../admin-guide/configuration/cache-basics.en.rst:609
-msgid ":ts:cv:`proxy.config.http.cache.vary_default_images`"
-msgstr ":ts:cv:`proxy.config.http.cache.vary_default_images`"
-
-#: ../../../admin-guide/configuration/cache-basics.en.rst:610
-msgid ":ts:cv:`proxy.config.http.cache.vary_default_other`"
-msgstr ":ts:cv:`proxy.config.http.cache.vary_default_other`"
-
 #: ../../../admin-guide/configuration/cache-basics.en.rst:616
 msgid ""
 "If you specify ``Cookie`` as the header field on which to vary in the above "
@@ -1682,7 +1666,7 @@ msgid ""
 msgstr ""
 "最後に :ts:cv:`proxy.config.http.cache.fuzz.min_time` は小さい TTL と大きい "
 "TTL で再確認の確率を評価する時間が異なることを許容します。TTL の小さなオブ"
-"ジェクトは ``fuzz.min_time`` 付近で “再確認のサイコロを転がす” ことを始めま"
+"ジェクトは ``fuzz.min_time`` 付近で "再確認のサイコロを転がす" ことを始めま"
 "す。一方、大きな TTL のオブジェクトは ``fuzz.time`` 付近で始めるでしょう。"
 
 #: ../../../admin-guide/configuration/cache-basics.en.rst:849

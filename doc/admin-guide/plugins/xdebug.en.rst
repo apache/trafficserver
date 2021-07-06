@@ -57,11 +57,20 @@ Diags
     transaction specific diagnostics for the transaction. This also requires
     that :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``.
 
-log-headers
-    If the ``log-headers`` is requested while :ts:cv:`proxy.config.diags.debug.tags`
-    is set to ``xdebug.headers`` and :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``,
-    then all client and server, request and response headers are logged.
-    Also, the ``X-Debug: log-headers`` header is always added to the upstream request.
+Probe
+    All request and response headers are written to the response body. Because
+    the body is altered, it disables writing to cache.
+    In conjunction with the `fwd` tag, the response body will contain a
+    chronological log of all headers for all transactions used for this
+    response.
+
+    Layout:
+
+    - Request Headers from Client  -> Proxy A
+    - Request Headers from Proxy A -> Proxy B
+    - Original content body
+    - Response Headers from Proxy B -> Proxy A
+    - Response Headers from Proxy A -> Client
 
 X-Cache-Key
     The ``X-Cache-Key`` header contains the URL that identifies the HTTP object in the
@@ -69,7 +78,7 @@ X-Cache-Key
     key is being used.
 
 X-Cache
-    The ``X-Cache`` header contains the results of any cache lookup.
+    The ``X-Cache`` header contains the results of any cache lookups.
 
     ==========  ===========
     Value       Description
@@ -80,6 +89,10 @@ X-Cache
     hit-fresh   The object was fresh in the cache.
     skipped     The cache lookup was skipped.
     ==========  ===========
+
+    If a request goes through multiple proxies, each one appends its X-Cache header content
+    the end of the existing X-Cache header. This is the same order as for the
+    ``Via`` header.
 
 X-Cache-Generation
   The cache generation ID for this transaction, as specified by the
@@ -100,3 +113,9 @@ X-Transaction-ID
 X-Remap
     If the URL was remapped for a request, this header gives the *to* and *from* field from the line in remap.config that caused
     the URL to be remapped.
+
+X-ParentSelection-Key
+    The ``X-ParentSelection-Key`` header contains the URL that is used to
+    determine parent selection for an object in the Traffic Server. This
+    header is particularly useful if a custom parent selection key is
+    being used.

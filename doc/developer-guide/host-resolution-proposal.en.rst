@@ -27,7 +27,7 @@ The current mechanism for resolving host names to IP addresses for Traffic Serve
 libraries. These take hostnames and provide IP addresses for them.
 
 The current implementation is generally considered inadequate, both from a functionality point of view and difficulty in
-working with it in other parts of Traffic Server. As Traffic Server is used in more complex situtations this inadequacy
+working with it in other parts of Traffic Server. As Traffic Server is used in more complex situations this inadequacy
 presents increasing problems.
 
 Goals
@@ -146,7 +146,7 @@ The biggest hurdle is being able to unwind a resolver chain when a block is enco
 
 1) Set a maximum resolver chain length and declare the request instance so that there is storage for state for that many
 resolvers. If needed and additional value of maximum storage per chain could be set as well. The expected number of
-elements in a chain is expected to be limited, 10 would likely be a reaosnable limit. If settable at source
+elements in a chain is expected to be limited, 10 would likely be a reasonable limit. If settable at source
 configuration time this should be sufficient.
 
 2) Embed class allocators in resolver chains and mark the top / outermost / first resolver. The maximum state size for a

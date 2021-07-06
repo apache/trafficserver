@@ -168,9 +168,11 @@ fi
 TS_ARG_ENABLE_VAR([has],[luajit])
 AM_CONDITIONAL([HAS_LUAJIT], [test 0 -ne $has_luajit])
 
-# On Darwin, LuaJIT requires magic link options for a program loading or running with LuaJIT,
-# otherwise it will crash in luaL_openlibs() at startup.  See http://luajit.org/install.html for more details
+dnl On Darwin, LuaJIT requires magic link options for a program loading or running with LuaJIT,
+dnl otherwise it will crash in luaL_openlibs() at startup.  See http://luajit.org/install.html for more details
+if test "$has_luajit" -ne 0; then
 AC_SUBST([LUAJIT_DARWIN_LDFLAGS], ["-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"])
+fi
 AM_CONDITIONAL([IS_DARWIN], [test x$(uname) = xDarwin])
 
 ])

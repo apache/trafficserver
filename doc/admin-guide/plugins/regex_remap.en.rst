@@ -54,6 +54,16 @@ profile dump, you can do ::
     $ sudo touch remap.config
     $ sudo traffic_ctl config reload
 
+By default, this plugin operates on the post-remap URL (including any
+remappings done by preceding plugins in the remap rule).  This behavior
+can be modified with the optional parameter ::
+
+    @pparam=[no-]pristine            [default: off]
+
+With ``@pparam=pristine``, the plugin will operate on the pre-remap, or
+pristine, URL.  (But, if no regular expression in the config file is
+matched, the resulting URL will still be the post-remap URL.)
+
 By default, only the path and query string of the URL are provided for
 the regular expressions to match. The following optional parameters can
 be used to modify the plugin instance behavior ::
@@ -109,7 +119,7 @@ on the right hand side during evaluation ::
 
     $0     - The entire matched string
     $1-9   - Regular expression groups ($1 first group etc.)
-    $h     - The original host header from the request
+    $h     - The host as used in the "to" portion of the remap rule. For a long time it was the original host header from the request.
     $f     - The host as used in the "from" portion of the remap rule
     $t     - The host as used in the "to" portion of the remap rule
     $p     - The original port number
@@ -143,7 +153,7 @@ remap.config. The following options are available ::
 
 This can be useful to force a particular response for some URLs, e.g. ::
 
-    ^/(ogre.*)/bad      http://www.examle.com/  @status=404
+    ^/(ogre.*)/bad      http://www.example.com/  @status=404
 
 Or, to force a 302 redirect ::
 

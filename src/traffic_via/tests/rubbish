@@ -1,4 +1,4 @@
-Via header is rubbish, Length is 7
+Via header is [rubbish], Length is 7
 
 Invalid VIA header. VIA header length should be 6 or 22 characters
 Valid via header format is [u<client-stuff>c<cache-lookup-stuff>s<server-stuff>f<cache-fill-stuff>p<proxy-stuff>e<error-codes>:t<tunneling-info>c<cache type><cache-lookup-result>p<parent-proxy-conn-info>s<server-conn-info>]

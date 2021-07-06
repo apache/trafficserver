@@ -50,8 +50,6 @@ typedef enum {
   TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4  // Allow this fetch to be created as a non-internal request.
 } TSFetchFlags;
 
-typedef struct tsapi_fetchsm *TSFetchSM;
-
 /* Forward declaration of in_addr, any user of these APIs should probably
    include net/netinet.h or whatever is appropriate on the platform. */
 struct in_addr;
@@ -192,12 +190,33 @@ tsapi TSReturnCode TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSM
 
 /****************************************************************************
  *  TSHttpTxnCacheLookupCountGet
- *  Return: TS_SUCESS/TS_ERROR
+ *  Return: TS_SUCCESS/TS_ERROR
  ****************************************************************************/
 tsapi TSReturnCode TSHttpTxnCacheLookupCountGet(TSHttpTxn txnp, int *lookup_count);
 tsapi TSReturnCode TSHttpTxnServerRespIgnore(TSHttpTxn txnp);
 tsapi TSReturnCode TSHttpTxnShutDown(TSHttpTxn txnp, TSEvent event);
 tsapi TSReturnCode TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close);
+
+/** Do another cache lookup with a different cache key.
+ *
+ * @param txnp Transaction.
+ * @param url URL to use for cache key.
+ * @param length Length of the string in @a url
+ *
+ * @return @c TS_SUCCESS on success, @c TS_ERROR if the @a txnp is invalid or the @a url is
+ * not a valid URL.
+ *
+ * If @a length is negative, @c strlen will be used to determine the length of @a url.
+ *
+ * @a url must be syntactically a URL, but otherwise it is just a string and does not need to
+ * be retrievable.
+ *
+ * This can only be called in a @c TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK callback. To set the cache
+ * key for the first lookup, use @c TSCacheUrlSet.
+ *
+ * @see TSCacheUrlSet
+ */
+tsapi TSReturnCode TSHttpTxnRedoCacheLookup(TSHttpTxn txnp, const char *url, int length);
 
 /****************************************************************************
  *  ??
@@ -222,8 +241,6 @@ tsapi TSReturnCode TSHttpTxnUpdateCachedObject(TSHttpTxn txnp);
  *  TODO: This returns a LookingUp_t value, we need to SDK'ify it.
  ****************************************************************************/
 tsapi int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
-
-tsapi void TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
 
 /* ip addr parsing */
 tsapi TSReturnCode TSIpStringToAddr(const char *str, size_t str_len, struct sockaddr *addr);
@@ -329,6 +346,7 @@ tsapi char *TSMatcherLineValue(TSMatcherLine ml, int element);
  ****************************************************************************/
 tsapi TSReturnCode TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value);
 
+tsapi TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
 /* ----------------------------------------------------------------------
  * Interfaces used by Wireless group
  * ---------------------------------------------------------------------- */
@@ -361,6 +379,16 @@ tsapi TSFetchSM TSFetchCreate(TSCont contp, const char *method, const char *url,
                               struct sockaddr const *client_addr, int flags);
 
 /*
+ * Set fetch flags to FetchSM Context
+ *
+ * @param fetch_sm: returned value of TSFetchCreate().
+ * @param flags: can be bitwise OR of several TSFetchFlags.
+ *
+ * return void
+ */
+tsapi void TSFetchFlagSet(TSFetchSM fetch_sm, int flags);
+
+/*
  * Create FetchSM, this API will enable stream IO automatically.
  *
  * @param fetch_sm: returned value of TSFetchCreate().
@@ -390,7 +418,7 @@ tsapi void TSFetchWriteData(TSFetchSM fetch_sm, const void *data, size_t len);
 tsapi ssize_t TSFetchReadData(TSFetchSM fetch_sm, void *buf, size_t len);
 
 /*
- * Lanuch FetchSM to do http request, before calling this API,
+ * Launch FetchSM to do http request, before calling this API,
  * you should append http request header into fetch sm through
  * TSFetchWriteData() API
  *
@@ -424,6 +452,16 @@ tsapi TSMBuffer TSFetchRespHdrMBufGet(TSFetchSM fetch_sm);
  * Get client response hdr mloc
  */
 tsapi TSMLoc TSFetchRespHdrMLocGet(TSFetchSM fetch_sm);
+
+/*
+ * Parse a MIME header date string.
+ */
+tsapi time_t TSMimeParseDate(char const *const value_str, int const value_len);
+
+/*
+ * Print as a MIME header date string.
+ */
+tsapi TSReturnCode TSMimeFormatDate(time_t const value_time, char *const value_str, int *const value_len);
 
 #ifdef __cplusplus
 }

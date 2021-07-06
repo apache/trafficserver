@@ -96,7 +96,7 @@ path_handler(const std::string &path, bool run_flag, const std::string &command)
   std::string cur_working_dir = "";
   char cwd[PATH_MAX];
   if (!getcwd(cwd, sizeof(cwd))) {
-    ink_warning("unexcepted failure from getcwd() - %s", strerror(errno));
+    ink_warning("unexpected failure from getcwd() - %s", strerror(errno));
   } else {
     cur_working_dir = cwd;
   }
@@ -162,6 +162,8 @@ LayoutEngine::info()
 
   if (arguments.get("features")) {
     produce_features(json);
+  } else if (arguments.get("versions")) {
+    produce_versions(json);
   } else {
     produce_layout(json);
   }
@@ -203,8 +205,8 @@ LayoutEngine::create_runroot()
       return;
     }
   }
-  std::string original_root = Layout::get()->prefix;
-  std::string ts_runroot    = path;
+  std::string original_root     = Layout::get()->prefix;
+  const std::string &ts_runroot = path;
   // check for existing runroot to use rather than create new one
   if (!force_flag && exists(Layout::relative_to(ts_runroot, "runroot.yaml"))) {
     std::cout << "Using existing runroot...\n"
@@ -376,7 +378,7 @@ LayoutEngine::remove_runroot()
     std::string cur_working_dir = "";
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-      ink_warning("unexcepted failure from getcwd() - %s", strerror(errno));
+      ink_warning("unexpected failure from getcwd() - %s", strerror(errno));
     } else {
       cur_working_dir = cwd;
     }

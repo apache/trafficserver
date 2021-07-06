@@ -1,0 +1,12 @@
+``
+<?php   header('X-Esi: 1'); ?>
+<html>
+<body>
+Hello, <?php
+header ("Cache-control: no-cache");
+echo date('l jS \of F Y h:i:s A');
+?>
+
+</body>
+</html>
+``

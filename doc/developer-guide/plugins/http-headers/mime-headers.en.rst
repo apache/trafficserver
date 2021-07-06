@@ -80,7 +80,7 @@ specified by the functions (see the example in the description of
 **Note:** MIME headers may contain more than one MIME field with the
 same name. Previous versions of Traffic Server joined multiple fields
 with the same name into one field with composite values, but this
-behavior came at a performance cost and caused compatability issues with
+behavior came at a performance cost and caused compatibility issues with
 older clients and servers. Hence, the current version of Traffic Server
 does not coalesce duplicate fields. Correctly-behaving plugins should
 check for the presence of duplicate fields and iterate over the
@@ -90,355 +90,285 @@ To facilitate fast comparisons and reduce storage size, Traffic Server
 defines several pre-allocated field names. These field names correspond
 to the field names in HTTP and NNTP headers.
 
-.. c:var:: const char* TS_MIME_FIELD_ACCEPT
-  "Accept"
-
-.. c:var:: int TS_MIME_LEN_ACCEPT
-
-.. c:var:: const char* TS_MIME_FIELD_ACCEPT_CHARSET
-  "Accept-Charset"
-
-.. c:var:: int TS_MIME_LEN_ACCEPT_CHARSET
-
-.. c:var:: const char* TS_MIME_FIELD_ACCEPT_ENCODING
-  "Accept-Encoding"
-
-.. c:var:: int TS_MIME_LEN_ACCEPT_ENCODING
-
-.. c:var:: const char* TS_MIME_FIELD_ACCEPT_LANGUAGE
-  "Accept-Language"
-
-.. c:var:: int TS_MIME_LEN_ACCEPT_LANGUAGE
-
-.. c:var:: const char* TS_MIME_FIELD_ACCEPT_RANGES
-  "Accept-Ranges"
-
-.. c:var:: int TS_MIME_LEN_ACCEPT_RANGES
-
-.. c:var:: const char* TS_MIME_FIELD_AGE
-  "Age"
-
-.. c:var:: int TS_MIME_LEN_AGE
-
-.. c:var:: const char* TS_MIME_FIELDALLOW
-  "Allow"
-
-.. c:var:: int TS_MIME_LEN_ALLOW
-
-.. c:var:: const char* TS_MIME_FIELDAPPROVED
-  "Approved"
-
-.. c:var:: int TS_MIME_LEN_APPROVED
-
-.. c:var:: const char* TS_MIME_FIELDAUTHORIZATION
-  "Authorization"
-
-.. c:var:: int TS_MIME_LEN_AUTHORIZATION
-
-.. c:var:: const char* TS_MIME_FIELDBYTES
-  "Bytes"
-
-.. c:var:: int TS_MIME_LEN_BYTES
-
-.. c:var:: const char* TS_MIME_FIELDCACHE_CONTROL
-  "Cache-Control"
-
-.. c:var:: int TS_MIME_LEN_CACHE_CONTROL
-
-.. c:var:: const char* TS_MIME_FIELDCLIENT_IP
-  "Client-ip"
-
-.. c:var:: int TS_MIME_LEN_CLIENT_IP
-
-.. c:var:: const char* TS_MIME_FIELDCONNECTION
-  "Connection"
-
-.. c:var:: int TS_MIME_LEN_CONNECTION
-
-.. c:var:: const char* TS_MIME_FIELDCONTENT_BASE
-  "Content-Base"
-
-.. c:var:: int TS_MIME_LEN_CONTENT_BASE
-
-.. c:var:: const char* TS_MIME_FIELDCONTENT_ENCODING
-  "Content-Encoding"
-
-.. c:var:: int TS_MIME_LEN_CONTENT_ENCODING
-
-.. c:var:: const char* TS_MIME_FIELDCONTENT_LANGUAGE
-  "Content-Language"
-
-.. c:var:: int TS_MIME_LEN_CONTENT_LANGUAGE
-
-.. c:var:: const char* TS_MIME_FIELDCONTENT_LENGTH
-  "Content-Length"
-
-.. c:var:: int TS_MIME_LEN_CONTENT_LENGTH
-
-.. c:var:: const char* TS_MIME_FIELDCONTENT_LOCATION
-  "Content-Location"
-
-.. c:var:: int TS_MIME_LEN_CONTENT_LOCATION
-
-.. c:var:: const char* TS_MIME_FIELDCONTENT_MD5
-  "Content-MD5"
-
-.. c:var:: int TS_MIME_LEN_CONTENT_MD5
-
-.. c:var:: const char* TS_MIME_FIELDCONTENT_RANGE
-  "Content-Range"
-
-.. c:var:: int TS_MIME_LEN_CONTENT_RANGE
-
-.. c:var:: const char* TS_MIME_FIELDCONTENT_TYPE
-  "Content-Type"
-
-.. c:var:: int TS_MIME_LEN_CONTENT_TYPE
-
-.. c:var:: const char* TS_MIME_FIELDCONTROL
-  "Control"
-
-.. c:var:: int TS_MIME_LEN_CONTROL
-
-.. c:var:: const char* TS_MIME_FIELDCOOKIE
-  "Cookie"
-
-.. c:var:: int TS_MIME_LEN_COOKIE
-
-.. c:var:: const char* TS_MIME_FIELDDATE
-  "Date"
-
-.. c:var:: int TS_MIME_LEN_DATE
-
-.. c:var:: const char* TS_MIME_FIELDDISTRIBUTION
-  "Distribution"
-
-.. c:var:: int TS_MIME_LEN_DISTRIBUTION
-
-.. c:var:: const char* TS_MIME_FIELDETAG
-  "Etag"
-
-.. c:var:: int TS_MIME_LEN_ETAG
-
-.. c:var:: const char* TS_MIME_FIELDEXPECT
-  "Expect"
-
-.. c:var:: int TS_MIME_LEN_EXPECT
-
-.. c:var:: const char* TS_MIME_FIELDEXPIRES
-  "Expires"
-
-.. c:var:: int TS_MIME_LEN_EXPIRES
-
-.. c:var:: const char* TS_MIME_FIELDFOLLOWUP_TO
-  "Followup-To"
-
-.. c:var:: int TS_MIME_LEN_FOLLOWUP_TO
-
-.. c:var:: const char* TS_MIME_FIELDFROM
-  "From"
-
-.. c:var:: int TS_MIME_LEN_FROM
-
-.. c:var:: const char* TS_MIME_FIELDHOST
-  "Host"
-
-.. c:var:: int TS_MIME_LEN_HOST
-
-.. c:var:: const char* TS_MIME_FIELDIF_MATCH
-  "If-Match"
-
-.. c:var:: int TS_MIME_LEN_IF_MATCH
-
-.. c:var:: const char* TS_MIME_FIELDIF_MODIFIED_SINCE
-  "If-Modified-Since"
-
-.. c:var:: int TS_MIME_LEN_IF_MODIFIED_SINCE
-
-.. c:var:: const char* TS_MIME_FIELDIF_NONE_MATCH
-  "If-None-Match"
-
-.. c:var:: int TS_MIME_LEN_IF_NONE_MATCH
-
-.. c:var:: const char* TS_MIME_FIELDIF_RANGE
-  "If-Range"
-
-.. c:var:: int TS_MIME_LEN_IF_RANGE
-
-.. c:var:: const char* TS_MIME_FIELDIF_UNMODIFIED_SINCE
-  "If-Unmodified-Since"
-
-.. c:var:: int TS_MIME_LEN_IF_UNMODIFIED_SINCE
-
-.. c:var:: const char* TS_MIME_FIELDKEEP_ALIVE
-  "Keep-Alive"
-
-.. c:var:: int TS_MIME_LEN_KEEP_ALIVE
-
-.. c:var:: const char* TS_MIME_FIELDKEYWORDS
-  "Keywords"
-
-.. c:var:: int TS_MIME_LEN_KEYWORDS
-
-.. c:var:: const char* TS_MIME_FIELDLAST_MODIFIED
-  "Last-Modified"
-
-.. c:var:: int TS_MIME_LEN_LAST_MODIFIED
-
-.. c:var:: const char* TS_MIME_FIELDLINES
-  "Lines"
-
-.. c:var:: int TS_MIME_LEN_LINES
-
-.. c:var:: const char* TS_MIME_FIELDLOCATION
-  "Location"
-
-.. c:var:: int TS_MIME_LEN_LOCATION
-
-.. c:var:: const char* TS_MIME_FIELDMAX_FORWARDS
-  "Max-Forwards"
-
-.. c:var:: int TS_MIME_LEN_MAX_FORWARDS
-
-.. c:var:: const char* TS_MIME_FIELDMESSAGE_ID
-  "Message-ID"
-
-.. c:var:: int TS_MIME_LEN_MESSAGE_ID
-
-.. c:var:: const char* TS_MIME_FIELDNEWSGROUPS
-  "Newsgroups"
-
-.. c:var:: int TS_MIME_LEN_NEWSGROUPS
-
-.. c:var:: const char* TS_MIME_FIELDORGANIZATION
-  "Organization"
-
-.. c:var:: int TS_MIME_LEN_ORGANIZATION
-
-.. c:var:: const char* TS_MIME_FIELDPATH
-  "Path"
-
-.. c:var:: int TS_MIME_LEN_PATH
-
-.. c:var:: const char* TS_MIME_FIELDPRAGMA
-  "Pragma"
-
-.. c:var:: int TS_MIME_LEN_PRAGMA
-
-.. c:var:: const char* TS_MIME_FIELDPROXY_AUTHENTICATE
-  "Proxy-Authenticate"
-
-.. c:var:: int TS_MIME_LEN_PROXY_AUTHENTICATE
-
-.. c:var:: const char* TS_MIME_FIELDPROXY_AUTHORIZATION
-  "Proxy-Authorization"
-
-.. c:var:: int TS_MIME_LEN_PROXY_AUTHORIZATION
-
-.. c:var:: const char* TS_MIME_FIELDPROXY_CONNECTION
-  "Proxy-Connection"
-
-.. c:var:: int TS_MIME_LEN_PROXY_CONNECTION
-
-.. c:var:: const char* TS_MIME_FIELDPUBLIC
-  "Public"
-
-.. c:var:: int TS_MIME_LEN_PUBLIC
-
-.. c:var:: const char* TS_MIME_FIELDRANGE
-  "Range"
-
-.. c:var:: int TS_MIME_LEN_RANGE
-
-.. c:var:: const char* TS_MIME_FIELDREFERENCES
-  "References"
-
-.. c:var:: int TS_MIME_LEN_REFERENCES
-
-.. c:var:: const char* TS_MIME_FIELDREFERER
-  "Referer"
-
-.. c:var:: int TS_MIME_LEN_REFERER
-
-.. c:var:: const char* TS_MIME_FIELDREPLY_TO
-  "Reply-To"
-
-.. c:var:: int TS_MIME_LEN_REPLY_TO
-
-.. c:var:: const char* TS_MIME_FIELDRETRY_AFTER
-  "Retry-After"
-
-.. c:var:: int TS_MIME_LEN_RETRY_AFTER
-
-.. c:var:: const char* TS_MIME_FIELDSENDER
-  "Sender"
-
-.. c:var:: int TS_MIME_LEN_SENDER
-
-.. c:var:: const char* TS_MIME_FIELDSERVER
-  "Server"
-
-.. c:var:: int TS_MIME_LEN_SERVER
-
-.. c:var:: const char* TS_MIME_FIELDSET_COOKIE
-  "Set-Cookie"
-
-.. c:var:: int TS_MIME_LEN_SET_COOKIE
-
-.. c:var:: const char* TS_MIME_FIELDSUBJECT
-  "Subject"
-
-.. c:var:: int TS_MIME_LEN_SUBJECTTS_MIME_LEN_SUBJECT
-
-.. c:var:: const char* TS_MIME_FIELDSUMMARY
-  "Summary"
-
-.. c:var:: int TS_MIME_LEN_SUMMARY
-
-.. c:var:: const char* TS_MIME_FIELDTE
-  "TE"
-
-.. c:var:: int TS_MIME_LEN_TE
-
-.. c:var:: const char* TS_MIME_FIELDTRANSFER_ENCODING
-  "Transfer-Encoding"
-
-.. c:var:: int TS_MIME_LEN_TRANSFER_ENCODING
-
-.. c:var:: const char* TS_MIME_FIELDUPGRADE
-  "Upgrade"
-
-.. c:var:: int TS_MIME_LEN_UPGRADE
-
-.. c:var:: const char* TS_MIME_FIELDUSER_AGENT
-  "User-Agent"
-
-.. c:var:: int TS_MIME_LEN_USER_AGENT
-
-.. c:var:: const char* TS_MIME_FIELDVARY
-  "Vary"
-
-.. c:var:: int TS_MIME_LEN_VARY
-
-.. c:var:: const char* TS_MIME_FIELDVIA
-  "Via"
-
-.. c:var:: int TS_MIME_LEN_VIA
-
-.. c:var:: const char* TS_MIME_FIELDWARNING
-  "Warning"
-
-.. c:var:: int TS_MIME_LEN_WARNING
-
-.. c:var:: const char* TS_MIME_FIELDWWW_AUTHENTICATE
-  "Www-Authenticate"
-
-.. c:var:: int TS_MIME_LEN_WWW_AUTHENTICATE
-
-.. c:var:: const char* TS_MIME_FIELDXREF
-  "Xref"
-
-.. c:var:: int TS_MIME_LEN_XREF
+"Accept"
+   .. c:var::  const char* TS_MIME_FIELD_ACCEPT
+   .. c:var:: int TS_MIME_LEN_ACCEPT
+
+"Accept-Charset"
+   .. c:var::  const char* TS_MIME_FIELD_ACCEPT_CHARSET
+   .. c:var:: int TS_MIME_LEN_ACCEPT_CHARSET
+
+"Accept-Encoding"
+   .. c:var::  const char* TS_MIME_FIELD_ACCEPT_ENCODING
+   .. c:var:: int TS_MIME_LEN_ACCEPT_ENCODING
+
+"Accept-Language"
+   .. c:var::  const char* TS_MIME_FIELD_ACCEPT_LANGUAGE
+   .. c:var:: int TS_MIME_LEN_ACCEPT_LANGUAGE
+
+"Accept-Ranges"
+   .. c:var::  const char* TS_MIME_FIELD_ACCEPT_RANGES
+   .. c:var:: int TS_MIME_LEN_ACCEPT_RANGES
+
+"Age"
+   .. c:var::  const char* TS_MIME_FIELD_AGE
+   .. c:var:: int TS_MIME_LEN_AGE
+
+"Allow"
+   .. c:var::  const char* TS_MIME_FIELDALLOW
+   .. c:var:: int TS_MIME_LEN_ALLOW
+
+"Approved"
+   .. c:var::  const char* TS_MIME_FIELDAPPROVED
+   .. c:var:: int TS_MIME_LEN_APPROVED
+
+"Authorization"
+   .. c:var::  const char* TS_MIME_FIELDAUTHORIZATION
+   .. c:var:: int TS_MIME_LEN_AUTHORIZATION
+
+"Bytes"
+   .. c:var::  const char* TS_MIME_FIELDBYTES
+   .. c:var:: int TS_MIME_LEN_BYTES
+
+"Cache-Control"
+   .. c:var::  const char* TS_MIME_FIELDCACHE_CONTROL
+   .. c:var:: int TS_MIME_LEN_CACHE_CONTROL
+
+"Client-ip"
+   .. c:var::  const char* TS_MIME_FIELDCLIENT_IP
+   .. c:var:: int TS_MIME_LEN_CLIENT_IP
+
+"Connection"
+   .. c:var::  const char* TS_MIME_FIELDCONNECTION
+   .. c:var:: int TS_MIME_LEN_CONNECTION
+
+"Content-Base"
+   .. c:var::  const char* TS_MIME_FIELDCONTENT_BASE
+   .. c:var:: int TS_MIME_LEN_CONTENT_BASE
+
+"Content-Encoding"
+   .. c:var::  const char* TS_MIME_FIELDCONTENT_ENCODING
+   .. c:var:: int TS_MIME_LEN_CONTENT_ENCODING
+
+"Content-Language"
+   .. c:var::  const char* TS_MIME_FIELDCONTENT_LANGUAGE
+   .. c:var:: int TS_MIME_LEN_CONTENT_LANGUAGE
+
+"Content-Length"
+   .. c:var::  const char* TS_MIME_FIELDCONTENT_LENGTH
+   .. c:var:: int TS_MIME_LEN_CONTENT_LENGTH
+
+"Content-Location"
+   .. c:var::  const char* TS_MIME_FIELDCONTENT_LOCATION
+   .. c:var:: int TS_MIME_LEN_CONTENT_LOCATION
+
+"Content-MD5"
+   .. c:var::  const char* TS_MIME_FIELDCONTENT_MD5
+   .. c:var:: int TS_MIME_LEN_CONTENT_MD5
+
+"Content-Range"
+   .. c:var::  const char* TS_MIME_FIELDCONTENT_RANGE
+   .. c:var:: int TS_MIME_LEN_CONTENT_RANGE
+
+"Content-Type"
+   .. c:var::  const char* TS_MIME_FIELDCONTENT_TYPE
+   .. c:var:: int TS_MIME_LEN_CONTENT_TYPE
+
+"Control"
+   .. c:var::  const char* TS_MIME_FIELDCONTROL
+   .. c:var:: int TS_MIME_LEN_CONTROL
+
+"Cookie"
+   .. c:var::  const char* TS_MIME_FIELDCOOKIE
+   .. c:var:: int TS_MIME_LEN_COOKIE
+
+"Date"
+   .. c:var::  const char* TS_MIME_FIELDDATE
+   .. c:var:: int TS_MIME_LEN_DATE
+
+"Distribution"
+   .. c:var::  const char* TS_MIME_FIELDDISTRIBUTION
+   .. c:var:: int TS_MIME_LEN_DISTRIBUTION
+
+"Etag"
+   .. c:var::  const char* TS_MIME_FIELDETAG
+   .. c:var:: int TS_MIME_LEN_ETAG
+
+"Expect"
+   .. c:var::  const char* TS_MIME_FIELDEXPECT
+   .. c:var:: int TS_MIME_LEN_EXPECT
+
+"Expires"
+   .. c:var::  const char* TS_MIME_FIELDEXPIRES
+   .. c:var:: int TS_MIME_LEN_EXPIRES
+
+"Followup-To"
+   .. c:var::  const char* TS_MIME_FIELDFOLLOWUP_TO
+   .. c:var:: int TS_MIME_LEN_FOLLOWUP_TO
+
+"From"
+   .. c:var::  const char* TS_MIME_FIELDFROM
+   .. c:var:: int TS_MIME_LEN_FROM
+
+"Host"
+   .. c:var::  const char* TS_MIME_FIELDHOST
+   .. c:var:: int TS_MIME_LEN_HOST
+
+"If-Match"
+   .. c:var::  const char* TS_MIME_FIELDIF_MATCH
+   .. c:var:: int TS_MIME_LEN_IF_MATCH
+
+"If-Modified-Since"
+   .. c:var::  const char* TS_MIME_FIELDIF_MODIFIED_SINCE
+   .. c:var:: int TS_MIME_LEN_IF_MODIFIED_SINCE
+
+"If-None-Match"
+   .. c:var::  const char* TS_MIME_FIELDIF_NONE_MATCH
+   .. c:var:: int TS_MIME_LEN_IF_NONE_MATCH
+
+"If-Range"
+   .. c:var::  const char* TS_MIME_FIELDIF_RANGE
+   .. c:var:: int TS_MIME_LEN_IF_RANGE
+
+"If-Unmodified-Since"
+   .. c:var::  const char* TS_MIME_FIELDIF_UNMODIFIED_SINCE
+   .. c:var:: int TS_MIME_LEN_IF_UNMODIFIED_SINCE
+
+"Keep-Alive"
+   .. c:var::  const char* TS_MIME_FIELDKEEP_ALIVE
+   .. c:var:: int TS_MIME_LEN_KEEP_ALIVE
+
+"Keywords"
+   .. c:var::  const char* TS_MIME_FIELDKEYWORDS
+   .. c:var:: int TS_MIME_LEN_KEYWORDS
+
+"Last-Modified"
+   .. c:var::  const char* TS_MIME_FIELDLAST_MODIFIED
+   .. c:var:: int TS_MIME_LEN_LAST_MODIFIED
+
+"Lines"
+   .. c:var::  const char* TS_MIME_FIELDLINES
+   .. c:var:: int TS_MIME_LEN_LINES
+
+"Location"
+   .. c:var::  const char* TS_MIME_FIELDLOCATION
+   .. c:var:: int TS_MIME_LEN_LOCATION
+
+"Max-Forwards"
+   .. c:var::  const char* TS_MIME_FIELDMAX_FORWARDS
+   .. c:var:: int TS_MIME_LEN_MAX_FORWARDS
+
+"Message-ID"
+   .. c:var::  const char* TS_MIME_FIELDMESSAGE_ID
+   .. c:var:: int TS_MIME_LEN_MESSAGE_ID
+
+"Newsgroups"
+   .. c:var::  const char* TS_MIME_FIELDNEWSGROUPS
+   .. c:var:: int TS_MIME_LEN_NEWSGROUPS
+
+"Organization"
+   .. c:var::  const char* TS_MIME_FIELDORGANIZATION
+   .. c:var:: int TS_MIME_LEN_ORGANIZATION
+
+"Path"
+   .. c:var::  const char* TS_MIME_FIELDPATH
+   .. c:var:: int TS_MIME_LEN_PATH
+
+"Pragma"
+   .. c:var::  const char* TS_MIME_FIELDPRAGMA
+   .. c:var:: int TS_MIME_LEN_PRAGMA
+
+"Proxy-Authenticate"
+   .. c:var::  const char* TS_MIME_FIELDPROXY_AUTHENTICATE
+   .. c:var:: int TS_MIME_LEN_PROXY_AUTHENTICATE
+
+"Proxy-Authorization"
+   .. c:var::  const char* TS_MIME_FIELDPROXY_AUTHORIZATION
+   .. c:var:: int TS_MIME_LEN_PROXY_AUTHORIZATION
+
+"Proxy-Connection"
+   .. c:var::  const char* TS_MIME_FIELDPROXY_CONNECTION
+   .. c:var:: int TS_MIME_LEN_PROXY_CONNECTION
+
+"Public"
+   .. c:var::  const char* TS_MIME_FIELDPUBLIC
+   .. c:var:: int TS_MIME_LEN_PUBLIC
+
+"Range"
+   .. c:var::  const char* TS_MIME_FIELDRANGE
+   .. c:var:: int TS_MIME_LEN_RANGE
+
+"References"
+   .. c:var::  const char* TS_MIME_FIELDREFERENCES
+   .. c:var:: int TS_MIME_LEN_REFERENCES
+
+"Referer"
+   .. c:var::  const char* TS_MIME_FIELDREFERER
+   .. c:var:: int TS_MIME_LEN_REFERER
+
+"Reply-To"
+   .. c:var::  const char* TS_MIME_FIELDREPLY_TO
+   .. c:var:: int TS_MIME_LEN_REPLY_TO
+
+"Retry-After"
+   .. c:var::  const char* TS_MIME_FIELDRETRY_AFTER
+   .. c:var:: int TS_MIME_LEN_RETRY_AFTER
+
+"Sender"
+   .. c:var::  const char* TS_MIME_FIELDSENDER
+   .. c:var:: int TS_MIME_LEN_SENDER
+
+"Server"
+   .. c:var::  const char* TS_MIME_FIELDSERVER
+   .. c:var:: int TS_MIME_LEN_SERVER
+
+"Set-Cookie"
+   .. c:var::  const char* TS_MIME_FIELDSET_COOKIE
+   .. c:var:: int TS_MIME_LEN_SET_COOKIE
+
+"Subject"
+   .. c:var::  const char* TS_MIME_FIELDSUBJECT
+   .. c:var:: int TS_MIME_LEN_SUBJECTTS_MIME_LEN_SUBJECT
+
+"Summary"
+   .. c:var::  const char* TS_MIME_FIELDSUMMARY
+   .. c:var:: int TS_MIME_LEN_SUMMARY
+
+"TE"
+   .. c:var::  const char* TS_MIME_FIELDTE
+   .. c:var:: int TS_MIME_LEN_TE
+
+"Transfer-Encoding"
+   .. c:var::  const char* TS_MIME_FIELDTRANSFER_ENCODING
+   .. c:var:: int TS_MIME_LEN_TRANSFER_ENCODING
+
+"Upgrade"
+   .. c:var::  const char* TS_MIME_FIELDUPGRADE
+   .. c:var:: int TS_MIME_LEN_UPGRADE
+
+"User-Agent"
+   .. c:var::  const char* TS_MIME_FIELDUSER_AGENT
+   .. c:var:: int TS_MIME_LEN_USER_AGENT
+
+"Vary"
+   .. c:var::  const char* TS_MIME_FIELDVARY
+   .. c:var:: int TS_MIME_LEN_VARY
+
+"Via"
+   .. c:var::  const char* TS_MIME_FIELDVIA
+   .. c:var:: int TS_MIME_LEN_VIA
+
+"Warning"
+   .. c:var::  const char* TS_MIME_FIELDWARNING
+   .. c:var:: int TS_MIME_LEN_WARNING
+
+"Www-Authenticate"
+   .. c:var::  const char* TS_MIME_FIELDWWW_AUTHENTICATE
+   .. c:var:: int TS_MIME_LEN_WWW_AUTHENTICATE
+
+"Xref"
+   .. c:var::  const char* TS_MIME_FIELDXREF
+   .. c:var:: int TS_MIME_LEN_XREF
 
 The header field names above are defined in ``ts.h`` as ``const char*``
 strings. When Traffic Server sets the name portion of a header field (or

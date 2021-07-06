@@ -24,7 +24,9 @@ TSContCreate
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSCont TSContCreate(TSEventFunc funcp, TSMutex mutexp)
 

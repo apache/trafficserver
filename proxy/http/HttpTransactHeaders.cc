@@ -35,6 +35,7 @@
 #include "HdrUtils.h"
 #include "HttpCompat.h"
 #include "HttpSM.h"
+#include "PoolableSession.h"
 
 #include "I_Machine.h"
 
@@ -62,7 +63,7 @@ HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
   if (!hdrtoken_is_wks(field_name)) {
     return (false);
   }
-  if ((hdrtoken_wks_to_flags(field_name) & MIME_FLAGS_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE)) {
+  if ((hdrtoken_wks_to_flags(field_name) & HTIF_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE)) {
     return (true);
   } else {
     return (false);
@@ -86,7 +87,15 @@ HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
 bool
 HttpTransactHeaders::is_method_safe(int method)
 {
+  // See RFC 7231, section 4.2.1.
   return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_OPTIONS || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_TRACE);
+}
+
+bool
+HttpTransactHeaders::is_status_an_error_response(HTTPStatus response_code)
+{
+  auto const comparable_response_code = static_cast<unsigned int>(response_code);
+  return (comparable_response_code >= 400) && (comparable_response_code <= 599);
 }
 
 bool
@@ -146,7 +155,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
     alloced_buffer = nullptr;
     value_buffer   = inline_buffer;
   } else {
-    alloced_buffer = (char *)ats_malloc(bytes);
+    alloced_buffer = static_cast<char *>(ats_malloc(bytes));
     value_buffer   = alloced_buffer;
   }
 
@@ -199,8 +208,6 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   ink_assert(src_hdr->valid());
   ink_assert(!new_hdr->valid());
 
-  MIMEField *field;
-  MIMEFieldIter field_iter;
   bool date_hdr = false;
 
   // Start with an exact duplicate
@@ -217,23 +224,23 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   //         we'll have problems with the TE being forwarded to the server
   //         and us caching the transfer encoded documents and then
   //         serving it to a client that can not handle it
-  //      2) Transfer enconding is copied.  If the transfer encoding
+  //      2) Transfer encoding is copied.  If the transfer encoding
   //         is changed for example by dechunking, the transfer encoding
   //         should be modified when when the decision is made to dechunk it
 
-  for (field = new_hdr->iter_get_first(&field_iter); field != nullptr; field = new_hdr->iter_get_next(&field_iter)) {
-    if (field->m_wks_idx == -1) {
+  for (auto &field : *new_hdr) {
+    if (field.m_wks_idx == -1) {
       continue;
     }
 
-    int field_flags = hdrtoken_index_to_flags(field->m_wks_idx);
+    int field_flags = hdrtoken_index_to_flags(field.m_wks_idx);
 
-    if (field_flags & MIME_FLAGS_HOPBYHOP) {
+    if (field_flags & HTIF_HOPBYHOP) {
       // Delete header if not in special proxy_auth retention mode
-      if ((!retain_proxy_auth_hdrs) || (!(field_flags & MIME_FLAGS_PROXYAUTH))) {
-        new_hdr->field_delete(field);
+      if ((!retain_proxy_auth_hdrs) || (!(field_flags & HTIF_PROXYAUTH))) {
+        new_hdr->field_delete(&field);
       }
-    } else if (field->m_wks_idx == MIME_WKSIDX_DATE) {
+    } else if (field.m_wks_idx == MIME_WKSIDX_DATE) {
       date_hdr = true;
     }
   }
@@ -253,10 +260,6 @@ HttpTransactHeaders::convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing
     convert_to_1_0_request_header(outgoing_request);
   } else if (outgoing_ver == HTTPVersion(1, 1)) {
     convert_to_1_1_request_header(outgoing_request);
-  } else if (outgoing_ver == HTTPVersion(0, 9)) {
-    // Http 0.9 is a special case - do not bother copying over fields,
-    // because they will all need to be removed anyway.
-    convert_to_0_9_request_header(outgoing_request);
   } else {
     Debug("http_trans", "[HttpTransactHeaders::convert_request]"
                         "Unsupported Version - passing through");
@@ -272,29 +275,10 @@ HttpTransactHeaders::convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoin
     convert_to_1_0_response_header(outgoing_response);
   } else if (outgoing_ver == HTTPVersion(1, 1)) {
     convert_to_1_1_response_header(outgoing_response);
-  } else if (outgoing_ver == HTTPVersion(0, 9)) {
-    // Http 0.9 is a special case - do not bother copying over fields,
-    // because they will all need to be removed anyway.
-    convert_to_0_9_response_header(outgoing_response);
   } else {
     Debug("http_trans", "[HttpTransactHeaders::convert_response]"
                         "Unsupported Version - passing through");
   }
-}
-
-////////////////////////////////////////////////////////////////////////
-// Take an existing outgoing request header and make it HTTP/0.9
-void
-HttpTransactHeaders::convert_to_0_9_request_header(HTTPHdr *outgoing_request)
-{
-  // These are required
-  ink_assert(outgoing_request->method_get_wksidx() == HTTP_WKSIDX_GET);
-  ink_assert(outgoing_request->url_get()->valid());
-
-  outgoing_request->version_set(HTTPVersion(0, 9));
-
-  // HTTP/0.9 has no headers: nuke them all
-  outgoing_request->fields_clear();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -336,20 +320,6 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr *outgoing_request)
   // so specify that response should use identity transfer coding.
   // outgoing_request->value_insert(MIME_FIELD_TE, "identity;q=1.0");
   // outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
-}
-
-////////////////////////////////////////////////////////////////////////
-// Take an existing outgoing response header and make it HTTP/0.9
-void
-HttpTransactHeaders::convert_to_0_9_response_header(HTTPHdr * /* outgoing_response ATS_UNUSED */)
-{
-  // Http 0.9 does not require a response header.
-
-  // There used to be clear header here, but the state machine
-  // does not write down the response header if the client is
-  // 0.9. We need the header fields to make decisions about
-  // the size of the response body, however.
-  // There is therefore no need to clear the header.
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -423,7 +393,7 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time, ink_time_t 
   ink_assert(now_value >= response_time);
 
   if (date_value > 0) {
-    apparent_age = std::max((time_t)0, (response_time - date_value));
+    apparent_age = std::max(static_cast<time_t>(0), (response_time - date_value));
   }
   if (age_value < 0) {
     current_age = -1; // Overflow from Age: header
@@ -475,12 +445,6 @@ HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *
   if (outgoing_request->version_get() == HTTPVersion(1, 1)) {
     // ver.set (HTTPVersion (1, 0));
     convert_to_1_0_request_header(outgoing_request);
-
-    // bz48199: only GET requests can be downgraded to HTTP/0.9
-  } else if (outgoing_request->version_get() == HTTPVersion(1, 0) && outgoing_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
-    // ver.set (HTTPVersion (0, 9));
-    convert_to_0_9_request_header(outgoing_request);
-
   } else {
     return false;
   }
@@ -504,6 +468,8 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     // its a cache hit.
     if (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) {
       hit_miss_code = SQUID_HIT_RAM;
+    } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT) {
+      hit_miss_code = SQUID_HIT_RWW;
     } else { // TODO: Support other cache tiers here
       hit_miss_code = SQUID_HIT_RESERVED;
     }
@@ -567,6 +533,8 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
           log_code = SQUID_LOG_TCP_HIT;
         } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_RAM_CACHE_FRESH) {
           log_code = SQUID_LOG_TCP_MEM_HIT;
+        } else if (via_string[VIA_CACHE_RESULT] == VIA_IN_CACHE_RWW_HIT) {
+          log_code = SQUID_LOG_TCP_CF_HIT; // Read while write HIT
         } else {
           log_code = SQUID_LOG_TCP_MISS;
         }
@@ -592,8 +560,6 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
   // Errors may override the other codes, so check the via string error codes last
   switch (via_string[VIA_ERROR_TYPE]) {
   case VIA_ERROR_AUTHORIZATION:
-    // TODO decide which one?
-    // log_code = SQUID_LOG_TCP_DENIED;
     log_code = SQUID_LOG_ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_CONNECTION:
@@ -631,11 +597,13 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     log_code  = SQUID_LOG_TCP_SWAPFAIL;
     hier_code = SQUID_HIER_NONE;
     break;
+  case VIA_ERROR_LOOP_DETECTED:
+    log_code  = SQUID_LOG_ERR_LOOP_DETECTED;
+    hier_code = SQUID_HIER_NONE;
+    break;
   default:
     break;
   }
-
-  Debug("http_trans", "[Squid code generation] Hit/Miss: %c, Log: %c, Hier: %c", hit_miss_code, log_code, hier_code);
 
   squid_codes->log_code      = log_code;
   squid_codes->hier_code     = hier_code;
@@ -659,7 +627,7 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
     warn_text_len = 0; // Make sure it's really zero
   }
 
-  char *warning_text = (char *)alloca(bufsize);
+  char *warning_text = static_cast<char *>(alloca(bufsize));
 
   len =
     snprintf(warning_text, bufsize, "%3d %s %.*s", code, http_config_param->proxy_response_via_string, warn_text_len, warn_text);
@@ -679,14 +647,6 @@ HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_
   //      See INKqa09852.
   if (date <= 0) {
     outgoing->set_date(now);
-  }
-}
-
-void
-HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr *h)
-{
-  if (likely(server_tag && server_tag_size > 0 && h)) {
-    h->set_server(server_tag, server_tag_size);
   }
 }
 
@@ -887,9 +847,10 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   int n_proto = 0;
 
   // Should suffice - if we're adding a response VIA, the connection is HTTP and only 1.0 and 1.1 are supported outbound.
-  proto_buf[n_proto++] = HTTP_MINOR(header->version_get().m_version) == 0 ? IP_PROTO_TAG_HTTP_1_0 : IP_PROTO_TAG_HTTP_1_1;
+  // TODO H2 expand for HTTP/2 outbound
+  proto_buf[n_proto++] = header->version_get().get_minor() == 0 ? IP_PROTO_TAG_HTTP_1_0 : IP_PROTO_TAG_HTTP_1_1;
 
-  auto ss = s->state_machine->get_server_session();
+  auto ss = s->state_machine->get_server_txn();
   if (ss) {
     n_proto += ss->populate_protocol(proto_buf.data() + n_proto, proto_buf.size() - n_proto);
   }
@@ -933,35 +894,6 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Name: insert_basic_realm_in_proxy_authenticate
-// Description: insert Basic realm into Proxy-Authenticate based on
-//              configuration
-//  fix for INKqa09089
-///////////////////////////////////////////////////////////////////////////////
-void
-HttpTransactHeaders::insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr *header, bool bRevPrxy)
-{
-  char new_basic_realm[128];
-  char *basic_realm;
-
-  basic_realm = new_basic_realm;
-  basic_realm += nstrcpy(basic_realm, "Basic realm=\"");
-  basic_realm += nstrcpy(basic_realm, (char *)realm);
-  *basic_realm++ = '"';
-  *basic_realm   = 0;
-
-  MIMEField *auth;
-  if (false == bRevPrxy) {
-    auth = header->field_create(MIME_FIELD_PROXY_AUTHENTICATE, MIME_LEN_PROXY_AUTHENTICATE);
-  } else {
-    auth = header->field_create(MIME_FIELD_WWW_AUTHENTICATE, MIME_LEN_WWW_AUTHENTICATE);
-  }
-
-  header->field_value_set(auth, new_basic_realm, strlen(new_basic_realm));
-  header->field_attach(auth);
-}
-
 void
 HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 {
@@ -996,12 +928,13 @@ HttpTransactHeaders::remove_host_name_from_url(HTTPHdr *outgoing_request)
 }
 
 void
-HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
+HttpTransactHeaders::add_global_user_agent_header_to_request(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (http_txn_conf->global_user_agent_header) {
     MIMEField *ua_field;
 
-    Debug("http_trans", "Adding User-Agent: %s", http_txn_conf->global_user_agent_header);
+    Debug("http_trans", "Adding User-Agent: %.*s", static_cast<int>(http_txn_conf->global_user_agent_header_size),
+          http_txn_conf->global_user_agent_header);
     if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == nullptr) {
       if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != nullptr)) {
         header->field_attach(ua_field);
@@ -1194,7 +1127,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
 } // end HttpTransact::add_forwarded_field_to_outgoing_request()
 
 void
-HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
+HttpTransactHeaders::add_server_header_to_response(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (http_txn_conf->proxy_response_server_enabled && http_txn_conf->proxy_response_server_string) {
     MIMEField *ua_field;
@@ -1220,7 +1153,7 @@ HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *
 
 void
 HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
-                                                         OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
+                                                         const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
   if (!header) {
     return;

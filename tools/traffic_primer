@@ -18,7 +18,7 @@
 
 # Simple script to fetch a URL through one proxy, and then PUSH that response (headers
 # and body) to a set of hosts. The host:port defaults to localhost:80 for fetching
-# the URL, but can be overriden with -h/-p.
+# the URL, but can be overridden with -h/-p.
 
 
 # Default values for command line options
@@ -72,7 +72,7 @@ push() {
         if [ $? -gt 0 ]; then
             echo -e "\tError: ${h}:${PORT} is down"
         else
-            echo -en "\tProcesing ${h}:${PORT}..."
+            echo -en "\tProcessing ${h}:${PORT}..."
             # PURGE the object first if we -f (force) it
             if [ $FORCE -gt 0 ]; then
                 echo -n " purged..."

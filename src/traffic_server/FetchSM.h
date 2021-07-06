@@ -61,12 +61,11 @@ public:
     callback_events  = events;
     callback_options = options;
     _addr.assign(addr);
-    fetch_flags = TS_FETCH_FLAGS_DECHUNK;
     writeRequest(headers, length);
     mutex = new_ProxyMutex();
 
     //
-    // We had dropped response_buffer/respone_reader to avoid unnecessary
+    // We had dropped response_buffer/response_reader to avoid unnecessary
     // memory copying. But for the original TSFetchURL() API, PluginVC may
     // stop adding data to resp_buffer when the pending data in resp_buffer
     // reach its water_mark.
@@ -74,6 +73,12 @@ public:
     // So we should set the water_mark of resp_buffer with a large value,
     // INT64_MAX would be reasonable.
     resp_buffer->water_mark = INT64_MAX;
+  }
+
+  void
+  set_fetch_flags(int flags)
+  {
+    fetch_flags = flags;
   }
 
   int fetch_handler(int event, void *data);
@@ -130,7 +135,7 @@ private:
   {
     return req_reader->read_avail();
   }
-  /// Check if the comma supproting MIME field @a name has @a value in it.
+  /// Check if the comma supporting MIME field @a name has @a value in it.
   bool check_for_field_value(const char *name, size_t name_len, char const *value, size_t value_len);
 
   bool has_body();

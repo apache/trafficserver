@@ -51,7 +51,7 @@ Cache Layout
 ============
 
 The following sections describe how persistent cache data is structured. |TS|
-treats its persisent storage as an undifferentiated collection of bytes,
+treats its persistent storage as an undifferentiated collection of bytes,
 assuming no other structure to it. In particular, it does not use the file
 system of the host operating system. If a file is used it is used only to mark
 out the set of bytes to be used.
@@ -80,12 +80,12 @@ stripe is in a single cache span and part of a single cache volume.
 
 If the cache volumes for the example cache spans were defined as:
 
-.. image:: images/ats-cache-volume-definition.png
+.. figure:: images/ats-cache-volume-definition.png
    :align: center
 
 Then the actual layout would look like:
 
-.. image:: images/cache-span-layout.png
+.. figure:: images/cache-span-layout.png
    :align: center
 
 Cache stripes are the fundamental unit of cache for the implementation. A
@@ -95,8 +95,8 @@ assigned to a stripe (and in turn to a cache volume) automatically based on a
 hash of the URI used to retrieve the object from the :term:`origin server`. It
 is possible to configure this to a limited extent in :file:`hosting.config`,
 which supports content from specific hosts or domain to be stored on specific
-cache volumes. As of version 4.0.1 it is also possible to control which cache
-spans (and hence, which cache stripes) are contained in a specific cache volume.
+cache volumes. It's also possible to control which cache spans (and hence,
+which cache stripes) are contained in a specific cache volume.
 
 The layout and structure of the cache spans, the cache volumes, and the cache
 stripes that compose them are derived entirely from :file:`storage.config` and
@@ -109,13 +109,13 @@ Span Structure
 
 Each cache span is marked at the front with a span header of type :class:`DiskHeader`. Each span is
 divided in to *span blocks*. These can be thought of similarly to normal disk partitions, marking
-out blocks of storage. Span blocks can v ary in size, subject only to being a multiple of the
+out blocks of storage. Span blocks can vary in size, subject only to being a multiple of the
 *volume block size* which is currently 128MB and, of course, being no larger than the span. The
 relationship between a span block and a cache stripe is the same as between a disk partition and a
 file system. A cache stripe is structured data contained in a span block and always occupies the
 entire span block.
 
-.. image:: images/span-header.svg
+.. figure:: images/span-header.svg
    :align: center
 
 Stripe Structure
@@ -292,7 +292,8 @@ The header for a stripe is a variably sized instance of :class:`VolHeaderFooter`
 The variable trailing section contains the head indices of the directory entry
 free lists for the segments.
 
-.. image:: images/stripe-header.svg
+.. figure:: images/stripe-header.svg
+   :align: center
 
 The trailing :member:`VolHeaderFooter::freelist` array overlays the disk storage with
 an entry for every segment, even though the array is declared to have length `1`.
@@ -366,8 +367,7 @@ along with overall object properties (such as content length).
 |TS| supports `varying content <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.44>`_
 for objects. These are called :term:`alternates <alternate>`. All metadata for
 all alternates is stored in the first fragment including the set of alternates
-and the HTTP headers for them. This enables `alternate selection
-<http://trafficserver.apache.org/docs/trunk/sdk/http-hooks-and-transactions/http-alternate-selection.en.html>`_
+and the HTTP headers for them. This enables :doc:`"alternate selection" <../plugins/hooks-and-transactions/http-alternate-selection.en>`
 to be done after the *first Doc* is read from disk. An object that has more than
 one alternate will have the alternate content stored separately from the first
 fragment. For objects with only one alternate the content may or may not be in
@@ -601,14 +601,14 @@ This value should be chosen so that it is a multiple of a
 :ref:`cache entry multiplier <big-mult>`. It is not necessary to make it a
 power of two [#cache-mult-value]_. Larger fragments increase I/O efficiency but
 lead to more wasted space. The default size (1M, 2^20) is a reasonable choice
-in most circumstances, altough in very specific cases there can be benefit from
+in most circumstances, although in very specific cases there can be benefit from
 tuning this parameter. |TS| imposes an internal maximum of a 4,194,232 bytes,
 which is 4M (2^22), less the size of a struct :cpp:class:`Doc`. In practice,
 the largest reasonable target fragment size is 4M - 262,144 = 3,932,160.
 
 When a fragment is stored to disk, the size data in the cache index entry is
 set to the finest granularity permitted by the size of the fragment. To
-determine this, consult the :ref:`cache entry multipler <big-mult>` table and
+determine this, consult the :ref:`cache entry multiplier <big-mult>` table and
 find the smallest maximum size that is at least as large as the fragment. That
 will indicate the value of *big* selected and therefore the granularity of the
 approximate size. That represents the largest possible amount of wasted disk I/O
@@ -981,8 +981,8 @@ to evacuate. It is assumed that an evacuation block is placed in the evacuation
 bucket (array element) that corresponds to the evacuation region in which the
 fragment is located although no ordering per bucket is enforced in the linked
 list (this sorting is handled during evacuation). Objects are evacuated by
-specifying the first or earliest fragment in the evactuation block. The
-evactuation operation will then continue the evacuation for subsequent fragments
+specifying the first or earliest fragment in the evacuation block. The
+evacuation operation will then continue the evacuation for subsequent fragments
 in the object by adding those fragments in evacuation blocks. Note that the
 actual evacuation of those fragments is delayed until the write cursor reaches
 the fragments, it is not necessarily done at the time the earliest fragment is
@@ -990,7 +990,7 @@ evacuated.
 
 There are two types of evacuations: *reader based* and *forced*. The
 ``EvacuationBlock`` has a reader count to track this. If the reader count is
-zero, then it is a forced evacuation and the the target, if it exists, will be
+zero, then it is a forced evacuation and the target, if it exists, will be
 evacuated when the write cursor gets close. If the reader value is non-zero
 then it is a count of entities that are currently expecting to be able to read
 the object. Readers increment the count when they require read access to the
@@ -1028,7 +1028,7 @@ written out in turn. Because the fragment data is now in memory it is acceptable
 to overwrite the disk image.
 
 Note that when normal stripe writing is resumed, this same check is done again,
-each time evauating (if needed) a fragment and queuing them for writing in turn.
+each time evaluating (if needed) a fragment and queuing them for writing in turn.
 
 Updates to the directory are done when the write for the evacuated fragment
 completes. Multi-fragment objects are detected after the read completes for a
@@ -1074,7 +1074,7 @@ Fragments can also be evacuated through *hit evacuation*. This is configured by
 :ts:cv:`proxy.config.cache.hit_evacuate_size_limit`. When a fragment is read it
 is checked to see if it is close and in front of the write cursor, close being
 less than the specified percent of the size of the stripe. If set at the default
-value of 10, then if the fragment is withing 10% of the size of the stripe, it
+value of 10, then if the fragment is within 10% of the size of the stripe, it
 is marked for evacuation. This is cleared if the write cursor passes through the
 fragment while it remains open (as all open objects are evacuated). If, when the
 object is closed, the fragment is still marked then it is placed in the

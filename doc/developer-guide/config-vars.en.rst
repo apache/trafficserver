@@ -33,11 +33,15 @@
 
 .. |InkAPI.cc| replace:: ``InkAPI.cc``
 
-.. _InkAPI.cc: https://github.com/apache/trafficserver/blob/master/proxy/api/InkAPI.cc
+.. _InkAPI.cc: https://github.com/apache/trafficserver/blob/master/src/traffic_server/InkAPI.cc
 
 .. |InkAPITest.cc| replace:: ``InkAPITest.cc``
 
-.. _InkAPITest.cc: https://github.com/apache/trafficserver/blob/master/proxy/api/InkAPITest.cc
+.. _InkAPITest.cc: https://github.com/apache/trafficserver/blob/master/src/traffic_server/InkAPITest.cc
+
+.. |overridable_txn_vars.cc| replace:: ``overridable_txn_vars.cc``
+
+.. _overridable_txn_vars.cc: https://github.com/apache/trafficserver/blob/master/src/shared/overridable_txn_vars.cc
 
 .. |ts_lua_http_config.c| replace:: ``ts_lua_http_config.c``
 
@@ -93,9 +97,9 @@ type:``RecT``
 
 name:``char const*``
    The fully qualified name of the configuration variable. Although there
-   appears to be a hierarchial naming scheme, that's just a convention, and it
+   appears to be a hierarchical naming scheme, that's just a convention, and it
    is not actually used by the code. Nonetheless, new variables should adhere
-   to the hierarchial scheme.
+   to the hierarchical scheme.
 
 value_type:``RecDataT``
    The data type of the value. It should be one of ``RECD_INT``,
@@ -172,7 +176,7 @@ generally via :option:`traffic_ctl config reload`. This is handled in a generic 
 described in the next section, or in a :ref:`more specialized way <http-config-var-impl>`
 (built on top of the generic mechanism) for HTTP related configuration
 variables. This is only needed if the variable is marked as dynamically
-updateable (|RECU_DYNAMIC|_) although HTTP configuration variables should be
+updatable (|RECU_DYNAMIC|_) although HTTP configuration variables should be
 dynamic if possible.
 
 Documentation and Defaults
@@ -260,12 +264,12 @@ action.
 
    The callback occurs asynchronously. For HTTP variables as described in the
    next section, this is handled by the more specialized HTTP update mechanisms.
-   Otherwise it is the implementor's responsibility to avoid race conditions.
+   Otherwise it is the implementer's responsibility to avoid race conditions.
 
 .. _http-config-var-impl:
 
-HTTP Configuation Values
-------------------------
+HTTP Configuration Values
+-------------------------
 
 Variables used for HTTP processing should be declared as members of the
 ``HTTPConfigParams`` structure (but see :ref:`overridable-config-vars` for
@@ -308,13 +312,10 @@ required for generic access:
 
 #. Add a value to the ``TSOverridableConfigKey`` enumeration in |apidefs.h.in|_.
 
-#. Augment the ``TSHttpTxnConfigFind`` function to return this enumeration value
-   when given the name of the configuration variable. Be sure to count the
-   charaters very carefully.
+#. Augment ``Overridable_Map`` in |overridable_txn_vars.cc|_ to include configuration variable.
 
-#. Augment the ``_conf_to_memberp`` function in |InkAPI.cc|_ to return a pointer
-   to the appropriate member of ``OverridableHttpConfigParams`` and set the type
-   if not a byte value.
+#. Update the function ``_conf_to_memberp`` in |InkAPI.cc|_ to have a case for the enumeration value
+   in ``TSOverridableConfigKey``.
 
 #. Update the testing logic in |InkAPITest.cc|_ by adding the string name of the
    configuration variable to the ``SDK_Overridable_Configs`` array.

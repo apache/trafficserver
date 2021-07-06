@@ -28,7 +28,7 @@ submitting sequences of requests over the session. ATS supports several session 
 HTTP/1.x and HTTP/2. A HTTP State Machine is created for each request to process the request.
 
 ATS uses the generic classes ProxySession and ProxyTransaction to hide the details of
-the underlaying protocols from the HTTP State Machine.
+the underlying protocols from the HTTP State Machine.
 
 Classes
 =======
@@ -54,9 +54,9 @@ ProxyTransaction
    :alt: ProxyTransaction hierarchy
 
 The ProxyTransaction class abstracts the key features of a client transaction.  It has a reference to its
-paraent ProxySession.  One HttpSM is created for each ProxyTransaction.
+parent ProxySession.  One HttpSM is created for each ProxyTransaction.
 
-There are two concrete subclasses: Http1ClientTransaction and Http2Stream.
+There are two concrete subclasses: Http1Transaction and Http2Stream.
 
 Session Object Relationships
 ============================
@@ -72,15 +72,15 @@ This diagram shows the relationships between objects created as part of a HTTP/1
 object performs the basic network level protocols.  The Http1ClientSession object has a reference to the
 associated NetVC object.  The NetVC object is available via the :code:`ProxySession::get_netvc()` method.
 
-The Http1ClientSession object contains a Http1ClientTransaction objet.  For each HTTP request, it calls
-the :code:`ProxySession::new_transaction()` method to instantiate the Http1ClientTransaction object.  With the HTTP/1.x
+The Http1ClientSession object contains a Http1Transaction object.  For each HTTP request, it calls
+the :code:`ProxySession::new_transaction()` method to instantiate the Http1Transaction object.  With the HTTP/1.x
 protocol at most one transaction can be active at a time.
 
-When the Http1ClientTransaction object is instantiated via :code:`ProxyTransaction::new_transaction()` it allocates a
+When the Http1Transaction object is instantiated via :code:`ProxyTransaction::new_transaction()` it allocates a
 new HttpSM object, initializes it, and calls :code:`HttpSM::attach_client_session()` to associate the
-Http1ClientTransaction object with the new HttpSM.
+Http1Transaction object with the new HttpSM.
 
-The ProxyTransaction object refers to the HttpSM via the current_reader member variable.  The HttpSM object
+The ProxyTransaction object refers to the HttpSM via the _sm member variable.  The HttpSM object
 refers to ProxyTransaction via the ua_session member variable (session in the member name is
 historical because the HttpSM used to refer directly to the ClientSession object).
 
@@ -93,18 +93,18 @@ HTTP/2 Objects
 
 This diagram shows the relationships between objects created as part of a HTTP/2 session.  It is very similar
 to the HTTP/1.x case.  The Http2ClientSession object interacts with the NetVC.  The Http2Stream object creates
-a HttpSM object object when :code:`ProxySession::new_transaction()` is called.
+a HttpSM object when :code:`ProxyClient::new_transaction()` is called.
 
 One difference is that the Http/2 protocol allows for multiple simultaneous transactions, so the Http2ClientSession
 object must be able to manage multiple streams. From the HttpSM perspective it is interacting with a
-ProxyTransaction object, and there is no difference between working with a Http2Stream and a Http1ClientTransaction.
+ProxyTransaction object, and there is no difference between working with a Http2Stream and a Http1Transaction.
 
 Transaction and Session Shutdown
 ================================
 
 One of the trickiest bits of managing sessions and transactions is cleaning things up accurately and in a timely fashion.
 In addition, the TXN_CLOSE hooks and SSN_CLOSE hooks must be executed accurately.  The TXN_CLOSE hooks must be
-executely exactly once.  The SSN_CLOSE hook must also be executed exactly once and only after all the TXN_CLOSE
+executed exactly once.  The SSN_CLOSE hook must also be executed exactly once and only after all the TXN_CLOSE
 hooks of all the child transactions have been executed.  The CLOSE hooks are important for many plugins to ensure that
 plugin allocated objects are appropriately reclaimed.
 

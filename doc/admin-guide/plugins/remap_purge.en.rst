@@ -54,7 +54,7 @@ Configuration
 
 This plugin only functions as a remap plugin, and is therefore
 configured in :file:`remap.config`. Be aware that the ``PURGE`` requests
-are typically restricted to ``localhost``, but see :file:`ip_allow.config`
+are typically restricted to ``localhost``, but see :file:`ip_allow.yaml`
 and :file:`remap.config` how to configure these access controls.
 
 If PURGE does not work for your setup, you can enable a relaxed configuration

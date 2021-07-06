@@ -120,7 +120,7 @@ Details
 
    .. function:: iterator find(value_type * v)
 
-      Search for :arg:`v` in the container. If found, return an iterator refering to :arg:`v`. If not
+      Search for :arg:`v` in the container. If found, return an iterator referring to :arg:`v`. If not
       return the end iterator. This validates :arg:`v` is in the container.
 
    .. function:: range equal_range(key_type key)
@@ -165,7 +165,7 @@ Design Notes
 
 This is a refresh of an previously existing class, :code:`TSHahTable`. The switch to C++ 11 and then
 C++ 17 made it possible to do much better in terms of the internal implementation and API. The
-overall functionality is the roughly the same but with an easier API, compatiblity with
+overall functionality is the roughly the same but with an easier API, compatibility with
 :class:`IntrusiveDList`, improved compliance with STL container standards, and better internal
 implementation.
 
@@ -173,7 +173,7 @@ The biggest change is that elements are stored in a single global list rather th
 The buckets serve only as entry points in to the global list and to count the number of elements
 per bucket. This simplifies the implementation of iteration, so that the old :code:`Location` nested
 class can be removed. Elements with equal keys can be handled in the same way as with STL
-containers, via iterator ranges, instead of a custom psuedo-iterator class.
+containers, via iterator ranges, instead of a custom pseudo-iterator class.
 
 Notes on :func:`IntrusiveHashMap::apply`
 ========================================

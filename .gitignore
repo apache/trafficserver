@@ -1,4 +1,6 @@
 *.o
+*.c_o
+*.cc_o
 *.a
 *.so
 *.pyc
@@ -38,9 +40,9 @@ build/lt~obsolete.m4
 
 Makefile
 Makefile-pl
+config.cache
 config.status
 config.nice
-config.h
 
 configs/records.config.default
 configs/storage.config.default
@@ -61,6 +63,7 @@ src/traffic_layout/traffic_layout
 src/traffic_logcat/traffic_logcat
 src/traffic_logstats/traffic_logstats
 src/traffic_manager/traffic_manager
+src/traffic_quic/traffic_quic
 src/traffic_server/traffic_server
 src/traffic_top/traffic_top
 src/traffic_via/traffic_via
@@ -86,30 +89,51 @@ src/tscore/test_Regex
 src/tscore/test_X509HostnameValidator
 src/tscore/test_tscore
 src/tscpp/util/test_tscpputil
+lib/records/test_librecords
+lib/records/test_librecords_on_eventsystem
 lib/perl/lib/Apache/TS.pm
 
 iocore/net/test_certlookup
 iocore/net/test_UDPNet
+iocore/net/test_libinknet
+iocore/net/quic/test_QUIC*
 iocore/aio/test_AIO
-iocore/eventsystem/test_Buffer
-iocore/eventsystem/test_Event
+iocore/eventsystem/test_IOBuffer
+iocore/eventsystem/test_EventSystem
 iocore/eventsystem/test_MIOBufferWriter
 iocore/hostdb/test_RefCountCache
 
 proxy/hdrs/test_mime
+proxy/hdrs/test_Huffmancode
+proxy/hdrs/test_proxy_hdrs
+proxy/hdrs/test_hdr_heap
+proxy/hdrs/test_Huffmancode
+proxy/hdrs/test_XPACK
+proxy/http/remap/test_NextHopRoundRobin
+proxy/http/remap/test_NextHopStrategyFactory
+proxy/http/remap/test_PluginDso
+proxy/http/remap/test_PluginFactory
+proxy/http/remap/test_RemapPluginInfo
 proxy/http/test_proxy_http
-proxy/http2/test_Huffmancode
+proxy/http/remap/test_*
+proxy/http2/test_libhttp2
 proxy/http2/test_Http2DependencyTree
+proxy/http2/test_Http2FrequencyCounter
 proxy/http2/test_HPACK
 proxy/http2/hpack-tests/results
+proxy/http3/test_libhttp3
+proxy/http3/test_qpack
 proxy/logging/test_LogUtils
 proxy/logging/test_LogUtils2
+proxy/logging/test_RolledLogDeleter
 
 plugins/header_rewrite/header_rewrite_test
+plugins/experimental/cookie_remap/test_cookiejar
 plugins/experimental/esi/*_test
 plugins/experimental/slice/test_*
 plugins/experimental/sslheaders/test_sslheaders
 plugins/s3_auth/test_s3auth
+plugins/experimental/traffic_dump/test_*
 
 plugins/esi/docnode_test
 plugins/esi/gzip_test
@@ -128,7 +152,7 @@ mgmt/tools/traffic_time_config
 mgmt/tools/traffic_vip_config
 mgmt/api/api_cli_remote
 mgmt/tools/shmem_clean
-mgmt/utils/test_marshall
+mgmt/utils/test_mgmt_utils
 
 libtool
 m4/libtool.m4
@@ -148,6 +172,7 @@ rc/trafficserver.service
 
 .svn/
 .vscode/
+target
 
 tsxs
 
@@ -160,10 +185,6 @@ GTAGS
 ETAGS
 CTAGS
 
-lib/tsconfig/TsConfigGrammar.hpp
-lib/tsconfig/TsConfigSyntax.c
-lib/tsconfig/test-tsconfig
-
 tools/http_load/http_load
 tools/jtest/jtest
 tools/trafficserver.pc
@@ -174,3 +195,10 @@ RELEASE
 
 # autest
 tests/env-test/
+tests/proxy-verifier
+tests/Pipfile.lock
+tests/gold_tests/chunked_encoding/smuggle-client
+tests/gold_tests/tls/ssl-post
+
+iocore/cache/test_*
+iocore/cache/test/var/trafficserver/cache.db

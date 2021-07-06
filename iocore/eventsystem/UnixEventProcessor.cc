@@ -37,7 +37,7 @@ class EventProcessor eventProcessor;
 
 class ThreadAffinityInitializer : public Continuation
 {
-  typedef ThreadAffinityInitializer self;
+  using self = ThreadAffinityInitializer;
 
 public:
   /// Default construct.
@@ -193,7 +193,7 @@ ThreadAffinityInitializer::set_affinity(int, Event *)
     hwloc_obj_t obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, t->id % obj_count);
 #if HWLOC_API_VERSION >= 0x00010100
     int cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
-    char *cpu_mask   = (char *)alloca(cpu_mask_len);
+    char *cpu_mask   = static_cast<char *>(alloca(cpu_mask_len));
     hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
     Debug("iocore_thread", "EThread: %p %s: %d CPU Mask: %s\n", t, obj_name, obj->logical_index, cpu_mask);
 #else
@@ -230,7 +230,11 @@ ThreadAffinityInitializer::alloc_numa_stack(EThread *t, size_t stacksize)
 
   if (mem_policy != HWLOC_MEMBIND_DEFAULT) {
     // Let's temporarily set the memory binding to our destination NUMA node
+#if HWLOC_API_VERSION >= 0x20000
+    hwloc_set_membind(ink_get_topology(), nodeset, mem_policy, HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_BYNODESET);
+#else
     hwloc_set_membind_nodeset(ink_get_topology(), nodeset, mem_policy, HWLOC_MEMBIND_THREAD);
+#endif
   }
 
   // Alloc our stack
@@ -238,8 +242,13 @@ ThreadAffinityInitializer::alloc_numa_stack(EThread *t, size_t stacksize)
 
   if (mem_policy != HWLOC_MEMBIND_DEFAULT) {
     // Now let's set it back to default for this thread.
+#if HWLOC_API_VERSION >= 0x20000
+    hwloc_set_membind(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_DEFAULT,
+                      HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_BYNODESET);
+#else
     hwloc_set_membind_nodeset(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_DEFAULT,
                               HWLOC_MEMBIND_THREAD);
+#endif
   }
 
   hwloc_bitmap_free(nodeset);
@@ -371,6 +380,7 @@ EventProcessor::spawn_event_threads(EventType ev_type, int n_threads, size_t sta
   }
   tg->_count = n_threads;
   n_ethreads += n_threads;
+  schedule_spawn(&thread_started, ev_type);
 
   // Separate loop to avoid race conditions between spawn events and updating the thread table for
   // the group. Some thread set up depends on knowing the total number of threads but that can't be
@@ -394,11 +404,7 @@ EventProcessor::initThreadState(EThread *t)
 {
   // Run all thread type initialization continuations that match the event types for this thread.
   for (int i = 0; i < MAX_EVENT_TYPES; ++i) {
-    if (t->is_event_type(i)) { // that event type done here, roll thread start events of that type.
-      ++thread_group[i]._started;
-      if (thread_group[i]._started == thread_group[i]._count && thread_group[i]._afterStartCallback != nullptr) {
-        thread_group[i]._afterStartCallback();
-      }
+    if (t->is_event_type(i)) {
       // To avoid race conditions on the event in the spawn queue, create a local one to actually send.
       // Use the spawn queue event as a read only model.
       Event *nev = eventAllocator.alloc();
@@ -491,4 +497,25 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
   e->ethread->start(thr_name, nullptr, stacksize);
 
   return e;
+}
+
+bool
+EventProcessor::has_tg_started(int etype)
+{
+  return thread_group[etype]._started == thread_group[etype]._count;
+}
+
+void
+thread_started(EThread *t)
+{
+  // Find what type of thread this is, and increment the "_started" counter of that thread type.
+  for (int i = 0; i < MAX_EVENT_TYPES; ++i) {
+    if (t->is_event_type(i)) {
+      if (++eventProcessor.thread_group[i]._started == eventProcessor.thread_group[i]._count &&
+          eventProcessor.thread_group[i]._afterStartCallback != nullptr) {
+        eventProcessor.thread_group[i]._afterStartCallback();
+      }
+      break;
+    }
+  }
 }

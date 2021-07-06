@@ -26,6 +26,7 @@
 
 **************************************************************************/
 #include "P_Net.h"
+#include "tscore/ink_defs.h"
 
 #define SET_NO_LINGER
 // set in the OS
@@ -33,8 +34,6 @@
 // #define SEND_BUF_SIZE            (1024*64)
 #define FIRST_RANDOM_PORT 16000
 #define LAST_RANDOM_PORT 32000
-
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
 #if TS_USE_TPROXY
 #if !defined(IP_TRANSPARENT)
@@ -61,7 +60,8 @@ Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool
 
   fd = res;
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr)) <
+             0)) {
     goto Lerror;
   }
 
@@ -82,12 +82,12 @@ Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool
   }
 
   // Set MultiCast TTL to specified value
-  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *)&mc_ttl, sizeof(mc_ttl)) < 0)) {
+  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, reinterpret_cast<char *>(&mc_ttl), sizeof(mc_ttl)) < 0)) {
     goto Lerror;
   }
 
   // Set MultiCast Interface to specified value
-  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&mc_if, sizeof(mc_if)) < 0)) {
+  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, reinterpret_cast<char *>(&mc_if), sizeof(mc_if)) < 0)) {
     goto Lerror;
   }
 
@@ -95,7 +95,7 @@ Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool
   if (!mc_loopback) {
     char loop = 0;
 
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loop, sizeof(loop)) < 0)) {
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop)) < 0)) {
       goto Lerror;
     }
   }
@@ -129,7 +129,8 @@ Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, b
     goto Lerror;
   }
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr)) <
+             0)) {
     goto Lerror;
   }
 
@@ -151,7 +152,7 @@ Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, b
     mc_request.imr_multiaddr.s_addr = ats_ip4_addr_cast(mc_addr);
     mc_request.imr_interface.s_addr = ats_ip4_addr_cast(my_addr);
 
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mc_request, sizeof(mc_request)) < 0)) {
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, reinterpret_cast<char *>(&mc_request), sizeof(mc_request)) < 0)) {
       goto Lerror;
     }
   }
@@ -406,22 +407,26 @@ Connection::apply_options(NetVCOptions const &opt)
       struct linger l;
       l.l_onoff  = 1;
       l.l_linger = 0;
-      safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l));
+      safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l));
       Debug("socket", "::open:: setsockopt() turn on SO_LINGER on socket");
     }
   }
 
 #if TS_HAS_SO_MARK
-  uint32_t mark = opt.packet_mark;
-  safe_setsockopt(fd, SOL_SOCKET, SO_MARK, reinterpret_cast<char *>(&mark), sizeof(uint32_t));
+  if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_PACKET_MARK) {
+    uint32_t mark = opt.packet_mark;
+    safe_setsockopt(fd, SOL_SOCKET, SO_MARK, reinterpret_cast<char *>(&mark), sizeof(uint32_t));
+  }
 #endif
 
 #if TS_HAS_IP_TOS
-  uint32_t tos = opt.packet_tos;
-  if (addr.isIp4()) {
-    safe_setsockopt(fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&tos), sizeof(uint32_t));
-  } else if (addr.isIp6()) {
-    safe_setsockopt(fd, IPPROTO_IPV6, IPV6_TCLASS, reinterpret_cast<char *>(&tos), sizeof(uint32_t));
+  if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_PACKET_TOS) {
+    uint32_t tos = opt.packet_tos;
+    if (addr.isIp4()) {
+      safe_setsockopt(fd, IPPROTO_IP, IP_TOS, reinterpret_cast<char *>(&tos), sizeof(uint32_t));
+    } else if (addr.isIp6()) {
+      safe_setsockopt(fd, IPPROTO_IPV6, IPV6_TCLASS, reinterpret_cast<char *>(&tos), sizeof(uint32_t));
+    }
   }
 #endif
 }

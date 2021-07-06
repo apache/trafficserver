@@ -22,61 +22,64 @@ TSRecordDataType
 Synopsis
 ========
 
-`#include <ts/apidefs.h>`
+.. code-block:: c
 
-.. c:type:: TSRecordDataType
+    #include <ts/apidefs.h>
+
+.. c:enum:: TSRecordDataType
 
    The underlying data type of a data record (configuration variable or statistic).
 
-   .. c:macro:: TS_RECORDDATATYPE_NULL
+   .. c:enumerator:: TS_RECORDDATATYPE_NULL
 
       No data type. Used as an invalid initialization value.
 
-   .. c:macro:: TS_RECORDDATATYPE_INT
+   .. c:enumerator:: TS_RECORDDATATYPE_INT
 
       An integer.
 
-   .. c:macro:: TS_RECORDDATATYPE_FLOAT
+   .. c:enumerator:: TS_RECORDDATATYPE_FLOAT
 
        Floating point.
 
-   .. c:macro:: TS_RECORDDATATYPE_STRING
+   .. c:enumerator:: TS_RECORDDATATYPE_STRING
 
       A string.
 
-   .. c:macro:: TS_RECORDDATATYPE_COUNTER
+   .. c:enumerator:: TS_RECORDDATATYPE_COUNTER
 
       A counter which has a count and a sum.
 
-   .. c:macro:: TS_RECORDDATATYPE_STAT_CONST
+   .. c:enumerator:: TS_RECORDDATATYPE_STAT_CONST
 
       A value that is unchangeable.
 
-   .. c:macro:: TS_RECORDDATATYPE_STAT_FX
+   .. c:enumerator:: TS_RECORDDATATYPE_STAT_FX
 
       Unknown.
 
-.. c:type:: TSRecordData
+.. c:union:: TSRecordData
 
-   A union that holds the data for a record. The correct member is indicated by a :c:type:`TSRecordType` value.
+   A union that holds the data for a record. The correct member is indicated by a :c:enum:`TSRecordType` value.
 
    .. c:member:: int rec_int
 
-      Data for :c:macro:`TS_RECORDDATATYPE_INT`.
+      Data for :c:enumerator:`TS_RECORDDATATYPE_INT <TSRecordDataType.TS_RECORDDATATYPE_INT>`.
 
    .. c:member:: float rec_float
 
-      Data for :c:macro:`TS_RECORDDATATYPE_FLOAT`.
+      Data for :c:enumerator:`TS_RECORDDATATYPE_FLOAT <TSRecordDataType.TS_RECORDDATATYPE_FLOAT>`.
 
    .. c:member:: char * rec_string
 
-      Data for :c:macro:`TS_RECORDDATATYPE_STRING`.
+      Data for :c:enumerator:`TS_RECORDDATATYPE_STRING <TSRecordDataType.TS_RECORDDATATYPE_STRING>`.
 
    .. c:member:: int64_t rec_counter
 
-      Data for :c:macro:`TS_RECORDDATATYPE_COUNTER`.
+      Data for :c:enumerator:`TS_RECORDDATATYPE_COUNTER <TSRecordDataType.TS_RECORDDATATYPE_COUNTER>`.
 
 Description
 ===========
 
-This data type describes the data stored in a management value such as a configuration value or a statistic value.
+This data type describes the data stored in a management value such as a configuration value or a
+statistic value.

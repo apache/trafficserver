@@ -25,7 +25,7 @@
 
 /*
  * Base64 encoding and decoding as according to RFC1521.  Similar to uudecode.
- * See RFC1521 for specificiation.
+ * See RFC1521 for specification.
  *
  * RFC 1521 requires inserting line breaks for long lines.  The basic web
  * authentication scheme does not require them.  This implementation is

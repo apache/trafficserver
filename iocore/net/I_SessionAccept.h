@@ -56,7 +56,7 @@ class SessionAccept : public Continuation
 {
 public:
   SessionAccept(ProxyMutex *amutex) : Continuation(amutex) { SET_HANDLER(&SessionAccept::mainEvent); }
-  ~SessionAccept() {}
+  ~SessionAccept() override {}
   /**
     Accept a new connection on this session.
 

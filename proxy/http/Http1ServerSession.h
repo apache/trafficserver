@@ -31,166 +31,62 @@
  ****************************************************************************/
 
 #pragma once
-/* Enable LAZY_BUF_ALLOC to delay allocation of buffers until they
- * are actually required.
- * Enabling LAZY_BUF_ALLOC, stop Http code from allocation space
- * for header buffer and tunnel buffer. The allocation is done by
- * the net code in read_from_net when data is actually written into
- * the buffer. By allocating memory only when it is required we can
- * reduce the memory consumed by TS process.
- *
- * IMPORTANT NOTE: enable/disable LAZY_BUF_ALLOC in HttpSM.h as well.
- */
-#define LAZY_BUF_ALLOC
 
 #include "P_Net.h"
 
 #include "HttpConnectionCount.h"
 #include "HttpProxyAPIEnums.h"
+#include "PoolableSession.h"
+#include "Http1ServerTransaction.h"
 
 class HttpSM;
 class MIOBuffer;
 class IOBufferReader;
-
-enum HSS_State {
-  HSS_INIT,
-  HSS_ACTIVE,
-  HSS_KA_CLIENT_SLAVE,
-  HSS_KA_SHARED,
-};
 
 enum {
   HTTP_SS_MAGIC_ALIVE = 0x0123FEED,
   HTTP_SS_MAGIC_DEAD  = 0xDEADFEED,
 };
 
-/// Class to manage a Http v1 session to a server
-// TODO: inherit from ProxySession
-class Http1ServerSession : public VConnection
+class Http1ServerSession : public PoolableSession
 {
   using self_type  = Http1ServerSession;
-  using super_type = VConnection;
+  using super_type = PoolableSession;
 
 public:
-  Http1ServerSession() : super_type(nullptr) {}
+  Http1ServerSession();
   Http1ServerSession(self_type const &) = delete;
   self_type &operator=(self_type const &) = delete;
+  ~Http1ServerSession()                   = default;
 
-  void destroy();
-  void new_connection(NetVConnection *new_vc);
+  ////////////////////
+  // Methods
+  void release(ProxyTransaction *) override;
+  void destroy() override;
+  void release_transaction();
 
-  /** Enable tracking the number of outbound session.
-   *
-   * @param group The connection tracking group.
-   *
-   * The @a group must have already incremented the connection count. It will be cleaned up when the
-   * session terminates.
-   */
-  void enable_outbound_connection_tracking(OutboundConnTrack::Group *group);
-
-  void
-  reset_read_buffer(void)
-  {
-    ink_assert(read_buffer->_writer);
-    ink_assert(buf_reader != nullptr);
-    read_buffer->dealloc_all_readers();
-    read_buffer->_writer = nullptr;
-    buf_reader           = read_buffer->alloc_reader();
-  }
-
-  IOBufferReader *
-  get_reader()
-  {
-    return buf_reader;
-  };
-
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = nullptr) override;
-
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
-                   bool owner = false) override;
-
+  // VConnection Methods
   void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
 
-  void reenable(VIO *vio) override;
+  // ProxySession Methods
+  int get_transact_count() const override;
+  const char *get_protocol_string() const override;
+  void increment_current_active_connections_stat() override;
+  void decrement_current_active_connections_stat() override;
+  void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader) override;
+  void start() override;
+  void free() override;
+  bool is_chunked_encoding_supported() const override;
 
-  void release();
-  void attach_hostname(const char *hostname);
-  NetVConnection *
-  get_netvc() const
-  {
-    return server_vc;
-  };
-  void
-  set_netvc(NetVConnection *new_vc)
-  {
-    server_vc = new_vc;
-  }
+  IOBufferReader *get_remote_reader() override;
+  IpEndpoint const &get_server_ip() const;
 
-  // Keys for matching hostnames
-  IpEndpoint const &
-  get_server_ip() const
-  {
-    ink_release_assert(server_vc != nullptr);
-    return server_vc->get_remote_endpoint();
-  }
+  ProxyTransaction *new_transaction() override;
 
-  CryptoHash hostname_hash;
+  ////////////////////
+  // Variables
 
-  int64_t con_id     = 0;
   int transact_count = 0;
-  HSS_State state    = HSS_INIT;
-
-  // Used to determine whether the session is for parent proxy
-  // it is session to orgin server
-  // We need to determine whether a closed connection was to
-  // close parent proxy to update the
-  // proxy.process.http.current_parent_proxy_connections
-  bool to_parent_proxy = false;
-
-  // Used to verify we are recording the server
-  //   transaction stat properly
-  int server_trans_stat = 0;
-
-  // Sessions become if authentication headers
-  //  are sent over them
-  bool private_session = false;
-
-  // Copy of the owning SM's server session sharing settings
-  TSServerSessionSharingMatchType sharing_match = TS_SERVER_SESSION_SHARING_MATCH_BOTH;
-  TSServerSessionSharingPoolType sharing_pool   = TS_SERVER_SESSION_SHARING_POOL_GLOBAL;
-  //  int share_session;
-
-  /// Hash map descriptor class for IP map.
-  struct IPLinkage {
-    self_type *_next = nullptr;
-    self_type *_prev = nullptr;
-
-    static self_type *&next_ptr(self_type *);
-    static self_type *&prev_ptr(self_type *);
-    static uint32_t hash_of(sockaddr const *key);
-    static sockaddr const *key_of(self_type const *ssn);
-    static bool equal(sockaddr const *lhs, sockaddr const *rhs);
-    // Add a couple overloads for internal convenience.
-    static bool equal(sockaddr const *lhs, Http1ServerSession const *rhs);
-    static bool equal(Http1ServerSession const *lhs, sockaddr const *rhs);
-  } _ip_link;
-
-  /// Hash map descriptor class for FQDN map.
-  struct FQDNLinkage {
-    self_type *_next = nullptr;
-    self_type *_prev = nullptr;
-
-    static self_type *&next_ptr(self_type *);
-    static self_type *&prev_ptr(self_type *);
-    static uint64_t hash_of(CryptoHash const &key);
-    static CryptoHash const &key_of(self_type *ssn);
-    static bool equal(CryptoHash const &lhs, CryptoHash const &rhs);
-  } _fqdn_link;
-
-  // Keep track of connection limiting and a pointer to the
-  // singleton that keeps track of the connection counts.
-  OutboundConnTrack::Group *conn_track_group = nullptr;
 
   // The ServerSession owns the following buffer which use
   //   for parsing the headers.  The server session needs to
@@ -198,110 +94,26 @@ public:
   //   to being acquired and parsing the header without
   //   changing the buffer we are doing I/O on.  We can
   //   not change the buffer for I/O without issuing a
-  //   an asyncronous cancel on NT
+  //   an asynchronous cancel on NT
   MIOBuffer *read_buffer = nullptr;
 
-  virtual int
-  populate_protocol(std::string_view *result, int size) const
-  {
-    auto vc = this->get_netvc();
-    return vc ? vc->populate_protocol(result, size) : 0;
-  }
-
-  virtual const char *
-  protocol_contains(std::string_view tag_prefix) const
-  {
-    auto vc = this->get_netvc();
-    return vc ? vc->protocol_contains(tag_prefix) : nullptr;
-  }
-
 private:
-  NetVConnection *server_vc = nullptr;
-  int magic                 = HTTP_SS_MAGIC_DEAD;
+  int magic = HTTP_SS_MAGIC_DEAD;
 
-  IOBufferReader *buf_reader = nullptr;
+  IOBufferReader *_reader = nullptr;
+
+  int released_transactions = 0;
+
+  Http1ServerTransaction trans;
 };
 
-extern ClassAllocator<Http1ServerSession> http1ServerSessionAllocator;
+extern ClassAllocator<Http1ServerSession, true> httpServerSessionAllocator;
 
-// --- Implementation ---
+////////////////////////////////////////////
+// INLINE
 
-inline void
-Http1ServerSession::attach_hostname(const char *hostname)
+inline IOBufferReader *
+Http1ServerSession::get_remote_reader()
 {
-  if (CRYPTO_HASH_ZERO == hostname_hash) {
-    CryptoContext().hash_immediate(hostname_hash, (unsigned char *)hostname, strlen(hostname));
-  }
-}
-
-inline Http1ServerSession *&
-Http1ServerSession::IPLinkage::next_ptr(self_type *ssn)
-{
-  return ssn->_ip_link._next;
-}
-
-inline Http1ServerSession *&
-Http1ServerSession::IPLinkage::prev_ptr(self_type *ssn)
-{
-  return ssn->_ip_link._prev;
-}
-
-inline uint32_t
-Http1ServerSession::IPLinkage::hash_of(sockaddr const *key)
-{
-  return ats_ip_hash(key);
-}
-
-inline sockaddr const *
-Http1ServerSession::IPLinkage::key_of(self_type const *ssn)
-{
-  return &ssn->get_server_ip().sa;
-}
-
-inline bool
-Http1ServerSession::IPLinkage::equal(sockaddr const *lhs, sockaddr const *rhs)
-{
-  return ats_ip_addr_port_eq(lhs, rhs);
-}
-
-inline bool
-Http1ServerSession::IPLinkage::equal(sockaddr const *lhs, Http1ServerSession const *rhs)
-{
-  return ats_ip_addr_port_eq(lhs, key_of(rhs));
-}
-
-inline bool
-Http1ServerSession::IPLinkage::equal(Http1ServerSession const *lhs, sockaddr const *rhs)
-{
-  return ats_ip_addr_port_eq(key_of(lhs), rhs);
-}
-
-inline Http1ServerSession *&
-Http1ServerSession::FQDNLinkage::next_ptr(self_type *ssn)
-{
-  return ssn->_fqdn_link._next;
-}
-
-inline Http1ServerSession *&
-Http1ServerSession::FQDNLinkage::prev_ptr(self_type *ssn)
-{
-  return ssn->_fqdn_link._prev;
-}
-
-inline uint64_t
-Http1ServerSession::FQDNLinkage::hash_of(CryptoHash const &key)
-{
-  return key.fold();
-}
-
-inline CryptoHash const &
-Http1ServerSession::FQDNLinkage::key_of(self_type *ssn)
-{
-  return ssn->hostname_hash;
-}
-
-inline bool
-Http1ServerSession::FQDNLinkage::equal(CryptoHash const &lhs, CryptoHash const &rhs)
-{
-  return lhs == rhs;
-}
+  return _reader;
+};

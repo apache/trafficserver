@@ -47,6 +47,16 @@ The arguments in the :file:`plugin.config` line in order represent
 2. The name of the key used for signature verification (disabled by
    default)
 
+3. A colon separated list of headers which, if present on at least one response, will be
+   added to the combo response.
+
+4. The path of a config file with allowed content types of objects to be combined, one per
+   line, without parameters. (Blank lines and comments starting with "#" are ignored.)
+   Parameters in the Content-Type field value will be ignored when
+   checking if they appear in the allowed types.  If the path does not start with "/", the
+   config file must be located in the ATS config directory.  By default, all content types
+   are allowed, but if this file is specified, it must contain at least one content type.
+
 A "-" can be supplied as a value for any of these arguments to request
 default value be applied.
 
@@ -90,8 +100,8 @@ Combohandler follows a few rules for the "Cache-Control" header:
 1) All requested documents must have "immutable" for the combo'd
    response to also have "immutable".
 
-2) [Feature gated for 8.0 release] If one or more requested documents has "private" set,
-   then the combo'd response will also have "private". If no requested documents have a
+2) If one or more requested documents has "private" set, then the combo'd
+   response will also have "private". If no requested documents have a
    publicity setting, then the default is "public".
 
 3) The "max-age" value will be set to the smallest of all the requested "max-age"

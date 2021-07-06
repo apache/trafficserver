@@ -22,7 +22,9 @@ TSStatPersistence
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. c:type:: TSStatPersistence
 

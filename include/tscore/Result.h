@@ -25,13 +25,14 @@
 
 #include "TextBuffer.h"
 
+#include <utility>
+
 // Result is simple error object that carries a success/fail status and
 // a corresponding error message for the failure case. It is a simplified
 // form of Rust's Result object in that we don't carry a return value for
 // the success case. Arguably it ought to just be Error(), but Diags.h
 // already owns that name.
 
-#include <utility>
 struct Result {
   Result() {}
 

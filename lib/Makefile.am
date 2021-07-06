@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = . records tsconfig
+SUBDIRS = . records
 
 if BUILD_PERL_LIB
 SUBDIRS += perl
@@ -34,3 +34,8 @@ all-local:	$(LOCAL)
 
 clean-local:
 	$(MAKE) -C yamlcpp clean
+
+if EXPORT_YAML_HEADERS
+install-data-local:
+	$(MAKE) -C yamlcpp install
+endif

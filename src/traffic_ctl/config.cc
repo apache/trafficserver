@@ -25,6 +25,11 @@
 #include <ctime>
 #include "records/I_RecDefs.h"
 #include "records/P_RecUtils.h"
+#include "ts/apidefs.h"
+#include "HTTP.h"
+#include "HttpConnectionCount.h"
+#include "shared/overridable_txn_vars.h"
+#include <tscore/BufferWriter.h>
 
 struct RecordDescriptionPolicy {
   using entry_type = TSConfigRecordDescription *;
@@ -63,7 +68,7 @@ rec_typeof(int rec_type)
     return "FLOAT";
   case TS_REC_STRING:
     return "STRING";
-  case TS_REC_UNDEFINED: /* fallthru */
+  case TS_REC_UNDEFINED: /* fallthrough */
   default:
     return "UNDEFINED";
   }
@@ -98,7 +103,7 @@ rec_accessof(int rec_access)
     return "no access";
   case RECA_READ_ONLY:
     return "read only";
-  case RECA_NULL: /* fallthru */
+  case RECA_NULL: /* fallthrough */
   default:
     return "default";
   }
@@ -115,7 +120,7 @@ rec_updateof(int rec_updatetype)
     return "static, restart traffic_server";
   case RECU_RESTART_TM:
     return "static, restart traffic_manager";
-  case RECU_NULL: /* fallthru */
+  case RECU_NULL: /* fallthrough */
   default:
     return "none";
   }
@@ -132,7 +137,7 @@ rec_checkof(int rec_checktype)
     return "integer with a specified range";
   case RECC_IP:
     return "IP address";
-  case RECC_NULL: /* fallthru */
+  case RECC_NULL: /* fallthrough */
   default:
     return "none";
   }
@@ -166,6 +171,30 @@ rec_labelof(int rec_class)
   default:
     return nullptr;
   }
+}
+
+static const char *
+rec_datatypeof(TSRecordDataType dt)
+{
+  switch (dt) {
+  case TS_RECORDDATATYPE_INT:
+    return "int";
+  case TS_RECORDDATATYPE_NULL:
+    return "null";
+  case TS_RECORDDATATYPE_FLOAT:
+    return "float";
+  case TS_RECORDDATATYPE_STRING:
+    return "string";
+  case TS_RECORDDATATYPE_COUNTER:
+    return "counter";
+  case TS_RECORDDATATYPE_STAT_CONST:
+    return "constant stat";
+  case TS_RECORDDATATYPE_STAT_FX:
+    return "stat fx";
+  case TS_RECORDDATATYPE_MAX:
+    return "*";
+  }
+  return "?";
 }
 
 static std::string
@@ -223,24 +252,31 @@ CtrlEngine::config_describe()
       return;
     }
 
-    std::cout << "Name: " << desc.rec_name << std::endl;
-    std::cout << "Current Value: " << CtrlMgmtRecordValue(desc.rec_type, desc.rec_value).c_str() << std::endl;
-    std::cout << "Default Value: " << CtrlMgmtRecordValue(desc.rec_type, desc.rec_default).c_str() << std::endl;
-    std::cout << "Record Type: " << rec_classof(desc.rec_class) << std::endl;
-    std::cout << "Data Type: " << rec_typeof(desc.rec_type) << std::endl;
-    std::cout << "Access Control: " << rec_accessof(desc.rec_access) << std::endl;
-    std::cout << "Update Type: " << rec_updateof(desc.rec_updatetype) << std::endl;
-    std::cout << "Update Status: " << desc.rec_update << std::endl;
-    std::cout << "Source: " << rec_sourceof(desc.rec_source) << std::endl;
+    auto ov_iter       = ts::Overridable_Txn_Vars.find(it);
+    bool overridable_p = (ov_iter != ts::Overridable_Txn_Vars.end());
+
+    std::string text;
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Name", desc.rec_name);
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Current Value ", CtrlMgmtRecordValue(desc.rec_type, desc.rec_value).c_str());
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Default Value ", CtrlMgmtRecordValue(desc.rec_type, desc.rec_default).c_str());
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Record Type ", rec_classof(desc.rec_class));
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Data Type ", rec_typeof(desc.rec_type));
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Access Control ", rec_accessof(desc.rec_access));
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Update Type ", rec_updateof(desc.rec_updatetype));
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Update Status ", desc.rec_update);
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Source ", rec_sourceof(desc.rec_source));
+    std::cout << ts::bwprint(text, "{:16s}: {} {}\n", "Overridable", overridable_p ? "yes" : "no",
+                             overridable_p ? rec_datatypeof(std::get<1>(ov_iter->second)) : "");
 
     if (strlen(desc.rec_checkexpr)) {
-      std::cout << "Syntax Check: " << rec_checkof(desc.rec_checktype) << desc.rec_checkexpr << std::endl;
+      std::cout << ts::bwprint(text, "{:16s}: {}\n", "Syntax Check ", rec_checkof(desc.rec_checktype), desc.rec_checkexpr);
     } else {
-      std::cout << "Syntax Check: " << rec_checkof(desc.rec_checktype) << std::endl;
+      std::cout << ts::bwprint(text, "{:16s}: {}\n", "Syntax Check ", rec_checkof(desc.rec_checktype));
     }
-    std::cout << "Version: " << desc.rec_version << std::endl;
-    std::cout << "Order: " << desc.rec_order << std::endl;
-    std::cout << "Raw Stat Block: " << desc.rec_rsb << std::endl;
+
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Version ", desc.rec_version);
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Order ", desc.rec_order);
+    std::cout << ts::bwprint(text, "{:16s}: {}\n", "Raw Stat Block ", desc.rec_rsb);
 
     TSConfigRecordDescriptionFree(&desc);
   }
@@ -333,8 +369,8 @@ CtrlEngine::config_status()
   CTRL_MGMT_CHECK(manager.fetch("proxy.node.config.restart_required.manager"));
 
   std::cout << CtrlMgmtRecordValue(version).c_str() << std::endl;
-  std::cout << "Started at " << timestr((time_t)starttime.as_int()).c_str();
-  std::cout << "Last reconfiguration at " << timestr((time_t)configtime.as_int()).c_str();
+  std::cout << "Started at " << timestr(static_cast<time_t>(starttime.as_int())).c_str();
+  std::cout << "Last reconfiguration at " << timestr(static_cast<time_t>(configtime.as_int())).c_str();
   std::cout << (reconfig.as_int() ? "Reconfiguration required" : "Configuration is current") << std::endl;
 
   if (proxy.as_int()) {

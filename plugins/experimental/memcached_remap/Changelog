@@ -1,5 +1,0 @@
-1.0.0 20-May-2011
-	* Initial Release for 2.1.8-unstable apache release
-1.0.0 14-Oct-2015
-	* added autoconf changes and Makefile.am so this plugin may be built
-		when configure --enable-experimental-plugins is used.

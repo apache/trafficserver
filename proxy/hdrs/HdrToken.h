@@ -85,12 +85,6 @@ enum HdrTokenInfoFlags {
   HTIF_PROXYAUTH = 1 << 3
 };
 
-#define MIME_FLAGS_NONE HTIF_NONE
-#define MIME_FLAGS_COMMAS HTIF_COMMAS
-#define MIME_FLAGS_MULTVALS HTIF_MULTVALS
-#define MIME_FLAGS_HOPBYHOP HTIF_HOPBYHOP
-#define MIME_FLAGS_PROXYAUTH HTIF_PROXYAUTH
-
 extern DFA *hdrtoken_strs_dfa;
 extern int hdrtoken_num_wks;
 
@@ -110,6 +104,7 @@ extern uint32_t hdrtoken_str_flags[];
 extern void hdrtoken_init();
 extern int hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
 inkcoreapi extern int hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
+extern int hdrtoken_method_tokenize(const char *string, int string_len);
 extern const char *hdrtoken_string_to_wks(const char *string);
 extern const char *hdrtoken_string_to_wks(const char *string, int length);
 
@@ -137,11 +132,12 @@ hdrtoken_is_valid_wks_idx(int wks_idx)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// ToDo: This, and dependencies / users should probably be const HdrTokenHeapPrefix * IMO.
 inline HdrTokenHeapPrefix *
 hdrtoken_wks_to_prefix(const char *wks)
 {
   ink_assert(hdrtoken_is_wks(wks));
-  return ((HdrTokenHeapPrefix *)(wks - sizeof(HdrTokenHeapPrefix)));
+  return reinterpret_cast<HdrTokenHeapPrefix *>(const_cast<char *>(wks) - sizeof(HdrTokenHeapPrefix));
 }
 
 /*-------------------------------------------------------------------------
@@ -298,7 +294,7 @@ hdrtoken_wks_to_flags(const char *wks)
 ////////////////////////////////////////////////////////////////////////////
 
 // Windows insists on doing everything it's own completely
-//   inmcompatible way, including integer constant subscripts.
+//   incompatible way, including integer constant subscripts.
 //   It's too easy to match a subscript to a type since everything
 //   won't break if the type is a different size.  Oh no, we
 //   need to define the number of bits in our constants to make

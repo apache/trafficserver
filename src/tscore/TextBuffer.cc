@@ -22,13 +22,14 @@
  */
 
 #include <cstdarg>
+#include <cstdio>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/TextBuffer.h"
 
 /****************************************************************************
  *
- *  TextBuffer.cc - A self-expanding buffer, primarly meant for strings
+ *  TextBuffer.cc - A self-expanding buffer, primarily meant for strings
  *
  *
  *
@@ -40,12 +41,12 @@ TextBuffer::TextBuffer(int size)
   nextAdd     = nullptr;
   currentSize = spaceLeft = 0;
   if (size > 0) {
-    // Insitute a minimum size
+    // Institute a minimum size
     if (size < 1024) {
       size = 1024;
     }
 
-    bufferStart = (char *)ats_malloc(size);
+    bufferStart = static_cast<char *>(ats_malloc(size));
     nextAdd     = bufferStart;
     currentSize = size;
     spaceLeft   = size - 1; // Leave room for a terminator;
@@ -134,9 +135,9 @@ TextBuffer::enlargeBuffer(unsigned N)
 
     addedSize = newSize - currentSize;
 
-    newSpace = (char *)ats_realloc(bufferStart, newSize);
+    newSpace = static_cast<char *>(ats_realloc(bufferStart, newSize));
     if (newSpace != nullptr) {
-      nextAdd     = newSpace + (unsigned)(nextAdd - bufferStart);
+      nextAdd     = newSpace + static_cast<unsigned>(nextAdd - bufferStart);
       bufferStart = newSpace;
       spaceLeft += addedSize;
       currentSize = newSize;
@@ -162,8 +163,8 @@ TextBuffer::rawReadFromFile(int fd)
 {
   int readSize;
 
-  // Check to see if we have got a resonable amount of space left in our
-  //   buffer, if not try to get somemore
+  // Check to see if we have got a reasonable amount of space left in our
+  //   buffer, if not try to get some more
   if (spaceLeft < 4096) {
     if (enlargeBuffer(4096) == -1) {
       return -1;
@@ -198,15 +199,15 @@ TextBuffer::slurp(int fd)
 // int TextBuffer::readFromFD(int fd)
 //
 // Issues a single read command on the file
-// descritor passed in.  Attempts to read a minimum of
+// descriptor passed in.  Attempts to read a minimum of
 // 512 bytes from file descriptor passed.
 int
 TextBuffer::readFromFD(int fd)
 {
   int readSize;
 
-  // Check to see if we have got a resonable amount of space left in our
-  //   buffer, if not try to get somemore
+  // Check to see if we have got a reasonable amount of space left in our
+  //   buffer, if not try to get some more
   if (spaceLeft < 512) {
     if (enlargeBuffer(512) == -1) {
       return -1;
@@ -244,7 +245,7 @@ TextBuffer::vformat(const char *fmt, va_list ap)
 
     va_end(args);
 
-    if ((unsigned)num < this->spaceLeft) {
+    if (static_cast<unsigned>(num) < this->spaceLeft) {
       // We had enough space to format including the NUL. Since the returned character
       // count does not include the NUL, we can just increment and the next format will
       // overwrite the previous NUL.

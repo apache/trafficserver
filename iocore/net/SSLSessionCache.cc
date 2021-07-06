@@ -21,6 +21,8 @@
 
 #include "P_SSLConfig.h"
 #include "SSLSessionCache.h"
+#include "SSLStats.h"
+
 #include <cstring>
 
 #define SSLSESSIONCACHE_STRINGIFY0(x) #x
@@ -34,7 +36,7 @@
 #endif
 
 /* Session Cache */
-SSLSessionCache::SSLSessionCache() : session_bucket(nullptr), nbuckets(SSLConfigParams::session_cache_number_buckets)
+SSLSessionCache::SSLSessionCache() : nbuckets(SSLConfigParams::session_cache_number_buckets)
 {
   Debug("ssl.session_cache", "Created new ssl session cache %p with %zu buckets each with size max size %zu", this, nbuckets,
         SSLConfigParams::session_cache_max_bucket_size);
@@ -58,7 +60,7 @@ SSLSessionCache::getSessionBuffer(const SSLSessionID &sid, char *buffer, int &le
 }
 
 bool
-SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
+SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess, ssl_session_cache_exdata **data) const
 {
   uint64_t hash            = sid.hash();
   uint64_t target_bucket   = hash % nbuckets;
@@ -71,7 +73,7 @@ SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
           target_bucket, bucket, buf, hash);
   }
 
-  return bucket->getSession(sid, sess);
+  return bucket->getSession(sid, sess, data);
 }
 
 void
@@ -95,7 +97,7 @@ SSLSessionCache::removeSession(const SSLSessionID &sid)
 }
 
 void
-SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess)
+SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess, SSL *ssl)
 {
   uint64_t hash            = sid.hash();
   uint64_t target_bucket   = hash % nbuckets;
@@ -108,15 +110,33 @@ SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess)
           target_bucket, bucket, buf, hash);
   }
 
-  bucket->insertSession(sid, sess);
+  bucket->insertSession(sid, sess, ssl);
 }
 
 void
-SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
+SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess, SSL *ssl)
 {
+  std::shared_lock r_lock(mutex, std::try_to_lock);
+  if (!r_lock.owns_lock()) {
+    if (ssl_rsb) {
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
+    }
+    if (SSLConfigParams::session_cache_skip_on_lock_contention) {
+      return;
+    }
+    r_lock.lock();
+  }
+
+  // Don't insert if it is already there
+  if (bucket_map.find(id) != bucket_map.end()) {
+    return;
+  }
+
+  r_lock.unlock();
+
   size_t len = i2d_SSL_SESSION(sess, nullptr); // make sure we're not going to need more than SSL_MAX_SESSION_SIZE bytes
   /* do not cache a session that's too big. */
-  if (len > (size_t)SSL_MAX_SESSION_SIZE) {
+  if (len > static_cast<size_t>(SSL_MAX_SESSION_SIZE)) {
     Debug("ssl.session_cache", "Unable to save SSL session because size of %zd exceeds the max of %d", len, SSL_MAX_SESSION_SIZE);
     return;
   }
@@ -127,41 +147,44 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
     Debug("ssl.session_cache", "Inserting session '%s' to bucket %p.", buf, this);
   }
 
-  MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-  if (!lock.is_locked()) {
+  Ptr<IOBufferData> buf;
+  Ptr<IOBufferData> buf_exdata;
+  size_t len_exdata = sizeof(ssl_session_cache_exdata);
+  buf               = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  ink_release_assert(static_cast<size_t>(buf->block_size()) >= len);
+  unsigned char *loc = reinterpret_cast<unsigned char *>(buf->data());
+  i2d_SSL_SESSION(sess, &loc);
+  buf_exdata = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
+  ink_release_assert(static_cast<size_t>(buf_exdata->block_size()) >= len_exdata);
+  ssl_session_cache_exdata *exdata = reinterpret_cast<ssl_session_cache_exdata *>(buf_exdata->data());
+  // This could be moved to a function in charge of populating exdata
+  exdata->curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
+
+  ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len, buf_exdata));
+
+  std::unique_lock w_lock(mutex, std::try_to_lock);
+  if (!w_lock.owns_lock()) {
     if (ssl_rsb) {
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
     }
     if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return;
     }
-    lock.acquire(this_ethread());
+    w_lock.lock();
   }
 
   PRINT_BUCKET("insertSession before")
-  if (queue.size >= static_cast<int>(SSLConfigParams::session_cache_max_bucket_size)) {
-    removeOldestSession();
-  }
-
-  // Don't insert if it is already there
-  SSLSession *node = queue.tail;
-  while (node) {
-    if (node->session_id == id) {
-      return;
+  if (bucket_map.size() >= SSLConfigParams::session_cache_max_bucket_size) {
+    if (ssl_rsb) {
+      SSL_INCREMENT_DYN_STAT(ssl_session_cache_eviction);
     }
-    node = node->link.prev;
+    removeOldestSession(w_lock);
   }
-
-  Ptr<IOBufferData> buf;
-  buf = new_IOBufferData(buffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-  ink_release_assert(static_cast<size_t>(buf->block_size()) >= len);
-  unsigned char *loc = reinterpret_cast<unsigned char *>(buf->data());
-  i2d_SSL_SESSION(sess, &loc);
-
-  ats_scoped_obj<SSLSession> ssl_session(new SSLSession(id, buf, len));
 
   /* do the actual insert */
-  queue.enqueue(ssl_session.release());
+  auto node = ssl_session.release();
+  bucket_que.enqueue(node);
+  bucket_map[id] = node;
 
   PRINT_BUCKET("insertSession after")
 }
@@ -170,39 +193,32 @@ int
 SSLSessionBucket::getSessionBuffer(const SSLSessionID &id, char *buffer, int &len)
 {
   int true_len = 0;
-  MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-  if (!lock.is_locked()) {
+  std::shared_lock lock(mutex, std::try_to_lock);
+  if (!lock.owns_lock()) {
     if (ssl_rsb) {
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
     }
     if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return true_len;
     }
-
-    lock.acquire(this_ethread());
+    lock.lock();
   }
 
-  // We work backwards because that's the most likely place we'll find our session...
-  SSLSession *node = queue.tail;
-  while (node) {
-    if (node->session_id == id) {
-      true_len = node->len_asn1_data;
-      if (buffer) {
-        const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
-        if (true_len < len) {
-          len = true_len;
-        }
-        memcpy(buffer, loc, len);
-        return true_len;
-      }
+  auto entry = bucket_map.find(id);
+  if (buffer && entry != bucket_map.end()) {
+    true_len                 = entry->second->len_asn1_data;
+    const unsigned char *loc = reinterpret_cast<const unsigned char *>(entry->second->asn1_data->data());
+    if (true_len < len) {
+      len = true_len;
     }
-    node = node->link.prev;
+    memcpy(buffer, loc, len);
+    return true_len;
   }
   return 0;
 }
 
 bool
-SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess)
+SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess, ssl_session_cache_exdata **data)
 {
   char buf[id.len * 2 + 1];
   buf[0] = '\0'; // just to be safe.
@@ -212,34 +228,31 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess)
 
   Debug("ssl.session_cache", "Looking for session with id '%s' in bucket %p", buf, this);
 
-  MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-  if (!lock.is_locked()) {
+  std::shared_lock lock(mutex, std::try_to_lock);
+  if (!lock.owns_lock()) {
     if (ssl_rsb) {
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
     }
     if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return false;
     }
-
-    lock.acquire(this_ethread());
+    lock.lock();
   }
 
   PRINT_BUCKET("getSession")
 
-  // We work backwards because that's the most likely place we'll find our session...
-  SSLSession *node = queue.tail;
-  while (node) {
-    if (node->session_id == id) {
-      const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
-      *sess                    = d2i_SSL_SESSION(nullptr, &loc, node->len_asn1_data);
-
-      return true;
-    }
-    node = node->link.prev;
+  auto entry = bucket_map.find(id);
+  if (entry == bucket_map.end()) {
+    Debug("ssl.session_cache", "Session with id '%s' not found in bucket %p.", buf, this);
+    return false;
   }
-
-  Debug("ssl.session_cache", "Session with id '%s' not found in bucket %p.", buf, this);
-  return false;
+  const unsigned char *loc = reinterpret_cast<const unsigned char *>(entry->second->asn1_data->data());
+  *sess                    = d2i_SSL_SESSION(nullptr, &loc, entry->second->len_asn1_data);
+  if (data != nullptr) {
+    ssl_session_cache_exdata *exdata = reinterpret_cast<ssl_session_cache_exdata *>(entry->second->extra_data->data());
+    *data                            = exdata;
+  }
+  return true;
 }
 
 void inline SSLSessionBucket::print(const char *ref_str) const
@@ -250,53 +263,120 @@ void inline SSLSessionBucket::print(const char *ref_str) const
   }
 
   fprintf(stderr, "-------------- BUCKET %p (%s) ----------------\n", this, ref_str);
-  fprintf(stderr, "Current Size: %d, Max Size: %zd\n", queue.size, SSLConfigParams::session_cache_max_bucket_size);
-  fprintf(stderr, "Queue: \n");
+  fprintf(stderr, "Current Size: %ld, Max Size: %zd\n", bucket_map.size(), SSLConfigParams::session_cache_max_bucket_size);
+  fprintf(stderr, "Bucket: \n");
 
-  SSLSession *node = queue.head;
-  while (node) {
-    char s_buf[2 * node->session_id.len + 1];
-    node->session_id.toString(s_buf, sizeof(s_buf));
+  for (auto &x : bucket_map) {
+    char s_buf[2 * x.second->session_id.len + 1];
+    x.second->session_id.toString(s_buf, sizeof(s_buf));
     fprintf(stderr, "  %s\n", s_buf);
-    node = node->link.next;
   }
 }
 
-void inline SSLSessionBucket::removeOldestSession()
+void inline SSLSessionBucket::removeOldestSession(const std::unique_lock<std::shared_mutex> &lock)
 {
-  // Caller must hold the bucket lock.
-  ink_assert(this_ethread() == mutex->thread_holding);
+  // Caller must hold the bucket shared_mutex with unique_lock.
+  ink_assert(lock.owns_lock());
 
   PRINT_BUCKET("removeOldestSession before")
-  while (queue.head && queue.size >= static_cast<int>(SSLConfigParams::session_cache_max_bucket_size)) {
-    SSLSession *old_head = queue.pop();
-    if (is_debug_tag_set("ssl.session_cache")) {
-      char buf[old_head->session_id.len * 2 + 1];
-      old_head->session_id.toString(buf, sizeof(buf));
-      Debug("ssl.session_cache", "Removing session '%s' from bucket %p because the bucket has size %d and max %zd", buf, this,
-            (queue.size + 1), SSLConfigParams::session_cache_max_bucket_size);
-    }
-    delete old_head;
+
+  while (bucket_que.head && bucket_que.size >= static_cast<int>(SSLConfigParams::session_cache_max_bucket_size)) {
+    auto node = bucket_que.pop();
+    bucket_map.erase(node->session_id);
+    delete node;
   }
+
   PRINT_BUCKET("removeOldestSession after")
 }
 
 void
 SSLSessionBucket::removeSession(const SSLSessionID &id)
 {
-  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread()); // We can't bail on contention here because this session MUST be removed.
-  SSLSession *node = queue.head;
-  while (node) {
-    if (node->session_id == id) {
-      queue.remove(node);
-      delete node;
-      return;
-    }
-    node = node->link.next;
+  // We can't bail on contention here because this session MUST be removed.
+  std::unique_lock lock(mutex);
+
+  PRINT_BUCKET("removeSession before")
+
+  auto entry = bucket_map.find(id);
+  if (entry != bucket_map.end()) {
+    auto node = entry->second;
+    bucket_que.remove(node);
+    bucket_map.erase(entry);
+    delete node;
   }
+
+  PRINT_BUCKET("removeSession after")
+
+  return;
 }
 
 /* Session Bucket */
-SSLSessionBucket::SSLSessionBucket() : mutex(new_ProxyMutex()) {}
+SSLSessionBucket::SSLSessionBucket() {}
 
 SSLSessionBucket::~SSLSessionBucket() {}
+
+SSLOriginSessionCache::SSLOriginSessionCache() {}
+
+SSLOriginSessionCache::~SSLOriginSessionCache() {}
+
+void
+SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl)
+{
+  if (is_debug_tag_set("ssl.origin_session_cache")) {
+    Debug("ssl.origin_session_cache", "insert session: %s = %p", lookup_key.c_str(), sess);
+  }
+
+  ssl_curve_id curve = (ssl == nullptr) ? 0 : SSLGetCurveNID(ssl);
+  ats_scoped_obj<SSLOriginSession> ssl_orig_session(new SSLOriginSession(lookup_key, sess, curve));
+  auto new_node = ssl_orig_session.release();
+
+  std::unique_lock lock(mutex);
+  auto entry = orig_sess_map.find(lookup_key);
+  if (entry != orig_sess_map.end()) {
+    auto node = entry->second;
+    orig_sess_que.remove(node);
+    orig_sess_map.erase(entry);
+    delete node;
+  } else if (orig_sess_map.size() >= SSLConfigParams::origin_session_cache_size) {
+    remove_oldest_session(lock);
+  }
+
+  orig_sess_que.enqueue(new_node);
+  orig_sess_map[lookup_key] = new_node;
+}
+
+bool
+SSLOriginSessionCache::get_session(const std::string &lookup_key, SSL_SESSION **sess, ssl_curve_id *curve)
+{
+  if (is_debug_tag_set("ssl.origin_session_cache")) {
+    Debug("ssl.origin_session_cache", "get session: %s", lookup_key.c_str());
+  }
+
+  std::shared_lock lock(mutex);
+  auto entry = orig_sess_map.find(lookup_key);
+  if (entry == orig_sess_map.end()) {
+    return false;
+  }
+
+  *sess = entry->second->session;
+  if (curve != nullptr) {
+    *curve = entry->second->curve_id;
+  }
+  return true;
+}
+
+void
+SSLOriginSessionCache::remove_oldest_session(const std::unique_lock<std::shared_mutex> &lock)
+{
+  // Caller must hold the bucket shared_mutex with unique_lock.
+  ink_assert(lock.owns_lock());
+
+  while (orig_sess_que.head && orig_sess_que.size >= static_cast<int>(SSLConfigParams::origin_session_cache_size)) {
+    auto node = orig_sess_que.pop();
+    if (is_debug_tag_set("ssl.origin_session_cache")) {
+      Debug("ssl.origin_session_cache", "remove oldest session: %s", node->key.c_str());
+    }
+    orig_sess_map.erase(node->key);
+    delete node;
+  }
+}

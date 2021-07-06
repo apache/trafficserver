@@ -19,15 +19,15 @@
 #  limitations under the License.
 
 # Update the PKGDATE with the new version date when making a new clang-format binary package.
-PKGDATE="20180413"
+PKGDATE="20200514"
 
 function main() {
   set -e # exit on error
   ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt/${PKGDATE}}
 
-  DIR=${1:-.}
+  DIR=${@:-.}
   PACKAGE="clang-format-${PKGDATE}.tar.bz2"
-  VERSION="clang-format version 6.0.1 (http://llvm.org/git/clang.git d5f48a217f404c3462537527f4169bb45eed3904) (http://llvm.org/git/llvm.git aa0c91ae818e0b9e7981a42236dededc85997568)"
+  VERSION="clang-format version 10.0.0 (https://github.com/llvm/llvm-project.git d32170dbd5b0d54436537b6b75beaf44324e0c28)"
 
   URL=${URL:-https://ci.trafficserver.apache.org/bintray/${PACKAGE}}
 
@@ -62,7 +62,7 @@ function main() {
     ${CURL} -L --progress-bar -o ${ARCHIVE} ${URL}
     ${TAR} -x -C ${ROOT} -f ${ARCHIVE}
     cat > ${ROOT}/sha1 << EOF
-26aff1bc6dc315c695c62cadde38c934acd22d06  ${ARCHIVE}
+5eec43e5c7f3010d6e6f37639491cabe51de0ab2  ${ARCHIVE}
 EOF
     ${SHASUM} -c ${ROOT}/sha1
     chmod +x ${FORMAT}
@@ -77,7 +77,7 @@ EOF
       echo "or alternatively, undefine the FORMAT environment variable"
       exit 1
   else
-      for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc); do
+      for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in); do
     echo $file
     ${FORMAT} -i $file
       done

@@ -33,30 +33,30 @@
 #include <type_traits>
 #include "tscore/BufferWriter.h"
 
-namespace tag
-{
-struct generic;
-}
-
 namespace ts
 {
+namespace tag
+{
+  struct generic;
+}
+
 template <intmax_t N, typename C, typename T> class Scalar;
 
 namespace detail
 {
-  // @internal - althought these conversion methods look bulky, in practice they compile down to
-  // very small amounts of code due to dead code elimination and that all of the conditions are
-  // compile time constants.
+  // @internal - although these conversion methods look bulky, in practice they compile down to
+  // very small amounts of code due to the conditions being compile time constant - the non-taken
+  // clauses are dead code and eliminated by the compiler.
 
   // The general case where neither N nor S are a multiple of the other seems a bit long but this
   // minimizes the risk of integer overflow.  I need to validate that under -O2 the compiler will
   // only do 1 division to get both the quotient and remainder for (n/N) and (n%N). In cases where
   // N,S are powers of 2 I have verified recent GNU compilers will optimize to bit operations.
 
-  /// Convert a count @a c that is scale @s S to scale @c N
-  template <intmax_t N, intmax_t S>
-  intmax_t
-  scale_conversion_round_up(intmax_t c)
+  /// Convert a count @a c that is scale @s S to the corresponding count for scale @c N
+  template <intmax_t N, intmax_t S, typename C>
+  C
+  scale_conversion_round_up(C c)
   {
     typedef std::ratio<N, S> R;
     if (N == S) {
@@ -71,9 +71,9 @@ namespace detail
   }
 
   /// Convert a count @a c that is scale @s S to scale @c N
-  template <intmax_t N, intmax_t S>
-  intmax_t
-  scale_conversion_round_down(intmax_t c)
+  template <intmax_t N, intmax_t S, typename C>
+  C
+  scale_conversion_round_down(C c)
   {
     typedef std::ratio<N, S> R;
     if (N == S) {
@@ -108,12 +108,15 @@ namespace detail
 
      Much of this is driven by the fact that the assignment operator, in some cases, can not be
      templated and therefore to have a nice interface for assignment this split is needed.
+
+     Note - the key point is the actual conversion is not done when the wrapper instance is created
+     but when the wrapper instance is assigned. That is what enables the conversion to be done in
+     the context of the destination, which is not otherwise possible.
    */
 
   // Unit value, to be rounded up.
   template <typename C> struct scalar_unit_round_up_t {
     C _n;
-    //    template <typename I> constexpr operator scalar_unit_round_up_t<I>() { return {static_cast<I>(_n)}; }
     template <intmax_t N, typename I>
     constexpr I
     scale() const
@@ -220,7 +223,7 @@ public:
   static_assert(N > 0, "The scaling factor (1st template argument) must be a positive integer");
   static_assert(std::is_integral<C>::value, "The counter type (2nd template argument) must be an integral type");
 
-  constexpr Scalar(); ///< Default contructor.
+  constexpr Scalar(); ///< Default constructor.
   ///< Construct to have @a n scaled units.
   explicit constexpr Scalar(Counter n);
   /// Copy constructor.
@@ -823,27 +826,39 @@ Scalar<N, C, T>::operator*=(C n) -> self &
   return *this;
 }
 
-template <intmax_t N, typename C, typename T> Scalar<N, C, T> operator*(Scalar<N, C, T> const &lhs, C n)
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(Scalar<N, C, T> const &lhs, C n)
 {
   return Scalar<N, C, T>(lhs) *= n;
 }
-template <intmax_t N, typename C, typename T> Scalar<N, C, T> operator*(C n, Scalar<N, C, T> const &rhs)
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(C n, Scalar<N, C, T> const &rhs)
 {
   return Scalar<N, C, T>(rhs) *= n;
 }
-template <intmax_t N, typename C, typename T> Scalar<N, C, T> operator*(Scalar<N, C, T> const &lhs, int n)
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(Scalar<N, C, T> const &lhs, int n)
 {
   return Scalar<N, C, T>(lhs) *= n;
 }
-template <intmax_t N, typename C, typename T> Scalar<N, C, T> operator*(int n, Scalar<N, C, T> const &rhs)
+template <intmax_t N, typename C, typename T>
+Scalar<N, C, T>
+operator*(int n, Scalar<N, C, T> const &rhs)
 {
   return Scalar<N, C, T>(rhs) *= n;
 }
-template <intmax_t N> Scalar<N, int> operator*(Scalar<N, int> const &lhs, int n)
+template <intmax_t N>
+Scalar<N, int>
+operator*(Scalar<N, int> const &lhs, int n)
 {
   return Scalar<N, int>(lhs) *= n;
 }
-template <intmax_t N> Scalar<N, int> operator*(int n, Scalar<N, int> const &rhs)
+template <intmax_t N>
+Scalar<N, int>
+operator*(int n, Scalar<N, int> const &rhs)
 {
   return Scalar<N, int>(rhs) *= n;
 }
@@ -868,7 +883,7 @@ template <intmax_t N, typename C, typename T, typename I>
 Scalar<N, C, T>
 operator/(Scalar<N, C, T> lhs, I n)
 {
-  static_assert(std::is_integral<I>::value, "Scalar divsion only support integral types.");
+  static_assert(std::is_integral<I>::value, "Scalar division only support integral types.");
   return Scalar<N, C, T>(lhs) /= n;
 }
 
@@ -891,6 +906,20 @@ auto
 Scalar<N, C, T>::minus(Counter n) const -> self
 {
   return {_n - n};
+}
+
+template <intmax_t N, typename C>
+C
+round_up(C value)
+{
+  return N * detail::scale_conversion_round_up<N, 1>(value);
+}
+
+template <intmax_t N, typename C>
+C
+round_down(C value)
+{
+  return N * detail::scale_conversion_round_down<N, 1>(value);
 }
 
 namespace detail

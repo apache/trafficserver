@@ -137,6 +137,15 @@ To change the RAM cache size:
    1GB or more, then restart with the :program:`trafficserver` command
    (refer to :ref:`start-traffic-server`).
 
+Disabling the RAM Cache
+-----------------------
+
+It is possible to disable the RAM cache. If you have configured your
+storage using the :file:`volume.config` you can add an optional directive
+of ``ramcache=false`` to whichever volumes you wish to have it disabled on.
+This may be desirable for volumes composed of storage like RAM disks where
+you may want to avoid double RAM caching.
+
 Changing Cache Capacity
 =======================
 
@@ -307,7 +316,7 @@ Pushing an Object into the Cache
 ================================
 
 Traffic Server accepts the custom HTTP request method ``PUSH`` to put an object
-into the the cache. If the object is successfully written to the cache, then
+into the cache. If the object is successfully written to the cache, then
 Traffic Server responds with a ``200 OK`` HTTP message; otherwise a
 ``400 Malformed Pushed Response Header`` message is returned.
 
@@ -357,7 +366,7 @@ To access the Cache Inspector utility:
       map http://yourhost.com/myCI/ http://{cache} @action=allow @src_ip=172.28.56.1-172.28.56.254
 
 #. Reload the Traffic Server configuration by running :option:`traffic_ctl config reload`.
-#. Open your web browser and go to the the following URL::
+#. Open your web browser and go to the following URL::
 
       http://yourhost/myCI/
 
@@ -406,7 +415,7 @@ with a ``304 Not Modified`` HTTP message.
 
 This table describes how Traffic Server handles these types of requests: ::
 
-    OS = Origin Server's respose HTTP message
+    OS = Origin Server's response HTTP message
     IMS = A GET request w/ an If-Modified-Since header
     LMs = Last-Modified header date returned by server
     INM = A GET request w/ an If-None-Match header

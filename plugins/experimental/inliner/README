@@ -12,7 +12,7 @@ Inliner:
    5. In case the url exists into the cache. Inliner replaces the image with a 1x1
       base64 pixel and starts retrieving the content from the cache.
    6. Once the image is retrieved, buffers its content into memory.
-   7. At the end of the orginal document, Inliner outputs a little JavaScript
+   7. At the end of the original document, Inliner outputs a little JavaScript
       snippet.
    8. Inliner outputs every image found into the cache into a JavaScript function
       call.

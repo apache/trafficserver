@@ -26,7 +26,9 @@ Get HTTP MIME header values.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function::  const char * TSMimeHdrFieldValueStringGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int * value_len_ptr)
 .. function::  int TSMimeHdrFieldValueIntGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
@@ -103,7 +105,7 @@ This examples show how to retrieve and copy a specific header. ::
       return len;
     }
 
-See Slso
+See Also
 ========
 
 :manpage:`TSAPI(3ts)`,

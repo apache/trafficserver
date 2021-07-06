@@ -23,7 +23,6 @@ experimental_slice_slice_la_SOURCES = \
   experimental/slice/Config.h \
   experimental/slice/ContentRange.cc \
   experimental/slice/ContentRange.h \
-  experimental/slice/Data.cc \
   experimental/slice/Data.h \
   experimental/slice/HttpHeader.cc \
   experimental/slice/HttpHeader.h \
@@ -39,25 +38,33 @@ experimental_slice_slice_la_SOURCES = \
   experimental/slice/slice.h \
   experimental/slice/Stage.h \
   experimental/slice/transfer.cc \
-  experimental/slice/transfer.h
+  experimental/slice/transfer.h \
+  experimental/slice/util.cc \
+  experimental/slice/util.h
 
 check_PROGRAMS += experimental/slice/test_content_range
 
-experimental_slice_test_content_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DSLICE_UNIT_TEST
+experimental_slice_test_content_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DUNITTEST
 experimental_slice_test_content_range_SOURCES = \
   experimental/slice/unit-tests/test_content_range.cc \
   experimental/slice/ContentRange.cc
 
+experimental_slice_test_content_range_LDADD = @LIBPCRE@
+
 check_PROGRAMS += experimental/slice/test_range
 
-experimental_slice_test_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DSLICE_UNIT_TEST
+experimental_slice_test_range_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DUNITTEST
 experimental_slice_test_range_SOURCES = \
   experimental/slice/unit-tests/test_range.cc \
   experimental/slice/Range.cc
 
+experimental_slice_test_range_LDADD = @LIBPCRE@
+
 check_PROGRAMS += experimental/slice/test_config
 
-experimental_slice_test_config_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DSLICE_UNIT_TEST
+experimental_slice_test_config_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include -DUNITTEST
 experimental_slice_test_config_SOURCES = \
   experimental/slice/unit-tests/test_config.cc \
   experimental/slice/Config.cc
+
+experimental_slice_test_config_LDADD = @LIBPCRE@

@@ -59,7 +59,7 @@ StatPagesManager::register_http(const char *module, StatPagesFunc func)
   ink_mutex_acquire(&stat_pages_mutex);
   ink_release_assert(n_stat_pages < MAX_STAT_PAGES);
 
-  stat_pages[n_stat_pages].module = (char *)ats_malloc(strlen(module) + 3);
+  stat_pages[n_stat_pages].module = static_cast<char *>(ats_malloc(strlen(module) + 3));
   snprintf(stat_pages[n_stat_pages].module, strlen(module) + 3, "{%s}", module);
   stat_pages[n_stat_pages++].func = func;
   ink_mutex_release(&stat_pages_mutex);
@@ -176,9 +176,9 @@ BaseStatPagesHandler::resp_add(const char *fmt, ...)
 
   if (size != response_size) {
     if (!response) {
-      response = (char *)ats_malloc(size);
+      response = static_cast<char *>(ats_malloc(size));
     } else {
-      response = (char *)ats_realloc(response, size);
+      response = static_cast<char *>(ats_realloc(response, size));
     }
     response_size = size;
   }

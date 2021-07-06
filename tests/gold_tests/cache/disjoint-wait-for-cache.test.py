@@ -19,17 +19,16 @@
 import uuid
 
 Test.Summary = '''
-Same as cache-generaertaion-disjoint, but uses proxy.config.http.wait_for_cache which should delay
+Same as cache-generation-disjoint, but uses proxy.config.http.wait_for_cache which should delay
 the server from accepting connection till the cache is loaded
 '''
-# need Curl
-Test.SkipUnless(Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"))
-Test.SkipIf(Condition.true("This test fails at the moment as is turned off"))
+
 Test.ContinueOnFail = True
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
 
-# setup some config file for this server
+# Setup some config file for this server. Note that setting wait_for_cache to 3
+# will intentionally override the value set in MakeATSProcess.
 ts.Disk.records_config.update({
     'proxy.config.body_factory.enable_customizations': 3,  # enable domain specific body factory
     'proxy.config.http.cache.generation': -1,  # Start with cache turned off
@@ -60,35 +59,35 @@ tr.Processes.Default.Streams.All = "gold/miss_default-1.gold"
 
 # Same URL in generation 1 is a MISS.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/generation1/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/generation1/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'.format(
     ts.Variables.port, objectid)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/miss_gen1.gold"
 
 # Same URL in generation 2 is still a MISS.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/generation2/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/generation2/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'.format(
     ts.Variables.port, objectid)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/miss_gen2.gold"
 
 # Second touch is a HIT for default.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/default/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'.format(
     ts.Variables.port, objectid)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_default-1.gold"
 
 # Second touch is a HIT for generation1.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/generation1/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/generation1/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'.format(
     ts.Variables.port, objectid)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_gen1.gold"
 
 # Second touch is a HIT for generation2.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/generation2/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose'.format(
+tr.Processes.Default.Command = 'curl "http://127.0.0.1:{0}/generation2/cache/10/{1}" -H "x-debug: x-cache,x-cache-key,via,x-cache-generation" --verbose -o /dev/null'.format(
     ts.Variables.port, objectid)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/hit_gen2.gold"

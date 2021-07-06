@@ -51,7 +51,7 @@ header and a :mailheader:`Digest: SHA-256=...` header, it checks if
 the URL in the :mailheader:`Location` header is already cached.  If it
 isn't, then it tries to find a URL that is cached to use instead.  It
 looks in the cache for some object that matches the digest in the
-:mailheader:`Digest` header and if it succeeds, then it rewites the
+:mailheader:`Digest` header and if it succeeds, then it rewrites the
 :mailheader:`Location` header with that object's URL.
 
 This way a client should get sent to a URL that's already cached and

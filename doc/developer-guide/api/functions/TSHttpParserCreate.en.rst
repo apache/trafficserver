@@ -27,7 +27,9 @@ Parse HTTP headers from memory buffers.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSHttpParser TSHttpParserCreate(void)
 .. function:: void TSHttpParserClear(TSHttpParser parser)
@@ -68,7 +70,7 @@ may be used again.
 :func:`TSHttpParserDestroy` destroys the TSHttpParser object pointed
 to by :arg:`parser`. The :arg:`parser` pointer must not be NULL.
 
-Return Salues
+Return Values
 =============
 
 :func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp` both return

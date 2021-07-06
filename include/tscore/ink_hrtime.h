@@ -33,6 +33,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/ink_assert.h"
 #include <ctime>
+#include <cstdint>
 #include <sys/time.h>
 #include <cstdlib>
 typedef int64_t ink_hrtime;
@@ -43,7 +44,7 @@ char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//      Factors to multiply units by to obtain coresponding ink_hrtime values.
+//      Factors to multiply units by to obtain corresponding ink_hrtime values.
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -80,7 +81,7 @@ char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *
 #define HRTIME_USECONDS(_x) ((_x)*HRTIME_USECOND)
 #define HRTIME_NSECONDS(_x) ((_x)*HRTIME_NSECOND)
 
-// gratuituous wrappers
+// gratuitous wrappers
 
 static inline ink_hrtime
 ink_hrtime_from_years(unsigned int years)

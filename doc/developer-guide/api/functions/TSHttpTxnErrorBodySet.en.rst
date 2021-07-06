@@ -26,7 +26,9 @@ Sets an error type body to a transaction.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char * buf, size_t buflength, char * mimetype)
 

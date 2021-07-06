@@ -21,12 +21,12 @@
 %define _hardened_build 1
 %endif
 
-# This can be overriden via command line option, e.g.  --define “release 12"
+# This can be overriden via command line option, e.g.  --define "release 12"
 %{!?release: %define release 1}
 
 Summary:	Apache Traffic Server, a reverse, forward and transparent HTTP proxy cache
 Name:		trafficserver
-Version:	9.0.0
+Version:	10.0.0
 Release:	%{release}%{?dist}
 License:	Apache Software License 2.0 (AL2)
 Group:		System Environment/Daemons
@@ -111,6 +111,8 @@ find %{buildroot} -type f -name "*.a" -delete
 find %{buildroot} -type f -name "*.pod" -delete
 find %{buildroot} -type f -name "*.in" -delete
 find %{buildroot} -type f -name ".packlist" -delete
+find %{buildroot} -type f -name "plugin_*.so" -delete
+
 
 # ToDo: Why is the Perl stuff ending up in the wrong place ??
 mkdir -p %{buildroot}%{_datadir}/perl5

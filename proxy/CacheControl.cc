@@ -23,7 +23,7 @@
 
 /*****************************************************************************
  *
- *  CacheControl.cc - Implementation to Cache Control systtem
+ *  CacheControl.cc - Implementation to Cache Control system
  *
  *
  ****************************************************************************/
@@ -31,6 +31,7 @@
 #include <sys/types.h>
 
 #include "tscore/ink_config.h"
+#include "tscore/Filenames.h"
 #include "CacheControl.h"
 #include "ControlMatcher.h"
 #include "Main.h"
@@ -58,17 +59,11 @@ static const char *CC_directive_str[CC_NUM_TYPES] = {
   // "CACHE_AUTH_CONTENT"
 };
 
-typedef ControlMatcher<CacheControlRecord, CacheControlResult> CC_table;
+using CC_table = ControlMatcher<CacheControlRecord, CacheControlResult>;
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
 CC_table *CacheControlTable = nullptr;
-
-void
-CC_delete_table()
-{
-  delete CacheControlTable;
-}
 
 // struct CC_FreerContinuation
 // Continuation to free old cache control lists after
@@ -144,21 +139,25 @@ initCacheControl()
 //
 //  Called when the cache.conf file changes.  Since it called
 //   infrequently, we do the load of new file as blocking I/O and
-//   lock aquire is also blocking
+//   lock acquire is also blocking
 //
 void
 reloadCacheControl()
 {
+  Note("%s loading ...", ts::filename::CACHE);
+
   CC_table *newTable;
 
-  Debug("cache_control", "cache.config updated, reloading");
+  Debug("cache_control", "%s updated, reloading", ts::filename::CACHE);
   eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CACHE);
   newTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
   ink_atomic_swap(&CacheControlTable, newTable);
+
+  Note("%s finished loading", ts::filename::CACHE);
 }
 
 void
-getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableHttpConfigParams *h_txn_conf, char *tag)
+getCacheControl(CacheControlResult *result, HttpRequestData *rdata, const OverridableHttpConfigParams *h_txn_conf, char *tag)
 {
   rdata->tag = tag;
   CacheControlTable->Match(rdata, result);
@@ -185,7 +184,7 @@ getCacheControl(CacheControlResult *result, HttpRequestData *rdata, OverridableH
 //  Debugging Method
 //
 void
-CacheControlResult::Print()
+CacheControlResult::Print() const
 {
   printf("\t reval: %d, never-cache: %d, pin: %d, ignore-c: %d ignore-s: %d\n", revalidate_after, never_cache, pin_in_cache_for,
          ignore_client_no_cache, ignore_server_no_cache);
@@ -196,7 +195,7 @@ CacheControlResult::Print()
 //  Debugging Method
 //
 void
-CacheControlRecord::Print()
+CacheControlRecord::Print() const
 {
   switch (this->directive) {
   case CC_REVALIDATE_AFTER:
@@ -299,7 +298,7 @@ CacheControlRecord::Init(matcher_line *line_info)
         directive = CC_IGNORE_SERVER_NO_CACHE;
         d_found   = true;
       } else {
-        return Result::failure("%s Invalid action at line %d in cache.config", modulePrefix, line_num);
+        return Result::failure("%s Invalid action at line %d in %s", modulePrefix, line_num, ts::filename::CACHE);
       }
     } else {
       if (strcasecmp(label, "revalidate") == 0) {
@@ -319,7 +318,7 @@ CacheControlRecord::Init(matcher_line *line_info)
           this->time_arg = time_in;
 
         } else {
-          return Result::failure("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+          return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::CACHE);
         }
       }
     }
@@ -333,14 +332,14 @@ CacheControlRecord::Init(matcher_line *line_info)
   }
 
   if (d_found == false) {
-    return Result::failure("%s No directive in cache.config at line %d", modulePrefix, line_num);
+    return Result::failure("%s No directive in %s at line %d", modulePrefix, ts::filename::CACHE, line_num);
   }
   // Process any modifiers to the directive, if they exist
   if (line_info->num_el > 0) {
     tmp = ProcessModifiers(line_info);
 
     if (tmp != nullptr) {
-      return Result::failure("%s %s at line %d in cache.config", modulePrefix, tmp, line_num);
+      return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::CACHE);
     }
   }
 
@@ -368,9 +367,12 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
     break;
   case CC_NEVER_CACHE:
     if (this->CheckForMatch(h_rdata, result->never_line) == true) {
-      result->never_cache = true;
-      result->never_line  = this->line_num;
-      match               = true;
+      // ttl-in-cache overrides never-cache
+      if (result->ttl_line == -1) {
+        result->never_cache = true;
+        result->never_line  = this->line_num;
+        match               = true;
+      }
     }
     break;
   case CC_STANDARD_CACHE:

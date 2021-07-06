@@ -18,6 +18,8 @@
 
 include $(top_srcdir)/build/tidy.mk
 
+check_PROGRAMS = test_librecords test_librecords_on_eventsystem
+
 AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/iocore/eventsystem \
 	-I$(abs_top_srcdir)/iocore/utils \
@@ -42,7 +44,6 @@ librecords_COMMON = \
 	P_RecCore.h \
 	P_RecDefs.h \
 	P_RecFile.h \
-	P_RecFile.h \
 	P_RecMessage.h \
 	P_RecUtils.h \
 	RecConfigParse.cc \
@@ -66,6 +67,40 @@ librecords_p_a_SOURCES = \
 	I_RecProcess.h \
 	P_RecProcess.h \
 	RecProcess.cc
+
+TESTS = $(check_PROGRAMS)
+
+test_librecords_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/tests/include
+
+test_librecords_SOURCES = \
+    unit_tests/unit_test_main.cc \
+    unit_tests/test_RecHttp.cc
+
+test_librecords_LDADD = \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@HWLOC_LIBS@ @LIBCAP@
+
+test_librecords_on_eventsystem_CPPFLAGS = $(AM_CPPFLAGS)\
+	-I$(abs_top_srcdir)/tests/include
+
+test_librecords_on_eventsystem_SOURCES = \
+    unit_tests/unit_test_main_on_eventsystem.cc \
+	unit_tests/test_DynamicStats.cc
+
+test_librecords_on_eventsystem_LDADD = \
+	$(top_builddir)/lib/records/librecords_p.a \
+	$(top_builddir)/mgmt/libmgmt_p.la \
+	$(top_builddir)/iocore/eventsystem/libinkevent.a \
+	$(top_builddir)/src/tscpp/util/libtscpputil.la \
+	$(top_builddir)/src/tscore/libtscore.la \
+	$(top_builddir)/proxy/shared/libUglyLogStubs.a \
+	@HWLOC_LIBS@ @LIBCAP@
 
 clang-tidy-local: $(sort $(DIST_SOURCES))
 	$(CXX_Clang_Tidy)

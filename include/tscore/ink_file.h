@@ -45,7 +45,7 @@
 #include <sys/statvfs.h>
 #endif
 
-// Darwin keeps statafs(2) in <sys/mount.h> ...
+// Darwin keeps statfs(2) in <sys/mount.h> ...
 #if HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif

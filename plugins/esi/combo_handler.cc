@@ -23,11 +23,12 @@
 
 #include <list>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <vector>
 #include <algorithm>
 #include <ctime>
-#include <pthread.h>
+#include <fstream>
 #include <arpa/inet.h>
 #include <limits>
 #include <getopt.h>
@@ -36,6 +37,7 @@
 #include "ts/experimental.h"
 #include "ts/remap.h"
 #include "tscore/ink_defs.h"
+#include "tscpp/util/TextView.h"
 
 #include "HttpDataFetcherImpl.h"
 #include "gzip.h"
@@ -45,7 +47,6 @@ using namespace std;
 using namespace EsiLib;
 
 #define DEBUG_TAG "combo_handler"
-#define FEAT_GATE_8_0
 
 // Because STL vs. C library leads to ugly casting, fix it once.
 inline int
@@ -64,7 +65,7 @@ unsigned MaxFileCount = DEFAULT_MAX_FILE_COUNT;
 
 int arg_idx;
 static string SIG_KEY_NAME;
-static vector<string> HEADER_WHITELIST;
+static vector<string> HEADER_ALLOWLIST;
 
 #define DEFAULT_COMBO_HANDLER_PATH "admin/v1/combo"
 static string COMBO_HANDLER_PATH{DEFAULT_COMBO_HANDLER_PATH};
@@ -83,12 +84,12 @@ static string COMBO_HANDLER_PATH{DEFAULT_COMBO_HANDLER_PATH};
 using StringList = list<string>;
 
 struct ClientRequest {
-  TSHttpStatus status;
-  const sockaddr *client_addr;
+  TSHttpStatus status         = TS_HTTP_STATUS_OK;
+  const sockaddr *client_addr = nullptr;
   StringList file_urls;
-  bool gzip_accepted;
+  bool gzip_accepted = false;
   string defaultBucket; // default Bucket will be set to HOST header
-  ClientRequest() : status(TS_HTTP_STATUS_OK), client_addr(nullptr), gzip_accepted(false), defaultBucket("l"){};
+  ClientRequest() : defaultBucket("l"){};
 };
 
 struct InterceptData {
@@ -96,11 +97,11 @@ struct InterceptData {
   TSCont contp;
 
   struct IoHandle {
-    TSVIO vio;
-    TSIOBuffer buffer;
-    TSIOBufferReader reader;
+    TSVIO vio               = nullptr;
+    TSIOBuffer buffer       = nullptr;
+    TSIOBufferReader reader = nullptr;
 
-    IoHandle() : vio(nullptr), buffer(nullptr), reader(nullptr){};
+    IoHandle() = default;
 
     ~IoHandle()
     {
@@ -168,6 +169,32 @@ struct CacheControlHeader {
   Publicity _publicity  = Publicity::DEFAULT;
   bool _immutable       = true;
 };
+
+class ContentTypeHandler
+{
+public:
+  ContentTypeHandler(std::string &resp_header_fields) : _resp_header_fields(resp_header_fields) {}
+
+  // Returns false if _content_type_allowlist is not empty, and content-type field is either not present or not in the
+  // allowlist.  Adds first Content-type field it encounters in the headers passed to this function.
+  //
+  bool nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc);
+
+  // Load allowlist from config file.
+  //
+  static void loadAllowList(std::string const &file_spec);
+
+private:
+  // Add Content-Type field to these.
+  //
+  std::string &_resp_header_fields;
+
+  bool _added_content_type{false};
+
+  static vector<std::string> _content_type_allowlist;
+};
+
+vector<std::string> ContentTypeHandler::_content_type_allowlist;
 
 bool
 InterceptData::init(TSVConn vconn)
@@ -282,18 +309,14 @@ CacheControlHeader::generate() const
   const char *publicity;
   const char *immutable;
 
-// TODO This feature gate should be removed for the 8.0 release. Previously, all combo_cache
-// documents were public. However, that's a bug. If any requested document is private the combo_cache
-// document should private as well.
-#ifndef FEAT_GATE_8_0
+  // Previously, all combo_cache documents were public. However, that's a bug. If any requested document is private the combo_cache
+  // document should private as well.
   if (_publicity == Publicity::PUBLIC || _publicity == Publicity::DEFAULT) {
     publicity = TS_HTTP_VALUE_PUBLIC;
   } else {
     publicity = TS_HTTP_VALUE_PRIVATE;
   }
-#else
-  publicity = TS_HTTP_VALUE_PUBLIC;
-#endif
+
   immutable = (_immutable ? ", " HTTP_IMMUTABLE : "");
   max_age   = (_max_age == numeric_limits<unsigned int>::max() ? 315360000 : _max_age); // default is 10 years
 
@@ -314,11 +337,7 @@ static bool writeResponse(InterceptData &int_data);
 static bool writeErrorResponse(InterceptData &int_data, int &n_bytes_written);
 static bool writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written);
 static void prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &resp_header_fields);
-static bool getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields);
 static bool getDefaultBucket(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_obj, ClientRequest &creq);
-
-// libesi TLS key.
-pthread_key_t threadKey = 0;
 
 void
 TSPluginInit(int argc, const char *argv[])
@@ -388,16 +407,28 @@ TSPluginInit(int argc, const char *argv[])
     stringstream strstream(argv[optind++]);
     string header;
     while (getline(strstream, header, ':')) {
-      HEADER_WHITELIST.push_back(header);
+      HEADER_ALLOWLIST.push_back(header);
     }
   }
   ++optind;
 
-  for (unsigned int i = 0; i < HEADER_WHITELIST.size(); i++) {
-    LOG_DEBUG("WhiteList: %s", HEADER_WHITELIST[i].c_str());
+  for (unsigned int i = 0; i < HEADER_ALLOWLIST.size(); i++) {
+    LOG_DEBUG("AllowList: %s", HEADER_ALLOWLIST[i].c_str());
   }
 
-  TSReleaseAssert(pthread_key_create(&threadKey, nullptr) == 0);
+  std::string content_type_allowlist_filespec = (argc > optind && (argv[optind][0] != '-' || argv[optind][1])) ? argv[optind] : "";
+  if (content_type_allowlist_filespec.empty()) {
+    LOG_DEBUG("No Content-Type allowlist file specified (all content types allowed)");
+  } else {
+    // If we have a path and it's not an absolute path, make it relative to the
+    // configuration directory.
+    if (content_type_allowlist_filespec[0] != '/') {
+      content_type_allowlist_filespec = std::string(TSConfigDirGet()) + '/' + content_type_allowlist_filespec;
+    }
+    LOG_DEBUG("Content-Type allowlist file: %s", content_type_allowlist_filespec.c_str());
+    ContentTypeHandler::loadAllowList(content_type_allowlist_filespec);
+  }
+  ++optind;
 
   TSCont rrh_contp = TSContCreate(handleReadRequestHeader, nullptr);
   if (!rrh_contp) {
@@ -407,7 +438,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, rrh_contp);
 
-  if (TSHttpTxnArgIndexReserve(DEBUG_TAG, "will save plugin-enable flag here", &arg_idx) != TS_SUCCESS) {
+  if (TSUserArgIndexReserve(TS_USER_ARGS_TXN, DEBUG_TAG, "will save plugin-enable flag here", &arg_idx) != TS_SUCCESS) {
     LOG_ERROR("failed to reserve private data slot");
     return;
   } else {
@@ -438,7 +469,7 @@ handleReadRequestHeader(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
     return 0;
   }
 
-  if (1 != reinterpret_cast<intptr_t>(TSHttpTxnArgGet(txnp, arg_idx))) {
+  if (1 != reinterpret_cast<intptr_t>(TSUserArgGet(txnp, arg_idx))) {
     LOG_DEBUG("combo is disabled for this channel");
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
@@ -540,18 +571,6 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
   LOG_DEBUG("host: %.*s", host_len, host);
   creq.defaultBucket = string(host, host_len);
   defaultBucketFound = true;
-
-  /*
-  for(int i = 0 ; i < host_len; i++)
-    {
-      if (host[i] == '.')
-        {
-          creq.defaultBucket = string(host, i);
-          defaultBucketFound = true;
-          break;
-        }
-    }
-  */
 
   TSHandleMLocRelease(bufp, hdr_obj, field_loc);
 
@@ -931,14 +950,12 @@ writeResponse(InterceptData &int_data)
 static void
 prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &resp_header_fields)
 {
-  bool got_content_type = false;
-
   if (int_data.creq.status == TS_HTTP_STATUS_OK) {
     HttpDataFetcherImpl::ResponseData resp_data;
     TSMLoc field_loc;
     time_t expires_time;
     bool got_expires_time = false;
-    int num_headers       = HEADER_WHITELIST.size();
+    int num_headers       = HEADER_ALLOWLIST.size();
     int flags_list[num_headers];
     CacheControlHeader cch;
 
@@ -946,12 +963,16 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
       flags_list[i] = 0;
     }
 
+    ContentTypeHandler cth(resp_header_fields);
+
     for (StringList::iterator iter = int_data.creq.file_urls.begin(); iter != int_data.creq.file_urls.end(); ++iter) {
       if (int_data.fetcher->getData(*iter, resp_data) && resp_data.status == TS_HTTP_STATUS_OK) {
         body_blocks.push_back(ByteBlock(resp_data.content, resp_data.content_len));
-        if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_CONTENT_TYPE) == HEADER_WHITELIST.end()) {
-          if (!got_content_type) {
-            got_content_type = getContentType(resp_data.bufp, resp_data.hdr_loc, resp_header_fields);
+        if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_CONTENT_TYPE) == HEADER_ALLOWLIST.end()) {
+          if (!cth.nextObjectHeader(resp_data.bufp, resp_data.hdr_loc)) {
+            LOG_ERROR("Content type missing or forbidden for requested URL [%s]", iter->c_str());
+            int_data.creq.status = TS_HTTP_STATUS_FORBIDDEN;
+            break;
           }
         }
 
@@ -979,7 +1000,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
             continue;
           }
 
-          const string &header = HEADER_WHITELIST[i];
+          const string &header = HEADER_ALLOWLIST[i];
 
           field_loc = TSMimeHdrFieldFind(resp_data.bufp, resp_data.hdr_loc, header.c_str(), header.size());
           if (field_loc != TS_NULL_MLOC) {
@@ -1015,16 +1036,17 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
     }
     if (int_data.creq.status == TS_HTTP_STATUS_OK) {
       // Add in Cache-Control header
-      if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_CACHE_CONTROL) == HEADER_WHITELIST.end()) {
+      if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_CACHE_CONTROL) == HEADER_ALLOWLIST.end()) {
         resp_header_fields.append(cch.generate());
       }
-      if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_EXPIRES) == HEADER_WHITELIST.end()) {
+      if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_EXPIRES) == HEADER_ALLOWLIST.end()) {
         if (got_expires_time) {
           if (expires_time <= 0) {
             resp_header_fields.append("Expires: 0\r\n");
           } else {
             char line_buf[128];
-            int line_size = strftime(line_buf, 128, "Expires: %a, %d %b %Y %T GMT\r\n", gmtime(&expires_time));
+            struct tm gm_expires_time;
+            int line_size = strftime(line_buf, 128, "Expires: %a, %d %b %Y %T GMT\r\n", gmtime_r(&expires_time, &gm_expires_time));
             resp_header_fields.append(line_buf, line_size);
           }
         }
@@ -1045,10 +1067,9 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
   }
 }
 
-static bool
-getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields)
+bool
+ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
 {
-  bool retval      = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
   if (field_loc != TS_NULL_MLOC) {
     bool values_added = false;
@@ -1057,21 +1078,86 @@ getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields)
     int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
-      if (!values_added) {
-        resp_header_fields.append("Content-Type: ");
-        values_added = true;
-      } else {
-        resp_header_fields.append(", ");
+      ts::TextView tv{value, value_len};
+      tv = tv.prefix(';').rtrim(std::string_view(" \t"));
+      if (_content_type_allowlist.empty()) {
+        ;
+      } else if (std::find_if(_content_type_allowlist.begin(), _content_type_allowlist.end(), [tv](ts::TextView tv2) -> bool {
+                   return strcasecmp(tv, tv2) == 0;
+                 }) == _content_type_allowlist.end()) {
+        return false;
+      } else if (tv.empty()) {
+        // allowlist is bad, contains an empty string.
+        return false;
       }
-      resp_header_fields.append(value, value_len);
+      if (!_added_content_type) {
+        if (!values_added) {
+          _resp_header_fields.append("Content-Type: ");
+          values_added = true;
+        } else {
+          _resp_header_fields.append(", ");
+        }
+        _resp_header_fields.append(value, value_len);
+      }
     }
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     if (values_added) {
-      resp_header_fields.append("\r\n");
-      retval = true;
+      _resp_header_fields.append("\r\n");
+
+      // Assume that the Content-type field from the first header covers all the responses being combined.
+      _added_content_type = true;
+    }
+    return true;
+  }
+  // No content type header field so doesn't pass allowlist if there is one.
+  return _content_type_allowlist.empty();
+}
+
+void
+ContentTypeHandler::loadAllowList(std::string const &file_spec)
+{
+  std::fstream fs;
+  char line_buffer[256];
+  bool extra_junk_on_line{false};
+  int line_num = 0;
+
+  fs.open(file_spec, std::ios_base::in);
+  if (fs.good()) {
+    for (;;) {
+      ++line_num;
+      fs.getline(line_buffer, sizeof(line_buffer));
+      if (!fs.good()) {
+        break;
+      }
+      constexpr std::string_view bs{" \t"sv};
+      ts::TextView line{line_buffer, std::size_t(fs.gcount() - 1)};
+      line.ltrim(bs);
+      if (line.empty() || line[0] == '#') {
+        // Empty/comment line.
+        continue;
+      }
+      ts::TextView content_type{line.take_prefix_at(bs)};
+      line.trim(bs);
+      if (line.size() && (line[0] != '#')) {
+        extra_junk_on_line = true;
+        break;
+      }
+      _content_type_allowlist.emplace_back(content_type);
     }
   }
-  return retval;
+  if (fs.fail() && !(fs.eof() && (fs.gcount() == 0))) {
+    LOG_ERROR("Error reading Content-Type allowlist config file %s, line %d", file_spec.c_str(), line_num);
+  } else if (extra_junk_on_line) {
+    LOG_ERROR("More than one type on line %d in Content-Type allowlist config file %s", line_num, file_spec.c_str());
+  } else if (_content_type_allowlist.empty()) {
+    LOG_ERROR("Content-type allowlist config file %s must have at least one entry", file_spec.c_str());
+  } else {
+    // End of file.
+    return;
+  }
+  _content_type_allowlist.clear();
+  // An empty string marks object as bad.
+  _content_type_allowlist.emplace_back("");
 }
 
 static const char INVARIANT_FIELD_LINES[]    = {"Vary: Accept-Encoding\r\n"};
@@ -1080,7 +1166,7 @@ static const char INVARIANT_FIELD_LINES_SIZE = sizeof(INVARIANT_FIELD_LINES) - 1
 static bool
 writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written)
 {
-  if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_VARY) == HEADER_WHITELIST.end()) {
+  if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_VARY) == HEADER_ALLOWLIST.end()) {
     if (TSIOBufferWrite(int_data.output.buffer, INVARIANT_FIELD_LINES, INVARIANT_FIELD_LINES_SIZE) == TS_ERROR) {
       LOG_ERROR("Error while writing invariant fields");
       return false;
@@ -1088,10 +1174,12 @@ writeStandardHeaderFields(InterceptData &int_data, int &n_bytes_written)
     n_bytes_written += INVARIANT_FIELD_LINES_SIZE;
   }
 
-  if (find(HEADER_WHITELIST.begin(), HEADER_WHITELIST.end(), TS_MIME_FIELD_LAST_MODIFIED) == HEADER_WHITELIST.end()) {
+  if (find(HEADER_ALLOWLIST.begin(), HEADER_ALLOWLIST.end(), TS_MIME_FIELD_LAST_MODIFIED) == HEADER_ALLOWLIST.end()) {
     time_t time_now = static_cast<time_t>(TShrtime() / 1000000000); // it returns nanoseconds!
     char last_modified_line[128];
-    int last_modified_line_size = strftime(last_modified_line, 128, "Last-Modified: %a, %d %b %Y %T GMT\r\n", gmtime(&time_now));
+    struct tm gmnow;
+    int last_modified_line_size =
+      strftime(last_modified_line, 128, "Last-Modified: %a, %d %b %Y %T GMT\r\n", gmtime_r(&time_now, &gmnow));
     if (TSIOBufferWrite(int_data.output.buffer, last_modified_line, last_modified_line_size) == TS_ERROR) {
       LOG_ERROR("Error while writing last-modified fields");
       return false;
@@ -1128,8 +1216,8 @@ writeErrorResponse(InterceptData &int_data, int &n_bytes_written)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  TSHttpTxnArgSet(rh, arg_idx, (void *)1); /* Save for later hooks */
-  return TSREMAP_NO_REMAP;                 /* Continue with next remap plugin in chain */
+  TSUserArgSet(rh, arg_idx, (void *)1); /* Save for later hooks */
+  return TSREMAP_NO_REMAP;              /* Continue with next remap plugin in chain */
 }
 
 /*

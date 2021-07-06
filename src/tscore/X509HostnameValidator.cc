@@ -166,7 +166,7 @@ wildcard_match(const unsigned char *prefix, size_t prefix_len, const unsigned ch
    * permitted characters and only matches a single label
    */
   for (p = wildcard_start; p != wildcard_end; ++p) {
-    if (!(('0' <= *p && *p <= '9') || ('A' <= *p && *p <= 'Z') || ('a' <= *p && *p <= 'z') || *p == '-')) {
+    if (!(('a' <= *p && *p <= 'z') || ('A' <= *p && *p <= 'Z') || ('0' <= *p && *p <= '9') || *p == '-' || *p == '_')) {
       return false;
     }
   }
@@ -179,7 +179,7 @@ equal_wildcard(const unsigned char *pattern, size_t pattern_len, const unsigned 
 {
   const unsigned char *wildcard = nullptr;
 
-  bool is_idna = (subject_len > 4 && strncasecmp((const char *)(subject), "xn--", 4) == 0);
+  bool is_idna = (subject_len > 4 && strncasecmp(reinterpret_cast<const char *>(subject), "xn--", 4) == 0);
   /*
    * Subject names starting with '.' can only match a wildcard pattern
    * via a subject sub-domain pattern suffix match (that we don't allow).
@@ -236,7 +236,7 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
   }
 
   // Check SANs for a match.
-  gens = (GENERAL_NAMES *)X509_get_ext_d2i(x, NID_subject_alt_name, nullptr, nullptr);
+  gens = static_cast<GENERAL_NAMES *>(X509_get_ext_d2i(x, NID_subject_alt_name, nullptr, nullptr));
   if (gens) {
     // BoringSSL has sk_GENERAL_NAME_num() return size_t.
     for (i = 0; i < static_cast<int>(sk_GENERAL_NAME_num(gens)); i++) {

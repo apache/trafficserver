@@ -179,15 +179,7 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:135
-msgid ":doc:`Balancer <balancer.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:135
 msgid "Balances requests across multiple origin servers."
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:138
-msgid ":doc:`Buffer Upload <buffer_upload.en>`"
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:138
@@ -259,10 +251,6 @@ msgid "Deny or allow requests based on the source IP geo-location."
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:165
-msgid ":doc:`HIPES <hipes.en>`"
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:165
 msgid "Adds support for HTTP Pipes."
 msgstr ""
 
@@ -326,10 +314,6 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:186
 msgid "Populate request headers with SSL session information."
-msgstr ""
-
-#: ../../../admin-guide/plugins/index.en.rst:189
-msgid ":doc:`Stale While Revalidate <stale_while_revalidate.en>`"
 msgstr ""
 
 #: ../../../admin-guide/plugins/index.en.rst:189

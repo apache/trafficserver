@@ -49,6 +49,29 @@ resetTransactionHandles(Transaction &transaction, TSEvent event)
   return;
 }
 
+void
+cleanupTransaction(Transaction &transaction, TSHttpTxn ats_txn_handle)
+{
+  delete &transaction;
+  // reset the txn arg to prevent use-after-free
+  TSUserArgSet(ats_txn_handle, TRANSACTION_STORAGE_INDEX, nullptr);
+}
+
+void
+cleanupTransactionPlugin(Plugin *plugin, TSHttpTxn ats_txn_handle)
+{
+  TransactionPlugin *transaction_plugin = static_cast<TransactionPlugin *>(plugin);
+  std::shared_ptr<Mutex> trans_mutex    = utils::internal::getTransactionPluginMutex(*transaction_plugin, ats_txn_handle);
+  if (trans_mutex == nullptr) {
+    LOG_ERROR("TransactionPlugin use-after-free! plugin %p, txn %p", plugin, ats_txn_handle);
+    return;
+  }
+  LOG_DEBUG("Locking TransactionPlugin mutex to delete transaction plugin at %p", transaction_plugin);
+  trans_mutex->lock();
+  delete transaction_plugin;
+  trans_mutex->unlock();
+}
+
 int
 handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
 {
@@ -61,7 +84,6 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
   utils::internal::setTransactionEvent(transaction, event);
   switch (event) {
   case TS_EVENT_HTTP_POST_REMAP:
-    transaction.getClientRequest().getUrl().reset();
     // This is here to force a refresh of the cached client request url
     TSMBuffer hdr_buf;
     TSMLoc hdr_loc;
@@ -78,14 +100,9 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
     resetTransactionHandles(transaction, event);
     const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
     for (auto plugin : plugins) {
-      std::shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(*plugin);
-      LOG_DEBUG("Locking TransacitonPlugin mutex to delete transaction plugin at %p", plugin);
-      trans_mutex->lock();
-      LOG_DEBUG("Locked Mutex...Deleting transaction plugin at %p", plugin);
-      delete plugin;
-      trans_mutex->unlock();
+      cleanupTransactionPlugin(plugin, ats_txn_handle);
     }
-    delete &transaction;
+    cleanupTransaction(transaction, ats_txn_handle);
   } break;
   default:
     assert(false); /* we should never get here */
@@ -99,7 +116,7 @@ void
 setupTransactionManagement()
 {
   // Reserve a transaction slot
-  TSAssert(TS_SUCCESS == TSHttpTxnArgIndexReserve("atscppapi", "ATS CPP API", &TRANSACTION_STORAGE_INDEX));
+  TSAssert(TS_SUCCESS == TSUserArgIndexReserve(TS_USER_ARGS_TXN, "atscppapi", "ATS CPP API", &TRANSACTION_STORAGE_INDEX));
   // We must always have a cleanup handler available
   TSMutex mutex = nullptr;
   TSCont cont   = TSContCreate(handleTransactionEvents, mutex);
@@ -142,6 +159,15 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
     plugin->handleReadCacheLookupComplete(transaction);
     break;
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    if (plugin) {
+      plugin->handleTxnClose(transaction);
+      cleanupTransactionPlugin(plugin, ats_txn_handle);
+    } else {
+      LOG_ERROR("stray event TS_EVENT_HTTP_TXN_CLOSE, no transaction plugin to handle it!");
+    }
+    cleanupTransaction(transaction, ats_txn_handle);
+    break;
   default:
     assert(false); /* we should never get here */
     break;
@@ -153,19 +179,19 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
 Transaction &
 utils::internal::getTransaction(TSHttpTxn ats_txn_handle)
 {
-  Transaction *transaction = static_cast<Transaction *>(TSHttpTxnArgGet(ats_txn_handle, TRANSACTION_STORAGE_INDEX));
+  Transaction *transaction = static_cast<Transaction *>(TSUserArgGet(ats_txn_handle, TRANSACTION_STORAGE_INDEX));
   if (!transaction) {
     transaction = new Transaction(static_cast<void *>(ats_txn_handle));
     LOG_DEBUG("Created new transaction object at %p for ats pointer %p", transaction, ats_txn_handle);
-    TSHttpTxnArgSet(ats_txn_handle, TRANSACTION_STORAGE_INDEX, transaction);
+    TSUserArgSet(ats_txn_handle, TRANSACTION_STORAGE_INDEX, transaction);
   }
   return *transaction;
 }
 
 std::shared_ptr<Mutex>
-utils::internal::getTransactionPluginMutex(TransactionPlugin &transaction_plugin)
+utils::internal::getTransactionPluginMutex(TransactionPlugin &transaction_plugin, TSHttpTxn txnp)
 {
-  return transaction_plugin.getMutex();
+  return transaction_plugin.getMutex(txnp);
 }
 
 TSHttpHookID
@@ -192,6 +218,8 @@ utils::internal::convertInternalHookToTsHook(Plugin::HookType hooktype)
     return TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
   case Plugin::HOOK_SELECT_ALT:
     return TS_HTTP_SELECT_ALT_HOOK;
+  case Plugin::HOOK_TXN_CLOSE:
+    return TS_HTTP_TXN_CLOSE_HOOK;
   default:
     assert(false); // shouldn't happen, let's catch it early
     break;

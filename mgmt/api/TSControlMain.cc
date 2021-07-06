@@ -50,8 +50,6 @@ static std::unordered_map<int, ClientT *> accepted_con; // a list of all accepte
 
 static TSMgmtError handle_control_message(int fd, void *msg, size_t msglen);
 
-static RecBool disable_modification = false;
-
 /*********************************************************************
  * create_client
  *
@@ -63,9 +61,9 @@ static RecBool disable_modification = false;
 static ClientT *
 create_client()
 {
-  ClientT *ele = (ClientT *)ats_malloc(sizeof(ClientT));
+  ClientT *ele = static_cast<ClientT *>(ats_malloc(sizeof(ClientT)));
 
-  ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
+  ele->adr = static_cast<struct sockaddr *>(ats_malloc(sizeof(struct sockaddr)));
   return ele;
 }
 
@@ -125,7 +123,7 @@ ts_ctrl_main(void *arg)
   int *socket_fd;
   int con_socket_fd; // main socket for listening to new connections
 
-  socket_fd     = (int *)arg;
+  socket_fd     = static_cast<int *>(arg);
   con_socket_fd = *socket_fd;
 
   // now we can start listening, accepting connections and servicing requests
@@ -133,7 +131,6 @@ ts_ctrl_main(void *arg)
 
   fd_set selectFDs;      // for select call
   ClientT *client_entry; // an entry of fd to alarms mapping
-  int fds_ready;         // stores return value for select
   struct timeval timeout;
 
   // loops until TM dies; waits for and processes requests from clients
@@ -158,12 +155,10 @@ ts_ctrl_main(void *arg)
     }
 
     // select call - timeout is set so we can check events at regular intervals
-    fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
+    int fds_ready = mgmt_select(FD_SETSIZE, &selectFDs, (fd_set *)nullptr, (fd_set *)nullptr, &timeout);
 
     // check if have any connections or requests
     if (fds_ready > 0) {
-      RecGetRecordBool("proxy.config.disable_configuration_modification", &disable_modification);
-
       // first check for connections!
       if (con_socket_fd >= 0 && FD_ISSET(con_socket_fd, &selectFDs)) {
         fds_ready--;
@@ -349,7 +344,7 @@ send_record_get_response(int fd, const RecRecord *rec)
 static void
 send_record_get(const RecRecord *rec, void *edata)
 {
-  int *fd = (int *)edata;
+  int *fd = static_cast<int *>(edata);
   *fd     = send_record_get_response(*fd, rec);
 }
 
@@ -380,7 +375,7 @@ handle_record_get(int fd, void *req, size_t reqlen)
 
   // If the lookup succeeded, the final error is in "fderr".
   if (ret == TS_ERR_OKAY) {
-    ret = (TSMgmtError)fderr;
+    ret = static_cast<TSMgmtError>(fderr);
   }
 
 done:
@@ -396,7 +391,7 @@ struct record_match_state {
 static void
 send_record_match(const RecRecord *rec, void *edata)
 {
-  record_match_state *match = (record_match_state *)edata;
+  record_match_state *match = static_cast<record_match_state *>(edata);
 
   if (match->err != TS_ERR_OKAY) {
     return;
@@ -523,7 +518,7 @@ handle_proxy_state_set(int fd, void *req, size_t reqlen)
     return send_mgmt_response(fd, OpType::PROXY_STATE_SET, &err);
   }
 
-  err = ProxyStateSet((TSProxyStateT)state, (TSCacheClearT)clear);
+  err = ProxyStateSet(static_cast<TSProxyStateT>(state), static_cast<TSCacheClearT>(clear));
   return send_mgmt_response(fd, OpType::PROXY_STATE_SET, &err);
 }
 
@@ -703,7 +698,7 @@ handle_event_get_mlt(int fd, void *req, size_t reqlen)
   // iterate through list and put into a delimited string list
   memset(buf, 0, MAX_BUF_SIZE);
   while (!queue_is_empty(event_list)) {
-    event_name = (char *)dequeue(event_list);
+    event_name = static_cast<char *>(dequeue(event_list));
     if (event_name) {
       snprintf(buf + buf_pos, (MAX_BUF_SIZE - buf_pos), "%s%c", event_name, REMOTE_DELIM);
       buf_pos += (strlen(event_name) + 1);
@@ -776,7 +771,7 @@ handle_stats_reset(int fd, void *req, size_t reqlen)
   }
 
   ats_free(name);
-  return send_mgmt_response(fd, (OpType)optype, &err);
+  return send_mgmt_response(fd, optype, &err);
 }
 
 /**************************************************************************
@@ -800,7 +795,7 @@ handle_host_status_up(int fd, void *req, size_t reqlen)
   }
 
   ats_free(name);
-  return send_mgmt_response(fd, (OpType)optype, &err);
+  return send_mgmt_response(fd, optype, &err);
 }
 
 /**************************************************************************
@@ -824,12 +819,12 @@ handle_host_status_down(int fd, void *req, size_t reqlen)
   }
 
   ats_free(name);
-  return send_mgmt_response(fd, (OpType)optype, &err);
+  return send_mgmt_response(fd, optype, &err);
 }
 /**************************************************************************
  * handle_api_ping
  *
- * purpose: handles the API_PING messaghat is sent by API clients to keep
+ * purpose: handles the API_PING message that is sent by API clients to keep
  *    the management socket alive
  * output: TS_ERR_xx. There is no response message.
  *************************************************************************/
@@ -858,7 +853,7 @@ handle_server_backtrace(int fd, void *req, size_t reqlen)
   err = send_mgmt_response(fd, OpType::SERVER_BACKTRACE, &err, &trace);
   ats_free(trace);
 
-  return (TSMgmtError)err;
+  return static_cast<TSMgmtError>(err);
 }
 
 static void
@@ -881,7 +876,7 @@ send_record_describe(const RecRecord *rec, void *edata)
 
   TSMgmtError err = TS_ERR_OKAY;
 
-  record_match_state *match = (record_match_state *)edata;
+  record_match_state *match = static_cast<record_match_state *>(edata);
 
   if (match->err != TS_ERR_OKAY) {
     return;
@@ -1091,6 +1086,6 @@ handle_control_message(int fd, void *req, size_t reqlen)
   return TS_ERR_OKAY;
 
 fail:
-  mgmt_elog(0, "%s: missing handler for type %d control message\n", __func__, (int)optype);
+  mgmt_elog(0, "%s: missing handler for type %d control message\n", __func__, static_cast<int>(optype));
   return TS_ERR_PARAMS;
 }

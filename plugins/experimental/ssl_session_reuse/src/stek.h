@@ -25,8 +25,8 @@
 
 /* STEK - Session Ticket Encryption Key stuff */
 
-#define STEK_ID_NAME "stek" // ACTUALLY it is redis channel minus cluster_name prefix, aka mdbm keyname
-#define STEK_ID_RESEND "resendstek"
+#define STEK_ID_NAME "@stek@" // ACTUALLY it is redis channel minus cluster_name prefix, aka mdbm keyname
+#define STEK_ID_RESEND "@resendstek@"
 #define STEK_MAX_LIFETIME 86400 // 24 hours max - should rotate STEK
 
 #define STEK_NOT_CHANGED_WARNING_INTERVAL (2 * STEK_MAX_LIFETIME) // warn on non-stek rotate every X secs.

@@ -66,10 +66,10 @@ MemArena::make_block(size_t n)
   return BlockPtr(new (::malloc(n)) Block(free_space));
 }
 
-MemSpan
+MemSpan<void>
 MemArena::alloc(size_t n)
 {
-  MemSpan zret;
+  MemSpan<void> zret;
   _active_allocated += n;
 
   if (!_active) {

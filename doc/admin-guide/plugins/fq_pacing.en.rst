@@ -38,7 +38,7 @@ First, enable the FQ qdisc by setting ``net.core.default_qdisc=fq`` in ``/etc/sy
 
 The `FQ Pacing` plugin is a :term:`remap plugin`.  Enable it by adding
 ``fq_pacing.so`` to your :file:`remap.config` file.  Provide a ``--rate=BytesPerSec`` option to set
-the maxmimum rate of a TCP connection matching that remap line.
+the maximum rate of a TCP connection matching that remap line.
 
 Here is an example remap.config entry:
 

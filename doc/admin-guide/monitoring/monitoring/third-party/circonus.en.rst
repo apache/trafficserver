@@ -62,7 +62,7 @@ environment.
 #. Begin the new check creation process from within your Circonus account by
    clicking the *New Check* button near the top-right of the checks screen.
 
-   .. image:: ../../../../static/images/admin/monitor/circonus/new-check-button.png
+   .. figure:: ../../../../static/images/admin/monitor/circonus/new-check-button.png
       :alt: Circonus New Check button
       :align: center
 
@@ -71,7 +71,7 @@ environment.
    you and will depend largely on whether you are using on-site Circonus or the
    hosted service, as well as the geographic location of your |TS| instance(s).
 
-   .. image:: ../../../../static/images/admin/monitor/circonus/check-config-1.png
+   .. figure:: ../../../../static/images/admin/monitor/circonus/check-config-1.png
       :alt: Choosing a check type
       :align: center
 
@@ -83,7 +83,7 @@ environment.
    any of the other options to match your environment if necessary (for this
    guide, only *Host* and *URI* will need to be entered).
 
-   .. image:: ../../../../static/images/admin/monitor/circonus/check-config-2.png
+   .. figure:: ../../../../static/images/admin/monitor/circonus/check-config-2.png
       :alt: Advanced check configuration
       :align: center
 
@@ -94,7 +94,7 @@ environment.
    running and use ``curl`` to manually fetch the statistics data from your
    server.
 
-   .. image:: ../../../../static/images/admin/monitor/circonus/check-config-3.png
+   .. figure:: ../../../../static/images/admin/monitor/circonus/check-config-3.png
       :alt: Check test
       :align: center
 
@@ -110,7 +110,7 @@ environment.
    clicking on *Metrics Grid* for an overview visualization of all the data
    being collected.
 
-   .. image:: ../../../../static/images/admin/monitor/circonus/metric-grid.png
+   .. figure:: ../../../../static/images/admin/monitor/circonus/metric-grid.png
       :alt: Circonus metric grid
       :align: center
 

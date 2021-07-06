@@ -35,7 +35,7 @@
 //////////////////////////////////////////////////////////
 // Lock Pool
 /// Intended to make datasets thread safe by assigning locks to stripes of data, kind of like a bloom filter.
-/** Allocates a fixed number of locks and retrives one with a hash.
+/** Allocates a fixed number of locks and retrieves one with a hash.
  */
 template <typename Mutex_t> struct LockPool {
   /**
@@ -152,7 +152,7 @@ protected:
 ///////////////////////////////////////////
 /// AcidCommitPtr
 
-/// a globally exclusive pointer, for commiting changes to AcidPtr.
+/// a globally exclusive pointer, for committing changes to AcidPtr.
 /** used for COPY_SWAP functionality.
  * 1. copy data (construct)
  * 2. overwrite data (scope)

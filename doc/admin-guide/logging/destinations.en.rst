@@ -31,8 +31,7 @@ Two classes of destinations are provided by |TS| currently: local and remote.
 Local logging involves storing log data onto filesystems locally mounted on the
 same system as the |TS| processes themselves and are covered below in
 :ref:`admin-logging-destinations-local`, while remote logging options involving
-:manpage:`syslog` and built-in |TS| log collation, are covered below in
-:ref:`admin-logging-destinations-remote`.
+:manpage:`syslog`, are covered below in :ref:`admin-logging-destinations-remote`.
 
 .. _admin-logging-destinations-local:
 
@@ -44,9 +43,8 @@ Local Logging
 Log Directory Configuration
 ---------------------------
 
-All local logging output (including incoming collation logs on a |TS| instance
-configured as a :ref:`admin-logging-collation-server`) are stored within a
-single base directory. Individual log file configurations may optionally append
+All local logging output is stored within a single base directory.
+Individual log file configurations may optionally append
 subdirectories to this base path. This location is adjusted with
 :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config`.
 
@@ -110,6 +108,9 @@ pipe, only full records are dropped.
 
 Output to named pipes is always, as the mode's name implies, in ASCII format.
 There is no option for logging binary format log data to a named pipe.
+
+For ASCII pipes there exists an option to set the ``pipe_buffer_size`` in
+the YAML config.
 
 .. _admin-logging-ascii-v-binary:
 
@@ -196,132 +197,3 @@ system and emergency logs. Sending custom event or transaction error logs to
 syslog is not directly supported. You may use external log aggregation tools,
 such as Logstash, to accomplish this by having them handle the ingestion of
 |TS| local log files and forwarding to whatever receivers you wish.
-
-.. _admin-logging-collation:
-
-Log Collation
--------------
-
-.. note::
-
-   Log collation is a *deprecated* feature as of ATS v8.0.0, and  will be
-   removed in ATS v9.0.0. Our recommendation is to use one of the many existing
-   log collection tools, such as Kafka, LogStash, FileBeat, Fluentd or even
-   syslog / syslog-ng (see above).
-
-|TS| offers remote log shipping natively through the log collation feature,
-which allows one or more |TS| instances handling regular traffic to transmit
-their log data to one or more |TS| instances acting as collation servers.
-
-This allows you to centralize your |TS| logging for (potentially) easier
-analysis and reporting in environments with many |TS| instances. Collation
-servers may be |TS| instance running a stripped down configuration aimed
-at log collation only (and omitting any configuration for actual traffic
-proxying or caching).
-
-When a |TS| node generates a buffer of event log entries, it first determines
-if it is the collation server or a collation client. The collation server node
-writes all log buffers to its local disk (as per its :file:`logging.yaml`
-configuration), just as it would if log collation was not enabled. The
-collation client nodes prepare their log buffers for transfer across the
-network and send the buffers to the configured log collation server.
-
-If log clients cannot contact their log collation server, then they write their
-log buffers to their local disks, into orphan log files. Orphaned log files
-require manual collation.
-
-.. important::
-
-    Log collation can have an impact on network performance. Because all nodes
-    are forwarding their log data buffers to the single collation server, a
-    bottleneck can occur. In addition, collated log files contain timestamp
-    information for each entry, but entries in the files do not appear in strict
-    chronological order. You may want to sort collated log files before doing
-    analysis.
-
-.. _admin-logging-collation-client:
-
-Collation Client
-~~~~~~~~~~~~~~~~
-
-To configure a |TS| node to be a collation client, follow the steps below.
-
-#. In the :file:`records.config` file, edit the following variables:
-
-   -  :ts:cv:`proxy.local.log.collation_mode`: ``2`` to configure this node as
-      log collation client and send standard formatted log entries to the
-      collation server. For custom log entries, see :file:`logging.yaml`.
-   -  :ts:cv:`proxy.config.log.collation_host`
-   -  :ts:cv:`proxy.config.log.collation_port`
-   -  :ts:cv:`proxy.config.log.collation_secret`
-   -  :ts:cv:`proxy.config.log.collation_host_tagged`
-   -  :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`
-
-#. Run the command :option:`traffic_ctl config reload` to apply the configuration
-   changes.
-
-.. note::
-
-    If you modify the collation port or secret after connections between the
-    collation server and collation clients have been established, you must
-    restart |TS| on all nodes.
-
-.. _admin-logging-collation-server:
-
-Collation Server
-~~~~~~~~~~~~~~~~
-
-To configure a |TS| node to be a collation server, perform the following
-configuration adjustments in :file:`records.config`:
-
-#. Set :ts:cv:`proxy.local.log.collation_mode` to ``1`` to indicate this node
-   will be a server. ::
-
-        CONFIG proxy.local.log.collation_mode INT 1
-
-#. Configure the port on which the server will listen to incoming collation
-   transfers from clients, using :ts:cv:`proxy.config.log.collation_port`. If
-   omitted, this defaults to port ``8085``. ::
-
-        CONFIG proxy.config.log.collation_port INT 8085
-
-#. Configure the shared secret used by collation clients to authenticate their
-   sessions, using :ts:cv:`proxy.config.log.collation_secret`. ::
-
-        CONFIG proxy.config.log.collation_secret STRING seekrit
-
-#. Run the command :option:`traffic_ctl config reload` to apply the configuration
-   changes.
-
-.. note::
-
-    If you modify the collation port or secret after connections between the
-    collation server and collation clients have been established, you must
-    restart |TS| on all nodes.
-
-.. _admin-logging-collating-custom-formats:
-
-Collating Custom Logs
-~~~~~~~~~~~~~~~~~~~~~
-
-If you use custom event log files, then you must edit :file:`logging.yaml`,
-in addition to configuring a collation server and collation clients.
-
-To collate custom event log files:
-
-#. On each collation client, edit :file:`logging.yaml` and add the
-   ``CollationHosts`` attribute to the relevant logs. For example, adding two
-   collation hosts to an ASCII log that uses the Squid format would look like:
-
-   .. code:: yaml
-
-      logs:
-      - mode: ascii
-        format: squid
-        filename: squid
-        collationhosts:
-        - 192.168.1.100:4567
-        - 192.168.1.101:4567
-
-#. Run the command :option:`traffic_ctl config reload` to restart |TS|.
-

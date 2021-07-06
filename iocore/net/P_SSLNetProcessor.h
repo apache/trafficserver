@@ -55,7 +55,7 @@ struct SSLNetProcessor : public UnixNetProcessor {
 public:
   int start(int, size_t stacksize) override;
 
-  void cleanup(void);
+  void cleanup();
 
   SSLNetProcessor();
   ~SSLNetProcessor() override;

@@ -42,7 +42,7 @@ namespace transformations
    *
    * The GzipDeflateTransformation is a helper transformation that can be used
    * to easily compress content. For a full example of GzipDeflateTransformation
-   * and GzipInflateTransformation see examples/gzip_transformation/.
+   * and GzipInflateTransformation see example/cppapi/gzip_transformation/.
    *
    * @note GzipDeflateTransformation DOES NOT set Content-Encoding headers, it is the
    * users responsibility to set any applicable headers.
@@ -54,7 +54,7 @@ namespace transformations
   public:
     /**
      * A full example of how to use GzipDeflateTransformation and GzipInflateTransformation is available
-     * in examples/gzip_tranformation/
+     * in example/cppapi/gzip_transformation/
      *
      * @param transaction As with any TransformationPlugin you must pass in the transaction
      * @param type because the GzipDeflateTransformation can be used with both requests and responses
@@ -74,7 +74,7 @@ namespace transformations
 
     /**
      * Any TransformationPlugin must implement handleInputComplete(), this method will
-     * finalize the gzip compression and flush any remaining data and the epilouge.
+     * finalize the gzip compression and flush any remaining data and the epilogue.
      */
     void handleInputComplete() override;
 

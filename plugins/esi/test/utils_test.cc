@@ -48,12 +48,9 @@ checkAttributes(const char *check_id, const AttributeList &attr_list, const char
   assert(iter == attr_list.end());
 }
 
-pthread_key_t threadKey;
-
 int
 main()
 {
-  pthread_key_create(&threadKey, nullptr);
   Utils::init(&Debug, &Error);
 
   AttributeList attr_list;
@@ -78,7 +75,7 @@ main()
   const char *expected_strs4[] = {"pos", " SKY BAR ", "spaceid", "12123", nullptr};
   checkAttributes("test4", attr_list, expected_strs4);
 
-  string str5("a=\"b & xyz\"&c=d&e=f&g=h\"");
+  string str5(R"(a="b & xyz"&c=d&e=f&g=h")");
   Utils::parseAttributes(str5, attr_list, "&");
   const char *expected_strs5[] = {"a", "b & xyz", "c", "d", "e", "f", nullptr};
   checkAttributes("test5", attr_list, expected_strs5);
@@ -94,9 +91,9 @@ main()
   checkAttributes("test7", attr_list, expected_strs7);
 
   const char *escaped_sequence = R"({\"site-attribute\":\"content=no_expandable; ajax_cert_expandable\"})";
-  string str8("pos=\"FPM1\" spaceid=96584352 extra_mime=\"");
+  string str8(R"(pos="FPM1" spaceid=96584352 extra_mime=")");
   str8.append(escaped_sequence);
-  str8.append("\" foo=bar a=\"b\"");
+  str8.append(R"(" foo=bar a="b")");
   const char *expected_strs8[] = {"pos", "FPM1", "spaceid", "96584352", "extra_mime", escaped_sequence,
                                   "foo", "bar",  "a",       "b",        nullptr};
   Utils::parseAttributes(str8, attr_list);
@@ -121,8 +118,8 @@ main()
 
   cout << "Test 11 " << endl;
   std::list<string> lines;
-  lines.push_back("whitelistCookie AGE");
-  lines.push_back("whitelistCookie GRADE");
+  lines.push_back("allowlistCookie AGE");
+  lines.push_back("allowlistCookie GRADE");
   lines.push_back("a b");
   Utils::KeyValueMap kv;
   Utils::HeaderValueList list;

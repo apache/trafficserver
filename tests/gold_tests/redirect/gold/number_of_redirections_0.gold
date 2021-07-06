@@ -1,0 +1,38 @@
+``
+> GET http://a.test/ping HTTP/1.1
+> Host: a.test
+> User-Agent: curl/``
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> uuid: redirect_test_1
+``
+< HTTP/1.1 302 Redirect
+< location: http://b.test:``
+< Date: ``
+< Age: ``
+< Transfer-Encoding: chunked
+< Proxy-Connection: keep-alive
+< Server: ATS/``
+``
+< HTTP/1.1 302 Redirect
+< location: http://c.test:``
+< Date: ``
+< Age: ``
+< Transfer-Encoding: chunked
+< Proxy-Connection: keep-alive
+< Server: ATS/``
+``
+> GET http://c.test:``
+> Host: c.test:``
+> User-Agent: curl/``
+> Accept: */*
+> Proxy-Connection: Keep-Alive
+> uuid: redirect_test_1
+``
+< HTTP/1.1 200 OK
+< date: ``
+< Age: ``
+< Transfer-Encoding: chunked
+< Proxy-Connection: keep-alive
+< Server: ATS/``
+``

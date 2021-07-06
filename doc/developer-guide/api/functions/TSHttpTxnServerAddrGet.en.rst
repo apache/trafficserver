@@ -24,7 +24,9 @@ TSHttpTxnServerAddrGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: sockaddr const* TSHttpTxnServerAddrGet(TSHttpTxn txnp)
 

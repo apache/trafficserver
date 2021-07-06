@@ -38,7 +38,7 @@ traffic_server -[#blue]-> local_rpc : <font color="blue">//unserialize message//
 traffic_server -> plugin : invoke hook and attach ""TSPluginMsg""
 plugin -> plugin : hooks ""TS_LIFECYCLE_MSG_HOOK""\nand reads ""TSPluginMsg""
 traffic_manager -[#green]-> remote_rpc : <font color="green">TS_ERR_OK</font>
-note right : traffic_manager has no idea if\nplugin actually recieved message
+note right : traffic_manager has no idea if\nplugin actually received message
 remote_rpc -> traffic_ctl : parse response
 
 

@@ -24,7 +24,9 @@ TSHttpHdrVersionSet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpHdrVersionSet(TSMBuffer bufp, TSMLoc offset, int ver)
 

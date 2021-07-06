@@ -28,7 +28,7 @@
 #include <openssl/ocsp.h>
 
 void ssl_stapling_ex_init();
-bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname);
+bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const char *rsp_file);
 void ocsp_update();
 int ssl_callback_ocsp_stapling(SSL *);
 #endif

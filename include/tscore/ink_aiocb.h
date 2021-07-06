@@ -46,14 +46,9 @@ struct ink_aiocb {
   void *aio_buf; /* buffer location */
 #endif
   size_t aio_nbytes; /* length of transfer */
+  off_t aio_offset;  /* file offset */
 
-  // TODO change to off_t
-  off_t aio_offset; /* file offset */
-
-  int aio_reqprio; /* request priority offset */
-  //    struct sigevent aio_sigevent;   /* signal number and offset */
   int aio_lio_opcode; /* listio operation */
-  //    aio_result_t    aio_resultp;    /* results */
-  int aio_state;   /* state flag for List I/O */
-  int aio__pad[1]; /* extension padding */
+  int aio_state;      /* state flag for List I/O */
+  int aio__pad[1];    /* extension padding */
 };

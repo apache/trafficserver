@@ -103,11 +103,11 @@ table->init(3, 1, "one", 2, "two", 7, "seven")
  *****************************************************************************/
 
 struct LogFieldAliasTableEntry {
-  bool valid;    // entry in table is valid
-  char *name;    // the string equivalent
-  size_t length; // the length of the string
+  bool valid    = false;   // entry in table is valid
+  char *name    = nullptr; // the string equivalent
+  size_t length = 0;       // the length of the string
 
-  LogFieldAliasTableEntry() : valid(false), name(nullptr), length(0) {}
+  LogFieldAliasTableEntry() {}
   ~LogFieldAliasTableEntry()
   {
     if (name) {
@@ -119,13 +119,13 @@ struct LogFieldAliasTableEntry {
 class LogFieldAliasTable : public LogFieldAliasMap
 {
 private:
-  IntType m_min;                    // minimum numeric value
-  IntType m_max;                    // maximum numeric value
-  IntType m_entries;                // number of entries in table
-  LogFieldAliasTableEntry *m_table; // array of table entries
+  IntType m_min                    = 0;       // minimum numeric value
+  IntType m_max                    = 0;       // maximum numeric value
+  IntType m_entries                = 0;       // number of entries in table
+  LogFieldAliasTableEntry *m_table = nullptr; // array of table entries
 
 public:
-  LogFieldAliasTable() : m_min(0), m_max(0), m_entries(0), m_table(nullptr) {}
+  LogFieldAliasTable() {}
   ~LogFieldAliasTable() override { delete[] m_table; }
   void init(size_t numPairs, ...);
 

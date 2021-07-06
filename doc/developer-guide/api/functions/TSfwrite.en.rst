@@ -24,7 +24,9 @@ TSfwrite
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: ssize_t TSfwrite(TSFile filep, const void * buf, size_t length)
 

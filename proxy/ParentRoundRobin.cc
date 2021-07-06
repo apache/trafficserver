@@ -52,7 +52,7 @@ ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _roun
   }
 }
 
-ParentRoundRobin::~ParentRoundRobin() {}
+ParentRoundRobin::~ParentRoundRobin() = default;
 
 void
 ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestData *rdata, unsigned int fail_threshold,
@@ -63,7 +63,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
   bool parentUp          = false;
   bool parentRetry       = false;
   HostStatus &pStatus    = HostStatus::instance();
-  HostStatus_t host_stat = HostStatus_t::HOST_STATUS_INIT;
+  TSHostStatus host_stat = TSHostStatus::TS_HOST_STATUS_UP;
 
   HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
 
@@ -99,8 +99,8 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         }
         break;
       case P_STRICT_ROUND_ROBIN:
-        cur_index = ink_atomic_increment((int32_t *)&result->rec->rr_next, 1);
-        cur_index = result->start_parent = cur_index % num_parents;
+        cur_index = result->start_parent =
+          ink_atomic_increment(reinterpret_cast<uint32_t *>(&result->rec->rr_next), 1) % num_parents;
         break;
       case P_NO_ROUND_ROBIN:
         cur_index = result->start_parent = 0;
@@ -117,7 +117,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
     latched_parent = cur_index = (result->last_parent + 1) % num_parents;
 
     // Check to see if we have wrapped around
-    if ((unsigned int)cur_index == result->start_parent) {
+    if (static_cast<unsigned int>(cur_index) == result->start_parent) {
       // We've wrapped around so bypass if we can
       if (result->rec->go_direct == true) {
         // Could not find a parent
@@ -136,31 +136,46 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
   // Loop through the array of parent seeing if any are up or
   //   should be retried
   do {
-    host_stat = pStatus.getHostStatus(parents[cur_index].hostname);
+    HostStatRec *hst = pStatus.getHostStatus(parents[cur_index].hostname);
+    host_stat        = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
+    // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
+    // ignore the down status and mark it as avaialble
+    if (result->rec->ignore_self_detect && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
+      if (hst->reasons == Reason::SELF_DETECT) {
+        host_stat = TS_HOST_STATUS_UP;
+      }
+    }
     Debug("parent_select", "cur_index: %d, result->start_parent: %d", cur_index, result->start_parent);
     // DNS ParentOnly inhibits bypassing the parent so always return that t
-    if ((parents[cur_index].failedAt == 0) || (parents[cur_index].failCount < static_cast<int>(fail_threshold))) {
-      if (host_stat == HOST_STATUS_UP) {
+    if ((parents[cur_index].failedAt.load() == 0) || (parents[cur_index].failCount.load() < static_cast<int>(fail_threshold))) {
+      if (host_stat == TS_HOST_STATUS_UP) {
         Debug("parent_select", "FailThreshold = %d", fail_threshold);
         Debug("parent_select", "Selecting a parent due to little failCount (faileAt: %u failCount: %d)",
-              (unsigned)parents[cur_index].failedAt, parents[cur_index].failCount);
+              (unsigned)parents[cur_index].failedAt.load(), parents[cur_index].failCount.load());
         parentUp = true;
       }
     } else {
       if ((result->wrap_around) ||
-          ((parents[cur_index].failedAt + retry_time) < request_info->xact_start && host_stat == HOST_STATUS_UP)) {
-        Debug("parent_select", "Parent[%d].failedAt = %u, retry = %u,xact_start = %" PRId64 " but wrap = %d", cur_index,
-              (unsigned)parents[cur_index].failedAt, retry_time, (int64_t)request_info->xact_start, result->wrap_around);
-        // Reuse the parent
-        parentUp    = true;
-        parentRetry = true;
-        Debug("parent_select", "Parent marked for retry %s:%d", parents[cur_index].hostname, parents[cur_index].port);
+          (((parents[cur_index].failedAt + retry_time) < request_info->xact_start) && host_stat == TS_HOST_STATUS_UP)) {
+        if (parents[cur_index].retriers.fetch_add(1, std::memory_order_relaxed) < max_retriers) {
+          Debug("parent_select",
+                "Parent[%d].failedAt = %u, retry = %u, retriers = %d, max_retriers = %u, xact_start = %" PRId64 " but wrap = %d",
+                cur_index, static_cast<unsigned>(parents[cur_index].failedAt.load()), retry_time,
+                parents[cur_index].retriers.load(), max_retriers, static_cast<int64_t>(request_info->xact_start),
+                result->wrap_around);
+          // Reuse the parent
+          parentUp    = true;
+          parentRetry = true;
+          Debug("parent_select", "Parent marked for retry %s:%d", parents[cur_index].hostname, parents[cur_index].port);
+        } else {
+          parents[cur_index].retriers--;
+        }
       } else {
         parentUp = false;
       }
     }
 
-    if (parentUp == true && host_stat != HOST_STATUS_DOWN) {
+    if (parentUp == true && host_stat != TS_HOST_STATUS_DOWN) {
       Debug("parent_select", "status for %s: %d", parents[cur_index].hostname, host_stat);
       result->result      = PARENT_SPECIFIED;
       result->hostname    = parents[cur_index].hostname;
@@ -173,7 +188,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
       return;
     }
     latched_parent = cur_index = (cur_index + 1) % num_parents;
-  } while ((unsigned int)cur_index != result->start_parent);
+  } while (static_cast<unsigned int>(cur_index) != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
     result->result = PARENT_DIRECT;

@@ -157,7 +157,8 @@ specifiers of the rule in question.
    =========================== ================================================
    Value                       Effect
    =========================== ================================================
-   ``never-cache``             Never cache specified objects.
+   ``never-cache``             Never cache specified objects, it will be
+                               overwritten by ``ttl-in-cache``.
    ``ignore-no-cache``         Ignore all ``Cache-Control: no-cache`` headers.
    ``ignore-client-no-cache``  Ignore ``Cache-Control: no-cache`` headers from
                                client requests.
@@ -197,7 +198,7 @@ specifiers of the rule in question.
 .. _cache-config-format-revalidate:
 
 ``revalidate``
-   For objects that are in cache, overrides the the amount of time the object(s)
+   For objects that are in cache, overrides the amount of time the object(s)
    are to be considered fresh. Use the same time formats as ``pin-in-cache``.
 
 .. _cache-config-format-ttl-in-cache:
@@ -249,6 +250,16 @@ for cache object revalidations on Javascript files, as well as a more targeted
 prefix. The former fails at this goal, because the second rule will match all
 Javascript files and will override any previous ``revalidate`` values that may
 have been set by prior rules.
+
+ttl-in-cache and never-cache
+----------------------------
+
+When multiple rules are matched in the same request, ``never-cache`` will always
+be overwritten by ``ttl-in-cache``. For example::
+
+    # ttl-in-cache=1d never-cache=false
+    dest_domain=example.com action=never-cache
+    dest_domain=example.com ttl-in-cache=1d
 
 Examples
 ========

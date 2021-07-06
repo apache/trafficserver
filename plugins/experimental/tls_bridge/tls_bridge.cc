@@ -29,7 +29,7 @@ constexpr char const PLUGIN_NAME[] = "TLS Bridge";
 constexpr char const PLUGIN_TAG[]  = "tls_bridge";
 
 // Base format string for making the internal CONNECT.
-char const CONNECT_FORMAT[] = "CONNECT https:%.*s HTTP/1.1\r\n\r\n";
+char const CONNECT_FORMAT[] = "CONNECT https://%.*s HTTP/1.1\r\n\r\n";
 
 // TextView of the 'CONNECT' method string.
 const TextView METHOD_CONNECT{TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT};
@@ -153,8 +153,9 @@ BridgeConfig::load_config(int argc, const char *argv[])
           while (!src.empty()) {
             TextView line{src.take_prefix_at('\n').trim_if(&isspace)};
             ++line_no;
-            if (line.empty() || '#' == *line)
+            if (line.empty() || '#' == *line) {
               continue; // empty or comment, ignore.
+            }
 
             // Pick apart the line into the regular expression and destination service.
             TextView service{line};

@@ -28,8 +28,8 @@ of TS.Scalar are always multiples of the scale factor.
 
 The tag is used to create categories of related types, the same underlying "metric" at different scales. To enforce this TS.Scalar does not allow assignment between instances with different tags. If this is not important the tag can be omitted and a default generic one will be used, thereby allowing arbitrary assignments.
 
-TS.Scalar is designed to be fast and efficient. When converting bewteen similar types with different
-scales it will do the minimum amout of work while minimizing the risk of integer overflow. Instances
+TS.Scalar is designed to be fast and efficient. When converting between similar types with different
+scales it will do the minimum amount of work while minimizing the risk of integer overflow. Instances
 have the same memory footprint as the underlying integer storage type. It is intended to replace
 lengthy and error prone hand optimizations used to handle related values of different scales.
 
@@ -53,7 +53,7 @@ quantizes the values that can be represented by an instance.
       Imported template parameter :arg:`C`.
 
    The scaling factor :arg:`SCALE` must be an positive integer. Values for an instance will always
-   be an integral multiple of :arg:`SCALE`. The alue of an instance will always be a
+   be an integral multiple of :arg:`SCALE`. The value of an instance will always be a
    multiple of :arg:`SCALE`.
 
    :arg:`C` must be an integral type. An instance of this type is used to hold the internal
@@ -91,8 +91,8 @@ In normal use a scalar evaluates to its value rather than its count. The goal is
 instance that appears to store unscaled values in a quantized way. The count is accessible if
 needed.
 
-Assigment
-=========
+Assignment
+==========
 
 Assigning values to, from, and between :class:`Scalar` instances is usually straightforward with a few simple rules.
 
@@ -143,7 +143,7 @@ The opposite is not implicit because the value of a :code:`deka` can be one not 
 
 Note this is very different from using :func:`Scalar::assign`. The latter sets the *count* of
 the scalar instance. :code:`round_up` and :code:`round_down` set the *value* of the scalar, dividing
-the provided value by the scale to set the count to make the value match the assignment as closesly
+the provided value by the scale to set the count to make the value match the assignment as closely
 as possible.
 
 .. code-block:: cpp
@@ -188,7 +188,7 @@ I/O
 ---
 
 When a scalar is printed it prints out as its value, not count. For a family of scalars it can be
-desireable to have the type printed along with the value. This can be done by adding a member named
+desirable to have the type printed along with the value. This can be done by adding a member named
 :literal:`label` to the *tag* type of the scalar. If the :literal:`label` member can be provided to
 an I/O stream then it will be after the value of the scalar. Otherwise it is ignored. An example can
 be found in the <Bytes>_ section of the example usage.
@@ -198,7 +198,7 @@ Examples
 
 The expected common use of TS.Scalar is to create a family of scalars representing the same
 underlying unit of measure, differing only in scale. The standard example of this is computer memory
-sizezs which have this property and are quite frequently used in |TS|.
+sizes which have this property and are quite frequently used in |TS|.
 
 Bytes
 -----
@@ -255,10 +255,10 @@ the library user. The increment / decrement and compound assignment operators we
 similar to pointer arithmetic to be unsurprising in this context. This was further influenced by the
 fact that, in general, these operators are useless in the value context. E.g. if a scalar has a
 scale greater than 1 (the common case) then increment and decrement of the value is always a null
-operation. Once those operators are used on the count is is least surprising that the compound
+operation. Once those operators are used on the count is least surprising that the compound
 operators act in the same way. The next step, to arithmetic operators, is not so clear and so those
 require explicit scale indicators, such as :code:`round_down` or explicit constructors. It was a
 design goal to avoid, as much as possible, the requirement that the library user keep track of the
 scale of specific variables. This has proved very useful in practice, but at the same time when
-doing arithmentic is is almost always the case that either the values are both scalars (making the
+doing arithmetic is almost always the case that either the values are both scalars (making the
 arithmetic unambiguous) or the scale of the literal is known (e.g., "add 6 kilobytes").

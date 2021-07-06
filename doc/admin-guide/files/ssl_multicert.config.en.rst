@@ -73,7 +73,7 @@ ssl_cert_name=FILENAME[,FILENAME ...]
 dest_ip=ADDRESS (optional)
   The IP (v4 or v6) address that the certificate should be presented
   on. This is now only used as a fallback in the case that the TLS
-  SubjectNameIndication extension is not supported. If *ADDRESS* is
+  ServerNameIndication extension is not supported. If *ADDRESS* is
   `*`, the corresponding certificate will be used as the global
   default fallback if no other match can be made. The address may
   contain a port specifier, in which case the corresponding certificate
@@ -93,13 +93,22 @@ ssl_ca_name=FILENAME (optional)
   the certificate chain. *FILENAME* is resolved relative to the
   :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable.
 
+ssl_ocsp_name=FILENAME (optional)
+  The name of the file containing the prefetched OCSP stapling response
+  for this certificate. This field can be omitted to let trafficserver
+  fetch OCSP responses dynamically. Otherwise, when included, the administrator is
+  responsible for updating the file's content. *FILENAME* is resolved
+  relative to the :ts:cv:`proxy.config.ssl.ocsp.response.path`
+  configuration variable.
+
 ssl_ticket_enabled=1|0 (optional)
   Enable RFC 5077 stateless TLS session tickets. To support this,
   OpenSSL should be upgraded to version 0.9.8f or higher. This
   option must be set to `0` to disable session ticket support.
 
-ticket_key_name=FILENAME (optional) [**REMOVED in 7.1.x and 8.0**]
-   Ticket key should be set in records.config via :ts:cv:`proxy.config.ssl.server.ticket_key.filename`
+ssl_ticket_number=INTEGER (optional)
+  Specifies the number of TLSv1.3 session tickets that are issued.
+  This defaults to 2 (the OpenSSL default)
 
 ssl_key_dialog=builtin|"exec:/path/to/program [args]" (optional)
   Method used to provide a pass phrase for encrypted private keys.  If the

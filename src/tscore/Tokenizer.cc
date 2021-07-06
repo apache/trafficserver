@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-/***************************************/
 #include "tscore/ink_platform.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/ink_assert.h"
@@ -42,7 +41,7 @@ Tokenizer::Tokenizer(const char *StrOfDelimiters)
   if (StrOfDelimiters == nullptr) {
     strOfDelimit = nullptr;
   } else {
-    length       = (int)(strlen(StrOfDelimiters) + 1);
+    length       = static_cast<int>(strlen(StrOfDelimiters) + 1);
     strOfDelimit = new char[length];
     memcpy(strOfDelimit, StrOfDelimiters, length);
   }
@@ -89,7 +88,7 @@ Tokenizer::~Tokenizer()
 unsigned
 Tokenizer::Initialize(const char *str)
 {
-  return Initialize((char *)str, COPY_TOKS);
+  return Initialize(const_cast<char *>(str), COPY_TOKS);
 }
 
 inline int
@@ -163,7 +162,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
     //          to skip past repeated delimiters
     if (options & ALLOW_EMPTY_TOKS) {
       if (isDelimiter(*str)) {
-        addToken(tokStart, (int)(str - tokStart));
+        addToken(tokStart, static_cast<int>(str - tokStart));
         tok_count++;
         tokStart            = str + 1;
         priorCharWasDelimit = 1;
@@ -175,7 +174,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
       if (isDelimiter(*str)) {
         if (priorCharWasDelimit == 0) {
           // This is a word end, so add it
-          addToken(tokStart, (int)(str - tokStart));
+          addToken(tokStart, static_cast<int>(str - tokStart));
           tok_count++;
         }
         priorCharWasDelimit = 1;
@@ -192,7 +191,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
 
   quoteFound = false;
 
-  // Check to see if we stoped due to a maxToken limit
+  // Check to see if we stopped due to a maxToken limit
   if (max_limit_hit == true) {
     if (options & ALLOW_EMPTY_TOKS) {
       // Go till either we hit a delimiter or we've
@@ -236,7 +235,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
   //  only have gotten it if the string ended with a delimiter
   if (priorCharWasDelimit == 0) {
     // We did not get it
-    addToken(tokStart, (int)(str - tokStart));
+    addToken(tokStart, static_cast<int>(str - tokStart));
     tok_count++;
   }
 
@@ -252,7 +251,7 @@ Tokenizer::addToken(char *startAddr, int length)
     startAddr[length] = '\0';
     add_ptr           = startAddr;
   } else {
-    add_ptr = (char *)ats_malloc(length + 1);
+    add_ptr = static_cast<char *>(ats_malloc(length + 1));
     memcpy(add_ptr, startAddr, length);
     add_ptr[length] = '\0';
   }
@@ -267,7 +266,7 @@ Tokenizer::addToken(char *startAddr, int length)
   //   if there is not a next one
   if (add_index >= TOK_NODE_ELEMENTS) {
     if (add_node->next == nullptr) {
-      add_node->next = (tok_node *)ats_malloc(sizeof(tok_node));
+      add_node->next = static_cast<tok_node *>(ats_malloc(sizeof(tok_node)));
       memset(add_node->next, 0, sizeof(tok_node));
     }
     add_node  = add_node->next;
@@ -275,7 +274,8 @@ Tokenizer::addToken(char *startAddr, int length)
   }
 }
 
-const char *Tokenizer::operator[](unsigned index) const
+const char *
+Tokenizer::operator[](unsigned index) const
 {
   const tok_node *cur_node = &start_node;
   unsigned cur_start       = 0;
@@ -333,11 +333,11 @@ Tokenizer::iterNext(tok_iter_state *state)
 }
 
 void
-Tokenizer::Print()
+Tokenizer::Print() const
 {
-  tok_node *cur_node = &start_node;
-  int node_index     = 0;
-  int count          = 0;
+  const tok_node *cur_node = &start_node;
+  int node_index           = 0;
+  int count                = 0;
 
   while (cur_node != nullptr) {
     if (cur_node->el[node_index] != nullptr) {
@@ -374,28 +374,3 @@ Tokenizer::ReUse()
   add_node       = &start_node;
   add_index      = 0;
 }
-
-#if TS_HAS_TESTS
-#include "tscore/TestBox.h"
-
-REGRESSION_TEST(libts_Tokenizer)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
-{
-  TestBox box(test, pstatus);
-  box = REGRESSION_TEST_PASSED;
-
-  Tokenizer remap(" \t");
-
-  const char *line = "map https://abc.com https://abc.com @plugin=conf_remap.so @pparam=proxy.config.abc='ABC DEF'";
-
-  const char *toks[] = {"map", "https://abc.com", "https://abc.com", "@plugin=conf_remap.so", "@pparam=proxy.config.abc='ABC DEF'"};
-
-  unsigned count = remap.Initialize(const_cast<char *>(line), (COPY_TOKS | ALLOW_SPACES));
-
-  box.check(count == 5, "check that we parsed 5 tokens");
-  box.check(count == remap.count(), "parsed %u tokens, but now we have %u tokens", count, remap.count());
-
-  for (unsigned i = 0; i < count; ++i) {
-    box.check(strcmp(remap[i], toks[i]) == 0, "expected token %u to be '%s' but found '%s'", count, toks[i], remap[i]);
-  }
-}
-#endif

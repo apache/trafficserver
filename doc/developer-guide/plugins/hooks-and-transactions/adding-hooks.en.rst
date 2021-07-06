@@ -33,7 +33,7 @@ There are several ways to add hooks to your plugin.
 -  **Transaction hooks** Transaction hooks can be used to call plugins
    back for a specific HTTP transaction. You cannot add transaction
    hooks in ``TSPluginInit``; you first need a handle to a transaction.
-   See :ref:`developer-plugins-blacklist-access-process-txn`.
+   See :ref:`developer-plugins-denylist-access-process-txn`.
 
 -  **Transformation hooks** Transformation hooks are a special case of
    transaction hooks. See
@@ -80,7 +80,7 @@ values for ``TSHttpHookID`` are:
     Called immediately after the HTTP state machine has completed a DNS
     lookup of the origin server. The HTTP state machine will know the
     origin server's IP address at this point, which is useful for
-    performing both authentication and blacklisting. Corresponds to the
+    performing both authentication and denylisting. Corresponds to the
     event ``TS_EVENT_HTTP_OS_DNS``.
 
 ``TS_HTTP_POST_REMAP_HOOK``

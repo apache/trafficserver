@@ -67,12 +67,11 @@ typedef struct io_event ink_io_event_t;
 #else
 
 struct ink_aiocb {
-  int aio_fildes    = 0;
+  int aio_fildes    = -1;      /* file descriptor or status: AIO_NOT_IN_PROGRESS */
   void *aio_buf     = nullptr; /* buffer location */
   size_t aio_nbytes = 0;       /* length of transfer */
   off_t aio_offset  = 0;       /* file offset */
 
-  int aio_reqprio    = 0; /* request priority offset */
   int aio_lio_opcode = 0; /* listio operation */
   int aio_state      = 0; /* state flag for List I/O */
   int aio__pad[1];        /* extension padding */
@@ -85,9 +84,6 @@ bool ink_aio_thread_num_set(int thread_num);
 // AIOCallback::thread special values
 #define AIO_CALLBACK_THREAD_ANY ((EThread *)0) // any regular event thread
 #define AIO_CALLBACK_THREAD_AIO ((EThread *)-1)
-
-#define AIO_LOWEST_PRIORITY 0
-#define AIO_DEFAULT_PRIORITY AIO_LOWEST_PRIORITY
 
 struct AIOCallback : public Continuation {
   // set before calling aio_read/aio_write
@@ -149,4 +145,4 @@ int ink_aio_write(AIOCallback *op, int fromAPI = 0);
 int ink_aio_readv(AIOCallback *op,
                   int fromAPI = 0); // fromAPI is a boolean to indicate if this is from a API call such as upload proxy feature
 int ink_aio_writev(AIOCallback *op, int fromAPI = 0);
-AIOCallback *new_AIOCallback(void);
+AIOCallback *new_AIOCallback();

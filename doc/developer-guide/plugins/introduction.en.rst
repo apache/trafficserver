@@ -90,7 +90,7 @@ Below are some guidelines for creating a plugin:
    These examples are discussed in the following chapters.
 
 #. Determine where your plugin needs to hook on to Traffic Server's HTTP
-   processing (view the :ref:`http-txn-state-diagram`.
+   processing (view the :ref:`http-txn-state-diagram`).
 
 #. Read :ref:`developer-plugins-header-based-examples` to learn the basics of
    writing plugins: creating continuations and setting up hooks. If you
@@ -101,7 +101,7 @@ Below are some guidelines for creating a plugin:
    then read about the details of those APIs in this manual's reference
    chapters.
 
-#. Compile and load your plugin (see :ref:`developer-plugins-getting-started`.
+#. Compile and load your plugin (see :ref:`developer-plugins-getting-started`).
 
 #. Depending on your plugin's functionality, you might start testing it
    by issuing requests by hand and checking for the desired behavior in
@@ -173,7 +173,7 @@ them into activity.
 
 A plugin may consist of just one static continuation that is called
 whenever certain events happen. Examples of such plugins include
-``blacklist_1.c``, ``basic_auth.c``, and ``redirect_1.c``.
+``denylist_1.c``, ``basic_auth.c``, and ``redirect_1.c``.
 Alternatively, a plugin might dynamically create other continuations as
 needed. Transform plugins are built in this manner: a static parent
 continuation checks all transactions to see if any are transformable;
@@ -266,35 +266,35 @@ reflects the Traffic Server state that was *just completed*. For
 example, the "OS DNS lookup" hook wakes up a plugin right *after* the
 origin server DNS lookup. For a plugin that requires the IP address of
 the requested origin server, this hook is the right one to use. The
-Blacklist plugin works in this manner, as shown in the :ref:`BlackListPlugin`
+Denylist plugin works in this manner, as shown in the :ref:`DenyListPlugin`
 diagram below.
 
-**Blacklist Plugin**
+**Denylist Plugin**
 
-.. _BlackListPlugin:
+.. _DenyListPlugin:
 
-.. figure:: /static/images/sdk/blacklist75.jpg
-   :alt: Blacklist Plugin
+.. figure:: /static/images/sdk/denylist.jpg
+   :alt: Denylist Plugin
 
-   Blacklist Plugin
+   Denylist Plugin
 
-Traffic Server calls the Blacklist plugin right after the origin server
+Traffic Server calls the Denylist plugin right after the origin server
 DNS lookup. The plugin checks the requested host against a list of
-blacklisted servers; if the request is allowed, then the transaction
-proceeds. If the host is forbidden, then the Blacklist plugin sends the
+denylisted servers; if the request is allowed, then the transaction
+proceeds. If the host is forbidden, then the Denylist plugin sends the
 transaction into an error state. When the HTTP state machine gets to the
-"send reply header" state, it then calls the Blacklist plugin to provide
+"send reply header" state, it then calls the Denylist plugin to provide
 the error message that's sent to the client.
 
 Types of Hooks
 ^^^^^^^^^^^^^^
 
-The Blacklist plugin's hook to the origin server DNS lookup state is a *global
+The Denylist plugin's hook to the origin server DNS lookup state is a *global
 hook*, meaning that the plugin is called every time there's an HTTP transaction
 with a DNS lookup event. The plugin's hook to the send reply header state is a
 *transaction hook*, meaning that this hook is only invoked for specified
-transactions (in the :ref:`developer-plugins-examples-blacklist` example, it's
-only used for requests to blacklisted servers). Several examples of setting up
+transactions (in the :ref:`developer-plugins-examples-denylist` example, it's
+only used for requests to denylisted servers). Several examples of setting up
 hooks are provided in :ref:`developer-plugins-header-based-examples` and
 :ref:`developer-plugins-http-transformations`.
 

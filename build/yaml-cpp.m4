@@ -84,3 +84,14 @@ AC_SUBST([YAMLCPP_LIBS])
 AC_SUBST([YAMLCPP_LDFLAGS])
 
 ])
+
+dnl TS_CHECK_YAML_HEADERS_EXPORT: check if we want to export yaml-cpp headers from trafficserver. default: not exported
+AC_DEFUN([TS_CHECK_YAML_HEADERS_EXPORT], [
+AC_MSG_CHECKING([whether to export yaml-cpp headers])
+AC_ARG_ENABLE([yaml-headers],
+  [AS_HELP_STRING([--enable-yaml-headers],[Export yaml-cpp headers])],
+  [],
+  [enable_yaml_headers=no]
+)
+AC_MSG_RESULT([$enable_yaml_headers])
+])

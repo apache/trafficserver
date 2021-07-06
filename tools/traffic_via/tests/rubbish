@@ -1,0 +1,6 @@
+Via header is [rubbish], Length is 7
+traffic_via: Invalid VIA header character: r
+traffic_via: Invalid VIA header character: b
+traffic_via: Invalid VIA header character: b
+traffic_via: Invalid VIA header character: i
+traffic_via: Invalid VIA header character: h

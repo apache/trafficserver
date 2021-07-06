@@ -65,7 +65,7 @@ will construct classes which allow us to document variables thusly::
     .. ts:variable:: http_enabled http integer
        :deprecated:
 
-       Enables (any postive, non-zero value) or disables (any zero or negative
+       Enables (any positive, non-zero value) or disables (any zero or negative
        value) processing of HTTP requests.
 
 And referencing of those variables defined with this domain via::

@@ -21,8 +21,8 @@
  * @brief HTTP headers manipulation.
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "headers.h"
 #include "common.h"
@@ -80,7 +80,7 @@ headerExist(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen)
  * @param header header name
  * @param headerlen header name length
  * @param value buffer for the value
- * @param valuelen lenght of the buffer for the value
+ * @param valuelen length of the buffer for the value
  * @return pointer to the string with the value.
  */
 char *
@@ -129,7 +129,7 @@ getHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, char
  * @param header header name
  * @param headerlen header name len
  * @param value the new value
- * @param valuelen lenght of the value
+ * @param valuelen length of the value
  * @return true - OK, false - failed
  */
 bool
@@ -156,6 +156,7 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
     bool first = true;
 
     while (fieldLoc) {
+      tmp = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
       if (first) {
         first = false;
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(bufp, hdrLoc, fieldLoc, -1, value, valuelen)) {
@@ -164,7 +165,6 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
       } else {
         TSMimeHdrFieldDestroy(bufp, hdrLoc, fieldLoc);
       }
-      tmp = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
       TSHandleMLocRelease(bufp, hdrLoc, fieldLoc);
       fieldLoc = tmp;
     }

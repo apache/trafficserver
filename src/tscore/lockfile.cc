@@ -24,7 +24,7 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_lockfile.h"
 
-#define LOCKFILE_BUF_LEN 16 // 16 bytes should be enought for a pid
+#define LOCKFILE_BUF_LEN 16 // 16 bytes should be enough for a pid
 
 int
 Lockfile::Open(pid_t *holding_pid)
@@ -91,7 +91,7 @@ Lockfile::Open(pid_t *holding_pid)
     *t = '\0';
 
     // coverity[secure_coding]
-    if (sscanf(buf, "%d\n", (int *)&val) != 1) {
+    if (sscanf(buf, "%d\n", static_cast<int *>(&val)) != 1) {
       *holding_pid = 0;
     } else {
       *holding_pid = val;
@@ -99,7 +99,7 @@ Lockfile::Open(pid_t *holding_pid)
     FAIL(0);
   }
   // If we did get the lock, then set the close on exec flag so that
-  // we don't accidently pass the file descriptor to a child process
+  // we don't accidentally pass the file descriptor to a child process
   // when we do a fork/exec.
   do {
     err = fcntl(fd, F_GETFD, 0);
@@ -154,13 +154,13 @@ Lockfile::Get(pid_t *holding_pid)
     return (-errno);
   }
   // Write our process id to the Lockfile.
-  snprintf(buf, sizeof(buf), "%d\n", (int)getpid());
+  snprintf(buf, sizeof(buf), "%d\n", static_cast<int>(getpid()));
 
   do {
     err = write(fd, buf, strlen(buf));
   } while ((err < 0) && (errno == EINTR));
 
-  if (err != (int)strlen(buf)) {
+  if (err != static_cast<int>(strlen(buf))) {
     close(fd);
     return (-errno);
   }

@@ -17,20 +17,25 @@ Test offering client cert to origin
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-import re
-
 Test.Summary = '''
 Test conf_remp to specify different client certificates to offer to the origin
 '''
 
-Test.SkipUnless(Condition.HasProgram("grep", "grep needs to be installed on system for this test to work"))
-
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=False)
+ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
-server = Test.MakeOriginServer("server", ssl=True, options = { "--clientCA": cafile, "--clientverify": ""}, clientcert="{0}/signed-foo.pem".format(Test.RunDirectory), clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
-server2 = Test.MakeOriginServer("server2", ssl=True, options = { "--clientCA": cafile2, "--clientverify": ""}, clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory), clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+server = Test.MakeOriginServer("server",
+                               ssl=True,
+                               options={"--clientCA": cafile,
+                                        "--clientverify": ""},
+                               clientcert="{0}/signed-foo.pem".format(Test.RunDirectory),
+                               clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
+server2 = Test.MakeOriginServer("server2",
+                                ssl=True,
+                                options={"--clientCA": cafile2,
+                                         "--clientverify": ""},
+                                clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory),
+                                clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
 server.Setup.Copy("ssl/signer.pem")
 server.Setup.Copy("ssl/signer2.pem")
 server.Setup.Copy("ssl/signed-foo.pem")
@@ -62,19 +67,18 @@ ts.addSSLfile("ssl/signed-bar.pem")
 ts.addSSLfile("ssl/signed2-bar.pem")
 ts.addSSLfile("ssl/signed-bar.key")
 
-ts.Variables.ssl_port = 4443
 ts.Disk.records_config.update({
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'ssl',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': '{0}'.format(ts.Variables.port),
-    'proxy.config.ssl.client.verify.server':  0,
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.cert.filename': 'signed-foo.pem',
     'proxy.config.ssl.client.private_key.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
     'proxy.config.exec_thread.autoconfig.scale': 1.0,
-    'proxy.config.url_remap.pristine_host_hdr' : 1,
+    'proxy.config.url_remap.pristine_host_hdr': 1,
+    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
 })
 
 ts.Disk.ssl_multicert_config.AddLine(
@@ -82,21 +86,29 @@ ts.Disk.ssl_multicert_config.AddLine(
 )
 
 ts.Disk.remap_config.AddLine(
-    'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(server.Variables.SSL_Port, "signed-foo.pem", "signed-foo.key")
-)
+    'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(
+        server.Variables.SSL_Port,
+        "signed-foo.pem",
+        "signed-foo.key"))
 ts.Disk.remap_config.AddLine(
-    'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(server.Variables.SSL_Port, "signed2-foo.pem", "signed-foo.key")
-)
+    'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(
+        server.Variables.SSL_Port,
+        "signed2-foo.pem",
+        "signed-foo.key"))
 ts.Disk.remap_config.AddLine(
-    'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(server2.Variables.SSL_Port, "signed2-foo.pem", "signed-foo.key")
-)
+    'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(
+        server2.Variables.SSL_Port,
+        "signed2-foo.pem",
+        "signed-foo.key"))
 ts.Disk.remap_config.AddLine(
-    'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(server2.Variables.SSL_Port, "signed-foo.pem", "signed-foo.key")
-)
+    'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(
+        server2.Variables.SSL_Port,
+        "signed-foo.pem",
+        "signed-foo.key"))
 
 # Should succeed
 tr = Test.AddTestRun("Connect with correct client cert to first server")
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
 tr.StillRunningAfter = ts
@@ -106,7 +118,7 @@ tr.Processes.Default.Command = "curl -H host:example.com  http://127.0.0.1:{0}/c
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
-#Should fail
+# Should fail
 trfail = Test.AddTestRun("Connect with bad client cert to first server")
 trfail.StillRunningAfter = ts
 trfail.StillRunningAfter = server
@@ -124,7 +136,7 @@ trbar.Processes.Default.Command = "curl -H host:bar.com  http://127.0.0.1:{0}/ca
 trbar.Processes.Default.ReturnCode = 0
 trbar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 
-#Should fail
+# Should fail
 trbarfail = Test.AddTestRun("Connect with bad client cert to second server")
 trbarfail.StillRunningAfter = ts
 trbarfail.StillRunningAfter = server
@@ -132,5 +144,3 @@ trbarfail.StillRunningAfter = server2
 trbarfail.Processes.Default.Command = 'curl -H host:bar.com  http://127.0.0.1:{0}/badcase2'.format(ts.Variables.port)
 trbarfail.Processes.Default.ReturnCode = 0
 trbarfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-
-

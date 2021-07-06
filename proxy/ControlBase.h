@@ -31,8 +31,9 @@
 
 #pragma once
 
+#include <vector>
+
 #include "tscore/ink_platform.h"
-#include "vector"
 
 class HttpRequestData;
 class Tokenizer;
@@ -65,19 +66,22 @@ public:
         @return @c true if the request is matched, @c false if not.
     */
     virtual bool check(HttpRequestData *req ///< Request to check.
-                       ) const = 0;
+    ) const = 0;
     /// Print the mod information.
     virtual void print(FILE *f ///< Output stream.
-                       ) const = 0;
+    ) const = 0;
   };
 
   ControlBase();
   ~ControlBase();
+
   const char *ProcessModifiers(matcher_line *line_info);
   bool CheckModifiers(HttpRequestData *request_data);
   bool CheckForMatch(HttpRequestData *request_data, int last_number);
-  void Print();
-  int line_num;
+
+  void Print() const;
+
+  int line_num = 0;
   Modifier *findModOfType(Modifier::Type t) const;
 
 protected:
@@ -97,7 +101,7 @@ private:
   void clear();
 };
 
-inline ControlBase::ControlBase() : line_num(0) {}
+inline ControlBase::ControlBase() {}
 
 inline bool
 ControlBase::CheckForMatch(HttpRequestData *request_data, int last_number)

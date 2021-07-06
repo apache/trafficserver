@@ -16,21 +16,24 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-sub usage {
+sub usage
+{
     print "Usage: freelist_diff.pl dump1.txt dump2.txt\n";
 }
 
-sub int_meg {
+sub int_meg
+{
     my $bytes = shift;
-    return $bytes / (1024*1024);
+    return $bytes / (1024 * 1024);
 }
 
-sub load_file {
+sub load_file
+{
     my $file = shift;
     my %data;
 
     open(DATA, $file) || return undef;
-    while(<DATA>) {
+    while (<DATA>) {
         my @items = split;
         chomp @items;
 
@@ -49,11 +52,13 @@ my %diff;
 
 while (my ($key, $value) = each(%{$data1})) {
     # before alloc [0], after alloc [1], before in-use [2], after in-use [3]
-    $diff{$key} = [ $value->[0], $data2->{$key}->[0], $value->[1], $data2->{$key}->[1],
-                    # diff alloc [4], diff in-use [5]
-                    $data2->{$key}->[0] - $value->[0], $data2->{$key}->[1] - $value->[1],
-                    # type size [6]
-                    $value->[2] ];
+    $diff{$key} = [
+        $value->[0], $data2->{$key}->[0], $value->[1], $data2->{$key}->[1],
+        # diff alloc [4], diff in-use [5]
+        $data2->{$key}->[0] - $value->[0], $data2->{$key}->[1] - $value->[1],
+        # type size [6]
+        $value->[2]
+    ];
 }
 
 print "Sorted by in-use growth\n";

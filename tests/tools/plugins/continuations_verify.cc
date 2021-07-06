@@ -23,8 +23,8 @@
   limitations under the License.
 */
 
-#include <stdlib.h> // for abort
-#include <ts/ts.h>  // for debug
+#include <cstdlib> // for abort
+#include <ts/ts.h> // for debug
 
 // debug messages viewable by setting 'proxy.config.diags.debug.tags'
 // in 'records.config'
@@ -147,13 +147,7 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name   = vendor_name;
   info.support_email = support_email;
 
-#if (TS_VERSION_MAJOR < 3)
-  if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
-#elif (TS_VERSION_MAJOR < 6)
-  if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
-#else
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-#endif
     TSError("[%s] Plugin registration failed. \n", plugin_name);
   }
 

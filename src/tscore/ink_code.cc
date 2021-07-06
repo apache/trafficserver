@@ -72,7 +72,7 @@ ink_code_incr_md5_update(INK_DIGEST_CTX *context, const char *input, int input_l
 int
 ink_code_incr_md5_final(char *sixteen_byte_hash_pointer, INK_DIGEST_CTX *context)
 {
-  return MD5_Final((unsigned char *)sixteen_byte_hash_pointer, context);
+  return MD5_Final(reinterpret_cast<unsigned char *>(sixteen_byte_hash_pointer), context);
 }
 
 /**

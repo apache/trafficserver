@@ -94,9 +94,9 @@ Distribute
 ==========
 
 The release candidate files should be uploaded to some public storage. Your
-personal storage on *people.apach.org* is a reasonable location to use.
+personal storage on *people.apache.org* is a reasonable location to use.
 
-Send the release candiate announcement to the *users* and *dev* mailinging
+Send the release candidate announcement to the *users* and *dev* mailing
 lists, noting that it is a release *candidate* and providing a link to the
 distribution files you uploaded. This announcement should also call for a vote
 on the candidate, generally with a 72 hours time limit.

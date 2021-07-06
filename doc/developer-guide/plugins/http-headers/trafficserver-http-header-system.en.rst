@@ -42,7 +42,7 @@ passed into the common ``str*()`` routines
    Values returned from a marshall buffer can be ``NULL``, which means the
    field or object requested does not exist.
 
-For example (from the ``blacklist_1`` sample)
+For example (from the ``denylist_1`` sample)
 
 .. code-block:: c
 

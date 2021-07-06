@@ -23,20 +23,28 @@
 
 #pragma once
 
+#include <string>
 #include "tscore/List.h"
+
+typedef enum { RELOAD_OFF, RELOAD_ON, RELOAD_COUNT } PluginDynamicReloadMode;
+
+// read records.config to parse plugin related configs
+void parsePluginConfig();
+
+bool isPluginDynamicReloadEnabled();
 
 struct PluginRegInfo {
   PluginRegInfo();
   ~PluginRegInfo();
 
-  bool plugin_registered;
-  char *plugin_path;
+  bool plugin_registered = false;
+  char *plugin_path      = nullptr;
 
-  char *plugin_name;
-  char *vendor_name;
-  char *support_email;
+  char *plugin_name   = nullptr;
+  char *vendor_name   = nullptr;
+  char *support_email = nullptr;
 
-  void *dlh;
+  void *dlh = nullptr;
 
   LINK(PluginRegInfo, link);
 };
@@ -46,6 +54,7 @@ extern DLL<PluginRegInfo> plugin_reg_list;
 extern PluginRegInfo *plugin_reg_current;
 
 bool plugin_init(bool validateOnly = false);
+bool plugin_dso_load(const char *path, void *&handle, void *&init, std::string &error);
 
 /** Abstract interface class for plugin based continuations.
 

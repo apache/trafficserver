@@ -46,7 +46,7 @@ class Continuation;
  * the appropriate callback for any hooks you register.
  *
  * A simple example of how to use the TransformationPlugin interface follows, this is an example
- * of a Response transformation, the avialable options are REQUEST_TRANSFORMATION and RESPONSE_TRANSFORMATION
+ * of a Response transformation, the available options are REQUEST_TRANSFORMATION and RESPONSE_TRANSFORMATION
  * which are defined in Type.
  *
  * This example is a Null Transformation, meaning it will just spit out the content it receives without
@@ -128,7 +128,7 @@ protected:
 
   /**
    * This is the method that you must call when you're done producing output for
-   * the downstream TranformationPlugin.
+   * the downstream TransformationPlugin.
    */
   size_t setOutputComplete();
 

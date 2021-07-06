@@ -1135,7 +1135,7 @@ msgstr ""
 #: ../../../admin-guide/plugins/header_rewrite.en.rst:792
 msgid ""
 "Rulesets evaluated within this context will process only once the origin "
-"server response (or cached response) has been read, but prior to |TS| "
+"server response has been read, but prior to |TS| "
 "sending that response to the client."
 msgstr ""
 
@@ -1424,7 +1424,7 @@ msgstr ""
 #: ../../../admin-guide/plugins/header_rewrite.en.rst:1019
 msgid ""
 "This rule adds cache control headers to CDN responses based matching the "
-"origin path.  One provides a max age and the other provides a “no-cache” "
+"origin path.  One provides a max age and the other provides a "no-cache" "
 "statement to two different file paths.::"
 msgstr ""
 

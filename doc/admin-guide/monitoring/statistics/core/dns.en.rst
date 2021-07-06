@@ -35,12 +35,24 @@ DNS
 
    The number of DNS lookups currently in progress.
 
+.. ts:stat:: global proxy.process.dns.tcp_retries integer
+   :type: gauge
+   :ungathered:
+
+   The number of DNS query over TCP in TCP_RETRY connection mode.
+
+.. ts:stat:: global proxy.process.dns.tcp_reset integer
+   :type: gauge
+   :ungathered:
+
+   The number of resetting TCP connection in TCP_RETRY connection mode.
+
 .. ts:stat:: global proxy.process.dns.lookup_avg_time integer
    :type: derivative
    :units: milliseconds
    :ungathered:
 
-   The average time spent performaning DNS lookups per host.
+   The average time spent performing DNS lookups per host.
 
 .. ts:stat:: global proxy.process.dns.lookup_failures integer
    :type: counter

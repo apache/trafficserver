@@ -18,7 +18,7 @@
 
 /**
  * @file noncopyable.h
- * @brief A base class used to prevent dervied classes from being copyable, this effectively
+ * @brief A base class used to prevent derived classes from being copyable, this effectively
  * eliminates the copy constructor and assignment operator.
  */
 

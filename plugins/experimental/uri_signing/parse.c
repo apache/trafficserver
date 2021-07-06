@@ -25,15 +25,14 @@
 #include <cjose/cjose.h>
 #include <jansson.h>
 #include <string.h>
-#include <ts/ts.h>
 #include <inttypes.h>
 
 cjose_jws_t *
 get_jws_from_uri(const char *uri, size_t uri_ct, const char *paramName, char *strip_uri, size_t buff_ct, size_t *strip_ct)
 {
   /* Reserved characters as defined by the URI Generic Syntax RFC: https://tools.ietf.org/html/rfc3986#section-2.2 */
-  static const char *reserved_string  = ":/?#[]@!$&\'()*+,;=";
-  static const char *sub_delim_string = "!$&\'()*+,;=";
+  static char const *const reserved_string  = ":/?#[]@!$&\'()*+,;=";
+  static char const *const sub_delim_string = "!$&\'()*+,;=";
 
   /* If param name ends in reserved character this will be treated as the termination symbol when parsing for package. Default is
    * '='. */
@@ -227,6 +226,11 @@ validate_jws(cjose_jws_t *jws, struct config *cfg, const char *uri, size_t uri_c
       }
       goto jwt_fail;
     }
+  }
+
+  if (!jwt_check_aud(jwt->aud, config_get_id(cfg))) {
+    PluginDebug("Valid key for %16p that does not match aud.", jws);
+    goto jwt_fail;
   }
 
   if (!jwt_check_uri(jwt->cdniuc, uri)) {

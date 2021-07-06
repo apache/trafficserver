@@ -43,7 +43,7 @@ extern "C" {
 
 inkcoreapi void _ink_assert(const char *a, const char *f, int l) TS_NORETURN;
 
-#if defined(DEBUG) || defined(__clang_analyzer__) || defined(__COVERITY__)
+#if defined(DEBUG) || defined(ENABLE_ALL_ASSERTS) || defined(__clang_analyzer__) || defined(__COVERITY__)
 #define ink_assert(EX) ((void)(__builtin_expect(!!(EX), 1) ? (void)0 : _ink_assert(#EX, __FILE__, __LINE__)))
 #else
 #define ink_assert(EX) (void)(EX)
@@ -53,13 +53,51 @@ inkcoreapi void _ink_assert(const char *a, const char *f, int l) TS_NORETURN;
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
 
-/* workaround a bug in the  stupid Sun preprocessor
+/*
+Use cast_to_derived() to cast a pointer/reference to a dynamic base class into a pointer/reference to a class
+that inherits directly or indirectly from the base class.  Uses checked dynamic_cast in debug builds, and
+static_cast in release (optimized) builds.  Use examples:
 
-#undef assert
-#define assert __DONT_USE_BARE_assert_USE_ink_assert__
-#define _ASSERT_H
-#undef __ASSERT_H__
-#define __ASSERT_H__
+class A { public: virtual ~A(); };
+class B : public A {};
+B * foo(A *a) { return cast_to_derived<B>(a); }
+B & foo2(A &a) { return cast_to_derived<B>(a); }
+B const & foo3(A const &a) { return cast_to_derived<B const>(a); }
+
 */
+
+template <class Derived, class Base>
+Derived *
+cast_to_derived(Base *b) // b must not be nullptr.
+{
+#ifdef DEBUG
+
+  ink_assert(b != nullptr);
+  auto d = dynamic_cast<Derived *>(b);
+  ink_assert(d != nullptr);
+  return d;
+
+#else
+
+  return static_cast<Derived *>(b);
+
+#endif
+}
+
+template <class Derived, class Base>
+Derived &
+cast_to_derived(Base &b)
+{
+#ifdef DEBUG
+
+  return dynamic_cast<Derived &>(b);
+
+#else
+
+  return static_cast<Derived &>(b);
+
+#endif
+}
+
+#endif /* __cplusplus */

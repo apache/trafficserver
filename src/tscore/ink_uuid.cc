@@ -41,8 +41,8 @@ ATSUuid::initialize(TSUuidVersion v)
     break;
   case TS_UUID_V4:
     RAND_bytes(_uuid.data, sizeof(_uuid.data));
-    _uuid.clockSeqAndReserved = (uint8_t)((_uuid.clockSeqAndReserved & 0x3F) | 0x80);
-    _uuid.timeHighAndVersion  = (uint16_t)((_uuid.timeHighAndVersion & 0x0FFF) | 0x4000);
+    _uuid.clockSeqAndReserved = static_cast<uint8_t>((_uuid.clockSeqAndReserved & 0x3F) | 0x80);
+    _uuid.timeHighAndVersion  = static_cast<uint16_t>((_uuid.timeHighAndVersion & 0x0FFF) | 0x4000);
 
     break;
   }
@@ -52,11 +52,13 @@ ATSUuid::initialize(TSUuidVersion v)
 
 // Copy assignment
 ATSUuid &
-ATSUuid::operator=(const ATSUuid other)
+ATSUuid::operator=(const ATSUuid &other)
 {
-  memcpy(_uuid.data, other._uuid.data, sizeof(_uuid.data));
-  memcpy(_string, other._string, sizeof(_string));
-  _version = other._version;
+  if (this != &other) { // Self assignment guard
+    memcpy(_uuid.data, other._uuid.data, sizeof(_uuid.data));
+    memcpy(_string, other._string, sizeof(_string));
+    _version = other._version;
+  }
 
   return *this;
 }

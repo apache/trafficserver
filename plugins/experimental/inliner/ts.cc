@@ -190,7 +190,7 @@ namespace io
 
     default:
       TSError("[" PLUGIN_TAG "] Unknown event: %i", e);
-      assert(false); // UNREACHEABLE
+      assert(false); // UNREACHABLE
       break;
     }
 

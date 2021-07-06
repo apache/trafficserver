@@ -18,31 +18,47 @@
 
 #include "Config.h"
 
-#include <algorithm>
 #include <cctype>
 #include <cinttypes>
-#include <map>
-#include <string>
+#include <cstdlib>
+#include <getopt.h>
+#include <string_view>
+
+#include "ts/experimental.h"
+
+Config::~Config()
+{
+  if (nullptr != m_regex_extra) {
+#ifndef PCRE_STUDY_JIT_COMPILE
+    pcre_free(m_regex_extra);
+#else
+    pcre_free_study(m_regex_extra);
+#endif
+  }
+  if (nullptr != m_regex) {
+    pcre_free(m_regex);
+  }
+}
 
 int64_t
-Config::bytesFrom(std::string const &valstr)
+Config::bytesFrom(char const *const valstr)
 {
-  char const *const nptr = valstr.c_str();
-  char *endptr           = nullptr;
-  int64_t blockbytes     = strtoll(nptr, &endptr, 10);
+  char *endptr          = nullptr;
+  int64_t blockbytes    = strtoll(valstr, &endptr, 10);
+  constexpr int64_t kib = 1024;
 
-  if (nullptr != endptr && nptr < endptr) {
-    size_t const dist = endptr - nptr;
-    if (dist < valstr.size() && 0 <= blockbytes) {
+  if (nullptr != endptr && valstr < endptr) {
+    size_t const dist = endptr - valstr;
+    if (dist < strlen(valstr) && 0 <= blockbytes) {
       switch (tolower(*endptr)) {
       case 'g':
-        blockbytes *= ((int64_t)1024 * (int64_t)1024 * (int64_t)1024);
+        blockbytes *= (kib * kib * kib);
         break;
       case 'm':
-        blockbytes *= ((int64_t)1024 * (int64_t)1024);
+        blockbytes *= (kib * kib);
         break;
       case 'k':
-        blockbytes *= (int64_t)1024;
+        blockbytes *= kib;
         break;
       default:
         break;
@@ -58,96 +74,208 @@ Config::bytesFrom(std::string const &valstr)
 }
 
 bool
-Config::fromArgs(int const argc, char const *const argv[], char *const errbuf, int const errbuf_size)
+Config::fromArgs(int const argc, char const *const argv[])
 {
-#if !defined(SLICE_UNIT_TEST)
   DEBUG_LOG("Number of arguments: %d", argc);
   for (int index = 0; index < argc; ++index) {
     DEBUG_LOG("args[%d] = %s", index, argv[index]);
   }
-#endif
 
-  std::map<std::string, std::string> keyvals;
+  // look for lowest priority deprecated blockbytes
+  int64_t blockbytes = 0;
 
-  static std::string const bbstr(blockbytesstr);
-  static std::string const bostr(bytesoverstr);
-
-  // collect all args
+  // backwards compat: look for blockbytes
   for (int index = 0; index < argc; ++index) {
-    std::string const argstr = argv[index];
+    std::string_view const argstr = argv[index];
 
-    std::size_t const spos = argstr.find_first_of(":");
-    if (spos != std::string::npos) {
-      std::string key = argstr.substr(0, spos);
-      std::string val = argstr.substr(spos + 1);
+    std::size_t const spos = argstr.find_first_of(':');
+    if (spos != std::string_view::npos) {
+      std::string_view const key = argstr.substr(0, spos);
+      std::string_view const val = argstr.substr(spos + 1);
 
-      if (!key.empty()) {
-        std::for_each(key.begin(), key.end(), [](char &ch) { ch = tolower(ch); });
+      if (!key.empty() && !val.empty()) {
+        char const *const valstr = val.data(); // inherits argv's null
+        int64_t const bytesread  = bytesFrom(valstr);
 
-        // blockbytes and bytesover collide
-        if (bbstr == key) {
-          keyvals.erase(bostr);
-        } else if (bostr == key) {
-          keyvals.erase(bbstr);
+        if (blockbytesmin <= bytesread && bytesread <= blockbytesmax) {
+          DEBUG_LOG("Found deprecated blockbytes %" PRId64, bytesread);
+          blockbytes = bytesread;
         }
-
-        keyvals[std::move(key)] = std::move(val);
       }
     }
   }
 
-  std::map<std::string, std::string>::const_iterator itfind;
+  // standard parsing
+  constexpr struct option longopts[] = {
+    {const_cast<char *>("blockbytes"), required_argument, nullptr, 'b'},
+    {const_cast<char *>("disable-errorlog"), no_argument, nullptr, 'd'},
+    {const_cast<char *>("exclude-regex"), required_argument, nullptr, 'e'},
+    {const_cast<char *>("include-regex"), required_argument, nullptr, 'i'},
+    {const_cast<char *>("ref-relative"), no_argument, nullptr, 'l'},
+    {const_cast<char *>("pace-errorlog"), required_argument, nullptr, 'p'},
+    {const_cast<char *>("remap-host"), required_argument, nullptr, 'r'},
+    {const_cast<char *>("blockbytes-test"), required_argument, nullptr, 't'},
+    {nullptr, 0, nullptr, 0},
+  };
 
-  // blockbytes checked range string
-  itfind = keyvals.find(bbstr);
-  if (keyvals.end() != itfind) {
-    std::string val = itfind->second;
-    if (!val.empty()) {
-      int64_t const blockbytes = bytesFrom(val);
+  // getopt assumes args start at '1' so this hack is needed
+  char *const *argvp = (const_cast<char *const *>(argv) - 1);
+  for (;;) {
+    int const opt = getopt_long(argc + 1, argvp, "b:de:i:lop:r:t:", longopts, nullptr);
+    if (-1 == opt) {
+      break;
+    }
 
-      if (blockbytes < blockbytesmin || blockbytesmax < blockbytes) {
-#if !defined(SLICE_UNIT_TEST)
-        DEBUG_LOG("Block Bytes %" PRId64 " outside checked limits %" PRId64 "-%" PRId64, blockbytes, blockbytesmin, blockbytesmax);
-        DEBUG_LOG("Block Bytes kept at %" PRId64, m_blockbytes);
-#endif
+    DEBUG_LOG("processing '%c' %s", (char)opt, argvp[optind - 1]);
+
+    switch (opt) {
+    case 'b': {
+      int64_t const bytesread = bytesFrom(optarg);
+      if (blockbytesmin <= bytesread && bytesread <= blockbytesmax) {
+        DEBUG_LOG("Using blockbytes %" PRId64, bytesread);
+        blockbytes = bytesread;
       } else {
-#if !defined(SLICE_UNIT_TEST)
-        DEBUG_LOG("Block Bytes set to %" PRId64, blockbytes);
-#endif
-        m_blockbytes = blockbytes;
+        ERROR_LOG("Invalid blockbytes: %s", optarg);
       }
-    }
+    } break;
+    case 'd': {
+      m_paceerrsecs = -1;
+    } break;
+    case 'e': {
+      if (None != m_regex_type) {
+        ERROR_LOG("Regex already specified!");
+        break;
+      }
 
-    keyvals.erase(itfind);
-  }
-
-  // bytesover unchecked range string
-  itfind = keyvals.find(bostr);
-  if (keyvals.end() != itfind) {
-    std::string val = itfind->second;
-    if (!val.empty()) {
-      int64_t const bytesover = bytesFrom(val);
-
-      if (bytesover <= 0) {
-#if !defined(SLICE_UNIT_TEST)
-        DEBUG_LOG("Bytes Over %" PRId64 " <= 0", bytesover);
-        DEBUG_LOG("Block Bytes kept at %" PRId64, m_blockbytes);
-#endif
+      const char *errptr;
+      int erroffset;
+      m_regexstr = optarg;
+      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
+      if (nullptr == m_regex) {
+        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
       } else {
-#if !defined(SLICE_UNIT_TEST)
-        DEBUG_LOG("Block Bytes set to %" PRId64, bytesover);
-#endif
-        m_blockbytes = bytesover;
+        m_regex_type  = Exclude;
+        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+        DEBUG_LOG("Using regex for url exclude: '%s'", m_regexstr.c_str());
       }
+    } break;
+    case 'i': {
+      if (None != m_regex_type) {
+        ERROR_LOG("Regex already specified!");
+        break;
+      }
+
+      const char *errptr;
+      int erroffset;
+      m_regexstr = optarg;
+      m_regex    = pcre_compile(m_regexstr.c_str(), 0, &errptr, &erroffset, nullptr);
+      if (nullptr == m_regex) {
+        ERROR_LOG("Invalid regex: '%s'", m_regexstr.c_str());
+      } else {
+        m_regex_type  = Include;
+        m_regex_extra = pcre_study(m_regex, 0, &errptr);
+        DEBUG_LOG("Using regex for url include: '%s'", m_regexstr.c_str());
+      }
+    } break;
+    case 'l': {
+      m_reftype = RefType::Relative;
+      DEBUG_LOG("Reference slice relative to request (not slice block 0)");
+    } break;
+    case 'p': {
+      int const secsread = atoi(optarg);
+      if (0 < secsread) {
+        m_paceerrsecs = std::min(secsread, 60);
+      } else {
+        ERROR_LOG("Ignoring pace-errlog argument");
+      }
+    } break;
+    case 'r': {
+      m_remaphost = optarg;
+      DEBUG_LOG("Using loopback remap host override: %s", m_remaphost.c_str());
+    } break;
+    case 't': {
+      if (0 == blockbytes) {
+        int64_t const bytesread = bytesFrom(optarg);
+        if (0 < bytesread) {
+          DEBUG_LOG("Using blockbytes-test %" PRId64, bytesread);
+          blockbytes = bytesread;
+        } else {
+          ERROR_LOG("Invalid blockbytes-test: %s", optarg);
+        }
+      } else {
+        DEBUG_LOG("Skipping blockbytes-test in favor of blockbytes");
+      }
+    } break;
+    default:
+      break;
     }
-    keyvals.erase(itfind);
   }
 
-  for (std::map<std::string, std::string>::const_iterator itkv(keyvals.cbegin()); keyvals.cend() != itkv; ++itkv) {
-#if !defined(SLICE_UNIT_TEST)
-    ERROR_LOG("Unhandled pparam %s", itkv->first.c_str());
-#endif
+  if (0 < blockbytes) {
+    DEBUG_LOG("Using configured blockbytes %" PRId64, blockbytes);
+    m_blockbytes = blockbytes;
+  } else {
+    DEBUG_LOG("Using default blockbytes %" PRId64, m_blockbytes);
+  }
+
+  if (m_paceerrsecs < 0) {
+    DEBUG_LOG("Block stitching error logs disabled");
+  } else if (0 == m_paceerrsecs) {
+    DEBUG_LOG("Block stitching error logs enabled");
+  } else {
+    DEBUG_LOG("Block stitching error logs at most every %d sec(s)", m_paceerrsecs);
   }
 
   return true;
+}
+
+bool
+Config::canLogError()
+{
+  if (m_paceerrsecs < 0) {
+    return false;
+  } else if (0 == m_paceerrsecs) {
+    return true;
+  }
+
+#if !defined(UNITTEST)
+  TSHRTime const timenow = TShrtime();
+#endif
+
+  std::lock_guard<std::mutex> const guard(m_mutex);
+
+#if !defined(UNITTEST)
+  if (timenow < m_nextlogtime) {
+    return false;
+  }
+
+  m_nextlogtime = timenow + TS_HRTIME_SECONDS(m_paceerrsecs);
+#else
+  m_nextlogtime = 0; // needed by clang
+#endif
+
+  return true;
+}
+
+bool
+Config::matchesRegex(char const *const url, int const urllen) const
+{
+  bool matches = true;
+
+  switch (m_regex_type) {
+  case Exclude: {
+    if (0 <= pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, nullptr, 0)) {
+      matches = false;
+    }
+  } break;
+  case Include: {
+    if (pcre_exec(m_regex, m_regex_extra, url, urllen, 0, 0, nullptr, 0) < 0) {
+      matches = false;
+    }
+  } break;
+  default:
+    break;
+  }
+
+  return matches;
 }

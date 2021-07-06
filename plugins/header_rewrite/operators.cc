@@ -77,7 +77,7 @@ OperatorSetStatus::initialize(Parser &p)
 
   _status.set_value(p.get_arg());
 
-  if (nullptr == (_reason = TSHttpHdrReasonLookup((TSHttpStatus)_status.get_int_value()))) {
+  if (nullptr == (_reason = TSHttpHdrReasonLookup(static_cast<TSHttpStatus>(_status.get_int_value())))) {
     TSError("[%s] unknown status %d", PLUGIN_NAME, _status.get_int_value());
     _reason_len = 0;
   } else {
@@ -106,14 +106,14 @@ OperatorSetStatus::exec(const Resources &res) const
   case TS_HTTP_READ_RESPONSE_HDR_HOOK:
   case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
     if (res.bufp && res.hdr_loc) {
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, (TSHttpStatus)_status.get_int_value());
+      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()));
       if (_reason && _reason_len > 0) {
         TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
       }
     }
     break;
   default:
-    TSHttpTxnStatusSet(res.txnp, (TSHttpStatus)_status.get_int_value());
+    TSHttpTxnStatusSet(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
     break;
   }
 
@@ -160,6 +160,17 @@ OperatorSetDestination::initialize(Parser &p)
 
   _url_qual = parse_url_qualifier(p.get_arg());
   _value.set_value(p.get_value());
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+}
+
+// OperatorRMDestination
+void
+OperatorRMDestination::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _url_qual = parse_url_qualifier(p.get_arg());
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
 }
@@ -239,26 +250,28 @@ OperatorSetDestination::exec(const Resources &res) const
       }
       break;
     case URL_QUAL_URL:
-      if (_value.empty()) {
+      _value.append_value(value, res);
+      if (value.empty()) {
         TSDebug(PLUGIN_NAME, "Would set destination URL to an empty value, skipping");
       } else {
-        const char *start = _value.get_value().c_str();
-        const char *end   = _value.get_value().size() + start;
+        const char *start = value.c_str();
+        const char *end   = start + value.size();
         TSMLoc new_url_loc;
         if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS && TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
-          TSDebug(PLUGIN_NAME, "Set destination URL to %s", _value.get_value().c_str());
+          TSDebug(PLUGIN_NAME, "Set destination URL to %s", value.c_str());
         } else {
-          TSDebug(PLUGIN_NAME, "Failed to set URL %s", _value.get_value().c_str());
+          TSDebug(PLUGIN_NAME, "Failed to set URL %s", value.c_str());
         }
       }
       break;
     case URL_QUAL_SCHEME:
-      if (_value.empty()) {
+      _value.append_value(value, res);
+      if (value.empty()) {
         TSDebug(PLUGIN_NAME, "Would set destination SCHEME to an empty value, skipping");
       } else {
-        TSUrlSchemeSet(bufp, url_m_loc, _value.get_value().c_str(), _value.get_value().length());
-        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with SCHEME: %s", _value.get_value().c_str());
+        TSUrlSchemeSet(bufp, url_m_loc, value.c_str(), value.length());
+        TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() invoked with SCHEME: %s", value.c_str());
       }
       break;
     default:
@@ -268,6 +281,54 @@ OperatorSetDestination::exec(const Resources &res) const
   } else {
     TSDebug(PLUGIN_NAME, "OperatorSetDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!",
             res.bufp, res.hdr_loc, res._rri);
+  }
+}
+
+void
+OperatorRMDestination::exec(const Resources &res) const
+{
+  if (res._rri || (res.bufp && res.hdr_loc)) {
+    // Default empty string to delete components
+    static std::string value = "";
+
+    // Determine which TSMBuffer and TSMLoc to use
+    TSMBuffer bufp;
+    TSMLoc url_m_loc;
+    if (res._rri) {
+      bufp      = res._rri->requestBufp;
+      url_m_loc = res._rri->requestUrl;
+    } else {
+      bufp = res.bufp;
+      if (TSHttpHdrUrlGet(res.bufp, res.hdr_loc, &url_m_loc) != TS_SUCCESS) {
+        TSDebug(PLUGIN_NAME, "TSHttpHdrUrlGet was unable to return the url m_loc");
+        return;
+      }
+    }
+
+    // Never set an empty destination value (I don't think that ever makes sense?)
+    switch (_url_qual) {
+    case URL_QUAL_PATH:
+      const_cast<Resources &>(res).changed_url = true;
+      TSUrlPathSet(bufp, url_m_loc, value.c_str(), value.size());
+      TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() deleting PATH");
+      break;
+    case URL_QUAL_QUERY:
+      const_cast<Resources &>(res).changed_url = true;
+      TSUrlHttpQuerySet(bufp, url_m_loc, value.c_str(), value.size());
+      TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() deleting QUERY");
+      break;
+    case URL_QUAL_PORT:
+      const_cast<Resources &>(res).changed_url = true;
+      TSUrlPortSet(bufp, url_m_loc, 0);
+      TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() deleting PORT");
+      break;
+    default:
+      TSDebug(PLUGIN_NAME, "RM Destination %i has no handler", _url_qual);
+      break;
+    }
+  } else {
+    TSDebug(PLUGIN_NAME, "OperatorRMDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
+            res.hdr_loc, res._rri);
   }
 }
 
@@ -404,14 +465,16 @@ OperatorSetRedirect::exec(const Resources &res) const
     const char *end   = value.size() + start;
     if (remap) {
       // Set new location.
-      TSUrlParse(bufp, url_loc, &start, end);
+      if (TS_PARSE_ERROR == TSUrlParse(bufp, url_loc, &start, end)) {
+        TSDebug(PLUGIN_NAME, "Could not set Location field value to: %s", value.c_str());
+      }
       // Set the new status.
-      TSHttpTxnStatusSet(res.txnp, (TSHttpStatus)_status.get_int_value());
+      TSHttpTxnStatusSet(res.txnp, static_cast<TSHttpStatus>(_status.get_int_value()));
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
       // Set the new status code and reason.
-      TSHttpStatus status = (TSHttpStatus)_status.get_int_value();
+      TSHttpStatus status = static_cast<TSHttpStatus>(_status.get_int_value());
       switch (get_hook()) {
       case TS_HTTP_PRE_REMAP_HOOK: {
         TSHttpTxnStatusSet(res.txnp, status);
@@ -598,6 +661,7 @@ OperatorSetHeader::exec(const Resources &res) const
       bool first = true;
 
       while (field_loc) {
+        tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
         if (first) {
           first = false;
           if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
@@ -606,7 +670,6 @@ OperatorSetHeader::exec(const Resources &res) const
         } else {
           TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
         }
-        tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
         TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
         field_loc = tmp;
       }

@@ -28,8 +28,6 @@
 #include <cmath>
 #include <cstdlib>
 
-using namespace std;
-
 CacheTestSM::CacheTestSM(RegressionTest *t, const char *name) : RegressionSM(t), cache_test_name(name)
 {
   SET_HANDLER(&CacheTestSM::event_handler);
@@ -37,9 +35,9 @@ CacheTestSM::CacheTestSM(RegressionTest *t, const char *name) : RegressionSM(t),
 
 CacheTestSM::CacheTestSM(const CacheTestSM &ao) : RegressionSM(ao)
 {
-  int o = (int)(((char *)&start_memcpy_on_clone) - ((char *)this));
-  int s = (int)(((char *)&end_memcpy_on_clone) - ((char *)&start_memcpy_on_clone));
-  memcpy(((char *)this) + o, ((char *)&ao) + o, s);
+  int o = static_cast<int>((reinterpret_cast<char *>(&start_memcpy_on_clone)) - (reinterpret_cast<char *>(this)));
+  int s = static_cast<int>((reinterpret_cast<char *>(&end_memcpy_on_clone)) - (reinterpret_cast<char *>(&start_memcpy_on_clone)));
+  memcpy((reinterpret_cast<char *>(this)) + o, ((char *)&ao) + o, s);
   SET_HANDLER(&CacheTestSM::event_handler);
 }
 
@@ -96,8 +94,8 @@ CacheTestSM::event_handler(int event, void *data)
     initial_event = event;
     cancel_timeout();
     cache_action  = nullptr;
-    cache_vc      = (CacheVConnection *)data;
-    buffer        = new_empty_MIOBuffer();
+    cache_vc      = static_cast<CacheVConnection *>(data);
+    buffer        = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     buffer_reader = buffer->alloc_reader();
     if (open_read_callout() < 0) {
       goto Lclose_error_next;
@@ -113,7 +111,7 @@ CacheTestSM::event_handler(int event, void *data)
       goto Lclose_error_next;
     }
     buffer_reader->consume(buffer_reader->read_avail());
-    ((VIO *)data)->reenable();
+    (static_cast<VIO *>(data))->reenable();
     return EVENT_CONT;
 
   case VC_EVENT_READ_COMPLETE:
@@ -130,8 +128,8 @@ CacheTestSM::event_handler(int event, void *data)
     initial_event = event;
     cancel_timeout();
     cache_action  = nullptr;
-    cache_vc      = (CacheVConnection *)data;
-    buffer        = new_empty_MIOBuffer();
+    cache_vc      = static_cast<CacheVConnection *>(data);
+    buffer        = new_empty_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     buffer_reader = buffer->alloc_reader();
     if (open_write_callout() < 0) {
       goto Lclose_error_next;
@@ -159,7 +157,7 @@ CacheTestSM::event_handler(int event, void *data)
 
   case CACHE_EVENT_SCAN:
     initial_event = event;
-    cache_vc      = (CacheVConnection *)data;
+    cache_vc      = static_cast<CacheVConnection *>(data);
     return EVENT_CONT;
 
   case CACHE_EVENT_SCAN_OBJECT:
@@ -221,7 +219,7 @@ CacheTestSM::fill_buffer()
   int64_t avail = buffer->write_avail();
   CacheKey k    = key;
   k.b[1] += content_salt;
-  int64_t sk = (int64_t)sizeof(key);
+  int64_t sk = static_cast<int64_t>(sizeof(key));
   while (avail > 0) {
     int64_t l = avail;
     if (l > sk) {
@@ -235,7 +233,7 @@ CacheTestSM::fill_buffer()
       l = sk - o;
     }
     k.b[0]  = pos / sk;
-    char *x = ((char *)&k) + o;
+    char *x = (reinterpret_cast<char *>(&k)) + o;
     buffer->write(x, l);
     buffer->fill(l);
     avail -= l;
@@ -249,7 +247,7 @@ CacheTestSM::check_buffer()
   CacheKey k    = key;
   k.b[1] += content_salt;
   char b[sizeof(key)];
-  int64_t sk  = (int64_t)sizeof(key);
+  int64_t sk  = static_cast<int64_t>(sizeof(key));
   int64_t pos = cvio->ndone - buffer_reader->read_avail();
   while (avail > 0) {
     int64_t l = avail;
@@ -261,7 +259,7 @@ CacheTestSM::check_buffer()
       l = sk - o;
     }
     k.b[0]  = pos / sk;
-    char *x = ((char *)&k) + o;
+    char *x = (reinterpret_cast<char *>(&k)) + o;
     buffer_reader->read(&b[0], l);
     if (::memcmp(b, x, l)) {
       return 0;
@@ -333,13 +331,14 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   remove_fail_test.expect_event = CACHE_EVENT_REMOVE_FAILED;
   rand_CacheKey(&remove_fail_test.key, thread->mutex);
 
-  CACHE_SM(t, replace_write_test,
-           { cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_SYNC); } int open_write_callout() {
-             header.serial = 10;
-             cache_vc->set_header(&header, sizeof(header));
-             cvio = cache_vc->do_io_write(this, nbytes, buffer_reader);
-             return 1;
-           });
+  CACHE_SM(
+    t, replace_write_test,
+    { cacheProcessor.open_write(this, &key, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_SYNC); } int open_write_callout() {
+      header.serial = 10;
+      cache_vc->set_header(&header, sizeof(header));
+      cvio = cache_vc->do_io_write(this, nbytes, buffer_reader);
+      return 1;
+    });
   replace_write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
   replace_write_test.expect_event         = VC_EVENT_WRITE_COMPLETE;
   replace_write_test.nbytes               = 100;
@@ -365,16 +364,17 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   replace_test.key                  = replace_write_test.key;
   replace_test.content_salt         = 1;
 
-  CACHE_SM(t, replace_read_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() {
-    CacheTestHeader *h = nullptr;
-    int hlen           = 0;
-    if (cache_vc->get_header((void **)&h, &hlen) < 0)
-      return -1;
-    if (h->serial != 11)
-      return -1;
-    cvio = cache_vc->do_io_read(this, nbytes, buffer);
-    return 1;
-  });
+  CACHE_SM(
+    t, replace_read_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() {
+      CacheTestHeader *h = nullptr;
+      int hlen           = 0;
+      if (cache_vc->get_header((void **)&h, &hlen) < 0)
+        return -1;
+      if (h->serial != 11)
+        return -1;
+      cvio = cache_vc->do_io_read(this, nbytes, buffer);
+      return 1;
+    });
   replace_read_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
   replace_read_test.expect_event         = VC_EVENT_READ_COMPLETE;
   replace_read_test.nbytes               = 100;
@@ -387,10 +387,11 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   large_write_test.nbytes               = 10000000;
   rand_CacheKey(&large_write_test.key, thread->mutex);
 
-  CACHE_SM(t, pread_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() {
-    cvio = cache_vc->do_io_pread(this, nbytes, buffer, 7000000);
-    return 1;
-  });
+  CACHE_SM(
+    t, pread_test, { cacheProcessor.open_read(this, &key); } int open_read_callout() {
+      cvio = cache_vc->do_io_pread(this, nbytes, buffer, 7000000);
+      return 1;
+    });
   pread_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
   pread_test.expect_event         = VC_EVENT_READ_COMPLETE;
   pread_test.nbytes               = 100;
@@ -511,7 +512,7 @@ build_zipf()
   if (zipf_table) {
     return;
   }
-  zipf_table = (double *)ats_malloc(ZIPF_SIZE * sizeof(double));
+  zipf_table = static_cast<double *>(ats_malloc(ZIPF_SIZE * sizeof(double)));
   for (int i = 0; i < ZIPF_SIZE; i++) {
     zipf_table[i] = 1.0 / pow(i + 2, zipf_alpha);
   }
@@ -550,7 +551,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   bool pass = true;
   CacheKey key;
   Vol *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
-  vector<Ptr<IOBufferData>> data;
+  std::vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, vol);
 
@@ -561,16 +562,16 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
 
       d->alloc(BUFFER_SIZE_INDEX_16K);
       data.push_back(make_ptr(d));
-      hash.u64[0] = ((uint64_t)i << 32) + i;
-      hash.u64[1] = ((uint64_t)i << 32) + i;
+      hash.u64[0] = (static_cast<uint64_t>(i) << 32) + i;
+      hash.u64[1] = (static_cast<uint64_t>(i) << 32) + i;
       cache->put(&hash, data[i].get(), 1 << 15);
       // More hits for the first 10.
       for (int j = 0; j <= i && j < 10; j++) {
         Ptr<IOBufferData> data;
         CryptoHash hash;
 
-        hash.u64[0] = ((uint64_t)j << 32) + j;
-        hash.u64[1] = ((uint64_t)j << 32) + j;
+        hash.u64[0] = (static_cast<uint64_t>(j) << 32) + j;
+        hash.u64[1] = (static_cast<uint64_t>(j) << 32) + j;
         cache->get(&hash, &data);
       }
     }
@@ -580,8 +581,8 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
     CryptoHash hash;
     Ptr<IOBufferData> data;
 
-    hash.u64[0] = ((uint64_t)i << 32) + i;
-    hash.u64[1] = ((uint64_t)i << 32) + i;
+    hash.u64[0] = (static_cast<uint64_t>(i) << 32) + i;
+    hash.u64[1] = (static_cast<uint64_t>(i) << 32) + i;
     if (!cache->get(&hash, &data)) {
       pass = false;
     }
@@ -590,7 +591,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   int sample_size = cache_size >> 6;
   build_zipf();
   srand48(13);
-  int *r = (int *)ats_malloc(sample_size * sizeof(int));
+  int *r = static_cast<int *>(ats_malloc(sample_size * sizeof(int)));
   for (int i = 0; i < sample_size; i++) {
     // coverity[dont_call]
     r[i] = get_zipf(drand48());
@@ -599,8 +600,8 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   int misses = 0;
   for (int i = 0; i < sample_size; i++) {
     CryptoHash hash;
-    hash.u64[0] = ((uint64_t)r[i] << 32) + r[i];
-    hash.u64[1] = ((uint64_t)r[i] << 32) + r[i];
+    hash.u64[0] = (static_cast<uint64_t>(r[i]) << 32) + r[i];
+    hash.u64[1] = (static_cast<uint64_t>(r[i]) << 32) + r[i];
     Ptr<IOBufferData> get_data;
     if (!cache->get(&hash, &get_data)) {
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
@@ -612,15 +613,15 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       }
     }
   }
-  double fixed_hit_rate = 1.0 - (((double)(misses)) / (sample_size / 2));
+  double fixed_hit_rate = 1.0 - ((static_cast<double>(misses)) / (sample_size / 2));
   rprintf(t, "RamCache %s Fixed Size Hit Rate %f\n", name, fixed_hit_rate);
 
   data.clear();
   misses = 0;
   for (int i = 0; i < sample_size; i++) {
     CryptoHash hash;
-    hash.u64[0] = ((uint64_t)r[i] << 32) + r[i];
-    hash.u64[1] = ((uint64_t)r[i] << 32) + r[i];
+    hash.u64[0] = (static_cast<uint64_t>(r[i]) << 32) + r[i];
+    hash.u64[1] = (static_cast<uint64_t>(r[i]) << 32) + r[i];
     Ptr<IOBufferData> get_data;
     if (!cache->get(&hash, &get_data)) {
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
@@ -632,7 +633,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       }
     }
   }
-  double variable_hit_rate = 1.0 - (((double)(misses)) / (sample_size / 2));
+  double variable_hit_rate = 1.0 - ((static_cast<double>(misses)) / (sample_size / 2));
   rprintf(t, "RamCache %s Variable Size Hit Rate %f\n", name, variable_hit_rate);
 
   rprintf(t, "RamCache %s Nominal Size %lld Size %lld\n", name, cache_size, cache->size());

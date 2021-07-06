@@ -22,12 +22,11 @@ Test.Summary = '''
 Test transactions and sessions for http2, making sure the two continuations catch the same number of hooks.
 '''
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl needs to be installed on system for this test to work"),
     Condition.HasCurlFeature('http2')
 )
 Test.ContinueOnFail = True
-# Define default ATS
-ts = Test.MakeATSProcess("ts", select_ports=False, command="traffic_manager")
+# Define default ATS. Disable the cache to simplify the test.
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, command="traffic_manager", enable_cache=False)
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
 
@@ -41,11 +40,9 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-L
 server.addResponse("sessionfile.log", request_header, response_header)
 
 # add ssl materials like key, certificates for the server
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+ts.addDefaultSSLFiles()
 
 # add port and remap rule
-ts.Variables.ssl_port = 4443
 ts.Disk.remap_config.AddLine(
     'map / http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
@@ -59,18 +56,13 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'continuations_verify',
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.cache.http': 0,  # disable cache to simply the test.
     'proxy.config.cache.enable_read_while_writer': 0,
-     # enable ssl port
-    'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
-    'proxy.config.ssl.client.verify.server':  0,
-    'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
     'proxy.config.http2.max_concurrent_streams_in': 65535
 })
 
 # add plugin to assist with test metrics
-Test.PreparePlugin(os.path.join(Test.Variables.AtsTestToolsDir,
-                                 'plugins', 'continuations_verify.cc'), ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir,
+                                    'continuations_verify.so'), ts)
 
 comparator_command = '''
 if test "`traffic_ctl metric get continuations_verify.{0}.close.1 | cut -d ' ' -f 2`" -eq "`traffic_ctl metric get continuations_verify.{0}.close.2 | cut -d ' ' -f 2`" ; then\
@@ -88,17 +80,17 @@ numberOfRequests = 25
 tr = Test.AddTestRun()
 
 # Create a bunch of curl commands to be executed in parallel. Default.Process is set in SpawnCommands.
-# On Fedora 28/29, it seems that curl will occaisionally timeout after a couple seconds and return exitcode 2
-# Examinig the packet capture shows that Traffic Server dutifully sends the response
-ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0,2))
+# On Fedora 28/29, it seems that curl will occasionally timeout after a couple seconds and return exitcode 2
+# Examining the packet capture shows that Traffic Server dutifully sends the response
+ps = tr.SpawnCommands(cmdstr=cmd, count=numberOfRequests, retcode=Any(0, 2))
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = Any(0,2)
+tr.Processes.Default.ReturnCode = Any(0, 2)
 
 # Execution order is: ts/server, ps(curl cmds), Default Process.
 tr.Processes.Default.StartBefore(
     server, ready=When.PortOpen(server.Variables.Port))
 # Adds a delay once the ts port is ready. This is because we cannot test the ts state.
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts
@@ -113,19 +105,22 @@ tr.StillRunningAfter = ts
 # Parking this as a ready tester on a meaningless process
 # To stall the test runs that check for the stats until the
 # stats have propagated and are ready to read.
-def make_done_stat_ready(tsenv): 
-  def done_stat_ready(process, hasRunFor, **kw):
-    retval = subprocess.run("traffic_ctl metric get continuations_verify.test.done > done  2> /dev/null", shell=True, env=tsenv)
-    if retval.returncode == 0:
-      retval = subprocess.run("grep 1 done > /dev/null", shell = True, env=tsenv)
-    return retval.returncode == 0
 
-  return done_stat_ready
-  
+
+def make_done_stat_ready(tsenv):
+    def done_stat_ready(process, hasRunFor, **kw):
+        retval = subprocess.run("traffic_ctl metric get continuations_verify.test.done > done  2> /dev/null", shell=True, env=tsenv)
+        if retval.returncode == 0:
+            retval = subprocess.run("grep 1 done > /dev/null", shell=True, env=tsenv)
+        return retval.returncode == 0
+
+    return done_stat_ready
+
+
 # number of sessions/transactions opened and closed are equal
 tr = Test.AddTestRun("Check Ssn")
 server2.StartupTimeout = 60
-# Again, here the imporant thing is the ready function not the server2 process
+# Again, here the important thing is the ready function not the server2 process
 tr.Processes.Default.StartBefore(server2, ready=make_done_stat_ready(ts.Env))
 tr.Processes.Default.Command = comparator_command.format('ssn')
 tr.Processes.Default.ReturnCode = 0
@@ -150,4 +145,3 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should verify contents')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server2
-

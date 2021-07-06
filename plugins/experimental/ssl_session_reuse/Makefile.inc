@@ -18,17 +18,17 @@
 pkglib_LTLIBRARIES += experimental/ssl_session_reuse/ssl_session_reuse.la
 
 experimental_ssl_session_reuse_ssl_session_reuse_la_SOURCES = \
-         experimental/ssl_session_reuse/src/openssl_utils.cc \
-         experimental/ssl_session_reuse/src/session_process.cc  \
-         experimental/ssl_session_reuse/src/ssl_init.cc \
-         experimental/ssl_session_reuse/src/config.cc \
-         experimental/ssl_session_reuse/src/redis_endpoint.cc  \
-         experimental/ssl_session_reuse/src/simple_pool.cc \
-         experimental/ssl_session_reuse/src/ssl_key_utils.cc \
-         experimental/ssl_session_reuse/src/connection.cc  \
-         experimental/ssl_session_reuse/src/publish.cc \
-         experimental/ssl_session_reuse/src/subscriber.cc \
-  	 experimental/ssl_session_reuse/src/ats_ssl_plugin.cc
+    experimental/ssl_session_reuse/src/ats_ssl_plugin.cc \
+    experimental/ssl_session_reuse/src/common.cc \
+    experimental/ssl_session_reuse/src/config.cc \
+    experimental/ssl_session_reuse/src/connection.cc \
+    experimental/ssl_session_reuse/src/openssl_utils.cc \
+    experimental/ssl_session_reuse/src/publish.cc \
+    experimental/ssl_session_reuse/src/redis_endpoint.cc \
+    experimental/ssl_session_reuse/src/session_process.cc \
+    experimental/ssl_session_reuse/src/simple_pool.cc \
+    experimental/ssl_session_reuse/src/ssl_init.cc \
+    experimental/ssl_session_reuse/src/ssl_key_utils.cc \
+    experimental/ssl_session_reuse/src/subscriber.cc
 
-experimental_ssl_session_reuse_ssl_session_reuse_la_LIBADD = @LIB_HIREDIS@ 
-
+experimental_ssl_session_reuse_ssl_session_reuse_la_LIBADD = @LIB_HIREDIS@

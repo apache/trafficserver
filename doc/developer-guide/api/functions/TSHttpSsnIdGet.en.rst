@@ -24,7 +24,9 @@ Returns the unique identifier for client session.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: int64_t TSHttpSsnIdGet(TSHttpSsn ssnp)
 
@@ -36,7 +38,7 @@ Description
 Return Values
 =============
 
-Returns a :type:`int64_t` as the unique ID
+Returns a :code:`int64_t` as the unique ID
 
 See also
 ========

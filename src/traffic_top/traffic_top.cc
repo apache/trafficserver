@@ -120,9 +120,9 @@ prettyPrint(const int x, const int y, const double number, const int type)
     } else {
       color = colorPair::green;
     }
-    snprintf(buffer, sizeof(buffer), "%6.1f%%%%", (double)my_number);
+    snprintf(buffer, sizeof(buffer), "%6.1f%%%%", my_number);
   } else {
-    snprintf(buffer, sizeof(buffer), "%6.1f%c", (double)my_number, exp);
+    snprintf(buffer, sizeof(buffer), "%6.1f%c", my_number, exp);
   }
   attron(COLOR_PAIR(color));
   attron(A_BOLD);
@@ -152,7 +152,7 @@ makeTable(const int x, const int y, const list<string> &items, Stats &stats)
 size_t
 write_data(void *ptr, size_t size, size_t nmemb, void * /* stream */)
 {
-  response.append((char *)ptr, size * nmemb);
+  response.append(static_cast<char *>(ptr), size * nmemb);
   return size * nmemb;
 }
 
@@ -228,10 +228,11 @@ help(const string &host, const string &version)
 
   while (true) {
     clear();
-    time_t now       = time(nullptr);
-    struct tm *nowtm = localtime(&now);
+    time_t now = time(nullptr);
+    struct tm nowtm;
     char timeBuf[32];
-    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);
+    localtime_r(&now, &nowtm);
+    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &nowtm);
 
     // clear();
     attron(A_BOLD);
@@ -247,7 +248,7 @@ help(const string &host, const string &version)
     attron(A_BOLD);
     mvprintw(7, 0, "Definitions:");
     attroff(A_BOLD);
-    mvprintw(8, 0, "Fresh      => Requests that were servered by fresh entries in cache");
+    mvprintw(8, 0, "Fresh      => Requests that were served by fresh entries in cache");
     mvprintw(9, 0, "Revalidate => Requests that contacted the origin to verify if still valid");
     mvprintw(10, 0, "Cold       => Requests that were not in cache at all");
     mvprintw(11, 0, "Changed    => Requests that required entries in cache to be updated");
@@ -400,7 +401,7 @@ main(int argc, const char **argv)
   version.setup(PACKAGE_NAME, "traffic_top", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
   const ArgumentDescription argument_descriptions[] = {
-    {"sleep", 's', "Enable debugging output", "I", &sleep_time, nullptr, nullptr},
+    {"sleep", 's', "Sets the delay between updates (in seconds)", "I", &sleep_time, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
     RUNROOT_ARGUMENT_DESCRIPTION(),
@@ -467,10 +468,11 @@ main(int argc, const char **argv)
     attron(A_BOLD);
 
     string version;
-    time_t now       = time(nullptr);
-    struct tm *nowtm = localtime(&now);
+    time_t now = time(nullptr);
+    struct tm nowtm;
     char timeBuf[32];
-    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);
+    localtime_r(&now, &nowtm);
+    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", &nowtm);
     stats.getStat("version", version);
 
     mvprintw(23, 0, "%-20.20s   %30s (q)uit (h)elp (%c)bsolute  ", host.c_str(), page_alt.c_str(), absolute ? 'A' : 'a');

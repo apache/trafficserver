@@ -24,11 +24,17 @@
 #include "tscore/ink_platform.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
+#include "tscore/Filenames.h"
 
+#include "RecordsConfig.h"
 #include "P_RecFile.h"
 #include "P_RecCore.h"
 #include "P_RecUtils.h"
 #include "tscore/I_Layout.h"
+
+// This is needed to manage the size of the librecords record. It can't be static, because it needs to be modified
+// and used (read) from several binaries / modules.
+int max_records_entries = REC_INTERNAL_RECORDS + REC_DEFAULT_API_RECORDS;
 
 static bool g_initialized = false;
 
@@ -110,7 +116,7 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 static int
 link_int(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  RecInt *rec_int = (RecInt *)cookie;
+  RecInt *rec_int = static_cast<RecInt *>(cookie);
   ink_atomic_swap(rec_int, data.rec_int);
   return REC_ERR_OKAY;
 }
@@ -118,28 +124,28 @@ link_int(const char * /* name */, RecDataT /* data_type */, RecData data, void *
 static int
 link_int32(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  *((int32_t *)cookie) = (int32_t)data.rec_int;
+  *(static_cast<int32_t *>(cookie)) = static_cast<int32_t>(data.rec_int);
   return REC_ERR_OKAY;
 }
 
 static int
 link_uint32(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  *((uint32_t *)cookie) = (uint32_t)data.rec_int;
+  *(static_cast<uint32_t *>(cookie)) = static_cast<uint32_t>(data.rec_int);
   return REC_ERR_OKAY;
 }
 
 static int
 link_float(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  *((RecFloat *)cookie) = data.rec_float;
+  *(static_cast<RecFloat *>(cookie)) = data.rec_float;
   return REC_ERR_OKAY;
 }
 
 static int
 link_counter(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  RecCounter *rec_counter = (RecCounter *)cookie;
+  RecCounter *rec_counter = static_cast<RecCounter *>(cookie);
   ink_atomic_swap(rec_counter, data.rec_counter);
   return REC_ERR_OKAY;
 }
@@ -149,7 +155,7 @@ link_counter(const char * /* name */, RecDataT /* data_type */, RecData data, vo
 static int
 link_byte(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
 {
-  RecByte *rec_byte = (RecByte *)cookie;
+  RecByte *rec_byte = static_cast<RecByte *>(cookie);
   RecByte byte      = static_cast<RecByte>(data.rec_int);
 
   ink_atomic_swap(rec_byte, byte);
@@ -157,7 +163,7 @@ link_byte(const char * /* name */, RecDataT /* data_type */, RecData data, void 
 }
 
 // mimic Config.cc::config_string_alloc_cb
-// cookie e.g. is the DEFAULT_xxx_str value which this functiion keeps up to date with
+// cookie e.g. is the DEFAULT_xxx_str value which this function keeps up to date with
 // the latest default applied during a config update from records.config
 static int
 link_string_alloc(const char * /* name */, RecDataT /* data_type */, RecData data, void *cookie)
@@ -170,8 +176,8 @@ link_string_alloc(const char * /* name */, RecDataT /* data_type */, RecData dat
   }
 
   // set new string for DEFAULT_xxx_str tp point to
-  RecString _temp2       = *((RecString *)cookie);
-  *((RecString *)cookie) = _new_value;
+  RecString _temp2                    = *(static_cast<RecString *>(cookie));
+  *(static_cast<RecString *>(cookie)) = _new_value;
   // free previous string DEFAULT_xxx_str points to
   ats_free(_temp2);
 
@@ -197,7 +203,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   g_num_records = 0;
 
   // initialize record array for our internal stats (this can be reallocated later)
-  g_records = (RecRecord *)ats_malloc(REC_MAX_RECORDS * sizeof(RecRecord));
+  g_records = static_cast<RecRecord *>(ats_malloc(max_records_entries * sizeof(RecRecord)));
 
   // initialize record rwlock
   ink_rwlock_init(&g_records_rwlock);
@@ -213,18 +219,14 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 
     ink_mutex_init(&g_rec_config_lock);
 
-    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT));
+    g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, ts::filename::RECORDS));
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-      ats_free((char *)g_rec_config_fpath);
-      g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE));
-      if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
-        RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
-        file_exists = false;
-      }
+      RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", ts::filename::RECORDS);
+      file_exists = false;
     }
 
     if (file_exists) {
-      RecReadConfigFile(true);
+      RecReadConfigFile();
     }
   }
 
@@ -234,7 +236,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 }
 
 //-------------------------------------------------------------------------
-// RecLinkCnfigXXX
+// RecLinkConfigXXX
 //-------------------------------------------------------------------------
 RecErrT
 RecLinkConfigInt(const char *name, RecInt *rec_int)
@@ -325,7 +327,7 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
          }
        */
 
-      RecConfigUpdateCbList *new_callback = (RecConfigUpdateCbList *)ats_malloc(sizeof(RecConfigUpdateCbList));
+      RecConfigUpdateCbList *new_callback = static_cast<RecConfigUpdateCbList *>(ats_malloc(sizeof(RecConfigUpdateCbList)));
       memset(new_callback, 0, sizeof(RecConfigUpdateCbList));
       new_callback->update_cb     = update_cb;
       new_callback->update_cookie = cookie;
@@ -605,7 +607,7 @@ RecGetRecordPersistenceType(const char *name, RecPersistT *persist_type, bool lo
 }
 
 RecErrT
-RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
+RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock, bool check_sync_cb)
 {
   RecErrT err = REC_ERR_FAIL;
 
@@ -617,15 +619,17 @@ RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
     RecRecord *r = it->second;
 
     if (r->registered) {
-      rec_mutex_acquire(&(r->lock));
-      if (order) {
-        *order = r->order;
+      if (!check_sync_cb || r->stat_meta.sync_cb) {
+        rec_mutex_acquire(&(r->lock));
+        if (order) {
+          *order = r->order;
+        }
+        if (id) {
+          *id = r->rsb_id;
+        }
+        err = REC_ERR_OKAY;
+        rec_mutex_release(&(r->lock));
       }
-      if (id) {
-        *id = r->rsb_id;
-      }
-      err = REC_ERR_OKAY;
-      rec_mutex_release(&(r->lock));
     }
   }
 
@@ -735,7 +739,7 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
   if (auto it = g_records_ht.find(name); it != g_records_ht.end()) {
     RecRecord *r = it->second;
 
-    *buf = (char *)ats_malloc(sizeof(char) * 1024);
+    *buf = static_cast<char *>(ats_malloc(sizeof(char) * 1024));
     memset(*buf, 0, 1024);
     err = REC_ERR_OKAY;
 
@@ -1065,7 +1069,7 @@ char *
 REC_ConfigReadString(const char *name)
 {
   char *t = nullptr;
-  RecGetRecordString_Xmalloc(name, (RecString *)&t);
+  RecGetRecordString_Xmalloc(name, static_cast<RecString *>(&t));
   return t;
 }
 
@@ -1073,7 +1077,7 @@ RecFloat
 REC_ConfigReadFloat(const char *name)
 {
   RecFloat t = 0;
-  RecGetRecordFloat(name, (RecFloat *)&t);
+  RecGetRecordFloat(name, &t);
   return t;
 }
 
@@ -1081,7 +1085,7 @@ RecCounter
 REC_ConfigReadCounter(const char *name)
 {
   RecCounter t = 0;
-  RecGetRecordCounter(name, (RecCounter *)&t);
+  RecGetRecordCounter(name, &t);
   return t;
 }
 
@@ -1255,7 +1259,7 @@ std::string
 RecConfigReadPersistentStatsPath()
 {
   std::string rundir(RecConfigReadRuntimeDir());
-  return Layout::relative_to(rundir, REC_RAW_STATS_FILE);
+  return Layout::relative_to(rundir, ts::filename::RECORDS_STATS);
 }
 
 void
@@ -1281,11 +1285,12 @@ RecSignalWarning(int sig, const char *fmt, ...)
 void
 RecConfigWarnIfUnregistered()
 {
-  RecDumpRecords(RECT_CONFIG,
-                 [](RecT, void *, int registered_p, const char *name, int, RecData *) -> void {
-                   if (!registered_p) {
-                     Warning("Unrecognized configuration value '%s'", name);
-                   }
-                 },
-                 nullptr);
+  RecDumpRecords(
+    RECT_CONFIG,
+    [](RecT, void *, int registered_p, const char *name, int, RecData *) -> void {
+      if (!registered_p) {
+        Warning("Unrecognized configuration value '%s'", name);
+      }
+    },
+    nullptr);
 }

@@ -164,7 +164,7 @@ AccessToken::validateTiming(time_t time)
   }
 
   /* "issued at" time-stamp is currently only for info, so check if the time-stamp is valid only */
-  if (!_issuedAt.empty() && 0 == (t = string2int(_issuedAt))) {
+  if (!_issuedAt.empty() && 0 == string2int(_issuedAt)) {
     return _state = INVALID_FIELD_VALUE;
   }
 
@@ -194,7 +194,7 @@ KvpAccessToken::parse(const StringView token)
     /* Look for the next KVP */
     pos              = _token.find(_tokenConfig.pairDelimiter, prev);
     StringView kvp   = _token.substr(prev, pos - prev);
-    size_t equalsign = kvp.find(_tokenConfig.kvDeliiter);
+    size_t equalsign = kvp.find(_tokenConfig.kvDelimiter);
     if (kvp.npos == equalsign) {
       ERROR_OUT("invalid key-value-pair, missing key-value delimiter");
       return _state = INVALID_SYNTAX;
@@ -231,11 +231,11 @@ KvpAccessToken::parse(const StringView token)
       return _state = INVALID_FIELD;
     }
 
-    prev = pos + _tokenConfig.kvDeliiter.size();
+    prev = pos + _tokenConfig.kvDelimiter.size();
   } while (pos != token.npos);
 
   /* Now identify the pay-load which was signed */
-  payloadSize += _tokenConfig.messageDigestName.size() + _tokenConfig.kvDeliiter.size();
+  payloadSize += _tokenConfig.messageDigestName.size() + _tokenConfig.kvDelimiter.size();
   _payload = _token.substr(0, payloadSize);
 
   DEBUG_OUT("payload:'" << _payload << "'");
@@ -256,7 +256,7 @@ void
 KvpAccessTokenBuilder::appendKeyValuePair(const StringView &key, const StringView value)
 {
   _buffer.append(_buffer.empty() ? "" : _config.pairDelimiter);
-  _buffer.append(key).append(_config.kvDeliiter).append(value);
+  _buffer.append(key).append(_config.kvDelimiter).append(value);
 }
 
 void
@@ -358,7 +358,7 @@ static const std::map<String, String> _digestAlgosMap = createStaticDigestAlgoMa
  * @param hf Hash Function (HF) [optional]
  * @param secret secret
  * @param message input message
- * @param messageLen input message lenght
+ * @param messageLen input message length
  * @param buffer output buffer for storing the message digest
  * @param len output buffer length
  * @return number of characters actually written to the output buffer.
@@ -437,7 +437,7 @@ accessTokenStatusToString(const AccessTokenStatus &state)
     s = "INVALID_FIELD_VALUE";
     break;
   case INVALID_VERSION:
-    s = "UNSUPORTED_VERSION";
+    s = "UNSUPPORTED_VERSION";
     break;
   case INVALID_SECRET:
     s = "NO_SECRET_SPECIFIED";
@@ -461,7 +461,7 @@ accessTokenStatusToString(const AccessTokenStatus &state)
     s = "INVALID_KEYID";
     break;
   case INVALID_HASH_FUNCTION:
-    s = "UNSUPORTED_HASH_FUNCTION";
+    s = "UNSUPPORTED_HASH_FUNCTION";
     break;
   default:
     s = "";

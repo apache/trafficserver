@@ -50,6 +50,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Background Fetch <background_fetch.en>
    Cache Key Manipulation <cachekey.en>
    Cache Promotion Policies <cache_promote.en>
+   Cache Range Requests <cache_range_requests.en>
    Combo Handler <combo_handler.en>
    Configuration Remap <conf_remap.en>
    Cookie Remap <cookie_remap.en>
@@ -63,7 +64,6 @@ Plugins that are considered stable are installed by default in |TS| releases.
    Regex Remap <regex_remap.en>
    Regex Revalidate <regex_revalidate.en>
    Remap Purge <remap_purge.en>
-   Slice <slice.en>
    Stats over HTTP <stats_over_http.en>
    TCPInfo <tcpinfo.en>
    XDebug <xdebug.en>
@@ -77,11 +77,14 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`Background Fetch <background_fetch.en>`
    Proactively fetch content from Origin in a way that it will fill the object into cache.
 
-:doc:`Cache Key Manipulation <cachekey.en>`
-   Allows some common cache key manipulations based on various HTTP request elements.
+:doc:`Cache Key and Parent Selection URL Manipulation <cachekey.en>`
+   Allows some common cache key or parent selection URL manipulations based on various HTTP request elements.
 
 :doc:`Cache Promotion Policies <cache_promote.en>`
    Allows for control over which assets should be written to cache, or not.
+
+:doc:`Cache Range Requests <cache_range_requests.en>`
+   Cache ranges by adding the range request header to the cache key.
 
 :doc:`Combo Handler <combo_handler.en>`
    Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
@@ -144,22 +147,27 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    :hidden:
 
    Access Control <access_control.en>
-   Balancer <balancer.en>
-   Buffer Upload <buffer_upload.en>
+   Cache Fill <cache_fill.en>
    Certifier <certifier.en>
+   Cert Reporting Tool <cert_reporting_tool.en>
    Collapsed-Forwarding <collapsed_forwarding.en>
    GeoIP ACL <geoip_acl.en>
    FQ Pacing <fq_pacing.en>
    Header Frequency <header_freq.en>
-   HIPES <hipes.en>
    Hook Trace <hook-trace.en>
+   ICAP <icap.en>
+   JA3 Fingerprint <ja3_fingerprint.en>
+   Maxmind ACL <maxmind_acl.en>
    Memcache <memcache.en>
+   Memory Profile <memory_profile.en>
    Metalink <metalink.en>
    Money Trace <money_trace.en>
    MP4 <mp4.en>
    Multiplexer <multiplexer.en>
    MySQL Remap <mysql_remap.en>
+   Rate Limit <rate_limit.en>
    Signed URLs <url_sig.en>
+   Slice <slice.en>
    SSL Headers <sslheaders.en>
    SSL Session Reuse <ssl_session_reuse.en>
    System Statistics <system_stats.en>
@@ -170,14 +178,11 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Access Control <access_control.en>`
    Access control plugin that handles various access control use-cases.
 
-:doc:`Balancer <balancer.en>`
-   Balances requests across multiple origin servers.
-
-:doc:`Buffer Upload <buffer_upload.en>`
-   Buffers POST data before connecting to the Origin server.
-
 :doc:`Certifier <certifier.en>`
    Manages and/or generates certificates for incoming HTTPS requests.
+
+:doc:`Cert Reporting Tool <cert_reporting_tool.en>`
+   Examines and logs information on loaded certificates.
 
 :doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
    Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
@@ -192,8 +197,14 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Header Frequency <header_freq.en>`
    Count the frequency of headers.
 
-:doc:`HIPES <hipes.en>`
-   Adds support for HTTP Pipes.
+:doc:`ICAP <icap.en>`
+   Pass response data to external server for further processing using the ICAP protocol.
+
+:doc:`JA3 Fingerprint <ja3_fingerprint.en>`
+   Calculates JA3 Fingerprints for incoming SSL traffic.
+
+:doc:`MaxMind ACL <maxmind_acl.en>`
+   ACL based on the maxmind geo databases (GeoIP2 mmdb and libmaxminddb)
 
 :doc:`Memcache <memcache.en>`
    Implements the memcache protocol for cache contents.
@@ -201,7 +212,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Metalink <metalink.en>`
    Implements the Metalink download description format in order to try not to download the same file twice.
 
-:doc:`Money Trace <metalink.en>`
+:doc:`Money Trace <money_trace.en>`
    Allows Trafficserver to participate in a distributed tracing system based upon the Comcast Money library.
 
 :doc:`MP4 <mp4.en>`
@@ -216,12 +227,23 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.
 
+:doc:`Prefetch <prefetch.en>`
+   Pre-fetch objects based on the requested URL path pattern.
+
+:doc:`Rate Limit <rate_limit.en>`
+   Simple transaction rate limiting.
+
 :doc:`Remap Purge <remap_purge.en>`
    This remap plugin allows the administrator to easily setup remotely
    controlled ``PURGE`` for the content of an entire remap rule.
 
 :doc:`Signed URLs <url_sig.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
+
+:doc:`Slice <slice.en>`
+   Slice full file or range based requests into deterministic chunks, allowing large files to be
+   spread across multiple cache stripes. Allows arbitrary range requests to be satisfied by stitching
+   these chunks together.
 
 :doc:`SSL Session Reuse <ssl_session_reuse.en>`
    Coordinates Session ID and ticket based TLS session resumption between a group of ATS machines.

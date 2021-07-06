@@ -21,13 +21,28 @@
   limitations under the License.
  */
 
+#include <fcntl.h>
+#include <openssl/crypto.h>
 #include "tscore/I_Layout.h"
+#include "tscore/Filenames.h"
+#include "tscore/BufferWriter.h"
 #include "records/I_RecProcess.h"
 #include "RecordsConfig.h"
 #include "info.h"
 
-// Produce output about compile time features, useful for checking how things were built, as well
-// as for our TSQA test harness.
+#if HAVE_ZLIB_H
+#include <zlib.h>
+#endif
+
+#if HAVE_LZMA_H
+#include <lzma.h>
+#endif
+
+#if HAVE_BROTLI_ENCODE_H
+#include <brotli/encode.h>
+#endif
+
+// Produce output about compile time features, useful for checking how things were built
 static void
 print_feature(std::string_view name, int value, bool json, bool last = false)
 {
@@ -59,21 +74,26 @@ produce_features(bool json)
   print_feature("BUILD_PERSON", BUILD_PERSON, json);
   print_feature("BUILD_GROUP", BUILD_GROUP, json);
   print_feature("BUILD_NUMBER", BUILD_NUMBER, json);
-#ifdef HAVE_ZLIB_H
+#if HAVE_ZLIB_H
   print_feature("TS_HAS_LIBZ", 1, json);
 #else
   print_feature("TS_HAS_LIBZ", 0, json);
 #endif
-#ifdef HAVE_LZMA_H
+#if HAVE_LZMA_H
   print_feature("TS_HAS_LZMA", 1, json);
 #else
   print_feature("TS_HAS_LZMA", 0, json);
 #endif
-#ifdef HAVE_BROTLI_ENCODE_H
+#if HAVE_BROTLI_ENCODE_H
   print_feature("TS_HAS_BROTLI", 1, json);
 #else
   print_feature("TS_HAS_BROTLI", 0, json);
 #endif
+#ifdef F_GETPIPE_SZ
+  print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 1, json);
+#else
+  print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 0, json);
+#endif /* F_GETPIPE_SZ */
   print_feature("TS_HAS_JEMALLOC", TS_HAS_JEMALLOC, json);
   print_feature("TS_HAS_TCMALLOC", TS_HAS_TCMALLOC, json);
   print_feature("TS_HAS_IN6_IS_ADDR_UNSPECIFIED", TS_HAS_IN6_IS_ADDR_UNSPECIFIED, json);
@@ -89,11 +109,9 @@ produce_features(bool json)
   print_feature("TS_HAS_SO_MARK", TS_HAS_SO_MARK, json);
   print_feature("TS_HAS_IP_TOS", TS_HAS_IP_TOS, json);
   print_feature("TS_USE_HWLOC", TS_USE_HWLOC, json);
-  print_feature("TS_USE_TLS_NPN", TS_USE_TLS_NPN, json);
-  print_feature("TS_USE_TLS_ALPN", TS_USE_TLS_ALPN, json);
-  print_feature("TS_USE_CERT_CB", TS_USE_CERT_CB, json);
   print_feature("TS_USE_SET_RBIO", TS_USE_SET_RBIO, json);
-  print_feature("TS_USE_TLS_ECKEY", TS_USE_TLS_ECKEY, json);
+  print_feature("TS_USE_TLS13", TS_USE_TLS13, json);
+  print_feature("TS_USE_QUIC", TS_USE_QUIC, json);
   print_feature("TS_USE_LINUX_NATIVE_AIO", TS_USE_LINUX_NATIVE_AIO, json);
   print_feature("TS_HAS_SO_PEERCRED", TS_HAS_SO_PEERCRED, json);
   print_feature("TS_USE_REMOTE_UNWINDING", TS_USE_REMOTE_UNWINDING, json);
@@ -106,8 +124,6 @@ produce_features(bool json)
   print_feature("TS_MAX_THREADS_IN_EACH_THREAD_TYPE", TS_MAX_THREADS_IN_EACH_THREAD_TYPE, json);
   print_feature("TS_MAX_NUMBER_EVENT_THREADS", TS_MAX_NUMBER_EVENT_THREADS, json);
   print_feature("TS_MAX_HOST_NAME_LEN", TS_MAX_HOST_NAME_LEN, json);
-  print_feature("TS_MAX_API_STATS", TS_MAX_API_STATS, json);
-  print_feature("SPLIT_DNS", SPLIT_DNS, json);
   print_feature("TS_PKGSYSUSER", TS_PKGSYSUSER, json);
   print_feature("TS_PKGSYSGROUP", TS_PKGSYSGROUP, json, true);
   if (json) {
@@ -144,14 +160,59 @@ produce_layout(bool json)
   print_var("PLUGINDIR", RecConfigReadPluginDir(), json);
   print_var("INCLUDEDIR", Layout::get()->includedir, json);
 
-  print_var("records.config", RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE), json);
-  print_var("remap.config", RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
-  print_var("plugin.config", RecConfigReadConfigPath(nullptr, "plugin.config"), json);
-  print_var("ssl_multicert.config", RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
-  print_var("storage.config", RecConfigReadConfigPath("proxy.config.cache.storage_filename"), json);
-  print_var("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
-  print_var("volume.config", RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
-  print_var("ip_allow.config", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
+  print_var(ts::filename::RECORDS, RecConfigReadConfigPath(nullptr, ts::filename::RECORDS), json);
+  print_var(ts::filename::REMAP, RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
+  print_var(ts::filename::PLUGIN, RecConfigReadConfigPath(nullptr, ts::filename::PLUGIN), json);
+  print_var(ts::filename::SSL_MULTICERT, RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
+  print_var(ts::filename::STORAGE, RecConfigReadConfigPath(nullptr, ts::filename::STORAGE), json);
+  print_var(ts::filename::HOSTING, RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
+  print_var(ts::filename::VOLUME, RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
+  print_var(ts::filename::IP_ALLOW, RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true);
+  if (json) {
+    printf("}\n");
+  }
+}
+
+void
+produce_versions(bool json)
+{
+  using LBW = ts::LocalBufferWriter<128>;
+  [[maybe_unused]] static const std::string_view undef{"undef"};
+
+  if (json) {
+    printf("{\n");
+  }
+
+  print_var("openssl", LBW().print("{:#x}", OPENSSL_VERSION_NUMBER).view(), json);
+  print_var("openssl_str", LBW().print(OPENSSL_VERSION_TEXT).view(), json);
+  print_var("pcre", LBW().print("{}.{}", PCRE_MAJOR, PCRE_MINOR).view(), json);
+  // These are optional, for now at least.
+#if TS_USE_HWLOC
+  print_var("hwloc", LBW().print("{:#x}", HWLOC_API_VERSION).view(), json);
+  print_var("hwloc.run", LBW().print("{:#x}", hwloc_get_api_version()).view(), json);
+#else
+  print_var("hwloc", undef, json);
+#endif
+#if HAVE_ZLIB_H
+  print_var("libz", LBW().print("{}", ZLIB_VERSION).view(), json);
+#else
+  print_var("libz", undef, json);
+#endif
+#if HAVE_LZMA_H
+  print_var("lzma", LBW().print("{}", LZMA_VERSION_STRING).view(), json);
+  print_var("lzma.run", LBW().print("{}", lzma_version_string()).view(), json);
+#else
+  print_var("lzma", undef, json);
+#endif
+#if HAVE_BROTLI_ENCODE_H
+  print_var("brotli", LBW().print("{:#x}", BrotliEncoderVersion()).view(), json);
+#else
+  print_var("brotli", undef, json);
+#endif
+
+  // This should always be last
+  print_var("traffic-server", LBW().print(TS_VERSION_STRING).view(), json, true);
+
   if (json) {
     printf("}\n");
   }

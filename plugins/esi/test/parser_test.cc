@@ -46,12 +46,9 @@ check_node_attr(const Attribute &attr, const char *name, const char *value)
   assert(strncmp(attr.value, value, value_len) == 0);
 }
 
-pthread_key_t threadKey;
-
 int
 main()
 {
-  pthread_key_create(&threadKey, nullptr);
   Utils::init(&Debug, &Error);
 
   {
@@ -118,7 +115,7 @@ main()
   {
     cout << endl << "==================== Test 6: Invalid Quoted URL test " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    string input_data = "<esi:include src=abc\"\"de\"f />";
+    string input_data = R"(<esi:include src=abc""de"f />)";
 
     DocNodeList node_list;
     assert(parser.parseChunk(input_data, node_list) == false);

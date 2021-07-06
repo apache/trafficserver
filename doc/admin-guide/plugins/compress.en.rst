@@ -76,6 +76,8 @@ With no further options, this will enable the following default behavior:
 
 *  Disable flush (flush compressed content to client).
 
+* Only objects greater than 1Kb will be compressed
+
 Alternatively, a configuration may be specified (shown here using the sample
 configuration provided with the plugin's source)::
 
@@ -101,12 +103,35 @@ versions of the content as :term:`alternates <alternate>`. When set to
 ``false``, |TS| will cache only the compressed or decompressed variant returned
 by the origin. Enabled by default.
 
+range-request
+-------------
+
+When set to ``true``, causes |TS| to compress responses to Range Requests.
+Disabled by default. Setting this to true while setting cache to false leads to delivering corrupted content.
+
 compressible-content-type
 -------------------------
 
 Provides a wildcard to match against content types, determining which are to be
 considered compressible. This defaults to ``text/*``. Takes one Content-Type
 per line.
+
+compressible-status-code
+------------------------
+
+A comma separated list of response status codes for which to enable
+compression. Defaults to 200, 206, 304.
+
+minimum-content-length
+----------------------
+
+Minimum Content-Length value sent by the origin server to consider the response
+compressible. Due to the overhead and latency of compression and decompression,
+it only makes sense to compress files above a certain size threshold.
+Compressing files below 150 bytes can actually make them larger. This setting
+only applies if the response explicitly sends Content-Length. Regardless of
+this setting, responses with ``Content-Length: 0`` are considered not
+compressible.
 
 allow
 --------
@@ -115,7 +140,7 @@ Provides a wildcard pattern which will be applied to request URLs. Any which
 match the pattern will be considered compressible, and only deflated versions
 of the objects will be cached and returned to clients. This may be useful for
 objects which already have their own compression built-in, to avoid the expense
-of multiple rounds of compression for trivial gains. If the regex is preceeded by
+of multiple rounds of compression for trivial gains. If the regex is preceded by
 ``!`` (for example ``allow !*/nothere/*``), it disables the plugin from those machine URLs.
 
 enabled
@@ -167,6 +192,8 @@ might create a configuration with the following options::
    remove-accept-encoding false
    compressible-content-type text/*
    compressible-content-type application/json
+   compressible-status-code 200, 206
+   minimum-content-length 860
    flush false
 
    # Now set a configuration for www.example.com
@@ -196,6 +223,25 @@ might create a configuration with the following options::
    # This origin does it all
    [bar.example.com]
    enabled false
+
+   # A reasonable list of content-types that are compressible
+   compressible-content-type text/*
+   compressible-content-type *font*
+   compressible-content-type *javascript
+   compressible-content-type *json
+   compressible-content-type *ml;*
+   compressible-content-type *mpegURL
+   compressible-content-type *mpegurl
+   compressible-content-type *otf
+   compressible-content-type *ttf
+   compressible-content-type *type
+   compressible-content-type *xml
+   compressible-content-type application/eot
+   compressible-content-type application/pkix-crl
+   compressible-content-type application/x-httpd-cgi
+   compressible-content-type application/x-perl
+   compressible-content-type image/vnd.microsoft.icon
+   compressible-content-type image/x-icon
 
 Assuming the above options are in a file at ``/etc/trafficserver/compress.config``
 the plugin would be enabled for |TS| in :file:`plugin.config` as::

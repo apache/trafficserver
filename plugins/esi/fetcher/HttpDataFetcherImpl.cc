@@ -47,10 +47,29 @@ HttpDataFetcherImpl::_release(RequestData &req_data)
 }
 
 HttpDataFetcherImpl::HttpDataFetcherImpl(TSCont contp, sockaddr const *client_addr, const char *debug_tag)
-  : _contp(contp), _n_pending_requests(0), _curr_event_id_base(FETCH_EVENT_ID_BASE), _headers_str(""), _client_addr(client_addr)
+  : _contp(contp), _n_pending_requests(0), _curr_event_id_base(FETCH_EVENT_ID_BASE), _headers_str("")
 {
   _http_parser = TSHttpParserCreate();
   snprintf(_debug_tag, sizeof(_debug_tag), "%s", debug_tag);
+  // default client address to use for fetch url
+  struct sockaddr_in sin;
+  memset(&sin, 0, sizeof(sin));
+  sin.sin_family      = AF_INET;
+  sin.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+  if (client_addr) {
+    if (client_addr->sa_family == AF_INET) {
+      memcpy(&_client_addr, client_addr, sizeof(sockaddr_in));
+    } else if (client_addr->sa_family == AF_INET6) {
+      memcpy(&_client_addr, client_addr, sizeof(sockaddr_in6));
+    } else {
+      memcpy(&_client_addr, &sin, sizeof(sin));
+      TSError("[HttpDataFetcherImpl] Unknown address family %d", client_addr->sa_family);
+    }
+  } else {
+    memcpy(&_client_addr, &sin, sizeof(sin));
+    TSError("[HttpDataFetcherImpl] Failed to get client host info");
+  }
 }
 
 HttpDataFetcherImpl::~HttpDataFetcherImpl()
@@ -77,10 +96,10 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
   int length;
 
   length = sizeof("GET ") - 1 + url.length() + sizeof(" HTTP/1.0\r\n") - 1 + _headers_str.length() + sizeof("\r\n") - 1;
-  if (length < (int)sizeof(buff)) {
+  if (length < static_cast<int>(sizeof(buff))) {
     http_req = buff;
   } else {
-    http_req = (char *)malloc(length + 1);
+    http_req = static_cast<char *>(malloc(length + 1));
     if (http_req == nullptr) {
       TSError("[HttpDataFetcherImpl][%s] malloc %d bytes fail", __FUNCTION__, length + 1);
       return false;
@@ -95,7 +114,7 @@ HttpDataFetcherImpl::addFetchRequest(const string &url, FetchedDataProcessor *ca
   event_ids.timeout_event_id = _curr_event_id_base + 2;
   _curr_event_id_base += 3;
 
-  TSFetchUrl(http_req, length, _client_addr, _contp, AFTER_BODY, event_ids);
+  TSFetchUrl(http_req, length, reinterpret_cast<sockaddr *>(&_client_addr), _contp, AFTER_BODY, event_ids);
   if (http_req != buff) {
     free(http_req);
   }

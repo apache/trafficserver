@@ -28,6 +28,7 @@
  */
 
 #include "tscore/ink_platform.h"
+#include "tscore/Filenames.h"
 #include <dlfcn.h>
 #include "P_EventSystem.h"
 #include "P_Cache.h"
@@ -43,8 +44,8 @@
 
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
-UrlRewrite *rewrite_table        = nullptr;
-remap_plugin_info *remap_pi_list = nullptr; // We never reload the remap plugins, just append to 'em.
+UrlRewrite *rewrite_table                             = nullptr;
+thread_local PluginThreadContext *pluginThreadContext = nullptr;
 
 // Tokens for the Callback function
 #define FILE_CHANGED 0
@@ -64,8 +65,11 @@ init_reverse_proxy()
   reconfig_mutex = new_ProxyMutex();
   rewrite_table  = new UrlRewrite();
 
-  if (!rewrite_table->is_valid()) {
-    Fatal("unable to load remap.config");
+  Note("%s loading ...", ts::filename::REMAP);
+  if (!rewrite_table->load()) {
+    Warning("%s failed to load", ts::filename::REMAP);
+  } else {
+    Note("%s finished loading", ts::filename::REMAP);
   }
 
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
@@ -101,26 +105,21 @@ response_url_remap(HTTPHdr *response_header, UrlRewrite *table)
 //
 
 /** Used to read the remap.config file after the manager signals a change. */
-struct UR_UpdateContinuation;
-using UR_UpdContHandler = int (UR_UpdateContinuation::*)(int, void *);
 struct UR_UpdateContinuation : public Continuation {
   int
   file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    (void)reloadUrlRewrite();
+    static_cast<void>(reloadUrlRewrite());
     delete this;
     return EVENT_DONE;
   }
-  UR_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m)
-  {
-    SET_HANDLER((UR_UpdContHandler)&UR_UpdateContinuation::file_update_handler);
-  }
+  UR_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m) { SET_HANDLER(&UR_UpdateContinuation::file_update_handler); }
 };
 
 bool
 urlRewriteVerify()
 {
-  return UrlRewrite().is_valid();
+  return UrlRewrite().load();
 }
 
 /**
@@ -134,10 +133,11 @@ reloadUrlRewrite()
 {
   UrlRewrite *newTable, *oldTable;
 
-  Debug("url_rewrite", "remap.config updated, reloading...");
+  Note("%s loading ...", ts::filename::REMAP);
+  Debug("url_rewrite", "%s updated, reloading...", ts::filename::REMAP);
   newTable = new UrlRewrite();
-  if (newTable->is_valid()) {
-    static const char *msg = "remap.config done reloading!";
+  if (newTable->load()) {
+    static const char *msg_format = "%s finished loading";
 
     // Hold at least one lease, until we reload the configuration
     newTable->acquire();
@@ -150,15 +150,15 @@ reloadUrlRewrite()
     // Release the old one
     oldTable->release();
 
-    Debug("url_rewrite", "%s", msg);
-    Note("%s", msg);
+    Debug("url_rewrite", msg_format, ts::filename::REMAP);
+    Note(msg_format, ts::filename::REMAP);
     return true;
   } else {
-    static const char *msg = "failed to reload remap.config, not replacing!";
+    static const char *msg_format = "%s failed to load";
 
     delete newTable;
-    Debug("url_rewrite", "%s", msg);
-    Warning("%s", msg);
+    Debug("url_rewrite", msg_format, ts::filename::REMAP);
+    Error(msg_format, ts::filename::REMAP);
     return false;
   }
 }
@@ -166,7 +166,7 @@ reloadUrlRewrite()
 int
 url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
 {
-  int my_token = (int)(long)cookie;
+  int my_token = static_cast<int>((long)cookie);
 
   switch (my_token) {
   case REVERSE_CHANGED:

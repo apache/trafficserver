@@ -46,22 +46,22 @@ struct DNSConnection {
 
     /// Connection is done non-blocking.
     /// Default: @c true.
-    bool _non_blocking_connect;
+    bool _non_blocking_connect = true;
     /// Set socket to have non-blocking I/O.
     /// Default: @c true.
-    bool _non_blocking_io;
+    bool _non_blocking_io = true;
     /// Use TCP if @c true, use UDP if @c false.
     /// Default: @c false.
-    bool _use_tcp;
+    bool _use_tcp = false;
     /// Bind to a random port.
     /// Default: @c true.
-    bool _bind_random_port;
+    bool _bind_random_port = true;
     /// Bind to this local address when using IPv6.
     /// Default: unset, bind to IN6ADDR_ANY.
-    sockaddr const *_local_ipv6;
+    sockaddr const *_local_ipv6 = nullptr;
     /// Bind to this local address when using IPv4.
     /// Default: unset, bind to INADDRY_ANY.
-    sockaddr const *_local_ipv4;
+    sockaddr const *_local_ipv4 = nullptr;
 
     Options();
 
@@ -75,12 +75,12 @@ struct DNSConnection {
 
   int fd;
   IpEndpoint ip;
-  int num;
+  int num = 0;
   Options opt;
   LINK(DNSConnection, link);
   EventIO eio;
   InkRand generator;
-  DNSHandler *handler;
+  DNSHandler *handler = nullptr;
 
   /// TCPData structure is to track the reading progress of a TCP connection
   struct TCPData {
@@ -110,15 +110,7 @@ struct DNSConnection {
   static Options const DEFAULT_OPTIONS;
 };
 
-inline DNSConnection::Options::Options()
-  : _non_blocking_connect(true),
-    _non_blocking_io(true),
-    _use_tcp(false),
-    _bind_random_port(true),
-    _local_ipv6(nullptr),
-    _local_ipv4(nullptr)
-{
-}
+inline DNSConnection::Options::Options() {}
 
 inline DNSConnection::Options &
 DNSConnection::Options::setNonBlockingIo(bool p)

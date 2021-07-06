@@ -138,31 +138,23 @@ public:
   inkcoreapi sockaddr const *get_client_ip() override;
 
   HttpRequestData()
-    : hdr(nullptr),
-      hostname_str(nullptr),
-      api_info(nullptr),
-      xact_start(0),
-      incoming_port(0),
-      tag(nullptr),
-      internal_txn(false),
-      cache_info_lookup_url(nullptr),
-      cache_info_parent_selection_url(nullptr)
+
   {
     ink_zero(src_ip);
     ink_zero(dest_ip);
   }
 
-  HTTPHdr *hdr;
-  char *hostname_str;
-  HttpApiInfo *api_info;
-  time_t xact_start;
+  HTTPHdr *hdr          = nullptr;
+  char *hostname_str    = nullptr;
+  HttpApiInfo *api_info = nullptr;
+  time_t xact_start     = 0;
   IpEndpoint src_ip;
   IpEndpoint dest_ip;
-  uint16_t incoming_port;
-  char *tag;
-  bool internal_txn;
-  URL **cache_info_lookup_url;
-  URL **cache_info_parent_selection_url;
+  uint16_t incoming_port                = 0;
+  char *tag                             = nullptr;
+  bool internal_txn                     = false;
+  URL **cache_info_lookup_url           = nullptr;
+  URL **cache_info_parent_selection_url = nullptr;
 };
 
 // Mixin class for shared info across all templates. This just wraps the
@@ -191,10 +183,12 @@ template <class Data, class MatchResult> class UrlMatcher : protected BaseMatche
 public:
   UrlMatcher(const char *name, const char *filename);
   ~UrlMatcher();
-  void Match(RequestData *rdata, MatchResult *result);
+
   void AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
-  void Print();
+
+  void Match(RequestData *rdata, MatchResult *result) const;
+  void Print() const;
 
   using super::num_el;
   using super::matcher_name;
@@ -215,10 +209,12 @@ template <class Data, class MatchResult> class RegexMatcher : protected BaseMatc
 public:
   RegexMatcher(const char *name, const char *filename);
   ~RegexMatcher();
-  void Match(RequestData *rdata, MatchResult *result);
+
   void AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
-  void Print();
+
+  void Match(RequestData *rdata, MatchResult *result) const;
+  void Print() const;
 
   using super::num_el;
   using super::matcher_name;
@@ -237,7 +233,7 @@ template <class Data, class MatchResult> class HostRegexMatcher : public RegexMa
 
 public:
   HostRegexMatcher(const char *name, const char *filename);
-  void Match(RequestData *rdata, MatchResult *result);
+  void Match(RequestData *rdata, MatchResult *result) const;
 
   using super::num_el;
   using super::matcher_name;
@@ -253,10 +249,12 @@ template <class Data, class MatchResult> class HostMatcher : protected BaseMatch
 public:
   HostMatcher(const char *name, const char *filename);
   ~HostMatcher();
-  void Match(RequestData *rdata, MatchResult *result);
+
   void AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
-  void Print();
+
+  void Match(RequestData *rdata, MatchResult *result) const;
+  void Print() const;
 
   using super::num_el;
   using super::matcher_name;
@@ -281,10 +279,12 @@ template <class Data, class MatchResult> class IpMatcher : protected BaseMatcher
 
 public:
   IpMatcher(const char *name, const char *filename);
-  void Match(sockaddr const *ip_addr, RequestData *rdata, MatchResult *result);
+
   void AllocateSpace(int num_entries);
   Result NewEntry(matcher_line *line_info);
-  void Print();
+
+  void Match(sockaddr const *ip_addr, RequestData *rdata, MatchResult *result) const;
+  void Print() const;
 
   using super::num_el;
   using super::matcher_name;
@@ -307,18 +307,19 @@ private:
 template <class Data, class MatchResult> class ControlMatcher
 {
 public:
-  // Parameter name must not be deallocated before this
-  //  object is
+  // Parameter name must not be deallocated before this object is
   ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags,
                  int flags_in = (ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE));
   ~ControlMatcher();
+
   int BuildTable();
   int BuildTableFromString(char *str);
-  void Match(RequestData *rdata, MatchResult *result);
-  void Print();
+
+  void Match(RequestData *rdata, MatchResult *result) const;
+  void Print() const;
 
   int
-  getEntryCount()
+  getEntryCount() const
   {
     return m_numEntries;
   }
@@ -335,25 +336,13 @@ public:
     return reMatch;
   }
 
-  UrlMatcher<Data, MatchResult> *
-  getUrlMatcher()
-  {
-    return urlMatch;
-  }
-
   IpMatcher<Data, MatchResult> *
   getIPMatcher()
   {
     return ipMatch;
   }
 
-  HostRegexMatcher<Data, MatchResult> *
-  getHrMatcher()
-  {
-    return hrMatch;
-  }
-
-  // private:
+  // private
   RegexMatcher<Data, MatchResult> *reMatch;
   UrlMatcher<Data, MatchResult> *urlMatch;
   HostMatcher<Data, MatchResult> *hostMatch;

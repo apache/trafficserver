@@ -118,7 +118,7 @@ public:
   {
   }
 
-  LogAccess(HttpSM *sm);
+  explicit LogAccess(HttpSM *sm);
 
   inkcoreapi ~LogAccess() {}
   inkcoreapi void init();
@@ -143,14 +143,19 @@ public:
   inkcoreapi int marshal_client_req_url_scheme(char *);         // STR
   inkcoreapi int marshal_client_req_http_version(char *);       // INT
   inkcoreapi int marshal_client_req_protocol_version(char *);   // STR
+  inkcoreapi int marshal_server_req_protocol_version(char *);   // STR
   inkcoreapi int marshal_client_req_squid_len(char *);          // INT
   inkcoreapi int marshal_client_req_header_len(char *);         // INT
   inkcoreapi int marshal_client_req_content_len(char *);        // INT
   inkcoreapi int marshal_client_req_tcp_reused(char *);         // INT
   inkcoreapi int marshal_client_req_is_ssl(char *);             // INT
   inkcoreapi int marshal_client_req_ssl_reused(char *);         // INT
+  inkcoreapi int marshal_client_req_is_internal(char *);        // INT
+  inkcoreapi int marshal_client_req_mptcp_state(char *);        // INT
   inkcoreapi int marshal_client_security_protocol(char *);      // STR
   inkcoreapi int marshal_client_security_cipher_suite(char *);  // STR
+  inkcoreapi int marshal_client_security_curve(char *);         // STR
+  inkcoreapi int marshal_client_security_alpn(char *);          // STR
   inkcoreapi int marshal_client_finish_status_code(char *);     // INT
   inkcoreapi int marshal_client_req_id(char *);                 // INT
   inkcoreapi int marshal_client_req_uuid(char *);               // STR
@@ -236,15 +241,27 @@ public:
 
   // other fields
   //
-  inkcoreapi int marshal_transfer_time_ms(char *);           // INT
-  inkcoreapi int marshal_transfer_time_s(char *);            // INT
-  inkcoreapi int marshal_file_size(char *);                  // INT
-  inkcoreapi int marshal_plugin_identity_id(char *);         // INT
-  inkcoreapi int marshal_plugin_identity_tag(char *);        // STR
-  inkcoreapi int marshal_process_uuid(char *);               // STR
-  inkcoreapi int marshal_client_http_connection_id(char *);  // INT
-  inkcoreapi int marshal_client_http_transaction_id(char *); // INT
-  inkcoreapi int marshal_cache_lookup_url_canon(char *);     // STR
+  inkcoreapi int marshal_transfer_time_ms(char *);                            // INT
+  inkcoreapi int marshal_transfer_time_s(char *);                             // INT
+  inkcoreapi int marshal_file_size(char *);                                   // INT
+  inkcoreapi int marshal_plugin_identity_id(char *);                          // INT
+  inkcoreapi int marshal_plugin_identity_tag(char *);                         // STR
+  inkcoreapi int marshal_process_uuid(char *);                                // STR
+  inkcoreapi int marshal_client_http_connection_id(char *);                   // INT
+  inkcoreapi int marshal_client_http_transaction_id(char *);                  // INT
+  inkcoreapi int marshal_client_http_transaction_priority_weight(char *);     // INT
+  inkcoreapi int marshal_client_http_transaction_priority_dependence(char *); // INT
+  inkcoreapi int marshal_cache_lookup_url_canon(char *);                      // STR
+  inkcoreapi int marshal_client_sni_server_name(char *);                      // STR
+  inkcoreapi int marshal_client_provided_cert(char *);                        // INT
+  inkcoreapi int marshal_proxy_provided_cert(char *);                         // INT
+  inkcoreapi int marshal_version_build_number(char *);                        // STR
+  inkcoreapi int marshal_cache_read_retries(char *);                          // INT
+  inkcoreapi int marshal_cache_write_retries(char *);                         // INT
+  inkcoreapi int marshal_cache_collapsed_connection_success(char *);          // INT
+  inkcoreapi int marshal_proxy_protocol_version(char *);                      // STR
+  inkcoreapi int marshal_proxy_protocol_src_ip(char *);                       // STR
+  inkcoreapi int marshal_proxy_protocol_dst_ip(char *);                       // STR
 
   // named fields from within a http header
   //
@@ -277,6 +294,7 @@ public:
   inkcoreapi int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
   inkcoreapi int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
   inkcoreapi int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
+  inkcoreapi void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
   //
   // unmarshalling routines
   //
@@ -299,14 +317,14 @@ public:
   static int unmarshal_ip(char **buf, IpEndpoint *dest);
   static int unmarshal_ip_to_str(char **buf, char *dest, int len);
   static int unmarshal_ip_to_hex(char **buf, char *dest, int len);
-  static int unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
-  static int unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
-  static int unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
-  static int unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
-  static int unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
+  static int unmarshal_hierarchy(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int unmarshal_finish_status(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
+  static int unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   static int unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
 
-  static int unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg = nullptr);
+  static int unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg = nullptr);
 
   static int unmarshal_record(char **buf, char *dest, int len);
 
@@ -358,10 +376,10 @@ private:
   char *m_cache_lookup_url_canon_str;
   int m_cache_lookup_url_canon_len;
 
-  void validate_unmapped_url(void);
-  void validate_unmapped_url_path(void);
+  void validate_unmapped_url();
+  void validate_unmapped_url_path();
 
-  void validate_lookup_url(void);
+  void validate_lookup_url();
 };
 
 inline int

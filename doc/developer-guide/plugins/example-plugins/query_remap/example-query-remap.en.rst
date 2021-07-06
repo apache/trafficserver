@@ -54,7 +54,7 @@ function. In ``query_remap``, ``tsremap_new_instance`` creates a
 plugin-defined ``query_remap_info`` struct to store its configuration
 parameters.
 
-.. literalinclude:: ../../../../../example/query_remap/query_remap.c
+.. literalinclude:: ../../../../../example/plugins/c-api/query_remap/query_remap.c
   :language: c
   :lines: 37-42
 
@@ -62,7 +62,7 @@ The :code:`ihandle`, an opaque pointer that can be used to pass
 per-instance data, is set to this struct pointer and will be passed to
 the :code:`TSRemapDoRemap` function when it is triggered for a request.
 
-.. literalinclude:: ../../../../../example/query_remap/query_remap.c
+.. literalinclude:: ../../../../../example/plugins/c-api/query_remap/query_remap.c
   :language: c
   :lines: 53-88
 
@@ -83,6 +83,6 @@ struct contains input and output members for the remap operation.
 parameter. If the parameter is found, the plugin sets a ``new_host`` to
 modify the request host:
 
-.. literalinclude:: ../../../../../example/query_remap/query_remap.c
+.. literalinclude:: ../../../../../example/plugins/c-api/query_remap/query_remap.c
   :language: c
   :lines: 112-166

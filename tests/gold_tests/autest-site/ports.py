@@ -31,8 +31,25 @@ except ImportError:
 g_ports = None  # ports we can use
 
 
-def PortOpen(port, address=None):
+class PortQueueSelectionError(Exception):
+    """
+    An exception for when there are problems selecting a port from the port
+    queue.
+    """
+    pass
 
+
+def PortOpen(port, address=None):
+    """
+    Detect whether the port is open, that is a socket is currently using that port.
+
+    Open ports are currently in use by an open socket and are therefore not available
+    for a server to listen on them.
+
+    Returns:
+        True if there is a connection currently listening on the port, False if
+        there is no server listening on the port currently.
+    """
     ret = False
     if address is None:
         address = "localhost"
@@ -40,25 +57,84 @@ def PortOpen(port, address=None):
     address = (address, port)
 
     try:
+        # Try to connect on that port. If we can connect on it, then someone is
+        # listening on that port and therefore the port is open.
         s = socket.create_connection(address, timeout=.5)
         s.close()
         ret = True
+        host.WriteDebug(
+            'PortOpen',
+            "Connection to port {} succeeded, the port is open, "
+            "and a future connection cannot use it".format(port))
     except socket.error:
         s = None
-        ret = False
+        host.WriteDebug(
+            'PortOpen',
+            "socket error for port {0}, port is closed, "
+            "and therefore a future connection can use it".format(port))
     except socket.timeout:
         s = None
+        host.WriteDebug(
+            'PortOpen',
+            "Timeout error for port {0}, port is closed, "
+            "and therefore a future connection can use it".format(port))
 
     return ret
 
 
-def setup_port_queue(amount=1000):
+def _get_available_port(queue):
+    """
+    Get the next available port from the port queue and return it.
+
+    Since there can be a delay between when the queue is populated and when the
+    port is requested, this checks the next port in the queue to see whether it
+    is still not open. If it isn't, it is dropped from the queue and the next
+    one is inspected. This process continues until either an available port is
+    found, or, if the queue is exhausted, PortQueueSelectionError is raised.
+
+    Returns:
+        An available (i.e., non-open) port.
+
+    Throws:
+        PortQueueSelectionError if the port queue is exhausted.
+    """
+
+    if queue.qsize() == 0:
+        host.WriteWarning("Port queue is empty.")
+        raise PortQueueSelectionError(
+            "Could not get a valid port because the queue is empty")
+
+    port = queue.get()
+    while PortOpen(port):
+        host.WriteDebug(
+            '_get_available_port'
+            "Port was open but now is used: {}".format(port))
+        if queue.qsize() == 0:
+            host.WriteWarning("Port queue is empty.")
+            raise PortQueueSelectionError(
+                "Could not get a valid port because the queue is empty")
+        port = queue.get()
+    return port
+
+
+def _setup_port_queue(amount=1000):
+    """
+    Build up the set of ports that the OS in theory will not use.
+    """
     global g_ports
     if g_ports is None:
-        g_ports = Queue.LifoQueue()
+        host.WriteDebug(
+            '_setup_port_queue',
+            "Populating the port queue.")
+        g_ports = Queue.Queue()
     else:
+        # The queue has already been populated.
+        host.WriteDebug(
+            '_setup_port_queue',
+            "Queue was previously populated. Queue size: {}".format(g_ports.qsize()))
         return
     try:
+        # Use sysctl to find the range of ports that the OS publishes it uses.
         # some docker setups don't have sbin setup correctly
         new_env = os.environ.copy()
         new_env['PATH'] = "/sbin:/usr/sbin:" + new_env['PATH']
@@ -78,7 +154,7 @@ def setup_port_queue(amount=1000):
             ).decode().split("=")[1].split()
         dmin = int(dmin)
         dmax = int(dmax)
-    except:
+    except Exception:
         host.WriteWarning("Unable to call sysctrl!\n Tests may fail because of bad port selection!")
         return
 
@@ -86,43 +162,89 @@ def setup_port_queue(amount=1000):
     rmax = 65536 - dmax
 
     if rmax > amount:
-        # fill in ports
+        # Fill in ports, starting above the upper OS-usable port range.
         port = dmax + 1
         while port < 65536 and g_ports.qsize() < amount:
-            # if port good:
             if not PortOpen(port):
+                host.WriteDebug(
+                    '_setup_port_queue',
+                    "Adding a possible port to connect to: {0}".format(port))
                 g_ports.put(port)
+            else:
+                host.WriteDebug(
+                    '_setup_port_queue',
+                    "Rejecting a possible port to connect to: {0}".format(port))
             port += 1
     if rmin > amount and g_ports.qsize() < amount:
         port = 2001
+        # Fill in more ports, starting at 2001, well above well known ports,
+        # and going up until the minimum port range used by the OS.
         while port < dmin and g_ports.qsize() < amount:
-            # if port good:
             if not PortOpen(port):
+                host.WriteDebug(
+                    '_setup_port_queue',
+                    "Adding a possible port to connect to: {0}".format(port))
                 g_ports.put(port)
+            else:
+                host.WriteDebug(
+                    '_setup_port_queue',
+                    "Rejecting a possible port to connect to: {0}".format(port))
             port += 1
 
 
-def get_port(obj, name):
-    '''
-    Get a port and set it to a variable on the object
+def _get_port_by_bind():
+    """
+    Create a socket, bind with REUSEADDR, and return the bound port.
 
-    '''
+    Because SO_REUSEADDR is applied as an option to the socket, the future
+    server should be able to use this port. This method is considered
+    sub-optimal in comparison to the OS-unused port range method used above
+    because another process might bind to this port in the meantime.
 
-    setup_port_queue()
-    if g_ports.qsize():
-        # get port
-        port = g_ports.get()
-        # assign to variable
-        obj.Variables[name] = port
-        # setup clean up step to recycle the port
-        obj.Setup.Lambda(func_cleanup=lambda: g_ports.put(
-            port), description="recycling port")
-        return port
-
-    # use old code
+    Returns:
+        A port value that can be used for a connection.
+    """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', 0))  # bind to all interfaces on an ephemeral port
     port = sock.getsockname()[1]
+    return port
+
+
+def get_port(obj, name):
+    '''
+    Get a port and set it to the specified variable on the object.
+
+    Args:
+        obj: The object upon which to set the port variable.
+        name: The name of the variable that receives the port value.
+
+    Returns:
+        The port value.
+    '''
+    _setup_port_queue()
+    port = 0
+    if g_ports.qsize() > 0:
+        try:
+            port = _get_available_port(g_ports)
+            host.WriteVerbose(
+                "get_port",
+                "Using port from port queue: {}".format(port))
+            # setup clean up step to recycle the port
+            obj.Setup.Lambda(func_cleanup=lambda: g_ports.put(
+                port), description="recycling port")
+        except PortQueueSelectionError:
+            port = _get_port_by_bind()
+            host.WriteVerbose(
+                "get_port",
+                "Queue was drained. Using port from a bound socket: {}".format(port))
+    else:
+        # Since the queue could not be populated, use a port via bind.
+        port = _get_port_by_bind()
+        host.WriteVerbose(
+            "get_port",
+            "Queue is empty. Using port from a bound socket: {}".format(port))
+
+    # Assign to the named variable.
     obj.Variables[name] = port
     return port

@@ -44,7 +44,7 @@
 extern ClassAllocator<Event> eventAllocator;
 
 void
-ProtectedQueue::enqueue(Event *e, bool fast_signal)
+ProtectedQueue::enqueue(Event *e)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
   EThread *e_ethread   = e->ethread;
@@ -62,38 +62,9 @@ ProtectedQueue::enqueue(Event *e, bool fast_signal)
 }
 
 void
-flush_signals(EThread *thr)
-{
-  ink_assert(this_ethread() == thr);
-  int n = thr->n_ethreads_to_be_signalled;
-  if (n > eventProcessor.n_ethreads) {
-    n = eventProcessor.n_ethreads; // MAX
-  }
-  int i;
-
-  for (i = 0; i < n; i++) {
-    if (thr->ethreads_to_be_signalled[i]) {
-      thr->ethreads_to_be_signalled[i]->tail_cb->signalActivity();
-      thr->ethreads_to_be_signalled[i] = nullptr;
-    }
-  }
-  thr->n_ethreads_to_be_signalled = 0;
-}
-
-void
-ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool sleep)
-{
-  (void)cur_time;
-  if (sleep) {
-    this->wait(timeout);
-  }
-  this->dequeue_external();
-}
-
-void
 ProtectedQueue::dequeue_external()
 {
-  Event *e = (Event *)ink_atomiclist_popall(&al);
+  Event *e = static_cast<Event *>(ink_atomiclist_popall(&al));
   // invert the list, to preserve order
   SLL<Event, Event::Link_link> l, t;
   t.head = e;
@@ -120,7 +91,7 @@ ProtectedQueue::wait(ink_hrtime timeout)
    *   - And then the Event Thread goes to sleep and waits for the wakeup signal of `EThread::might_have_data`,
    *   - The `EThread::lock` will be locked again when the Event Thread wakes up.
    */
-  if (INK_ATOMICLIST_EMPTY(al)) {
+  if (INK_ATOMICLIST_EMPTY(al) && localQueue.empty()) {
     timespec ts = ink_hrtime_to_timespec(timeout);
     ink_cond_timedwait(&might_have_data, &lock, &ts);
   }

@@ -132,10 +132,10 @@ Classes
 
 .. function:: HdrHeap * new_HdrHeap(int n)
 
-   Create and return a new instance of :class:`HdrHeap`. If :arg:`n` is less than ``HDR_HEAP_DEFAULT_SIZE``
+   Create and return a new instance of :class:`HdrHeap`. If :arg:`n` is less than ``HdrHeap::DEFAULT_SIZE``
    it is increased to that value.
 
-   If the allocated size is ``HDR_HEAP_DEFAULT_SIZE`` (or smaller and upsized to that value) then
+   If the allocated size is ``HdrHeap::DEFAULT_SIZE`` (or smaller and upsized to that value) then
    the instance is allocated from a thread local pool via :code:`hdrHeapAllocator`. If larger it
    is allocated from global memory via :code:`ats_malloc`.
 
@@ -150,7 +150,7 @@ Implementation
 String Coalescence
 ------------------
 
-String heaps do do not maintain lists of internal free space. Strings that are released are left in
+String heaps do not maintain lists of internal free space. Strings that are released are left in
 place, creating dead space in the heap. For this reason it can become necessary to do a garbage
 collection operation on the writeable string heap in the header heap by calling
 :func:`HdrHeap::coalesce_str_heaps`. This is done when
@@ -159,10 +159,17 @@ collection operation on the writeable string heap in the header heap by calling
 
 *  An external string heap is being added and all current read only string heap slots are used.
 
+The mechanism is simple in design - the size of the live string data in the current string heaps is
+calculated and a new heap is allocated sufficient to contain all existing strings, with additional
+space for new string data. Each heap object is required to provide a :code:`strings_length` method
+which returns the size of the live string data for that object (recursively as needed). The strings
+are copied to the new string heap, all of the previous string heaps are discarded, and the new heap
+becomes the writable string heap for the header heap.
+
 Each heap object is responsible for providing a :code:`move_strings` method which copies its strings
-to a new string heap. This is a source of pointer invalidation for other parts of the core and the
-plugin API. For the latter, insulating from such string movement is the point of the
-:c:type:`TSMLoc` type.
+to a new string heap, passed as an argument. This is a source of pointer invalidation for other
+parts of the core and the plugin API. For the latter, insulating from such string movement is the
+point of the :c:type:`TSMLoc` type.
 
 String Allocation
 -----------------
@@ -193,7 +200,7 @@ created with twice the space of the last :class:`HdrHeap` in the list and added 
 try.
 
 Once space is found for the object, the base members of :class:`HdrHeapObjImpl` are initialized with
-the objec type and size, with the :arg:`m_obj_flags` set to 0.
+the object type and size, with the :arg:`m_obj_flags` set to 0.
 
 Serialization
 -------------

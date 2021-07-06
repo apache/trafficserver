@@ -34,12 +34,28 @@ using namespace std::literals;
 
 TEST_CASE("TextView Constructor", "[libts][TextView]")
 {
-  static std::string base = "Evil Dave Rulez!";
+  static const char *delain = "Best Band";
+  static std::string base   = "Evil Dave Rulez!";
   TextView tv(base);
-  TextView a{"Evil Dave Rulez"};
+  TextView alpha{delain, TextView::npos};
+  TextView bravo{delain, 9};
   TextView b{base.data(), base.size()};
   TextView c{std::string_view(base)};
-  constexpr TextView d{"Grigor!"sv};
+
+  tv.assign(base);
+  REQUIRE(0 == strcmp(tv, base));
+  REQUIRE(0 == strcmp(b, c));
+  REQUIRE(0 == strcmp(tv, b));
+  REQUIRE(strlen(delain) == alpha.size());
+  REQUIRE(0 == strcmp(alpha, bravo));
+
+  static const char *null = nullptr;
+  TextView null1{nullptr};
+  TextView null2{null, 0};
+  TextView null3{null, TextView::npos};
+  REQUIRE(null1.empty() == true);
+  REQUIRE(null2.empty() == true);
+  REQUIRE(null3.empty() == true);
 }
 
 TEST_CASE("TextView Operations", "[libts][TextView]")
@@ -111,6 +127,8 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   left         = tv3;
   right        = left.split_suffix_at(";:,");
   TextView pre{tv3}, post{pre.split_suffix_at(7)};
+
+  REQUIRE(post.size() == 7);
   REQUIRE(right.size() == 7);
   REQUIRE(left.size() == 7);
   REQUIRE(left == "abcdefg");
@@ -252,6 +270,59 @@ TEST_CASE("TextView Affixes", "[libts][TextView]")
   s = "file.cc.org";
   s.remove_prefix('!');
   REQUIRE(s.empty());
+
+  // From MIMEHdr::get_host_port_values
+  auto f_host = [](TextView b, TextView &host, TextView &port) -> void {
+    if ('[' == *b) {
+      auto idx = b.find(']');
+      if (idx <= b.size() && b[idx + 1] == ':') {
+        host = b.take_prefix_at(idx + 1);
+        port = b;
+      } else {
+        host = b;
+      }
+    } else {
+      auto x = b.split_prefix_at(':');
+      if (x) {
+        host = x;
+        port = b;
+      } else {
+        host = b;
+      }
+    }
+  };
+
+  TextView host, port;
+
+  s = "host";
+  f_host(s, host, port);
+  REQUIRE(host == "host");
+  REQUIRE(port.empty());
+
+  s = "host:";
+  f_host(s, host, port);
+  REQUIRE(host == "host");
+  REQUIRE(port.empty());
+
+  s = "[host]";
+  f_host(s, host, port);
+  REQUIRE(host == "[host]");
+  REQUIRE(port.empty());
+
+  s = "host:port";
+  f_host(s, host, port);
+  REQUIRE(host == "host");
+  REQUIRE(port == "port");
+
+  s = "[host]:port";
+  f_host(s, host, port);
+  REQUIRE(host == "[host]");
+  REQUIRE(port == "port");
+
+  s = "[host]:";
+  f_host(s, host, port);
+  REQUIRE(host == "[host]");
+  REQUIRE(port.empty());
 };
 
 TEST_CASE("TextView Formatting", "[libts][TextView]")

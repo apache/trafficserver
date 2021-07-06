@@ -43,7 +43,7 @@ struct vec_info {
 };
 
 struct CacheHTTPInfoVector {
-  void *magic;
+  void *magic = nullptr;
 
   CacheHTTPInfoVector();
   ~CacheHTTPInfoVector();
@@ -72,7 +72,7 @@ struct CacheHTTPInfoVector {
   int unmarshal(const char *buf, int length, RefCountObj *block_ptr);
 
   CacheArray<vec_info> data;
-  int xcount;
+  int xcount = 0;
   Ptr<RefCountObj> vector_buf;
 };
 

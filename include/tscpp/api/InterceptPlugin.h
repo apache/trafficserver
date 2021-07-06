@@ -68,6 +68,12 @@ public:
   /** Should be called only after request header has completely been consumed */
   Headers &getRequestHeaders();
 
+  /**
+   * The returned TSSslConnection would be nullptr if the connection is not a TLS connection
+   * or Intercept plugin is not ready.
+   */
+  TSSslConnection getSslConnection();
+
   ~InterceptPlugin() override;
 
   struct State; /** Internal use only */

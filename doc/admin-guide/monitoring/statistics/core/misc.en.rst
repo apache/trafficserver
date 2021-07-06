@@ -24,33 +24,3 @@ Miscellaneous
 
 .. ts:stat:: global proxy.process.http.misc_count_stat integer
 .. ts:stat:: global proxy.process.http.misc_user_agent_bytes_stat integer
-
-.. ts:stat:: global proxy.process.eventloop.count integer
-
-    Number of event loops executed.
-
-.. ts:stat:: global proxy.process.eventloop.events integer
-
-    Number of events dispatched.
-
-.. ts:stat:: global proxy.process.eventloop.events.min integer
-
-    Minimum number of events dispatched in a loop.
-
-.. ts:stat:: global proxy.process.eventloop.events.max integer
-
-    Maximum number of events dispatched in a loop.
-
-.. ts:stat:: global proxy.process.eventloop.wait integer
-
-    Number of loops that did a conditional wait.
-
-.. ts:stat:: global proxy.process.eventloop.time.min integer
-    :units: nanoseconds
-
-    Shortest time spent in a loop.
-
-.. ts:stat:: global proxy.process.eventloop.time.max integer
-    :units: nanoseconds
-
-    Longest time spent in a loop.

@@ -51,7 +51,7 @@ Plugin Configuration
 * Specify certificate generation related files. If any of the following parameters is missing, the dynamic generation will be disabled.
    .. option:: --sign-cert <path_to_certificate>
 
-   (`optional`, default:empty/unused) - specifies the path to the root CA certficate. In most cases, this would be a self-signed certificate that is configured to be trusted by all potential clients. Path should be the path and file name of the cert. If it is relative, it is relative to the Traffic Server configuration directory.
+   (`optional`, default:empty/unused) - specifies the path to the root CA certificate. In most cases, this would be a self-signed certificate that is configured to be trusted by all potential clients. Path should be the path and file name of the cert. If it is relative, it is relative to the Traffic Server configuration directory.
 
    .. option:: --sign-key <path_to_key>
 

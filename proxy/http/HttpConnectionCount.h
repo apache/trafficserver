@@ -43,7 +43,7 @@
 #include "Show.h"
 
 /**
- * Singleton class to keep track of the number of outbound connnections.
+ * Singleton class to keep track of the number of outbound connections.
  *
  * Outbound connections are divided in to equivalence classes (called "groups" here) based on the
  * session matching setting. Tracking data is stored for each group.
@@ -71,23 +71,21 @@ public:
   /// Per transaction configuration values.
   struct TxnConfig {
     int max{0};                ///< Maximum concurrent connections.
+    int min{0};                ///< Minimum keepalive connections.
     MatchType match{MATCH_IP}; ///< Match type.
   };
 
   /** Static configuration values. */
   struct GlobalConfig {
-    int queue_size{0};                          ///< Maximum delayed transactions.
-    std::chrono::milliseconds queue_delay{100}; ///< Reschedule / queue delay in ms.
-    std::chrono::seconds alert_delay{60};       ///< Alert delay in seconds.
+    std::chrono::seconds alert_delay{60}; ///< Alert delay in seconds.
   };
 
   // The names of the configuration values.
   // Unfortunately these are not used in RecordsConfig.cc so that must be made consistent by hand.
   // Note: These need to be @c constexpr or there are static initialization ordering risks.
   static constexpr std::string_view CONFIG_VAR_MAX{"proxy.config.http.per_server.connection.max"_sv};
+  static constexpr std::string_view CONFIG_VAR_MIN{"proxy.config.http.per_server.connection.min"_sv};
   static constexpr std::string_view CONFIG_VAR_MATCH{"proxy.config.http.per_server.connection.match"_sv};
-  static constexpr std::string_view CONFIG_VAR_QUEUE_SIZE{"proxy.config.http.per_server.connection.queue_size"_sv};
-  static constexpr std::string_view CONFIG_VAR_QUEUE_DELAY{"proxy.config.http.per_server.connection.queue_delay"_sv};
   static constexpr std::string_view CONFIG_VAR_ALERT_DELAY{"proxy.config.http.per_server.connection.alert_delay"_sv};
 
   /// A record for the outbound connection count.
@@ -109,17 +107,17 @@ public:
       MatchType const &_match_type; ///< Type of matching.
     };
 
-    IpEndpoint _addr;      ///< Remote IP address.
-    CryptoHash _hash;      ///< Hash of the FQDN.
-    MatchType _match_type; ///< Type of matching.
-    std::string _fqdn;     ///< Expanded FQDN, set if matching on FQDN.
-    Key _key;              ///< Pre-assembled key which references the following members.
+    IpEndpoint _addr;         ///< Remote IP address.
+    CryptoHash _hash;         ///< Hash of the FQDN.
+    MatchType _match_type;    ///< Type of matching.
+    std::string _fqdn;        ///< Expanded FQDN, set if matching on FQDN.
+    int min_keep_alive_conns; /// < Min keep alive conns on this server group
+    Key _key;                 ///< Pre-assembled key which references the following members.
 
     // Counting data.
     std::atomic<int> _count{0};         ///< Number of outbound connections.
     std::atomic<int> _count_max{0};     ///< largest observed @a count value.
     std::atomic<int> _blocked{0};       ///< Number of outbound connections blocked since last alert.
-    std::atomic<int> _rescheduled{0};   ///< # of connection reschedules.
     std::atomic<int> _in_queue{0};      ///< # of connections queued, waiting for a connection.
     std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
 
@@ -132,7 +130,7 @@ public:
      * @param key A populated @c Key structure - values are copied to the @c Group.
      * @param fqdn The full FQDN.
      */
-    Group(Key const &key, std::string_view fqdn);
+    Group(Key const &key, std::string_view fqdn, int min_keep_alive);
     /// Key equality checker.
     static bool equal(Key const &lhs, Key const &rhs);
     /// Hashing function.
@@ -165,8 +163,6 @@ public:
     void dequeue();
     /// Note blocking a transaction.
     void blocked();
-    /// Note a rescheduling
-    void rescheduled();
     /// Clear all reservations.
     void clear();
     /// Drop the reservation - assume it will be cleaned up elsewhere.
@@ -181,7 +177,7 @@ public:
      * @param count Current connection count for display in message.
      * @param addr IP address of the upstream.
      */
-    void Note_Unblocked(TxnConfig *config, int count, const sockaddr *addr);
+    void Note_Unblocked(const TxnConfig *config, int count, const sockaddr *addr);
 
     /** Generate a Warning that a connection was blocked.
      *
@@ -191,7 +187,7 @@ public:
      * @param addr IP address of the upstream.
      * @param debug_tag Tag to use for the debug message. If no debug message should be generated set this to @c nullptr.
      */
-    void Warn_Blocked(TxnConfig *config, int64_t sm_id, int count, const sockaddr *addr, const char *debug_tag = nullptr);
+    void Warn_Blocked(const TxnConfig *config, int64_t sm_id, int count, const sockaddr *addr, const char *debug_tag = nullptr);
   };
 
   /** Get or create the @c Group for the specified session properties.
@@ -227,7 +223,7 @@ public:
    */
   static void config_init(GlobalConfig *global, TxnConfig *txn);
 
-  /// Tag used for debugging otuput.
+  /// Tag used for debugging output.
   static constexpr char const *const DEBUG_TAG{"conn_track"};
 
   /** Convert a string to a match type.
@@ -247,6 +243,7 @@ public:
   static void Warning_Bad_Match_Type(std::string_view tag);
 
   // Converters for overridable values for use in the TS API.
+  static const MgmtConverter MIN_CONV;
   static const MgmtConverter MAX_CONV;
   static const MgmtConverter MATCH_CONV;
 
@@ -286,8 +283,8 @@ OutboundConnTrack::instance()
   return _imp;
 }
 
-inline OutboundConnTrack::Group::Group(Key const &key, std::string_view fqdn)
-  : _hash(key._hash), _match_type(key._match_type), _key{_addr, _hash, _match_type}
+inline OutboundConnTrack::Group::Group(Key const &key, std::string_view fqdn, int min_keep_alive)
+  : _hash(key._hash), _match_type(key._match_type), min_keep_alive_conns(min_keep_alive), _key{_addr, _hash, _match_type}
 {
   // store the host name if relevant.
   if (MATCH_HOST == _match_type || MATCH_BOTH == _match_type) {
@@ -386,12 +383,6 @@ inline void
 OutboundConnTrack::TxnState::blocked()
 {
   ++_g->_blocked;
-}
-
-inline void
-OutboundConnTrack::TxnState::rescheduled()
-{
-  ++_g->_rescheduled;
 }
 
 /* === Linkage === */

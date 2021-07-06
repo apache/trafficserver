@@ -1,6 +1,6 @@
 /** @file
 
-  Managment packet marshalling.
+  Management packet marshalling.
 
   @section license License
 
@@ -40,8 +40,9 @@ static char *empty = const_cast<char *>("");
 static bool
 data_is_nul_terminated(const MgmtMarshallData *data)
 {
-  const char *str = (const char *)(data->ptr);
+  const char *str = static_cast<const char *>(data->ptr);
 
+  ink_assert(str);
   if (str[data->len - 1] != '\0') {
     return false;
   }
@@ -80,7 +81,7 @@ socket_read_bytes(int fd, void *buf, size_t needed)
       return -1;
     }
 
-    buf = (uint8_t *)buf + ret;
+    buf = static_cast<uint8_t *>(buf) + ret;
     nread += ret;
   }
 
@@ -126,7 +127,7 @@ socket_write_buffer(int fd, const MgmtMarshallData *data)
 
   if (data->len) {
     nwrite = socket_write_bytes(fd, data->ptr, data->len);
-    if (nwrite != (ssize_t)data->len) {
+    if (nwrite != static_cast<ssize_t>(data->len)) {
       goto fail;
     }
   }
@@ -152,7 +153,7 @@ socket_read_buffer(int fd, MgmtMarshallData *data)
   if (data->len) {
     data->ptr = ats_malloc(data->len);
     nread     = socket_read_bytes(fd, data->ptr, data->len);
-    if (nread != (ssize_t)data->len) {
+    if (nread != static_cast<ssize_t>(data->len)) {
       goto fail;
     }
   }
@@ -348,7 +349,7 @@ mgmt_message_read_v(int fd, const MgmtMarshallType *fields, unsigned count, va_l
 
       ink_assert(data_is_nul_terminated(&data));
       ptr.m_string  = va_arg(ap, MgmtMarshallString *);
-      *ptr.m_string = (char *)data.ptr;
+      *ptr.m_string = static_cast<char *>(data.ptr);
       break;
     }
     case MGMT_MARSHALL_DATA:
@@ -424,7 +425,7 @@ mgmt_message_marshall_v(void *buf, size_t remain, const MgmtMarshallType *fields
       }
 
       memcpy(buf, &data.len, 4);
-      memcpy((uint8_t *)buf + 4, data.ptr, data.len);
+      memcpy(static_cast<uint8_t *>(buf) + 4, data.ptr, data.len);
       nwritten = 4 + data.len;
       break;
     }
@@ -434,7 +435,7 @@ mgmt_message_marshall_v(void *buf, size_t remain, const MgmtMarshallType *fields
         goto nospace;
       }
       memcpy(buf, &(ptr.m_data->len), 4);
-      memcpy((uint8_t *)buf + 4, ptr.m_data->ptr, ptr.m_data->len);
+      memcpy(static_cast<uint8_t *>(buf) + 4, ptr.m_data->ptr, ptr.m_data->len);
       nwritten = 4 + ptr.m_data->len;
       break;
     default:
@@ -443,7 +444,7 @@ mgmt_message_marshall_v(void *buf, size_t remain, const MgmtMarshallType *fields
     }
 
     nbytes += nwritten;
-    buf = (uint8_t *)buf + nwritten;
+    buf = static_cast<uint8_t *>(buf) + nwritten;
     remain -= nwritten;
   }
 
@@ -495,7 +496,7 @@ mgmt_message_parse_v(const void *buf, size_t len, const MgmtMarshallType *fields
       break;
     case MGMT_MARSHALL_STRING: {
       MgmtMarshallData data;
-      nread = buffer_read_buffer((const uint8_t *)buf, len, &data);
+      nread = buffer_read_buffer(static_cast<const uint8_t *>(buf), len, &data);
       if (nread == -1) {
         goto nospace;
       }
@@ -503,12 +504,12 @@ mgmt_message_parse_v(const void *buf, size_t len, const MgmtMarshallType *fields
       ink_assert(data_is_nul_terminated(&data));
 
       ptr.m_string  = va_arg(ap, MgmtMarshallString *);
-      *ptr.m_string = (char *)data.ptr;
+      *ptr.m_string = static_cast<char *>(data.ptr);
       break;
     }
     case MGMT_MARSHALL_DATA:
       ptr.m_data = va_arg(ap, MgmtMarshallData *);
-      nread      = buffer_read_buffer((const uint8_t *)buf, len, ptr.m_data);
+      nread      = buffer_read_buffer(static_cast<const uint8_t *>(buf), len, ptr.m_data);
       if (nread == -1) {
         goto nospace;
       }

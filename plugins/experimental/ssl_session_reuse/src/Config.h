@@ -31,7 +31,6 @@
 
 struct fromstring {
   fromstring(const std::string &string) : _string(string) {}
-
   template <typename _T> operator _T() const
   {
     _T t;

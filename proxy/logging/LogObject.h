@@ -28,7 +28,6 @@
 #include "LogFile.h"
 #include "LogFormat.h"
 #include "LogFilter.h"
-#include "LogHost.h"
 #include "LogBuffer.h"
 #include "LogAccess.h"
 #include "LogFilter.h"
@@ -66,10 +65,10 @@ class LogBufferManager
 {
 private:
   ASLL(LogBuffer, write_link) write_list;
-  int _num_flush_buffers;
+  int _num_flush_buffers = 0;
 
 public:
-  LogBufferManager() : _num_flush_buffers(0) {}
+  LogBufferManager() {}
   inline void
   add_to_flush_queue(LogBuffer *buffer)
   {
@@ -87,31 +86,22 @@ class LogObject : public RefCountObj
 public:
   enum LogObjectFlags {
     BINARY                   = 1,
-    REMOTE_DATA              = 2,
     WRITES_TO_PIPE           = 4,
     LOG_OBJECT_FMT_TIMESTAMP = 8, // always format a timestamp into each log line (for raw text logs)
   };
 
   // BINARY: log is written in binary format (rather than ascii)
-  // REMOTE_DATA: object receives data from remote collation clients, so
-  //              it should not be destroyed during a reconfiguration
   // WRITES_TO_PIPE: object writes to a named pipe rather than to a file
 
-  LogObject(const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format, const char *header,
-            Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec = 0, int rolling_offset_hr = 0,
-            int rolling_size_mb = 0, bool auto_created = false);
-  LogObject(LogObject &);
+  LogObject(LogConfig *cfg, const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
+            const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec = 0,
+            int rolling_offset_hr = 0, int rolling_size_mb = 0, bool auto_created = false, int rolling_max_count = 0,
+            int rolling_min_count = 0, bool reopen_after_rolling = false, int pipe_buffer_size = 0);
   ~LogObject() override;
 
   void add_filter(LogFilter *filter, bool copy = true);
   void set_filter_list(const LogFilterList &list, bool copy = true);
-  void add_loghost(LogHost *host, bool copy = true);
 
-  inline void
-  set_remote_flag()
-  {
-    m_flags |= REMOTE_DATA;
-  };
   inline void
   set_fmt_timestamps()
   {
@@ -153,11 +143,8 @@ public:
       idx = m_buffer_manager_idx++ % m_flush_threads;
     }
 
-    if (m_logFile) {
-      nfb = m_buffer_manager[idx].preproc_buffers(m_logFile.get());
-    } else {
-      nfb = m_buffer_manager[idx].preproc_buffers(&m_host_list);
-    }
+    nfb = m_buffer_manager[idx].preproc_buffers(m_logFile.get());
+
     return nfb;
   }
 
@@ -205,41 +192,31 @@ public:
   inline void
   set_rolling_enabled(Log::RollingEnabledValues rolling_enabled)
   {
-    _setup_rolling(rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
+    _setup_rolling(Log::config, rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
   }
 
   inline void
   set_rolling_interval_sec(int rolling_interval_sec)
   {
-    _setup_rolling(m_rolling_enabled, rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
+    _setup_rolling(Log::config, m_rolling_enabled, rolling_interval_sec, m_rolling_offset_hr, m_rolling_size_mb);
   }
 
   inline void
   set_rolling_offset_hr(int rolling_offset_hr)
   {
-    _setup_rolling(m_rolling_enabled, m_rolling_interval_sec, rolling_offset_hr, m_rolling_size_mb);
+    _setup_rolling(Log::config, m_rolling_enabled, m_rolling_interval_sec, rolling_offset_hr, m_rolling_size_mb);
   }
 
   inline void
   set_rolling_size_mb(int rolling_size_mb)
   {
-    _setup_rolling(m_rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, rolling_size_mb);
+    _setup_rolling(Log::config, m_rolling_enabled, m_rolling_interval_sec, m_rolling_offset_hr, rolling_size_mb);
   }
 
   inline bool
-  is_collation_client() const
-  {
-    return (m_logFile ? false : true);
-  }
-  inline bool
-  receives_remote_data() const
-  {
-    return m_flags & REMOTE_DATA ? true : false;
-  }
-  inline bool
   writes_to_pipe() const
   {
-    return m_flags & WRITES_TO_PIPE ? true : false;
+    return (m_flags & WRITES_TO_PIPE) ? true : false;
   }
   inline bool
   writes_to_disk()
@@ -276,11 +253,9 @@ public:
   bool operator==(LogObject &rhs);
 
 public:
-  bool m_auto_created;
   LogFormat *m_format;
   Ptr<LogFile> m_logFile;
   LogFilterList m_filter_list;
-  LogHostList m_host_list;
 
 private:
   char *m_basename; // the name of the file associated
@@ -300,17 +275,21 @@ private:
   int m_flush_threads;        // number of flush threads
   int m_rolling_interval_sec; // time interval between rolls
   // 0 means no rolling
-  int m_rolling_offset_hr; //
-  int m_rolling_size_mb;   // size at which the log file rolls
-  long m_last_roll_time;   // the last time this object rolled
-  // its files
+  int m_rolling_offset_hr;     //
+  int m_rolling_size_mb;       // size at which the log file rolls
+  long m_last_roll_time;       // the last time this object rolled its files
+  int m_max_rolled;            // maximum number of rolled logs to be kept, 0 no limit
+  int m_min_rolled;            // minimum number of rolled logs to be kept, 0 no limit
+  bool m_reopen_after_rolling; // reopen log file after rolling (normally it is just renamed and closed)
 
   head_p m_log_buffer; // current work buffer
   unsigned m_buffer_manager_idx;
   LogBufferManager *m_buffer_manager;
 
+  int m_pipe_buffer_size;
+
   void generate_filenames(const char *log_dir, const char *basename, LogFileFormat file_format);
-  void _setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr,
+  void _setup_rolling(LogConfig *cfg, Log::RollingEnabledValues rolling_enabled, int rolling_interval_sec, int rolling_offset_hr,
                       int rolling_size_mb);
   unsigned _roll_files(long interval_start, long interval_end);
 
@@ -334,7 +313,8 @@ class TextLogObject : public LogObject
 public:
   inkcoreapi TextLogObject(const char *name, const char *log_dir, bool timestamps, const char *header,
                            Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
-                           int rolling_offset_hr, int rolling_size_mb);
+                           int rolling_offset_hr, int rolling_size_mb, int rolling_max_count, int rolling_min_count,
+                           bool reopen_after_rolling);
 
   inkcoreapi int write(const char *format, ...) TS_PRINTFLIKE(2, 3);
   inkcoreapi int va_write(const char *format, va_list ap);
@@ -372,7 +352,7 @@ public:
   ink_mutex *_APImutex; // synchronize access to array of API objects
 private:
   int _manage_object(LogObject *log_object, bool is_api_object, int maxConflicts);
-  static bool _has_internal_filename_conflict(const char *filename, LogObjectList &objects);
+  static bool _has_internal_filename_conflict(std::string_view filename, LogObjectList &objects);
   int _solve_filename_conflicts(LogObject *log_obj, int maxConflicts);
   int _solve_internal_filename_conflicts(LogObject *log_obj, int maxConflicts, int fileNum = 0);
   void _filename_resolution_abort(const char *fname);
@@ -407,6 +387,7 @@ public:
   void check_buffer_expiration(long time_now);
 
   unsigned roll_files(long time_now);
+  void reopen_moved_log_files();
 
   int log(LogAccess *lad);
   void display(FILE *str = stdout);
@@ -426,41 +407,20 @@ public:
   {
     return _objects.size();
   }
-  unsigned get_num_collation_clients() const;
 };
 
 inline bool
 LogObject::operator==(LogObject &old)
 {
-  if (!receives_remote_data() && !old.receives_remote_data()) {
-    return (get_signature() == old.get_signature() &&
-            (is_collation_client() && old.is_collation_client() ?
-               m_host_list == old.m_host_list :
-               m_logFile && old.m_logFile && strcmp(m_logFile->get_name(), old.m_logFile->get_name()) == 0) &&
-            (m_filter_list == old.m_filter_list) &&
-            (m_rolling_interval_sec == old.m_rolling_interval_sec && m_rolling_offset_hr == old.m_rolling_offset_hr &&
-             m_rolling_size_mb == old.m_rolling_size_mb));
-  }
-  return false;
+  return (get_signature() == old.get_signature() && m_logFile && old.m_logFile &&
+          strcmp(m_logFile->get_name(), old.m_logFile->get_name()) == 0 && (m_filter_list == old.m_filter_list) &&
+          (m_rolling_interval_sec == old.m_rolling_interval_sec && m_rolling_offset_hr == old.m_rolling_offset_hr &&
+           m_rolling_size_mb == old.m_rolling_size_mb && m_reopen_after_rolling == old.m_reopen_after_rolling &&
+           m_max_rolled == old.m_max_rolled && m_min_rolled == old.m_min_rolled));
 }
 
 inline off_t
 LogObject::get_file_size_bytes()
 {
-  if (m_logFile) {
-    return m_logFile->get_size_bytes();
-  } else {
-    off_t max_size = 0;
-    LogHost *host;
-    for (host = m_host_list.first(); host; host = m_host_list.next(host)) {
-      LogFile *orphan_logfile = host->get_orphan_logfile();
-      if (orphan_logfile) {
-        off_t s = orphan_logfile->get_size_bytes();
-        if (s > max_size) {
-          max_size = s;
-        }
-      }
-    }
-    return max_size;
-  }
+  return m_logFile->get_size_bytes();
 }

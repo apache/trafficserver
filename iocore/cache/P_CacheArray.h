@@ -81,12 +81,16 @@ template <class T> TS_INLINE CacheArray<T>::operator const T *() const
   return data;
 }
 
-template <class T> TS_INLINE CacheArray<T>::operator T *()
+template <class T>
+TS_INLINE
+CacheArray<T>::operator T *()
 {
   return data;
 }
 
-template <class T> TS_INLINE T &CacheArray<T>::operator[](int idx)
+template <class T>
+TS_INLINE T &
+CacheArray<T>::operator[](int idx)
 {
   return data[idx];
 }

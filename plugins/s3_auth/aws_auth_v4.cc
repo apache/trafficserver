@@ -95,7 +95,7 @@ uriEncode(const String &in, bool isObjectName)
       result << "/";
     } else {
       /* Letters in the hexadecimal value must be upper-case, for example "%1A". */
-      result << "%" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << (int)i;
+      result << "%" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(i);
     }
   }
 
@@ -103,32 +103,68 @@ uriEncode(const String &in, bool isObjectName)
 }
 
 /**
- * @brief URI-decode a character string (AWS specific version, see spec)
+ * @brief checks if the string is URI-encoded (AWS specific encoding version, see spec)
  *
  * @see AWS spec: http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
  *
- * @todo Consider reusing / converting to TSStringPercentDecode()
- *       Currently we don't build a library/archive so we could link with the unit-test binary. Also using
- *       different sets of encode/decode functions during runtime and unit-testing did not seem as a good idea.
- * @param in string to be URI decoded
- * @return encoded string.
+ * @note According to the following RFC if the string is encoded and contains '%' it should
+ *       be followed by 2 hexadecimal symbols otherwise '%' should be encoded with %25:
+ *          https://tools.ietf.org/html/rfc3986#section-2.1
+ *
+ * @param in string to be URI checked
+ * @param isObjectName if true encoding didn't encode '/', kept it as it is.
+ * @return true if encoded, false not encoded.
  */
-String
-uriDecode(const String &in)
+bool
+isUriEncoded(const String &in, bool isObjectName)
 {
-  std::string result;
-  result.reserve(in.length());
-  size_t i = 0;
-  while (i < in.length()) {
-    if (in[i] == '%') {
-      result += static_cast<char>(std::stoi(in.substr(i + 1, 2), nullptr, 16));
-      i += 3;
-    } else {
-      result += in[i];
-      i++;
+  for (size_t pos = 0; pos < in.length(); pos++) {
+    char c = in[pos];
+
+    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+      /* found a unreserved character which should not have been be encoded regardless
+       * 'A'-'Z', 'a'-'z', '0'-'9', '-', '.', '_', and '~'.  */
+      continue;
+    }
+
+    if (' ' == c) {
+      /* space should have been encoded with %20 if the string was encoded */
+      return false;
+    }
+
+    if ('/' == c && !isObjectName) {
+      /* if this is not an object name '/' should have been encoded */
+      return false;
+    }
+
+    if ('%' == c) {
+      if (pos + 2 < in.length() && std::isxdigit(in[pos + 1]) && std::isxdigit(in[pos + 2])) {
+        /* if string was encoded we should have exactly 2 hexadecimal chars following it */
+        return true;
+      } else {
+        /* lonely '%' should have been encoded with %25 according to the RFC so likely not encoded */
+        return false;
+      }
     }
   }
-  return result;
+
+  return false;
+}
+
+String
+canonicalEncode(const String &in, bool isObjectName)
+{
+  String canonical;
+  if (!isUriEncoded(in, isObjectName)) {
+    /* Not URI-encoded */
+    canonical = uriEncode(in, isObjectName);
+  } else {
+    /* URI-encoded, then don't encode since AWS does not encode which is not mentioned in the spec,
+     * asked AWS, still waiting for confirmation */
+    canonical = in;
+  }
+
+  return canonical;
 }
 
 /**
@@ -224,9 +260,9 @@ getPayloadSha256(bool signPayload)
   }
 
   unsigned char payloadHash[SHA256_DIGEST_LENGTH];
-  SHA256((const unsigned char *)"", 0, payloadHash); /* empty content */
+  SHA256(reinterpret_cast<const unsigned char *>(""), 0, payloadHash); /* empty content */
 
-  return base16Encode((char *)payloadHash, SHA256_DIGEST_LENGTH);
+  return base16Encode(reinterpret_cast<char *>(payloadHash), SHA256_DIGEST_LENGTH);
 }
 
 /**
@@ -267,7 +303,7 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
   str = api.getPath(&length);
   String path("/");
   path.append(str, length);
-  String canonicalUri = uriEncode(path, /* isObjectName */ true);
+  String canonicalUri = canonicalEncode(path, /* isObjectName */ true);
   sha256Update(&canonicalRequestSha256Ctx, canonicalUri);
   sha256Update(&canonicalRequestSha256Ctx, "\n");
 
@@ -286,21 +322,9 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
     String param(token.substr(0, pos == String::npos ? token.size() : pos));
     String value(pos == String::npos ? "" : token.substr(pos + 1, token.size()));
 
-    String encodedParam = uriEncode(param, /* isObjectName */ false);
-
+    String encodedParam = canonicalEncode(param, /* isObjectName */ false);
     paramNames.insert(encodedParam);
-
-    /* Look for '%' first trying to avoid as many uri-decode calls as possible.
-     * it is hard to estimate which is more likely use-case - (1) URIs with uri-encoded query parameter
-     * values or (2) with unencoded which defines the success of this optimization */
-    if (nullptr == memchr(value.c_str(), '%', value.length()) || 0 == uriDecode(value).compare(value)) {
-      /* Not URI-encoded */
-      paramsMap[encodedParam] = uriEncode(value, /* isObjectName */ false);
-    } else {
-      /* URI-encoded, then don't encode since AWS does not encode which is not mentioned in the spec,
-       * asked AWS, still waiting for confirmation */
-      paramsMap[encodedParam] = value;
-    }
+    paramsMap[encodedParam] = canonicalEncode(value, /* isObjectName */ false);
   }
 
   String queryStr;
@@ -361,7 +385,11 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
     const char *trimValue = trimWhiteSpaces(value, valueLen, trimValueLen);
 
     signedHeadersSet.insert(lowercaseName);
-    headersMap[lowercaseName] = String(trimValue, trimValueLen);
+    if (headersMap.find(lowercaseName) == headersMap.end()) {
+      headersMap[lowercaseName] = String(trimValue, trimValueLen);
+    } else {
+      headersMap[lowercaseName].append(",").append(String(trimValue, trimValueLen));
+    }
   }
 
   for (const auto &it : signedHeadersSet) {
@@ -392,7 +420,7 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
 #ifdef AWS_AUTH_V4_DETAILED_DEBUG_OUTPUT
   std::cout << "</CanonicalRequest>" << std::endl;
 #endif
-  return base16Encode((char *)canonicalRequestSha256Hash, SHA256_DIGEST_LENGTH);
+  return base16Encode(reinterpret_cast<char *>(canonicalRequestSha256Hash), SHA256_DIGEST_LENGTH);
 }
 
 /**
@@ -639,10 +667,10 @@ getSignature(const char *awsSecret, size_t awsSecretLen, const char *awsRegion, 
       HMAC(EVP_sha256(), dateKey, dateKeyLen, (unsigned char *)awsRegion, awsRegionLen, dateRegionKey, &dateRegionKeyLen) &&
       HMAC(EVP_sha256(), dateRegionKey, dateRegionKeyLen, (unsigned char *)awsService, awsServiceLen, dateRegionServiceKey,
            &dateRegionServiceKeyLen) &&
-      HMAC(EVP_sha256(), dateRegionServiceKey, dateRegionServiceKeyLen, (unsigned char *)"aws4_request", 12, signingKey,
-           &signingKeyLen) &&
-      HMAC(EVP_sha256(), signingKey, signingKeyLen, (unsigned char *)stringToSign, stringToSignLen, (unsigned char *)signature,
-           &len)) {
+      HMAC(EVP_sha256(), dateRegionServiceKey, dateRegionServiceKeyLen, reinterpret_cast<const unsigned char *>("aws4_request"), 12,
+           signingKey, &signingKeyLen) &&
+      HMAC(EVP_sha256(), signingKey, signingKeyLen, (unsigned char *)stringToSign, stringToSignLen,
+           reinterpret_cast<unsigned char *>(signature), &len)) {
     return len;
   }
 

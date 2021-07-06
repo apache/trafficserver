@@ -24,7 +24,9 @@ TSVIONBytesGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: int64_t TSVIONBytesGet(TSVIO viop)
 

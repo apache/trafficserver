@@ -23,50 +23,67 @@
 #include "HttpHeader.h"
 #include "Range.h"
 #include "Stage.h"
-#include "slice.h"
 
 #include <netinet/in.h>
 
-void incrData();
+struct Config;
 
-void decrData();
+enum BlockState {
+  Pending,
+  PendingInt, // Pending internal refectch
+  PendingRef, // Pending reference refetch
+  Active,
+  ActiveInt, // Active internal refetch
+  ActiveRef, // Active reference refetch
+  Done,
+  Passthru, // non 206 response passthru
+  Fail,
+};
 
 struct Data {
   Data(Data const &) = delete;
   Data &operator=(Data const &) = delete;
 
-  int64_t const m_blockbytes_config; // configured slice block size
+  Config *const m_config;
+
   sockaddr_storage m_client_ip;
 
-  // for pristine url coming in
-  TSMBuffer m_urlbuffer{nullptr};
+  // transaction pointer
+  TSHttpTxn m_txnp{nullptr};
+
+  // for pristine/effective url coming in
+  TSMBuffer m_urlbuf{nullptr};
   TSMLoc m_urlloc{nullptr};
 
   char m_hostname[8192];
-  int m_hostlen;
+  int m_hostlen{0};
+
+  // read from slice block 0
+  char m_date[33];
+  int m_datelen{0};
   char m_etag[8192];
-  int m_etaglen;
-  char m_lastmodified[8192];
-  int m_lastmodifiedlen;
+  int m_etaglen{0};
+  char m_lastmodified[33];
+  int m_lastmodifiedlen{0};
 
-  TSHttpStatus m_statustype; // 200 or 206
+  int64_t m_contentlen{-1};
 
-  bool m_bail; // non 206/200 response
+  TSHttpStatus m_statustype{TS_HTTP_STATUS_NONE}; // 200 or 206
 
   Range m_req_range; // converted to half open interval
-  int64_t m_contentlen;
 
-  int64_t m_blocknum;      // block number to work on, -1 bad/stop
-  int64_t m_blockexpected; // body bytes expected
-  int64_t m_blockskip;     // number of bytes to skip in this block
-  int64_t m_blockconsumed; // body bytes consumed
-  bool m_iseos;            // server in EOS state
+  int64_t m_blocknum{-1};     // block number to work on, -1 bad/stop
+  int64_t m_blockexpected{0}; // body bytes expected
+  int64_t m_blockskip{0};     // number of bytes to skip in this block
+  int64_t m_blockconsumed{0}; // body bytes consumed
 
-  int64_t m_bytestosend; // header + content bytes to send
-  int64_t m_bytessent;   // number of bytes written to the client
+  BlockState m_blockstate{Pending}; // is there an active slice block
 
-  bool m_server_block_header_parsed;
-  bool m_server_first_header_parsed;
+  int64_t m_bytestosend{0}; // header + content bytes to send
+  int64_t m_bytessent{0};   // number of bytes written to the client
+
+  bool m_server_block_header_parsed{false};
+  bool m_server_first_header_parsed{false};
 
   Stage m_upstream;
   Stage m_dnstream;
@@ -76,50 +93,27 @@ struct Data {
 
   TSHttpParser m_http_parser{nullptr}; //!< cached for reuse
 
-  explicit Data(int64_t const blockbytes)
-    : m_blockbytes_config(blockbytes),
-      m_client_ip(),
-      m_urlbuffer(nullptr),
-      m_urlloc(nullptr),
-      m_hostlen(0),
-      m_etaglen(0),
-      m_lastmodifiedlen(0),
-      m_statustype(TS_HTTP_STATUS_NONE),
-      m_bail(false),
-      m_req_range(-1, -1),
-      m_contentlen(-1)
-
-      ,
-      m_blocknum(-1),
-      m_blockexpected(0),
-      m_blockskip(0),
-      m_blockconsumed(0),
-      m_iseos(false)
-
-      ,
-      m_bytestosend(0),
-      m_bytessent(0),
-      m_server_block_header_parsed(false),
-      m_server_first_header_parsed(false),
-      m_http_parser(nullptr)
+  explicit Data(Config *const config) : m_config(config)
   {
-    // incrData();
+    m_date[0]         = '\0';
     m_hostname[0]     = '\0';
-    m_lastmodified[0] = '\0';
     m_etag[0]         = '\0';
+    m_lastmodified[0] = '\0';
   }
 
   ~Data()
   {
-    // decrData();
-    if (nullptr != m_urlbuffer) {
+    if (nullptr != m_urlbuf) {
       if (nullptr != m_urlloc) {
-        TSHandleMLocRelease(m_urlbuffer, TS_NULL_MLOC, m_urlloc);
+        TSHandleMLocRelease(m_urlbuf, TS_NULL_MLOC, m_urlloc);
+        m_urlloc = nullptr;
       }
-      TSMBufferDestroy(m_urlbuffer);
+      TSMBufferDestroy(m_urlbuf);
+      m_urlbuf = nullptr;
     }
     if (nullptr != m_http_parser) {
       TSHttpParserDestroy(m_http_parser);
+      m_http_parser = nullptr;
     }
   }
 };

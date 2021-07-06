@@ -31,16 +31,27 @@
  ****************************************************************************/
 #pragma once
 
+#include <memory>
+
 #include "tscore/ink_platform.h"
 #include "ts/apidefs.h"
 #include <string_view>
+#include <cstring>
+#include <memory>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/objects.h>
 
 #include "P_EventSystem.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixNet.h"
+#include "P_ALPNSupport.h"
+#include "TLSSessionResumptionSupport.h"
+#include "TLSSNISupport.h"
+#include "TLSBasicSupport.h"
+#include "P_SSLUtils.h"
+#include "P_SSLConfig.h"
 
 // These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
@@ -66,8 +77,6 @@
 #define SSL_DEF_TLS_RECORD_BYTE_THRESHOLD 1000000
 #define SSL_DEF_TLS_RECORD_MSEC_THRESHOLD 1000
 
-class SSLNextProtocolSet;
-class SSLNextProtocolAccept;
 struct SSLCertLookup;
 
 typedef enum {
@@ -86,7 +95,11 @@ enum SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHA
 //  A VConnection for a network socket.
 //
 //////////////////////////////////////////////////////////////////
-class SSLNetVConnection : public UnixNetVConnection
+class SSLNetVConnection : public UnixNetVConnection,
+                          public ALPNSupport,
+                          public TLSSessionResumptionSupport,
+                          public TLSSNISupport,
+                          public TLSBasicSupport
 {
   typedef UnixNetVConnection super; ///< Parent type.
 
@@ -95,19 +108,12 @@ public:
   void clear() override;
   void free(EThread *t) override;
 
-  virtual void
-  enableRead()
-  {
-    read.enabled  = 1;
-    write.enabled = 1;
-  }
-
   bool
   trackFirstHandshake() override
   {
-    bool retval = sslHandshakeBeginTime == 0;
+    bool retval = this->get_tls_handshake_begin_time() == 0;
     if (retval) {
-      sslHandshakeBeginTime = Thread::get_hrtime();
+      this->_record_tls_handshake_begin_time();
     }
     return retval;
   }
@@ -124,23 +130,10 @@ public:
     sslHandshakeStatus = state;
   }
 
-  void
-  setSSLSessionCacheHit(bool state)
-  {
-    sslSessionCacheHit = state;
-  }
-
-  bool
-  getSSLSessionCacheHit() const
-  {
-    return sslSessionCacheHit;
-  }
-
   int sslServerHandShakeEvent(int &err);
   int sslClientHandShakeEvent(int &err);
   void net_read_io(NetHandler *nh, EThread *lthread) override;
   int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs) override;
-  void registerNextProtocolSet(SSLNextProtocolSet *);
   void do_io_close(int lerrno = -1) override;
 
   ////////////////////////////////////////////////////////////
@@ -150,15 +143,6 @@ public:
   ////////////////////////////////////////////////////////////
   SSLNetVConnection();
   ~SSLNetVConnection() override {}
-  static int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned *outlen, void *);
-  static int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
-                                  unsigned inlen, void *);
-
-  Continuation *
-  endpoint() const
-  {
-    return npnEndpoint;
-  }
 
   bool
   getSSLClientRenegotiationAbort() const
@@ -190,16 +174,12 @@ public:
   /// Reenable the VC after a pre-accept or SNI hook is called.
   virtual void reenable(NetHandler *nh, int event = TS_EVENT_CONTINUE);
 
-  /// Set the SSL context.
-  /// @note This must be called after the SSL endpoint has been created.
-  virtual bool sslContextSet(void *ctx);
-
   int64_t read_raw_data();
 
   void
   initialize_handshake_buffers()
   {
-    this->handShakeBuffer    = new_MIOBuffer();
+    this->handShakeBuffer    = new_MIOBuffer(SSLConfigParams::ssl_misc_max_iobuffer_size_index);
     this->handShakeReader    = this->handShakeBuffer->alloc_reader();
     this->handShakeHolder    = this->handShakeReader->clone();
     this->handShakeBioStored = 0;
@@ -241,8 +221,18 @@ public:
         }
       }
       break;
-    case HANDSHAKE_HOOKS_SNI:
+    case HANDSHAKE_HOOKS_CLIENT_HELLO:
+    case HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE:
       if (eventId == TS_EVENT_VCONN_START) {
+        retval = true;
+      } else if (eventId == TS_EVENT_SSL_CLIENT_HELLO) {
+        if (curHook) {
+          retval = true;
+        }
+      }
+      break;
+    case HANDSHAKE_HOOKS_SNI:
+      if (eventId == TS_EVENT_VCONN_START || eventId == TS_EVENT_SSL_CLIENT_HELLO) {
         retval = true;
       } else if (eventId == TS_EVENT_SSL_SERVERNAME) {
         if (curHook) {
@@ -252,7 +242,7 @@ public:
       break;
     case HANDSHAKE_HOOKS_CERT:
     case HANDSHAKE_HOOKS_CERT_INVOKE:
-      if (eventId == TS_EVENT_VCONN_START || eventId == TS_EVENT_SSL_SERVERNAME) {
+      if (eventId == TS_EVENT_VCONN_START || eventId == TS_EVENT_SSL_CLIENT_HELLO || eventId == TS_EVENT_SSL_SERVERNAME) {
         retval = true;
       } else if (eventId == TS_EVENT_SSL_CERT) {
         if (curHook) {
@@ -287,18 +277,6 @@ public:
     return retval;
   }
 
-  const char *
-  getSSLProtocol(void) const
-  {
-    return ssl ? SSL_get_version(ssl) : nullptr;
-  }
-
-  const char *
-  getSSLCipherSuite(void) const
-  {
-    return ssl ? SSL_get_cipher_name(ssl) : nullptr;
-  }
-
   bool
   has_tunnel_destination() const
   {
@@ -317,17 +295,15 @@ public:
     return tunnel_port;
   }
 
-  /* Returns true if this vc was configured for forward_route
-   */
-  bool
-  decrypt_tunnel()
-  {
-    return has_tunnel_destination() && tunnel_decrypt;
-  }
+  bool decrypt_tunnel() const;
+  bool upstream_tls() const;
+  SNIRoutingType tunnel_type() const;
 
   void
-  set_tunnel_destination(const std::string_view &destination, bool decrypt)
+  set_tunnel_destination(const std::string_view &destination, SNIRoutingType type)
   {
+    _tunnel_type = type;
+
     auto pos = destination.find(":");
     if (nullptr != tunnel_host) {
       ats_free(tunnel_host);
@@ -339,7 +315,6 @@ public:
       tunnel_port = 0;
       tunnel_host = ats_strndup(destination.data(), destination.length());
     }
-    tunnel_decrypt = decrypt;
   }
 
   int populate_protocol(std::string_view *results, int n) const override;
@@ -352,16 +327,23 @@ public:
    */
   int populate(Connection &con, Continuation *c, void *arg) override;
 
-  SSL *ssl                         = nullptr;
-  ink_hrtime sslHandshakeBeginTime = 0;
-  ink_hrtime sslHandshakeEndTime   = 0;
-  ink_hrtime sslLastWriteTime      = 0;
-  int64_t sslTotalBytesSent        = 0;
-  // The serverName is either a pointer to the name fetched from the
-  // SSL object or the empty string.  Therefore, we do not allocate
-  // extra memory for this value.  If plugins in the future can set the
-  // serverName value, this strategy will have to change.
-  const char *serverName = nullptr;
+  SSL *ssl                    = nullptr;
+  ink_hrtime sslLastWriteTime = 0;
+  int64_t sslTotalBytesSent   = 0;
+
+  // The serverName is either a pointer to the (null-terminated) name fetched from the
+  // SSL object or the empty string.
+  const char *
+  get_server_name() const override
+  {
+    return _get_sni_server_name() ? _get_sni_server_name() : "";
+  }
+
+  bool
+  support_sni() const override
+  {
+    return true;
+  }
 
   /// Set by asynchronous hooks to request a specific operation.
   SslVConnOp hookOpRequested = SSL_HOOK_OP_DEFAULT;
@@ -373,19 +355,114 @@ public:
   bool protocol_mask_set = false;
   unsigned long protocol_mask;
 
+  // early data related stuff
+  bool early_data_finish            = false;
+  MIOBuffer *early_data_buf         = nullptr;
+  IOBufferReader *early_data_reader = nullptr;
+  int64_t read_from_early_data      = 0;
+
+  // Only applies during the VERIFY certificate hooks (client and server side)
+  // Means to give the plugin access to the data structure passed in during the underlying
+  // openssl callback so the plugin can make more detailed decisions about the
+  // validity of the certificate in their cases
+  X509_STORE_CTX *
+  get_verify_cert()
+  {
+    return verify_cert;
+  }
+  void
+  set_verify_cert(X509_STORE_CTX *ctx)
+  {
+    verify_cert = ctx;
+  }
+
+  const char *
+  get_sni_servername() const override
+  {
+    return SSL_get_servername(this->ssl, TLSEXT_NAMETYPE_host_name);
+  }
+
+  bool
+  peer_provided_cert() const override
+  {
+    X509 *cert = SSL_get_peer_certificate(this->ssl);
+    if (cert != nullptr) {
+      X509_free(cert);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  int
+  provided_cert() const override
+  {
+    if (this->get_context() == NET_VCONNECTION_OUT) {
+      return this->sent_cert;
+    } else {
+      return 1;
+    }
+  }
+
+  void
+  set_sent_cert(int send_the_cert)
+  {
+    sent_cert = send_the_cert;
+  }
+
+  void set_ca_cert_file(std::string_view file, std::string_view dir);
+
+  const char *
+  get_ca_cert_file()
+  {
+    return _ca_cert_file.get();
+  }
+  const char *
+  get_ca_cert_dir()
+  {
+    return _ca_cert_dir.get();
+  }
+
+  void
+  set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask)
+  {
+    SSL_set_options(this->ssl, proto_mask);
+    SSL_clear_options(this->ssl, max_mask & ~proto_mask);
+  }
+
+protected:
+  SSL *
+  _get_ssl_object() const override
+  {
+    return this->ssl;
+  }
+  ssl_curve_id _get_tls_curve() const override;
+
+  const IpEndpoint &
+  _getLocalEndpoint() override
+  {
+    return local_addr;
+  }
+
+  void _fire_ssl_servername_event() override;
+
 private:
   std::string_view map_tls_protocol_to_tag(const char *proto_string) const;
   bool update_rbio(bool move_to_socket);
+  void increment_ssl_version_metric(int version) const;
+  NetProcessor *_getNetProcessor() override;
+  void *_prepareForMigration() override;
 
   enum SSLHandshakeStatus sslHandshakeStatus = SSL_HANDSHAKE_ONGOING;
   bool sslClientRenegotiationAbort           = false;
-  bool sslSessionCacheHit                    = false;
   MIOBuffer *handShakeBuffer                 = nullptr;
   IOBufferReader *handShakeHolder            = nullptr;
   IOBufferReader *handShakeReader            = nullptr;
   int handShakeBioStored                     = 0;
 
   bool transparentPassThrough = false;
+
+  int sent_cert = 0;
 
   /// The current hook.
   /// @note For @C SSL_HOOKS_INVOKE, this is the hook to invoke.
@@ -394,6 +471,8 @@ private:
   enum SSLHandshakeHookState {
     HANDSHAKE_HOOKS_PRE,
     HANDSHAKE_HOOKS_PRE_INVOKE,
+    HANDSHAKE_HOOKS_CLIENT_HELLO,
+    HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE,
     HANDSHAKE_HOOKS_SNI,
     HANDSHAKE_HOOKS_CERT,
     HANDSHAKE_HOOKS_CERT_INVOKE,
@@ -405,16 +484,57 @@ private:
     HANDSHAKE_HOOKS_DONE
   } sslHandshakeHookState = HANDSHAKE_HOOKS_PRE;
 
-  const SSLNextProtocolSet *npnSet = nullptr;
-  Continuation *npnEndpoint        = nullptr;
-  SessionAccept *sessionAcceptPtr  = nullptr;
-  bool sslTrace                    = false;
-  int64_t redoWriteSize            = 0;
-  char *tunnel_host                = nullptr;
-  in_port_t tunnel_port            = 0;
-  bool tunnel_decrypt              = false;
+  int64_t redoWriteSize       = 0;
+  char *tunnel_host           = nullptr;
+  in_port_t tunnel_port       = 0;
+  SNIRoutingType _tunnel_type = SNIRoutingType::NONE;
+  X509_STORE_CTX *verify_cert = nullptr;
+
+  // Null-terminated string, or nullptr if there is no SNI server name.
+  std::unique_ptr<char[]> _ca_cert_file;
+  std::unique_ptr<char[]> _ca_cert_dir;
+
+  EventIO async_ep{};
+
+private:
+  void _make_ssl_connection(SSL_CTX *ctx);
+  void _bindSSLObject();
+  void _unbindSSLObject();
+
+  int _ssl_read_from_net(EThread *lthread, int64_t &ret);
+  ssl_error_t _ssl_read_buffer(void *buf, int64_t nbytes, int64_t &nread);
+  ssl_error_t _ssl_write_buffer(const void *buf, int64_t nbytes, int64_t &nwritten);
+  ssl_error_t _ssl_connect();
+  ssl_error_t _ssl_accept();
 };
 
 typedef int (SSLNetVConnection::*SSLNetVConnHandler)(int, void *);
 
 extern ClassAllocator<SSLNetVConnection> sslNetVCAllocator;
+
+//
+// Inline Functions
+//
+inline SNIRoutingType
+SSLNetVConnection::tunnel_type() const
+{
+  return _tunnel_type;
+}
+
+/**
+   Returns true if this vc was configured for forward_route or partial_blind_route
+ */
+inline bool
+SSLNetVConnection::decrypt_tunnel() const
+{
+  return _tunnel_type == SNIRoutingType::FORWARD || _tunnel_type == SNIRoutingType::PARTIAL_BLIND;
+}
+
+/**
+   Returns true if this vc was configured partial_blind_route
+ */
+inline bool
+SSLNetVConnection::upstream_tls() const
+{
+  return _tunnel_type == SNIRoutingType::PARTIAL_BLIND;
+}

@@ -21,34 +21,37 @@ import os
 Test.Summary = '''
 Test log fields.
 '''
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram(
-        "curl", "Curl need to be installed on system for this test to work"),
-    Condition.IsPlatform("linux")
-)
 
-# Define default ATS
-ts = Test.MakeATSProcess("ts")
-# Microserver
+ts = Test.MakeATSProcess("ts", enable_cache=False)
 server = Test.MakeOriginServer("server")
 
 request_header = {'timestamp': 100, "headers": "GET /test-1 HTTP/1.1\r\nHost: test-1\r\n\r\n", "body": ""}
-response_header = {'timestamp': 100,
-                   "headers": "HTTP/1.1 200 OK\r\nTest: 1\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n", "body": "Test 1"}
+response_header = {
+    'timestamp': 100,
+    "headers": "HTTP/1.1 200 OK\r\nTest: 1\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n",
+    "body": "Test 1"}
 server.addResponse("sessionlog.json", request_header, response_header)
 server.addResponse("sessionlog.json",
-                   {'timestamp': 101, "headers": "GET /test-2 HTTP/1.1\r\nHost: test-2\r\n\r\n", "body": ""},
-                   {'timestamp': 101, "headers": "HTTP/1.1 200 OK\r\nTest: 2\r\nContent-Type: application/jason\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n", "body": "Test 2"}
-                   )
+                   {'timestamp': 101,
+                    "headers": "GET /test-2 HTTP/1.1\r\nHost: test-2\r\n\r\n",
+                    "body": ""},
+                   {'timestamp': 101,
+                       "headers": "HTTP/1.1 200 OK\r\nTest: 2\r\nContent-Type: application/jason\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n",
+                       "body": "Test 2"})
 server.addResponse("sessionlog.json",
-                   {'timestamp': 102, "headers": "GET /test-3 HTTP/1.1\r\nHost: test-3\r\n\r\n", "body": ""},
-                   {'timestamp': 102, "headers": "HTTP/1.1 200 OK\r\nTest: 3\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n", "body": "Test 3"}
-                   )
+                   {'timestamp': 102,
+                    "headers": "GET /test-3 HTTP/1.1\r\nHost: test-3\r\n\r\n",
+                    "body": ""},
+                   {'timestamp': 102,
+                       "headers": "HTTP/1.1 200 OK\r\nTest: 3\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n",
+                       "body": "Test 3"})
+
+nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
 ts.Disk.records_config.update({
     'proxy.config.net.connections_throttle': 100,
-    'proxy.config.http.cache.http': 0
+    'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
+    'proxy.config.dns.resolv_conf': 'NULL'
 })
 # setup some config file for this server
 ts.Disk.remap_config.AddLine(
@@ -57,13 +60,13 @@ ts.Disk.remap_config.AddLine(
 
 ts.Disk.logging_yaml.AddLines(
     '''
-formats:
-  - name: custom
-    format: '%<{Content-Type}essh>'
-
-logs:
-  - filename: field-test
-    format: custom
+logging:
+  formats:
+    - name: custom
+      format: '%<{Content-Type}essh>'
+  logs:
+    - filename: field-test
+      format: custom
 '''.split("\n")
 )
 
@@ -78,6 +81,7 @@ Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'field-test.log'),
 tr = Test.AddTestRun()
 # Wait for the micro server
 tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(nameserver)
 # Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
@@ -95,7 +99,10 @@ tr.Processes.Default.Command = 'curl --verbose --header "Host: test-3" http://lo
     ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun()
-tr.DelayStart = 10
-tr.Processes.Default.Command = 'echo "Delay for log flush"'
-tr.Processes.Default.ReturnCode = 0
+# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
+test_run = Test.AddTestRun()
+test_run.Processes.Default.Command = (
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
+    os.path.join(ts.Variables.LOGDIR, 'field-test.log')
+)
+test_run.Processes.Default.ReturnCode = 0

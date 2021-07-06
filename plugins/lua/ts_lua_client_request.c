@@ -16,8 +16,8 @@
   limitations under the License.
 */
 
-#include "tscore/ink_platform.h"
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include "ts_lua_util.h"
 
 static void ts_lua_inject_client_request_client_addr_api(lua_State *L);
@@ -66,6 +66,15 @@ static int ts_lua_client_request_client_addr_get_port(lua_State *L);
 static int ts_lua_client_request_client_addr_get_addr(lua_State *L);
 static int ts_lua_client_request_client_addr_get_incoming_port(lua_State *L);
 
+static void ts_lua_inject_client_request_ssl_reused_api(lua_State *L);
+static int ts_lua_client_request_get_ssl_reused(lua_State *L);
+static void ts_lua_inject_client_request_ssl_cipher_api(lua_State *L);
+static int ts_lua_client_request_get_ssl_cipher(lua_State *L);
+static void ts_lua_inject_client_request_ssl_protocol_api(lua_State *L);
+static int ts_lua_client_request_get_ssl_protocol(lua_State *L);
+static void ts_lua_inject_client_request_ssl_curve_api(lua_State *L);
+static int ts_lua_client_request_get_ssl_curve(lua_State *L);
+
 void
 ts_lua_inject_client_request_api(lua_State *L)
 {
@@ -82,6 +91,10 @@ ts_lua_inject_client_request_api(lua_State *L)
   ts_lua_inject_client_request_version_api(L);
   ts_lua_inject_client_request_body_size_api(L);
   ts_lua_inject_client_request_header_size_api(L);
+  ts_lua_inject_client_request_ssl_reused_api(L);
+  ts_lua_inject_client_request_ssl_cipher_api(L);
+  ts_lua_inject_client_request_ssl_protocol_api(L);
+  ts_lua_inject_client_request_ssl_curve_api(L);
 
   lua_setfield(L, -2, "client_request");
 }
@@ -163,7 +176,7 @@ ts_lua_client_request_header_get(lua_State *L)
         next_field_loc = TSMimeHdrFieldNextDup(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, field_loc);
         lua_pushlstring(L, val, val_len);
         count++;
-        // multiple headers with the same name must be semantically the same as one value which is comma seperated
+        // multiple headers with the same name must be semantically the same as one value which is comma separated
         if (next_field_loc != TS_NULL_MLOC) {
           lua_pushlstring(L, ",", 1);
           count++;
@@ -483,6 +496,7 @@ ts_lua_client_request_set_url_port(lua_State *L)
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
+  // NOLINTNEXTLINE
   port = luaL_checkint(L, 1);
 
   TSUrlPortSet(http_ctx->client_request_bufp, http_ctx->client_request_url, port);
@@ -886,7 +900,7 @@ ts_lua_client_request_set_version(lua_State *L)
 {
   const char *version;
   size_t len;
-  int major, minor;
+  unsigned int major, minor;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -920,6 +934,121 @@ ts_lua_client_request_get_header_size(lua_State *L)
 
   header_size = TSHttpTxnClientReqHdrBytesGet(http_ctx->txnp);
   lua_pushnumber(L, header_size);
+
+  return 1;
+}
+
+static void
+ts_lua_inject_client_request_ssl_reused_api(lua_State *L)
+{
+  lua_pushcfunction(L, ts_lua_client_request_get_ssl_reused);
+  lua_setfield(L, -2, "get_ssl_reused");
+}
+
+static int
+ts_lua_client_request_get_ssl_reused(lua_State *L)
+{
+  int ssl_reused = 0;
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn ssnp;
+  TSVConn client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    ssl_reused = TSVConnIsSslReused(client_conn);
+  }
+
+  lua_pushnumber(L, ssl_reused);
+
+  return 1;
+}
+
+static void
+ts_lua_inject_client_request_ssl_cipher_api(lua_State *L)
+{
+  lua_pushcfunction(L, ts_lua_client_request_get_ssl_cipher);
+  lua_setfield(L, -2, "get_ssl_cipher");
+}
+
+static int
+ts_lua_client_request_get_ssl_cipher(lua_State *L)
+{
+  const char *ssl_cipher = "-";
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn ssnp;
+  TSVConn client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    ssl_cipher = TSVConnSslCipherGet(client_conn);
+  }
+
+  lua_pushstring(L, ssl_cipher);
+
+  return 1;
+}
+
+static void
+ts_lua_inject_client_request_ssl_protocol_api(lua_State *L)
+{
+  lua_pushcfunction(L, ts_lua_client_request_get_ssl_protocol);
+  lua_setfield(L, -2, "get_ssl_protocol");
+}
+
+static int
+ts_lua_client_request_get_ssl_protocol(lua_State *L)
+{
+  const char *ssl_protocol = "-";
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn ssnp;
+  TSVConn client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    ssl_protocol = TSVConnSslProtocolGet(client_conn);
+  }
+
+  lua_pushstring(L, ssl_protocol);
+
+  return 1;
+}
+
+static void
+ts_lua_inject_client_request_ssl_curve_api(lua_State *L)
+{
+  lua_pushcfunction(L, ts_lua_client_request_get_ssl_curve);
+  lua_setfield(L, -2, "get_ssl_curve");
+}
+
+static int
+ts_lua_client_request_get_ssl_curve(lua_State *L)
+{
+  const char *ssl_curve = "-";
+  ts_lua_http_ctx *http_ctx;
+  TSHttpSsn ssnp;
+  TSVConn client_conn;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  ssnp        = TSHttpTxnSsnGet(http_ctx->txnp);
+  client_conn = TSHttpSsnClientVConnGet(ssnp);
+
+  if (TSVConnIsSsl(client_conn)) {
+    ssl_curve = TSVConnSslCurveGet(client_conn);
+  }
+
+  lua_pushstring(L, ssl_curve);
 
   return 1;
 }

@@ -28,10 +28,10 @@ accomplished by examining the initial data from the inbound connection to decide
 destination. The initial data is then sent to the destination and subsequently |TS| forwards all
 data read on one connection to the other and vice versa.
 
-.. image:: ../uml/images/l4-basic-sequence.svg
+.. figure:: ../uml/images/l4-basic-sequence.svg
    :align: center
 
-In this way it acts similary to `nc <https://linux.die.net/man/1/nc>`__.
+In this way it acts similarly to `nc <https://linux.die.net/man/1/nc>`__.
 
 The primary differences between different types of layer 4 routing is the mechanism by which |TS|
 creates the outbound connection. This is described in detail in the type specific documentation.
@@ -51,7 +51,7 @@ SNI Routing
 Currently the only directly supported layer 4 routing (as of version 8.0) is SNI based routing. This
 imposes the requirement on the traffic that the inbound connection must be TLS.
 
-SNI routing is configured by :file:`ssl_server_name.yaml`.
+SNI routing is configured by :file:`sni.yaml`.
 
 If SNI Routing is enabled the initial "`CLIENT HELLO
 <https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" data of an inbound TLS connection is
@@ -61,7 +61,10 @@ the option of interest is ``tunnel_route``. If this is set then |TS| synthesizes
 request to itself with the ``tunnel_route`` host and port as the upstream. That is, the inbound
 connection is treated as if the user agent had sent a
 ``CONNECT`` to the upstream and forwards the "`CLIENT HELLO
-<https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" to it.
+<https://tools.ietf.org/html/rfc5246#section-7.4.1.2>`__" to it. In addition to the method appearing
+as ``CONNECT``, be aware that logs printing the URL via the ``<%cquc>`` field format will show the
+scheme in the URL as ``tunnel``. The scheme as printed via ``<%cqus>``, however, will show the
+scheme used in the original client request.
 
 Example
 -------
@@ -96,27 +99,26 @@ service-1.example.com      app-server-29:443
 service-2.example.com      app-server-56:4443
 ========================== =====================================
 
-The :file:`ssl_server_name.yaml` contents would be
+The :file:`sni.yaml` contents would be
 
 .. code:: yaml
 
 
+   sni:
    - tunnel_route: app-server-29:443
      fqdn: service-1.example.com
 
    - tunnel_route: app-server-56:4443
      fqdn: service-2.example.com
 
-In addition to this, in the :file:`records.config` file, edit the following variables:
+In addition to this, in the :file:`records.config` file, edit ``connect_ports`` like so:
 
    -  :ts:cv:`proxy.config.http.connect_ports`: ``443 4443`` to allow |TS| to connect
       to the destination port
-   -  :ts:cv:`proxy.config.url_remap.remap_required`: ``0`` to permit |TS| to process requests
-      for hosts not explicitly configured in the remap rules
 
 The sequence of network activity for a Client connecting to ``service-2`` is
 
-.. image:: ../uml/images/l4-sni-routing-seq.svg
+.. figure:: ../uml/images/l4-sni-routing-seq.svg
    :align: center
 
 Note the destination for the outbound TCP connection and the HTTP ``CONNECT`` is the same. If this
@@ -125,5 +127,5 @@ In this case the proxy request is available in the :c:macro:`TS_HTTP_TXN_START_H
 cannot be done using remap because for a ``CONNECT`` there is no remap phase. Note that for a
 tunneled connection like this, the only transaction hooks that will be triggered are
 :c:macro:`TS_HTTP_TXN_START_HOOK` and :c:macro:`TS_HTTP_TXN_CLOSE_HOOK`. In addition, because |TS|
-does not terminate (and thefore does not decrypt) the connection, it cannot be cached or served from
+does not terminate (and therefore does not decrypt) the connection, it cannot be cached or served from
 cache.

@@ -24,9 +24,32 @@ TSHttpTxnServerReqGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
 
-.. function:: TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * offset)
+    #include <ts/ts.h>
+
+.. function:: TSReturnCode TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer * bufp, TSMLoc * obj)
 
 Description
 ===========
+
+Get the request |TS| is sending to the upstream (server) for the transaction :arg:`txnp`.
+:arg:`bufp` and :arg:`obj` should be valid pointers to use as return values. The call site could
+look something like ::
+
+   TSMBuffer mbuffer;
+   TSMLoc mloc;
+   if (TS_SUCCESS == TSHttpTxnServerReqGet(&mbuffer, &mloc)) {
+      /* Can use safely mbuffer, mloc for subsequent API calls */
+   } else {
+      /* mbuffer, mloc in an undefined state */
+   }
+
+This call returns :c:macro:`TS_SUCCESS` on success, and :c:macro:`TS_ERROR` on failure. It is the
+caller's responsibility to see that :arg:`txnp` is a valid transaction.
+
+Once the request object is obtained, it can be used to access all of the elements of the request,
+such as the URL, the header fields, etc. This is also the mechanism by which a plugin can change the
+upstream request, if done before the request is sent (in or before
+:c:macro:`TS_HTTP_SEND_REQUEST_HDR_HOOK`). Note that for earlier hooks, the request may not yet
+exist, in which case an error is returned.

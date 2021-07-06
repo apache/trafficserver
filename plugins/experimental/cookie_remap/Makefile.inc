@@ -19,7 +19,7 @@ pkglib_LTLIBRARIES += experimental/cookie_remap/cookie_remap.la
 experimental_cookie_remap_cookie_remap_la_SOURCES = \
 	experimental/cookie_remap/cookie_remap.cc \
 	experimental/cookie_remap/hash.c \
-	experimental/cookie_remap/strip.c \
+	experimental/cookie_remap/strip.cc \
 	experimental/cookie_remap/cookiejar.cc
 
 experimental_cookie_remap_cookie_remap_la_LDFLAGS = \
@@ -33,7 +33,7 @@ check_PROGRAMS +=  \
 experimental_cookie_remap_test_cookiejar_CPPFLAGS = $(AM_CPPFLAGS) -Iexperimental/cookie_remap -I$(abs_top_srcdir)/tests/include
 experimental_cookie_remap_test_cookiejar_SOURCES = \
 	experimental/cookie_remap/test_cookiejar.cc \
-	experimental/cookie_remap/strip.c \
+	experimental/cookie_remap/strip.cc \
 	experimental/cookie_remap/cookiejar.cc \
 	experimental/cookie_remap/cookiejar.h
 

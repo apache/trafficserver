@@ -42,7 +42,7 @@ Cache::link(Continuation *cont, const CacheKey *from, const CacheKey *to, CacheF
 
   c->buf = new_IOBufferData(BUFFER_SIZE_INDEX_512);
 #ifdef DEBUG
-  Doc *doc = (Doc *)c->buf->data();
+  Doc *doc = reinterpret_cast<Doc *>(c->buf->data());
   memcpy(doc->data(), to, sizeof(*to)); // doublecheck
 #endif
 
@@ -137,14 +137,14 @@ CacheVC::derefRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (!buf) {
     goto Lcollision;
   }
-  if ((int)io.aio_result != (int)io.aiocb.aio_nbytes) {
+  if (static_cast<int>(io.aio_result) != static_cast<int>(io.aiocb.aio_nbytes)) {
     goto Ldone;
   }
   if (!dir_agg_valid(vol, &dir)) {
     last_collision = nullptr;
     goto Lcollision;
   }
-  doc = (Doc *)buf->data();
+  doc = reinterpret_cast<Doc *>(buf->data());
   if (!(doc->first_key == key)) {
     goto Lcollision;
   }

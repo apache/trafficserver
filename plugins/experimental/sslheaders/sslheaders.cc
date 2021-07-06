@@ -33,10 +33,10 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
   TSMBuffer mbuf;
   TSMLoc mhdr;
 
-  txn                 = (TSHttpTxn)edata;
-  hdr                 = (const SslHdrInstance *)TSContDataGet(cont);
+  txn                 = static_cast<TSHttpTxn>(edata);
+  hdr                 = static_cast<const SslHdrInstance *>(TSContDataGet(cont));
   TSVConn vconn       = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txn));
-  TSSslConnection ssl = TSVConnSSLConnectionGet(vconn);
+  TSSslConnection ssl = TSVConnSslConnectionGet(vconn);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -61,7 +61,7 @@ SslHdrExpandRequestHook(TSCont cont, TSEvent event, void *edata)
     goto done;
   }
 
-  SslHdrExpand((SSL *)ssl, hdr->expansions, mbuf, mhdr);
+  SslHdrExpand(reinterpret_cast<SSL *>(ssl), hdr->expansions, mbuf, mhdr);
   TSHandleMLocRelease(mbuf, TS_NULL_MLOC, mhdr);
 
 done:
@@ -220,7 +220,7 @@ SslHdrParseOptions(int argc, const char **argv)
   for (;;) {
     int opt;
 
-    opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
+    opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
     switch (opt) {
     case 'a':
       if (strcmp(optarg, "client") == 0) {
@@ -268,13 +268,13 @@ TSPluginInit(int argc, const char *argv[])
     SslHdrError("plugin registration failed");
   }
 
-  hdr = SslHdrParseOptions(argc, (const char **)argv);
+  hdr = SslHdrParseOptions(argc, static_cast<const char **>(argv));
   if (hdr) {
     switch (hdr->attach) {
     case SSL_HEADERS_ATTACH_SERVER:
       TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
       break;
-    case SSL_HEADERS_ATTACH_BOTH: /* fallthru */
+    case SSL_HEADERS_ATTACH_BOTH: /* fallthrough */
     case SSL_HEADERS_ATTACH_CLIENT:
       TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, hdr->cont);
       TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
@@ -306,20 +306,20 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char * /* err */, in
 void
 TSRemapDeleteInstance(void *instance)
 {
-  SslHdrInstance *hdr = (SslHdrInstance *)instance;
+  SslHdrInstance *hdr = static_cast<SslHdrInstance *>(instance);
   delete hdr;
 }
 
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
 {
-  SslHdrInstance *hdr = (SslHdrInstance *)instance;
+  SslHdrInstance *hdr = static_cast<SslHdrInstance *>(instance);
 
   switch (hdr->attach) {
   case SSL_HEADERS_ATTACH_SERVER:
     TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
     break;
-  case SSL_HEADERS_ATTACH_BOTH: /* fallthru */
+  case SSL_HEADERS_ATTACH_BOTH: /* fallthrough */
   case SSL_HEADERS_ATTACH_CLIENT:
     TSHttpTxnHookAdd(txn, TS_HTTP_READ_REQUEST_HDR_HOOK, hdr->cont);
     TSHttpTxnHookAdd(txn, TS_HTTP_SEND_REQUEST_HDR_HOOK, hdr->cont);
@@ -329,8 +329,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)
   return TSREMAP_NO_REMAP;
 }
 
-SslHdrInstance::SslHdrInstance()
-  : expansions(), attach(SSL_HEADERS_ATTACH_SERVER), cont(TSContCreate(SslHdrExpandRequestHook, nullptr))
+SslHdrInstance::SslHdrInstance() : expansions(), cont(TSContCreate(SslHdrExpandRequestHook, nullptr))
 {
   TSContDataSet(cont, this);
 }
@@ -338,9 +337,4 @@ SslHdrInstance::SslHdrInstance()
 SslHdrInstance::~SslHdrInstance()
 {
   TSContDestroy(cont);
-}
-
-void
-SslHdrInstance::register_hooks()
-{
 }

@@ -400,7 +400,7 @@ dir_clear_range(off_t start, off_t end, Vol *vol)
 {
   for (off_t i = 0; i < vol->buckets * DIR_DEPTH * vol->segments; i++) {
     Dir *e = dir_index(vol, i);
-    if (!dir_token(e) && dir_offset(e) >= (int64_t)start && dir_offset(e) < (int64_t)end) {
+    if (!dir_token(e) && dir_offset(e) >= static_cast<int64_t>(start) && dir_offset(e) < static_cast<int64_t>(end)) {
       CACHE_DEC_DIR_USED(vol->mutex);
       dir_set_offset(e, 0); // delete
     }
@@ -513,7 +513,7 @@ dir_segment_accounted(int s, Vol *d, int offby, int *f, int *u, int *et, int *v,
     *av = agg_valid;
   }
   if (as) {
-    *as = used ? (int)(agg_size / used) : 0;
+    *as = used ? static_cast<int>(agg_size / used) : 0;
   }
   ink_assert(d->buckets * DIR_DEPTH - (free + used + empty) <= offby);
   return d->buckets * DIR_DEPTH - (free + used + empty) <= offby;
@@ -558,7 +558,7 @@ Lagain:
         if (collision) {
           if (collision == e) {
             collision = nullptr;
-            // increment collison stat
+            // increment collision stat
             // Note: dir_probe could be called multiple times
             // for the same document and so the collision stat
             // may not accurately reflect the number of documents
@@ -823,7 +823,7 @@ dir_lookaside_fixup(const CacheKey *key, Vol *d)
       DDebug("dir_lookaside", "fixup %X %X offset %" PRId64 " phase %d %d", key->slice32(0), key->slice32(1),
              dir_offset(&b->new_dir), dir_phase(&b->new_dir), res);
       int64_t o = dir_offset(&b->dir), n = dir_offset(&b->new_dir);
-      d->ram_cache->fixup(key, (uint32_t)(o >> 32), (uint32_t)o, (uint32_t)(n >> 32), (uint32_t)n);
+      d->ram_cache->fixup(key, static_cast<uint64_t>(o), static_cast<uint64_t>(n));
       d->lookaside[i].remove(b);
       free_EvacuationBlock(b, d->mutex->thread_holding);
       return res;
@@ -973,7 +973,7 @@ sync_cache_dir_on_shutdown()
 
       int r = pwrite(d->fd, d->agg_buffer, d->agg_buf_pos, d->header->write_pos);
       if (r != d->agg_buf_pos) {
-        ink_assert(!"flusing agg buffer failed");
+        ink_assert(!"flushing agg buffer failed");
         continue;
       }
       d->header->last_write_pos = d->header->write_pos;
@@ -988,17 +988,17 @@ sync_cache_dir_on_shutdown()
         if (buf_huge) {
           ats_free_hugepage(buf, buflen);
         } else {
-          ats_memalign_free(buf);
+          ats_free(buf);
         }
         buf = nullptr;
       }
       buflen = dirlen;
       if (ats_hugepage_enabled()) {
-        buf      = (char *)ats_alloc_hugepage(buflen);
+        buf      = static_cast<char *>(ats_alloc_hugepage(buflen));
         buf_huge = true;
       }
       if (buf == nullptr) {
-        buf      = (char *)ats_memalign(ats_pagesize(), buflen);
+        buf      = static_cast<char *>(ats_memalign(ats_pagesize(), buflen));
         buf_huge = false;
       }
     }
@@ -1023,7 +1023,7 @@ sync_cache_dir_on_shutdown()
     if (buf_huge) {
       ats_free_hugepage(buf, buflen);
     } else {
-      ats_memalign_free(buf);
+      ats_free(buf);
     }
     buf = nullptr;
   }
@@ -1044,7 +1044,7 @@ Lrestart:
       if (buf_huge) {
         ats_free_hugepage(buf, buflen);
       } else {
-        ats_memalign_free(buf);
+        ats_free(buf);
       }
       buflen   = 0;
       buf      = nullptr;
@@ -1063,7 +1063,7 @@ Lrestart:
 
   if (event == AIO_EVENT_DONE) {
     // AIO Thread
-    if (io.aio_result != (int64_t)io.aiocb.aio_nbytes) {
+    if (io.aio_result != static_cast<int64_t>(io.aiocb.aio_nbytes)) {
       Warning("vol write error during directory sync '%s'", gvol[vol_idx]->hash_text.get());
       event = EVENT_NONE;
       goto Ldone;
@@ -1121,17 +1121,17 @@ Lrestart:
           if (buf_huge) {
             ats_free_hugepage(buf, buflen);
           } else {
-            ats_memalign_free(buf);
+            ats_free(buf);
           }
           buf = nullptr;
         }
         buflen = dirlen;
         if (ats_hugepage_enabled()) {
-          buf      = (char *)ats_alloc_hugepage(buflen);
+          buf      = static_cast<char *>(ats_alloc_hugepage(buflen));
           buf_huge = true;
         }
         if (buf == nullptr) {
-          buf      = (char *)ats_memalign(ats_pagesize(), buflen);
+          buf      = static_cast<char *>(ats_memalign(ats_pagesize(), buflen));
           buf_huge = false;
         }
       }
@@ -1148,15 +1148,15 @@ Lrestart:
       // write header
       aio_write(vol->fd, buf + writepos, headerlen, start + writepos);
       writepos += headerlen;
-    } else if (writepos < (off_t)dirlen - headerlen) {
+    } else if (writepos < static_cast<off_t>(dirlen) - headerlen) {
       // write part of body
       int l = SYNC_MAX_WRITE;
-      if (writepos + l > (off_t)dirlen - headerlen) {
+      if (writepos + l > static_cast<off_t>(dirlen) - headerlen) {
         l = dirlen - headerlen - writepos;
       }
       aio_write(vol->fd, buf + writepos, l, start + writepos);
       writepos += l;
-    } else if (writepos < (off_t)dirlen) {
+    } else if (writepos < static_cast<off_t>(dirlen)) {
       ink_assert(writepos == (off_t)dirlen - headerlen);
       // write footer
       aio_write(vol->fd, buf + writepos, headerlen, start + writepos);
@@ -1190,7 +1190,8 @@ compare_ushort(void const *a, void const *b)
 // Check
 //
 
-int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
+int
+Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
   static int const SEGMENT_HISTOGRAM_WIDTH = 16;
   int hist[SEGMENT_HISTOGRAM_WIDTH + 1]    = {0};
@@ -1266,10 +1267,6 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
             seg_bytes_in_use += size;
             ++frag_demographics[dir_size(e)][dir_big(e)];
           }
-        }
-        e = next_dir(e, seg);
-        if (!e) {
-          break;
         }
       }
 
@@ -1404,7 +1401,7 @@ void
 dir_corrupt_bucket(Dir *b, int s, Vol *d)
 {
   // coverity[dont_call]
-  int l    = ((int)(dir_bucket_length(b, s, d) * drand48()));
+  int l    = (static_cast<int>(dir_bucket_length(b, s, d) * drand48()));
   Dir *e   = b;
   Dir *seg = d->dir_segment(s);
   for (int i = 0; i < l; i++) {
@@ -1460,7 +1457,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
     inserted++;
   }
   rprintf(t, "inserted: %d\n", inserted);
-  if ((unsigned int)(inserted - free) > 1) {
+  if (static_cast<unsigned int>(inserted - free) > 1) {
     ret = REGRESSION_TEST_FAILED;
   }
 
@@ -1474,7 +1471,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   dir_clean_segment(s, d);
   int newfree = dir_freelist_length(d, s);
   rprintf(t, "newfree: %d\n", newfree);
-  if ((unsigned int)(newfree - free) > 1) {
+  if (static_cast<unsigned int>(newfree - free) > 1) {
     ret = REGRESSION_TEST_FAILED;
   }
 
@@ -1490,7 +1487,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   // On windows us is sometimes 0. I don't know why.
   // printout the insert rate only if its not 0
   if (us) {
-    rprintf(t, "insert rate = %d / second\n", (int)((newfree * (uint64_t)1000000) / us));
+    rprintf(t, "insert rate = %d / second\n", static_cast<int>((newfree * static_cast<uint64_t>(1000000)) / us));
   }
   regress_rand_init(13);
   ttime = Thread::get_hrtime_updated();
@@ -1505,7 +1502,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   // On windows us is sometimes 0. I don't know why.
   // printout the probe rate only if its not 0
   if (us) {
-    rprintf(t, "probe rate = %d / second\n", (int)((newfree * (uint64_t)1000000) / us));
+    rprintf(t, "probe rate = %d / second\n", static_cast<int>((newfree * static_cast<uint64_t>(1000000)) / us));
   }
 
   for (int c = 0; c < d->direntries() * 0.75; c++) {

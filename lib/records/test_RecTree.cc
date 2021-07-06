@@ -21,8 +21,7 @@
   limitations under the License.
  */
 
-#include "P_RecTree.h"
-#include "stdio.h"
+#include <stdio.h>
 
 int
 main(int argc, char **argv)

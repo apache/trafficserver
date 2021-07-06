@@ -51,14 +51,12 @@ enum ThreadType {
   DEDICATED,
 };
 
-extern bool shutdown_event_system;
-
 /**
   Event System specific type of thread.
 
   The EThread class is the type of thread created and managed by
   the Event System. It is one of the available interfaces for
-  schedulling events in the event system (another two are the Event
+  scheduling events in the event system (another two are the Event
   and EventProcessor classes).
 
   In order to handle events, each EThread object has two event
@@ -75,7 +73,7 @@ extern bool shutdown_event_system;
 
   Scheduling Interface:
 
-  There are eight schedulling functions provided by EThread and
+  There are eight scheduling functions provided by EThread and
   they are a wrapper around their counterparts in EventProcessor.
 
   @see EventProcessor
@@ -120,15 +118,14 @@ public:
 
     @param c Continuation to be called back as soon as possible.
     @param callback_event Event code to be passed back to the
-      continuation's handler. See the the EventProcessor class.
+      continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return Reference to an Event object representing the schedulling
+    @return Reference to an Event object representing the scheduling
       of this callback.
 
   */
   Event *schedule_imm(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
-  Event *schedule_imm_signal(Continuation *c, int callback_event = EVENT_IMMEDIATE, void *cookie = nullptr);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -145,7 +142,7 @@ public:
       continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
@@ -165,7 +162,7 @@ public:
       continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
@@ -179,14 +176,14 @@ public:
     to occur every time 'aperiod' elapses. It is scheduled on this
     EThread.
 
-    @param c Continuation to call back everytime 'aperiod' elapses.
+    @param c Continuation to call back every time 'aperiod' elapses.
     @param aperiod Duration of the time period between callbacks.
     @param callback_event Event code to be passed back to the
       continuation's handler. See the Remarks section in the
       EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
@@ -204,7 +201,7 @@ public:
       continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
@@ -225,7 +222,7 @@ public:
       continuation's handler. See the EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
@@ -246,7 +243,7 @@ public:
       EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
@@ -259,14 +256,14 @@ public:
     Schedules the callback to the continuation 'c' to occur every
     time 'aperiod' elapses. It is scheduled on this EThread.
 
-    @param c Continuation to call back everytime 'aperiod' elapses.
+    @param c Continuation to call back every time 'aperiod' elapses.
     @param aperiod Duration of the time period between callbacks.
     @param callback_event Event code to be passed back to the
       continuation's handler. See the Remarks section in the
       EventProcessor class.
     @param cookie User-defined value or pointer to be passed back
       in the Event's object cookie field.
-    @return A reference to an Event object representing the schedulling
+    @return A reference to an Event object representing the scheduling
       of this callback.
 
   */
@@ -285,6 +282,8 @@ public:
   // Set the tail handler.
   void set_tail_handler(LoopTailHandler *handler);
 
+  void set_specific() override;
+
   /* private */
 
   Event *schedule_local(Event *e);
@@ -302,7 +301,7 @@ public:
   EThread &operator=(const EThread &) = delete;
   ~EThread() override;
 
-  Event *schedule(Event *e, bool fast_signal = false);
+  Event *schedule(Event *e);
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
   char thread_private[PER_THREAD_DATA];
@@ -316,16 +315,11 @@ public:
   ProtectedQueue EventQueueExternal;
   PriorityEventQueue EventQueue;
 
-  EThread **ethreads_to_be_signalled = nullptr;
-  int n_ethreads_to_be_signalled     = 0;
-
   static constexpr int NO_ETHREAD_ID = -1;
   int id                             = NO_ETHREAD_ID;
   unsigned int event_types           = 0;
   bool is_event_type(EventType et);
   void set_event_type(EventType et);
-
-  bool has_event_loop = false;
 
   // Private Interface
 
@@ -362,6 +356,7 @@ public:
   */
   class DefaultTailHandler : public LoopTailHandler
   {
+    // cppcheck-suppress noExplicitConstructor; allow implicit conversion
     DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
 
     int
@@ -390,27 +385,27 @@ public:
   struct EventMetrics {
     /// Time the loop was active, not including wait time but including event dispatch time.
     struct LoopTimes {
-      ink_hrtime _start; ///< The time of the first loop for this sample. Used to mark valid entries.
-      ink_hrtime _min;   ///< Shortest loop time.
-      ink_hrtime _max;   ///< Longest loop time.
-      LoopTimes() : _start(0), _min(INT64_MAX), _max(0) {}
+      ink_hrtime _start = 0;         ///< The time of the first loop for this sample. Used to mark valid entries.
+      ink_hrtime _min   = INT64_MAX; ///< Shortest loop time.
+      ink_hrtime _max   = 0;         ///< Longest loop time.
+      LoopTimes() {}
     } _loop_time;
 
     struct Events {
-      int _min;
-      int _max;
-      int _total;
-      Events() : _min(INT_MAX), _max(0), _total(0) {}
+      int _min   = INT_MAX;
+      int _max   = 0;
+      int _total = 0;
+      Events() {}
     } _events;
 
-    int _count; ///< # of times the loop executed.
-    int _wait;  ///< # of timed wait for events
+    int _count = 0; ///< # of times the loop executed.
+    int _wait  = 0; ///< # of timed wait for events
 
     /// Add @a that to @a this data.
     /// This embodies the custom logic per member concerning whether each is a sum, min, or max.
     EventMetrics &operator+=(EventMetrics const &that);
 
-    EventMetrics() : _count(0), _wait(0) {}
+    EventMetrics() {}
   };
 
   /** The number of metric blocks kept.

@@ -59,7 +59,7 @@ Offloading Heavily-Used Origin Servers
 
 Traffic Server can accept requests on behalf of the origin server and improve
 the speed and quality of web serving by reducing load and hot spots on
-backup origin servers. For example, a web hoster can maintain a scalable
+backup origin servers. For example, a web host can maintain a scalable
 Traffic Server system with a set of low-cost, low-performance,
 less-reliable PC origin servers as backup servers. In fact, a single
 Traffic Server can act as the virtual origin server for multiple backup
@@ -116,7 +116,7 @@ server. For additional information, see `HTTP Reverse Proxy`_.
 
 .. note::
 
-    To avoid a DNS conflict, the origin server’s hostname and its advertised
+    To avoid a DNS conflict, the origin server's hostname and its advertised
     hostname must not be the same.
 
 HTTP Reverse Proxy
@@ -138,7 +138,7 @@ The figure above demonstrates the following steps:
 
 1. A client browser sends an HTTP request addressed to a host called
    ``www.host.com`` on port 80. Traffic Server receives the request
-   because it is acting as the origin server (the origin server’s
+   because it is acting as the origin server (the origin server's
    advertised hostname resolves to Traffic Server).
 
 2. Traffic Server locates a map rule in the :file:`remap.config` file and

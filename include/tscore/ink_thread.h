@@ -192,6 +192,9 @@ ink_thread_self()
 static inline ink_thread
 ink_thread_null()
 {
+  // The implementation of ink_thread (the alias of pthread_t) is different on platforms
+  // - e.g. `struct pthread *` on Unix and `unsigned long int` on Linux
+  // NOLINTNEXTLINE(modernize-use-nullptr)
   return (ink_thread)0;
 }
 

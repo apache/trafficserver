@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <tscore/TSSystemState.h>
+
 //////////////////////////////////////////////////////////////////////
 //
 // The EThread Class
@@ -31,6 +33,8 @@
 #if HAVE_EVENTFD
 #include <sys/eventfd.h>
 #endif
+
+#include <typeinfo>
 
 struct AIOCallback;
 
@@ -45,9 +49,36 @@ char const *const EThread::STAT_NAME[] = {"proxy.process.eventloop.count",      
 
 int const EThread::SAMPLE_COUNT[N_EVENT_TIMESCALES] = {10, 100, 1000};
 
-bool shutdown_event_system = false;
-
 int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
+
+// To define a class inherits from Thread:
+//   1) Define an independent ink_thread_key
+//   2) Override Thread::set_specific()
+//   3) Define this_Xthread() which get thread specific data by the independent key
+//   4) Clear thread specific data at destructor funtion.
+//
+// The below comments are copied from I_Thread.h
+//
+// Additionally, the EThread class (derived from Thread) maintains its
+// own independent key. All (and only) the threads created in the Event
+// Subsystem are registered with this key.
+ink_thread_key ethread_key;
+
+namespace
+{
+static bool ethread_initialized ATS_UNUSED = ([]() -> bool {
+  // File scope initialization goes here.
+  ink_thread_key_create(&ethread_key, nullptr);
+  return true;
+})();
+}
+
+void
+EThread::set_specific()
+{
+  ink_thread_setspecific(ethread_key, this);
+  Thread::set_specific();
+}
 
 EThread::EThread()
 {
@@ -56,8 +87,6 @@ EThread::EThread()
 
 EThread::EThread(ThreadType att, int anid) : id(anid), tt(att)
 {
-  ethreads_to_be_signalled = (EThread **)ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *));
-  memset(ethreads_to_be_signalled, 0, MAX_EVENT_THREADS * sizeof(EThread *));
   memset(thread_private, 0, PER_THREAD_DATA);
 #if HAVE_EVENTFD
   evfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -94,12 +123,12 @@ EThread::EThread(ThreadType att, Event *e) : tt(att), start_event(e)
 // threads won't have to deal with EThread memory deallocation.
 EThread::~EThread()
 {
-  if (n_ethreads_to_be_signalled > 0) {
-    flush_signals(this);
+  ink_release_assert(mutex->thread_holding == static_cast<EThread *>(this));
+
+  if (ink_thread_getspecific(ethread_key) == this) {
+    // Clear pointer to this object stored in thread-specific data by set_specific.
+    ink_thread_setspecific(ethread_key, nullptr);
   }
-  ats_free(ethreads_to_be_signalled);
-  // TODO: This can't be deleted ....
-  // delete[]l1_hash;
 }
 
 bool
@@ -118,7 +147,7 @@ void
 EThread::process_event(Event *e, int calling_code)
 {
   ink_assert((!e->in_the_prot_queue && !e->in_the_priority_queue));
-  MUTEX_TRY_LOCK(lock, e->mutex, this);
+  WEAK_MUTEX_TRY_LOCK(lock, e->mutex, this);
   if (!lock.is_locked()) {
     e->timeout_at = cur_time + DELAY_FOR_RETRY;
     EventQueueExternal.enqueue_local(e);
@@ -128,7 +157,10 @@ EThread::process_event(Event *e, int calling_code)
       return;
     }
     Continuation *c_temp = e->continuation;
-    // Make sure that the contination is locked before calling the handler
+
+    // Restore the client IP debugging flags
+    set_cont_flags(e->continuation->control_flags);
+
     e->continuation->handleEvent(calling_code, e);
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);
@@ -138,11 +170,7 @@ EThread::process_event(Event *e, int calling_code)
         if (e->period < 0) {
           e->timeout_at = e->period;
         } else {
-          this->get_hrtime_updated();
-          e->timeout_at = cur_time + e->period;
-          if (e->timeout_at < cur_time) {
-            e->timeout_at = cur_time;
-          }
+          e->timeout_at = Thread::get_hrtime_updated() + e->period;
         }
         EventQueueExternal.enqueue_local(e);
       }
@@ -193,24 +221,23 @@ EThread::execute_regular()
 {
   Event *e;
   Que(Event, link) NegativeQueue;
-  ink_hrtime next_time = 0;
-  ink_hrtime delta     = 0;    // time spent in the event loop
+  ink_hrtime next_time;
+  ink_hrtime delta;            // time spent in the event loop
   ink_hrtime loop_start_time;  // Time the loop started.
   ink_hrtime loop_finish_time; // Time at the end of the loop.
 
   // Track this so we can update on boundary crossing.
   EventMetrics *prev_metric = this->prev(metrics + (ink_get_hrtime_internal() / HRTIME_SECOND) % N_EVENT_METRICS);
 
-  int nq_count = 0;
-  int ev_count = 0;
+  int nq_count;
+  int ev_count;
 
   // A statically initialized instance we can use as a prototype for initializing other instances.
   static EventMetrics METRIC_INIT;
 
   // give priority to immediate events
-  has_event_loop = true;
   for (;;) {
-    if (unlikely(shutdown_event_system == true)) {
+    if (TSSystemState::is_event_system_shut_down()) {
       return;
     }
 
@@ -235,7 +262,7 @@ EThread::execute_regular()
     do {
       done_one = false;
       // execute all the eligible internal events
-      EventQueue.check_ready(cur_time, this);
+      EventQueue.check_ready(loop_start_time, this);
       while ((e = EventQueue.dequeue_ready(cur_time))) {
         ink_assert(e);
         ink_assert(e->timeout_at > 0);
@@ -261,20 +288,22 @@ EThread::execute_regular()
     next_time             = EventQueue.earliest_timeout();
     ink_hrtime sleep_time = next_time - Thread::get_hrtime_updated();
     if (sleep_time > 0) {
-      sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
+      if (EventQueueExternal.localQueue.empty()) {
+        sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
+      } else {
+        // Because of a missed lock, Timed-Event and Negative-Event have been pushed into localQueue for retry in awhile.
+        // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.
+        sleep_time = std::min(sleep_time, DELAY_FOR_RETRY);
+      }
       ++(current_metric->_wait);
     } else {
       sleep_time = 0;
     }
 
-    if (n_ethreads_to_be_signalled) {
-      flush_signals(this);
-    }
-
     tail_cb->waitForActivity(sleep_time);
 
     // loop cleanup
-    loop_finish_time = this->get_hrtime_updated();
+    loop_finish_time = Thread::get_hrtime_updated();
     delta            = loop_finish_time - loop_start_time;
 
     // This can happen due to time of day adjustments (which apparently happen quite frequently). I

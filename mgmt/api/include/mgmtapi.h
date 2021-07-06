@@ -432,7 +432,7 @@ tsapi TSMgmtError TSHostStatusSetUp(const char *host_name, int down_time, const 
 tsapi TSMgmtError TSHostStatusSetDown(const char *host_name, int down_time, const char *reason);
 /*--- statistics operations -----------------------------------------------*/
 /* TSStatsReset: sets all the statistics variables to their default values
- * Outpue: TSErrr
+ * Output: TSMgmtError
  */
 tsapi TSMgmtError TSStatsReset(const char *name);
 
@@ -506,15 +506,6 @@ tsapi TSMgmtError TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need);
  * becomes inactive when resolved. Events are triggered and resolved
  * by specifying the event's name (which is predefined and immutable).
  */
-
-/* UNIMPLEMENTED - wait for new alarm processor */
-/* TSEventSignal: enables the user to trigger an event
- * Input:  event_name - "MGMT_ALARM_ADD_ALARM"
- *         ...        - variable argument list of parameters that go
- *                       go into event description when it is signalled
- * Output: TSMgmtError
- */
-/*tsapi TSMgmtError               TSEventSignal (char *event_name, ...); */
 
 /* TSEventResolve: enables the user to resolve an event
  * Input:  event_name - event to resolve

@@ -25,15 +25,12 @@
 #pragma once
 
 #include "tscore/ink_platform.h"
+#include "tscore/PluginUserArgs.h"
 #include "I_EventSystem.h"
 
 #if !defined(I_VIO_h)
 #error "include I_VIO.h"
 #endif
-
-#include <array>
-
-static constexpr int TS_VCONN_MAX_USER_ARG = 4;
 
 //
 // Data Types
@@ -54,7 +51,7 @@ static constexpr int TS_VCONN_MAX_USER_ARG = 4;
 #define VC_EVENT_READ_READY VC_EVENT_EVENTS_START
 
 /**
-  Any data in the accociated buffer *will be written* when the
+  Any data in the associated buffer *will be written* when the
   Continuation returns.
 
 */
@@ -73,7 +70,7 @@ static constexpr int TS_VCONN_MAX_USER_ARG = 4;
 #define VC_EVENT_ERROR EVENT_ERROR
 
 /**
-  VC_EVENT_INACTIVITY_TIMEOUT indiates that the operation (read or write) has:
+  VC_EVENT_INACTIVITY_TIMEOUT indicates that the operation (read or write) has:
     -# been enabled for more than the inactivity timeout period
        (for a read, there has been space in the buffer)
        (for a write, there has been data in the buffer)
@@ -85,7 +82,7 @@ static constexpr int TS_VCONN_MAX_USER_ARG = 4;
 #define VC_EVENT_INACTIVITY_TIMEOUT (VC_EVENT_EVENTS_START + 5)
 
 /**
-  Total time for some operation has been exeeded, regardless of any
+  Total time for some operation has been exceeded, regardless of any
   intermediate progress.
 
 */
@@ -101,10 +98,10 @@ static constexpr int TS_VCONN_MAX_USER_ARG = 4;
 // VC_EVENT_READ_READ occurs when data *has been written* into
 // the associated buffer.
 //
-// VC_EVENT_ERROR indicates that some error has occured.  The
+// VC_EVENT_ERROR indicates that some error has occurred.  The
 // "data" will be either 0 if the errno is unavailable or errno.
 //
-// VC_EVENT_INTERVAL indidates that an interval timer has expired.
+// VC_EVENT_INTERVAL indicates that an interval timer has expired.
 //
 
 //
@@ -260,7 +257,7 @@ public:
     must call this function to indicate that the VConnection can
     be deallocated.  After a close has been called, the VConnection
     and underlying processor must not send any more events related
-    to this VConnection to the state machine. Likeswise, the state
+    to this VConnection to the state machine. Likewise, the state
     machine must not access the VConnection or any VIOs obtained
     from it after calling this method.
 
@@ -313,8 +310,8 @@ public:
   */
   virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
 
-  VConnection(ProxyMutex *aMutex);
-  VConnection(Ptr<ProxyMutex> &aMutex);
+  explicit VConnection(ProxyMutex *aMutex);
+  explicit VConnection(Ptr<ProxyMutex> &aMutex);
 
   // Private
   // Set continuation on a given vio. The public interface
@@ -335,7 +332,7 @@ public:
 
     @param id Identifier associated to interpret the data field
     @param data Value or pointer with state machine or VConnection data.
-    @return True if the oparation is successful.
+    @return True if the operation is successful.
 
   */
   virtual bool
@@ -356,7 +353,7 @@ public:
 
     @param id Identifier associated to interpret the data field.
     @param data Value or pointer with state machine or VConnection data.
-    @return True if the oparation is successful.
+    @return True if the operation is successful.
 
   */
   virtual bool
@@ -378,38 +375,7 @@ public:
   int lerrno;
 };
 
-/**
-  Subclass of VConnection to provide support for user arguments
-
-  Inherited by DummyVConnection (down to INKContInternal) and NetVConnection
-*/
-class AnnotatedVConnection : public VConnection
-{
-  using self_type  = AnnotatedVConnection;
-  using super_type = VConnection;
-
-public:
-  AnnotatedVConnection(ProxyMutex *aMutex) : super_type(aMutex){};
-  AnnotatedVConnection(Ptr<ProxyMutex> &aMutex) : super_type(aMutex){};
-
-  void *
-  get_user_arg(unsigned ix) const
-  {
-    ink_assert(ix < user_args.size());
-    return this->user_args[ix];
-  };
-  void
-  set_user_arg(unsigned ix, void *arg)
-  {
-    ink_assert(ix < user_args.size());
-    user_args[ix] = arg;
-  };
-
-protected:
-  std::array<void *, TS_VCONN_MAX_USER_ARG> user_args{{nullptr}};
-};
-
-struct DummyVConnection : public AnnotatedVConnection {
+struct DummyVConnection : public VConnection, public PluginUserArgs<TS_USER_ARGS_VCONN> {
   VIO *
   do_io_write(Continuation * /* c ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */, IOBufferReader * /* buf ATS_UNUSED */,
               bool /* owner ATS_UNUSED */) override
@@ -440,5 +406,5 @@ struct DummyVConnection : public AnnotatedVConnection {
                 "cannot use default implementation");
   }
 
-  DummyVConnection(ProxyMutex *m) : AnnotatedVConnection(m) {}
+  explicit DummyVConnection(ProxyMutex *m) : VConnection(m) {}
 };

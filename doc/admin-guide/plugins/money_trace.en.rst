@@ -20,7 +20,7 @@
 Money Trace Plugin
 ==================
 
-This is a remap plugin  that allows ATS to participate in a distrbuted tracing system based upon
+This is a remap plugin  that allows ATS to participate in a distributed tracing system based upon
 the Comcast "Money" distributed tracing and monitoring library.  The Comcast "Money" library has
 its roots in Google's Dapper and Twitters Zipkin systems.  A money trace header or session id, is
 attached to transaction and allows an operator with the appropriate logging systems in place,

@@ -52,7 +52,7 @@ namespace detail
     /// @return The child in the direction @a d if it exists,
     /// @c NULL if not.
     self *getChild(Direction d //!< The direction of the desired child
-                   ) const;
+    ) const;
 
     /** Determine which child a node is
         @return @c LEFT if @a n is the left child,
@@ -61,7 +61,7 @@ namespace detail
     */
     Direction
     getChildDirection(self *const &n //!< The presumed child node
-                      ) const
+    ) const
     {
       return (n == _left) ? LEFT : (n == _right) ? RIGHT : NONE;
     }
@@ -108,7 +108,7 @@ namespace detail
     int validate();
 
     /// Default constructor.
-    RBNode() : _color(RED), _parent(nullptr), _left(nullptr), _right(nullptr), _next(nullptr), _prev(nullptr) {}
+    RBNode() {}
     /// Destructor (force virtual).
     virtual ~RBNode() {}
     /** Rotate the subtree rooted at this node.
@@ -206,12 +206,12 @@ namespace detail
     //! Invoke @c structure_fixup() on this node and all of its ancestors.
     self *rippleStructureFixup();
 
-    Color _color;  ///< node color
-    self *_parent; ///< parent node (needed for rotations)
-    self *_left;   ///< left child
-    self *_right;  ///< right child
-    self *_next;   ///< Next node.
-    self *_prev;   ///< Previous node.
+    Color _color  = RED;     ///< node color
+    self *_parent = nullptr; ///< parent node (needed for rotations)
+    self *_left   = nullptr; ///< left child
+    self *_right  = nullptr; ///< right child
+    self *_next   = nullptr; ///< Next node.
+    self *_prev   = nullptr; ///< Previous node.
   };
 
 } /* namespace detail */

@@ -58,6 +58,6 @@ public:
   Errata unmarshal(URLImpl *obj, intptr_t offset);
   Errata unmarshal(MIMEFieldBlockImpl *mf, intptr_t offset);
   Errata unmarshal(MIMEHdrImpl *obj, intptr_t offset);
-  bool check_url(ts::MemSpan &mem, URLImpl *url);
+  bool check_url(ts::MemSpan<char> &mem, URLImpl *url);
 };
 } // namespace ct

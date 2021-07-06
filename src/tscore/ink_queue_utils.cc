@@ -34,10 +34,10 @@
  * problem resulted in the discovery that gcc was spitting out the
  * "ldd" (load double) instruction for loading of the 64 bit field "data"
  * while CC was spitting out two "ld" (load) instructions. The old code
- * was calling item.data = head.data on sparcs and not putting any restriction
+ * was calling item.data = head.data on Sparcs and not putting any restriction
  * on the order of loading of the fields.
  *
- * This is a problem on the sparcs because the "pointer" field was being loaded
+ * This is a problem on the Sparcs because the "pointer" field was being loaded
  * before the "version" field. This can result in a very subtle race condition
  * which subverts the addition of the "version" field.
  *
@@ -50,7 +50,7 @@
  * next.version = item.version ++;
  * cas64(head, item, next)
 
- * Note, that the cas64 call will be succesful and the next.ptr will probably
+ * Note, that the cas64 call will be successful and the next.ptr will probably
  * be a pointer into the vtable entry. The next alloc will result in a write into
  * the vtable area.
  *
@@ -75,6 +75,6 @@ ink_queue_load_64(void *dst, void *src)
   (*(head_p *)dst).s.version = src_version;
   (*(head_p *)dst).s.pointer = src_pointer;
 #else
-  *(void **)dst = *(void **)src;
+  *static_cast<void **>(dst) = *static_cast<void **>(src);
 #endif
 }

@@ -26,6 +26,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <netinet/in.h>
 
 #include "ts/ts.h"
 #include "lib/StringHash.h"
@@ -110,17 +111,15 @@ private:
   struct RequestData {
     std::string response;
     std::string raw_response;
-    const char *body;
-    int body_len;
-    TSHttpStatus resp_status;
+    const char *body         = nullptr;
+    int body_len             = 0;
+    TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
     CallbackObjectList callback_objects;
-    bool complete;
-    TSMBuffer bufp;
-    TSMLoc hdr_loc;
+    bool complete  = false;
+    TSMBuffer bufp = nullptr;
+    TSMLoc hdr_loc = nullptr;
 
-    RequestData() : body(nullptr), body_len(0), resp_status(TS_HTTP_STATUS_NONE), complete(false), bufp(nullptr), hdr_loc(nullptr)
-    {
-    }
+    RequestData() {}
   };
 
   typedef __gnu_cxx::hash_map<std::string, RequestData, EsiLib::StringHasher> UrlToContentMap;
@@ -149,7 +148,7 @@ private:
 
   inline void _release(RequestData &req_data);
 
-  sockaddr const *_client_addr;
+  struct sockaddr_storage _client_addr;
 };
 
 inline void

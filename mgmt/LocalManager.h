@@ -68,7 +68,7 @@ public:
   void sendMgmtMsgToProcesses(int msg_id, const char *data_raw, int data_len);
   void sendMgmtMsgToProcesses(MgmtMessageHdr *mh);
 
-  void signalFileChange(const char *var_name, bool incVersion = true);
+  void signalFileChange(const char *var_name);
   void signalEvent(int msg_id, const char *data_str);
   void signalEvent(int msg_id, const char *data_raw, int data_len);
   void signalAlarm(int alarm_id, const char *desc = nullptr, const char *ip = nullptr);
@@ -76,7 +76,8 @@ public:
   void processEventQueue();
   bool startProxy(const char *onetime_options);
   void listenForProxy();
-  void bindProxyPort(HttpProxyPort &);
+  void bindUdpProxyPort(HttpProxyPort &);
+  void bindTcpProxyPort(HttpProxyPort &);
   void closeProxyPorts();
 
   void mgmtCleanup();

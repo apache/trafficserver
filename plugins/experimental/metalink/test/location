@@ -16,11 +16,11 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-print '''1..2 location
-# The proxy rewrites the Location header if the file is already cached'''
-
 from twisted.internet import error, protocol, reactor, tcp
 from twisted.web import http
+
+print '''1..2 location
+# The proxy rewrites the Location header if the file is already cached'''
 
 
 def callback():
@@ -114,7 +114,7 @@ class factory(protocol.ClientFactory):
             def handleStatus(version, status, message):
                 del ctx.handleHeader
 
-                def handleStatus(version, staus, message):
+                def handleStatus(version, status, message):
                     def handleHeader(k, v):
                         if k.lower() == 'location':
                             if v != 'http://{0}:{1}/location'.format(*origin.socket.getsockname()):

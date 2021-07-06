@@ -24,16 +24,18 @@
 #pragma once
 
 #include <cstring>
+// I had to move this here, because I really needed to avoid including ink_platform.h in here,
+// because of a conflict on linux/tcp.h vs netinet/tcp.h.
+#include <limits.h> // NOLINT(modernize-deprecated-headers)
 
 #include "tscore/ink_defs.h"
 #include "tscore/ink_apidefs.h"
-#include "tscore/ink_platform.h"
 
 typedef unsigned int CTypeResult;
 
 // Set this to 0 to disable SI
 // decimal multipliers
-#define USE_SI_MULTILIERS 1
+#define USE_SI_MULTIPLIERS 1
 
 #define is_char_BIT (1 << 0)
 #define is_upalpha_BIT (1 << 1)
@@ -136,7 +138,7 @@ public:
   //////////////////
 
   static CTypeResult is_escape(const char *seq); // %<hex><hex>
-  static CTypeResult is_uchar(const char *seq);  // starts unresrvd or is escape
+  static CTypeResult is_uchar(const char *seq);  // starts unreserved or is escape
   static CTypeResult is_pchar(const char *seq);  // uchar,:,@,&,=,+ (see code)
 
   ///////////////////
@@ -766,7 +768,7 @@ ParseRules::strlen_eow(const char *s)
 //
 //  This function is the same as strstr(), except that it accepts strings
 //  that are terminated with '\r', '\n' or null.
-//  It returns a pointer to the first occurance of s2 within s1 (or null).
+//  It returns a pointer to the first occurrence of s2 within s1 (or null).
 //////////////////////////////////////////////////////////////////////////////
 inline const char *
 ParseRules::strstr_eow(const char *s1, const char *s2)
@@ -825,7 +827,7 @@ ink_get_hex(char c)
   return (int)((c - 'a') + 10);
 }
 
-int64_t ink_atoi64(const char *);
+int64_t ink_atoi64(const char *, const char **end = nullptr);
 uint64_t ink_atoui64(const char *);
 int64_t ink_atoi64(const char *, int);
 

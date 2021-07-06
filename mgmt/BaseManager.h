@@ -23,14 +23,17 @@
 
 #pragma once
 
+#include <list>
+#include <queue>
+#include <mutex>
+#include <unordered_map>
+
 #include "tscore/ink_thread.h"
 #include "tscore/ink_mutex.h"
-#include "tscore/ink_llqueue.h"
+#include "tscpp/util/MemSpan.h"
 
 #include "MgmtDefs.h"
 #include "MgmtMarshall.h"
-
-#include <unordered_map>
 
 /*
  * MgmtEvent defines.
@@ -46,7 +49,7 @@
 #define MGMT_EVENT_PLUGIN_CONFIG_UPDATE 10006
 #define MGMT_EVENT_ROLL_LOG_FILES 10008
 #define MGMT_EVENT_LIBRECORDS 10009
-#define MGMT_EVENT_CONFIG_FILE_UPDATE_NO_INC_VERSION 10010
+// 10010 is unused
 // cache storage operations - each is a distinct event.
 // this is done because the code paths share nothing but boilerplate logic
 // so it's easier to do this than to try to encode an opcode and yet another
@@ -67,51 +70,76 @@
 
 // Signal flows: traffic server -> traffic manager
 #define MGMT_SIGNAL_PID 0
-#define MGMT_SIGNAL_MACHINE_UP 1 /* Data is ip addr */
-#define MGMT_SIGNAL_MACHINE_DOWN 2
-#define MGMT_SIGNAL_CONFIG_ERROR 3 /* Data is descriptive string */
+
+#define MGMT_SIGNAL_PROXY_PROCESS_DIED 1
+#define MGMT_SIGNAL_PROXY_PROCESS_BORN 2
+#define MGMT_SIGNAL_CONFIG_ERROR 3
 #define MGMT_SIGNAL_SYSTEM_ERROR 4
-#define MGMT_SIGNAL_LOG_SPACE_CRISIS 5
-#define MGMT_SIGNAL_CONFIG_FILE_READ 6
-#define MGMT_SIGNAL_CACHE_ERROR 7
-#define MGMT_SIGNAL_CACHE_WARNING 8
-#define MGMT_SIGNAL_LOGGING_ERROR 9
-#define MGMT_SIGNAL_LOGGING_WARNING 10
-// Currently unused: 11
-// Currently unused: 12
-// Currently unused: 13
-#define MGMT_SIGNAL_PLUGIN_SET_CONFIG 14
-#define MGMT_SIGNAL_LOG_FILES_ROLLED 15
-#define MGMT_SIGNAL_LIBRECORDS 16
+#define MGMT_SIGNAL_CACHE_ERROR 5
+#define MGMT_SIGNAL_CACHE_WARNING 6
+#define MGMT_SIGNAL_LOGGING_ERROR 7
+#define MGMT_SIGNAL_LOGGING_WARNING 8
+#define MGMT_SIGNAL_PLUGIN_SET_CONFIG 9
 
-#define MGMT_SIGNAL_CONFIG_FILE_CHILD 22
+// This are additional on top of the ones defined in Alarms.h. Que?
+#define MGMT_SIGNAL_LIBRECORDS 10
+#define MGMT_SIGNAL_CONFIG_FILE_CHILD 11
 
-#define MGMT_SIGNAL_SAC_SERVER_DOWN 400
-
-typedef struct _mgmt_message_hdr_type {
+struct MgmtMessageHdr {
   int msg_id;
   int data_len;
-} MgmtMessageHdr;
-
-typedef struct _mgmt_event_callback_list {
-  MgmtCallback func;
-  void *opaque_data;
-  struct _mgmt_event_callback_list *next;
-} MgmtCallbackList;
+  ts::MemSpan<void>
+  payload()
+  {
+    return {this + 1, static_cast<size_t>(data_len)};
+  }
+};
 
 class BaseManager
 {
+  using MgmtCallbackList = std::list<MgmtCallback>;
+
 public:
   BaseManager();
+
   ~BaseManager();
 
-  int registerMgmtCallback(int msg_id, MgmtCallback func, void *opaque_callback_data = nullptr);
+  /** Associate a callback function @a func with message identifier @a msg_id.
+   *
+   * @param msg_id Message identifier for the callback.
+   * @param func The callback function.
+   * @return @a msg_id on success, -1 on failure.
+   *
+   * @a msg_id should be one of the @c MGMT_EVENT_... values.
+   *
+   * If a management message with @a msg is received, the callbacks for that message id
+   * are invoked and passed the message payload (not including the header).
+   */
+  int registerMgmtCallback(int msg_id, MgmtCallback const &func);
 
-  LLQ *mgmt_event_queue;
-  std::unordered_map<int, MgmtCallbackList *> mgmt_callback_table;
+  /// Add a @a msg to the queue.
+  /// This must be the entire message as read off the wire including the header.
+  void enqueue(MgmtMessageHdr *msg);
+
+  /// Current size of the queue.
+  /// @note This does not block on the semaphore.
+  bool queue_empty();
+
+  /// Dequeue a msg.
+  /// This waits on the semaphore for a message to arrive.
+  MgmtMessageHdr *dequeue();
 
 protected:
-  void executeMgmtCallback(int msg_id, char *data_raw, int data_len);
+  void executeMgmtCallback(int msg_id, ts::MemSpan<void> span);
 
-private:
-}; /* End class BaseManager */
+  /// The mapping from an event type to a list of callbacks to invoke.
+  std::unordered_map<int, MgmtCallbackList> mgmt_callback_table;
+
+  /// Message queue.
+  // These holds the entire message object, including the header.
+  std::queue<MgmtMessageHdr *> queue;
+  /// Locked access to the queue.
+  std::mutex q_mutex;
+  /// Semaphore to signal queue state.
+  ink_semaphore q_sem;
+};

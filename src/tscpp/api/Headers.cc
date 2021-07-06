@@ -101,11 +101,11 @@ HeaderFieldName::operator!=(const std::string &field_name)
  * @private
  */
 struct HeaderFieldValueIteratorState : noncopyable {
-  TSMBuffer hdr_buf_;
-  TSMLoc hdr_loc_;
-  TSMLoc field_loc_;
-  int index_;
-  HeaderFieldValueIteratorState() : hdr_buf_(nullptr), hdr_loc_(nullptr), field_loc_(nullptr), index_(0) {}
+  TSMBuffer hdr_buf_              = nullptr;
+  TSMLoc hdr_loc_                 = nullptr;
+  TSMLoc field_loc_               = nullptr;
+  int index_                      = 0;
+  HeaderFieldValueIteratorState() = default;
   void
   reset(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc field_loc, int index)
   {
@@ -133,7 +133,8 @@ header_field_value_iterator::~header_field_value_iterator()
   delete state_;
 }
 
-std::string header_field_value_iterator::operator*()
+std::string
+header_field_value_iterator::operator*()
 {
   if (state_->index_ >= 0) {
     int length      = 0;
@@ -200,7 +201,7 @@ struct HeaderFieldIteratorState {
   }
 };
 
-HeaderField::~HeaderField() {}
+HeaderField::~HeaderField() = default;
 
 HeaderField::size_type
 HeaderField::size() const
@@ -293,7 +294,7 @@ HeaderField::clear()
 }
 
 bool
-HeaderField::erase(header_field_value_iterator it)
+HeaderField::erase(const header_field_value_iterator &it)
 {
   return (TSMimeHdrFieldValueDelete(it.state_->hdr_buf_, it.state_->hdr_loc_, it.state_->field_loc_, it.state_->index_) ==
           TS_SUCCESS);
@@ -363,7 +364,8 @@ HeaderField::operator=(const char *field_value)
   return append(field_value);
 }
 
-std::string HeaderField::operator[](const int index)
+std::string
+HeaderField::operator[](const int index)
 {
   return *header_field_value_iterator(iter_.state_->mloc_container_->hdr_buf_, iter_.state_->mloc_container_->hdr_loc_,
                                       iter_.state_->mloc_container_->field_loc_, index);
@@ -464,7 +466,8 @@ header_field_iterator::operator!=(const header_field_iterator &rhs) const
   return !operator==(rhs);
 }
 
-HeaderField header_field_iterator::operator*()
+HeaderField
+header_field_iterator::operator*()
 {
   return HeaderField(*this);
 }
@@ -561,7 +564,7 @@ Headers::clear()
 }
 
 bool
-Headers::erase(header_field_iterator it)
+Headers::erase(const header_field_iterator &it)
 {
   return (TSMimeHdrFieldDestroy(it.state_->mloc_container_->hdr_buf_, it.state_->mloc_container_->hdr_loc_,
                                 it.state_->mloc_container_->field_loc_) == TS_SUCCESS);
@@ -670,7 +673,8 @@ Headers::set(const std::string &key, const std::string &value)
   return append(key, value);
 }
 
-HeaderField Headers::operator[](const std::string &key)
+HeaderField
+Headers::operator[](const std::string &key)
 {
   // In STL fashion if the key doesn't exist it will be added with an empty value.
   header_field_iterator it = find(key);

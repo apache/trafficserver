@@ -93,7 +93,8 @@
 #define isascii(c) (!(c & 0200))
 #endif
 
-HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {HOST_RES_PREFER_IPV4, HOST_RES_PREFER_IPV6, HOST_RES_PREFER_NONE};
+HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER = {
+  {HOST_RES_PREFER_IPV4, HOST_RES_PREFER_IPV6, HOST_RES_PREFER_NONE}};
 
 HostResPreferenceOrder host_res_default_preference_order;
 
@@ -129,7 +130,7 @@ ink_res_setservers(ink_res_state statp, IpEndpoint const *set, int cnt)
 
   /* The goal here seems to be to compress the source list (@a set) by
      squeezing out invalid addresses. We handle the special case where
-     the destination and sourcea are the same.
+     the destination and source are the same.
   */
   int nserv = 0;
   for (IpEndpoint const *limit = set + cnt; nserv < INK_MAXNS && set < limit; ++set) {
@@ -168,8 +169,9 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
   int i;
 
 #ifdef DEBUG
-  if (statp->options & INK_RES_DEBUG)
+  if (statp->options & INK_RES_DEBUG) {
     printf(";; res_setoptions(\"%s\", \"%s\")...\n", options, source);
+  }
 #endif
   while (*cp) {
     /* skip leading and inner runs of spaces */
@@ -185,8 +187,9 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
         statp->ndots = INK_RES_MAXNDOTS;
       }
 #ifdef DEBUG
-      if (statp->options & INK_RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG) {
         printf(";;\tndots=%d\n", statp->ndots);
+      }
 #endif
     } else if (!strncmp(cp, "timeout:", sizeof("timeout:") - 1)) {
       i = atoi(cp + sizeof("timeout:") - 1);
@@ -196,8 +199,9 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
         statp->retrans = INK_RES_MAXRETRANS;
       }
 #ifdef DEBUG
-      if (statp->options & INK_RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG) {
         printf(";;\ttimeout=%d\n", statp->retrans);
+      }
 #endif
 #ifdef SOLARIS2
     } else if (!strncmp(cp, "retrans:", sizeof("retrans:") - 1)) {
@@ -223,8 +227,9 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
         statp->retry = INK_RES_MAXRETRY;
       }
 #ifdef DEBUG
-      if (statp->options & INK_RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG) {
         printf(";;\tattempts=%d\n", statp->retry);
+      }
 #endif
     } else if (!strncmp(cp, "debug", sizeof("debug") - 1)) {
 #ifdef DEBUG
@@ -275,7 +280,7 @@ ink_res_randomid()
  * there will have precedence.  Otherwise, the server address is set to
  * INADDR_ANY and the default domain name comes from the gethostname().
  *
- * An interrim version of this code (BIND 4.9, pre-4.4BSD) used 127.0.0.1
+ * An interim version of this code (BIND 4.9, pre-4.4BSD) used 127.0.0.1
  * rather than INADDR_ANY ("0.0.0.0") as the default name server address
  * since it was noted that INADDR_ANY actually meant ``the first interface
  * you "ifconfig"'d at boot time'' and if this was a SLIP or PPP interface,
@@ -382,7 +387,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   }
 
   /* ---------------------------------------------
-     Default domain name and doamin Search list:
+     Default domain name and domain Search list:
 
      if we are supplied a default domain name,
      and/or search list we will use it. Otherwise,
@@ -427,7 +432,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   }
 
   /* -------------------------------------------
-     we must be provided with atleast a named!
+     we must be provided with at least a named!
      ------------------------------------------- */
   if (pHostList) {
     if (pHostListSize > INK_MAXNS) {
@@ -568,8 +573,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 #ifdef DEBUG
     if (statp->options & INK_RES_DEBUG) {
       printf(";; res_init()... default dnsrch list:\n");
-      for (pp = statp->dnsrch; *pp; pp++)
+      for (pp = statp->dnsrch; *pp; pp++) {
         printf(";;\t%s\n", *pp);
+      }
       printf(";;\t..END..\n");
     }
 #endif
@@ -586,7 +592,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 }
 
 void
-parse_host_res_preference(const char *value, HostResPreferenceOrder order)
+parse_host_res_preference(const char *value, HostResPreferenceOrder &order)
 {
   Tokenizer tokens(";/|");
   // preference from the config string.
@@ -601,7 +607,8 @@ parse_host_res_preference(const char *value, HostResPreferenceOrder order)
     found[i] = false;
   }
 
-  for (i = 0; i < n && np < N_HOST_RES_PREFERENCE_ORDER; ++i) {
+  const int order_size = static_cast<int>(order.size());
+  for (i = 0; i < n && np < order_size; ++i) {
     const char *elt = tokens[i];
     // special case none/only because that terminates the sequence.
     if (0 == strcasecmp(elt, HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_NONE])) {
@@ -632,7 +639,7 @@ parse_host_res_preference(const char *value, HostResPreferenceOrder order)
     if (!found[HOST_RES_PREFER_IPV6]) {
       order[np++] = HOST_RES_PREFER_IPV6;
     }
-    if (np < N_HOST_RES_PREFERENCE_ORDER) { // was N_HOST_RES_PREFERENCE)
+    if (np < order_size) { // was N_HOST_RES_PREFERENCE)
       order[np] = HOST_RES_PREFER_NONE;
     }
   }

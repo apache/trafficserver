@@ -27,7 +27,7 @@ export CCACHE_BASEDIR
 # and mgmt, hence we have to build proxy/hdrs first.
 
 # depends on the generates ts/ts.h include file.
-SUBDIRS = src/tscpp/util lib src/tscore iocore proxy mgmt src plugins tools example rc configs include
+SUBDIRS = src/tscpp/util lib src/tscore iocore proxy mgmt src plugins tools example rc configs include tests
 
 if BUILD_DOCS
 SUBDIRS += doc include
@@ -58,7 +58,7 @@ doxygen:
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) $@
 
 changelog:
-	./tools/changelog.pl apache trafficserver $(VERSION) $(AUTHTOKEN) > CHANGELOG-$(VERSION)
+	./tools/git/changelog.pl -o apache -r trafficserver -m $(VERSION) -a $(AUTHTOKEN) > CHANGELOG-$(VERSION)
 
 asf-dist: asf-distdir
 	tardir=$(distdir) && $(am__tar) --mtime=./configure.ac | bzip2 -9 -c >$(distdir).tar.bz2
@@ -104,13 +104,15 @@ if BUILD_DOCS
 	@cd doc && $(MAKE) $(AM_MAKEFLAGS) install-man
 endif
 
-TESTS = tools/check-unused-dependencies
+if OS_LINUX
+    TESTS = tools/check-unused-dependencies
+endif
 
 rat:
 	java -jar $(top_srcdir)/ci/apache-rat-0.13-SNAPSHOT.jar -E $(top_srcdir)/ci/rat-regex.txt  -d $(top_srcdir)
 
 autopep8:
-	@autopep8 -i -r $(top_srcdir)
+	@$(top_srcdir)/tools/autopep8.sh $(top_srcdir)
 
 #
 # These are rules to make clang-format easy and fast to run. Run it with e.g.
@@ -119,7 +121,7 @@ autopep8:
 # If you make changes to directory structures, you must update this as well.
 #
 .PHONY:	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
-	clang-format-plugins clang-format-proxy clang-format-tools
+	clang-format-plugins clang-format-proxy clang-format-tools perltidy
 
 clang-format: 	clang-format-src clang-format-example clang-format-iocore clang-format-lib clang-format-mgmt \
 		clang-format-plugins clang-format-proxy clang-format-tools clang-format-tests
@@ -151,6 +153,9 @@ clang-format-tools:
 
 clang-format-tests:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/tests
+
+perltidy:
+	perltidy -q -b -bext='/' `find . -name \*.pm -o -name \*.pl`
 
 help:
 	@echo 'all              default target for building the package'

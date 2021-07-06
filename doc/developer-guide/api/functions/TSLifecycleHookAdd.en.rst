@@ -26,7 +26,9 @@ TSLifecycleHookAdd
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: c
+
+    #include <ts/ts.h>
 
 .. function:: void TSLifecycleHookAdd(TSLifecycleHookID id, TSCont contp)
 
@@ -38,7 +40,7 @@ specified by :arg:`id`. Lifecycle hooks are based on the Traffic Server
 process, not on any specific transaction or session. These will typically be
 called only once during the execution of the Traffic Server process and
 therefore should be added in :func:`TSPluginInit` (which could itself be
-considered a lifecyle hook). Unlike other hooks, lifecycle hooks may not have a
+considered a lifecycle hook). Unlike other hooks, lifecycle hooks may not have a
 well defined ordering and use of them should not assume that one of the hooks
 is always called before another unless specifically mentioned.
 
@@ -104,27 +106,35 @@ Types
       Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_TASK_THREADS_READY` and ``NULL``
       data.
 
+   .. cpp:enumerator:: TS_LIFECYCLE_SSL_SECRET_HOOK
+
+      Called before the data for the certificate or key is loaded.  The data argument to the callback is a pointer to a :type:`TSSecretID` which
+      contains a pointer to the name of the certificate or key and the relevant version if applicable.
+
+      This hook gives the plugin a chance to load the certificate or key from an alternative source and set via the :c:func:`TSSslSecretSet` API.
+      If there is no plugin override, the certificate or key will be loaded from disk and the secret name will be interpreted as a file path.
+
    .. cpp:enumerator:: TS_LIFECYCLE_SHUTDOWN_HOOK
 
       Called after |TS| receiving a shutdown signal, such as SIGTERM.
 
       Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_SHUTDOWN` and ``NULL`` data.
 
-.. c:type:: TSPluginMsg
+.. c:struct:: TSPluginMsg
 
-   The format of the data for the plugin message event :c:data:`TS_EVENT_LIFECYCLE_MSG`.
+   The data for the plugin message event :c:data:`TS_EVENT_LIFECYCLE_MSG`.
 
-.. c:member:: const char * TSPluginMsg::tag
+   .. c:var:: const char * tag
 
-   The tag of the message. This is a null terminated string.
+      The tag of the message. This is a null terminated string.
 
-.. c:member:: const void * TSPluginMsg::data
+   .. c:var:: const void * data
 
-   Message data (payload). This is a raw slab of bytes - no structure is guaranteed.
+      Message data (payload). This is a raw slab of bytes - no structure is guaranteed.
 
-.. c:member:: size_t TSPluginMsg::data_size
+   .. c:var:: size_t data_size
 
-   The size of :member:`TSPluginMsg::data`.
+      The number of valid bytes pointed at by :var:`TSPluginMsg.data`.
 
 Ordering
 ========
@@ -180,7 +190,7 @@ initialization, which was problematic because all of them could effectively
 only be called from :func:`TSPluginInit` . The solution was to move
 :func:`TSPluginInit` as early as possible in the process initialization and
 provide hooks for API calls that needed to be invoked later which served
-essentially as additional pluging initialization points.
+essentially as additional plugin initialization points.
 
 See Also
 ========

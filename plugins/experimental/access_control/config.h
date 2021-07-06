@@ -38,7 +38,7 @@ public:
   virtual ~AccessControlConfig() { delete _tokenFactory; }
   bool init(int argc, char *argv[]);
 
-  bool loadMultiPatternsFromFile(const String &filename, bool blacklist = true);
+  bool loadMultiPatternsFromFile(const String &filename, bool denylist = true);
 
   StringMap _symmetricKeysMap; /** @brief a map secrets accessible by key string (KID) */
 
@@ -66,5 +66,5 @@ public:
   String _extrTokenIdHdrName;    /** @brief header name to extract the token id, if empty => no extraction */
   String _extrValidationHdrName; /** @brief header name to extract the token validation status, if empty => no extraction */
   bool _useRedirects = false;    /** @brief true - use redirect to set the access token cookie, @todo not used yet */
-  Classifier _uriPathScope; /**< @brief blacklist (exclude) and white-list (include) whcih path should have the access control */
+  Classifier _uriPathScope; /**< @brief denylist (exclude) and allow-list (include) which path should have the access control */
 };

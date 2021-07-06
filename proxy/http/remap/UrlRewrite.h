@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  URL rewriting.
 
   @section license License
 
@@ -19,6 +19,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
 
 #pragma once
@@ -28,6 +29,8 @@
 #include "UrlMappingPathIndex.h"
 #include "HttpTransact.h"
 #include "tscore/Regex.h"
+#include "PluginFactory.h"
+#include "NextHopStrategyFactory.h"
 
 #include <memory>
 
@@ -57,14 +60,28 @@ class UrlRewrite : public RefCountObj
 {
 public:
   using URLTable = std::unordered_map<std::string, UrlMappingPathIndex *>;
-  UrlRewrite();
+  UrlRewrite()   = default;
   ~UrlRewrite() override;
 
+  /** Load the configuration.
+   *
+   * This access data in librecords to obtain the information needed for loading the configuration.
+   *
+   * @return @c true if the instance state is valid, @c false if not.
+   */
+  bool load();
+
+  /** Build the internal url write tables.
+   *
+   * @param path Path to configuration file.
+   * @return 0 on success, non-zero error code on failure.
+   */
   int BuildTable(const char *path);
+
   mapping_type Remap_redirect(HTTPHdr *request_header, URL *redirect_url);
   bool ReverseMap(HTTPHdr *response_header);
   void SetReverseFlag(int flag);
-  void Print();
+  void Print() const;
 
   // The UrlRewrite object is-a RefCountObj, but this is a convenience to make it clear that we
   // don't delete() these objects directly, but via the release() method only.
@@ -128,8 +145,9 @@ public:
   };
 
   void PerformACLFiltering(HttpTransact::State *s, url_mapping *mapping);
-  url_mapping *SetupBackdoorMapping();
-  void PrintStore(MappingsStore &store);
+  void PrintStore(const MappingsStore &store) const;
+  std::string PrintRemapHits();
+  std::string PrintRemapHitsStore(MappingsStore &store);
 
   void
   DestroyStore(MappingsStore &store)
@@ -182,20 +200,23 @@ public:
                           mapping_container);
   }
 
-  int nohost_rules;
-  int reverse_proxy;
+  int nohost_rules  = 0;
+  int reverse_proxy = 0;
 
-  char *ts_name; // Used to send redirects when no host info
+  char *ts_name = nullptr; // Used to send redirects when no host info
 
-  char *http_default_redirect_url; // Used if redirect in "referer" filtering was not defined properly
-  int num_rules_forward;
-  int num_rules_reverse;
-  int num_rules_redirect_permanent;
-  int num_rules_redirect_temporary;
-  int num_rules_forward_with_recv_port;
+  char *http_default_redirect_url      = nullptr; // Used if redirect in "referer" filtering was not defined properly
+  int num_rules_forward                = 0;
+  int num_rules_reverse                = 0;
+  int num_rules_redirect_permanent     = 0;
+  int num_rules_redirect_temporary     = 0;
+  int num_rules_forward_with_recv_port = 0;
+
+  PluginFactory pluginFactory;
+  NextHopStrategyFactory *strategyFactory = nullptr;
 
 private:
-  bool _valid;
+  bool _valid = false;
 
   bool _mappingLookup(MappingsStore &mappings, URL *request_url, int request_port, const char *request_host, int request_host_len,
                       UrlMappingContainer &mapping_container);

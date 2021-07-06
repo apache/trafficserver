@@ -83,7 +83,7 @@ specifies where these messages are logged. A typical location is
 
 The :manpage:`syslog(8)` process works on a system-wide basis, so it serves as
 the single repository for messages from all |TS| processes (including
-:program:`traffic_server` and  :program:`traffic_manager`).
+:program:`traffic_server` and :program:`traffic_manager`).
 
 System information logs observe a static format. Each log entry in the log
 contains information about the date and time the error was logged, the hostname
@@ -137,7 +137,7 @@ Function    Description
             within the interval. May be used with any type of field; numeric or
             otherwise.
 ``LAST``    The value of the last event, chronologically, which was observed
-            within the interval. May be used with any type of field; nuemric or
+            within the interval. May be used with any type of field; numeric or
             otherwise.
 ``SUM``     Sum of the given field's value from all events within the interval.
             May only be used on numeric fields.
@@ -151,7 +151,7 @@ aforementioned aggregate functions and the specification of an interval, as so:
 
    formats:
    - name: mysummary
-     format: '%<operator(field)> : %<operator(field)>'
+     format: '%<operator(field)> , %<operator(field)>'
      interval: n
 
 The interval itself is given with *n* as the number of seconds for each period

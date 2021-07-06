@@ -171,47 +171,4 @@ predicate(V (T::*m)() const, V const &v)
   return MethodPredicate<T, V>(m, v);
 }
 
-#if 0
-
-/// Accumulate a minimum value when called repeated on different objects.
-template <
-  typename V, ///< Value type.
-  typename T, ///< Object type
-  typename F ///< Extractor type.
-> struct MinimaFunctor :  public std::unary_function<T, void> {
-  V& m_result; ///< Result value.
-  F m_extractor; ///< Extraction functor.
-  /// Constructor.
-MinimaFunctor(F const& f, V& v) : m_result(v), m_extractor(f) { }
-  /// Extract a value and accumulate the minimum.
-  void operator () (T const& obj) const {
-    m_result = std::min(m_result, m_extractor(obj));
-  }
-};
-
-// Working on a more general mechanism by starting with more specific
-// ones to see the pattern.
-
-template <
-  typename R, ///< Return type.
-  typename T, ///< Object type.
-  typename ARG1 ///< Bound argument type.
-> struct BinderConstMethodArg1ToNullary : std::unary_function<T, R> {
-  typedef R (T::*F)(ARG1) const; /// Method type.
-  F m_method; ///< The actual method.
-  ARG1 m_arg1; ///< Bound argument.
-  /// Constructor.
-  BinderConstMethodArg1ToNullary(
-    F const& f, ///< Pointer to  method.
-    ARG1 const& arg1 ///< Argument to bind.
-  ) : m_method(f), m_arg1(arg1) {
-  }
-  /// Call the method.
-  R operator () (T const& obj) const {
-    return (obj.*m_method)(m_arg1);
-  }
-};
-
-#endif
-
 } // namespace ts

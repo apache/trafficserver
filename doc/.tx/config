@@ -37,9 +37,9 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/explicit-forwa
 source_file = _build/locale/pot/admin-guide/configuration/explicit-forward-proxying.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--configuration--hierachical-caching_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/hierachical-caching.en.po
-source_file = _build/locale/pot/admin-guide/configuration/hierachical-caching.en.pot
+[apache-traffic-server-6x.admin-guide--configuration--hierarchical-caching_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/hierarchical-caching.en.po
+source_file = _build/locale/pot/admin-guide/configuration/hierarchical-caching.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--configuration--index_en]
@@ -160,11 +160,6 @@ source_lang = en
 [apache-traffic-server-6x.admin-guide--monitoring--logging--log-builder_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-builder.en.po
 source_file = _build/locale/pot/admin-guide/monitoring/logging/log-builder.en.pot
-source_lang = en
-
-[apache-traffic-server-6x.admin-guide--monitoring--logging--log-collation_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-collation.en.po
-source_file = _build/locale/pot/admin-guide/monitoring/logging/log-collation.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.admin-guide--monitoring--logging--log-formats_en]
@@ -702,9 +697,9 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContMute
 source_file = _build/locale/pot/developer-guide/api/functions/TSContMutexGet.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--api--functions--TSContSchedule_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContSchedule.en.po
-source_file = _build/locale/pot/developer-guide/api/functions/TSContSchedule.en.pot
+[apache-traffic-server-6x.developer-guide--api--functions--TSContScheduleOnPool_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContScheduleOnPool.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContScheduleOnPool.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.developer-guide--api--functions--TSDebug_en]
@@ -1682,11 +1677,6 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSReturnCode.e
 source_file = _build/locale/pot/developer-guide/api/types/TSReturnCode.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--api--types--TSSDKVersion_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSSDKVersion.en.po
-source_file = _build/locale/pot/developer-guide/api/types/TSSDKVersion.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.developer-guide--api--types--TSServerSessionSharingMatchType_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSServerSessionSharingMatchType.en.po
 source_file = _build/locale/pot/developer-guide/api/types/TSServerSessionSharingMatchType.en.pot
@@ -1932,34 +1922,34 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/
 source_file = _build/locale/pot/developer-guide/plugins/example-plugins/basic-authorization/working-with-http-headers.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--accessing-the-transaction-being-processed_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/accessing-the-transaction-being-processed.en.po
-source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/accessing-the-transaction-being-processed.en.pot
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--denylist--accessing-the-transaction-being-processed_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/denylist/accessing-the-transaction-being-processed.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/denylist/accessing-the-transaction-being-processed.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--index_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/index.en.po
-source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/index.en.pot
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--denylist--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/denylist/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/denylist/index.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--setting-a-global-hook_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/setting-a-global-hook.en.po
-source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/setting-a-global-hook.en.pot
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--denylist--setting-a-global-hook_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/denylist/setting-a-global-hook.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/denylist/setting-a-global-hook.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--setting-up-a-transaction-hook_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.po
-source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.pot
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--denylist--setting-up-a-transaction-hook_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/denylist/setting-up-a-transaction-hook.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/denylist/setting-up-a-transaction-hook.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--source-code_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/source-code.en.po
-source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/source-code.en.pot
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--denylist--source-code_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/denylist/source-code.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/denylist/source-code.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--working-with-http-header-functions_en]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/working-with-http-header-functions.en.po
-source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/working-with-http-header-functions.en.pot
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--denylist--working-with-http-header-functions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/denylist/working-with-http-header-functions.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/denylist/working-with-http-header-functions.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.developer-guide--plugins--example-plugins--query-remap--example-query-remap_en]

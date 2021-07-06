@@ -56,7 +56,7 @@ expressions, and unique rules for match. E.g.
 
 
 Note that the default in the case of no matches on the regular expressions
-is to "allow" the request. This can be overriden, see next use case.
+is to "allow" the request. This can be overridden, see next use case.
 
 
 3. You can also combine 1) and 2), and provide defaults in the remap.config
@@ -79,7 +79,7 @@ Finally, there's one additional parameter option that can be used:
     @pparam=html::/some/path.html
 
 
-This will override the default reponse body for the denied responses with a
+This will override the default response body for the denied responses with a
 custom piece of HTML. This can be useful to explain to your users why they
 are getting denied access to a particular piece of content. This
 configuration can be used with any of the use cases described above.

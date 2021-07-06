@@ -1,0 +1,213 @@
+'''
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from autest.testers import Tester, tester
+import autest.common.is_a as is_a
+import hosts.output as host
+
+import re
+
+
+class CurlHeader(Tester):
+    def __init__(self,
+                 value,
+                 test_value=None,
+                 kill_on_failure=False,
+                 description_group=None,
+                 description=None):
+
+        self._stack = host.getCurrentStack(1)
+
+        if not is_a.Dictionary(value):
+            host.WriteError(
+                "CurlHeader Input: Need to provide a dictionary.",
+                stack=host.getCurrentStack(1)
+            )
+
+        ops = ("equal", "equal_re")
+        gold_dict = value
+
+        headers = tuple(gold_dict.keys())
+        if description is None:
+            description = 'Checking that all {} headers exist and have matching values: {}'.format(
+                len(headers), ', '.join(headers) if len(headers) <= 10 else ', '.join(headers[0:10]) + ', etc.')
+
+        # sanity check for input dictionary format
+        for header, target in gold_dict.items():
+            if not isinstance(header, str):
+                host.WriteError(
+                    'CurlHeader Input: Unsupported type for header {}. Header needs to be a string.'.format(header),
+                    stack=self._stack
+                )
+
+            if target is None or isinstance(target, str):
+                continue
+            elif isinstance(target, dict):
+                for op, pos_val in target.items():
+                    if op not in ops:
+                        host.WriteError(
+                            'CurlHeader Input: Unsupported operation \'{}\' for value at header \'{}\'. The available operations are: {}.'.format(
+                                op, header, ', '.join(ops)), stack=self._stack)
+                    elif pos_val is None or isinstance(pos_val, str):
+                        continue
+                    elif isinstance(pos_val, list):
+                        for str_ in pos_val:
+                            if not isinstance(str_, str) and str_ is not None:
+                                host.WriteError(
+                                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string or None.'.format(
+                                        str_, str_.__class__.__name__, header), stack=self._stack)
+                    else:
+                        host.WriteError(
+                            'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string, a list or None for possible curl values.'.format(
+                                pos_val, pos_val.__class__.__name__, header), stack=self._stack)
+            else:
+                host.WriteError(
+                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide either a string, a dictionary or None.'.format(
+                        target, target.__class__.__name__, header), stack=self._stack)
+
+        super(CurlHeader, self).__init__(
+            value=value,
+            test_value=test_value,
+            kill_on_failure=kill_on_failure,
+            description_group=description_group,
+            description=description)
+
+    def test(self, eventinfo, **kw):
+        # Get curl output file to test against
+        fname = self._GetContent(eventinfo)
+        # do test
+
+        if fname is None:
+            pass
+        try:
+            with open(fname) as val_file:
+                val_content = [v.replace('\r\n', '\n').rstrip('\n') for v in val_file.readlines()]
+        except (OSError, IOError) as e:
+            self.Result = tester.ResultType.Failed
+            self.Reason = str(e)
+            return
+
+        val_dict = {}
+        gold_dict = self.Value
+
+        for line in val_content:
+            # Current version of curl uses ': ' to separate header and value
+            vals = line.split(': ')
+            # headers need to be lowercased to avoid inconsistence in letter case
+            if len(vals) == 1:
+                val_dict[vals[0].lower()] = ''
+            elif len(vals) == 2:
+                val_dict[vals[0].lower()] = vals[1]
+            else:
+                val_dict[vals[0].lower()] = ': '.join(vals[1:])
+
+        # generate a gold dictionary with lowercase header
+        gold_dict = {k.lower(): v for k, v in gold_dict.items()}
+
+        p_flag = 1
+        reason = ''
+
+        for header in gold_dict.keys():
+            v = val_dict.get(header)
+            if v is not None:
+                res = self.match(gold_dict, header, v)
+                if res is None:
+                    continue
+                else:
+                    reason += 'In field: {} \n'.format(header) + res
+                    p_flag = 0
+                    reason += '\n--------------------------------------------------------------------------------\n'
+            else:
+                reason += 'Nonexistent field: {}'.format(header)
+                p_flag = 0
+                reason += '\n--------------------------------------------------------------------------------\n'
+
+        if p_flag == 1:
+            self.Result = tester.ResultType.Passed
+            self.Reason = "Curl headers and values match"
+        else:
+            self.Result = tester.ResultType.Failed
+            self.Reason = reason
+            if self.KillOnFailure:
+                raise KillOnFailureError
+        host.WriteVerbose(
+            ["testers.CurlHeader", "testers"],
+            "{0} - ".format(tester.ResultType.to_color_string(self.Result)),
+            self.Reason)
+
+    # Optional operations to do:
+    #       equal: complete string match
+    #       equal_re: regular expression match for the entire string
+    # Given in gold_dict:
+    #       a string: equal
+    #       a dict: {equal: [e], equal_re: [r]}. Test will pass if either
+    #               the equal or equal_re is satisfied, who will be satisfied
+    #               if any of the patterns in the list matches.
+
+    def match(self, gold_dictionary, header, val_value):
+        target = gold_dictionary[header]
+
+        if target is None:
+            return None
+        elif isinstance(target, str):
+            # if given a string, check for an exact match
+            return 'Not an exact match.\nExpected : {}\nActual   : {}'.format(target, val_value) \
+                if target != val_value else None
+
+        elif isinstance(target, dict):
+            # if given a dict, check for valid operations indicated by the keys
+            for op, pos_val in target.items():
+                if pos_val is None:
+                    return None
+                elif isinstance(pos_val, list):
+                    # print('Need to provide a list of possible values.')
+                    # continue
+                    if op == 'equal':
+                        for str_ in pos_val:
+                            if val_value == str_ or str_ is None:
+                                return None
+                        # return 'No matching strings in the list.'
+                    elif op == 'equal_re':
+                        for regex in pos_val:
+                            if regex is None:
+                                return None
+                            elif re.fullmatch(regex, val_value) is not None:
+                                return None
+
+                elif isinstance(pos_val, str):
+                    if op == 'equal':
+                        if val_value == pos_val:
+                            return None
+                            # else 'Not an exact match.\nExpected : {}\nActual   : {}'.format(pos_val, val_value)
+
+                    elif op == 'equal_re':
+                        if re.fullmatch(pos_val, val_value) is not None:
+                            return None
+
+            ret = ''
+            ops = {'equal': 'Any of the following strings: ',
+                   'equal_re': 'Any of the following regular expression: '}
+
+            for op, pos_val in target.items():
+                ret += '    {}: \'{}\'\n'.format(ops[op], '\', \''.join(pos_val)) if isinstance(pos_val, list) \
+                    else '    {}: \'{}\'\n'.format(ops[op], pos_val)
+
+            return 'Value \'{}\' matches none of: \n{}'.format(val_value, ret.strip('\n'))
+
+
+AddTester(CurlHeader)

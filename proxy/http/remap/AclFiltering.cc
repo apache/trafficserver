@@ -33,7 +33,7 @@ acl_filter_rule::reset()
 {
   int i;
   for (i = (argc = 0); i < ACL_FILTER_MAX_ARGV; i++) {
-    argv[i] = (char *)ats_free_null(argv[i]);
+    argv[i] = static_cast<char *>(ats_free_null(argv[i]));
   }
   method_restriction_enabled = false;
   for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
@@ -51,8 +51,7 @@ acl_filter_rule::reset()
   internal    = 0;
 }
 
-acl_filter_rule::acl_filter_rule()
-  : next(nullptr), filter_name(nullptr), allow_flag(1), src_ip_valid(0), active_queue_flag(0), internal(0), argc(0)
+acl_filter_rule::acl_filter_rule() : allow_flag(1), src_ip_valid(0), active_queue_flag(0), internal(0)
 {
   standard_method_lookup.resize(HTTP_WKSIDX_METHODS_CNT);
   ink_zero(argv);
@@ -83,7 +82,7 @@ acl_filter_rule::add_argv(int _argc, char *_argv[])
 void
 acl_filter_rule::name(const char *_name)
 {
-  filter_name = (char *)ats_free_null(filter_name);
+  filter_name = static_cast<char *>(ats_free_null(filter_name));
   if (_name) {
     filter_name = ats_strdup(_name);
   }
@@ -96,13 +95,14 @@ acl_filter_rule::print()
   printf("-----------------------------------------------------------------------------------------\n");
   printf("Filter \"%s\" status: allow_flag=%s, src_ip_valid=%s, in_ip_valid=%s, internal=%s, active_queue_flag=%d\n",
          filter_name ? filter_name : "<NONAME>", allow_flag ? "true" : "false", src_ip_valid ? "true" : "false",
-         in_ip_valid ? "true" : "false", internal ? "true" : "false", (int)active_queue_flag);
+         in_ip_valid ? "true" : "false", internal ? "true" : "false", static_cast<int>(active_queue_flag));
   printf("standard methods=");
   for (i = 0; i < HTTP_WKSIDX_METHODS_CNT; i++) {
     if (standard_method_lookup[i]) {
       printf("0x%x ", HTTP_WKSIDX_CONNECT + i);
     }
   }
+  printf("\n");
   printf("nonstandard methods=");
   for (const auto &nonstandard_method : nonstandard_methods) {
     printf("%s ", nonstandard_method.c_str());
@@ -111,13 +111,13 @@ acl_filter_rule::print()
   printf("src_ip_cnt=%d\n", src_ip_cnt);
   for (i = 0; i < src_ip_cnt; i++) {
     ip_text_buffer b1, b2;
-    printf("%s - %s", src_ip_array[i].start.toString(b1, sizeof(b1)), src_ip_array[i].end.toString(b2, sizeof(b2)));
+    printf("%s - %s, ", src_ip_array[i].start.toString(b1, sizeof(b1)), src_ip_array[i].end.toString(b2, sizeof(b2)));
   }
   printf("\n");
   printf("in_ip_cnt=%d\n", in_ip_cnt);
   for (i = 0; i < in_ip_cnt; i++) {
     ip_text_buffer b1, b2;
-    printf("%s - %s", in_ip_array[i].start.toString(b1, sizeof(b1)), in_ip_array[i].end.toString(b2, sizeof(b2)));
+    printf("%s - %s, ", in_ip_array[i].start.toString(b1, sizeof(b1)), in_ip_array[i].end.toString(b2, sizeof(b2)));
   }
   printf("\n");
   for (i = 0; i < argc; i++) {

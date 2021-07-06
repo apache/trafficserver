@@ -25,8 +25,6 @@
 
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object.
 
-extern int cache_config_compatibility_4_2_0_fixup;
-
 Action *
 Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, const char *hostname, int host_len)
 {
@@ -93,7 +91,7 @@ Lcallreturn:
 }
 
 Action *
-Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, OverridableHttpConfigParams *params,
+Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const OverridableHttpConfigParams *params,
                  CacheFragType type, const char *hostname, int host_len)
 {
   if (!CacheProcessor::IsCacheReady(type)) {
@@ -224,7 +222,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
     }
     // check if all the writers who came before this reader have
     // set the http_info.
-    for (w = (CacheVC *)od->writers.head; w; w = (CacheVC *)w->opendir_link.next) {
+    for (w = static_cast<CacheVC *>(od->writers.head); w; w = static_cast<CacheVC *>(w->opendir_link.next)) {
       if (w->start_time > start_time || w->closed < 0) {
         continue;
       }
@@ -278,7 +276,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
       alternate_index = 0;
     }
     CacheHTTPInfo *obj = vector.get(alternate_index);
-    for (w = (CacheVC *)od->writers.head; w; w = (CacheVC *)w->opendir_link.next) {
+    for (w = static_cast<CacheVC *>(od->writers.head); w; w = static_cast<CacheVC *>(w->opendir_link.next)) {
       if (obj->m_alt == w->alternate.m_alt) {
         write_vc = w;
         break;
@@ -423,7 +421,7 @@ CacheVC::openReadFromWriter(int event, Event *e)
         // the resident alternate is being updated and its a
         // header only update. The first_buf of the writer has the
         // document body.
-        Doc *doc   = (Doc *)write_vc->first_buf->data();
+        Doc *doc   = reinterpret_cast<Doc *>(write_vc->first_buf->data());
         writer_buf = new_IOBufferBlock(write_vc->first_buf, doc->data_len(), doc->prefix_len());
         MUTEX_RELEASE(writer_lock);
         ink_assert(doc_len == doc->data_len());
@@ -489,7 +487,7 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
   if (ntodo <= 0) {
     return EVENT_CONT;
   }
-  if (length < ((int64_t)doc_len) - vio.ndone) {
+  if (length < (static_cast<int64_t>(doc_len)) - vio.ndone) {
     DDebug("cache_read_agg", "truncation %X", first_key.slice32(1));
     if (is_action_tag_set("cache")) {
       ink_release_assert(false);
@@ -499,7 +497,7 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
   }
   /* its possible that the user did a do_io_close before
      openWriteWriteDone was called. */
-  if (length > ((int64_t)doc_len) - vio.ndone) {
+  if (length > (static_cast<int64_t>(doc_len)) - vio.ndone) {
     int64_t skip_bytes = length - (doc_len - vio.ndone);
     iobufferblock_skip(writer_buf.get(), &writer_offset, &length, skip_bytes);
   }
@@ -507,7 +505,7 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
   if (bytes > vio.ntodo()) {
     bytes = vio.ntodo();
   }
-  if (vio.ndone >= (int64_t)doc_len) {
+  if (vio.ndone >= static_cast<int64_t>(doc_len)) {
     ink_assert(bytes <= 0);
     // reached the end of the document and the user still wants more
     return calluser(VC_EVENT_EOS);
@@ -565,13 +563,12 @@ CacheVC::openReadReadDone(int event, Event *e)
       VC_SCHED_LOCK_RETRY();
     }
     if (event == AIO_EVENT_DONE && !io.ok()) {
-      dir_delete(&earliest_key, vol, &earliest_dir);
       goto Lerror;
     }
     if (last_collision &&     // no missed lock
         dir_valid(vol, &dir)) // object still valid
     {
-      doc = (Doc *)buf->data();
+      doc = reinterpret_cast<Doc *>(buf->data());
       if (doc->magic != DOC_MAGIC) {
         char tmpstring[CRYPTO_HEX_SIZE];
         if (doc->magic == DOC_CORRUPT) {
@@ -623,10 +620,11 @@ Lerror : {
   if (request.valid()) {
     int url_length;
     const char *url_text = request.url_get()->string_get_ref(&url_length);
-    Warning("Document %s truncated, url[%.*s]", earliest_key.toHexStr(tmpstring), url_length, url_text);
+    Warning("Document %s truncated, url[%.*s] .. clearing", earliest_key.toHexStr(tmpstring), url_length, url_text);
   } else {
-    Warning("Document %s truncated", earliest_key.toHexStr(tmpstring));
+    Warning("Document %s truncated .. clearing", earliest_key.toHexStr(tmpstring));
   }
+  dir_delete(&earliest_key, vol, &earliest_dir);
   return calluser(VC_EVENT_ERROR);
 }
 Ldone:
@@ -645,7 +643,7 @@ int
 CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   cancel_trigger();
-  Doc *doc         = (Doc *)buf->data();
+  Doc *doc         = reinterpret_cast<Doc *>(buf->data());
   int64_t ntodo    = vio.ntodo();
   int64_t bytes    = doc->len - doc_pos;
   IOBufferBlock *b = nullptr;
@@ -719,8 +717,46 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     bytes     = doc->len - doc_pos;
     if (is_debug_tag_set("cache_seek")) {
       char target_key_str[CRYPTO_HEX_SIZE];
-      key.toHexStr(target_key_str);
-      Debug("cache_seek", "Read # %d @ %" PRId64 "/%d for %" PRId64, fragment, doc_pos, doc->len, bytes);
+      Debug("cache_seek", "Read # %d @ %" PRId64 "/%d for %" PRId64 " %s", fragment, doc_pos, doc->len, bytes,
+            key.toHexStr(target_key_str));
+    }
+
+    // This shouldn't happen for HTTP assets but it does
+    // occasionally in production. This is a temporary fix
+    // to clean up broken objects until the root cause can
+    // be found. It must be the case that either the fragment
+    // offsets are incorrect or a fragment table isn't being
+    // created when it should be.
+    if (frag_type == CACHE_FRAG_TYPE_HTTP && bytes < 0) {
+      char xt[CRYPTO_HEX_SIZE];
+      char yt[CRYPTO_HEX_SIZE];
+
+      int url_length       = 0;
+      char const *url_text = nullptr;
+      if (request.valid()) {
+        url_text = request.url_get()->string_get_ref(&url_length);
+      }
+
+      int64_t prev_frag_size = 0;
+      if (fragment && frags) {
+        prev_frag_size = static_cast<int64_t>(frags[fragment - 1]);
+      }
+
+      Warning("cache_seek range request bug: read %s targ %s - %s frag # %d (prev_frag %" PRId64 ") @ %" PRId64 "/%d for %" PRId64
+              " tot %" PRId64 " url '%.*s'",
+              doc->key.toHexStr(xt), key.toHexStr(yt), f.single_fragment ? "single" : "multi", fragment, prev_frag_size, doc_pos,
+              doc->len, bytes, doc->total_len, url_length, url_text);
+
+      doc->magic = DOC_CORRUPT;
+
+      CACHE_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+      if (!lock.is_locked()) {
+        SET_HANDLER(&CacheVC::openReadDirDelete);
+        VC_SCHED_LOCK_RETRY();
+      }
+
+      dir_delete(&earliest_key, vol, &earliest_dir);
+      goto Lerror;
     }
   }
   if (ntodo <= 0) {
@@ -754,7 +790,7 @@ CacheVC::openReadMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     return EVENT_CONT;
   }
 Lread : {
-  if (vio.ndone >= (int64_t)doc_len) {
+  if (vio.ndone >= static_cast<int64_t>(doc_len)) {
     // reached the end of the document and the user still wants more
     return calluser(VC_EVENT_EOS);
   }
@@ -838,13 +874,13 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     // an object needs to be outside the aggregation window in order to be
     // be evacuated as it is read
     if (!dir_agg_valid(vol, &dir)) {
-      // a directory entry which is nolonger valid may have been overwritten
+      // a directory entry which is no longer valid may have been overwritten
       if (!dir_valid(vol, &dir)) {
         last_collision = nullptr;
       }
       goto Lread;
     }
-    doc = (Doc *)buf->data();
+    doc = reinterpret_cast<Doc *>(buf->data());
     if (doc->magic != DOC_MAGIC) {
       char tmpstring[CRYPTO_HEX_SIZE];
       if (is_action_tag_set("cache")) {
@@ -864,7 +900,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
       last_collision = nullptr;
       goto Lread;
     }
-    if (!(doc->key == key)) { // collisiion
+    if (!(doc->key == key)) { // collision
       goto Lread;
     }
     // success
@@ -873,7 +909,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     next_CacheKey(&key, &doc->key);
     vol->begin_read(this);
     if (vol->within_hit_evacuate_window(&earliest_dir) &&
-        (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
+        (!cache_config_hit_evacuate_size_limit || doc_len <= static_cast<uint64_t>(cache_config_hit_evacuate_size_limit))) {
       DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&earliest_dir),
              vol->offset_to_vol_offset(vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
@@ -892,7 +928,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
     if (!f.read_from_writer_called && frag_type == CACHE_FRAG_TYPE_HTTP) {
       // don't want any writers while we are evacuating the vector
       if (!vol->open_write(this, false, 1)) {
-        Doc *doc1    = (Doc *)first_buf->data();
+        Doc *doc1    = reinterpret_cast<Doc *>(first_buf->data());
         uint32_t len = this->load_http_info(write_vector, doc1);
         ink_assert(len == doc1->hlen && write_vector->count() > 0);
         write_vector->remove(alternate_index, true);
@@ -1041,13 +1077,13 @@ CacheVC::openReadStartHead(int event, Event *e)
     // an object needs to be outside the aggregation window in order to be
     // be evacuated as it is read
     if (!dir_agg_valid(vol, &dir)) {
-      // a directory entry which is nolonger valid may have been overwritten
+      // a directory entry which is no longer valid may have been overwritten
       if (!dir_valid(vol, &dir)) {
         last_collision = nullptr;
       }
       goto Lread;
     }
-    doc = (Doc *)buf->data();
+    doc = reinterpret_cast<Doc *>(buf->data());
     if (doc->magic != DOC_MAGIC) {
       char tmpstring[CRYPTO_HEX_SIZE];
       if (is_action_tag_set("cache")) {
@@ -1085,7 +1121,7 @@ CacheVC::openReadStartHead(int event, Event *e)
         if (buf) {
           HTTPCacheAlt *alt  = reinterpret_cast<HTTPCacheAlt *>(doc->hdr());
           int32_t alt_length = 0;
-          // count should be reasonable, as vector is initialized and unlikly to be too corrupted
+          // count should be reasonable, as vector is initialized and unlikely to be too corrupted
           // by bad disk data - count should be the number of successfully unmarshalled alts.
           for (int32_t i = 0; i < vector.count(); ++i) {
             CacheHTTPInfo *info = vector.get(i);
@@ -1157,7 +1193,7 @@ CacheVC::openReadStartHead(int event, Event *e)
     }
 
     if (vol->within_hit_evacuate_window(&dir) &&
-        (!cache_config_hit_evacuate_size_limit || doc_len <= (uint64_t)cache_config_hit_evacuate_size_limit)) {
+        (!cache_config_hit_evacuate_size_limit || doc_len <= static_cast<uint64_t>(cache_config_hit_evacuate_size_limit))) {
       DDebug("cache_hit_evac", "dir: %" PRId64 ", write: %" PRId64 ", phase: %d", dir_offset(&dir),
              vol->offset_to_vol_offset(vol->header->write_pos), vol->header->phase);
       f.hit_evacuate = 1;
@@ -1219,4 +1255,19 @@ Learliest:
   last_collision = nullptr;
   SET_HANDLER(&CacheVC::openReadStartEarliest);
   return openReadStartEarliest(event, e);
+}
+
+/*
+   Handle a directory delete event in case of some detected corruption.
+*/
+int
+CacheVC::openReadDirDelete(int event, Event *e)
+{
+  MUTEX_TRY_LOCK(lock, vol->mutex, mutex->thread_holding);
+  if (!lock.is_locked()) {
+    VC_SCHED_LOCK_RETRY();
+  }
+
+  dir_delete(&earliest_key, vol, &earliest_dir);
+  return calluser(VC_EVENT_ERROR);
 }

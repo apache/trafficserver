@@ -77,7 +77,7 @@ END:
 }
 
 /* readHTTPResponse
- * - read from an openned socket to memory-allocated buffer and close the
+ * - read from an opened socket to memory-allocated buffer and close the
  *   socket regardless success or failure.
  * INPUT:  sock -- the socket to read the response from
  *         buffer -- the buffer to be filled with the HTTP response
@@ -132,7 +132,7 @@ error: /* "Houston, we have a problem!" (Apollo 13) */
 }
 
 /* sendHTTPRequest
- * - Compose a HTTP GET request and sent it via an openned socket.
+ * - Compose a HTTP GET request and sent it via an opened socket.
  * INPUT:  sock -- the socket to send the message to
  *         req  -- the request to send
  * OUTPUT: bool -- true if everything went well. false otherwise (and sock is
@@ -182,7 +182,6 @@ error: /* "Houston, we have a problem!" (Apollo 13) */
   return TS_ERR_NET_WRITE;
 }
 
-/* Modified from TrafficCop.cc (open_socket) */
 int
 connectDirect(const char *host, int port, uint64_t /* timeout ATS_UNUSED */)
 {
@@ -222,10 +221,10 @@ connectDirect(const char *host, int port, uint64_t /* timeout ATS_UNUSED */)
   if (!pHostent) {
     goto error;
   }
-  memcpy((caddr_t) & (name.sin_addr), pHostent->h_addr, pHostent->h_length);
+  memcpy(reinterpret_cast<caddr_t>(&(name.sin_addr)), pHostent->h_addr, pHostent->h_length);
 
   do {
-    err = connect(sock, (struct sockaddr *)&name, sizeof(name));
+    err = connect(sock, reinterpret_cast<struct sockaddr *>(&name), sizeof(name));
   } while ((err < 0) && ((errno == EINTR) || (errno == EAGAIN)));
 
   if ((err < 0) && (errno != EINPROGRESS)) {
@@ -241,7 +240,6 @@ error:
   return -1;
 } /* connectDirect */
 
-/* COPIED direclty form TrafficCop.cc */
 static int
 poll_read(int fd, int timeout)
 {
@@ -302,16 +300,10 @@ get_event_id(const char *event_name)
     return MGMT_ALARM_PROXY_PROCESS_DIED;
   } else if (strcmp("MGMT_ALARM_PROXY_PROCESS_BORN", event_name) == 0) {
     return MGMT_ALARM_PROXY_PROCESS_BORN;
-  } else if (strcmp("MGMT_ALARM_PROXY_PEER_BORN", event_name) == 0) {
-    return MGMT_ALARM_PROXY_PEER_BORN;
-  } else if (strcmp("MGMT_ALARM_PROXY_PEER_DIED", event_name) == 0) {
-    return MGMT_ALARM_PROXY_PEER_DIED;
   } else if (strcmp("MGMT_ALARM_PROXY_CONFIG_ERROR", event_name) == 0) {
     return MGMT_ALARM_PROXY_CONFIG_ERROR;
   } else if (strcmp("MGMT_ALARM_PROXY_SYSTEM_ERROR", event_name) == 0) {
     return MGMT_ALARM_PROXY_SYSTEM_ERROR;
-  } else if (strcmp("MGMT_ALARM_PROXY_LOG_SPACE_CRISIS", event_name) == 0) {
-    return MGMT_ALARM_PROXY_LOG_SPACE_CRISIS;
   } else if (strcmp("MGMT_ALARM_PROXY_CACHE_ERROR", event_name) == 0) {
     return MGMT_ALARM_PROXY_CACHE_ERROR;
   } else if (strcmp("MGMT_ALARM_PROXY_CACHE_WARNING", event_name) == 0) {
@@ -320,14 +312,8 @@ get_event_id(const char *event_name)
     return MGMT_ALARM_PROXY_LOGGING_ERROR;
   } else if (strcmp("MGMT_ALARM_PROXY_LOGGING_WARNING", event_name) == 0) {
     return MGMT_ALARM_PROXY_LOGGING_WARNING;
-  } else if (strcmp("MGMT_ALARM_MGMT_TEST", event_name) == 0) {
-    return MGMT_ALARM_MGMT_TEST;
   } else if (strcmp("MGMT_ALARM_CONFIG_UPDATE_FAILED", event_name) == 0) {
     return MGMT_ALARM_CONFIG_UPDATE_FAILED;
-  } else if (strcmp("MGMT_ALARM_WEB_ERROR", event_name) == 0) {
-    return MGMT_ALARM_WEB_ERROR;
-  } else if (strcmp("MGMT_ALARM_PING_FAILURE", event_name) == 0) {
-    return MGMT_ALARM_PING_FAILURE;
   }
 
   return -1;
@@ -336,7 +322,7 @@ get_event_id(const char *event_name)
 /**********************************************************************
  * get_event_id
  *
- * Purpose: based on alarm_id, determine the corresonding alarm name
+ * Purpose: based on alarm_id, determine the corresponding alarm name
  * Note:    allocates memory for the name returned
  *********************************************************************/
 char *
@@ -352,20 +338,11 @@ get_event_name(int id)
   case MGMT_ALARM_PROXY_PROCESS_BORN:
     ink_strlcpy(name, "MGMT_ALARM_PROXY_PROCESS_BORN", sizeof(name));
     break;
-  case MGMT_ALARM_PROXY_PEER_BORN:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_PEER_BORN", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_PEER_DIED:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_PEER_DIED", sizeof(name));
-    break;
   case MGMT_ALARM_PROXY_CONFIG_ERROR:
     ink_strlcpy(name, "MGMT_ALARM_PROXY_CONFIG_ERROR", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_SYSTEM_ERROR:
     ink_strlcpy(name, "MGMT_ALARM_PROXY_SYSTEM_ERROR", sizeof(name));
-    break;
-  case MGMT_ALARM_PROXY_LOG_SPACE_CRISIS:
-    ink_strlcpy(name, "MGMT_ALARM_PROXY_LOG_SPACE_CRISIS", sizeof(name));
     break;
   case MGMT_ALARM_PROXY_CACHE_ERROR:
     ink_strlcpy(name, "MGMT_ALARM_PROXY_CACHE_ERROR", sizeof(name));
@@ -379,23 +356,8 @@ get_event_name(int id)
   case MGMT_ALARM_PROXY_LOGGING_WARNING:
     ink_strlcpy(name, "MGMT_ALARM_PROXY_LOGGING_WARNING", sizeof(name));
     break;
-  case MGMT_ALARM_MGMT_TEST:
-    ink_strlcpy(name, "MGMT_ALARM_MGMT_TEST", sizeof(name));
-    break;
   case MGMT_ALARM_CONFIG_UPDATE_FAILED:
     ink_strlcpy(name, "MGMT_ALARM_CONFIG_UPDATE_FAILED", sizeof(name));
-    break;
-  case MGMT_ALARM_WEB_ERROR:
-    ink_strlcpy(name, "MGMT_ALARM_WEB_ERROR", sizeof(name));
-    break;
-  case MGMT_ALARM_PING_FAILURE:
-    ink_strlcpy(name, "MGMT_ALARM_PING_FAILURE", sizeof(name));
-    break;
-  case MGMT_ALARM_MGMT_CONFIG_ERROR:
-    ink_strlcpy(name, "MGMT_ALARM_MGMT_CONFIG_ERROR", sizeof(name));
-    break;
-  case MGMT_ALARM_ADD_ALARM:
-    ink_strlcpy(name, "MGMT_ALARM_ADD_ALARM", sizeof(name));
     break;
   default:
     return nullptr;

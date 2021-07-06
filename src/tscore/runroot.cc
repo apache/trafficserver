@@ -96,7 +96,7 @@ get_parent_yaml_path(const std::string &path)
     if (!yaml_file.empty()) {
       return yaml_file;
     }
-    whole_path = whole_path.substr(0, whole_path.find_last_of("/"));
+    whole_path = whole_path.substr(0, whole_path.find_last_of('/'));
   }
   return {};
 }
@@ -135,7 +135,7 @@ runroot_extra_handling(const char *executable, bool json)
   char RealBinPath[PATH_MAX] = {0};
   if ((executable != nullptr) && realpath(executable, RealBinPath) != nullptr) {
     std::string bindir = RealBinPath;
-    bindir             = bindir.substr(0, bindir.find_last_of("/")); // getting the bin dir not executable path
+    bindir             = bindir.substr(0, bindir.find_last_of('/')); // getting the bin dir not executable path
     path               = get_parent_yaml_path(bindir);
     if (!path.empty()) {
       runroot_file = path;
@@ -242,7 +242,7 @@ runroot_map(const std::string &file)
   RunrootMapType map;
   try {
     YAML::Node yamlfile = YAML::LoadFile(file);
-    std::string prefix  = file.substr(0, file.find_last_of("/"));
+    std::string prefix  = file.substr(0, file.find_last_of('/'));
 
     for (const auto &it : yamlfile) {
       // key value pairs of dirs

@@ -20,11 +20,16 @@ set -e # exit on error
 
 TMPDIR=${TMPDIR:-/tmp}
 tmpfile=$(mktemp "$TMPDIR/via.XXXXXX")
-srcdir=$(cd $srcdir && pwd)
+if [ ! -z "$srcdir"]; then
+    srcdir=$(cd $srcdir && pwd)
+else
+    srcdir=$(pwd)
+fi
 
 find $srcdir/tests -type f |
 while read f ; do
     name=$(basename "$f")
+    echo "testing $name"
     ./traffic_via "$name" > "$tmpfile" 2>&1 || true
     diff -u "$tmpfile" "$srcdir/tests/$name"
 done

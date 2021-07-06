@@ -41,7 +41,7 @@
    header is already cached.  If it isn't, then it tries to find a URL
    that is cached to use instead.  It looks in the cache for some
    object that matches the digest in the Digest header and if it
-   succeeds, then it rewites the Location header with that object's
+   succeeds, then it rewrites the Location header with that object's
    URL.
 
    This way a client should get sent to a URL that's already cached

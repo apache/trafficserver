@@ -24,7 +24,9 @@ TSMgmtFloatGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSMgmtFloatGet(const char * var_name, TSMgmtFloat * result)
 

@@ -103,7 +103,7 @@ Data Structures
 .. class:: CacheHTTPInfoVector
 
    Defined in :ts:git:`iocore/cache/P_CacheHttp.h`. This is an array of :class:`HTTPInfo`
-   objects and serves as the respository of information about alternates of an
+   objects and serves as the repository of information about alternates of an
    object. It is marshaled as part of the metadata for an object in the cache.
 
 .. class:: HTTPInfo
@@ -160,7 +160,7 @@ Data Structures
 
    .. member:: DLL<EvacuationBlock> evacuate
 
-      Array of of :class:`EvacuationBlock` buckets. This is sized so there
+      Array of :class:`EvacuationBlock` buckets. This is sized so there
       is one bucket for every evacuation span.
 
    .. member:: off_t len
@@ -396,7 +396,7 @@ Data Structures
 
    .. member:: int volume_number
 
-      indentification number of this volume
+      identification number of this volume
 
    .. member:: int scheme
 
@@ -453,7 +453,7 @@ Data Structures
 
     .. member:: int num_http_volumes
 
-       Total number of volumes scpecified in volume.config for HTTP scheme
+       Total number of volumes specified in volume.config for HTTP scheme
 
     .. member:: Queue<ConfigVol> cp_queue
 

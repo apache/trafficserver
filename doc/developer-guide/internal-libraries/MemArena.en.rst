@@ -65,7 +65,7 @@ of the copied objects will be put in the same new internal block. If this for so
 sizing isn't correct a hint can be passed to :func:`MemArena::freeze` to specify a different value
 (if, for instance, there is a lot of unused memory of known size). Generally this is most useful for
 data that is initialized on process start and not changed after process startup. After the process
-start initilization, the data can be coalesced for better performance after all modifications have
+start initialization, the data can be coalesced for better performance after all modifications have
 been done. Alternatively, a container that allocates and de-allocates same sized objects (such as a
 :code:`std::map`) can use a free list to re-use objects before going to the |MemArena| for more
 memory and thereby avoiding collecting unused memory in the arena.
@@ -148,6 +148,6 @@ Allocated memory is tracked by two linked lists, one for current memory and the 
 memory. The latter is used only while the arena is frozen. Because a shared pointer is used for the
 link, the list can be de-allocated by clearing the head pointer in |MemArena|. This pattern is
 similar to that used by the :code:`IOBuffer` data blocks, and so those were considered for use as
-the internal memory allcation blocks. However, that would have required some non-trivial tweaks and,
+the internal memory allocation blocks. However, that would have required some non-trivial tweaks and,
 with the move away from internal allocation pools to memory support from libraries like "jemalloc",
 unlikely to provide any benefit.

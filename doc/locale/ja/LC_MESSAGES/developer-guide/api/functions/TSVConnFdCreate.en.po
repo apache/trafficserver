@@ -77,7 +77,7 @@ msgstr "参照"
 
 #: ../../developer-guide/api/functions/TSVConnFdCreate.en.rst:50
 msgid ""
-"The example below is excerpted from `example/intercept/intercept.cc` in the "
+"The example below is excerpted from `example/plugins/c-api/intercept/intercept.cc` in the "
 "Traffic Server source distribution. It demonstrates how to use :func:"
 "`TSVConnFdCreate` to construct a :type:`TSVConn` from a connected socket."
 msgstr ""

@@ -25,7 +25,9 @@ Change packet firewall mark for the server side connection.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
 

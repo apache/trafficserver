@@ -27,7 +27,7 @@
 #include <pthread.h>
 
 struct RegexThreadKey {
-  RegexThreadKey() { pthread_key_create(&this->key, (void (*)(void *)) & pcre_jit_stack_free); }
+  RegexThreadKey() { pthread_key_create(&this->key, reinterpret_cast<void (*)(void *)>(&pcre_jit_stack_free)); }
   pthread_key_t key;
 };
 
@@ -38,7 +38,7 @@ get_jit_stack(void *)
 {
   pcre_jit_stack *jit_stack;
 
-  if ((jit_stack = (pcre_jit_stack *)pthread_getspecific(k.key)) == nullptr) {
+  if ((jit_stack = static_cast<pcre_jit_stack *>(pthread_getspecific(k.key))) == nullptr) {
     jit_stack = pcre_jit_stack_alloc(8192, 1024 * 1024); // 1 page min and 1MB max
     pthread_setspecific(k.key, (void *)jit_stack);
   }

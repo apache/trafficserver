@@ -171,7 +171,7 @@ private:
                               LengthCondition lc);
 
   inline bool _checkConditionAndWipe(OperatorFunction f, char **field_value, size_t field_value_length, char **val,
-                                     LengthCondition lc);
+                                     const char *uppercase_field_value, LengthCondition lc);
 
   // -- member functions that are not allowed --
   LogFilterString();
@@ -301,7 +301,7 @@ public:
 private:
   Queue<LogFilter> m_filter_list;
 
-  bool m_does_conjunction;
+  bool m_does_conjunction = true;
   // If m_does_conjunction = true
   // toss_this_entry returns true
   // if ANY filter tosses entry away.
@@ -383,52 +383,102 @@ LogFilterString::_checkCondition(OperatorFunction f, const char *field_value, si
 }
 
 /*---------------------------------------------------------------------------
-  wipeField : Given a dest buffer, wipe the first occurance of the value of the
+ * find pattern from the query param
+ * 1) if pattern is not in the query param, return nullptr
+ * 2) if got the pattern in one param's value, search again until it's in one param name, or nullptr if can't find it from param
+name
+---------------------------------------------------------------------------*/
+static const char *
+findPatternFromParamName(const char *lookup_query_param, const char *pattern)
+{
+  const char *pattern_in_query_param = strstr(lookup_query_param, pattern);
+  while (pattern_in_query_param) {
+    // wipe pattern in param name, need to search again if find pattern in param value
+    const char *param_value_str = strchr(pattern_in_query_param, '=');
+    if (!param_value_str) {
+      // no "=" after pattern_in_query_param, means pattern_in_query_param is not in the param name, and no more param after it
+      pattern_in_query_param = nullptr;
+      break;
+    }
+    const char *param_name_str = strchr(pattern_in_query_param, '&');
+    if (param_name_str && param_value_str > param_name_str) {
+      //"=" is after "&" followd by pattern_in_query_param, means pattern_in_query_param is not in the param name
+      pattern_in_query_param = strstr(param_name_str, pattern);
+      continue;
+    }
+    // ensure pattern_in_query_param is in the param name now
+    break;
+  }
+  return pattern_in_query_param;
+}
+
+/*---------------------------------------------------------------------------
+ * replace param value whose name contains pattern with same count 'X' of original value str length
+---------------------------------------------------------------------------*/
+static void
+updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos, char *buf_dest)
+{
+  int buf_dest_len = strlen(buf_dest);
+  char buf_dest_to_field[buf_dest_len + 1];
+  char *temp_text = buf_dest_to_field;
+  memcpy(temp_text, buf_dest, (pattern_str - buf_dest));
+  temp_text += (pattern_str - buf_dest);
+  const char *value_str = strchr(pattern_str, '=');
+  if (value_str) {
+    value_str++;
+    memcpy(temp_text, pattern_str, (value_str - pattern_str));
+    temp_text += (value_str - pattern_str);
+    const char *next_param_str = strchr(value_str, '&');
+    if (next_param_str) {
+      for (int i = 0; i < (next_param_str - value_str); i++) {
+        temp_text[i] = 'X';
+      }
+      temp_text += (next_param_str - value_str);
+      memcpy(temp_text, next_param_str, ((buf_dest + buf_dest_len) - next_param_str));
+    } else {
+      for (int i = 0; i < ((buf_dest + buf_dest_len) - value_str); i++) {
+        temp_text[i] = 'X';
+      }
+    }
+  } else {
+    return;
+  }
+
+  buf_dest_to_field[buf_dest_len] = '\0';
+  strcpy(*field, buf_dest_to_field);
+}
+
+/*---------------------------------------------------------------------------
+  wipeField : Given a dest buffer, wipe the first occurrence of the value of the
   field in the buffer.
 
 --------------------------------------------------------------------------*/
 static void
-wipeField(char **dest, char *field)
+wipeField(char **field, char *pattern, const char *uppercase_field)
 {
-  char *buf_dest = *dest;
+  char *buf_dest          = *field;
+  const char *lookup_dest = uppercase_field ? uppercase_field : *field;
 
   if (buf_dest) {
-    char *query_param = strstr(buf_dest, "?");
-
-    if (!query_param) {
+    char *query_param              = strchr(buf_dest, '?');
+    const char *lookup_query_param = strchr(lookup_dest, '?');
+    if (!query_param || !lookup_query_param) {
       return;
     }
 
-    char *p1 = strstr(query_param, field);
+    const char *pattern_in_param_name = findPatternFromParamName(lookup_query_param, pattern);
+    while (pattern_in_param_name) {
+      int field_pos         = pattern_in_param_name - lookup_query_param;
+      pattern_in_param_name = query_param + field_pos;
+      updatePatternForFieldValue(field, pattern_in_param_name, field_pos, buf_dest);
 
-    if (p1) {
-      char tmp_text[strlen(buf_dest) + 10];
-      char *temp_text = tmp_text;
-      memcpy(temp_text, buf_dest, (p1 - buf_dest));
-      temp_text += (p1 - buf_dest);
-      char *p2 = strstr(p1, "=");
-      if (p2) {
-        p2++;
-        memcpy(temp_text, p1, (p2 - p1));
-        temp_text += (p2 - p1);
-        char *p3 = strstr(p2, "&");
-        if (p3) {
-          for (int i = 0; i < (p3 - p2); i++) {
-            temp_text[i] = 'X';
-          }
-          temp_text += (p3 - p2);
-          memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
-        } else {
-          for (int i = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++) {
-            temp_text[i] = 'X';
-          }
-        }
+      // search new param again
+      const char *new_param = strchr(lookup_query_param + field_pos, '&');
+      if (new_param && (new_param + 1)) {
+        pattern_in_param_name = findPatternFromParamName(new_param + 1, pattern);
       } else {
-        return;
+        break;
       }
-
-      tmp_text[strlen(buf_dest)] = '\0';
-      strcpy(*dest, tmp_text);
     }
   }
 }
@@ -454,7 +504,7 @@ wipeField(char **dest, char *field)
 
 inline bool
 LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, size_t field_value_length, char **val,
-                                        LengthCondition lc)
+                                        const char *uppercase_field_value, LengthCondition lc)
 {
   bool retVal = false;
 
@@ -464,18 +514,19 @@ LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, 
 
   // make single value case a little bit faster by taking it out of loop
   //
+  const char *lookup_field_value = uppercase_field_value ? uppercase_field_value : *field_value;
   if (m_num_values == 1) {
     switch (lc) {
     case DATA_LENGTH_EQUAL:
-      retVal = (field_value_length == *m_length ? ((*f)(*field_value, *val) == 0 ? true : false) : false);
+      retVal = (field_value_length == *m_length ? ((*f)(lookup_field_value, *val) == 0 ? true : false) : false);
       if (retVal) {
-        wipeField(field_value, *val);
+        wipeField(field_value, *val, uppercase_field_value);
       }
       break;
     case DATA_LENGTH_LARGER:
-      retVal = (field_value_length > *m_length ? ((*f)(*field_value, *val) == 0 ? true : false) : false);
+      retVal = (field_value_length > *m_length ? ((*f)(lookup_field_value, *val) == 0 ? true : false) : false);
       if (retVal) {
-        wipeField(field_value, *val);
+        wipeField(field_value, *val, uppercase_field_value);
       }
       break;
     default:
@@ -488,18 +539,18 @@ LogFilterString::_checkConditionAndWipe(OperatorFunction f, char **field_value, 
     case DATA_LENGTH_EQUAL:
       for (i = 0; i < m_num_values; ++i) {
         // condition is satisfied if f returns zero
-        if (field_value_length == m_length[i] && (*f)(*field_value, val[i]) == 0) {
+        if (field_value_length == m_length[i] && (*f)(lookup_field_value, val[i]) == 0) {
           retVal = true;
-          wipeField(field_value, val[i]);
+          wipeField(field_value, val[i], uppercase_field_value);
         }
       }
       break;
     case DATA_LENGTH_LARGER:
       for (i = 0; i < m_num_values; ++i) {
         // condition is satisfied if f returns zero
-        if (field_value_length > m_length[i] && (*f)(*field_value, val[i]) == 0) {
+        if (field_value_length > m_length[i] && (*f)(lookup_field_value, val[i]) == 0) {
           retVal = true;
-          wipeField(field_value, val[i]);
+          wipeField(field_value, val[i], uppercase_field_value);
         }
       }
       break;

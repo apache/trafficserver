@@ -33,7 +33,7 @@ Online Event Log Builder
 ========================
 
 If you need any assistance building your event log, you can try out our
-`online log builder <http://trafficserver.apache.org/logbuilder/>`_. This is a
+`online log builder <https://trafficserver.apache.org/logbuilder/>`_. This is a
 work in progress, so any comments, critique or suggestions are most welcome.
 
 Emulating Other HTTP Server Formats
@@ -183,7 +183,7 @@ No. Field    Description
              of milliseconds between the time the client established the
              connection with |TS| and the time |TS| sent the last byte of
              the response back to the client.
-3   chi      The IP address of the client’s host machine.
+3   chi      The IP address of the client's host machine.
 4   crc/pssc The cache result code; how the cache responded to the request:
              ``HIT``, ``MISS``, and so on. Cache result codes are described
              in :ref:`admin-logging-cache-results`. The
@@ -247,7 +247,7 @@ to clients:
 
    formats:
    - name: mysummary
-     format: '%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>'
+     format: '%<LAST(cqts)>:%<COUNT(*)>:%<SUM(psql)>'
      interval: 10
 
 Dual Output to Compact Binary Logs and ASCII Pipes
@@ -293,11 +293,31 @@ for them to a UNIX pipe that the alerting software can constantly read from.
      accept: cqup MATCH "/nightmare/scenario/dont/touch"
 
    logs:
-   - mode: pipe
+   - mode: ascii_pipe
      format: canaryformat
      filters:
      - canaryfilter
      filename: alerting_canaries
+
+Configuring ASCII Pipe Buffer Size
+==================================
+
+This example mirrors the one above but also sets a ```pipe_buffer_size``` of
+1024 * 1024 for the pipe. This can be set on a per-pipe basis but is only
+available on Linux (later than 2.6.35). If this field is not set, the pipe buffer
+will default to the OS default size.
+
+.. code:: yaml
+
+   logs:
+   - mode: ascii_pipe
+     format: canaryformat
+     filters:
+     - canaryfilter
+     filename: alerting_canaries
+     pipe_buffer_size: 1048576
+
+
 
 Summarizing Origin Responses by Hour
 ====================================
@@ -310,18 +330,20 @@ the request to clients during that hour.
 
 .. code:: yaml
 
-   formats:
-   - name: originrepformat
-     format: '%<FIRST(cqtq)> %<COUNT(*)> %<AVERAGE(ttms)>'
-     interval: 3600
+   logging:
+     formats:
+     - name: originrepformat
+       format: '%<FIRST(cqtq)> %<COUNT(*)> %<AVG(ttms)>'
+       interval: 3600
 
-   filters:
-   - name: originfilter
-     reject: crc CONTAINS "HIT"
-
-   logs:
-   - mode: ascii
-     format: originrepformat
      filters:
-     - originfilter
-     filename: origin_access_summary
+     - name: originfilter
+       action: reject
+       condition: crc CONTAINS "HIT"
+
+     logs:
+     - mode: ascii
+       format: originrepformat
+       filters:
+       - originfilter
+       filename: origin_access_summary

@@ -27,42 +27,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-const void *
-SockaddrGetAddress(const sockaddr *saddr)
-{
-  union {
-    const sockaddr *sa;
-    const sockaddr_in *sin;
-    const sockaddr_in6 *sin6;
-  } addr;
-
-  addr.sa = saddr;
-  if (addr.sa->sa_family == PF_INET6) {
-    return &addr.sin6->sin6_addr;
-  } else {
-    TSReleaseAssert(addr.sin->sin_family == PF_INET);
-    return &addr.sin->sin_addr;
-  }
-}
-
-uint16_t
-SockaddrGetPort(const sockaddr *saddr)
-{
-  union {
-    const sockaddr *sa;
-    const sockaddr_in *sin;
-    const sockaddr_in6 *sin6;
-  } addr;
-
-  addr.sa = saddr;
-  if (addr.sa->sa_family == PF_INET6) {
-    return addr.sin6->sin6_port;
-  } else {
-    TSReleaseAssert(addr.sin->sin_family == PF_INET);
-    return addr.sin->sin_port;
-  }
-}
-
 void
 HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr)
 {
@@ -76,7 +40,7 @@ HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr)
 
   blk   = TSIOBufferReaderStart(iobuf.reader);
   avail = TSIOBufferBlockReadAvail(blk, iobuf.reader);
-  ptr   = (const char *)TSIOBufferBlockReadStart(blk, iobuf.reader, &nbytes);
+  ptr   = TSIOBufferBlockReadStart(blk, iobuf.reader, &nbytes);
 
   AuthLogDebug("http request (%u of %u bytes):\n%*.*s", (unsigned)nbytes, (unsigned)avail, (int)nbytes, (int)nbytes, ptr);
 }
@@ -151,46 +115,6 @@ HttpIsChunkedEncoding(TSMBuffer mbuf, TSMLoc mhdr)
 
   TSHandleMLocRelease(mbuf, mhdr, mloc);
   return ischunked;
-}
-
-bool
-HttpGetOriginHost(TSMBuffer mbuf, TSMLoc mhdr, char *name, size_t namelen)
-{
-  const char *host;
-  int len;
-  TSMLoc mloc;
-
-  // First, try to get it from the Host header. The Host header this returns
-  // depends on whether pristine_host_hdr is set.
-  mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_HOST, -1);
-  if (mloc != TS_NULL_MLOC) {
-    host = TSMimeHdrFieldValueStringGet(mbuf, mhdr, mloc, -1 /* index */, &len);
-    TSHandleMLocRelease(mbuf, mhdr, mloc);
-
-    if (host) {
-      AuthLogDebug("using origin %.*s from host header", len, host);
-      len = std::min(len, (int)namelen - 1);
-      memcpy(name, host, len);
-      name[len] = '\0';
-      return true;
-    }
-  }
-
-  // If that didn't work, try to get the origin host from the request URL.
-  if (TSHttpHdrUrlGet(mbuf, mhdr, &mloc) == TS_SUCCESS) {
-    host = TSUrlHostGet(mbuf, mloc, &len);
-    TSHandleMLocRelease(mbuf, mhdr, mloc);
-
-    if (host) {
-      AuthLogDebug("using origin %.*s from request URL", len, host);
-      len = std::min(len, (int)namelen - 1);
-      memcpy(name, host, len);
-      name[len] = '\0';
-      return true;
-    }
-  }
-
-  return false;
 }
 
 // vim: set ts=4 sw=4 et :

@@ -74,6 +74,8 @@
 #include <resolv.h>
 #include <arpa/nameser.h>
 
+#include <array>
+
 #if defined(openbsd)
 #define NS_INT16SZ INT16SZ
 #define NS_INT32SZ INT32SZ
@@ -109,7 +111,7 @@
 #define INK_RES_AAONLY 0x00000004         /*%< authoritative answers only (!IMPL)*/
 #define INK_RES_USEVC 0x00000008          /*%< use virtual circuit */
 #define INK_RES_PRIMARY 0x00000010        /*%< query primary server only (!IMPL) */
-#define INK_RES_IGNTC 0x00000020          /*%< ignore trucation errors */
+#define INK_RES_IGNTC 0x00000020          /*%< ignore truncation errors */
 #define INK_RES_RECURSE 0x00000040        /*%< recursion desired */
 #define INK_RES_DEFNAMES 0x00000080       /*%< use default domain name */
 #define INK_RES_STAYOPEN 0x00000100       /*%< Keep TCP socket open */
@@ -157,10 +159,8 @@ enum HostResPreference {
 };
 /// # of preference values.
 static int const N_HOST_RES_PREFERENCE = HOST_RES_PREFER_IPV6 + 1;
-/// # of entries in a preference ordering.
-static int const N_HOST_RES_PREFERENCE_ORDER = 3;
 /// Storage for preference ordering.
-typedef HostResPreference HostResPreferenceOrder[N_HOST_RES_PREFERENCE_ORDER];
+using HostResPreferenceOrder = std::array<HostResPreference, 3>;
 /// Global, hard wired default value for preference ordering.
 extern HostResPreferenceOrder const HOST_RES_DEFAULT_PREFERENCE_ORDER;
 /// Global (configurable) default.
@@ -181,18 +181,28 @@ enum HostResStyle {
 /// Strings for host resolution styles
 extern const char *const HOST_RES_STYLE_STRING[];
 
-/// Caclulate the effective resolution preferences.
-extern HostResStyle ats_host_res_from(int family,            ///< Connection family
-                                      HostResPreferenceOrder ///< Preference ordering.
+/// Calculate the effective resolution preferences.
+extern HostResStyle ats_host_res_from(int family,                    ///< Connection family
+                                      HostResPreferenceOrder const & ///< Preference ordering.
 );
-/// Calculate the host resolution style to force a family match to @a addr.
-extern HostResStyle ats_host_res_match(sockaddr const *addr);
 
 /** Parse a host resolution configuration string.
  */
-extern void parse_host_res_preference(const char *value,           ///< [in] Configuration string.
-                                      HostResPreferenceOrder order /// [out] Order to update.
+extern void parse_host_res_preference(const char *value,            ///< [in] Configuration string.
+                                      HostResPreferenceOrder &order /// [out] Order to update.
 );
+
+/// Configure the preference order to hold only what's from the client address.
+/// @addr[in] client's address.
+/// @order[out] Order to update
+extern void ats_force_order_by_family(sockaddr const *addr, HostResPreferenceOrder order);
+
+// Domain resolution priority for origin.
+struct HostResData {
+  HostResPreferenceOrder order;
+  // keep the configuration value to satisfy the API(TSHttpTxnConfigStringSet)
+  char *conf_value{nullptr};
+};
 
 #ifndef NS_GET16
 #define NS_GET16(s, cp)                                                  \

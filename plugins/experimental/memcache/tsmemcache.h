@@ -21,9 +21,6 @@
   limitations under the License.
  */
 
-#ifndef tsmemcache_h
-#define tsmemcache_h
-
 #include "I_EventSystem.h"
 #include "I_Net.h"
 #include "I_Cache.h"
@@ -83,15 +80,15 @@ struct MCAccept : public Continuation {
 #ifndef HAVE_TLS
   ProxyAllocator *theMCThreadAllocator;
 #endif
-  int accept_port;
+  int accept_port = 0;
   int main_event(int event, void *netvc);
 
   MCAccept()
     :
 #ifndef HAVE_TLS
-      theMCThreadAllocator(NULL),
+      theMCThreadAllocator(NULL)
 #endif
-      accept_port(0)
+
   {
     SET_HANDLER(&MCAccept::main_event);
   }
@@ -241,5 +238,3 @@ xatoull(char *s, char *e)
   }
   return n;
 }
-
-#endif

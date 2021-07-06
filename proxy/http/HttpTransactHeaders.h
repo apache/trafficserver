@@ -45,10 +45,8 @@ public:
 
   static void convert_request(HTTPVersion outgoing_ver, HTTPHdr *outgoing_request);
   static void convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoing_response);
-  static void convert_to_0_9_request_header(HTTPHdr *outgoing_request);
   static void convert_to_1_0_request_header(HTTPHdr *outgoing_request);
   static void convert_to_1_1_request_header(HTTPHdr *outgoing_request);
-  static void convert_to_0_9_response_header(HTTPHdr *outgoing_response);
   static void convert_to_1_0_response_header(HTTPHdr *outgoing_response);
   static void convert_to_1_1_response_header(HTTPHdr *outgoing_response);
 
@@ -58,6 +56,7 @@ public:
   static bool downgrade_request(bool *origin_server_keep_alive, HTTPHdr *outgoing_request);
   static bool is_method_safe(int method);
   static bool is_method_idempotent(int method);
+  static bool is_status_an_error_response(HTTPStatus response_code);
 
   static void generate_and_set_squid_codes(HTTPHdr *header, char *via_string, HttpTransact::SquidLogInfo *squid_codes);
 
@@ -66,15 +65,10 @@ public:
   static int write_hdr_protocol_stack(char *hdr_string, size_t len, ProtocolStackDetail pSDetail, std::string_view *proto_buf,
                                       int n_proto, char separator = ' ');
 
-  // Removing handle_conditional_headers.  Functionality appears to be elsewhere (issue_revalidate)
-  // and the only condition when it does anything causes an assert to go
-  // off
-  // static void handle_conditional_headers(HttpTransact::CacheLookupInfo * cache_info, HTTPHdr * header);
   static void insert_warning_header(HttpConfigParams *http_config_param, HTTPHdr *header, HTTPWarningCode code,
                                     const char *warn_text = nullptr, int warn_text_len = 0);
   static void insert_time_and_age_headers_in_response(ink_time_t request_sent_time, ink_time_t response_received_time,
                                                       ink_time_t now, HTTPHdr *base, HTTPHdr *outgoing);
-  static void insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr *header);
   static void insert_via_header_in_request(HttpTransact::State *s, HTTPHdr *header);
   static void insert_via_header_in_response(HttpTransact::State *s, HTTPHdr *header);
   static void insert_hsts_header_in_response(HttpTransact::State *s, HTTPHdr *header);
@@ -85,15 +79,13 @@ public:
 
   static void normalize_accept_encoding(const OverridableHttpConfigParams *ohcp, HTTPHdr *header);
 
-  static void insert_basic_realm_in_proxy_authenticate(const char *realm, HTTPHdr *header, bool bRevPrxy);
-
   static void remove_conditional_headers(HTTPHdr *outgoing);
   static void remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing);
   static void remove_host_name_from_url(HTTPHdr *outgoing_request);
-  static void add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
-  static void add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
-  static void remove_privacy_headers_from_request(HttpConfigParams *http_config_param, OverridableHttpConfigParams *http_txn_conf,
-                                                  HTTPHdr *header);
+  static void add_global_user_agent_header_to_request(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
+  static void add_server_header_to_response(const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
+  static void remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
+                                                  const OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header);
   static void add_connection_close(HTTPHdr *header);
 
   static int nstrcpy(char *d, const char *as);

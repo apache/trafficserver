@@ -26,11 +26,9 @@
 
 #include <string_view>   /* std:string_view */
 #include <openssl/evp.h> /* EVP_* constants, structures and functions. */
-#include <string.h>      /* strlen, strncmp, strncpy, memset, size_t */
+#include <cstring>       /* strlen, strncmp, strncpy, memset, size_t */
 
 #define MAX_MSGDIGEST_BUFFER_SIZE EVP_MAX_MD_SIZE
-
-bool parseStrLong(const char *s, size_t len, long &val);
 
 /* ******* Encoding/Decoding functions ******* */
 

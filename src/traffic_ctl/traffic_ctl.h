@@ -175,7 +175,7 @@ struct CtrlEngine {
   int status_code = CTRL_EX_OK;
 
   // All traffic_ctl methods:
-  // umimplemented command
+  // unimplemented command
   void CtrlUnimplementedCommand(std::string_view command);
 
   // alarm methods

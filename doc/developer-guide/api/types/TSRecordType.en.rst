@@ -22,37 +22,39 @@ TSRecordType
 Synopsis
 ========
 
-`#include <ts/apidefs.h>`
+.. code-block:: cpp
 
-.. c:type:: TSRecordType
+    #include <ts/apidefs.h>
+
+.. c:enum:: TSRecordType
 
    Effectively the scope of the record.
 
-   .. c:macro:: TS_RECORDTYPE_NULL
+   .. c:enumerator:: TS_RECORDTYPE_NULL
 
       Invalid value. This is used to indicate a failure or for initialization.
 
-   .. c:macro:: TS_RECORDTYPE_CONFIG
+   .. c:enumerator:: TS_RECORDTYPE_CONFIG
 
       A configuration record.
 
-   .. c:macro:: TS_RECORDTYPE_PROCESS
+   .. c:enumerator:: TS_RECORDTYPE_PROCESS
 
-   .. c:macro:: TS_RECORDTYPE_NODE
+   .. c:enumerator:: TS_RECORDTYPE_NODE
 
-   .. c:macro:: TS_RECORDTYPE_CLUSTER
+   .. c:enumerator:: TS_RECORDTYPE_CLUSTER
 
       Deprecated - shared among a cluster.
 
-   .. c:macro:: TS_RECORDTYPE_LOCAL
+   .. c:enumerator:: TS_RECORDTYPE_LOCAL
 
       Deprecated - not shared among a cluster.
 
-   .. c:macro:: TS_RECORDTYPE_PLUGIN
+   .. c:enumerator:: TS_RECORDTYPE_PLUGIN
 
       Created by a plugin.
 
-   .. c:macro:: TS_RECORDTYPE_ALL
+   .. c:enumerator:: TS_RECORDTYPE_ALL
 
 Description
 ===========

@@ -28,7 +28,7 @@ static int
 procfd_open(pid_t pid, const char *fname)
 {
   char path[128];
-  snprintf(path, sizeof(path), "/proc/%ld/%s", (long)pid, fname);
+  snprintf(path, sizeof(path), "/proc/%ld/%s", static_cast<long>(pid), fname);
   return open(path, O_RDONLY);
 }
 
@@ -37,9 +37,9 @@ procfd_readlink(pid_t pid, const char *fname)
 {
   char path[128];
   ssize_t nbytes;
-  ats_scoped_str resolved((char *)ats_malloc(MAXPATHLEN + 1));
+  ats_scoped_str resolved(static_cast<char *>(ats_malloc(MAXPATHLEN + 1)));
 
-  snprintf(path, sizeof(path), "/proc/%ld/%s", (long)pid, fname);
+  snprintf(path, sizeof(path), "/proc/%ld/%s", static_cast<long>(pid), fname);
   nbytes = readlink(path, resolved, MAXPATHLEN);
   if (nbytes == -1) {
     Note("readlink failed with %s", strerror(errno));
@@ -60,7 +60,7 @@ write_procfd_file(const char *filename, const char *label, FILE *fp, const crash
   if (fd != -1) {
     text.slurp(fd);
     text.chomp();
-    fprintf(fp, "%s:\n%.*s\n", label, (int)text.spaceUsed(), text.bufPtr());
+    fprintf(fp, "%s:\n%.*s\n", label, static_cast<int>(text.spaceUsed()), text.bufPtr());
   }
 
   return !text.empty();
@@ -123,9 +123,9 @@ crashlog_write_procname(FILE *fp, const crashlog_target &target)
   if (fd != -1) {
     text.slurp(fd);
     text.chomp();
-    fprintf(fp, LABELFMT "%s [%ld]\n", "Process:", text.bufPtr(), (long)target.pid);
+    fprintf(fp, LABELFMT "%s [%ld]\n", "Process:", text.bufPtr(), static_cast<long>(target.pid));
   } else {
-    fprintf(fp, LABELFMT "%ld\n", "Process:", (long)target.pid);
+    fprintf(fp, LABELFMT "%ld\n", "Process:", static_cast<long>(target.pid));
   }
 
   return true;
@@ -225,9 +225,9 @@ crashlog_write_siginfo(FILE *fp, const crashlog_target &target)
   fprintf(fp, "Signal Status:\n");
   fprintf(fp, LABELFMT "%d (%s)\n", "siginfo.si_signo:", target.siginfo.si_signo, strsignal(target.siginfo.si_signo));
 
-  snprintf(tmp, sizeof(tmp), "%ld", (long)target.siginfo.si_pid);
+  snprintf(tmp, sizeof(tmp), "%ld", static_cast<long>(target.siginfo.si_pid));
   fprintf(fp, LABELFMT LABELFMT, "siginfo.si_pid:", tmp);
-  fprintf(fp, LABELFMT "%ld", "siginfo.si_uid:", (long)target.siginfo.si_uid);
+  fprintf(fp, LABELFMT "%ld", "siginfo.si_uid:", static_cast<long>(target.siginfo.si_uid));
   fprintf(fp, "\n");
 
   snprintf(tmp, sizeof(tmp), "0x%x (%d)", target.siginfo.si_code, target.siginfo.si_code);
@@ -236,7 +236,8 @@ crashlog_write_siginfo(FILE *fp, const crashlog_target &target)
   fprintf(fp, "\n");
 
   if (target.siginfo.si_code == SI_USER) {
-    fprintf(fp, "Signal delivered by user %ld from process %ld\n", (long)target.siginfo.si_uid, (long)target.siginfo.si_pid);
+    fprintf(fp, "Signal delivered by user %ld from process %ld\n", static_cast<long>(target.siginfo.si_uid),
+            static_cast<long>(target.siginfo.si_pid));
     return true;
   }
 

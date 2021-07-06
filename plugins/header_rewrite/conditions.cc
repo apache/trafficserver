@@ -15,10 +15,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 // conditions.cc: Implementation of the condition classes
 //
 //
+
 #include <sys/time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -31,6 +33,17 @@
 
 #include "conditions.h"
 #include "lulu.h"
+
+// This is a bit of a hack, to get the more linux specific tcp_info struct ...
+#if HAVE_STRUCT_LINUX_TCP_INFO
+#ifndef _LINUX_TCP_H
+#define _LINUX_TCP_H
+#endif
+#elif HAVE_NETINET_IN_H
+#ifndef _NETINET_TCP_H
+#define _NETINET_TCP_H
+#endif
+#endif
 
 // ConditionStatus
 void
@@ -248,83 +261,6 @@ ConditionHeader::eval(const Resources &res)
   return static_cast<const MatcherType *>(_matcher)->test(s);
 }
 
-// ConditionPath
-void
-ConditionPath::initialize(Parser &p)
-{
-  Condition::initialize(p);
-  MatcherType *match = new MatcherType(_cond_op);
-
-  match->set(p.get_arg());
-  _matcher = match;
-}
-
-void
-ConditionPath::append_value(std::string &s, const Resources &res)
-{
-  TSMBuffer bufp;
-  TSMLoc url_loc;
-
-  if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url_loc) == TS_SUCCESS) {
-    int path_length;
-    const char *path = TSUrlPathGet(bufp, url_loc, &path_length);
-
-    if (path && path_length) {
-      s.append(path, path_length);
-    }
-
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
-  }
-}
-
-bool
-ConditionPath::eval(const Resources &res)
-{
-  std::string s;
-
-  append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating PATH()");
-
-  return static_cast<MatcherType *>(_matcher)->test(s);
-}
-
-// ConditionQuery
-void
-ConditionQuery::initialize(Parser &p)
-{
-  Condition::initialize(p);
-  MatcherType *match = new MatcherType(_cond_op);
-
-  match->set(p.get_arg());
-  _matcher = match;
-}
-
-void
-ConditionQuery::append_value(std::string &s, const Resources &res)
-{
-  int query_len     = 0;
-  const char *query = TSUrlHttpQueryGet(res._rri->requestBufp, res._rri->requestUrl, &query_len);
-
-  TSDebug(PLUGIN_NAME, "Appending QUERY to evaluation value: %.*s", query_len, query);
-  s.append(query, query_len);
-}
-
-bool
-ConditionQuery::eval(const Resources &res)
-{
-  if (nullptr != res._rri) {
-    std::string s;
-
-    append_value(s, res);
-    TSDebug(PLUGIN_NAME, "Evaluating QUERY()");
-
-    return static_cast<const MatcherType *>(_matcher)->test(s);
-  }
-
-  TSDebug(PLUGIN_NAME, "\tQUERY requires remap initialization! Evaluating to false!");
-  return false;
-}
-
 // ConditionUrl: request or response header. TODO: This is not finished, at all!!!
 void
 ConditionUrl::initialize(Parser &p)
@@ -351,11 +287,17 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
   TSMLoc url     = nullptr;
   TSMBuffer bufp = nullptr;
 
-  if (res._rri != nullptr) {
+  if (_type == CLIENT) {
+    // CLIENT always uses the pristine URL
+    TSDebug(PLUGIN_NAME, "   Using the pristine url");
+    if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url) != TS_SUCCESS) {
+      TSError("[header_rewrite] Error getting the pristine URL");
+      return;
+    }
+  } else if (res._rri != nullptr) {
     // called at the remap hook
     bufp = res._rri->requestBufp;
-    if (_type == URL || _type == CLIENT) {
-      // res._rri->requestBufp and res.client_bufp are the same if it is at the remap hook
+    if (_type == URL) {
       TSDebug(PLUGIN_NAME, "   Using the request url");
       url = res._rri->requestUrl;
     } else if (_type == FROM) {
@@ -369,19 +311,15 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
       return;
     }
   } else {
-    TSMLoc hdr_loc = nullptr;
-    if (_type == CLIENT) {
-      bufp    = res.client_bufp;
-      hdr_loc = res.client_hdr_loc;
-    } else if (_type == URL) {
-      bufp    = res.bufp;
-      hdr_loc = res.hdr_loc;
+    if (_type == URL) {
+      bufp           = res.bufp;
+      TSMLoc hdr_loc = res.hdr_loc;
+      if (TSHttpHdrUrlGet(bufp, hdr_loc, &url) != TS_SUCCESS) {
+        TSError("[header_rewrite] Error getting the URL");
+        return;
+      }
     } else {
       TSError("[header_rewrite] Rule not supported at this hook");
-      return;
-    }
-    if (TSHttpHdrUrlGet(bufp, hdr_loc, &url) != TS_SUCCESS) {
-      TSError("[header_rewrite] Error getting the URL");
       return;
     }
   }
@@ -421,11 +359,14 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     TSDebug(PLUGIN_NAME, "   Scheme to match is: %.*s", i, q_str);
     break;
   case URL_QUAL_URL:
-  case URL_QUAL_NONE:
-    q_str = TSUrlStringGet(bufp, url, &i);
-    s.append(q_str, i);
-    TSDebug(PLUGIN_NAME, "   URL to match is: %.*s", i, q_str);
+  case URL_QUAL_NONE: {
+    // TSUrlStringGet returns an allocated char * we must free
+    char *non_const_q_str = TSUrlStringGet(bufp, url, &i);
+    s.append(non_const_q_str, i);
+    TSDebug(PLUGIN_NAME, "   URL to match is: %.*s", i, non_const_q_str);
+    TSfree(non_const_q_str);
     break;
+  }
   }
 }
 
@@ -652,37 +593,6 @@ ConditionIp::append_value(std::string &s, const Resources &res)
   }
 }
 
-void
-ConditionIncomingPort::initialize(Parser &p)
-{
-  Condition::initialize(p);
-
-  MatcherType *match = new MatcherType(_cond_op);
-
-  match->set(static_cast<uint16_t>(strtoul(p.get_arg().c_str(), nullptr, 10)));
-  _matcher = match;
-}
-
-bool
-ConditionIncomingPort::eval(const Resources &res)
-{
-  uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
-
-  TSDebug(PLUGIN_NAME, "Evaluating INCOMING-PORT()");
-  return static_cast<MatcherType *>(_matcher)->test(port);
-}
-
-void
-ConditionIncomingPort::append_value(std::string &s, const Resources &res)
-{
-  std::ostringstream oss;
-  uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
-
-  oss << port;
-  s += oss.str();
-  TSDebug(PLUGIN_NAME, "Appending %d to evaluation value -> %s", port, s.c_str());
-}
-
 // ConditionTransactCount
 void
 ConditionTransactCount::initialize(Parser &p)
@@ -832,155 +742,11 @@ ConditionNow::eval(const Resources &res)
   return static_cast<const MatcherType *>(_matcher)->test(now);
 }
 
-// ConditionGeo: Geo-based information (integer). See ConditionGeoCountry for the string version.
-#if HAVE_GEOIP_H
-const char *
-ConditionGeo::get_geo_string(const sockaddr *addr) const
-{
-  const char *ret = nullptr;
-  int v           = 4;
-
-  if (addr) {
-    switch (_geo_qual) {
-    // Country database
-    case GEO_QUAL_COUNTRY:
-      switch (addr->sa_family) {
-      case AF_INET:
-        if (gGeoIP[GEOIP_COUNTRY_EDITION]) {
-          uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
-
-          ret = GeoIP_country_code_by_ipnum(gGeoIP[GEOIP_COUNTRY_EDITION], ip);
-        }
-        break;
-      case AF_INET6: {
-        if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
-          geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
-
-          v   = 6;
-          ret = GeoIP_country_code_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
-        }
-      } break;
-      default:
-        break;
-      }
-      TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from Country: %s", v, ret);
-      break;
-
-    // ASN database
-    case GEO_QUAL_ASN_NAME:
-      switch (addr->sa_family) {
-      case AF_INET:
-        if (gGeoIP[GEOIP_ASNUM_EDITION]) {
-          uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
-
-          ret = GeoIP_name_by_ipnum(gGeoIP[GEOIP_ASNUM_EDITION], ip);
-        }
-        break;
-      case AF_INET6: {
-        if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
-          geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
-
-          v   = 6;
-          ret = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
-        }
-      } break;
-      default:
-        break;
-      }
-      TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ASN Name: %s", v, ret);
-      break;
-
-    default:
-      break;
-    }
-  }
-
-  return ret ? ret : "(unknown)";
-}
-
-int64_t
-ConditionGeo::get_geo_int(const sockaddr *addr) const
-{
-  int64_t ret = -1;
-  int v       = 4;
-
-  if (!addr) {
-    return 0;
-  }
-
-  switch (_geo_qual) {
-  // Country Databse
-  case GEO_QUAL_COUNTRY_ISO:
-    switch (addr->sa_family) {
-    case AF_INET:
-      if (gGeoIP[GEOIP_COUNTRY_EDITION]) {
-        uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
-
-        ret = GeoIP_id_by_ipnum(gGeoIP[GEOIP_COUNTRY_EDITION], ip);
-      }
-      break;
-    case AF_INET6: {
-      if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
-        geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
-
-        v   = 6;
-        ret = GeoIP_id_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
-      }
-    } break;
-    default:
-      break;
-    }
-    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from Country ISO: %" PRId64, v, ret);
-    break;
-
-  case GEO_QUAL_ASN: {
-    const char *asn_name = nullptr;
-
-    switch (addr->sa_family) {
-    case AF_INET:
-      if (gGeoIP[GEOIP_ASNUM_EDITION]) {
-        uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
-
-        asn_name = GeoIP_name_by_ipnum(gGeoIP[GEOIP_ASNUM_EDITION], ip);
-      }
-      break;
-    case AF_INET6:
-      if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
-        geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
-
-        v        = 6;
-        asn_name = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
-      }
-      break;
-    }
-    if (asn_name) {
-      // This is a little odd, but the strings returned are e.g. "AS1234 Acme Inc"
-      while (*asn_name && !(isdigit(*asn_name))) {
-        ++asn_name;
-      }
-      ret = strtol(asn_name, nullptr, 10);
-    }
-  }
-    TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ASN #: %" PRId64, v, ret);
-    break;
-
-  // Likely shouldn't trip, should we assert?
-  default:
-    break;
-  }
-
-  return ret;
-}
-
-#else
-
-// No Geo library avaiable, these are just stubs.
-
-const char *
+std::string
 ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
-  return nullptr;
+  return "";
 }
 
 int64_t
@@ -989,8 +755,6 @@ ConditionGeo::get_geo_int(const sockaddr *addr) const
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return 0;
 }
-
-#endif
 
 void
 ConditionGeo::initialize(Parser &p)
@@ -1221,17 +985,17 @@ ConditionCidr::append_value(std::string &s, const Resources &res)
   if (addr) {
     switch (addr->sa_family) {
     case AF_INET: {
-      char res[INET_ADDRSTRLEN];
+      char resource[INET_ADDRSTRLEN];
       struct in_addr ipv4 = reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr;
 
       ipv4.s_addr &= _v4_mask.s_addr;
-      inet_ntop(AF_INET, &ipv4, res, INET_ADDRSTRLEN);
-      if (res[0]) {
-        s += res;
+      inet_ntop(AF_INET, &ipv4, resource, INET_ADDRSTRLEN);
+      if (resource[0]) {
+        s += resource;
       }
     } break;
     case AF_INET6: {
-      char res[INET6_ADDRSTRLEN];
+      char resource[INET6_ADDRSTRLEN];
       struct in6_addr ipv6 = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
       if (_v6_zero_bytes > 0) {
@@ -1240,9 +1004,9 @@ ConditionCidr::append_value(std::string &s, const Resources &res)
       if (_v6_mask != 0xff) {
         ipv6.s6_addr[16 - _v6_zero_bytes] &= _v6_mask;
       }
-      inet_ntop(AF_INET6, &ipv6, res, INET6_ADDRSTRLEN);
-      if (res[0]) {
-        s += res;
+      inet_ntop(AF_INET6, &ipv6, resource, INET6_ADDRSTRLEN);
+      if (resource[0]) {
+        s += resource;
       }
     } break;
     }
@@ -1402,4 +1166,109 @@ ConditionStringLiteral::eval(const Resources &res)
   TSDebug(PLUGIN_NAME, "Evaluating StringLiteral");
 
   return static_cast<const MatcherType *>(_matcher)->test(_literal);
+}
+
+// ConditionSessionTransactCount
+void
+ConditionSessionTransactCount::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  MatcherType *match     = new MatcherType(_cond_op);
+  std::string const &arg = p.get_arg();
+
+  match->set(strtol(arg.c_str(), nullptr, 10));
+  _matcher = match;
+}
+
+bool
+ConditionSessionTransactCount::eval(const Resources &res)
+{
+  int const val = TSHttpTxnServerSsnTransactionCount(res.txnp);
+
+  TSDebug(PLUGIN_NAME, "Evaluating SSN-TXN-COUNT()");
+  return static_cast<MatcherType *>(_matcher)->test(val);
+}
+
+void
+ConditionSessionTransactCount::append_value(std::string &s, Resources const &res)
+{
+  char value[32]; // enough for UINT64_MAX
+  int const count  = TSHttpTxnServerSsnTransactionCount(res.txnp);
+  int const length = ink_fast_itoa(count, value, sizeof(value));
+
+  if (length > 0) {
+    TSDebug(PLUGIN_NAME, "Appending SSN-TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
+    s.append(value, length);
+  }
+}
+
+void
+ConditionTcpInfo::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  TSDebug(PLUGIN_NAME, "Initializing TCP Info");
+  MatcherType *match     = new MatcherType(_cond_op);
+  std::string const &arg = p.get_arg();
+
+  match->set(strtol(arg.c_str(), nullptr, 10));
+  _matcher = match;
+}
+
+void
+ConditionTcpInfo::initialize_hooks()
+{
+  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
+  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+}
+
+bool
+ConditionTcpInfo::eval(const Resources &res)
+{
+  std::string s;
+
+  append_value(s, res);
+  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+
+  TSDebug(PLUGIN_NAME, "Evaluating TCP-Info: %s - rval: %d", s.c_str(), rval);
+
+  return rval;
+}
+
+void
+ConditionTcpInfo::append_value(std::string &s, Resources const &res)
+{
+#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
+  if (TSHttpTxnIsInternal(res.txnp)) {
+    TSDebug(PLUGIN_NAME, "No TCP-INFO available for internal transactions");
+    return;
+  }
+  TSReturnCode tsSsn;
+  int fd;
+  struct tcp_info info;
+  socklen_t tcp_info_len = sizeof(info);
+  tsSsn                  = TSHttpTxnClientFdGet(res.txnp, &fd);
+  if (tsSsn != TS_SUCCESS || fd <= 0) {
+    TSDebug(PLUGIN_NAME, "error getting the client socket fd from ssn");
+  }
+  if (getsockopt(fd, IPPROTO_TCP, TCP_INFO, &info, &tcp_info_len) != 0) {
+    TSDebug(PLUGIN_NAME, "getsockopt(%d, TCP_INFO) failed: %s", fd, strerror(errno));
+  }
+
+  if (tsSsn == TS_SUCCESS) {
+    if (tcp_info_len > 0) {
+      char buf[12 * 4 + 9]; // 4x uint32's + 4x "; " + '\0'
+#if !defined(freebsd) || defined(__GLIBC__)
+      snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
+               info.tcpi_snd_cwnd, info.tcpi_retrans);
+#else
+      snprintf(buf, sizeof(buf), "%" PRIu32 ";%" PRIu32 ";%" PRIu32 ";%" PRIu32 "", info.tcpi_rtt, info.tcpi_rto,
+               info.tcpi_snd_cwnd, info.__tcpi_retrans);
+#endif
+      s += buf;
+    }
+  }
+#else
+  s += "-";
+#endif
 }

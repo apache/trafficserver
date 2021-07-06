@@ -88,15 +88,17 @@ location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
 //
 //////////////////////////////////////////////////////////////////////////////
 
-Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLogFile *_diags_log, int dl_perm, int ol_perm)
+Diags::Diags(std::string_view prefix_string, const char *bdt, const char *bat, BaseLogFile *_diags_log, int dl_perm, int ol_perm)
   : diags_log(nullptr),
     stdout_log(nullptr),
     stderr_log(nullptr),
     magic(DIAGS_MAGIC),
     show_location(SHOW_LOCATION_NONE),
     base_debug_tags(nullptr),
-    base_action_tags(nullptr)
+    base_action_tags(nullptr),
+    prefix_str(prefix_string)
 {
+  ink_release_assert(!prefix_str.empty());
   int i;
 
   cleanup_func = nullptr;
@@ -116,11 +118,8 @@ Diags::Diags(const char *prefix_string, const char *bdt, const char *bat, BaseLo
   config.enabled[DiagsTagType_Debug]  = (base_debug_tags != nullptr);
   config.enabled[DiagsTagType_Action] = (base_action_tags != nullptr);
   diags_on_for_plugins                = config.enabled[DiagsTagType_Debug];
-  prefix_str                          = prefix_string;
 
   // The caller must always provide a non-empty prefix.
-  ink_release_assert(prefix_str);
-  ink_release_assert(*prefix_str);
 
   for (i = 0; i < DiagsLevel_Count; i++) {
     config.outputs[i].to_stdout   = false;
@@ -204,7 +203,7 @@ Diags::~Diags()
 //
 //      This routine outputs to all of the output targets enabled for this
 //      debugging level in config.outputs[diags_level].  Many higher level
-//      diagnosting printing routines are built upon print_va, including:
+//      diagnostics printing routines are built upon print_va, including:
 //
 //              void print(...)
 //              void log_va(...)
@@ -453,23 +452,20 @@ Diags::dump(FILE *fp) const
   fprintf(fp, "  action default tags: '%s'\n", (base_action_tags ? base_action_tags : "NULL"));
   fprintf(fp, "  outputs:\n");
   for (i = 0; i < DiagsLevel_Count; i++) {
-    fprintf(fp, "    %10s [stdout=%d, stderr=%d, syslog=%d, diagslog=%d]\n", level_name((DiagsLevel)i), config.outputs[i].to_stdout,
-            config.outputs[i].to_stderr, config.outputs[i].to_syslog, config.outputs[i].to_diagslog);
+    fprintf(fp, "    %10s [stdout=%d, stderr=%d, syslog=%d, diagslog=%d]\n", level_name(static_cast<DiagsLevel>(i)),
+            config.outputs[i].to_stdout, config.outputs[i].to_stderr, config.outputs[i].to_syslog, config.outputs[i].to_diagslog);
   }
 }
 
 void
 Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_string, va_list ap) const
 {
-  va_list ap2;
-
-  if (DiagsLevel_IsTerminal(level)) {
-    va_copy(ap2, ap);
-  }
-
   print_va(nullptr, level, loc, format_string, ap);
 
   if (DiagsLevel_IsTerminal(level)) {
+    va_list ap2;
+
+    va_copy(ap2, ap);
     if (cleanup_func) {
       cleanup_func();
     }
@@ -480,9 +476,8 @@ Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_
     } else {
       ink_fatal_va(format_string, ap2);
     }
+    va_end(ap2);
   }
-
-  va_end(ap2);
 }
 
 /*
@@ -519,6 +514,40 @@ Diags::config_roll_outputlog(RollingEnabledValues re, int ri, int rs)
   outputlog_rolling_enabled  = re;
   outputlog_rolling_interval = ri;
   outputlog_rolling_size     = rs;
+}
+
+/*
+ * Update diags_log to use the underlying file on disk.
+ *
+ * This function will replace the current BaseLogFile object with a new one, as
+ * each BaseLogFile object logically represents one file on disk. It can be
+ * used when we want to re-open the log file if the initial one was moved.
+ *
+ * Note that, however, cross process race conditions may still exist,
+ * especially with the metafile, and further work with flock() for fcntl() may
+ * still need to be done.
+ *
+ * Returns true if the log was reseated, false otherwise.
+ */
+bool
+Diags::reseat_diagslog()
+{
+  if (diags_log == nullptr || !diags_log->is_init()) {
+    return false;
+  }
+  fflush(diags_log->m_fp);
+  char *oldname = ats_strdup(diags_log->get_name());
+  log_log_trace("in %s for diags.log, oldname=%s\n", __func__, oldname);
+  BaseLogFile *n = new BaseLogFile(oldname);
+  if (setup_diagslog(n)) {
+    BaseLogFile *old_diags = diags_log;
+    lock();
+    diags_log = n;
+    unlock();
+    delete old_diags;
+  }
+  ats_free(oldname);
+  return true;
 }
 
 /*

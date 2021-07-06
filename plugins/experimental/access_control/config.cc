@@ -169,23 +169,23 @@ load(T &container, const String &filename)
 bool
 AccessControlConfig::init(int argc, char *argv[])
 {
-  static const struct option longopt[] = {{const_cast<char *>("invalid-syntax-status-code"), optional_argument, 0, 'a'},
-                                          {const_cast<char *>("invalid-signature-status-code"), optional_argument, 0, 'b'},
-                                          {const_cast<char *>("invalid-timing-status-code"), optional_argument, 0, 'c'},
-                                          {const_cast<char *>("invalid-scope-status-code"), optional_argument, 0, 'd'},
-                                          {const_cast<char *>("invalid-origin-response"), optional_argument, 0, 'e'},
-                                          {const_cast<char *>("internal-error-status-code"), optional_argument, 0, 'f'},
-                                          {const_cast<char *>("check-cookie"), optional_argument, 0, 'g'},
-                                          {const_cast<char *>("symmetric-keys-map"), optional_argument, 0, 'h'},
-                                          {const_cast<char *>("reject-invalid-token-requests"), optional_argument, 0, 'i'},
-                                          {const_cast<char *>("extract-subject-to-header"), optional_argument, 0, 'j'},
-                                          {const_cast<char *>("extract-tokenid-to-header"), optional_argument, 0, 'k'},
-                                          {const_cast<char *>("extract-status-to-header"), optional_argument, 0, 'l'},
-                                          {const_cast<char *>("token-response-header"), optional_argument, 0, 'm'},
-                                          {const_cast<char *>("use-redirects"), optional_argument, 0, 'n'},
+  static const struct option longopt[] = {{const_cast<char *>("invalid-syntax-status-code"), optional_argument, nullptr, 'a'},
+                                          {const_cast<char *>("invalid-signature-status-code"), optional_argument, nullptr, 'b'},
+                                          {const_cast<char *>("invalid-timing-status-code"), optional_argument, nullptr, 'c'},
+                                          {const_cast<char *>("invalid-scope-status-code"), optional_argument, nullptr, 'd'},
+                                          {const_cast<char *>("invalid-origin-response"), optional_argument, nullptr, 'e'},
+                                          {const_cast<char *>("internal-error-status-code"), optional_argument, nullptr, 'f'},
+                                          {const_cast<char *>("check-cookie"), optional_argument, nullptr, 'g'},
+                                          {const_cast<char *>("symmetric-keys-map"), optional_argument, nullptr, 'h'},
+                                          {const_cast<char *>("reject-invalid-token-requests"), optional_argument, nullptr, 'i'},
+                                          {const_cast<char *>("extract-subject-to-header"), optional_argument, nullptr, 'j'},
+                                          {const_cast<char *>("extract-tokenid-to-header"), optional_argument, nullptr, 'k'},
+                                          {const_cast<char *>("extract-status-to-header"), optional_argument, nullptr, 'l'},
+                                          {const_cast<char *>("token-response-header"), optional_argument, nullptr, 'm'},
+                                          {const_cast<char *>("use-redirects"), optional_argument, nullptr, 'n'},
                                           {const_cast<char *>("include-uri-paths-file"), optional_argument, nullptr, 'o'},
                                           {const_cast<char *>("exclude-uri-paths-file"), optional_argument, nullptr, 'p'},
-                                          {0, 0, 0, 0}};
+                                          {nullptr, 0, nullptr, 0}};
 
   bool status = true;
   optind      = 0;
@@ -206,27 +206,27 @@ AccessControlConfig::init(int argc, char *argv[])
     switch (opt) {
     case 'a': /* invalid-syntax-status-code */
     {
-      _invalidSignature = (TSHttpStatus)string2int(optarg);
+      _invalidSignature = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'b': /* invalid-signature-status-code */
     {
-      _invalidSignature = (TSHttpStatus)string2int(optarg);
+      _invalidSignature = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'c': /* invalid-timing-status-code */
     {
-      _invalidTiming = (TSHttpStatus)string2int(optarg);
+      _invalidTiming = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'd': /* invalid-scope-status-code */
     {
-      _invalidScope = (TSHttpStatus)string2int(optarg);
+      _invalidScope = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'e': /* invalid-origin-response */
     {
-      _invalidOriginResponse = (TSHttpStatus)string2int(optarg);
+      _invalidOriginResponse = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'f': /* internal-error-status-code */
     {
-      _internalError = (TSHttpStatus)string2int(optarg);
+      _internalError = static_cast<TSHttpStatus>(string2int(optarg));
     } break;
     case 'g': /* check-cookie */
     {
@@ -261,14 +261,14 @@ AccessControlConfig::init(int argc, char *argv[])
       _useRedirects = ::isTrue(optarg);
     } break;
     case 'o': /* include-uri-paths-file */
-      if (!loadMultiPatternsFromFile(optarg, /* blacklist = */ false)) {
-        AccessControlError("failed to load uri-path multi-pattern white-list '%s'", optarg);
+      if (!loadMultiPatternsFromFile(optarg, /* denylist = */ false)) {
+        AccessControlError("failed to load uri-path multi-pattern allow-list '%s'", optarg);
         status = false;
       }
       break;
     case 'p': /* exclude-uri-paths-file */
-      if (!loadMultiPatternsFromFile(optarg, /* blacklist = */ true)) {
-        AccessControlError("failed to load uri-path multi-pattern black-list '%s'", optarg);
+      if (!loadMultiPatternsFromFile(optarg, /* denylist = */ true)) {
+        AccessControlError("failed to load uri-path multi-pattern deny-list '%s'", optarg);
         status = false;
       }
       break;
@@ -297,11 +297,11 @@ AccessControlConfig::init(int argc, char *argv[])
 /**
  * @brief a helper function which loads the classifier from files.
  * @param filename file name
- * @param blacklist true - load as a blacklist of patterns, false - white-list of patterns
+ * @param denylist true - load as a denylist of patterns, false - allow-list of patterns
  * @return true if successful, false otherwise.
  */
 bool
-AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool blacklist)
+AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool denylist)
 {
   if (filename.empty()) {
     AccessControlError("filename cannot be empty");
@@ -322,7 +322,7 @@ AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool blac
 
   /* Have the multiplattern be named as same as the filename, would be used only for debugging. */
   MultiPattern *multiPattern;
-  if (blacklist) {
+  if (denylist) {
     multiPattern = new NonMatchingMultiPattern(filename);
     AccessControlDebug("NonMatchingMultiPattern('%s')", filename.c_str());
   } else {
@@ -355,11 +355,11 @@ AccessControlConfig::loadMultiPatternsFromFile(const String &filename, bool blac
     p = new Pattern();
 
     if (nullptr != p && p->init(regex)) {
-      if (blacklist) {
-        AccessControlDebug("Added pattern '%s' to black list uri-path multi-pattern '%s'", regex.c_str(), filename.c_str());
+      if (denylist) {
+        AccessControlDebug("Added pattern '%s' to deny list uri-path multi-pattern '%s'", regex.c_str(), filename.c_str());
         multiPattern->add(p);
       } else {
-        AccessControlDebug("Added pattern '%s' to white list uri-path multi-pattern '%s'", regex.c_str(), filename.c_str());
+        AccessControlDebug("Added pattern '%s' to allow list uri-path multi-pattern '%s'", regex.c_str(), filename.c_str());
         multiPattern->add(p);
       }
     } else {

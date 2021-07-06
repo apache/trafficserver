@@ -73,8 +73,8 @@ class EThread;
   thread is independent of the thread groups and it exists as long as your continuation handle
   executes and there are events to process. In the latter, you call @c registerEventType to get an
   event type and then @c spawn_event_theads which creates the threads in the group of that
-  type. Such threads require events to be scheduled on a specicif thread in the group or for the
-  grouop in general using the event type. Note that between these two calls @c
+  type. Such threads require events to be scheduled on a specific thread in the group or for the
+  group in general using the event type. Note that between these two calls @c
   EThread::schedule_spawn can be used to set up per thread initialization.
 
   Callback event codes:
@@ -151,11 +151,7 @@ public:
   */
   Event *schedule_imm(Continuation *c, EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE,
                       void *cookie = nullptr);
-  /*
-    provides the same functionality as schedule_imm and also signals the thread immediately
-  */
-  Event *schedule_imm_signal(Continuation *c, EventType event_type = ET_CALL, int callback_event = EVENT_IMMEDIATE,
-                             void *cookie = nullptr);
+
   /**
     Schedules the continuation on a specific thread group to receive an
     event at the given timeout. Requests the EventProcessor to schedule
@@ -204,11 +200,11 @@ public:
   /**
     Schedules the continuation on a specific thread group to receive
     an event periodically. Requests the EventProcessor to schedule the
-    callback to the continuation 'c' everytime 'aperiod' elapses. The
+    callback to the continuation 'c' every time 'aperiod' elapses. The
     callback is handled by a thread in the specified thread group
     (event_type).
 
-    @param c Continuation to call back everytime 'aperiod' elapses.
+    @param c Continuation to call back every time 'aperiod' elapses.
     @param aperiod duration of the time period between callbacks.
     @param event_type thread group id (or event type) specifying the
       group of threads on which to schedule the callback.
@@ -325,12 +321,15 @@ public:
   */
   int n_ethreads = 0;
 
+  bool has_tg_started(int etype);
+
   /*------------------------------------------------------*\
   | Unix & non NT Interface                                |
   \*------------------------------------------------------*/
 
-  Event *schedule(Event *e, EventType etype, bool fast_signal = false);
+  Event *schedule(Event *e, EventType etype);
   EThread *assign_thread(EventType etype);
+  EThread *assign_affinity_by_type(Continuation *cont, EventType etype);
 
   EThread *all_dthreads[MAX_EVENT_THREADS];
   int n_dthreads       = 0; // No. of dedicated threads
@@ -391,7 +390,7 @@ private:
     EventProcessor *_evp;
 
   public:
-    ThreadInit(EventProcessor *evp) : _evp(evp) { SET_HANDLER(&self::init); }
+    explicit ThreadInit(EventProcessor *evp) : _evp(evp) { SET_HANDLER(&self::init); }
 
     int
     init(int /* event ATS_UNUSED */, Event *ev)
@@ -409,3 +408,5 @@ private:
 };
 
 extern inkcoreapi class EventProcessor eventProcessor;
+
+void thread_started(EThread *);

@@ -21,14 +21,15 @@
     limitations under the License.
 */
 
+#include "tscore/IntrusivePtr.h"
+
 #include <string>
 #include <sstream>
-#include <tsconfig/IntrusivePtr.h>
 #include <catch.hpp>
 
 struct Thing : public ts::IntrusivePtrCounter {
   Thing() { ++_count; }
-  ~Thing() { --_count; }
+  virtual ~Thing() { --_count; }
   std::string _name;
   static int _count; // instance count.
 };
@@ -96,7 +97,7 @@ TEST_CASE("IntrusivePtr", "[libts][IntrusivePtr]")
 // List test.
 TEST_CASE("IntrusivePtr List", "[libts][IntrusivePtr]")
 {
-  // The clang analyzer claims this type of list manipularion leads to use after free because of
+  // The clang analyzer claims this type of list manipulation leads to use after free because of
   // premature class destruction but these tests verify that is a false positive.
 
   using LP = ts::IntrusivePtr<Item>;

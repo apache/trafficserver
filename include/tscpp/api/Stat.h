@@ -21,7 +21,9 @@
 
 #pragma once
 
+#include "ts/apidefs.h"
 #include "tscpp/api/noncopyable.h"
+
 #include <cstdint>
 #include <string>
 
@@ -63,7 +65,7 @@ public:
   /**
    * You must initialize your Stat with a call to this init() method.
    *
-   * @param name The string name of the stat, this will be visbible via traffic_ctl, or through http stats.
+   * @param name The string name of the stat, this will be visible via traffic_ctl, or through http stats.
    * @param type The SyncType of the Stat, this decides how TrafficServer will treat your inputs. The default
    *   value is SYNC_COUNT.
    * @param persistent This determines if your Stats will persist, the default value is false.
@@ -97,7 +99,7 @@ public:
   void set(int64_t value);
 
 private:
-  int stat_id_; /**< The internal stat ID */
+  int stat_id_ = TS_ERROR; /**< The internal stat ID */
 };
 
 } // namespace atscppapi

@@ -24,17 +24,17 @@
 #pragma once
 
 #include "tscore/ink_config.h"
-#include <stddef.h>
+#include <stddef.h> // NOLINT(modernize-deprecated-headers)
 #include <sys/mman.h>
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#include <stdint.h> // NOLINT(modernize-deprecated-headers)
 #else
 // TODO: Add "standard" int types?
 #endif
 
 #ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
+#include <inttypes.h> // NOLINT(modernize-deprecated-headers)
 #else
 // TODO: add PRI*64 stuff?
 #endif
@@ -104,10 +104,6 @@ countof(const T (&)[N])
 #include <hwloc.h>
 #endif
 
-#ifndef ROUNDUP
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
-#endif
-
 #if defined(MAP_NORESERVE)
 #define MAP_SHARED_MAP_NORESERVE (MAP_SHARED | MAP_NORESERVE)
 #else
@@ -126,16 +122,22 @@ int ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
 int ink_number_of_processors();
 int ink_login_name_max();
 
+#ifdef __cplusplus
+// Round up a value to be a multiple of m if necessary.
+//
+template <typename ArithmeticV, typename ArithmeticM>
+constexpr ArithmeticV
+ROUNDUP(ArithmeticV value, ArithmeticM m)
+{
+  ArithmeticV remainder = value % m;
+  if (remainder) {
+    value += m - remainder;
+  }
+  return value;
+}
+#endif
+
 #if TS_USE_HWLOC
 // Get the hardware topology
 hwloc_topology_t ink_get_topology();
-#endif
-
-/** Constants.
- */
-#ifdef __cplusplus
-namespace ts
-{
-static const int NO_FD = -1; ///< No or invalid file descriptor.
-}
 #endif

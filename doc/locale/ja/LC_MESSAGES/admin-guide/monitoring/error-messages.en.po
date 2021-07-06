@@ -185,7 +185,7 @@ msgid "Alarm Messages"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:92
-msgid "``[Rollback::Rollback] Config file is read-only: <filename>``"
+msgid "``[ConfigManager::ConfigManager] Config file is read-only: <filename>``"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:91
@@ -199,7 +199,7 @@ msgstr ""
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:96
 msgid ""
-"``[Rollback::Rollback] Unable to read or write config file <filename>``"
+"``[ConfigManager::ConfigManager] Unable to read or write config file <filename>``"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:95
@@ -405,10 +405,10 @@ msgstr ""
 
 #: ../../../admin-guide/monitoring/error-messages.en.rst:185
 msgid ""
-"``400`` Could not process this request because ``Content-Length`` was not "
+"``411`` Could not process this request because ``Content-Length`` was not "
 "specified. ``request#no_content_length``"
 msgstr ""
-"``400`` Could not process this request because ``Content-Length`` was not "
+"``411`` Could not process this request because ``Content-Length`` was not "
 "specified. (``Content-Length`` が指定されなかったためリクエストを処理できま"
 "せんでした。) ``request#no_content_length``"
 

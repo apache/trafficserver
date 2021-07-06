@@ -60,7 +60,7 @@ struct BWFSpec {
   // @a _min is unsigned because there's no point in an invalid default, 0 works fine.
   unsigned int _min = 0;                                        ///< Minimum width.
   int _prec         = -1;                                       ///< Precision
-  unsigned int _max = std::numeric_limits<unsigned int>::max(); ///< Maxium width
+  unsigned int _max = std::numeric_limits<unsigned int>::max(); ///< Maximum width
   int _idx          = -1;                                       ///< Positional "name" of the specification.
   std::string_view _name;                                       ///< Name of the specification.
   std::string_view _ext;                                        ///< Extension if provided.

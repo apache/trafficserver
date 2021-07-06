@@ -1,6 +1,6 @@
 /** @file
 
-  ProxySession - Base class for protocol client & server sessions.
+  ProxySession - Base class for protocol client sessions.
 
   @section license License
 
@@ -24,12 +24,22 @@
 #include "HttpConfig.h"
 #include "HttpDebugNames.h"
 #include "ProxySession.h"
+#include "P_SSLNetVConnection.h"
 
-static int64_t next_cs_id = 0;
+ProxySession::ProxySession() : VConnection(nullptr) {}
 
-ProxySession::ProxySession() : VConnection(nullptr)
+ProxySession::ProxySession(NetVConnection *vc) : VConnection(nullptr), _vc(vc) {}
+
+ProxySession::~ProxySession()
 {
-  ink_zero(this->user_args);
+  if (schedule_event) {
+    schedule_event->cancel();
+    schedule_event = nullptr;
+  }
+  this->api_hooks.clear();
+  this->mutex.clear();
+  this->acl.clear();
+  this->_ssl.reset();
 }
 
 void
@@ -37,7 +47,7 @@ ProxySession::set_session_active()
 {
   if (!m_active) {
     m_active = true;
-    this->increment_current_active_client_connections_stat();
+    this->increment_current_active_connections_stat();
   }
 }
 
@@ -46,14 +56,8 @@ ProxySession::clear_session_active()
 {
   if (m_active) {
     m_active = false;
-    this->decrement_current_active_client_connections_stat();
+    this->decrement_current_active_connections_stat();
   }
-}
-
-int64_t
-ProxySession::next_connection_id()
-{
-  return ink_atomic_increment(&next_cs_id, 1);
 }
 
 static const TSEvent eventmap[TS_HTTP_LAST_HOOK + 1] = {
@@ -77,24 +81,6 @@ static const TSEvent eventmap[TS_HTTP_LAST_HOOK + 1] = {
   TS_EVENT_NONE,                       // TS_HTTP_LAST_HOOK
 };
 
-static bool
-is_valid_hook(TSHttpHookID hookid)
-{
-  return (hookid >= 0) && (hookid < TS_HTTP_LAST_HOOK);
-}
-
-void
-ProxySession::free()
-{
-  if (schedule_event) {
-    schedule_event->cancel();
-    schedule_event = nullptr;
-  }
-  this->api_hooks.clear();
-  this->mutex.clear();
-  this->acl.clear();
-}
-
 int
 ProxySession::state_api_callout(int event, void *data)
 {
@@ -107,34 +93,28 @@ ProxySession::state_api_callout(int event, void *data)
   case EVENT_NONE:
   case EVENT_INTERVAL:
   case TS_EVENT_HTTP_CONTINUE:
-    if (likely(is_valid_hook(this->api_hookid))) {
-      if (this->api_current == nullptr && this->api_scope == API_HOOK_SCOPE_GLOBAL) {
-        this->api_current = http_global_hooks->get(this->api_hookid);
-        this->api_scope   = API_HOOK_SCOPE_LOCAL;
-      }
+    if (nullptr == cur_hook) {
+      /// Get the next hook to invoke from HttpHookState
+      cur_hook = hook_state.getNext();
+    }
+    if (nullptr != cur_hook) {
+      APIHook const *hook = cur_hook;
 
-      if (this->api_current == nullptr && this->api_scope == API_HOOK_SCOPE_LOCAL) {
-        this->api_current = ssn_hook_get(this->api_hookid);
-        this->api_scope   = API_HOOK_SCOPE_NONE;
-      }
+      WEAK_MUTEX_TRY_LOCK(lock, hook->m_cont->mutex, mutex->thread_holding);
 
-      if (this->api_current) {
-        APIHook *hook = this->api_current;
-
-        MUTEX_TRY_LOCK(lock, hook->m_cont->mutex, mutex->thread_holding);
-        // Have a mutex but did't get the lock, reschedule
-        if (!lock.is_locked()) {
-          SET_HANDLER(&ProxySession::state_api_callout);
-          if (!schedule_event) { // Don't bother to schedule is there is already one out.
-            schedule_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
-          }
-          return 0;
+      // Have a mutex but didn't get the lock, reschedule
+      if (!lock.is_locked()) {
+        SET_HANDLER(&ProxySession::state_api_callout);
+        if (!schedule_event) { // Don't bother if there is already one
+          schedule_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
         }
-
-        this->api_current = this->api_current->next();
-        hook->invoke(eventmap[this->api_hookid], this);
-        return 0;
+        return -1;
       }
+
+      cur_hook = nullptr; // mark current callback at dispatched.
+      hook->invoke(eventmap[hook_state.id()], this);
+
+      return 0;
     }
 
     handle_api_return(event);
@@ -152,33 +132,30 @@ ProxySession::state_api_callout(int event, void *data)
   return 0;
 }
 
-void
+int
 ProxySession::do_api_callout(TSHttpHookID id)
 {
   ink_assert(id == TS_HTTP_SSN_START_HOOK || id == TS_HTTP_SSN_CLOSE_HOOK);
-
-  this->api_hookid  = id;
-  this->api_scope   = API_HOOK_SCOPE_GLOBAL;
-  this->api_current = nullptr;
-
-  if (this->has_hooks()) {
+  hook_state.init(id, http_global_hooks, &api_hooks);
+  /// Verify if there is any hook to invoke
+  cur_hook = hook_state.getNext();
+  if (nullptr != cur_hook) {
     SET_HANDLER(&ProxySession::state_api_callout);
-    this->state_api_callout(EVENT_NONE, nullptr);
+    return this->state_api_callout(EVENT_NONE, nullptr);
   } else {
     this->handle_api_return(TS_EVENT_HTTP_CONTINUE);
   }
+  return 0;
 }
 
 void
 ProxySession::handle_api_return(int event)
 {
-  TSHttpHookID hookid = this->api_hookid;
+  TSHttpHookID hookid = hook_state.id();
 
   SET_HANDLER(&ProxySession::state_api_callout);
 
-  this->api_hookid  = TS_HTTP_LAST_HOOK;
-  this->api_scope   = API_HOOK_SCOPE_NONE;
-  this->api_current = nullptr;
+  cur_hook = nullptr;
 
   switch (hookid) {
   case TS_HTTP_SSN_START_HOOK:
@@ -196,4 +173,142 @@ ProxySession::handle_api_return(int event)
     Fatal("received invalid session hook %s (%d)", HttpDebugNames::get_api_hook_name(hookid), hookid);
     break;
   }
+}
+
+bool
+ProxySession::is_chunked_encoding_supported() const
+{
+  return false;
+}
+
+// Override if your session protocol cares.
+void
+ProxySession::set_half_close_flag(bool flag)
+{
+}
+
+bool
+ProxySession::get_half_close_flag() const
+{
+  return false;
+}
+
+int64_t
+ProxySession::connection_id() const
+{
+  return con_id;
+}
+
+bool
+ProxySession::attach_server_session(PoolableSession *ssession, bool transaction_done)
+{
+  return false;
+}
+
+PoolableSession *
+ProxySession::get_server_session() const
+{
+  return nullptr;
+}
+
+void
+ProxySession::set_active_timeout(ink_hrtime timeout_in)
+{
+  if (_vc) {
+    _vc->set_active_timeout(timeout_in);
+  }
+}
+
+void
+ProxySession::set_inactivity_timeout(ink_hrtime timeout_in)
+{
+  if (_vc) {
+    _vc->set_inactivity_timeout(timeout_in);
+  }
+}
+
+void
+ProxySession::cancel_inactivity_timeout()
+{
+  if (_vc) {
+    _vc->cancel_inactivity_timeout();
+  }
+}
+
+void
+ProxySession::cancel_active_timeout()
+{
+  if (_vc) {
+    _vc->cancel_active_timeout();
+  }
+}
+
+int
+ProxySession::populate_protocol(std::string_view *result, int size) const
+{
+  return _vc ? _vc->populate_protocol(result, size) : 0;
+}
+
+const char *
+ProxySession::protocol_contains(std::string_view tag_prefix) const
+{
+  return _vc ? _vc->protocol_contains(tag_prefix) : nullptr;
+}
+
+HTTPVersion
+ProxySession::get_version(HTTPHdr &hdr) const
+{
+  return hdr.version_get();
+}
+
+sockaddr const *
+ProxySession::get_remote_addr() const
+{
+  return _vc ? _vc->get_remote_addr() : nullptr;
+}
+
+sockaddr const *
+ProxySession::get_local_addr()
+{
+  return _vc ? _vc->get_local_addr() : nullptr;
+}
+
+void
+ProxySession::_handle_if_ssl(NetVConnection *new_vc)
+{
+  auto ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
+  if (ssl_vc) {
+    _ssl = std::make_unique<SSLProxySession>();
+    _ssl.get()->init(*ssl_vc);
+  }
+}
+
+VIO *
+ProxySession::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
+{
+  return _vc ? this->_vc->do_io_read(c, nbytes, buf) : nullptr;
+}
+
+VIO *
+ProxySession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+{
+  return _vc ? this->_vc->do_io_write(c, nbytes, buf, owner) : nullptr;
+}
+
+void
+ProxySession::do_io_shutdown(ShutdownHowTo_t howto)
+{
+  this->_vc->do_io_shutdown(howto);
+}
+
+void
+ProxySession::reenable(VIO *vio)
+{
+  this->_vc->reenable(vio);
+}
+
+bool
+ProxySession::support_sni() const
+{
+  return _vc ? _vc->support_sni() : false;
 }

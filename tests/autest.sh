@@ -1,4 +1,5 @@
 #!/bin/bash
+# vim: sw=4:ts=4:softtabstop=4:ai:et
 
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -16,20 +17,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+./prepare_proxy_verifier.sh
 pushd $(dirname $0) > /dev/null
 export PYTHONPATH=$(pwd):$PYTHONPATH
-RED='\033[0;31m'
-GREEN='\033[1;32m'
-NC='\033[0m' # No Color
-if [ ! -f ./env-test/bin/autest ]; then\
-        echo -e "${RED}AuTest is not installed! Bootstrapping system...${NC}";\
-		./bootstrap.py;\
-        echo -e "${GREEN}Done!${NC}";\
-	fi
+./test-env-check.sh
 # this is for rhel or centos systems
-test -r /opt/rh/rh-python35/enable && . /opt/rh/rh-python35/enable
-. env-test/bin/activate
-./env-test/bin/autest -D gold_tests "$@"
+echo "Environment config finished. Running AuTest..."
+pipenv run autest -D gold_tests "$@"
 ret=$?
 popd > /dev/null
 exit $ret

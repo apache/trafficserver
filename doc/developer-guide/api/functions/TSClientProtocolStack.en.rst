@@ -25,13 +25,19 @@ TSClientProtocolStack
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
 
-.. function:: TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int n, char const** result, int* actual)
+    #include <ts/ts.h>
 
-.. function:: TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int n, char const** result, int* actual)
+.. function:: TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int count, char const** result, int* actual)
+
+.. function:: TSReturnCode TSHttpTxnServerProtocolStackGet(TSHttpTxn txnp, int count, const char** result, int* actual)
+
+.. function:: TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int count, char const** result, int* actual)
 
 .. function:: char const* TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp)
+
+.. function:: const char* TSHttpTxnServerProtocolStackContains(TSHttpTxn txnp, char const* tag)
 
 .. function:: char const* TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp)
 
@@ -42,12 +48,15 @@ Synopsis
 Description
 ===========
 
-These functions are used to explore the protocol stack of the client (user agent) connection to
+These functions are used to explore the protocol stack of either the client (user agent) or origin server connection to
 |TS|. The functions :func:`TSHttpTxnClientProtocolStackGet` and
 :func:`TSHttpSsnClientProtocolStackGet` can be used to retrieve the entire protocol stack for the
-user agent connection. :func:`TSHttpTxnClientProtocolStackContains` and
-:func:`TSHttpSsnClientProtocolStackContains` will check for a specific protocol :arg:`tag` being
-present in the stack.
+user agent connection. The :func:`TSHttpTxnServerProtocolStackGet` can be used
+to retrieve the entire protocol stack for
+the origin server connection. :func:`TSHttpTxnClientProtocolStackContains`,
+:func:`TSHttpSsnClientProtocolStackContains`, and
+:func:`TSHttpTxnServerProtocolStackContains`  will check for a specific
+protocol :arg:`tag` being present in the stack.
 
 Each protocol is represented by tag which is a null terminated string. A particular tag will always
 be returned as the same character pointer and so protocols can be reliably checked with pointer
@@ -58,18 +67,18 @@ normalized value. This is useful for plugins that provide custom protocols for u
 
 The protocols are ordered from higher level protocols to the lower level ones on which the higher
 operate. For instance a stack might look like "http/1.1,tls/1.2,tcp,ipv4". For
-:func:`TSHttpTxnClientProtocolStackGet` and :func:`TSHttpSsnClientProtocolStackGet` these values
+:func:`TSHttpTxnClientProtocolStackGet`, :func:`TSHttpSsnClientProtocolStackGet`, and :func:`TSHttpTxnServerProtocolStackGet` these values
 are placed in the array :arg:`result`. :arg:`count` is the maximum number of elements of
 :arg:`result` that may be modified by the function call. If :arg:`actual` is not :const:`NULL` then
 the actual number of elements in the protocol stack will be returned. If this is equal or less than
 :arg:`count` then all elements were returned. If it is larger then some layers were omitted from
 :arg:`result`. If the full stack is required :arg:`actual` can be used to resize :arg:`result` to
 be sufficient to hold all of the elements and the function called again with updated :arg:`count`
-and :arg:`result`. In practice the maximum number of elements will is almost certain to be less
+and :arg:`result`. In practice the maximum number of elements is almost certain to be less
 than 10 which therefore should suffice. These functions return :const:`TS_SUCCESS` on success and
-:const:`TS_ERROR` on failure which should only occurr if :arg:`txnp` or :arg:`ssnp` are invalid.
+:const:`TS_ERROR` on failure which should only occur if :arg:`txnp` or :arg:`ssnp` are invalid.
 
-The :func:`TSHttpTxnClientProtocolStackContains` and :func:`TSHttpSsnClientProtocolStackContains`
+The :func:`TSHttpTxnClientProtocolStackContains`, :func:`TSHttpSsnClientProtocolStackContains`, and :func:`TSHttpTxnServerProtocolStackContains`
 functions are provided for the convenience when only the presence of a protocol is of interest, not
 its location or the presence of other protocols. These functions return :const:`NULL` if the protocol
 :arg:`tag` is not present, and a pointer to the normalized tag if it is present. The strings are
@@ -102,10 +111,10 @@ QUIC        quic
 Examples
 --------
 
-The example below is excerpted from `example/protocol_stack/protocol_stack.cc`
+The example below is excerpted from `example/plugins/c-api/protocol_stack/protocol_stack.cc`
 in the Traffic Server source distribution. It demonstrates how to
 use :func:`TSHttpTxnClientProtocolStackGet` and :func:`TSHttpTxnClientProtocolStackContains`
 
-.. literalinclude:: ../../../../example/protocol_stack/protocol_stack.cc
+.. literalinclude:: ../../../../example/plugins/c-api/protocol_stack/protocol_stack.cc
   :language: c
   :lines: 31-46

@@ -41,12 +41,12 @@
  ***********************************************************************/
 
 struct Str {
-  const char *str;  // string pointer
-  size_t len;       // length of string (not counting NUL)
-  struct Str *next; // next in list
-  struct Str *prev; // prev in list
+  const char *str  = nullptr; // string pointer
+  size_t len       = 0;       // length of string (not counting NUL)
+  struct Str *next = nullptr; // next in list
+  struct Str *prev = nullptr; // prev in list
 
-  Str() : str(nullptr), len(0), next(nullptr), prev(nullptr) {}
+  Str() {}
   Str(char *s)
   {
     str  = s;

@@ -24,7 +24,9 @@ TSCacheWrite
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSAction TSCacheWrite(TSCont contp, TSCacheKey key)
 

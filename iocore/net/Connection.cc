@@ -28,6 +28,7 @@
 
 **************************************************************************/
 #include "tscore/ink_platform.h"
+#include "tscore/ink_defs.h"
 
 #include "P_Net.h"
 
@@ -36,8 +37,6 @@
 // #define SEND_BUF_SIZE            (1024*64)
 #define FIRST_RANDOM_PORT 16000
 #define LAST_RANDOM_PORT 32000
-
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
 int
 get_listen_backlog()
@@ -57,7 +56,7 @@ NetVCOptions::toString(addr_bind_style s)
   return ANY_ADDR == s ? "any" : INTF_ADDR == s ? "interface" : "foreign";
 }
 
-Connection::Connection() : fd(NO_FD), is_bound(false), is_connected(false), sock_type(0)
+Connection::Connection() : fd(NO_FD)
 {
   memset(&addr, 0, sizeof(addr));
 }
@@ -136,11 +135,13 @@ add_http_filter(int fd ATS_UNUSED)
 int
 Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 {
-  int res = 0;
+  int res               = 0;
+  int listen_per_thread = 0;
 
   ink_assert(fd != NO_FD);
 
-  if (http_accept_filter) {
+  if (opt.etype == ET_NET && opt.defer_accept > 0) {
+    http_accept_filter = true;
     add_http_filter(fd);
   }
 
@@ -190,7 +191,7 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     }
   }
 
-  if ((res = safe_fcntl(fd, F_SETFD, FD_CLOEXEC)) < 0) {
+  if (safe_fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
     goto Lerror;
   }
 
@@ -199,33 +200,44 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     l.l_onoff  = 0;
     l.l_linger = 0;
     if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) &&
-        (res = safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
+        safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, reinterpret_cast<char *>(&l), sizeof(l)) < 0) {
       goto Lerror;
     }
   }
 
-  if (ats_is_ip6(&addr) && (res = safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int))) < 0) {
+  if (ats_is_ip6(&addr) && safe_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int))) < 0) {
+  if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
+  }
+  REC_ReadConfigInteger(listen_per_thread, "proxy.config.exec_thread.listen");
+  if (listen_per_thread == 1) {
+    if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, SOCKOPT_ON, sizeof(int)) < 0) {
+      goto Lerror;
+    }
+#ifdef SO_REUSEPORT_LB
+    if (safe_setsockopt(fd, SOL_SOCKET, SO_REUSEPORT_LB, SOCKOPT_ON, sizeof(int)) < 0) {
+      goto Lerror;
+    }
+#endif
   }
 
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_NO_DELAY) &&
-      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int))) < 0) {
+      safe_setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
 
   // enables 2 hour inactivity probes, also may fix IRIX FIN_WAIT_2 leak
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_KEEP_ALIVE) &&
-      (res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
+      safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int)) < 0) {
     goto Lerror;
   }
 
 #ifdef TCP_FASTOPEN
   if ((opt.sockopt_flags & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
-      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int)))) {
+      safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&opt.tfo_queue_length, sizeof(int))) {
     goto Lerror;
   }
 #endif
@@ -247,14 +259,24 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
 
 #if defined(TCP_MAXSEG)
   if (NetProcessor::accept_mss > 0) {
-    if ((res = safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, (char *)&NetProcessor::accept_mss, sizeof(int))) < 0) {
+    if (safe_setsockopt(fd, IPPROTO_TCP, TCP_MAXSEG, reinterpret_cast<char *>(&NetProcessor::accept_mss), sizeof(int)) < 0) {
       goto Lerror;
     }
   }
 #endif
 
+#ifdef TCP_DEFER_ACCEPT
+  // set tcp defer accept timeout if it is configured, this will not trigger an accept until there is
+  // data on the socket ready to be read
+  if (opt.defer_accept > 0 && setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &opt.defer_accept, sizeof(int)) < 0) {
+    // FIXME: should we go to the error
+    // goto error;
+    Error("[Server::listen] Defer accept is configured but set failed: %d", errno);
+  }
+#endif
+
   if (non_blocking) {
-    if ((res = safe_nonblocking(fd)) < 0) {
+    if (safe_nonblocking(fd) < 0) {
       goto Lerror;
     }
   }

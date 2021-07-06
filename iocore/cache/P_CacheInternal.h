@@ -207,6 +207,7 @@ extern RecRawStatBlock *cache_rsb;
 // Configuration
 extern int cache_config_dir_sync_frequency;
 extern int cache_config_http_max_alts;
+extern int cache_config_log_alternate_eviction;
 extern int cache_config_permit_pinning;
 extern int cache_config_select_alternate;
 extern int cache_config_max_doc_size;
@@ -293,6 +294,16 @@ struct CacheVC : public CacheVConnection {
     return -1;
   }
 
+  const char *
+  get_disk_path() const override
+  {
+    if (vol && vol->disk) {
+      return vol->disk->path;
+    }
+
+    return nullptr;
+  }
+
   bool
   is_compressed_in_ram() const override
   {
@@ -326,6 +337,7 @@ struct CacheVC : public CacheVConnection {
   int openReadFromWriterMain(int event, Event *e);
   int openReadFromWriterFailure(int event, Event *);
   int openReadChooseWriter(int event, Event *e);
+  int openReadDirDelete(int event, Event *e);
 
   int openWriteCloseDir(int event, Event *e);
   int openWriteCloseHeadDone(int event, Event *e);
@@ -388,8 +400,6 @@ struct CacheVC : public CacheVConnection {
   bool is_pread_capable() override;
   bool set_pin_in_cache(time_t time_pin) override;
   time_t get_pin_in_cache() override;
-  bool set_disk_io_priority(int priority) override;
-  int get_disk_io_priority() override;
 
 // offsets from the base stat
 #define CACHE_STAT_ACTIVE 0
@@ -423,9 +433,9 @@ struct CacheVC : public CacheVConnection {
   Ptr<IOBufferBlock> blocks; // data available to write
   Ptr<IOBufferBlock> writer_buf;
 
-  OpenDirEntry *od;
+  OpenDirEntry *od = nullptr;
   AIOCallbackInternal io;
-  int alternate_index; // preferred position in vector
+  int alternate_index = CACHE_ALT_INDEX_DEFAULT; // preferred position in vector
   LINK(CacheVC, opendir_link);
 #ifdef CACHE_STAT_PAGES
   LINK(CacheVC, stat_link);
@@ -435,16 +445,15 @@ struct CacheVC : public CacheVConnection {
   // Start Region C
   // These variables are memset to 0 when the structure is freed.
   // The size of this region is size_to_init which is initialized
-  // in the CacheVC constuctor. It assumes that vio is the start
+  // in the CacheVC constructor. It assumes that vio is the start
   // of this region.
   // NOTE: NOTE: NOTE: If vio is NOT the start, then CHANGE the
   // size_to_init initialization
   VIO vio;
-  EThread *initial_thread; // initial thread open_XX was called on
   CacheFragType frag_type;
   CacheHTTPInfo *info;
   CacheHTTPInfoVector *write_vector;
-  OverridableHttpConfigParams *params;
+  const OverridableHttpConfigParams *params;
   int header_len;        // for communicating with agg_copy
   int frag_len;          // for communicating with agg_copy
   uint32_t write_len;    // for communicating with agg_copy
@@ -549,9 +558,9 @@ new_CacheVC(Continuation *cont)
   CacheVC *c          = THREAD_ALLOC(cacheVConnectionAllocator, t);
   c->vector.data.data = &c->vector.data.fast_data[0];
   c->_action          = cont;
-  c->initial_thread   = t->tt == DEDICATED ? nullptr : t;
   c->mutex            = cont->mutex;
   c->start_time       = Thread::get_hrtime();
+  c->setThreadAffinity(t);
   ink_assert(c->trigger == nullptr);
   Debug("cache_new", "new %p", c);
 #ifdef CACHE_STAT_PAGES
@@ -581,14 +590,13 @@ free_CacheVC(CacheVC *cont)
   ink_assert(!cont->is_io_in_progress());
   ink_assert(!cont->od);
   /* calling cont->io.action = nullptr causes compile problem on 2.6 solaris
-     release build....wierd??? For now, null out continuation and mutex
+     release build....weird??? For now, null out continuation and mutex
      of the action separately */
   cont->io.action.continuation = nullptr;
   cont->io.action.mutex        = nullptr;
   cont->io.mutex.clear();
-  cont->io.aio_result        = 0;
-  cont->io.aiocb.aio_nbytes  = 0;
-  cont->io.aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
+  cont->io.aio_result       = 0;
+  cont->io.aiocb.aio_nbytes = 0;
   cont->request.reset();
   cont->vector.clear();
   cont->vio.buffer.clear();
@@ -956,8 +964,8 @@ CacheRemoveCont::event_handler(int event, void *data)
   return EVENT_DONE;
 }
 
-int64_t cache_bytes_used(void);
-int64_t cache_bytes_total(void);
+int64_t cache_bytes_used();
+int64_t cache_bytes_total();
 
 #ifdef DEBUG
 #define CACHE_DEBUG_INCREMENT_DYN_STAT(_x) CACHE_INCREMENT_DYN_STAT(_x)
@@ -972,14 +980,14 @@ struct Vol;
 class CacheHostTable;
 
 struct Cache {
-  int cache_read_done;
-  int total_good_nvol;
-  int total_nvol;
-  int ready;
-  int64_t cache_size; // in store block size
-  CacheHostTable *hosttable;
-  int total_initialized_vol;
-  CacheType scheme;
+  int cache_read_done       = 0;
+  int total_good_nvol       = 0;
+  int total_nvol            = 0;
+  int ready                 = CACHE_INITIALIZING;
+  int64_t cache_size        = 0; // in store block size
+  CacheHostTable *hosttable = nullptr;
+  int total_initialized_vol = 0;
+  CacheType scheme          = CACHE_NONE_TYPE;
 
   int open(bool reconfigure, bool fix);
   int close();
@@ -992,7 +1000,7 @@ struct Cache {
                             const char *hostname = nullptr, int host_len = 0);
   Action *scan(Continuation *cont, const char *hostname = nullptr, int host_len = 0, int KB_per_second = 2500);
 
-  Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, OverridableHttpConfigParams *params,
+  Action *open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request, const OverridableHttpConfigParams *params,
                     CacheFragType type, const char *hostname, int host_len);
   Action *open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *old_info, time_t pin_in_cache = (time_t)0,
                      const CacheKey *key1 = nullptr, CacheFragType type = CACHE_FRAG_TYPE_HTTP, const char *hostname = nullptr,
@@ -1010,17 +1018,7 @@ struct Cache {
 
   Vol *key_to_vol(const CacheKey *key, const char *hostname, int host_len);
 
-  Cache()
-    : cache_read_done(0),
-      total_good_nvol(0),
-      total_nvol(0),
-      ready(CACHE_INITIALIZING),
-      cache_size(0), // in store block size
-      hosttable(nullptr),
-      total_initialized_vol(0),
-      scheme(CACHE_NONE_TYPE)
-  {
-  }
+  Cache() {}
 };
 
 extern Cache *theCache;

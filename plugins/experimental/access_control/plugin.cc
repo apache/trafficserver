@@ -139,7 +139,7 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errBuf, int er
 void
 TSRemapDeleteInstance(void *instance)
 {
-  AccessControlConfig *config = (AccessControlConfig *)instance;
+  AccessControlConfig *config = static_cast<AccessControlConfig *>(instance);
   delete config;
 }
 
@@ -359,7 +359,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
 
             AccessToken *token = config->_tokenFactory->getAccessToken();
             if (nullptr != token &&
-                VALID == (data->_originState = token->validate(StringView(tokenHdrValue, tokenHdrValueLen), time(0)))) {
+                VALID == (data->_originState = token->validate(StringView(tokenHdrValue, tokenHdrValueLen), time(nullptr)))) {
               /*
                * From RFC 6265 "HTTP State Management Mechanism":
                * To maximize compatibility with user agents, servers that wish to
@@ -385,7 +385,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
 
               /* Secure   - instructs the UA to include the cookie in an HTTP request only if the request is transmitted over
                *            a secure channel, typically HTTP over Transport Layer Security (TLS)
-               * HttpOnly - instructs the UA to omit the cookie when providing access to cookies via “non-HTTP” APIs such as a web
+               * HttpOnly - instructs the UA to omit the cookie when providing access to cookies via "non-HTTP" APIs such as a web
                *            browser API that exposes cookies to scripts */
               cookieValue.append("path=/; Secure; HttpOnly");
 
@@ -399,7 +399,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
               /* Don't set any cookie, fail the request here returning appropriate status code and body.*/
               TSHttpTxnStatusSet(txnp, config->_invalidOriginResponse);
               static const char *body = "Unexpected Response From the Origin Server\n";
-              char *buf               = (char *)TSmalloc(strlen(body) + 1);
+              char *buf               = static_cast<char *>(TSmalloc(strlen(body) + 1));
               sprintf(buf, "%s", body);
               TSHttpTxnErrorBodySet(txnp, buf, strlen(buf), nullptr);
 
@@ -520,7 +520,7 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
     if (0 < decryptedCookieSize) {
       AccessToken *token = config->_tokenFactory->getAccessToken();
       if (nullptr != token) {
-        data->_vaState = token->validate(StringView(decodedCookie, decryptedCookieSize), time(0));
+        data->_vaState = token->validate(StringView(decodedCookie, decryptedCookieSize), time(nullptr));
         if (VALID != data->_vaState) {
           remapStatus =
             handleInvalidToken(txnp, data, reject, accessTokenStateToHttpStatus(data->_vaState, config), data->_vaState);
@@ -570,7 +570,7 @@ TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   TSRemapStatus remapStatus   = TSREMAP_NO_REMAP;
-  AccessControlConfig *config = (AccessControlConfig *)instance;
+  AccessControlConfig *config = static_cast<AccessControlConfig *>(instance);
 
   if (nullptr != config) {
     /* Plugin is designed to be used only with TLS, check the scheme */

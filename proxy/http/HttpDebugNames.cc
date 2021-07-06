@@ -27,7 +27,6 @@
 #include "HttpTunnel.h"
 #include "Transform.h"
 #include "HttpSM.h"
-#include "HttpUpdateSM.h"
 #include <ts/apidefs.h>
 #include <I_Event.h>
 
@@ -231,22 +230,6 @@ HttpDebugNames::get_event_name(int event)
     static_assert(static_cast<int>(HTTP_API_ERROR) == static_cast<int>(TS_EVENT_HTTP_ERROR));
     return "HTTP_API_ERROR/TS_EVENT_HTTP_ERROR";
 
-  ///////////////////////////////
-  //  Scheduled Update Events
-  ///////////////////////////////
-  case HTTP_SCH_UPDATE_EVENT_WRITTEN:
-    return "HTTP_SCH_UPDATE_EVENT_WRITTEN";
-  case HTTP_SCH_UPDATE_EVENT_UPDATED:
-    return "HTTP_SCH_UPDATE_EVENT_UPDATED";
-  case HTTP_SCH_UPDATE_EVENT_DELETED:
-    return "HTTP_SCH_UPDATE_EVENT_DELETED";
-  case HTTP_SCH_UPDATE_EVENT_NOT_CACHED:
-    return "HTTP_SCH_UPDATE_EVENT_NOT_CACHED";
-  case HTTP_SCH_UPDATE_EVENT_ERROR:
-    return "HTTP_SCH_UPDATE_EVENT_ERROR";
-  case HTTP_SCH_UPDATE_EVENT_NO_ACTION:
-    return "HTTP_SCH_UPDATE_EVENT_NO_ACTION";
-
   case TS_EVENT_NET_ACCEPT_FAILED:
     return "TS_EVENT_NET_ACCEPT_FAILED";
   case TS_EVENT_INTERNAL_206:
@@ -365,6 +348,8 @@ HttpDebugNames::get_event_name(int event)
     return "TS_EVENT_INTERNAL_60201";
   case TS_EVENT_INTERNAL_60202:
     return "TS_EVENT_INTERNAL_60202";
+  case TS_EVENT_SSL_CLIENT_HELLO:
+    return "TS_EVENT_SSL_CLIENT_HELLO";
   case TS_EVENT_SSL_CERT:
     return "TS_EVENT_SSL_CERT";
   case TS_EVENT_SSL_SERVERNAME:
@@ -607,6 +592,8 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_VCONN_START_HOOK";
   case TS_VCONN_CLOSE_HOOK:
     return "TS_VCONN_CLOSE_HOOK";
+  case TS_SSL_CLIENT_HELLO_HOOK:
+    return "TS_SSL_CLIENT_HELLO_HOOK";
   case TS_SSL_CERT_HOOK:
     return "TS_SSL_CERT_HOOK";
   case TS_SSL_SERVERNAME_HOOK:

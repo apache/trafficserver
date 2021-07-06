@@ -30,6 +30,8 @@
 #include "LogFormat.h"
 #include "LogBuffer.h"
 
+extern AppVersionInfo appVersionInfo;
+
 char INVALID_STR[] = "!INVALID_STR!";
 
 #define HIDDEN_CONTENT_TYPE "@Content-Type"
@@ -106,18 +108,18 @@ LogAccess::init()
     m_proxy_response = &(hdr->client_response);
     MIMEField *field = m_proxy_response->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     if (field) {
-      m_proxy_resp_content_type_str = (char *)field->value_get(&m_proxy_resp_content_type_len);
+      m_proxy_resp_content_type_str = const_cast<char *>(field->value_get(&m_proxy_resp_content_type_len));
 
       LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
     } else {
       // If Content-Type field is missing, check for @Content-Type
       field = m_proxy_response->field_find(HIDDEN_CONTENT_TYPE, HIDDEN_CONTENT_TYPE_LEN);
       if (field) {
-        m_proxy_resp_content_type_str = (char *)field->value_get(&m_proxy_resp_content_type_len);
+        m_proxy_resp_content_type_str = const_cast<char *>(field->value_get(&m_proxy_resp_content_type_len));
         LogUtils::remove_content_type_attributes(m_proxy_resp_content_type_str, &m_proxy_resp_content_type_len);
       }
     }
-    m_proxy_resp_reason_phrase_str = (char *)m_proxy_response->reason_get(&m_proxy_resp_reason_phrase_len);
+    m_proxy_resp_reason_phrase_str = const_cast<char *>(m_proxy_response->reason_get(&m_proxy_resp_reason_phrase_len));
   }
   if (hdr->server_request.valid()) {
     m_proxy_request = &(hdr->server_request);
@@ -167,7 +169,7 @@ LogAccess::marshal_process_uuid(char *buf)
   int len = round_strlen(TS_UUID_STRING_LEN + 1);
 
   if (buf) {
-    const char *str = (char *)Machine::instance()->uuid.getString();
+    const char *str = const_cast<char *>(Machine::instance()->uuid.getString());
     marshal_str(buf, str, len);
   }
   return len;
@@ -180,7 +182,7 @@ int
 LogAccess::marshal_config_int_var(char *config_var, char *buf)
 {
   if (buf) {
-    int64_t val = (int64_t)REC_ConfigReadInteger(config_var);
+    int64_t val = static_cast<int64_t>(REC_ConfigReadInteger(config_var));
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -252,13 +254,13 @@ LogAccess::marshal_record(char *record, char *buf)
       //
       ink_assert(max_chars > 21);
 
-      int64_t val = (int64_t)(LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
+      int64_t val = static_cast<int64_t>(LOG_INTEGER == stype ? REC_readInteger(record, &found) : REC_readCounter(record, &found));
 
       if (found) {
         out_buf = int64_to_str(ascii_buf, max_chars, val, &num_chars);
         ink_assert(out_buf);
       } else {
-        out_buf   = (char *)record_not_found_msg;
+        out_buf   = const_cast<char *>(record_not_found_msg);
         num_chars = record_not_found_chars;
       }
     } else if (LOG_FLOAT == stype) {
@@ -291,7 +293,7 @@ LogAccess::marshal_record(char *record, char *buf)
           out_buf = ascii_buf;
         }
       } else {
-        out_buf   = (char *)record_not_found_msg;
+        out_buf   = const_cast<char *>(record_not_found_msg);
         num_chars = record_not_found_chars;
       }
     } else if (LOG_STRING == stype) {
@@ -311,7 +313,7 @@ LogAccess::marshal_record(char *record, char *buf)
           num_chars = ::strlen(out_buf) + 1;
         }
       } else {
-        out_buf   = (char *)record_not_found_msg;
+        out_buf   = const_cast<char *>(record_not_found_msg);
         num_chars = record_not_found_chars;
       }
     } else {
@@ -352,7 +354,7 @@ LogAccess::marshal_str(char *dest, const char *source, int padded_len)
   // bytes to avoid UMR errors when the buffer is written.
   //
   size_t real_len = (::strlen(source) + 1);
-  while ((int)real_len < padded_len) {
+  while (static_cast<int>(real_len) < padded_len) {
     dest[real_len] = '$';
     real_len++;
   }
@@ -438,11 +440,11 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
 }
 
 inline int
-LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, Ptr<LogFieldAliasMap> map, const char *msg)
+LogAccess::unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg)
 {
   long int codeStrLen = 0;
 
-  switch (map->asString(code, dest, len, (size_t *)&codeStrLen)) {
+  switch (map->asString(code, dest, len, reinterpret_cast<size_t *>(&codeStrLen))) {
   case LogFieldAliasMap::INVALID_INT:
     if (msg) {
       const int bufSize = 64;
@@ -479,8 +481,8 @@ LogAccess::unmarshal_int(char **buf)
   ink_assert(*buf != nullptr);
   int64_t val;
 
-  // TODO: this used to do nthol, do we need to worrry? TS-1156.
-  val = *((int64_t *)(*buf));
+  // TODO: this used to do nthol, do we need to worry? TS-1156.
+  val = *(reinterpret_cast<int64_t *>(*buf));
   *buf += INK_MIN_ALIGN;
   return val;
 }
@@ -511,24 +513,28 @@ LogAccess::unmarshal_itoa(int64_t val, char *dest, int field_width, char leading
 {
   ink_assert(dest != nullptr);
 
-  char *p = dest;
+  char *p       = dest;
+  bool negative = false;
 
-  if (val <= 0) {
-    *p-- = '0';
-    while (dest - p < field_width) {
-      *p-- = leading_char;
-    }
-    return (int)(dest - p);
+  if (val < 0) {
+    negative = true;
+    val      = -val;
   }
 
-  while (val) {
+  do {
     *p-- = '0' + (val % 10);
     val /= 10;
-  }
+  } while (val);
+
   while (dest - p < field_width) {
     *p-- = leading_char;
   }
-  return (int)(dest - p);
+
+  if (negative) {
+    *p-- = '-';
+  }
+
+  return static_cast<int>(dest - p);
 }
 
 /*-------------------------------------------------------------------------
@@ -548,7 +554,7 @@ LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading
   char *p             = dest;
   static char table[] = "0123456789abcdef?";
 
-  for (int i = 0; i < (int)(sizeof(int64_t) * 2); i++) {
+  for (int i = 0; i < static_cast<int>(sizeof(int64_t) * 2); i++) {
     *p-- = table[val & 0xf];
     val >>= 4;
   }
@@ -556,7 +562,7 @@ LogAccess::unmarshal_itox(int64_t val, char *dest, int field_width, char leading
     *p-- = leading_char;
   }
 
-  return (int64_t)(dest - p);
+  return static_cast<int64_t>(dest - p);
 }
 
 /*-------------------------------------------------------------------------
@@ -636,7 +642,7 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
   ink_assert(dest != nullptr);
 
   char *val_buf = *buf;
-  int val_len   = (int)::strlen(val_buf);
+  int val_len   = static_cast<int>(::strlen(val_buf));
 
   *buf += LogAccess::strlen(val_buf); // this is how it was stored
 
@@ -671,7 +677,7 @@ LogAccess::unmarshal_ttmsf(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   int64_t val = unmarshal_int(buf);
-  double secs = (double)val / 1000;
+  double secs = static_cast<double>(val) / 1000;
   int val_len = snprintf(dest, len, "%.3f", secs);
   return val_len;
 }
@@ -685,7 +691,7 @@ LogAccess::unmarshal_int_to_date_str(char **buf, char *dest, int len)
 
   int64_t value = unmarshal_int(buf);
   char *strval  = LogUtils::timestamp_to_date_str(value);
-  int strlen    = (int)::strlen(strval);
+  int strlen    = static_cast<int>(::strlen(strval));
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -700,7 +706,7 @@ LogAccess::unmarshal_int_to_time_str(char **buf, char *dest, int len)
 
   int64_t value = unmarshal_int(buf);
   char *strval  = LogUtils::timestamp_to_time_str(value);
-  int strlen    = (int)::strlen(strval);
+  int strlen    = static_cast<int>(::strlen(strval));
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -727,7 +733,7 @@ LogAccess::unmarshal_int_to_netscape_str(char **buf, char *dest, int len)
 
   int64_t value = unmarshal_int(buf);
   char *strval  = LogUtils::timestamp_to_netscape_str(value);
-  int strlen    = (int)::strlen(strval);
+  int strlen    = static_cast<int>(::strlen(strval));
 
   memcpy(dest, strval, strlen);
   return strlen;
@@ -770,7 +776,7 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   static const char *http = "HTTP/";
-  static int http_len     = (int)::strlen(http);
+  static int http_len     = static_cast<int>(::strlen(http));
 
   char val_buf[128];
   char *p = val_buf;
@@ -951,7 +957,7 @@ LogAccess::unmarshal_ip_to_hex(char **buf, char *dest, int len)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -969,7 +975,7 @@ LogAccess::unmarshal_hierarchy(char **buf, char *dest, int len, Ptr<LogFieldAlia
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -987,7 +993,7 @@ LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogField
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1005,7 +1011,7 @@ LogAccess::unmarshal_cache_code(char **buf, char *dest, int len, Ptr<LogFieldAli
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1015,7 +1021,7 @@ LogAccess::unmarshal_cache_hit_miss(char **buf, char *dest, int len, Ptr<LogFiel
 }
 
 int
-LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map)
+LogAccess::unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map)
 {
   ink_assert(buf != nullptr);
   ink_assert(*buf != nullptr);
@@ -1032,7 +1038,7 @@ LogAccess::unmarshal_record(char **buf, char *dest, int len)
   ink_assert(dest != nullptr);
 
   char *val_buf = *buf;
-  int val_len   = (int)::strlen(val_buf);
+  int val_len   = static_cast<int>(::strlen(val_buf));
   *buf += MARSHAL_RECORD_LENGTH; // this is how it was stored
   if (val_len < len) {
     memcpy(dest, val_buf, val_len);
@@ -1104,7 +1110,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   Debug("log-resolve", "Marshaling data from LogAccess into buffer ...");
   context->init();
   unsigned bytes_needed = fields.marshal_len(context);
-  char *buf             = (char *)ats_malloc(bytes_needed);
+  char *buf             = static_cast<char *>(ats_malloc(bytes_needed));
   unsigned bytes_used   = fields.marshal(context, buf);
 
   ink_assert(bytes_needed == bytes_used);
@@ -1116,7 +1122,7 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   // we're not sure how much space it will take when it's unmarshalled.
   // So, we'll just guess.
   //
-  char *result = (char *)ats_malloc(8192);
+  char *result = static_cast<char *>(ats_malloc(8192));
   unsigned bytes_resolved =
     LogBuffer::resolve_custom_entry(&fields, printf_str, buf, result, 8191, LogUtils::timestamp(), 0, LOG_SEGMENT_VERSION);
   ink_assert(bytes_resolved < 8192);
@@ -1138,7 +1144,7 @@ void
 LogAccess::set_client_req_url(char *buf, int len)
 {
   if (buf) {
-    m_client_req_url_len = len;
+    m_client_req_url_len = std::min(len, m_client_req_url_len);
     ink_strlcpy(m_client_req_url_str, buf, m_client_req_url_len + 1);
   }
 }
@@ -1147,7 +1153,7 @@ void
 LogAccess::set_client_req_url_canon(char *buf, int len)
 {
   if (buf) {
-    m_client_req_url_canon_len = len;
+    m_client_req_url_canon_len = std::min(len, m_client_req_url_canon_len);
     ink_strlcpy(m_client_req_url_canon_str, buf, m_client_req_url_canon_len + 1);
   }
 }
@@ -1155,8 +1161,8 @@ LogAccess::set_client_req_url_canon(char *buf, int len)
 void
 LogAccess::set_client_req_unmapped_url_canon(char *buf, int len)
 {
-  if (buf) {
-    m_client_req_unmapped_url_canon_len = len;
+  if (buf && m_client_req_unmapped_url_canon_str) {
+    m_client_req_unmapped_url_canon_len = std::min(len, m_client_req_unmapped_url_canon_len);
     ink_strlcpy(m_client_req_unmapped_url_canon_str, buf, m_client_req_unmapped_url_canon_len + 1);
   }
 }
@@ -1164,8 +1170,8 @@ LogAccess::set_client_req_unmapped_url_canon(char *buf, int len)
 void
 LogAccess::set_client_req_unmapped_url_path(char *buf, int len)
 {
-  if (buf) {
-    m_client_req_unmapped_url_path_len = len;
+  if (buf && m_client_req_unmapped_url_path_str) {
+    m_client_req_unmapped_url_path_len = std::min(len, m_client_req_unmapped_url_path_len);
     ink_strlcpy(m_client_req_unmapped_url_path_str, buf, m_client_req_unmapped_url_path_len + 1);
   }
 }
@@ -1173,8 +1179,8 @@ LogAccess::set_client_req_unmapped_url_path(char *buf, int len)
 void
 LogAccess::set_client_req_unmapped_url_host(char *buf, int len)
 {
-  if (buf) {
-    m_client_req_unmapped_url_host_len = len;
+  if (buf && m_client_req_unmapped_url_host_str) {
+    m_client_req_unmapped_url_host_len = std::min(len, m_client_req_unmapped_url_host_len);
     ink_strlcpy(m_client_req_unmapped_url_host_str, buf, m_client_req_unmapped_url_host_len + 1);
   }
 }
@@ -1183,8 +1189,8 @@ void
 LogAccess::set_client_req_url_path(char *buf, int len)
 {
   //?? use m_client_req_unmapped_url_path_str for now..may need to enhance later..
-  if (buf) {
-    m_client_req_url_path_len = len;
+  if (buf && m_client_req_unmapped_url_path_str) {
+    m_client_req_url_path_len = std::min(len, m_client_req_url_path_len);
     ink_strlcpy(m_client_req_unmapped_url_path_str, buf, m_client_req_url_path_len + 1);
   }
 }
@@ -1262,7 +1268,145 @@ LogAccess::marshal_cache_lookup_url_canon(char *buf)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_sni_server_name(char *buf)
+{
+  // NOTE:  For this string_view, data() must always be nul-terminated, but the nul character must not be included in
+  // the length.
+  //
+  std::string_view server_name = "";
 
+  if (m_http_sm) {
+    auto txn = m_http_sm->get_ua_txn();
+    if (txn) {
+      auto ssn = txn->get_proxy_ssn();
+      if (ssn) {
+        auto ssl = ssn->ssl();
+        if (ssl) {
+          auto server_name_str = ssl->client_sni_server_name();
+          if (server_name_str) {
+            server_name = server_name_str;
+          }
+        }
+      }
+    }
+  }
+  int len = round_strlen(server_name.length() + 1);
+  if (buf) {
+    marshal_str(buf, server_name.data(), len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_client_provided_cert(char *buf)
+{
+  int provided_cert = 0;
+  if (m_http_sm) {
+    auto txn = m_http_sm->get_ua_txn();
+    if (txn) {
+      auto ssn = txn->get_proxy_ssn();
+      if (ssn) {
+        auto ssl = ssn->ssl();
+        if (ssl) {
+          provided_cert = ssl->client_provided_certificate();
+        }
+      }
+    }
+  }
+  if (buf) {
+    marshal_int(buf, provided_cert);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_proxy_provided_cert(char *buf)
+{
+  int provided_cert = 0;
+  if (m_http_sm) {
+    provided_cert = m_http_sm->server_connection_provided_cert;
+  }
+  if (buf) {
+    marshal_int(buf, provided_cert);
+  }
+  return INK_MIN_ALIGN;
+}
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_version_build_number(char *buf)
+{
+  int len = LogAccess::strlen(appVersionInfo.BldNumStr);
+  if (buf) {
+    marshal_str(buf, appVersionInfo.BldNumStr, len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_proxy_protocol_version(char *buf)
+{
+  const char *version_str = nullptr;
+  int len                 = INK_MIN_ALIGN;
+
+  if (m_http_sm) {
+    ProxyProtocolVersion ver = m_http_sm->t_state.pp_info.version;
+    switch (ver) {
+    case ProxyProtocolVersion::V1:
+      version_str = "V1";
+      break;
+    case ProxyProtocolVersion::V2:
+      version_str = "V2";
+      break;
+    case ProxyProtocolVersion::UNDEFINED:
+    default:
+      version_str = "-";
+      break;
+    }
+    len = LogAccess::strlen(version_str);
+  }
+
+  if (buf) {
+    marshal_str(buf, version_str, len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_proxy_protocol_src_ip(char *buf)
+{
+  sockaddr const *ip = nullptr;
+  if (m_http_sm && m_http_sm->t_state.pp_info.version != ProxyProtocolVersion::UNDEFINED) {
+    ip = &m_http_sm->t_state.pp_info.src_addr.sa;
+  }
+  return marshal_ip(buf, ip);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_proxy_protocol_dst_ip(char *buf)
+{
+  sockaddr const *ip = nullptr;
+  if (m_http_sm && m_http_sm->t_state.pp_info.version != ProxyProtocolVersion::UNDEFINED) {
+    ip = &m_http_sm->t_state.pp_info.dst_addr.sa;
+  }
+  return marshal_ip(buf, ip);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
 int
 LogAccess::marshal_client_host_port(char *buf)
 {
@@ -1328,9 +1472,6 @@ LogAccess::validate_unmapped_url()
 void
 LogAccess::validate_unmapped_url_path()
 {
-  int len;
-  char *c;
-
   if (m_client_req_unmapped_url_path_str == nullptr && m_client_req_unmapped_url_host_str == nullptr) {
     // Use unmapped canonical URL as default
     m_client_req_unmapped_url_path_str = m_client_req_unmapped_url_canon_str;
@@ -1339,16 +1480,20 @@ LogAccess::validate_unmapped_url_path()
     m_client_req_unmapped_url_host_str = INVALID_STR;
 
     if (m_client_req_unmapped_url_path_len >= 6) { // xxx:// - minimum schema size
-      c = (char *)memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1);
-      if (c && (len = (int)(c - m_client_req_unmapped_url_path_str)) <= 5) { // 5 - max schema size
+      int len;
+      char *c =
+        static_cast<char *>(memchr((void *)m_client_req_unmapped_url_path_str, ':', m_client_req_unmapped_url_path_len - 1));
+
+      if (c && (len = static_cast<int>(c - m_client_req_unmapped_url_path_str)) <= 5) { // 5 - max schema size
         if (len + 2 <= m_client_req_unmapped_url_canon_len && c[1] == '/' && c[2] == '/') {
           len += 3; // Skip "://"
           m_client_req_unmapped_url_host_str = &m_client_req_unmapped_url_canon_str[len];
           m_client_req_unmapped_url_host_len = m_client_req_unmapped_url_path_len - len;
           // Attempt to find first '/' in the path
-          if (m_client_req_unmapped_url_host_len > 0 && (c = (char *)memchr((void *)m_client_req_unmapped_url_host_str, '/',
-                                                                            m_client_req_unmapped_url_path_len)) != nullptr) {
-            m_client_req_unmapped_url_host_len = (int)(c - m_client_req_unmapped_url_host_str);
+          if (m_client_req_unmapped_url_host_len > 0 &&
+              (c = static_cast<char *>(
+                 memchr((void *)m_client_req_unmapped_url_host_str, '/', m_client_req_unmapped_url_path_len))) != nullptr) {
+            m_client_req_unmapped_url_host_len = static_cast<int>(c - m_client_req_unmapped_url_host_str);
             m_client_req_unmapped_url_path_str = &m_client_req_unmapped_url_host_str[m_client_req_unmapped_url_host_len];
             m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_path_len - len - m_client_req_unmapped_url_host_len;
           }
@@ -1429,7 +1574,7 @@ LogAccess::marshal_client_req_http_method(char *buf)
   int plen  = INK_MIN_ALIGN;
 
   if (m_client_request) {
-    str = (char *)m_client_request->method_get(&alen);
+    str = const_cast<char *>(m_client_request->method_get(&alen));
 
     // calculate the the padded length only if the actual length
     // is not zero. We don't want the padded length to be zero
@@ -1590,15 +1735,14 @@ int
 LogAccess::marshal_client_req_http_version(char *buf)
 {
   if (buf) {
-    int64_t major = 0;
-    int64_t minor = 0;
     if (m_client_request) {
       HTTPVersion versionObject = m_client_request->version_get();
-      major                     = HTTP_MAJOR(versionObject.m_version);
-      minor                     = HTTP_MINOR(versionObject.m_version);
+      marshal_int(buf, versionObject.get_major());
+      marshal_int((buf + INK_MIN_ALIGN), versionObject.get_minor());
+    } else {
+      marshal_int(buf, 0);
+      marshal_int((buf + INK_MIN_ALIGN), 0);
     }
-    marshal_int(buf, major);
-    marshal_int((buf + INK_MIN_ALIGN), minor);
   }
   return (2 * INK_MIN_ALIGN);
 }
@@ -1616,11 +1760,41 @@ LogAccess::marshal_client_req_protocol_version(char *buf)
   if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
     if (m_client_request) {
       HTTPVersion versionObject = m_client_request->version_get();
-      int64_t major             = HTTP_MAJOR(versionObject.m_version);
-      int64_t minor             = HTTP_MINOR(versionObject.m_version);
-      if (major == 1 && minor == 1) {
+      if (versionObject == HTTP_1_1) {
         protocol_str = "http/1.1";
-      } else if (major == 1 && minor == 0) {
+      } else if (versionObject == HTTP_1_0) {
+        protocol_str = "http/1.0";
+      } // else invalid http version
+    } else {
+      protocol_str = "*";
+    }
+
+    len = LogAccess::strlen(protocol_str);
+  }
+
+  if (buf) {
+    marshal_str(buf, protocol_str, len);
+  }
+
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_server_req_protocol_version(char *buf)
+{
+  const char *protocol_str = m_http_sm->server_protocol;
+  int len                  = LogAccess::strlen(protocol_str);
+
+  // Set major & minor versions when protocol_str is not "http/2".
+  if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
+    if (m_proxy_request) {
+      HTTPVersion versionObject = m_proxy_request->version_get();
+      if (versionObject == HTTP_1_1) {
+        protocol_str = "http/1.1";
+      } else if (versionObject == HTTP_1_0) {
         protocol_str = "http/1.0";
       } // else invalid http version
     } else {
@@ -1689,37 +1863,49 @@ int
 LogAccess::marshal_client_req_tcp_reused(char *buf)
 {
   if (buf) {
-    int64_t tcp_reused;
-    tcp_reused = m_http_sm->client_tcp_reused;
-    marshal_int(buf, tcp_reused);
+    marshal_int(buf, m_http_sm->client_tcp_reused ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 int
 LogAccess::marshal_client_req_is_ssl(char *buf)
 {
   if (buf) {
-    int64_t is_ssl;
-    is_ssl = m_http_sm->client_connection_is_ssl;
-    marshal_int(buf, is_ssl);
+    marshal_int(buf, m_http_sm->client_connection_is_ssl ? 1 : 0);
   }
   return INK_MIN_ALIGN;
 }
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 
 int
 LogAccess::marshal_client_req_ssl_reused(char *buf)
 {
   if (buf) {
-    int64_t ssl_session_reused;
-    ssl_session_reused = m_http_sm->client_ssl_reused;
-    marshal_int(buf, ssl_session_reused);
+    marshal_int(buf, m_http_sm->client_ssl_reused ? 1 : 0);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_client_req_is_internal(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_http_sm->is_internal ? 1 : 0);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_client_req_mptcp_state(char *buf)
+{
+  if (buf) {
+    int val = -1;
+
+    if (m_http_sm->mptcp_state.has_value()) {
+      val = m_http_sm->mptcp_state.value() ? 1 : 0;
+    } else {
+    }
+    marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
 }
@@ -1773,7 +1959,7 @@ LogAccess::marshal_client_req_uuid(char *buf)
   len = round_strlen(len + 1);
 
   if (buf) {
-    marshal_str(buf, str, len); // This will pad the remaning bytes properly ...
+    marshal_str(buf, str, len); // This will pad the remaining bytes properly ...
   }
 
   return len;
@@ -1836,6 +2022,37 @@ LogAccess::marshal_client_security_cipher_suite(char *buf)
 
   if (buf) {
     marshal_str(buf, cipher, round_len);
+  }
+
+  return round_len;
+}
+
+int
+LogAccess::marshal_client_security_curve(char *buf)
+{
+  const char *curve = m_http_sm->client_curve;
+  int round_len     = LogAccess::strlen(curve);
+
+  if (buf) {
+    marshal_str(buf, curve, round_len);
+  }
+
+  return round_len;
+}
+
+int
+LogAccess::marshal_client_security_alpn(char *buf)
+{
+  const char *alpn = "-";
+  if (const int alpn_id = m_http_sm->client_alpn_id; alpn_id != SessionProtocolNameRegistry::INVALID) {
+    ts::TextView client_sec_alpn = globalSessionProtocolNameRegistry.nameFor(alpn_id);
+    alpn                         = client_sec_alpn.data();
+  }
+
+  int round_len = LogAccess::strlen(alpn);
+
+  if (buf) {
+    marshal_str(buf, alpn, round_len);
   }
 
   return round_len;
@@ -1917,7 +2134,7 @@ LogAccess::marshal_proxy_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, (int64_t)status);
+    marshal_int(buf, static_cast<int64_t>(status));
   }
   return INK_MIN_ALIGN;
 }
@@ -1986,7 +2203,7 @@ LogAccess::marshal_cache_result_code(char *buf)
 {
   if (buf) {
     SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
-    marshal_int(buf, (int64_t)code);
+    marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
 }
@@ -1999,7 +2216,7 @@ LogAccess::marshal_cache_result_subcode(char *buf)
 {
   if (buf) {
     SquidSubcode code = m_http_sm->t_state.squid_codes.subcode;
-    marshal_int(buf, (int64_t)code);
+    marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
 }
@@ -2012,7 +2229,7 @@ LogAccess::marshal_cache_hit_miss(char *buf)
 {
   if (buf) {
     SquidHitMissCode code = m_http_sm->t_state.squid_codes.hit_miss_code;
-    marshal_int(buf, (int64_t)code);
+    marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
 }
@@ -2117,7 +2334,7 @@ LogAccess::marshal_proxy_hierarchy_route(char *buf)
 {
   if (buf) {
     SquidHierarchyCode code = m_http_sm->t_state.squid_codes.hier_code;
-    marshal_int(buf, (int64_t)code);
+    marshal_int(buf, static_cast<int64_t>(code));
   }
   return INK_MIN_ALIGN;
 }
@@ -2177,7 +2394,7 @@ LogAccess::marshal_server_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, (int64_t)status);
+    marshal_int(buf, static_cast<int64_t>(status));
   }
   return INK_MIN_ALIGN;
 }
@@ -2234,8 +2451,8 @@ LogAccess::marshal_server_resp_http_version(char *buf)
     int64_t major = 0;
     int64_t minor = 0;
     if (m_server_response) {
-      major = HTTP_MAJOR(m_server_response->version_get().m_version);
-      minor = HTTP_MINOR(m_server_response->version_get().m_version);
+      major = m_server_response->version_get().get_major();
+      minor = m_server_response->version_get().get_minor();
     }
     marshal_int(buf, major);
     marshal_int((buf + INK_MIN_ALIGN), minor);
@@ -2249,9 +2466,7 @@ int
 LogAccess::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf, m_http_sm->milestones.difference_msec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE));
   }
   return INK_MIN_ALIGN;
 }
@@ -2260,9 +2475,8 @@ int
 LogAccess::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf,
+                static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SERVER_CONNECT, TS_MILESTONE_SERVER_CLOSE)));
   }
   return INK_MIN_ALIGN;
 }
@@ -2307,7 +2521,7 @@ LogAccess::marshal_cache_resp_status_code(char *buf)
     } else {
       status = HTTP_STATUS_NONE;
     }
-    marshal_int(buf, (int64_t)status);
+    marshal_int(buf, static_cast<int64_t>(status));
   }
   return INK_MIN_ALIGN;
 }
@@ -2364,8 +2578,8 @@ LogAccess::marshal_cache_resp_http_version(char *buf)
     int64_t major = 0;
     int64_t minor = 0;
     if (m_cache_response) {
-      major = HTTP_MAJOR(m_cache_response->version_get().m_version);
-      minor = HTTP_MINOR(m_cache_response->version_get().m_version);
+      major = m_cache_response->version_get().get_major();
+      minor = m_cache_response->version_get().get_minor();
     }
     marshal_int(buf, major);
     marshal_int((buf + INK_MIN_ALIGN), minor);
@@ -2445,9 +2659,7 @@ int
 LogAccess::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf, m_http_sm->milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
   }
   return INK_MIN_ALIGN;
 }
@@ -2456,9 +2668,7 @@ int
 LogAccess::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
-    marshal_int(buf, val);
+    marshal_int(buf, static_cast<int64_t>(m_http_sm->milestones.difference_sec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH)));
   }
   return INK_MIN_ALIGN;
 }
@@ -2476,8 +2686,8 @@ LogAccess::marshal_file_size(char *buf)
 
     if (hdr && (fld = hdr->field_find(MIME_FIELD_CONTENT_RANGE, MIME_LEN_CONTENT_RANGE))) {
       int len;
-      char *str = (char *)fld->value_get(&len);
-      char *pos = (char *)memchr(str, '/', len); // Find the /
+      char *str = const_cast<char *>(fld->value_get(&len));
+      char *pos = static_cast<char *>(memchr(str, '/', len)); // Find the /
 
       // If the size is not /* (which means unknown) use it as the file_size.
       if (pos && !memchr(pos + 1, '*', len - (pos + 1 - str))) {
@@ -2533,6 +2743,94 @@ LogAccess::marshal_client_http_transaction_id(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_http_transaction_priority_weight(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->client_transaction_priority_weight();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_client_http_transaction_priority_dependence(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->client_transaction_priority_dependence();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_cache_read_retries(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->get_cache_sm().get_open_read_tries();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_cache_write_retries(char *buf)
+{
+  if (buf) {
+    int64_t id = 0;
+    if (m_http_sm) {
+      id = m_http_sm->get_cache_sm().get_open_write_tries();
+    }
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_cache_collapsed_connection_success(char *buf)
+{
+  if (buf) {
+    int64_t id = 0; // default - no collapse attempt
+    if (m_http_sm) {
+      SquidLogCode code = m_http_sm->t_state.squid_codes.log_code;
+
+      // We increment open_write_tries beyond the max when we want to jump back to the read state for collapsing
+      if ((m_http_sm->get_cache_sm().get_open_write_tries() > (m_http_sm->t_state.txn_conf->max_cache_open_write_retries)) &&
+          ((code == SQUID_LOG_TCP_HIT) || (code == SQUID_LOG_TCP_MEM_HIT) || (code == SQUID_LOG_TCP_DISK_HIT) ||
+           (code == SQUID_LOG_TCP_CF_HIT))) {
+        // Attempted collapsed connection and got a hit, success
+        id = 1;
+      } else if (m_http_sm->get_cache_sm().get_open_write_tries() > (m_http_sm->t_state.txn_conf->max_cache_open_write_retries)) {
+        // Attempted collapsed connection with no hit, failure, we can also get +2 retries in a failure state
+        id = -1;
+      }
+    }
+
+    marshal_int(buf, id);
+  }
+  return INK_MIN_ALIGN;
+}
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_http_header_field(LogField::Container container, char *field, char *buf)
 {
   char *str        = nullptr;
@@ -2568,7 +2866,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
   }
 
   if (header) {
-    MIMEField *fld = header->field_find(field, (int)::strlen(field));
+    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
     if (fld) {
       valid_field = true;
 
@@ -2577,7 +2875,7 @@ LogAccess::marshal_http_header_field(LogField::Container container, char *field,
       //
       int running_len = 0;
       while (fld) {
-        str = (char *)fld->value_get(&actual_len);
+        str = const_cast<char *>(fld->value_get(&actual_len));
         if (buf) {
           memcpy(buf, str, actual_len);
           buf += actual_len;
@@ -2669,7 +2967,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
   }
 
   if (header) {
-    MIMEField *fld = header->field_find(field, (int)::strlen(field));
+    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
     if (fld) {
       valid_field = true;
 
@@ -2678,7 +2976,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container container, cha
       //
       int running_len = 0;
       while (fld) {
-        str     = (char *)fld->value_get(&actual_len);
+        str     = const_cast<char *>(fld->value_get(&actual_len));
         new_str = LogUtils::escapify_url(&m_arena, str, actual_len, &new_len);
         if (buf) {
           memcpy(buf, new_str, new_len);
@@ -2770,9 +3068,60 @@ int
 LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_http_sm->milestones.elapsed(ms2, ms1);
-    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val = m_http_sm->milestones.difference_msec(ms2, ms1);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
+}
+
+void
+LogAccess::set_http_header_field(LogField::Container container, char *field, char *buf, int len)
+{
+  HTTPHdr *header;
+
+  switch (container) {
+  case LogField::CQH:
+  case LogField::ECQH:
+    header = m_client_request;
+    break;
+
+  case LogField::PSH:
+  case LogField::EPSH:
+    header = m_proxy_response;
+    break;
+
+  case LogField::PQH:
+  case LogField::EPQH:
+    header = m_proxy_request;
+    break;
+
+  case LogField::SSH:
+  case LogField::ESSH:
+    header = m_server_response;
+    break;
+
+  case LogField::CSSH:
+  case LogField::ECSSH:
+    header = m_cache_response;
+    break;
+
+  default:
+    header = nullptr;
+    break;
+  }
+
+  if (header && buf) {
+    MIMEField *fld = header->field_find(field, static_cast<int>(::strlen(field)));
+    if (fld) {
+      // Loop over dups, update each of them
+      //
+      while (fld) {
+        // make sure to reuse header heaps as otherwise
+        // coalesce logic in header heap may free up
+        // memory pointed to by cquuc or other log fields
+        header->field_value_set(fld, buf, len, true);
+        fld = fld->m_next_dup;
+      }
+    }
+  }
 }

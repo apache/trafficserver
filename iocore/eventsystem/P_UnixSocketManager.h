@@ -114,14 +114,12 @@ SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_re
 {
   const int max_iovecs_per_request = 16;
   int n;
-  int64_t r = 0;
+  int64_t r;
   int n_vec;
   int64_t bytes_xfered = 0;
-  int current_count;
-  int64_t current_request_bytes;
 
   for (n_vec = 0; n_vec < (int)count; n_vec += max_iovecs_per_request) {
-    current_count = std::min(max_iovecs_per_request, ((int)(count - n_vec)));
+    int current_count = std::min(max_iovecs_per_request, ((int)(count - n_vec)));
     do {
       // coverity[tainted_data_argument]
       r = read_request ? ::readv(fd, &vector[n_vec], current_count) : ::writev(fd, &vector[n_vec], current_count);
@@ -141,7 +139,7 @@ SocketManager::vector_io(int fd, struct iovec *vector, size_t count, int read_re
     }
 
     // Compute bytes in current vector
-    current_request_bytes = 0;
+    int64_t current_request_bytes = 0;
     for (n = n_vec; n < (n_vec + current_count); ++n) {
       current_request_bytes += vector[n].iov_len;
     }

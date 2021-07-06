@@ -26,10 +26,18 @@ Traffic Server Debugging APIs.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: c
 
+    #include <ts/ts.h>
+
+.. function:: void TSStatus(const char * format, ...)
+.. function:: void TSNote(const char * format, ...)
+.. function:: void TSWarning(const char * format, ...)
+.. function:: void TSError(const char * format, ...)
+.. function:: void TSFatal(const char * format, ...)
+.. function:: void TSAlert(const char * format, ...)
+.. function:: void TSEmergency(const char * format, ...)
 .. function:: void TSDebug(const char * tag, const char * format, ...)
-.. function:: void TSError(const char * tag, const char * format, ...)
 .. function:: int TSIsDebugTagSet(const char * tag)
 .. function:: void TSDebugSpecific(int debug_flag, const char * tag, const char * format, ...)
 .. function:: void TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
@@ -39,19 +47,37 @@ Synopsis
 .. function:: const char* TSHttpServerStateNameLookup(TSServerState state)
 .. function:: const char* TSHttpHookNameLookup(TSHttpHookID hook)
 .. function:: const char* TSHttpEventNameLookup(TSEvent event)
-.. macro:: void TSAssert( ... )
-.. macro:: void TSReleaseAssert( ... )
+.. macro:: TSAssert( ... )
+.. macro:: TSReleaseAssert( ... )
 
-Description
-===========
+diags.log
+=========
 
-:func:`TSError` is similar to ``printf`` except that instead
-of writing the output to the C standard output, it writes output
-to the Traffic Server error log.
+The following methods print to diags.log with expected reactions as a coordinated outcome of
+Traffic Server, Traffic Manager, AuTest, CI, and your log monitoring service/dashboard (e.g. Splunk)
 
-:func:`TSDebug` is the same as :func:`TSError` except that it only
-logs the debug message if the given debug :arg:`tag` is enabled. It writes
-output to the Traffic Server debug log.
+.. csv-table::
+   :header: "API", "Purpose", "TrafficManager", "AuTest+CI",  "LogMonitor"
+   :widths: 15, 20, 10, 10, 10
+
+   ":func:`TSStatus`","basic information"
+   ":func:`TSNote`","significant information"
+   ":func:`TSWarning`","concerning information","","","track"
+   ":func:`TSError`","operational failure","","FAIL","review"
+   ":func:`TSFatal`","recoverable crash","restart","FAIL","review"
+   ":func:`TSAlert`","significant crash","restart","FAIL","ALERT"
+   ":func:`TSEmergency`","unrecoverable,misconfigured","EXIT","FAIL","ALERT"
+
+.. note::
+    :func:`TSFatal`, :func:`TSAlert`, and :func:`TSEmergency` can be called within
+    :func:`TSPluginInit`, such that Traffic Server can be shutdown promptly when
+    the plugin fails to initialize properly.
+
+trafficserver.out
+=================
+
+:func:`TSDebug` logs the debug message only if the given debug :arg:`tag` is enabled.
+It writes output to the Traffic Server debug log through stderr.
 
 :func:`TSIsDebugTagSet` returns non-zero if the given debug :arg:`tag` is
 enabled.

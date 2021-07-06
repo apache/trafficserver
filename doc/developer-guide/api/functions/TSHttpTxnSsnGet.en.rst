@@ -24,7 +24,9 @@ TSHttpTxnSsnGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSHttpSsn TSHttpTxnSsnGet(TSHttpTxn txnp)
 

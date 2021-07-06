@@ -27,7 +27,9 @@ Traffic Server URL percent encoding API.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSUrlPercentEncode(TSMBuffer bufp, TSMLoc offset, char * dst, size_t dst_size, size_t * length, const unsigned char * map)
 .. function:: TSReturnCode TSStringPercentEncode(const char * str, int str_len, char * dst, size_t dst_size, size_t * length, const unsigned char * map)
@@ -49,16 +51,28 @@ failed.  :func:`TSStringPercentEncode` is similar but operates on a string. If
 the optional :arg:`map` parameter is provided (not :literal:`NULL`) , it should
 be a map of characters to encode.
 
-:func:`TSStringPercentDecode` perform percent-decoding of the string in the
-:arg:`str` buffer, writing to the :arg:`dst` buffer. The source and
-destination can be the same, in which case they overwrite. The decoded string
-is always guaranteed to be no longer than the source string.
+:func:`TSStringPercentDecode` perform percent-decoding of the string in the :arg:`str` buffer,
+writing to the :arg:`dst` buffer. The source and destination can be the same, in which case the
+decoded string is written on top of the source string. The decoded string is guaranteed to be
+no longer than the source string, but will include a terminating null which, if there are no
+escapes, makes the destination one longer than the source. In practice this means the destination
+length needs to be bumped up by one to account for the null, and a string can't be decoded in place
+if it's not already null terminated with the length of the destination including the null, but the
+length of the source *not* including the null. E.g. ::
+
+   static char const ORIGINAL[] = "A string without escapes, but null terminated";
+   char * source = TSstrdup(ORIGINAL); // make it writeable.
+   size_t length; // return value.
+   // sizeof(ORIGINAL) includes the null, so don't include that in the input.
+   static const size_t N_CHARS = sizeof(ORIGINAL) - 1;
+   TSReturnCode result = TSUrlPercentDecode(source, N_CHARS, source, N_CHARS + 1, &length);
+   ink_assert(length == N_CHARS);
 
 Return Values
 =============
 
-All these APIs returns a :type:`TSReturnCode`, indicating success
-(:data:`TS_SUCCESS`) or failure (:data:`TS_ERROR`) of the operation.
+All these APIs returns a :type:`TSReturnCode`, indicating success (:data:`TS_SUCCESS`) or failure
+(:data:`TS_ERROR`) of the operation.
 
 See Also
 ========

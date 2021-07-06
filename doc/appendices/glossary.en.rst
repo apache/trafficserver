@@ -26,7 +26,7 @@ Glossary
    :sorted:
 
    continuation
-      A callable object that contains state. These are are mechanism used by
+      A callable object that contains state. This is a mechanism used by
       |TS| to implement callbacks and continued computations. Continued
       computations are critical to efficient processing of traffic because by
       avoiding any blocking operations that wait on external events. In any
@@ -55,6 +55,12 @@ Glossary
       cache. A transaction begins when |TS| receives a request, and ends when
       |TS| sends the response.
 
+   client request
+      The HTTP request sent from the user agent (the client) to |TS|.
+
+   proxy request
+      The HTTP request sent from |TS| (the proxy) to the upstream.
+
    cache volume
       A user defined unit of persistent storage for the cache. Cache volumes
       are defined in :file:`volume.config`. A cache volume is by default spread
@@ -62,7 +68,7 @@ Glossary
       cache volume on a specific cache span is a :term:`cache stripe`.
 
    cache stripe
-      A homogenous, persistent store for the cache in a single
+      A homogeneous, persistent store for the cache in a single
       :term:`cache span`. A stripe always resides entirely on a single physical
       device and is treated as an undifferentiated span of bytes. This is the
       smallest independent unit of storage.

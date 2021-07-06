@@ -17,15 +17,21 @@
 .. include:: ../../../common.defs
 .. default-domain:: c
 
-.. _TSVConnArgs:
-
 TSVConnArgs
 ************
 
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. note::
+
+   This set of API is obsoleted as of ATS v9.0.0, and will be removed with ATS v10.0.0!
+   For details of the new APIs, see :ref:`tsuserargs`.
+
+
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSVConnArgIndexReserve(const char * name, const char * description, int * arg_idx)
 .. function:: TSReturnCode TSVConnArgIndexNameLookup(const char * name, int * arg_idx, const char ** description)

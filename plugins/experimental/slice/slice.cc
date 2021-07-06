@@ -27,13 +27,14 @@
 #include "ts/ts.h"
 
 #include <netinet/in.h>
+#include <mutex>
 
 namespace
 {
 Config globalConfig;
 
 bool
-read_request(TSHttpTxn txnp, Config const *const config)
+read_request(TSHttpTxn txnp, Config *const config)
 {
   DEBUG_LOG("slice read_request");
   TxnHdrMgr hdrmgr;
@@ -43,6 +44,29 @@ read_request(TSHttpTxn txnp, Config const *const config)
   if (TS_HTTP_METHOD_GET == header.method()) {
     static int const SLICER_MIME_LEN_INFO = strlen(SLICER_MIME_FIELD_INFO);
     if (!header.hasKey(SLICER_MIME_FIELD_INFO, SLICER_MIME_LEN_INFO)) {
+      // check if any previous plugin has monkeyed with the transaction status
+      TSHttpStatus const txnstat = TSHttpTxnStatusGet(txnp);
+      if (TS_HTTP_STATUS_NONE != txnstat) {
+        DEBUG_LOG("txn status change detected (%d), skipping plugin\n", static_cast<int>(txnstat));
+        return false;
+      }
+
+      if (config->hasRegex()) {
+        int urllen         = 0;
+        char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &urllen);
+        if (nullptr != urlstr) {
+          bool const shouldslice = config->matchesRegex(urlstr, urllen);
+          if (!shouldslice) {
+            DEBUG_LOG("request failed regex, not slicing: '%.*s'", urllen, urlstr);
+            TSfree(urlstr);
+            return false;
+          }
+
+          DEBUG_LOG("request passed regex, slicing: '%.*s'", urllen, urlstr);
+          TSfree(urlstr);
+        }
+      }
+
       // turn off any and all transaction caching (shouldn't matter)
       TSHttpTxnServerRespNoStoreSet(txnp, 1);
       TSHttpTxnRespCacheableSet(txnp, 0);
@@ -55,7 +79,10 @@ read_request(TSHttpTxn txnp, Config const *const config)
         return false;
       }
 
-      Data *const data = new Data(config->m_blockbytes);
+      TSAssert(nullptr != config);
+      Data *const data = new Data(config);
+
+      data->m_txnp = txnp;
 
       // set up feedback connect
       if (AF_INET == ip->sa_family) {
@@ -75,33 +102,83 @@ read_request(TSHttpTxn txnp, Config const *const config)
         return false;
       }
 
-      // need the pristine url, especially for global plugins
-      TSMBuffer urlbuf;
-      TSMLoc urlloc;
-      TSReturnCode rcode = TSHttpTxnPristineUrlGet(txnp, &urlbuf, &urlloc);
+      // is the plugin configured to use a remap host?
+      std::string const &newhost = config->m_remaphost;
+      if (newhost.empty()) {
+        TSMBuffer urlbuf   = nullptr;
+        TSMLoc urlloc      = nullptr;
+        TSReturnCode rcode = TSHttpTxnPristineUrlGet(txnp, &urlbuf, &urlloc);
 
-      if (TS_SUCCESS == rcode) {
-        TSMBuffer const newbuf = TSMBufferCreate();
-        TSMLoc newloc          = nullptr;
-        rcode                  = TSUrlClone(newbuf, urlbuf, urlloc, &newloc);
-        TSHandleMLocRelease(urlbuf, TS_NULL_MLOC, urlloc);
+        if (TS_SUCCESS == rcode) {
+          TSMBuffer const newbuf = TSMBufferCreate();
+          TSMLoc newloc          = nullptr;
+          rcode                  = TSUrlClone(newbuf, urlbuf, urlloc, &newloc);
+          TSHandleMLocRelease(urlbuf, TS_NULL_MLOC, urlloc);
 
-        if (TS_SUCCESS != rcode) {
-          ERROR_LOG("Error cloning pristine url");
-          delete data;
-          TSMBufferDestroy(newbuf);
-          return false;
+          if (TS_SUCCESS != rcode) {
+            ERROR_LOG("Error cloning pristine url");
+            TSMBufferDestroy(newbuf);
+            delete data;
+            return false;
+          }
+
+          data->m_urlbuf = newbuf;
+          data->m_urlloc = newloc;
         }
+      } else { // grab the effective url, swap out the host and zero the port
+        int len            = 0;
+        char *const effstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
 
-        data->m_urlbuffer = newbuf;
-        data->m_urlloc    = newloc;
+        if (nullptr != effstr) {
+          TSMBuffer const newbuf = TSMBufferCreate();
+          TSMLoc newloc          = nullptr;
+          bool okay              = false;
+
+          if (TS_SUCCESS == TSUrlCreate(newbuf, &newloc)) {
+            char const *start = effstr;
+            if (TS_PARSE_DONE == TSUrlParse(newbuf, newloc, &start, start + len)) {
+              if (TS_SUCCESS == TSUrlHostSet(newbuf, newloc, newhost.c_str(), newhost.size()) &&
+                  TS_SUCCESS == TSUrlPortSet(newbuf, newloc, 0)) {
+                okay = true;
+              }
+            }
+          }
+
+          TSfree(effstr);
+
+          if (!okay) {
+            ERROR_LOG("Error cloning effective url");
+            if (nullptr != newloc) {
+              TSHandleMLocRelease(newbuf, nullptr, newloc);
+            }
+            TSMBufferDestroy(newbuf);
+            delete data;
+            return false;
+          }
+
+          data->m_urlbuf = newbuf;
+          data->m_urlloc = newloc;
+        }
       }
 
-      // we'll intercept this GET and do it ourselfs
-      TSCont const icontp(TSContCreate(intercept_hook, TSMutexCreate()));
+      if (TSIsDebugTagSet(PLUGIN_NAME)) {
+        int len            = 0;
+        char *const urlstr = TSUrlStringGet(data->m_urlbuf, data->m_urlloc, &len);
+        DEBUG_LOG("slice url: %.*s", len, urlstr);
+        TSfree(urlstr);
+      }
+
+      // we'll intercept this GET and do it ourselves
+      TSMutex const mutex = TSContMutexGet(reinterpret_cast<TSCont>(txnp));
+      TSCont const icontp(TSContCreate(intercept_hook, mutex));
       TSContDataSet(icontp, (void *)data);
-      //      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, icontp);
+
+      // Skip remap and remap rule requirement
+      TSSkipRemappingSet(txnp, 1);
+
+      // Grab the transaction
       TSHttpTxnIntercept(icontp, txnp);
+
       return true;
     } else {
       DEBUG_LOG("slice passing GET request through to next plugin");
@@ -150,11 +227,11 @@ TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
 
 SLICE_EXPORT
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
   Config *const config = new Config;
   if (2 < argc) {
-    config->fromArgs(argc - 2, argv + 2, errbuf, errbuf_size);
+    config->fromArgs(argc - 2, argv + 2);
   }
   *ih = static_cast<void *>(config);
   return TS_SUCCESS;
@@ -174,7 +251,7 @@ SLICE_EXPORT
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbug, int errbuf_size)
 {
-  DEBUG_LOG("slice remap is successfully initialized.");
+  DEBUG_LOG("slice remap initializing.");
   return TS_SUCCESS;
 }
 
@@ -195,7 +272,7 @@ TSPluginInit(int argc, char const *argv[])
   }
 
   if (1 < argc) {
-    globalConfig.fromArgs(argc - 1, argv + 1, nullptr, 0);
+    globalConfig.fromArgs(argc - 1, argv + 1);
   }
 
   TSCont const contp(TSContCreate(global_read_request_hook, nullptr));

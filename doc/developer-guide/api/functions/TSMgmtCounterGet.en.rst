@@ -24,7 +24,9 @@ TSMgmtCounterGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: TSReturnCode TSMgmtCounterGet(const char * var_name, TSMgmtCounter * result)
 

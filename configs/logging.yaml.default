@@ -1,16 +1,17 @@
 # Custom log configuration
 #
 # Documentation on logging:
-#    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/logging/index.en.html
+#    https://docs.trafficserver.apache.org/en/9.0.x/admin-guide/logging/index.en.html
 #
-# Documentaion on logging.yaml file format:
-#    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/files/logging.yaml.en.html
+# Documentation on logging.yaml file format:
+#    https://docs.trafficserver.apache.org/en/9.0.x/admin-guide/files/logging.yaml.en.html
 #
 # Example log configurations:
-#    https://docs.trafficserver.apache.org/en/8.0.x/admin-guide/logging/examples.en.html
+#    https://docs.trafficserver.apache.org/en/9.0.x/admin-guide/logging/examples.en.html
 
 
-formats:
+logging:
+  formats:
     # WebTrends Enhanced Log Format.
     #
     # The following is compatible with the WebTrends Enhanced Log Format.
@@ -41,10 +42,9 @@ formats:
     - name: "extended2"
       format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>'
 
-logs:
+  logs:
     - filename: squid
       format: squid
       mode: binary
-
 
 # vim: set ft=yaml :

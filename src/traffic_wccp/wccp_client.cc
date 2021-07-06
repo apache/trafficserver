@@ -20,9 +20,9 @@
     limitations under the License.
  */
 
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include <stdarg.h>
+#include <cstdarg>
 #include <memory.h>
 #include <strings.h>
 #include <iostream>
@@ -39,8 +39,8 @@
 #include "tscore/ink_memory.h"
 #include "wccp/Wccp.h"
 #include "../wccp/WccpUtil.h"
-#include "tsconfig/TsValue.h"
 #include "tscore/ink_lockfile.h"
+#include "tscore/Errata.h"
 
 #define WCCP_LOCK "wccp.pid"
 
@@ -49,7 +49,7 @@ bool do_daemon = false;
 
 static const char USAGE_TEXT[] = "%s\n"
                                  "--address IP address to bind.\n"
-                                 "--router Booststrap IP address for routers.\n"
+                                 "--router Bootstrap IP address for routers.\n"
                                  "--service Path to service group definitions.\n"
                                  "--debug Print debugging information.\n"
                                  "--daemon Run as daemon.\n"
@@ -66,8 +66,9 @@ PrintErrata(ts::Errata const &err)
     if (do_debug || code >= wccp::LVL_WARN) {
       n = err.write(buff, SIZE, 1, 0, 2, "> ");
       // strip trailing newlines.
-      while (n && (buff[n - 1] == '\n' || buff[n - 1] == '\r'))
+      while (n && (buff[n - 1] == '\n' || buff[n - 1] == '\r')) {
         buff[--n] = 0;
+      }
       printf("%s\n", buff);
     }
   }
@@ -97,7 +98,7 @@ check_lockfile()
     fprintf(stderr, "WARNING: Can't acquire lockfile '%s'", (const char *)lockfile);
 
     if ((err == 0) && (holding_pid != -1)) {
-      fprintf(stderr, " (Lock file held by process ID %l" PRIu32 ")\n", (long)holding_pid);
+      fprintf(stderr, " (Lock file held by process ID %l" PRIu32 ")\n", static_cast<long>(holding_pid));
     } else if ((err == 0) && (holding_pid == -1)) {
       fprintf(stderr, " (Lock file exists, but can't read process ID)\n");
     } else if (reason) {
@@ -124,13 +125,13 @@ main(int argc, char **argv)
   static int const OPT_DAEMON  = 262; ///< Disconnect and run as daemon
 
   static option OPTIONS[] = {
-    {"address", 1, 0, OPT_ADDRESS},
-    {"router", 1, 0, OPT_ROUTER},
-    {"service", 1, 0, OPT_SERVICE},
-    {"debug", 0, 0, OPT_DEBUG},
-    {"daemon", 0, 0, OPT_DAEMON},
-    {"help", 0, 0, OPT_HELP},
-    {0, 0, 0, 0} // required terminator.
+    {"address", 1, nullptr, OPT_ADDRESS},
+    {"router", 1, nullptr, OPT_ROUTER},
+    {"service", 1, nullptr, OPT_SERVICE},
+    {"debug", 0, nullptr, OPT_DEBUG},
+    {"daemon", 0, nullptr, OPT_DAEMON},
+    {"help", 0, nullptr, OPT_HELP},
+    {nullptr, 0, nullptr, 0} // required terminator.
   };
 
   in_addr ip_addr     = {INADDR_ANY};
@@ -165,8 +166,9 @@ main(int argc, char **argv)
       break;
     case OPT_SERVICE: {
       ts::Errata status = wcp.loadServicesFromFile(optarg);
-      if (!status)
+      if (!status) {
         fail = true;
+      }
       break;
     }
     case OPT_DEBUG:

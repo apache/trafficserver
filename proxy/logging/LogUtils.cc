@@ -99,12 +99,11 @@ char *
 LogUtils::timestamp_to_netscape_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
-  static char gmtstr[16];
   static long last_timestamp = 0;
-  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -134,6 +133,8 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
       offset = zone / -60;
       sign   = '+';
     }
+
+    static char gmtstr[16];
     int glen = snprintf(gmtstr, 16, "%c%.2d%.2d", sign, offset / 60, offset % 60);
 
     strftime(timebuf, 64 - glen, "%d/%b/%Y:%H:%M:%S ", tms);
@@ -155,10 +156,10 @@ LogUtils::timestamp_to_date_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -187,10 +188,10 @@ LogUtils::timestamp_to_time_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
+    static char bad_time[] = "Bad timestamp";
     return bad_time;
   }
   //
@@ -221,13 +222,13 @@ void
 LogUtils::manager_alarm(LogUtils::AlarmType alarm_type, const char *msg, ...)
 {
   char msg_buf[LOG_MAX_FORMATTED_LINE];
-  va_list ap;
 
   ink_assert(alarm_type >= 0 && alarm_type < LogUtils::LOG_ALARM_N_TYPES);
 
   if (msg == nullptr) {
     snprintf(msg_buf, sizeof(msg_buf), "No Message");
   } else {
+    va_list ap;
     va_start(ap, msg);
     vsnprintf(msg_buf, LOG_MAX_FORMATTED_LINE, msg, ap);
     va_end(ap);
@@ -359,7 +360,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
   //
   size_t out_len = len_in + 2 * count;
 
-  if (dst && out_len > dst_size) {
+  if (dst && (out_len + 1) > dst_size) {
     *len_out = 0;
     return nullptr;
   }
@@ -373,7 +374,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
   if (dst) {
     new_url = dst;
   } else {
-    new_url = (char *)arena->str_alloc(out_len + 1);
+    new_url = arena->str_alloc(out_len + 1);
   }
 
   char *from = url;
@@ -444,7 +445,7 @@ LogUtils::remove_content_type_attributes(char *type_str, int *type_len)
   }
   // Look for a semicolon and cut out everything after that
   //
-  char *p = (char *)memchr(type_str, ';', *type_len);
+  char *p = static_cast<char *>(memchr(type_str, ';', *type_len));
   if (p) {
     *type_len = p - type_str;
   }
@@ -475,6 +476,34 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
   int sidl = lt.tm_sec + lt.tm_min * 60 + lt.tm_hour * 3600;
   int tr   = rolling_offset * 3600;
   return ((tr >= sidl ? (tr - sidl) % rolling_interval : (86400 - (sidl - tr)) % rolling_interval));
+}
+
+ts::TextView
+LogUtils::get_unrolled_filename(ts::TextView rolled_filename)
+{
+  auto unrolled_name = rolled_filename;
+
+  // A rolled log will look something like:
+  //   squid.log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old
+  auto suffix = rolled_filename;
+
+  suffix.remove_prefix_at('.');
+  // Using the above squid.log example, suffix now looks like:
+  //   log_some.hostname.com.20191029.18h15m02s-20191029.18h30m02s.old
+
+  // Some suffixes do not have the hostname.  Rolled diags.log files will look
+  // something like this, for example:
+  //   diags.log.20191114.21h43m16s-20191114.21h43m17s.old
+  //
+  // For these, the second delimeter will be a period. For this reason, we also
+  // split_prefix_at with a period as well.
+  if (suffix.split_prefix_at('_') || suffix.split_prefix_at('.')) {
+    // ' + 1' to remove the '_' or second '.':
+    return unrolled_name.remove_suffix(suffix.size() + 1);
+  }
+  // If there isn't a '.' or an '_' after the first '.', then this
+  // doesn't look like a rolled file.
+  return rolled_filename;
 }
 
 // Checks if the file pointed to by full_filename either is a regular
@@ -570,7 +599,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
     if (e < 0) {
       ret_val = -1;
     } else {
-      if (limit_data.rlim_cur != (rlim_t)RLIM_INFINITY) {
+      if (limit_data.rlim_cur != static_cast<rlim_t> RLIM_INFINITY) {
         if (has_size_limit) {
           *has_size_limit = true;
         }
@@ -590,7 +619,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
 
 namespace
 {
-// Get a string out of a MIMEField using one of its member funcitions, and put it into a buffer writer, terminated with a nul.
+// Get a string out of a MIMEField using one of its member functions, and put it into a buffer writer, terminated with a nul.
 //
 void
 marshalStr(ts::FixedBufferWriter &bw, const MIMEField &mf, const char *(MIMEField::*get_func)(int *length) const)
@@ -641,14 +670,9 @@ marshalMimeHdr(MIMEHdr *hdr, char *buf)
   ts::FixedBufferWriter bw(buf, bwSize);
 
   if (hdr) {
-    MIMEFieldIter mfIter;
-    const MIMEField *mfp = hdr->iter_get_first(&mfIter);
-
-    while (mfp) {
-      marshalStr(bw, *mfp, &MIMEField::name_get);
-      marshalStr(bw, *mfp, &MIMEField::value_get);
-
-      mfp = hdr->iter_get_next(&mfIter);
+    for (auto const &mfp : *hdr) {
+      marshalStr(bw, mfp, &MIMEField::name_get);
+      marshalStr(bw, mfp, &MIMEField::value_get);
     }
   }
 

@@ -19,9 +19,13 @@
 include $(top_srcdir)/build/tidy.mk
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_atomic test_freelist test_geometry test_X509HostnameValidator test_tscore
+check_PROGRAMS = test_geometry test_X509HostnameValidator test_tscore
 
-TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=suppression.txt
+if EXPENSIVE_TESTS
+check_PROGRAMS += test_atomic test_freelist
+endif
+
+TESTS_ENVIRONMENT = LSAN_OPTIONS=suppressions=$(abs_top_srcdir)/ci/asan_leak_suppression/unit_tests.txt
 
 TESTS = $(check_PROGRAMS)
 
@@ -30,7 +34,6 @@ lib_LTLIBRARIES = libtscore.la
 AM_CPPFLAGS += \
 	$(iocore_include_dirs) \
 	-I$(abs_top_srcdir)/include \
-	-I$(abs_top_srcdir)/include/records \
 	-I$(abs_top_srcdir)/lib \
 	$(TS_INCLUDES) \
 	@YAMLCPP_INCLUDES@
@@ -48,170 +51,91 @@ libtscore_la_LIBADD = \
 	-lc
 
 libtscore_la_SOURCES = \
-	Allocator.h \
 	AcidPtr.cc \
-	AcidPtr.h \
 	Arena.cc \
-	Arena.h \
 	ArgParser.cc \
-	ArgParser.h \
 	BaseLogFile.cc \
-	BaseLogFile.h \
-	BufferWriter.h \
-	BufferWriterForward.h \
 	BufferWriterFormat.cc \
 	ConsistentHash.cc \
-	ConsistentHash.h \
 	ContFlags.cc \
-	ContFlags.h \
 	CryptoHash.cc \
-	CryptoHash.h \
-	defalloc.h \
 	Diags.cc \
-	Diags.h \
+	Errata.cc \
 	EventNotify.cc \
-	EventNotify.h \
-	Extendible.h \
+	Extendible.cc \
 	fastlz.c \
-	fastlz.h \
 	Hash.cc \
 	HashFNV.cc \
-	HashFNV.h \
-	Hash.h \
 	HashMD5.cc \
-	HashMD5.h \
 	HashSip.cc \
-	HashSip.h \
-	History.h \
 	HostLookup.cc \
-	HostLookup.h \
 	hugepages.cc \
-	hugepages.h \
-	I_Layout.h \
-	ink_aiocb.h \
-	ink_align.h \
-	ink_apidefs.h \
 	ink_args.cc \
-	ink_args.h \
 	ink_assert.cc \
-	ink_assert.h \
-	ink_atomic.h \
 	ink_base64.cc \
-	ink_base64.h \
 	ink_cap.cc \
-	ink_cap.h \
 	ink_code.cc \
-	ink_code.h \
 	ink_defs.cc \
-	ink_defs.h \
 	InkErrno.cc \
-	InkErrno.h \
 	ink_error.cc \
-	ink_error.h \
-	ink_exception.h \
 	ink_file.cc \
-	ink_file.h \
 	ink_hrtime.cc \
-	ink_hrtime.h \
 	ink_inet.cc \
-	ink_inet.h \
-	ink_inout.h \
-	ink_llqueue.h \
-	ink_lockfile.h \
-	INK_MD5.h \
 	ink_memory.cc \
-	ink_memory.h \
 	ink_mutex.cc \
-	ink_mutex.h \
-	ink_platform.h \
 	ink_queue.cc \
-	ink_queue.h \
 	ink_queue_utils.cc \
 	ink_rand.cc \
-	ink_rand.h \
 	ink_res_init.cc \
 	ink_res_mkquery.cc \
-	ink_resolver.h \
 	ink_resource.cc \
-	ink_resource.h \
 	ink_rwlock.cc \
-	ink_rwlock.h \
 	ink_sock.cc \
-	ink_sock.h \
 	ink_sprintf.cc \
-	ink_sprintf.h \
 	ink_stack_trace.cc \
-	ink_stack_trace.h \
 	ink_string.cc \
 	ink_string++.cc \
-	ink_string.h \
-	ink_string++.h \
 	ink_sys_control.cc \
-	ink_sys_control.h \
 	ink_syslog.cc \
-	ink_syslog.h \
 	ink_thread.cc \
-	ink_thread.h \
 	ink_time.cc \
-	ink_time.h \
 	ink_uuid.cc \
-	ink_uuid.h \
 	IpMap.cc \
 	IpMapConf.cc \
-	IpMapConf.h \
-	IpMap.h \
-	I_Version.h \
-	JeAllocator.h \
 	JeAllocator.cc \
 	Layout.cc \
-	List.h \
 	llqueue.cc \
 	lockfile.cc \
 	MatcherUtils.cc \
-	MatcherUtils.h \
-	MemSpan.h \
 	MemArena.cc \
-	MemArena.h \
 	MMH.cc \
-	MMH.h \
-	MT_hashtable.h \
 	ParseRules.cc \
-	ParseRules.h \
-	PriorityQueue.h \
-	Ptr.h \
+	Random.cc \
 	RbTree.cc \
-	RbTree.h \
 	Regex.cc \
-	Regex.h \
 	Regression.cc \
-	Regression.h \
-	Result.h \
 	runroot.cc \
-	runroot.h \
 	signals.cc \
-	signals.h \
-	SimpleTokenizer.h \
 	SourceLocation.cc \
-	SourceLocation.h \
-	TestBox.h \
 	TextBuffer.cc \
-	TextBuffer.h \
+	LogMessage.cc \
+	Throttler.cc \
 	Tokenizer.cc \
-	Tokenizer.h \
-	Trie.h \
-	TsBuffer.h \
-	ts_file. h ts_file.cc \
+	ts_file.cc \
 	Version.cc \
-	X509HostnameValidator.cc \
-	X509HostnameValidator.h
+	X509HostnameValidator.cc
+
+if HAS_HKDF
+if OPENSSL_IS_BORINGSSL
+HKDF_impl = HKDF_boringssl.cc
+else
+HKDF_impl = HKDF_openssl.cc
+endif
+libtscore_la_SOURCES += \
+  $(HKDF_impl)
+endif
 
 BufferWriterFormat.o : AM_CPPFLAGS += -Wno-char-subscripts
-
-#test_UNUSED_SOURCES = \
-#  load_http_hdr.cc \
-#  IntrusivePtrTest.cc \
-#  IpMapTest.cc \
-#  TestHttpHeader.cc
 
 # Special hacks to generate the parser rules
 $(srcdir)/ParseRules.cc: ParseRulesCType
@@ -238,7 +162,7 @@ test_tscore_CPPFLAGS = $(AM_CPPFLAGS)\
 	-I$(abs_top_srcdir)/tests/include
 
 test_tscore_CXXFLAGS = -Wno-array-bounds $(AM_CXXFLAGS)
-test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a
+test_tscore_LDADD = libtscore.la $(top_builddir)/src/tscpp/util/libtscpputil.la $(top_builddir)/iocore/eventsystem/libinkevent.a @OPENSSL_LIBS@
 test_tscore_SOURCES = \
 	unit_tests/unit_test_main.cc \
 	unit_tests/test_AcidPtr.cc \
@@ -256,12 +180,24 @@ test_tscore_SOURCES = \
 	unit_tests/test_List.cc \
 	unit_tests/test_MemArena.cc \
 	unit_tests/test_MT_hashtable.cc \
+	unit_tests/test_ParseRules.cc \
 	unit_tests/test_PriorityQueue.cc \
 	unit_tests/test_Ptr.cc \
 	unit_tests/test_Regex.cc \
 	unit_tests/test_Scalar.cc \
 	unit_tests/test_scoped_resource.cc \
-	unit_tests/test_ts_file.cc
+	unit_tests/test_Throttler.cc \
+	unit_tests/test_Tokenizer.cc \
+	unit_tests/test_ts_file.cc \
+	unit_tests/test_Version.cc \
+	unit_tests/test_Errata.cc \
+	unit_tests/test_MMH.cc \
+	unit_tests/test_Random.cc
+
+if HAS_HKDF
+test_tscore_SOURCES += \
+	unit_tests/test_HKDF.cc
+endif
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 

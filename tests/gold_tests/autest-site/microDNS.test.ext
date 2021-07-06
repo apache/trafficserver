@@ -18,14 +18,12 @@
 
 import json
 import os
-import sys
 
 import trlib.ipconstants as IPConstants
 from ports import get_port
 
+
 # AddRecord registers a list of ip address against hostname
-
-
 def AddRecord(hostname, list_ip_addr):
 
     record = dict()
@@ -84,6 +82,9 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOO
         jsondata = {'mappings': []}
 
         if default:
+            if isinstance(default, str):
+                # MicroDNS expects 'otherwise' to be a sequence.
+                default = [default]
             jsondata['otherwise'] = default
 
         with open(filepath, 'w') as f:
@@ -115,5 +116,7 @@ def MakeDNServer(obj, name, filename="dns_file.json", port=False, ip='INADDR_LOO
     return p
 
 
+ExtendTestRun(MakeDNServer, name="MakeDNServer")
+ExtendTestRun(MakeDNServer, name="MakeDNS")
 ExtendTest(MakeDNServer, name="MakeDNServer")
 ExtendTest(MakeDNServer, name="MakeDNS")

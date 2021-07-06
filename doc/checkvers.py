@@ -15,7 +15,6 @@
 # limitations under the License.
 
 import sys
-import os
 
 if __name__ == '__main__':
     # Use optparse instead of argparse because this needs to work on old Python versions.
@@ -28,8 +27,8 @@ if __name__ == '__main__':
 
     # Check whether we have the required version of sphinx.
     if options.checkvers:
-        min_sphinx_version_info = (1,7,5)
-        min_sphinx_version = '.'.join([str(x) for x in min_sphinx_version_info])
+        min_sphinx_version_info = (1, 7, 5)
+        min_sphinx_version = '.'.join(str(x) for x in min_sphinx_version_info)
 
         print('checking for sphinx version >= {0}... '.format(min_sphinx_version), end="")
         # Need at least 1.5.1 to use svg
@@ -65,5 +64,5 @@ if __name__ == '__main__':
             import sphinxcontrib.plantuml
             print('yes')
         except Exception as e:
-            print(e);
+            print(e)
             sys.exit(1)

@@ -22,7 +22,7 @@
  */
 
 #include "tscore/ink_platform.h"
-#include "Rollback.h"
+#include "ConfigManager.h"
 #include "tscore/ParseRules.h"
 #include "P_RecCore.h"
 #include "P_RecLocal.h"
@@ -31,6 +31,7 @@
 #include "P_RecFile.h"
 #include "LocalManager.h"
 #include "FileManager.h"
+#include <tscore/TSSystemState.h>
 
 // Marks whether the message handler has been initialized.
 static bool message_initialized_p = false;
@@ -61,44 +62,13 @@ i_am_the_record_owner(RecT rec_type)
 static void *
 sync_thr(void *data)
 {
-  TextBuffer *tb           = new TextBuffer(65536);
-  FileManager *configFiles = (FileManager *)data;
+  FileManager *configFiles = static_cast<FileManager *>(data);
 
-  while (true) {
-    bool inc_version;
-    RecBool disabled = false;
-    RecBool check    = true;
-
-    RecGetRecordBool("proxy.config.disable_configuration_modification", &disabled);
-    if (disabled) {
-      RecDebug(DL_Debug, "configuration modification is disabled, skipping it");
-    }
+  while (!TSSystemState::is_event_system_shut_down()) {
+    RecBool check = true;
 
     send_push_message();
     RecSyncStatsFile();
-
-    if (!disabled && RecSyncConfigToTB(tb, &inc_version) == REC_ERR_OKAY) {
-      bool written = false;
-      Rollback *rb = nullptr;
-
-      if (configFiles->getRollbackObj(REC_CONFIG_FILE, &rb)) {
-        if (inc_version) {
-          RecDebug(DL_Note, "Rollback: '%s'", REC_CONFIG_FILE);
-          version_t ver = rb->getCurrentVersion();
-          if ((rb->updateVersion(tb, ver, -1, false)) != OK_ROLLBACK) {
-            RecDebug(DL_Note, "Rollback failed: '%s'", REC_CONFIG_FILE);
-          }
-          written = true;
-        }
-      }
-
-      if (!written) {
-        if (RecWriteConfigFile(tb) == REC_ERR_OKAY) {
-          rb->setLastModifiedTime();
-          check = false;
-        }
-      }
-    }
 
     // If we didn't successfully sync to disk, check whether we need to update ....
     if (check) {
@@ -119,7 +89,7 @@ sync_thr(void *data)
 static void *
 config_update_thr(void * /* data */)
 {
-  while (true) {
+  while (!TSSystemState::is_event_system_shut_down()) {
     switch (RecExecConfigUpdateCbs(REC_LOCAL_UPDATE_REQUIRED)) {
     case RECU_RESTART_TS:
       RecSetRecordInt("proxy.node.config.restart_required.proxy", 1, REC_SOURCE_DEFAULT);
@@ -145,7 +115,7 @@ void
 RecMessageInit()
 {
   ink_assert(g_mode_type != RECM_NULL);
-  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, RecMessageRecvThis, nullptr);
+  lmgmt->registerMgmtCallback(MGMT_SIGNAL_LIBRECORDS, &RecMessageRecvThis);
   message_initialized_p = true;
 }
 
@@ -207,9 +177,9 @@ RecLocalStart(FileManager *configFiles)
 }
 
 int
-RecRegisterManagerCb(int id, RecManagerCb _fn, void *_data)
+RecRegisterManagerCb(int id, RecManagerCb const &_fn)
 {
-  return lmgmt->registerMgmtCallback(id, _fn, _data);
+  return lmgmt->registerMgmtCallback(id, _fn);
 }
 
 void
@@ -237,7 +207,7 @@ RecMessageSend(RecMessage *msg)
   if (g_mode_type == RECM_CLIENT || g_mode_type == RECM_SERVER) {
     msg->o_end = msg->o_write;
     msg_size   = sizeof(RecMessageHdr) + (msg->o_write - msg->o_start);
-    lmgmt->signalEvent(MGMT_EVENT_LIBRECORDS, (char *)msg, msg_size);
+    lmgmt->signalEvent(MGMT_EVENT_LIBRECORDS, reinterpret_cast<char *>(msg), msg_size);
   }
 
   return REC_ERR_OKAY;

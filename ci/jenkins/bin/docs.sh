@@ -20,17 +20,28 @@
 test -z "${ATS_MAKE}" && ATS_MAKE="make"
 test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 
+# Skip if nothing in doc has changed
+INCLUDE_FILES=$(for i in $(git grep literalinclude doc/ | awk '{print $3}'); do basename $i; done | sort -u | paste -sd\|)
+echo $INCLUDE_FILES
+if [ ! -z "$ghprbActualCommit" ]; then
+    git diff ${ghprbActualCommit}^...${ghprbActualCommit} --name-only | egrep -E "(^doc/|$INCLUDE_FILES)" > /dev/null
+    if [ $? = 1 ]; then
+        echo "No relevant files changed, skipping run"
+        exit 0
+    fi
+fi
+
 # Run configure on the docs builds each time in case there have been updates
 autoreconf -fi && ./configure --enable-docs || exit 1
 
 cd doc
 
-echo "Building English version"
+echo "Building English version with warnings treated as errors"
 rm -rf docbuild/html
-${ATS_MAKE} -e SPHINXOPTS="-D language='en'" html
+${ATS_MAKE} -e SPHINXOPTS="-W -D language='en'" html
 [ $? != 0 ] && exit 1
 
-# Only continue with the rsync and JA build if we're on the official docs updates.
+# Only continue with the rsync and JA build if we're on the official docs updates
 [ -w /home/docs ] || exit 0
 
 /usr/bin/rsync --delete -av docbuild/html/ /home/docs/en/${ATS_BRANCH}

@@ -1,8 +1,7 @@
 URI Signing Plugin
 ==================
 
-This remap plugin implements the draft URI Signing protocol documented here:
-https://tools.ietf.org/html/draft-ietf-cdni-uri-signing-16 .
+This remap plugin implements the draft URI Signing protocol documented [here](https://tools.ietf.org/html/draft-ietf-cdni-uri-signing-21):
 
 It takes a single argument: the name of a config file that contains key information.
 
@@ -77,16 +76,25 @@ It's worth noting that multiple issuers can provide `auth_directives`.
 Each issuer will be processed in order and any issuer can provide access to
 a path.
 
-### Token Stripping
+### More Configuration Options
 
-When The boolean strip_token parameter is set to true, the plugin removes the 
-token from both the url that is sent upstream to the origin and the url that 
-is used as the cache key. It can be set like this:
+**Strip Token**
+When the strip_token parameter is set to true, the plugin removes the
+token from both the url that is sent upstream to the origin and the url that
+is used as the cache key. The strip_token parameter defaults to false and should
+be set by only one issuer.
+**ID**
+The id field takes a string indicating the identification of the entity processing the request.
+This is used in aud claim checks to ensure that the receiver is the intended audience of a
+tokenized request. The id parameter can only be set by one issuer.
+
+Example:
 
     {
       "Kabletown URI Authority": {
         "renewal_kid": "Second Key",
         "strip_token" : true,
+        "id" : "mycdn",
         "auth_directives": [
           ⋮
         ]
@@ -94,8 +102,6 @@ is used as the cache key. It can be set like this:
           ⋮
         ]
     }
-
-The strip_token parameter defaults to false and should be set by only one issuer.
 
 Usage
 -----
@@ -107,9 +113,8 @@ will receive a 403 Forbidden response, instead of receiving content.
 Tokens will be found in either of these places:
 
   - A query parameter named `URISigningPackage`. The value must be the JWT.
+  - A path parameter named `URISigningPackage`. The value must be the JWT.
   - A cookie named `URISigningPackage`. The value of the cookie must be the JWT.
-
-Path parameters will not be searched for JWTs.
 
 ### Supported Claims
 
@@ -118,24 +123,24 @@ The following claims are understood:
   - `iss`: Must be present. The issuer is used to locate the key for verification.
   - `sub`: May be present, but is not validated.
   - `exp`: Expired tokens are not valid.
+  - `nbf`: Tokens processed before this time are not valid.
+  - `aud`: Token aud claim strings must match the configured id to be considered valid.
   - `iat`: May be present, but is not validated.
   - `cdniv`: Must be missing or 1.
   - `cdniuc`: Validated last, after key verificationD. **Only `regex` is supported!**
   - `cdniets`: If cdnistt is 1, this must be present and non-zero.
   - `cdnistt`: If present, must be 1.
-  - `cdnistd`: If present, must be 0.
+  - `cdnistd`: Renewal token cookies will have cdnistd path segments of the request in their path attribute.
 
 ### Unsupported Claims
 
 These claims are not supported. If they are present, the token will not validate:
 
-  - `aud`
-  - `nbf`
   - `jti`
   - `cdnicrit`
   - `cdniip`
 
-In addition, the `cdniuc` container of `hash` is 
+In addition, the `cdniuc` container of `hash` is
 **not supported**.
 
 ### Token Renewal
@@ -185,3 +190,42 @@ plugin.
 If you would like to statically link them, you will need to ensure that they are
 compiled with the `-fPIC` flag in their CFLAGs. If the archives have PIC, the
 build scripts will automatically statically link them.
+
+Here are some sample commands for building jansson, cjose and trafficserver
+locally using static linking.  This assumes all source is under ${HOME}/git.
+
+### Sample
+
+If using local jansson:
+
+    cd ${HOME}/git
+    git clone https://github.com/akheron/jansson.git
+    cd jansson
+    autoreconf -i
+    ./configure --disable-shared CC="gcc -fpic"
+    make -j`nproc`
+
+    # Needed for ATS configure
+    ln -s src/.libs lib
+    ln -s src include
+
+If using local cjose:
+
+    cd ${HOME}/git
+    git clone https://github.com/cisco/cjose.git
+    cd cjose
+    autoreconf -i
+    ./configure --with-jansson=${HOME}/git/jansson --disable-shared CC="gcc -fpic"
+    make -j`nproc`
+
+    # Needed for ATS configure
+    ln -s src/.libs lib
+
+ATS:
+
+    cd ${HOME}/git/
+    git clone https://github.com/apache/trafficserver.git
+    cd trafficserver
+		autoreconf -i
+    ./configure --enable-experimental-plugins --with-jansson=${HOME}/git/jansson --with-cjose=${HOME}/git/cjose
+    make -j`nproc`

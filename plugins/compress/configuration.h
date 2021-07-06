@@ -26,8 +26,8 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "debug_macros.h"
-#include "tscore/ink_atomic.h"
+
+#include "ts/ts.h"
 #include "tscpp/api/noncopyable.h"
 
 namespace Gzip
@@ -48,11 +48,11 @@ public:
     : host_(host),
       enabled_(true),
       cache_(true),
+      range_request_(false),
       remove_accept_encoding_(false),
       flush_(false),
       compression_algorithms_(ALGORITHM_GZIP),
-      minimum_content_length_(1024),
-      ref_count_(0)
+      minimum_content_length_(1024)
   {
   }
 
@@ -65,6 +65,16 @@ public:
   set_enabled(bool x)
   {
     enabled_ = x;
+  }
+  bool
+  range_request()
+  {
+    return range_request_;
+  }
+  void
+  set_range_request(bool x)
+  {
+    range_request_ = x;
   }
   bool
   cache()
@@ -128,30 +138,15 @@ public:
   void add_compression_algorithms(std::string &algorithms);
   int compression_algorithms();
 
-  // Ref-counting these host configuration objects
-  void
-  hold()
-  {
-    ink_atomic_increment(&ref_count_, 1);
-  }
-  void
-  release()
-  {
-    if (1 >= ink_atomic_decrement(&ref_count_, 1)) {
-      debug("released and deleting HostConfiguration for %s settings", host_.size() > 0 ? host_.c_str() : "global");
-      delete this;
-    }
-  }
-
 private:
   std::string host_;
   bool enabled_;
   bool cache_;
+  bool range_request_;
   bool remove_accept_encoding_;
   bool flush_;
   int compression_algorithms_;
   unsigned int minimum_content_length_;
-  int ref_count_;
 
   StringContainer compressible_content_types_;
   StringContainer allows_;
@@ -169,7 +164,6 @@ class Configuration : private atscppapi::noncopyable
 public:
   static Configuration *Parse(const char *path);
   HostConfiguration *find(const char *host, int host_length);
-  void release_all();
 
 private:
   explicit Configuration() {}

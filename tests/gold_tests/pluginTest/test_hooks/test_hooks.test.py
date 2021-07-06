@@ -14,40 +14,39 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
+
 Test.Summary = '''
 Test TS API Hooks.
 '''
 
 Test.SkipUnless(
-    Condition.HasATSFeature('TS_USE_TLS_ALPN'),
     Condition.HasCurlFeature('http2'),
 )
 Test.ContinueOnFail = True
 
-# test_hooks.so will output test logging to this file.
-Test.Env["OUTPUT_FILE"] = Test.RunDirectory + "/log.txt"
-
 server = Test.MakeOriginServer("server")
 
 request_header = {
-    "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "" }
+    "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts = Test.MakeATSProcess("ts", select_ports=False)
+# Disable the cache to make sure each request is forwarded to the origin
+# server.
+ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True, enable_cache=False)
 
-ts.addSSLfile("ssl/server.pem")
-ts.addSSLfile("ssl/server.key")
+# test_hooks.so will output test logging to this file.
+log_path = os.path.join(ts.Variables.LOGDIR, "log.txt")
+Test.Env["OUTPUT_FILE"] = log_path
 
-ts.Variables.ssl_port = 4443
+ts.addDefaultSSLFiles()
 
 ts.Disk.records_config.update({
-    'proxy.config.http.cache.http': 0,  # Make sure each request is forwarded to the origin server.
     'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
     'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
     'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    'proxy.config.http.server_ports': (
-        'ipv4:{0} ipv4:{1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port)),
     'proxy.config.url_remap.remap_required': 0,
     'proxy.config.diags.debug.enabled': 0,
     'proxy.config.diags.debug.tags': 'http|test_hooks',
@@ -57,7 +56,7 @@ ts.Disk.ssl_multicert_config.AddLine(
     'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key'
 )
 
-Test.PreparePlugin(Test.Variables.AtsTestToolsDir + '/plugins/test_hooks.cc', ts)
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_hooks.so'), ts)
 
 ts.Disk.remap_config.AddLine(
     "map http://one http://127.0.0.1:{0}".format(server.Variables.Port)
@@ -69,8 +68,7 @@ ts.Disk.remap_config.AddLine(
 tr = Test.AddTestRun()
 # Probe server port to check if ready.
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-# Probe TS cleartext port to check if ready (probing TLS port causes spurious VCONN hook triggers).
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=When.PortOpen(ts.Variables.port))
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 #
 tr.Processes.Default.Command = (
     'curl --verbose --ipv4 --header "Host: one" http://localhost:{0}/argh'.format(ts.Variables.port)
@@ -84,7 +82,21 @@ tr.Processes.Default.Command = (
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
+tr.Processes.Default.Command = (
+    'curl --verbose --ipv4 --http1.1 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port)
+)
+tr.Processes.Default.ReturnCode = 0
+
+# The probing of the ATS port to detect when ATS is ready may be seen by ATS as a VCONN start/close, so filter out these
+# events from the log file.
+#
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = "cd " + Test.RunDirectory + " ; . " + Test.TestDirectory + "/clean.sh"
+tr.Processes.Default.ReturnCode = 0
+
+tr = Test.AddTestRun()
 tr.Processes.Default.Command = "echo check log"
 tr.Processes.Default.ReturnCode = 0
-f = tr.Disk.File("log.txt")
+f = tr.Disk.File(log_path)
 f.Content = "log.gold"
+f.Content += Testers.ContainsExpression("Global: event=TS_EVENT_VCONN_CLOSE", "VCONN_CLOSE should trigger 2 times")

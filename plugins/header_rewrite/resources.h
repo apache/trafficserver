@@ -28,11 +28,6 @@
 
 #include "lulu.h"
 
-#if HAVE_GEOIP_H
-#include <GeoIP.h>
-extern GeoIP *gGeoIP[NUM_DB_TYPES];
-#endif
-
 enum ResourceIDs {
   RSRC_NONE                    = 0,
   RSRC_SERVER_RESPONSE_HEADERS = 1,

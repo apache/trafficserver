@@ -27,7 +27,9 @@ Intercept Traffic Server events.
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: void TSHttpHookAdd(TSHttpHookID id, TSCont contp)
 .. function:: void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp)
@@ -68,7 +70,7 @@ It is good practice to conserve resources by reusing hooks in this way
 when possible.
 
 When a continuation on a hook is triggered, the name of the event passed to
-the continution function depends on the name of the hook.  The naming
+the continuation function depends on the name of the hook.  The naming
 convention is that, for hook TS_xxx_HOOK, the event passed to the continuation
 function will be TS_EVENT_xxx.  For example, when a continuation attached to
 TS_HTTP_READ_REQUEST_HDR_HOOK is triggered, the event passed to the continuation

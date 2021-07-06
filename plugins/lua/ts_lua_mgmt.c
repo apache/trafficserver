@@ -22,6 +22,7 @@ static int ts_lua_mgmt_get_int(lua_State *L);
 static int ts_lua_mgmt_get_counter(lua_State *L);
 static int ts_lua_mgmt_get_float(lua_State *L);
 static int ts_lua_mgmt_get_string(lua_State *L);
+static int ts_lua_mgmt_add_config_file(lua_State *L);
 
 void
 ts_lua_inject_mgmt_api(lua_State *L)
@@ -39,6 +40,9 @@ ts_lua_inject_mgmt_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_mgmt_get_string);
   lua_setfield(L, -2, "get_string");
+
+  lua_pushcfunction(L, ts_lua_mgmt_add_config_file);
+  lua_setfield(L, -2, "add_config_file");
 
   lua_setfield(L, -2, "mgmt");
 }
@@ -101,7 +105,24 @@ ts_lua_mgmt_get_string(lua_State *L)
   name = luaL_checklstring(L, 1, &name_len);
   if (TS_SUCCESS == TSMgmtStringGet(name, &str_val)) {
     lua_pushstring(L, str_val);
+    TSfree(str_val);
     return 1;
+  }
+
+  return 0;
+}
+
+static int
+ts_lua_mgmt_add_config_file(lua_State *L)
+{
+  const char *parent;
+  const char *filename;
+  size_t parent_len = 0, filename_len = 0;
+
+  if (lua_gettop(L) == 2) {
+    filename = luaL_checklstring(L, 2, &filename_len);
+    parent   = luaL_checklstring(L, 1, &parent_len);
+    TSMgmtConfigFileAdd(parent, filename);
   }
 
   return 0;

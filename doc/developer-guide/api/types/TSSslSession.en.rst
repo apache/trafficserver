@@ -24,7 +24,9 @@ TSSslSession
 Synopsis
 ========
 
-`#include <ts/apidefs.h>`
+.. code-block:: cpp
+
+    #include <ts/apidefs.h>
 
 .. type:: TSSslSessionID
 

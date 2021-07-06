@@ -17,17 +17,10 @@
 #  limitations under the License.
 
 import os
-import subprocess
 
 Test.Summary = '''
 Test new "all headers" log fields
 '''
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram(
-        "curl", "Curl need to be installed on system for this test to work"),
-    # Condition.IsPlatform("linux"), Don't see the need for this.
-)
 
 # Define ATS.
 #
@@ -39,7 +32,7 @@ server = Test.MakeOriginServer("server")
 
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: does.not.matter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
-    "timestamp": "1469733493.993", "body": "xxx"}
+                   "timestamp": "1469733493.993", "body": "xxx"}
 server.addResponse("sessionlog.json", request_header, response_header)
 
 ts.Disk.records_config.update({
@@ -55,12 +48,13 @@ ts.Disk.remap_config.AddLine(
 #
 ts.Disk.logging_yaml.AddLines(
     '''
-formats:
-  - name: custom
-    format: " %<cqah> %<pssc> %<psah> %<ssah> %<pqah> %<cssah> " 
-logs:
-  - filename: test_all_headers
-    format: custom
+logging:
+  formats:
+    - name: custom
+      format: "%<cqah> ___FS___ %<pssc> ___FS___ %<psah> ___FS___ %<ssah> ___FS___ %<pqah> ___FS___ %<cssah> ___FS___ END_TXN"
+  logs:
+    - filename: test_all_headers
+      format: custom
 '''.split("\n")
 )
 
@@ -69,10 +63,6 @@ logs:
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log.san'),
                exists=True, content='gold/test_all_headers.gold')
 
-# Ask the OS if the port is ready for connect()
-#
-def CheckPort(Port):
-    return lambda: 0 == subprocess.call('netstat --listen --tcp -n | grep -q :{}'.format(Port), shell=True)
 
 def reallyLong():
     value = 'abcdefghijklmnop'
@@ -84,11 +74,12 @@ def reallyLong():
         retval += ' -H "x-header{}: {}"'.format(i, value)
     return retval
 
+
 tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(server, ready=CheckPort(server.Variables.Port))
-tr.Processes.Default.StartBefore(Test.Processes.ts, ready=CheckPort(ts.Variables.port))
+tr.Processes.Default.StartBefore(server)
+tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Command = (
-'curl "http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong()
+    'curl "http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong()
 )
 tr.Processes.Default.ReturnCode = 0
 
@@ -96,16 +87,16 @@ tr.Processes.Default.ReturnCode = 0
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-'curl "http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong()
+    'curl "http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong()
 )
 tr.Processes.Default.ReturnCode = 0
 
 # Delay to allow TS to flush report to disk, then "sanitize" generated log.
 #
 tr = Test.AddTestRun()
-tr.DelayStart = 10
-tr.Processes.Default.Command = 'python {0} {3} < {1} > {2}'.format(
+tr.Processes.Default.Command = 'python3 {0} {2} {4} | sh {1} > {3}'.format(
     os.path.join(Test.TestDirectory, 'all_headers_sanitizer.py'),
+    os.path.join(Test.TestDirectory, 'all_headers_sanitizer.sh'),
     os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log'),
     os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log.san'),
     server.Variables.Port)

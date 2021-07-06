@@ -16,13 +16,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
 Test.Summary = '''
 Test experimental/multiplexer.
 '''
-# need Curl
+
 Test.SkipUnless(
-    Condition.HasProgram("curl", "Curl need to be installed on system for this test to work"),
     Condition.PluginExists('multiplexer.so')
 )
 Test.ContinueOnFail = False
@@ -45,7 +43,8 @@ ts.Disk.remap_config.AddLine(
 
 # For now, just make sure the plugin loads without error.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = 'curl --silent --proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: close"'.format(ts.Variables.port)
+tr.Processes.Default.Command = 'curl --silent --proxy 127.0.0.1:{0} "http://www.example.com" -H "Proxy-Connection: close"'.format(
+    ts.Variables.port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)

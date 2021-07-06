@@ -71,12 +71,12 @@ by other continuations).
 Locking Global Data
 ===================
 
-The :ref:`blacklist-1.c` sample plugin implements a mutex that locks global
-data. The blacklist plugin reads its blacklisted sites from a
+The :ref:`denylist-1.c` sample plugin implements a mutex that locks global
+data. The denylist plugin reads sites to be denied from a
 configuration file; file read operations are protected by a mutex
-created in :c:func:`TSPluginInit`. The :ref:`blacklist-1.c` code uses
+created in :c:func:`TSPluginInit`. The :ref:`denylist-1.c` code uses
 :c:func:`TSMutexLockTry` instead of :c:func:`TSMutexLock`. For more detailed
-information, see the :ref:`blacklist-1.c` code;
+information, see the :ref:`denylist-1.c` code;
 start by looking at the :c:func:`TSPluginInit` function.
 
 General guidelines for locking shared data are as follows:
@@ -120,7 +120,7 @@ accessed by other continuations or processes. Here's how:
 
 If any other functions want to access ``contp``'s data, then it is up to
 them to get ``contp``'s mutex (using, for example, ``TSContMutexGet``)
-to lock it. For usage, ssee the sample Protocol plugin.
+to lock it. For usage, see the sample Protocol plugin.
 
 How to Associate a Continuation With Every HTTP Transaction
 ===========================================================
@@ -197,7 +197,7 @@ In the plugin continuation handler, create the new continuation
                return 0;
            }
 
-Remember that the ``txn_contp`` handler must destory itself when the
+Remember that the ``txn_contp`` handler must destroy itself when the
 HTTP transaction is closed. If you forget to do this, then your plugin
 will have a memory leak.
 
@@ -339,7 +339,7 @@ case only, it's safe to access data shared between ``txnp`` and
 HTTP transaction ``txnp`` is the only one that will call back
 ``txn_contp``, and you are guaranteed that ``txn_contp`` will be called
 back only one hook at a time. After processing is finished,
-``txn_contp`` will reenable ``txnp``.
+``txn_contp`` will re-enable ``txnp``.
 
 In all other cases, you should create a mutex with the continuation. In
 general, a lock is needed when you're using iocore APIs or any other API
@@ -368,7 +368,7 @@ continuation created in ``txn_handler``:
         TSCont newCont;
         ....
             newCont = TSContCreate (newCont_handler, NULL);
-        //It's not necessary to create a new mutex for newCont.
+        // It's not necessary to create a new mutex for newCont.
 
         ...
 

@@ -41,12 +41,12 @@ namespace transformations
    *
    * The GzipInflateTransformation is a helper transformation that can be used
    * to easily decompress gzipped content. For a full example of GzipInflateTransformation
-   * and GzipDeflateTransformation see examples/gzip_transformation/.
+   * and GzipDeflateTransformation see example/cppapi/gzip_transformation/.
    *
    * @note GzipDeflateTransformation DOES NOT set or check Content-Encoding headers, it is the
-   * users responsibility to set any applicable headers and check that the content is acctually
+   * users responsibility to set any applicable headers and check that the content is actually
    * gzipped by checking the Content-Encoding header before creating a GzipInflateTransformation,
-   * see examples/gzip_transformation/ for a full example.
+   * see example/cppapi/gzip_transformation/ for a full example.
    *
    * @see GzipDeflateTransformation
    */
@@ -55,7 +55,7 @@ namespace transformations
   public:
     /**
      * A full example of how to use GzipInflateTransformation and GzipDeflateTransformation is available
-     * in examples/gzip_tranformation/
+     * in example/cppapi/gzip_transformation/.
      *
      * @param transaction As with any TransformationPlugin you must pass in the transaction
      * @param type because the GzipInflateTransformation can be used with both requests and responses

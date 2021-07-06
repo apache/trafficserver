@@ -70,19 +70,16 @@ RecRecord *RecForceInsert(RecRecord *record);
 //-------------------------------------------------------------------------
 
 RecErrT RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *raw_stat, RecSourceT source,
-                     bool lock = true, bool inc_version = true);
+                     bool lock = true);
 
 RecErrT RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool lock = true);
 
 //-------------------------------------------------------------------------
 // Read/Sync to Disk
 //-------------------------------------------------------------------------
-
 RecErrT RecReadStatsFile();
 RecErrT RecSyncStatsFile();
-RecErrT RecReadConfigFile(bool inc_version);
-RecErrT RecWriteConfigFile(TextBuffer *tb);
-RecErrT RecSyncConfigToTB(TextBuffer *tb, bool *inc_version = nullptr);
+RecErrT RecReadConfigFile();
 
 //-------------------------------------------------------------------------
 // Misc

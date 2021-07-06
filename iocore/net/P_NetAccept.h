@@ -107,6 +107,7 @@ struct NetAccept : public Continuation {
 
   virtual int acceptEvent(int event, void *e);
   virtual int acceptFastEvent(int event, void *e);
+  virtual int accept_per_thread(int event, void *e);
   int acceptLoopEvent(int event, Event *e);
   void cancel();
 

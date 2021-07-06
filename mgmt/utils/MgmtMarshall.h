@@ -1,6 +1,6 @@
 /** @file
 
-  Managment packet marshalling.
+  Management packet marshalling.
 
   @section license License
 

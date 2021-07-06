@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <tscore/TSSystemState.h>
+
 #include "tscore/ink_align.h"
 #include "I_EventProcessor.h"
 
@@ -61,39 +63,67 @@ EventProcessor::assign_thread(EventType etype)
   return tg->_thread[next];
 }
 
+// If thread_holding is the correct type, return it.
+//
+// Otherwise check if there is already an affinity associated with the continuation,
+// return it if the type is the same, return the next available thread of "etype" if
+// the type is different.
+//
+// Only assign new affinity when there is currently none.
+TS_INLINE EThread *
+EventProcessor::assign_affinity_by_type(Continuation *cont, EventType etype)
+{
+  EThread *ethread = cont->mutex->thread_holding;
+  if (!ethread->is_event_type(etype)) {
+    ethread = cont->getThreadAffinity();
+    if (ethread == nullptr || !ethread->is_event_type(etype)) {
+      ethread = assign_thread(etype);
+    }
+  }
+
+  if (cont->getThreadAffinity() == nullptr) {
+    cont->setThreadAffinity(ethread);
+  }
+
+  return ethread;
+}
+
 TS_INLINE Event *
-EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
+EventProcessor::schedule(Event *e, EventType etype)
 {
   ink_assert(etype < MAX_EVENT_TYPES);
 
-  EThread *ethread = e->continuation->getThreadAffinity();
-  if (ethread != nullptr && ethread->is_event_type(etype)) {
-    e->ethread = ethread;
+  if (TSSystemState::is_event_system_shut_down()) {
+    return nullptr;
+  }
+
+  EThread *affinity_thread = e->continuation->getThreadAffinity();
+  EThread *curr_thread     = this_ethread();
+  if (affinity_thread != nullptr && affinity_thread->is_event_type(etype)) {
+    e->ethread = affinity_thread;
   } else {
-    e->ethread = assign_thread(etype);
+    // Is the current thread eligible?
+    if (curr_thread != nullptr && curr_thread->is_event_type(etype)) {
+      e->ethread = curr_thread;
+    } else {
+      e->ethread = assign_thread(etype);
+    }
+    if (affinity_thread == nullptr) {
+      e->continuation->setThreadAffinity(e->ethread);
+    }
   }
 
   if (e->continuation->mutex) {
     e->mutex = e->continuation->mutex;
-  } else {
-    e->mutex = e->continuation->mutex = e->ethread->mutex;
   }
-  e->ethread->EventQueueExternal.enqueue(e, fast_signal);
+
+  if (curr_thread != nullptr && e->ethread == curr_thread) {
+    e->ethread->EventQueueExternal.enqueue_local(e);
+  } else {
+    e->ethread->EventQueueExternal.enqueue(e);
+  }
+
   return e;
-}
-
-TS_INLINE Event *
-EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callback_event, void *cookie)
-{
-  Event *e = eventAllocator.alloc();
-
-  ink_assert(et < MAX_EVENT_TYPES);
-#ifdef ENABLE_TIME_TRACE
-  e->start_time = Thread::get_hrtime();
-#endif
-  e->callback_event = callback_event;
-  e->cookie         = cookie;
-  return schedule(e->init(cont, 0, 0), et, true);
 }
 
 TS_INLINE Event *

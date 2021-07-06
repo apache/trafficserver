@@ -1,6 +1,6 @@
 /** @file
 
-  Header file for shared declarations/definitions for test_LogUtils2.cc and LogUtils.h for unit testing.
+  Header file for shared declarations/definitions for test_LogUtils.cc and LogUtils.h for unit testing.
 
   @section license License
 
@@ -23,6 +23,9 @@
 
 #pragma once
 
+#include <cstring>
+#include <tscpp/util/MemSpan.h>
+
 struct MIMEField {
   const char *tag, *value;
 
@@ -40,34 +43,22 @@ struct MIMEField {
   }
 };
 
-struct MIMEFieldIter {
-};
-
 class MIMEHdr
 {
-public:
-  MIMEHdr(const MIMEField *first, int count) : _first(first), _count(count), _idx(0) {}
-
-  const MIMEField *
-  iter_get_first(MIMEFieldIter *)
-  {
-    return _idx < _count ? _first + _idx : nullptr;
-  }
-  const MIMEField *
-  iter_get_next(MIMEFieldIter *)
-  {
-    ++_idx;
-    return iter_get_first(nullptr);
-  }
-
-  void
-  reset()
-  {
-    _idx = 0;
-  }
-
 private:
-  const MIMEField *const _first;
-  const int _count;
-  int _idx;
+  ts::MemSpan<MIMEField const> _fields;
+
+public:
+  MIMEHdr(const MIMEField *first, int count) : _fields{first, size_t(count)} {}
+
+  auto
+  begin()
+  {
+    return _fields.begin();
+  }
+  auto
+  end()
+  {
+    return _fields.end();
+  }
 };

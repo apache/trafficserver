@@ -57,10 +57,10 @@ Range::fromStringClosed(char const *const rangestr)
   }
 
   // rip out any whitespace
-  static int const RLEN = 1024;
-  char rangebuf[RLEN];
-  char *pbuf = rangebuf;
-  while ('\0' != *pstr && (pbuf - rangebuf) < RLEN) {
+  char rangebuf[1024];
+  int const rangelen = sizeof(rangebuf);
+  char *pbuf         = rangebuf;
+  while ('\0' != *pstr && (pbuf - rangebuf) < rangelen) {
     if (!isblank(*pstr)) {
       *pbuf++ = *pstr;
     }
@@ -121,7 +121,7 @@ Range::fromStringClosed(char const *const rangestr)
 bool
 Range::toStringClosed(char *const bufstr,
                       int *const buflen // returns actual bytes used
-                      ) const
+) const
 {
   if (!isValid()) {
     if (0 < *buflen) {
@@ -146,7 +146,17 @@ int64_t
 Range::firstBlockFor(int64_t const blocksize) const
 {
   if (0 < blocksize && isValid()) {
-    return std::max((int64_t)0, m_beg / blocksize);
+    return std::max(static_cast<int64_t>(0), m_beg / blocksize);
+  } else {
+    return -1;
+  }
+}
+
+int64_t
+Range::lastBlockFor(int64_t const blocksize) const
+{
+  if (0 < blocksize && isValid()) {
+    return std::max(static_cast<int64_t>(0), (m_end - 1) / blocksize);
   } else {
     return -1;
   }
@@ -162,7 +172,6 @@ bool
 Range::blockIsInside(int64_t const blocksize, int64_t const blocknum) const
 {
   Range const blockrange(blocksize * blocknum, blocksize * (blocknum + 1));
-
   Range const isec(blockrange.intersectedWith(*this));
 
   return isec.isValid();

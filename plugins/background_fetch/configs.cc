@@ -40,7 +40,7 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
                                           {nullptr, no_argument, nullptr, '\0'}};
 
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "lc", longopt, nullptr);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "lc", longopt, nullptr);
 
     if (opt == -1) {
       break;
@@ -72,7 +72,7 @@ BgFetchConfig::parseOptions(int argc, const char *argv[])
   return true;
 }
 
-// Read a config file, populare the linked list (chain the BgFetchRule's)
+// Read a config file, populate the linked list (chain the BgFetchRule's)
 bool
 BgFetchConfig::readConfig(const char *config_file)
 {
@@ -127,9 +127,9 @@ BgFetchConfig::readConfig(const char *config_file)
       char *cfg_type  = strtok_r(buffer, " ", &savePtr);
       char *cfg_name  = nullptr;
       char *cfg_value = nullptr;
-      bool exclude    = false;
 
       if (cfg_type) {
+        bool exclude = false;
         if (!strcmp(cfg_type, "exclude")) {
           exclude = true;
         } else if (strcmp(cfg_type, "include")) {
@@ -190,7 +190,7 @@ BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
   // We could do this recursively, but following the linked list is probably more efficient.
   for (const BgFetchRule *r = _rules; nullptr != r; r = r->_next) {
     if (r->check_field_configured(txnp)) {
-      TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, (int)r->_exclude);
+      TSDebug(PLUGIN_NAME, "found field match %s, exclude %d", r->_field, static_cast<int>(r->_exclude));
       allow_bg_fetch = !r->_exclude;
       break;
     }

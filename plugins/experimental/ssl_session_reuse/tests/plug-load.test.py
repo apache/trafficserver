@@ -20,49 +20,45 @@ Test a basic remap of a http connection
 '''
 
 pluginName = 'ats_ssl_plugin'
-path=os.path.abspath(".")
-configFile='./packages/rhel.6.5.package/conf/trafficserver/ats_ssl_session_reuse.xml'
+path = os.path.abspath(".")
+configFile = './packages/rhel.6.5.package/conf/trafficserver/ats_ssl_session_reuse.xml'
 
-# need Curl
-Test.SkipUnless(
-    Condition.HasProgram("curl","Curl need to be installed on system for this test to work")
-    )
-Test.ContinueOnFail=True
+Test.ContinueOnFail = True
 # Define default ATS
-ts=Test.MakeATSProcess("ts")
-server=Test.MakeOriginServer("server")
+ts = Test.MakeATSProcess("ts")
+server = Test.MakeOriginServer("server")
 
 Test.testName = ""
-request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-#expected response from the origin server
-response_header={"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+# expected response from the origin server
+response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
-#add response to the server dictionary
+# add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': '{0}'.format(pluginName),
-    })
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': '{0}'.format(pluginName),
+})
 
 ts.Disk.plugin_config.AddLine(
-    '# {1}/{0}.so {2}'.format(pluginName,path,configFile)
+    '# {1}/{0}.so {2}'.format(pluginName, path, configFile)
 )
 ts.Disk.remap_config.AddLine(
     'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
 )
 
-goldFile = os.path.join(Test.RunDirectory,"{0}.gold".format(pluginName))
-with open(goldFile,'w+') as jf:
-        jf.write("``loading plugin ``{0}.so``".format(pluginName))
+goldFile = os.path.join(Test.RunDirectory, "{0}.gold".format(pluginName))
+with open(goldFile, 'w+') as jf:
+    jf.write("``loading plugin ``{0}.so``".format(pluginName))
 
 # call localhost straight
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='curl --proxy 127.0.0.1:{0} "http://www.example.com" --verbose'.format(ts.Variables.port)
-tr.Processes.Default.ReturnCode=0
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = 'curl --proxy 127.0.0.1:{0} "http://www.example.com" --verbose'.format(ts.Variables.port)
+tr.Processes.Default.ReturnCode = 0
 # time delay as proxy.config.http.wait_for_cache could be broken
-tr.Processes.Default.StartBefore(server,ready=When.PortOpen(server.Variables.Port))
+tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.StillRunningAfter=server
+tr.StillRunningAfter = server
 
-#ts.Streams.All=goldFile
-#ts.Disk.diags_log.Content+=goldFile
+# ts.Streams.All=goldFile
+# ts.Disk.diags_log.Content+=goldFile

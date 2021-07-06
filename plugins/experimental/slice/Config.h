@@ -20,21 +20,54 @@
 
 #include "slice.h"
 
-#include <string>
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
+
+#include <mutex>
 
 // Data Structures and Classes
 struct Config {
-  static int64_t const blockbytesmin     = 1024 * 256;       // 256KB
-  static int64_t const blockbytesmax     = 1024 * 1024 * 32; // 32MB
-  static int64_t const blockbytesdefault = 1024 * 1024;      // 1MB
-
-  static constexpr char const *const blockbytesstr = "blockbytes";
-  static constexpr char const *const bytesoverstr  = "bytesover";
+  static constexpr int64_t const blockbytesmin     = 1024 * 256;        // 256KB
+  static constexpr int64_t const blockbytesmax     = 1024 * 1024 * 128; // 128MB
+  static constexpr int64_t const blockbytesdefault = 1024 * 1024;       // 1MB
 
   int64_t m_blockbytes{blockbytesdefault};
+  std::string m_remaphost; // remap host to use for loopback slice GET
+  std::string m_regexstr;  // regex string for things to slice (default all)
+  enum RegexType { None, Include, Exclude };
+  RegexType m_regex_type{None};
+  pcre *m_regex{nullptr};
+  pcre_extra *m_regex_extra{nullptr};
+  int m_paceerrsecs{0}; // -1 disable logging, 0 no pacing, max 60s
+  enum RefType { First, Relative };
+  RefType m_reftype{First}; // reference slice is relative to request
 
-  // Last one wins
-  bool fromArgs(int const argc, char const *const argv[], char *const errbuf, int const errbuf_size);
+  // Convert optarg to bytes
+  static int64_t bytesFrom(char const *const valstr);
 
-  static int64_t bytesFrom(std::string const &valstr);
+  // clean up pcre if applicable
+  ~Config();
+
+  // Parse from args, ast one wins
+  bool fromArgs(int const argc, char const *const argv[]);
+
+  // Check if the error should can be logged, if sucessful may update m_nexttime
+  bool canLogError();
+
+  // Check if regex supplied
+  bool
+  hasRegex() const
+  {
+    return None != m_regex_type;
+  }
+
+  // If no null reg, true, otherwise check against regex
+  bool matchesRegex(char const *const url, int const urllen) const;
+
+private:
+  TSHRTime m_nextlogtime{0}; // next time to log in ns
+  std::mutex m_mutex;
 };

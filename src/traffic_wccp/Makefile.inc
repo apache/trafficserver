@@ -35,7 +35,6 @@ traffic_wccp_traffic_wccp_SOURCES = \
 	traffic_wccp/wccp_client.cc
 
 traffic_wccp_traffic_wccp_LDADD = \
-	$(top_builddir)/lib/tsconfig/libtsconfig.la \
 	$(top_builddir)/src/wccp/libwccp.a \
 	$(top_builddir)/src/tscore/libtscore.la \
 	$(top_builddir)/src/tscpp/util/libtscpputil.la \

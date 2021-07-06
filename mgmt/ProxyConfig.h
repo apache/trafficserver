@@ -30,16 +30,6 @@
 
 class ProxyMutex;
 
-void *config_int_cb(void *data, void *value);
-void *config_long_long_cb(void *data, void *value);
-void *config_float_cb(void *data, void *value);
-void *config_string511_cb(void *data, void *value);
-void *config_string_alloc_cb(void *data, void *value);
-
-// Configuration file flags shared by proxy configuration and mgmt.
-static constexpr unsigned int CONFIG_FLAG_NONE        = 0;
-static constexpr unsigned int CONFIG_FLAG_UNVERSIONED = 1; // Don't version this config file
-
 //
 // Macros that spin waiting for the data to be bound
 //
@@ -72,7 +62,11 @@ public:
     ~scoped_config() { ClassType::release(ptr); }
     operator bool() const { return ptr != nullptr; }
     operator const ConfigType *() const { return ptr; }
-    const ConfigType *operator->() const { return ptr; }
+    const ConfigType *
+    operator->() const
+    {
+      return ptr;
+    }
 
   private:
     ConfigType *ptr;

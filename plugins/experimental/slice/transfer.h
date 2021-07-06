@@ -32,3 +32,6 @@ int64_t transfer_content_bytes(Data *const data); // , char const * const fstr);
 
 // transfer all bytes from the server (error condition)
 int64_t transfer_all_bytes(Data *const data);
+
+// Signal the input about write state
+void signal_input(TSVIO const input_vio, int64_t const consumed);

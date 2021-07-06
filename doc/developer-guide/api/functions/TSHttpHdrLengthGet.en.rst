@@ -24,7 +24,9 @@ TSHttpHdrLengthGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: int TSHttpHdrLengthGet(TSMBuffer bufp, TSMLoc mloc)
 

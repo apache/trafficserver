@@ -24,7 +24,9 @@ TSVConnCacheObjectSizeGet
 Synopsis
 ========
 
-`#include <ts/ts.h>`
+.. code-block:: cpp
+
+    #include <ts/ts.h>
 
 .. function:: int64_t TSVConnCacheObjectSizeGet(TSVConn connp)
 

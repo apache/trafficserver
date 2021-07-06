@@ -58,7 +58,7 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSVConnReenable.en.rst:34
 msgid ""
 "Reenable the SSL connection :arg:`svc`. If a plugin hook is called, ATS "
-"processing on that connnection will not resume until this is invoked for "
+"processing on that connection will not resume until this is invoked for "
 "that connection."
 msgstr ""
 

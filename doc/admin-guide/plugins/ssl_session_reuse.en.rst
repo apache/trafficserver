@@ -22,7 +22,7 @@
 SSL Session Reuse Plugin
 ************************
 
-This plugin coordinates session state data between ATS instances running in a group.  This should 
+This plugin coordinates session state data between ATS instances running in a group.  This should
 improve TLS session reuse (both ticket and ID based) for a set of machines fronted by some form of
 layer 4 connection load balancer.
 
@@ -31,36 +31,36 @@ How It Works
 
 The plugin coordinates TLS session reuse for both Session ID based resumption and ticket based resumption.
 For Session ID base resumption in uses the ATS SSL Session Cache for the local store of TLS sessions.  It uses
-Redis to communication new sessions with its peers.  When a new session is seen by an ATS instances it 
+Redis to communication new sessions with its peers.  When a new session is seen by an ATS instances it
 publishes an encrypted copy of the session state to the local Redis channel.  When a new session is received
 on the Redis channel, the plugin stores that session state into its local ATS SSL session cache.  Once the
-session state is in the local ATS SSL session cache it is avalible to the openssl library for future TLS 
+session state is in the local ATS SSL session cache it is available to the openssl library for future TLS
 handshakes.
 
 For the ticket based session resumption, the plugin implements logic to decide on a Session Ticket Encryption Key (STEK)
-master.  The master will periodically create a new STEK key and use the Redis channel to publish the new STEK key 
+master.  The master will periodically create a new STEK key and use the Redis channel to publish the new STEK key
 to the other ATS boxes in the group.  When the plugin starts up, it will publish a Redis message requesting the master to
 resend the STEK key.  The plugin uses the TSSslTicketKeyUpdate call to update ATS with the last two STEK's it has received.
 
 All communication over the Redis channel is encrypted with a preshared key.  All the ATS boxes participating in the session
-resuse must have access to that preshared key.
+reuse must have access to that preshared key.
 
 Building
 ========
 
-This plugin uses Redis for communication.  The hiredis client development library must be installed 
+This plugin uses Redis for communication.  The hiredis client development library must be installed
 for this plugin to build.  It can be installed in the standard system location or the install location
 can be specified by the --with-hiredis argument to configure.
 
-As part of the expermental plugs, the --enable-experimental-plugins option must also be given to configure
+As part of the experimental plugs, the --enable-experimental-plugins option must also be given to configure
 to build this plugin.
 
 Deploying
 =========
 
 The SSL Session Reuse plugin relies on Redis for communication.  To deploy build your own redis server or use a standard rpm
-package.  It must be installed on at least one box in the ATS group.  We have it installed on two boxes in a failover 
-scenario.  The SSL Session Resuse configuration file describes how to communicate with the redis servers.  
+package.  It must be installed on at least one box in the ATS group.  We have it installed on two boxes in a failover
+scenario.  The SSL Session Reuse configuration file describes how to communicate with the redis servers.
 
 * :ts:cv:`proxy.config.ssl.session_cache` should be set to 2 to enable the ATS implementation of session cache
 * :ts:cv:`proxy.config.ssl.session_cache.size` and :ts:cv:`proxy.config.ssl.session_cache.num_buckets` may need to be adjusted to ensure good hash table performance for your workload.  For example, we needed to increase the number of buckets to avoid long hash chains.
@@ -70,11 +70,11 @@ scenario.  The SSL Session Resuse configuration file describes how to communicat
 Config File
 ===========
 
-SSL Session Reuse is a global plugin.  Its configuration file is given as a argument to the plugin. 
+SSL Session Reuse is a global plugin.  Its configuration file is given as a argument to the plugin.
 
 * redis.RedisEndpoints - This is a comma separated list of Redis servers to connect to.  The description of the redis server may include a port
 * redis.RedisConnectTimeout - Timeout on the redis connect attempt in milliseconds.
-* redis.RedisRetryDelay - Timeout on retrying redis operations in miliseconds.
+* redis.RedisRetryDelay - Timeout on retrying redis operations in milliseconds.
 * pubconfig.PubNumWorkers - Number of worker threads.  Must be at least as many as the number of redis servers.
 * pubconfig.PubRedisPublishTries - Number of times to attempt publishing data
 * pubconfig.PubRedisConnectTries - Number of times to retry a redis connection attempt
@@ -91,4 +91,3 @@ Example Config File
 ===================
 
 .. literalinclude:: ../../../plugins/experimental/ssl_session_reuse/example_config.config
-

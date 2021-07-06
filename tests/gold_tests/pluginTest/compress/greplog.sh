@@ -20,4 +20,4 @@ grep --text \
  -e '^> Accept-Encoding:' \
  -e '^< Content-' \
  -e '^< Vary:' \
- -e '^$'
+ -e '^===$'

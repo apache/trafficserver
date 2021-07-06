@@ -1,6 +1,6 @@
 /** @file
  *
- *  Endian convertion routines
+ *  Endian conversion routines
  *
  *  @section license License
  *
@@ -22,6 +22,8 @@
  */
 
 #pragma once
+
+#include "tscore/ink_config.h"
 
 #ifdef HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
@@ -47,5 +49,25 @@ inline uint64_t
 htobe64(uint64_t x)
 {
   return OSSwapHostToBigInt64(x);
+}
+inline uint32_t
+be32toh(uint32_t x)
+{
+  return OSSwapBigToHostInt32(x);
+}
+inline uint32_t
+htobe32(uint32_t x)
+{
+  return OSSwapHostToBigInt32(x);
+}
+inline uint32_t
+le32toh(uint32_t x)
+{
+  return OSSwapLittleToHostInt32(x);
+}
+inline uint32_t
+htole32(uint32_t x)
+{
+  return OSSwapHostToLittleInt32(x);
 }
 #endif

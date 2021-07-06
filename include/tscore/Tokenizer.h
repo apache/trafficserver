@@ -43,26 +43,26 @@
  *
  *  There are three memory options.
  *     SHARE_TOKS - this modifies the original string passed in
- *          through Intialize() and shares its space.   NULLs
+ *          through Initialize() and shares its space.   NULLs
  *          are inserted into string after each token.  Choosing
- *          this option means the user is reponsible for not
+ *          this option means the user is responsible for not
  *          deallocating the string storage before deallocating
  *          the tokenizer object
- *     COPY_TOKS - this option copies the orginial string and
+ *     COPY_TOKS - this option copies the original string and
  *          leaves the original unchanged.  The deallocation of the
  *          original string and the deallocation of the Tokenizer
  *          object are now independent.
  *     Note: If neither SHARE_TOKS or COPY_TOKS is selected, COPY_TOKS
  *          is the default
  *     ALLOW_EMPTY_TOKENS: If multiple delimiters appear next to each
- *          other, each delimiter creates a token someof which
+ *          other, each delimiter creates a token some of which
  *          will be zero length.  The default is to skip repeated
  *          delimiters
  *
  *  Tokenizer(const char* StrOfDelimit) - a string that contains
  *     the delimiters for tokenizing.  This string is copied.
  *
- *  Intialize(char* str, TokenizerOpts opt) - Submits a string
+ *  Initialize(char* str, TokenizerOpts opt) - Submits a string
  *     to be tokenized according to the memory options listed above
  *
  *  ReUse() - Allows the object to be reused for a new string
@@ -76,7 +76,7 @@
  *     is intended to be used on a small number of tokens
  *
  *  iterFirst(tok_iter_state* state) - Returns the first
- *     token and intializes state argument for subsequent
+ *     token and initializes state argument for subsequent
  *     calls to iterNext.  If no tokens exist, NULL is
  *     returned
  *
@@ -143,7 +143,7 @@ public:
   };
 
   unsigned count() const;
-  void Print(); // Debugging print out
+  void Print() const;
 
   inkcoreapi const char *iterFirst(tok_iter_state *state);
   inkcoreapi const char *iterNext(tok_iter_state *state);

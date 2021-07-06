@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Information about remap plugin libraries.
 
   @section license License
 
@@ -19,108 +19,269 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
  */
+
+#include <unistd.h>
 
 #include "RemapPluginInfo.h"
 #include "tscore/ink_string.h"
 #include "tscore/ink_memory.h"
+#include "tscore/ink_apidefs.h"
 
-remap_plugin_info::remap_plugin_info(char *_path)
-  : next(nullptr),
-    path(nullptr),
-    path_size(0),
-    dlh(nullptr),
-    fp_tsremap_init(nullptr),
-    fp_tsremap_config_reload(nullptr),
-    fp_tsremap_done(nullptr),
-    fp_tsremap_new_instance(nullptr),
-    fp_tsremap_delete_instance(nullptr),
-    fp_tsremap_do_remap(nullptr),
-    fp_tsremap_os_response(nullptr)
+#include "RemapPluginInfo.h"
+#ifdef PLUGIN_DSO_TESTS
+#include "unit-tests/plugin_testing_common.h"
+#else
+#include "tscore/Diags.h"
+#define PluginDebug Debug
+#define PluginError Error
+#endif
+
+/**
+ * @brief helper function that returns the function address from the plugin DSO
+ *
+ * There can be valid defined DSO symbols that are NULL
+ * but when it comes to functions we can assume that
+ * if not defined we can return nullptr and a valid address if the are defined.
+ * @param symbol function symbol name
+ * @param error error messages in case of symbol is not found
+ * @return function address or nullptr if not found.
+ */
+template <class T>
+T *
+RemapPluginInfo::getFunctionSymbol(const char *symbol)
 {
-  // coverity did not see ats_free
-  // coverity[ctor_dtor_leak]
-  if (_path && likely((path = ats_strdup(_path)) != nullptr)) {
-    path_size = strlen(path);
+  std::string error; /* ignore the error, return nullptr if symbol not defined */
+  void *address = nullptr;
+  if (getSymbol(symbol, address, error)) {
+    PluginDebug(_tag, "plugin '%s' found symbol '%s'", _configPath.c_str(), symbol);
+  }
+  return reinterpret_cast<T *>(address);
+}
+
+std::string
+RemapPluginInfo::missingRequiredSymbolError(const std::string &pluginName, const char *required, const char *requiring)
+{
+  std::string error;
+  error.assign("plugin ").append(pluginName).append(" missing required function ").append(required);
+  if (requiring) {
+    error.append(" if ").append(requiring).append(" is defined");
+  }
+  return error;
+}
+
+RemapPluginInfo::RemapPluginInfo(const fs::path &configPath, const fs::path &effectivePath, const fs::path &runtimePath)
+  : PluginDso(configPath, effectivePath, runtimePath)
+{
+}
+
+bool
+RemapPluginInfo::load(std::string &error)
+{
+  error.clear();
+
+  if (!PluginDso::load(error)) {
+    return false;
+  }
+
+  init_cb               = getFunctionSymbol<Init_F>(TSREMAP_FUNCNAME_INIT);
+  pre_config_reload_cb  = getFunctionSymbol<PreReload_F>(TSREMAP_FUNCNAME_PRE_CONFIG_RELOAD);
+  post_config_reload_cb = getFunctionSymbol<PostReload_F>(TSREMAP_FUNCNAME_POST_CONFIG_RELOAD);
+  done_cb               = getFunctionSymbol<Done_F>(TSREMAP_FUNCNAME_DONE);
+  new_instance_cb       = getFunctionSymbol<New_Instance_F>(TSREMAP_FUNCNAME_NEW_INSTANCE);
+  delete_instance_cb    = getFunctionSymbol<Delete_Instance_F>(TSREMAP_FUNCNAME_DELETE_INSTANCE);
+  do_remap_cb           = getFunctionSymbol<Do_Remap_F>(TSREMAP_FUNCNAME_DO_REMAP);
+  os_response_cb        = getFunctionSymbol<OS_Response_F>(TSREMAP_FUNCNAME_OS_RESPONSE);
+
+  /* Validate if the callback TSREMAP functions are specified correctly in the plugin. */
+  bool valid = true;
+  if (!init_cb) {
+    error = missingRequiredSymbolError(_configPath.string(), TSREMAP_FUNCNAME_INIT);
+    valid = false;
+  } else if (!do_remap_cb) {
+    error = missingRequiredSymbolError(_configPath.string(), TSREMAP_FUNCNAME_DO_REMAP);
+    valid = false;
+  } else if (!new_instance_cb && delete_instance_cb) {
+    error = missingRequiredSymbolError(_configPath.string(), TSREMAP_FUNCNAME_NEW_INSTANCE, TSREMAP_FUNCNAME_DELETE_INSTANCE);
+    valid = false;
+  } else if (new_instance_cb && !delete_instance_cb) {
+    error = missingRequiredSymbolError(_configPath.string(), TSREMAP_FUNCNAME_DELETE_INSTANCE, TSREMAP_FUNCNAME_NEW_INSTANCE);
+    valid = false;
+  }
+
+  if (valid) {
+    PluginDebug(_tag, "plugin '%s' callbacks validated", _configPath.c_str());
+  } else {
+    PluginError("plugin '%s' callbacks validation failed: %s", _configPath.c_str(), error.c_str());
+  }
+  return valid;
+}
+
+/* Initialize plugin (required). */
+bool
+RemapPluginInfo::init(std::string &error)
+{
+  TSRemapInterface ri;
+  bool result = true;
+
+  PluginDebug(_tag, "started initializing plugin '%s'", _configPath.c_str());
+
+  /* A buffer to get the error from the plugin instance init function, be defensive here. */
+  char tmpbuf[2048];
+  ink_zero(tmpbuf);
+
+  ink_zero(ri);
+  ri.size            = sizeof(ri);
+  ri.tsremap_version = TSREMAP_VERSION;
+
+  setPluginContext();
+
+  if (init_cb && init_cb(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
+    error.assign("failed to initialize plugin ")
+      .append(_configPath.string())
+      .append(": ")
+      .append(tmpbuf[0] ? tmpbuf : "Unknown plugin error");
+    result = false;
+  }
+
+  resetPluginContext();
+
+  PluginDebug(_tag, "finished initializing plugin '%s'", _configPath.c_str());
+
+  return result;
+}
+
+/* Called when plugin is unloaded (optional). */
+void
+RemapPluginInfo::done()
+{
+  if (done_cb) {
+    done_cb();
   }
 }
 
-remap_plugin_info::~remap_plugin_info()
+bool
+RemapPluginInfo::initInstance(int argc, char **argv, void **ih, std::string &error)
 {
-  ats_free(path);
-  if (dlh) {
-    dlclose(dlh);
-  }
-}
+  TSReturnCode res = TS_SUCCESS;
+  bool result      = true;
 
-//
-// Find a plugin by path from our linked list
-//
-remap_plugin_info *
-remap_plugin_info::find_by_path(char *_path)
-{
-  int _path_size        = 0;
-  remap_plugin_info *pi = nullptr;
+  PluginDebug(_tag, "started initializing instance of plugin '%s'", _configPath.c_str());
 
-  if (likely(_path && (_path_size = strlen(_path)) > 0)) {
-    for (pi = this; pi; pi = pi->next) {
-      if (pi->path && pi->path_size == _path_size && !strcmp(pi->path, _path)) {
-        break;
-      }
+  /* A buffer to get the error from the plugin instance init function, be defensive here. */
+  char tmpbuf[2048];
+  ink_zero(tmpbuf);
+
+  if (new_instance_cb) {
+#if defined(freebsd) || defined(darwin)
+    optreset = 1;
+#endif
+#if defined(__GLIBC__)
+    optind = 0;
+#else
+    optind = 1;
+#endif
+    opterr = 0;
+    optarg = nullptr;
+
+    setPluginContext();
+
+    res = new_instance_cb(argc, argv, ih, tmpbuf, sizeof(tmpbuf) - 1);
+
+    resetPluginContext();
+
+    if (TS_SUCCESS != res) {
+      error.assign("failed to create instance for plugin ")
+        .append(_configPath.string())
+        .append(": ")
+        .append(tmpbuf[0] ? tmpbuf : "Unknown plugin error");
+      result = false;
     }
   }
 
-  return pi;
+  PluginDebug(_tag, "finished initializing instance of plugin '%s'", _configPath.c_str());
+
+  return result;
 }
 
-//
-// Add a plugin to the linked list
-//
 void
-remap_plugin_info::add_to_list(remap_plugin_info *pi)
+RemapPluginInfo::doneInstance(void *ih)
 {
-  remap_plugin_info *p = this;
+  setPluginContext();
 
-  if (likely(pi)) {
-    while (p->next) {
-      p = p->next;
-    }
-
-    p->next  = pi;
-    pi->next = nullptr;
+  if (delete_instance_cb) {
+    delete_instance_cb(ih);
   }
+
+  resetPluginContext();
 }
 
-//
-// Remove and delete all plugins from a list, including ourselves.
-//
-void
-remap_plugin_info::delete_my_list()
+TSRemapStatus
+RemapPluginInfo::doRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  remap_plugin_info *p = this->next;
+  TSRemapStatus result = TSREMAP_NO_REMAP;
 
-  while (p) {
-    remap_plugin_info *tmp = p;
+  setPluginContext();
 
-    p = p->next;
-    delete tmp;
+  if (do_remap_cb) {
+    result = do_remap_cb(ih, rh, rri);
   }
 
-  delete this;
+  resetPluginContext();
+
+  return result;
 }
 
-//
-// Tell all plugins (that so wish) that remap.config is being reloaded
-//
 void
-remap_plugin_info::indicate_reload()
+RemapPluginInfo::osResponse(void *ih, TSHttpTxn rh, int os_response_type)
 {
-  remap_plugin_info *p = this;
+  setPluginContext();
 
-  while (p) {
-    if (p->fp_tsremap_config_reload) {
-      p->fp_tsremap_config_reload();
-    }
-    p = p->next;
+  if (os_response_cb) {
+    os_response_cb(ih, rh, os_response_type);
   }
+
+  resetPluginContext();
+}
+
+RemapPluginInfo::~RemapPluginInfo() {}
+
+void
+RemapPluginInfo::indicatePreReload()
+{
+  setPluginContext();
+
+  if (pre_config_reload_cb) {
+    pre_config_reload_cb();
+  }
+
+  resetPluginContext();
+}
+
+void
+RemapPluginInfo::indicatePostReload(TSRemapReloadStatus reloadStatus)
+{
+  setPluginContext();
+
+  if (post_config_reload_cb) {
+    post_config_reload_cb(reloadStatus);
+  }
+
+  resetPluginContext();
+}
+
+inline void
+RemapPluginInfo::setPluginContext()
+{
+  _tempContext        = pluginThreadContext;
+  pluginThreadContext = this;
+  PluginDebug(_tag, "change plugin context from dso-addr:%p to dso-addr:%p", pluginThreadContext, _tempContext);
+}
+
+inline void
+RemapPluginInfo::resetPluginContext()
+{
+  PluginDebug(_tag, "change plugin context from dso-addr:%p to dso-addr:%p (restore)", this, pluginThreadContext);
+  pluginThreadContext = _tempContext;
 }

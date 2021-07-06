@@ -26,7 +26,7 @@
    NetVCTest.cc
 
    Description:
-       Unit test for infastructure for VConnections implementing the
+       Unit test for infrastructure for VConnections implementing the
          NetVConnection interface
 
 
@@ -67,7 +67,7 @@ NVC_test_def netvc_tests_def[] = {
   {"itimeout", 6000, 8000, 10, 10, 512, 10, VC_EVENT_READ_COMPLETE, VC_EVENT_INACTIVITY_TIMEOUT},
   {"itimeout", 10, 10, 6000, 8000, 512, 20, VC_EVENT_EOS, VC_EVENT_WRITE_COMPLETE},
 
-  // Test the small transfer code one byts at a time
+  // Test the small transfer code one byte at a time
   {"smallt", 400, 400, 500, 500, 1, 15, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE},
   {"smallt", 500, 500, 400, 400, 1, 15, VC_EVENT_READ_COMPLETE, VC_EVENT_WRITE_COMPLETE},
 
@@ -80,37 +80,7 @@ NVC_test_def netvc_tests_def[] = {
 };
 const unsigned num_netvc_tests = countof(netvc_tests_def);
 
-NetVCTest::NetVCTest()
-  : Continuation(nullptr),
-    test_cont_type(NET_VC_TEST_ACTIVE),
-    test_vc(nullptr),
-    regress(nullptr),
-    driver(nullptr),
-    read_vio(nullptr),
-    write_vio(nullptr),
-    read_buffer(nullptr),
-    write_buffer(nullptr),
-    reader_for_rbuf(nullptr),
-    reader_for_wbuf(nullptr),
-    write_bytes_to_add_per(0),
-    timeout(0),
-    actual_bytes_read(0),
-    actual_bytes_sent(0),
-    write_done(false),
-    read_done(false),
-    read_seed(0),
-    write_seed(0),
-    bytes_to_send(0),
-    bytes_to_read(0),
-    nbytes_read(0),
-    nbytes_write(0),
-    expected_read_term(0),
-    expected_write_term(0),
-    test_name(nullptr),
-    module_name(nullptr),
-    debug_tag(nullptr)
-{
-}
+NetVCTest::NetVCTest() : Continuation(nullptr) {}
 
 NetVCTest::~NetVCTest()
 {
@@ -168,8 +138,8 @@ NetVCTest::start_test()
   test_vc->set_inactivity_timeout(HRTIME_SECONDS(timeout));
   test_vc->set_active_timeout(HRTIME_SECONDS(timeout + 5));
 
-  read_buffer  = new_MIOBuffer();
-  write_buffer = new_MIOBuffer();
+  read_buffer  = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  write_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
 
   reader_for_rbuf = read_buffer->alloc_reader();
   reader_for_wbuf = write_buffer->alloc_reader();
@@ -190,7 +160,7 @@ NetVCTest::start_test()
 int
 NetVCTest::fill_buffer(MIOBuffer *buf, uint8_t *seed, int bytes)
 {
-  char *space = (char *)ats_malloc(bytes);
+  char *space = static_cast<char *>(ats_malloc(bytes));
   char *tmp   = space;
   int to_add  = bytes;
 
@@ -220,7 +190,7 @@ NetVCTest::consume_and_check_bytes(IOBufferReader *r, uint8_t *seed)
   while (r->read_avail() > 0) {
     int64_t b_avail = r->block_read_avail();
 
-    tmp        = (uint8_t *)r->start();
+    tmp        = reinterpret_cast<uint8_t *>(r->start());
     end        = tmp + b_avail;
     b_consumed = 0;
 
@@ -379,7 +349,7 @@ int
 NetVCTest::main_handler(int event, void *data)
 {
   if (event == NET_EVENT_ACCEPT) {
-    test_vc = (NetVConnection *)data;
+    test_vc = static_cast<NetVConnection *>(data);
     start_test();
     return 0;
   }
@@ -395,6 +365,6 @@ NetVCTest::main_handler(int event, void *data)
   return 0;
 }
 
-NetTestDriver::NetTestDriver() : Continuation(nullptr), errors(0), r(nullptr), pstatus(nullptr) {}
+NetTestDriver::NetTestDriver() : Continuation(nullptr) {}
 
 NetTestDriver::~NetTestDriver() {}

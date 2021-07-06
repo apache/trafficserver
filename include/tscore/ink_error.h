@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_apidefs.h"
 

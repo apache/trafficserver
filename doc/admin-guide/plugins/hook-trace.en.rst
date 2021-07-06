@@ -30,7 +30,7 @@ The plugin begins by adding a global hook on each of the hooks it
 is interested in. Next, in the event handler, we simply cast the
 event data pointer to the expected type.
 
-Hook events can be shown in the |TS| diagnosic log by using the
+Hook events can be shown in the |TS| diagnostic log by using the
 ``hook-trace`` diagnostic tag::
 
     $ traffic_server -T hook-trace

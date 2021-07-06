@@ -28,9 +28,9 @@
 #include <algorithm>
 
 template <typename T> struct PriorityQueueEntry {
-  PriorityQueueEntry(T n) : index(0), node(n){};
-  PriorityQueueEntry() : index(0), node(NULL){};
-  uint32_t index;
+  PriorityQueueEntry(T n) : node(n){};
+  PriorityQueueEntry() : node(NULL){};
+  uint32_t index = 0;
   T node;
 };
 

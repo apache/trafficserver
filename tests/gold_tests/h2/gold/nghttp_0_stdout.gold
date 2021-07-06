@@ -1,0 +1,16 @@
+``
+[``] send HEADERS frame <length=``, flags=0x04, stream_id=1>
+``
+``trailer: foo
+``
+[``] send DATA frame <length=``, flags=0x00, stream_id=1>
+``
+[``] send HEADERS frame <length=8, flags=0x05, stream_id=1>
+``; END_STREAM | END_HEADERS
+``
+``foo: bar
+``
+[``] recv (stream_id=1) :status: 200
+``
+``; END_STREAM
+``

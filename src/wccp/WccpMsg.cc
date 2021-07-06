@@ -1796,7 +1796,7 @@ ISeeYouMsg::parse(ts::Buffer const &buffer)
   // Optional components.
 
   // Test for alternates here
-  // At most one of the asssignments but never both.
+  // At most one of the assignments but never both.
   // Can be omitted.
   m_assignment.parse(m_buffer);
   m_map.parse(m_buffer);

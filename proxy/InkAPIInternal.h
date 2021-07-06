@@ -31,6 +31,7 @@
 #include "ProxyConfig.h"
 #include "P_Cache.h"
 #include "I_Tasks.h"
+#include "Plugin.h"
 
 #include "ts/InkAPIPrivateIOCore.h"
 #include "ts/experimental.h"
@@ -39,8 +40,6 @@
 
 /* Some defines that might be candidates for configurable settings later.
  */
-#define TS_HTTP_MAX_USER_ARG 16 /* max number of user arguments for Transactions and Sessions */
-
 typedef int8_t TSMgmtByte; // Not for external use
 
 /* ****** Cache Structure ********* */
@@ -53,20 +52,13 @@ enum CacheInfoMagic {
 
 struct CacheInfo {
   CryptoHash cache_key;
-  CacheFragType frag_type;
-  char *hostname;
-  int len;
-  time_t pin_in_cache;
-  CacheInfoMagic magic;
+  CacheFragType frag_type = CACHE_FRAG_TYPE_NONE;
+  char *hostname          = nullptr;
+  int len                 = 0;
+  time_t pin_in_cache     = 0;
+  CacheInfoMagic magic    = CACHE_INFO_MAGIC_ALIVE;
 
-  CacheInfo()
-  {
-    frag_type    = CACHE_FRAG_TYPE_NONE;
-    hostname     = nullptr;
-    len          = 0;
-    pin_in_cache = 0;
-    magic        = CACHE_INFO_MAGIC_ALIVE;
-  }
+  CacheInfo() {}
 };
 
 class FileImpl
@@ -121,8 +113,9 @@ class APIHook
 {
 public:
   INKContInternal *m_cont;
-  int invoke(int event, void *edata);
+  int invoke(int event, void *edata) const;
   APIHook *next() const;
+  APIHook *prev() const;
   LINK(APIHook, m_link);
 };
 
@@ -130,10 +123,12 @@ public:
 class APIHooks
 {
 public:
-  void prepend(INKContInternal *cont);
   void append(INKContInternal *cont);
-  APIHook *get() const;
+  /// Get the first hook.
+  APIHook *head() const;
+  /// Remove all hooks.
   void clear();
+  /// Check if there are no hooks.
   bool is_empty() const;
 
 private:
@@ -156,7 +151,7 @@ APIHooks::is_empty() const
     maximum hook ID so the valid ids are 0..(N-1) in the standard C array style.
  */
 template <typename ID, ///< Type of hook ID
-          ID N         ///< Number of hooks
+          int N        ///< Number of hooks
           >
 class FeatureAPIHooks
 {
@@ -166,8 +161,6 @@ public:
 
   /// Remove all hooks.
   void clear();
-  /// Add the hook @a cont to the front of the hooks for @a id.
-  void prepend(ID id, INKContInternal *cont);
   /// Add the hook @a cont to the end of the hooks for @a id.
   void append(ID id, INKContInternal *cont);
   /// Get the list of hooks for @a id.
@@ -188,57 +181,57 @@ public:
   /// @return @c true if any hooks of type @a id are present.
   bool has_hooks_for(ID id) const;
 
+  /// Get a pointer to the set of hooks for a specific hook @id
+  APIHooks const *operator[](ID id) const;
+
 private:
-  bool hooks_p; ///< Flag for (not) empty container.
+  bool m_hooks_p = false; ///< Flag for (not) empty container.
   /// The array of hooks lists.
   APIHooks m_hooks[N];
 };
 
-template <typename ID, ID N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() : hooks_p(false) {}
+template <typename ID, int N> FeatureAPIHooks<ID, N>::FeatureAPIHooks() {}
 
-template <typename ID, ID N> FeatureAPIHooks<ID, N>::~FeatureAPIHooks()
+template <typename ID, int N> FeatureAPIHooks<ID, N>::~FeatureAPIHooks()
 {
   this->clear();
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::clear()
 {
-  for (int i = 0; i < N; ++i) {
-    m_hooks[i].clear();
+  for (auto &h : m_hooks) {
+    h.clear();
   }
-  hooks_p = false;
+  m_hooks_p = false;
 }
 
-template <typename ID, ID N>
-void
-FeatureAPIHooks<ID, N>::prepend(ID id, INKContInternal *cont)
-{
-  if (likely(is_valid(id))) {
-    hooks_p = true;
-    m_hooks[id].prepend(cont);
-  }
-}
-
-template <typename ID, ID N>
+template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::append(ID id, INKContInternal *cont)
 {
-  if (likely(is_valid(id))) {
-    hooks_p = true;
+  if (is_valid(id)) {
+    m_hooks_p = true;
     m_hooks[id].append(cont);
   }
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 APIHook *
 FeatureAPIHooks<ID, N>::get(ID id) const
 {
-  return likely(is_valid(id)) ? m_hooks[id].get() : nullptr;
+  return likely(is_valid(id)) ? m_hooks[id].head() : nullptr;
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
+APIHooks const *
+FeatureAPIHooks<ID, N>::operator[](ID id) const
+{
+  return likely(is_valid(id)) ? &(m_hooks[id]) : nullptr;
+}
+
+template <typename ID, int N>
 void
 FeatureAPIHooks<ID, N>::invoke(ID id, int event, void *data)
 {
@@ -247,14 +240,14 @@ FeatureAPIHooks<ID, N>::invoke(ID id, int event, void *data)
   }
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 bool
 FeatureAPIHooks<ID, N>::has_hooks() const
 {
-  return hooks_p;
+  return m_hooks_p;
 }
 
-template <typename ID, ID N>
+template <typename ID, int N>
 bool
 FeatureAPIHooks<ID, N>::is_valid(ID id)
 {
@@ -265,21 +258,26 @@ class HttpAPIHooks : public FeatureAPIHooks<TSHttpHookID, TS_HTTP_LAST_HOOK>
 {
 };
 
-typedef enum {
-  TS_SSL_INTERNAL_FIRST_HOOK,
-  TS_VCONN_START_INTERNAL_HOOK = TS_SSL_INTERNAL_FIRST_HOOK,
-  TS_VCONN_CLOSE_INTERNAL_HOOK,
-  TS_SSL_CERT_INTERNAL_HOOK,
-  TS_SSL_SERVERNAME_INTERNAL_HOOK,
-  TS_SSL_VERIFY_SERVER_INTERNAL_HOOK,
-  TS_SSL_VERIFY_CLIENT_INTERNAL_HOOK,
-  TS_SSL_SESSION_INTERNAL_HOOK,
-  TS_VCONN_OUTBOUND_START_INTERNAL_HOOK,
-  TS_VCONN_OUTBOUND_CLOSE_INTERNAL_HOOK,
-  TS_SSL_INTERNAL_LAST_HOOK
-} TSSslHookInternalID;
+class TSSslHookInternalID
+{
+public:
+  explicit constexpr TSSslHookInternalID(TSHttpHookID id) : _id(id - TS_SSL_FIRST_HOOK) {}
 
-class SslAPIHooks : public FeatureAPIHooks<TSSslHookInternalID, TS_SSL_INTERNAL_LAST_HOOK>
+  constexpr operator int() const { return _id; }
+
+  static const int NUM = TS_SSL_LAST_HOOK - TS_SSL_FIRST_HOOK + 1;
+
+  constexpr bool
+  is_in_bounds() const
+  {
+    return (_id >= 0) && (_id < NUM);
+  }
+
+private:
+  const int _id;
+};
+
+class SslAPIHooks : public FeatureAPIHooks<TSSslHookInternalID, TSSslHookInternalID::NUM>
 {
 };
 
@@ -290,7 +288,7 @@ class LifecycleAPIHooks : public FeatureAPIHooks<TSLifecycleHookID, TS_LIFECYCLE
 class ConfigUpdateCallback : public Continuation
 {
 public:
-  ConfigUpdateCallback(INKContInternal *contp) : Continuation(contp->mutex.get()), m_cont(contp)
+  explicit ConfigUpdateCallback(INKContInternal *contp) : Continuation(contp->mutex.get()), m_cont(contp)
   {
     SET_HANDLER(&ConfigUpdateCallback::event_handler);
   }
@@ -331,6 +329,60 @@ public:
 private:
   std::unordered_map<std::string, INKContInternal *> cb_table;
 };
+
+class HttpHookState
+{
+public:
+  /// Scope tags for interacting with a live instance.
+  enum ScopeTag { GLOBAL, SSN, TXN };
+
+  /// Default Constructor
+  HttpHookState();
+
+  /// Initialize the hook state to track up to 3 sources of hooks.
+  /// The argument order to this method is used to break priority ties (callbacks from earlier args are invoked earlier)
+  /// The order in terms of @a ScopeTag is GLOBAL, SESSION, TRANSACTION.
+  void init(TSHttpHookID id, HttpAPIHooks const *global, HttpAPIHooks const *ssn = nullptr, HttpAPIHooks const *txn = nullptr);
+
+  /// Select a hook for invocation and advance the state to the next valid hook
+  /// @return nullptr if no current hook.
+  APIHook const *getNext();
+
+  /// Get the hook ID
+  TSHttpHookID id() const;
+
+  /// Temporary function to return true. Later will be used to decide if a plugin is enabled for the hooks
+  bool is_enabled();
+
+protected:
+  /// Track the state of one scope of hooks.
+  struct Scope {
+    APIHook const *_c;      ///< Current hook (candidate for invocation).
+    APIHook const *_p;      ///< Previous hook (already invoked).
+    APIHooks const *_hooks; ///< Reference to the real hook list
+
+    /// Initialize the scope.
+    void init(HttpAPIHooks const *scope, TSHttpHookID id);
+    /// Clear the scope.
+    void clear();
+    /// Return the current candidate.
+    APIHook const *candidate();
+    /// Advance state to the next hook.
+    void operator++();
+  };
+
+private:
+  TSHttpHookID _id;
+  Scope _global; ///< Chain from global hooks.
+  Scope _ssn;    ///< Chain from session hooks.
+  Scope _txn;    ///< Chain from transaction hooks.
+};
+
+inline TSHttpHookID
+HttpHookState::id() const
+{
+  return _id;
+}
 
 void api_init();
 
