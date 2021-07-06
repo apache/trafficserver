@@ -356,12 +356,12 @@ done:
 static int
 ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
-  Debug("ssl", "Callback: verify client cert");
+  Debug("ssl_verify", "Callback: verify client cert");
   auto *ssl                = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   if (!netvc || netvc->ssl != ssl) {
-    Debug("ssl.error", "ssl_verify_client_callback call back on stale netvc");
+    Debug("ssl_verify", "ssl_verify_client_callback call back on stale netvc");
     return false;
   }
 

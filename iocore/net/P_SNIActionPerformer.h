@@ -77,12 +77,15 @@ public:
   int
   SNIAction(TLSSNISupport *snis, const Context &ctx) const override
   {
-    auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
+    auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
+    const char *servername = ssl_vc->get_server_name();
     if (ssl_vc) {
       if (!enable_h2) {
         ssl_vc->disableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
+        Debug("ssl_sni", "H2 disabled, fqdn [%s]", servername);
       } else {
         ssl_vc->enableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
+        Debug("ssl_sni", "H2 enabled, fqdn [%s]", servername);
       }
     }
     return SSL_TLSEXT_ERR_OK;
@@ -107,14 +110,16 @@ public:
   {
     // Set the netvc option?
     SSLNetVConnection *ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
+    const char *servername       = ssl_netvc->get_server_name();
     if (ssl_netvc) {
       // If needed, we will try to amend the tunnel destination.
       if (ctx._fqdn_wildcard_captured_groups && need_fix) {
         const auto &fixed_dst = replace_match_groups(destination, *ctx._fqdn_wildcard_captured_groups);
         ssl_netvc->set_tunnel_destination(fixed_dst, type);
-        Debug("TunnelDestination", "Destination now is [%s], configured [%s]", fixed_dst.c_str(), destination.c_str());
+        Debug("ssl_sni", "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
       } else {
         ssl_netvc->set_tunnel_destination(destination, type);
+        Debug("ssl_sni", "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
       }
 
       if (type == SNIRoutingType::BLIND) {
@@ -212,17 +217,20 @@ public:
   VerifyClient(uint8_t param, std::string_view file, std::string_view dir) : mode(param), ca_file(file), ca_dir(dir) {}
   VerifyClient(const char *param, std::string_view file, std::string_view dir) : VerifyClient(atoi(param), file, dir) {}
   ~VerifyClient() override;
+
   int
   SNIAction(TLSSNISupport *snis, const Context &ctx) const override
   {
-    auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
-    Debug("ssl_sni", "action verify param %d", this->mode);
+    auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
+    const char *servername = ssl_vc->get_server_name();
+    Debug("ssl_sni", "action verify param %d, fqdn [%s]", this->mode, servername);
     setClientCertLevel(ssl_vc->ssl, this->mode);
     ssl_vc->set_ca_cert_file(ca_file, ca_dir);
     setClientCertCACerts(ssl_vc->ssl, ssl_vc->get_ca_cert_file(), ssl_vc->get_ca_cert_dir());
 
     return SSL_TLSEXT_ERR_OK;
   }
+
   bool
   TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &policy) const override
   {
@@ -243,12 +251,14 @@ public:
   HostSniPolicy(const char *param) : policy(atoi(param)) {}
   HostSniPolicy(uint8_t param) : policy(param) {}
   ~HostSniPolicy() override {}
+
   int
   SNIAction(TLSSNISupport *snis, const Context &ctx) const override
   {
     // On action this doesn't do anything
     return SSL_TLSEXT_ERR_OK;
   }
+
   bool
   TestClientSNIAction(const char *servername, const IpEndpoint &ep, int &in_policy) const override
   {
@@ -272,12 +282,14 @@ public:
 #endif
   TLSValidProtocols() : protocol_mask(max_mask) {}
   TLSValidProtocols(unsigned long protocols) : unset(false), protocol_mask(protocols) {}
+
   int
   SNIAction(TLSSNISupport *snis, const Context & /* ctx */) const override
   {
     if (!unset) {
-      auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
-      Debug("ssl_sni", "TLSValidProtocol param 0%x", static_cast<unsigned int>(this->protocol_mask));
+      auto ssl_vc            = dynamic_cast<SSLNetVConnection *>(snis);
+      const char *servername = ssl_vc->get_server_name();
+      Debug("ssl_sni", "TLSValidProtocol param 0%x, fqdn [%s]", static_cast<unsigned int>(this->protocol_mask), servername);
       ssl_vc->set_valid_tls_protocols(protocol_mask, TLSValidProtocols::max_mask);
     }
 
@@ -333,6 +345,7 @@ public:
       return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
   }
+
   bool
   TestClientSNIAction(const char *servrername, const IpEndpoint &ep, int &policy) const override
   {

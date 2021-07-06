@@ -45,7 +45,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   int err;
   SSL *ssl;
 
-  SSLDebug("Entered verify cb");
+  Debug("ssl_verify", "Entered cert verify callback");
 
   /*
    * Retrieve the pointer to the SSL of the connection currently treated
@@ -57,7 +57,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   // No enforcing, go away
   if (netvc == nullptr) {
     // No netvc, very bad.  Go away.  Things are not good.
-    SSLDebug("WARN, Netvc gone by in verify_callback");
+    Debug("ssl_verify", "WARNING, NetVC is NULL in cert verify callback");
     return false;
   } else if (netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
     return true; // Tell them that all is well
@@ -73,7 +73,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
 
   if (check_sig) {
     if (!signature_ok) {
-      SSLDebug("verify error:num=%d:%s:depth=%d", err, X509_verify_cert_error_string(err), depth);
+      Debug("ssl_verify", "verification error:num=%d:%s:depth=%d", err, X509_verify_cert_error_string(err), depth);
       const char *sni_name;
       char buff[INET6_ADDRSTRLEN];
       ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
@@ -108,7 +108,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
       ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
     }
     if (validate_hostname(cert, sni_name, false, &matched_name)) {
-      SSLDebug("Hostname %s verified OK, matched %s", netvc->options.sni_servername.get(), matched_name);
+      Debug("ssl_verify", "Hostname %s verified OK, matched %s", sni_name, matched_name);
       ats_free(matched_name);
     } else { // Name validation failed
       // Get the server address if we did't already compute it
@@ -152,6 +152,7 @@ ssl_client_cert_callback(SSL *ssl, void * /*arg*/)
     // both are internal pointers
     X509 *cert = SSL_CTX_get0_certificate(ctx);
     netvc->set_sent_cert(cert != nullptr ? 2 : 1);
+    Debug("ssl_verify", "sent cert: %d", cert != nullptr ? 2 : 1);
   }
   return 1;
 }
