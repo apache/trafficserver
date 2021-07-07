@@ -482,6 +482,10 @@ Http2ClientSession::state_aborted(int event, void *edata)
 
     break;
   }
+  case HTTP2_SESSION_EVENT_GRACEFUL_SHUTDOWN: {
+    _graceful_shutdown_event = nullptr;
+    [[fallthrough]];
+  }
   case VC_EVENT_READ_READY:
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_WRITE_READY:
