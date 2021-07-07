@@ -13,7 +13,7 @@
 
 .. include:: ../../common.defs
 
-.. |RPC| replace:: ``JSONRPC 2.0``
+.. |RPC| replace:: JSONRPC 2.0
 
 .. _JSONRPC: https://www.jsonrpc.org/specification
 .. _JSON: https://www.json.org/json-en.html
@@ -21,8 +21,8 @@
 
 .. _jsonrpc_development:
 
-JSONRPC handler implementation
-******************************
+Handler implementation
+**********************
 
 Use this section as a guide for developing new rpc methods inside |TS| and how to expose them through the |RPC| endpoint.
 Before we start, it is worth mentioning some of the architecture of the current implementation. The whole RPC mechanism is divided in
@@ -36,7 +36,7 @@ This class is the entrance point for both, server calls and registered functions
 .. figure:: ../../uml/images/JsonRPCManager.svg
 
 Dispatcher class
-^^^^^^^^^^^^^^^^^
+----------------
 
 * Class that keeps track of all the registered methods and notifications that can be invoked by the RPC server. This class holds two
   hash tables containing methods and notifications which uses the method name as a key.
@@ -46,7 +46,7 @@ Dispatcher class
 
 
 JsonRPCManager class
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 * Singleton class that handles the JSONRPC handler registration and JSONRPC handler invocation.
 * This class is the main entrance point for the RPC server through ``handle_call(std::string_view req)`` function.
@@ -63,7 +63,7 @@ Dealing with incoming and outgoing parameters is up to the developer, we will to
 .. _jsonrpc_development-design:
 
 Design
-^^^^^^
+------
 
 As requirement from the ``JsonRPCManager`` in order to be able to register inside the RPC management a function should implement the
 following signature:
@@ -97,12 +97,12 @@ Notifications:
 
 .. note::
 
-    If there is no explicit response from the method, the protocol implementation will respond with :ref:`success_response` unless an error
+    If there is no explicit response from the method, the protocol implementation will respond with `success_response` unless an error
     was specified.
 
 
 Error Handling
-^^^^^^^^^^^^^^
+--------------
 
 
 There are several ways to deal with internal handler errors. Errors are expected to be sent back to the client if the API was expressed that way
@@ -116,9 +116,9 @@ We recommend some ways to deal with this:
 
 This can be set in case you would like to let the server to respond with an |RPC| error, ``ExecutionError`` will be used to catch all the
 errors that are fired from within the function call, either by setting the proper errata or by throwing an exception.
-Please refer to `rpc-error-code`_ and in particular ``ExecutionError = 9``. Also check :ref:`jsonrpc-handler-errors`
+Please check the `rpc-error-code` and in particular ``ExecutionError = 9``. Also check :ref:`jsonrpc-handler-errors`
 
-.. note::
+.. important::
 
     Errors have preference over any other response, so if you set both, the errata and the ``YAML::Node`` response, then the former
     will be set in the response.
@@ -135,7 +135,7 @@ Examples:
 
 * Respond with an error, no ``result`` field will be set in the response.
 
-    .. code-block:: cpp
+    .. code-block::
 
         ts::Rv<YAML::Node>
         respond_with_an_error(std::string_view const &id, YAML::Node const &params)
@@ -171,7 +171,7 @@ Examples:
   have json schemas to enforce any of this on the client side.
 
 
-   .. code-block:: cpp
+   .. code-block::
 
       ts::Rv<YAML::Node>
       respond_with_my_own_error(std::string_view const &id, YAML::Node const &params)
@@ -199,7 +199,7 @@ We have selected the ``ts::Rv<YAML::Node>`` as a message interface as this can h
 
 
 Registration
-^^^^^^^^^^^^
+------------
 
 Handler registration should be done by using the ``JsonRPCManager`` singleton object. Note that there are a set of convenient helper
 functions that can be used to achieve registration through the singleton object.
@@ -267,9 +267,10 @@ Important Notes
 ===============
 
 * You can refer to `YAML`_ for more info in how code/decode yaml content.
-* Remember to update :ref:`admin-jsonrpc` if you are adding a new handler.
+* Remember to update :ref:`jsonrpc-api` if you are adding a new handler.
 * If a new handler needs to be exposed through :program:`traffic_ctl` please refer to :ref:`traffic_ctl_jsonrpc` for a general idea
   and to :ref:`developer-guide-traffic_ctl-development` for how to implement a new command.
+* To interact directly with the |RPC| node, please check :ref:`jsonrpc-node`
 
 
 :ref:`admnin-jsonrpc-configuration`,

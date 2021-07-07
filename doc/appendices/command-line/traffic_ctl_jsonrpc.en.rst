@@ -13,7 +13,7 @@
 
 .. include:: ../../common.defs
 
-.. |RPC| replace:: ``JSONRPC 2.0``
+.. |RPC| replace:: JSONRPC 2.0
 
 .. _JSONRPC: https://www.jsonrpc.org/specification
 .. _JSON: https://www.json.org/json-en.html
@@ -88,6 +88,10 @@ Options
 .. option:: --records
 
    Option available only for records request.
+
+.. option:: --run-root
+
+   Path to the runroot file.
 
 Subcommands
 ===========
@@ -191,11 +195,6 @@ traffic_ctl metric
 .. option:: zero METRIC [METRIC...]
 
    Reset the named statistics to zero.
-
-.. program:: traffic_ctl metric
-.. option:: describe RECORD [RECORD...]
-
-   Display all the known information about a metric record.
 
 .. program:: traffic_ctl metric
 .. option:: describe RECORD [RECORD...]
@@ -332,7 +331,7 @@ endpoint.
 
    Supports :option:`--reason`.
 
-.. _traffic_ctl rpc:
+.. _traffic_ctl_rpc:
 
 traffic_ctl rpc
 ---------------
@@ -394,7 +393,7 @@ but rather to the rpc endpoint, so you can directly send requests and receive re
 
    Example:
 
-   .. code-block:: bash
+   .. code-block::
 
       $ traffic_ctl rpc input
       >> Ctrl-D to fire the request
@@ -453,7 +452,7 @@ but rather to the rpc endpoint, so you can directly send requests and receive re
 
    You can see a valid  json ``{}`` but an invalid |RPC| message. In this case the server is responding.
 
-   .. code-block:: json
+   .. code-block::
 
       $ traffic_ctl rpc input
       >> Ctrl-D to fire the request

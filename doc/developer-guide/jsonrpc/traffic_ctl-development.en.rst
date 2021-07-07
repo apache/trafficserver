@@ -17,7 +17,7 @@
 
 .. include:: ../../common.defs
 
-.. |RPC| replace:: ``JSONRPC 2.0``
+.. |RPC| replace:: JSONRPC 2.0
 
 .. _YAML: https://github.com/jbeder/yaml-cpp/wiki/Tutorial
 
