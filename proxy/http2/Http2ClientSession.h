@@ -49,7 +49,9 @@ enum class Http2SsnMilestone {
 
 size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
+// clang-format off
 /**
+
    @startuml
    title ProxySession Continuation Handler
    hide empty description
@@ -70,6 +72,8 @@ size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFE
    state_aborted --> state_closed  : all transaction is done
 
    state_open              --> state_graceful_shutdown : graceful shutdown
+   state_graceful_shutdown --> state_aborted           : VC_EVENT_EOS\lVC_EVENT_ERROR\lrecv GOAWAY frame with error code
+   state_graceful_shutdown --> state_goaway            : VC_EVENT_ACTIVE_TIMEOUT\lVC_EVENT_INACTIVITY_TIMEOUT\lsend GOAWAY frame with error code
    state_graceful_shutdown --> state_closed            : all transaction is done
 
    state_open   --> state_goaway : VC_EVENT_ACTIVE_TIMEOUT\lVC_EVENT_INACTIVITY_TIMEOUT\lsend GOAWAY frame with error code
@@ -91,6 +95,7 @@ size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFE
 
    @enduml
  */
+// clang-format on
 class Http2ClientSession : public ProxySession
 {
 public:
