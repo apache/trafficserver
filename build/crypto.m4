@@ -365,3 +365,43 @@ AC_DEFUN([TS_CHECK_SESSION_TICKET], [
 
   AC_SUBST(has_tls_session_ticket)
 ])
+
+dnl SSL_set1_verify_cert_store macro is for OpenSSL 1.1.1
+dnl SSL_set1_verify_cert_store function is for BoringSSL
+AC_DEFUN([TS_CHECK_VERIFY_CERT_STORE], [
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_CHECK_HEADERS(openssl/ssl.h)
+  verify_cert_store_check=no
+  has_verify_cert_store=0
+  AC_MSG_CHECKING([for SSL_set1_verify_cert_store macro])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[#include <openssl/ssl.h>]],
+                     [[
+                     #ifndef SSL_set1_verify_cert_store
+                     #error
+                     #endif
+                     ]])
+    ],
+    [
+      verify_cert_store_check=yes
+      has_verify_cert_store=1
+    ],
+    []
+  )
+  AC_MSG_RESULT([$verify_cert_store_check])
+
+  AC_CHECK_FUNCS(
+    SSL_set1_verify_cert_store,
+    [
+      verify_cert_store_check=yes
+      has_verify_cert_store=1
+    ],
+    []
+  )
+
+  AC_MSG_CHECKING([for setting verify cert store APIs])
+  AC_MSG_RESULT([$verify_cert_store_check])
+
+  AC_SUBST(has_verify_cert_store)
+])

@@ -1132,7 +1132,7 @@ void
 setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
 {
   if ((file != nullptr && file[0] != '\0') || (dir != nullptr && dir[0] != '\0')) {
-#if defined(SSL_set1_verify_cert_store)
+#if TS_HAS_VERIFY_CERT_STORE
     // The set0 version will take ownership of the X509_STORE object
     X509_STORE *ctx = X509_STORE_new();
     if (X509_STORE_load_locations(ctx, file && file[0] != '\0' ? file : nullptr, dir && dir[0] != '\0' ? dir : nullptr)) {
