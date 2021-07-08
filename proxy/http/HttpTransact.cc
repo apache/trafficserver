@@ -281,6 +281,17 @@ nextParent(HttpTransact::State *s)
   }
 }
 
+inline static void
+retryComplete(HttpTransact::State *s)
+{
+  url_mapping *mp = s->url_map.getMapping();
+  if (mp && mp->strategy) {
+    mp->strategy->retryComplete(reinterpret_cast<TSHttpTxn>(s->state_machine), s->parent_result.hostname, s->parent_result.port);
+  } else if (s->parent_params) {
+    s->parent_params->retryComplete(&s->parent_result);
+  }
+}
+
 inline static bool
 is_localhost(const char *name, int len)
 {
@@ -3633,6 +3644,12 @@ HttpTransact::handle_response_from_parent(State *s)
   LookingUp_t next_lookup = UNDEFINED_LOOKUP;
   TxnDebug("http_trans", "[handle_response_from_parent] (hrfp)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
+
+  // if this parent was retried from a markdown, then
+  // notify that the retry has completed.
+  if (s->parent_result.retry) {
+    retryComplete(s);
+  }
 
   simple_or_unavailable_server_retry(s);
 
