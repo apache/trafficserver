@@ -540,8 +540,8 @@ HttpTunnel::reset()
   call_sm       = false;
   num_producers = 0;
   num_consumers = 0;
-  memset(consumers, 0, sizeof(consumers));
-  memset(producers, 0, sizeof(producers));
+  memset(static_cast<void *>(consumers), 0, sizeof(consumers));
+  memset(static_cast<void *>(producers), 0, sizeof(producers));
 }
 
 void

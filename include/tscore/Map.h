@@ -427,7 +427,7 @@ Vec<C, A, S>::move_internal(Vec<C, A, S> &vv)
   n = vv.n;
   i = vv.i;
   if (vv.v == &vv.e[0]) {
-    memcpy(e, &vv.e[0], sizeof(e));
+    memcpy(static_cast<void *>(e), &vv.e[0], sizeof(e));
     v = e;
   } else
     v = vv.v;
@@ -449,7 +449,7 @@ Vec<C, A, S>::copy(const Vec<C, A, S> &vv)
   n = vv.n;
   i = vv.i;
   if (vv.v == &vv.e[0]) {
-    memcpy(e, &vv.e[0], sizeof(e));
+    memcpy(static_cast<void *>(e), &vv.e[0], sizeof(e));
     v = e;
   } else {
     if (vv.v)

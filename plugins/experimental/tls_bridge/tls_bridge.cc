@@ -99,7 +99,7 @@ BridgeConfig::load_config(int argc, const char *argv[])
     if (i + 1 >= argc) {
       TSError("%s: Destination regular expression without peer", PLUGIN_TAG);
     } else {
-      if (r.compile(argv[i]), Regex::ANCHORED) {
+      if (r.compile(argv[i], Regex::ANCHORED)) {
         _items.emplace_back(argv[i], std::move(r), argv[i + 1]);
       } else {
         TSError("%s: Failed to compile regular expression '%s'", PLUGIN_TAG, argv[i]);
