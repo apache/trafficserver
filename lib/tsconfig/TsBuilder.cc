@@ -63,7 +63,7 @@ Builder::init() {
   // appropriate dispatch method.
 
   // Zero everything first, just to be safe.
-  memset(_dispatch, 0, sizeof(_dispatch));
+  memset(static_cast<void *>(_dispatch), 0, sizeof(_dispatch));
   memset(&_loc, 0, sizeof(_loc));
 
   for ( size_t i = 0 ; i < TS_CONFIG_N_EVENT_TYPES ; ++i) {
