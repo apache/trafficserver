@@ -2925,6 +2925,12 @@ TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int 
 // TSMBuffer: pointers to HdrHeapSDKHandle objects
 // TSMLoc:    pointers to MIMEFieldSDKHandle objects
 
+size_t
+TSMimeHdrFieldFastMLocSize()
+{
+  return sizeof(MIMEFieldSDKHandle);
+}
+
 int
 TSMimeHdrFieldEqual(TSMBuffer bufp, TSMLoc hdr_obj, TSMLoc field1_obj, TSMLoc field2_obj)
 {
@@ -2985,6 +2991,34 @@ TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
 
   h->field_ptr = f;
   return reinterpret_cast<TSMLoc>(h);
+}
+
+TSReturnCode
+TSMimeHdrFieldFastFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length, TSMLoc *locp)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr_obj) == TS_SUCCESS) ||
+             (sdk_sanity_check_http_hdr_handle(hdr_obj) == TS_SUCCESS));
+  sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+
+  if (length == -1) {
+    length = strlen(name);
+  }
+
+  MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(hdr_obj);
+  MIMEField *f    = mime_hdr_field_find(mh, name, length);
+
+  if (f == nullptr) {
+    *locp = TS_NULL_MLOC;
+    return TS_SUCCESS;
+  }
+
+  MIMEFieldSDKHandle *h = reinterpret_cast<MIMEFieldSDKHandle *>(*locp);
+  obj_init_header(h, HDR_HEAP_OBJ_FIELD_SDK_HANDLE, sizeof(MIMEFieldSDKHandle), 0);
+  h->mh        = mh;
+  h->field_ptr = f;
+
+  return TS_SUCCESS;
 }
 
 TSReturnCode
@@ -3152,6 +3186,34 @@ TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int 
 }
 
 TSReturnCode
+TSMimeHdrFieldFastCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len, TSMLoc *locp)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert((sdk_sanity_check_mime_hdr_handle(mh_mloc) == TS_SUCCESS) ||
+             (sdk_sanity_check_http_hdr_handle(mh_mloc) == TS_SUCCESS));
+  sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)locp) == TS_SUCCESS);
+
+  if (!isWriteable(bufp)) {
+    return TS_ERROR;
+  }
+
+  if (name_len == -1) {
+    name_len = strlen(name);
+  }
+
+  MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(mh_mloc);
+  HdrHeap *heap   = (HdrHeap *)(((HdrHeapSDKHandle *)bufp)->m_heap);
+
+  MIMEFieldSDKHandle *h = reinterpret_cast<MIMEFieldSDKHandle *>(*locp);
+  obj_init_header(h, HDR_HEAP_OBJ_FIELD_SDK_HANDLE, sizeof(MIMEFieldSDKHandle), 0);
+  h->mh        = mh;
+  h->field_ptr = mime_field_create_named(heap, mh, name, name_len);
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field)
 {
   // Allow to modify the buffer only
@@ -3314,6 +3376,29 @@ TSMimeHdrFieldNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field)
   MIMEFieldSDKHandle *next_handle = sdk_alloc_field_handle(bufp, mh);
   next_handle->field_ptr          = next;
   return (TSMLoc)next_handle;
+}
+
+TSReturnCode
+TSMimeHdrFieldFastNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, TSMLoc *locp)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
+  sdk_assert(sdk_sanity_check_field_handle(field, hdr) == TS_SUCCESS);
+
+  MIMEHdrImpl *mh                  = _hdr_mloc_to_mime_hdr_impl(hdr);
+  MIMEFieldSDKHandle *field_handle = (MIMEFieldSDKHandle *)field;
+  MIMEField *next                  = field_handle->field_ptr->m_next_dup;
+  if (next == nullptr) {
+    *locp = TS_NULL_MLOC;
+    return TS_SUCCESS;
+  }
+
+  MIMEFieldSDKHandle *next_handle = reinterpret_cast<MIMEFieldSDKHandle *>(*locp);
+  obj_init_header(next_handle, HDR_HEAP_OBJ_FIELD_SDK_HANDLE, sizeof(MIMEFieldSDKHandle), 0);
+  next_handle->mh        = mh;
+  next_handle->field_ptr = next;
+
+  return TS_SUCCESS;
 }
 
 int
