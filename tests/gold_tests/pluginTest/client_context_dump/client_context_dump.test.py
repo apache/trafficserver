@@ -25,7 +25,7 @@ Test client_context_dump plugin
 Test.SkipUnless(Condition.PluginExists('client_context_dump.so'))
 
 # Set up ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, enable_tls=True, dump_runroot=True)
 
 # Set up ssl files
 ts.addSSLfile("ssl/one.com.pem")
@@ -73,6 +73,6 @@ p.StartBefore(Test.Processes.ts)
 tr = Test.AddTestRun()
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = (
-    '{0}/traffic_ctl plugin msg client_context_dump.t 1'.format(ts.Variables.BINDIR)
+    '{0}/traffic_ctl plugin msg client_context_dump.t 1 --run-root {1}'.format(ts.Variables.BINDIR, ts.Disk.runroot_yaml.Name)
 )
 tr.Processes.Default.ReturnCode = 0

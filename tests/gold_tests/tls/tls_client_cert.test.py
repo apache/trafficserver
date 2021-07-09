@@ -21,7 +21,7 @@ Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
 '''
 
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, dump_runroot=True)
 cafile = "{0}/signer.pem".format(Test.RunDirectory)
 cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 # --clientverify: "" empty string because microserver does store_true for argparse, but options is a dictionary
@@ -117,6 +117,7 @@ logging:
 '''.split("\n")
 )
 
+
 # Should succeed
 tr = Test.AddTestRun("Connect with first client cert to first server")
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -188,6 +189,9 @@ tr2.Processes.Default.Command = 'echo Updated configs'
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
+
+# Set TS_RUNROOT, traffic_ctl needs it to find the socket.
+ts.SetRunRootEnv()
 
 tr2reload = Test.AddTestRun("Reload config")
 tr2reload.StillRunningAfter = ts

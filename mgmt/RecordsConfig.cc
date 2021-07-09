@@ -1505,7 +1505,9 @@ static const RecordElement RecordsConfig[] =
   //# 0 - no checking. 1 - log in mismatch. 2 - enforcing
   //#
   //###########
-  {RECT_CONFIG, "proxy.config.http.host_sni_policy", RECD_INT, "2", RECU_NULL, RR_NULL, RECC_NULL, "[0-2]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.http.host_sni_policy", RECD_INT, "2", RECU_NULL, RR_NULL, RECC_NULL, "[0-2]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.jsonrpc.filename", RECD_STRING, ts::filename::JSONRPC, RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
 };
 // clang-format on
 

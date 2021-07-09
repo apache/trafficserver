@@ -23,7 +23,7 @@ Test transactions and sessions, making sure they open and close in the proper or
 '''
 
 # Define default ATS. Disable the cache to simplify the test.
-ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_cache=False)
+ts = Test.MakeATSProcess("ts", command="traffic_server", enable_cache=False, dump_runroot=True)
 
 server = Test.MakeOriginServer("server")
 server2 = Test.MakeOriginServer("server2")
@@ -71,6 +71,9 @@ ts.StartAfter(*ps)
 server.StartAfter(*ps)
 tr.StillRunningAfter = ts
 
+
+# Set TS_RUNROOT, traffic_ctl needs it to find the socket.
+ts.SetRunRootEnv()
 # Signal that all the curl processes have completed
 tr = Test.AddTestRun("Curl Done")
 tr.DelayStart = 2  # Delaying a couple seconds to make sure the global continuation's lock contention resolves.

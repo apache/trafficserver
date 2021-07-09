@@ -24,7 +24,7 @@ Verify ip_allow filtering behavior.
 Test.ContinueOnFail = True
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True,
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True,
                          enable_tls=True, enable_cache=False)
 server = Test.MakeOriginServer("server", ssl=True)
 

@@ -21,7 +21,7 @@ Test tunneling based on SNI
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, enable_tls=True, dump_runroot=True)
 server_foo = Test.MakeOriginServer("server_foo", ssl=True)
 server_bar = Test.MakeOriginServer("server_bar", ssl=True)
 server2 = Test.MakeOriginServer("server2")
@@ -184,7 +184,7 @@ trreload = Test.AddTestRun("Reload config")
 trreload.StillRunningAfter = ts
 trreload.StillRunningAfter = server_foo
 trreload.StillRunningAfter = server_bar
-trreload.Processes.Default.Command = 'traffic_ctl config reload'
+trreload.Processes.Default.Command = 'traffic_ctl config reload --run-root {}'.format(ts.Disk.runroot_yaml.Name)
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 trreload.Processes.Default.Env = ts.Env
 trreload.Processes.Default.ReturnCode = 0

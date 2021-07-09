@@ -109,15 +109,11 @@ TS_ROOT=${TS_ROOT:-$TS_PREFIX}
 # For standard installations TS_BASE will be empty
 eval TS_BASE="`echo $TS_ROOT | ${ESED} -e 's;@prefix@$;;'`"
 
-TM_NAME=${TM_NAME:-traffic_manager}
 TS_NAME=${TS_NAME:-traffic_server}
-TM_DAEMON=${TM_DAEMON:-$TS_BASE@exp_bindir@/traffic_manager}
-TM_DAEMON_ARGS=""
 TS_DAEMON=${TS_DAEMON:-$TS_BASE@exp_bindir@/traffic_server}
 TS_DAEMON_ARGS=""
-TL_BINARY=${TL_BINARY:-$TS_BASE@exp_bindir@/traffic_ctl}
-TY_BINARY=${TL_BINARY:-$TS_BASE@exp_bindir@/traffic_layout}
-TM_PIDFILE=${TM_PIDFILE:-$TS_BASE@exp_runtimedir@/manager.lock}
+TC_BINARY=${TC_BINARY:-$TS_BASE@exp_bindir@/traffic_ctl}
+TY_BINARY=${TC_BINARY:-$TS_BASE@exp_bindir@/traffic_layout}
 TS_PIDFILE=${TS_PIDFILE:-$TS_BASE@exp_runtimedir@/server.lock}
 # number of times to retry check on pid lock file
 PIDFILE_CHECK_RETRIES=${PIDFILE_CHECK_RETRIES:-30}
@@ -206,8 +202,8 @@ forkdaemon()
     while (( $i < $PIDFILE_CHECK_RETRIES ))
     do
         # check for regular file and size greater than 0
-        if [[ -f $TM_PIDFILE ]] && [[ -s $TM_PIDFILE ]]; then
-            success || true
+        if [[ -f $TS_PIDFILE ]] && [[ -s $TS_PIDFILE ]]; then
+            success
             return 0
         fi
 
@@ -230,16 +226,16 @@ do_start()
   #   0 if daemon has been started
   #   1 if daemon was already running
   #   2 if daemon could not be started
-    start-stop-daemon --start --quiet --pidfile $TM_PIDFILE --exec $TM_DAEMON --test > /dev/null \
+    start-stop-daemon --start --quiet --pidfile $TS_PIDFILE --exec $TS_DAEMON --test > /dev/null \
         || return 1
-    start-stop-daemon --start --background --quiet --pidfile $TM_PIDFILE --exec $TM_DAEMON -- \
-        $TM_DAEMON_ARGS \
+    start-stop-daemon --start --background --quiet --pidfile $TS_PIDFILE --exec $TS_DAEMON -- \
+        $TS_DAEMON_ARGS \
         || return 2
   # Add code here, if necessary, that waits for the process to be ready
   # to handle requests from services started subsequently which depend
   # on this one.  As a last resort, sleep for some time.
     sleep 1
-    test -f "$TM_PIDFILE" || return 2
+    test -f "$TS_PIDFILE" || return 2
 }
 
 #
@@ -252,7 +248,7 @@ do_stop()
   #   1 if daemon was already stopped
   #   2 if daemon could not be stopped
   #   other if a failure occurred
-    start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
+    start-stop-daemon --stop --quiet --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
     RETVAL="$?"
     test "$RETVAL" != 0 && return $RETVAL
   # Wait for children to finish too if this is a daemon that forks
@@ -261,19 +257,14 @@ do_stop()
   # that waits for the process to drop all resources that could be
   # needed by services started subsequently.  A last resort is to
   # sleep for some time.
-    start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TM_DAEMON
+    start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $TS_DAEMON
     RETVAL="$?"
     test "$RETVAL" != 0 && return $RETVAL
-  # Need to stop the TM and TS also
-    start-stop-daemon --stop --quiet --oknodo --retry=QUIT/30/KILL/5 --pidfile $TM_PIDFILE --name $TM_NAME
-    RETVAL="$?"
-    test "$RETVAL" != 0 && return $RETVAL
+  # Need to stop the TS
     start-stop-daemon --stop --quiet --oknodo --retry=QUIT/30/KILL/5 --pidfile $TS_PIDFILE --name $TS_NAME
     RETVAL="$?"
     test "$RETVAL" != 0 && return $RETVAL
   # Many daemons don't delete their pidfiles when they exit.
-    rm -f $TM_PIDFILE
-    rm -f $TM_PIDFILE
     rm -f $TS_PIDFILE
     return "$RETVAL"
 }
@@ -322,24 +313,24 @@ case "$1" in
 	    do_start
 	    eend $?
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TM_DAEMON $TM_DAEMON_ARGS
+            action "Starting ${TS_PACKAGE_NAME}:" forkdaemon $TS_DAEMON $TS_DAEMON_ARGS
         elif [ "$DISTRIB_ID" = "suse" ]; then
             echo -n "Starting ${TS_PACKAGE_NAME}"
-            startproc -p $TM_PIDFILE $TM_DAEMON $TM_DAEMON_ARGS
+            startproc -p $TS_PIDFILE $TS_DAEMON $TS_DAEMON_ARGS
             rc_status -v
         elif [ "$DISTRIB_ID" = "nixos" ]; then
             echo "Starting ${TS_PACKAGE_NAME}"
             forkdaemon $TM_DAEMON $TM_DAEMON_ARGS
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Starting ${TS_PACKAGE_NAME}"
-            launchctl bsexec / launchctl list $TM_NAME > /dev/null 2>&1 && exit 0
-            launchctl bsexec / launchctl submit -l $TM_NAME -p $TM_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TM_DAEMON_ARGS
+            launchctl bsexec / launchctl list $TS_NAME > /dev/null 2>&1 && exit 0
+            launchctl bsexec / launchctl submit -l $TS_NAME -p $TS_DAEMON -o $STDOUTLOG -e $STDERRLOG -- $TS_DAEMON_ARGS
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
             echo "Starting ${TS_PACKAGE_NAME}"
-            name="$TM_NAME"
+            name="$TS_NAME"
             command="/usr/sbin/daemon"
-            command_args="-o $STDOUTLOG $TM_DAEMON $TM_DAEMON_ARGS"
-            pidfile="$TM_PIDFILE"
+            command_args="-o $STDOUTLOG $TS_DAEMON $TS_DAEMON_ARGS"
+            pidfile="$TS_PIDFILE"
             run_rc_command "$1"
         else
             echo "This script needs to be ported to this OS"
@@ -355,16 +346,12 @@ case "$1" in
             test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Stopping ${TM_NAME}:" killproc -p $TM_PIDFILE -d 35 $TM_DAEMON
             action "Stopping ${TS_NAME}:" killproc -p $TS_PIDFILE -d 35 $TS_DAEMON
         elif [ "$DISTRIB_ID" = "gentoo" ]; then
 	    ebegin "Starting ${TS_PACKAGE_NAME}"
 	    do_stop
 	    eend $?
         elif [ "$DISTRIB_ID" = "suse" ]; then
-            echo -n "Stopping ${TM_NAME}"
-            killproc -p $TM_PIDFILE $TM_DAEMON
-            rc_status -v
             echo -n "Stopping ${TS_NAME}"
             killproc -p $TS_PIDFILE $TS_DAEMON
             rc_status -v
@@ -380,18 +367,15 @@ case "$1" in
             fi
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Stopping ${TS_PACKAGE_NAME}"
-            launchctl bsexec / launchctl list $TM_NAME > /dev/null 2>&1 || exit 0
-            echo "Stopping ${TM_NAME}"
-            launchctl bsexec / launchctl remove ${TM_NAME}
-            rm -f ${TM_PIDFILE}
+            launchctl bsexec / launchctl list $TS_NAME > /dev/null 2>&1 || exit 0
             echo "Stopping ${TS_NAME}"
-            kill $(cat $TS_PIDFILE)
+            launchctl bsexec / launchctl remove ${TS_NAME}
             rm -f ${TS_PIDFILE}
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
             echo "Stopping ${TS_PACKAGE_NAME}"
-            if [ -e "$TM_PIDFILE" ]; then
-                kill $(cat $TM_PIDFILE)
-                rm -f ${TM_PIDFILE}
+            if [ -e "$TS_PIDFILE" ]; then
+                kill $(cat $TS_PIDFILE)
+                rm -f ${TS_PIDFILE}
             fi
         else
             echo "This script needs to be ported to this OS"
@@ -409,29 +393,29 @@ case "$1" in
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
             test "x$VERBOSE" != "xno" && log_daemon_msg "Reloading ${TS_PACKAGE_NAME}" "$NAME"
             retval=0
-            $TL_BINARY config reload
+            $TC_BINARY config reload
             test "$?" -ne 0 -a "$?" -ne 1 && retval=1
             test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Reloading ${NAME}:" $TL_BINARY config reload
+            action "Reloading ${NAME}:" $TC_BINARY config reload
         elif [ "$DISTRIB_ID" = "gentoo" ]; then
 	    ebegin "Reloading ${NAME}"
-            $TL_BINARY config reload
+            $TC_BINARY config reload
 	    eend $?
         elif [ "$DISTRIB_ID" = "suse" ]; then
             echo -n "Reloading ${NAME}"
-            $TL_BINARY config reload
+            $TC_BINARY config reload
             rc_status -v
         elif [ "$DISTRIB_ID" = "nixos" ]; then
             echo "Reloading ${NAME}"
             $TL_BINARY config reload
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Reloading ${NAME}"
-            $TL_BINARY config reload
+            $TC_BINARY config reload
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
             echo "Reloading ${NAME}"
-            $TL_BINARY config reload
+            $TC_BINARY config reload
         else
             echo "This script needs to be ported to this OS"
             exit 1
@@ -469,24 +453,28 @@ case "$1" in
         ;;
     status)
         if [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            status -p $TM_PIDFILE $TM_NAME
+            status -p $TS_PIDFILE $TS_NAME
         elif [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
-            status_of_proc "$TM_DAEMON" "$TM_NAME" -p "$TM_PIDFILE" && exit 0 || exit $?
+            status_of_proc "$TS_DAEMON" "$TS_NAME" -p "$TS_PIDFILE" && exit 0 || exit $?
         elif [  "$DISTRIB_ID" = "suse" ]; then
             echo -n "Checking for service ${DM}: "
-            checkproc -p $TM_PIDFILE $TM_NAME
+            checkproc -p $TS_PIDFILE $TS_NAME
             rc_status -v
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             /bin/echo -n "${TS_PACKAGE_NAME} is "
-            launchctl bsexec / launchctl list $TM_NAME > /dev/null 2>&1
+            launchctl bsexec / launchctl list $TS_NAME > /dev/null 2>&1
             status=$?
             [ $status -eq 0 ] || /bin/echo -n "not "
             echo "running."
+<<<<<<< HEAD
         elif [ "$DISTRIB_ID" = "FreeBSD" -o "$DISTRIB_ID" = "gentoo" -o "$DISTRIB_ID" = "nixos" ]; then
             if pgrep $TM_NAME > /dev/null ; then
                 echo "$TM_NAME running as pid `cat $TM_PIDFILE`" ; else
                 echo "$TM_NAME not running"
             fi
+=======
+        elif [ "$DISTRIB_ID" = "FreeBSD" -o "$DISTRIB_ID" = "gentoo" ]; then
+>>>>>>> 24778a1... JSONRPC - Adapt rc/* files to work with TS instead of TM
             if pgrep $TS_NAME > /dev/null ; then
                 echo "$TS_NAME running as pid `cat $TS_PIDFILE`"; else
                 echo "$TS_NAME not running"

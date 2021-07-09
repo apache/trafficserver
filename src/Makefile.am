@@ -37,9 +37,17 @@ include traffic_manager/Makefile.inc
 include traffic_server/Makefile.inc
 include traffic_logstats/Makefile.inc
 include traffic_crashlog/Makefile.inc
-include traffic_ctl/Makefile.inc
 include traffic_layout/Makefile.inc
 include traffic_logcat/Makefile.inc
+
+# Build non jsonrpc traffic_ctl
+if BUILD_LEGACY_TC
+include traffic_ctl/Makefile.inc
+else
+include traffic_ctl_jsonrpc/Makefile.inc
+endif
+
+
 
 if ENABLE_QUIC
 include traffic_quic/Makefile.inc

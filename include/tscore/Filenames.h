@@ -41,6 +41,7 @@ namespace filename
   constexpr const char *SSL_MULTICERT = "ssl_multicert.config";
   constexpr const char *SPLITDNS      = "splitdns.config";
   constexpr const char *SNI           = "sni.yaml";
+  constexpr const char *JSONRPC       = "jsonrpc.yaml";
 
   ///////////////////////////////////////////////////////////////////
   // Various other file names

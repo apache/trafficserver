@@ -36,13 +36,16 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionlog.json", request_header, response_header)
 
 # Set up ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", enable_tls=1)
+ts = Test.MakeATSProcess("ts", command="traffic_server", enable_tls=1, dump_runroot=True)
 
 # Set up ssl files
 ts.addSSLfile("ssl/server1.pem")
 ts.addSSLfile("ssl/server2.pem")
 ts.addSSLfile("ssl/client1.pem")
 ts.addSSLfile("ssl/client2.pem")
+
+# Set TS_RUNROOT, traffic_ctl needs it to find the socket.
+ts.SetRunRootEnv()
 
 # reserve port, attach it to 'ts' so it is released later
 ports.get_port(ts, 's_server_port')

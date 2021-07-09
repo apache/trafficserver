@@ -1,0 +1,104 @@
+{
+  "$schema":"http://json-schema.org/draft-04/schema#",
+  "title":"JSON RPC 2.0 response message",
+  "description":"Data for a JSON RPC 2.0 response, this may contains some exceptions to the standard which will be noted. Licensed under Apache V2 https://www.apache.org/licenses/LICENSE-2.0",
+  "oneOf":[
+     {
+        "$ref":"#/definitions/success"
+     },
+     {
+        "$ref":"#/definitions/error"
+     },
+     {
+        "type":"array",
+        "items":{
+           "oneOf":[
+              {
+                 "$ref":"#/definitions/success"
+              },
+              {
+                 "$ref":"#/definitions/error"
+              }
+           ]
+        }
+     }
+  ],
+  "definitions":{
+     "common":{
+        "required":[
+           "jsonrpc"
+        ],
+        "not":{
+           "description":"Cannot have result and error at the same time",
+           "required":[
+              "result",
+              "error"
+           ]
+        },
+        "type":"object",
+        "properties":{
+           "id":{
+              "type":[
+                 "string",
+                 "integer",
+                 "null"
+              ],
+              "note":[
+                 "Specs specify that this should be mandatory, in this implementation if the server cannot fetch the id on error, the id field will not be set.",
+                 "As per our implementation, the Server will not use literal null"
+               ]
+           },
+           "jsonrpc":{
+              "enum":[
+                 "2.0"
+              ]
+           }
+        }
+     },
+     "success":{
+        "description":"A success. The result member is then required and can be anything.",
+        "allOf":[
+           {
+              "$ref":"#/definitions/common"
+           },
+           {
+              "required":[
+                 "result"
+              ]
+           }
+        ]
+     },
+     "error":{
+        "allOf":[
+           {
+              "$ref":"#/definitions/common"
+           },
+           {
+              "required":[
+                 "error"
+              ],
+              "properties":{
+                 "error":{
+                    "type":"object",
+                    "required":[
+                       "code",
+                       "message"
+                    ],
+                    "properties":{
+                       "code":{
+                          "type":"integer"
+                       },
+                       "message":{
+                          "type":"string"
+                       },
+                       "data":{
+                          "description":"Optional, It will describe a list of events that occurred during the handling."
+                       }
+                    }
+                 }
+              }
+           }
+        ]
+     }
+  }
+}

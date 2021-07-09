@@ -20,6 +20,8 @@ Test.Summary = '''
 Test that Trafficserver starts with default configurations.
 '''
 
+Test.SkipIf(Condition.true("We do not need to test traffic_manager (JSONRPC)"))
+
 ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True)
 
 t = Test.AddTestRun("Test traffic server started properly")
