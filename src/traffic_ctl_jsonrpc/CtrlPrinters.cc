@@ -19,6 +19,7 @@
 */
 #include <iostream>
 #include <unordered_map>
+#include <string_view>
 
 #include "CtrlPrinters.h"
 #include "jsonrpc/yaml_codecs.h"
@@ -50,13 +51,38 @@ print_record_error_list(std::vector<RecordLookUpResponse::RecordError> const &er
 void
 BasePrinter::write_output(specs::JSONRPCResponse const &response)
 {
-  if (response.is_error() && _format == Format::PRETTY) {
+  // If json, then we print the full message, either ok or error.
+  if (this->is_json_format()) {
+    YAML::Emitter out;
+    out << YAML::DoubleQuoted << YAML::Flow;
+    out << response.fullMsg;
+    write_output(std::string_view{out.c_str()});
+    return;
+  }
+
+  if (response.is_error() && this->is_pretty_format()) {
+    // we print the error in this case. Already formatted.
     std::cout << response.error.as<specs::JSONRPCError>();
     return;
   }
+
   if (!response.result.IsNull()) {
+    // on you!
+    // Found convinient to let the derived class deal with the specifics.
     write_output(response.result);
   }
+}
+
+void
+BasePrinter::write_output(std::string_view output)
+{
+  std::cout << output << '\n';
+}
+
+void
+BasePrinter::write_debug(std::string_view output)
+{
+  std::cout << output << '\n';
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -64,7 +90,7 @@ void
 RecordPrinter::write_output(YAML::Node const &result)
 {
   auto response = result.as<RecordLookUpResponse>();
-  if (is_format_legacy()) {
+  if (is_legacy_format()) {
     write_output_legacy(response);
   } else {
     write_output_pretty(response);
@@ -133,7 +159,7 @@ void
 RecordDescribePrinter::write_output(YAML::Node const &result)
 {
   auto const &response = result.as<RecordLookUpResponse>();
-  if (is_format_legacy()) {
+  if (is_legacy_format()) {
     write_output_legacy(response);
   } else {
     write_output_pretty(response);
@@ -209,7 +235,7 @@ void
 CacheDiskStoragePrinter::write_output(YAML::Node const &result)
 {
   // do nothing.
-  if (!is_format_legacy()) {
+  if (!is_legacy_format()) {
     write_output_pretty(result);
   }
 }
@@ -235,7 +261,7 @@ CacheDiskStoragePrinter::write_output_pretty(YAML::Node const &result)
 void
 CacheDiskStorageOfflinePrinter::write_output(YAML::Node const &result)
 {
-  if (!is_format_legacy()) {
+  if (!is_legacy_format()) {
     write_output_pretty(result);
   }
 }

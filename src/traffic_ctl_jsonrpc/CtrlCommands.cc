@@ -26,35 +26,42 @@
 
 namespace
 {
-const std::unordered_map<std::string, BasePrinter::Format> _Fmt_str_to_enum = {{"pretty", BasePrinter::Format::PRETTY},
-                                                                               {"legacy", BasePrinter::Format::LEGACY}};
+const std::unordered_map<std::string_view, BasePrinter::Options::Format> _Fmt_str_to_enum = {
+  {"pretty", BasePrinter::Options::Format::PRETTY},  {"legacy", BasePrinter::Options::Format::LEGACY},
+  {"json", BasePrinter::Options::Format::JSON},      {"req", BasePrinter::Options::Format::DATA_REQ},
+  {"resp", BasePrinter::Options::Format::DATA_RESP}, {"all", BasePrinter::Options::Format::DATA_ALL}};
 
-BasePrinter::Format
+BasePrinter::Options::Format
 parse_format(ts::Arguments &args)
 {
   if (args.get("records")) {
-    return BasePrinter::Format::RECORDS;
+    return BasePrinter::Options::Format::RECORDS;
   }
 
-  BasePrinter::Format val{BasePrinter::Format::LEGACY};
+  BasePrinter::Options::Format val{BasePrinter::Options::Format::LEGACY};
 
-  if (args.get("format")) {
-    std::string fmt = args.get("format").value();
+  if (auto data = args.get("format"); data) {
+    ts::TextView fmt{data.value()};
+    if ("data" == fmt.prefix(':')) {
+      fmt.take_prefix_at(':');
+    }
     if (auto search = _Fmt_str_to_enum.find(fmt); search != std::end(_Fmt_str_to_enum)) {
       val = search->second;
     }
   }
   return val;
 }
+
+BasePrinter::Options
+parse_print_opts(ts::Arguments &args)
+{
+  return {parse_format(args)};
+}
 } // namespace
 
 //------------------------------------------------------------------------------------------------------------------------------------
-CtrlCommand::CtrlCommand(ts::Arguments args) : _arguments(args)
-{
-  if (_arguments.get("debugrpc")) {
-    _debugRpcRawMsg = true;
-  }
-}
+CtrlCommand::CtrlCommand(ts::Arguments args) : _arguments(args) {}
+
 void
 CtrlCommand::execute()
 {
@@ -62,16 +69,21 @@ CtrlCommand::execute()
     _invoked_func();
   }
 }
+
 std::string
 CtrlCommand::invoke_rpc(std::string const &request)
 {
-  if (_debugRpcRawMsg) { // TODO: printer's work.
-    std::cout << "RPC Raw request: \n" << request << "\n---\n";
+  if (_printer->print_req_msg()) {
+    std::string text;
+    ts::bwprint(text, "--> {}", request);
+    _printer->write_debug(std::string_view{text});
   }
   if (auto resp = _rpcClient.call(request); !resp.empty()) {
     // all good.
-    if (_debugRpcRawMsg) {
-      std::cout << "RPC Raw request: \n" << resp << "\n---\n";
+    if (_printer->print_resp_msg()) {
+      std::string text;
+      ts::bwprint(text, "<-- {}", resp);
+      _printer->write_debug(std::string_view{text});
     }
     return resp;
   }
@@ -87,6 +99,12 @@ CtrlCommand::invoke_rpc(CtrlClientRequest const &request)
   return Codec::decode(resp);
 }
 
+void
+CtrlCommand::invoke_rpc(CtrlClientRequest const &request, std::string &resp)
+{
+  std::string encodedRequest = Codec::encode(request);
+  resp                       = invoke_rpc(encodedRequest);
+}
 // -----------------------------------------------------------------------------------------------------------------------------------
 RecordCommand::RecordCommand(ts::Arguments args) : CtrlCommand(args) {}
 
@@ -97,30 +115,30 @@ RecordCommand::execute()
 }
 ConfigCommand::ConfigCommand(ts::Arguments args) : RecordCommand(args)
 {
-  auto const fmt = parse_format(_arguments);
+  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
   if (args.get("match")) {
-    _printer      = std::make_unique<RecordPrinter>(fmt);
+    _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_match(); };
   } else if (args.get("get")) {
-    _printer      = std::make_unique<RecordPrinter>(fmt);
+    _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_get(); };
   } else if (args.get("diff")) {
-    _printer      = std::make_unique<DiffConfigPrinter>(fmt);
+    _printer      = std::make_unique<DiffConfigPrinter>(printOpts);
     _invoked_func = [&]() { config_diff(); };
   } else if (args.get("describe")) {
-    _printer      = std::make_unique<RecordDescribePrinter>(fmt);
+    _printer      = std::make_unique<RecordDescribePrinter>(printOpts);
     _invoked_func = [&]() { config_describe(); };
   } else if (args.get("defaults")) {
-    _printer      = std::make_unique<RecordPrinter>(fmt);
+    _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_defaults(); };
   } else if (args.get("set")) {
-    _printer      = std::make_unique<GenericPrinter>();
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { config_set(); };
   } else if (args.get("status")) {
-    _printer      = std::make_unique<RecordPrinter>(fmt);
+    _printer      = std::make_unique<RecordPrinter>(printOpts);
     _invoked_func = [&]() { config_status(); };
   } else if (args.get("reload")) {
-    _printer      = std::make_unique<ConfigReloadPrinter>(parse_format(_arguments));
+    _printer      = std::make_unique<ConfigReloadPrinter>(printOpts);
     _invoked_func = [&]() { config_reload(); };
   } else {
     // work in here.
@@ -202,21 +220,22 @@ ConfigCommand::config_reload()
 //------------------------------------------------------------------------------------------------------------------------------------
 MetricCommand::MetricCommand(ts::Arguments args) : RecordCommand(args)
 {
-  auto const fmt = parse_format(_arguments);
+  // auto const fmt = parse_format(_arguments);
+  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
   if (args.get("match")) {
-    _printer      = std::make_unique<MetricRecordPrinter>(fmt);
+    _printer      = std::make_unique<MetricRecordPrinter>(printOpts);
     _invoked_func = [&]() { metric_match(); };
   } else if (args.get("get")) {
-    _printer      = std::make_unique<MetricRecordPrinter>(fmt);
+    _printer      = std::make_unique<MetricRecordPrinter>(printOpts);
     _invoked_func = [&]() { metric_get(); };
   } else if (args.get("describe")) {
-    _printer      = std::make_unique<RecordDescribePrinter>(fmt);
+    _printer      = std::make_unique<RecordDescribePrinter>(printOpts);
     _invoked_func = [&]() { metric_describe(); };
   } else if (args.get("clear")) {
-    _printer      = std::make_unique<GenericPrinter>();
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { metric_clear(); };
   } else if (args.get("zero")) {
-    _printer      = std::make_unique<GenericPrinter>();
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { metric_zero(); };
   }
 }
@@ -266,14 +285,15 @@ MetricCommand::metric_zero()
 // TODO, let call the super const
 HostCommand::HostCommand(ts::Arguments args) : CtrlCommand(args)
 {
+  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
   if (_arguments.get("status")) {
-    _printer      = std::make_unique<GetHostStatusPrinter>(parse_format(_arguments));
+    _printer      = std::make_unique<GetHostStatusPrinter>(printOpts);
     _invoked_func = [&]() { status_get(); };
   } else if (_arguments.get("down")) {
-    _printer      = std::make_unique<SetHostStatusPrinter>(parse_format(_arguments));
+    _printer      = std::make_unique<SetHostStatusPrinter>(printOpts);
     _invoked_func = [&]() { status_down(); };
   } else if (_arguments.get("up")) {
-    _printer      = std::make_unique<SetHostStatusPrinter>(parse_format(_arguments));
+    _printer      = std::make_unique<SetHostStatusPrinter>(printOpts);
     _invoked_func = [&]() { status_up(); };
   }
 }
@@ -318,6 +338,7 @@ PluginCommand::PluginCommand(ts::Arguments args) : CtrlCommand(args)
   if (_arguments.get("msg")) {
     _invoked_func = [&]() { plugin_msg(); };
   }
+  _printer = std::make_unique<GenericPrinter>(parse_print_opts(_arguments));
 }
 
 void
@@ -336,8 +357,10 @@ PluginCommand::plugin_msg()
 //------------------------------------------------------------------------------------------------------------------------------------
 DirectRPCCommand::DirectRPCCommand(ts::Arguments args) : CtrlCommand(args)
 {
+  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
+
   if (_arguments.get("get-api")) {
-    _printer      = std::make_unique<RPCAPIPrinter>();
+    _printer      = std::make_unique<RPCAPIPrinter>(printOpts);
     _invoked_func = [&]() { get_rpc_api(); };
     return;
   } else if (_arguments.get("file")) {
@@ -346,7 +369,7 @@ DirectRPCCommand::DirectRPCCommand(ts::Arguments args) : CtrlCommand(args)
     _invoked_func = [&]() { read_from_input(); };
   }
 
-  _printer = std::make_unique<GenericPrinter>();
+  _printer = std::make_unique<GenericPrinter>(printOpts);
 }
 
 bool
@@ -375,12 +398,18 @@ DirectRPCCommand::from_file_request()
 
       if (!validate_input(content)) {
         _printer->write_output(
-          ts::bwprint(text, "Content not accepted. expecting a valid sequence or structure {} skipped.\n", filename));
+          ts::bwprint(text, "Content not accepted. expecting a valid sequence or structure. {} skipped.\n", filename));
         continue;
       }
-      _printer->write_output(ts::bwprint(text, "\n[ {} ]\n --> \n{}\n", filename, content));
       std::string const &response = invoke_rpc(content);
-      _printer->write_output(ts::bwprint(text, "<--\n{}\n", response));
+      if (_printer->is_json_format()) {
+        // as we have the raw json in here, we cna just directly print it
+        _printer->write_output(response);
+      } else {
+        _printer->write_output(ts::bwprint(text, "\n[ {} ]\n --> \n{}\n", filename, content));
+        _printer->write_output(ts::bwprint(text, "<--\n{}\n", response));
+      }
+
     } catch (std::exception const &ex) {
       _printer->write_output(ts::bwprint(text, "Error found: {}\n", ex.what()));
     }
@@ -416,11 +445,13 @@ DirectRPCCommand::read_from_input()
     _printer->write_output(ts::bwprint(text, "Error found: {}\n", ex.what()));
   }
 }
+
 //------------------------------------------------------------------------------------------------------------------------------------
 ServerCommand::ServerCommand(ts::Arguments args) : CtrlCommand(args)
 {
+  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
   if (_arguments.get("drain")) {
-    _printer      = std::make_unique<GenericPrinter>();
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
     _invoked_func = [&]() { server_drain(); };
   }
 }
@@ -444,11 +475,12 @@ ServerCommand::server_drain()
 // //------------------------------------------------------------------------------------------------------------------------------------
 StorageCommand::StorageCommand(ts::Arguments args) : CtrlCommand(args)
 {
+  BasePrinter::Options printOpts{parse_print_opts(_arguments)};
   if (_arguments.get("status")) {
-    _printer      = std::make_unique<CacheDiskStoragePrinter>(BasePrinter::Format::PRETTY);
+    _printer      = std::make_unique<CacheDiskStoragePrinter>(printOpts);
     _invoked_func = [&]() { get_storage_status(); };
   } else if (_arguments.get("offline")) {
-    _printer      = std::make_unique<CacheDiskStorageOfflinePrinter>(parse_format(_arguments));
+    _printer      = std::make_unique<CacheDiskStorageOfflinePrinter>(printOpts);
     _invoked_func = [&]() { set_storage_offline(); };
   }
 }

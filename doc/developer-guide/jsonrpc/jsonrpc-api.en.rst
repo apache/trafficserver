@@ -1206,7 +1206,7 @@ Response:
                "record_class": "2",
                "overridable": "false",
                "data_type": "STRING",
-               "current_value": "HOST_STATUS_DOWN,ACTIVE:DOWN:1602531077:100,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0",
+               "current_value": "HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0",
                "default_value": "HOST_STATUS_UP,ACTIVE:UP:0:0,LOCAL:UP:0:0,MANUAL:UP:0:0,SELF_DETECT:UP:0"
             }
          }]
@@ -1407,7 +1407,7 @@ Examples
 Request:
 
 
-.. code-block::json
+.. code-block:: json
    :linenos:
 
    {

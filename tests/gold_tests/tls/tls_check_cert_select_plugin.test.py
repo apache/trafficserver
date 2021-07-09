@@ -23,7 +23,8 @@ Test ATS offering different certificates based on SNI. Load via plugin
 '''
 
 # Define default ATS
-ts = Test.MakeATSProcess("ts", command="traffic_manager", select_ports=True, enable_tls=True)
+ts = Test.MakeATSProcess("ts", command="traffic_server", select_ports=True, enable_tls=True, dump_runroot=True)
+ts.SetRunRootEnv()
 server = Test.MakeOriginServer("server", ssl=True)
 dns = Test.MakeDNServer("dns")
 

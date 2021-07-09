@@ -1,0 +1,5 @@
+{
+   "id":"71588e95-4f11-43a9-9c7d-9942e017548c",
+   "jsonrpc":"2.0",
+   "method":"admin_config_reload"
+}

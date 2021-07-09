@@ -55,6 +55,8 @@ struct JSONRPCResponse {
   {
     return !error.IsNull();
   }
+
+  YAML::Node fullMsg;
 };
 
 struct JSONRPCError {
@@ -373,6 +375,17 @@ struct ShowRegisterHandlersRequest : CtrlClientRequest {
   get_method() const
   {
     return "show_registered_handlers";
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
+// We expect the method to be passed, this request is used to create dynamic requests by using (traffic_ctl rpc invoke "func_name")
+struct CustomizableRequest : CtrlClientRequest {
+  using super = CtrlClientRequest;
+  CustomizableRequest(std::string const &methodName) { super::method = methodName; }
+  std::string
+  get_method() const
+  {
+    return super::method;
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------

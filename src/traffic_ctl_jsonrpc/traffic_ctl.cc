@@ -42,12 +42,12 @@ main(int argc, const char **argv)
   parser.add_global_usage("traffic_ctl [OPTIONS] CMD [ARGS ...]");
   parser.require_commands();
 
-  parser.add_option("--debug", "", "Enable debugging output")
+  parser.add_option("--debug", "", "Enable debugging output - unimplemented")
     .add_option("--version", "-V", "Print version string")
     .add_option("--help", "-h", "Print usage information")
     .add_option("--run-root", "", "using TS_RUNROOT as sandbox", "TS_RUNROOT", 1)
-    .add_option("--format", "-f", "Use a specific output format legacy|pretty", "", 1, "legacy", "format")
-    .add_option("--debugrpc", "-r", "Show raw rpc message before/after calling the Server.");
+    .add_option("--format", "-f", "Use a specific output format {legacy|pretty|json|data:{req|resp|all}}", "", 1, "legacy",
+                "format");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
   auto &metric_command     = parser.add_command("metric", "Manipulate performance metrics").require_commands();

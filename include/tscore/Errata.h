@@ -826,7 +826,8 @@ inline Errata::Errata(Message &&msg)
 }
 inline Errata::Errata(std::error_code const &ec)
 {
-  this->push(ec.default_error_condition().value(), // we use the classification from the error_condition.
+  auto cond = ec.category().default_error_condition(ec.value());
+  this->push(cond.value(), // we use the classification from the error_condition.
              ec.value(), ec.message());
 }
 

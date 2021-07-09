@@ -37,14 +37,24 @@ class BasePrinter
 {
 public:
   /// This enum maps the --format flag coming from traffic_ctl. (also --records is included here, see comments down below.)
-  enum class Format {
-    LEGACY = 0, // Legacy format, mimics the old traffic_ctl output
-    PRETTY,     // Enhanced printing messages. (in case you would like to generate them)
-    RECORDS     // only valid for configs, but it's handy to have it here.
+  struct Options {
+    enum class Format {
+      LEGACY = 0, // Legacy format, mimics the old traffic_ctl output
+      PRETTY,     // Enhanced printing messages. (in case you would like to generate them)
+      JSON,       // Json formatting
+      RECORDS,    // only valid for configs, but it's handy to have it here.
+      DATA_REQ,   // Print json request + default format
+      DATA_RESP,  // Print json response + default format
+      DATA_ALL    // Print json request and response + default format
+    };
+    Options() = default;
+    Options(Format fmt) : _format(fmt) {}
+    Format _format{Format::LEGACY}; //!< selected(passed) format.
   };
 
   /// Printer constructor. Needs the format as it will be used by derived classes.
-  BasePrinter(Format fmt) : _format(fmt) {}
+  BasePrinter(Options opts) : _printOpt(opts) {}
+
   BasePrinter()          = default;
   virtual ~BasePrinter() = default;
 
@@ -68,22 +78,60 @@ public:
   ///
   virtual void write_output(YAML::Node const &result) = 0;
 
-  virtual void
-  write_output(std::string_view output)
-  {
-    std::cout << output;
-  }
+  virtual void write_output(std::string_view output);
+  virtual void write_debug(std::string_view output);
+
+  /// Format getters.
+  Options::Format get_format() const;
+  bool print_req_msg() const;
+  bool print_resp_msg() const;
+  bool is_json_format() const;
+  bool is_legacy_format() const;
+  bool is_records_format() const;
+  bool is_pretty_format() const;
 
 protected:
-  /// handy function that checks if the selected format is legacy.
-  bool
-  is_format_legacy()
-  {
-    return _format == Format::LEGACY;
-  }
-
-  Format _format{Format::LEGACY}; //!< selected(passed) format.
+  Options _printOpt;
 };
+inline BasePrinter::Options::Format
+BasePrinter::get_format() const
+{
+  return _printOpt._format;
+}
+
+inline bool
+BasePrinter::print_req_msg() const
+{
+  return get_format() == Options::Format::DATA_ALL || get_format() == Options::Format::DATA_REQ;
+}
+
+inline bool
+BasePrinter::print_resp_msg() const
+{
+  return get_format() == Options::Format::DATA_ALL || get_format() == Options::Format::DATA_RESP;
+}
+
+inline bool
+BasePrinter::is_json_format() const
+{
+  return get_format() == Options::Format::JSON;
+}
+
+inline bool
+BasePrinter::is_legacy_format() const
+{
+  return get_format() == Options::Format::LEGACY;
+}
+inline bool
+BasePrinter::is_records_format() const
+{
+  return get_format() == Options::Format::RECORDS;
+}
+inline bool
+BasePrinter::is_pretty_format() const
+{
+  return get_format() == Options::Format::PRETTY;
+}
 //------------------------------------------------------------------------------------------------------------------------------------
 class GenericPrinter : public BasePrinter
 {
@@ -94,7 +142,7 @@ class GenericPrinter : public BasePrinter
   }
 
 public:
-  GenericPrinter() : BasePrinter() {}
+  GenericPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class RecordPrinter : public BasePrinter
@@ -104,7 +152,7 @@ class RecordPrinter : public BasePrinter
   void write_output_pretty(RecordLookUpResponse const &result);
 
 public:
-  RecordPrinter(BasePrinter::Format fmt) : BasePrinter(fmt) { _printAsRecords = (_format == Format::RECORDS); }
+  RecordPrinter(Options opt) : BasePrinter(opt) { _printAsRecords = is_records_format(); }
 
 protected:
   bool _printAsRecords{false};
@@ -115,7 +163,7 @@ class MetricRecordPrinter : public BasePrinter
   void write_output(YAML::Node const &result) override;
 
 public:
-  MetricRecordPrinter(BasePrinter::Format fmt) : BasePrinter(fmt) {}
+  MetricRecordPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class DiffConfigPrinter : public RecordPrinter
@@ -124,7 +172,7 @@ class DiffConfigPrinter : public RecordPrinter
   void write_output_pretty(YAML::Node const &result);
 
 public:
-  DiffConfigPrinter(BasePrinter::Format fmt) : RecordPrinter(fmt) {}
+  DiffConfigPrinter(BasePrinter::Options opt) : RecordPrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class ConfigReloadPrinter : public BasePrinter
@@ -133,7 +181,7 @@ class ConfigReloadPrinter : public BasePrinter
   void write_output_pretty(YAML::Node const &result);
 
 public:
-  ConfigReloadPrinter(BasePrinter::Format fmt) : BasePrinter(fmt) {}
+  ConfigReloadPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class RecordDescribePrinter : public BasePrinter
@@ -143,7 +191,7 @@ class RecordDescribePrinter : public BasePrinter
   void write_output(YAML::Node const &result) override;
 
 public:
-  RecordDescribePrinter(BasePrinter::Format fmt) : BasePrinter(fmt) {}
+  RecordDescribePrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class GetHostStatusPrinter : public BasePrinter
@@ -151,7 +199,7 @@ class GetHostStatusPrinter : public BasePrinter
   void write_output(YAML::Node const &result) override;
 
 public:
-  GetHostStatusPrinter(BasePrinter::Format fmt) : BasePrinter(fmt) {}
+  GetHostStatusPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class SetHostStatusPrinter : public BasePrinter
@@ -159,7 +207,7 @@ class SetHostStatusPrinter : public BasePrinter
   void write_output(YAML::Node const &result) override;
 
 public:
-  SetHostStatusPrinter(BasePrinter::Format fmt) : BasePrinter(fmt) {}
+  SetHostStatusPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class CacheDiskStoragePrinter : public BasePrinter
@@ -168,7 +216,7 @@ class CacheDiskStoragePrinter : public BasePrinter
   void write_output(YAML::Node const &result) override;
 
 public:
-  CacheDiskStoragePrinter(BasePrinter::Format fmt) : BasePrinter(fmt) {}
+  CacheDiskStoragePrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class CacheDiskStorageOfflinePrinter : public BasePrinter
@@ -177,11 +225,14 @@ class CacheDiskStorageOfflinePrinter : public BasePrinter
   void write_output_pretty(YAML::Node const &result);
 
 public:
-  CacheDiskStorageOfflinePrinter(BasePrinter::Format fmt) : BasePrinter(fmt) {}
+  CacheDiskStorageOfflinePrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 class RPCAPIPrinter : public BasePrinter
 {
   void write_output(YAML::Node const &result) override;
+
+public:
+  RPCAPIPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------

@@ -1,0 +1,295 @@
+'''
+JSONRPC client test extension.
+'''
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+import os
+import tempfile
+import jsonrpc
+import json
+import sys
+import typing
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError
+from autest.testers import Tester, tester
+import hosts.output as host
+from autest.exceptions.killonfailure import KillOnFailureError
+
+
+class SchemaValidator:
+    '''
+    Class that provides some handy schema validation function. It's in a class so some Testers can use this functionality without
+    exporting the class or method.
+    '''
+
+    def validate_request_schema(self, event, file_name, is_request=True, schema_file_name=None, field_schema_file_name=None):
+        '''
+        Perform Schema validation on the JSONRPC params and also to the particular params field.
+
+        file_name:
+            main json request file, schema check will be applied to the content of this file.
+        schema_file_name:
+            main doc schema file, this should only contain the wider JSONRPC 2.0 schema(not including params or result)
+        is_request:
+            This lets the function know if it should apply the 'field_schema_file_name' to the 'params' or the 'result' field.
+        field_schema_file_name:
+            param or result field schema file.
+
+        '''
+
+        with open(file_name, 'r') as f:
+            r = f.read()
+            rdata = json.loads(r)
+
+        if schema_file_name:
+            with open(schema_file_name, 'r') as f:
+                s = f.read()
+                sdata = json.loads(s)
+        try:
+            # validate may throw if invalid schema.
+            if schema_file_name:
+                validate(instance=rdata, schema=sdata)
+
+            if field_schema_file_name:
+                fieldName = 'params' if is_request else 'result'
+                jsonField = rdata[fieldName] if fieldName in rdata else None
+
+                if jsonField:
+                    with open(field_schema_file_name, 'r') as f:
+                        p = f.read()
+                        psdata = json.loads(p)
+                    validate(instance=jsonField, schema=psdata)
+                else:
+                    return (False, f"There is no {fieldName} field to validate", "Error found.")
+        except ValidationError as ve:
+            event.object.Stop()
+            return (False, "Check JSONRPC 2.0 schema validation", str(ve))
+
+        return (True, "Check JSONRPC 2.0 schema validation", "All good")
+
+
+def AddJsonRPCClientRequest(obj, ts, request='', file=None, schema_file_name=None, params_field_schema_file_name=None):
+    '''
+    Function to add a JSONRPC request into a process. This function will internally generate a call to traffic_ctl.
+    As traffic_ctl can send request by reading from a file, internally this function will create a temporary json file
+    and will be passed as parameter to traffic_ctl, taking only the output as response (-z).
+
+    Args:
+        ts:
+            traffic_server object, this is needed in order to traffic_ctl find the right socket.
+
+        file: The file name used to read the request.
+
+        request:
+            request should be created by the Request api(jsonrpc.py). ie:
+
+            tr = Test.AddTestRun("Test JSONRPC foo_bar()")
+            tr.AddJsonRPCClientRequest(ts, Request.foo_bar(fqdn=["yahoo.com", "aol.com", "vz.com"]))
+
+        schema_file_name:
+            Unsupported for now. This will be used to validate the request against a schema file. if empty no request schema
+            validation will be performed.
+
+        params_field_schema_file_name:
+            Schema file to validate the params field in the jsonrpc message.
+
+    Validating the response:
+
+    Either by the regular validation mechanism already provided by the Testing framework or by using CustomJSONRPCResponse Tester
+    which will let you read the response as a dict and play with it. See CustomJSONRPCResponse for more  details.
+
+    Errors:
+        If there is an error in the schema validation, either the params or the whole json message, the test will not run, an exception
+        will be thrown with the specific error.
+
+    '''
+
+    fileName = ''
+    process = obj.Processes.Default
+    if file is None:
+        reqFile = tempfile.NamedTemporaryFile(delete=False, dir=process.RunDirectory, suffix=f"_{obj.Name}.json")
+        fileName = reqFile.name
+        with open(fileName, "w") as req:
+            req.write(str(request))
+    else:
+        fileName = file
+
+    command = f"{ts.Variables.BINDIR}/traffic_ctl rpc file {fileName} "
+    if ts:
+        command += f" --run-root {ts.Disk.runroot_yaml.Name}"
+
+    command += ' --format json'  # we only want the output.
+
+    process.Command = command
+    process.ReturnCode = 0
+
+    if schema_file_name != "":
+        process.SetupEvent.Connect(
+            Testers.Lambda(
+                lambda ev: SchemaValidator().validate_request_schema(
+                    ev,
+                    fileName,
+                    True,
+                    schema_file_name,
+                    params_field_schema_file_name)))
+    return process
+
+
+def AddJsonRPCShowRegisterHandlerRequest(obj, ts):
+    '''
+    Handy function to request all the registered endpoints in the RPC engine. A good way to validate that your new RPC handler
+    is available through the RPC by calling this function and validating the response. ie:
+
+        tr = Test.AddTestRun("Test registered API - using AddJsonRPCShowRegisterHandlerRequest")
+        tr.AddJsonRPCShowRegisterHandlerRequest(ts)
+
+        tr.Processes.Default.Streams.stdout = All(
+            Testers.IncludesExpression('foo_bar', 'Should  be listed'),
+        )
+    '''
+    return AddJsonRPCClientRequest(obj, ts, jsonrpc.Request.show_registered_handlers())
+
+
+# Testers
+class CustomJSONRPCResponse(Tester):
+
+    '''
+    Custom tester that provides the user the ability to be called with the response from the RPC. The registered function will be
+    called with the jsonrpc.Response(jsonrpc.py).
+
+    Args:
+        func:
+            The function that will be called to perform a custom validation of the jsonrpc
+            message.
+
+    Example:
+
+        tr = Test.AddTestRun("Test update_host_status")
+        Params = [
+            {'name': 'yahoo', 'status': 'up'}
+        ]
+
+        tr.AddJsonRPCClientRequest(ts, Request.update_host_status(hosts=Params))
+
+
+        def check_no_error_on_response(resp: Response):
+            # we only check if it's an error.
+            if resp.is_error():
+                return (False, resp.error_as_str())
+            return (True, "All good")
+
+        tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(check_no_error_on_response)
+
+    '''
+
+    def __init__(self,
+                 func: typing.Any,
+                 test_value=None,
+                 kill_on_failure: bool = False,
+                 description_group: typing.Optional[str] = None,
+                 description: typing.Optional[str] = None):
+        if description is None:
+            description = "Validating JSONRPC 2.0 response"
+
+        super(CustomJSONRPCResponse, self).__init__(
+            value=func,
+            test_value=test_value,
+            kill_on_failure=kill_on_failure,
+            description_group=description_group,
+            description=description)
+
+    def test(self, eventinfo, **kw):
+
+        response_text = {}
+        with open(self._GetContent(eventinfo), "r") as resp:
+            response_text = resp.read()
+
+        (testPassed, reason) = self.Value(jsonrpc.Response(text=response_text))
+
+        if testPassed:
+            self.Result = tester.ResultType.Passed
+            self.Reason = f"Returned value: {reason}"
+            host.WriteVerbose(
+                ["testers.CustomJSONRPCResponse", "testers"], f"tester.ResultType.to_color_string(self.Result) - ", self.Reason)
+        else:
+            self.Result = tester.ResultType.Failed
+            self.Reason = f"Returned value: {reason}"
+            if self.KillOnFailure:
+                raise KillOnFailureError
+
+# Testers
+
+
+class JSONRPCResponseSchemaValidator(Tester, SchemaValidator):
+
+    '''
+    Tester for response schema validation.
+    This class can perform a JSONRPC 2.0 schema validation and also the 'result' field validation if provided.
+
+    schema_file_name:
+        Main JSONRPC 2.0 schema validation  file.
+
+    result_field_schema_file_name:
+        result field schema validation, this is optional, if not provided the main schema will just check that the result matches
+        the JSONRPC 2.0 specs.
+    '''
+
+    def __init__(self,
+                 schema_file_name,
+                 result_field_schema_file_name=None,
+                 value=None,
+                 test_value=None,
+                 kill_on_failure: bool = False,
+                 description_group: typing.Optional[str] = None,
+                 description: typing.Optional[str] = None):
+        if description is None:
+            description = "Validating JSONRPC 2.0 response schema"
+        self._schema_file_name = schema_file_name
+        self._result_field_schema_file_name = result_field_schema_file_name
+
+        super(JSONRPCResponseSchemaValidator, self).__init__(
+            value=value,
+            test_value=test_value,
+            kill_on_failure=kill_on_failure,
+            description_group=description_group,
+            description=description)
+
+    def test(self, eventinfo, **kw):
+        response_text = {}
+        with open(self._GetContent(eventinfo), "r") as resp:
+            response_text = resp.read()
+
+        (testPassed, reason, cmm) = self.validate_request_schema(eventinfo, self._GetContent(
+            eventinfo), False, self._schema_file_name, self._result_field_schema_file_name)
+
+        if testPassed:
+            self.Result = tester.ResultType.Passed
+            self.Reason = f"Returned value: {reason}"
+            host.WriteVerbose(["testers.JSONRPCResponseSchemaValidator", "testers"],
+                              f"tester.ResultType.to_color_string(self.Result) - ", self.Reason)
+        else:
+            self.Result = tester.ResultType.Failed
+            self.Reason = f"Returned value: {reason}"
+            if self.KillOnFailure:
+                raise KillOnFailureError
+
+
+# Export
+AddTester(CustomJSONRPCResponse)
+AddTester(JSONRPCResponseSchemaValidator)
+ExtendTestRun(AddJsonRPCShowRegisterHandlerRequest, name="AddJsonRPCShowRegisterHandlerRequest")
+ExtendTestRun(AddJsonRPCClientRequest, name="AddJsonRPCClientRequest")

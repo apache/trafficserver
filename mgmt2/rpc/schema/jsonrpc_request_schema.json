@@ -1,54 +1,54 @@
 {
-  "$schema":"http://json-schema.org/draft-04/schema#",
-  "title":"mgmt2/rpc/schema/jsonrpc_request_schema.json",
-  "description":"Data for a JSON RPC 2.0 request, this may contains some exceptions to the standard. Licensed under Apache V2 https://www.apache.org/licenses/LICENSE-2.0",
-  "oneOf":[
-     {
-        "description":"An individual request",
-        "$ref":"#/definitions/request"
-     },
-     {
-        "description":"An array of requests",
-        "type":"array",
-        "items":{
-           "$ref":"#/definitions/request"
-        }
-     }
-  ],
-  "definitions":{
-     "request":{
-        "type":"object",
-        "required":[
-           "jsonrpc",
-           "method"
-        ],
-        "properties":{
-           "jsonrpc":{
-              "enum":[
-                 "2.0"
-              ]
-           },
-           "method":{
-              "type":"string"
-           },
-           "id":{
-              "type":[
-                 "string",
-                 "number",
-                 "null"
-              ],
-              "note":[
-                 "While allowed, null should be avoided: http://www.jsonrpc.org/specification#id1",
-                 "While allowed, a number with a fractional part should be avoided: http://www.jsonrpc.org/specification#id2"
-              ]
-           },
-           "params":{
-              "type":[
-                 "array",
-                 "object"
-              ]
-           }
-        }
-     }
-  }
-}
+   "$schema":"http://json-schema.org/draft-04/schema#",
+   "title":"JSONRPC 2.0 request schema",
+   "description":"Data for a JSON RPC 2.0 request, this may contains some exceptions to the standard. Licensed under Apache V2 https://www.apache.org/licenses/LICENSE-2.0",
+   "oneOf":[
+      {
+         "description":"An individual request",
+         "$ref":"#/definitions/request"
+      },
+      {
+         "description":"An array of requests",
+         "type":"array",
+         "items":{
+            "$ref":"#/definitions/request"
+         }
+      }
+   ],
+   "definitions":{
+      "request":{
+         "type":"object",
+         "required":[
+            "jsonrpc",
+            "method"
+         ],
+         "properties":{
+            "jsonrpc":{
+               "enum":[
+                  "2.0"
+               ]
+            },
+            "method":{
+               "type":"string"
+            },
+            "id":{
+               "type":[
+                  "string",
+                  "number",
+                  "null"
+               ],
+               "note":[
+                  "While allowed, null should be avoided: http://www.jsonrpc.org/specification#id1",
+                  "While allowed, a number with a fractional part should be avoided: http://www.jsonrpc.org/specification#id2"
+               ]
+            },
+            "params":{
+               "type":[
+                  "array",
+                  "object"
+               ]
+            }
+         }
+      }
+   }
+ }

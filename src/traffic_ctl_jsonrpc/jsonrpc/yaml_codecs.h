@@ -24,10 +24,12 @@
 
 #include "RPCRequests.h"
 
+namespace
+{
 // For some fields, If we can't get the value, then just send the default/empty value. Let the
 // traffic_ctl display something.
 template <typename T>
-static auto
+auto
 try_extract(YAML::Node const &node, const char *name, bool throwOnFail = false)
 {
   try {
@@ -41,6 +43,7 @@ try_extract(YAML::Node const &node, const char *name, bool throwOnFail = false)
   }
   return T{};
 }
+} // namespace
 /**
  * YAML namespace. All json rpc request codecs can be placed here. It will read all the definitions from "requests.h"
  * It's noted that there may be some duplicated with the rpc server implementation structures but as this is very simple idiom where
@@ -317,23 +320,23 @@ public:
   {
     specs::JSONRPCResponse resp;
     try {
-      YAML::Node node = YAML::Load(response.data());
-      if (node.Type() != YAML::NodeType::Map) {
+      resp.fullMsg = YAML::Load(response.data());
+      if (resp.fullMsg.Type() != YAML::NodeType::Map) {
         // we are not expecting anything else than a structure
         std::cout << "## error parsing response, response is not a structure\n";
         return {};
       }
 
-      if (node["result"]) {
-        resp.result = node["result"];
-      } else if (node["error"]) {
-        resp.error = node["error"];
+      if (resp.fullMsg["result"]) {
+        resp.result = resp.fullMsg["result"];
+      } else if (resp.fullMsg["error"]) {
+        resp.error = resp.fullMsg["error"];
       }
 
-      if (auto id = node["id"]) {
+      if (auto id = resp.fullMsg["id"]) {
         resp.id = id.as<std::string>();
       }
-      if (auto jsonrpc = node["jsonrpc"]) {
+      if (auto jsonrpc = resp.fullMsg["jsonrpc"]) {
         resp.jsonrpc = jsonrpc.as<std::string>();
       }
     } catch (YAML::Exception const &e) {
