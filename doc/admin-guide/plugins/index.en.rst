@@ -166,7 +166,8 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Multiplexer <multiplexer.en>
    MySQL Remap <mysql_remap.en>
    Rate Limit <rate_limit.en>
-   Signed URLs <url_sig.en>
+   URI Signing <uri_signing.en>
+   Legacy Signed URLs <url_sig.en>
    Slice <slice.en>
    SSL Headers <sslheaders.en>
    SSL Session Reuse <ssl_session_reuse.en>
@@ -237,8 +238,16 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    This remap plugin allows the administrator to easily setup remotely
    controlled ``PURGE`` for the content of an entire remap rule.
 
-:doc:`Signed URLs <url_sig.en>`
+:doc:`URI Signing <uri_signing.en>`
+   Adds support for verifying URL signatures for incoming requests to either deny or redirect access,
+   implementing the IETF URI Signing draft RFC.
+
+:doc:`Legacy Signed URLs <url_sig.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
+
+   .. note::
+
+    URL Sig is old and unlikely to be standardized. Prefer URI Signing.
 
 :doc:`Slice <slice.en>`
    Slice full file or range based requests into deterministic chunks, allowing large files to be

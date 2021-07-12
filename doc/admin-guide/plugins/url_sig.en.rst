@@ -22,6 +22,10 @@
 Signed URL Plugin
 *****************
 
+   .. note::
+
+    The URL Sig protocol is old and unlikely to be standardized. Prefer :doc:`uri_signing.en`.
+
 This plugin checks a signature query string on a URL and rejects (HTTP ``403``)
 or redirects (HTTP ``302``) when the check fails. The signature is based on a
 secret key that both a signing portal and the |TS| cache share. The algorithm
