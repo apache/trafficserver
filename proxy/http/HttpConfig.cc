@@ -1629,7 +1629,7 @@ HttpConfig::reconfigure()
   params->referer_filter_enabled  = INT_TO_BOOL(m_master.referer_filter_enabled);
   params->referer_format_redirect = INT_TO_BOOL(m_master.referer_format_redirect);
 
-  params->strict_uri_parsing = INT_TO_BOOL(m_master.strict_uri_parsing);
+  params->strict_uri_parsing = m_master.strict_uri_parsing;
 
   params->oride.down_server_timeout = m_master.oride.down_server_timeout;
 

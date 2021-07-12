@@ -1191,14 +1191,38 @@ url_is_strictly_compliant(const char *start, const char *end)
   return true;
 }
 
+/**
+ *  This method will return TRUE if the uri is mostly compliant with
+ *  RFC 3986 and it will return FALSE if not. Specifically denying white
+ *  space an unprintable characters
+ */
+bool
+url_is_mostly_compliant(const char *start, const char *end)
+{
+  for (const char *i = start; i < end; ++i) {
+    if (isspace(*i)) {
+      Debug("http", "Whitespace character [0x%.2X] found in URL", (unsigned char)*i);
+      return false;
+    }
+    if (!isprint(*i)) {
+      Debug("http", "Non-printable character [0x%.2X] found in URL", (unsigned char)*i);
+      return false;
+    }
+  }
+  return true;
+}
+
 } // namespace UrlImpl
 using namespace UrlImpl;
 
 ParseResult
-url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, bool strict_uri_parsing,
+url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, int strict_uri_parsing,
           bool verify_host_characters)
 {
-  if (strict_uri_parsing && !url_is_strictly_compliant(*start, end)) {
+  if (strict_uri_parsing == 1 && !url_is_strictly_compliant(*start, end)) {
+    return PARSE_RESULT_ERROR;
+  }
+  if (strict_uri_parsing == 2 && !url_is_mostly_compliant(*start, end)) {
     return PARSE_RESULT_ERROR;
   }
 

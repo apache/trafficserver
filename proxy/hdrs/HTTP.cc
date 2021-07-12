@@ -873,7 +873,7 @@ http_parser_clear(HTTPParser *parser)
 
 ParseResult
 http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                      bool must_copy_strings, bool eof, bool strict_uri_parsing, size_t max_request_line_size,
+                      bool must_copy_strings, bool eof, int strict_uri_parsing, size_t max_request_line_size,
                       size_t max_hdr_field_size)
 {
   if (parser->m_parsing_http) {
