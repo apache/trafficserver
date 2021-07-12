@@ -45,7 +45,7 @@
   -------------------------------------------------------------------------*/
 
 ParseResult
-HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing)
+HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, int strict_uri_parsing)
 {
   const char *start;
   const char *tmp;
