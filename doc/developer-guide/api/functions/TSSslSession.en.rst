@@ -44,7 +44,7 @@ These functions tend to be used with the :macro:`TS_SSL_SESSION_HOOK`.
 
 The functions work with the :type:`TSSslSessionID` object to identify sessions to retrieve, insert, or delete.
 
-The functions also work with the :type:`TSSslSession` object which can be cast to a pointer to the openssl SSL_SESSION object.
+The functions also work with the :type:`TSSslSession` object which can be cast to a pointer to the OpenSSL SSL_SESSION object.
 
 These functions perform the appropriate locking on the session cache to avoid errors.
 

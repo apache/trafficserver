@@ -34,7 +34,7 @@ For Session ID base resumption in uses the ATS SSL Session Cache for the local s
 Redis to communication new sessions with its peers.  When a new session is seen by an ATS instances it
 publishes an encrypted copy of the session state to the local Redis channel.  When a new session is received
 on the Redis channel, the plugin stores that session state into its local ATS SSL session cache.  Once the
-session state is in the local ATS SSL session cache it is available to the openssl library for future TLS
+session state is in the local ATS SSL session cache it is available to the OpenSSL library for future TLS
 handshakes.
 
 For the ticket based session resumption, the plugin implements logic to decide on a Session Ticket Encryption Key (STEK)

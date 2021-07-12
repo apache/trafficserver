@@ -82,11 +82,11 @@ always be called after TS_VCONN_START_HOOK.
 
 The Traffic Server core first evaluates the settings in the ssl_multicert.config file based on the
 server name. Then the core SNI callback executes the plugin registered SNI callback code. The plugin
-callback can access the servername by calling the openssl function SSL_get_servername().
+callback can access the servername by calling the OpenSSL function SSL_get_servername().
 
 Processing will continue regardless of whether the hook callback executes
-:c:func:`TSVConnReenable()` since the openssl implementation does not allow for pausing processing
-during the openssl servername callback.
+:c:func:`TSVConnReenable()` since the OpenSSL implementation does not allow for pausing processing
+during the OpenSSL servername callback.
 
 TS_SSL_CERT_HOOK
 ----------------
@@ -95,7 +95,7 @@ This hook is called as the server certificate is selected for the TLS handshake.
 can execute code to create or select the certificate that should be used for the TLS handshake.
 This will override the default Traffic Server certificate selection.
 
-If you are running with openssl 1.0.2 or later, you can control whether the TLS handshake processing
+If you are running with OpenSSL 1.0.2 or later, you can control whether the TLS handshake processing
 will continue after the certificate hook callback execute by calling :c:func:`TSVConnReenable()` or
 not.  The TLS handshake processing will not proceed until :c:func:`TSVConnReenable()` is called.
 
@@ -111,7 +111,7 @@ object using the :c:func:`TSVConnSslVerifyCTXGet()` method and fetch the peer's 
 any additional checks.
 
 Processing will continue regardless of whether the hook callback executes
-:c:func:`TSVConnReenable()` since the openssl implementation does not allow for pausing processing
+:c:func:`TSVConnReenable()` since the OpenSSL implementation does not allow for pausing processing
 during the certificate verify callback.  The plugin can use the :c:func:`TSVConnReenableEx()`
 function to pass in the TS_EVENT_ERROR and stop the TLS handshake.
 
@@ -124,7 +124,7 @@ the :c:func:`TSVConnSslVerifyCTXGet()` method and fetch the peer's certificates 
 additional checks.
 
 Processing will continue regardless of whether the hook callback executes
-:c:func:`TSVConnReenable()` since the openssl implementation does not allow for pausing processing
+:c:func:`TSVConnReenable()` since the OpenSSL implementation does not allow for pausing processing
 during the certificate verify callback.  The plugin can use the :c:func:`TSVConnReenableEx()`
 function to pass in the TS_EVENT_ERROR and
 

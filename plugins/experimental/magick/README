@@ -12,7 +12,7 @@ The input for the plug-in's request is the query parameter "magick" which contai
 
 To avoid being exploited, the plug-in accepts one configuration argument specified on `plugin.config`; a OpenSSL's RSA256 public key file used to verify if the raw content of the "magick" parameter is valid and authorized. When it is configured, an additional query parameter "magickSig" is required on each request.
 
-The size of the keys directly impact how easy to compute (and break) the signature as well as the length of it. Generate a private & public pair of RSA256 keys using the following openssl commands:
+The size of the keys directly impact how easy to compute (and break) the signature as well as the length of it. Generate a private & public pair of RSA256 keys using the following OpenSSL commands:
 
 ```
 # private key
