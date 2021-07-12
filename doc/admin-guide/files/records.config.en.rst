@@ -1174,6 +1174,8 @@ mptcp
    proxy.process.http.disallowed_post_100_continue will be incremented.
 
 .. ts:cv:: CONFIG proxy.config.http.default_buffer_size INT 8
+   :reloadable:
+   :overridable:
 
    Configures the default buffer size, in bytes, to allocate for incoming
    request bodies which lack a ``Content-length`` header.
