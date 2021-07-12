@@ -1,0 +1,8 @@
+``HTTP/1.0 400 Invalid HTTP Request
+``Server: ATS/``
+``Content-Length: 219
+``
+<TITLE>Bad Request</TITLE>
+``<H1>Bad Request</H1>
+``Description: Could not process this request.
+``
