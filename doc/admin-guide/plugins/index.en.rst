@@ -165,6 +165,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    MP4 <mp4.en>
    Multiplexer <multiplexer.en>
    MySQL Remap <mysql_remap.en>
+   Parent Select <parent_select.en>
    Rate Limit <rate_limit.en>
    URI Signing <uri_signing.en>
    Legacy Signed URLs <url_sig.en>
@@ -230,6 +231,10 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Prefetch <prefetch.en>`
    Pre-fetch objects based on the requested URL path pattern.
+
+:doc:`Parent Select <parent_select.en>`
+   This remap plugin allows selection of parent proxies or origins during requests. This
+   provides the same functionality as the core :file:`parent.config` and :file:`strategies.yaml` config files.
 
 :doc:`Rate Limit <rate_limit.en>`
    Simple transaction rate limiting.
