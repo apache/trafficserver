@@ -151,9 +151,9 @@ libraries on the machine used to build |TS|:
 
 - pkgconfig
 - libtool
-- gcc (>= 4.3 or clang > 3.0)
+- C++ compiler (gcc >= 4.3 or clang > 3.0)
 - GNU make
-- openssl
+- OpenSSL or BoringSSL
 - pcre
 - libcap
 - flex (for TPROXY)

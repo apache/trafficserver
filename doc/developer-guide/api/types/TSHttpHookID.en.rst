@@ -99,17 +99,17 @@ Enumeration Members
 Description
 ===========
 
-Note that :macro:`TS_SSL_CERT_HOOK` and :macro:`TS_SSL_SNI_HOOK` correspond to the same openssl
+Note that :macro:`TS_SSL_CERT_HOOK` and :macro:`TS_SSL_SNI_HOOK` correspond to the same OpenSSL
 callbacks. This is done for backwards compatibility. :macro:`TS_SSL_SNI_HOOK` is expected
 to be deprecated and removed, plugins using this should change to :macro:`TS_SSL_CERT_HOOK` or
 :macro:`TS_SSL_SERVERNAME_HOOK` as appropriate.
 
-.. warning:: openssl 1.0.2 and later versions
+.. warning:: OpenSSL 1.0.2 and later versions
 
-   :macro:`TS_SSL_SERVERNAME_HOOK` is invoked for the openssl servername callback.
-   :macro:`TS_SSL_SNI_HOOK` and :macro:`TS_SSL_CERT_HOOK` are invoked for the openssl certificate
+   :macro:`TS_SSL_SERVERNAME_HOOK` is invoked for the OpenSSL servername callback.
+   :macro:`TS_SSL_SNI_HOOK` and :macro:`TS_SSL_CERT_HOOK` are invoked for the OpenSSL certificate
    callback which is not guaranteed to be invoked for a TLS transaction.
 
-   This is a behavior change dependent on the version of openssl. To avoid problems use
+   This is a behavior change dependent on the version of OpenSSL. To avoid problems use
    :macro:`TS_SSL_SERVERNAME_HOOK` to get called back for all TLS transaction and
    :macro:`TS_SSL_CERT_HOOK` to get called back only to select a certificate.
