@@ -79,7 +79,7 @@ FCGIClientRequest::FCGIClientRequest(int request_id, TSHttpTxn txn)
       atscppapi::header_field_iterator it = h.find(key);
       if (it != h.end()) {
         atscppapi::HeaderField hf(*it);
-        string value                             = hf.values(","); // delimeter for header values
+        string value                             = hf.values(","); // delimiter for header values
         state_->requestHeaders["CONTENT_LENGTH"] = value.c_str();
       }
 
@@ -87,7 +87,7 @@ FCGIClientRequest::FCGIClientRequest(int request_id, TSHttpTxn txn)
       it  = h.find(key);
       if (it != h.end()) {
         HeaderField hf1(*it);
-        string value                           = hf1.values(","); // delimeter for header values
+        string value                           = hf1.values(","); // delimiter for header values
         state_->requestHeaders["CONTENT_TYPE"] = value.c_str();
       }
     }
@@ -105,7 +105,7 @@ FCGIClientRequest::FCGIClientRequest(int request_id, TSHttpTxn txn)
 }
 
 // destructor will reset the client_req_id and delete the recListState_ object
-// holding respose records received from fcgi server
+// holding response records received from fcgi server
 FCGIClientRequest::~FCGIClientRequest()
 {
   if (_headerRecord)
@@ -578,7 +578,7 @@ FCGIClientRequest::fcgiProcessBuffer(uchar *beg_buf, uchar *end_buf, std::ostrin
                 atscppapi::header_field_iterator it = h.find(key);
                 if (it != h.end()) {
                   atscppapi::HeaderField hf(*it);
-                  string value = hf.values(","); // delimeter for header values
+                  string value = hf.values(","); // delimiter for header values
                   output << HTTP_VERSION_STRINGS[HTTP_VERSION_1_1] << " ";
                   output << value.c_str() << "\r\n";
                 } else {

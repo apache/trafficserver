@@ -105,7 +105,7 @@ public:
  * Any plugin using the IO Core must enter
  *   with a held mutex.  SDK 1.0, 1.1 & 2.0 did not
  *   have this restriction so we need to add a mutex
- *   to Plugin's Continuation if it trys to use the IOCore
+ *   to Plugin's Continuation if it tries to use the IOCore
  * Not only does the plugin have to have a mutex
  *   before entering the IO Core.  The mutex needs to be held.
  *   We now take out the mutex on each call to ensure it is

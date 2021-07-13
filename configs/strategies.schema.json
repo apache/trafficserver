@@ -9,7 +9,7 @@
             "properties": {
                 "hosts": {
                     "type": "array",
-                    "description": "An array of hosts assinged to a group",
+                    "description": "An array of hosts assigned to a group",
                     "items": {
                         "$ref": "#/definitions/Host"
                     }

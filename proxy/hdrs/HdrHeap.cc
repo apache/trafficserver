@@ -1070,7 +1070,7 @@ HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
     // Coalesce can't know the inherited str size so we pass it
     //  it in so that it can allocate a new read-write string heap
     //  large enough (INKqa07513).
-    // INVARIENT: inherit_str_heaps can only be called after
+    // INVARIANT: inherit_str_heaps can only be called after
     //  all the objects the callee wants to inherit strings for
     //  are put into the heap
     coalesce_str_heaps(inherit_str_size);

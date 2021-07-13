@@ -102,7 +102,7 @@ namespace details
     ++cnt_fld_constructed; // don't allow schema modification
     ink_assert(cnt_fld_constructed <= cnt_constructed);
 
-    // init all extendible memory to 0, incase constructors don't
+    // init all extendible memory to 0, in case constructors don't
     memset(reinterpret_cast<void *>(ext_loc), 0, alloc_size);
 
     for (auto const &elm : fields) {

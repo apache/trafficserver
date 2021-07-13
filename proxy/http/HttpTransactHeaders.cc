@@ -215,7 +215,7 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
 
   // Nuke hop-by-hop headers
   //
-  //    The hop-by-hop header fields are layed out by the spec
+  //    The hop-by-hop header fields are laid out by the spec
   //    with two adjustments
   //      1) we treat TE as hop-by-hop because spec implies
   //         that it is by declaring anyone who sends a TE must

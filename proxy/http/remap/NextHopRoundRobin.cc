@@ -124,7 +124,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     HostStatRec *hst = pStatus.getHostStatus(cur_host->hostname.c_str());
     host_stat        = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
     // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-    // ignore the down status and mark it as avaialble
+    // ignore the down status and mark it as available
     if (ignore_self_detect && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
       if (hst->reasons == Reason::SELF_DETECT) {
         host_stat = TS_HOST_STATUS_UP;

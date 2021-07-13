@@ -157,7 +157,7 @@ HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
 
 // void HdrHeap::attach_block(IOBufferBlock* b, const char* use_start)
 //
-//    Attachs data from an IOBuffer block to
+//    Attaches data from an IOBuffer block to
 //      as a read-only string heap.  Looks through existing
 //      to expand an existing string heap entry if necessary
 //

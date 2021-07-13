@@ -500,7 +500,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   }
 
   // Now handle the remap specific rules for the "remap hook" (which is not a real hook).
-  // This is sufficiently differen than the normal cont_rewrite_headers() callback, and
+  // This is sufficiently different than the normal cont_rewrite_headers() callback, and
   // we can't (shouldn't) schedule this as a TXN hook.
   RuleSet *rule = conf->rule(TS_REMAP_PSEUDO_HOOK);
   Resources res(rh, rri);

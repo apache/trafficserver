@@ -125,7 +125,7 @@ struct EventIO {
    */
   int refresh(int events);
 
-  /// Remove the kernal or epoll event. Returns 0 on success.
+  /// Remove the kernel or epoll event. Returns 0 on success.
   int stop();
 
   /// Remove the epoll event and close the connection. Returns 0 on success.

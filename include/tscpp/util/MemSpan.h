@@ -383,7 +383,7 @@ public:
 
 namespace detail
 {
-  /// Suport pointer distance calculations for all types, @b include @c <void*>.
+  /// Support pointer distance calculations for all types, @b include @c <void*>.
   /// This is useful in templates.
   inline size_t
   ptr_distance(void const *first, void const *last)

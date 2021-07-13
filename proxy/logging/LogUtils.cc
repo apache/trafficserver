@@ -495,7 +495,7 @@ LogUtils::get_unrolled_filename(ts::TextView rolled_filename)
   // something like this, for example:
   //   diags.log.20191114.21h43m16s-20191114.21h43m17s.old
   //
-  // For these, the second delimeter will be a period. For this reason, we also
+  // For these, the second delimiter will be a period. For this reason, we also
   // split_prefix_at with a period as well.
   if (suffix.split_prefix_at('_') || suffix.split_prefix_at('.')) {
     // ' + 1' to remove the '_' or second '.':

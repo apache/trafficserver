@@ -145,7 +145,7 @@ createStrategiesFromFile(const char *file)
  * loads the contents of a file into a std::stringstream document.  If the file has a '#include file'
  * directive, that 'file' is read into the document beginning at the the point where the
  * '#include' was found. This allows the 'strategy' and 'hosts' yaml files to be separate.  The
- * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's begining.
+ * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's beginning.
  */
 void
 loadConfigFile(const std::string &fileName, std::stringstream &doc, std::unordered_set<std::string> &include_once)

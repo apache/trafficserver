@@ -22,7 +22,7 @@
  */
 
 /***************************************************************************
- This file contains constants and other limitis used within the logging
+ This file contains constants and other limits used within the logging
  module.
  ***************************************************************************/
 

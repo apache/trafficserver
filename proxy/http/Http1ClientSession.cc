@@ -487,7 +487,7 @@ Http1ClientSession::attach_server_session(PoolableSession *ssession, bool transa
 
     // Since this our slave, issue an IO to detect a close and
     //  have it call the client session back.  This IO also prevent
-    //  the server net conneciton from calling back a dead sm
+    //  the server net connection from calling back a dead sm
     SET_HANDLER(&Http1ClientSession::state_keep_alive);
     slave_ka_vio = ssession->do_io_read(this, INT64_MAX, ssession->get_remote_reader()->mbuf);
     ink_assert(slave_ka_vio != ka_vio);

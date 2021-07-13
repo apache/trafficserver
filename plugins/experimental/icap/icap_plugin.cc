@@ -702,7 +702,7 @@ transform_bypass(TSCont contp, TransformData *data)
 
 /*
  * transform_buffer_os_resp (Used only in debug-mode)
- * Description: Buffer resposne body from origin server.
+ * Description: Buffer response body from origin server.
  */
 static int
 transform_buffer_os_resp(TSCont contp, TransformData *data)

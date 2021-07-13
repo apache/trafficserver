@@ -56,7 +56,7 @@ public:
 
   /**
     This method tests whether this action would have been triggered by a
-    particuarly SNI value and IP address combination.  This is run after the
+    particularly SNI value and IP address combination.  This is run after the
     TLS exchange finished to see if the client used an SNI name different from
     the host name to avoid SNI-based policy
   */

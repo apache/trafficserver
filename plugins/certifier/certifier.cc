@@ -429,7 +429,7 @@ shadow_cert_generator(TSCont contp, TSEvent event, void *edata)
 
   struct stat st;
   FILE *fp = nullptr;
-  /// If directory doesn't exist, creat one
+  /// If directory doesn't exist, create one
   if (stat(path.c_str(), &st) == -1) {
     mkdir(path.c_str(), 0755);
   } else {

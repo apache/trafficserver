@@ -335,7 +335,7 @@ set_context_cert(SSL *ssl)
     SSL_CTX_set_tlsext_ticket_key_cb(ctx.get(), ssl_callback_session_ticket);
 #endif
 #endif
-    // After replacing the SSL_CTX, make sure the overriden ca_cert_file is still set
+    // After replacing the SSL_CTX, make sure the overridden ca_cert_file is still set
     setClientCertCACerts(ssl, netvc->get_ca_cert_file(), netvc->get_ca_cert_dir());
   } else {
     found = false;
@@ -1534,7 +1534,7 @@ SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams ss
 }
 
 /**
-   Insert SSLCertContext (SSL_CTX ans options) into SSLCertLookup with key.
+   Insert SSLCertContext (SSL_CTX and options) into SSLCertLookup with key.
    Do NOT call SSL_CTX_set_* functions from here. SSL_CTX should be set up by SSLMultiCertConfigLoader::init_server_ssl_ctx().
  */
 bool
@@ -1966,7 +1966,7 @@ get_verify_str(SSL *ssl)
 
 /**
  * Process the config to pull out the list of file names, and process the certs to get the list
- * of subject and sni names.  Thanks to dual cert configurations, there may be mulitple files of each type.
+ * of subject and sni names.  Thanks to dual cert configurations, there may be multiple files of each type.
  * If some names are not in all the listed certs they are listed in the uniqe_names map, keyed by the index
  * of the including certificate
  */

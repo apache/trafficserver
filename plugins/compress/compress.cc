@@ -42,7 +42,7 @@ using namespace std;
 using namespace Gzip;
 
 // FIXME: custom dictionaries would be nice. configurable/content-type?
-// a GPRS device might benefit from a higher compression ratio, whereas a desktop w. high bandwith
+// a GPRS device might benefit from a higher compression ratio, whereas a desktop w. high bandwidth
 // might be served better with little or no compression at all
 // FIXME: look into compressing from the task thread pool
 // FIXME: make normalizing accept encoding configurable

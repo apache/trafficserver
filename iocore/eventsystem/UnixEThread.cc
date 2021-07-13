@@ -55,7 +55,7 @@ int thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
 //   1) Define an independent ink_thread_key
 //   2) Override Thread::set_specific()
 //   3) Define this_Xthread() which get thread specific data by the independent key
-//   4) Clear thread specific data at destructor funtion.
+//   4) Clear thread specific data at destructor function.
 //
 // The below comments are copied from I_Thread.h
 //

@@ -86,9 +86,9 @@ def MakeATSProcess(obj, name, command='traffic_server', select_ports=True,
     # p.StartBefore(p_debug)
     # we want to have a few directories more fixed
     # this helps with debugging as location are common
-    # we do this by overiding locations from the "layout"
+    # we do this by overriding locations from the "layout"
     # used as part of build. This means loctaion such as
-    # PROXY_CONFIG_BIN_PATH with alway be $root/bin
+    # PROXY_CONFIG_BIN_PATH with always be $root/bin
     # not something else such as bin64
     #####
 
@@ -425,7 +425,7 @@ class Config(File):
         '''
         Write contents to disk
         '''
-        host.WriteVerbosef('ats-config-file', "Writting out file {0}",
+        host.WriteVerbosef('ats-config-file', "Writing out file {0}",
                            self.Name)
         if self.content is not None:
             with open(name, 'w') as f:
@@ -480,7 +480,7 @@ class RecordsConfig(Config, dict):
         self.WriteCustomOn(self._do_write)
 
     def _do_write(self, name):
-        host.WriteVerbosef('ats-config-file', "Writting out file {0}", name)
+        host.WriteVerbosef('ats-config-file', "Writing out file {0}", name)
         if len(self) > 0:
             with open(name, 'w') as f:
                 for name, val in self.items():

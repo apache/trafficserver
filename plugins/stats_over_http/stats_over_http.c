@@ -194,10 +194,10 @@ init_gzip(stats_state *my_state, int mode)
   my_state->zstrm.data_type = Z_ASCII;
   int err = deflateInit2(&my_state->zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, mode, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
   if (err != Z_OK) {
-    TSDebug(PLUGIN_NAME, "gzip intialization failed");
+    TSDebug(PLUGIN_NAME, "gzip initialization failed");
     return NONE;
   } else {
-    TSDebug(PLUGIN_NAME, "gzip initialized succesfully");
+    TSDebug(PLUGIN_NAME, "gzip initialized successfully");
     if (mode == GZIP_MODE) {
       return GZIP;
     } else if (mode == DEFLATE_MODE) {

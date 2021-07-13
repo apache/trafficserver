@@ -91,7 +91,7 @@ RecDataSetMax(RecDataT type, RecData *data)
     data->rec_float = FLT_MAX;
     break;
   default:
-    Fatal("unsupport type:%d\n", type);
+    Fatal("unsupported type:%d\n", type);
   }
 }
 
@@ -107,7 +107,7 @@ RecDataSetMin(RecDataT type, RecData *data)
     data->rec_float = FLT_MIN;
     break;
   default:
-    Fatal("unsupport type:%d\n", type);
+    Fatal("unsupported type:%d\n", type);
   }
 }
 
@@ -190,7 +190,7 @@ RecDataCmp(RecDataT type, RecData left, RecData right)
       return -1;
     }
   default:
-    Fatal("unsupport type:%d\n", type);
+    Fatal("unsupported type:%d\n", type);
     return 0;
   }
 }

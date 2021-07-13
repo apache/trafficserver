@@ -107,7 +107,7 @@ namespace Catch {
 // The following features are defined:
 //
 // CATCH_CONFIG_COUNTER : is the __COUNTER__ macro supported?
-// CATCH_CONFIG_WINDOWS_SEH : is Windows SEH supported?
+// CATCH_CONFIG_WINDOWS_SEH : is Windows SHE supported?
 // CATCH_CONFIG_POSIX_SIGNALS : are POSIX signals supported?
 // CATCH_CONFIG_DISABLE_EXCEPTIONS : Are exceptions enabled?
 // ****************
@@ -205,7 +205,7 @@ namespace Catch {
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-// Not all Windows environments support SEH properly
+// Not all Windows environments support SHE properly
 #if defined(__MINGW32__)
 #    define CATCH_INTERNAL_CONFIG_NO_WINDOWS_SEH
 #endif
@@ -240,7 +240,7 @@ namespace Catch {
 #  define CATCH_INTERNAL_START_WARNINGS_SUPPRESSION __pragma( warning(push) )
 #  define CATCH_INTERNAL_STOP_WARNINGS_SUPPRESSION  __pragma( warning(pop) )
 
-// Universal Windows platform does not support SEH
+// Universal Windows platform does not support SHE
 // Or console colours (or console at all...)
 #  if defined(WINAPI_FAMILY) && (WINAPI_FAMILY == WINAPI_FAMILY_APP)
 #    define CATCH_CONFIG_COLOUR_NONE
@@ -10573,7 +10573,7 @@ namespace Catch {
             // Extracts the actual name part of an enum instance
             // In other words, it returns the Blue part of Bikeshed::Colour::Blue
             StringRef extractInstanceName(StringRef enumInstance) {
-                // Find last occurence of ":"
+                // Find last occurrence of ":"
                 size_t name_start = enumInstance.size();
                 while (name_start > 0 && enumInstance[name_start - 1] != ':') {
                     --name_start;
@@ -10749,7 +10749,7 @@ namespace {
     }
 }
 
-#endif // signals/SEH handling
+#endif // signals/SHE handling
 
 #if defined( CATCH_CONFIG_WINDOWS_SEH )
 
@@ -10888,7 +10888,7 @@ namespace Catch {
     void FatalConditionHandler::reset() {}
 }
 
-#endif // signals/SEH handling
+#endif // signals/SHE handling
 
 #if defined(__GNUC__)
 #    pragma GCC diagnostic pop

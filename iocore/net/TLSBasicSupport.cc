@@ -1,6 +1,6 @@
 /** @file
 
-  TLSSBasicSupport.cc provides implmentations for
+  TLSSBasicSupport.cc provides implementations for
   TLSBasicSupport methods
 
   @section license License

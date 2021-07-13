@@ -1173,7 +1173,7 @@ QPACK::StaticTable::lookup(const char *name, int name_len, const char *value, in
           match_type = QPACK::LookupResult::MatchType::EXACT;
           break;
         } else {
-          // Name match -- Keep it for no exact matchs
+          // Name match -- Keep it for no exact matches
           match_type = QPACK::LookupResult::MatchType::NAME;
         }
       }
@@ -1277,7 +1277,7 @@ QPACK::DynamicTable::lookup(const char *name, int name_len, const char *value, i
           match_type = QPACK::LookupResult::MatchType::EXACT;
           break;
         } else {
-          // Name match -- Keep it for no exact matchs
+          // Name match -- Keep it for no exact matches
           match_type = QPACK::LookupResult::MatchType::NAME;
         }
       }

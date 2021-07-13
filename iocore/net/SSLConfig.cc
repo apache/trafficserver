@@ -482,7 +482,7 @@ SSLConfig::reconfigure()
   int loading_config_index        = get_loading_config_index();
   configids[loading_config_index] = configProcessor.set(configids[loading_config_index], params);
   params->initialize(); // re-read configuration
-  // Make the new config avaiable for use.
+  // Make the new config available for use.
   commit_config_id();
 }
 

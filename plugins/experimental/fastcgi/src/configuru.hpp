@@ -424,7 +424,7 @@ public:
   }
 
 // ----------------------------------------
-// Convertors:
+// Converters:
 
 #if CONFIGURU_IMPLICIT_CONVERSIONS
   /// Explicit casting, for overloads of as<T>
@@ -1382,7 +1382,7 @@ Config parse_file(const std::string &path, const FormatOptions &options, DocInfo
 // ----------------------------------------------------------
 /// Writes the config as a string in the given format.
 /// May call CONFIGURU_ONERROR if the given config is invalid. This can happen if
-/// a Config is unitialized (and options write_uninitialized is not set) or
+/// a Config is uninitialized (and options write_uninitialized is not set) or
 /// a Config contains inf/nan (and options.inf/options.nan aren't set).
 std::string dump_string(const Config &config, const FormatOptions &options);
 
@@ -2110,16 +2110,16 @@ Config::on_error(const std::string &msg) const
 }
 
 void
-Config::assert_type(Type exepected) const
+Config::assert_type(Type expected) const
 {
   if (_type == BadLookupType) {
     auto where = where_is(_u.bad_lookup->doc, _u.bad_lookup->line);
     CONFIGURU_ONERROR(where + "Failed to find key '" + _u.bad_lookup->key + "'");
-  } else if (_type != exepected) {
-    const auto message = where() + "Expected " + type_str(exepected) + ", got " + type_str(_type);
-    if (_type == Uninitialized && exepected == Object) {
+  } else if (_type != expected) {
+    const auto message = where() + "Expected " + type_str(expected) + ", got " + type_str(_type);
+    if (_type == Uninitialized && expected == Object) {
       CONFIGURU_ONERROR(message + ". Did you forget to call Config::object()?");
-    } else if (_type == Uninitialized && exepected == Array) {
+    } else if (_type == Uninitialized && expected == Array) {
       CONFIGURU_ONERROR(message + ". Did you forget to call Config::array()?");
     } else {
       CONFIGURU_ONERROR(message);

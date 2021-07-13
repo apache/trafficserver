@@ -1633,7 +1633,7 @@ HttpTransact::HandleRequest(State *s)
 
   // Added to skip the dns if the document is in the cache.
   // DNS is requested before cache lookup only if there are rules in cache.config , parent.config or
-  // if the newly added varible doc_in_cache_skip_dns is not enabled
+  // if the newly added variable doc_in_cache_skip_dns is not enabled
   if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' &&
       (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
       s->parent_params->parent_table->hostMatch) {
@@ -2194,9 +2194,9 @@ HttpTransact::DecideCacheLookup(State *s)
     TxnDebug("http_trans", "[DecideCacheLookup] Will NOT do cache lookup.");
     TxnDebug("http_seq", "[DecideCacheLookup] Will NOT do cache lookup");
     // If this is a push request, we need send an error because
-    //   since what ever was sent is not cachable
+    //   since what ever was sent is not cacheable
     if (s->method == HTTP_WKSIDX_PUSH) {
-      HandlePushError(s, "Request Not Cachable");
+      HandlePushError(s, "Request Not Cacheable");
       return;
     }
     // for redirect, we skipped cache lookup to do the automatic redirection
@@ -2307,7 +2307,7 @@ HttpTransact::HandlePushResponseHdr(State *s)
 
     TRANSACT_RETURN(SM_ACTION_CACHE_ISSUE_WRITE, HandlePushCacheWrite);
   } else {
-    HandlePushError(s, "Response Not Cachable");
+    HandlePushError(s, "Response Not Cacheable");
   }
 }
 
@@ -2379,7 +2379,7 @@ HttpTransact::HandlePushError(State *s, const char *reason)
   s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
 
   // Set half close flag to prevent TCP
-  //   reset from the body still being transfered
+  //   reset from the body still being transferred
   s->state_machine->set_ua_half_close_flag();
 
   build_error_response(s, HTTP_STATUS_BAD_REQUEST, reason, "default");
@@ -2437,7 +2437,7 @@ HttpTransact::HandleCacheOpenRead(State *s)
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_NOT_CACHED);
     // Perform DNS for the origin when it is required.
     // 1. If parent configuration does not allow to go to origin there is no need of performing DNS
-    // 2. If parent satisfies the request there is no need to go to origin to perfrom DNS
+    // 2. If parent satisfies the request there is no need to go to origin to perform DNS
     HandleCacheOpenReadMiss(s);
   } else {
     // cache hit
@@ -3097,7 +3097,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
   // Check if cached response supports Range. If it does, append
   // Range transformation plugin
   // A little misnomer. HTTP_STATUS_RANGE_NOT_SATISFIABLE
-  // acutally means If-Range match fails here.
+  // actually means If-Range match fails here.
   // fall through
   default:
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_HIT_SERVED);
@@ -4689,7 +4689,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
         our_via = s->hdr_info.client_response.field_create(MIME_FIELD_VIA, MIME_LEN_VIA);
         s->hdr_info.client_response.field_attach(our_via);
       }
-      // HDR FIX ME - Mulitple appends are VERY slow
+      // HDR FIX ME - Multiple appends are VERY slow
       while (resp_via) {
         int clen;
         const char *cfield = resp_via->value_get(&clen);
@@ -4996,7 +4996,7 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
   //  quite beyond me.  Seems like a unsafe practice so
   //  FIX ME!
 
-  // Logic added to restore the orignal URL for multiple cache lookup
+  // Logic added to restore the original URL for multiple cache lookup
   // and automatic redirection
   if (s->redirect_info.redirect_in_process) {
     temp_url = &s->redirect_info.original_url;
@@ -6247,7 +6247,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   int req_method = request->method_get_wksidx();
   if (!(HttpTransactHeaders::is_method_cacheable(s->http_config_param, req_method)) && s->api_req_cacheable == false) {
     TxnDebug("http_trans", "[is_response_cacheable] "
-                           "only GET, and some HEAD and POST are cachable");
+                           "only GET, and some HEAD and POST are cacheable");
     return false;
   }
   // TxnDebug("http_trans", "[is_response_cacheable] method is cacheable");
@@ -6256,7 +6256,7 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // looked up, either, so why cache this).
   if (!(is_request_cache_lookupable(s))) {
     TxnDebug("http_trans", "[is_response_cacheable] "
-                           "request is not cache lookupable, response is not cachable");
+                           "request is not cache lookupable, response is not cacheable");
     return false;
   }
   // already has a fresh copy in the cache
@@ -6264,18 +6264,18 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     return false;
   }
 
-  // Check whether the response is cachable based on its cookie
+  // Check whether the response is cacheable based on its cookie
   // If there are cookies in response but a ttl is set, allow caching
   if ((s->cache_control.ttl_in_cache <= 0) &&
       do_cookies_prevent_caching(static_cast<int>(s->txn_conf->cache_responses_to_cookies), request, response)) {
     TxnDebug("http_trans", "[is_response_cacheable] "
-                           "response has uncachable cookies, response is not cachable");
+                           "response has uncachable cookies, response is not cacheable");
     return false;
   }
   // if server spits back a WWW-Authenticate
   if ((s->txn_conf->cache_ignore_auth) == 0 && response->presence(MIME_PRESENCE_WWW_AUTHENTICATE)) {
     TxnDebug("http_trans", "[is_response_cacheable] "
-                           "response has WWW-Authenticate, response is not cachable");
+                           "response has WWW-Authenticate, response is not cacheable");
     return false;
   }
   // does server explicitly forbid storing?
@@ -6449,7 +6449,7 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
   case NON_EXISTANT_REQUEST_HEADER:
   /* fall through */
   case BAD_HTTP_HEADER_SYNTAX: {
-    TxnDebug("http_trans", "[is_request_valid] non-existant/bad header");
+    TxnDebug("http_trans", "[is_request_valid] non-existent/bad header");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid HTTP Request", "request#syntax_error");
     return false;

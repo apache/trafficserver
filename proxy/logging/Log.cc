@@ -1167,7 +1167,7 @@ Log::access(LogAccess *lad)
     ret = Log::SKIP;
     goto done;
   }
-  // initialize this LogAccess object and proccess
+  // initialize this LogAccess object and process
   //
   lad->init();
   ret = config->log_object_manager.log(lad);

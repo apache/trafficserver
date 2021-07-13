@@ -22,7 +22,7 @@ openssl genrsa -out rsa256-private 512;
 openssl rsa -in rsa256-private -pubout > rsa256-public;
 ```
 
-The `test.sh` script, helps verifing ImageMagick's convert works. The script outputs the right query parameter for you.
+The `test.sh` script, helps verifying ImageMagick's convert works. The script outputs the right query parameter for you.
 
 `
 

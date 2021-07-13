@@ -359,7 +359,7 @@ Tree<T>::remove(Node *node)
     return;
   }
 
-  // Make a note of node's ancestory
+  // Make a note of node's ancestry
   add_ancestor(node);
 
   Node *parent = node->parent;

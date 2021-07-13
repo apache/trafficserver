@@ -185,7 +185,7 @@ function rebuild() {
     make clean
 
     # Here is where things are dumb.  We don't check for
-    # successful builds yet.  Thats in the next release.
+    # successful builds yet.  That's in the next release.
     # This is why I call it dumb.
     make
     make uninstall

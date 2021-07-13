@@ -36,7 +36,7 @@ void prep_HttpProxyServer();
  */
 void init_accept_HttpProxyServer(int n_accept_threads = 0);
 
-/** Checkes whether we can call start_HttpProxyServer().
+/** Checks whether we can call start_HttpProxyServer().
  */
 void init_HttpProxyServer();
 

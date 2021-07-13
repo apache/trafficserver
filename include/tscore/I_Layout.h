@@ -43,7 +43,7 @@ struct Layout {
 
   /**
    Setup the runroot for layout class
-   Return true if runroot is setup succesfully and false if runroot is not used
+   Return true if runroot is setup successfully and false if runroot is not used
    */
   bool runroot_setup();
 

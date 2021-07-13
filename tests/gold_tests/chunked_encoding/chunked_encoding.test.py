@@ -104,7 +104,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(server2)
 tr.Processes.Default.StartBefore(server3)
-# Delay on readyness of our ssl ports
+# Delay on readiness of our ssl ports
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr = "gold/chunked_GET_200.gold"
 tr.StillRunningAfter = server

@@ -23,7 +23,7 @@ Test tls server prefetched OCSP responses
 
 Test.SkipUnless(
     Condition.HasCurlVersion("7.41.0"),  # curl --cert-status option has been introduced in version 7.41.0
-    Condition.IsOpenSSL(),  # functionality tested in this test requires OpenSSL specifc APIs
+    Condition.IsOpenSSL(),  # functionality tested in this test requires OpenSSL specific APIs
 )
 
 # Define default ATS

@@ -1,6 +1,6 @@
 /** @file
 
-  ALPNSupport.cc provides implmentations for ALPNSupport methods
+  ALPNSupport.cc provides implementations for ALPNSupport methods
 
   @section license License
 

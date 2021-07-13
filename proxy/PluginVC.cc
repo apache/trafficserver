@@ -29,7 +29,7 @@
       continuation to another via a mechanism that impersonates a
       NetVC.  Should implement all external attributes of NetVConnections.
 
-   Since data is transfered within Traffic Server, this is a two
+   Since data is transferred within Traffic Server, this is a two
    headed beast.  One NetVC on initiating side (active side) and
    one NetVC on the receiving side (passive side).
 
@@ -406,7 +406,7 @@ PluginVC::do_io_shutdown(ShutdownHowTo_t howto)
 // int PluginVC::transfer_bytes(MIOBuffer* transfer_to,
 //                              IOBufferReader* transfer_from, int act_on)
 //
-//   Takes care of transfering bytes from a reader to another buffer
+//   Takes care of transferring bytes from a reader to another buffer
 //      In the case of large transfers, we move blocks.  In the case
 //      of small transfers we copy data so as to not build too many
 //      buffer blocks
@@ -417,7 +417,7 @@ PluginVC::do_io_shutdown(ShutdownHowTo_t howto)
 //   act_on: is the max number of bytes we are to copy.  There must
 //          be at least act_on bytes available from transfer_from
 //
-// Returns number of bytes transfered
+// Returns number of bytes transferred
 //
 int64_t
 PluginVC::transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, int64_t act_on)
