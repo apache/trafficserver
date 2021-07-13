@@ -1712,7 +1712,7 @@ msgstr "``ss``"
 #: ../../../admin-guide/monitoring/logging/log-formats.en.rst:768
 msgid ""
 "The time |TS| spends accessing the origin as a fractional number of "
-"seconds. That is, the time is formated as a floating-point number, instead "
+"seconds. That is, the time is formatted as a floating-point number, instead "
 "of an integer as in ``stms``."
 msgstr ""
 "|TS| がオリジンにアクセスするのにかかった時間を少数の秒数で表したもの。つま"

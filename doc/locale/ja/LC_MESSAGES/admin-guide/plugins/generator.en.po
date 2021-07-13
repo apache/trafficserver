@@ -103,7 +103,7 @@ msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:32
 msgid ""
-"``cache`` or ``nocache``. If ``cache`` is specifed, the `Generator` plugin "
+"``cache`` or ``nocache``. If ``cache`` is specified, the `Generator` plugin "
 "will respond with ``Cache-Control`` headers marking the response as "
 "cacheable for 24 hours. Integral number of bytes to return in the response."
 msgstr ""

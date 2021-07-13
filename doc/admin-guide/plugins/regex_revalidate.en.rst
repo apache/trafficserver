@@ -76,7 +76,7 @@ The configuration parameter `--state-file` or `-f` may be used to configure
 the plugin to maintain a state file with the last loaded configuration.
 Normally when ATS restarts the epoch times of all rules are reset to
 the first config file load time which will cause all matching assets to
-issue new IMS requests to their parents for mathing rules.
+issue new IMS requests to their parents for matching rules.
 
 This option allows the revalidate rule "epoch" times to be retained between ATS
 restarts.  This state file by default is placed in var/trafficserver/<filename>

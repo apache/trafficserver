@@ -56,7 +56,7 @@ orientation = "portrait";
 "VALID" -> "PICK_ADDR" [ label = "no" ];
 "VALID" -> "SETUP_S_READ" [ label = "yes" ];
 "SETUP_S_READ" -> "SETUP_TRANS" [ label = "Uncachable" ];
-"SETUP_S_READ" -> "SETUP_CACHE_WRITE" [ label = "Cachable" ];
+"SETUP_S_READ" -> "SETUP_CACHE_WRITE" [ label = "Cacheable" ];
 "SETUP_CACHE_WRITE" -> "SETUP_TRANS";
 "SETUP_TRANS" -> "TUNNEL";
 "TUNNEL" -> "ACCEPT";

@@ -180,7 +180,7 @@ msgstr ""
 #: ../../../admin-guide/files/storage.config.en.rst:94
 msgid ""
 "The :arg:`id` option can be used to create a fixed string that an "
-"administrator can use to keep the assignment table consistent by maintaing "
+"administrator can use to keep the assignment table consistent by maintaining "
 "the mapping from physical device to base string even in the presence of "
 "hardware changes and failures."
 msgstr ""
