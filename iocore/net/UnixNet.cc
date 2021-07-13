@@ -523,8 +523,16 @@ NetHandler::waitForActivity(ink_hrtime timeout)
           write_ready_list.enqueue(ne);
         }
       } else if (!(flags & (EVENTIO_READ))) {
-        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd, x));
-        ink_release_assert(false);
+        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", flags);
+        // Temporarily replacing the asssert with a warning message and logic
+        // to treat this case on the write queue, so we can get some information
+        // about the flags that show up in the case.  Unfortunately in the core that
+        // results from the assert, the flags variable is optimized out
+        Warning("Unhandled epoll event: 0x%x", flags);
+        ne->write.triggered = 1;
+        if (!write_ready_list.in(ne)) {
+          write_ready_list.enqueue(ne);
+        }
       }
     } else if (epd->type == EVENTIO_DNS_CONNECTION) {
       if (epd->data.dnscon != nullptr) {
