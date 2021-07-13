@@ -92,7 +92,7 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/cachekey.en.rst:55
 msgid ""
-"The cache key set by the cachekey plugin can be considered as devided into "
+"The cache key set by the cachekey plugin can be considered as divided into "
 "several sections."
 msgstr ""
 

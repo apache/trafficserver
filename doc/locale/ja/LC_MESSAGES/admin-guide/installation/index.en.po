@@ -201,7 +201,7 @@ msgstr ""
 
 #: ../../../admin-guide/installation/index.en.rst:134
 msgid ""
-"If you are buiding from a checkout of the Git repository, you will need to "
+"If you are building from a checkout of the Git repository, you will need to "
 "prepare the source tree by regenerating the configuration scripts. This is "
 "performed by running::"
 msgstr ""
@@ -297,7 +297,7 @@ msgstr ""
 
 #: ../../../admin-guide/installation/index.en.rst:220
 msgid ""
-"Set the ``PKG_CONFIG_PATH`` enviroment variable to the appropriate path in "
+"Set the ``PKG_CONFIG_PATH`` environment variable to the appropriate path in "
 "your newly-installed overlay directory. ::"
 msgstr ""
 

@@ -222,7 +222,7 @@ msgstr ""
 
 #: ../../../admin-guide/security/index.en.rst:141
 msgid ""
-"Client certficates required, and must validate based on configured CAs."
+"Client certificates required, and must validate based on configured CAs."
 msgstr ""
 
 #: ../../../admin-guide/security/index.en.rst:144
@@ -402,7 +402,7 @@ msgid ""
 "the client when the client requests the status.  Traffic Server will "
 "automatically query the OCSP responder specified in the SSL certificate to "
 "gather the latest revocation status.  Traffic Server will then cache the "
-"results for each configured certifcate.  The location of the OCSP responder "
+"results for each configured certificate.  The location of the OCSP responder "
 "is taken from the Authority Information Access field of the signed "
 "certificate. For example::"
 msgstr ""

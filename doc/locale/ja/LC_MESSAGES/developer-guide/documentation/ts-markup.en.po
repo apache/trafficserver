@@ -207,7 +207,7 @@ msgstr ""
 msgid ""
 "The key name of the collection in the returned JSON data from the :ref:"
 "`admin-plugins-stats-over-http` plugin. For most statistics, this is the "
-"literal sting :literal:`global`. *Required*"
+"literal string :literal:`global`. *Required*"
 msgstr ""
 
 #: ../../../developer-guide/documentation/ts-markup.en.rst:126

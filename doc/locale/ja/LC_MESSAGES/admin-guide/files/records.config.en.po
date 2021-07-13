@@ -452,7 +452,7 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:258
 msgid ""
-"The minimum amount of addtional duration allowed before Traffic Server "
+"The minimum amount of additional duration allowed before Traffic Server "
 "detects that the :program:`traffic_server` is not responsive and attempts a "
 "restart during startup. This configuration variable allows Traffic Server a "
 "longer init time to load potentially large configuration files such as "
@@ -1614,7 +1614,7 @@ msgstr "次のうち 1 つを指定できます。"
 
 #: ../../../admin-guide/files/records.config.en.rst:837
 msgid ""
-"|TS| will buffer the request until the post body has been recieved and then "
+"|TS| will buffer the request until the post body has been received and then "
 "send the request to the origin server."
 msgstr ""
 
@@ -2794,7 +2794,7 @@ msgid ""
 "If set to a value other than ``-1``, the value if this configuration option "
 "is combined with the cache key at cache lookup time. Changing this value "
 "has the effect of an instantaneous, zero-cost cache purge since it will "
-"cause all subsequent cache keys to change. Since this is an overrideable "
+"cause all subsequent cache keys to change. Since this is an overridable "
 "configuration, it can be used to purge the entire cache, or just a "
 "specific :file:`remap.config` rule."
 msgstr ""
@@ -3417,7 +3417,7 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2208
 msgid ""
-"To enable any enpoint there needs to be an entry in :file:`remap.config` "
+"To enable any endpoint there needs to be an entry in :file:`remap.config` "
 "which specifically enables it. Such a line would look like: ::"
 msgstr ""
 
@@ -3813,7 +3813,7 @@ msgstr ""
 #: ../../../admin-guide/files/records.config.en.rst:2499
 msgid ""
 "Note: hostdb is syncd to disk on a per-partition basis (of which there are "
-"64). This means that the minumum time to sync all data to disk is :ts:cv:"
+"64). This means that the minimum time to sync all data to disk is :ts:cv:"
 "`proxy.config.cache.hostdb.sync_frequency` * 64"
 msgstr ""
 
@@ -4243,7 +4243,7 @@ msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2787
 msgid ""
-"Each |TS| `diag` and `debug` level message is annotated with a subsytem "
+"Each |TS| `diag` and `debug` level message is annotated with a subsystem "
 "tag. This configuration contains a regular expression that filters the "
 "messages based on the tag. Some commonly used debug tags are:"
 msgstr ""
@@ -4253,7 +4253,7 @@ msgid "Tag"
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2792
-msgid "Subsytem usage"
+msgid "Subsystem usage"
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2794
@@ -4607,7 +4607,7 @@ msgstr ""
 #: ../../../admin-guide/files/records.config.en.rst:3019
 msgid ""
 "Default. Enables the session cache using |TS|'s implementation. This "
-"implentation should perform much better than the OpenSSL implementation."
+"implementation should perform much better than the OpenSSL implementation."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:3026

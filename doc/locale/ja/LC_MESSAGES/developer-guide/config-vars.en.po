@@ -467,7 +467,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/config-vars.en.rst:281
-msgid "HTTP Configuation Values"
+msgid "HTTP Configuration Values"
 msgstr ""
 
 #: ../../../developer-guide/config-vars.en.rst:283
@@ -538,7 +538,7 @@ msgstr ""
 msgid ""
 "Augment the ``TSHttpTxnConfigFind`` function to return this enumeration "
 "value when given the name of the configuration variable. Be sure to count "
-"the charaters very carefully."
+"the characters very carefully."
 msgstr ""
 
 #: ../../../developer-guide/config-vars.en.rst:328
