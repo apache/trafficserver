@@ -83,16 +83,16 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 
 #endif
 
-#define THREAD_FREE(_p, _a, _t)                              \
-  do {                                                       \
-    ::_a.destroy_if_enabled(_p);                             \
-    if (!cmd_disable_pfreelist) {                            \
-      *(char **)_p    = (char *)_t->_a.freelist;             \
-      _t->_a.freelist = _p;                                  \
-      _t->_a.allocated++;                                    \
-      if (_t->_a.allocated > thread_freelist_high_watermark) \
-        thread_freeup(::_a.raw(), _t->_a);                   \
-    } else {                                                 \
-      ::_a.raw().free_void(_p);                              \
-    }                                                        \
+#define THREAD_FREE(_p, _a, _t)                                                                    \
+  do {                                                                                             \
+    ::_a.destroy_if_enabled(_p);                                                                   \
+    if (!cmd_disable_pfreelist) {                                                                  \
+      *(char **)_p    = (char *)_t->_a.freelist;                                                   \
+      _t->_a.freelist = _p;                                                                        \
+      _t->_a.allocated++;                                                                          \
+      if (thread_freelist_high_watermark > 0 && _t->_a.allocated > thread_freelist_high_watermark) \
+        thread_freeup(::_a.raw(), _t->_a);                                                         \
+    } else {                                                                                       \
+      ::_a.raw().free_void(_p);                                                                    \
+    }                                                                                              \
   } while (0)
