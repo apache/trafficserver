@@ -27,6 +27,7 @@
 
 
 ***************************************************************************/
+#include "tscore/ink_sock.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_string.h"
@@ -112,6 +113,29 @@ safe_clr_fl(int fd, int arg)
 }
 
 int
+safe_write(int fd, const char *buffer, int len)
+{
+  int num_written = 0;
+  while (num_written < len) {
+    int const ret = write(fd, buffer + num_written, len - num_written);
+    if (ret == -1) {
+      if (errno == EAGAIN || errno == EINTR) {
+        // The errno indicates that we should attempt the write again. Poll
+        // until the socket is ready for writing then try again.
+        if (write_ready(fd) != 1) {
+          return -1;
+        }
+        continue;
+      }
+      // Some unexpected errno was encountered.
+      return ret;
+    }
+    num_written += ret;
+  }
+  return num_written;
+}
+
+int
 safe_nonblocking(int fd)
 {
   return safe_set_fl(fd, O_NONBLOCK);
@@ -137,6 +161,25 @@ read_ready(int fd, int timeout_msec)
     return -1;
   }
   if (p.revents & (POLLIN | POLLHUP)) {
+    return 1;
+  }
+  return 0;
+}
+
+int
+write_ready(int fd, int timeout_msec)
+{
+  struct pollfd p;
+  p.events = POLLOUT;
+  p.fd     = fd;
+  int r    = poll(&p, 1, timeout_msec);
+  if (r <= 0) {
+    return r;
+  }
+  if (p.revents & (POLLERR | POLLNVAL)) {
+    return -1;
+  }
+  if (p.revents & POLLOUT) {
     return 1;
   }
   return 0;

@@ -41,6 +41,18 @@ int safe_listen(int s, int backlog);
 int safe_getsockname(int s, struct sockaddr *name, int *namelen);
 int safe_getpeername(int s, struct sockaddr *name, int *namelen);
 
+/** Repeat write calls to fd until all len bytes are written.
+ *
+ * @param[in] fd The file descriptor to write to.
+ * @param[in] buffer The buffer of bytes to write into fd.
+ * @param[in] len The number of bytes in buffer to write into fd.
+ *
+ * @return The number of bytes written or -1 if there was an error writing to
+ * the file descriptor. If -1 is returned, errno should indicate why the
+ * write failed.
+ */
+int safe_write(int fd, const char *buffer, int len);
+
 int safe_fcntl(int fd, int cmd, int arg);
 int safe_ioctl(int fd, int request, char *arg);
 
@@ -50,7 +62,27 @@ int safe_clr_fl(int fd, int arg);
 int safe_blocking(int fd);
 int safe_nonblocking(int fd);
 
+/** Poll on fd until it is ready for reading.
+ *
+ * @param[in] fd The file descriptor to poll on.
+ * @param[in] timeout_msec How many milliseconds to poll on the socket before
+ *   giving up.
+ *
+ * @return 1 if the socket is ready for reading, -1 if there was an error, and
+ * 0 for timeout.
+ */
 int read_ready(int fd, int timeout_msec = 0);
+
+/** Poll on fd until it is ready for writing.
+ *
+ * @param[in] fd The file descriptor to poll on.
+ * @param[in] timeout_msec How many milliseconds to poll on the socket before
+ *   giving up.
+ *
+ * @return 1 if the socket is ready for writing, -1 if there was an error, and
+ * 0 for timeout.
+ */
+int write_ready(int fd, int timeout_msec = 0);
 
 char fd_read_char(int fd);
 int fd_read_line(int fd, char *s, int len);
