@@ -164,7 +164,7 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "ex
 tr.StillRunningAfter = ts
 
 # 5 Stage - Change from MISS to STALE, reload
-tr = Test.AddTestRun("Reload config path1 STYLE")
+tr = Test.AddTestRun("Reload config path1 STALE")
 ps = tr.Processes.Default
 tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' STALE')
 tr.Disk.File(regex_revalidate_conf_path + "_tr5", typename="ats:config").AddLine(path1_rule + ' STALE')
