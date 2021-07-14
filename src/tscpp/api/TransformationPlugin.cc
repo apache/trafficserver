@@ -76,7 +76,8 @@ struct TransformationPluginState : noncopyable, public detail::ResumeAfterPauseC
 
   TransformationPluginState(atscppapi::Transaction &transaction, TransformationPlugin &transformation_plugin,
                             TransformationPlugin::Type type, TSHttpTxn txn)
-    : vconn_(nullptr),
+    : detail::ResumeAfterPauseCont(TSMutexCreate()),
+      vconn_(nullptr),
       transaction_(transaction),
       transformation_plugin_(transformation_plugin),
       type_(type),
