@@ -4596,7 +4596,7 @@ Sockets
 .. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_size INT 512
 
    Sets the maximum number of elements that can be contained in a ProxyAllocator (per-thread)
-   before returning the objects to the global pool
+   before returning the objects to the global pool. If set to ``0``, there is no limit enforced.
 
 .. ts:cv:: CONFIG proxy.config.allocator.thread_freelist_low_watermark INT 32
 
