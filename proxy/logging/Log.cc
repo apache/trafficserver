@@ -954,6 +954,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("vbn", field);
 
+  field = new LogField("version_string", "vs", LogField::STRING, &LogAccess::marshal_version_string,
+                       reinterpret_cast<LogField::UnmarshalFunc>(&LogAccess::unmarshal_str));
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("vs", field);
+
   init_status |= FIELDS_INITIALIZED;
 }
 

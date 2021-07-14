@@ -256,6 +256,7 @@ public:
   inkcoreapi int marshal_client_provided_cert(char *);                        // INT
   inkcoreapi int marshal_proxy_provided_cert(char *);                         // INT
   inkcoreapi int marshal_version_build_number(char *);                        // STR
+  inkcoreapi int marshal_version_string(char *);                              // STR
   inkcoreapi int marshal_cache_read_retries(char *);                          // INT
   inkcoreapi int marshal_cache_write_retries(char *);                         // INT
   inkcoreapi int marshal_cache_collapsed_connection_success(char *);          // INT
