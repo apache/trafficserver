@@ -1522,11 +1522,6 @@ syslog_log_configure()
 }
 
 static void
-check_system_constants()
-{
-}
-
-static void
 init_http_header()
 {
   url_init();
@@ -1743,9 +1738,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   pcre_malloc = ats_malloc;
   pcre_free   = ats_free;
-
-  // Verify system dependent 'constants'
-  check_system_constants();
 
   // Define the version info
   appVersionInfo.setup(PACKAGE_NAME, "traffic_server", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
