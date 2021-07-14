@@ -59,15 +59,21 @@ public:
   void
   handleReadResponseHeaders(Transaction &transaction) override
   {
-    if (_transform_image_type == ImageEncoding::webp) {
+    switch (_transform_image_type) {
+    case ImageEncoding::webp:
       transaction.getServerResponse().getHeaders()["Content-Type"] = "image/webp";
-    }
-    if (_transform_image_type == ImageEncoding::jpeg) {
+      break;
+    case ImageEncoding::jpeg:
       transaction.getServerResponse().getHeaders()["Content-Type"] = "image/jpeg";
-    }
-    if (_transform_image_type == ImageEncoding::png) {
+      break;
+    case ImageEncoding::png:
       transaction.getServerResponse().getHeaders()["Content-Type"] = "image/png";
+      break;
+    case ImageEncoding::unknown:
+      // do nothing
+      break;
     }
+
     transaction.getServerResponse().getHeaders()["Vary"] = "Accept"; // to have a separate cache entry
 
     TS_DEBUG(TAG, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
