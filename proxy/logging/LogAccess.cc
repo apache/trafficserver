@@ -1353,6 +1353,19 @@ LogAccess::marshal_version_build_number(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_version_string(char *buf)
+{
+  int len = LogAccess::strlen(appVersionInfo.VersionStr);
+  if (buf) {
+    marshal_str(buf, appVersionInfo.VersionStr, len);
+  }
+  return len;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_proxy_protocol_version(char *buf)
 {
   const char *version_str = nullptr;
