@@ -123,7 +123,7 @@ if ENV['ATS_BIN'] is not None:
     Variables.trafficserver_version = out
     host.WriteVerbose(['ats'], "Traffic server version:", out)
 
-    # this querys tsxs for build flags so we can build code for the tests and get certain
+    # this queries tsxs for build flags so we can build code for the tests and get certain
     # useful flags as which openssl to use when we don't use the system version
     out = {
         'CPPFLAGS': '',

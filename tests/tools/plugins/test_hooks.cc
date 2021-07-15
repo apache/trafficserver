@@ -312,7 +312,7 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  // Mutex to protext the logFile object.
+  // Mutex to protect the logFile object.
   //
   TSMutex mtx = TSMutexCreate();
 

@@ -21,7 +21,7 @@
 %define _hardened_build 1
 %endif
 
-# This can be overriden via command line option, e.g.  --define "release 12"
+# This can be overridden via command line option, e.g.  --define "release 12"
 %{!?release: %define release 1}
 
 Summary:	Apache Traffic Server, a reverse, forward and transparent HTTP proxy cache
@@ -187,11 +187,11 @@ getent passwd ats >/dev/null || useradd -r -u 176 -g ats -d / -s /sbin/nologin -
 
 %changelog
 * Wed Sep 19 2018 Bryan Call <bcall@apache.org> - 8.0.0-1
-- Changed the owner ofthe configuration files to ats
+- Changed the owner of the configuration files to ats
 - Include files for the C++ APIs moved
 - C++ library name changed
 
 * Tue Dec 19 2017 Leif Hedstrom <zwoop@apache.org> - 7.1.2-1
 - Cleanup for 7.1.x, and various other changes. This needs more work
   upstream though, since I'm finding issues.
-- Losely based on ideas from the Fedora .spec
+- Loosely based on ideas from the Fedora .spec

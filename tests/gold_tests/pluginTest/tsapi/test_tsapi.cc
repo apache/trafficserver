@@ -275,7 +275,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  // Mutex to protext the logFile object.
+  // Mutex to protect the logFile object.
   //
   TSMutex mtx = TSMutexCreate();
 

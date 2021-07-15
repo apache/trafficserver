@@ -414,7 +414,7 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
     pRec ? (TSHostStatusGet(pRec->hostname.c_str(), pRec->hostname.size(), &hostStatus, &hostReasons) == TS_SUCCESS) : false;
   host_stat = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
   // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-  // ignore the down status and mark it as avaialble
+  // ignore the down status and mark it as available
   if ((pRec && ignore_self_detect) && (hostExists && hostStatus == TS_HOST_STATUS_DOWN)) {
     if (hostReasons & TS_HOST_STATUS_SELF_DETECT) {
       host_stat = TS_HOST_STATUS_UP;
@@ -471,7 +471,7 @@ PLNextHopConsistentHash::next(TSHttpTxn txnp, void *strategyTxn, const char *exc
         host_stat = hostExists ? hostStatus : TSHostStatus::TS_HOST_STATUS_UP;
 
         // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-        // ignore the down status and mark it as avaialble
+        // ignore the down status and mark it as available
         if ((pRec && ignore_self_detect) && (hostExists && hostStatus == TS_HOST_STATUS_DOWN)) {
           if (hostReasons & TS_HOST_STATUS_SELF_DETECT) {
             host_stat = TS_HOST_STATUS_UP;

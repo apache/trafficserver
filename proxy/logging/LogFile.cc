@@ -89,7 +89,7 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
 /*-------------------------------------------------------------------------
   LogFile::LogFile
 
-  This (copy) contructor builds a LogFile object from another LogFile object.
+  This (copy) constructor builds a LogFile object from another LogFile object.
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const LogFile &copy)

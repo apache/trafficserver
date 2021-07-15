@@ -137,7 +137,7 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
     TSMBuffer request;
     TSMLoc req_hdr;
 
-    // This is beacuse compilers before gcc 8 aren't smart enough to ignore the unused structured bindings
+    // This is because compilers before gcc 8 aren't smart enough to ignore the unused structured bindings
     (void)val_key;
 
     // We check that the request is cacheable, we will still count the request, but if not cacheable, we
@@ -239,7 +239,7 @@ LRUPolicy::addBytes(TSHttpTxn txnp)
           auto &[val_key, val_hits, val_bytes] = *(map_it->second);
           int64_t cl                           = TSMimeHdrFieldValueInt64Get(resp, resp_hdr, field_loc, -1);
 
-          // This is beacuse compilers before gcc 8 aren't smart enough to ignore the unused structured bindings
+          // This is because compilers before gcc 8 aren't smart enough to ignore the unused structured bindings
           (void)val_key, (void)val_hits;
 
           val_bytes += cl;

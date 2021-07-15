@@ -1489,7 +1489,7 @@ LogAccess::validate_unmapped_url_path()
     // Use unmapped canonical URL as default
     m_client_req_unmapped_url_path_str = m_client_req_unmapped_url_canon_str;
     m_client_req_unmapped_url_path_len = m_client_req_unmapped_url_canon_len;
-    // Incase the code below fails, we prevent it from being used.
+    // In case the code below fails, we prevent it from being used.
     m_client_req_unmapped_url_host_str = INVALID_STR;
 
     if (m_client_req_unmapped_url_path_len >= 6) { // xxx:// - minimum schema size

@@ -105,7 +105,7 @@ QUICMultiCertConfigLoader::_set_info_callback(SSL_CTX *ctx)
 bool
 QUICMultiCertConfigLoader::_set_npn_callback(SSL_CTX *ctx)
 {
-  // Do not set a callback for NPN since QUIC doens't use it
+  // Do not set a callback for NPN since QUIC doesn't use it
   return true;
 }
 

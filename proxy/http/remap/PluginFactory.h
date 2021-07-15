@@ -77,7 +77,7 @@ public:
  *
  * Each plugin factory instance corresponds to a config reload, each new config file set is meant to use a new factory instance.
  * A notion of runtime directory is maintained to make sure the DSO library files are not erased or modified while the library are
- * loaded in memory and make sure if the library file is overriden with a new DSO file that the new overriding plugin's
+ * loaded in memory and make sure if the library file is overridden with a new DSO file that the new overriding plugin's
  * functionality will be loaded with the next factory, it also handles some problems noticed on different OSes in handling
  * filesystem links and different dl library implementations.
  *

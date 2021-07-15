@@ -119,7 +119,7 @@ chash_lookup(ATSConsistentHash *fhash, uint64_t path_hash, ATSConsistentHashIter
   } else {
     prtmp = (pRecord *)fhash->lookup(nullptr, chashIter, wrap_around, hash);
   }
-  // Do not set wrap_around to true until we try all the parents atleast once.
+  // Do not set wrap_around to true until we try all the parents at least once.
   bool wrapped = *wrap_around;
   *wrap_around = (*mapWrapped && *wrap_around) ? true : false;
   if (!*mapWrapped && wrapped) {
@@ -221,7 +221,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   }
 
   // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-  // ignore the down status and mark it as avaialble
+  // ignore the down status and mark it as available
   if ((pRec && result->rec->ignore_self_detect) && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
     if (hst->reasons == Reason::SELF_DETECT) {
       host_stat = TS_HOST_STATUS_UP;
@@ -306,7 +306,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
       hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname) : nullptr;
       host_stat = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
       // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-      // ignore the down status and mark it as avaialble
+      // ignore the down status and mark it as available
       if ((pRec && result->rec->ignore_self_detect) && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
         if (hst->reasons == Reason::SELF_DETECT) {
           host_stat = TS_HOST_STATUS_UP;
@@ -322,7 +322,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   // ----------------------------------------------------------------------------------------------------
 
   // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-  // ignore the down status and mark it as avaialble
+  // ignore the down status and mark it as available
   if ((pRec && result->rec->ignore_self_detect) && (hst && hst->status == TS_HOST_STATUS_DOWN)) {
     if (hst->reasons == Reason::SELF_DETECT) {
       host_stat = TS_HOST_STATUS_UP;

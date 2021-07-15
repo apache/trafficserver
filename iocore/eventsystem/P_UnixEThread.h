@@ -187,7 +187,7 @@ EThread::schedule_spawn(Continuation *c, int ev, void *cookie)
 TS_INLINE EThread *
 this_ethread()
 {
-  // The `dynamic_cast` has a significant performace impact (~6%).
+  // The `dynamic_cast` has a significant performance impact (~6%).
   // Reported by masaori and create PR #6281 to fix it.
   return static_cast<EThread *>(ink_thread_getspecific(ethread_key));
 }

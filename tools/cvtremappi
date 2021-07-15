@@ -443,7 +443,7 @@ def handle_header_rewrite(pathspec, obj):
                     rc.lines[pair[1]] = ln[:ofst] + self._first.pathspec + ln[ofst + len(self._base.pathspec):]
 
     # Returns a pair: length of string before # comment, and a flag indicating if %< (beginning of a variable
-    # exapansion) was in any of the double-quoted strings.
+    # expansion) was in any of the double-quoted strings.
     #
     def get_content_len(s):
         # States.

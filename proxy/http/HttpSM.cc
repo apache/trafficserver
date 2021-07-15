@@ -313,7 +313,7 @@ HttpVCTable::cleanup_all()
 
 /*
  * Helper functions to ensure that the parallel
- * API set timeouts are set consistenly with the records.config settings
+ * API set timeouts are set consistently with the records.config settings
  */
 ink_hrtime
 HttpSM::get_server_inactivity_timeout()
@@ -4753,7 +4753,7 @@ HttpSM::do_cache_lookup_and_read()
 void
 HttpSM::do_cache_delete_all_alts(Continuation *cont)
 {
-  // Do not delete a non-existant object.
+  // Do not delete a non-existent object.
   ink_assert(t_state.cache_info.object_read);
 
   SMDebug("http_seq", "[HttpSM::do_cache_delete_all_alts] Issuing cache delete for %s",
@@ -5280,7 +5280,7 @@ HttpSM::do_http_server_open(bool raw)
     }
   }
 
-  // draft-stenberg-httpbis-tcp recommends only enabling TFO on indempotent methods or
+  // draft-stenberg-httpbis-tcp recommends only enabling TFO on idempotent methods or
   // those with intervening protocol layers (eg. TLS).
 
   if (tls_upstream || HttpTransactHeaders::is_method_idempotent(t_state.method)) {

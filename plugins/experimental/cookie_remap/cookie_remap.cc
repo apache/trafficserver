@@ -773,7 +773,7 @@ public:
           TSDebug(MY_NAME, "we hashed in the range, yay!");
           continue; // we hashed in the range
         } else {
-          TSDebug(MY_NAME, "we didnt hash in the "
+          TSDebug(MY_NAME, "we didn't hash in the "
                            "range requested, so "
                            "sad");
           retval &= 0;
@@ -1045,7 +1045,7 @@ sub_lookup(char const *targ, int targ_len)
   for (;;) {
     while ((targ_len < static_cast<int>(opt->comp.size())) || (std::string_view(targ, opt->comp.size()) != opt->comp)) {
       if (!--count) {
-        return 1; // Failed lookup, return some positive numver.
+        return 1; // Failed lookup, return some positive number.
       }
       ++opt;
     }

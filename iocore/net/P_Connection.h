@@ -149,7 +149,7 @@ protected:
    * @return @a this
    *
    * This is protected because it is not safe in the general case, but is valid for
-   * certain subclasses. Those provide a public assignemnt that depends on this method.
+   * certain subclasses. Those provide a public assignment that depends on this method.
    */
   Connection &operator=(Connection const &that) = default;
   void _cleanup();

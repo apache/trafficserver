@@ -225,7 +225,7 @@ private:
   uint32_t m_id; // unique buffer id (for debugging)
 public:
   LB_State m_state; // buffer state
-  int m_references; // oustanding checkout_write references.
+  int m_references; // outstanding checkout_write references.
 
   // noncopyable
   // -- member functions that are not allowed --

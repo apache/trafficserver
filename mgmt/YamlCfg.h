@@ -1,6 +1,6 @@
 /** @file
 
-  Utilites to help with parsing YAML files with good error reporting.
+  Utilities to help with parsing YAML files with good error reporting.
 
   @section license License
 

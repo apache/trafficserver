@@ -132,7 +132,7 @@ ServerConnection::~ServerConnection()
     TSVConnClose(vc_);
     vc_ = nullptr;
   }
-  // XXX(oschaaf): check commmented line below.
+  // XXX(oschaaf): check commented line below.
   // readio.vio = writeio.vio = nullptr;
   _requestId    = 0;
   _max_requests = 0;

@@ -383,7 +383,7 @@ CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &pr
   // "true" would mean that the plugin config meant to override the default prefix, "false" means use default.
   bool customPrefix = false;
 
-  /* For all the following operations if a canonical prefix is required then appned to the key with no separator
+  /* For all the following operations if a canonical prefix is required then append to the key with no separator
    * to leave the door open for potential valid host name formed in the final resulting cache key. */
 
   if (!prefix.empty()) {
@@ -753,7 +753,7 @@ CacheKey::finalize() const
   switch (_keyType) {
   case CACHE_KEY: {
     if (TS_SUCCESS == TSCacheUrlSet(_txn, &(_key[0]), _key.size())) {
-      /* Set cache key succesfully */
+      /* Set cache key successfully */
       msg.assign("set cache key to ").append(_key);
       res = true;
     } else {

@@ -1,6 +1,6 @@
 /** @file
 
-  TLSSessionResumptionSupport.cc provides implmentations for
+  TLSSessionResumptionSupport.cc provides implementations for
   TLSSessionResumptionSupport methods
 
   @section license License

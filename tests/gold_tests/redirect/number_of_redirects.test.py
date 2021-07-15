@@ -96,4 +96,4 @@ NumberOfRedirectionsTest("Test number_of_redirections=1", 1).run()
 # The client will just get 200OK and no redirect will be done by it, TS will follow the two
 # 302 Redirect.
 NumberOfRedirectionsTest("Test number_of_redirections=2", 2).run()
-# If adding more, need to touch the server side  as well. It wont be enough.
+# If adding more, need to touch the server side  as well. It won't be enough.

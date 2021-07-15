@@ -76,7 +76,7 @@ it introduces grouping in time as well. Unfortunately, an implementation
 requires the notion of "local" and "global" stats.
 
 Now, stats fall into three categories:
-1) transactional (dyanmic) stats: e.g. number of current origin server
+1) transactional (dynamic) stats: e.g. number of current origin server
    connections,
 2) incremental stats: number of bytes from origin server,
 3) transactional stats: number of requests served.
@@ -283,7 +283,7 @@ Types Of Stats:
  		*** number of cache lookups
  			**** number of alternates
  		*** number of cache hits
-                        cache hits, misses, etc. stats should be catagorized
+                        cache hits, misses, etc. stats should be categorized
                         the same way they are categorized in WUTS (squid logs).
  			**** fresh hits
  			**** stale hits
@@ -452,7 +452,7 @@ Date: Thu, 26 Mar 1998 11:48:15 -0800
 >From a Support standpoint, I do have some reservations about hacking
 information and function out of the Traffic Manager for TS Lite. Less
 information in the Monitor makes it more difficult to observe Traffic Server
-operation. Less functionality in Configure means more manual editting of
+operation. Less functionality in Configure means more manual editing of
 config files and greater chance of admin errors. These factors could greatly
 increase our support problems and cost for "Lite" customers.
 
@@ -501,7 +501,7 @@ Adam Beguelin wrote:
 >         Adam
 >
 > On the dashboard add these stats:
->  o Cahce Free Space
+>  o Cache Free Space
 >  o Cache Size
 >  o DNS Hit rate
 >

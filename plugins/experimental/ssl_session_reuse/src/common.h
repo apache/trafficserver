@@ -1,6 +1,6 @@
 /** @file
 
-  commmon.h - Things that need to be everywhere
+  common.h - Things that need to be everywhere
 
   @section license License
 

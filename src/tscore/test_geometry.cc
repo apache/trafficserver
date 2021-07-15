@@ -27,7 +27,7 @@
 
 // This isn't really a unit test. It's just a dumb little program to probe the disk
 // geometry of an arbitrary device file. That's useful when figuring out how ATS will
-// perceive different devices on differen operating systems.
+// perceive different devices on different operating systems.
 
 int
 main(int argc, const char **argv)

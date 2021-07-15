@@ -72,7 +72,7 @@ RemapPlugins::run_plugin(RemapPluginInst *plugin)
 
   @return 1 when you are done doing crap (otherwise, you get re-called
     with schedule_imm and i hope you have something more to do), else
-    0 if you have something more do do (this isnt strict and we check
+    0 if you have something more do do (this isn't strict and we check
     there actually *is* something to do).
 
 */

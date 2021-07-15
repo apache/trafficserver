@@ -54,7 +54,7 @@ struct Config {
   // Parse from args, ast one wins
   bool fromArgs(int const argc, char const *const argv[]);
 
-  // Check if the error should can be logged, if sucessful may update m_nexttime
+  // Check if the error should can be logged, if successful may update m_nexttime
   bool canLogError();
 
   // Check if regex supplied

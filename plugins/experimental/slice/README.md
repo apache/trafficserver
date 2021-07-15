@@ -69,7 +69,7 @@ with loopback remap host may be used by adding the '-r <hostname>' or
 Using the `--remap-host` option splits the plugin chain into 2 remap rules.
 One remap rule for all the incoming requests and the other for just the block
 range requests.  This allows for easier trouble shooting via logs and
-also allows for more effecient plugin rules.  The default pristine method
+also allows for more efficient plugin rules.  The default pristine method
 runs the remap plugins twice, one for the incoming request and one for
 eace slice.  Splitting the rules allows for plugins like URI signing to
 be done on the client request only.

@@ -2854,7 +2854,7 @@ mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str
 {
   ink_assert(s_len >= 0 && s_len < UINT16_MAX);
   // INKqa08287 - keep track of free string space.
-  //  INVARIENT: passed in result pointers must be to
+  //  INVARIANT: passed in result pointers must be to
   //    either NULL or be valid ptr for a string already
   //    the string heaps
   heap->free_string(*d_str, *d_len);

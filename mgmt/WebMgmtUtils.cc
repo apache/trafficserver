@@ -102,8 +102,8 @@ varSetFromStr(const char *varName, const char *value)
 //
 //  Sets the variable specified by varName to value.  varName
 //   must be a RecFloat variable.  No conversion is done for
-//   other types unless convert is set to ture. In the case
-//   of convert is ture, type conversion is perform if applicable.
+//   other types unless convert is set to true. In the case
+//   of convert is true, type conversion is perform if applicable.
 //   By default, convert is set to be false and can be overridden
 //   when the function is called.
 //
@@ -153,8 +153,8 @@ varSetFloat(const char *varName, RecFloat value, bool convert)
 //
 //  Sets the variable specified by varName to value.  varName
 //   must be an RecCounter variable.  No conversion is done for
-//   other types unless convert is set to ture. In the case
-//   of convert is ture, type conversion is perform if applicable.
+//   other types unless convert is set to true. In the case
+//   of convert is true, type conversion is perform if applicable.
 //   By default, convert is set to be false and can be overridden
 //   when the function is called.
 //
@@ -203,8 +203,8 @@ varSetCounter(const char *varName, RecCounter value, bool convert)
 //
 //  Sets the variable specified by varName to value.  varName
 //   must be an RecInt variable.  No conversion is done for
-//   other types unless convert is set to ture. In the case
-//   of convert is ture, type conversion is perform if applicable.
+//   other types unless convert is set to true. In the case
+//   of convert is true, type conversion is perform if applicable.
 //   By default, convert is set to be false and can be overridden
 //   when the function is called.
 //
@@ -270,7 +270,7 @@ varSetData(RecDataT varType, const char *varName, RecData value)
     err = RecSetRecordFloat(const_cast<char *>(varName), value.rec_float, REC_SOURCE_EXPLICIT);
     break;
   default:
-    Fatal("unsupport type:%d\n", varType);
+    Fatal("unsupported type:%d\n", varType);
   }
   return (err == REC_ERR_OKAY);
 }

@@ -155,7 +155,7 @@ create_lua_vms()
     return NULL;
   }
 
-  // Initalize the GC numbers, no need to lock here
+  // Initialize the GC numbers, no need to lock here
   for (int index = 0; index < ts_lua_max_state_count; ++index) {
     ts_lua_main_ctx *const main_ctx = (ctx_array + index);
     lua_State *const lstate         = main_ctx->lua;
