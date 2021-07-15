@@ -22,6 +22,7 @@
  */
 
 #include "tscore/BaseLogFile.h"
+#include "tscore/ink_sock.h"
 
 /*
  * This constructor creates a BaseLogFile based on a given name.
@@ -532,24 +533,23 @@ BaseMetaInfo::_write_to_file()
   }
   log_log_trace("Successfully opened metafile=%s\n", _filename);
 
-  int n;
   if (_flags & VALID_CREATION_TIME) {
     log_log_trace("Writing creation time to %s\n", _filename);
-    n = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", static_cast<unsigned long>(_creation_time));
+    int const num_to_write = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", static_cast<unsigned long>(_creation_time));
     // TODO modify this runtime check so that it is not an assertion
-    ink_release_assert(n <= BUF_SIZE);
-    if (write(fd, _buffer, n) == -1) {
-      log_log_trace("Could not write creation_time");
+    ink_release_assert(num_to_write <= BUF_SIZE);
+    if (safe_write(fd, _buffer, num_to_write) == -1) {
+      log_log_error("Could not write creation_time: %s\n", strerror(errno));
     }
   }
 
   if (_flags & VALID_SIGNATURE) {
     log_log_trace("Writing signature to %s\n", _filename);
-    n = snprintf(_buffer, BUF_SIZE, "object_signature = %" PRIu64 "\n", _log_object_signature);
+    int const num_to_write = snprintf(_buffer, BUF_SIZE, "object_signature = %" PRIu64 "\n", _log_object_signature);
     // TODO modify this runtime check so that it is not an assertion
-    ink_release_assert(n <= BUF_SIZE);
-    if (write(fd, _buffer, n) == -1) {
-      log_log_error("Could not write object_signature\n");
+    ink_release_assert(num_to_write <= BUF_SIZE);
+    if (safe_write(fd, _buffer, num_to_write) == -1) {
+      log_log_error("Could not write object_signature: %s\n", strerror(errno));
     }
     log_log_trace("BaseMetaInfo::_write_to_file\n"
                   "\tfilename = %s\n"
@@ -558,6 +558,9 @@ BaseMetaInfo::_write_to_file()
                   _filename, _log_object_signature, _buffer);
   }
 
+  if (fsync(fd) == -1) {
+    log_log_error("Could not fsync the log meta file: %s\n", strerror(errno));
+  }
   close(fd);
 }
 
