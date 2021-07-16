@@ -126,14 +126,15 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
   TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, buf, buf_len);
 
   // remove Accept-Encoding
-  ae_field = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  ae_field =
+    TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING, nullptr);
   if (ae_field) {
     TSMimeHdrFieldDestroy(rri->requestBufp, rri->requestHdrp, ae_field);
     TSHandleMLocRelease(rri->requestBufp, rri->requestHdrp, ae_field);
   }
 
   // remove Range
-  range_field = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+  range_field = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, nullptr);
   if (range_field) {
     TSMimeHdrFieldDestroy(rri->requestBufp, rri->requestHdrp, range_field);
     TSHandleMLocRelease(rri->requestBufp, rri->requestHdrp, range_field);
@@ -211,7 +212,7 @@ mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp)
 
   n = 0;
 
-  cl_field = TSMimeHdrFieldFind(bufp, hdrp, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+  cl_field = TSMimeHdrFieldFind(bufp, hdrp, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, nullptr);
   if (cl_field) {
     n = TSMimeHdrFieldValueInt64Get(bufp, hdrp, cl_field, -1);
     TSHandleMLocRelease(bufp, hdrp, cl_field);
@@ -249,7 +250,7 @@ mp4_read_response(Mp4Context *mc, TSHttpTxn txnp)
   }
 
   n        = 0;
-  cl_field = TSMimeHdrFieldFind(bufp, hdrp, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+  cl_field = TSMimeHdrFieldFind(bufp, hdrp, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, nullptr);
   if (cl_field) {
     n = TSMimeHdrFieldValueInt64Get(bufp, hdrp, cl_field, -1);
     TSHandleMLocRelease(bufp, hdrp, cl_field);

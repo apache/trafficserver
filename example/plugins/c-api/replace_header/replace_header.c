@@ -53,7 +53,7 @@ replace_header(TSHttpTxn txnp)
     goto done;
   }
 
-  field_loc = TSMimeHdrFieldFind(resp_bufp, resp_loc, TS_MIME_FIELD_ACCEPT_RANGES, TS_MIME_LEN_ACCEPT_RANGES);
+  field_loc = TSMimeHdrFieldFind(resp_bufp, resp_loc, TS_MIME_FIELD_ACCEPT_RANGES, TS_MIME_LEN_ACCEPT_RANGES, NULL);
   if (field_loc == TS_NULL_MLOC) {
     /* field was not found */
 

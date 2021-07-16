@@ -101,7 +101,7 @@ FindOrMakeHdrField(TSMBuffer buffer, TSMLoc hdr, const char *name, unsigned len)
 {
   TSMLoc field;
 
-  field = TSMimeHdrFieldFind(buffer, hdr, name, len);
+  field = TSMimeHdrFieldFind(buffer, hdr, name, len, nullptr);
   if (field == TS_NULL_MLOC) {
     if (TSMimeHdrFieldCreateNamed(buffer, hdr, name, len, &field) == TS_SUCCESS) {
       TSReleaseAssert(TSMimeHdrFieldAppend(buffer, hdr, field) == TS_SUCCESS);
@@ -582,7 +582,7 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
   TSDebug("xdebug", "scanning for %s header values", xDebugHeader.str);
 
   // Walk the X-Debug header values and determine what to inject into the response.
-  field = TSMimeHdrFieldFind(buffer, hdr, xDebugHeader.str, xDebugHeader.len);
+  field = TSMimeHdrFieldFind(buffer, hdr, xDebugHeader.str, xDebugHeader.len, nullptr);
   while (field != TS_NULL_MLOC) {
     int count = TSMimeHdrFieldValuesCount(buffer, hdr, field);
 
@@ -700,7 +700,7 @@ XDeleteDebugHdr(TSCont /* contp */, TSEvent event, void *edata)
     return TS_EVENT_NONE;
   }
 
-  field = TSMimeHdrFieldFind(buffer, hdr, xDebugHeader.str, xDebugHeader.len);
+  field = TSMimeHdrFieldFind(buffer, hdr, xDebugHeader.str, xDebugHeader.len, nullptr);
   if (field == TS_NULL_MLOC) {
     return TS_EVENT_NONE;
   }

@@ -181,7 +181,7 @@ template <class T> struct HttpTransaction {
     assert(b != nullptr);
     assert(l != nullptr);
     bool result        = false;
-    const TSMLoc field = TSMimeHdrFieldFind(b, l, TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING);
+    const TSMLoc field = TSMimeHdrFieldFind(b, l, TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING, nullptr);
     if (field != nullptr) {
       int length;
       const char *const value = TSMimeHdrFieldValueStringGet(b, l, field, -1, &length);

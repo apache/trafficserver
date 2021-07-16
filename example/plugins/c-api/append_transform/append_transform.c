@@ -256,7 +256,7 @@ transformable(TSHttpTxn txnp)
     if (TS_HTTP_STATUS_OK == TSHttpHdrStatusGet(bufp, hdr_loc)) {
       /* We only want to do the transformation on documents that have a
          content type of "text/html". */
-      TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Content-Type", 12);
+      TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Content-Type", 12, NULL);
       if (!field_loc) {
         ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
         return 0;

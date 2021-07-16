@@ -85,7 +85,7 @@ static int
 add_redirect_header(TSMBuffer &bufp, TSMLoc &hdr_loc, const std::string &location)
 {
   // This is needed in case the response already contains a Location header
-  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, LOCATION_HEADER, strlen(LOCATION_HEADER));
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, LOCATION_HEADER, strlen(LOCATION_HEADER), nullptr);
 
   if (field_loc == TS_NULL_MLOC) {
     TSMimeHdrFieldCreateNamed(bufp, hdr_loc, LOCATION_HEADER, strlen(LOCATION_HEADER), &field_loc);
@@ -115,7 +115,7 @@ check_internal_message_hdr(TSHttpTxn &txnp)
     return false;
   }
 
-  TSMLoc header_loc = TSMimeHdrFieldFind(bufp, hdr_loc, ATS_INTERNAL_MESSAGE, strlen(ATS_INTERNAL_MESSAGE));
+  TSMLoc header_loc = TSMimeHdrFieldFind(bufp, hdr_loc, ATS_INTERNAL_MESSAGE, strlen(ATS_INTERNAL_MESSAGE), nullptr);
   if (header_loc) {
     found = true;
     // found the header, remove it now..

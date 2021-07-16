@@ -190,7 +190,7 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
     if ((TS_HTTP_METHOD_PURGE == method) || ((TS_HTTP_METHOD_GET == method) && purge->allow_get)) {
       /* First see if we require the "secret" to be passed in a header, and then use that */
       if (purge->header) {
-        TSMLoc field_loc = TSMimeHdrFieldFind(reqp, hdr_loc, purge->header, purge->header_len);
+        TSMLoc field_loc = TSMimeHdrFieldFind(reqp, hdr_loc, purge->header, purge->header_len, NULL);
 
         if (field_loc) {
           const char *header;

@@ -119,7 +119,7 @@ enable_agent_check(TSHttpTxn txnp)
 
   // Enable the sink agent if the header is present.
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
-    TSMLoc range_field = TSMimeHdrFieldFind(req_buf, req_loc, FLAG_MIME_FIELD, FLAG_MIME_LEN);
+    TSMLoc range_field = TSMimeHdrFieldFind(req_buf, req_loc, FLAG_MIME_FIELD, FLAG_MIME_LEN, NULL);
     zret               = NULL == range_field ? 0 : 1;
   }
 

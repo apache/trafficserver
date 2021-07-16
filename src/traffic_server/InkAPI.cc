@@ -2962,8 +2962,10 @@ TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr_obj, int idx)
   return reinterpret_cast<TSMLoc>(h);
 }
 
+static_assert(sizeof(TSHdrHandle) >= sizeof(MIMEFieldSDKHandle) && alignof(TSHdrHandle) == alignof(MIMEFieldSDKHandle));
+
 TSMLoc
-TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
+TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length, TSHdrHandle *handle)
 {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr_obj) == TS_SUCCESS) ||
@@ -2981,7 +2983,14 @@ TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
     return TS_NULL_MLOC;
   }
 
-  MIMEFieldSDKHandle *h = sdk_alloc_field_handle(bufp, mh);
+  MIMEFieldSDKHandle *h = nullptr;
+  if (handle == nullptr) {
+    h = sdk_alloc_field_handle(bufp, mh);
+  } else {
+    h = reinterpret_cast<MIMEFieldSDKHandle *>(handle);
+    obj_init_header(h, HDR_HEAP_OBJ_FIELD_SDK_HANDLE, sizeof(MIMEFieldSDKHandle), 0);
+    h->mh = mh;
+  }
 
   h->field_ptr = f;
   return reinterpret_cast<TSMLoc>(h);

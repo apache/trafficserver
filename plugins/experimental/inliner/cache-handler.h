@@ -51,7 +51,7 @@ bool
 getHeader(TSMBuffer buffer, TSMLoc location, const std::string &name, std::string &value)
 {
   bool result        = false;
-  const TSMLoc field = TSMimeHdrFieldFind(buffer, location, name.c_str(), name.size());
+  const TSMLoc field = TSMimeHdrFieldFind(buffer, location, name.c_str(), name.size(), nullptr);
   if (field != nullptr) {
     int length                = 0;
     const char *const content = TSMimeHdrFieldValueStringGet(buffer, location, field, -1, &length);

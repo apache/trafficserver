@@ -282,7 +282,7 @@ GeneratorGetRequestHeader(GeneratorHttpHeader &request, const char *field_name, 
 {
   TSMLoc field;
 
-  field = TSMimeHdrFieldFind(request.buffer, request.header, field_name, field_len);
+  field = TSMimeHdrFieldFind(request.buffer, request.header, field_name, field_len, nullptr);
   if (field != TS_NULL_MLOC) {
     default_value = TSMimeHdrFieldValueInt64Get(request.buffer, request.header, field, -1);
   }

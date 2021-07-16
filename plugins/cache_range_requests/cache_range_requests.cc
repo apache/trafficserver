@@ -188,7 +188,7 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
   TSCont txn_contp;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_buf, &hdr_loc)) {
-    loc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+    loc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, nullptr);
     if (TS_NULL_MLOC != loc) {
       const char *hdr_value = TSMimeHdrFieldValueStringGet(hdr_buf, hdr_loc, loc, 0, &length);
       TSHandleMLocRelease(hdr_buf, hdr_loc, loc);
@@ -244,7 +244,7 @@ range_header_check(TSHttpTxn txnp, pluginconfig *const pc)
 
             // optionally consider an X-CRR-IMS header
             if (pc->consider_ims_header) {
-              TSMLoc const imsloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, X_IMS_HEADER.data(), X_IMS_HEADER.size());
+              TSMLoc const imsloc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, X_IMS_HEADER.data(), X_IMS_HEADER.size(), nullptr);
               if (TS_NULL_MLOC != imsloc) {
                 time_t const itime = TSMimeHdrFieldValueDateGet(hdr_buf, hdr_loc, imsloc);
                 DEBUG_LOG("Servicing the '%.*s' header", (int)X_IMS_HEADER.size(), X_IMS_HEADER.data());
@@ -392,7 +392,7 @@ handle_server_read_response(TSHttpTxn txnp, txndata *const txn_state)
 int
 remove_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len)
 {
-  TSMLoc field = TSMimeHdrFieldFind(buf, hdr_loc, header, len);
+  TSMLoc field = TSMimeHdrFieldFind(buf, hdr_loc, header, len, nullptr);
   int cnt      = 0;
 
   while (field) {
@@ -423,7 +423,7 @@ set_header(TSMBuffer buf, TSMLoc hdr_loc, const char *header, int len, const cha
 
   DEBUG_LOG("header: %s, len: %d, val: %s, val_len: %d", header, len, val, val_len);
   bool ret         = false;
-  TSMLoc field_loc = TSMimeHdrFieldFind(buf, hdr_loc, header, len);
+  TSMLoc field_loc = TSMimeHdrFieldFind(buf, hdr_loc, header, len, nullptr);
 
   if (!field_loc) {
     // No existing header, so create one
@@ -464,7 +464,7 @@ get_date_from_cached_hdr(TSHttpTxn txn)
   time_t date = 0;
 
   if (TSHttpTxnCachedRespGet(txn, &buf, &hdr_loc) == TS_SUCCESS) {
-    date_loc = TSMimeHdrFieldFind(buf, hdr_loc, TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE);
+    date_loc = TSMimeHdrFieldFind(buf, hdr_loc, TS_MIME_FIELD_DATE, TS_MIME_LEN_DATE, nullptr);
     if (date_loc != TS_NULL_MLOC) {
       date = TSMimeHdrFieldValueDateGet(buf, hdr_loc, date_loc);
       TSHandleMLocRelease(buf, hdr_loc, date_loc);

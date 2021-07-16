@@ -39,7 +39,7 @@
 int
 removeHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen)
 {
-  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
+  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen, nullptr);
   int cnt         = 0;
 
   while (fieldLoc) {
@@ -64,7 +64,7 @@ removeHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen)
 bool
 headerExist(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen)
 {
-  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
+  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen, nullptr);
   if (TS_NULL_MLOC != fieldLoc) {
     TSHandleMLocRelease(bufp, hdrLoc, fieldLoc);
     return true;
@@ -86,7 +86,7 @@ headerExist(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen)
 char *
 getHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, char *value, int *valuelen)
 {
-  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
+  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen, nullptr);
   char *dst       = value;
   while (fieldLoc) {
     TSMLoc next = TSMimeHdrFieldNextDup(bufp, hdrLoc, fieldLoc);
@@ -140,7 +140,7 @@ setHeader(TSMBuffer bufp, TSMLoc hdrLoc, const char *header, int headerlen, cons
   }
 
   bool ret        = false;
-  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen);
+  TSMLoc fieldLoc = TSMimeHdrFieldFind(bufp, hdrLoc, header, headerlen, nullptr);
 
   if (!fieldLoc) {
     // No existing header, so create one

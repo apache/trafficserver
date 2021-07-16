@@ -50,7 +50,7 @@ HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, unsigned value)
 {
   TSMLoc mloc;
 
-  mloc = TSMimeHdrFieldFind(mbuf, mhdr, name, -1);
+  mloc = TSMimeHdrFieldFind(mbuf, mhdr, name, -1, nullptr);
   if (mloc == TS_NULL_MLOC) {
     TSReleaseAssert(TSMimeHdrFieldCreateNamed(mbuf, mhdr, name, -1, &mloc) == TS_SUCCESS);
   } else {
@@ -68,7 +68,7 @@ HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, const char *val
 {
   TSMLoc mloc;
 
-  mloc = TSMimeHdrFieldFind(mbuf, mhdr, name, -1);
+  mloc = TSMimeHdrFieldFind(mbuf, mhdr, name, -1, nullptr);
   if (mloc == TS_NULL_MLOC) {
     TSReleaseAssert(TSMimeHdrFieldCreateNamed(mbuf, mhdr, name, -1, &mloc) == TS_SUCCESS);
   } else {
@@ -87,7 +87,7 @@ HttpGetContentLength(TSMBuffer mbuf, TSMLoc mhdr)
   TSMLoc mloc;
   unsigned value = 0;
 
-  mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, -1);
+  mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_CONTENT_LENGTH, -1, nullptr);
   if (mloc != TS_NULL_MLOC) {
     value = TSMimeHdrFieldValueUintGet(mbuf, mhdr, mloc, 0 /* index */);
   }
@@ -102,7 +102,7 @@ HttpIsChunkedEncoding(TSMBuffer mbuf, TSMLoc mhdr)
   TSMLoc mloc;
   bool ischunked = false;
 
-  mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_TRANSFER_ENCODING, -1);
+  mloc = TSMimeHdrFieldFind(mbuf, mhdr, TS_MIME_FIELD_TRANSFER_ENCODING, -1, nullptr);
   if (mloc != TS_NULL_MLOC) {
     const char *str;
     int len;

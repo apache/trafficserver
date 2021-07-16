@@ -450,14 +450,13 @@ static int
 get_request_id_value(const char *name, TSMBuffer buf, TSMLoc hdr)
 {
   int id = -1;
-  TSMLoc field;
+  TSHdrHandle handle;
 
-  field = TSMimeHdrFieldFind(buf, hdr, name, -1);
+  TSMLoc field = TSMimeHdrFieldFind(buf, hdr, name, -1, &handle);
   if (field != TS_NULL_MLOC) {
     id = TSMimeHdrFieldValueIntGet(buf, hdr, field, 0);
   }
 
-  TSHandleMLocRelease(buf, hdr, field);
   return id;
 }
 
@@ -5400,7 +5399,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
     if (TSMimeHdrFieldDestroy(bufp1, mime_loc1, field_loc15) != TS_SUCCESS) {
       SDK_RPRINT(test, "TSMimeHdrFieldDestroy", "TestCase1", TC_FAIL, "TSMimeHdrFieldDestroy returns TS_ERROR");
     } else {
-      if ((test_field_loc15 = TSMimeHdrFieldFind(bufp1, mime_loc1, field5Name, -1)) == TS_NULL_MLOC) {
+      if ((test_field_loc15 = TSMimeHdrFieldFind(bufp1, mime_loc1, field5Name, -1, nullptr)) == TS_NULL_MLOC) {
         SDK_RPRINT(test, "TSMimeHdrFieldDestroy", "TestCase1", TC_PASS, "ok");
         test_passed_Mime_Hdr_Field_Destroy = true;
       } else {
@@ -5930,7 +5929,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
 
   // TSMimeHdrFieldNextDup
   if (test_passed_parse == true) {
-    if ((field_loc1 = TSMimeHdrFieldFind(bufp1, mime_hdr_loc1, DUPLICATE_FIELD_NAME, -1)) == TS_NULL_MLOC) {
+    if ((field_loc1 = TSMimeHdrFieldFind(bufp1, mime_hdr_loc1, DUPLICATE_FIELD_NAME, -1, nullptr)) == TS_NULL_MLOC) {
       SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_FAIL, "TSMimeHdrFieldFind returns TS_NULL_MLOC");
       SDK_RPRINT(test, "TSMimeHdrFieldFind", "TestCase1", TC_PASS, "TSMimeHdrFieldFind returns TS_NULL_MLOC");
     } else {
@@ -6006,14 +6005,14 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
 
   // TSMimeHdrFieldRemove
   if (test_passed_mime_hdr_copy == true) {
-    if ((field_loc1 = TSMimeHdrFieldFind(bufp2, mime_hdr_loc2, REMOVE_FIELD_NAME, -1)) == TS_NULL_MLOC) {
+    if ((field_loc1 = TSMimeHdrFieldFind(bufp2, mime_hdr_loc2, REMOVE_FIELD_NAME, -1, nullptr)) == TS_NULL_MLOC) {
       SDK_RPRINT(test, "TSMimeHdrFieldRemove", "TestCase1", TC_FAIL, "TSMimeHdrFieldFind returns TS_NULL_MLOC");
     } else {
       if (TSMimeHdrFieldRemove(bufp2, mime_hdr_loc2, field_loc1) != TS_SUCCESS) {
         SDK_RPRINT(test, "TSMimeHdrFieldRemove", "TestCase1", TC_FAIL, "TSMimeHdrFieldRemove returns TS_ERROR");
       } else {
         // Make sure the remove actually took effect
-        field_loc2 = TSMimeHdrFieldFind(bufp2, mime_hdr_loc2, REMOVE_FIELD_NAME, -1);
+        field_loc2 = TSMimeHdrFieldFind(bufp2, mime_hdr_loc2, REMOVE_FIELD_NAME, -1, nullptr);
         if ((field_loc2 == TS_NULL_MLOC) || (field_loc1 != field_loc2)) {
           test_passed_mime_hdr_field_remove = true;
         } else {
@@ -7894,7 +7893,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
       if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr) != TS_SUCCESS) {
         SDK_RPRINT(data->test, "TSHttpTxnTransform", "TestCase", TC_FAIL, "TSHttpTxnClientReqGet returns 0");
       } else {
-        if (TS_NULL_MLOC == (field = TSMimeHdrFieldFind(bufp, hdr, "Request", -1))) {
+        if (TS_NULL_MLOC == (field = TSMimeHdrFieldFind(bufp, hdr, "Request", -1, nullptr))) {
           SDK_RPRINT(data->test, "TSHttpTxnTransform", "TestCase", TC_FAIL, "Didn't find field request");
         } else {
           int reqid = TSMimeHdrFieldValueIntGet(bufp, hdr, field, 0);

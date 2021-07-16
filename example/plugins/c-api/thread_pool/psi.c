@@ -856,7 +856,7 @@ transformable(TSHttpTxn txnp)
     }
 
     TSMLoc field_loc;
-    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
+    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1, NULL);
     if (field_loc == TS_NULL_MLOC) {
       TSError("[%s] Unable to search Content-Type field", PLUGIN_NAME);
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -872,7 +872,7 @@ transformable(TSHttpTxn txnp)
 
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
 
-    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1);
+    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1, NULL);
 
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);

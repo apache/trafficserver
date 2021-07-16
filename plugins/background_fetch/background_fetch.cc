@@ -674,10 +674,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo * /* rri */)
   TSMLoc req_hdrs;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &bufp, &req_hdrs)) {
-    TSMLoc field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+    TSMLoc field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, nullptr);
 
     if (!field_loc) { // Less common case, but also allow If-Range header to trigger, but only if Range not present
-      field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_IF_RANGE, TS_MIME_LEN_IF_RANGE);
+      field_loc = TSMimeHdrFieldFind(bufp, req_hdrs, TS_MIME_FIELD_IF_RANGE, TS_MIME_LEN_IF_RANGE, nullptr);
     }
 
     if (field_loc) {

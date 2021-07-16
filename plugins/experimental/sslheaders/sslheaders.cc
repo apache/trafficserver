@@ -75,7 +75,7 @@ SslHdrRemoveHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string &name)
   TSMLoc field;
   TSMLoc next;
 
-  field = TSMimeHdrFieldFind(mbuf, mhdr, name.c_str(), name.size());
+  field = TSMimeHdrFieldFind(mbuf, mhdr, name.c_str(), name.size(), nullptr);
   for (; field != TS_NULL_MLOC; field = next) {
     next = TSMimeHdrFieldNextDup(mbuf, mhdr, field);
     TSMimeHdrFieldDestroy(mbuf, mhdr, field);
@@ -94,7 +94,7 @@ SslHdrSetHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string &name, BIO *value
 
   SslHdrDebug("SSL header '%s'", name.c_str());
 
-  field = TSMimeHdrFieldFind(mbuf, mhdr, name.c_str(), name.size());
+  field = TSMimeHdrFieldFind(mbuf, mhdr, name.c_str(), name.size(), nullptr);
   if (field == TS_NULL_MLOC) {
     TSMimeHdrFieldCreateNamed(mbuf, mhdr, name.c_str(), name.size(), &field);
     TSMimeHdrFieldValueStringSet(mbuf, mhdr, field, -1, vptr, vlen);

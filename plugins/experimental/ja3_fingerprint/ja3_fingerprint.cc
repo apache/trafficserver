@@ -274,7 +274,7 @@ append_to_field(TSMBuffer bufp, TSMLoc hdr_loc, const char *field, int field_len
     return;
   }
 
-  TSMLoc target = TSMimeHdrFieldFind(bufp, hdr_loc, field, field_len);
+  TSMLoc target = TSMimeHdrFieldFind(bufp, hdr_loc, field, field_len, nullptr);
   if (target == TS_NULL_MLOC) {
     TSMimeHdrFieldCreateNamed(bufp, hdr_loc, field, field_len, &target);
     TSMimeHdrFieldAppend(bufp, hdr_loc, target);

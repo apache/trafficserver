@@ -202,7 +202,7 @@ vary_header(TSMBuffer bufp, TSMLoc hdr_loc)
   TSReturnCode ret;
   TSMLoc ce_loc;
 
-  ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_VARY, TS_MIME_LEN_VARY);
+  ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_VARY, TS_MIME_LEN_VARY, nullptr);
   if (ce_loc) {
     int idx, count, len;
 
@@ -244,7 +244,7 @@ etag_header(TSMBuffer bufp, TSMLoc hdr_loc)
   TSReturnCode ret = TS_SUCCESS;
   TSMLoc ce_loc;
 
-  ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
+  ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG, nullptr);
 
   if (ce_loc) {
     int strl;
@@ -675,7 +675,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
 
   // check if Range Requests are cacheable
   bool range_request = host_configuration->range_request();
-  rfield             = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+  rfield             = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, nullptr);
   if (rfield != TS_NULL_MLOC && !range_request) {
     debug("Range header found in the request and range_request is configured as false, not compressible");
     TSHandleMLocRelease(cbuf, chdr, rfield);
@@ -697,7 +697,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
   }
 
   *algorithms = host_configuration->compression_algorithms();
-  cfield      = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  cfield      = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING, nullptr);
   if (cfield != TS_NULL_MLOC) {
     int compression_acceptable = 0;
     int nvalues                = TSMimeHdrFieldValuesCount(cbuf, chdr, cfield);
@@ -743,7 +743,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
 
   /* If there already exists a content encoding then we don't want
      to do anything. */
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, -1);
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, -1, nullptr);
   if (field_loc) {
     info("response is already content encoded, not compressible");
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
@@ -751,7 +751,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
     return 0;
   }
 
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, nullptr);
   if (field_loc != TS_NULL_MLOC) {
     unsigned int hdr_value = TSMimeHdrFieldValueUintGet(bufp, hdr_loc, field_loc, -1);
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
@@ -768,7 +768,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
 
   /* We only want to do gzip compression on documents that have a
      content type of "text/" or "application/x-javascript". */
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1, nullptr);
   if (!field_loc) {
     info("no content type header found, not compressible");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -818,7 +818,7 @@ compress_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type,
 HostConfiguration *
 find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc locp, Configuration *config)
 {
-  TSMLoc fieldp    = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
+  TSMLoc fieldp    = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, nullptr);
   int strl         = 0;
   const char *strv = nullptr;
   HostConfiguration *host_configuration;

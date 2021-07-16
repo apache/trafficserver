@@ -215,7 +215,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       goto fail;
     }
 
-    field = TSMimeHdrFieldFind(buffer, hdr, "Cookie", 6);
+    field = TSMimeHdrFieldFind(buffer, hdr, "Cookie", 6, NULL);
     if (field == TS_NULL_MLOC) {
       TSHandleMLocRelease(buffer, TS_NULL_MLOC, hdr);
       if (!checked_auth) {

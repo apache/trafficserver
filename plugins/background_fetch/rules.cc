@@ -97,7 +97,7 @@ BgFetchRule::check_field_configured(TSHttpTxn txnp) const
   // Check response headers. ToDo: This doesn't check e.g. Content-Type :-/.
   if (!strcmp(_field, "Content-Length")) {
     if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &hdr_bufp, &hdr_loc)) {
-      TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, _field, -1);
+      TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, _field, -1, nullptr);
 
       if (TS_NULL_MLOC != loc) {
         unsigned int content_len = TSMimeHdrFieldValueUintGet(hdr_bufp, hdr_loc, loc, 0 /* index */);
@@ -119,7 +119,7 @@ BgFetchRule::check_field_configured(TSHttpTxn txnp) const
 
   // Check request headers
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &hdr_loc)) {
-    TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, _field, -1);
+    TSMLoc loc = TSMimeHdrFieldFind(hdr_bufp, hdr_loc, _field, -1, nullptr);
 
     if (TS_NULL_MLOC != loc) {
       if (!strcmp(_value, "*")) {

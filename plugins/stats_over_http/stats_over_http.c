@@ -597,7 +597,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   memset(my_state, 0, sizeof(*my_state));
   icontp = TSContCreate(stats_dostuff, TSMutexCreate());
 
-  accept_field     = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT);
+  accept_field     = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT, NULL);
   my_state->output = JSON_OUTPUT; // default to json output
   // accept header exists, use it to determine response type
   if (accept_field != TS_NULL_MLOC) {
@@ -613,7 +613,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   }
 
   // Check for Accept Encoding and init
-  accept_encoding_field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  accept_encoding_field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING, NULL);
   my_state->encoding    = NONE;
   if (accept_encoding_field != TS_NULL_MLOC) {
     int len         = -1;

@@ -181,7 +181,7 @@ ts_lua_server_response_header_get(lua_State *L)
   TS_LUA_CHECK_SERVER_RESPONSE_HDR(http_ctx);
 
   if (key && key_len) {
-    field_loc = TSMimeHdrFieldFind(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, key, key_len);
+    field_loc = TSMimeHdrFieldFind(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, key, key_len, NULL);
     if (field_loc != TS_NULL_MLOC) {
       count = 0;
       while (field_loc != TS_NULL_MLOC) {
@@ -238,7 +238,7 @@ ts_lua_server_response_header_set(lua_State *L)
 
   TS_LUA_CHECK_SERVER_RESPONSE_HDR(http_ctx);
 
-  field_loc = TSMimeHdrFieldFind(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, key, key_len);
+  field_loc = TSMimeHdrFieldFind(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, key, key_len, NULL);
 
   if (remove) {
     while (field_loc != TS_NULL_MLOC) {
