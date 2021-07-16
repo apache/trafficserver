@@ -445,7 +445,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.default_buffer_size
  proxy.config.http.default_buffer_water_mark
  proxy.config.http.doc_in_cache_skip_dns
- proxy.config.http.down_server.abort_threshold
  proxy.config.http.down_server.cache_time
  proxy.config.http.enabled
  proxy.config.http.enable_http_info

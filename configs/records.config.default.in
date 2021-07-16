@@ -62,7 +62,6 @@ CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
 CONFIG proxy.config.http.connect_attempts_timeout INT 30
 CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
 CONFIG proxy.config.http.down_server.cache_time INT 60
-CONFIG proxy.config.http.down_server.abort_threshold INT 10
 
 ##############################################################################
 # Negative response caching, for redirects and errors. Docs:
