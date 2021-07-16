@@ -1991,12 +1991,20 @@ int
 HttpSM::state_read_server_response_header(int event, void *data)
 {
   STATE_ENTER(&HttpSM::state_read_server_response_header, event);
+  // If we had already received EOS, just go away. We would sometimes see
+  // a WRITE event appear after receiving EOS from the server connection
+  if (server_entry->eos) {
+    return 0;
+  } else if (data == server_entry->write_vio) {
+    return this->state_send_server_request_header(event, data);
+  }
+
+  ink_assert(server_entry->eos != true);
   ink_assert(server_entry->read_vio == (VIO *)data);
   ink_assert(t_state.current.server->state == HttpTransact::STATE_UNDEFINED);
   ink_assert(t_state.current.state == HttpTransact::STATE_UNDEFINED);
 
   int bytes_used = 0;
-  VIO *vio       = static_cast<VIO *>(data);
 
   switch (event) {
   case VC_EVENT_EOS:
@@ -2042,7 +2050,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   // And don't allow empty headers from closed connections
   if ((state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTP_0_9 &&
        server_txn->get_transaction_id() > 1) ||
-      (server_entry->eos && vio->ndone == 0)) {
+      (server_entry->eos && state == PARSE_RESULT_CONT)) { // No more data will be coming
     state = PARSE_RESULT_ERROR;
   }
   // Check to see if we are over the hdr size limit
@@ -2055,6 +2063,15 @@ HttpSM::state_read_server_response_header(int event, void *data)
     server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
     milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = Thread::get_hrtime();
+
+    // If there is a post body in transit, give up on it
+    if (tunnel.is_tunnel_alive()) {
+      tunnel.abort_tunnel();
+      // Make sure client connection is closed when we are done in case there is cruft left over
+      t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
+      // Similarly the server connection should also be closed
+      t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+    }
   }
 
   switch (state) {
@@ -2119,7 +2136,14 @@ HttpSM::state_read_server_response_header(int event, void *data)
       this->disable_redirect();
     }
 
-    do_api_callout();
+    // Go ahead and process the hooks assuming any body tunnel has already completed
+    if (!tunnel.is_tunnel_alive()) {
+      SMDebug("http_seq", "Continue processing response");
+      do_api_callout();
+    } else {
+      SMDebug("http_seq", "Defer processing response until post body is processed");
+      server_entry->read_vio->disable(); // Disable the read until we finish the tunnel
+    }
     break;
   case PARSE_RESULT_CONT:
     ink_assert(server_entry->eos == false);
@@ -2136,9 +2160,13 @@ HttpSM::state_read_server_response_header(int event, void *data)
 int
 HttpSM::state_send_server_request_header(int event, void *data)
 {
-  STATE_ENTER(&HttpSM::state_send_server_request_header, event);
   ink_assert(server_entry != nullptr);
-  ink_assert(server_entry->write_vio == (VIO *)data || server_entry->read_vio == (VIO *)data);
+  if (server_entry->read_vio == data) {
+    return this->state_read_server_response_header(event, data);
+  }
+  ink_assert(server_entry->eos == false);
+  ink_assert(server_entry->write_vio == (VIO *)data);
+  STATE_ENTER(&HttpSM::state_send_server_request_header, event);
 
   int method;
 
@@ -2162,31 +2190,9 @@ HttpSM::state_send_server_request_header(int event, void *data)
         // Go ahead and set up the post tunnel if we are not waiting for a 100 response
         if (!t_state.hdr_info.client_request.m_100_continue_required) {
           do_setup_post_tunnel(HTTP_SERVER_VC);
-        } else {
-          setup_server_read_response_header();
         }
       }
-    } else {
-      // It's time to start reading the response
-      setup_server_read_response_header();
     }
-
-    break;
-
-  case VC_EVENT_READ_READY:
-    // We already did the read for the response header and
-    //  we got some data.  Wait for the request header
-    //  send before dealing with it.  However, we need to
-    //  disable further IO here since the whole response
-    //  may be in the buffer and we can not switch buffers
-    //  on the io core later
-    ink_assert(server_entry->read_vio == (VIO *)data);
-    // setting nbytes to ndone would disable reads and remove it from the read queue.
-    // We can't do this in the epoll paradigm because we may be missing epoll errors that would
-    // prevent us from leaving this state.
-    // setup_server_read_response_header will trigger READ_READY to itself if there is data in the buffer.
-
-    // server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
 
     break;
 
@@ -2898,7 +2904,15 @@ HttpSM::tunnel_handler_post(int event, void *data)
       call_transact_and_set_next_state(HttpTransact::HandleRequestBufferDone);
       break;
     }
-    setup_server_read_response_header();
+    // Is the response header ready and waiting?
+    // If so, go ahead and do the hook processing
+    if (milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] != 0) {
+      Warning("Process waiting response id=[%" PRId64, sm_id);
+      t_state.current.state         = HttpTransact::CONNECTION_ALIVE;
+      t_state.transact_return_point = HttpTransact::HandleResponse;
+      t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
+      do_api_callout();
+    }
     break;
   default:
     ink_release_assert(0);
@@ -5611,21 +5625,15 @@ HttpSM::handle_post_failure()
   t_state.client_info.keep_alive     = HTTP_NO_KEEPALIVE;
   t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
 
-  if (server_txn->get_remote_reader()->read_avail() > 0) {
-    tunnel.deallocate_buffers();
-    tunnel.reset();
-    // There's data from the server so try to read the header
-    setup_server_read_response_header();
-  } else {
-    tunnel.deallocate_buffers();
-    tunnel.reset();
-    // Server died
-    if (t_state.current.state == HttpTransact::STATE_UNDEFINED || t_state.current.state == HttpTransact::CONNECTION_ALIVE) {
-      t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
-      t_state.current.state = HttpTransact::CONNECTION_CLOSED;
-    }
-    call_transact_and_set_next_state(HttpTransact::HandleResponse);
+  ink_assert(server_txn->get_remote_reader()->read_avail() == 0);
+  tunnel.deallocate_buffers();
+  tunnel.reset();
+  // Server died
+  if (t_state.current.state == HttpTransact::STATE_UNDEFINED || t_state.current.state == HttpTransact::CONNECTION_ALIVE) {
+    t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
+    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
   }
+  call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
 // void HttpSM::handle_http_server_open()
@@ -5664,7 +5672,7 @@ HttpSM::handle_http_server_open()
   if (method != HTTP_WKSIDX_TRACE &&
       (t_state.hdr_info.request_content_length > 0 || t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) &&
       do_post_transform_open()) {
-    do_setup_post_tunnel(HTTP_TRANSFORM_VC);
+    do_setup_post_tunnel(HTTP_TRANSFORM_VC); // Seems like we should be sending the request along this way too
   } else if (server_txn != nullptr) {
     setup_server_send_request_api();
   }
@@ -6269,6 +6277,9 @@ HttpSM::setup_server_send_request()
 
   // Make sure the VC is using correct timeouts.  We may be reusing a previously used server session
   server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
+
+  // Go on and set up the read response header too
+  setup_server_read_response_header();
 }
 
 void
@@ -6281,6 +6292,8 @@ HttpSM::setup_server_read_response_header()
              t_state.req_flavor == HttpTransact::REQ_FLAVOR_REVPROXY);
 
   ink_assert(server_txn != nullptr && server_txn->get_remote_reader() != nullptr);
+
+  SMDebug("http", "[setup_server_read_response_header] Setting up the header read");
 
   // Now that we've got the ability to read from the
   //  server, setup to read the response header
@@ -6440,6 +6453,9 @@ HttpSM::setup_100_continue_transfer()
   ua_txn->set_half_close_flag(false);
   ua_entry->in_tunnel = true;
   tunnel.tunnel_run(p);
+
+  // Set up the header response read again.  Already processed the 100 response
+  setup_server_read_response_header();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -7597,6 +7613,8 @@ HttpSM::set_next_state()
     break;
   }
 
+  // This is called in some case if the 100 continue header is from a HTTP/1.0 server
+  // Likely an obsolete case now and should probably return an error
   case HttpTransact::SM_ACTION_SERVER_PARSE_NEXT_HDR: {
     setup_server_read_response_header();
     break;
