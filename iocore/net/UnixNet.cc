@@ -524,11 +524,9 @@ NetHandler::waitForActivity(ink_hrtime timeout)
         }
       } else if (!(flags & (EVENTIO_READ))) {
         Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", flags);
-        // Temporarily replacing the asssert with a warning message and logic
-        // to treat this case on the write queue, so we can get some information
-        // about the flags that show up in the case.  Unfortunately in the core that
-        // results from the assert, the flags variable is optimized out
-        Warning("Unhandled epoll event: 0x%x", flags);
+        // In practice we sometimes see EPOLLERR and EPOLLHUP through there
+        // Anything else would be surprising
+        ink_assert((flags & ~(EVENTIO_ERROR)) == 0);
         ne->write.triggered = 1;
         if (!write_ready_list.in(ne)) {
           write_ready_list.enqueue(ne);
