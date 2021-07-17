@@ -39,7 +39,7 @@
 
 using UDPNetContHandler = int (UDPNetHandler::*)(int, void *);
 
-inkcoreapi ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
+ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 EventType ET_UDP;
 
 //

@@ -123,11 +123,11 @@ struct tok_iter_state {
 class Tokenizer
 {
 public:
-  inkcoreapi Tokenizer(const char *StrOfDelimiters);
-  inkcoreapi ~Tokenizer();
+  Tokenizer(const char *StrOfDelimiters);
+  ~Tokenizer();
 
   unsigned Initialize(char *str, unsigned options);
-  inkcoreapi unsigned Initialize(const char *str); // Automatically sets option to copy
+  unsigned Initialize(const char *str); // Automatically sets option to copy
   const char *operator[](unsigned index) const;
 
   void
@@ -145,8 +145,8 @@ public:
   unsigned count() const;
   void Print() const;
 
-  inkcoreapi const char *iterFirst(tok_iter_state *state);
-  inkcoreapi const char *iterNext(tok_iter_state *state);
+  const char *iterFirst(tok_iter_state *state);
+  const char *iterNext(tok_iter_state *state);
 
   // noncopyable
   Tokenizer &operator=(const Tokenizer &) = delete;

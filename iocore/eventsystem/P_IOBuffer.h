@@ -616,7 +616,7 @@ IOBufferReader::reset()
 //      inline functions definitions
 //
 ////////////////////////////////////////////////////////////////
-inkcoreapi extern ClassAllocator<MIOBuffer> ioAllocator;
+extern ClassAllocator<MIOBuffer> ioAllocator;
 ////////////////////////////////////////////////////////////////
 //
 //  MIOBuffer::MIOBuffer()

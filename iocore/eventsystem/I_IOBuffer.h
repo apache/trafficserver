@@ -109,7 +109,7 @@ enum AllocType {
 #define BUFFER_SIZE_FOR_CONSTANT(_size) (_size - DEFAULT_BUFFER_SIZES)
 #define BUFFER_SIZE_INDEX_FOR_CONSTANT_SIZE(_size) (_size + DEFAULT_BUFFER_SIZES)
 
-inkcoreapi extern Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
+extern Allocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 
 void init_buffer_allocators(int iobuffer_advice);
 
@@ -237,7 +237,7 @@ public:
   IOBufferData &operator=(const IOBufferData &) = delete;
 };
 
-inkcoreapi extern ClassAllocator<IOBufferData> ioDataAllocator;
+extern ClassAllocator<IOBufferData> ioDataAllocator;
 
 /**
   A linkable portion of IOBufferData. IOBufferBlock is a chainable
@@ -480,7 +480,7 @@ public:
   IOBufferBlock &operator=(const IOBufferBlock &) = delete;
 };
 
-extern inkcoreapi ClassAllocator<IOBufferBlock> ioBlockAllocator;
+extern ClassAllocator<IOBufferBlock> ioBlockAllocator;
 
 /** A class for holding a chain of IO buffer blocks.
     This class is intended to be used as a member variable for other classes that
@@ -789,7 +789,7 @@ public:
       occurrence.
 
   */
-  inkcoreapi int64_t memchr(char c, int64_t len = INT64_MAX, int64_t offset = 0);
+  int64_t memchr(char c, int64_t len = INT64_MAX, int64_t offset = 0);
 
   /**
     Copies and consumes data. Copies len bytes of data from the buffer
@@ -805,7 +805,7 @@ public:
     @return number of bytes copied and consumed.
 
   */
-  inkcoreapi int64_t read(void *buf, int64_t len);
+  int64_t read(void *buf, int64_t len);
 
   /**
     Copy data but do not consume it. Copies 'len' bytes of data from
@@ -824,7 +824,7 @@ public:
       parameter buf is set to this value also.
 
   */
-  inkcoreapi char *memcpy(void *buf, int64_t len = INT64_MAX, int64_t offset = 0);
+  char *memcpy(void *buf, int64_t len = INT64_MAX, int64_t offset = 0);
 
   /**
     Subscript operator. Returns a reference to the character at the
@@ -953,7 +953,7 @@ public:
     control. Returns the number of bytes added.
 
   */
-  inkcoreapi int64_t write(const void *rbuf, int64_t nbytes);
+  int64_t write(const void *rbuf, int64_t nbytes);
 
   /**
     Add by data from IOBufferReader r to the this buffer by reference. If
@@ -980,7 +980,7 @@ public:
     rather than sharing blocks to prevent a build of blocks on the buffer.
 
   */
-  inkcoreapi int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
+  int64_t write(IOBufferReader *r, int64_t len = INT64_MAX, int64_t offset = 0);
 
   /** Copy data from the @a chain to this buffer.
       New IOBufferBlocks are allocated so this gets a copy of the data that is independent of the source.

@@ -36,7 +36,7 @@
 ///////////////////////////////////////////////
 
 ink_hrtime Thread::cur_time = ink_get_hrtime_internal();
-inkcoreapi ink_thread_key Thread::thread_data_key;
+ink_thread_key Thread::thread_data_key;
 
 namespace
 {

@@ -91,6 +91,6 @@ int close_socket(int s);
 int write_socket(int s, const char *buffer, int length);
 int read_socket(int s, char *buffer, int length);
 
-inkcoreapi uint32_t ink_inet_addr(const char *s);
+uint32_t ink_inet_addr(const char *s);
 
 int bind_unix_domain_socket(const char *path, mode_t mode);

@@ -187,12 +187,12 @@ void ink_freelist_init_ops(int nofl_class, int nofl_proxy);
  */
 InkFreeList *ink_freelist_create(const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment);
 
-inkcoreapi void ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment);
-inkcoreapi void ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size,
-                                          uint32_t alignment, int advice);
-inkcoreapi void *ink_freelist_new(InkFreeList *f);
-inkcoreapi void ink_freelist_free(InkFreeList *f, void *item);
-inkcoreapi void ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item);
+void ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment);
+void ink_freelist_madvise_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32_t chunk_size, uint32_t alignment,
+                               int advice);
+void *ink_freelist_new(InkFreeList *f);
+void ink_freelist_free(InkFreeList *f, void *item);
+void ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item);
 void ink_freelists_dump(FILE *f);
 void ink_freelists_dump_baselinerel(FILE *f);
 void ink_freelists_snap_baseline();
@@ -213,11 +213,11 @@ struct InkAtomicList {
 
 // WARNING: the "name" string is not copied, it has to be a statically-stored constant string.
 //
-inkcoreapi void ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next);
+void ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next);
 
-inkcoreapi void *ink_atomiclist_push(InkAtomicList *l, void *item);
+void *ink_atomiclist_push(InkAtomicList *l, void *item);
 void *ink_atomiclist_pop(InkAtomicList *l);
-inkcoreapi void *ink_atomiclist_popall(InkAtomicList *l);
+void *ink_atomiclist_popall(InkAtomicList *l);
 /*
  * WARNING WARNING WARNING WARNING WARNING WARNING WARNING
  * only if only one thread is doing pops it is possible to have a "remove"

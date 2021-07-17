@@ -415,20 +415,20 @@ void http_hdr_adjust(HTTPHdrImpl *hdrp, int32_t offset, int32_t length, int32_t 
 /* Public */
 void http_init();
 
-inkcoreapi HTTPHdrImpl *http_hdr_create(HdrHeap *heap, HTTPType polarity);
+HTTPHdrImpl *http_hdr_create(HdrHeap *heap, HTTPType polarity);
 void http_hdr_init(HdrHeap *heap, HTTPHdrImpl *hh, HTTPType polarity);
 HTTPHdrImpl *http_hdr_clone(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HdrHeap *d_heap);
 void http_hdr_copy_onto(HTTPHdrImpl *s_hh, HdrHeap *s_heap, HTTPHdrImpl *d_hh, HdrHeap *d_heap, bool inherit_strs);
 
-inkcoreapi int http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hh, char *buf, int bufsize, int *bufindex, int *dumpoffset);
+int http_hdr_print(HdrHeap *heap, HTTPHdrImpl *hh, char *buf, int bufsize, int *bufindex, int *dumpoffset);
 
 void http_hdr_describe(HdrHeapObjImpl *obj, bool recurse = true);
 
-inkcoreapi bool http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver);
+bool http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver);
 
 const char *http_hdr_method_get(HTTPHdrImpl *hh, int *length);
-inkcoreapi void http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
-                                    bool must_copy);
+void http_hdr_method_set(HdrHeap *heap, HTTPHdrImpl *hh, const char *method, int16_t method_wks_idx, int method_length,
+                         bool must_copy);
 
 void http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url);
 
@@ -462,7 +462,7 @@ HTTPValRange*          http_parse_range (const char *buf, Arena *arena);
 */
 HTTPValTE *http_parse_te(const char *buf, int len, Arena *arena);
 
-inkcoreapi bool is_http_hdr_version_supported(const HTTPVersion &http_version);
+bool is_http_hdr_version_supported(const HTTPVersion &http_version);
 
 class IOBufferReader;
 
@@ -1344,8 +1344,8 @@ public:
   void copy_frag_offsets_from(HTTPInfo *src);
   HTTPInfo &operator=(const HTTPInfo &m);
 
-  inkcoreapi int marshal_length();
-  inkcoreapi int marshal(char *buf, int len);
+  int marshal_length();
+  int marshal(char *buf, int len);
   static int unmarshal(char *buf, int len, RefCountObj *block_ref);
   static int unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref);
   void set_buffer_reference(RefCountObj *block_ref);

@@ -153,7 +153,7 @@ LifecycleAPIHooks *lifecycle_hooks = nullptr;
 StatPagesManager statPagesManager;
 
 #include "ProcessManager.h"
-inkcoreapi ProcessManager *pmgmt = nullptr;
+ProcessManager *pmgmt = nullptr;
 
 int
 BaseManager::registerMgmtCallback(int, MgmtCallback const &)

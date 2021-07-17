@@ -132,10 +132,10 @@ public:
 class HttpRequestData : public RequestData
 {
 public:
-  inkcoreapi char *get_string() override;
-  inkcoreapi const char *get_host() override;
-  inkcoreapi sockaddr const *get_ip() override;
-  inkcoreapi sockaddr const *get_client_ip() override;
+  char *get_string() override;
+  const char *get_host() override;
+  sockaddr const *get_ip() override;
+  sockaddr const *get_client_ip() override;
 
   HttpRequestData()
 

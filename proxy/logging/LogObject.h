@@ -311,13 +311,12 @@ private:
 class TextLogObject : public LogObject
 {
 public:
-  inkcoreapi TextLogObject(const char *name, const char *log_dir, bool timestamps, const char *header,
-                           Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
-                           int rolling_offset_hr, int rolling_size_mb, int rolling_max_count, int rolling_min_count,
-                           bool reopen_after_rolling);
+  TextLogObject(const char *name, const char *log_dir, bool timestamps, const char *header,
+                Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec, int rolling_offset_hr,
+                int rolling_size_mb, int rolling_max_count, int rolling_min_count, bool reopen_after_rolling);
 
-  inkcoreapi int write(const char *format, ...) TS_PRINTFLIKE(2, 3);
-  inkcoreapi int va_write(const char *format, va_list ap);
+  int write(const char *format, ...) TS_PRINTFLIKE(2, 3);
+  int va_write(const char *format, va_list ap);
 
   static const LogFormat *textfmt;
 };

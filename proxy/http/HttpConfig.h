@@ -860,8 +860,8 @@ public:
 
   static void reconfigure();
 
-  inkcoreapi static HttpConfigParams *acquire();
-  inkcoreapi static void release(HttpConfigParams *params);
+  static HttpConfigParams *acquire();
+  static void release(HttpConfigParams *params);
 
   static bool load_server_session_sharing_match(const char *key, MgmtByte &mask);
 

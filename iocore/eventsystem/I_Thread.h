@@ -112,7 +112,7 @@ public:
 
   virtual void set_specific();
 
-  inkcoreapi static ink_thread_key thread_data_key;
+  static ink_thread_key thread_data_key;
 
   // For THREAD_ALLOC
   ProxyAllocator eventAllocator;

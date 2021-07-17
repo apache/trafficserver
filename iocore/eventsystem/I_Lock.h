@@ -126,9 +126,9 @@ class EThread;
 typedef EThread *EThreadPtr;
 
 #if DEBUG
-inkcoreapi extern void lock_waiting(const SourceLocation &, const char *handler);
-inkcoreapi extern void lock_holding(const SourceLocation &, const char *handler);
-inkcoreapi extern void lock_taken(const SourceLocation &, const char *handler);
+extern void lock_waiting(const SourceLocation &, const char *handler);
+extern void lock_holding(const SourceLocation &, const char *handler);
+extern void lock_taken(const SourceLocation &, const char *handler);
 #endif
 
 /**
@@ -249,7 +249,7 @@ public:
 };
 
 // The ClassAllocator for ProxyMutexes
-extern inkcoreapi ClassAllocator<ProxyMutex> mutexAllocator;
+extern ClassAllocator<ProxyMutex> mutexAllocator;
 
 inline bool
 Mutex_trylock(

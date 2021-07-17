@@ -420,7 +420,7 @@ extern const char *MIME_FIELD_KEEP_ALIVE;
 extern const char *MIME_FIELD_KEYWORDS;
 extern const char *MIME_FIELD_LAST_MODIFIED;
 extern const char *MIME_FIELD_LINES;
-inkcoreapi extern const char *MIME_FIELD_LOCATION;
+extern const char *MIME_FIELD_LOCATION;
 extern const char *MIME_FIELD_MAX_FORWARDS;
 extern const char *MIME_FIELD_MESSAGE_ID;
 extern const char *MIME_FIELD_NEWSGROUPS;
@@ -525,7 +525,7 @@ extern int MIME_LEN_KEEP_ALIVE;
 extern int MIME_LEN_KEYWORDS;
 extern int MIME_LEN_LAST_MODIFIED;
 extern int MIME_LEN_LINES;
-inkcoreapi extern int MIME_LEN_LOCATION;
+extern int MIME_LEN_LOCATION;
 extern int MIME_LEN_MAX_FORWARDS;
 extern int MIME_LEN_MESSAGE_ID;
 extern int MIME_LEN_NEWSGROUPS;
@@ -704,7 +704,7 @@ void mime_hdr_fields_clear(HdrHeap *heap, MIMEHdrImpl *mh);
 MIMEField *_mime_hdr_field_list_search_by_wks(MIMEHdrImpl *mh, int wks_idx);
 MIMEField *_mime_hdr_field_list_search_by_string(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len);
 MIMEField *_mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum);
-inkcoreapi MIMEField *mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len);
+MIMEField *mime_hdr_field_find(MIMEHdrImpl *mh, const char *field_name_str, int field_name_len);
 
 MIMEField *mime_hdr_field_get(MIMEHdrImpl *mh, int idx);
 MIMEField *mime_hdr_field_get_slotnum(MIMEHdrImpl *mh, int slotnum);
@@ -722,7 +722,7 @@ void mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, boo
  * Returned slotnum is not a persistent value. A slotnum may refer a different field after making changes to a mime header.
  */
 int mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field);
-inkcoreapi MIMEField *mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int name_length);
+MIMEField *mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int name_length);
 
 void mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field);
 
@@ -745,8 +745,7 @@ void mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField
 void mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
                                        int new_piece_len);
 
-inkcoreapi void mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length,
-                                     bool must_copy_string);
+void mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool must_copy_string);
 void mime_field_value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int32_t value);
 void mime_field_value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, uint32_t value);
 void mime_field_value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int64_t value);

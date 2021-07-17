@@ -39,14 +39,14 @@ class Arena
 public:
   Arena() {}
   ~Arena() { reset(); }
-  inkcoreapi void *alloc(size_t size, size_t alignment = sizeof(double));
+  void *alloc(size_t size, size_t alignment = sizeof(double));
   void free(void *mem, size_t size);
   size_t str_length(const char *str);
   char *str_alloc(size_t len);
   void str_free(char *str);
   char *str_store(const char *str, size_t len);
 
-  inkcoreapi void reset();
+  void reset();
 
 private:
   ArenaBlock *m_blocks = nullptr;

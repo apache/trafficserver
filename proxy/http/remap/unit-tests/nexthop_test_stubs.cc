@@ -241,5 +241,5 @@ UDPConnection::Release()
 }
 
 #include "P_UDPPacket.h"
-inkcoreapi ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
+ClassAllocator<UDPPacketInternal> udpPacketAllocator("udpPacketAllocator");
 // for UDPPacketInternal::free()

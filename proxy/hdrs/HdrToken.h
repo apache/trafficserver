@@ -103,7 +103,7 @@ extern uint32_t hdrtoken_str_flags[];
 
 extern void hdrtoken_init();
 extern int hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
-inkcoreapi extern int hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
+extern int hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
 extern int hdrtoken_method_tokenize(const char *string, int string_len);
 extern const char *hdrtoken_string_to_wks(const char *string);
 extern const char *hdrtoken_string_to_wks(const char *string, int length);

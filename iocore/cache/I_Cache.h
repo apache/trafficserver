@@ -74,20 +74,19 @@ struct CacheProcessor : public Processor {
   int dir_check(bool fix);
   int db_check(bool fix);
 
-  inkcoreapi Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                            const char *hostname = nullptr, int host_len = 0);
-  inkcoreapi Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                               const char *hostname = nullptr, int host_len = 0);
-  inkcoreapi Action *open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                                int expected_size = CACHE_EXPECTED_SIZE, int options = 0, time_t pin_in_cache = (time_t)0,
-                                char *hostname = nullptr, int host_len = 0);
-  inkcoreapi Action *remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
-                            const char *hostname = nullptr, int host_len = 0);
+  Action *lookup(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
+                 const char *hostname = nullptr, int host_len = 0);
+  Action *open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
+                    const char *hostname = nullptr, int host_len = 0);
+  Action *open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
+                     int expected_size = CACHE_EXPECTED_SIZE, int options = 0, time_t pin_in_cache = (time_t)0,
+                     char *hostname = nullptr, int host_len = 0);
+  Action *remove(Continuation *cont, const CacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_NONE,
+                 const char *hostname = nullptr, int host_len = 0);
   Action *scan(Continuation *cont, char *hostname = nullptr, int host_len = 0, int KB_per_second = SCAN_KB_PER_SECOND);
   Action *lookup(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
-  inkcoreapi Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request,
-                               const OverridableHttpConfigParams *params, time_t pin_in_cache = (time_t)0,
-                               CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
+  Action *open_read(Continuation *cont, const HttpCacheKey *key, CacheHTTPHdr *request, const OverridableHttpConfigParams *params,
+                    time_t pin_in_cache = (time_t)0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *open_write(Continuation *cont, int expected_size, const HttpCacheKey *key, CacheHTTPHdr *request, CacheHTTPInfo *old_info,
                      time_t pin_in_cache = (time_t)0, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
   Action *remove(Continuation *cont, const HttpCacheKey *key, CacheFragType frag_type = CACHE_FRAG_TYPE_HTTP);
@@ -220,5 +219,5 @@ struct CacheVConnection : public VConnection {
 };
 
 void ink_cache_init(ts::ModuleVersion version);
-extern inkcoreapi CacheProcessor cacheProcessor;
+extern CacheProcessor cacheProcessor;
 extern Continuation *cacheRegexDeleteCont;

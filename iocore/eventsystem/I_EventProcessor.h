@@ -407,6 +407,6 @@ private:
   ink_mutex dedicated_thread_spawn_mutex;
 };
 
-extern inkcoreapi class EventProcessor eventProcessor;
+extern class EventProcessor eventProcessor;
 
 void thread_started(EThread *);
