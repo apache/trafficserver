@@ -203,7 +203,8 @@ public:
 
   // Allocate a PluginVCCore object, passing the continuation which
   // will receive NET_EVENT_ACCEPT to accept the new session.
-  static PluginVCCore *alloc(Continuation *acceptor);
+  static PluginVCCore *alloc(Continuation *acceptor, int64_t buffer_index = BUFFER_SIZE_INDEX_32K,
+                             int64_t buffer_water_mark = DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK);
 
   int state_send_accept(int event, void *data);
   int state_send_accept_failed(int event, void *data);
@@ -246,7 +247,7 @@ public:
   PluginVC passive_vc;
 
 private:
-  void init();
+  void init(int64_t buffer_index = BUFFER_SIZE_INDEX_32K, int64_t buffer_water_mark = DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK);
   void destroy();
 
   Continuation *connect_to = nullptr;
@@ -266,6 +267,8 @@ private:
 
   static int32_t nextid;
   unsigned id = 0;
+
+  uint64_t buffer_size = BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_32K);
 };
 
 inline PluginVCCore::PluginVCCore() : active_vc(this), passive_vc(this)

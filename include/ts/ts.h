@@ -1778,6 +1778,14 @@ tsapi void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp);
     @param addr Target address of the origin server.
     @param tag A logging tag that can be accessed via the pitag field. May be @c NULL.
     @param id A logging id that can be access via the piid field.
+    @param buffer_index Index for read and write buffers used by PluginVC.
+    @param buffer_water_mark Number of bytes used as the water mark for buffers used by PluginVC.
+ */
+tsapi TSVConn TSHttpConnectPlugin(struct sockaddr const *addr, const char *tag, int64_t id, int64_t buffer_index,
+                                  int64_t buffer_water_mark);
+
+/** Backwards compatible version.
+    This provides a @a buffer_index of 8 and a @a buffer_water_mark of 0.
  */
 tsapi TSVConn TSHttpConnectWithPluginId(struct sockaddr const *addr, const char *tag, int64_t id);
 
@@ -1785,6 +1793,9 @@ tsapi TSVConn TSHttpConnectWithPluginId(struct sockaddr const *addr, const char 
     This provides a @a tag of "plugin" and an @a id of 0.
  */
 tsapi TSVConn TSHttpConnect(struct sockaddr const *addr);
+
+tsapi TSMgmtInt TSPluginVCGetIOBufferIndex(TSHttpTxn txnp);
+tsapi TSMgmtInt TSPluginVCGetIOBufferWaterMark(TSHttpTxn txnp);
 
 /* --------------------------------------------------------------------------
  Initiate Transparent Http Connection */

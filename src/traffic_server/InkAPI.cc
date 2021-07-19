@@ -6881,13 +6881,27 @@ TSHttpTxnPluginTagGet(TSHttpTxn txnp)
 TSVConn
 TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
 {
+  return TSHttpConnectPlugin(addr, tag, id, BUFFER_SIZE_INDEX_32K, DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK);
+}
+
+TSVConn
+TSHttpConnectPlugin(sockaddr const *addr, const char *tag, int64_t id, int64_t buffer_index, int64_t buffer_water_mark)
+{
   sdk_assert(addr);
 
   sdk_assert(ats_is_ip(addr));
   sdk_assert(ats_ip_port_cast(addr));
 
+  if (buffer_index < BUFFER_SIZE_INDEX_128 || buffer_index > MAX_BUFFER_SIZE_INDEX) {
+    buffer_index = BUFFER_SIZE_INDEX_32K; // out of range, set to the default for safety
+  }
+
+  if (buffer_water_mark < 0) {
+    buffer_water_mark = DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK;
+  }
+
   if (plugin_http_accept) {
-    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_accept);
+    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_accept, buffer_index, buffer_water_mark);
 
     new_pvc->set_active_addr(addr);
     new_pvc->set_plugin_id(id);
@@ -7215,8 +7229,11 @@ TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
+  int64_t buffer_index      = TSPluginVCGetIOBufferIndex(txnp);
+  int64_t buffer_water_mark = TSPluginVCGetIOBufferWaterMark(txnp);
+
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_SERVER;
-  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp);
+  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp, buffer_index, buffer_water_mark);
 }
 
 void
@@ -7227,8 +7244,36 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
+  int64_t buffer_index      = TSPluginVCGetIOBufferIndex(txnp);
+  int64_t buffer_water_mark = TSPluginVCGetIOBufferWaterMark(txnp);
+
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_INTERCEPT;
-  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp);
+  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp, buffer_index, buffer_water_mark);
+}
+
+TSMgmtInt
+TSPluginVCGetIOBufferIndex(TSHttpTxn txnp)
+{
+  TSMgmtInt index;
+
+  if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX, &index) == TS_SUCCESS &&
+      index >= BUFFER_SIZE_INDEX_128 && index <= MAX_BUFFER_SIZE_INDEX) {
+    return index;
+  }
+
+  return BUFFER_SIZE_INDEX_32K;
+}
+
+TSMgmtInt
+TSPluginVCGetIOBufferWaterMark(TSHttpTxn txnp)
+{
+  TSMgmtInt water_mark;
+
+  if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, &water_mark) == TS_SUCCESS && water_mark >= 0) {
+    return water_mark;
+  }
+
+  return DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK;
 }
 
 // The API below require timer values as TSHRTime parameters
@@ -8803,6 +8848,12 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
     ret  = &overridableHttpConfig->host_res_data;
     conv = &HttpTransact::HOST_RES_CONV;
+    break;
+  case TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX:
+    ret = _memberp_to_generic(&overridableHttpConfig->plugin_vc_default_buffer_index, conv);
+    break;
+  case TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK:
+    ret = _memberp_to_generic(&overridableHttpConfig->plugin_vc_default_buffer_water_mark, conv);
     break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:

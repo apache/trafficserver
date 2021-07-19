@@ -77,7 +77,6 @@
 #include "tscore/Regression.h"
 
 #define PVC_LOCK_RETRY_TIME HRTIME_MSECONDS(10)
-#define PVC_DEFAULT_MAX_BYTES 32768
 #define MIN_BLOCK_TRANSFER_BYTES 128
 
 #define PVC_TYPE ((vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive")
@@ -511,7 +510,7 @@ PluginVC::process_write_side(bool other_side_call)
   // Bytes available, try to transfer to the PluginVCCore
   //   intermediate buffer
   //
-  int64_t buf_space = PVC_DEFAULT_MAX_BYTES - core_buffer->max_read_avail();
+  int64_t buf_space = core_obj->buffer_size - core_buffer->max_read_avail();
   if (buf_space <= 0) {
     Debug("pvc", "[%u] %s: process_write_side no buffer space", core_obj->id, PVC_TYPE);
     return;
@@ -522,7 +521,7 @@ PluginVC::process_write_side(bool other_side_call)
   if (added < 0) {
     // Couldn't actually get the buffer space.  This only
     //   happens on small transfers with the above
-    //   PVC_DEFAULT_MAX_BYTES factor doesn't apply
+    //   buffer_size factor doesn't apply
     Debug("pvc", "[%u] %s: process_write_side out of buffer space", core_obj->id, PVC_TYPE);
     return;
   }
@@ -632,7 +631,7 @@ PluginVC::process_read_side(bool other_side_call)
   MIOBuffer *output_buffer = read_state.vio.get_writer();
 
   int64_t water_mark = output_buffer->water_mark;
-  water_mark         = std::max(water_mark, static_cast<int64_t>(PVC_DEFAULT_MAX_BYTES));
+  water_mark         = std::max(water_mark, static_cast<int64_t>(core_obj->buffer_size));
   int64_t buf_space  = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {
     Debug("pvc", "[%u] %s: process_read_side no buffer space", core_obj->id, PVC_TYPE);
@@ -644,7 +643,7 @@ PluginVC::process_read_side(bool other_side_call)
   if (added <= 0) {
     // Couldn't actually get the buffer space.  This only
     //   happens on small transfers with the above
-    //   PVC_DEFAULT_MAX_BYTES factor doesn't apply
+    //   buffer_size factor doesn't apply
     Debug("pvc", "[%u] %s: process_read_side out of buffer space", core_obj->id, PVC_TYPE);
     return;
   }
@@ -1054,16 +1053,16 @@ int32_t PluginVCCore::nextid;
 PluginVCCore::~PluginVCCore() = default;
 
 PluginVCCore *
-PluginVCCore::alloc(Continuation *acceptor)
+PluginVCCore::alloc(Continuation *acceptor, int64_t buffer_index, int64_t buffer_water_mark)
 {
   PluginVCCore *pvc = new PluginVCCore;
-  pvc->init();
+  pvc->init(buffer_index, buffer_water_mark);
   pvc->connect_to = acceptor;
   return pvc;
 }
 
 void
-PluginVCCore::init()
+PluginVCCore::init(int64_t buffer_index, int64_t buffer_water_mark)
 {
   mutex = new_ProxyMutex();
 
@@ -1079,13 +1078,20 @@ PluginVCCore::init()
   passive_vc.mutex      = mutex;
   passive_vc.thread     = active_vc.thread;
 
-  p_to_a_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-  p_to_a_reader = p_to_a_buffer->alloc_reader();
+  p_to_a_buffer             = new_MIOBuffer(buffer_index);
+  p_to_a_buffer->water_mark = buffer_water_mark;
+  p_to_a_reader             = p_to_a_buffer->alloc_reader();
 
-  a_to_p_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-  a_to_p_reader = a_to_p_buffer->alloc_reader();
+  a_to_p_buffer             = new_MIOBuffer(buffer_index);
+  a_to_p_buffer->water_mark = buffer_water_mark;
+  a_to_p_reader             = a_to_p_buffer->alloc_reader();
 
-  Debug("pvc", "[%u] Created PluginVCCore at %p, active %p, passive %p", id, this, &active_vc, &passive_vc);
+  buffer_size = BUFFER_SIZE_FOR_INDEX(buffer_index);
+
+  Debug("pvc",
+        "[%u] Created PluginVCCore at %p, active %p, passive %p, buffer_index %" PRId64 ", buffer_size %" PRId64
+        ", buffer_water_mark %" PRId64,
+        id, this, &active_vc, &passive_vc, buffer_index, buffer_size, buffer_water_mark);
 }
 
 void
@@ -1341,7 +1347,7 @@ PVCTestDriver::run_next_test()
 
   NetVCTest *p       = new NetVCTest;
   NetVCTest *a       = new NetVCTest;
-  PluginVCCore *core = PluginVCCore::alloc(p);
+  PluginVCCore *core = PluginVCCore::alloc(p, BUFFER_SIZE_INDEX_32K);
 
   p->init_test(NET_VC_TEST_PASSIVE, this, nullptr, r, &netvc_tests_def[p_index], "PluginVC", "pvc_test_detail");
   PluginVC *a_vc = core->connect();
