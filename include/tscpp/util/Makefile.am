@@ -22,4 +22,5 @@ library_include_HEADERS = \
 	IntrusiveDList.h \
 	LocalBuffer.h \
 	PostScript.h \
-	TextView.h
+	TextView.h \
+	TsSharedMutex.h
