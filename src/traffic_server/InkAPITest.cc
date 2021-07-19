@@ -8696,11 +8696,13 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.hostdb.ip_resolve",
    "proxy.config.http.connect.dead.policy"}};
 
+extern ClassAllocator<HttpSM> httpSMAllocator;
+
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TSOverridableConfigKey key;
   TSRecordDataType type;
-  HttpSM *s      = HttpSM::allocate();
+  HttpSM *s      = THREAD_ALLOC(httpSMAllocator, this_thread());
   bool success   = true;
   TSHttpTxn txnp = reinterpret_cast<TSHttpTxn>(s);
   InkRand generator(17);
@@ -8804,7 +8806,7 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
 
 REGRESSION_TEST(SDK_API_TXN_HTTP_INFO_GET)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  HttpSM *s      = HttpSM::allocate();
+  HttpSM *s      = THREAD_ALLOC(httpSMAllocator, this_thread());
   bool success   = true;
   TSHttpTxn txnp = reinterpret_cast<TSHttpTxn>(s);
   TSMgmtInt ival_read;
