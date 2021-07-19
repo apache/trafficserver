@@ -115,8 +115,9 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
     result->rec          = extApiRecord;
     result->start_parent = 0;
     result->last_parent  = 0;
-
-    Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->hostname, result->port);
+    result->url          = rdata->get_string();
+    Debug("parent_select", "Result for %s(%s) was API set parent %s:%d", rdata->get_host(), result->url, result->hostname,
+          result->port);
     return;
   }
 
@@ -125,6 +126,9 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result, uns
 
   tablePtr->Match(rdata, result);
   rec = result->rec;
+
+  // Set the result url string to store the URL request that initiated this
+  result->url = rdata->get_string();
 
   if (rec == nullptr) {
     // No parents were found
