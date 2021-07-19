@@ -523,8 +523,14 @@ NetHandler::waitForActivity(ink_hrtime timeout)
           write_ready_list.enqueue(ne);
         }
       } else if (!(flags & (EVENTIO_READ))) {
-        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd, x));
-        ink_release_assert(false);
+        Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", flags);
+        // In practice we sometimes see EPOLLERR and EPOLLHUP through there
+        // Anything else would be surprising
+        ink_assert((flags & ~(EVENTIO_ERROR)) == 0);
+        ne->write.triggered = 1;
+        if (!write_ready_list.in(ne)) {
+          write_ready_list.enqueue(ne);
+        }
       }
     } else if (epd->type == EVENTIO_DNS_CONNECTION) {
       if (epd->data.dnscon != nullptr) {

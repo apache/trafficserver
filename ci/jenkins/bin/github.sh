@@ -25,13 +25,11 @@ CCACHE=""
 WERROR=""
 DEBUG=""
 WCCP=""
-LUAJIT=""
 QUIC=""
 [ "1" == "$enable_ccache" ] && CCACHE="--enable-ccache"
 [ "1" == "$enable_werror" ] && WERROR="--enable-werror"
 [ "1" == "$enable_debug" ] && DEBUG="--enable-debug"
 [ "1" == "$enable_wccp" ] && WCCP="--enable-wccp"
-[ "1" == "$enable_luajit" ] && LUAJIT="--enable-luajit"
 [ "1" == "$enable_quic" ] && QUIC="--with-openssl=/opt/openssl-quic"
 
 mkdir -p ${INSTALL}
@@ -41,7 +39,6 @@ echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
 echo "DEBUG: $DEBUG"
 echo "WCCP: $WCCP"
-echo "LUAJIT: $LUAJIT"
 echo "QUIC: $QUIC"
 
 # Restore verbose shell output
@@ -56,7 +53,6 @@ autoreconf -if
     --enable-example-plugins \
     ${CCACHE} \
     ${WCCP} \
-    ${LUAJIT} \
     ${QUIC} \
     ${WERROR} \
     ${DEBUG}

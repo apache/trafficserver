@@ -36,9 +36,19 @@ autoreconf -fi && ./configure --enable-docs || exit 1
 
 cd doc
 
-echo "Building English version with warnings treated as errors"
+W_OPTION=""
+if grep ALLSPHINXOPTS Makefile.am | grep -q -- -W
+then
+  # We use the presence of -W in ALLSPHINXOPTS as a marker that we can treat
+  # warnings as errors.
+  echo "Building English version with warnings treated as errors"
+  W_OPTION="-W"
+else
+  echo "Building English version"
+fi
+make clean || true
 rm -rf docbuild/html
-${ATS_MAKE} -e SPHINXOPTS="-W -D language='en'" html
+${ATS_MAKE} -e SPHINXOPTS="${W_OPTION} -D language='en'" html
 [ $? != 0 ] && exit 1
 
 # Only continue with the rsync and JA build if we're on the official docs updates

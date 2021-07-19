@@ -51,32 +51,7 @@ char INVALID_STR[] = "!INVALID_STR!";
   machine pointer.
   -------------------------------------------------------------------------*/
 
-LogAccess::LogAccess(HttpSM *sm)
-  : m_http_sm(sm),
-    m_arena(),
-    m_client_request(nullptr),
-    m_proxy_response(nullptr),
-    m_proxy_request(nullptr),
-    m_server_response(nullptr),
-    m_cache_response(nullptr),
-    m_client_req_url_str(nullptr),
-    m_client_req_url_len(0),
-    m_client_req_url_canon_str(nullptr),
-    m_client_req_url_canon_len(0),
-    m_client_req_unmapped_url_canon_str(nullptr),
-    m_client_req_unmapped_url_canon_len(0),
-    m_client_req_unmapped_url_path_str(nullptr),
-    m_client_req_unmapped_url_path_len(0),
-    m_client_req_unmapped_url_host_str(nullptr),
-    m_client_req_unmapped_url_host_len(0),
-    m_client_req_url_path_str(nullptr),
-    m_client_req_url_path_len(0),
-    m_proxy_resp_content_type_str(nullptr),
-    m_proxy_resp_content_type_len(0),
-    m_proxy_resp_reason_phrase_str(nullptr),
-    m_proxy_resp_reason_phrase_len(0),
-    m_cache_lookup_url_canon_str(nullptr),
-    m_cache_lookup_url_canon_len(0)
+LogAccess::LogAccess(HttpSM *sm) : m_http_sm(sm)
 {
   ink_assert(m_http_sm != nullptr);
 }
@@ -1189,10 +1164,7 @@ void
 LogAccess::set_client_req_url_path(char *buf, int len)
 {
   //?? use m_client_req_unmapped_url_path_str for now..may need to enhance later..
-  if (buf && m_client_req_unmapped_url_path_str) {
-    m_client_req_url_path_len = std::min(len, m_client_req_url_path_len);
-    ink_strlcpy(m_client_req_unmapped_url_path_str, buf, m_client_req_url_path_len + 1);
-  }
+  this->set_client_req_unmapped_url_path(buf, len);
 }
 
 /*-------------------------------------------------------------------------

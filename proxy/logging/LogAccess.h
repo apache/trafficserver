@@ -113,8 +113,7 @@ enum LogCacheWriteCodeType {
 class LogAccess
 {
 public:
-  LogAccess() {}
-
+  LogAccess() = delete;
   explicit LogAccess(HttpSM *sm);
 
   ~LogAccess() {}
@@ -345,34 +344,34 @@ public:
   LogAccess &operator=(LogAccess &rhs) = delete; // or assignment
 
 private:
-  HttpSM *m_http_sm;
+  HttpSM *m_http_sm = nullptr;
 
   Arena m_arena;
 
-  HTTPHdr *m_client_request;
-  HTTPHdr *m_proxy_response;
-  HTTPHdr *m_proxy_request;
-  HTTPHdr *m_server_response;
-  HTTPHdr *m_cache_response;
+  HTTPHdr *m_client_request  = nullptr;
+  HTTPHdr *m_proxy_response  = nullptr;
+  HTTPHdr *m_proxy_request   = nullptr;
+  HTTPHdr *m_server_response = nullptr;
+  HTTPHdr *m_cache_response  = nullptr;
 
-  char *m_client_req_url_str;
-  int m_client_req_url_len;
-  char *m_client_req_url_canon_str;
-  int m_client_req_url_canon_len;
-  char *m_client_req_unmapped_url_canon_str;
-  int m_client_req_unmapped_url_canon_len;
-  char *m_client_req_unmapped_url_path_str;
-  int m_client_req_unmapped_url_path_len;
-  char *m_client_req_unmapped_url_host_str;
-  int m_client_req_unmapped_url_host_len;
-  char const *m_client_req_url_path_str;
-  int m_client_req_url_path_len;
-  char *m_proxy_resp_content_type_str;
-  int m_proxy_resp_content_type_len;
-  char *m_proxy_resp_reason_phrase_str;
-  int m_proxy_resp_reason_phrase_len;
-  char *m_cache_lookup_url_canon_str;
-  int m_cache_lookup_url_canon_len;
+  char *m_client_req_url_str                = nullptr;
+  int m_client_req_url_len                  = 0;
+  char *m_client_req_url_canon_str          = nullptr;
+  int m_client_req_url_canon_len            = 0;
+  char *m_client_req_unmapped_url_canon_str = nullptr;
+  int m_client_req_unmapped_url_canon_len   = 0;
+  char *m_client_req_unmapped_url_path_str  = nullptr;
+  int m_client_req_unmapped_url_path_len    = 0;
+  char *m_client_req_unmapped_url_host_str  = nullptr;
+  int m_client_req_unmapped_url_host_len    = 0;
+  char const *m_client_req_url_path_str     = nullptr;
+  int m_client_req_url_path_len             = 0;
+  char *m_proxy_resp_content_type_str       = nullptr;
+  int m_proxy_resp_content_type_len         = 0;
+  char *m_proxy_resp_reason_phrase_str      = nullptr;
+  int m_proxy_resp_reason_phrase_len        = 0;
+  char *m_cache_lookup_url_canon_str        = nullptr;
+  int m_cache_lookup_url_canon_len          = 0;
 
   void validate_unmapped_url();
   void validate_unmapped_url_path();
