@@ -55,7 +55,6 @@ CCACHE=""
 WERROR=""
 DEBUG=""
 WCCP=""
-LUAJIT=""
 QUIC=""
 CURL=""
 AUTEST_DEBUG=""
@@ -66,7 +65,6 @@ PROXY_VERIFIER_ARGUMENT=""
 [ "1" == "$enable_werror" ] && WERROR="--enable-werror"
 [ "1" == "$enable_debug" ] && DEBUG="--enable-debug"
 [ "1" == "$enable_wccp" ] && WCCP="--enable-wccp"
-[ "1" == "$enable_luajit" ] && LUAJIT="--enable-luajit"
 [ "1" == "$enable_quic" ] && QUIC="--with-openssl=/opt/openssl-quic"
 [ "1" == "$disable_curl" ] && CURL="--disable-curl"
 [ "1" == "$enable_autest_debug" ] && AUTEST_DEBUG="--debug"
@@ -81,7 +79,6 @@ echo "CCACHE: $CCACHE"
 echo "WERROR: $WERROR"
 echo "DEBUG: $DEBUG"
 echo "WCCP: $WCCP"
-echo "LUAJIT: $LUAJIT"
 echo "QUIC: $QUIC"
 echo "CURL: $CURL"
 
@@ -97,7 +94,6 @@ autoreconf -if
     --enable-example-plugins \
     ${CCACHE} \
     ${WCCP} \
-    ${LUAJIT} \
     ${QUIC} \
     ${WERROR} \
     ${DEBUG} \
