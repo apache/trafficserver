@@ -23,7 +23,7 @@ dnl TS_CHECK_LUAJIT: look for luajit libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_LUAJIT], [
 has_luajit=0
-AC_ARG_WITH(luajit, [AC_HELP_STRING([--with-luajit=DIR], [use a specific luajit library])],
+AC_ARG_WITH(luajit, [AS_HELP_STRING([--with-luajit=DIR],[use a specific luajit library])],
 [
   if test "x$withval" != "xyes" && test "x$withval" != "x"; then
     luajit_base_dir="$withval"

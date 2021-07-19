@@ -23,7 +23,7 @@ dnl TS_CHECK_BROTLI: look for brotli libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_BROTLI], [
 has_brotli=0
-AC_ARG_WITH(brotli, [AC_HELP_STRING([--with-brotli=DIR],[use a specific brotli library])],
+AC_ARG_WITH(brotli, [AS_HELP_STRING([--with-brotli=DIR],[use a specific brotli library])],
 [
   if test "x$withval" != "xyes" && test "x$withval" != "x"; then
     brotli_base_dir="$withval"

@@ -20,7 +20,7 @@ dnl
 
 AC_DEFUN([TS_CHECK_JEMALLOC], [
 enable_jemalloc=no
-AC_ARG_WITH([jemalloc], [AC_HELP_STRING([--with-jemalloc=DIR], [use a specific jemalloc library])],
+AC_ARG_WITH([jemalloc], [AS_HELP_STRING([--with-jemalloc=DIR],[use a specific jemalloc library])],
 [
   if test "$withval" != "no"; then
     if test "x${enable_tcmalloc}" = "xyes"; then

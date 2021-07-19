@@ -23,7 +23,7 @@ dnl TS_CHECK_LZMA: look for lzma libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_LZMA], [
 enable_lzma=no
-AC_ARG_WITH(lzma, [AC_HELP_STRING([--with-lzma=DIR],[use a specific lzma library])],
+AC_ARG_WITH(lzma, [AS_HELP_STRING([--with-lzma=DIR],[use a specific lzma library])],
 [
   if test "x$withval" != "xyes" && test "x$withval" != "x"; then
     lzma_base_dir="$withval"

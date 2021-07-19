@@ -32,7 +32,7 @@
 
 #serial 7
 
-AU_ALIAS([AC_CHECK_CURL], [AX_LIB_CURL])
+AU_ALIAS([AX_LIB_CURL], [AX_LIB_CURL])
 AC_DEFUN([AX_LIB_CURL], [
   AX_PATH_GENERIC([curl],[$1],['s/^libcurl\ \+//'],[$2],[$3])
 ])

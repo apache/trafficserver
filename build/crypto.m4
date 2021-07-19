@@ -27,7 +27,7 @@ AC_DEFUN([TS_CHECK_CRYPTO], [
   AX_CHECK_OPENSSL([
     enable_crypto=yes
   ], [
-    AC_ERROR(failed to find OpenSSL)
+    AC_MSG_ERROR(failed to find OpenSSL)
     enable_crypto=no
   ])
 
@@ -45,7 +45,7 @@ dnl Check OpenSSL Version
 dnl
 AC_DEFUN([TS_CHECK_CRYPTO_VERSION], [
   AC_MSG_CHECKING([OpenSSL version])
-  AC_TRY_RUN([
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <openssl/opensslv.h>
 int main() {
   if (OPENSSL_VERSION_NUMBER < 0x1000200fL) {
@@ -53,9 +53,7 @@ int main() {
   }
   return 0;
 }
-],
-  [AC_MSG_RESULT([ok])],
-  [AC_MSG_FAILURE([requires an OpenSSL version 1.0.2 or greater])])
+]])],[AC_MSG_RESULT([ok])],[AC_MSG_FAILURE([requires OpenSSL version 1.0.2 or greater])],[])
 ])
 
 dnl

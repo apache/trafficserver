@@ -34,7 +34,7 @@
 
 #serial 8
 
-AU_ALIAS([CHECK_SSL], [AX_CHECK_OPENSSL])
+AU_ALIAS([AX_CHECK_OPENSSL], [AX_CHECK_OPENSSL])
 AC_DEFUN([AX_CHECK_OPENSSL], [
     found=false
     overriden_with_ssl=false

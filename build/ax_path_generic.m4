@@ -58,7 +58,7 @@
 #   --libs` returns just "-lbaz" that would normally result in using the
 #   shared library.
 #
-#   This macro is a rearranged version of AC_PATH_GENERIC from Angus Lees.
+#   This macro is a rearranged version of AX_PATH_GENERIC from Angus Lees.
 #
 # LICENSE
 #
@@ -71,7 +71,7 @@
 
 #serial 11
 
-AU_ALIAS([AC_PATH_GENERIC], [AX_PATH_GENERIC])
+AU_ALIAS([AX_PATH_GENERIC], [AX_PATH_GENERIC])
 AC_DEFUN([AX_PATH_GENERIC],[
   AC_REQUIRE([AC_PROG_SED])
 
