@@ -2034,7 +2034,8 @@ HttpSM::state_read_server_response_header(int event, void *data)
     server_txn->set_inactivity_timeout(get_server_inactivity_timeout());
 
     // For requests that contain a body, we can cancel the ua inactivity timeout.
-    if (ua_txn && t_state.hdr_info.request_content_length > 0) {
+    if (ua_txn && ua_txn->has_request_body(t_state.hdr_info.request_content_length,
+                                           t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
       ua_txn->cancel_inactivity_timeout();
     }
   }
@@ -3682,9 +3683,8 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
     // Now that we have communicated the post body, turn off the inactivity timeout
     // until the server starts sending data back
     if (ua_txn) {
-      if (t_state.hdr_info.request_content_length > 0) {
-        ua_txn->cancel_inactivity_timeout();
-      }
+      ua_txn->cancel_inactivity_timeout();
+
       // Initiate another read to catch aborts
       ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
       ua_entry->read_vio   = p->vc->do_io_read(this, INT64_MAX, ua_txn->get_remote_reader()->mbuf);
@@ -7550,14 +7550,14 @@ HttpSM::set_next_state()
       // Now that we have gotten the user agent request, we can cancel
       // the inactivity timeout associated with it.  Note, however, that
       // we must not cancel the inactivity timeout if the message
-      // contains a body (as indicated by the non-zero request_content_length
-      // field).  This indicates that a POST operation is taking place and
+      // contains a body. This indicates that a POST operation is taking place and
       // that the client is still sending data to the origin server.  The
       // origin server cannot reply until the entire request is received.  In
       // light of this dependency, TS must ensure that the client finishes
       // sending its request and for this reason, the inactivity timeout
       // cannot be cancelled.
-      if (ua_txn && t_state.hdr_info.request_content_length <= 0) {
+      if (ua_txn && !ua_txn->has_request_body(t_state.hdr_info.request_content_length,
+                                              t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
         ua_txn->cancel_inactivity_timeout();
       } else if (!ua_txn) {
         terminate_sm = true;
@@ -7594,14 +7594,14 @@ HttpSM::set_next_state()
       // Now that we have gotten the user agent request, we can cancel
       // the inactivity timeout associated with it.  Note, however, that
       // we must not cancel the inactivity timeout if the message
-      // contains a body (as indicated by the non-zero request_content_length
-      // field).  This indicates that a POST operation is taking place and
+      // contains a body. This indicates that a POST operation is taking place and
       // that the client is still sending data to the origin server.  The
       // origin server cannot reply until the entire request is received.  In
       // light of this dependency, TS must ensure that the client finishes
       // sending its request and for this reason, the inactivity timeout
       // cannot be cancelled.
-      if (ua_txn && t_state.hdr_info.request_content_length <= 0) {
+      if (ua_txn && !ua_txn->has_request_body(t_state.hdr_info.request_content_length,
+                                              t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
         ua_txn->cancel_inactivity_timeout();
       } else if (!ua_txn) {
         terminate_sm = true;
