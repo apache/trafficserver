@@ -569,16 +569,19 @@ OperatorSkipRemap::exec(const Resources &res) const
 void
 OperatorRMHeader::exec(const Resources &res) const
 {
-  TSMLoc field_loc, tmp;
+  uint8_t raw_field_loc[TSMimeHdrFieldFastMLocSize()];
+  TSMLoc field_loc = reinterpret_cast<TSMLoc>(raw_field_loc);
+
+  uint8_t raw_tmp[TSMimeHdrFieldFastMLocSize()];
+  TSMLoc tmp = reinterpret_cast<TSMLoc>(raw_tmp);
 
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorRMHeader::exec() invoked on %s", _header.c_str());
-    field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
+    TSMimeHdrFieldFastFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc);
     while (field_loc) {
       TSDebug(PLUGIN_NAME, "   Deleting header %s", _header.c_str());
-      tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
+      TSMimeHdrFieldFastNextDup(res.bufp, res.hdr_loc, field_loc, &tmp);
       TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
-      TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
       field_loc = tmp;
     }
   }
@@ -608,14 +611,14 @@ OperatorAddHeader::exec(const Resources &res) const
 
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorAddHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
-    TSMLoc field_loc;
+    uint8_t raw_field_loc[TSMimeHdrFieldFastMLocSize()];
+    TSMLoc field_loc = reinterpret_cast<TSMLoc>(raw_field_loc);
 
-    if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
+    if (TS_SUCCESS == TSMimeHdrFieldFastCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
       if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
         TSDebug(PLUGIN_NAME, "   Adding header %s", _header.c_str());
         TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
       }
-      TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
     }
   }
 }
@@ -643,25 +646,32 @@ OperatorSetHeader::exec(const Resources &res) const
   }
 
   if (res.bufp && res.hdr_loc) {
-    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
+    uint8_t raw_field_loc[TSMimeHdrFieldFastMLocSize()];
+    TSMLoc field_loc = reinterpret_cast<TSMLoc>(raw_field_loc);
+
+    TSMimeHdrFieldFastFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc);
 
     TSDebug(PLUGIN_NAME, "OperatorSetHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
 
     if (!field_loc) {
       // No existing header, so create one
-      if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
-        if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
+
+      uint8_t raw_new_field_loc[TSMimeHdrFieldFastMLocSize()];
+      TSMLoc new_field_loc = reinterpret_cast<TSMLoc>(raw_new_field_loc);
+
+      if (TS_SUCCESS == TSMimeHdrFieldFastCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &new_field_loc)) {
+        if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, new_field_loc, -1, value.c_str(), value.size())) {
           TSDebug(PLUGIN_NAME, "   Adding header %s", _header.c_str());
-          TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
+          TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, new_field_loc);
         }
-        TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
       }
     } else {
-      TSMLoc tmp = nullptr;
+      uint8_t raw_tmp[TSMimeHdrFieldFastMLocSize()];
+      TSMLoc tmp = reinterpret_cast<TSMLoc>(raw_tmp);
       bool first = true;
 
       while (field_loc) {
-        tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
+        TSMimeHdrFieldFastNextDup(res.bufp, res.hdr_loc, field_loc, &tmp);
         if (first) {
           first = false;
           if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
@@ -670,7 +680,6 @@ OperatorSetHeader::exec(const Resources &res) const
         } else {
           TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
         }
-        TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
         field_loc = tmp;
       }
     }

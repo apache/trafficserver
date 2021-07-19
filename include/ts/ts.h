@@ -928,6 +928,11 @@ tsapi TSReturnCode TSMimeHdrFieldsClear(TSMBuffer bufp, TSMLoc offset);
 tsapi int TSMimeHdrFieldsCount(TSMBuffer bufp, TSMLoc offset);
 
 /**
+   Return size of object which TSMLoc is pointing for TSMimeHdr* APIs.
+ */
+tsapi size_t TSMimeHdrFieldFastMLocSize();
+
+/**
     Retrieves the location of a specified MIME field within the
     MIME header located at hdr_loc within bufp. The idx parameter
     specifies which field to retrieve. The fields are numbered from 0
@@ -962,6 +967,7 @@ tsapi TSMLoc TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr, int idx);
 
  */
 tsapi TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length);
+tsapi TSReturnCode TSMimeHdrFieldFastFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length, TSMLoc *locp);
 
 /**
     Returns the TSMLoc location of a specified MIME field from within
@@ -1012,6 +1018,7 @@ tsapi TSReturnCode TSMimeHdrFieldCreate(TSMBuffer bufp, TSMLoc hdr, TSMLoc *locp
  *  Create a new field and assign it a name all in one call
  ****************************************************************************/
 tsapi TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len, TSMLoc *locp);
+tsapi TSReturnCode TSMimeHdrFieldFastCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int name_len, TSMLoc *locp);
 
 /**
     Destroys the MIME field located at field within bufp. You must
@@ -1034,6 +1041,7 @@ tsapi TSReturnCode TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr
                                             TSMLoc src_hdr, TSMLoc src_field);
 tsapi TSMLoc TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
 tsapi TSMLoc TSMimeHdrFieldNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
+tsapi TSReturnCode TSMimeHdrFieldFastNextDup(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, TSMLoc *locp);
 tsapi int TSMimeHdrFieldLengthGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
 tsapi const char *TSMimeHdrFieldNameGet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int *length);
 tsapi TSReturnCode TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name, int length);
