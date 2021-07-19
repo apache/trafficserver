@@ -100,7 +100,7 @@ ts_lua_client_response_header_get(lua_State *L)
   }
 
   if (key && key_len) {
-    field_loc = TSMimeHdrFieldFind(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, key, key_len);
+    field_loc = TSMimeHdrFieldFind(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, key, key_len, NULL);
     if (field_loc != TS_NULL_MLOC) {
       count = 0;
       while (field_loc != TS_NULL_MLOC) {
@@ -161,7 +161,7 @@ ts_lua_client_response_header_set(lua_State *L)
     }
   }
 
-  field_loc = TSMimeHdrFieldFind(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, key, key_len);
+  field_loc = TSMimeHdrFieldFind(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, key, key_len, NULL);
 
   if (remove) {
     while (field_loc != TS_NULL_MLOC) {
@@ -423,7 +423,7 @@ ts_lua_client_response_set_error_resp(lua_State *L)
   }
 
   field_loc = TSMimeHdrFieldFind(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, TS_MIME_FIELD_TRANSFER_ENCODING,
-                                 TS_MIME_LEN_TRANSFER_ENCODING);
+                                 TS_MIME_LEN_TRANSFER_ENCODING, NULL);
 
   if (field_loc) {
     TSMimeHdrFieldDestroy(http_ctx->client_response_bufp, http_ctx->client_response_hdrp, field_loc);

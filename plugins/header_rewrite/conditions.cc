@@ -231,7 +231,7 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
   if (bufp && hdr_loc) {
     TSMLoc field_loc;
 
-    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier.c_str(), _qualifier.size());
+    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, _qualifier.c_str(), _qualifier.size(), nullptr);
     TSDebug(PLUGIN_NAME, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
 
     while (field_loc) {
@@ -477,7 +477,7 @@ ConditionCookie::append_value(std::string &s, const Resources &res)
   }
 
   // Find Cookie
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, nullptr);
   if (field_loc == nullptr) {
     return;
   }

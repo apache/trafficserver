@@ -44,7 +44,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, const char *val)
   }
 
   bool ret         = false;
-  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header, strlen(header));
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header, strlen(header), nullptr);
 
   TSReleaseAssert(!field_loc); // The headers are for testing, should never exist
   if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(bufp, hdr_loc, header, strlen(header), &field_loc)) {

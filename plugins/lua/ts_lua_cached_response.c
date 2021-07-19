@@ -154,7 +154,7 @@ ts_lua_cached_response_header_get(lua_State *L)
   TS_LUA_CHECK_CACHED_RESPONSE_HDR(http_ctx);
 
   if (key && key_len) {
-    field_loc = TSMimeHdrFieldFind(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, key, key_len);
+    field_loc = TSMimeHdrFieldFind(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, key, key_len, NULL);
 
     if (field_loc != TS_NULL_MLOC) {
       count = 0;

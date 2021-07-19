@@ -48,7 +48,7 @@ void
 Hdr_Remove_Field(TSMBuffer mbuf, TSMLoc hdr_loc, TextView field)
 {
   TSMLoc field_loc;
-  if (TS_NULL_MLOC != (field_loc = TSMimeHdrFieldFind(mbuf, hdr_loc, field.data(), field.size()))) {
+  if (TS_NULL_MLOC != (field_loc = TSMimeHdrFieldFind(mbuf, hdr_loc, field.data(), field.size(), nullptr))) {
     TSMimeHdrFieldDestroy(mbuf, hdr_loc, field_loc);
     TSHandleMLocRelease(mbuf, hdr_loc, field_loc);
   }

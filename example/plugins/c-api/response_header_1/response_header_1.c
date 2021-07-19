@@ -134,7 +134,7 @@ modify_header(TSHttpTxn txnp)
     }
 
     /* Get the cached MIME field name for this HTTP header */
-    cached_field_loc = TSMimeHdrFieldFind(cached_bufp, cached_loc, (const char *)mimehdr1_name, strlen(mimehdr1_name));
+    cached_field_loc = TSMimeHdrFieldFind(cached_bufp, cached_loc, (const char *)mimehdr1_name, strlen(mimehdr1_name), NULL);
     if (TS_NULL_MLOC == cached_field_loc) {
       TSError("[%s] Can't find header %s in cached document", PLUGIN_NAME, mimehdr1_name);
       TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_loc);

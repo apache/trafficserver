@@ -643,7 +643,7 @@ Headers::find(const std::string &key)
 header_field_iterator
 Headers::find(const char *key, int length)
 {
-  TSMLoc field_loc = TSMimeHdrFieldFind(state_->hdr_buf_, state_->hdr_loc_, key, length);
+  TSMLoc field_loc = TSMimeHdrFieldFind(state_->hdr_buf_, state_->hdr_loc_, key, length, nullptr);
   if (field_loc != TS_NULL_MLOC) {
     return header_field_iterator(state_->hdr_buf_, state_->hdr_loc_, field_loc);
   }

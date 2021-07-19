@@ -151,7 +151,7 @@ classifyUserAgent(const Classifier &c, TSMBuffer buf, TSMLoc hdrs, String &class
   TSMLoc field;
   bool matched = false;
 
-  field = TSMimeHdrFieldFind(buf, hdrs, TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT);
+  field = TSMimeHdrFieldFind(buf, hdrs, TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT, nullptr);
   while (field != TS_NULL_MLOC && !matched) {
     const char *value;
     int len;
@@ -489,7 +489,7 @@ CacheKey::processHeader(const String &name, const ConfigHeaders &config, T &dst,
 {
   TSMLoc field;
 
-  for (field = TSMimeHdrFieldFind(_buf, _hdrs, name.c_str(), name.size()); field != TS_NULL_MLOC;
+  for (field = TSMimeHdrFieldFind(_buf, _hdrs, name.c_str(), name.size(), nullptr); field != TS_NULL_MLOC;
        field = ::nextDuplicate(_buf, _hdrs, field)) {
     const char *value;
     int vlen;
@@ -593,7 +593,7 @@ CacheKey::appendCookies(const ConfigCookies &config)
   TSMLoc field;
   StringSet cset; /* sort and uniquify the cookies list in the cache key */
 
-  for (field = TSMimeHdrFieldFind(_buf, _hdrs, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE); field != TS_NULL_MLOC;
+  for (field = TSMimeHdrFieldFind(_buf, _hdrs, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, nullptr); field != TS_NULL_MLOC;
        field = ::nextDuplicate(_buf, _hdrs, field)) {
     int count = TSMimeHdrFieldValuesCount(_buf, _hdrs, field);
 
@@ -692,7 +692,7 @@ CacheKey::appendUaCaptures(Pattern &config)
   const char *value;
   int len;
 
-  field = TSMimeHdrFieldFind(_buf, _hdrs, TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT);
+  field = TSMimeHdrFieldFind(_buf, _hdrs, TS_MIME_FIELD_USER_AGENT, TS_MIME_LEN_USER_AGENT, nullptr);
   if (field == TS_NULL_MLOC) {
     CacheKeyDebug("missing %.*s header", TS_MIME_LEN_USER_AGENT, TS_MIME_FIELD_USER_AGENT);
     return;

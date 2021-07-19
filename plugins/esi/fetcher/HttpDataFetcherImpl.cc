@@ -231,7 +231,7 @@ bool
 HttpDataFetcherImpl::_checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, const char *exp_value,
                                        int exp_value_len, bool prefix) const
 {
-  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, name, name_len);
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, name, name_len, nullptr);
   if (!field_loc) {
     return false;
   }

@@ -141,7 +141,7 @@ transformable(TSHttpTxn txnp)
 
   if (returnValue) {
     returnValue        = false;
-    const TSMLoc field = TSMimeHdrFieldFind(buffer, location, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
+    const TSMLoc field = TSMimeHdrFieldFind(buffer, location, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE, nullptr);
 
     if (field != TS_NULL_MLOC) {
       int length                = 0;

@@ -137,7 +137,7 @@ HttpHeader::hasKey(char const *const key, int const keylen) const
     return false;
   }
 
-  TSMLoc const locfield(TSMimeHdrFieldFind(m_buffer, m_lochdr, key, keylen));
+  TSMLoc const locfield(TSMimeHdrFieldFind(m_buffer, m_lochdr, key, keylen, nullptr));
   if (nullptr != locfield) {
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
     return true;
@@ -155,7 +155,7 @@ HttpHeader::removeKey(char const *const keystr, int const keylen)
 
   bool status = true;
 
-  TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
+  TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen, nullptr);
   if (nullptr != locfield) {
     int const rcode = TSMimeHdrFieldRemove(m_buffer, m_lochdr, locfield);
     status          = (TS_SUCCESS == rcode);
@@ -175,7 +175,7 @@ HttpHeader::valueForKey(char const *const keystr, int const keylen, char *const 
 
   bool status = false;
 
-  TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
+  TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen, nullptr);
 
   if (nullptr != locfield) {
     int getlen               = 0;
@@ -209,7 +209,7 @@ HttpHeader::setKeyVal(char const *const keystr, int const keylen, char const *co
 
   bool status(false);
 
-  TSMLoc locfield(TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen));
+  TSMLoc locfield(TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen, nullptr));
 
   if (nullptr != locfield) {
     status = TS_SUCCESS == TSMimeHdrFieldValueStringSet(m_buffer, m_lochdr, locfield, index, valstr, vallen);
@@ -244,7 +244,7 @@ HttpHeader::timeForKey(char const *const keystr, int const keylen, time_t *const
 
   bool status = false;
 
-  TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
+  TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen, nullptr);
 
   if (nullptr != locfield) {
     *timeval = TSMimeHdrFieldValueDateGet(m_buffer, m_lochdr, locfield);
@@ -265,7 +265,7 @@ HttpHeader::setKeyTime(char const *const keystr, int const keylen, time_t const 
 
   bool status(false);
 
-  TSMLoc locfield(TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen));
+  TSMLoc locfield(TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen, nullptr));
 
   if (nullptr == locfield) {
     DEBUG_LOG("Creating header %.*s", keylen, keystr);

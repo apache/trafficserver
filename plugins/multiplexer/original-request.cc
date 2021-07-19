@@ -63,12 +63,12 @@ OriginalRequest::OriginalRequest(const TSMBuffer b, const TSMLoc l) : buffer_(b)
   /*
    * this code assumes the request has a single Host header
    */
-  hostHeader_ = TSMimeHdrFieldFind(b, l, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
+  hostHeader_ = TSMimeHdrFieldFind(b, l, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, nullptr);
   assert(hostHeader_ != nullptr);
 
   const_cast<std::string &>(original.hostHeader) = get(buffer_, location_, hostHeader_);
 
-  xMultiplexerHeader_ = TSMimeHdrFieldFind(b, l, "X-Multiplexer", 13);
+  xMultiplexerHeader_ = TSMimeHdrFieldFind(b, l, "X-Multiplexer", 13, nullptr);
 
   if (xMultiplexerHeader_ != nullptr) {
     const_cast<std::string &>(original.xMultiplexerHeader) = get(buffer_, location_, xMultiplexerHeader_);

@@ -573,7 +573,7 @@ OperatorRMHeader::exec(const Resources &res) const
 
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorRMHeader::exec() invoked on %s", _header.c_str());
-    field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
+    field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), nullptr);
     while (field_loc) {
       TSDebug(PLUGIN_NAME, "   Deleting header %s", _header.c_str());
       tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
@@ -643,7 +643,7 @@ OperatorSetHeader::exec(const Resources &res) const
   }
 
   if (res.bufp && res.hdr_loc) {
-    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
+    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), nullptr);
 
     TSDebug(PLUGIN_NAME, "OperatorSetHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
 
@@ -722,10 +722,10 @@ OperatorRMCookie::exec(const Resources &res) const
 {
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec() invoked on cookie %s", _cookie.c_str());
-    TSMLoc field_loc;
 
     // Find Cookie
-    field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
+    TSHdrHandle handle;
+    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, &handle);
     if (nullptr == field_loc) {
       TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec, no cookie");
       return;
@@ -744,7 +744,6 @@ OperatorRMCookie::exec(const Resources &res) const
         TSDebug(PLUGIN_NAME, "OperatorRMCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
       }
     }
-    TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
   }
 }
 
@@ -765,10 +764,10 @@ OperatorAddCookie::exec(const Resources &res) const
 
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorAddCookie::exec() invoked on cookie %s", _cookie.c_str());
-    TSMLoc field_loc;
 
     // Find Cookie
-    field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
+    TSHdrHandle handle;
+    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, &handle);
     if (nullptr == field_loc) {
       TSDebug(PLUGIN_NAME, "OperatorAddCookie::exec, no cookie");
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, &field_loc)) {
@@ -777,7 +776,6 @@ OperatorAddCookie::exec(const Resources &res) const
           TSDebug(PLUGIN_NAME, "Adding cookie %s", _cookie.c_str());
           TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
         }
-        TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
       }
       return;
     }
@@ -810,10 +808,10 @@ OperatorSetCookie::exec(const Resources &res) const
 
   if (res.bufp && res.hdr_loc) {
     TSDebug(PLUGIN_NAME, "OperatorSetCookie::exec() invoked on cookie %s", _cookie.c_str());
-    TSMLoc field_loc;
 
     // Find Cookie
-    field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
+    TSHdrHandle handle;
+    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, &handle);
     if (nullptr == field_loc) {
       TSDebug(PLUGIN_NAME, "OperatorSetCookie::exec, no cookie");
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, &field_loc)) {
@@ -822,7 +820,6 @@ OperatorSetCookie::exec(const Resources &res) const
           TSDebug(PLUGIN_NAME, "Adding cookie %s", _cookie.c_str());
           TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
         }
-        TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
       }
       return;
     }
@@ -835,7 +832,6 @@ OperatorSetCookie::exec(const Resources &res) const
           TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, updated_cookie.c_str(), updated_cookie.size())) {
       TSDebug(PLUGIN_NAME, "OperatorSetCookie::exec, updated_cookie = [%s]", updated_cookie.c_str());
     }
-    TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
   }
 }
 

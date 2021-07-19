@@ -706,7 +706,7 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
   }
 
   bool ret         = false;
-  TSMLoc field_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, header, header_len);
+  TSMLoc field_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, header, header_len, nullptr);
 
   if (!field_loc) {
     // No existing header, so create one
@@ -866,7 +866,7 @@ S3Request::authorizeV2(S3Config *s3)
   // If the configuration is a "virtual host" (foo.s3.aws ...), extract the
   // first portion into the Host: header.
   if (s3->virt_host()) {
-    host_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
+    host_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, nullptr);
     if (host_loc) {
       host      = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, host_loc, -1, &host_len);
       host_endp = static_cast<const char *>(memchr(host, '.', host_len));
@@ -876,14 +876,14 @@ S3Request::authorizeV2(S3Config *s3)
   }
 
   // Just in case we add Content-MD5 if present
-  md5_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_CONTENT_MD5, TS_MIME_LEN_CONTENT_MD5);
+  md5_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_CONTENT_MD5, TS_MIME_LEN_CONTENT_MD5, nullptr);
   if (md5_loc) {
     con_md5 = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, md5_loc, -1, &con_md5_len);
   }
 
   // get the Content-Type if available - (buggy) clients may send it
   // for GET requests too
-  contype_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
+  contype_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE, nullptr);
   if (contype_loc) {
     con_type = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, contype_loc, -1, &con_type_len);
   }

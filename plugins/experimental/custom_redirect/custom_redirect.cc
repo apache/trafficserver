@@ -63,7 +63,7 @@ handle_response(TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
         const char *method = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
         if ((return_code == TS_HTTP_STATUS_NONE || return_code == status) &&
             ((strncasecmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0))) {
-          redirect_url_loc = TSMimeHdrFieldFind(resp_bufp, resp_loc, redirect_url_header, redirect_url_header_len);
+          redirect_url_loc = TSMimeHdrFieldFind(resp_bufp, resp_loc, redirect_url_header, redirect_url_header_len, nullptr);
 
           if (redirect_url_loc) {
             redirect_url_str = TSMimeHdrFieldValueStringGet(resp_bufp, resp_loc, redirect_url_loc, -1, &redirect_url_length);

@@ -1180,7 +1180,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   std::string rewrite_to;
   char cookie_str[] = "Cookie";
-  TSMLoc field      = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, cookie_str, sizeof(cookie_str) - 1);
+  TSMLoc field      = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, cookie_str, sizeof(cookie_str) - 1, nullptr);
 
   // cookie header doesn't exist
   if (field == nullptr) {

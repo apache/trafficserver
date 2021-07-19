@@ -781,7 +781,7 @@ http_send_response_hdr(TSCont contp, void *edata)
    * Then scan if the URL or digest already exist in the cache. */
 
   /* If the response has a Location header */
-  data->location_loc = TSMimeHdrFieldFind(data->resp_bufp, data->hdr_loc, TS_MIME_FIELD_LOCATION, TS_MIME_LEN_LOCATION);
+  data->location_loc = TSMimeHdrFieldFind(data->resp_bufp, data->hdr_loc, TS_MIME_FIELD_LOCATION, TS_MIME_LEN_LOCATION, nullptr);
   if (!data->location_loc) {
     TSHandleMLocRelease(data->resp_bufp, TS_NULL_MLOC, data->hdr_loc);
 
@@ -825,7 +825,7 @@ http_send_response_hdr(TSCont contp, void *edata)
   }
 
   /* ... and a Digest header */
-  data->digest_loc = TSMimeHdrFieldFind(data->resp_bufp, data->hdr_loc, "Digest", 6);
+  data->digest_loc = TSMimeHdrFieldFind(data->resp_bufp, data->hdr_loc, "Digest", 6, nullptr);
   while (data->digest_loc) {
     int count = TSMimeHdrFieldValuesCount(data->resp_bufp, data->hdr_loc, data->digest_loc);
     for (data->idx = 0; data->idx < count; data->idx += 1) {

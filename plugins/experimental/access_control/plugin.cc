@@ -234,7 +234,7 @@ getCookieByName(TSHttpTxn txn, TSMBuffer buf, TSMLoc hdrs, const String &cookieN
 {
   TSMLoc field;
 
-  for (field = TSMimeHdrFieldFind(buf, hdrs, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE); field != TS_NULL_MLOC;
+  for (field = TSMimeHdrFieldFind(buf, hdrs, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE, nullptr); field != TS_NULL_MLOC;
        field = ::nextDuplicate(buf, hdrs, field)) {
     int count = TSMimeHdrFieldValuesCount(buf, hdrs, field);
 

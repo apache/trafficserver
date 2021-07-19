@@ -52,7 +52,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
   }
 
   bool ret         = false;
-  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header, len);
+  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header, len, nullptr);
 
   if (!field_loc) {
     // No existing header, so create one

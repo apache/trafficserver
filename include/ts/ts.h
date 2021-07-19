@@ -961,7 +961,7 @@ tsapi TSMLoc TSMimeHdrFieldGet(TSMBuffer bufp, TSMLoc hdr, int idx);
       not be found, returns TS_NULL_MLOC.
 
  */
-tsapi TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length);
+tsapi TSMLoc TSMimeHdrFieldFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length, TSHdrHandle *handle);
 
 /**
     Returns the TSMLoc location of a specified MIME field from within

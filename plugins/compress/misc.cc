@@ -80,7 +80,7 @@ strip_ae_value(ts::TextView &value)
 void
 normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc)
 {
-  TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING, nullptr);
   bool deflate = false;
   bool gzip    = false;
   bool br      = false;
@@ -134,7 +134,7 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
 void
 hide_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name)
 {
-  TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING, nullptr);
   while (field) {
     TSMLoc tmp;
     tmp = TSMimeHdrFieldNextDup(reqp, hdr_loc, field);
@@ -147,7 +147,7 @@ hide_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr
 void
 restore_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name)
 {
-  TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, hidden_header_name, -1);
+  TSMLoc field = TSMimeHdrFieldFind(reqp, hdr_loc, hidden_header_name, -1, nullptr);
 
   while (field) {
     TSMLoc tmp;

@@ -147,7 +147,7 @@ LRUPolicy::doPromote(TSHttpTxn txnp)
       const char *method = TSHttpHdrMethodGet(request, req_hdr, &method_len);
 
       if (TS_HTTP_METHOD_GET == method) { // Only allow GET requests (for now) to actually do the promotion
-        TSMLoc range = TSMimeHdrFieldFind(request, req_hdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE);
+        TSMLoc range = TSMimeHdrFieldFind(request, req_hdr, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE, nullptr);
 
         if (TS_NULL_MLOC != range) { // Found a Range: header, not cacheable
           TSHandleMLocRelease(request, req_hdr, range);
@@ -233,7 +233,7 @@ LRUPolicy::addBytes(TSHttpTxn txnp)
       TSMLoc resp_hdr;
 
       if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &resp, &resp_hdr)) {
-        TSMLoc field_loc = TSMimeHdrFieldFind(resp, resp_hdr, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+        TSMLoc field_loc = TSMimeHdrFieldFind(resp, resp_hdr, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, nullptr);
 
         if (field_loc) {
           auto &[val_key, val_hits, val_bytes] = *(map_it->second);

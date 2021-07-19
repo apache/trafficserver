@@ -101,7 +101,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
     goto done;
   }
 
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_PROXY_AUTHORIZATION, TS_MIME_LEN_PROXY_AUTHORIZATION);
+  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_PROXY_AUTHORIZATION, TS_MIME_LEN_PROXY_AUTHORIZATION, NULL);
   if (!field_loc) {
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSError("[%s] No Proxy-Authorization field", PLUGIN_NAME);
