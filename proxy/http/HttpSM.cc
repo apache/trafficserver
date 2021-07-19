@@ -4992,6 +4992,14 @@ HttpSM::do_http_server_open(bool raw)
   SMDebug("http", "[%" PRId64 "] open connection to %s: %s", sm_id, t_state.current.server->name,
           ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
+  SMDebug("http_seq", "[HttpSM::do_http_server_open] Sending request to server");
+
+  // set the server first connect milestone here in case we return in the plugin_tunnel case that follows
+  milestones[TS_MILESTONE_SERVER_CONNECT] = Thread::get_hrtime();
+  if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] == 0) {
+    milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] = milestones[TS_MILESTONE_SERVER_CONNECT];
+  }
+
   if (plugin_tunnel) {
     PluginVCCore *t           = plugin_tunnel;
     plugin_tunnel             = nullptr;
@@ -5000,13 +5008,6 @@ HttpSM::do_http_server_open(bool raw)
     // This connect call is always reentrant
     ink_release_assert(pvc_action_handle == ACTION_RESULT_DONE);
     return;
-  }
-
-  SMDebug("http_seq", "[HttpSM::do_http_server_open] Sending request to server");
-
-  milestones[TS_MILESTONE_SERVER_CONNECT] = Thread::get_hrtime();
-  if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] == 0) {
-    milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] = milestones[TS_MILESTONE_SERVER_CONNECT];
   }
 
   // Check for remap rule. If so, only apply ip_allow filter if it is activated (ip_allow_check_enabled_p set).
