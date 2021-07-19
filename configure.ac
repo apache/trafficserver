@@ -35,8 +35,8 @@
 m4_define([TS_VERSION_S],[10.0.0])
 m4_define([TS_VERSION_N],[10000000])
 
-AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver], [https://trafficserver.apache.org])
-AC_PREREQ([2.59])
+AC_INIT([Apache Traffic Server],[TS_VERSION_S()],[dev@trafficserver.apache.org],[trafficserver],[https://trafficserver.apache.org])
+AC_PREREQ([2.69])
 AC_CONFIG_AUX_DIR([build/_aux])
 AC_CONFIG_SRCDIR([src/traffic_server/traffic_server.cc])
 AC_CONFIG_MACRO_DIR([build])
@@ -325,13 +325,13 @@ AC_ARG_ENABLE([docs],
       TS_MAN8_MANPAGES=`cd $srcdir/doc && $PYTHON manpages.py --section=8 | $AWK '{print "$(BUILDDIR)/man/" $0 }' | tr '\n' ' '`
     ], [
       enable_doc_build=no
-      AC_ERROR([Doc building disabled, python 3.4 or better required])
+      AC_MSG_ERROR(Doc building disabled, Python 3.4 or better required)
     ])
 
     AS_IF([test -z "$JAVA"],
       [
         enable_doc_build=no
-        AC_ERROR([Doc building disabled, java required but not found])
+        AC_MSG_ERROR(Doc building disabled, Java required but not found)
       ])
     AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
     AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
@@ -342,7 +342,7 @@ AC_ARG_ENABLE([docs],
       ],[
         sphinx_version_check=no
         enable_doc_build=no
-        AC_ERROR([Doc building disabled, check sphinx installation])
+        AC_MSG_ERROR(Doc building disabled, check Sphinx installation)
       ])
 
 
@@ -734,11 +734,11 @@ AC_PROG_AWK
 AC_PROG_SED
 AC_PROG_LN_S
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
+LT_INIT
 AC_CHECK_PROG(RM, rm, rm)
 AC_CHECK_PROG(ASCPP, cpp, cpp)
 AC_CHECK_TOOL(AR, ar, ar)
-AC_ISC_POSIX
+AC_SEARCH_LIBS([strerror],[cposix])
 
 AC_ARG_VAR(RPATH, [path to be added to rpath])
 
@@ -776,7 +776,7 @@ FLEX_MINOR=5
 FLEX_POINT=33
 dnl ylwrap requires the lexer executable to be an absolute path or in the srcdir.
 dnl but we need various other LEX values.
-AC_PROG_LEX
+AC_PROG_LEX([noyywrap])
 AS_IF([test -n "$LEX"],
       [ flex_version_check=`$LEX --version 2>&1 | \
         $SED -n '/flex/s/^[[^0-9]]*\([[0-9]][[0-9.]]*\)[[^0-9]]*.*$/\1/p' | \
@@ -980,13 +980,13 @@ fi
 # Flags for ASAN
 if test "x${enable_asan}" = "xyes"; then
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
+    AC_MSG_ERROR(Cannot have ASAN and TSAN options at the same time, pick one)
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=address])
 elif test "x${enable_asan}" = "xstatic"; then
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_ERROR([Cannot have ASAN and TSAN options at the same time, pick one])
+    AC_MSG_ERROR(Cannot have ASAN and TSAN options at the same time, pick one)
   fi
   asan_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -fno-omit-frame-pointer -fsanitize=address -static-libasan"
@@ -997,7 +997,7 @@ elif test "x${enable_asan}" = "xstatic"; then
     [AC_MSG_RESULT([yes])],
     [
       AC_MSG_RESULT([no])
-      AC_ERROR([Cannot find static ASAN library.])
+      AC_MSG_ERROR(Cannot find static ASAN library.)
     ]
   )
   AC_LANG_POP
@@ -1009,23 +1009,23 @@ fi
 # Flags for LSAN stand-alone mode
 if test "x${enable_lsan}" = "xyes"; then
   if test "x${enable_asan}" = "xyes" -o "x${enable_asan}" = "xstatic"; then
-    AC_ERROR([ASAN already specified, --enable-lsan is meant only for lsan stand-alone mode])
+    AC_MSG_ERROR(ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode)
   fi
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_ERROR([Cannot have LSAN and TSAN options at the same time, pick one])
+    AC_MSG_ERROR(Cannot have LSAN and TSAN options at the same time, pick one)
   fi
   TS_ADDTO(AM_CFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
   TS_ADDTO(AM_CXXFLAGS, [-fno-omit-frame-pointer -fsanitize=leak])
 elif test "x${enable_lsan}" = "xstatic"; then
   if test "x${enable_asan}" = "xyes" -o "x${enable_asan}" = "xstatic"; then
-    AC_ERROR([ASAN already specified, --enable-lsan is meant only for lsan stand-alone mode])
+    AC_MSG_ERROR(ASAN already specified, --enable-lsan is meant only for LSAN stand-alone mode)
   fi
   if test "x${enable_tsan}" = "xyes" -o "x${enable_tsan}" = "xstatic"; then
-    AC_ERROR([Cannot have LSAN and TSAN options at the same time, pick one])
+    AC_MSG_ERROR(Cannot have LSAN and TSAN options at the same time, pick one)
   fi
   AC_CHECK_LIB(lsan, _init, [lsan_have_libs=yes], [lsan_have_libs=no])
   if test "x${lsan_have_libs}" == "xno"; then
-    AC_ERROR([Cannot find LSAN static library])
+    AC_MSG_ERROR(Cannot find LSAN static library)
   fi
   lsan_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -fno-omit-frame-pointer -fsanitize=leak -static-liblsan"
@@ -1036,7 +1036,7 @@ elif test "x${enable_lsan}" = "xstatic"; then
     [AC_MSG_RESULT([yes])],
     [
       AC_MSG_RESULT([no])
-      AC_ERROR([Cannot find static LSAN library.])
+      AC_MSG_ERROR(Cannot find static LSAN library.)
     ]
   )
   AC_LANG_POP
@@ -1052,7 +1052,7 @@ if test "x${enable_tsan}" = "xyes"; then
 elif test "x${enable_tsan}" = "xstatic"; then
   AC_CHECK_LIB(tsan, _init, [tsan_have_libs=yes], [tsan_have_libs=no])
   if test "x${tsan_have_libs}" == "xno"; then
-    AC_ERROR([Cannot find TSAN static library])
+    AC_MSG_ERROR(Cannot find TSAN static library)
   fi
   tsan_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -fsanitize=thread -static-libtsan"
@@ -1063,7 +1063,7 @@ elif test "x${enable_tsan}" = "xstatic"; then
     [AC_MSG_RESULT([yes])],
     [
       AC_MSG_RESULT([no])
-      AC_ERROR([Cannot find static TSAN library.])
+      AC_MSG_ERROR(Cannot find static TSAN library.)
     ]
   )
   AC_LANG_POP
@@ -1076,7 +1076,7 @@ fi
 # TODO: Later this is irrelevant, and we should just bail on 32-bit platforms always
 AC_CHECK_SIZEOF([void*])
 if test "x$ac_cv_sizeof_voidp" == "x"; then
-  AC_ERROR([Cannot determine size of void*])
+  AC_MSG_ERROR(Cannot determine size of void*)
 fi
 
 # Right now, 32-bit platform is a build error, unless we've forced it with --enable-32bit-build
@@ -1084,7 +1084,7 @@ if test "${ac_cv_sizeof_voidp}" = "4"; then
    AS_IF([test x"$enable_32bit_build" = "xyes"], [
      AC_MSG_NOTICE([Explicitly building on a 32-bit platform, this might be unsupported soon!])
    ], [
-     AC_ERROR([You are trying to build on a 32-bit platform, which is unsupported.])
+     AC_MSG_ERROR(You are trying to build on a 32-bit platform, which is unsupported.)
    ])
 fi
 
@@ -1115,7 +1115,7 @@ fi
 
 # Override detected architecture with the user supplied one
 #
-AC_ARG_WITH(architecture, [AC_HELP_STRING([--with-architecture=ARCH],[use a specific CPU architecture])],
+AC_ARG_WITH(architecture, [AS_HELP_STRING([--with-architecture=ARCH],[use a specific CPU architecture])],
 [
   if test "x$withval" != "xyes" && test "x$withval" != "xno"; then
     case "$withval" in
@@ -1129,7 +1129,7 @@ AC_ARG_WITH(architecture, [AC_HELP_STRING([--with-architecture=ARCH],[use a spec
       ;;
     esac
   elif test "x$withval" = "x"; then
-    AC_MSG_ERROR([--with-architecture requires an param])
+    AC_MSG_ERROR([--with-architecture requires a parameter])
   fi
 ])
 
@@ -1479,9 +1479,9 @@ AS_IF([test "x$enable_unwind" = "xyes"], [
       ])
     ])], [
     AS_IF([test "x$enable_unwind_default" = "xyes"], [
-      AC_MSG_WARN([unwind only available on linux, try disabling it --disable-unwind])
+      AC_MSG_WARN([unwind only available on Linux, try disabling it --disable-unwind])
     ], [
-      AC_MSG_ERROR([unwind only available on linux, try disabling it --disable-unwind])
+      AC_MSG_ERROR([unwind only available on Linux, try disabling it --disable-unwind])
     ])
   ])
 ])

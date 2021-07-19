@@ -60,7 +60,7 @@
 
 #serial 6
 
-AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE])
+AU_ALIAS([AX_LIB_READLINE], [AX_LIB_READLINE])
 AC_DEFUN([AX_LIB_READLINE], [
   AC_CACHE_CHECK([for a readline compatible library],
                  ax_cv_lib_readline, [

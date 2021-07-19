@@ -23,7 +23,7 @@ dnl TS_CHECK_PCRE: look for pcre libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_PCRE], [
 enable_pcre=no
-AC_ARG_WITH(pcre, [AC_HELP_STRING([--with-pcre=DIR],[use a specific pcre library])],
+AC_ARG_WITH(pcre, [AS_HELP_STRING([--with-pcre=DIR],[use a specific pcre library])],
 [
   if test "x$withval" != "xyes" && test "x$withval" != "x"; then
     pcre_base_dir="$withval"

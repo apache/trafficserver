@@ -246,7 +246,7 @@ AC_DEFUN([_FIND_CURSES_FLAGS], [
     ])
 ])
 
-AU_ALIAS([MP_WITH_CURSES], [AX_WITH_CURSES])
+AU_ALIAS([AX_WITH_CURSES], [AX_WITH_CURSES])
 AC_DEFUN([AX_WITH_CURSES], [
     AC_ARG_VAR([CURSES_LIBS], [linker library for Curses, e.g. -lcurses])
     AC_ARG_VAR([CURSES_CFLAGS], [preprocessor flags for Curses, e.g. -I/usr/include/ncursesw])

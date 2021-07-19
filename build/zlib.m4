@@ -23,7 +23,7 @@ dnl TS_CHECK_ZLIB: look for zlib libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_ZLIB], [
 enable_zlib=yes
-AC_ARG_WITH(zlib, [AC_HELP_STRING([--with-zlib=DIR],[use a specific zlib library])],
+AC_ARG_WITH(zlib, [AS_HELP_STRING([--with-zlib=DIR],[use a specific zlib library])],
 [
   if test "x$withval" != "xyes" && test "x$withval" != "x"; then
     zlib_base_dir="$withval"
