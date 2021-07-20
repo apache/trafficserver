@@ -1114,4 +1114,4 @@ is_response_body_precluded(HTTPStatus status_code, int method)
   }
 }
 
-inkcoreapi extern ink_time_t ink_local_time();
+extern ink_time_t ink_local_time();

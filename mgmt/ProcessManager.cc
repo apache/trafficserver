@@ -32,7 +32,7 @@
 /*
  * Global ProcessManager
  */
-inkcoreapi ProcessManager *pmgmt = nullptr;
+ProcessManager *pmgmt = nullptr;
 
 // read_management_message attempts to read a message from the management
 // socket. Returns -errno on error, otherwise 0. If a message was read the

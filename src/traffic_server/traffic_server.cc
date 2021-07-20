@@ -164,11 +164,11 @@ int remote_management_flag      = DEFAULT_REMOTE_MANAGEMENT_FLAG;
 static char bind_stdout[512]    = "";
 static char bind_stderr[512]    = "";
 
-static char error_tags[1024]               = "";
-static char action_tags[1024]              = "";
-static int show_statistics                 = 0;
-static inkcoreapi DiagsConfig *diagsConfig = nullptr;
-HttpBodyFactory *body_factory              = nullptr;
+static char error_tags[1024]    = "";
+static char action_tags[1024]   = "";
+static int show_statistics      = 0;
+static DiagsConfig *diagsConfig = nullptr;
+HttpBodyFactory *body_factory   = nullptr;
 
 static int accept_mss           = 0;
 static int poll_timeout         = -1; // No value set.

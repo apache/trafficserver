@@ -69,7 +69,7 @@ public:
   InkRand(uint64_t d);
 
   void seed(uint64_t d);
-  inkcoreapi uint64_t random();
+  uint64_t random();
   double drandom();
 
 private:

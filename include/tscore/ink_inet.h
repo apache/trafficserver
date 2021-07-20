@@ -176,7 +176,7 @@ int ats_ip_check_characters(std::string_view text);
   @param s IP address in the Internet standard dot notation.
 
 */
-inkcoreapi uint32_t ats_inet_addr(const char *s);
+uint32_t ats_inet_addr(const char *s);
 
 const char *ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size);
 

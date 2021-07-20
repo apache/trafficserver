@@ -72,8 +72,8 @@ int cftime_replacement(char *s, int maxsize, const char *format, const time_t *c
 
 ink_time_t convert_tm(const struct tm *tp);
 
-inkcoreapi char *ink_ctime_r(const ink_time_t *clock, char *buf);
-inkcoreapi struct tm *ink_localtime_r(const ink_time_t *clock, struct tm *res);
+char *ink_ctime_r(const ink_time_t *clock, char *buf);
+struct tm *ink_localtime_r(const ink_time_t *clock, struct tm *res);
 
 /*===========================================================================*
                               Inline Stuffage

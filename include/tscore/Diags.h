@@ -56,7 +56,7 @@
 #endif
 #endif
 
-extern inkcoreapi Diags *diags;
+extern Diags *diags;
 
 // Note that the log functions being implemented as a macro has the advantage
 // that the pre-compiler expands this in place such that the call to

@@ -56,7 +56,7 @@
 #define PERIODIC_TASKS_INTERVAL_FALLBACK 5
 
 // Log global objects
-inkcoreapi LogObject *Log::error_log = nullptr;
+LogObject *Log::error_log = nullptr;
 LogFieldList Log::global_field_list;
 Log::LoggingMode Log::logging_mode = LOG_MODE_NONE;
 

@@ -1085,13 +1085,13 @@ CacheProcessor::lookup(Continuation *cont, const CacheKey *key, CacheFragType fr
   return caches[frag_type]->lookup(cont, key, frag_type, hostname, host_len);
 }
 
-inkcoreapi Action *
+Action *
 CacheProcessor::open_read(Continuation *cont, const CacheKey *key, CacheFragType frag_type, const char *hostname, int hostlen)
 {
   return caches[frag_type]->open_read(cont, key, frag_type, hostname, hostlen);
 }
 
-inkcoreapi Action *
+Action *
 CacheProcessor::open_write(Continuation *cont, CacheKey *key, CacheFragType frag_type, int expected_size ATS_UNUSED, int options,
                            time_t pin_in_cache, char *hostname, int host_len)
 {

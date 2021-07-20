@@ -57,9 +57,9 @@ public:
   // Stop the process manager, dropping any unprocessed messages.
   void stop();
 
-  inkcoreapi void signalConfigFileChild(const char *parent, const char *child);
-  inkcoreapi void signalManager(int msg_id, const char *data_str);
-  inkcoreapi void signalManager(int msg_id, const char *data_raw, int data_len);
+  void signalConfigFileChild(const char *parent, const char *child);
+  void signalManager(int msg_id, const char *data_str);
+  void signalManager(int msg_id, const char *data_raw, int data_len);
 
   /** Send a management message of type @a msg_id with @a text.
    *
@@ -68,9 +68,9 @@ public:
    *
    * A terminating null character is added automatically.
    */
-  inkcoreapi void signalManager(int msg_id, std::string_view text);
+  void signalManager(int msg_id, std::string_view text);
 
-  inkcoreapi void signalManager(MgmtMessageHdr *mh);
+  void signalManager(MgmtMessageHdr *mh);
 
   void reconfigure();
   void initLMConnection();
@@ -112,4 +112,4 @@ private:
   static void *processManagerThread(void *arg);
 };
 
-inkcoreapi extern ProcessManager *pmgmt;
+extern ProcessManager *pmgmt;

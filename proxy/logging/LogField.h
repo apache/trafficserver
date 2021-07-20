@@ -174,7 +174,7 @@ public:
     return m_time_field;
   }
 
-  inkcoreapi void set_http_header_field(LogAccess *lad, LogField::Container container, char *field, char *buf, int len);
+  void set_http_header_field(LogAccess *lad, LogField::Container container, char *field, char *buf, int len);
   void set_aggregate_op(Aggregate agg_op);
   void update_aggregate(int64_t val);
 

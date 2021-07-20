@@ -55,7 +55,7 @@ public:
      @param block block chain to add.
 
    */
-  inkcoreapi void append_block(IOBufferBlock *block);
+  void append_block(IOBufferBlock *block);
 
   IpEndpoint from; // what address came from
   IpEndpoint to;   // what address to send to

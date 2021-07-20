@@ -172,7 +172,7 @@ public:
   static constexpr int DEFAULT_SIZE = 2048;
 
   void init();
-  inkcoreapi void destroy();
+  void destroy();
 
   // PtrHeap allocation
   HdrHeapObjImpl *allocate_obj(int nbytes, int type);
@@ -185,8 +185,8 @@ public:
   void free_string(const char *s, int len);
 
   // Marshalling
-  inkcoreapi int marshal_length();
-  inkcoreapi int marshal(char *buf, int length);
+  int marshal_length();
+  int marshal(char *buf, int length);
   int unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, RefCountObj *block_ref);
   /// Computes the valid data size of an unmarshalled instance.
   /// Callers should round up to HDR_PTR_SIZE to get the actual footprint.
@@ -499,6 +499,6 @@ HdrHeapSDKHandle::set(const HdrHeapSDKHandle *from)
 }
 
 HdrStrHeap *new_HdrStrHeap(int requested_size);
-inkcoreapi HdrHeap *new_HdrHeap(int size = HdrHeap::DEFAULT_SIZE);
+HdrHeap *new_HdrHeap(int size = HdrHeap::DEFAULT_SIZE);
 
 void hdr_heap_test();

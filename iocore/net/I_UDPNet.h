@@ -72,7 +72,7 @@ public:
      @return Action* Always returns ACTION_RESULT_DONE if socket was
      created successfully, or ACTION_IO_ERROR if not.
   */
-  inkcoreapi Action *UDPBind(Continuation *c, sockaddr const *addr, int fd = -1, int send_bufsize = 0, int recv_bufsize = 0);
+  Action *UDPBind(Continuation *c, sockaddr const *addr, int fd = -1, int send_bufsize = 0, int recv_bufsize = 0);
 
   // Regarding sendto_re, sendmsg_re, recvfrom_re:
   // * You may be called back on 'c' with completion or error status.
@@ -102,7 +102,7 @@ public:
                       bool useReadCont = true, int timeout = 0);
 };
 
-inkcoreapi extern UDPNetProcessor &udpNet;
+extern UDPNetProcessor &udpNet;
 extern EventType ET_UDP;
 
 #include "I_UDPPacket.h"

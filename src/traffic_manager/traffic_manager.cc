@@ -85,14 +85,14 @@ extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer,
 
 static AppVersionInfo appVersionInfo; // Build info for this application
 
-static inkcoreapi DiagsConfig *diagsConfig = nullptr;
-static char debug_tags[1024]               = "";
-static char action_tags[1024]              = "";
-static int proxy_off                       = false;
-static int listen_off                      = false;
-static char bind_stdout[512]               = "";
-static char bind_stderr[512]               = "";
-static const char *mgmt_path               = nullptr;
+static DiagsConfig *diagsConfig = nullptr;
+static char debug_tags[1024]    = "";
+static char action_tags[1024]   = "";
+static int proxy_off            = false;
+static int listen_off           = false;
+static char bind_stdout[512]    = "";
+static char bind_stderr[512]    = "";
+static const char *mgmt_path    = nullptr;
 
 // By default, set the current directory as base
 static const char *recs_conf = ts::filename::RECORDS;

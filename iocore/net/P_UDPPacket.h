@@ -55,7 +55,7 @@ public:
   int in_heap               = 0;
 };
 
-inkcoreapi extern ClassAllocator<UDPPacketInternal> udpPacketAllocator;
+extern ClassAllocator<UDPPacketInternal> udpPacketAllocator;
 
 TS_INLINE
 UDPPacketInternal::UDPPacketInternal()

@@ -23,11 +23,6 @@
 
 #pragma once
 
-#define inkliapi
-#define inkcoreapi
-#define ink_undoc_liapi
-#define ink_undoc_coreapi inkcoreapi
-
 #if defined(__GNUC__) || defined(__clang__)
 #ifndef likely
 #define likely(x) __builtin_expect(!!(x), 1)

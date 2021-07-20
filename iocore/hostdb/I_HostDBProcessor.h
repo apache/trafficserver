@@ -471,7 +471,7 @@ struct HostDBProcessor : public Processor {
   static Options const DEFAULT_OPTIONS;
 
   HostDBProcessor() {}
-  inkcoreapi Action *getbyname_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
+  Action *getbyname_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
 
   Action *getbynameport_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
 
@@ -542,6 +542,6 @@ public:
 
 void run_HostDBTest();
 
-extern inkcoreapi HostDBProcessor hostDBProcessor;
+extern HostDBProcessor hostDBProcessor;
 
 void ink_hostdb_init(ts::ModuleVersion version);

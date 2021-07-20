@@ -71,9 +71,9 @@ typedef unsigned int CTypeResult;
 /* shut up the DEC compiler */
 #define is_http_field_value_BIT (((CTypeResult)1) << 31)
 
-extern ink_undoc_liapi const CTypeResult parseRulesCType[];
-inkcoreapi extern const char parseRulesCTypeToUpper[];
-inkcoreapi extern const char parseRulesCTypeToLower[];
+extern const CTypeResult parseRulesCType[];
+extern const char parseRulesCTypeToUpper[];
+extern const char parseRulesCTypeToLower[];
 
 class ParseRules
 {

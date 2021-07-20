@@ -48,10 +48,10 @@
  *===========================================================================*/
 /* these are supposed to be fast */
 
-inkcoreapi char *ink_memcpy_until_char(char *dst, char *src, unsigned int n, unsigned char c);
-inkcoreapi char *ink_string_concatenate_strings(char *dest, ...);
-inkcoreapi char *ink_string_concatenate_strings_n(char *dest, int n, ...);
-inkcoreapi char *ink_string_append(char *dest, char *src, int n);
+char *ink_memcpy_until_char(char *dst, char *src, unsigned int n, unsigned char c);
+char *ink_string_concatenate_strings(char *dest, ...);
+char *ink_string_concatenate_strings_n(char *dest, int n, ...);
+char *ink_string_append(char *dest, char *src, int n);
 
 /*
  * Copy src to string dst of size siz.  At most siz-1 characters

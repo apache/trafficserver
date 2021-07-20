@@ -76,7 +76,7 @@ struct StatPageData {
 struct StatPagesManager {
   void init();
 
-  inkcoreapi void register_http(const char *hostname, StatPagesFunc func);
+  void register_http(const char *hostname, StatPagesFunc func);
 
   // Private
   Action *handle_http(Continuation *cont, HTTPHdr *header);
@@ -86,7 +86,7 @@ struct StatPagesManager {
   ink_mutex stat_pages_mutex;
 };
 
-inkcoreapi extern StatPagesManager statPagesManager;
+extern StatPagesManager statPagesManager;
 
 // Stole Pete's code for formatting the page and slapped it here
 //   for easy reuse
@@ -97,23 +97,23 @@ public:
   ~BaseStatPagesHandler() override { resp_clear(); };
 
 protected:
-  inkcoreapi void resp_clear();
-  inkcoreapi void resp_add(const char *fmt, ...);
-  inkcoreapi void resp_add_sep();
-  inkcoreapi void resp_begin(const char *title);
-  inkcoreapi void resp_end();
+  void resp_clear();
+  void resp_add(const char *fmt, ...);
+  void resp_add_sep();
+  void resp_begin(const char *title);
+  void resp_end();
   void resp_begin_numbered();
   void resp_end_numbered();
-  inkcoreapi void resp_begin_unnumbered();
-  inkcoreapi void resp_end_unnumbered();
-  inkcoreapi void resp_begin_item();
+  void resp_begin_unnumbered();
+  void resp_end_unnumbered();
+  void resp_begin_item();
   void resp_end_item();
-  inkcoreapi void resp_begin_table(int border, int columns, int percent);
-  inkcoreapi void resp_end_table();
-  inkcoreapi void resp_begin_row();
-  inkcoreapi void resp_end_row();
-  inkcoreapi void resp_begin_column(int percent = -1, const char *align = nullptr);
-  inkcoreapi void resp_end_column();
+  void resp_begin_table(int border, int columns, int percent);
+  void resp_end_table();
+  void resp_begin_row();
+  void resp_end_row();
+  void resp_begin_column(int percent = -1, const char *align = nullptr);
+  void resp_end_column();
 
   char *response;
   int response_size;

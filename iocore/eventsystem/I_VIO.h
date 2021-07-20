@@ -118,7 +118,7 @@ public:
     as they hurt system throughput and waste CPU.
 
   */
-  inkcoreapi void reenable();
+  void reenable();
 
   /**
     Reenable the IO operation.
@@ -135,7 +135,7 @@ public:
     as they hurt system throughput and waste CPU.
 
   */
-  inkcoreapi void reenable_re();
+  void reenable_re();
 
   void disable();
   bool is_disabled() const;
