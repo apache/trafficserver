@@ -37,11 +37,11 @@ where :arg:`pathname` is the name of a partition, directory or file, :arg:`size`
 named partition, directory or file (in bytes), and :arg:`volume` is the volume number used in the
 files :file:`volume.config` and :file:`hosting.config`. :arg:`id` is used for seeding the
 :ref:`assignment-table`. You must specify a size for directories; size is optional for files and raw
-partitions. :arg:`volume` and arg:`seed` are optional.
+partitions. :arg:`volume` and :arg:`id` are optional.
 
 .. note::
 
-   The :arg:`volume` option is independent of the :arg:`seed` option and either can be used with or without the other,
+   The :arg:`volume` option is independent of the :arg:`id` option and either can be used with or without the other,
    and their ordering on the line is irrelevant.
 
 .. note::
