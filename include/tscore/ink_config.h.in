@@ -84,6 +84,8 @@
 #define TS_USE_HRW_GEOIP @use_hrw_geoip@
 #define TS_USE_HRW_MAXMINDDB @use_hrw_maxminddb@
 
+#define TS_HAS_BORINGOCSP @has_boringocsp@
+
 #define TS_HAS_SO_PEERCRED @has_so_peercred@
 
 /* OS API definitions */

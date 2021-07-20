@@ -25,10 +25,21 @@
 
 #if TS_USE_TLS_OCSP
 #include <openssl/ssl.h>
+
+#if TS_HAS_BORINGOCSP
+#include <boringocsp/ocsp.h>
+#else
 #include <openssl/ocsp.h>
+#endif
 
 void ssl_stapling_ex_init();
 bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const char *rsp_file);
 void ocsp_update();
+
+#ifndef OPENSSL_IS_BORINGSSL
 int ssl_callback_ocsp_stapling(SSL *);
+#else
+int ssl_callback_ocsp_stapling(SSL *, void *);
+#endif
+
 #endif
