@@ -7433,6 +7433,7 @@ TSHostLookup(TSCont contp, const char *hostname, size_t namelen)
   auto bouncer          = INKContAllocator.alloc();
   bouncer->m_event_func = &TSHostLookupTrampoline;
   bouncer->mdata        = contp;
+  bouncer->mutex        = reinterpret_cast<INKContInternal *>(contp)->mutex;
   return (TSAction)hostDBProcessor.getbyname_re(bouncer, hostname, namelen);
 }
 
