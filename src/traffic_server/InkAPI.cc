@@ -5679,6 +5679,7 @@ TSReturnCode
 TSHttpTxnAborted(TSHttpTxn txnp, bool *client_abort)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(client_abort != nullptr);
 
   *client_abort = false;
   HttpSM *sm    = (HttpSM *)txnp;
