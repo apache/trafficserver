@@ -773,7 +773,7 @@ isWriteable(TSMBuffer bufp)
 static MIMEFieldSDKHandle *
 sdk_alloc_field_handle(TSMBuffer /* bufp ATS_UNUSED */, MIMEHdrImpl *mh)
 {
-  MIMEFieldSDKHandle *handle = mHandleAllocator.alloc();
+  MIMEFieldSDKHandle *handle = THREAD_ALLOC(mHandleAllocator, this_thread());
 
   // TODO: Should remove this when memory allocation can't fail.
   sdk_assert(sdk_sanity_check_null_ptr((void *)handle) == TS_SUCCESS);
@@ -788,7 +788,7 @@ static void
 sdk_free_field_handle(TSMBuffer bufp, MIMEFieldSDKHandle *field_handle)
 {
   if (sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS) {
-    mHandleAllocator.free(field_handle);
+    THREAD_FREE(field_handle, mHandleAllocator, this_thread());
   }
 }
 
