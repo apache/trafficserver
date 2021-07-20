@@ -163,6 +163,25 @@ Returns true if |TS| was able to successfully update the access time on the
 file at ``<path>``. This condition will return false if the file does not exist
 or |TS| cannot access it for any other reason.
 
+CACHE
+~~~~~
+::
+
+    cond %{CACHE} <operand>
+
+This condition provides the server's cache lookup results to inform headers 
+where the requested data was generated from. The cache values are: 
+
+  ==========  ===========
+  Value       Description
+  ==========  ===========
+  none        No cache lookup was attempted.
+  miss        The object was not found in the cache.
+  hit-stale   The object was found in the cache, but it was stale.
+  hit-fresh   The object was fresh in the cache.
+  skipped     The cache lookup was skipped.
+  ==========  ===========
+
 CLIENT-HEADER
 ~~~~~~~~~~~~~
 ::

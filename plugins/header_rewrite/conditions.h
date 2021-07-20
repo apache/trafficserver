@@ -587,7 +587,7 @@ protected:
 // Cache Lookup Results
 class ConditionCache : public Condition
 {
-  typedef Matchers<std::string> MatcherType;
+  using MatcherType = Matchers<std::string>;
 
 public:
   ConditionCache() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCache"); }
