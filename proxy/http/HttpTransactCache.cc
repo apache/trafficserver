@@ -1250,27 +1250,32 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-None-Match: may match weakly //
   if (request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
-    int raw_etags_len, comma_sep_tag_list_len;
+    int raw_etags_len              = 0;
+    int comma_sep_tag_list_len     = 0;
     const char *raw_etags          = response->value_get(MIME_FIELD_ETAG, MIME_LEN_ETAG, &raw_etags_len);
     const char *comma_sep_tag_list = nullptr;
 
     if (raw_etags) {
       comma_sep_tag_list = request->value_get(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, &comma_sep_tag_list_len);
-      if (!comma_sep_tag_list) {
-        comma_sep_tag_list     = "";
-        comma_sep_tag_list_len = 0;
-      }
+    } else {
+      raw_etags     = "";
+      raw_etags_len = 0;
+    }
 
-      ////////////////////////////////////////////////////////////////////////
-      // If we have an etag and a if-none-match, we are talking to someone  //
-      // who is doing a 1.1 revalidate. Since this is a GET request with no //
-      // sub-ranges, we can do a weak validation.                           //
-      ////////////////////////////////////////////////////////////////////////
-      if (do_strings_match_weakly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
-        return HTTP_STATUS_NOT_MODIFIED;
-      } else {
-        return response->status_get();
-      }
+    if (!comma_sep_tag_list) {
+      comma_sep_tag_list     = "";
+      comma_sep_tag_list_len = 0;
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // If we have an etag and a if-none-match, we are talking to someone  //
+    // who is doing a 1.1 revalidate. Since this is a GET request with no //
+    // sub-ranges, we can do a weak validation.                           //
+    ////////////////////////////////////////////////////////////////////////
+    if (do_strings_match_weakly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
+      return HTTP_STATUS_NOT_MODIFIED;
+    } else {
+      return response->status_get();
     }
   }
 
@@ -1319,16 +1324,14 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
     if (raw_etags) {
       comma_sep_tag_list = request->value_get(MIME_FIELD_IF_MATCH, MIME_LEN_IF_MATCH, &comma_sep_tag_list_len);
+    } else {
+      raw_etags     = "";
+      raw_etags_len = 0;
     }
 
     if (!comma_sep_tag_list) {
       comma_sep_tag_list     = "";
       comma_sep_tag_list_len = 0;
-    }
-
-    if (!raw_etags) {
-      raw_etags     = "";
-      raw_etags_len = 0;
     }
 
     if (do_strings_match_strongly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
