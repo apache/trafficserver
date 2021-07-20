@@ -380,8 +380,6 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 static void
 InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
 {
-  TSMLoc dst = TS_NULL_MLOC;
-
   struct {
     char *ptr;
     int len;
@@ -392,14 +390,11 @@ InjectEffectiveURLHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   strval.ptr = TSHttpTxnEffectiveUrlStringGet(txn, &strval.len);
 
   if (strval.ptr != nullptr && strval.len > 0) {
-    dst = FindOrMakeHdrField(buffer, hdr, "X-Effective-URL", lengthof("X-Effective-URL"));
+    TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Effective-URL", lengthof("X-Effective-URL"));
     if (dst != TS_NULL_MLOC) {
       TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, strval.ptr, strval.len) == TS_SUCCESS);
+      TSHandleMLocRelease(buffer, hdr, dst);
     }
-  }
-
-  if (dst != TS_NULL_MLOC) {
-    TSHandleMLocRelease(buffer, hdr, dst);
   }
 
   TSfree(strval.ptr);
