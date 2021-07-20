@@ -36,17 +36,6 @@
 ////
 // NetVConnection
 //
-Action *
-NetVConnection::send_OOB(Continuation *, char *, int)
-{
-  return ACTION_RESULT_DONE;
-}
-
-void
-NetVConnection::cancel_OOB()
-{
-  return;
-}
 
 /**
    PROXY Protocol check with IOBufferReader

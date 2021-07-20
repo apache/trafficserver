@@ -88,8 +88,6 @@
 */
 #define VC_EVENT_ACTIVE_TIMEOUT (VC_EVENT_EVENTS_START + 6)
 
-#define VC_EVENT_OOB_COMPLETE (VC_EVENT_EVENTS_START + 7)
-
 //
 // Event names
 //

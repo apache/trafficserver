@@ -473,21 +473,6 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override = 0;
 
   /**
-    Sends out of band messages over the connection. This function
-    is used to send out of band messages (is this still useful?).
-    cont is called back with VC_EVENT_OOB_COMPLETE - on successful
-    send or VC_EVENT_EOS - if the other side has shutdown the
-    connection. These callbacks could be re-entrant. Only one
-    send_OOB can be in progress at any time for a VC.
-
-    @param cont to be called back with events.
-    @param buf message buffer.
-    @param len length of the message.
-
-  */
-  virtual Action *send_OOB(Continuation *cont, char *buf, int len);
-
-  /**
     Return the server name that is appropriate for the network VC type
   */
   virtual const char *
@@ -495,15 +480,6 @@ public:
   {
     return nullptr;
   }
-
-  /**
-    Cancels a scheduled send_OOB. Part of the message could have
-    been sent already. Not callbacks to the cont are made after
-    this call. The Action returned by send_OOB should not be accessed
-    after cancel_OOB.
-
-  */
-  virtual void cancel_OOB();
 
   ////////////////////////////////////////////////////////////
   // Set the timeouts associated with this connection.      //
