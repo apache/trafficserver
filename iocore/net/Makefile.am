@@ -33,6 +33,7 @@ AM_CPPFLAGS += \
 	-I$(abs_top_srcdir)/proxy/http \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@ \
+	@BORINGOCSP_INCLUDES@ \
 	@YAMLCPP_INCLUDES@
 
 TESTS = $(check_PROGRAMS)
