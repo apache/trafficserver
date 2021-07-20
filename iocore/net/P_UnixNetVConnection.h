@@ -94,9 +94,6 @@ public:
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf) override;
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) override;
 
-  Continuation *read_vio_cont() override;
-  Continuation *write_vio_cont() override;
-
   bool get_data(int id, void *data) override;
 
   const char *

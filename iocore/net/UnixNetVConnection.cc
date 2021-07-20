@@ -633,18 +633,6 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
   return &write.vio;
 }
 
-Continuation *
-UnixNetVConnection::read_vio_cont()
-{
-  return read.vio.cont;
-}
-
-Continuation *
-UnixNetVConnection::write_vio_cont()
-{
-  return write.vio.cont;
-}
-
 void
 UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 {
