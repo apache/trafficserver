@@ -194,6 +194,10 @@ BUILDS
 DEBUG
 RELEASE
 
+# lcov generated files.
+*.gcda
+*.gcno
+
 # autest
 tests/env-test/
 tests/proxy-verifier
