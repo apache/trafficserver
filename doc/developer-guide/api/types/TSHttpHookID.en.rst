@@ -38,6 +38,8 @@ Enumeration Members
 
    .. c:enumerator:: TS_HTTP_READ_REQUEST_HDR_HOOK
 
+   .. c:enumerator:: TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK
+
    .. c:enumerator:: TS_HTTP_OS_DNS_HOOK
 
    .. c:enumerator:: TS_HTTP_SEND_REQUEST_HDR_HOOK
