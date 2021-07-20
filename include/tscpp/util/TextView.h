@@ -1265,6 +1265,32 @@ namespace literals
   constexpr ts::TextView operator"" _tv(const char *s, size_t n) { return {s, n}; }
 } // namespace literals
 
+/** Functor for STL containers that need caseless comparisons of standard string types.
+ *
+ * For example a @c std::set of strings with caseless comparison would be
+ *
+ * @code
+ * std::set<std::string, ts::caseless_compare> strings;
+ * @endcode
+ */
+struct caseless_compare {
+  bool
+  operator()(std::string_view const &lhs, std::string_view const &rhs) const
+  {
+    return strcasecmp(lhs, rhs);
+  }
+  bool
+  operator()(TextView const &lhs, TextView const &rhs) const
+  {
+    return strcasecmp(lhs, rhs);
+  }
+  bool
+  operator()(std::string const &lhs, std::string const &rhs) const
+  {
+    return strcasecmp(lhs, rhs);
+  }
+};
+
 } // namespace ts
 
 namespace std

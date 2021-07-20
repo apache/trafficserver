@@ -110,16 +110,15 @@ LogAccess::init()
 int
 LogAccess::marshal_proxy_host_name(char *buf)
 {
-  char *str        = nullptr;
-  int len          = 0;
-  Machine *machine = Machine::instance();
+  int len         = 0;
+  char const *str = nullptr;
 
-  if (machine) {
-    str = machine->hostname;
+  if (Machine *machine = Machine::instance(); machine) {
+    str = machine->host_name.c_str();
+    len = machine->host_name.length();
   }
 
-  len = LogAccess::strlen(str);
-
+  len = INK_ALIGN_DEFAULT(len + 1);
   if (buf) {
     marshal_str(buf, str, len);
   }

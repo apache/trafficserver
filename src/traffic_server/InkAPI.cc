@@ -10090,7 +10090,7 @@ TSRemapToUrlGet(TSHttpTxn txnp, TSMLoc *urlLocp)
 TSReturnCode
 TSHostnameIsSelf(const char *hostname, size_t hostname_len)
 {
-  return Machine::instance()->is_self(hostname, hostname_len) ? TS_SUCCESS : TS_ERROR;
+  return Machine::instance()->is_self(std::string_view{hostname, hostname_len}) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
