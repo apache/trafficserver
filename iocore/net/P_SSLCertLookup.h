@@ -40,6 +40,14 @@ enum class SSLCertContextOption {
   OPT_TUNNEL ///< Just tunnel, don't terminate.
 };
 
+/** Used to discern the context type when BoringSSL is used for the SSL implementation.
+ */
+enum class SSLCertContextType {
+  GENERIC, ///< Generic Context (can be either EC or RSA)
+  RSA,     ///< RSA-based Context
+  EC       ///< EC-based Context
+};
+
 /**
    @brief Gather user provided settings from ssl_multicert.config in to this single struct
  */
@@ -100,14 +108,17 @@ public:
     : ctx_mutex(), ctx(c, SSL_CTX_free), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr), keyblock(nullptr)
   {
   }
-  SSLCertContext(shared_SSL_CTX sc, shared_SSLMultiCertConfigParams u)
-    : ctx_mutex(), ctx(sc), opt(u->opt), userconfig(u), keyblock(nullptr)
+
+  SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, shared_SSLMultiCertConfigParams u)
+    : ctx_mutex(), ctx(sc), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(nullptr)
   {
   }
-  SSLCertContext(shared_SSL_CTX sc, shared_SSLMultiCertConfigParams u, shared_ssl_ticket_key_block kb)
-    : ctx_mutex(), ctx(sc), opt(u->opt), userconfig(u), keyblock(kb)
+
+  SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, shared_SSLMultiCertConfigParams u, shared_ssl_ticket_key_block kb)
+    : ctx_mutex(), ctx(sc), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(kb)
   {
   }
+
   SSLCertContext(SSLCertContext const &other);
   SSLCertContext &operator=(SSLCertContext const &other);
   ~SSLCertContext() {}
@@ -117,6 +128,7 @@ public:
   void setCtx(shared_SSL_CTX sc);
   void release();
 
+  SSLCertContextType ctx_type                = SSLCertContextType::GENERIC;
   SSLCertContextOption opt                   = SSLCertContextOption::OPT_NONE; ///< Special handling option.
   shared_SSLMultiCertConfigParams userconfig = nullptr;                        ///< User provided settings
   shared_ssl_ticket_key_block keyblock       = nullptr;                        ///< session keys associated with this address
@@ -124,6 +136,8 @@ public:
 
 struct SSLCertLookup : public ConfigInfo {
   SSLContextStorage *ssl_storage;
+  SSLContextStorage *ec_storage;
+
   shared_SSL_CTX ssl_default;
   bool is_valid = true;
 
@@ -141,7 +155,7 @@ struct SSLCertLookup : public ConfigInfo {
       Exact matches have priority, then wildcards. Only destination based matches are checked.
       @return @c A pointer to the matched context, @c nullptr if no match is found.
   */
-  SSLCertContext *find(const std::string &name) const;
+  SSLCertContext *find(const std::string &name, SSLCertContextType ctxType = SSLCertContextType::GENERIC) const;
 
   // Return the last-resort default TLS context if there is no name or address match.
   SSL_CTX *

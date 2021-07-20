@@ -38,6 +38,7 @@
 #include "P_OCSPStapling.h"
 #include "P_SSLSNI.h"
 #include "P_SSLConfig.h"
+#include "BoringSSLUtils.h"
 #include "ProxyProtocol.h"
 #include "SSLSessionCache.h"
 #include "SSLSessionTicket.h"
@@ -253,16 +254,18 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 }
 
 static int
-set_context_cert(SSL *ssl)
+set_context_cert(SSL *ssl, void *arg)
 {
   shared_SSL_CTX ctx  = nullptr;
   SSL_CTX *verify_ctx = nullptr;
   SSLCertContext *cc  = nullptr;
   SSLCertificateConfig::scoped_config lookup;
-  const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  bool found               = true;
-  int retval               = 1;
+
+  const char *servername     = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  SSLNetVConnection *netvc   = SSLNetVCAccess(ssl);
+  bool found                 = true;
+  int retval                 = 1;
+  SSLCertContextType ctxType = SSLCertContextType::GENERIC;
 
   if (!netvc || netvc->ssl != ssl) {
     Debug("ssl.error", "set_context_cert call back on stale netvc");
@@ -279,11 +282,19 @@ set_context_cert(SSL *ssl)
     goto done;
   }
 
+#ifdef OPENSSL_IS_BORINGSSL
+  if (arg != nullptr) {
+    const SSL_CLIENT_HELLO *client_hello = (const SSL_CLIENT_HELLO *)arg;
+    const bool client_ecdsa_capable      = BoringSSLUtils::isClientEcdsaCapable(client_hello);
+    ctxType                              = client_ecdsa_capable ? SSLCertContextType::EC : SSLCertContextType::RSA;
+  }
+#endif
+
   // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we
   // don't find a name-based match at this point, we *do not* want to mess with the context because we've
   // already made a best effort to find the best match.
   if (likely(servername)) {
-    cc = lookup->find(const_cast<char *>(servername));
+    cc = lookup->find(servername, ctxType);
     if (cc) {
       ctx = cc->getCtx();
     }
@@ -342,6 +353,7 @@ set_context_cert(SSL *ssl)
   }
 
   verify_ctx = SSL_get_SSL_CTX(ssl);
+  // set_context_cert found SSL context for ...
   Debug("ssl", "ssl_cert_callback %s SSL context %p for requested name '%s'", found ? "found" : "using", verify_ctx, servername);
 
   if (verify_ctx == nullptr) {
@@ -410,14 +422,48 @@ ssl_client_hello_callback(SSL *s, int *al, void *arg)
   }
   return SSL_CLIENT_HELLO_SUCCESS;
 }
+#elif defined(OPENSSL_IS_BORINGSSL)
+static ssl_select_cert_result_t
+ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
+{
+  SSL *s = client_hello->ssl;
+  TLSSNISupport *snis = TLSSNISupport::getInstance(s);
+
+  if (snis) {
+    snis->on_client_hello(client_hello);
+    int ret = snis->perform_sni_action();
+    if (ret != SSL_TLSEXT_ERR_OK) {
+      return ssl_select_cert_error;
+    }
+  } else {
+    // This error suggests either of these:
+    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
+    // 2) Call back on stale netvc
+    Debug("ssl.error", "ssl_client_hello_callback was called unexpectedly");
+    return ssl_select_cert_error;
+  }
+
+  SSLNetVConnection *netvc = SSLNetVCAccess(s);
+  if (!netvc || netvc->ssl != s) {
+    Debug("ssl.error", "ssl_client_hello_callback call back on stale netvc");
+    return ssl_select_cert_error;
+  }
+
+  bool reenabled = netvc->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+
+  if (!reenabled) {
+    return ssl_select_cert_retry;
+  }
+  return ssl_select_cert_success;
+}
 #endif
 
 /**
  * Called before either the server or the client certificate is used
- * Return 1 on success, 0 on error, or -1 to pause
+ * Return 1 on success, 0 on error, or -1 to pause, -2 to retry
  */
 static int
-ssl_cert_callback(SSL *ssl, void * /*arg*/)
+ssl_cert_callback(SSL *ssl, void *arg)
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   bool reenabled;
@@ -430,13 +476,17 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
 
   // If we are in tunnel mode, don't select a cert.  Pause!
   if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
+#ifdef OPENSSL_IS_BORINGSSL
+    return -2; // Retry
+#else
     return -1; // Pause
+#endif
   }
 
   // Do the common certificate lookup only once.  If we pause
   // and restart processing, do not execute the common logic again
   if (!netvc->calledHooks(TS_EVENT_SSL_CERT)) {
-    retval = set_context_cert(ssl);
+    retval = set_context_cert(ssl, arg);
     if (retval != 1) {
       return retval;
     }
@@ -463,7 +513,7 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
   TLSSNISupport *snis = TLSSNISupport::getInstance(ssl);
   if (snis) {
     snis->on_servername(ssl, al, arg);
-#if !TS_USE_HELLO_CB
+#if !TS_USE_HELLO_CB && !defined(OPENSSL_IS_BORINGSSL)
     // Only call the SNI actions here if not already performed in the HELLO_CB
     int ret = snis->perform_sni_action();
     if (ret != SSL_TLSEXT_ERR_OK) {
@@ -1099,11 +1149,47 @@ void
 SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 {
   // Make sure the callbacks are set
+#ifndef OPENSSL_IS_BORINGSSL
   SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, nullptr);
   SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
 
 #if TS_USE_HELLO_CB
   SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
+#endif
+#else
+  SSL_CTX_set_select_certificate_cb(ctx, [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
+    ssl_select_cert_result_t res;
+    res = ssl_client_hello_callback(client_hello);
+    if (res == ssl_select_cert_error) {
+      return res;
+    }
+
+    res = (ssl_servername_callback(client_hello->ssl, nullptr, nullptr) == SSL_TLSEXT_ERR_OK) ? ssl_select_cert_success :
+                                                                                                ssl_select_cert_error;
+    if (res == ssl_select_cert_error) {
+      return res;
+    }
+
+    int cbres = ssl_cert_callback(client_hello->ssl, (void *)client_hello);
+    switch (cbres) {
+    case -2:
+      res = ssl_select_cert_retry;
+      break;
+    case -1:
+      res = ssl_select_cert_success;
+      break;
+    case 0:
+      res = ssl_select_cert_error;
+      break;
+    case 1:
+      res = ssl_select_cert_success;
+      break;
+    default:
+      ink_assert(!"unhandled cert result");
+    }
+
+    return res;
+  });
 #endif
 }
 
@@ -1154,99 +1240,147 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
    Initialize SSL_CTX for server
    This is public function because of used by SSLCreateServerContext.
  */
-SSL_CTX *
+std::vector<SSLLoadingContext>
 SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings,
                                               std::set<std::string> &names)
 {
-  const SSLConfigParams *params = this->_params;
+  std::vector<std::vector<std::string>> cert_names;
+  std::vector<std::vector<std::string>> key_names;
+  std::vector<std::string> key_names_list;
 
-  SSL_CTX *ctx = this->default_server_ssl_ctx();
-
-  // disable selected protocols
-  SSL_CTX_set_options(ctx, params->ssl_ctx_options);
-
-  if (!this->_setup_session_cache(ctx)) {
-    goto fail;
+  bool generate_default_ctx = data.cert_names_list.empty();
+  if (!generate_default_ctx) {
+#ifdef OPENSSL_IS_BORINGSSL
+    for (auto const &name : data.cert_names_list) {
+      cert_names.emplace_back(std::vector({name}));
+    }
+    for (auto const &name : data.key_list) {
+      key_names.emplace_back(std::vector({name}));
+    }
+#else
+    if (!data.cert_names_list.empty()) {
+      cert_names.emplace_back(data.cert_names_list);
+      key_names.emplace_back(data.key_list);
+    }
+#endif
+  } else {
+    // In the case of no cert_names, we still want to create a
+    // ctx with all the bells and whistles (as much as possible)
+    cert_names.emplace_back(std::vector({std::string("default")}));
+    key_names.emplace_back(std::vector({std::string("default")}));
   }
 
-#ifdef SSL_MODE_RELEASE_BUFFERS
-  Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
-  SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
-#endif
+  SSLCertContextType ctx_type = SSLCertContextType::GENERIC;
+  std::vector<SSLLoadingContext> ret;
+  unsigned int i = 0;
+  SSL_CTX *ctx   = nullptr;
+  for (auto const &cert_names_list : cert_names) {
+    if (i < key_names.size()) {
+      key_names_list = key_names[i];
+    } else {
+      key_names_list.clear();
+    }
 
-#ifdef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
-  SSL_CTX_set_options(ctx, SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
-#endif
+    ctx = this->default_server_ssl_ctx();
 
-  if (sslMultCertSettings) {
-    if (!this->_setup_dialog(ctx, sslMultCertSettings)) {
+    ctx_type = (!generate_default_ctx && i < data.cert_type_list.size()) ? data.cert_type_list[i] : SSLCertContextType::GENERIC;
+
+    Debug("ssl", "Creating new context %p cert_count=%ld initial: %s", ctx, cert_names_list.size(), cert_names_list[0].c_str());
+
+    // disable selected protocols
+    SSL_CTX_set_options(ctx, _params->ssl_ctx_options);
+
+    if (!this->_setup_session_cache(ctx)) {
       goto fail;
     }
 
-    if (sslMultCertSettings->cert) {
-      if (!SSLMultiCertConfigLoader::load_certs(ctx, data, params, sslMultCertSettings)) {
+#ifdef SSL_MODE_RELEASE_BUFFERS
+    Debug("ssl", "enabling SSL_MODE_RELEASE_BUFFERS");
+    SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
+#endif
+
+#ifdef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
+    SSL_CTX_set_options(ctx, SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
+#endif
+
+    if (sslMultCertSettings) {
+      if (!this->_setup_dialog(ctx, sslMultCertSettings)) {
+        goto fail;
+      }
+
+      if (sslMultCertSettings->cert && !generate_default_ctx) {
+        if (!SSLMultiCertConfigLoader::load_certs(ctx, cert_names_list, key_names_list, data, _params, sslMultCertSettings)) {
+          goto fail;
+        }
+      }
+
+      if (!this->_set_verify_path(ctx, sslMultCertSettings)) {
+        goto fail;
+      }
+
+      if (!this->_setup_session_ticket(ctx, sslMultCertSettings)) {
         goto fail;
       }
     }
 
-    if (!this->_set_verify_path(ctx, sslMultCertSettings)) {
+    if (!this->_setup_client_cert_verification(ctx)) {
       goto fail;
     }
 
-    if (!this->_setup_session_ticket(ctx, sslMultCertSettings)) {
+    if (!SSLMultiCertConfigLoader::set_session_id_context(ctx, _params, sslMultCertSettings)) {
       goto fail;
     }
-  }
 
-  if (!this->_setup_client_cert_verification(ctx)) {
-    goto fail;
-  }
+    if (!this->_set_cipher_suites_for_legacy_versions(ctx)) {
+      goto fail;
+    }
 
-  if (!SSLMultiCertConfigLoader::set_session_id_context(ctx, params, sslMultCertSettings)) {
-    goto fail;
-  }
+    if (!this->_set_cipher_suites(ctx)) {
+      goto fail;
+    }
 
-  if (!this->_set_cipher_suites_for_legacy_versions(ctx)) {
-    goto fail;
-    ;
-  }
-  if (!this->_set_cipher_suites(ctx)) {
-    goto fail;
-  }
-  if (!this->_set_curves(ctx)) {
-    goto fail;
-  }
+    if (!this->_set_curves(ctx)) {
+      goto fail;
+    }
 
-  if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
-    goto fail;
-  }
+    if (!ssl_context_enable_dhe(_params->dhparamsFile, ctx)) {
+      goto fail;
+    }
 
-  ssl_context_enable_ecdh(ctx);
+    ssl_context_enable_ecdh(ctx);
 
-  if (sslMultCertSettings && sslMultCertSettings->dialog) {
-    SSLMultiCertConfigLoader::clear_pw_references(ctx);
-  }
+    if (sslMultCertSettings && sslMultCertSettings->dialog) {
+      SSLMultiCertConfigLoader::clear_pw_references(ctx);
+    }
 
-  if (!this->_set_info_callback(ctx)) {
-    goto fail;
-  };
-  if (!this->_set_npn_callback(ctx)) {
-    goto fail;
-  }
-  if (!this->_set_alpn_callback(ctx)) {
-    goto fail;
-  }
+    if (!this->_set_info_callback(ctx)) {
+      goto fail;
+    }
 
-  if (SSLConfigParams::init_ssl_ctx_cb) {
-    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
-  }
+    if (!this->_set_npn_callback(ctx)) {
+      goto fail;
+    }
 
-  return ctx;
+    if (!this->_set_alpn_callback(ctx)) {
+      goto fail;
+    }
+
+    if (SSLConfigParams::init_ssl_ctx_cb) {
+      SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+    }
+
+    ret.emplace_back(SSLLoadingContext(ctx, ctx_type));
+    i++;
+  }
+  return ret;
 
 fail:
+  ink_assert(ctx != nullptr);
   SSLMultiCertConfigLoader::clear_pw_references(ctx);
-  SSLReleaseContext(ctx);
-  return nullptr;
+  SSL_CTX_free(ctx);
+  ret.emplace_back(SSLLoadingContext(ctx, ctx_type));
+
+  return ret;
 }
 
 bool
@@ -1470,31 +1604,40 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
                        const char *key_path)
 {
   SSLMultiCertConfigLoader loader(params);
-  std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ctx(nullptr, &SSL_CTX_free);
   std::vector<X509 *> cert_list;
   std::set<std::string> common_names;
   std::unordered_map<int, std::set<std::string>> unique_names;
   SSLMultiCertConfigLoader::CertLoadData data;
-  if (loader.load_certs_and_cross_reference_names(cert_list, data, params, sslMultiCertSettings, common_names, unique_names)) {
-    ctx.reset(loader.init_server_ssl_ctx(data, sslMultiCertSettings, common_names));
+  SSLCertContextType cert_type;
+  if (!loader.load_certs_and_cross_reference_names(cert_list, data, params, sslMultiCertSettings, common_names, unique_names,
+                                                   &cert_type)) {
+    return nullptr;
   }
   for (auto &i : cert_list) {
     X509_free(i);
   }
-  if (ctx && cert_path) {
-    if (!SSL_CTX_use_certificate_file(ctx.get(), cert_path, SSL_FILETYPE_PEM)) {
-      SSLError("SSLCreateServerContext(): failed to load server certificate.");
-      ctx = nullptr;
-    } else if (!key_path || key_path[0] == '\0') {
-      key_path = cert_path;
-    }
-    if (ctx) {
-      if (!SSL_CTX_use_PrivateKey_file(ctx.get(), key_path, SSL_FILETYPE_PEM)) {
-        SSLError("SSLCreateServerContext(): failed to load server private key.");
+
+  std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ctx(nullptr, &SSL_CTX_free);
+
+  std::vector<SSLLoadingContext> ctxs = loader.init_server_ssl_ctx(data, sslMultiCertSettings, common_names);
+  for (auto const &loaderctx : ctxs) {
+    ctx.reset(loaderctx.ctx);
+
+    if (ctx && cert_path) {
+      if (!SSL_CTX_use_certificate_file(ctx.get(), cert_path, SSL_FILETYPE_PEM)) {
+        SSLError("SSLCreateServerContext(): failed to load server certificate.");
         ctx = nullptr;
-      } else if (!SSL_CTX_check_private_key(ctx.get())) {
-        SSLError("SSLCreateServerContext(): server private key does not match server certificate.");
-        ctx = nullptr;
+      } else if (!key_path || key_path[0] == '\0') {
+        key_path = cert_path;
+      }
+      if (ctx) {
+        if (!SSL_CTX_use_PrivateKey_file(ctx.get(), key_path, SSL_FILETYPE_PEM)) {
+          SSLError("SSLCreateServerContext(): failed to load server private key.");
+          ctx = nullptr;
+        } else if (!SSL_CTX_check_private_key(ctx.get())) {
+          SSLError("SSLCreateServerContext(): server private key does not match server certificate.");
+          ctx = nullptr;
+        }
       }
     }
   }
@@ -1512,11 +1655,15 @@ SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams ss
   std::vector<X509 *> cert_list;
   const SSLConfigParams *params = this->_params;
 
-  this->load_certs_and_cross_reference_names(cert_list, data, params, sslMultCertSettings.get(), common_names, unique_names);
+  SSLCertContextType cert_type;
+  if (!this->load_certs_and_cross_reference_names(cert_list, data, params, sslMultCertSettings.get(), common_names, unique_names,
+                                                  &cert_type)) {
+    return false;
+  }
 
   int i           = 0;
   bool good_certs = true;
-  for (auto cert : cert_list) {
+  for (auto const &cert : cert_list) {
     const char *current_cert_name = data.cert_names_list[i].c_str();
     if (0 > SSLMultiCertConfigLoader::check_server_cert_now(cert, current_cert_name)) {
       /* At this point, we know cert is bad, and we've already printed a
@@ -1550,13 +1697,13 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
     return false;
   }
 
-  if (!common_names.empty()) {
-    shared_SSL_CTX ctx(this->init_server_ssl_ctx(data, sslMultCertSettings.get(), common_names), SSL_CTX_free);
-
-    if (!ctx || !sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, common_names)) {
+  std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, sslMultCertSettings.get(), common_names);
+  for (const auto &loadingctx : ctxs) {
+    shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
+    if (!sslMultCertSettings || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, ctx, loadingctx.ctx_type, common_names)) {
       retval = false;
       std::string names;
-      for (auto name : data.cert_names_list) {
+      for (auto const &name : data.cert_names_list) {
         names.append(name);
         names.append(" ");
       }
@@ -1577,11 +1724,14 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
     single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
     single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
 
-    shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_data, sslMultCertSettings.get(), iter->second), SSL_CTX_free);
-    if (!unique_ctx || !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, unique_ctx, iter->second)) {
-      retval = false;
-    } else {
-      lookup->register_cert_secrets(data.cert_names_list, iter->second);
+    std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, sslMultCertSettings.get(), iter->second);
+    for (const auto &loadingctx : ctxs) {
+      shared_SSL_CTX unique_ctx(loadingctx.ctx, SSL_CTX_free);
+      if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, unique_ctx, loadingctx.ctx_type, iter->second)) {
+        retval = false;
+      } else {
+        lookup->register_cert_secrets(data.cert_names_list, iter->second);
+      }
     }
   }
   return retval;
@@ -1611,15 +1761,18 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
     }
 
     if (!common_names.empty()) {
-      shared_SSL_CTX ctx(this->init_server_ssl_ctx(data, policy_iter->get(), common_names), SSL_CTX_free);
+      std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(data, policy_iter->get(), common_names);
+      for (const auto &loadingctx : ctxs) {
+        shared_SSL_CTX ctx(loadingctx.ctx, SSL_CTX_free);
 
-      if (!ctx) {
-        retval = false;
-      } else {
-        for (auto name : common_names) {
-          SSLCertContext *cc = lookup->find(name);
-          if (cc && cc->userconfig.get() == policy_iter->get()) {
-            cc->setCtx(ctx);
+        if (!ctx) {
+          retval = false;
+        } else {
+          for (auto const &name : common_names) {
+            SSLCertContext *cc = lookup->find(name, loadingctx.ctx_type);
+            if (cc && cc->userconfig.get() == policy_iter->get()) {
+              cc->setCtx(ctx);
+            }
           }
         }
       }
@@ -1634,15 +1787,18 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
       single_data.ca_list.push_back(i < data.ca_list.size() ? data.ca_list[i] : "");
       single_data.ocsp_list.push_back(i < data.ocsp_list.size() ? data.ocsp_list[i] : "");
 
-      shared_SSL_CTX unique_ctx(this->init_server_ssl_ctx(single_data, policy_iter->get(), iter->second), SSL_CTX_free);
+      std::vector<SSLLoadingContext> ctxs = this->init_server_ssl_ctx(single_data, policy_iter->get(), iter->second);
+      for (auto const &loadingctx : ctxs) {
+        shared_SSL_CTX unique_ctx(loadingctx.ctx, SSL_CTX_free);
 
-      if (!unique_ctx) {
-        retval = false;
-      } else {
-        for (auto name : iter->second) {
-          SSLCertContext *cc = lookup->find(name);
-          if (cc && cc->userconfig.get() == policy_iter->get()) {
-            cc->setCtx(unique_ctx);
+        if (!unique_ctx) {
+          retval = false;
+        } else {
+          for (auto const &name : iter->second) {
+            SSLCertContext *cc = lookup->find(name, loadingctx.ctx_type);
+            if (cc && cc->userconfig.get() == policy_iter->get()) {
+              cc->setCtx(unique_ctx);
+            }
           }
         }
       }
@@ -1653,7 +1809,7 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
 
 bool
 SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings,
-                                                shared_SSL_CTX ctx, std::set<std::string> &names)
+                                                shared_SSL_CTX ctx, SSLCertContextType ctx_type, std::set<std::string> &names)
 {
   bool inserted                        = false;
   shared_ssl_ticket_key_block keyblock = nullptr;
@@ -1665,7 +1821,8 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings->addr) {
     if (strcmp(sslMultCertSettings->addr, "*") == 0) {
-      if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, sslMultCertSettings, keyblock)) >= 0) {
+      Debug("ssl", "Addr is '*'; setting %p to default", ctx.get());
+      if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, ctx_type, sslMultCertSettings, keyblock)) >= 0) {
         inserted            = true;
         lookup->ssl_default = ctx;
         this->_set_handshake_callbacks(ctx.get());
@@ -1674,7 +1831,7 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
       IpEndpoint ep;
 
       if (ats_ip_pton(sslMultCertSettings->addr, &ep) == 0) {
-        if (lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings, keyblock)) >= 0) {
+        if (lookup->insert(ep, SSLCertContext(ctx, ctx_type, sslMultCertSettings, keyblock)) >= 0) {
           inserted = true;
         }
       } else {
@@ -1687,8 +1844,8 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
   // Insert additional mappings. Note that this maps multiple keys to the same value, so when
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
-  for (auto sni_name : names) {
-    if (lookup->insert(sni_name.c_str(), SSLCertContext(ctx, sslMultCertSettings, keyblock)) >= 0) {
+  for (auto const &sni_name : names) {
+    if (lookup->insert(sni_name.c_str(), SSLCertContext(ctx, ctx_type, sslMultCertSettings, keyblock)) >= 0) {
       inserted = true;
     }
   }
@@ -1797,7 +1954,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup)
     switch (ec.value()) {
     case ENOENT:
       Warning("Cannot open SSL certificate configuration from %s - %s", params->configFilePath, strerror(ec.value()));
-      break;
+      return false;
     default:
       Error("Failed to read SSL certificate configuration from %s - %s", params->configFilePath, strerror(ec.value()));
       return false;
@@ -1971,12 +2128,10 @@ get_verify_str(SSL *ssl)
  * of the including certificate
  */
 bool
-SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 *> &cert_list,
-                                                               SSLMultiCertConfigLoader::CertLoadData &data,
-                                                               const SSLConfigParams *params,
-                                                               const SSLMultiCertConfigParams *sslMultCertSettings,
-                                                               std::set<std::string> &common_names,
-                                                               std::unordered_map<int, std::set<std::string>> &unique_names)
+SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
+  std::vector<X509 *> &cert_list, SSLMultiCertConfigLoader::CertLoadData &data, const SSLConfigParams *params,
+  const SSLMultiCertConfigParams *sslMultCertSettings, std::set<std::string> &common_names,
+  std::unordered_map<int, std::set<std::string>> &unique_names, SSLCertContextType *certType)
 {
   SimpleTokenizer cert_tok(sslMultCertSettings && sslMultCertSettings->cert ? (const char *)sslMultCertSettings->cert : "",
                            SSL_CERT_SEPARATE_DELIM);
@@ -2050,6 +2205,27 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
       return false;
     }
 
+    if (certType != nullptr) {
+#ifdef OPENSSL_IS_BORINGSSL
+      std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> public_key(X509_get_pubkey(cert), &EVP_PKEY_free);
+      int pkey_id = EVP_PKEY_id(public_key.get());
+
+      switch (pkey_id) {
+      case EVP_PKEY_EC:
+        *certType = SSLCertContextType::EC;
+        break;
+      case EVP_PKEY_RSA:
+        *certType = SSLCertContextType::RSA;
+        break;
+      default:
+        ink_assert(false);
+      }
+#else
+      *certType = SSLCertContextType::GENERIC;
+#endif
+      data.cert_type_list.push_back(*certType);
+    }
+
     cert_list.push_back(cert);
 
     std::set<std::string> name_set;
@@ -2120,7 +2296,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
         }
       }
       // Anything still in name_set was not in common_names
-      for (auto name : name_set) {
+      for (auto const &name : name_set) {
         auto iter = unique_names.find(cert_index);
         if (iter == unique_names.end()) {
           std::set<std::string> new_set;
@@ -2141,7 +2317,8 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(std::vector<X509 
    @static
  */
 bool
-SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, SSLMultiCertConfigLoader::CertLoadData const &data,
+SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string> &cert_names_list,
+                                     const std::vector<std::string> &key_list, CertLoadData const &data,
                                      const SSLConfigParams *params, const SSLMultiCertConfigParams *sslMultCertSettings)
 {
 #if TS_USE_TLS_OCSP
@@ -2157,13 +2334,15 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, SSLMultiCertConfigLoader::Cer
   }
 #endif /* TS_USE_TLS_OCSP */
 
-  for (size_t i = 0; i < data.cert_names_list.size(); i++) {
-    std::string keyPath = (i < data.key_list.size()) ? data.key_list[i] : "";
+  ink_assert(!cert_names_list.empty());
+
+  for (size_t i = 0; i < cert_names_list.size(); i++) {
+    std::string keyPath = (i < key_list.size()) ? key_list[i] : "";
     std::string_view secret_data;
     std::string_view secret_key_data;
-    params->secrets.getOrLoadSecret(data.cert_names_list[i], keyPath, secret_data, secret_key_data);
+    params->secrets.getOrLoadSecret(cert_names_list[i], keyPath, secret_data, secret_key_data);
     if (secret_data.empty()) {
-      SSLError("failed to load certificate secret for %s", data.cert_names_list[i].c_str());
+      SSLError("failed to load certificate secret for %s", cert_names_list[i].c_str());
       return false;
     }
     scoped_BIO bio(BIO_new_mem_buf(secret_data.data(), secret_data.size()));
@@ -2171,18 +2350,23 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, SSLMultiCertConfigLoader::Cer
     if (bio) {
       cert = PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr);
     }
+
     if (!bio || !cert) {
-      SSLError("failed to load certificate chain from %s", data.cert_names_list[i].c_str());
+      SSLError("failed to load certificate chain from %s", cert_names_list[i].c_str());
       return false;
     }
+
+    Debug("ssl", "for ctx=%p, using certificate %s", ctx, cert_names_list[i].c_str());
     if (!SSL_CTX_use_certificate(ctx, cert)) {
-      SSLError("Failed to assign cert from %s to SSL_CTX", data.cert_names_list[i].c_str());
+      SSLError("Failed to assign cert from %s to SSL_CTX", cert_names_list[i].c_str());
       X509_free(cert);
       return false;
     }
 
     // Load up any additional chain certificates
-    SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
+    if (!SSL_CTX_add_extra_chain_cert_bio(ctx, bio)) {
+      Debug("ssl", "couldn't add chain to %p", ctx);
+    }
 
     if (secret_key_data.empty()) {
       secret_key_data = secret_data;

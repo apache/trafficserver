@@ -710,7 +710,7 @@ cleanup_bio(BIO *&biop)
 void
 SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
 {
-  // Clear the corresponding client CTX's.  They will be lazy loaded later
+  // Clear the corresponding client CTXs.  They will be lazy loaded later
   Debug("ssl", "Update cert %s", cert_secret_name.c_str());
   this->clearCTX(cert_secret_name);
 

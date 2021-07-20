@@ -119,6 +119,8 @@ libinknet_a_SOURCES = \
 	ALPNSupport.cc \
 	BIO_fastopen.cc \
 	BIO_fastopen.h \
+	BoringSSLUtils.cc \
+	BoringSSLUtils.h \
 	Connection.cc \
 	I_Net.h \
 	I_NetProcessor.h \
@@ -143,7 +145,7 @@ libinknet_a_SOURCES = \
 	P_Socks.h \
 	P_SSLCertLookup.h \
 	P_SSLConfig.h \
-        P_SSLSecret.h \
+	P_SSLSecret.h \
 	P_SSLNetAccept.h \
 	P_SSLNetProcessor.h \
 	P_SSLNetVConnection.h \
@@ -172,7 +174,7 @@ libinknet_a_SOURCES = \
 	SSLClientCoordinator.cc \
 	SSLClientUtils.cc \
 	SSLConfig.cc \
-        SSLSecret.cc \
+	SSLSecret.cc \
 	SSLDiags.cc \
 	SSLInternal.cc \
 	SSLNetAccept.cc \
