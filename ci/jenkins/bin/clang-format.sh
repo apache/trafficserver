@@ -20,7 +20,9 @@ set +x
 cd "${WORKSPACE}/src"
 
 # First, make sure there are no trailing WS!!!
-git grep -IE ' +$' | fgrep -v '.gold:'
+git grep -IE ' +$' | \
+  fgrep -v '.gold:' | \
+  fgrep -v '.test_input'
 if [ "1" != "$?" ]; then
     echo "Error: Trailing whitespaces are not allowed!"
     echo "Error: Please run: git grep -IE ' +$'"
@@ -29,7 +31,9 @@ fi
 echo "Success! No trailing whitespace"
 
 # Make sure there are no DOS shit here.
-git grep -IE $'\r$' | fgrep -v 'lib/yamlcpp'
+git grep -IE $'\r$' | \
+    fgrep -v 'lib/yamlcpp' | \
+    fgrep -v '.test_input'
 if [ "1" != "$?" ]; then
     echo "Error: Please make sure to run dos2unix on the above file(s)"
     exit 1
