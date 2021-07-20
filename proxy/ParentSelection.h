@@ -109,7 +109,9 @@ private:
 //
 //    A record for an individual parent
 //
-struct pRecord : ATSConsistentHashNode {
+class pRecord : public ATSConsistentHashNode
+{
+public:
   char hostname[MAXDNAME + 1];
   int port;
   std::atomic<time_t> failedAt = 0;
@@ -119,7 +121,46 @@ struct pRecord : ATSConsistentHashNode {
   int idx;
   float weight;
   char hash_string[MAXDNAME + 1];
-  std::atomic<int> retriers = 0;
+
+  int
+  retriers() const
+  {
+    return _retriers.load(std::memory_order_relaxed);
+  }
+
+  void
+  clear_retriers()
+  {
+    _retriers.store(0, std::memory_order_relaxed);
+  }
+
+  bool
+  inc_retriers(int max_retriers)
+  {
+    ink_assert(max_retriers > 0);
+
+    int r = _retriers.load(std::memory_order_relaxed);
+    while (r < max_retriers) {
+      if (_retriers.compare_exchange_weak(r, r + 1, std::memory_order_relaxed, std::memory_order_relaxed)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void
+  dec_retriers()
+  {
+    int r = _retriers.load(std::memory_order_relaxed);
+    while (r > 0) {
+      if (_retriers.compare_exchange_weak(r, r - 1, std::memory_order_relaxed, std::memory_order_relaxed)) {
+        break;
+      }
+    }
+  }
+
+private:
+  std::atomic<int> _retriers = 0;
 };
 
 typedef ControlMatcher<ParentRecord, ParentResult> P_table;

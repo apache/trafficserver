@@ -67,9 +67,7 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
       new_fail_count = pRec->failCount = 1;
     } else {
       // this was a retry that failed, decrement the retriers count
-      if ((pRec->retriers--) < 0) {
-        pRec->retriers = 0;
-      }
+      pRec->dec_retriers();
     }
 
     Note("Parent %s marked as down %s:%d", (result->retry) ? "retry" : "initially", pRec->hostname, pRec->port);
@@ -128,7 +126,7 @@ ParentSelectionStrategy::markParentUp(ParentResult *result)
   pRec->failedAt = static_cast<time_t>(0);
   int old_count  = pRec->failCount.exchange(0, std::memory_order_relaxed);
   // a retry succeeded, just reset retriers
-  pRec->retriers = 0;
+  pRec->clear_retriers();
 
   if (old_count > 0) {
     Note("http parent proxy %s:%d restored", pRec->hostname, pRec->port);
