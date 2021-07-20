@@ -2382,14 +2382,21 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
       }
       break;
     case MIME_PARSE_INSIDE: {
-      auto lf_off = text.find(ParseRules::CHAR_LF);
-      if (lf_off != TextView::npos) {
-        text.remove_prefix(lf_off + 1); // drop up to and including LF
-        if (LINE == scan_type) {
-          zret    = PARSE_RESULT_OK;
-          m_state = MIME_PARSE_BEFORE;
-        } else {
-          m_state = MIME_PARSE_AFTER; // looking for line folding.
+      auto cr_off = text.find(ParseRules::CHAR_CR);
+      if (cr_off != TextView::npos) {
+        text.remove_prefix(cr_off + 1); // drop up to and including CR
+        // Is the next item a LF?
+        auto lf_off = text.find(ParseRules::CHAR_LF);
+        if (lf_off != TextView::npos) {
+          text.remove_prefix(lf_off + 1); // drop up to and including LF
+          if (LINE == scan_type) {
+            zret    = PARSE_RESULT_OK;
+            m_state = MIME_PARSE_BEFORE;
+          } else {
+            m_state = MIME_PARSE_AFTER; // looking for line folding.
+          }
+        } else { // No LF yet, adjust state to note
+          m_state = MIME_PARSE_FOUND_CR;
         }
       } else { // no EOL, consume all text without changing state.
         text.remove_prefix(text.size());
