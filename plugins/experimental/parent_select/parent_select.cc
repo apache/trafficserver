@@ -391,6 +391,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuff, int errbuff
   TSDebug(PLUGIN_NAME, "'%s' '%s' TSRemapNewInstance successfully loaded strategy '%s' from '%s'.", remap_from, remap_to,
           strategy_name, config_file_path);
   *ih = static_cast<void *>(new_strategy.release());
+
+  // Associate our config file with remap.config to be able to initiate reloads
+  TSMgmtString result;
+  const char *var_name = "proxy.config.url_remap.filename";
+  TSMgmtStringGet(var_name, &result);
+  TSMgmtConfigFileAdd(result, config_file_path);
+
   return TS_SUCCESS;
 }
 
