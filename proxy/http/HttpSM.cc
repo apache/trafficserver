@@ -383,7 +383,7 @@ void
 HttpSM::destroy()
 {
   cleanup();
-  httpSMAllocator.free(this);
+  THREAD_FREE(this, httpSMAllocator, this_thread());
 }
 
 void

@@ -26,6 +26,8 @@
 
 #define HttpTxnDebug(fmt, ...) SsnDebug(this, "http_txn", fmt, __VA_ARGS__)
 
+extern ClassAllocator<HttpSM> httpSMAllocator;
+
 ProxyTransaction::ProxyTransaction(ProxySession *session) : VConnection(nullptr), _proxy_ssn(session) {}
 
 ProxyTransaction::~ProxyTransaction()
@@ -43,7 +45,7 @@ ProxyTransaction::new_transaction(bool from_early_data)
   // connection re-use
 
   ink_release_assert(_proxy_ssn != nullptr);
-  _sm = HttpSM::allocate();
+  _sm = THREAD_ALLOC(httpSMAllocator, this_thread());
   _sm->init(from_early_data);
   HttpTxnDebug("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", _proxy_ssn->connection_id(),
                _proxy_ssn->get_transact_count(), _sm->sm_id);

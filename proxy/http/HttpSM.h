@@ -697,13 +697,6 @@ HttpSM::get_cache_sm()
   return cache_sm;
 }
 
-inline HttpSM *
-HttpSM::allocate()
-{
-  extern ClassAllocator<HttpSM> httpSMAllocator;
-  return httpSMAllocator.alloc();
-}
-
 inline int
 HttpSM::write_response_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
 {
