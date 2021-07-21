@@ -1,8 +1,0 @@
-`` DIAG: (test)  -- globalHandler :: TS_EVENT_HTTP_SSN_START
-`` DIAG: (test) New session, cont is ``
-`` DIAG: (test)  -- sessionHandler :: TS_EVENT_TIMEOUT
-`` DIAG: (test)  -- sessionHandler :: TS_EVENT_HTTP_PRE_REMAP
-`` DIAG: (test)  -- transactionHandler :: TS_EVENT_HTTP_PRE_REMAP
-`` DIAG: (test)  -- transactionHandler :: TS_EVENT_HTTP_TXN_CLOSE
-`` DIAG: (test)  -- sessionHandler :: TS_EVENT_HTTP_SSN_CLOSE
-``

@@ -1,9 +1,0 @@
-``
-Serving GET /photos/search?query=magic... Finished
-``
-Serving GET /photos/search?query=/theunmatchedpath... Finished
-``
-Serving GET /photos/search/cr_substitutions?query=%28http%3A%2F%2Fwww%2Eexample%2Ecom%2Fmagic... Finished
-``
-Serving GET /photos/search/magic/foobar... Finished
-``

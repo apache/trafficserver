@@ -1,8 +1,0 @@
-# This is a test configuration
-
-# Do a regex against the cookie
-op:
-  cookie: fpbeta
-  operation: not exists
-  sendto: http://127.0.0.10:$PORT/cookiedoesntexist
-  else: http://127.0.0.11:$ALTPORT/cookieexists

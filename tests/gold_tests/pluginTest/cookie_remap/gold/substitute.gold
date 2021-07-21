@@ -1,7 +1,0 @@
-``
-Serving GET /photos/search?query=magic... Finished
-``
-Serving GET /photos/search?query=/theunmatchedpath... Finished
-``
-Serving GET /photos/search/magic/foobar... Finished
-``

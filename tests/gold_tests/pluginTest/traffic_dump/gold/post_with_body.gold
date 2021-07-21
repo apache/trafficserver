@@ -1,8 +1,0 @@
-``
-> POST http://localhost:``/post_with_body HTTP/1.1
-> Host: www.notls.com``
-> User-Agent: curl/``
-> Accept: */*
-``
-< Server: ATS/``
-``

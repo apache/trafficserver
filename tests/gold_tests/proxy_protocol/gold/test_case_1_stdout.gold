@@ -1,9 +1,0 @@
-{
-``
-  "headers": {
-``
-    "Forwarded": "for=127.0.0.1;proto=https",
-``
-  },
-``
-}
