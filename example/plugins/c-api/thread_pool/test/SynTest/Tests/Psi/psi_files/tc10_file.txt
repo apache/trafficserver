@@ -1,3 +1,0 @@
-include a big file.
-<!--include=incfile2.txt-->
-include should be up there.
