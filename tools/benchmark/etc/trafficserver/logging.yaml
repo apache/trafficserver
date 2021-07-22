@@ -1,0 +1,50 @@
+# Custom log configuration
+#
+# Documentation on logging:
+#    https://docs.trafficserver.apache.org/en/9.0.x/admin-guide/logging/index.en.html
+#
+# Documentation on logging.yaml file format:
+#    https://docs.trafficserver.apache.org/en/9.0.x/admin-guide/files/logging.yaml.en.html
+#
+# Example log configurations:
+#    https://docs.trafficserver.apache.org/en/9.0.x/admin-guide/logging/examples.en.html
+
+
+logging:
+  formats:
+    # WebTrends Enhanced Log Format.
+    #
+    # The following is compatible with the WebTrends Enhanced Log Format.
+    # If you want to generate a log that can be parsed by WebTrends
+    # reporting tools, simply create a log that uses this format.
+    - name: welf
+      format: |-
+          id=firewall time="%<cqtd> %<cqtt>" fw=%<phn> pri=6 proto=%<cqus> duration=%<ttmsf> sent=%<psql> rcvd=%<cqhl> src=%<chi> dst=%<shi> dstname=%<shn> user=%<caun> op=%<cqhm> arg="%<cqup>" result=%<pssc> ref="%<{Referer}cqh>" agent="%<{user-agent}cqh>" cache=%<crc>
+    # Squid Log Format with seconds resolution timestamp.
+    # The following is the squid format but with a seconds-only timestamp
+    # (cqts) instead of a seconds and milliseconds timestamp (cqtq).
+    - name: squid_seconds_only_timestamp
+      format: '%<cqts> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
+
+    # Squid Log Format.
+    - name: squid
+      format: '%<cqtq> %<ttms> %<chi> %<crc>/%<pssc> %<psql> %<cqhm> %<cquc> %<caun> %<phr>/%<shn> %<psct>'
+
+    # Common Log Format.
+    - name: common
+      format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>'
+
+    # Extended Log Format.
+    - name: 'extended'
+      format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>'
+
+     # Extended2 Log Formats
+    - name: "extended2"
+      format: '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>'
+
+  logs:
+    - filename: squid
+      format: squid
+      mode: binary
+
+# vim: set ft=yaml :

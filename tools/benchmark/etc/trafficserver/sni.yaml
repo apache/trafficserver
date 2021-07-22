@@ -1,0 +1,28 @@
+# sni.yaml
+#
+# This configuration file
+#     - sets the SSL actions to be performed based on the servername provided during SSL handhshake phase (SNI extension)
+#     - sets the SSL properties required to make SSL connection with the next hop or origin server.
+#
+# YAML-based Configuration file
+#  Format :
+#  Actions available:
+#    http2 - adds or removes HTTP/2 (H2) from the protocol list advertised by ATS; parameter required = None, parameters = on or off
+#    verify_client - sets the verification flag for verifying the client certificate; parameters = one of 'NONE', 'MODERATE' or 'STRICT'
+#    verify_origin_server - sets the verification flag for verifying the server certificate; parameters = one of 'NONE', 'MODERATE' or 'STRICT'
+#    client_cert - sets the client certificate to present to the server specified in dest_host; parameters = certificate file .
+#                      The location of the certificate file is relative to proxy.config.ssl.server.cert.path directory.
+#    tunnel_route  - sets the e2e tunnel route
+#    ip_allow - lists or range of client IP addresses, subnets that are allowed for this connection. This accepts CIDR format
+#              for subnet specification.
+#
+#  Example:
+# sni:
+#   - fqdn: one.com
+#     http2: off
+#     verify_origin_server: STRICT
+#     client_cert: somepem.pem
+#     verify_client: MODERATE
+#   - fqdn: two.com
+#     tunnel_route: two.com
+#     ip_allow = '10.0.0.1-10.0.0.255'
