@@ -41,10 +41,10 @@ sub displayStat($)
     printf("%25s %10s %10s %10s %10s %10s %10s %10s %10s\n",
         'key', 'total', 'count', 'mean', 'median', '95th', '99th', 'min', 'max');
     foreach my $key (
-        'ua_begin',            'ua_first_read',     'ua_read_header_done',     'cache_open_read_begin',
-        'cache_open_read_end', 'dns_lookup_begin',  'dns_lookup_end',          'server_connect',
-        'server_connect_end',  'server_first_read', 'server_read_header_done', 'server_close',
-        'ua_close',            'sm_finish'
+        'tls_handshake', 'ua_begin', 'ua_first_read', 'ua_read_header_done', 'cache_open_read_begin',
+        'cache_open_read_end', 'cache_open_write_begin', 'cache_open_write_end', 'dns_lookup_begin',
+        'dns_lookup_end', 'server_connect', 'server_connect_end',  'server_first_read',
+        'server_read_header_done', 'server_close', 'ua_close', 'sm_finish', 'plugin_active', 'plugin_total'
       )
     {
 
@@ -64,7 +64,7 @@ sub displayStat($)
         my $mean   = 0;
         $mean = $total / $count if $count > 0;
 
-        printf("%25s %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f\n",
+        printf("%25s %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n",
             $key, $total, $count, $mean, $median, $p95th, $p99th, $min, $max);
     }
     print "NOTE: Times are in seconds\n";
@@ -78,7 +78,7 @@ sub displayStat($)
         s/unique id/unique_id/;
         s/server state/server_state/;
         s/client state/client_state/;
-        if (m|Slow Request: .+ (ua_begin: .+)|) {
+        if (m|Slow Request: .+ (tls_handshake: .+)|) {
             my %data = split(/: | /, $1);
             foreach my $key (keys %data) {
                 next if (!defined $data{$key});
