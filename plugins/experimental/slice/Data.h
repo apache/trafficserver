@@ -23,6 +23,7 @@
 #include "HttpHeader.h"
 #include "Range.h"
 #include "Stage.h"
+#include "I_IOBuffer.h"
 
 #include <netinet/in.h>
 
@@ -81,6 +82,10 @@ struct Data {
 
   int64_t m_bytestosend{0}; // header + content bytes to send
   int64_t m_bytessent{0};   // number of bytes written to the client
+
+  // default buffer size and water mark
+  int64_t m_buffer_index{BUFFER_SIZE_INDEX_32K};
+  int64_t m_buffer_water_mark{DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK};
 
   bool m_server_block_header_parsed{false};
   bool m_server_first_header_parsed{false};
