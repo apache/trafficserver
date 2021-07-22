@@ -319,7 +319,7 @@ struct HostDBInfo : public RefCountObj {
     }
   }
 
-  uint64_t key;
+  uint64_t key{0};
 
   // Application specific data. NOTE: We need an integral number of
   // these per block. This structure is 32 bytes. (at 200k hosts =
@@ -332,11 +332,11 @@ struct HostDBInfo : public RefCountObj {
     SRVInfo srv;
   } data;
 
-  unsigned int hostname_offset; // always maintain a permanent copy of the hostname for non-rev dns records.
+  unsigned int hostname_offset{0}; // always maintain a permanent copy of the hostname for non-rev dns records.
 
-  unsigned int ip_timestamp;
+  unsigned int ip_timestamp{0};
 
-  unsigned int ip_timeout_interval; // bounded between 1 and HOST_DB_MAX_TTL (0x1FFFFF, 24 days)
+  unsigned int ip_timeout_interval{0}; // bounded between 1 and HOST_DB_MAX_TTL (0x1FFFFF, 24 days)
 
   unsigned int is_srv : 1;
   unsigned int reverse_dns : 1;
