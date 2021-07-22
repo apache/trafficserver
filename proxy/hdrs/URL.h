@@ -165,7 +165,6 @@ void url_nuke_proxy_stuff(URLImpl *d_url);
 
 URLImpl *url_copy(URLImpl *s_url, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit_strs = true);
 void url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
-void url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs = true);
 
 // Normalization flag masks.
 namespace URLNormalize
