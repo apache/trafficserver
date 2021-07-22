@@ -195,7 +195,7 @@ Each **strategy** in the list may using the following parameters::
   - **response_codes**: Part of the **failover** map.  This is a list of **http** response codes that may be used for **simple retry**.
   - **markdown_codes**: Part of the **failover** map.  This is a list of **http** response codes that may be used for **unavailable retry** which will cause a parent markdown.
   - **health_check**: Part of the **failover** map.  A list of health checks. **passive** is the default and means that the state machine marks down **hosts** when a transaction timeout or connection error is detected.  **passive** is always used by the next hop strategies.  **active** means that some external process may actively health check the hosts using the defined **health check url** and mark them down using **traffic_ctl**.
-
+  - **self**: Part of the **failover** map.  This can only be used when **ring_mode** is **peering_ring**.  This is the hostname of the host in the (first) group of peers that is the local host |TS| runs on.
 
 Example:
 ::

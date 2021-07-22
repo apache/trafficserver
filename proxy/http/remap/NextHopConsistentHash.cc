@@ -232,7 +232,6 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
   TSHostStatus host_stat           = TSHostStatus::TS_HOST_STATUS_INIT;
   HostStatRec *hst                 = nullptr;
   Machine *machine                 = Machine::instance();
-  ;
 
   if (result->line_number == -1 && result->result == PARENT_UNDEFINED) {
     firstcall = true;
@@ -292,7 +291,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
         result->first_choice_status = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
         // if peering and the selected host is myself, change rings and search for an upstream
         // parent.
-        if (ring_mode == NH_PEERING_RING && machine->is_self(pRec->hostname.c_str())) {
+        if (ring_mode == NH_PEERING_RING && (pRec->self || machine->is_self(pRec->hostname.c_str()))) {
           // switch to the upstream ring.
           cur_ring = 1;
           continue;
