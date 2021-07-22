@@ -326,6 +326,7 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
         // check if the host is retryable.  It's retryable if the retry window has elapsed
         _now == 0 ? _now = time(nullptr) : _now = now;
         if ((pRec->failedAt.load() + retry_time) < static_cast<unsigned>(_now)) {
+          NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "] next hop %s, retriers: %d", sm_id, pRec->hostname.c_str(), pRec->retriers.load());
           if (pRec->retriers.fetch_add(1, std::memory_order_relaxed) < max_retriers) {
             nextHopRetry        = true;
             result->last_parent = pRec->host_index;

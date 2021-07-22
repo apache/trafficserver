@@ -53,6 +53,7 @@ struct NHHealthStatus {
   virtual bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) = 0;
   virtual void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                            const time_t now = 0)                                                           = 0;
+  virtual void retryComplete(TSHttpTxn txn, const char *hostname, const int port)                          = 0;
   virtual ~NHHealthStatus() {}
 };
 
@@ -173,9 +174,7 @@ struct HostRecord : ATSConsistentHashNode {
       std::lock_guard<std::mutex> lock(_mutex);
       failedAt  = time(nullptr);
       available = false;
-      if (--retriers < 0) {
-        retriers = 0;
-      }
+      retriers  = 0;
     }
   }
 
@@ -226,6 +225,7 @@ public:
   bool isNextHopAvailable(TSHttpTxn txn, const char *hostname, const int port, void *ih = nullptr) override;
   void markNextHop(TSHttpTxn txn, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                    const time_t now = 0) override;
+  void retryComplete(TSHttpTxn txn, const char *hostname, const int port) override;
   NextHopHealthStatus(){};
 
 private:
@@ -245,6 +245,8 @@ public:
   bool nextHopExists(TSHttpTxn txnp, void *ih = nullptr);
 
   virtual ParentRetry_t responseIsRetryable(int64_t sm_id, HttpTransact::CurrentInfo &current_info, HTTPStatus response_code);
+
+  void retryComplete(TSHttpTxn txn, const char *hostname, const int port);
 
   std::string strategy_name;
   bool go_direct           = true;

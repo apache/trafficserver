@@ -120,6 +120,14 @@ struct pRecord : ATSConsistentHashNode {
   float weight;
   char hash_string[MAXDNAME + 1];
   std::atomic<int> retriers = 0;
+
+  void
+  retryComplete()
+  {
+    if (retriers.fetch_sub(1, std::memory_order_relaxed) < 0) {
+      retriers = 0;
+    }
+  }
 };
 
 typedef ControlMatcher<ParentRecord, ParentResult> P_table;
@@ -359,6 +367,16 @@ public:
 
   // virtual destructor.
   virtual ~ParentSelectionStrategy(){};
+
+  void
+  retryComplete(ParentResult *result)
+  {
+    pRecord *p = getParents(result);
+    uint32_t n = numParents(result);
+    if (p != nullptr && result->last_parent < n) {
+      p[result->last_parent].retryComplete();
+    }
+  }
 };
 
 class ParentConfigParams : public ConfigInfo
@@ -408,6 +426,15 @@ public:
     } else {
       ink_release_assert(result->rec->selection_strategy != nullptr);
       return result->rec->selection_strategy->numParents(result);
+    }
+  }
+
+  void
+  retryComplete(ParentResult *result)
+  {
+    if (!result->is_api_result()) {
+      ink_release_assert(result != nullptr);
+      result->rec->selection_strategy->retryComplete(result);
     }
   }
 

@@ -149,3 +149,29 @@ NextHopHealthStatus::markNextHop(TSHttpTxn txn, const char *hostname, const int 
     break;
   }
 }
+
+void
+NextHopHealthStatus::retryComplete(TSHttpTxn txn, const char *hostname, const int port)
+{
+  HttpSM *sm          = reinterpret_cast<HttpSM *>(txn);
+  ParentResult result = sm->t_state.parent_result;
+  int64_t sm_id       = sm->sm_id;
+
+  // make sure we're called back with a result structure for a parent that is being retried.
+  if (result.result != PARENT_SPECIFIED && !result.retry) {
+    return;
+  }
+
+  const std::string host_port = HostRecord::makeHostPort(hostname, port);
+  auto iter                   = host_map.find(host_port);
+  if (iter == host_map.end()) {
+    NH_Debug(NH_DEBUG_TAG, "[%" PRId64 "] no host named %s found in host_map", sm_id, host_port.c_str());
+    return;
+  }
+
+  std::shared_ptr h = iter->second;
+
+  if (h->retriers.fetch_sub(1, std::memory_order_relaxed) < 0) {
+    h->retriers = 0;
+  }
+}
