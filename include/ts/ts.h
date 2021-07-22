@@ -1323,6 +1323,7 @@ tsapi int TSVConnIsSsl(TSVConn sslp);
 /* Returns 1 if a certificate was provided in the TLS handshake, 0 otherwise.
  */
 tsapi int TSVConnProvidedSslCert(TSVConn sslp);
+tsapi const char *TSSslSNIGet(TSVConn sslp, int *length);
 
 tsapi TSSslSession TSSslSessionGet(const TSSslSessionID *session_id);
 tsapi int TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr);

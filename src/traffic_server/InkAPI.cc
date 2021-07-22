@@ -9306,6 +9306,26 @@ TSVConnSslConnectionGet(TSVConn sslp)
   return ssl;
 }
 
+const char *
+TSSslSNIGet(TSVConn sslp, int *length)
+{
+  char const *server_name   = nullptr;
+  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
+
+  if (ssl_vc == nullptr) {
+    return nullptr;
+  }
+
+  server_name = ssl_vc->get_server_name();
+
+  if (length) {
+    *length = server_name ? strlen(server_name) : 0;
+  }
+
+  return server_name;
+}
+
 tsapi TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
 {
