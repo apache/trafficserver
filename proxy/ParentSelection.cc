@@ -394,7 +394,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
       ink_assert(length < sizeof(fqdn));
       memset(fqdn, 0, sizeof(fqdn));
       strncpy(fqdn, token, length);
-      if (self_detect && machine->is_self(fqdn)) {
+      if (self_detect && machine->is_self(std::string_view(fqdn))) {
         if (self_detect == 1) {
           Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", fqdn, line_num);
           token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);
@@ -405,7 +405,7 @@ ParentRecord::PreProcessParents(const char *val, const int line_num, char *buf, 
         }
       }
     } else {
-      if (self_detect && machine->is_self(token)) {
+      if (self_detect && machine->is_self(std::string_view(token))) {
         if (self_detect == 1) {
           Debug("parent_select", "token: %s, matches this machine.  Removing self from parent list at line %d", token, line_num);
           token = strtok_r(nullptr, PARENT_DELIMITERS, &savePtr);

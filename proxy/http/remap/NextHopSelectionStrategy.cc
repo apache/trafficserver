@@ -214,7 +214,7 @@ NextHopSelectionStrategy::Init(ts::Yaml::Map &n)
               std::shared_ptr<HostRecord> host_rec = std::make_shared<HostRecord>(hosts_list[hst].as<HostRecord>());
               host_rec->group_index                = grp;
               host_rec->host_index                 = hst;
-              if (mach->is_self(host_rec->hostname.c_str())) {
+              if (mach->is_self(host_rec->hostname)) {
                 h_stat.setHostStatus(host_rec->hostname.c_str(), TSHostStatus::TS_HOST_STATUS_DOWN, 0, Reason::SELF_DETECT);
               }
               hosts_inner.push_back(std::move(host_rec));
