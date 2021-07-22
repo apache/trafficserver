@@ -1,0 +1,2 @@
+GET http://www.redirect307.test/ HTTP/1.1
+

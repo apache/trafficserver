@@ -1,4 +1,0 @@
-GET /get304 HTTP/1.1
-Host: www.example.test
-If-Modified-Since: Thu, 1 Jan 1970 00:00:00 GMT
-

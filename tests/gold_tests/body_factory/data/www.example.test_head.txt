@@ -1,3 +1,0 @@
-HEAD http://www.example.test/ HTTP/1.1
-Host: www.example.test
-
