@@ -583,3 +583,22 @@ protected:
   bool eval(const Resources &res) override;
   void initialize_hooks() override; // Return status only valid in certain hooks
 };
+
+// Cache Lookup Results
+class ConditionCache : public Condition
+{
+  using MatcherType = Matchers<std::string>;
+
+public:
+  ConditionCache() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCache"); }
+
+  // noncopyable
+  ConditionCache(const ConditionCache &) = delete;
+  void operator=(const ConditionCache &) = delete;
+
+  void initialize(Parser &p) override;
+  void append_value(std::string &s, const Resources &res) override;
+
+protected:
+  bool eval(const Resources &res) override;
+};

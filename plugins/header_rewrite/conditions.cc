@@ -1272,3 +1272,50 @@ ConditionTcpInfo::append_value(std::string &s, Resources const &res)
   s += "-";
 #endif
 }
+
+void
+ConditionCache::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  MatcherType *match = new MatcherType(_cond_op);
+
+  match->set(p.get_arg());
+  _matcher = match;
+}
+
+bool
+ConditionCache::eval(const Resources &res)
+{
+  std::string s;
+
+  append_value(s, res);
+  TSDebug(PLUGIN_NAME, "Evaluating CACHE()");
+
+  return static_cast<const MatcherType *>(_matcher)->test(s);
+}
+
+void
+ConditionCache::append_value(std::string &s, const Resources &res)
+{
+  TSHttpTxn txn = res.txnp;
+  int status;
+
+  static const char *names[] = {
+    "miss",      // TS_CACHE_LOOKUP_MISS,
+    "hit-stale", // TS_CACHE_LOOKUP_HIT_STALE,
+    "hit-fresh", // TS_CACHE_LOOKUP_HIT_FRESH,
+    "skipped"    // TS_CACHE_LOOKUP_SKIPPED
+  };
+
+  TSDebug(PLUGIN_NAME, "Appending CACHE() to evaluation value -> %s", s.c_str());
+
+  if (TSHttpTxnCacheLookupStatusGet(txn, &status) == TS_ERROR || status < 0 || status >= 4) {
+    TSDebug(PLUGIN_NAME, "Cache Status Invalid: %d", status);
+
+    s += "none";
+  } else {
+    TSDebug(PLUGIN_NAME, "Cache Status Valid: %d", status);
+
+    s += names[status];
+  }
+}
