@@ -94,28 +94,6 @@ HdrCsvIter::find_csv()
   }
 }
 
-ts::TextView
-HdrCsvIter::get_nth(MIMEField *field, int nth, bool follow_dups)
-{
-  ink_assert(nth >= 0);
-  int i = 0;
-
-  auto tv = get_first(field, follow_dups); // index zero sub-value.
-  while (tv && nth > i) {
-    tv = get_next();
-    ++i;
-  }
-  return tv;
-}
-
-const char *
-HdrCsvIter::get_nth(MIMEField *field, int *len, int n, bool follow_dups)
-{
-  auto tv = this->get_nth(field, n, follow_dups);
-  *len    = int(tv.size());
-  return tv.data();
-}
-
 int
 HdrCsvIter::count_values(MIMEField *field, bool follow_dups)
 {
