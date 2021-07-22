@@ -600,7 +600,6 @@ public:
   const char *scheme_get(int *length ///< Storage for path length.
   );
   void url_set(URL *url);
-  void url_set_as_server_url(URL *url);
   void url_set(const char *str, int length);
 
   /// Check location of target host.
@@ -1039,19 +1038,6 @@ HTTPHdr::url_set(URL *url)
 
   URLImpl *url_impl = m_http->u.req.m_url_impl;
   ::url_copy_onto(url->m_url_impl, url->m_heap, url_impl, m_heap, true);
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-inline void
-HTTPHdr::url_set_as_server_url(URL *url)
-{
-  ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
-
-  URLImpl *url_impl = m_http->u.req.m_url_impl;
-  ::url_copy_onto_as_server_url(url->m_url_impl, url->m_heap, url_impl, m_heap, true);
 }
 
 /*-------------------------------------------------------------------------

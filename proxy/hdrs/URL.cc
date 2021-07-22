@@ -280,39 +280,6 @@ url_nuke_proxy_stuff(URLImpl *d_url)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-/**
-  This routine is like url_copy_onto, but clears the
-  scheme/host/user/pass/port components, resulting in a server-style URL.
-
-*/
-void
-url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, bool inherit_strs)
-{
-  url_nuke_proxy_stuff(d_url);
-
-  d_url->m_ptr_path      = s_url->m_ptr_path;
-  d_url->m_path_is_empty = s_url->m_path_is_empty;
-  d_url->m_ptr_params    = s_url->m_ptr_params;
-  d_url->m_ptr_query     = s_url->m_ptr_query;
-  d_url->m_ptr_fragment  = s_url->m_ptr_fragment;
-  url_clear_string_ref(d_url);
-
-  d_url->m_len_path     = s_url->m_len_path;
-  d_url->m_len_params   = s_url->m_len_params;
-  d_url->m_len_query    = s_url->m_len_query;
-  d_url->m_len_fragment = s_url->m_len_fragment;
-
-  d_url->m_url_type  = s_url->m_url_type;
-  d_url->m_type_code = s_url->m_type_code;
-
-  if (inherit_strs && (s_heap != d_heap)) {
-    d_heap->inherit_string_heaps(s_heap);
-  }
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
 /***********************************************************************
  *                                                                     *
  *                        M A R S H A L I N G                          *
