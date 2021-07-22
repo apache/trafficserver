@@ -1176,7 +1176,7 @@ Http2ConnectionState::rcv_frame(const Http2Frame *frame)
         Error("HTTP/2 stream error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s", static_cast<int>(error.code),
               client_ip, ua_session->connection_id(), stream_id, error.msg);
       }
-      this->send_rst_stream_frame(stream_id, error.code);
+      this->send_rst_stream_frame(stream_id, error.code, error.msg != nullptr);
     }
   }
 }
@@ -1922,11 +1922,11 @@ Http2ConnectionState::send_push_promise_frame(Http2Stream *stream, URL &url, con
 }
 
 void
-Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
+Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec, bool include_error)
 {
   Http2StreamDebug(ua_session, id, "Send RST_STREAM frame");
 
-  if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
+  if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR && include_error) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_STREAM_ERRORS_COUNT, this_ethread());
     ++stream_error_count;
   }

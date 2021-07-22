@@ -131,7 +131,7 @@ public:
   Http2SendDataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
   bool send_push_promise_frame(Http2Stream *stream, URL &url, const MIMEField *accept_encoding);
-  void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
+  void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec, bool include_in_error_count = true);
   void send_settings_frame(const Http2ConnectionSettings &new_settings);
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);
   void send_goaway_frame(Http2StreamId id, Http2ErrorCode ec);
