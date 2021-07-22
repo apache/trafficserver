@@ -80,16 +80,6 @@ public:
   TextView get_current();
   const char *get_current(int *len);
 
-  /** Get the @a nth sub-value in the field @a m.
-   *
-   * @param m Field.
-   * @param nth Index of the target sub-value.
-   * @param follow_dups Follow duplicate fields if necessary.
-   * @return The subvalue at index @a n, or an empty view if that does not exist.
-   */
-  TextView get_nth(MIMEField *m, int nth, bool follow_dups = true);
-  const char *get_nth(MIMEField *m, int *len, int n, bool follow_dups = true);
-
   int count_values(MIMEField *field, bool follow_dups = true);
 
   /** Get the first sub-value as an integer.
