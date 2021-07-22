@@ -67,7 +67,7 @@ libmgmtapilocal_la_LIBADD = \
 	libmgmtapi.la \
 	$(top_builddir)/src/tscore/libtscore.la
 
-libtsmgmt_la_LDFLAGS = -no-undefined -version-info @TS_LIBTOOL_VERSION@
+libtsmgmt_la_LDFLAGS = @AM_LDFLAGS@ -no-undefined -version-info @TS_LIBTOOL_VERSION@
 libtsmgmt_la_LIBADD = @LIBOBJS@ \
 	libmgmtapi.la \
 	$(top_builddir)/src/tscore/libtscore.la \
