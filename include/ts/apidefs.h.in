@@ -1038,6 +1038,11 @@ typedef struct TSSecretID_s {
   size_t key_name_len;
 } TSSecretID;
 
+typedef struct TSDbgCtl_s {
+  char volatile on; // Flag
+  char const *tag;
+} TSDbgCtl;
+
 /* --------------------------------------------------------------------------
    Init */
 

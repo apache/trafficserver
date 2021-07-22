@@ -18,8 +18,8 @@
 
 .. default-domain:: c
 
-TSDebug
-*******
+TSDbg
+*****
 
 Traffic Server Debugging APIs.
 
@@ -37,7 +37,11 @@ Synopsis
 .. function:: void TSFatal(const char * format, ...)
 .. function:: void TSAlert(const char * format, ...)
 .. function:: void TSEmergency(const char * format, ...)
+.. type:: TSDbgCtl
+.. function:: void TSDbg(const TSDbgCtl * ctlptr, const char * format, ...)
+.. function:: const TSDbgCtl * TSDbgCtlCreate(const char * tag)
 .. function:: void TSDebug(const char * tag, const char * format, ...)
+.. function:: int TSIsDbgCtlSet(const TSDbgCtl * ctlptr)
 .. function:: int TSIsDebugTagSet(const char * tag)
 .. function:: void TSDebugSpecific(int debug_flag, const char * tag, const char * format, ...)
 .. function:: void TSHttpTxnDebugSet(TSHttpTxn txnp, int on)
@@ -76,10 +80,19 @@ Traffic Server, Traffic Manager, AuTest, CI, and your log monitoring service/das
 trafficserver.out
 =================
 
-:func:`TSDebug` logs the debug message only if the given debug :arg:`tag` is enabled.
+:func:`TSDbg` logs the debug message only if the given debug control pointed to by
+:arg:`ctlptr` is enabled.  It writes output to the Traffic Server debug log through stderr.
+
+:func:`TSDbgCtlCreate` creates a debug control, associated with the
+debug :arg:`tag`, and returns a const pointer to it.
+
+:func:`TSIsDbgCtlSet` returns non-zero if the given debug control, pointed to by :arg:`ctlptr`, is
+enabled.
+
+:func:`TSDebug` (deprecated) logs the debug message only if the given debug :arg:`tag` is enabled.
 It writes output to the Traffic Server debug log through stderr.
 
-:func:`TSIsDebugTagSet` returns non-zero if the given debug :arg:`tag` is
+:func:`TSIsDebugTagSet` (deprecated) returns non-zero if the given debug :arg:`tag` is
 enabled.
 
 In debug mode, :macro:`TSAssert` Traffic Server to prints the file

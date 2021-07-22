@@ -61,7 +61,6 @@ public:
 
   /* TODO: Add BufferWriter overloads for these. */
   void diag(const char *tag, SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
-  void debug(const char *tag, SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
   void status(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
   void note(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
   void warning(SourceLocation const &loc, const char *fmt, ...) TS_PRINTFLIKE(3, 4);
@@ -123,7 +122,7 @@ private:
    */
   void message_debug_helper(const char *tag, DiagsLevel level, SourceLocation const &loc, const char *fmt, va_list args);
 
-  /** Same as above, but uses the tag-ignoring diags->print variant. */
+  /** Same as above, but uses the tag-ignoring diags()->print variant. */
   void message_print_helper(const char *tag, DiagsLevel level, SourceLocation const &loc, const char *fmt, va_list args);
 
 private:

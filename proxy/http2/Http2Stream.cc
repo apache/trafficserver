@@ -34,8 +34,10 @@
     this->_history.push_back(MakeSourceLocation(), e, r); \
   }
 
+static DbgCtl http2_stream_dbg_ctl("http2_stream");
+
 #define Http2StreamDebug(fmt, ...) \
-  SsnDebug(_proxy_ssn, "http2_stream", "[%" PRId64 "] [%u] " fmt, _proxy_ssn->connection_id(), this->get_id(), ##__VA_ARGS__);
+  SsnDebug(_proxy_ssn, http2_stream_dbg_ctl, "[%" PRId64 "] [%u] " fmt, _proxy_ssn->connection_id(), this->get_id(), ##__VA_ARGS__);
 
 ClassAllocator<Http2Stream, true> http2StreamAllocator("http2StreamAllocator");
 

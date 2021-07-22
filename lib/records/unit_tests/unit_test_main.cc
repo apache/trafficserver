@@ -33,7 +33,7 @@ int
 main(int argc, char *argv[])
 {
   // Set the global diags variable
-  diags = new CatchDiags;
+  DiagsPtr::set(new CatchDiags);
 
   // Global data initialization needed for the unit tests.
   ts_session_protocol_well_known_name_indices_init();

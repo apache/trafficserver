@@ -48,7 +48,7 @@
 
 #define DUMP_HEADER(T, H, I, S)                                 \
   {                                                             \
-    if (diags->on(T)) {                                         \
+    if (is_debug_tag_set(T)) {                                  \
       fprintf(stderr, "+++++++++ %s +++++++++\n", S);           \
       fprintf(stderr, "-- State Machine Id: %" PRId64 "\n", I); \
       char b[4096];                                             \
