@@ -4026,7 +4026,7 @@ HTTP/2 Configuration
    HTTP/2 connection to avoid duplicate pushes on the same connection. If the
    maximum number is reached, new entries are not remembered.
 
-.. ts:cv:: CONFIG proxy.config.http2.stream_error_rate_threshold FLOAT 0.1
+.. ts:cv:: CONFIG proxy.config.http2.stream_error_rate_threshold FLOAT 0.5
    :reloadable:
 
    This is the maximum stream error rate |TS| allows on an HTTP/2 connection.
