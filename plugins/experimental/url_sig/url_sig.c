@@ -236,6 +236,11 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
         cfg->ignore_expiry = true;
         TSError("[url_sig] Plugin IGNORES sig expiration");
       }
+    } else if (strncmp(line, "url_type", 8) == 0) {
+      if (strncmp(value, "pristine", 8) == 0) {
+        cfg->pristine_url_flag = 1;
+        TSDebug(PLUGIN_NAME, "Pristine URLs (from config) will be used");
+      }
     } else {
       TSError("[url_sig] Error parsing line %d of file %s (%s)", line_no, config_file, line);
     }
@@ -246,6 +251,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   if (argc > 3) {
     if (strcasecmp(argv[3], "pristineurl") == 0) {
       cfg->pristine_url_flag = 1;
+      TSDebug(PLUGIN_NAME, "Pristine URLs (from args) will be used");
 
     } else {
       snprintf(errbuf, errbuf_size, "[TSRemapNewInstance] - second pparam (if present) must be pristineurl");

@@ -90,6 +90,14 @@ ts.Disk.remap_config.AddLine(
     ' @plugin=url_sig.so @pparam=url_sig.config @pparam=PristineUrl'
 )
 
+# Use config with all settings set
+#
+ts.Setup.Copy("url_sig.all.config", ts.Variables.CONFIGDIR)
+ts.Disk.remap_config.AddLine(
+    f'map http://ten.eleven.twelve/ http://127.0.0.1:{server.Variables.Port}/' +
+    ' @plugin=url_sig.so @pparam=url_sig.all.config'
+)
+
 # Validation failure tests.
 
 LogTee = f" 2>&1 | grep '^<' | tee -a {Test.RunDirectory}/url_sig_long.log"
@@ -259,6 +267,16 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
     f"curl --verbose --http1.1 --insecure --header 'Host: one.two.three' '{url}'" +
     LogTee + " ; grep -F -e '< HTTP' -e Authorization {0}/url_sig_long.log > {0}/url_sig_short.log ".format(ts.RunDirectory)
+)
+
+# With client / MD5 / P=101 / URL pristine / URL altered.
+# uses url_type pristine in config
+tr = Test.AddTestRun()
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Command = (
+    f"curl --verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/" +
+    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=586ef8e808caeeea025c525c89ff2638'" +
+    LogTee
 )
 
 # Overriding the built in ERROR check since we expect some ERROR messages

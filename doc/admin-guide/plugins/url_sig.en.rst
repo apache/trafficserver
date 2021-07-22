@@ -129,6 +129,12 @@ on our website ``foo.com`` we might have a remap line like this::
     map http://foo.com/download/ http://origin.server.tld/download/ \
         @plugin=url_sig.so @pparam=url_sig.config
 
+.. note::
+
+   To be consistent, the config file option `pristine = true` should
+   be preferred over using a plugin argument.
+
+
 Signing a URL
 =============
 
@@ -257,6 +263,37 @@ Signature query parameters embedded in the URL path.
       --algorithm 1 --duration 86400 --key kSCE1_uBREdGI3TPnr_dXKc9f_J4ZV2f --pathparams --siganchor urlsig
 
       curl -s -o /dev/null -v --max-redirs 0 'http://test-remap.domain.com/vod/t;urlsig=O0U9MTQ2MzkyOTM4NTtBPTE7Sz0zO1A9MTtTPTIxYzk2YWRiZWZk'
+
+Other Config File Options
+=========================
+
+In addition to the keys and error_url, the following options are supported
+in the configuration file::
+
+    sig_anchor
+        signed anchor string token in url
+        default: no anchor
+
+    excl_regex
+        pcre regex for urls that aren't signed.
+        default: no regex
+
+    url_type
+        which url to match against
+        pristine or remap
+        default: remap
+
+     ignore_expiry
+        option which assists in testing where the timestamp check is skipped
+        DO NOT run with this set in production!
+        default: false
+
+Example::
+
+    sig_anchor = urlsig
+    excl_regex = (/crossdomain.xml|/clientaccesspolicy.xml|/test.html)
+    url_type = pristine
+    ignore_expiry = true
 
 
 Edge Cache Debugging
@@ -387,21 +424,3 @@ Example
     <
     { [data not shown]
     * Connection #0 to host localhost left intact
-
-
-Replay test support
-===================
-
-To assist in log replay an option is available in the config file which
-will ignore the expiration date.  This allows all url_sig tests to
-pass the expiration date.
-
-The config file option to enable this is::
-
-    ignore_expiry = true
-
-Once updated, touch `remap.config` then issue a
-:option:`traffic_ctl config reload` to make the settings active.
-
-Do NOT deploy this to production as it will disable valid checks
-on signed urls!
