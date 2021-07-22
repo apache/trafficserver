@@ -696,6 +696,9 @@ struct OverridableHttpConfigParams {
 
   OutboundConnTrack::TxnConfig outbound_conntrack;
 
+  MgmtInt plugin_vc_default_buffer_index      = BUFFER_SIZE_INDEX_32K;
+  MgmtInt plugin_vc_default_buffer_water_mark = DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK;
+
   ///////////////////////////////////////////////////////////////////
   // Server header                                                 //
   ///////////////////////////////////////////////////////////////////

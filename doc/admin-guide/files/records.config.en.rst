@@ -4350,6 +4350,21 @@ Plug-in Configuration
    Enables (``1``) or disables (``0``) the dynamic reload feature for remap
    plugins (`remap.config`). Global plugins (`plugin.config`) do not have dynamic reload feature yet.
 
+.. ts:cv:: CONFIG proxy.config.plugin.vc.default_buffer_index INT 8
+   :reloadable:
+   :overridable:
+
+   Specifies the buffer index and thus size to use when constructing IO buffers within the PluginVC.
+   Tuning this can impact performance of intercept plugins. Default is 8, which aligns with the
+   default value of ts:cv:`CONFIG proxy.config.http.default_buffer_size`.
+
+.. ts:cv:: CONFIG proxy.config.plugin.vc.default_buffer_water_mark INT 0
+   :reloadable:
+   :overridable:
+
+   Specifies the buffer water mark size in bytes used to control the flow of data through IO buffers
+   within the PluginVC. Default is zero to preserve existing PluginVC water marking behavior.
+
 SOCKS Processor
 ===============
 
