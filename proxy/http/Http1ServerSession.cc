@@ -146,6 +146,11 @@ Http1ServerSession::release(ProxyTransaction *trans)
   Debug("http_ss", "[%" PRId64 "] Releasing session, private_session=%d, sharing_match=%d", con_id, this->is_private(),
         sharing_match);
   if (state == SSN_IN_USE) {
+    // The caller should have already set the inactive timeout to the keep alive timeout
+    // Unfortunately, we do not have access to that value from here.
+    // However we can clear the active timeout here.  The active timeout makes no sense
+    // in the keep alive state
+    cancel_active_timeout();
     state = SSN_TO_RELEASE;
     return;
   }
