@@ -293,6 +293,12 @@ NextHopSelectionStrategy::responseIsRetryable(int64_t sm_id, HttpTransact::Curre
   return PARENT_RETRY_NONE;
 }
 
+void
+NextHopSelectionStrategy::retryComplete(TSHttpTxn txnp, const char *hostname, const int port)
+{
+  return passive_health.retryComplete(txnp, hostname, port);
+}
+
 namespace YAML
 {
 template <> struct convert<HostRecord> {

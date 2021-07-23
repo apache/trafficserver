@@ -150,15 +150,13 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
       _now == 0 ? _now = time(nullptr) : _now = now;
       if (((result->wrap_around) || (cur_host->failedAt + retry_time) < static_cast<unsigned>(_now)) &&
           host_stat == TS_HOST_STATUS_UP) {
-        if (cur_host->retriers.fetch_add(1, std::memory_order_relaxed) < max_retriers) {
+        if (cur_host->retriers.inc(max_retriers)) {
           // Reuse the parent
           parentUp    = true;
           parentRetry = true;
           NH_Debug(NH_DEBUG_TAG, "[%" PRIu64 "]  NextHop marked for retry %s:%d, max_retriers: %d, retriers: %d", sm_id,
                    cur_host->hostname.c_str(), host_groups[cur_grp_index][cur_hst_index]->getPort(scheme), max_retriers,
-                   cur_host->retriers.load());
-        } else {
-          cur_host->retriers--;
+                   cur_host->retriers());
         }
       } else { // not retryable or available.
         parentUp = false;
