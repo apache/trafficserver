@@ -6,7 +6,7 @@
    except in compliance with the License.  You may obtain a copy of
    the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,30 +14,27 @@
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
 
+.. include:: ../../../common.defs
+
 .. default-domain:: c
 
-=====================
-TSHttpTxnPluginTagGet
-=====================
-
-Fetch the tag of the plugin that created this transaction.
+TSPluginVCGetIOBufferWaterMark
+******************************
 
 Synopsis
 ========
+
 .. code-block:: cpp
 
     #include <ts/ts.h>
 
-.. function:: const char * TSHttpTxnPluginTagGet(TSHttpTxn txnp)
+.. function:: TSMgmtInt TSPluginVCGetIOBufferWaterMark(TSHttpTxn txnp)
 
 Description
 ===========
 
-This call retrieves the tag associated with the transaction.  This
-tag is set by the plugin that created the transaction.
-
-See also
-========
-:manpage:`TSHttpConnectPlugin(3ts)`,
-:manpage:`TSHttpConnectWithPluginId(3ts)`,
-:manpage:`TSAPI(3ts)`
+Convenience function to obtain the current value of the
+:ts:cv:`proxy.config.plugin.vc.default_buffer_water_mark` parameter from the
+transaction provided in :arg:`txnp`. If no errors are encountered and the
+watermark on the transaction is greater than or equal to zero, this value
+is returned. Otherwise the default value is returned.

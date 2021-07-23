@@ -752,6 +752,11 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConn
 source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnect.en.pot
 source_lang = en
 
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpConnectPlugin_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConnectPlugin.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnectPlugin.en.pot
+source_lang = en
+
 [apache-traffic-server-6x.developer-guide--api--functions--TSHttpConnectWithPluginId_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConnectWithPluginId.en.po
 source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnectWithPluginId.en.pot
@@ -1340,6 +1345,16 @@ source_lang = en
 [apache-traffic-server-6x.developer-guide--api--functions--TSPluginInit_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginInit.en.po
 source_file = _build/locale/pot/developer-guide/api/functions/TSPluginInit.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSPluginVCGetIOBufferIndex]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginVCGetIOBufferIndex.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSPluginVCGetIOBufferIndex.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSPluginVCGetIOBufferWaterMark]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginVCGetIOBufferWaterMark.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSPluginVCGetIOBufferWaterMark.en.pot
 source_lang = en
 
 [apache-traffic-server-6x.developer-guide--api--functions--TSRemap_en]
