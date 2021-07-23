@@ -38,8 +38,12 @@ Http3HeaderFramer::Http3HeaderFramer(Http3Transaction *transaction, VIO *source,
 }
 
 Http3FrameUPtr
-Http3HeaderFramer::generate_frame(uint16_t max_size)
+Http3HeaderFramer::generate_frame()
 {
+  if (!this->_source_vio->get_reader()) {
+    return Http3FrameFactory::create_null_frame();
+  }
+
   ink_assert(!this->_transaction->is_response_header_sent());
 
   if (!this->_header_block) {
@@ -48,8 +52,7 @@ Http3HeaderFramer::generate_frame(uint16_t max_size)
   }
 
   if (this->_header_block) {
-    // Create frames on demand base on max_size since we don't know how much we can write now
-    uint64_t len = std::min(this->_header_block_len - this->_header_block_wrote, static_cast<uint64_t>(max_size));
+    uint64_t len = std::min(this->_header_block_len - this->_header_block_wrote, UINT64_C(64 * 1024));
 
     Http3FrameUPtr frame = Http3FrameFactory::create_headers_frame(this->_header_block_reader, len);
 

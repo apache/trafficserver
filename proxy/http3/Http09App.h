@@ -28,6 +28,7 @@
 #include "HttpSessionAccept.h"
 
 #include "QUICApplication.h"
+#include "QUICStreamVCAdapter.h"
 
 class QUICNetVConnection;
 class Http09Session;
@@ -44,8 +45,11 @@ public:
   Http09App(QUICNetVConnection *client_vc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
   ~Http09App();
 
+  void on_new_stream(QUICStream &stream) override;
+
   int main_event_handler(int event, Event *data);
 
 private:
   Http09Session *_ssn = nullptr;
+  std::unordered_map<QUICStreamId, QUICStreamVCAdapter::IOInfo> _streams;
 };

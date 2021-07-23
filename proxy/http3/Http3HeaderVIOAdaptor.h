@@ -27,18 +27,27 @@
 
 #include "Http3FrameHandler.h"
 
-// TODO: rename, this is not VIOAdaptor anymore
-class Http3HeaderVIOAdaptor : public Http3FrameHandler
+class Http3HeaderVIOAdaptor : public Http3FrameHandler, public Continuation
 {
 public:
-  Http3HeaderVIOAdaptor(HTTPHdr *hdr, QPACK *qpack, Continuation *cont, uint64_t stream_id);
+  Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id);
+  ~Http3HeaderVIOAdaptor();
+
   // Http3FrameHandler
   std::vector<Http3FrameType> interests() override;
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame) override;
 
+  bool is_complete();
+  int event_handler(int event, Event *data);
+
 private:
-  HTTPHdr *_request_header = nullptr;
-  QPACK *_qpack            = nullptr;
-  Continuation *_cont      = nullptr;
-  uint64_t _stream_id      = 0;
+  VIO *_sink_vio      = nullptr;
+  QPACK *_qpack       = nullptr;
+  uint64_t _stream_id = 0;
+  bool _is_complete   = false;
+
+  HTTPHdr _header; ///< HTTP header buffer for decoding
+
+  int _on_qpack_decode_complete();
+  ParseResult _convert_header_from_3_to_1_1(HTTPHdr *hdr);
 };

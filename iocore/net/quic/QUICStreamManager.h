@@ -36,7 +36,7 @@
 
 class QUICTransportParameters;
 
-class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator
+class QUICStreamManager : public QUICFrameHandler, public QUICFrameGenerator, public QUICStreamStateListener
 {
 public:
   QUICStreamManager(QUICContext *context, QUICApplicationMap *app_map);
@@ -58,7 +58,7 @@ public:
 
   void set_default_application(QUICApplication *app);
 
-  DLL<QUICStreamVConnection> stream_list;
+  DLL<QUICStream> stream_list;
 
   // QUICFrameHandler
   virtual std::vector<QUICFrameType> interests() override;
@@ -69,12 +69,15 @@ public:
   QUICFrame *generate_frame(uint8_t *buf, QUICEncryptionLevel level, uint64_t connection_credit, uint16_t maximum_frame_size,
                             size_t current_packet_size, uint32_t timestamp) override;
 
+  // QUICStreamStateListener
+  void on_stream_state_close(const QUICStream *stream) override;
+
 protected:
   virtual bool _is_level_matched(QUICEncryptionLevel level) override;
 
 private:
-  QUICStreamVConnection *_find_stream_vc(QUICStreamId id);
-  QUICStreamVConnection *_find_or_create_stream_vc(QUICStreamId stream_id);
+  QUICStream *_find_stream(QUICStreamId id);
+  QUICStream *_find_or_create_stream(QUICStreamId stream_id);
   void _add_total_offset_sent(uint32_t sent_byte);
   QUICConnectionErrorUPtr _handle_frame(const QUICStreamFrame &frame);
   QUICConnectionErrorUPtr _handle_frame(const QUICRstStreamFrame &frame);

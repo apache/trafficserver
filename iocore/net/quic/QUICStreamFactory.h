@@ -25,7 +25,7 @@
 
 #include "QUICTypes.h"
 
-class QUICStreamVConnection;
+class QUICStream;
 
 // PS: this class function should not static because of  THREAD_ALLOC and THREAD_FREE
 class QUICStreamFactory
@@ -35,10 +35,10 @@ public:
   ~QUICStreamFactory() {}
 
   // create a bidistream, send only stream or receive only stream
-  QUICStreamVConnection *create(QUICStreamId sid, uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
+  QUICStream *create(QUICStreamId sid, uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
 
   // delete stream by stream type
-  void delete_stream(QUICStreamVConnection *stream);
+  void delete_stream(QUICStream *stream);
 
 private:
   QUICRTTProvider *_rtt_provider    = nullptr;

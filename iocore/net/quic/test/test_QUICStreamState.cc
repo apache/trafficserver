@@ -57,17 +57,17 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 
     // Case2. Send STREAM
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame);
+    CHECK(ss.update_with_sending_frame(*stream_frame));
     CHECK(ss.get() == QUICSendStreamState::Send);
 
     // Case3. Send STREAM_DATA_BLOCKED
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM_DATA_BLOCKED));
-    ss.update_with_sending_frame(*stream_data_blocked_frame);
+    CHECK(!ss.update_with_sending_frame(*stream_data_blocked_frame));
     CHECK(ss.get() == QUICSendStreamState::Send);
 
     // Case3. Send FIN in a STREAM
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_sending_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICSendStreamState::DataSent);
 
     // Case4. STREAM is not allowed to send
@@ -75,7 +75,7 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 
     // Case5. Receive all ACKs
     pp.set_transfer_complete(true);
-    ss.update_on_ack();
+    CHECK(ss.update_on_ack());
     CHECK(ss.get() == QUICSendStreamState::DataRecvd);
   }
 
@@ -87,7 +87,7 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 
     // Case2. Send STREAM_DATA_BLOCKED
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM_DATA_BLOCKED));
-    ss.update_with_sending_frame(*stream_data_blocked_frame);
+    CHECK(ss.update_with_sending_frame(*stream_data_blocked_frame));
     CHECK(ss.get() == QUICSendStreamState::Send);
   }
 
@@ -101,7 +101,7 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 
     // Case2. Send RESET_STREAM
     CHECK(ss.is_allowed_to_send(QUICFrameType::RESET_STREAM));
-    ss.update_with_sending_frame(*rst_stream_frame);
+    CHECK(ss.update_with_sending_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICSendStreamState::ResetSent);
 
     // Case3. Receive ACK for STREAM
@@ -109,7 +109,7 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 
     // Case4. Receive ACK for RESET_STREAM
     pp.set_cancelled(true);
-    ss.update_on_ack();
+    CHECK(ss.update_on_ack());
     CHECK(ss.get() == QUICSendStreamState::ResetRecvd);
   }
 
@@ -121,21 +121,21 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 
     // Case2. Send STREAM
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame);
+    CHECK(ss.update_with_sending_frame(*stream_frame));
     CHECK(ss.get() == QUICSendStreamState::Send);
 
     // Case3. Send RESET_STREAM
     CHECK(ss.is_allowed_to_send(QUICFrameType::RESET_STREAM));
-    ss.update_with_sending_frame(*rst_stream_frame);
+    CHECK(ss.update_with_sending_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICSendStreamState::ResetSent);
 
     // Case4. Receive ACK for STREAM
-    ss.update_on_ack();
+    CHECK(!ss.update_on_ack());
     CHECK(ss.get() == QUICSendStreamState::ResetSent);
 
     // Case5. Receive ACK for RESET_STREAM
     pp.set_cancelled(true);
-    ss.update_on_ack();
+    CHECK(ss.update_on_ack());
     CHECK(ss.get() == QUICSendStreamState::ResetRecvd);
   }
 
@@ -147,17 +147,17 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 
     // Case2. Send STREAM
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame);
+    CHECK(ss.update_with_sending_frame(*stream_frame));
     CHECK(ss.get() == QUICSendStreamState::Send);
 
     // Case3. Send STREAM_DATA_BLOCKED
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM_DATA_BLOCKED));
-    ss.update_with_sending_frame(*stream_data_blocked_frame);
+    CHECK(!ss.update_with_sending_frame(*stream_data_blocked_frame));
     CHECK(ss.get() == QUICSendStreamState::Send);
 
     // Case3. Send FIN in a STREAM
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_sending_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICSendStreamState::DataSent);
 
     // Case4. STREAM is not allowed to send
@@ -165,16 +165,16 @@ TEST_CASE("QUICSendStreamState", "[quic]")
 
     // Case4. Send RESET_STREAM
     CHECK(ss.is_allowed_to_send(QUICFrameType::RESET_STREAM));
-    ss.update_with_sending_frame(*rst_stream_frame);
+    CHECK(ss.update_with_sending_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICSendStreamState::ResetSent);
 
     // Case5. Receive ACK for STREAM
-    ss.update_on_ack();
+    CHECK(!ss.update_on_ack());
     CHECK(ss.get() == QUICSendStreamState::ResetSent);
 
     // Case6. Receive ACK for RESET_STREAM
     pp.set_cancelled(true);
-    ss.update_on_ack();
+    CHECK(ss.update_on_ack());
     CHECK(ss.get() == QUICSendStreamState::ResetRecvd);
   }
 }
@@ -209,29 +209,29 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     CHECK(ss.is_allowed_to_send(QUICFrameType::MAX_STREAM_DATA) == false);
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_progress(1);
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.update_with_receiving_frame(*stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::Recv);
 
     // Case2. Recv STREAM_DATA_BLOCKED
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM_DATA_BLOCKED));
-    ss.update_with_receiving_frame(*stream_data_blocked_frame);
+    CHECK(!ss.update_with_receiving_frame(*stream_data_blocked_frame));
     CHECK(ss.get() == QUICReceiveStreamState::Recv);
 
     // Case3. Recv FIN in a STREAM
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_goal(3);
-    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICReceiveStreamState::SizeKnown);
 
     // Case4. Recv ALL data
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_progress(3);
-    ss.update_with_receiving_frame(*stream_frame_delayed);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_delayed));
     CHECK(ss.get() == QUICReceiveStreamState::DataRecvd);
 
     // Case5. Read data
     in_progress.set_transfer_complete(true);
-    ss.update_on_read();
+    CHECK(ss.update_on_read());
     CHECK(ss.get() == QUICReceiveStreamState::DataRead);
   }
 
@@ -242,16 +242,16 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     // Case1. Recv STREAM
     QUICReceiveStreamStateMachine ss(&in_progress, nullptr);
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.update_with_receiving_frame(*stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::Recv);
 
     // Case2. Recv RESET_STREAM
     CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM));
-    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.update_with_receiving_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::ResetRecvd);
 
     // Case3. Handle reset
-    ss.update_on_eos();
+    CHECK(ss.update_on_eos());
     CHECK(ss.get() == QUICReceiveStreamState::ResetRead);
   }
 
@@ -262,17 +262,17 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     // Case1. Recv STREAM
     QUICReceiveStreamStateMachine ss(&in_progress, nullptr);
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.update_with_receiving_frame(*stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::Recv);
 
     // Case2. Recv FIN in a STREAM
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICReceiveStreamState::SizeKnown);
 
     // Case3. Recv RESET_STREAM
     CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM));
-    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.update_with_receiving_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::ResetRecvd);
   }
 
@@ -284,24 +284,24 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     QUICReceiveStreamStateMachine ss(&in_progress, nullptr);
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_progress(1);
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.update_with_receiving_frame(*stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::Recv);
 
     // Case2. Recv FIN in a STREAM
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_goal(3);
-    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICReceiveStreamState::SizeKnown);
 
     // Case3. Recv ALL data
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_progress(3);
-    ss.update_with_receiving_frame(*stream_frame_delayed);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_delayed));
     CHECK(ss.get() == QUICReceiveStreamState::DataRecvd);
 
     // Case4. Recv RESET_STREAM
     CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM));
-    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(!ss.update_with_receiving_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::DataRecvd);
   }
 
@@ -313,24 +313,24 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     QUICReceiveStreamStateMachine ss(&in_progress, nullptr);
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_progress(1);
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.update_with_receiving_frame(*stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::Recv);
 
     // Case2. Recv FIN in a STREAM
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_goal(3);
-    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICReceiveStreamState::SizeKnown);
 
     // Case3. Recv RESET_STREAM
     CHECK(ss.is_allowed_to_receive(QUICFrameType::RESET_STREAM));
-    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.update_with_receiving_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::ResetRecvd);
 
     // Case4. Recv ALL data
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_progress(3);
-    ss.update_with_receiving_frame(*stream_frame_delayed);
+    CHECK(!ss.update_with_receiving_frame(*stream_frame_delayed));
     CHECK(ss.get() == QUICReceiveStreamState::ResetRecvd);
     CHECK(ss.is_allowed_to_send(QUICFrameType::STOP_SENDING) == false);
   }
@@ -342,18 +342,18 @@ TEST_CASE("QUICReceiveStreamState", "[quic]")
     // Case1. Recv STREAM
     QUICReceiveStreamStateMachine ss(&in_progress, nullptr);
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.update_with_receiving_frame(*stream_frame));
     CHECK(ss.get() == QUICReceiveStreamState::Recv);
 
     // Case2. Recv FIN in a STREAM
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICReceiveStreamState::SizeKnown);
 
     // // Case3. Recv ALL data
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
     in_progress.set_transfer_complete(true);
-    ss.update_with_receiving_frame(*stream_frame_delayed);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_delayed));
     // ss.update_on_transport_recv_event();
     CHECK(ss.get() == QUICReceiveStreamState::DataRecvd);
 
@@ -390,11 +390,11 @@ TEST_CASE("QUICBidiState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
 
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.update_with_receiving_frame(*stream_frame));
 
     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
     in_progress.set_transfer_complete(true);
-    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_R);
   }
 
@@ -407,10 +407,10 @@ TEST_CASE("QUICBidiState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
 
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(ss.update_with_receiving_frame(*stream_frame));
 
     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.update_with_receiving_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_R);
   }
 
@@ -423,17 +423,17 @@ TEST_CASE("QUICBidiState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
 
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame);
-
+    CHECK(ss.update_with_sending_frame(*stream_frame));
     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-    ss.update_with_sending_frame(*stream_frame_with_fin);
+
+    CHECK(ss.update_with_sending_frame(*stream_frame_with_fin)); // internal state is changed
     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
 
     out_progress.set_transfer_complete(true);
-    ss.update_on_ack();
+    CHECK(ss.update_on_ack());
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
 
-    ss.update_with_sending_frame(*stream_frame_delayed);
+    CHECK(!ss.update_with_sending_frame(*stream_frame_delayed));
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
   }
 
@@ -446,10 +446,10 @@ TEST_CASE("QUICBidiState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
 
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame);
-
+    CHECK(ss.update_with_sending_frame(*stream_frame));
     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-    ss.update_with_sending_frame(*rst_stream_frame);
+
+    CHECK(ss.update_with_sending_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
   }
 
@@ -462,19 +462,19 @@ TEST_CASE("QUICBidiState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
 
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame);
-
+    CHECK(ss.update_with_sending_frame(*stream_frame));
     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
-    ss.update_with_sending_frame(*rst_stream_frame);
+
+    CHECK(ss.update_with_sending_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
 
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(!ss.update_with_receiving_frame(*stream_frame));
 
-    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.update_with_receiving_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
 
-    ss.update_on_eos();
+    CHECK(ss.update_on_eos()); // internal state is changed
     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
   }
 
@@ -487,20 +487,20 @@ TEST_CASE("QUICBidiState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
 
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_sending_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
     out_progress.set_transfer_complete(true);
-    ss.update_on_ack();
+    CHECK(ss.update_on_ack());
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
 
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame);
+    CHECK(!ss.update_with_receiving_frame(*stream_frame));
 
-    ss.update_with_receiving_frame(*rst_stream_frame);
+    CHECK(ss.update_with_receiving_frame(*rst_stream_frame));
     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
 
     in_progress.set_transfer_complete(true);
-    ss.update_on_eos();
+    CHECK(ss.update_on_eos()); // internal state is changed
     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
   }
 
@@ -513,20 +513,20 @@ TEST_CASE("QUICBidiState", "[quic]")
     CHECK(ss.get() == QUICBidirectionalStreamState::Idle);
 
     CHECK(ss.is_allowed_to_send(QUICFrameType::STREAM));
-    ss.update_with_sending_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_sending_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICBidirectionalStreamState::Open);
     out_progress.set_transfer_complete(true);
-    ss.update_on_ack();
+    CHECK(ss.update_on_ack());
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
 
     CHECK(ss.is_allowed_to_receive(QUICFrameType::STREAM));
-    ss.update_with_receiving_frame(*stream_frame_delayed);
+    CHECK(!ss.update_with_receiving_frame(*stream_frame_delayed));
 
-    ss.update_with_receiving_frame(*stream_frame_with_fin);
+    CHECK(ss.update_with_receiving_frame(*stream_frame_with_fin));
     CHECK(ss.get() == QUICBidirectionalStreamState::HC_L);
 
     in_progress.set_transfer_complete(true);
-    ss.update_on_read();
+    CHECK(ss.update_on_read());
     CHECK(ss.get() == QUICBidirectionalStreamState::Closed);
   }
 }

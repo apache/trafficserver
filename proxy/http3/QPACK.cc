@@ -149,22 +149,47 @@ QPACK::QPACK(QUICConnection *qc, uint32_t max_header_list_size, uint16_t max_tab
 
 QPACK::~QPACK() {}
 
+void
+QPACK::on_new_stream(QUICStream &stream)
+{
+  auto *info = new QUICStreamVCAdapter::IOInfo(stream);
+
+  switch (stream.direction()) {
+  case QUICStreamDirection::BIDIRECTIONAL:
+    // ink_assert(!"QPACK does not use bidirectional streams");
+    // QPACK offline interop uses stream 0 as a encoder stream.
+    info->setup_write_vio(this);
+    info->setup_read_vio(this);
+    break;
+  case QUICStreamDirection::SEND:
+    info->setup_write_vio(this);
+    break;
+  case QUICStreamDirection::RECEIVE:
+    info->setup_read_vio(this);
+    break;
+  default:
+    ink_assert(false);
+    break;
+  }
+
+  stream.set_io_adapter(&info->adapter);
+}
+
 int
 QPACK::event_handler(int event, Event *data)
 {
-  VIO *vio                = reinterpret_cast<VIO *>(data);
-  QUICStreamIO *stream_io = this->_find_stream_io(vio);
+  VIO *vio = reinterpret_cast<VIO *>(data);
   int ret;
 
   switch (event) {
   case VC_EVENT_READ_READY:
-    ret = this->_on_read_ready(*stream_io);
+    ret = this->_on_read_ready(vio);
     break;
   case VC_EVENT_READ_COMPLETE:
     ret = EVENT_DONE;
     break;
   case VC_EVENT_WRITE_READY:
-    ret = this->_on_write_ready(*stream_io);
+    ret = this->_on_write_ready(vio);
     break;
   case VC_EVENT_WRITE_COMPLETE:
     ret = EVENT_DONE;
@@ -254,17 +279,15 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
 }
 
 void
-QPACK::set_encoder_stream(QUICStreamIO *stream_io)
+QPACK::set_encoder_stream(QUICStreamId id)
 {
-  this->_encoder_stream_id = stream_io->stream_id();
-  this->set_stream(stream_io);
+  this->_encoder_stream_id = id;
 }
 
 void
-QPACK::set_decoder_stream(QUICStreamIO *stream_io)
+QPACK::set_decoder_stream(QUICStreamId id)
 {
-  this->_decoder_stream_id = stream_io->stream_id();
-  this->set_stream(stream_io);
+  this->_decoder_stream_id = id;
 }
 
 void
@@ -1008,27 +1031,32 @@ QPACK::_abort_decode()
 }
 
 int
-QPACK::_on_read_ready(QUICStreamIO &stream_io)
+QPACK::_on_read_ready(VIO *vio)
 {
-  QUICStreamId stream_id = stream_io.stream_id();
+  int nread              = 0;
+  QUICStreamId stream_id = static_cast<QUICStreamVCAdapter *>(vio->vc_server)->stream().id();
+
   if (stream_id == this->_decoder_stream_id) {
-    return this->_on_decoder_stream_read_ready(stream_io);
+    nread = this->_on_decoder_stream_read_ready(*vio->get_reader());
   } else if (stream_id == this->_encoder_stream_id) {
-    return this->_on_encoder_stream_read_ready(stream_io);
+    nread = this->_on_encoder_stream_read_ready(*vio->get_reader());
   } else {
     ink_assert(!"The stream ID must match either encoder stream id or decoder stream id");
-    return EVENT_DONE;
   }
+
+  vio->ndone += nread;
+  return EVENT_DONE;
 }
 
 int
-QPACK::_on_write_ready(QUICStreamIO &stream_io)
+QPACK::_on_write_ready(VIO *vio)
 {
-  QUICStreamId stream_id = stream_io.stream_id();
+  QUICStreamId stream_id = static_cast<QUICStreamVCAdapter *>(vio->vc_server)->stream().id();
+
   if (stream_id == this->_decoder_stream_id) {
-    return this->_on_decoder_write_ready(stream_io);
+    return this->_on_decoder_write_ready(*vio->get_writer());
   } else if (stream_id == this->_encoder_stream_id) {
-    return this->_on_encoder_write_ready(stream_io);
+    return this->_on_encoder_write_ready(*vio->get_writer());
   } else {
     ink_assert(!"The stream ID must match either decoder stream id or decoder stream id");
     return EVENT_DONE;
@@ -1036,13 +1064,14 @@ QPACK::_on_write_ready(QUICStreamIO &stream_io)
 }
 
 int
-QPACK::_on_decoder_stream_read_ready(QUICStreamIO &stream_io)
+QPACK::_on_decoder_stream_read_ready(IOBufferReader &reader)
 {
-  uint8_t buf;
-  if (stream_io.peek(&buf, 1) > 0) {
+  if (reader.is_read_avail_more_than(0)) {
+    uint8_t buf;
+    reader.memcpy(&buf, 1);
     if (buf & 0x80) { // Header Acknowledgement
       uint64_t stream_id;
-      if (this->_read_header_acknowledgement(stream_io, stream_id) >= 0) {
+      if (this->_read_header_acknowledgement(reader, stream_id) >= 0) {
         QPACKDebug("Received Header Acknowledgement: stream_id=%" PRIu64, stream_id);
         this->_update_largest_known_received_index_by_stream_id(stream_id);
         this->_update_reference_counts(stream_id);
@@ -1050,14 +1079,14 @@ QPACK::_on_decoder_stream_read_ready(QUICStreamIO &stream_io)
       }
     } else if (buf & 0x40) { // Stream Cancellation
       uint64_t stream_id;
-      if (this->_read_stream_cancellation(stream_io, stream_id) >= 0) {
+      if (this->_read_stream_cancellation(reader, stream_id) >= 0) {
         QPACKDebug("Received Stream Cancellation: stream_id=%" PRIu64, stream_id);
         this->_update_reference_counts(stream_id);
         this->_references.erase(stream_id);
       }
     } else { // Table State Synchronize
       uint16_t insert_count;
-      if (this->_read_table_state_synchronize(stream_io, insert_count) >= 0) {
+      if (this->_read_table_state_synchronize(reader, insert_count) >= 0) {
         QPACKDebug("Received Table State Synchronize: inserted_count=%d", insert_count);
         this->_update_largest_known_received_index_by_insert_count(insert_count);
       }
@@ -1068,18 +1097,18 @@ QPACK::_on_decoder_stream_read_ready(QUICStreamIO &stream_io)
 }
 
 int
-QPACK::_on_encoder_stream_read_ready(QUICStreamIO &stream_io)
+QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
 {
-  uint8_t buf;
-
-  while (stream_io.peek(&buf, 1) > 0) {
+  while (reader.is_read_avail_more_than(0)) {
+    uint8_t buf;
+    reader.memcpy(&buf, 1);
     if (buf & 0x80) { // Insert With Name Reference
       bool is_static;
       uint16_t index;
       Arena arena;
       char *value;
       uint16_t value_len;
-      if (this->_read_insert_with_name_ref(stream_io, is_static, index, arena, &value, value_len) < 0) {
+      if (this->_read_insert_with_name_ref(reader, is_static, index, arena, &value, value_len) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
@@ -1091,7 +1120,7 @@ QPACK::_on_encoder_stream_read_ready(QUICStreamIO &stream_io)
       uint16_t name_len;
       char *value;
       uint16_t value_len;
-      if (this->_read_insert_without_name_ref(stream_io, arena, &name, name_len, &value, value_len) < 0) {
+      if (this->_read_insert_without_name_ref(reader, arena, &name, name_len, &value, value_len) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
@@ -1099,7 +1128,7 @@ QPACK::_on_encoder_stream_read_ready(QUICStreamIO &stream_io)
       this->_dynamic_table.insert_entry(name, name_len, value, value_len);
     } else if (buf & 0x20) { // Dynamic Table Size Update
       uint16_t max_size;
-      if (this->_read_dynamic_table_size_update(stream_io, max_size) < 0) {
+      if (this->_read_dynamic_table_size_update(reader, max_size) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
@@ -1107,7 +1136,7 @@ QPACK::_on_encoder_stream_read_ready(QUICStreamIO &stream_io)
       this->_dynamic_table.update_size(max_size);
     } else { // Duplicates
       uint16_t index;
-      if (this->_read_duplicate(stream_io, index) < 0) {
+      if (this->_read_duplicate(reader, index) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
@@ -1122,17 +1151,17 @@ QPACK::_on_encoder_stream_read_ready(QUICStreamIO &stream_io)
 }
 
 int
-QPACK::_on_decoder_write_ready(QUICStreamIO &stream_io)
+QPACK::_on_decoder_write_ready(MIOBuffer &writer)
 {
-  int64_t written_len = stream_io.write(this->_decoder_stream_sending_instructions_reader, INT64_MAX);
+  int64_t written_len = writer.write(this->_decoder_stream_sending_instructions_reader, INT64_MAX);
   this->_decoder_stream_sending_instructions_reader->consume(written_len);
   return written_len;
 }
 
 int
-QPACK::_on_encoder_write_ready(QUICStreamIO &stream_io)
+QPACK::_on_encoder_write_ready(MIOBuffer &writer)
 {
-  int64_t written_len = stream_io.write(this->_encoder_stream_sending_instructions_reader, INT64_MAX);
+  int64_t written_len = writer.write(this->_encoder_stream_sending_instructions_reader, INT64_MAX);
   this->_encoder_stream_sending_instructions_reader->consume(written_len);
   return written_len;
 }
@@ -1611,14 +1640,14 @@ QPACK::_write_stream_cancellation(uint64_t stream_id)
 }
 
 int
-QPACK::_read_insert_with_name_ref(QUICStreamIO &stream_io, bool &is_static, uint16_t &index, Arena &arena, char **value,
+QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
                                   uint16_t &value_len)
 {
   size_t read_len = 0;
   int ret;
   uint8_t input[16384];
-  int input_len;
-  input_len = stream_io.peek(input, sizeof(input));
+  uint8_t *p    = reinterpret_cast<uint8_t *>(reader.memcpy(input, sizeof(input)));
+  int input_len = p - input;
 
   // S flag
   is_static = input[0] & 0x40;
@@ -1638,20 +1667,20 @@ QPACK::_read_insert_with_name_ref(QUICStreamIO &stream_io, bool &is_static, uint
   value_len = tmp;
   read_len += ret;
 
-  stream_io.consume(read_len);
+  reader.consume(read_len);
 
   return 0;
 }
 
 int
-QPACK::_read_insert_without_name_ref(QUICStreamIO &stream_io, Arena &arena, char **name, uint16_t &name_len, char **value,
+QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, uint16_t &name_len, char **value,
                                      uint16_t &value_len)
 {
   size_t read_len = 0;
   int ret;
   uint8_t input[16384];
-  int input_len;
-  input_len = stream_io.peek(input, sizeof(input));
+  uint8_t *p    = reinterpret_cast<uint8_t *>(reader.memcpy(input, sizeof(input)));
+  int input_len = p - input;
 
   // Name
   uint64_t tmp;
@@ -1668,19 +1697,19 @@ QPACK::_read_insert_without_name_ref(QUICStreamIO &stream_io, Arena &arena, char
   value_len = tmp;
   read_len += ret;
 
-  stream_io.consume(read_len);
+  reader.consume(read_len);
 
   return 0;
 }
 
 int
-QPACK::_read_duplicate(QUICStreamIO &stream_io, uint16_t &index)
+QPACK::_read_duplicate(IOBufferReader &reader, uint16_t &index)
 {
   size_t read_len = 0;
   int ret;
   uint8_t input[16];
-  int input_len;
-  input_len = stream_io.peek(input, sizeof(input));
+  uint8_t *p    = reinterpret_cast<uint8_t *>(reader.memcpy(input, sizeof(input)));
+  int input_len = p - input;
 
   // Index
   uint64_t tmp;
@@ -1690,19 +1719,19 @@ QPACK::_read_duplicate(QUICStreamIO &stream_io, uint16_t &index)
   index = tmp;
   read_len += ret;
 
-  stream_io.consume(read_len);
+  reader.consume(read_len);
 
   return 0;
 }
 
 int
-QPACK::_read_dynamic_table_size_update(QUICStreamIO &stream_io, uint16_t &max_size)
+QPACK::_read_dynamic_table_size_update(IOBufferReader &reader, uint16_t &max_size)
 {
   size_t read_len = 0;
   int ret;
   uint8_t input[16];
-  int input_len;
-  input_len = stream_io.peek(input, sizeof(input));
+  uint8_t *p    = reinterpret_cast<uint8_t *>(reader.memcpy(input, sizeof(input)));
+  int input_len = p - input;
   uint64_t tmp;
 
   // Max Size
@@ -1712,19 +1741,19 @@ QPACK::_read_dynamic_table_size_update(QUICStreamIO &stream_io, uint16_t &max_si
   max_size = tmp;
   read_len += ret;
 
-  stream_io.consume(read_len);
+  reader.consume(read_len);
 
   return 0;
 }
 
 int
-QPACK::_read_table_state_synchronize(QUICStreamIO &stream_io, uint16_t &insert_count)
+QPACK::_read_table_state_synchronize(IOBufferReader &reader, uint16_t &insert_count)
 {
   size_t read_len = 0;
   int ret;
   uint8_t input[16];
-  int input_len;
-  input_len = stream_io.peek(input, sizeof(input));
+  uint8_t *p    = reinterpret_cast<uint8_t *>(reader.memcpy(input, sizeof(input)));
+  int input_len = p - input;
   uint64_t tmp;
 
   // Insert Count
@@ -1734,19 +1763,19 @@ QPACK::_read_table_state_synchronize(QUICStreamIO &stream_io, uint16_t &insert_c
   insert_count = tmp;
   read_len += ret;
 
-  stream_io.consume(read_len);
+  reader.consume(read_len);
 
   return 0;
 }
 
 int
-QPACK::_read_header_acknowledgement(QUICStreamIO &stream_io, uint64_t &stream_id)
+QPACK::_read_header_acknowledgement(IOBufferReader &reader, uint64_t &stream_id)
 {
   size_t read_len = 0;
   int ret;
   uint8_t input[16];
-  int input_len;
-  input_len = stream_io.peek(input, sizeof(input));
+  uint8_t *p    = reinterpret_cast<uint8_t *>(reader.memcpy(input, sizeof(input)));
+  int input_len = p - input;
 
   // Stream ID
   // FIXME xpack_decode_integer does not support uint64_t
@@ -1755,19 +1784,19 @@ QPACK::_read_header_acknowledgement(QUICStreamIO &stream_io, uint64_t &stream_id
   }
   read_len += ret;
 
-  stream_io.consume(read_len);
+  reader.consume(read_len);
 
   return 0;
 }
 
 int
-QPACK::_read_stream_cancellation(QUICStreamIO &stream_io, uint64_t &stream_id)
+QPACK::_read_stream_cancellation(IOBufferReader &reader, uint64_t &stream_id)
 {
   size_t read_len = 0;
   int ret;
   uint8_t input[16];
-  int input_len;
-  input_len = stream_io.peek(input, sizeof(input));
+  uint8_t *p    = reinterpret_cast<uint8_t *>(reader.memcpy(input, sizeof(input)));
+  int input_len = p - input;
 
   // Stream ID
   // FIXME xpack_decode_integer does not support uint64_t
@@ -1776,7 +1805,7 @@ QPACK::_read_stream_cancellation(QUICStreamIO &stream_io, uint64_t &stream_id)
   }
   read_len += ret;
 
-  stream_io.consume(read_len);
+  reader.consume(read_len);
 
   return 0;
 }

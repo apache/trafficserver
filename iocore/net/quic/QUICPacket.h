@@ -275,7 +275,7 @@ private:
   QUICKeyPhase _key_phase;
   QUICPacketNumber _packet_number;
   int _packet_number_len;
-  QUICConnectionId _dcid;
+  QUICConnectionId _dcid = QUICConnectionId::ZERO();
 };
 
 class QUICStatelessResetPacket : public QUICPacket
