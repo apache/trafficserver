@@ -138,9 +138,6 @@ public:
     return i;
   }
 
-  int write(int fd) const;
-  int read(int fd);
-
   /// Duplicate this span and all chained spans.
   Span *dup();
   int64_t
@@ -249,8 +246,6 @@ struct Store {
   // 0 on success -1 on failure
   // these operations are NOT thread-safe
   //
-  int write(int fd, const char *name) const;
-  int read(int fd, char *name);
   int clear(char *filename, bool clear_dirs = true);
   void normalize();
   void delete_all();
