@@ -12,7 +12,6 @@
 < Connection: keep-alive
 < Server: ATS/10.0.0
 < Cache-Result: miss
-< 
 ``
 > GET / HTTP/1.1
 > Host: www.example.com
@@ -27,7 +26,6 @@
 < Connection: keep-alive
 < Server: ATS/10.0.0
 < Cache-Result: hit-fresh
-< 
 ``
 > GET / HTTP/1.1
 > Host: www.example.com
@@ -42,7 +40,6 @@
 < Connection: keep-alive
 < Server: ATS/10.0.0
 < Cache-Result: hit-stale
-< 
 ``
 > GET / HTTP/1.1
 > Host: www.example.com
@@ -57,5 +54,4 @@
 < Connection: keep-alive
 < Server: ATS/10.0.0
 < Cache-Result: hit-fresh
-< 
 ``

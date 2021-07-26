@@ -169,8 +169,8 @@ CACHE
 
     cond %{CACHE} <operand>
 
-This condition provides the server's cache lookup results to inform headers 
-where the requested data was generated from. The cache values are: 
+This condition provides the server's cache lookup results to inform headers
+where the requested data was generated from. The cache values are:
 
   ==========  ===========
   Value       Description
