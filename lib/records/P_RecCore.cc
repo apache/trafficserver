@@ -746,7 +746,7 @@ RecResetStatRecord(RecT type, bool all)
   for (i = 0; i < num_records; i++) {
     RecRecord *r1 = &(g_records[i]);
 
-    if (REC_TYPE_IS_STAT(r1->rec_type)) {
+    if (!REC_TYPE_IS_STAT(r1->rec_type)) {
       continue;
     }
 
