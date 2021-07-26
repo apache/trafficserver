@@ -59,18 +59,18 @@ ip_allow                  Specify a list of client IP address, subnets, or range
 verify_server_policy      One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
                           By default this is :ts:cv:`proxy.config.ssl.client.verify.server.policy`.
-                          This controls how Traffic Server evaluated the origin certificate.
+                          This controls how |TS| evaluated the origin certificate.
 
 verify_server_properties  One of the values :code:`NONE`, :code:`SIGNATURE`, :code:`NAME`, and :code:`ALL`
 
                           By default this is :ts:cv:`proxy.config.ssl.client.verify.server.properties`.
-                          This controls what Traffic Server checks when evaluating the origin certificate.
+                          This controls what |TS| checks when evaluating the origin certificate.
 
 verify_client             One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
                           If ``NONE`` is specified, |TS| requests no certificate.  If ``MODERATE`` is specified
                           |TS| will verify a certificate that is presented by the client, but it will not
                           fail the TLS handshake if no certificate is presented.  If ``STRICT`` is specified
-                          the client must resent a certificate during the TLS handshake.
+                          the client must present a certificate during the TLS handshake.
 
                           By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
 
@@ -164,7 +164,7 @@ Upstream (server) verification, via ``verify_server_policy`` and ``verify_server
 except there is always an upstream certificate. This is equivalent to setting
 :ts:cv:`proxy.config.ssl.client.verify.server.policy` and :ts:cv:`proxy.config.ssl.client.verify.server.properties` for this connection.
 
-``verify_server_policy`` specifies how Traffic Server will enforce the server certificate verification.
+``verify_server_policy`` specifies how |TS| will enforce the server certificate verification.
 
 :code:`DISABLED`
    Do not verify the upstream server certificate.
@@ -177,10 +177,10 @@ except there is always an upstream certificate. This is equivalent to setting
    Do verification of the upstream certificate. If verification fails, the failure is
    logged in :file:`diags.log` and the connection is denied.
 
-In addition ``verify_server_properties`` specifies what Traffic Server will check when performing the verification.
+In addition ``verify_server_properties`` specifies what |TS| will check when performing the verification.
 
 :code:`NONE`
-  Do not check anything in the standard Traffic Server verification routine.  Rely entirely on the ``TS_SSL_VERIFY_SERVER_HOOK`` for evaluating the origin's certificate.
+  Do not check anything in the standard |TS| verification routine.  Rely entirely on the ``TS_SSL_VERIFY_SERVER_HOOK`` for evaluating the origin's certificate.
 
 :code:`SIGNATURE`
   Check the signature of the origin certificate.
