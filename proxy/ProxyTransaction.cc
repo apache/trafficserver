@@ -240,3 +240,11 @@ ProxyTransaction::allow_half_open() const
 {
   return false;
 }
+
+// Most protocols will not want to set the Connection: header
+// For H2 it will initiate the drain logic.  So we make do nothing
+// the default action.
+void
+ProxyTransaction::set_close_connection(HTTPHdr &hdr) const
+{
+}

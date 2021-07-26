@@ -87,6 +87,10 @@ public:
   // Returns true if there is a request body for this request
   virtual bool has_request_body(int64_t content_length, bool is_chunked_set) const;
 
+  // Worker function to set Connection:close header if appropriate for
+  // underlying protocol
+  virtual void set_close_connection(HTTPHdr &hdr) const;
+
   sockaddr const *get_remote_addr() const;
 
   virtual HTTPVersion get_version(HTTPHdr &hdr) const;
