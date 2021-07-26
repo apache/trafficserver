@@ -66,6 +66,25 @@ ink_stack_trace_dump()
   }
 }
 
+const void *
+ink_backtrace(const int n)
+{
+  if (INK_STACK_TRACE_MAX_LEVELS < n + 1) {
+    return nullptr;
+  }
+
+  const int m = n + 1;
+  void *callstack[m];
+  int frames = backtrace(callstack, m);
+
+  const void *symbol = nullptr;
+  if (frames == m && callstack[n] != nullptr) {
+    symbol = callstack[n];
+  }
+
+  return symbol;
+}
+
 #else /* !TS_HAS_BACKTRACE */
 
 void
@@ -74,6 +93,12 @@ ink_stack_trace_dump()
   const char msg[] = "ink_stack_trace_dump not implemented on this operating system\n";
   if (write(STDERR_FILENO, msg, sizeof(msg) - 1) == -1)
     return;
+}
+
+const void *
+ink_backtrace(const int /* n */)
+{
+  return nullptr;
 }
 
 #endif /* TS_HAS_BACKTRACE */

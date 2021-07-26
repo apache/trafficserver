@@ -32,6 +32,7 @@
 
 #include "I_EThread.h"
 #include "I_EventProcessor.h"
+#include <execinfo.h>
 
 const ink_hrtime DELAY_FOR_RETRY = HRTIME_MSECONDS(10);
 extern ink_thread_key ethread_key;
@@ -39,7 +40,12 @@ extern ink_thread_key ethread_key;
 TS_INLINE Event *
 EThread::schedule_imm(Continuation *cont, int callback_event, void *cookie)
 {
-  Event *e          = ::eventAllocator.alloc();
+  Event *e = ::eventAllocator.alloc();
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   return schedule(e->init(cont, 0, 0));
@@ -48,7 +54,12 @@ EThread::schedule_imm(Continuation *cont, int callback_event, void *cookie)
 TS_INLINE Event *
 EThread::schedule_at(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
 {
-  Event *e          = ::eventAllocator.alloc();
+  Event *e = ::eventAllocator.alloc();
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   return schedule(e->init(cont, t, 0));
@@ -57,7 +68,12 @@ EThread::schedule_at(Continuation *cont, ink_hrtime t, int callback_event, void 
 TS_INLINE Event *
 EThread::schedule_in(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
 {
-  Event *e          = ::eventAllocator.alloc();
+  Event *e = ::eventAllocator.alloc();
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   return schedule(e->init(cont, get_hrtime() + t, 0));
@@ -66,7 +82,12 @@ EThread::schedule_in(Continuation *cont, ink_hrtime t, int callback_event, void 
 TS_INLINE Event *
 EThread::schedule_every(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
 {
-  Event *e          = ::eventAllocator.alloc();
+  Event *e = ::eventAllocator.alloc();
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   if (t < 0) {
@@ -108,7 +129,12 @@ EThread::schedule(Event *e)
 TS_INLINE Event *
 EThread::schedule_imm_local(Continuation *cont, int callback_event, void *cookie)
 {
-  Event *e          = EVENT_ALLOC(eventAllocator, this);
+  Event *e = EVENT_ALLOC(eventAllocator, this);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   return schedule_local(e->init(cont, 0, 0));
@@ -117,7 +143,12 @@ EThread::schedule_imm_local(Continuation *cont, int callback_event, void *cookie
 TS_INLINE Event *
 EThread::schedule_at_local(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
 {
-  Event *e          = EVENT_ALLOC(eventAllocator, this);
+  Event *e = EVENT_ALLOC(eventAllocator, this);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   return schedule_local(e->init(cont, t, 0));
@@ -126,7 +157,12 @@ EThread::schedule_at_local(Continuation *cont, ink_hrtime t, int callback_event,
 TS_INLINE Event *
 EThread::schedule_in_local(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
 {
-  Event *e          = EVENT_ALLOC(eventAllocator, this);
+  Event *e = EVENT_ALLOC(eventAllocator, this);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   return schedule_local(e->init(cont, get_hrtime() + t, 0));
@@ -135,7 +171,12 @@ EThread::schedule_in_local(Continuation *cont, ink_hrtime t, int callback_event,
 TS_INLINE Event *
 EThread::schedule_every_local(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
 {
-  Event *e          = EVENT_ALLOC(eventAllocator, this);
+  Event *e = EVENT_ALLOC(eventAllocator, this);
+
+#ifdef ENABLE_EVENT_TRACKER
+  e->set_location();
+#endif
+
   e->callback_event = callback_event;
   e->cookie         = cookie;
   if (t < 0) {

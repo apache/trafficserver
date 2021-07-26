@@ -200,6 +200,11 @@ public:
   // inherited from Action::cancel
   // virtual void cancel(Continuation * c = nullptr);
 
+#ifdef ENABLE_EVENT_TRACKER
+  void set_location();
+  const void *get_location() const;
+#endif
+
   void free();
 
   EThread *ethread = nullptr;
@@ -238,6 +243,14 @@ public:
 
 private:
   void *operator new(size_t size); // use the fast allocators
+
+#ifdef ENABLE_EVENT_TRACKER
+  /**
+    Address of who scheduled this event
+    To get symbols, use backtrace_symbols(3) or external tools like `addr2line(1)` (Linux) or `atos(1)`(BSD).
+   */
+  const void *_location = nullptr;
+#endif
 
 public:
   LINK(Event, link);
