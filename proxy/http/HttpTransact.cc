@@ -7052,7 +7052,7 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
     if (s->client_info.keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
       if (s->client_info.proxy_connect_hdr) {
         heads->value_set(c_hdr_field_str, c_hdr_field_len, "close", 5);
-      } else {
+      } else if (s->state_machine->ua_txn != nullptr) {
         s->state_machine->ua_txn->set_close_connection(*heads);
       }
       s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
