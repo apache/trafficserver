@@ -6891,7 +6891,10 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
         if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
         } else {
-          s->state_machine->get_server_txn()->set_close_connection(*heads);
+          ProxyTransaction *svr = s->state_machine->get_server_txn();
+          if (svr) {
+            svr->set_close_connection(*heads);
+          }
         }
       }
       // Note: if we are 1.1, we always need to send the close
