@@ -23,6 +23,7 @@
 static int ts_lua_get_process_id(lua_State *L);
 static int ts_lua_get_now_time(lua_State *L);
 static int ts_lua_debug(lua_State *L);
+static int ts_lua_is_debug_tag_set(lua_State *L);
 static int ts_lua_error(lua_State *L);
 static int ts_lua_emergency(lua_State *L);
 static int ts_lua_fatal(lua_State *L);
@@ -65,6 +66,10 @@ ts_lua_inject_misc_api(lua_State *L)
   /* ts.debug(...) */
   lua_pushcfunction(L, ts_lua_debug);
   lua_setfield(L, -2, "debug");
+
+  /* ts.is_debug_tag_set(...) */
+  lua_pushcfunction(L, ts_lua_is_debug_tag_set);
+  lua_setfield(L, -2, "is_debug_tag_set");
 
   /* ts.error(...) */
   lua_pushcfunction(L, ts_lua_error);
@@ -180,6 +185,29 @@ ts_lua_debug(lua_State *L)
   }
 
   return 0;
+}
+
+static int
+ts_lua_is_debug_tag_set(lua_State *L)
+{
+  const char *flag;
+  size_t flag_len = 0;
+  int stat        = 0;
+
+  if (lua_gettop(L) == 1) {
+    flag = luaL_checklstring(L, 1, &flag_len);
+    stat = TSIsDebugTagSet(flag);
+  } else {
+    stat = TSIsDebugTagSet(TS_LUA_DEBUG_TAG);
+  }
+
+  if (0 == stat) {
+    lua_pushboolean(L, 0);
+  } else {
+    lua_pushboolean(L, 1);
+  }
+
+  return 1;
 }
 
 static int
