@@ -1042,6 +1042,14 @@ typedef struct TSSecretID_s {
   size_t key_name_len;
 } TSSecretID;
 
+typedef struct TSHttpConnectPluginOptions_s {
+  struct sockaddr const *addr;
+  const char *tag;
+  int64_t id;
+  TSIOBufferSizeIndex buffer_index;
+  int64_t buffer_water_mark;
+} TSHttpConnectPluginOptions;
+
 /* --------------------------------------------------------------------------
    Init */
 

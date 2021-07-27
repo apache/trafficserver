@@ -1775,17 +1775,16 @@ tsapi void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp);
 
     This returns a VConn that connected to the transaction.
 
+    @param options a TSHttpConnectPluginOptions structure that specifies options.
+ */
+tsapi TSVConn TSHttpConnectPlugin(TSHttpConnectPluginOptions options);
+
+/** Backwards compatible version.
+    This function calls This provides a @a buffer_index of 8 and a @a buffer_water_mark of 0.
+
     @param addr Target address of the origin server.
     @param tag A logging tag that can be accessed via the pitag field. May be @c NULL.
     @param id A logging id that can be access via the piid field.
-    @param buffer_index Index for read and write buffers used by PluginVC.
-    @param buffer_water_mark Number of bytes used as the water mark for buffers used by PluginVC.
- */
-tsapi TSVConn TSHttpConnectPlugin(struct sockaddr const *addr, const char *tag, int64_t id, int64_t buffer_index,
-                                  int64_t buffer_water_mark);
-
-/** Backwards compatible version.
-    This provides a @a buffer_index of 8 and a @a buffer_water_mark of 0.
  */
 tsapi TSVConn TSHttpConnectWithPluginId(struct sockaddr const *addr, const char *tag, int64_t id);
 

@@ -34,7 +34,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSVConn TSHttpConnectPlugin(sockaddr const * addr, char const * tag, int64_t id, int64_t buffer_index, int64_t buffer_water_mark)
+.. function:: TSVConn TSHttpConnectPlugin(TSHttpConnectPluginOptions options);
 
 Description
 ===========
@@ -44,39 +44,11 @@ connection to that state machine. This is more efficient than using
 :c:func:`TSNetConnect` because it avoids using the operating system
 stack via the loopback interface.
 
-:arg:`addr`
-   This is the network address of the target of the connection.
-   This includes the port which should be stored in the :code:`sockaddr`
-   structure pointed at by :arg:`addr`.
-
-:arg:`tag`
-   This is a tag that is passed through to the HTTP state machine.
-   It must be a persistent string that has a lifetime longer than
-   the connection. It is accessible via the log field :ref:`pitag
-   <pitag>`. This is intended as a class or type identifier that
-   is consistent across all connections for this plugin. In effect,
-   the name of the plugin. This can be :literal:`NULL`.
-
-:arg:`id`
-   This is a numeric identifier that is passed through to the HTTP
-   state machine. It is accessible via the log field :ref:`piid
-   <piid>`. This is intended as a connection identifier and should
-   be distinct for every call to :c:func:`TSHttpConnectPlugin`.
-   The easiest mechanism is to define a plugin global value and
-   increment it for each connection. The value :literal:`0` is
-   reserved to mean "not set" and can be used as a default if this
-   functionality is not needed.
-
-:arg:`buffer_index`
-   This is the numeric index that will be used to derive the actual
-   sizes to use when constructing IOBuffers. The range of acceptable
-   values are defined by the type:`TSIOBufferSizeIndex` enum.
-
-:arg:`buffer_water_mark`
-   This specifies the minimum number of bytes that must be written
-   to an IOBuffer before any continuation is called back to read from
-   the buffer. See the :c:func:`TSIOBufferWaterMarkGet` and
-   :c:func:`TSIOBufferWaterMarkSet` functions for further detail.
+:arg:`options`
+   A :c:type:`TSHttpConnectPluginOptions` structure that contains
+   fields that provide the network address of the target, a tag that
+   can be passed through to the HTTP state machine, a plugin ID, a
+   buffer index and buffer water mark.
 
 The virtual connection returned as the :c:type:`TSVConn` is API
 equivalent to a network virtual connection both to the plugin and
@@ -101,12 +73,12 @@ Notes
 
 The H2 implementation uses this to correlate client sessions
 with H2 streams. Each client connection is assigned a distinct
-numeric identifier. This is passed as the :arg:`id` to
-:c:func:`TSHttpConnectPlugin`. The :arg:`tag` is selected
-to be the NPN string for the client session protocol, e.g.
-"h2". Log post processing can then count the number of connections for the
-various supported protocols and the number of H2 virtual streams for each
-real client connection to Traffic Server.
+numeric identifier. This is passed in the options structure via
+the member variable `id` to the :c:func:`TSHttpConnectPlugin` function.
+The :arg:`tag` is selected to be the NPN string for the client session
+protocol, e.g. "h2". Log post processing can then count the number of
+connections for the various supported protocols and the number of H2
+virtual streams for each real client connection to Traffic Server.
 
 See Also
 ========
