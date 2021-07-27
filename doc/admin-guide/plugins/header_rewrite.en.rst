@@ -1245,7 +1245,7 @@ The following ruleset removes any query parameters set by the client.::
    rm-destination QUERY
 
 Mimic X-Debug Plugin's X-Cache Header
-------------------------------------
+-------------------------------------
 
 This rule can mimic X-Debug plugin's ``X-Cache`` header by accumulating
 the ``CACHE`` condition results to a header.::
