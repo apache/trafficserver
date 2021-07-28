@@ -344,30 +344,3 @@ TSPluginInit(int argc, const char *argv[])
 
   tCont = TSContCreate(transactionContFunc, mtx);
 }
-
-namespace
-{
-class Cleanup
-{
-public:
-  ~Cleanup()
-  {
-    // In practice it is not strictly necessary to destroy remaining continuations on program exit.
-
-    if (tCont) {
-      TSContDestroy(tCont);
-    }
-    if (sCont) {
-      TSContDestroy(sCont);
-    }
-    if (gCont) {
-      TSContDestroy(gCont);
-    }
-  }
-};
-
-// Do any needed cleanup for this source file at program termination time.
-//
-Cleanup cleanup;
-
-} // namespace
