@@ -1,4 +1,5 @@
 Changes with Apache Traffic Server 9.1.0
+  #4843 - limit m_current_range to max value in RangeTransform
   #5758 - Fix race condition when invoking TASK_THREADS_READY lifecycle hook
   #5759 - Remove unnecessary parts from tests
   #5761 - Remove testing command
@@ -214,6 +215,7 @@ Changes with Apache Traffic Server 9.1.0
   #7289 - Enable all h2spec test
   #7291 - Add failed state to hostdb to better track failing origins
   #7292 - Allow disabling SO_MARK and IP_TOS usage
+  #7298 - Adds OCSP support for BoringSSL
   #7307 - fix DNS spike issue for TCP_RETRY mode
   #7311 - Traffic Dump: Fix stream-id printing after first transaction.
   #7323 - Updates the Dockerfile with more packages
@@ -343,6 +345,7 @@ Changes with Apache Traffic Server 9.1.0
   #7783 - Adds new TS API TSHttpTxnCacheDiskPathGet
   #7784 - Adds new X-Cache-Info header to the xdebug plugin
   #7790 - Fix MLoc assert caused by s3auth
+  #7793 - use sendmsg and recvmsg
   #7797 - HTTP: clean up the http_hdr_describe format error
   #7806 - TSHttpTxnCacheDiskPathGet - tighten up the code a bit.
   #7807 - Address assert on captive_action
@@ -351,17 +354,32 @@ Changes with Apache Traffic Server 9.1.0
   #7830 - Fix a format specifier for size_t
   #7834 - AuTest: use exteneded help output to determine curl feature support
   #7835 - Remove unused member from HttpSM
-  #7840 - Fixed warning in gcc 11 about array not being initalized
   #7842 - Extra braces for clang 5 / ubuntu 16.04 on array initialization
   #7858 - Adds a new --enable-all-asserts configure option
+  #7885 - Close connection after every bad request for HTTP/1.1
+  #7886 - Enforce case for well known methods
   #7892 - Reset Http1Transaction before adding vc to keep_alive_queue
   #7894 - Set accept_options of Http1Transaction in Http1ClientSession::new_con…
   #7896 - Fixed spelling mistakes in the docs
   #7898 - docs: fix capitalization of Linux
-  #7904 - Ensure the HTTP portion of the protocol string is upper case
+  #7905 - Treat TRACE with body as bad request
   #7911 - Add a basic Au test using strategies.yaml, with consistent hashing.
   #7914 - Add Au test for strategies.yaml, with consistent hashing, with fallover.
   #7923 - Adjust vc read errors
   #7929 - Satisfy ci/jenkins/bin/clang-format.sh
+  #7932 - Add a JSON schema for strategies.yaml
   #7935 - Remove scrap log object dead code
   #7940 - Pin Sphinx to 3.x to unblock `make html`
+  #7958 - Fixed compile error with Linux AIO unit test
+  #7963 - Note YAML parser library bug, and work-around, in documentation.
+  #7970 - ESI plugin documentation updates.
+  #7989 - Cleans up the code bit, including milliseconds consistency
+  #8004 - Fix HPACK eviction iterator manipulation
+  #8005 - Updates to webp_transform to convert webp to jpeg
+  #8058 - Replace assert with warning in error event processing
+  #8070 - Finishes #/7748 with some additional cleanup
+  #8074 - Make the InkAPI mHandleAllocator be a Proxy Allocator
+  #8099 - .gitignore rules for gcov generated files
+  #8162 - HostDBProcessor: ensure hostname_offset is initialized to '0' to indicate null hostname
+  #8168 - Added missing milestones and updated slow log report script
+  #8173 - Update INSTALL for URLs and version number
