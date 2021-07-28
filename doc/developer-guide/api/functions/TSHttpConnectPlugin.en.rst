@@ -34,7 +34,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSVConn TSHttpConnectPlugin(TSHttpConnectPluginOptions options);
+.. function:: TSVConn TSHttpConnectPlugin(TSHttpConnectOptions * options);
 
 Description
 ===========
@@ -45,10 +45,10 @@ connection to that state machine. This is more efficient than using
 stack via the loopback interface.
 
 :arg:`options`
-   A :c:type:`TSHttpConnectPluginOptions` structure that contains
-   fields that provide the network address of the target, a tag that
-   can be passed through to the HTTP state machine, a plugin ID, a
-   buffer index and buffer water mark.
+   A :c:type:`TSHttpConnectOptions` structure that contains fields
+   that provide the network address of the target, a tag that can be
+   passed through to the HTTP state machine, a plugin ID, a buffer
+   index and buffer water mark.
 
 The virtual connection returned as the :c:type:`TSVConn` is API
 equivalent to a network virtual connection both to the plugin and

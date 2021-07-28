@@ -1777,7 +1777,7 @@ tsapi void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp);
 
     @param options a TSHttpConnectPluginOptions structure that specifies options.
  */
-tsapi TSVConn TSHttpConnectPlugin(TSHttpConnectPluginOptions options);
+tsapi TSVConn TSHttpConnectPlugin(TSHttpConnectOptions *options);
 
 /** Backwards compatible version.
     This function calls This provides a @a buffer_index of 8 and a @a buffer_water_mark of 0.

@@ -1042,13 +1042,16 @@ typedef struct TSSecretID_s {
   size_t key_name_len;
 } TSSecretID;
 
-typedef struct TSHttpConnectPluginOptions_s {
+typedef enum { TS_CONNECT_UNDEFINED, TS_CONNECT_PLUGIN, TS_CONNECT_LAST_ENTRY } TSConnectType;
+
+typedef struct TSHttpConnectOptions_s {
+  TSConnectType connect_type;
   struct sockaddr const *addr;
   const char *tag;
   int64_t id;
   TSIOBufferSizeIndex buffer_index;
   int64_t buffer_water_mark;
-} TSHttpConnectPluginOptions;
+} TSHttpConnectOptions;
 
 /* --------------------------------------------------------------------------
    Init */

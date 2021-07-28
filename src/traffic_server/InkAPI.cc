@@ -6881,36 +6881,39 @@ TSHttpTxnPluginTagGet(TSHttpTxn txnp)
 TSVConn
 TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
 {
-  TSHttpConnectPluginOptions options = {.addr              = addr,
-                                        .tag               = tag,
-                                        .id                = id,
-                                        .buffer_index      = TS_IOBUFFER_SIZE_INDEX_32K,
-                                        .buffer_water_mark = DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK};
-  return TSHttpConnectPlugin(options);
+  TSHttpConnectOptions options = {.connect_type      = TS_CONNECT_PLUGIN,
+                                  .addr              = addr,
+                                  .tag               = tag,
+                                  .id                = id,
+                                  .buffer_index      = TS_IOBUFFER_SIZE_INDEX_32K,
+                                  .buffer_water_mark = DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK};
+  return TSHttpConnectPlugin(&options);
 }
 
 TSVConn
-TSHttpConnectPlugin(TSHttpConnectPluginOptions options)
+TSHttpConnectPlugin(TSHttpConnectOptions *options)
 {
-  sdk_assert(options.addr);
+  sdk_assert(options != nullptr);
+  sdk_assert(options->connect_type == TS_CONNECT_PLUGIN);
+  sdk_assert(options->addr);
 
-  sdk_assert(ats_is_ip(options.addr));
-  sdk_assert(ats_ip_port_cast(options.addr));
+  sdk_assert(ats_is_ip(options->addr));
+  sdk_assert(ats_ip_port_cast(options->addr));
 
-  if (options.buffer_index < TS_IOBUFFER_SIZE_INDEX_128 || options.buffer_index > MAX_BUFFER_SIZE_INDEX) {
-    options.buffer_index = TS_IOBUFFER_SIZE_INDEX_32K; // out of range, set to the default for safety
+  if (options->buffer_index < TS_IOBUFFER_SIZE_INDEX_128 || options->buffer_index > MAX_BUFFER_SIZE_INDEX) {
+    options->buffer_index = TS_IOBUFFER_SIZE_INDEX_32K; // out of range, set to the default for safety
   }
 
-  if (options.buffer_water_mark < 0) {
-    options.buffer_water_mark = DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK;
+  if (options->buffer_water_mark < 0) {
+    options->buffer_water_mark = DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK;
   }
 
   if (plugin_http_accept) {
-    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_accept, options.buffer_index, options.buffer_water_mark);
+    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_accept, options->buffer_index, options->buffer_water_mark);
 
-    new_pvc->set_active_addr(options.addr);
-    new_pvc->set_plugin_id(options.id);
-    new_pvc->set_plugin_tag(options.tag);
+    new_pvc->set_active_addr(options->addr);
+    new_pvc->set_plugin_id(options->id);
+    new_pvc->set_plugin_tag(options->tag);
 
     PluginVC *return_vc = new_pvc->connect();
 

@@ -78,9 +78,13 @@ more widely. Those are described on this page.
 
    A 64 bit time value, measured in nanoseconds.
 
-.. type:: TSHttpConnectPluginOptions
+.. type:: TSHttpConnectOptions
 
    A type that encapsulates options passed into the :func:`TSHttpConnectPlugin` function.
+
+   .. member:: TSConnectType connect_type
+
+      The type of data represented in the struct.
 
    .. member:: sockaddr const *addr
 
@@ -105,6 +109,10 @@ more widely. Those are described on this page.
       an IOBuffer before any continuation is called back to read from the buffer.
       See the :c:func:`TSIOBufferWaterMarkGet` and :c:func:`TSIOBufferWaterMarkSet`
       functions for further detail.
+
+.. type:: TSHttpConnectType
+
+   Enumeration that specifies the type of data within a :c:type:`TSHttpConnectOptions` structure.
 
 .. type:: TSHttpParser
 
