@@ -110,7 +110,7 @@ more widely. Those are described on this page.
       See the :c:func:`TSIOBufferWaterMarkGet` and :c:func:`TSIOBufferWaterMarkSet`
       functions for further detail.
 
-.. type:: TSHttpConnectType
+.. type:: TSConnectType
 
    Enumeration that specifies the type of data within a :c:type:`TSHttpConnectOptions` structure.
 
