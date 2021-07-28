@@ -380,6 +380,7 @@ Changes with Apache Traffic Server 9.1.0
   #8070 - Finishes #/7748 with some additional cleanup
   #8074 - Make the InkAPI mHandleAllocator be a Proxy Allocator
   #8099 - .gitignore rules for gcov generated files
+  #8106 - Make the rest of InkAPI allocators Proxy Allocated
   #8162 - HostDBProcessor: ensure hostname_offset is initialized to '0' to indicate null hostname
   #8168 - Added missing milestones and updated slow log report script
   #8173 - Update INSTALL for URLs and version number
