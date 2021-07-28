@@ -1075,7 +1075,7 @@ INKContInternal::free()
   clear();
   this->mutex.clear();
   m_free_magic = INKCONT_INTERN_MAGIC_DEAD;
-  INKContAllocator.free(this);
+  THREAD_FREE(this, INKContAllocator, this_thread());
 }
 
 void
@@ -1181,7 +1181,7 @@ INKVConnInternal::free()
   clear();
   this->mutex.clear();
   m_free_magic = INKCONT_INTERN_MAGIC_DEAD;
-  INKVConnAllocator.free(this);
+  THREAD_FREE(this, INKVConnAllocator, this_thread());
 }
 
 void
@@ -1386,7 +1386,7 @@ APIHooks::append(INKContInternal *cont)
 {
   APIHook *api_hook;
 
-  api_hook         = apiHookAllocator.alloc();
+  api_hook         = THREAD_ALLOC(apiHookAllocator, this_thread());
   api_hook->m_cont = cont;
 
   m_hooks.enqueue(api_hook);
@@ -1397,7 +1397,7 @@ APIHooks::clear()
 {
   APIHook *hook;
   while (nullptr != (hook = m_hooks.pop())) {
-    apiHookAllocator.free(hook);
+    THREAD_FREE(hook, apiHookAllocator, this_thread());
   }
 }
 
@@ -4599,7 +4599,7 @@ TSContCreate(TSEventFunc funcp, TSMutex mutexp)
     pluginThreadContext->acquire();
   }
 
-  INKContInternal *i = INKContAllocator.alloc();
+  INKContInternal *i = THREAD_ALLOC(INKContAllocator, this_thread());
 
   i->init(funcp, mutexp, pluginThreadContext);
   return (TSCont)i;
@@ -7002,7 +7002,7 @@ TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp)
     pluginThreadContext->acquire();
   }
 
-  INKVConnInternal *i = INKVConnAllocator.alloc();
+  INKVConnInternal *i = THREAD_ALLOC(INKVConnAllocator, this_thread());
 
   sdk_assert(sdk_sanity_check_null_ptr((void *)i) == TS_SUCCESS);
 

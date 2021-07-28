@@ -135,6 +135,10 @@ public:
   ProxyAllocator ioDataAllocator;
   ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
+  // From InkAPI (plugins wrappers)
+  ProxyAllocator apiHookAllocator;
+  ProxyAllocator INKContAllocator;
+  ProxyAllocator INKVConnAllocator;
   ProxyAllocator mHandleAllocator;
 
   /** Start the underlying thread.
