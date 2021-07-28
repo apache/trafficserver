@@ -415,7 +415,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
     return ret;
   }
 
-  MMDB_lookup_result_s result = MMDB_lookup_sockaddr(&_mmdb, TSHttpTxnClientAddrGet(txnp), &mmdb_error);
+  MMDB_lookup_result_s result = MMDB_lookup_sockaddr(&_mmdb, sockaddr, &mmdb_error);
 
   if (MMDB_SUCCESS != mmdb_error) {
     TSDebug(PLUGIN_NAME, "Error during sockaddr lookup: %s", MMDB_strerror(mmdb_error));
@@ -509,7 +509,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len)
   char *output = nullptr;
 
   // We need to null terminate the iso_code ourselves, they are unterminated in the DBs
-  output = (char *)malloc((sizeof(char) * (entry_data->data_size + 1)));
+  output = static_cast<char *>(malloc((sizeof(char) * (entry_data->data_size + 1))));
   strncpy(output, entry_data->utf8_string, entry_data->data_size);
   output[entry_data->data_size] = '\0';
   TSDebug(PLUGIN_NAME, "This IP Country Code: %s", output);
