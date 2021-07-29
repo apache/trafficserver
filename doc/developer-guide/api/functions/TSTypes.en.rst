@@ -103,7 +103,7 @@ more widely. Those are described on this page.
       A numeric buffer size index used to derive actual sizes used when constructing
       IOBuffers; see :type:`TSIOBufferSizeIndex`.
 
-   .. member:: int64_t buffer_water_mark
+   .. member:: TSIOBufferWaterMark buffer_water_mark
 
       A numeric value specifying the minimum number of bytes that must be written to
       an IOBuffer before any continuation is called back to read from the buffer.
@@ -131,6 +131,10 @@ more widely. Those are described on this page.
 .. type:: TSIOBufferReader
 
 .. type:: TSIOBufferSizeIndex
+
+.. type:: TSIOBufferWaterMark
+
+   An enumeration that contains valid watermark values, currently only defaults.
 
 .. type:: TSLifecycleHookID
 

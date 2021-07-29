@@ -18,7 +18,7 @@
 
 .. default-domain:: c
 
-TSPluginVCGetIOBufferWaterMark
+TSPluginVCIOBufferWaterMarkGet
 ******************************
 
 Synopsis
@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSMgmtInt TSPluginVCGetIOBufferWaterMark(TSHttpTxn txnp)
+.. function:: TSIOBufferWaterMark TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp)
 
 Description
 ===========

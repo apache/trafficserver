@@ -1347,15 +1347,20 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginIn
 source_file = _build/locale/pot/developer-guide/api/functions/TSPluginInit.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--api--functions--TSPluginVCGetIOBufferIndex]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginVCGetIOBufferIndex.en.po
-source_file = _build/locale/pot/developer-guide/api/functions/TSPluginVCGetIOBufferIndex.en.pot
+[apache-traffic-server-6x.developer-guide--api--functions--TSPluginVCIOBufferIndexGet]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginVCIOBufferIndexGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSPluginVCIOBufferIndexGet.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.developer-guide--api--functions--TSPluginVCGetIOBufferWaterMark]
-file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginVCGetIOBufferWaterMark.en.po
-source_file = _build/locale/pot/developer-guide/api/functions/TSPluginVCGetIOBufferWaterMark.en.pot
+[apache-traffic-server-6x.developer-guide--api--functions--TSPluginVCIOBufferWaterMarkGet]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginVCIOBufferWaterMarkGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSPluginVCIOBufferWaterMarkGet.en.pot
 source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpConnectOptionsGet]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConnectOptionsGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnectOptionsGet.en.pot
+source_lang = e
 
 [apache-traffic-server-6x.developer-guide--api--functions--TSRemap_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSRemap.en.po

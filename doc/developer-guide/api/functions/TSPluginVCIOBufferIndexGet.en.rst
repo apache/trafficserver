@@ -18,7 +18,7 @@
 
 .. default-domain:: c
 
-TSPluginVCGetIOBufferIndex
+TSPluginVCIOBufferIndexGet
 **************************
 
 Synopsis
@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSMgmtInt TSPluginVCGetIOBufferIndex(TSHttpTxn txnp)
+.. function:: TSIOBufferSizeIndex TSPluginVCIOBufferIndexGet(TSHttpTxn txnp)
 
 Description
 ===========

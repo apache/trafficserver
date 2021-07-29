@@ -1793,8 +1793,20 @@ tsapi TSVConn TSHttpConnectWithPluginId(struct sockaddr const *addr, const char 
  */
 tsapi TSVConn TSHttpConnect(struct sockaddr const *addr);
 
-tsapi TSMgmtInt TSPluginVCGetIOBufferIndex(TSHttpTxn txnp);
-tsapi TSMgmtInt TSPluginVCGetIOBufferWaterMark(TSHttpTxn txnp);
+/**
+   Get an instance of TSHttpConnectOptions with default values.
+ */
+tsapi TSHttpConnectOptions TSHttpConnectOptionsGet(TSConnectType connect_type);
+
+/**
+   Get the value of proxy.config.plugin.vc.default_buffer_index from the TSHttpTxn
+ */
+tsapi TSIOBufferSizeIndex TSPluginVCIOBufferIndexGet(TSHttpTxn txnp);
+
+/**
+   Get the value of proxy.config.plugin.vc.default_buffer_water_mark from the TSHttpTxn
+ */
+tsapi TSIOBufferWaterMark TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp);
 
 /* --------------------------------------------------------------------------
  Initiate Transparent Http Connection */
