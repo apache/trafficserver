@@ -43,6 +43,7 @@ public:
   // Methods
   int get_transaction_id() const override;
   void set_reader(IOBufferReader *reader);
+  void set_close_connection(HTTPHdr &hdr) const override;
 
   ////////////////////
   // Variables
@@ -70,4 +71,10 @@ inline void
 Http1Transaction::set_reader(IOBufferReader *reader)
 {
   _reader = reader;
+}
+
+inline void
+Http1Transaction::set_close_connection(HTTPHdr &hdr) const
+{
+  hdr.value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
 }

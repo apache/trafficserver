@@ -5873,7 +5873,7 @@ HttpSM::do_drain_request_body(HTTPHdr &response)
 
 close_connection:
   t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
-  response.value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
+  ua_txn->set_close_connection(response);
 }
 
 void

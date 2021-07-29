@@ -6891,7 +6891,10 @@ HttpTransact::handle_request_keep_alive_headers(State *s, HTTPVersion ver, HTTPH
         if (s->current.request_to == PARENT_PROXY && parent_is_proxy(s)) {
           heads->value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
         } else {
-          heads->value_set(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION, "close", 5);
+          ProxyTransaction *svr = s->state_machine->get_server_txn();
+          if (svr) {
+            svr->set_close_connection(*heads);
+          }
         }
       }
       // Note: if we are 1.1, we always need to send the close
@@ -7050,7 +7053,11 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   case KA_CLOSE:
   case KA_DISABLED:
     if (s->client_info.keep_alive != HTTP_NO_KEEPALIVE || (ver == HTTP_1_1)) {
-      heads->value_set(c_hdr_field_str, c_hdr_field_len, "close", 5);
+      if (s->client_info.proxy_connect_hdr) {
+        heads->value_set(c_hdr_field_str, c_hdr_field_len, "close", 5);
+      } else if (s->state_machine->ua_txn != nullptr) {
+        s->state_machine->ua_txn->set_close_connection(*heads);
+      }
       s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
     }
     // Note: if we are 1.1, we always need to send the close
