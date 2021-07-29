@@ -644,9 +644,9 @@ typedef enum {
 } TSIOBufferSizeIndex;
 
 typedef enum {
-  TS_IOBUFFER_WATER_MARK_UNDEFINED = -1,
-  TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT = 0, // mirror of DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK
-  TS_IOBUFFER_WATER_MARK_HTTP_DEFAULT = 32768, // mirror of default_buffer_water_mark
+  TS_IOBUFFER_WATER_MARK_UNDEFINED         = -1,
+  TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT = 0,     // mirror of DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK
+  TS_IOBUFFER_WATER_MARK_HTTP_DEFAULT      = 32768, // mirror of default_buffer_water_mark
 } TSIOBufferWaterMark;
 
 typedef enum {
