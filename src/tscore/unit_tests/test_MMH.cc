@@ -30,8 +30,8 @@
 static int
 xxcompar(const void *a, const void *b)
 {
-  int **x = static_cast<int **>(a);
-  int **y = static_cast<int **>(b);
+  int *const *x = static_cast<int *const *>(a);
+  int *const *y = static_cast<int *const *>(b);
   for (int i = 0; i < 4; i++) {
     if (x[i] > y[i]) {
       return 1;
