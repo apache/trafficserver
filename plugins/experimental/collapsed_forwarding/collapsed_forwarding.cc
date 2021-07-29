@@ -75,11 +75,11 @@ static int OPEN_WRITE_FAIL_REQ_DELAY_TIMEOUT     = 500;
 
 static bool global_init = false;
 
-typedef struct _RequestData {
+using RequestData = struct _RequestData {
   TSHttpTxn txnp;
   int wl_retry; // write lock failure retry count
   std::string req_url;
-} RequestData;
+};
 
 static int
 add_redirect_header(TSMBuffer &bufp, TSMLoc &hdr_loc, const std::string &location)

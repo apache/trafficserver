@@ -149,7 +149,7 @@ SocksProxy::init(NetVConnection *netVC)
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
 
-  SET_HANDLER((EventHandler)&SocksProxy::acceptEvent);
+  SET_HANDLER(static_cast<EventHandler>(&SocksProxy::acceptEvent));
 
   handleEvent(NET_EVENT_ACCEPT, netVC);
 }
@@ -178,7 +178,7 @@ SocksProxy::acceptEvent(int event, void *data)
 
   buf->reset();
 
-  SET_HANDLER((EventHandler)&SocksProxy::mainEvent);
+  SET_HANDLER(static_cast<EventHandler>(&SocksProxy::mainEvent));
   vc_handler = &SocksProxy::state_read_client_request;
 
   timeout   = this_ethread()->schedule_in(this, HRTIME_SECONDS(netProcessor.socks_conf_stuff->socks_timeout));
@@ -299,7 +299,7 @@ SocksProxy::state_read_client_request(int event, void *data)
 
   unsigned char *p = (unsigned char *)reader->start();
 
-  Debug("SocksProxy", "Accepted connection from a version %d client", (int)p[0]);
+  Debug("SocksProxy", "Accepted connection from a version %d client", static_cast<int>(p[0]));
 
   switch (p[0]) {
   case SOCKS4_VERSION:
@@ -313,7 +313,7 @@ SocksProxy::state_read_client_request(int event, void *data)
     return (this->*vc_handler)(event, data);
     break;
   default:
-    Warning("Wrong version for Socks: %d\n", (int)p[0]);
+    Warning("Wrong version for Socks: %d\n", static_cast<int>(p[0]));
     state = SOCKS_ERROR;
     break;
   }
@@ -470,7 +470,7 @@ SocksProxy::state_read_socks5_client_request(int event, void *data)
   default:
     req_len = INT_MAX;
     state   = SOCKS_ERROR;
-    Debug("SocksProxy", "Illegal address type(%d)", (int)p[3]);
+    Debug("SocksProxy", "Illegal address type(%d)", static_cast<int>(p[3]));
   }
 
   if (state == SOCKS_ERROR) {

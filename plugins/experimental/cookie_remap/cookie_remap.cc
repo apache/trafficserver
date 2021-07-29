@@ -811,8 +811,8 @@ private:
   TSHttpStatus else_status = TS_HTTP_STATUS_NONE;
 };
 
-typedef std::pair<std::string, std::string> StringPair;
-using OpMap = std::vector<StringPair>;
+using StringPair = std::pair<std::string, std::string>;
+using OpMap      = std::vector<StringPair>;
 
 //----------------------------------------------------------------------------
 static bool

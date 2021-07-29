@@ -39,7 +39,7 @@
 
 namespace
 {
-typedef std::pair<IpAddr, IpAddr> IpRange;
+using IpRange      = std::pair<IpAddr, IpAddr>;
 using IpRangeQueue = std::deque<IpRange>;
 IpRangeQueue ClientBlindTunnelIp;
 

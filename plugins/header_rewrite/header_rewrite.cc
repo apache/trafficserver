@@ -302,7 +302,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-static const struct option longopt[] = {{"geo-db-path", required_argument, NULL, 'm'}, {NULL, no_argument, NULL, '\0'}};
+static const struct option longopt[] = {{"geo-db-path", required_argument, nullptr, 'm'}, {nullptr, no_argument, nullptr, '\0'}};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the InkAPI plugin for the global hooks we support.
@@ -323,7 +323,7 @@ TSPluginInit(int argc, const char *argv[])
 
   std::string geoDBpath;
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "m:", longopt, NULL);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "m:", longopt, nullptr);
 
     switch (opt) {
     case 'm': {
@@ -335,7 +335,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   }
 
-  if (!geoDBpath.empty() && geoDBpath.find("/") != 0) {
+  if (!geoDBpath.empty() && geoDBpath.find('/') != 0) {
     geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
   }
 
@@ -421,7 +421,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   std::string geoDBpath;
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "m:", longopt, NULL);
+    int opt = getopt_long(argc, (char *const *)argv, "m:", longopt, nullptr);
 
     switch (opt) {
     case 'm': {
@@ -434,7 +434,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
 
   if (!geoDBpath.empty()) {
-    if (geoDBpath.find("/") != 0) {
+    if (geoDBpath.find('/') != 0) {
       geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
     }
 

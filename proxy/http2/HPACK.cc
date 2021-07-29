@@ -33,7 +33,7 @@ namespace
 // its value's length in octets, and 32.
 const static unsigned ADDITIONAL_OCTETS = 32;
 
-typedef enum {
+using TS_HPACK_STATIC_TABLE_ENTRY = enum {
   TS_HPACK_STATIC_TABLE_0 = 0,
   TS_HPACK_STATIC_TABLE_AUTHORITY,
   TS_HPACK_STATIC_TABLE_METHOD_GET,
@@ -97,7 +97,7 @@ typedef enum {
   TS_HPACK_STATIC_TABLE_VIA,
   TS_HPACK_STATIC_TABLE_WWW_AUTHENTICATE,
   TS_HPACK_STATIC_TABLE_ENTRY_NUM
-} TS_HPACK_STATIC_TABLE_ENTRY;
+};
 
 constexpr HpackHeaderField STATIC_TABLE[] = {{"", ""},
                                              {":authority", ""},
