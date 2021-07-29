@@ -1004,7 +1004,7 @@ UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
   if (!action_.cancelled) {
     connectUp(e->ethread, NO_FD);
   } else {
-    free(e->ethread);
+    this->free(e->ethread);
   }
   return EVENT_DONE;
 }
