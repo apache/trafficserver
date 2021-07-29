@@ -633,26 +633,23 @@ http_hdr_type_set(HTTPHdrImpl *hh, HTTPType type)
   -------------------------------------------------------------------------*/
 
 bool
-is_version_supported(const uint8_t major, const uint8_t minor)
+is_http1_version(const uint8_t major, const uint8_t minor)
 {
-  if (major == 1) {
-    return minor == 1 || minor == 0;
-  }
-
-  return false;
+  // Return true if 1.1 or 1.0
+  return (major == 1) && (minor == 1 || minor == 0);
 }
 
 bool
-is_http_hdr_version_supported(const HTTPVersion &http_version)
+is_http1_hdr_version_supported(const HTTPVersion &http_version)
 {
-  return is_version_supported(http_version.get_major(), http_version.get_minor());
+  return is_http1_version(http_version.get_major(), http_version.get_minor());
 }
 
 bool
 http_hdr_version_set(HTTPHdrImpl *hh, const HTTPVersion &ver)
 {
   hh->m_version = ver;
-  return is_version_supported(ver.get_major(), ver.get_minor());
+  return is_http1_version(ver.get_major(), ver.get_minor());
 }
 
 /*-------------------------------------------------------------------------
