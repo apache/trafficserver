@@ -296,7 +296,7 @@ template <> struct convert<PLHostRecord> {
       throw std::invalid_argument("Invalid host protocol definition, expected a sequence.");
     } else {
       for (auto &&ii : proto) {
-        YAML::Node protocol_node         = ii;
+        const YAML::Node &protocol_node  = ii;
         std::shared_ptr<PLNHProtocol> pr = std::make_shared<PLNHProtocol>(protocol_node.as<PLNHProtocol>());
         nh.protocols.push_back(std::move(pr));
       }

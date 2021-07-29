@@ -785,7 +785,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
 
       biop = BIO_new_mem_buf(secret_data.data(), secret_data.size());
 
-      cert = PEM_read_bio_X509(biop, NULL, 0, NULL);
+      cert = PEM_read_bio_X509(biop, nullptr, nullptr, nullptr);
       if (!cert) {
         SSLError("failed to load cert %s", client_cert.c_str());
         goto fail;
@@ -797,14 +797,14 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
       X509_free(cert);
 
       // Continue to fetch certs to associate intermediate certificates
-      cert = PEM_read_bio_X509(biop, NULL, 0, NULL);
+      cert = PEM_read_bio_X509(biop, nullptr, nullptr, nullptr);
       while (cert) {
         if (!SSL_CTX_use_certificate(client_ctx.get(), cert)) {
           SSLError("failed to attach client chain certificate from %s", client_cert.c_str());
           goto fail;
         }
         X509_free(cert);
-        cert = PEM_read_bio_X509(biop, NULL, 0, NULL);
+        cert = PEM_read_bio_X509(biop, nullptr, nullptr, nullptr);
       }
 
       cleanup_bio(biop);
@@ -819,7 +819,7 @@ SSLConfigParams::getCTX(const std::string &client_cert, const std::string &key_f
         biop = BIO_new_mem_buf(secret_data.data(), secret_data.size());
       }
 
-      key = PEM_read_bio_PrivateKey(biop, NULL, 0, NULL);
+      key = PEM_read_bio_PrivateKey(biop, nullptr, nullptr, nullptr);
       if (!key) {
         SSLError("failed to load client private key file from %s", key_file_name.c_str());
         goto fail;

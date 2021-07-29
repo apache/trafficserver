@@ -114,7 +114,7 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
   };
 
   while (true) {
-    int opt = getopt_long(argc, (char *const *)argv, "", longopt, nullptr);
+    int opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopt, nullptr);
 
     switch (opt) {
     case 'l':

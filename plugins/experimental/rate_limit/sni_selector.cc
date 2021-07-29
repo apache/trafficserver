@@ -20,7 +20,7 @@
 // Needs special OpenSSL APIs as a global plugin for early CLIENT_HELLO inspection
 #if TS_USE_HELLO_CB
 
-#include <string.h>
+#include <cstring>
 
 #include "sni_limiter.h"
 #include "sni_selector.h"

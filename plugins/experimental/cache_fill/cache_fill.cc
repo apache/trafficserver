@@ -68,11 +68,12 @@ getCacheLookupResultName(TSCacheLookupResult result)
 static bool
 cont_check_cacheable(TSHttpTxn txnp)
 {
-  if (TSHttpTxnIsInternal(txnp))
+  if (TSHttpTxnIsInternal(txnp)) {
     return false;
+  }
   int lookupStatus;
   TSHttpTxnCacheLookupStatusGet(txnp, &lookupStatus);
-  TSDebug(PLUGIN_NAME, "lookup status: %s", getCacheLookupResultName((TSCacheLookupResult)lookupStatus));
+  TSDebug(PLUGIN_NAME, "lookup status: %s", getCacheLookupResultName(static_cast<TSCacheLookupResult>(lookupStatus)));
   bool ret = false;
   if (TS_CACHE_LOOKUP_MISS == lookupStatus || TS_CACHE_LOOKUP_HIT_STALE == lookupStatus) {
     bool const nostore = TSHttpTxnServerRespNoStoreGet(txnp);

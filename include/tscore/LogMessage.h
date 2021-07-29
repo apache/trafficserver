@@ -111,7 +111,7 @@ private:
    *
    * @param[in] args The parameters for the above format string.
    */
-  void message_helper(std::chrono::microseconds current_configured_interval, log_function_f log_function, const char *fmt,
+  void message_helper(std::chrono::microseconds current_configured_interval, const log_function_f &log_function, const char *fmt,
                       va_list args);
 
   /** Message handling for non-debug logs. */

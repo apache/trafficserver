@@ -1648,7 +1648,7 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
  * Common name resolution and cert validation
  */
 bool
-SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams sslMultCertSettings,
+SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams &sslMultCertSettings,
                                         SSLMultiCertConfigLoader::CertLoadData &data, std::set<std::string> &common_names,
                                         std::unordered_map<int, std::set<std::string>> &unique_names)
 {

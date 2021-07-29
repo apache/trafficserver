@@ -98,7 +98,7 @@ url_mapping::Print() const
 std::string
 url_mapping::PrintRemapHitCount() const
 {
-  std::string result = "{\"fromURL\": \"" + remapKey + "\", \"hit_count\": " + std::to_string(_hitCount) + "}";
+  std::string result = R"({"fromURL": ")" + remapKey + R"(", "hit_count": )" + std::to_string(_hitCount) + "}";
   return result;
 }
 
