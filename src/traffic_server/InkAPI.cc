@@ -7290,7 +7290,8 @@ TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp)
 {
   TSMgmtInt water_mark;
 
-  if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, &water_mark) == TS_SUCCESS && water_mark >= 0) {
+  if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, &water_mark) == TS_SUCCESS &&
+      water_mark > TS_IOBUFFER_WATER_MARK_UNDEFINED) {
     return static_cast<TSIOBufferWaterMark>(water_mark);
   }
 
