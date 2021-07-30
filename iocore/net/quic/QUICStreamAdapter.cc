@@ -21,24 +21,12 @@
  *  limitations under the License.
  */
 
-#pragma once
+#include "QUICStreamAdapter.h"
 
-#include "Http3FrameGenerator.h"
-#include "Http3Frame.h"
-
-class Http3Transaction;
-class VIO;
-
-class Http3DataFramer : public Http3FrameGenerator
+Ptr<IOBufferBlock>
+QUICStreamAdapter::read(size_t len)
 {
-public:
-  Http3DataFramer(Http3Transaction *transaction, VIO *source);
-
-  // Http3FrameGenerator
-  Http3FrameUPtr generate_frame() override;
-  bool is_done() const override;
-
-private:
-  Http3Transaction *_transaction = nullptr;
-  VIO *_source_vio               = nullptr;
-};
+  auto ret = this->_read(len);
+  this->_stream.on_read();
+  return ret;
+}

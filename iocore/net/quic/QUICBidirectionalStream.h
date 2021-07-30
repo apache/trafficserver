@@ -25,23 +25,17 @@
 
 #include "QUICStream.h"
 
-class QUICBidirectionalStream : public QUICStreamVConnection, public QUICTransferProgressProvider
+class QUICBidirectionalStream : public QUICStream, public QUICTransferProgressProvider
 {
 public:
   QUICBidirectionalStream(QUICRTTProvider *rtt_provider, QUICConnectionInfoProvider *cinfo, QUICStreamId sid,
                           uint64_t recv_max_stream_data, uint64_t send_max_stream_data);
   QUICBidirectionalStream()
-    : QUICStreamVConnection(),
-      _remote_flow_controller(0, 0),
-      _local_flow_controller(nullptr, 0, 0),
-      _state(nullptr, nullptr, nullptr, nullptr)
+    : QUICStream(), _remote_flow_controller(0, 0), _local_flow_controller(nullptr, 0, 0), _state(nullptr, nullptr, nullptr, nullptr)
   {
   }
 
   ~QUICBidirectionalStream() {}
-
-  int state_stream_open(int event, void *data);
-  int state_stream_closed(int event, void *data);
 
   // QUICFrameGenerator
   bool will_generate_frame(QUICEncryptionLevel level, size_t current_packet_size, bool ack_eliciting, uint32_t seq_num) override;
@@ -53,13 +47,6 @@ public:
   virtual QUICConnectionErrorUPtr recv(const QUICStreamDataBlockedFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICStopSendingFrame &frame) override;
   virtual QUICConnectionErrorUPtr recv(const QUICRstStreamFrame &frame) override;
-
-  // Implement VConnection Interface.
-  VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
-  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0, bool owner = false) override;
-  void do_io_close(int lerrno = -1) override;
-  void do_io_shutdown(ShutdownHowTo_t howto) override;
-  void reenable(VIO *vio) override;
 
   void stop_sending(QUICStreamErrorUPtr error) override;
   void reset(QUICStreamErrorUPtr error) override;
@@ -79,6 +66,9 @@ public:
   QUICOffset largest_offset_received() const override;
   QUICOffset largest_offset_sent() const override;
 
+protected:
+  virtual void _on_adapter_updated() override;
+
 private:
   QUICStreamErrorUPtr _reset_reason        = nullptr;
   bool _is_reset_sent                      = false;
@@ -88,7 +78,7 @@ private:
   bool _is_transfer_complete = false;
   bool _is_reset_complete    = false;
 
-  QUICTransferProgressProviderVIO _progress_vio = {this->_write_vio};
+  QUICTransferProgressProviderSA _progress_sa;
 
   QUICRemoteStreamFlowController _remote_flow_controller;
   QUICLocalStreamFlowController _local_flow_controller;
@@ -98,7 +88,6 @@ private:
   // TODO: Consider to replace with ts/RbTree.h or other data structure
   QUICIncomingStreamFrameBuffer _received_stream_frame_buffer;
 
-  // FIXME Unidirectional streams should use either ReceiveStreamState or SendStreamState
   QUICBidirectionalStreamStateMachine _state;
 
   // QUICFrameGenerator

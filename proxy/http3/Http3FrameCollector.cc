@@ -26,10 +26,9 @@
 #include "Http3DebugNames.h"
 
 Http3ErrorUPtr
-Http3FrameCollector::on_write_ready(QUICStreamIO *stream_io, size_t &nwritten)
+Http3FrameCollector::on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, size_t &nwritten, bool &all_done)
 {
-  bool all_done = true;
-  uint8_t tmp[32768];
+  all_done = true;
   nwritten = 0;
 
   for (auto g : this->_generators) {
@@ -37,24 +36,15 @@ Http3FrameCollector::on_write_ready(QUICStreamIO *stream_io, size_t &nwritten)
       continue;
     }
     size_t len           = 0;
-    Http3FrameUPtr frame = g->generate_frame(sizeof(tmp) - nwritten);
+    Http3FrameUPtr frame = g->generate_frame();
     if (frame) {
-      frame->store(tmp + nwritten, &len);
+      auto b = frame->to_io_buffer_block();
+      len    = writer.write(b.get(), INT64_MAX, 0);
       nwritten += len;
-
-      Debug("http3", "[TX] [%d] | %s size=%zu", stream_io->stream_id(), Http3DebugNames::frame_type(frame->type()), len);
+      Debug("http3", "[TX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(frame->type()), len);
     }
 
     all_done &= g->is_done();
-  }
-
-  if (nwritten) {
-    int64_t len = stream_io->write(tmp, nwritten);
-    ink_assert(len > 0 && (uint64_t)len == nwritten);
-  }
-
-  if (all_done) {
-    stream_io->write_done();
   }
 
   return Http3ErrorUPtr(new Http3NoError());

@@ -28,7 +28,7 @@
 Http3DataFramer::Http3DataFramer(Http3Transaction *transaction, VIO *source) : _transaction(transaction), _source_vio(source) {}
 
 Http3FrameUPtr
-Http3DataFramer::generate_frame(uint16_t max_size)
+Http3DataFramer::generate_frame()
 {
   if (!this->_transaction->is_response_header_sent()) {
     return Http3FrameFactory::create_null_frame();
@@ -37,11 +37,7 @@ Http3DataFramer::generate_frame(uint16_t max_size)
   Http3FrameUPtr frame   = Http3FrameFactory::create_null_frame();
   IOBufferReader *reader = this->_source_vio->get_reader();
 
-  if (max_size <= Http3Frame::MAX_FRAM_HEADER_OVERHEAD) {
-    return frame;
-  }
-
-  size_t payload_len = max_size - Http3Frame::MAX_FRAM_HEADER_OVERHEAD;
+  size_t payload_len = 128 * 1024;
   if (!reader->is_read_avail_more_than(payload_len)) {
     payload_len = reader->read_avail();
   }

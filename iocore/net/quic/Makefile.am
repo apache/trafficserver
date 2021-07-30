@@ -62,6 +62,8 @@ libquic_a_SOURCES = \
   QUICNewRenoCongestionController.cc \
   QUICFlowController.cc \
   QUICStreamState.cc \
+  QUICStreamAdapter.cc \
+  QUICStreamVCAdapter.cc \
   QUICStream.cc \
   QUICHandshake.cc \
   QUICPacketHeaderProtector.cc \
@@ -92,6 +94,7 @@ libquic_a_SOURCES = \
   QUICFrameGenerator.cc \
   QUICFrameRetransmitter.cc \
   QUICAddrVerifyState.cc \
+  QUICTransferProgressProvider.cc \
   QUICBidirectionalStream.cc \
   QUICCryptoStream.cc \
   QUICUnidirectionalStream.cc \

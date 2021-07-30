@@ -152,6 +152,31 @@ Http09ClientApp::Http09ClientApp(QUICNetVConnection *qvc, const QUICClientConfig
 }
 
 void
+Http09ClientApp::on_new_stream(QUICStream &stream)
+{
+  auto ret   = this->_streams.emplace(stream.id(), stream);
+  auto &info = ret.first->second;
+
+  switch (stream.direction()) {
+  case QUICStreamDirection::BIDIRECTIONAL:
+    info.setup_read_vio(this);
+    info.setup_write_vio(this);
+    break;
+  case QUICStreamDirection::SEND:
+    info.setup_write_vio(this);
+    break;
+  case QUICStreamDirection::RECEIVE:
+    info.setup_read_vio(this);
+    break;
+  default:
+    ink_assert(false);
+    break;
+  }
+
+  stream.set_io_adapter(&info.adapter);
+}
+
+void
 Http09ClientApp::start()
 {
   if (this->_config->output[0] != 0x0) {
@@ -183,11 +208,11 @@ Http09ClientApp::_do_http_request()
 
   Http09ClientAppDebug("\n%s", request);
 
-  QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
-
-  stream_io->write(reinterpret_cast<uint8_t *>(request), request_len);
-  stream_io->write_done();
-  stream_io->write_reenable();
+  auto ite       = this->_streams.find(stream_id);
+  VIO *write_vio = ite->second.write_vio;
+  write_vio->get_writer()->write(reinterpret_cast<uint8_t *>(request), request_len);
+  write_vio->done();
+  write_vio->reenable();
 }
 
 int
@@ -195,10 +220,10 @@ Http09ClientApp::main_event_handler(int event, Event *data)
 {
   Http09ClientAppVDebug("%s (%d)", get_vc_event_name(event), event);
 
-  VIO *vio                = reinterpret_cast<VIO *>(data);
-  QUICStreamIO *stream_io = this->_find_stream_io(vio);
+  VIO *vio                     = reinterpret_cast<VIO *>(data->cookie);
+  QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
 
-  if (stream_io == nullptr) {
+  if (adapter == nullptr) {
     Http09ClientAppDebug("Unknown Stream");
     return -1;
   }
@@ -217,8 +242,10 @@ Http09ClientApp::main_event_handler(int event, Event *data)
 
     uint8_t buf[8192] = {0};
     int64_t nread;
-    while ((nread = stream_io->read(buf, sizeof(buf))) > 0) {
+    auto reader = vio->get_reader();
+    while ((nread = reader->read(buf, sizeof(buf))) > 0) {
       std::cout.write(reinterpret_cast<char *>(buf), nread);
+      vio->ndone += nread;
     }
     std::cout.flush();
 
@@ -227,7 +254,7 @@ Http09ClientApp::main_event_handler(int event, Event *data)
       std::cout.rdbuf(default_stream);
     }
 
-    if (stream_io->is_read_done() && this->_config->close) {
+    if (vio->ntodo() == 0 && this->_config->close) {
       // Connection Close Exercise
       this->_qc->close_quic_connection(
         QUICConnectionErrorUPtr(new QUICConnectionError(QUICTransErrorCode::NO_ERROR, "Close Exercise")));
@@ -278,7 +305,7 @@ Http3ClientApp::start()
   this->_resp_buf                 = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   IOBufferReader *resp_buf_reader = _resp_buf->alloc_reader();
 
-  this->_resp_handler = new RespHandler(this->_config, resp_buf_reader, [&](void) {
+  this->_resp_handler  = new RespHandler(this->_config, resp_buf_reader, [&](void) {
     if (this->_config->close) {
       // Connection Close Exercise
       this->_qc->close_quic_connection(
@@ -288,6 +315,7 @@ Http3ClientApp::start()
       this->_qc->reset_quic_connection();
     }
   });
+  this->_req_generator = new ReqGenerator();
 
   super::start();
   this->_do_http_request();
@@ -304,10 +332,10 @@ Http3ClientApp::_do_http_request()
     ink_abort("Could not create bidi stream : %s", error->msg);
   }
 
-  QUICStreamIO *stream_io = this->_find_stream_io(stream_id);
+  auto ite = this->_streams.find(stream_id);
 
   // TODO: create Http3ServerTransaction
-  Http3Transaction *txn = new Http3Transaction(this->_ssn, stream_io);
+  Http3Transaction *txn = new Http3Transaction(this->_ssn, ite->second);
   SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
 
   // TODO: fix below issue with H2 origin conn stuff
@@ -337,7 +365,7 @@ Http3ClientApp::_do_http_request()
   // TODO: check write avail size
   int64_t nbytes            = this->_req_buf->write(request, request_len);
   IOBufferReader *buf_start = this->_req_buf->alloc_reader();
-  txn->do_io_write(this, nbytes, buf_start);
+  txn->do_io_write(this->_req_generator, nbytes, buf_start);
 }
 
 //
@@ -405,5 +433,16 @@ RespHandler::main_event_handler(int event, Event *data)
     break;
   }
 
+  return EVENT_CONT;
+}
+
+ReqGenerator::ReqGenerator() : Continuation(new_ProxyMutex())
+{
+  SET_HANDLER(&ReqGenerator::main_event_handler);
+}
+
+int
+ReqGenerator::main_event_handler(int event, Event *data)
+{
   return EVENT_CONT;
 }

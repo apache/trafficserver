@@ -72,14 +72,16 @@ QUICReceiveStreamStateMachine::is_allowed_to_receive(QUICFrameType type) const
   return false;
 }
 
-void
+bool
 QUICReceiveStreamStateMachine::update_with_sending_frame(const QUICFrame &frame)
 {
+  return false;
 }
 
-void
+bool
 QUICReceiveStreamStateMachine::update_with_receiving_frame(const QUICFrame &frame)
 {
+  bool state_changed = false;
   // The receiving part of a stream initiated by a peer (types 1 and 3 for a client, or 0 and 2 for a server) is created when the
   // first STREAM, STREAM_DATA_BLOCKED, or RESET_STREAM is received for that stream.
   QUICReceiveStreamState state = this->get();
@@ -87,32 +89,32 @@ QUICReceiveStreamStateMachine::update_with_receiving_frame(const QUICFrame &fram
 
   if (state == QUICReceiveStreamState::Init &&
       (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_DATA_BLOCKED || type == QUICFrameType::RESET_STREAM)) {
-    this->_set_state(QUICReceiveStreamState::Recv);
+    state_changed |= this->_set_state(QUICReceiveStreamState::Recv);
   }
 
   switch (this->get()) {
   case QUICReceiveStreamState::Recv:
     if (type == QUICFrameType::STREAM) {
       if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
-        this->_set_state(QUICReceiveStreamState::SizeKnown);
+        state_changed |= this->_set_state(QUICReceiveStreamState::SizeKnown);
         if (this->_in_progress->is_transfer_complete()) {
-          this->_set_state(QUICReceiveStreamState::DataRecvd);
+          state_changed |= this->_set_state(QUICReceiveStreamState::DataRecvd);
         }
       }
     } else if (type == QUICFrameType::RESET_STREAM) {
-      this->_set_state(QUICReceiveStreamState::ResetRecvd);
+      state_changed |= this->_set_state(QUICReceiveStreamState::ResetRecvd);
     }
     break;
   case QUICReceiveStreamState::SizeKnown:
     if (type == QUICFrameType::STREAM && this->_in_progress->is_transfer_complete()) {
-      this->_set_state(QUICReceiveStreamState::DataRecvd);
+      state_changed |= this->_set_state(QUICReceiveStreamState::DataRecvd);
     } else if (type == QUICFrameType::RESET_STREAM) {
-      this->_set_state(QUICReceiveStreamState::ResetRecvd);
+      state_changed |= this->_set_state(QUICReceiveStreamState::ResetRecvd);
     }
     break;
   case QUICReceiveStreamState::DataRecvd:
     if (type == QUICFrameType::STREAM && this->_in_progress->is_transfer_complete()) {
-      this->_set_state(QUICReceiveStreamState::ResetRecvd);
+      state_changed |= this->_set_state(QUICReceiveStreamState::ResetRecvd);
     }
     break;
   case QUICReceiveStreamState::Init:
@@ -124,23 +126,25 @@ QUICReceiveStreamStateMachine::update_with_receiving_frame(const QUICFrame &fram
     ink_assert(!"Unknown state");
     break;
   }
+  return state_changed;
 }
 
-void
+bool
 QUICReceiveStreamStateMachine::update_on_read()
 {
   if (this->_in_progress->is_transfer_complete()) {
-    this->_set_state(QUICReceiveStreamState::DataRead);
+    return this->_set_state(QUICReceiveStreamState::DataRead);
   }
+  return false;
 }
 
-void
+bool
 QUICReceiveStreamStateMachine::update_on_eos()
 {
-  this->_set_state(QUICReceiveStreamState::ResetRead);
+  return this->_set_state(QUICReceiveStreamState::ResetRead);
 }
 
-void
+bool
 QUICReceiveStreamStateMachine::update(const QUICSendStreamState state)
 {
   // The receiving part of a stream enters the "Recv" state when the sending part of a bidirectional stream initiated by the
@@ -148,12 +152,14 @@ QUICReceiveStreamStateMachine::update(const QUICSendStreamState state)
   switch (this->get()) {
   case QUICReceiveStreamState::Init:
     if (state == QUICSendStreamState::Ready) {
-      this->_set_state(QUICReceiveStreamState::Recv);
+      return this->_set_state(QUICReceiveStreamState::Recv);
     }
     break;
   default:
     break;
   }
+
+  return false;
 }
 
 // ---------- QUICSendStreamState -------------
@@ -251,29 +257,30 @@ QUICSendStreamStateMachine::is_allowed_to_receive(QUICFrameType type) const
   return false;
 }
 
-void
+bool
 QUICSendStreamStateMachine::update_with_sending_frame(const QUICFrame &frame)
 {
+  bool state_changed        = false;
   QUICSendStreamState state = this->get();
   QUICFrameType type        = frame.type();
   if (state == QUICSendStreamState::Ready &&
       (type == QUICFrameType::STREAM || type == QUICFrameType::STREAM_DATA_BLOCKED || type == QUICFrameType::RESET_STREAM)) {
-    this->_set_state(QUICSendStreamState::Send);
+    state_changed |= this->_set_state(QUICSendStreamState::Send);
   }
 
   switch (this->get()) {
   case QUICSendStreamState::Send:
     if (type == QUICFrameType::STREAM) {
       if (static_cast<const QUICStreamFrame &>(frame).has_fin_flag()) {
-        this->_set_state(QUICSendStreamState::DataSent);
+        state_changed |= this->_set_state(QUICSendStreamState::DataSent);
       }
     } else if (type == QUICFrameType::RESET_STREAM) {
-      this->_set_state(QUICSendStreamState::ResetSent);
+      state_changed |= this->_set_state(QUICSendStreamState::ResetSent);
     }
     break;
   case QUICSendStreamState::DataSent:
     if (type == QUICFrameType::RESET_STREAM) {
-      this->_set_state(QUICSendStreamState::ResetSent);
+      state_changed |= this->_set_state(QUICSendStreamState::ResetSent);
     }
     break;
   case QUICSendStreamState::Init:
@@ -286,37 +293,42 @@ QUICSendStreamStateMachine::update_with_sending_frame(const QUICFrame &frame)
     ink_assert(!"Unknown state");
     break;
   }
+  return state_changed;
 }
 
-void
+bool
 QUICSendStreamStateMachine::update_with_receiving_frame(const QUICFrame &frame)
 {
+  return false;
 }
 
-void
+bool
 QUICSendStreamStateMachine::update_on_ack()
 {
   if (this->_out_progress->is_transfer_complete()) {
-    this->_set_state(QUICSendStreamState::DataRecvd);
+    return this->_set_state(QUICSendStreamState::DataRecvd);
   } else if (this->_out_progress->is_cancelled()) {
-    this->_set_state(QUICSendStreamState::ResetRecvd);
+    return this->_set_state(QUICSendStreamState::ResetRecvd);
   }
+  return false;
 }
 
-void
+bool
 QUICSendStreamStateMachine::update(const QUICReceiveStreamState state)
 {
+  bool state_changed = false;
   // The sending part of a bidirectional stream initiated by a peer (type 0 for a server, type 1 for a client) enters the "Ready"
   // state then immediately transitions to the "Send" state if the receiving part enters the "Recv" state (Section 3.2).
   switch (this->get()) {
   case QUICSendStreamState::Ready:
     if (state == QUICReceiveStreamState::Recv) {
-      this->_set_state(QUICSendStreamState::Send);
+      state_changed |= this->_set_state(QUICSendStreamState::Send);
     }
     break;
   default:
     break;
   }
+  return state_changed;
 }
 
 // ---------QUICBidirectionalStreamState -----------
@@ -369,48 +381,56 @@ QUICBidirectionalStreamStateMachine::get() const
   }
 }
 
-void
+bool
 QUICBidirectionalStreamStateMachine::update_with_sending_frame(const QUICFrame &frame)
 {
+  bool state_changed = false;
+
   // The receiving part of a stream enters the "Recv" state when the sending part of a bidirectional stream initiated by the
   // endpoint (type 0 for a client, type 1 for a server) enters the "Ready" state.
-  this->_send_stream_state.update_with_sending_frame(frame);
+  state_changed |= this->_send_stream_state.update_with_sending_frame(frame);
   // PS: It should not happen because we initialize the send side and read side together. And the SendState has the default state
   // "Ready". But to obey the specs, we do this as follow.
   if (this->_send_stream_state.get() == QUICSendStreamState::Ready &&
       this->_recv_stream_state.get() == QUICReceiveStreamState::Init) {
-    this->_recv_stream_state.update(this->_send_stream_state.get());
+    state_changed |= this->_recv_stream_state.update(this->_send_stream_state.get());
   }
+
+  return state_changed;
 }
 
-void
+bool
 QUICBidirectionalStreamStateMachine::update_with_receiving_frame(const QUICFrame &frame)
 {
+  bool state_changed = false;
+
   // The sending part of a bidirectional stream initiated by a peer (type 0 for a server, type 1 for a client) enters the "Ready"
   // state then immediately transitions to the "Send" state if the receiving part enters the "Recv" state (Section 3.2).
-  this->_recv_stream_state.update_with_receiving_frame(frame);
+  state_changed |= this->_recv_stream_state.update_with_receiving_frame(frame);
   if (this->_send_stream_state.get() == QUICSendStreamState::Ready &&
       this->_recv_stream_state.get() == QUICReceiveStreamState::Recv) {
-    this->_send_stream_state.update(this->_recv_stream_state.get());
+    state_changed |= this->_send_stream_state.update(this->_recv_stream_state.get());
   }
+
+  return state_changed;
 }
 
-void
+bool
 QUICBidirectionalStreamStateMachine::update_on_ack()
 {
-  this->_send_stream_state.update_on_ack();
+  return this->_send_stream_state.update_on_ack();
 }
 
-void
+bool
 QUICBidirectionalStreamStateMachine::update_on_read()
 {
-  this->_recv_stream_state.update_on_read();
+  return this->_recv_stream_state.update_on_read();
 }
 
-void
+bool
 QUICBidirectionalStreamStateMachine::update_on_eos()
 {
-  this->_recv_stream_state.update_on_eos();
+  return this->_recv_stream_state.update_on_eos();
 }
 
 bool

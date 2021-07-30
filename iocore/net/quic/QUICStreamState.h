@@ -67,8 +67,8 @@ public:
     return this->_state;
   }
 
-  virtual void update_with_sending_frame(const QUICFrame &frame)   = 0;
-  virtual void update_with_receiving_frame(const QUICFrame &frame) = 0;
+  [[nodiscard]] virtual bool update_with_sending_frame(const QUICFrame &frame)   = 0;
+  [[nodiscard]] virtual bool update_with_receiving_frame(const QUICFrame &frame) = 0;
 
   virtual bool is_allowed_to_send(QUICFrameType type) const        = 0;
   virtual bool is_allowed_to_send(const QUICFrame &frame) const    = 0;
@@ -76,11 +76,16 @@ public:
   virtual bool is_allowed_to_receive(const QUICFrame &frame) const = 0;
 
 protected:
-  void
+  bool
   _set_state(T s)
   {
     ink_assert(s != T::Init);
-    this->_state = s;
+    if (this->_state != s) {
+      this->_state = s;
+      return true;
+    } else {
+      return false;
+    }
   }
 
 private:
@@ -109,16 +114,16 @@ public:
     this->_set_state(QUICSendStreamState::Ready);
   }
 
-  void update_with_sending_frame(const QUICFrame &frame) override;
-  void update_with_receiving_frame(const QUICFrame &frame) override;
-  void update_on_ack();
+  [[nodiscard]] bool update_with_sending_frame(const QUICFrame &frame) override;
+  [[nodiscard]] bool update_with_receiving_frame(const QUICFrame &frame) override;
+  [[nodiscard]] bool update_on_ack();
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
   bool is_allowed_to_receive(QUICFrameType type) const override;
   bool is_allowed_to_receive(const QUICFrame &frame) const override;
 
-  void update(const QUICReceiveStreamState opposite_side);
+  [[nodiscard]] bool update(const QUICReceiveStreamState opposite_side);
 };
 
 class QUICReceiveStreamStateMachine : public QUICUnidirectionalStreamStateMachine,
@@ -130,17 +135,17 @@ public:
   {
   }
 
-  void update_with_sending_frame(const QUICFrame &frame) override;
-  void update_with_receiving_frame(const QUICFrame &frame) override;
-  void update_on_read();
-  void update_on_eos();
+  [[nodiscard]] bool update_with_sending_frame(const QUICFrame &frame) override;
+  [[nodiscard]] bool update_with_receiving_frame(const QUICFrame &frame) override;
+  [[nodiscard]] bool update_on_read();
+  [[nodiscard]] bool update_on_eos();
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
   bool is_allowed_to_receive(QUICFrameType type) const override;
   bool is_allowed_to_receive(const QUICFrame &frame) const override;
 
-  void update(const QUICSendStreamState opposite_side);
+  [[nodiscard]] bool update(const QUICSendStreamState opposite_side);
 };
 
 class QUICBidirectionalStreamStateMachine : public QUICStreamStateMachine<QUICBidirectionalStreamState>
@@ -150,16 +155,16 @@ public:
                                       QUICTransferProgressProvider *recv_in, QUICTransferProgressProvider *recv_out)
     : _send_stream_state(send_in, send_out), _recv_stream_state(recv_in, recv_out)
   {
-    this->_recv_stream_state.update(this->_send_stream_state.get());
+    ink_assert(this->_recv_stream_state.update(this->_send_stream_state.get()));
   };
 
   QUICBidirectionalStreamState get() const override;
 
-  void update_with_sending_frame(const QUICFrame &frame) override;
-  void update_with_receiving_frame(const QUICFrame &frame) override;
-  void update_on_ack();
-  void update_on_read();
-  void update_on_eos();
+  [[nodiscard]] bool update_with_sending_frame(const QUICFrame &frame) override;
+  [[nodiscard]] bool update_with_receiving_frame(const QUICFrame &frame) override;
+  [[nodiscard]] bool update_on_ack();
+  [[nodiscard]] bool update_on_read();
+  [[nodiscard]] bool update_on_eos();
 
   bool is_allowed_to_send(QUICFrameType type) const override;
   bool is_allowed_to_send(const QUICFrame &frame) const override;
