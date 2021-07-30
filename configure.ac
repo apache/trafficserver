@@ -2192,6 +2192,31 @@ AC_ARG_WITH([default-stack-size],
 AC_SUBST([default_stack_size], [$with_default_stack_size])
 
 #
+# records config to YAML generation
+#
+AC_MSG_CHECKING([whether to generate records.yaml based on records.config.default.in])
+AC_ARG_ENABLE([records-yaml-gen],
+  [AS_HELP_STRING([--enable-records-yaml-gen],[Generate a yaml file based on the records.config.default.in])],
+  [
+    AS_IF([$PYTHON -c "import ruamel.yaml"  > /dev/null 2>&1], [
+          AS_IF([$PYTHON -c "from jsonschema import validate"  > /dev/null 2>&1],
+                [generate_yaml=yes],
+                [
+                  generate_yaml=no
+                  AC_ERROR(["python jsonschema module is needed])
+                ])
+          ],[
+            generate_yaml=no
+            AC_ERROR([python ruamel.yaml module is needed])
+          ]
+        )
+  ],
+  [generate_yaml=no]
+)
+AC_MSG_RESULT([$generate_yaml])
+AM_CONDITIONAL([GENERATE_RECORDS_YAML], [ test "x${generate_yaml}" = "xyes" ])
+
+#
 # use modular IOCORE
 #
 iocore_include_dirs="\

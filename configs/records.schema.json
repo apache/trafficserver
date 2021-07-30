@@ -1,0 +1,2457 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Rercods config schema",
+  "description": "Data model for Records config. Licensed under Apache V2 https://www.apache.org/licenses/LICENSE-2.0",
+  "properties": {
+    "ts": {
+      "type": "object",
+      "properties": {
+        "accept_threads": {
+          "type": "integer"
+        },
+        "admin": {
+          "type": "object",
+          "properties": {
+            "api": {
+              "type": "object",
+              "properties": {
+                "restricted": {
+                  "type": "integer"
+                }
+              }
+            },
+            "autoconf": {
+              "type": "object",
+              "properties": {
+                "localhost_only": {
+                  "type": "integer"
+                }
+              }
+            },
+            "cli_path": {
+              "type": "string"
+            },
+            "user_id": {
+              "type": "string"
+            }
+          }
+        },
+        "alarm": {
+          "type": "object",
+          "properties": {
+            "abs_path": {
+              "type": "string"
+            },
+            "bin": {
+              "type": "string"
+            },
+            "script_runtime": {
+              "type": "integer"
+            }
+          }
+        },
+        "allocator": {
+          "type": "object",
+          "properties": {
+            "dontdump_iobuffers": {
+              "type": "integer"
+            },
+            "hugepages": {
+              "type": "integer"
+            },
+            "thread_freelist_low_watermark": {
+              "type": "integer"
+            },
+            "thread_freelist_size": {
+              "type": "integer"
+            }
+          }
+        },
+        "bin_path": {
+          "type": "string"
+        },
+        "body_factory": {
+          "type": "object",
+          "properties": {
+            "enable_customizations": {
+              "type": "integer",
+              "enum": [
+                1,
+                2,
+                3
+              ],
+              "description": "1 - enable customizable user response pages in only the 'default' directory; 2 - enable language-targeted user response pages; 3 - enable host-targeted user response pages"
+            },
+            "enable_logging": {
+              "type": "integer",
+              "enum": [
+                0,
+                1
+              ]
+            },
+            "response_max_size": {
+              "type": "integer"
+            },
+            "response_suppression_mode": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2
+              ],
+              "description": "0 - never suppress generated responses; 1 - always suppress generated responses; 2 - suppress responses for internal traffic"
+            },
+            "template_base": {
+              "type": "string",
+              "pattern": ".*"
+            },
+            "template_sets_dir": {
+              "type": "string",
+              "pattern": "^[^[:space:]]+$"
+            }
+          }
+        },
+        "cache": {
+          "type": "object",
+          "properties": {
+            "agg_write_backlog": {
+              "type": "integer"
+            },
+            "alt_rewrite_max_size": {
+              "type": "integer"
+            },
+            "control": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string"
+                }
+              }
+            },
+            "dir": {
+              "type": "object",
+              "properties": {
+                "sync_frequency": {
+                  "type": "integer"
+                }
+              }
+            },
+            "enable_checksum": {
+              "type": "integer"
+            },
+            "enable_read_while_writer": {
+              "type": "integer"
+            },
+            "force_sector_size": {
+              "type": "integer"
+            },
+            "hit_evacuate_percent": {
+              "type": "integer"
+            },
+            "hit_evacuate_size_limit": {
+              "type": "integer"
+            },
+            "hostdb": {
+              "type": "object",
+              "properties": {
+                "disable_reverse_lookup": {
+                  "type": "integer"
+                },
+                "sync_frequency": {
+                  "type": "integer"
+                }
+              }
+            },
+            "hosting_filename": {
+              "type": "string"
+            },
+            "ip_allow": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string"
+                }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "http": {
+                  "type": "object",
+                  "properties": {
+                    "max_alts": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "log": {
+              "type": "object",
+              "properties": {
+                "alternate": {
+                  "type": "object",
+                  "properties": {
+                    "eviction": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "max_disk_errors": {
+              "type": "integer"
+            },
+            "max_doc_size": {
+              "type": "integer"
+            },
+            "min_average_object_size": {
+              "type": "integer"
+            },
+            "mutex_retry_delay": {
+              "type": "integer"
+            },
+            "permit": {
+              "type": "object",
+              "properties": {
+                "pinning": {
+                  "type": "integer"
+                }
+              }
+            },
+            "ram_cache": {
+              "type": "object",
+              "properties": {
+                "algorithm": {
+                  "type": "integer"
+                },
+                "compress": {
+                  "type": "integer"
+                },
+                "compress_percent": {
+                  "type": "integer"
+                },
+                "size": {
+                  "type": "integer"
+                },
+                "use_seen_filter": {
+                  "type": "integer"
+                }
+              }
+            },
+            "ram_cache_cutoff": {
+              "type": "integer"
+            },
+            "read_while_writer": {
+              "type": "object",
+              "properties": {
+                "max_retries": {
+                  "type": "integer"
+                }
+              }
+            },
+            "read_while_writer_retry": {
+              "type": "object",
+              "properties": {
+                "delay": {
+                  "type": "integer"
+                }
+              }
+            },
+            "select_alternate": {
+              "type": "integer"
+            },
+            "target_fragment_size": {
+              "type": "integer"
+            },
+            "threads_per_disk": {
+              "type": "integer"
+            },
+            "volume_filename": {
+              "type": "string"
+            }
+          }
+        },
+        "config_update_interval_ms": {
+          "type": "integer"
+        },
+        "core_limit": {
+          "type": "integer"
+        },
+        "crash_log_helper": {
+          "type": "string"
+        },
+        "diags": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "integer"
+                },
+                "tags": {
+                  "type": "string"
+                }
+              }
+            },
+            "debug": {
+              "type": "object",
+              "properties": {
+                "client_ip": {
+                  "type": "string"
+                },
+                "enabled": {
+                  "type": "integer"
+                },
+                "tags": {
+                  "type": "string"
+                },
+                "throttling_interval_msec": {
+                  "type": "integer"
+                }
+              }
+            },
+            "logfile": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string"
+                },
+                "rolling_enabled": {
+                  "type": "integer"
+                },
+                "rolling_interval_sec": {
+                  "type": "integer"
+                },
+                "rolling_min_count": {
+                  "type": "integer"
+                },
+                "rolling_size_mb": {
+                  "type": "integer"
+                }
+              }
+            },
+            "logfile_perm": {
+              "type": "string"
+            },
+            "output": {
+              "type": "object",
+              "properties": {
+                "alert": {
+                  "type": "string"
+                },
+                "debug": {
+                  "type": "string"
+                },
+                "diag": {
+                  "type": "string"
+                },
+                "emergency": {
+                  "type": "string"
+                },
+                "error": {
+                  "type": "string"
+                },
+                "fatal": {
+                  "type": "string"
+                },
+                "note": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "warning": {
+                  "type": "string"
+                }
+              }
+            },
+            "show_location": {
+              "type": "integer"
+            }
+          }
+        },
+        "dns": {
+          "type": "object",
+          "properties": {
+            "connection_mode": {
+              "type": "integer"
+            },
+            "dedicated_thread": {
+              "type": "integer"
+            },
+            "failover_number": {
+              "type": "integer"
+            },
+            "failover_period": {
+              "type": "integer"
+            },
+            "local_ipv4": {
+              "type": "string"
+            },
+            "local_ipv6": {
+              "type": "string"
+            },
+            "lookup_timeout": {
+              "type": "integer"
+            },
+            "max_dns_in_flight": {
+              "type": "integer"
+            },
+            "max_tcp_continuous_failures": {
+              "type": "integer"
+            },
+            "nameservers": {
+              "type": "string"
+            },
+            "resolv_conf": {
+              "type": "string"
+            },
+            "retries": {
+              "type": "integer"
+            },
+            "round_robin_nameservers": {
+              "type": "integer"
+            },
+            "search_default_domains": {
+              "type": "integer"
+            },
+            "splitDNS": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "integer"
+                }
+              }
+            },
+            "splitdns": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string"
+                }
+              }
+            },
+            "validate_query_name": {
+              "type": "integer"
+            }
+          }
+        },
+        "dump_mem_info_frequency": {
+          "type": "integer"
+        },
+        "env_prep": {
+          "type": "string"
+        },
+        "error": {
+          "type": "object",
+          "properties": {
+            "logfile": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "exec_thread": {
+          "type": "object",
+          "properties": {
+            "affinity": {
+              "type": "integer",
+              "enum": [0, 1, 2, 3, 4]
+            },
+            "autoconfig": {
+              "type": "object",
+              "properties": {
+                "scale": {
+                  "type": "number"
+                },
+                "value": {
+                  "$ref": "#/$defs/ts_bool"
+                }
+              }
+            },
+            "limit": {
+              "type": "integer"
+            },
+            "listen": {
+              "$ref": "#/$defs/ts_bool"
+            }
+          }
+        },
+        "header": {
+          "type": "object",
+          "properties": {
+            "parse": {
+              "type": "object",
+              "properties": {
+                "no_host_url_redirect": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "hostdb": {
+          "type": "object",
+          "properties": {
+            "fail": {
+              "type": "object",
+              "properties": {
+                "timeout": {
+                  "type": "integer"
+                }
+              }
+            },
+            "filename": {
+              "type": "string"
+            },
+            "host_file": {
+              "type": "object",
+              "properties": {
+                "interval": {
+                  "type": "integer"
+                },
+                "path": {
+                  "type": "string"
+                }
+              }
+            },
+            "lookup_timeout": {
+              "type": "integer"
+            },
+            "max_count": {
+              "type": "integer"
+            },
+            "max_size": {
+              "type": "string"
+            },
+            "migrate_on_demand": {
+              "type": "integer"
+            },
+            "partitions": {
+              "type": "integer"
+            },
+            "re_dns_on_reload": {
+              "type": "integer"
+            },
+            "round_robin_max_count": {
+              "type": "integer"
+            },
+            "serve_stale_for": {
+              "type": "integer"
+            },
+            "storage_path": {
+              "type": "string"
+            },
+            "strict_round_robin": {
+              "type": "integer"
+            },
+            "timed_round_robin": {
+              "type": "integer"
+            },
+            "timeout": {
+              "type": "integer"
+            },
+            "ttl_mode": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "description": "in minutes (all three); 0 = obey, 1 = ignore, 2 = min(X,ttl), 3 = max(X,ttl)"
+            },
+            "value": {
+              "$ref": "#/$defs/ts_bool",
+              "description": "HostDB"
+            },
+            "verify_after": {
+              "type": "integer"
+            }
+          }
+        },
+        "http": {
+          "type": "object",
+          "properties": {
+            "accept_no_activity_timeout": {
+              "type": "integer"
+            },
+            "allow_half_open": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "allow_multi_range": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2
+              ]
+            },
+            "anonymize_other_header_list": {
+              "type": "string",
+              "pattern": ".*"
+            },
+            "anonymize_remove_client_ip": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "anonymize_remove_cookie": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "anonymize_remove_from": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "anonymize_remove_referer": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "anonymize_remove_user_agent": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "attach_server_session_to_client": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "auth_server_session_private": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "background_fill_active_timeout": {
+              "type": "integer"
+            },
+            "background_fill_completed_threshold": {
+              "type": "number"
+            },
+            "cache": {
+              "type": "object",
+              "properties": {
+                "cache_responses_to_cookies": {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4
+                  ],
+                  "description": "TBC"
+                },
+                "cache_urls_that_look_dynamic": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "generation": {
+                  "type": "integer"
+                },
+                "guaranteed_max_lifetime": {
+                  "type": "integer"
+                },
+                "guaranteed_min_lifetime": {
+                  "type": "integer"
+                },
+                "heuristic_lm_factor": {
+                  "type": "number"
+                },
+                "heuristic_max_lifetime": {
+                  "type": "integer",
+                  "pattern": "^[0-9]+$"
+                },
+                "heuristic_min_lifetime": {
+                  "type": "integer"
+                },
+                "http": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "ignore_accept_charset_mismatch": {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1,
+                    2
+                  ]
+                },
+                "ignore_accept_encoding_mismatch": {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1,
+                    2
+                  ]
+                },
+                "ignore_accept_language_mismatch": {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1,
+                    2
+                  ]
+                },
+                "ignore_accept_mismatch": {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1,
+                    2
+                  ]
+                },
+                "ignore_authentication": {
+                  "type": "integer"
+                },
+                "ignore_client_cc_max_age": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "ignore_client_no_cache": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "ignore_server_no_cache": {
+                  "type": "integer"
+                },
+                "ims_on_client_no_cache": {
+                  "type": "integer"
+                },
+                "max_open_read_retries": {
+                  "type": "integer"
+                },
+                "max_open_write_retries": {
+                  "type": "integer"
+                },
+                "max_stale_age": {
+                  "type": "integer"
+                },
+                "open_read_retry_time": {
+                  "type": "integer"
+                },
+                "open_write_fail_action": {
+                  "type": "integer",
+                  "description": "TBD"
+                },
+                "post_method": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "range": {
+                  "type": "object",
+                  "properties": {
+                    "lookup": {
+                      "type": "integer"
+                    },
+                    "write": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "required_headers": {
+                  "type": "integer"
+                },
+                "when_to_revalidate": {
+                  "type": "integer",
+                  "description": ""
+                }
+              }
+            },
+            "chunking": {
+              "type": "object",
+              "properties": {
+                "size": {
+                  "type": "integer"
+                }
+              }
+            },
+            "chunking_enabled": {
+              "type": "integer"
+            },
+            "connect": {
+              "type": "object",
+              "properties": {
+                "dead": {
+                  "type": "object",
+                  "properties": {
+                    "policy": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "connect_attempts_max_retries": {
+              "type": "integer"
+            },
+            "connect_attempts_max_retries_dead_server": {
+              "type": "integer"
+            },
+            "connect_attempts_rr_retries": {
+              "type": "integer"
+            },
+            "connect_attempts_timeout": {
+              "type": "integer"
+            },
+            "connect_ports": {
+              "type": "string",
+              "pattern": "^(\\*|[[:digit:][:space:]]+)$"
+            },
+            "default_buffer_size": {
+              "type": "integer"
+            },
+            "default_buffer_water_mark": {
+              "type": "integer"
+            },
+            "disallow_post_100_continue": {
+              "type": "integer"
+            },
+            "doc_in_cache_skip_dns": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "down_server": {
+              "type": "object",
+              "properties": {
+                "cache_time": {
+                  "type": "integer"
+                }
+              }
+            },
+            "enable_http_info": {
+              "type": "integer"
+            },
+            "enable_http_stats": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "enabled": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "errors": {
+              "type": "object",
+              "properties": {
+                "log_error_pages": {
+                  "type": "integer"
+                }
+              }
+            },
+            "flow_control": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "integer"
+                },
+                "high_water": {
+                  "type": "integer"
+                },
+                "low_water": {
+                  "type": "integer"
+                }
+              }
+            },
+            "forward": {
+              "type": "object",
+              "properties": {
+                "proxy_auth_to_parent": {
+                  "type": "integer"
+                }
+              }
+            },
+            "forward_connect_method": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "global_user_agent_header": {
+              "type": "string",
+              "pattern": ".*"
+            },
+            "header_field_max_size": {
+              "type": "integer"
+            },
+            "host_sni_policy": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2
+              ],
+              "description": "Control how the host/sni name mismatches are handled; 0 - no checking. 1 - log in mismatch. 2 - enforcing"
+            },
+            "insert_age_in_response": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "insert_client_ip": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2
+              ]
+            },
+            "insert_forwarded": {
+              "type": "string"
+            },
+            "insert_request_via_str": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ]
+            },
+            "insert_response_via_str": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ]
+            },
+            "insert_squid_x_forwarded_for": {
+              "type": "integer"
+            },
+            "keep_alive_enabled_in": {
+              "type": "integer"
+            },
+            "keep_alive_enabled_out": {
+              "type": "integer"
+            },
+            "keep_alive_no_activity_timeout_in": {
+              "type": "integer"
+            },
+            "keep_alive_no_activity_timeout_out": {
+              "type": "integer"
+            },
+            "keep_alive_post_out": {
+              "type": "integer"
+            },
+            "keepalive_internal_vc": {
+              "type": "integer"
+            },
+            "max_post_size": {
+              "type": "integer"
+            },
+            "negative_caching_enabled": {
+              "type": "integer"
+            },
+            "negative_caching_lifetime": {
+              "type": "integer"
+            },
+            "negative_caching_list": {
+              "type": "string",
+              "description": "ie: 204 305 403 404 414 500 501 502 503 504"
+            },
+            "negative_revalidating_enabled": {
+              "type": "integer"
+            },
+            "negative_revalidating_lifetime": {
+              "type": "integer"
+            },
+            "no_dns_just_forward_to_parent": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "no_origin_server_dns": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "normalize_ae": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2
+              ]
+            },
+            "number_of_redirections": {
+              "type": "integer",
+              "description": ""
+            },
+            "parent_proxies": {
+              "type": "string",
+              "pattern": ".*"
+            },
+            "parent_proxy": {
+              "type": "object",
+              "properties": {
+                "connect_attempts_timeout": {
+                  "type": "integer"
+                },
+                "fail_threshold": {
+                  "type": "integer"
+                },
+                "file": {
+                  "type": "string"
+                },
+                "mark_down_hostdb": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "max_trans_retries": {
+                  "type": "integer"
+                },
+                "per_parent_connect_attempts": {
+                  "type": "integer"
+                },
+                "retry_time": {
+                  "type": "integer"
+                },
+                "self_detect": {
+                  "type": "integer"
+                },
+                "total_connect_attempts": {
+                  "type": "integer"
+                }
+              }
+            },
+            "per_server": {
+              "type": "object",
+              "properties": {
+                "connection": {
+                  "type": "object",
+                  "properties": {
+                    "alert_delay": {
+                      "type": "integer"
+                    },
+                    "match": {
+                      "type": "string",
+                      "enum": ["ip","host","both","none"]
+                    },
+                    "max": {
+                      "type": "integer"
+                    },
+                    "min": {
+                      "type": "integer"
+                    },
+                    "queue_delay": {
+                      "type": "integer"
+                    },
+                    "queue_size": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "post": {
+              "type": "object",
+              "properties": {
+                "check": {
+                  "type": "object",
+                  "properties": {
+                    "content_length": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "$ref": "#/$defs/ts_bool"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "post_connect_attempts_timeout": {
+              "type": "integer"
+            },
+            "post_copy_size": {
+              "type": "integer"
+            },
+            "proxy_protocol_allowlist": {
+              "type": "string"
+            },
+            "proxy_protocol_out": {
+              "type": "integer",
+              "enum": [
+                -1,
+                0,
+                1,
+                2
+              ]
+            },
+            "push_method_enabled": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "redirect": {
+              "type": "object",
+              "properties": {
+                "actions": {
+                  "type": "string"
+                }
+              }
+            },
+            "redirect_host_no_port": {
+              "type": "integer"
+            },
+            "redirect_use_orig_cache_key": {
+              "type": "integer"
+            },
+            "referer_default_redirect": {
+              "type": "string"
+            },
+            "referer_filter": {
+              "type": "integer"
+            },
+            "referer_format_redirect": {
+              "type": "integer"
+            },
+            "remap": {
+              "type": "object",
+              "properties": {
+                "old_behavior": {
+                  "$ref": "#/$defs/ts_bool"
+                }
+              }
+            },
+            "request_buffer_enabled": {
+              "type": "integer"
+            },
+            "request_header_max_size": {
+              "type": "integer"
+            },
+            "request_line_max_size": {
+              "type": "integer"
+            },
+            "request_via_str": {
+              "type": "string"
+            },
+            "response_header_max_size": {
+              "type": "integer"
+            },
+            "response_server_enabled": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2
+              ]
+            },
+            "response_server_str": {
+              "type": "string",
+              "pattern": ".*"
+            },
+            "response_via_str": {
+              "type": "string"
+            },
+            "send_100_continue_response": {
+              "type": "integer"
+            },
+            "send_http11_requests": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2,
+                3
+              ]
+            },
+            "server_max_connections": {
+              "type": "integer"
+            },
+            "server_ports": {
+              "type": "string"
+            },
+            "server_session_sharing": {
+              "type": "object",
+              "properties": {
+                "match": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "ip",
+                    "host",
+                    "both",
+                    "hostonly",
+                    "sni",
+                    "cert"
+                  ]
+                },
+                "pool": {
+                  "type": "string",
+                  "enum": [
+                    "global",
+                    "thread",
+                    "hybrid"
+                  ]
+                }
+              }
+            },
+            "slow": {
+              "type": "object",
+              "properties": {
+                "log": {
+                  "type": "object",
+                  "properties": {
+                    "threshold": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "strict_uri_parsing": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "transaction_active_timeout_in": {
+              "type": "integer"
+            },
+            "transaction_active_timeout_out": {
+              "type": "integer"
+            },
+            "transaction_no_activity_timeout_in": {
+              "type": "integer"
+            },
+            "transaction_no_activity_timeout_out": {
+              "type": "integer"
+            },
+            "uncacheable_requests_bypass_parent": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "use_client_source_port": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "use_client_target_addr": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2
+              ]
+            },
+            "wait_for_cache": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2,
+                3
+              ]
+            },
+            "websocket": {
+              "type": "object",
+              "properties": {
+                "max_number_of_connections": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "parent_proxy": {
+            "type": "object",
+            "properties": {
+              "disable_connect_tunneling": {
+                "type": "integer"
+              }
+            }
+          },
+          "incoming_ip_to_bind": {
+            "type": "string"
+          },
+          "outgoing_ip_to_bind": {
+            "type": "string"
+          }
+        },
+        "http2": {
+          "type": "object",
+          "properties": {
+            "accept_no_activity_timeout": {
+              "type": "integer"
+            },
+            "active_timeout_in": {
+              "type": "integer"
+            },
+            "connection": {
+              "type": "object",
+              "properties": {
+                "slow": {
+                  "type": "object",
+                  "properties": {
+                    "log": {
+                      "type": "object",
+                      "properties": {
+                        "threshold": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "header_table_size": {
+              "type": "integer"
+            },
+            "header_table_size_limit": {
+              "type": "integer"
+            },
+            "initial_window_size_in": {
+              "type": "integer"
+            },
+            "max_active_streams_in": {
+              "type": "integer"
+            },
+            "max_concurrent_streams_in": {
+              "type": "integer"
+            },
+            "max_frame_size": {
+              "type": "integer"
+            },
+            "max_header_list_size": {
+              "type": "integer"
+            },
+            "max_ping_frames_per_minute": {
+              "type": "integer"
+            },
+            "max_priority_frames_per_minute": {
+              "type": "integer"
+            },
+            "max_settings_frames_per_minute": {
+              "type": "integer"
+            },
+            "max_settings_per_frame": {
+              "type": "integer"
+            },
+            "max_settings_per_minute": {
+              "type": "integer"
+            },
+            "min_avg_window_update": {
+              "type": "number"
+            },
+            "min_concurrent_streams_in": {
+              "type": "integer"
+            },
+            "no_activity_timeout_in": {
+              "type": "integer"
+            },
+            "push_diary_size": {
+              "type": "integer"
+            },
+            "stream": {
+              "type": "object",
+              "properties": {
+                "slow": {
+                  "type": "object",
+                  "properties": {
+                    "log": {
+                      "type": "object",
+                      "properties": {
+                        "threshold": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "stream_error_rate_threshold": {
+              "type": "number"
+            },
+            "stream_priority_enabled": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "write_buffer_block_size": {
+              "type": "integer"
+            },
+            "write_size_threshold": {
+              "type": "number"
+            },
+            "write_time_threshold": {
+              "type": "integer"
+            },
+            "zombie_debug_timeout_in": {
+              "type": "integer"
+            }
+          }
+        },
+        "http3": {
+          "type": "object",
+          "properties": {
+            "header_table_size": {
+              "type": "integer"
+            },
+            "max_header_list_size": {
+              "type": "integer"
+            },
+            "max_settings": {
+              "type": "integer"
+            },
+            "num_placeholders": {
+              "type": "integer"
+            },
+            "qpack_blocked_streams": {
+              "type": "integer"
+            }
+          }
+        },
+        "http_ui_enabled": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "jsonrpc": {
+          "type": "object",
+          "properties": {
+            "filename": {
+              "type": "string"
+            }
+          }
+        },
+        "lm": {
+          "type": "object",
+          "properties": {
+            "pserver_timeout_msecs": {
+              "type": "integer"
+            },
+            "pserver_timeout_secs": {
+              "type": "integer"
+            }
+          }
+        },
+        "local_state_dir": {
+          "type": "string"
+        },
+        "log": {
+          "type": "object",
+          "properties": {
+            "ascii_buffer_size": {
+              "type": "integer"
+            },
+            "auto_delete_rolled_files": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "config": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string"
+                }
+              }
+            },
+            "file_stat_frequency": {
+              "type": "integer"
+            },
+            "hostname": {
+              "type": "string"
+            },
+            "io": {
+              "type": "object",
+              "properties": {
+                "max_buffer_index": {
+                  "type": "integer"
+                }
+              }
+            },
+            "log_buffer_size": {
+              "type": "integer"
+            },
+            "logfile_dir": {
+              "type": "string",
+              "pattern": "^[^[:space:]]+$"
+            },
+            "logfile_perm": {
+              "type": "string"
+            },
+            "logging_enabled": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ],
+              "description": "possible values for logging_enabled..."
+            },
+            "max_line_size": {
+              "type": "integer"
+            },
+            "max_secs_per_buffer": {
+              "type": "integer"
+            },
+            "max_space_mb_for_logs": {
+              "type": "integer"
+            },
+            "max_space_mb_headroom": {
+              "type": "integer"
+            },
+            "periodic_tasks_interval": {
+              "type": "integer"
+            },
+            "preproc_threads": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 128
+            },
+            "rolling_allow_empty": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "rolling_enabled": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2
+              ],
+              "description": "tbd, this is  related to rolling_size_mb, we may need a constraint for that."
+            },
+            "rolling_interval_sec": {
+              "type": "integer"
+            },
+            "rolling_max_count": {
+              "type": "integer"
+            },
+            "rolling_min_count": {
+              "type": "integer"
+            },
+            "rolling_offset_hr": {
+              "type": "integer"
+            },
+            "rolling_size_mb": {
+              "type": "integer"
+            },
+            "sampling_frequency": {
+              "type": "integer"
+            },
+            "space_used_frequency": {
+              "type": "integer"
+            },
+            "throttling_interval_msec": {
+              "type": "integer"
+            }
+          }
+        },
+        "memory": {
+          "type": "object",
+          "properties": {
+            "max_usage": {
+              "type": "integer"
+            }
+          }
+        },
+        "mlock_enabled": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2
+          ],
+          "description": "0 - Disabled, 1 - enabled for important pages (e.g. cache directory), 2 - enabled for all pages"
+        },
+        "msg": {
+          "type": "object",
+          "properties": {
+            "io": {
+              "type": "object",
+              "properties": {
+                "max_buffer_index": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "net": {
+          "type": "object",
+          "properties": {
+            "accept_period": {
+              "type": "integer"
+            },
+            "connections_throttle": {
+              "type": "integer"
+            },
+            "default_inactivity_timeout": {
+              "type": "integer"
+            },
+            "defer_accept": {
+              "type": "integer"
+            },
+            "event_period": {
+              "type": "integer"
+            },
+            "inactivity_check_frequency": {
+              "type": "integer"
+            },
+            "listen_backlog": {
+              "type": "integer"
+            },
+            "max_connections_in": {
+              "type": "integer"
+            },
+            "max_requests_in": {
+              "type": "integer"
+            },
+            "poll_timeout": {
+              "type": "integer"
+            },
+            "retry_delay": {
+              "type": "integer"
+            },
+            "sock_mss_in": {
+              "type": "integer"
+            },
+            "sock_option_flag_in": {
+              "type": "string"
+            },
+            "sock_option_flag_out": {
+              "type": "string"
+            },
+            "sock_option_tfo_queue_size_in": {
+              "type": "integer"
+            },
+            "sock_packet_mark_in": {
+              "type": "string"
+            },
+            "sock_packet_mark_out": {
+              "type": "string"
+            },
+            "sock_packet_tos_in": {
+              "type": "string"
+            },
+            "sock_packet_tos_out": {
+              "type": "string"
+            },
+            "sock_recv_buffer_size_in": {
+              "type": "integer"
+            },
+            "sock_recv_buffer_size_out": {
+              "type": "integer"
+            },
+            "sock_send_buffer_size_in": {
+              "type": "integer"
+            },
+            "sock_send_buffer_size_out": {
+              "type": "integer"
+            },
+            "tcp_congestion_control_in": {
+              "type": "string"
+            },
+            "tcp_congestion_control_out": {
+              "type": "string"
+            },
+            "throttle_delay": {
+              "type": "integer"
+            }
+          }
+        },
+        "output": {
+          "type": "object",
+          "properties": {
+            "logfile": {
+              "type": "object",
+              "properties": {
+                "rolling_enabled": {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1,
+                    2
+                  ]
+                },
+                "rolling_interval_sec": {
+                  "type": "integer"
+                },
+                "rolling_min_count": {
+                  "type": "integer"
+                },
+                "rolling_size_mb": {
+                  "type": "integer"
+                },
+                "value": {
+                  "type": "string"
+                }
+              }
+            },
+            "logfile_perm": {
+              "type": "string"
+            }
+          }
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "io": {
+              "type": "object",
+              "properties": {
+                "max_buffer_index": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "plugin": {
+          "type": "object",
+          "properties": {
+            "dynamic_reload_mode": {
+              "$ref": "#/$defs/ts_bool",
+              "description": "Enables the dynamic reload feature for remap plugins (remap.config). Global plugins (plugin.config) do not have dynamic reload feature yet."
+            },
+            "load_elevated": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "plugin_dir": {
+              "type": "string"
+            }
+          }
+        },
+        "process_manager": {
+          "type": "object",
+          "properties": {
+            "timeout": {
+              "type": "integer"
+            }
+          }
+        },
+        "product_company": {
+          "type": "string",
+          "description": "Apache Software Foundation"
+        },
+        "product_name": {
+          "type": "string"
+        },
+        "product_vendor": {
+          "type": "string"
+        },
+        "node": {
+          "type": "object",
+          "properties": {
+            "config": {
+              "type": "object",
+              "properties": {
+                "manager_exponential_sleep_ceiling": {
+                  "type": "integer"
+                },
+                "manager_log_filename": {
+                  "type": "string"
+                },
+                "manager_retry_cap": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "proxy_binary": {
+          "type": "string"
+        },
+        "proxy_binary_opts": {
+          "type": "string"
+        },
+        "proxy_name": {
+          "type": "string"
+        },
+        "quic": {
+          "type": "object",
+          "properties": {
+            "ack_delay_exponent_in": {
+              "type": "integer"
+            },
+            "ack_delay_exponent_out": {
+              "type": "integer"
+            },
+            "active_cid_limit_in": {
+              "type": "integer"
+            },
+            "active_cid_limit_out": {
+              "type": "integer"
+            },
+            "client": {
+              "type": "object",
+              "properties": {
+                "cm_exercise_enabled": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "keylog_file": {
+                  "type": "string"
+                },
+                "quantum_readiness_test_enabled": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "session_file": {
+                  "type": "string"
+                },
+                "supported_groups": {
+                  "type": "string"
+                },
+                "vn_exercise_enabled": {
+                  "$ref": "#/$defs/ts_bool"
+                }
+              }
+            },
+            "congestion_control": {
+              "type": "object",
+              "properties": {
+                "initial_window": {
+                  "type": "integer"
+                },
+                "loss_reduction_factor": {
+                  "type": "number"
+                },
+                "max_datagram_size": {
+                  "type": "integer"
+                },
+                "minimum_window": {
+                  "type": "integer"
+                },
+                "persistent_congestion_threshold": {
+                  "type": "integer"
+                }
+              }
+            },
+            "connection_table": {
+              "type": "object",
+              "properties": {
+                "size": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 536870909
+                }
+              }
+            },
+            "disable_active_migration": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "initial_max_data_in": {
+              "type": "integer"
+            },
+            "initial_max_data_out": {
+              "type": "integer"
+            },
+            "initial_max_stream_data_bidi_local_in": {
+              "type": "integer"
+            },
+            "initial_max_stream_data_bidi_local_out": {
+              "type": "integer"
+            },
+            "initial_max_stream_data_bidi_remote_in": {
+              "type": "integer"
+            },
+            "initial_max_stream_data_bidi_remote_out": {
+              "type": "integer"
+            },
+            "initial_max_stream_data_uni_in": {
+              "type": "integer"
+            },
+            "initial_max_stream_data_uni_out": {
+              "type": "integer"
+            },
+            "initial_max_streams_bidi_in": {
+              "type": "integer"
+            },
+            "initial_max_streams_bidi_out": {
+              "type": "integer"
+            },
+            "initial_max_streams_uni_in": {
+              "type": "integer"
+            },
+            "initial_max_streams_uni_out": {
+              "type": "integer"
+            },
+            "instance_id": {
+              "type": "integer"
+            },
+            "loss_detection": {
+              "type": "object",
+              "properties": {
+                "granularity": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "initial_rtt": {
+                  "type": "integer"
+                },
+                "packet_threshold": {
+                  "type": "integer"
+                },
+                "time_threshold": {
+                  "type": "number"
+                }
+              }
+            },
+            "max_ack_delay_in": {
+              "type": "integer"
+            },
+            "max_ack_delay_out": {
+              "type": "integer"
+            },
+            "no_activity_timeout_in": {
+              "type": "integer"
+            },
+            "no_activity_timeout_out": {
+              "type": "integer"
+            },
+            "num_alt_connection_ids": {
+              "type": "integer"
+            },
+            "preferred_address_ipv4": {
+              "type": "string"
+            },
+            "preferred_address_ipv6": {
+              "type": "string"
+            },
+            "qlog_dir": {
+              "type": "string"
+            },
+            "server": {
+              "type": "object",
+              "properties": {
+                "quantum_readiness_test_enabled": {
+                  "type": "integer"
+                },
+                "stateless_retry_enabled": {
+                  "type": "integer"
+                },
+                "supported_groups": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "raw_stat_sync_interval_ms": {
+          "type": "integer"
+        },
+        "remote_sync_interval_ms": {
+          "type": "integer"
+        },
+        "res_track_memory": {
+          "type": "integer",
+          "enun": [
+            0,
+            1,
+            2
+          ]
+        },
+        "restart": {
+          "type": "object",
+          "properties": {
+            "active_client_threshold": {
+              "type": "integer"
+            },
+            "stop_listening": {
+              "$ref": "#/$defs/ts_bool"
+            }
+          }
+        },
+        "reverse_proxy": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "$ref": "#/$defs/ts_bool"
+            }
+          }
+        },
+        "socks": {
+          "type": "object",
+          "properties": {
+            "accept_enabled": {
+              "type": "integer"
+            },
+            "accept_port": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "connection_attempts": {
+              "type": "integer"
+            },
+            "default_servers": {
+              "type": "string",
+              "pattern": "^([^[:space:]]+:[0-9]+;?)*$"
+            },
+            "http_port": {
+              "type": "integer"
+            },
+            "per_server_connection_attempts": {
+              "type": "integer"
+            },
+            "server_connect_timeout": {
+              "type": "integer"
+            },
+            "server_fail_threshold": {
+              "type": "integer"
+            },
+            "server_retry_time": {
+              "type": "integer"
+            },
+            "server_retry_timeout": {
+              "type": "integer"
+            },
+            "socks_config_file": {
+              "type": "string"
+            },
+            "socks_needed": {
+              "type": "integer"
+            },
+            "socks_timeout": {
+              "type": "integer"
+            },
+            "socks_version": {
+              "type": "integer"
+            }
+          }
+        },
+        "srv_enabled": {
+          "$ref": "#/$defs/ts_bool",
+          "description": "Support for SRV records"
+        },
+        "ssl": {
+          "type": "object",
+          "properties": {
+            "CA": {
+              "type": "object",
+              "properties": {
+                "cert": {
+                  "$ref": "#/$defs/ts_path"
+                }
+              }
+            },
+            "TLSv1": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "TLSv1_1": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "TLSv1_2": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "TLSv1_3": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "allow_client_renegotiation": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "async": {
+              "type": "object",
+              "properties": {
+                "handshake": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "$ref": "#/$defs/ts_bool"
+                    }
+                  }
+                }
+              }
+            },
+            "cert": {
+              "type": "object",
+              "properties": {
+                "load_elevated": {
+                  "$ref": "#/$defs/ts_bool"
+                }
+              }
+            },
+            "client": {
+              "type": "object",
+              "properties": {
+                "CA": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "$ref": "#/$defs/ts_path"
+                    }
+                  }
+                },
+                "TLSv1": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "TLSv1_1": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "TLSv1_2": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "TLSv1_3": {
+                  "type": "object",
+                  "properties": {
+                    "cipher_suites": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "$ref": "#/$defs/ts_bool"
+                    }
+                  }
+                },
+                "cert": {
+                  "$ref": "#/$defs/ts_path"
+                },
+                "certification_level": {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1,
+                    2
+                  ]
+                },
+                "cipher_suite": {
+                  "type": "string"
+                },
+                "groups_list": {
+                  "type": "string"
+                },
+                "private_key": {
+                  "$ref": "#/$defs/ts_path"
+                },
+                "sni_policy": {
+                  "type": "string"
+                },
+                "verify": {
+                  "type": "object",
+                  "properties": {
+                    "server": {
+                      "type": "object",
+                      "properties": {
+                        "policy": {
+                          "type": "string"
+                        },
+                        "properties": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "engine": {
+              "type": "object",
+              "properties": {
+                "conf_file": {
+                  "type": "string"
+                }
+              }
+            },
+            "handshake_timeout_in": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 65535
+            },
+            "hsts_include_subdomains": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "hsts_max_age": {
+              "type": "integer"
+            },
+            "max_record_size": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 16383
+            },
+            "misc": {
+              "type": "object",
+              "properties": {
+                "io": {
+                  "type": "object",
+                  "properties": {
+                    "max_buffer_index": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            },
+            "ocsp": {
+              "type": "object",
+              "properties": {
+                "cache_timeout": {
+                  "type": "integer"
+                },
+                "enabled": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "request_timeout": {
+                  "type": "integer"
+                },
+                "response": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "update_period": {
+                  "type": "integer"
+                }
+              }
+            },
+            "origin_session_cache": {
+              "type": "object",
+              "properties": {
+                "size": {
+                  "type": "integer"
+                },
+                "value": {
+                  "type": "integer"
+                }
+              }
+            },
+            "server": {
+              "type": "object",
+              "properties": {
+                "TLSv1_3": {
+                  "type": "object",
+                  "properties": {
+                    "cipher_suites": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "allow_early_data_params": {
+                  "type": "integer"
+                },
+                "cert": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "cert_chain": {
+                  "type": "object",
+                  "properties": {
+                    "filename": {
+                      "$ref": "#/$defs/ts_filename"
+                    }
+                  }
+                },
+                "cipher_suite": {
+                  "type": "string"
+                },
+                "dhparams_file": {
+                  "type": "string"
+                },
+                "groups_list": {
+                  "type": "string"
+                },
+                "honor_cipher_order": {
+                  "type": "integer"
+                },
+                "max_early_data": {
+                  "type": "integer"
+                },
+                "multicert": {
+                  "type": "object",
+                  "properties": {
+                    "exit_on_load_fail": {
+                      "type": "integer"
+                    },
+                    "filename": {
+                      "$ref": "#/$defs/ts_filename"
+                    }
+                  }
+                },
+                "prioritize_chacha": {
+                  "$ref": "#/$defs/ts_bool"
+                },
+                "private_key": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "session_ticket": {
+                  "type": "object",
+                  "properties": {
+                    "enable": {
+                      "$ref": "#/$defs/ts_bool"
+                    },
+                    "number": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "ticket_key": {
+                  "type": "object",
+                  "properties": {
+                    "filename": {
+                      "$ref": "#/$defs/ts_filename"
+                    }
+                  }
+                }
+              }
+            },
+            "servername": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "$ref": "#/$defs/ts_filename"
+                }
+              }
+            },
+            "session_cache": {
+              "type": "object",
+              "properties": {
+                "auto_clear": {
+                  "type": "integer"
+                },
+                "num_buckets": {
+                  "type": "integer"
+                },
+                "size": {
+                  "type": "integer"
+                },
+                "skip_cache_on_bucket_contention": {
+                  "type": "integer"
+                },
+                "timeout": {
+                  "type": "integer"
+                },
+                "value": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "stat_api": {
+          "type": "object",
+          "properties": {
+            "max_stats_allowed": {
+              "type": "number",
+              "minimum": 256,
+              "maximum": 1000
+            }
+          }
+        },
+        "stop": {
+          "type": "object",
+          "properties": {
+            "shutdown_timeout": {
+              "type": "integer"
+            }
+          }
+        },
+        "syslog_facility": {
+          "type": "string",
+          "pattern": ".*"
+        },
+        "system": {
+          "type": "object",
+          "properties": {
+            "file_max_pct": {
+              "type": "number"
+            }
+          }
+        },
+        "task_threads": {
+          "type": "integer"
+        },
+        "thread": {
+          "type": "object",
+          "properties": {
+            "default": {
+              "type": "object",
+              "properties": {
+                "stacksize": {
+                  "type": "number",
+                  "minimum": 131072,
+                  "maximum": 104857600
+                }
+              }
+            },
+            "max_heartbeat_mseconds": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          }
+        },
+        "udp": {
+          "type": "object",
+          "properties": {
+            "free_cancelled_pkts_sec": {
+              "type": "integer"
+            },
+            "periodic_cleanup": {
+              "type": "integer"
+            },
+            "send_retries": {
+              "type": "integer"
+            },
+            "threads": {
+              "type": "integer"
+            }
+          }
+        },
+        "url_remap": {
+          "type": "object",
+          "properties": {
+            "filename": {
+              "$ref": "#/$defs/ts_filename"
+            },
+            "pristine_host_hdr": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "remap_required": {
+              "$ref": "#/$defs/ts_bool"
+            },
+            "strategies": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "$ref": "#/$defs/ts_filename"
+                }
+              }
+            }
+          }
+        },
+        "wccp": {
+          "type": "object",
+          "properties": {
+            "addr": {
+              "type": "string"
+            },
+            "services": {
+              "type": "string"
+            }
+          }
+        },
+        "websocket": {
+          "type": "object",
+          "properties": {
+            "active_timeout": {
+              "type": "integer"
+            },
+            "no_activity_timeout": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "ts"
+  ],
+  "$defs": {
+    "ts_bool": {
+      "anyOf": [{
+          "type": "boolean"
+        },
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        }
+      ]
+    },
+    "ts_nullstring": {
+      "type": ["string","null"]
+    },
+    "ts_filename": {
+      "type": ["string","null"],
+      "pattern": "^[^[:space:]]*$"
+    },
+    "ts_path": {
+      "type": "object",
+      "properties": {
+        "filename": {
+          "$ref": "#/$defs/ts_filename"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -41,6 +41,24 @@ dist_sysconf_DATA =	\
 	strategies.yaml.default \
 	volume.config.default
 
+if GENERATE_RECORDS_YAML
+all-am: gen-rec-yaml
+endif
+
+gen-rec-yaml:
+# generate records.yaml base on the current records.config, also run a schema validation with it.
+	@python3 $(top_builddir)/contrib/python/records_config_to_yaml.py \
+		--file records.config.default.in \
+		--schema records.schema.json \
+		--yaml \
+		--save2 records.yaml; \
+	if [ $$? -ne 0 ] ; then \
+		echo records.yaml file not generated.; \
+		exit 1; \
+	else \
+		echo records.yaml file generated.; \
+	fi
+
 install-exec-hook:
 	for dfltcfgfile in $(dist_sysconf_DATA) $(nodist_sysconf_DATA) ; \
 	do \
