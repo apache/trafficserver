@@ -211,11 +211,9 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
   // Transfer control of the write side as well
   ss->do_io_write(this, 0, nullptr);
 
-  // we probably don't need the active timeout set, but will leave it for now
-  HttpConfigParams *http_config_params = HttpConfig::acquire();
-  ss->set_inactivity_timeout(HRTIME_SECONDS(http_config_params->oride.keep_alive_no_activity_timeout_out));
-  ss->set_active_timeout(HRTIME_SECONDS(http_config_params->oride.keep_alive_no_activity_timeout_out));
-  HttpConfig::release(http_config_params);
+  ss->set_inactivity_timeout(ss->get_netvc()->get_inactivity_timeout());
+  ss->cancel_active_timeout();
+
   // put it in the pools.
   this->addSession(ss);
 
@@ -251,9 +249,8 @@ ServerSessionPool::eventHandler(int event, void *data)
     return 0;
   }
 
-  sockaddr const *addr                 = net_vc->get_remote_addr();
-  HttpConfigParams *http_config_params = HttpConfig::acquire();
-  bool found                           = false;
+  sockaddr const *addr = net_vc->get_remote_addr();
+  bool found           = false;
 
   for (auto spot = m_ip_pool.find(addr); spot != m_ip_pool.end() && spot->_ip_link.equal(addr, spot); ++spot) {
     if ((s = spot)->get_netvc() == net_vc) {
@@ -271,8 +268,7 @@ ServerSessionPool::eventHandler(int event, void *data)
                 "[%" PRId64 "] [session_bucket] session received io notice [%s], "
                 "resetting timeout to maintain minimum number of connections",
                 s->connection_id(), HttpDebugNames::get_event_name(event));
-          s->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(http_config_params->oride.keep_alive_no_activity_timeout_out));
-          s->get_netvc()->set_active_timeout(HRTIME_SECONDS(http_config_params->oride.keep_alive_no_activity_timeout_out));
+          s->get_netvc()->set_inactivity_timeout(s->get_netvc()->get_inactivity_timeout());
           found = true;
           break;
         }
@@ -292,7 +288,6 @@ ServerSessionPool::eventHandler(int event, void *data)
     }
   }
 
-  HttpConfig::release(http_config_params);
   if (!found) {
     // We failed to find our session.  This can only be the result of a programming flaw. Since we only ever keep
     // UnixNetVConnections and SSLNetVConnections in the session pool, the dynamic cast won't fail.
