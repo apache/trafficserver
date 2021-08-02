@@ -89,7 +89,6 @@ DNSConnection::trigger()
 
 int
 DNSConnection::connect(sockaddr const *addr, Options const &opt)
-//                       bool non_blocking_connect, bool use_tcp, bool non_blocking, bool bind_random_port)
 {
   ink_assert(fd == NO_FD);
   ink_assert(ats_is_ip(addr));

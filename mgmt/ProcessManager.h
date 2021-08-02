@@ -33,7 +33,7 @@
 #include "MgmtUtils.h"
 #include "BaseManager.h"
 #include "tscore/ink_sock.h"
-
+#include "tscore/ink_llqueue.h"
 #include "tscore/ink_apidefs.h"
 
 #if HAVE_EVENTFD

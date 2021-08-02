@@ -24,7 +24,6 @@
 #pragma once
 
 #include "tscore/ink_thread.h"
-#include "tscore/ink_llqueue.h"
 #include "tscore/ink_rwlock.h"
 #include "tscore/TextBuffer.h"
 
@@ -44,7 +43,6 @@ extern RecModeT g_mode_type;
 
 // records.config items
 extern const char *g_rec_config_fpath;
-extern LLQ *g_rec_config_contents_llq;
 extern std::unordered_set<std::string> g_rec_config_contents_ht;
 extern ink_mutex g_rec_config_lock;
 

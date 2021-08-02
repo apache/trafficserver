@@ -796,7 +796,6 @@ MIOBuffer::append_block_internal(IOBufferBlock *b)
 {
   // It would be nice to remove an empty buffer at the beginning,
   // but this breaks HTTP.
-  // if (!_writer || !_writer->read_avail())
   if (!_writer) {
     _writer = b;
     init_readers();

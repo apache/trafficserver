@@ -37,7 +37,6 @@
 #include "tscore/I_Layout.h"
 
 const char *g_rec_config_fpath = nullptr;
-LLQ *g_rec_config_contents_llq = nullptr;
 std::unordered_set<std::string> g_rec_config_contents_ht;
 ink_mutex g_rec_config_lock;
 
@@ -48,7 +47,6 @@ void
 RecConfigFileInit()
 {
   ink_mutex_init(&g_rec_config_lock);
-  g_rec_config_contents_llq = create_queue();
 }
 
 //-------------------------------------------------------------------------
@@ -161,12 +159,6 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
     ink_mutex_release(&g_rec_config_lock);
     return REC_ERR_FAIL;
   }
-  // clear our g_rec_config_contents_xxx structures
-  while (!queue_is_empty(g_rec_config_contents_llq)) {
-    cfe = static_cast<RecConfigFileEntry *>(dequeue(g_rec_config_contents_llq));
-    ats_free(cfe->entry);
-    ats_free(cfe);
-  }
 
   line_tok.Initialize(fbuf, SHARE_TOKS | ALLOW_EMPTY_TOKS);
   line     = line_tok.iterFirst(&line_tok_state);
@@ -183,7 +175,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
 
     // check for blank lines and comments
     if ((!rec_type_str) || (rec_type_str && (*rec_type_str == '#'))) {
-      goto L_next_line;
+      goto L_done;
     }
 
     name_str      = strtok_r(nullptr, " \t", &ln);
@@ -221,7 +213,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
     // check for errors
     if (!(rec_type_str && name_str && data_type_str && data_str)) {
       RecLog(DL_Warning, "Could not parse line at '%s:%d' -- skipping line: '%s'", path, line_num, line);
-      goto L_next_line;
+      goto L_done;
     }
 
     // record type
@@ -235,7 +227,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
       rec_type = RECT_LOCAL;
     } else {
       RecLog(DL_Warning, "Unknown record type '%s' at '%s:%d' -- skipping line", rec_type_str, path, line_num);
-      goto L_next_line;
+      goto L_done;
     }
 
     // data_type
@@ -249,7 +241,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
       data_type = RECD_COUNTER;
     } else {
       RecLog(DL_Warning, "Unknown data type '%s' at '%s:%d' -- skipping line", data_type_str, path, line_num);
-      goto L_next_line;
+      goto L_done;
     }
 
     // OK, we parsed the record, send it to the handler ...
@@ -260,17 +252,7 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler)
     cfe             = static_cast<RecConfigFileEntry *>(ats_malloc(sizeof(RecConfigFileEntry)));
     cfe->entry_type = RECE_RECORD;
     cfe->entry      = ats_strdup(name_str);
-    enqueue(g_rec_config_contents_llq, (void *)cfe);
     g_rec_config_contents_ht.emplace(name_str);
-    goto L_done;
-
-  L_next_line:
-    // store this line into g_rec_config_contents_llq so that we can
-    // write it out later
-    cfe             = static_cast<RecConfigFileEntry *>(ats_malloc(sizeof(RecConfigFileEntry)));
-    cfe->entry_type = RECE_COMMENT;
-    cfe->entry      = ats_strdup(line);
-    enqueue(g_rec_config_contents_llq, (void *)cfe);
 
   L_done:
     line = line_tok.iterNext(&line_tok_state);

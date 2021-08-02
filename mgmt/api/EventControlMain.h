@@ -34,6 +34,7 @@
 #include "mgmtapi.h"       //add the include path b/c included in web dir
 #include "CoreAPIShared.h" // for NUM_EVENTS
 #include "Alarms.h"
+#include "tscore/ink_llqueue.h"
 
 #include <unordered_map>
 
