@@ -1008,7 +1008,7 @@ HttpTransactHeaders::add_forwarded_field_to_request(HttpTransact::State *s, HTTP
       hdr << "by=_" << m.uuid.getString();
     }
 
-    if (optSet[HttpForwarded::BY_IP] and (m.ip_string_len > 0)) {
+    if (optSet[HttpForwarded::BY_IP] and m.ip.isValid()) {
       if (hdr.size()) {
         hdr << ';';
       }

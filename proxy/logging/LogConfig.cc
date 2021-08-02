@@ -69,7 +69,7 @@
 void
 LogConfig::setup_default_values()
 {
-  hostname              = ats_strdup(Machine::instance()->hostname);
+  hostname              = ats_strdup(Machine::instance()->host_name.c_str());
   log_buffer_size       = static_cast<int>(10 * LOG_KILOBYTE);
   max_secs_per_buffer   = 5;
   max_space_mb_for_logs = 100;
