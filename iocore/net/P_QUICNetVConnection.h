@@ -166,6 +166,7 @@ public:
   int connectUp(EThread *t, int fd) override;
 
   // QUICNetVConnection
+  int startEvent(int event, Event *e);
   int state_pre_handshake(int event, Event *data);
   int state_handshake(int event, Event *data);
   int state_connection_established(int event, Event *data);
