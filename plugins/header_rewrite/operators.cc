@@ -643,25 +643,32 @@ OperatorSetHeader::exec(const Resources &res) const
   }
 
   if (res.bufp && res.hdr_loc) {
-    TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
-
     TSDebug(PLUGIN_NAME, "OperatorSetHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
 
-    if (!field_loc) {
+    TSHdrHandle handle = TSMimeHdrFieldFastFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
+
+    if (TSMimeHdrFieldIsEmptyHandler(handle)) {
+      TSHdrHandle new_handle;
+      // compatibility for old APIs
+      TSMLoc field_loc = reinterpret_cast<TSMLoc>(&new_handle);
+
       // No existing header, so create one
       if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
         if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
           TSDebug(PLUGIN_NAME, "   Adding header %s", _header.c_str());
           TSMimeHdrFieldAppend(res.bufp, res.hdr_loc, field_loc);
         }
-        TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
       }
     } else {
-      TSMLoc tmp = nullptr;
+      TSHdrHandle tmp;
       bool first = true;
 
-      while (field_loc) {
-        tmp = TSMimeHdrFieldNextDup(res.bufp, res.hdr_loc, field_loc);
+      while (!TSMimeHdrFieldIsEmptyHandler(handle)) {
+        tmp = TSMimeHdrFieldFastNextDup(res.bufp, res.hdr_loc, handle);
+
+        // compatibility for old APIs
+        TSMLoc field_loc = reinterpret_cast<TSMLoc>(&handle);
+
         if (first) {
           first = false;
           if (TS_SUCCESS == TSMimeHdrFieldValueStringSet(res.bufp, res.hdr_loc, field_loc, -1, value.c_str(), value.size())) {
@@ -670,8 +677,7 @@ OperatorSetHeader::exec(const Resources &res) const
         } else {
           TSMimeHdrFieldDestroy(res.bufp, res.hdr_loc, field_loc);
         }
-        TSHandleMLocRelease(res.bufp, res.hdr_loc, field_loc);
-        field_loc = tmp;
+        handle = tmp;
       }
     }
   }

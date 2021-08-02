@@ -792,6 +792,23 @@ sdk_free_field_handle(TSMBuffer bufp, MIMEFieldSDKHandle *field_handle)
   }
 }
 
+/**
+   TSHdrHandle
+ */
+static const TSHdrHandle ts_hdr_handle_empty = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+static TSHdrHandle
+init_hdr_handle(MIMEHdrImpl *mh, MIMEField *field)
+{
+  MIMEFieldSDKHandle handle;
+
+  obj_init_header(&handle, HDR_HEAP_OBJ_FIELD_SDK_HANDLE, sizeof(MIMEFieldSDKHandle), 0);
+  handle.mh        = mh;
+  handle.field_ptr = field;
+
+  return *(TSHdrHandle *)&handle;
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // FileImpl
@@ -3770,6 +3787,53 @@ TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx)
 
   mime_field_value_delete_comma_val(heap, handle->mh, handle->field_ptr, idx);
   return TS_SUCCESS;
+}
+
+bool
+TSMimeHdrFieldIsEmptyHandler(TSHdrHandle handle)
+{
+  return memcmp(&handle, &ts_hdr_handle_empty, sizeof(TSHdrHandle)) == 0;
+}
+
+TSHdrHandle
+TSMimeHdrFieldFastFind(TSMBuffer bufp, TSMLoc hdr_obj, const char *name, int length)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr_obj) == TS_SUCCESS) ||
+             (sdk_sanity_check_http_hdr_handle(hdr_obj) == TS_SUCCESS));
+  sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+
+  if (length == -1) {
+    length = strlen(name);
+  }
+
+  MIMEHdrImpl *mh = _hdr_mloc_to_mime_hdr_impl(hdr_obj);
+  MIMEField *f    = mime_hdr_field_find(mh, name, length);
+
+  if (f == nullptr) {
+    return ts_hdr_handle_empty;
+  }
+
+  return init_hdr_handle(mh, f);
+}
+
+TSHdrHandle
+TSMimeHdrFieldFastNextDup(TSMBuffer bufp, TSMLoc hdr, TSHdrHandle handle)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert((sdk_sanity_check_mime_hdr_handle(hdr) == TS_SUCCESS) || (sdk_sanity_check_http_hdr_handle(hdr) == TS_SUCCESS));
+  TSMLoc field = TS_MLOC_FROM_HDR_HANDLE(handle);
+  sdk_assert(sdk_sanity_check_field_handle(field, hdr) == TS_SUCCESS);
+
+  MIMEHdrImpl *mh                  = _hdr_mloc_to_mime_hdr_impl(hdr);
+  MIMEFieldSDKHandle *field_handle = (MIMEFieldSDKHandle *)field;
+  MIMEField *next                  = field_handle->field_ptr->m_next_dup;
+
+  if (next == nullptr) {
+    return ts_hdr_handle_empty;
+  }
+
+  return init_hdr_handle(mh, next);
 }
 
 /**************/

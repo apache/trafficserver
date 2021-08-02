@@ -1062,6 +1062,11 @@ tsapi TSReturnCode TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSM
 
 tsapi TSReturnCode TSMimeHdrFieldValueDelete(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx);
 
+// TSHdrHandle APIs
+tsapi bool TSMimeHdrFieldIsEmptyHandler(TSHdrHandle handle);
+tsapi TSHdrHandle TSMimeHdrFieldFastFind(TSMBuffer bufp, TSMLoc hdr, const char *name, int length);
+tsapi TSHdrHandle TSMimeHdrFieldFastNextDup(TSMBuffer bufp, TSMLoc hdr, TSHdrHandle handle);
+
 /* --------------------------------------------------------------------------
    HTTP headers */
 tsapi TSHttpParser TSHttpParserCreate(void);

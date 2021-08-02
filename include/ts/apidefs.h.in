@@ -168,6 +168,15 @@ typedef struct {
 } TSPluginMsg;
 
 /**
+    A struct to avoid heap allocations in TSMimeHdrField* APIs
+  */
+typedef struct {
+  uint8_t _d[24]; // private
+} TSHdrHandle;
+
+#define TS_MLOC_FROM_HDR_HANDLE(HH_) ((TSMLoc)((HH_)._d))
+
+/**
     This set of enums are possible values returned by
     TSHttpHdrParseReq() and TSHttpHdrParseResp().
 
