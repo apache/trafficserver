@@ -154,6 +154,7 @@ std::atomic<int64_t> SessionData::disk_usage       = 0;
 ts::file::path SessionData::log_directory{default_log_directory};
 uint64_t SessionData::session_counter = 0;
 std::string SessionData::sni_filter;
+std::optional<IpAddr> SessionData::client_ip_filter = std::nullopt;
 
 int
 SessionData::get_session_arg_index()
@@ -180,11 +181,24 @@ SessionData::set_max_disk_usage(int64_t new_max_disk_usage)
 }
 
 bool
-SessionData::init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size)
+SessionData::init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size, std::string_view ip_filter)
 {
   SessionData::log_directory    = log_directory;
   SessionData::max_disk_usage   = max_disk_usage;
   SessionData::sample_pool_size = sample_size;
+
+  if (!ip_filter.empty()) {
+    client_ip_filter.emplace();
+    if (client_ip_filter->load(ip_filter)) {
+      TSDebug(debug_tag, "Problems parsing IP filter address argument: %.*s", static_cast<int>(ip_filter.size()), ip_filter.data());
+      TSError("[%s] Problems parsing IP filter address argument: %.*s", debug_tag, static_cast<int>(ip_filter.size()),
+              ip_filter.data());
+      client_ip_filter = std::nullopt;
+      return false;
+    } else {
+      TSDebug(debug_tag, "Filtering to only dump connections with ip: %.*s", static_cast<int>(ip_filter.size()), ip_filter.data());
+    }
+  }
 
   if (TS_SUCCESS != TSUserArgIndexReserve(TS_USER_ARGS_SSN, debug_tag, "Track log related data", &session_arg_index)) {
     TSError("[%s] Unable to initialize plugin (disabled). Failed to reserve ssn arg.", traffic_dump::debug_tag);
@@ -202,9 +216,10 @@ SessionData::init(std::string_view log_directory, int64_t max_disk_usage, int64_
 }
 
 bool
-SessionData::init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size, std::string_view sni_filter)
+SessionData::init(std::string_view log_directory, int64_t max_disk_usage, int64_t sample_size, std::string_view ip_filter,
+                  std::string_view sni_filter)
 {
-  if (!init(log_directory, max_disk_usage, sample_size)) {
+  if (!init(log_directory, max_disk_usage, sample_size, ip_filter)) {
     return false;
   }
   SessionData::sni_filter = sni_filter;
@@ -348,6 +363,28 @@ SessionData::get_http_version_in_client_stack() const
   return http_version_in_client_stack;
 }
 
+// static
+bool
+SessionData::is_filtered_out(const sockaddr *session_client_ip)
+{
+  if (!client_ip_filter) {
+    // The user did not configure an IP by which to filter.
+    return false;
+  }
+  if (session_client_ip == nullptr) {
+    TSDebug(debug_tag, "Found no client IP address for session. Abort.");
+    return true;
+  }
+  if (session_client_ip->sa_family != AF_INET && session_client_ip->sa_family != AF_INET6) {
+    TSDebug(debug_tag, "IP family is not v4 nor v6. Abort.");
+    return true;
+  }
+
+  IpAddr session_address(*session_client_ip);
+  return session_address != *client_ip_filter;
+}
+
+// static
 int
 SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
 {
@@ -373,7 +410,7 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
         ts::file::file_status st = ts::file::status(ssnData->log_name, ec);
         if (!ec) {
           disk_usage += ts::file::file_size(st);
-          TSDebug(debug_tag, "Finish a session with log file of %" PRIuMAX "bytes", ts::file::file_size(st));
+          TSDebug(debug_tag, "Finish a session with log file of %" PRIuMAX " bytes", ts::file::file_size(st));
         }
         delete ssnData;
         return TS_SUCCESS;
@@ -388,6 +425,7 @@ SessionData::session_aio_handler(TSCont contp, TSEvent event, void *edata)
   return TS_SUCCESS;
 }
 
+// static
 int
 SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
 {
@@ -424,12 +462,17 @@ SessionData::global_session_handler(TSCont contp, TSEvent event, void *edata)
     }
     const auto this_session_count = session_counter++;
     if (this_session_count % sample_pool_size != 0) {
-      TSDebug(debug_tag, "global_session_handler(): Ignore session %" PRId64 "...", id);
+      TSDebug(debug_tag, "Ignore session %" PRId64 " per the random sampling mechanism", id);
       break;
     } else if (disk_usage >= max_disk_usage) {
-      TSDebug(debug_tag, "global_session_handler(): Ignore session %" PRId64 "due to disk usage %" PRId64 "bytes", id,
-              disk_usage.load());
+      TSDebug(debug_tag, "Ignore session %" PRId64 " due to disk usage %" PRId64 " bytes", id, disk_usage.load());
       break;
+    } else {
+      const sockaddr *client_ip = TSHttpSsnClientAddrGet(ssnp);
+      if (SessionData::is_filtered_out(client_ip)) {
+        TSDebug(debug_tag, "Ignore session %" PRId64 " per the client's IP filter", id);
+        break;
+      }
     }
     // Beginning of a new session
     /// Get epoch time

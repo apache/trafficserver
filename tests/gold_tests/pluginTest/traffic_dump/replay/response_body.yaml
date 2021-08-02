@@ -1,0 +1,142 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+#
+# Test 0: A request with no body.
+#
+- transactions:
+  - client-request:
+      method: GET
+      url: /no/body
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        # Note that this will have no body.
+        - [ Content-Length, 0 ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 0, as: equal } ]
+
+#
+# Test 1: A request with a body.
+#
+- transactions:
+  - client-request:
+      method: POST
+      url: /with/a/body
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 16, as: equal } ]
+
+#
+# Test 2: A request body that needs to be escaped.
+#
+- transactions:
+  - client-request:
+      method: POST
+      url: /with/a/complex/body
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, 3 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 5 ]
+        - [ Connection, close ]
+
+      content:
+        data: '12"34'
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 5, as: equal } ]
+
+#
+# Test 3: An HTTP/2 request body.
+#
+- protocol: [ {name: http, version: 2},
+              {name: tls, sni: www.tls.com},
+              {name: tcp},
+              {name: ip} ]
+
+  transactions:
+  - client-request:
+      headers:
+        fields:
+        - [ :method, POST ]
+        - [ :scheme, https ]
+        - [ :authority, www.tls.com ]
+        - [ :path, /h2/body ]
+        - [ uuid, 4 ]
+      content:
+        size: 0
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 24 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 24, as: equal } ]
+

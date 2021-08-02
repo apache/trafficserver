@@ -24,6 +24,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 
 #include "ts/ts.h"
 
@@ -49,6 +50,9 @@ private:
   /** The string for the JSON content of this transaction. */
   std::string _txn_json;
 
+  /** The client-response body bytes, if dump_body is true. */
+  std::string _response_body;
+
   /** The '"protocol" node for this transaction's server-side connection. */
   std::string _server_protocol_description;
 
@@ -60,17 +64,28 @@ private:
   /// whose values will be replaced with auto-generated generic content.
   static sensitive_fields_t sensitive_fields;
 
+  /// Whether the user configured the dumping of body content.
+  static bool _dump_body;
+
 public:
   /** Initialize TransactionData, using the provided sensitive fields.
    *
+   * @param[in] dump_body Whether to dump body content.
+   *
+   * @param[in] sensitive_fields_t The HTTP fields considered to have sensitive
+   * data.
+   *
    * @return True if initialization is successful, false otherwise.
    */
-  static bool init(sensitive_fields_t &&sensitive_fields);
+  static bool init(bool dump_body, sensitive_fields_t &&sensitive_fields);
 
   /** Initialize TransactionData, using default sensitive fields.
+   *
+   * @param[in] dump_body Whether to dump body content.
+   *
    * @return True if initialization is successful, false otherwise.
    */
-  static bool init();
+  static bool init(bool dump_body);
 
   /** Read the txn information from TSMBuffer and write the header information.
    * This function does not write the content node.
@@ -83,17 +98,33 @@ public:
   /** Read the txn information from TSMBuffer and write the header information including
    * the content node describing the body characteristics.
    *
+   * @param[in] num_body_bytes The number of body bytes to specify in the content node.
    * @param[in] http_version An optional specification for the HTTP "version"
    * node.
    */
   std::string write_message_node(TSMBuffer &buffer, TSMLoc &hdr_loc, int64_t num_body_bytes, std::string_view http_version = "");
 
+  /** Read the txn information from TSMBuffer and write the header information including
+   * the content node containing the provided body.
+   *
+   * @param[in] body The body bytes to place in the content node.
+   * @param[in] http_version An optional specification for the HTTP "version"
+   * node.
+   */
+  std::string write_message_node(TSMBuffer &buffer, TSMLoc &hdr_loc, std::string_view body, std::string_view http_version = "");
+
   /// The handler callback for transaction events.
   static int global_transaction_handler(TSCont contp, TSEvent event, void *edata);
 
 private:
-  /** Common logic for the init overloads. */
-  static bool init_helper();
+  /** Common logic for the init overloads.
+   *
+   * @param[in] dump_body Whether the user configured the dumping of body
+   * content.
+   *
+   * @return True if initialization is successful, false otherwise.
+   */
+  static bool init_helper(bool dump_body);
 
   /** Initialize the generic sensitive field to be dumped. This is used instead
    * of the sensitive field values seen on the wire.
@@ -118,6 +149,20 @@ private:
    */
   TransactionData(TSHttpTxn txnp, std::string_view http_version_from_client_stack);
 
+  /** Retrieve the response body from the transaction.
+   *
+   * @param[in] txnp The transaction from which to retrieve the response body.
+   *
+   * @return The response body string.
+   */
+  static std::string response_body_get(TSHttpTxn txnp);
+
+  /** The callback for gathering response body data.
+   *
+   * @note This is only called if the user enabled dump_body.
+   */
+  static int response_buffer_handler(TSCont contp, TSEvent event, void *edata);
+
   /** Inspect the field to see whether it is sensitive and return a generic value
    * of equal size to the original if it is.
    *
@@ -134,6 +179,14 @@ private:
   ///    "encoding"
   ///    "size"
   std::string write_content_node(int64_t num_body_bytes);
+
+  /// Write the content JSON node for an HTTP message.
+  //
+  /// "content"
+  ///    "encoding"
+  ///    "size"
+  ///    "data"
+  std::string write_content_node(std::string_view body);
 
   /** Remove the scheme prefix from the url.
    *
