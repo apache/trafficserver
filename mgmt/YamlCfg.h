@@ -40,7 +40,7 @@ namespace Yaml
   public:
     // A YAML::ParserException will be thrown if 'map' isn't actually a map.
     //
-    explicit Map(YAML::Node map);
+    explicit Map(const YAML::Node &map);
 
     // Get the node for a key.  Throw a YAML::Exception if 'key' is not in the map.  The node for each key in the
     // map must be gotten at least once.  The lifetime of the char array referenced by passed key must be as long

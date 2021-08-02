@@ -32,7 +32,7 @@ namespace ts
 {
 namespace Yaml
 {
-  Map::Map(YAML::Node map) : _map{map}
+  Map::Map(const YAML::Node &map) : _map{map}
   {
     if (!_map.IsMap()) {
       throw YAML::ParserException(_map.Mark(), "map expected");

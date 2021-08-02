@@ -114,7 +114,7 @@ MMConditionGeo::get_geo_string(const sockaddr *addr) const
   }
   ret = std::string(entry_data.utf8_string, entry_data.data_size);
 
-  if (NULL != entry_data_list) {
+  if (nullptr != entry_data_list) {
     MMDB_free_entry_data_list(entry_data_list);
   }
 
@@ -176,7 +176,7 @@ MMConditionGeo::get_geo_int(const sockaddr *addr) const
   }
   ret = entry_data.uint32;
 
-  if (NULL != entry_data_list) {
+  if (nullptr != entry_data_list) {
     MMDB_free_entry_data_list(entry_data_list);
   }
 

@@ -130,7 +130,7 @@ setup_test_case_1(const int64_t n)
   assert(obj_count > 0);
 
   for (int i = 0; i < n; i++) {
-    ink_thread_create(&list[i], test_case_1, (void *)((intptr_t)i), 0, 0, nullptr);
+    ink_thread_create(&list[i], test_case_1, (void *)(static_cast<intptr_t>(i)), 0, 0, nullptr);
 
     int dst = i;
     if (thread_assiging_order == 1) {
@@ -146,7 +146,7 @@ setup_test_case_1(const int64_t n)
 
     if (debug_enabled) {
       int cpu_mask_len = hwloc_bitmap_snprintf(nullptr, 0, obj->cpuset) + 1;
-      char *cpu_mask   = (char *)alloca(cpu_mask_len);
+      char *cpu_mask   = static_cast<char *>(alloca(cpu_mask_len));
       hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
 
       std::cout << "tid=" << list[i] << " obj->logical_index=" << obj->logical_index << " cpu_mask=" << cpu_mask << std::endl;

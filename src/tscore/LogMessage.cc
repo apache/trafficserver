@@ -45,8 +45,8 @@ LogMessage::set_default_debug_throttling_interval(std::chrono::milliseconds new_
 }
 
 void
-LogMessage::message_helper(std::chrono::microseconds current_configured_interval, log_function_f log_function, const char *fmt,
-                           va_list args)
+LogMessage::message_helper(std::chrono::microseconds current_configured_interval, const log_function_f &log_function,
+                           const char *fmt, va_list args)
 {
   if (!_is_throttled) {
     // If throttling is disabled, make this operation as efficient as possible.
