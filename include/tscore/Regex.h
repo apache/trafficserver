@@ -74,7 +74,7 @@ public:
    *
    * It is safe to call this method concurrently on the same instance of @a this.
    */
-  bool exec(std::string_view const &str);
+  bool exec(std::string_view const &str) const;
 
   /** Execute the regular expression.
    *
@@ -88,7 +88,7 @@ public:
    * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
    * be a multiple of 3 and at least three times the number of desired capture groups.
    */
-  bool exec(std::string_view const &str, int *ovector, int ovecsize);
+  bool exec(std::string_view const &str, int *ovector, int ovecsize) const;
 
   /// @return The number of groups captured in the last call to @c exec.
   int get_capture_count();
