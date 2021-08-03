@@ -823,7 +823,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       t_state.http_return_code = HTTP_STATUS_REQUEST_URI_TOO_LONG :
       t_state.http_return_code = HTTP_STATUS_NONE;
 
-    if (!is_http_hdr_version_supported(t_state.hdr_info.client_request.version_get())) {
+    if (!is_http1_hdr_version_supported(t_state.hdr_info.client_request.version_get())) {
       t_state.http_return_code = HTTP_STATUS_HTTPVER_NOT_SUPPORTED;
     }
 
