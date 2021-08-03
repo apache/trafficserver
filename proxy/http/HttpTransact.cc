@@ -3852,9 +3852,12 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
            ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
 
   if (s->current.server->had_connect_fail()) {
-    char *url_str = s->hdr_info.client_request.url_string_get(&s->arena);
-    int host_len;
-    const char *host_name_ptr = s->unmapped_url.host_get(&host_len);
+    char *url_str             = s->hdr_info.client_request.url_string_get(&s->arena);
+    int host_len              = 0;
+    const char *host_name_ptr = "";
+    if (s->unmapped_url.valid()) {
+      host_name_ptr = s->unmapped_url.host_get(&host_len);
+    }
     std::string_view host_name{host_name_ptr, size_t(host_len)};
     TxnDebug("dead_server", "%s",
              lbw()
