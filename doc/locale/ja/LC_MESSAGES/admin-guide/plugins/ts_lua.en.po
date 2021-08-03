@@ -1954,7 +1954,7 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:1872
 msgid ""
-"**description**: This function can be used to retrive the total bytes to be "
+"**description**: This function can be used to retrieve the total bytes to be "
 "received from the upstream. If we got chunked response body from origin "
 "server, TS_LUA_INT64_MAX will be returned."
 msgstr ""
@@ -2194,7 +2194,7 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:2202
 msgid ""
-"Returns a Lua table with serveral slots (res.status, res.header, res.body, "
+"Returns a Lua table with several slots (res.status, res.header, res.body, "
 "and res.truncated)."
 msgstr ""
 
@@ -2217,7 +2217,7 @@ msgid "Here is a basic example:"
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:2233
-msgid "We can set the optional table with serveral members:"
+msgid "We can set the optional table with several members:"
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:2235
@@ -2602,7 +2602,7 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:2832
 msgid ""
-"**decription:** This function can be used to make transaction follow "
+"**description:** This function can be used to make transaction follow "
 "redirect"
 msgstr ""
 
@@ -2616,7 +2616,7 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:2852
 msgid ""
-"**decription:** This function can be used to enable debug log for the "
+"**description:** This function can be used to enable debug log for the "
 "transaction"
 msgstr ""
 

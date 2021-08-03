@@ -57,7 +57,7 @@ msgstr ""
 #: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:41
 msgid ""
 ":func:`TSSslContextFindByAddr` searches for a SSL server context created "
-"from :file:`ssl_multicert.config` matchin against the server :arg:`address`."
+"from :file:`ssl_multicert.config` matching against the server :arg:`address`."
 msgstr ""
 
 #: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:46

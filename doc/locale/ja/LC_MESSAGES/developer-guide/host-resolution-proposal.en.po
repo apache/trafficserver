@@ -306,7 +306,7 @@ msgid ""
 "The current implementation is generally considered inadequate, both from a "
 "functionality point of view and difficulty in working with it in other "
 "parts of Traffic Server. As Traffic Server is used in more complex "
-"situtations this inadequacy presents increasing problems."
+"situations this inadequacy presents increasing problems."
 msgstr ""
 
 #: ../../developer-guide/host-resolution-proposal.en.rst:26

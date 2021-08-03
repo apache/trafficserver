@@ -85,7 +85,7 @@ msgstr "オブジェクトの :term:`代替` の最初の読み込みを実行�
 #: ../../developer-guide/architecture/data-structures.en.rst:57
 msgid ""
 "Defined in |P-CacheHttp.h|_. This is an array of :cpp:class:`HTTPInfo` "
-"objects and serves as the respository of information about alternates of an "
+"objects and serves as the repository of information about alternates of an "
 "object. It is marshaled as part of the metadata for an object in the cache."
 msgstr ""
 "|P-CacheHttp.h|_ で定義されます。これは :cpp:class:`HTTPInfo` オブジェクトの"

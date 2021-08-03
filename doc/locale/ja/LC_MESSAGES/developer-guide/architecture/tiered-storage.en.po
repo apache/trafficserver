@@ -182,7 +182,7 @@ msgid ""
 "other tiers that are written will get a local copy of the object, and the "
 "origin server will not be used. In terms of implementation, currently a "
 "cache write to a volume is done via the construction of an instance of :cpp:"
-"class:`CacheVC` which recieves the object stream. For tiered storage, the "
+"class:`CacheVC` which receives the object stream. For tiered storage, the "
 "same thing is done for each target volume."
 msgstr ""
 

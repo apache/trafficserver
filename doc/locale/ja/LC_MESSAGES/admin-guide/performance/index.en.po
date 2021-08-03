@@ -133,7 +133,7 @@ msgid ""
 "storage, though this setting can be adjusted manually in :file:`records."
 "config` using the setting :ts:cv:`proxy.config.cache.ram_cache.size`. |TS| "
 "will, under the default configuration, adjust this automatically if your "
-"system does not have enough physical memory to accomodate the "
+"system does not have enough physical memory to accommodate the "
 "aforementioned target."
 msgstr ""
 
@@ -354,7 +354,7 @@ msgid ""
 "the time after which |TS| will abort the fill attempt and close the origin "
 "server connection that was being used. Setting this to zero disables the "
 "timeout, but modifying the value and enforcing a timeout may help in "
-"situtations where your origin servers stall connections without closing."
+"situations where your origin servers stall connections without closing."
 msgstr ""
 
 #: ../../../admin-guide/performance/index.en.rst:286

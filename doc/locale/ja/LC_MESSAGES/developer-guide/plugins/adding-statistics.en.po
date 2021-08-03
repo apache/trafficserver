@@ -110,7 +110,7 @@ msgstr ""
 #: ../../developer-guide/plugins/adding-statistics.en.rst:86
 msgid ""
 "The mechanism for updating coupled statistics jointly is to create local "
-"copies of global coupled statistics in the routines that modifiy them. When "
+"copies of global coupled statistics in the routines that modify them. When "
 "each local copy is updated appropriately, do a global update using "
 "``TSStatsCoupledUpdate``. To specify which statistics are related to one "
 "another, establish a coupled statistic category and make sure that each "
