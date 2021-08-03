@@ -152,7 +152,7 @@ NextHopStrategyFactory::strategyInstance(const char *name)
   std::shared_ptr<NextHopSelectionStrategy> ps_strategy;
 
   if (!strategies_loaded) {
-    NH_Error("no strategy configurations were defined, see defintions in '%s' file", fn.c_str());
+    NH_Error("no strategy configurations were defined, see definitions in '%s' file", fn.c_str());
     return nullptr;
   } else {
     auto it = _strategies.find(name);
@@ -172,7 +172,7 @@ NextHopStrategyFactory::strategyInstance(const char *name)
  * loads the contents of a file into a std::stringstream document.  If the file has a '#include file'
  * directive, that 'file' is read into the document beginning at the the point where the
  * '#include' was found. This allows the 'strategy' and 'hosts' yaml files to be separate.  The
- * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's begining.
+ * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's beginning.
  */
 void
 NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::stringstream &doc,

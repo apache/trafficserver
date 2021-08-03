@@ -673,7 +673,7 @@ HttpBodyFactory::is_response_suppressed(HttpTransact::State *context)
   // as the connection is going to be closed anyway.
   /*
      if (context->client_info.port_attribute == SERVER_PORT_BLIND_TUNNEL) {
-     // Blind SSL tunnels always supress error messages
+     // Blind SSL tunnels always suppress error messages
      return true;
      } else
    */

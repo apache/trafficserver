@@ -309,7 +309,7 @@ const char *matcher_type_str[] = {"invalid", "host", "domain", "ip", "url_regex"
 
 // char* processDurationString(char* str, int* seconds)
 //
-//   Take a duration sting which is composed of
+//   Take a duration string which is composed of
 //      digits followed by a unit specifier
 //         w - week
 //         d - day
@@ -341,7 +341,7 @@ processDurationString(char *str, int *seconds)
   len = strlen(str);
   for (int i = 0; i < len; i++) {
     if (!ParseRules::is_digit(*current)) {
-      // Make sure there is a time to proces
+      // Make sure there is a time to process
       if (current == s) {
         return "Malformed time";
       }

@@ -515,7 +515,7 @@ namespace bw_fmt
   // MSVC will expand the parameter pack inside a lambda but not gcc, so this indirection is required.
 
   /// This selects the @a I th argument in the @a TUPLE arg pack and calls the formatter on it. This
-  /// (or the equivalent lambda) is needed because the array of formatters must have a homogenous
+  /// (or the equivalent lambda) is needed because the array of formatters must have a homogeneous
   /// signature, not vary per argument. Effectively this indirection erases the type of the specific
   /// argument being formatted. Instances of this have the signature @c ArgFormatterSignature.
   template <typename TUPLE, size_t I>

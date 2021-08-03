@@ -75,7 +75,7 @@ isSTEKMaster()
  * This ensures proper key rotation.
  *
  * One node in the pod is configured to be Master STEK setter in charge of key rotations.
- * The alogrithm implemented allows for the POD to dynamically self configure a master
+ * The algorithm implemented allows for the POD to dynamically self configure a master
  * which can recover from death of master, misconfigurations, ultimately ineffective rotations.
  *
  * General description:
@@ -353,7 +353,7 @@ STEK_Update_Checker_Thread(void *arg)
 
   TSDebug(PLUGIN, "Starting STEK_Update_Checker_Thread.");
 
-  lastChangeTime = lastWarningTime = time(&currentTime); // init to current to supress a startup warning.
+  lastChangeTime = lastWarningTime = time(&currentTime); // init to current to suppress a startup warning.
   int check_count                  = 0;                  // Keep track of how many times we've checked whether we got a new STEK.
 
   while (!plugin_threads.shutdown) {
@@ -429,7 +429,7 @@ STEK_init_keys()
   //  Initialize starter Session Ticket Encryption Key
   //  Will sync up with master later
   if (!STEK_CreateNew(&initKey, 0, 0 /*fast start*/)) {
-    TSError("Cant init STEK.");
+    TSError("Can't init STEK.");
     return -1;
   }
   memcpy(&ssl_param.ticket_keys[0], &initKey, sizeof(struct ssl_ticket_key_t));

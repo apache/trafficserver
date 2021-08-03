@@ -27,7 +27,7 @@
 const char *PLUGIN_NAME = "cache_promote";
 
 // This has to be a global here. I tried doing a classic singleton (with a getInstance()) in the PolicyManager,
-// but then reloading the DSO does not work. What happens is that the old singleton is stil there, even though
+// but then reloading the DSO does not work. What happens is that the old singleton is still there, even though
 // the rest of the plugin is reloaded. Very scary, and not what we need / want; if the plugin reloads, the
 // PolicyManager has to reload (and start fresh) as well.
 static PolicyManager gManager;

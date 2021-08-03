@@ -243,7 +243,7 @@ inkcoreapi extern ClassAllocator<IOBufferData> ioDataAllocator;
   A linkable portion of IOBufferData. IOBufferBlock is a chainable
   buffer block descriptor. The IOBufferBlock represents both the used
   and available space in the underlying block. The IOBufferBlock is not
-  sharable between buffers but rather represents what part of the data
+  shareable between buffers but rather represents what part of the data
   block is both in use and usable by the MIOBuffer it is attached to.
 
 */

@@ -47,7 +47,7 @@ ts.addSSLfile("ssl/server.key")
 ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 
-# Need no remap rules.  Everything should be proccessed by sni
+# Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(

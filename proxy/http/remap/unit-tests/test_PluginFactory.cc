@@ -65,7 +65,7 @@ thread_local PluginThreadContext *pluginThreadContext;
 std::error_code ec;
 static void *INSTANCE_HANDLER = (void *)789;
 
-/* Mock of PluginFactory just to get consisten UUID to be able to test consistently */
+/* Mock of PluginFactory just to get consistent UUID to be able to test consistently */
 static fs::path tempComponent = fs::path("c71e2bab-90dc-4770-9535-c9304c3de38e");
 class PluginFactoryUnitTest : public PluginFactory
 {
@@ -727,7 +727,7 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
         testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825557, effectivePath_v2, runtimePath_v2);
       plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
 
-      /* Make sure plugin.so was overriden */
+      /* Make sure plugin.so was overridden */
       CHECK(effectivePath_v1 == effectivePath_v2);
       /* Although effective path is the same runtime paths should be different */
       CHECK(runtimePath_v1 != runtimePath_v2);
@@ -769,7 +769,7 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
         testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825556, effectivePath_v2, runtimePath_v2);
       plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
 
-      /* Make sure plugin.so was overriden */
+      /* Make sure plugin.so was overridden */
       CHECK(effectivePath_v1 == effectivePath_v2);
 
       THEN("expect only v1 plugin to be loaded since the timestamp has not changed")
@@ -807,7 +807,7 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
         testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825557, effectivePath_v2, runtimePath_v2);
       plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
 
-      /* Make sure plugin.so was overriden */
+      /* Make sure plugin.so was overridden */
       CHECK(effectivePath_v1 == effectivePath_v2);
       /* since dynamic reload is disabled, runtimepaths should be same */
       CHECK(runtimePath_v1 == runtimePath_v2);
@@ -849,7 +849,7 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
         testSetupLoadPluginWithOptOut(configName, buildPath_v2, uuid_t2, 1556825557, effectivePath_v2, runtimePath_v2);
       plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
 
-      /* Make sure plugin.so was overriden */
+      /* Make sure plugin.so was overridden */
       CHECK(effectivePath_v1 == effectivePath_v2);
 
       /* since dynamic reload is disabled, runtimepaths should be same */
@@ -894,7 +894,7 @@ SCENARIO("loading multiple version of the same plugin at the same time", "[plugi
         testSetupLoadPlugin(configName, buildPath_v2, uuid_t2, 1556825556, effectivePath_v2, runtimePath_v2);
       plugin_v1->_plugin.getSymbol("TSRemapInit", tsRemapInitSym_v1_t2, error);
 
-      /* Make sure plugin.so was overriden */
+      /* Make sure plugin.so was overridden */
       CHECK(effectivePath_v1 == effectivePath_v2);
       /* since dynamic reload is disabled, runtimepaths should be same */
       CHECK(runtimePath_v1 == runtimePath_v2);
@@ -986,7 +986,7 @@ SCENARIO("loading multiple version of the same plugin in mixed mode - global as 
       PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
       RemapPluginInst *plugin_v2      = factory2->getRemapPlugin(configName, 0, nullptr, error2, isPluginDynamicReloadEnabled());
 
-      /* Make sure plugin.so was overriden */
+      /* Make sure plugin.so was overridden */
       CHECK(effectivePath_v1 == effectivePath_v2);
 
       /* since dynamic reload is disabled, runtimepaths should be same */
@@ -1044,7 +1044,7 @@ SCENARIO("loading multiple version of the same plugin in mixed mode - global as 
 
       RemapPluginInst *plugin_v2 = factory->getRemapPlugin(configName, 0, nullptr, error2, isPluginDynamicReloadEnabled());
 
-      /* Make sure plugin.so was overriden */
+      /* Make sure plugin.so was overridden */
       CHECK(effectivePath_v1 == effectivePath_v2);
 
       /* since dynamic reload is disabled, runtimepaths should be same */
@@ -1095,7 +1095,7 @@ SCENARIO("loading multiple version of the same plugin in mixed mode - global as 
       PluginFactoryUnitTest *factory2 = getFactory(uuid_t2);
       RemapPluginInst *plugin_v2      = factory2->getRemapPlugin(configName, 0, nullptr, error2, isPluginDynamicReloadEnabled());
 
-      /* Make sure plugin.so was overriden */
+      /* Make sure plugin.so was overridden */
       CHECK(effectivePath_v1 == effectivePath_v2);
 
       /* since dynamic reload is disabled, runtimepaths should be same */
@@ -1382,7 +1382,7 @@ SCENARIO("notifying plugins of config reload", "[plugin][core]")
       RemapPluginInst *pluginInst1 = factory1->getRemapPlugin(configName1, 0, nullptr, error, isPluginDynamicReloadEnabled());
       RemapPluginInst *pluginInst2 = factory1->getRemapPlugin(configName2, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
-      /* only 1 plugin loaded by the 2st factory */
+      /* only 1 plugin loaded by the 2nd factory */
       RemapPluginInst *pluginInst3 = factory2->getRemapPlugin(configName1, 0, nullptr, error, isPluginDynamicReloadEnabled());
 
       /* pluginInst1 and pluginInst3 should be using the same plugin DSO named configName1

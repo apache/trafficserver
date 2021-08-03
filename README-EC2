@@ -26,7 +26,7 @@ Author: Jason Giedymin
 -------
 
 1.0 Ubuntu Based Images
-  This is the prefered image as Ubuntu is kept up to date by Canonical.
+  This is the preferred image as Ubuntu is kept up to date by Canonical.
 
 1.1 Ubuntu AMI Details
   Name: Amuxbit-Karmic-ApacheTrafficServer-AMI

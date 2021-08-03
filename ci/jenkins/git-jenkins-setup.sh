@@ -46,7 +46,7 @@ fi
     done
 )
 
-# The directory names corresponsing to the branches should match the names
+# The directory names corresponding to the branches should match the names
 # used by jenkins; see jobs.yaml.
 branch trafficserver_3.2 3.2.x
 branch trafficserver_4 4.1.x

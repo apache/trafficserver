@@ -440,7 +440,7 @@ AC_ARG_ENABLE([hwloc],
 AC_MSG_RESULT([$enable_hwloc])
 
 #
-# Enble ccache explicitly (it's disabled by default, because of build problems in some cases)
+# Enable ccache explicitly (it's disabled by default, because of build problems in some cases)
 #
 AC_MSG_CHECKING([whether to enable ccache])
 AC_ARG_ENABLE([ccache],
@@ -451,7 +451,7 @@ AC_ARG_ENABLE([ccache],
 AC_MSG_RESULT([$enable_ccache])
 
 #
-# Enble hardening of the executables
+# Enable hardening of the executables
 #
 AC_MSG_CHECKING([whether to enable hardening of the executables])
 AC_ARG_ENABLE([hardening],
@@ -1125,7 +1125,7 @@ if test "x${GCC}" = "xyes"; then
   fi
 fi
 
-# Overrride detected architecture with the user suplied one
+# Override detected architecture with the user supplied one
 #
 AC_ARG_WITH(architecture, [AC_HELP_STRING([--with-architecture=ARCH],[use a specific CPU architecture])],
 [
@@ -1177,7 +1177,7 @@ AS_IF([test "x${enable_hardening}" = "xyes"], [
 
 #
 # Note:  These are site-specific macro's that do various tests
-#         on the selected compilers.  There was some tunning
+#         on the selected compilers.  There was some tuning
 #         associated with our not wanting to use GNU for _everything_.
 # Note:  This macro may set certain parameters when run.
 #
@@ -1210,7 +1210,7 @@ AC_CHECK_FUNCS([pthread_mutexattr_settype])
 dnl XXX The following check incorrectly causes the build to succeed
 dnl on Darwin. We should be using AC_SEARCH_LIBS, but rest_init is
 dnl actually present in libsystem. We are searching for the library
-dnl that contains the full Bind 9 API (which is acutally libresolv).
+dnl that contains the full Bind 9 API (which is actually libresolv).
 dnl However, the resolv API uses macros to rename it's APIs to per-version
 dnl symbols, so standard autoconf macros cannot reasonably be used to
 dnl check for it. We need to write custom macros to detect it properly.
@@ -2232,7 +2232,7 @@ AC_SUBST([iocore_include_dirs])
 # TS_INCLUDES *not* to AM_CPPFLAGS. If you add then to AM_CPPFLAGS
 # then they are always prepended to the local AM_CPPFLAGS which risks
 # name collisions with in-tree files. We always want the in-tree files
-# to have precendence.
+# to have precedence.
 AC_SUBST([TS_INCLUDES])
 
 AS_IF([test "x$RPATH" != "x"], [

@@ -127,7 +127,7 @@ PluginFactory::setRuntimeDir(const fs::path &runtimeDir)
 const char *
 PluginFactory::getUuid()
 {
-  return _uuid ? _uuid->getString() : "uknown";
+  return _uuid ? _uuid->getString() : "unknown";
 }
 
 /**

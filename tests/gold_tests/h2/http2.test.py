@@ -203,7 +203,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
 tr.StillRunningAfter = server
 
-# Test Case 8: Huge resposne header
+# Test Case 8: Huge response header
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'curl -vs -k --http2 https://127.0.0.1:{0}/huge_resp_hdrs'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0

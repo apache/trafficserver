@@ -261,7 +261,7 @@ TEST_CASE("ts_file::path::copy", "[libts][fs_file]")
   CHECK_FALSE(ts::file::copy(file1, path(), ec));
   CHECK(ec.value() == EINVAL);
 
-  // successfull copy: "to" is directory
+  // successful copy: "to" is directory
   CHECK(ts::file::copy(file1, testdir2, ec));
   CHECK(ec.value() == 0);
 

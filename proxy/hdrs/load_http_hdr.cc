@@ -33,12 +33,12 @@
  ****************************************************************************/
 
 /***************************************************************************
- *  USAGE NOTE:  This program was orignally built for reading TS 3.0.X &
- *    TS 3.5.X header dumps.  These data structures were always continguous.
+ *  USAGE NOTE:  This program was originally built for reading TS 3.0.X &
+ *    TS 3.5.X header dumps.  These data structures were always contiguous.
  *    TS 4.0.X and later have completely redesigned data structures that
  *    are more complicated but much faster.  This program has been adapted
  *    read headers that have been unmarshalled from cache, in which
- *    case they are contiguious.  It's conversion is in a half baked
+ *    case they are contiguous.  It's conversion is in a half baked
  *    state and is therefore not useful for must purposes.
  ***************************************************************************/
 
@@ -181,7 +181,7 @@ loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
       printf("  HDR_HEAP_OBJ_EMPTY       %d bytes\n", obj->m_length);
       break;
     default:
-      printf("  OBJ UNKONWN (%d)  %d bytes\n", obj->m_type, obj->m_length);
+      printf("  OBJ UNKNOWN (%d)  %d bytes\n", obj->m_type, obj->m_length);
     }
 
     if (obj->m_length == 0) {

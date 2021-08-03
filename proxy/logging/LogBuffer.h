@@ -65,7 +65,7 @@ struct LogBufferHeader {
   uint32_t cookie;               // so we can find it on disk
   uint32_t version;              // in case we want to change it later
   uint32_t format_type;          // SQUID_LOG, COMMON_LOG, ...
-  uint32_t byte_count;           // acutal # of bytes for the segment
+  uint32_t byte_count;           // actual # of bytes for the segment
   uint32_t entry_count;          // actual number of entries stored
   uint32_t low_timestamp;        // lowest timestamp value of entries
   uint32_t high_timestamp;       // highest timestamp value of entries
@@ -225,7 +225,7 @@ private:
   uint32_t m_id; // unique buffer id (for debugging)
 public:
   LB_State m_state; // buffer state
-  int m_references; // oustanding checkout_write references.
+  int m_references; // outstanding checkout_write references.
 
   // noncopyable
   // -- member functions that are not allowed --

@@ -69,14 +69,14 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 
 #if 1
 
-// Potentially empty varaiable arguments -- non-standard GCC way
+// Potentially empty variable arguments -- non-standard GCC way
 //
 #define THREAD_ALLOC(_a, _t, ...) thread_alloc(::_a, _t->_a, ##__VA_ARGS__)
 #define THREAD_ALLOC_INIT(_a, _t, ...) thread_alloc(::_a, _t->_a, ##__VA_ARGS__)
 
 #else
 
-// Potentially empty varaiable arguments -- Standard C++20 way
+// Potentially empty variable arguments -- Standard C++20 way
 //
 #define THREAD_ALLOC(_a, _t, ...) thread_alloc(::_a, _t->_a __VA_OPT__(, ) __VA_ARGS__)
 #define THREAD_ALLOC_INIT(_a, _t, ...) thread_alloc(::_a, _t->_a __VA_OPT__(, ) __VA_ARGS__)

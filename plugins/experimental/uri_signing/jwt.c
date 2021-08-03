@@ -161,14 +161,14 @@ jwt_check_aud(json_t *aud, const char *id)
   /* If aud is a string, do a simple string comparison */
   const char *aud_str = json_string_value(aud);
   if (aud_str) {
-    PluginDebug("Checking aud %s agaisnt token aud string \"%s\"", id, aud_str);
+    PluginDebug("Checking aud %s against token aud string \"%s\"", id, aud_str);
     /* Both strings will be null terminated per jansson docs */
     if (strcmp(aud_str, id) == 0) {
       return true;
     }
     return false;
   }
-  PluginDebug("Checking aud %s agaisnt token aud array", id);
+  PluginDebug("Checking aud %s against token aud array", id);
   /* If aud is an array, check all items */
   if (json_is_array(aud)) {
     size_t index;

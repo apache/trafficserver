@@ -231,7 +231,7 @@ checkCallTest(bool shouldHaveFailed, bool result, const std::string &error, std:
     CHECK(false == result);
     CHECK(error == expectedError); // Appropriate error was returned.
   } else {
-    CHECK(true == result); // Init succesfull - returned TS_SUCCESS.
+    CHECK(true == result); // Init successful - returned TS_SUCCESS.
     CHECK(error.empty());  // No error was returned.
   }
 }

@@ -458,7 +458,7 @@ urlParse(char const *const url_in, char *anchor, char *new_path_seg, int new_pat
     } else {
       TSError("insufficient space to copy into new_path_seg buffer.");
     }
-  } else { // no signature anchor string was found, assum it is in the last path segment.
+  } else { // no signature anchor string was found, assume it is in the last path segment.
     if (strlen(segment[numtoks - 2]) < signed_seg_len) {
       memcpy(signed_seg, segment[numtoks - 2], strlen(segment[numtoks - 2]));
     } else {

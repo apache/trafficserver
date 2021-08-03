@@ -54,7 +54,7 @@ error status.
 2) asString(IntType key, char *buf, size_t bufLen, size_t *numChars=0)
 
 This method takes an IntType key and writes its equivalent string to a
-bufer buf of length bufLen. It sets the number of written characters
+buffer buf of length bufLen. It sets the number of written characters
 numChars (if numChars is not NULL), and returns an error status.
 
 The IntType to string conversion is used when unmarshaling data prior to

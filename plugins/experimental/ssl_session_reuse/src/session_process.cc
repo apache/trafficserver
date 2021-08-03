@@ -122,7 +122,7 @@ decrypt_session(const std::string &encrypted_data, const unsigned char *key, int
       goto Cleanup;
     }
 
-    // If there is less data than the maxiumum buffer size, reduce accordingly
+    // If there is less data than the maximum buffer size, reduce accordingly
     if (ret < session_data_len) {
       session_data_len = ret;
     }

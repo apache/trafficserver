@@ -180,7 +180,7 @@ TEST_CASE("Base64: quick encode / decode with '+', '/' and various paddings", "[
     CHECK(0 == strncmp(encodedMessage, encoded[i], encodedMessageLen));
 
     /* Decode */
-    // Keep test around incase our implementation's estimation gets better
+    // Keep test around in case our implementation's estimation gets better
     // size_t decodedMessageEstimatedLen = cryptoBase64DecodeSize(encodedMessage, encodedMessageLen);
     // CHECK(strlen(decoded[i]) == decodedMessageEstimatedLen);
     char decodedMessage[encodedMessageEstimatedLen];

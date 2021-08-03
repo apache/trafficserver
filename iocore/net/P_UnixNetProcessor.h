@@ -51,7 +51,7 @@ public:
   off_t netHandler_offset;
   off_t pollCont_offset;
 
-  // we probably wont need these members
+  // we probably won't need these members
   int n_netthreads;
   EThread **netthreads;
 };

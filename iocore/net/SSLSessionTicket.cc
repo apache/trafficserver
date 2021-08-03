@@ -53,8 +53,8 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   if (srs) {
     return srs->processSessionTicket(ssl, keyname, iv, cipher_ctx, hctx, enc);
   } else {
-    // We could implement a default behavior that would have been done if this callback was not registred, but it's not necessary at
-    // the moment because TLSSessionResumptionSupport is alawys available when the callback is registerd.
+    // We could implement a default behavior that would have been done if this callback was not registered, but it's not necessary
+    // at the moment because TLSSessionResumptionSupport is alawys available when the callback is registerd.
     ink_assert(!"srs should be available");
 
     // For now, make it an error (this would cause handshake failure)

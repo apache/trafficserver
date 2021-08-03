@@ -573,7 +573,7 @@ public:
       This is a reference, not allocated.
       @return A pointer to the fragment or @c NULL if there is no valid URL.
   */
-  const char *fragment_get(int *length ///< Storage for fragement length.
+  const char *fragment_get(int *length ///< Storage for fragment length.
   );
 
   /** Get the target host name.

@@ -296,7 +296,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"abort_retry_speed", 'o', "Abort/Retry Speed", "I", &abort_retry_speed, "JTEST_ABORT_RETRY_SPEED", nullptr},
   {"abort_retry_bytes", ' ', "Abort/Retry Threshold (bytes)", "I", &abort_retry_bytes, "JTEST_ABORT_RETRY_THRESHHOLD_BYTES",
    nullptr},
-  {"abort_retry_secs", ' ', "Abort/Retry Threshhold (secs)", "I", &abort_retry_secs, "JTEST_ABORT_RETRY_THRESHHOLD_SECS", nullptr},
+  {"abort_retry_secs", ' ', "Abort/Retry Threshold (secs)", "I", &abort_retry_secs, "JTEST_ABORT_RETRY_THRESHHOLD_SECS", nullptr},
   {"reload_rate", 'W', "Reload Rate", "D", &reload_rate, "JTEST_RELOAD_RATE", nullptr},
   {"compd_port", 'O', "Compd port", "I", &compd_port, "JTEST_COMPD_PORT", nullptr},
   {"compd_suite", '1', "Compd Suite", "F", &compd_suite, "JTEST_COMPD_SUITE", nullptr},
@@ -1052,7 +1052,7 @@ process_header(int sock, char *buffer, int offset)
       fd[sock].range_bytes = length - fd[sock].range_start + 1;
     } else {
       if (verbose)
-        printf("unvalid 206");
+        printf("invalid 206");
     }
     ims = nullptr;
     if (verbose) {
@@ -1958,7 +1958,7 @@ defer_url(char *url)
   if (n_defered_urls < MAX_DEFERED_URLS - 1) {
     defered_urls[n_defered_urls++] = strdup(url);
   } else {
-    fprintf(stderr, "too many defered urls, dropping '%s'\n", url);
+    fprintf(stderr, "too many deferred urls, dropping '%s'\n", url);
   }
 }
 

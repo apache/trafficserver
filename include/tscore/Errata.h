@@ -9,7 +9,7 @@
     augmented as the error travels up the stack frame.
 
     This could be done with exceptions but
-    - That is more effort to implemention
+    - That is more effort to implementation
     - Generally more expensive.
 
     Each message on a stack contains text and a numeric identifier.
@@ -188,7 +188,7 @@ public:
 
   /** Push a constructed @c Message.
       The @c Message is set to have the @a id and @a code. The other arguments are converted
-      to strings and concatenated to form the messsage text.
+      to strings and concatenated to form the message text.
       @return A reference to this object.
   */
   template <typename... Args> self &push(Id id, Code code, Args const &... args);
@@ -313,7 +313,7 @@ public:
     SinkHandlerFunction m_f; ///< Client supplied handler.
   };
 
-  /// Register a sink function for abandonded erratum.
+  /// Register a sink function for abandoned erratum.
   static void
   registerSink(SinkHandlerFunction f)
   {
@@ -333,7 +333,7 @@ public:
    */
   std::ostream &write(std::ostream &out, ///< Output stream.
                       int offset,        ///< Lead white space for every line.
-                      int indent,        ///< Additional indention per line for messages.
+                      int indent,        ///< Additional indentation per line for messages.
                       int shift,         ///< Additional @a indent for nested @c Errata.
                       char const *lead   ///< Leading text for nested @c Errata.
   ) const;
@@ -342,7 +342,7 @@ public:
   size_t write(char *buffer,    ///< Output buffer.
                size_t n,        ///< Buffer size.
                int offset,      ///< Lead white space for every line.
-               int indent,      ///< Additional indention per line for messages.
+               int indent,      ///< Additional indentation per line for messages.
                int shift,       ///< Additional @a indent for nested @c Errata.
                char const *lead ///< Leading text for nested @c Errata.
   ) const;

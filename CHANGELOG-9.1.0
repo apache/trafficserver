@@ -267,7 +267,7 @@ Changes with Apache Traffic Server 9.1.0
   #7445 - Add PROXY Protocol Builder
   #7446 - Add Outbound PROXY Protocol (v1/v2) Support
   #7450 - Move reopen_moved_log_files to log flushing thread
-  #7451 - Unit Test -  Increase openssl's key size. Place test certs into a comon test folder
+  #7451 - Unit Test -  Increase openssl's key size. Place test certs into a common test folder
   #7453 - Cleanup: Add SNIRoutingType
   #7455 - Fix Makefile target for creating changelogs
   #7457 - Fix comment in include/tscore/Filenames.h.
@@ -352,7 +352,7 @@ Changes with Apache Traffic Server 9.1.0
   #7809 - Save and propagate epoll network error
   #7828 - Fix so EOS are delivered to sessions in the pool
   #7830 - Fix a format specifier for size_t
-  #7834 - AuTest: use exteneded help output to determine curl feature support
+  #7834 - AuTest: use extended help output to determine curl feature support
   #7835 - Remove unused member from HttpSM
   #7842 - Extra braces for clang 5 / ubuntu 16.04 on array initialization
   #7858 - Adds a new --enable-all-asserts configure option

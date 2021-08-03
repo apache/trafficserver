@@ -533,7 +533,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
       }
     }
 
-    // makeing requests and marking down hosts with a config set for alternating ring mode.
+    // making requests and marking down hosts with a config set for alternating ring mode.
     WHEN("requests are made in a config set for alternating rings and hosts are marked down.")
     {
       HttpSM sm;

@@ -36,7 +36,7 @@
 //              SPECIAL URLs
 //
 //
-// 1. Access from Browswers
+// 1. Access from Browsers
 //
 //    By special URLS:
 //
@@ -55,7 +55,7 @@
 //
 //         http://{http}/groups/use_graph.gif?august
 //
-//    B. Each protocol/sybsystem should have their own information.
+//    B. Each protocol/subsystem should have their own information.
 //       For example
 
 #define STAT_PAGE_SUCCESS STAT_PAGES_EVENTS_START + 0

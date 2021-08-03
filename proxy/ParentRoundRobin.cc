@@ -139,7 +139,7 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
     HostStatRec *hst = pStatus.getHostStatus(parents[cur_index].hostname);
     host_stat        = (hst) ? hst->status : HostStatus_t::HOST_STATUS_UP;
     // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
-    // ignore the down status and mark it as avaialble
+    // ignore the down status and mark it as available
     if (result->rec->ignore_self_detect && (hst && hst->status == HOST_STATUS_DOWN)) {
       if (hst->reasons == Reason::SELF_DETECT) {
         host_stat = HOST_STATUS_UP;

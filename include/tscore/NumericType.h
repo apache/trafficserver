@@ -124,7 +124,7 @@ public:
   /// User conversion to implementation type.
   /// @internal If we have just a single const method conversion to a copy
   /// of the @c raw_type then the stream operators don't work. Only a CR
-  /// conversion operator satisifies the argument matching.
+  /// conversion operator satisfies the argument matching.
   operator raw_type const &() const { return _t; }
   /// User conversion to implementation type.
   operator raw_type &() { return _t; }

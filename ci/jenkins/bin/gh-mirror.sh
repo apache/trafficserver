@@ -53,7 +53,7 @@ function checkBuild() {
 	# Check if commits have doc/ changes
 	echo -n "$diff" | ${GREP} -F -e doc/ >/dev/null
 	if [ 0 == $? ]; then
-		echo "Triggerd Docs build for ${branch}"
+		echo "Triggered Docs build for ${branch}"
 		${CURL} -o /dev/null -s ${BASE_URL}/job/docs-${branch}/${token}
 	fi
 

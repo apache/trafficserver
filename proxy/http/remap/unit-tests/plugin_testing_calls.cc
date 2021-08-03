@@ -115,7 +115,7 @@ TSRemapPostConfigReload(TSRemapReloadStatus reloadStatus)
   debugObject.postReloadConfigStatus = reloadStatus;
 }
 
-/* The folowing functions are meant for unit testing */
+/* The following functions are meant for unit testing */
 int
 pluginDsoVersionTest()
 {
