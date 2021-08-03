@@ -462,7 +462,7 @@ HTTPValRange*          http_parse_range (const char *buf, Arena *arena);
 */
 HTTPValTE *http_parse_te(const char *buf, int len, Arena *arena);
 
-bool is_http_hdr_version_supported(const HTTPVersion &http_version);
+bool is_http1_hdr_version_supported(const HTTPVersion &http_version);
 
 class IOBufferReader;
 
