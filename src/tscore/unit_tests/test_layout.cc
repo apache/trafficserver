@@ -29,8 +29,9 @@ std::string
 append_slash(const char *path)
 {
   std::string ret(path);
-  if (ret.back() != '/')
+  if (ret.back() != '/') {
     ret.append("/");
+  }
   return ret;
 }
 

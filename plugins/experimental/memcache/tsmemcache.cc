@@ -132,7 +132,7 @@ MCAccept::main_event(int event, void *data)
     }
     return EVENT_CONT;
   } else {
-    Fatal("tsmemcache accept received fatal error: errno = %d", -((int)(intptr_t)data));
+    Fatal("tsmemcache accept received fatal error: errno = %d", -(static_cast<int>((intptr_t)data)));
     return EVENT_CONT;
   }
 }

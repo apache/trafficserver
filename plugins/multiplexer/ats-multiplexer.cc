@@ -78,7 +78,7 @@ TSRemapNewInstance(int argc, char **argv, void **i, char *, int)
   instance->skipPostPut = false;
 
   if (argc > 2) {
-    std::copy_if(argv + 2, argv + argc, std::back_inserter(instance->origins), [&](std::string s) {
+    std::copy_if(argv + 2, argv + argc, std::back_inserter(instance->origins), [&](const std::string &s) {
       if (s == "proxy.config.multiplexer.skip_post_put=1") {
         instance->skipPostPut = true;
         return false;

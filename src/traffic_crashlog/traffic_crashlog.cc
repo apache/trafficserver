@@ -192,8 +192,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     diags->config.outputs[DL_Emergency].to_syslog = true;
   }
 
-  Note("crashlog started, target=%ld, debug=%s syslog=%s, uid=%ld euid=%ld", (long)target_pid, debug_mode ? "true" : "false",
-       syslog_mode ? "true" : "false", (long)getuid(), (long)geteuid());
+  Note("crashlog started, target=%ld, debug=%s syslog=%s, uid=%ld euid=%ld", static_cast<long>(target_pid),
+       debug_mode ? "true" : "false", syslog_mode ? "true" : "false", (long)getuid(), (long)geteuid());
 
   mgmterr = TSInit(nullptr, (TSInitOptionT)(TS_MGMT_OPT_NO_EVENTS | TS_MGMT_OPT_NO_SOCK_TESTS));
   if (mgmterr != TS_ERR_OKAY) {

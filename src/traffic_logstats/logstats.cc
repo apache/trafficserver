@@ -389,9 +389,9 @@ public:
       _dump_url(u, as_object);
     }
     if (as_object) {
-      std::cout << "  \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\"" << std::endl;
+      std::cout << R"(  "_timestamp" : ")" << static_cast<int>(ink_time_wall_seconds()) << "\"" << std::endl;
     } else {
-      std::cout << "  { \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\" }" << std::endl;
+      std::cout << R"(  { "_timestamp" : ")" << static_cast<int>(ink_time_wall_seconds()) << "\" }" << std::endl;
     }
   }
 
@@ -1929,8 +1929,8 @@ format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json, bool 
   if (json) {
     std::cout << "    " << '"' << desc << "\" : "
               << "{ ";
-    std::cout << "\"min\": \"" << stat.min << "\", ";
-    std::cout << "\"max\": \"" << stat.max << "\"";
+    std::cout << R"("min": ")" << stat.min << "\", ";
+    std::cout << R"("max": ")" << stat.max << "\"";
     if (!concise) {
       std::cout << ", \"avg\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.avg << "\", ";
       std::cout << "\"dev\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2) << stat.stddev << "\"";
@@ -1968,12 +1968,12 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
   if (json) {
     std::cout << "    " << '"' << desc << "\" : "
               << "{ ";
-    std::cout << "\"req\": \"" << stat.count << "\", ";
+    std::cout << R"("req": ")" << stat.count << "\", ";
     if (!concise) {
       std::cout << "\"req_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2)
                 << (double)stat.count / total.count * 100 << "\", ";
     }
-    std::cout << "\"bytes\": \"" << stat.bytes << "\"";
+    std::cout << R"("bytes": ")" << stat.bytes << "\"";
 
     if (!concise) {
       std::cout << ", \"bytes_pct\": \"" << std::setiosflags(ios::fixed) << std::setprecision(2)
@@ -2260,7 +2260,7 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
     std::cout << std::endl;
     std::cout << std::setw(cl.line_len) << std::setfill('_') << '_' << std::setfill(' ') << std::endl;
   } else {
-    std::cout << "    \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << '"' << std::endl;
+    std::cout << R"(    "_timestamp" : ")" << static_cast<int>(ink_time_wall_seconds()) << '"' << std::endl;
   }
 }
 

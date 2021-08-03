@@ -35,7 +35,7 @@
 #define MAX_SIMPLE_RETRIES 5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
 
-typedef ControlMatcher<ParentRecord, ParentResult> P_table;
+using P_table = ControlMatcher<ParentRecord, ParentResult>;
 
 // Global Vars for Parent Selection
 static const char modulePrefix[]                             = "[ParentSelection]";

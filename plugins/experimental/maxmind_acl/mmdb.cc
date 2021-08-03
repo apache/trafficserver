@@ -150,8 +150,8 @@ Acl::loaddeny(const YAML::Node &denyNode)
       YAML::Node country = denyNode["country"];
       if (!country.IsNull()) {
         if (country.IsSequence()) {
-          for (std::size_t i = 0; i < country.size(); i++) {
-            allow_country.insert_or_assign(country[i].as<std::string>(), false);
+          for (auto &&i : country) {
+            allow_country.insert_or_assign(i.as<std::string>(), false);
           }
         } else {
           TSDebug(PLUGIN_NAME, "Invalid country code allow list yaml");
@@ -170,9 +170,9 @@ Acl::loaddeny(const YAML::Node &denyNode)
       if (!ip.IsNull()) {
         if (ip.IsSequence()) {
           // Do IP Deny processing
-          for (std::size_t i = 0; i < ip.size(); i++) {
+          for (auto &&i : ip) {
             IpAddr min, max;
-            ats_ip_range_parse(std::string_view{ip[i].as<std::string>()}, min, max);
+            ats_ip_range_parse(std::string_view{i.as<std::string>()}, min, max);
             deny_ip_map.fill(min, max, nullptr);
             TSDebug(PLUGIN_NAME, "loading ip: valid: %d, fam %d ", min.isValid(), min.family());
           }
@@ -230,8 +230,8 @@ Acl::loadallow(const YAML::Node &allowNode)
       YAML::Node country = allowNode["country"];
       if (!country.IsNull()) {
         if (country.IsSequence()) {
-          for (std::size_t i = 0; i < country.size(); i++) {
-            allow_country.insert_or_assign(country[i].as<std::string>(), true);
+          for (auto &&i : country) {
+            allow_country.insert_or_assign(i.as<std::string>(), true);
           }
 
         } else {
@@ -251,9 +251,9 @@ Acl::loadallow(const YAML::Node &allowNode)
       if (!ip.IsNull()) {
         if (ip.IsSequence()) {
           // Do IP Allow processing
-          for (std::size_t i = 0; i < ip.size(); i++) {
+          for (auto &&i : ip) {
             IpAddr min, max;
-            ats_ip_range_parse(std::string_view{ip[i].as<std::string>()}, min, max);
+            ats_ip_range_parse(std::string_view{i.as<std::string>()}, min, max);
             allow_ip_map.fill(min, max, nullptr);
             TSDebug(PLUGIN_NAME, "loading ip: valid: %d, fam %d ", min.isValid(), min.family());
           }
@@ -290,9 +290,9 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
     if (!regex.IsNull()) {
       if (regex.IsSequence()) {
         // Parse each country-regex pair
-        for (std::size_t i = 0; i < regex.size(); i++) {
+        for (const auto &i : regex) {
           plugin_regex temp;
-          auto temprule = regex[i].as<std::vector<std::string>>();
+          auto temprule = i.as<std::vector<std::string>>();
           temp._regex_s = temprule.back();
           const char *error;
           int erroffset;
@@ -311,11 +311,11 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
           }
 
           for (std::size_t y = 0; y < temprule.size() - 1; y++) {
-            TSDebug(PLUGIN_NAME, "Adding regex: %s, for country: %s", temp._regex_s.c_str(), regex[i][y].as<std::string>().c_str());
+            TSDebug(PLUGIN_NAME, "Adding regex: %s, for country: %s", temp._regex_s.c_str(), i[y].as<std::string>().c_str());
             if (allow) {
-              allow_regex[regex[i][y].as<std::string>()].push_back(temp);
+              allow_regex[i[y].as<std::string>()].push_back(temp);
             } else {
-              deny_regex[regex[i][y].as<std::string>()].push_back(temp);
+              deny_regex[i[y].as<std::string>()].push_back(temp);
             }
           }
         }
@@ -423,7 +423,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
       return ret;
     }
 
-    if (NULL != entry_data_list) {
+    if (nullptr != entry_data_list) {
       // This is useful to be able to dump out a full record of a
       // mmdb entry for debug. Enabling can help if you want to figure
       // out how to add new fields
@@ -481,7 +481,7 @@ Acl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp)
     break;
   }
 
-  if (NULL != entry_data_list) {
+  if (nullptr != entry_data_list) {
     MMDB_free_entry_data_list(entry_data_list);
   }
 
@@ -498,7 +498,7 @@ Acl::eval_country(MMDB_entry_data_s *entry_data, const char *path, int path_len)
   bool ret     = false;
   bool allow   = default_allow;
   char *output = nullptr;
-  output       = (char *)malloc((sizeof(char) * entry_data->data_size));
+  output       = static_cast<char *>(malloc((sizeof(char) * entry_data->data_size)));
   strncpy(output, entry_data->utf8_string, entry_data->data_size);
   TSDebug(PLUGIN_NAME, "This IP Country Code: %s", output);
   auto exists = allow_country.count(output);

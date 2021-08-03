@@ -171,7 +171,7 @@ struct cmp_str {
 };
 } // namespace
 
-typedef std::map<ts::ConstBuffer, TSMilestonesType, cmp_str> milestone_map;
+using milestone_map = std::map<ts::ConstBuffer, TSMilestonesType, cmp_str>;
 static milestone_map m_milestone_map;
 
 struct milestone {
