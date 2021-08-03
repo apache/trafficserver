@@ -6732,7 +6732,7 @@ HttpSM::setup_transfer_from_transform()
   transform_info.entry->in_tunnel = true;
   ua_entry->in_tunnel             = true;
 
-  this->setup_plugin_agents(p);
+  this->setup_plugin_agents(p, client_response_hdr_bytes);
 
   if (t_state.client_info.receive_chunked_response) {
     tunnel.set_producer_chunking_action(p, client_response_hdr_bytes, TCA_CHUNK_CONTENT);
@@ -6862,7 +6862,7 @@ HttpSM::setup_server_transfer()
   ua_entry->in_tunnel     = true;
   server_entry->in_tunnel = true;
 
-  this->setup_plugin_agents(p);
+  this->setup_plugin_agents(p, client_response_hdr_bytes);
 
   // If the incoming server response is chunked and the client does not
   // expect a chunked response, then dechunk it.  Otherwise, if the
@@ -6998,13 +6998,13 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 }
 
 void
-HttpSM::setup_plugin_agents(HttpTunnelProducer *p)
+HttpSM::setup_plugin_agents(HttpTunnelProducer *p, int num_header_bytes)
 {
   APIHook *agent           = txn_hook_get(TS_HTTP_RESPONSE_CLIENT_HOOK);
   has_active_plugin_agents = agent != nullptr;
   while (agent) {
     INKVConnInternal *contp = static_cast<INKVConnInternal *>(agent->m_cont);
-    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "plugin agent");
+    tunnel.add_consumer(contp, p->vc, &HttpSM::tunnel_handler_plugin_agent, HT_HTTP_CLIENT, "plugin agent", num_header_bytes);
     // We don't put these in the SM VC table because the tunnel
     // will clean them up in do_io_close().
     agent = agent->next();

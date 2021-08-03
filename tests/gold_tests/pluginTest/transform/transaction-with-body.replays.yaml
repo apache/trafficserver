@@ -1,0 +1,36 @@
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/test/http11"
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+        - [ Content-Length, 20 ]
+        # The example plugin only prints bodies with responses to requests
+        # containing The TS-Agent header.
+        - [ TS-Agent, 1 ]
+      content:
+        data: "http1.1_request_body"
+
+    proxy-request:
+      headers:
+        fields:
+        - [ TS-Agent, { as: present } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 21 ]
+      content:
+        data: "http1.1_response_body"
+
+    proxy-response:
+      status: 200

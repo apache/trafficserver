@@ -562,7 +562,15 @@ protected:
   HttpTunnelProducer *setup_transfer_from_transform();
   HttpTunnelProducer *setup_cache_transfer_to_transform();
   HttpTunnelProducer *setup_transfer_from_transform_to_cache_only();
-  void setup_plugin_agents(HttpTunnelProducer *p);
+
+  /** Configure consumers for transform plugins.
+   *
+   * @param[in] p The Tunnel's producer for whom transform plugins' consumers
+   *   will be configured.
+   * @param[in] num_header_bytes The number of header bytes in the stream.
+   *   These will be skipped and not passed to the consumers of the data sink.
+   */
+  void setup_plugin_agents(HttpTunnelProducer *p, int num_header_bytes);
 
   HttpTransact::StateMachineAction_t last_action     = HttpTransact::SM_ACTION_UNDEFINED;
   int (HttpSM::*m_last_state)(int event, void *data) = nullptr;
