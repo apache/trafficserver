@@ -273,103 +273,114 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
 bool
 Http2Stream::change_state(uint8_t type, uint8_t flags)
 {
-  switch (_state) {
-  case Http2StreamState::HTTP2_STREAM_STATE_IDLE:
-    if (type == HTTP2_FRAME_TYPE_HEADERS) {
-      if (recv_end_stream) {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
-      } else if (send_end_stream) {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
+  Http2StreamState original_state = _state;
+  bool retval                     = true;
+  if (type == HTTP2_FRAME_TYPE_RST_STREAM) {
+    _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
+  } else {
+    switch (_state) {
+    case Http2StreamState::HTTP2_STREAM_STATE_IDLE:
+      if (type == HTTP2_FRAME_TYPE_HEADERS) {
+        if (recv_end_stream) {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+        } else if (send_end_stream) {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
+        } else {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_OPEN;
+        }
+      } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) {
+        if (recv_end_stream) {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+        } else if (send_end_stream) {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
+        } else {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_OPEN;
+        }
+      } else if (type == HTTP2_FRAME_TYPE_PUSH_PROMISE) {
+        _state = Http2StreamState::HTTP2_STREAM_STATE_RESERVED_LOCAL;
       } else {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_OPEN;
+        retval = false;
       }
-    } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) {
-      if (recv_end_stream) {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
-      } else if (send_end_stream) {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
+      break;
+
+    case Http2StreamState::HTTP2_STREAM_STATE_OPEN:
+      if (type == HTTP2_FRAME_TYPE_HEADERS || type == HTTP2_FRAME_TYPE_DATA) {
+        if (recv_end_stream) {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+        } else if (send_end_stream) {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
+        }
+        // Otherwise Do not change state
       } else {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_OPEN;
+        // A stream in the "open" state may be used by both peers to send frames of any type.
       }
-    } else if (type == HTTP2_FRAME_TYPE_PUSH_PROMISE) {
-      _state = Http2StreamState::HTTP2_STREAM_STATE_RESERVED_LOCAL;
-    } else {
-      return false;
-    }
-    break;
+      break;
 
-  case Http2StreamState::HTTP2_STREAM_STATE_OPEN:
-    if (type == HTTP2_FRAME_TYPE_RST_STREAM) {
-      _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
-    } else if (type == HTTP2_FRAME_TYPE_HEADERS || type == HTTP2_FRAME_TYPE_DATA) {
-      if (recv_end_stream) {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
-      } else if (send_end_stream) {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
+    case Http2StreamState::HTTP2_STREAM_STATE_RESERVED_LOCAL:
+      if (type == HTTP2_FRAME_TYPE_HEADERS) {
+        if (flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+        }
+      } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) {
+        if (flags & HTTP2_FLAGS_CONTINUATION_END_HEADERS) {
+          _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+        }
       } else {
-        // Do not change state
+        retval = false;
       }
-    } else {
-      // A stream in the "open" state may be used by both peers to send frames of any type.
-      return true;
-    }
-    break;
+      break;
 
-  case Http2StreamState::HTTP2_STREAM_STATE_RESERVED_LOCAL:
-    if (type == HTTP2_FRAME_TYPE_HEADERS) {
-      if (flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+    case Http2StreamState::HTTP2_STREAM_STATE_RESERVED_REMOTE:
+      // Currently ATS supports only HTTP/2 server features
+      retval = false;
+      break;
+
+    case Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL:
+      if (recv_end_stream) {
+        _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
+      } else {
+        // Error, set state closed
+        _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
+        retval = false;
       }
-    } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) {
-      if (flags & HTTP2_FLAGS_CONTINUATION_END_HEADERS) {
-        _state = Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+      break;
+
+    case Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE:
+      if (send_end_stream) {
+        _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
+      } else if (type == HTTP2_FRAME_TYPE_HEADERS) { // w/o END_STREAM flag
+        // No state change here. Expect a following DATA frame with END_STREAM flag.
+      } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) { // w/o END_STREAM flag
+        // No state change here. Expect a following DATA frame with END_STREAM flag.
+      } else {
+        // Error, set state closed
+        _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
+        retval = false;
       }
-    } else {
-      return false;
+      break;
+
+    case Http2StreamState::HTTP2_STREAM_STATE_CLOSED:
+      // No state changing
+      break;
+    default:
+      retval = true;
+      break;
     }
-    break;
+  }
 
-  case Http2StreamState::HTTP2_STREAM_STATE_RESERVED_REMOTE:
-    // Currently ATS supports only HTTP/2 server features
-    return false;
-
-  case Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL:
-    if (type == HTTP2_FRAME_TYPE_RST_STREAM || recv_end_stream) {
-      _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
-    } else {
-      // Error, set state closed
-      _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
-      return false;
-    }
-    break;
-
-  case Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE:
-    if (type == HTTP2_FRAME_TYPE_RST_STREAM || send_end_stream) {
-      _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
-    } else if (type == HTTP2_FRAME_TYPE_HEADERS) { // w/o END_STREAM flag
-      // No state change here. Expect a following DATA frame with END_STREAM flag.
-      return true;
-    } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) { // w/o END_STREAM flag
-      // No state change here. Expect a following DATA frame with END_STREAM flag.
-      return true;
-    } else {
-      // Error, set state closed
-      _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
-      return false;
-    }
-    break;
-
-  case Http2StreamState::HTTP2_STREAM_STATE_CLOSED:
-    // No state changing
-    return true;
-
-  default:
-    return false;
+  // Did we just transition to closed or remote closed? Decrement stream count
+  if ((_state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
+       original_state != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) ||
+      (_state == Http2StreamState::HTTP2_STREAM_STATE_CLOSED && original_state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED &&
+       original_state != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE)) {
+    Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
+    SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+    h2_proxy_ssn->connection_state.decrement_stream_count(this->_id);
   }
 
   Http2StreamDebug("%s", Http2DebugNames::get_state_name(_state));
 
-  return true;
+  return retval;
 }
 
 VIO *
@@ -432,12 +443,22 @@ Http2Stream::do_io_close(int /* flags */)
     // by the time this is called from transaction_done.
     closed = true;
 
-    if (_proxy_ssn && this->is_client_state_writeable()) {
-      // Make sure any trailing end of stream frames are sent
-      // We will be removed at send_data_frames or closing connection phase
+    if (_proxy_ssn) {
       Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
-      SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->mutex, this_ethread());
-      h2_proxy_ssn->connection_state.send_data_frames(this);
+
+      // If the stream closed in a non-standard state, update the session stream stats
+      if (_state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED &&
+          _state != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) {
+        SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+        h2_proxy_ssn->connection_state.decrement_stream_count(this->_id);
+      }
+
+      if (this->is_client_state_writeable()) {
+        // Make sure any trailing end of stream frames are sent
+        // We will be removed at send_data_frames or closing connection phase
+        SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->mutex, this_ethread());
+        h2_proxy_ssn->connection_state.send_data_frames(this);
+      }
     }
 
     _clear_timers();
@@ -495,6 +516,14 @@ Http2Stream::initiating_close()
     // Set the state of the connection to closed
     // TODO - these states should be combined
     closed = true;
+
+    // If the stream closed in a non-standard state, update the session stream stats
+    if (_state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED &&
+        _state != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) {
+      Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
+      SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+      h2_proxy_ssn->connection_state.decrement_stream_count(this->_id);
+    }
     _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
 
     // leaving the reference to the SM, so we can detach from the SM when we actually destroy

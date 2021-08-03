@@ -147,6 +147,8 @@ public:
   Event *get_zombie_event();
   void schedule_zombie_event();
 
+  void decrement_stream_count(Http2StreamId id);
+
   void increment_received_settings_count(uint32_t count);
   uint32_t get_received_settings_count();
   void increment_received_settings_frame_count();
@@ -345,5 +347,15 @@ Http2ConnectionState::schedule_zombie_event()
       zombie_event->cancel();
     }
     zombie_event = this_ethread()->schedule_in(this, HRTIME_SECONDS(Http2::zombie_timeout_in));
+  }
+}
+
+inline void
+Http2ConnectionState::decrement_stream_count(Http2StreamId id)
+{
+  if (http2_is_client_streamid(id)) {
+    --client_streams_in_count;
+  } else {
+    --client_streams_out_count;
   }
 }
