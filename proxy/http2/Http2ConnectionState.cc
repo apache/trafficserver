@@ -1105,7 +1105,7 @@ void
 Http2ConnectionState::init(Http2CommonSession *ssn)
 {
   session            = ssn;
-  this->_server_rwnd = Http2::initial_window_size;
+  this->_server_rwnd = Http2::session_initial_window_size;
 
   local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
   remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
@@ -1139,8 +1139,10 @@ Http2ConnectionState::send_connection_preface()
 
   send_settings_frame(configured_settings);
 
-  if (local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) > HTTP2_INITIAL_WINDOW_SIZE) {
-    send_window_update_frame(0, local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - HTTP2_INITIAL_WINDOW_SIZE);
+  // If the session window size is non-default, send a window update right away
+
+  if (Http2::session_initial_window_size > HTTP2_INITIAL_WINDOW_SIZE) {
+    send_window_update_frame(0, Http2::session_initial_window_size - HTTP2_INITIAL_WINDOW_SIZE);
   }
 }
 
@@ -1512,7 +1514,7 @@ Http2ConnectionState::restart_streams()
 void
 Http2ConnectionState::restart_receiving(Http2Stream *stream)
 {
-  uint32_t initial_rwnd = this->local_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
+  uint32_t initial_rwnd = Http2::session_initial_window_size;
   uint32_t min_rwnd     = std::min(initial_rwnd, this->local_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
 
   // Connection level WINDOW UPDATE
@@ -1533,6 +1535,8 @@ Http2ConnectionState::restart_receiving(Http2Stream *stream)
     return;
   }
 
+  // Update the window size for the stream
+  initial_rwnd              = Http2::initial_window_size;
   Http2WindowSize diff_size = initial_rwnd - std::max(static_cast<int64_t>(stream->server_rwnd()), data_size);
   stream->increment_server_rwnd(diff_size);
   this->send_window_update_frame(stream->get_id(), diff_size);

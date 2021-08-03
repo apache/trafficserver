@@ -3971,7 +3971,17 @@ HTTP/2 Configuration
 .. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 65535
    :reloadable:
 
-   The initial window size for inbound connections.
+   The initial window size for inbound connection streams.
+
+.. ts:cv:: CONFIG proxy.config.http2.session_initial_window_size_in INT 0
+   :reloadable:
+
+   The initial window size for inbound connection session.  HTTP/2 provides both
+   a per stream window and a session wide window.  Each data byte exchanged decrements
+   the window of the associated stream and the session window.  To allow for multiple
+   active streams, the session window should be larger than the stream window.
+   |TS| verifies that the session initial window is always at least as large as the
+   stream initial window.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_frame_size INT 16384
    :reloadable:

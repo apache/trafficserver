@@ -817,6 +817,7 @@ uint32_t Http2::max_active_streams_in          = 0;
 bool Http2::throttling                         = false;
 uint32_t Http2::stream_priority_enabled        = 0;
 uint32_t Http2::initial_window_size            = 65535;
+uint32_t Http2::session_initial_window_size    = 65535;
 uint32_t Http2::max_frame_size                 = 16384;
 uint32_t Http2::header_table_size              = 4096;
 uint32_t Http2::max_header_list_size           = 4294967295;
@@ -848,6 +849,13 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_active_streams_in, "proxy.config.http2.max_active_streams_in");
   REC_EstablishStaticConfigInt32U(stream_priority_enabled, "proxy.config.http2.stream_priority_enabled");
   REC_EstablishStaticConfigInt32U(initial_window_size, "proxy.config.http2.initial_window_size_in");
+  REC_EstablishStaticConfigInt32U(session_initial_window_size, "proxy.config.http2.session_initial_window_size_in");
+
+  // The session window must be at least as big as the stream window
+  if (session_initial_window_size < initial_window_size) {
+    session_initial_window_size = initial_window_size;
+  }
+
   REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
   REC_EstablishStaticConfigInt32U(header_table_size, "proxy.config.http2.header_table_size");
   REC_EstablishStaticConfigInt32U(max_header_list_size, "proxy.config.http2.max_header_list_size");

@@ -391,6 +391,7 @@ public:
   static bool throttling;
   static uint32_t stream_priority_enabled;
   static uint32_t initial_window_size;
+  static uint32_t session_initial_window_size;
   static uint32_t max_frame_size;
   static uint32_t header_table_size;
   static uint32_t max_header_list_size;
