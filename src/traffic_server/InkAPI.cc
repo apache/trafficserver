@@ -6879,20 +6879,55 @@ TSHttpTxnPluginTagGet(TSHttpTxn txnp)
   return sm->plugin_tag;
 }
 
+TSHttpConnectOptions
+TSHttpConnectOptionsGet(TSConnectType connect_type)
+{
+  sdk_assert(connect_type > TS_CONNECT_UNDEFINED);
+  sdk_assert(connect_type < TS_CONNECT_LAST_ENTRY);
+
+  return TSHttpConnectOptions{.connect_type      = connect_type,
+                              .addr              = nullptr,
+                              .tag               = nullptr,
+                              .id                = 0,
+                              .buffer_index      = TS_IOBUFFER_SIZE_INDEX_32K,
+                              .buffer_water_mark = TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT};
+}
+
 TSVConn
 TSHttpConnectWithPluginId(sockaddr const *addr, const char *tag, int64_t id)
 {
-  sdk_assert(addr);
+  TSHttpConnectOptions options = TSHttpConnectOptionsGet(TS_CONNECT_PLUGIN);
+  options.addr                 = addr;
+  options.tag                  = tag;
+  options.id                   = id;
 
-  sdk_assert(ats_is_ip(addr));
-  sdk_assert(ats_ip_port_cast(addr));
+  return TSHttpConnectPlugin(&options);
+}
+
+TSVConn
+TSHttpConnectPlugin(TSHttpConnectOptions *options)
+{
+  sdk_assert(options != nullptr);
+  sdk_assert(options->connect_type == TS_CONNECT_PLUGIN);
+  sdk_assert(options->addr);
+
+  sdk_assert(ats_is_ip(options->addr));
+  sdk_assert(ats_ip_port_cast(options->addr));
+
+  if (options->buffer_index < TS_IOBUFFER_SIZE_INDEX_128 || options->buffer_index > MAX_BUFFER_SIZE_INDEX) {
+    options->buffer_index = TS_IOBUFFER_SIZE_INDEX_32K; // out of range, set to the default for safety
+  }
+
+  if (options->buffer_water_mark < TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT) {
+    options->buffer_water_mark = TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT;
+  }
 
   if (plugin_http_accept) {
-    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_accept);
+    PluginVCCore *new_pvc = PluginVCCore::alloc(plugin_http_accept, options->buffer_index, options->buffer_water_mark);
 
-    new_pvc->set_active_addr(addr);
-    new_pvc->set_plugin_id(id);
-    new_pvc->set_plugin_tag(tag);
+    new_pvc->set_active_addr(options->addr);
+    new_pvc->set_plugin_id(options->id);
+    new_pvc->set_plugin_tag(options->tag);
 
     PluginVC *return_vc = new_pvc->connect();
 
@@ -7216,8 +7251,11 @@ TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
+  TSIOBufferSizeIndex buffer_index      = TSPluginVCIOBufferIndexGet(txnp);
+  TSIOBufferWaterMark buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(txnp);
+
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_SERVER;
-  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp);
+  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp, buffer_index, buffer_water_mark);
 }
 
 void
@@ -7228,8 +7266,37 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
+  TSIOBufferSizeIndex buffer_index      = TSPluginVCIOBufferIndexGet(txnp);
+  TSIOBufferWaterMark buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(txnp);
+
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_INTERCEPT;
-  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp);
+  http_sm->plugin_tunnel      = PluginVCCore::alloc((INKContInternal *)contp, buffer_index, buffer_water_mark);
+}
+
+TSIOBufferSizeIndex
+TSPluginVCIOBufferIndexGet(TSHttpTxn txnp)
+{
+  TSMgmtInt index;
+
+  if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX, &index) == TS_SUCCESS &&
+      index >= TS_IOBUFFER_SIZE_INDEX_128 && index <= MAX_BUFFER_SIZE_INDEX) {
+    return static_cast<TSIOBufferSizeIndex>(index);
+  }
+
+  return TS_IOBUFFER_SIZE_INDEX_32K;
+}
+
+TSIOBufferWaterMark
+TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp)
+{
+  TSMgmtInt water_mark;
+
+  if (TSHttpTxnConfigIntGet(txnp, TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK, &water_mark) == TS_SUCCESS &&
+      water_mark > TS_IOBUFFER_WATER_MARK_UNDEFINED) {
+    return static_cast<TSIOBufferWaterMark>(water_mark);
+  }
+
+  return TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT;
 }
 
 // The API below require timer values as TSHRTime parameters
@@ -8801,6 +8868,12 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE:
     ret  = &overridableHttpConfig->host_res_data;
     conv = &HttpTransact::HOST_RES_CONV;
+    break;
+  case TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX:
+    ret = _memberp_to_generic(&overridableHttpConfig->plugin_vc_default_buffer_index, conv);
+    break;
+  case TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK:
+    ret = _memberp_to_generic(&overridableHttpConfig->plugin_vc_default_buffer_water_mark, conv);
     break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:

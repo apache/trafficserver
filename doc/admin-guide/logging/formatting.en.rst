@@ -539,10 +539,12 @@ Field Source           Description
 ===== ================ ============================================================
 piid  Proxy Plugin     Plugin ID for the current transaction. This is set for
                        plugin driven transactions via
-                       :c:func:`TSHttpConnectWithPluginId`.
+                       :c:func:`TSHttpConnectWithPluginId`. or
+                       :c:func:`TSHttpConnectPlugin`.
 pitag Proxy Plugin     Plugin tag for the current transaction. This is set for
                        plugin driven transactions via
-                       :c:func:`TSHttpConnectWithPluginId`.
+                       :c:func:`TSHttpConnectWithPluginId`. or
+                       :c:func:`TSHttpConnectPlugin`.
 cqint Client Request   If a request was generated internally (via a plugin), then
                        this has a value of ``1``, otherwise ``0``. This can be
                        useful when tracking internal only requests, such as those

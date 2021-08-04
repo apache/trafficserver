@@ -1775,6 +1775,13 @@ tsapi void TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp);
 
     This returns a VConn that connected to the transaction.
 
+    @param options a TSHttpConnectPluginOptions structure that specifies options.
+ */
+tsapi TSVConn TSHttpConnectPlugin(TSHttpConnectOptions *options);
+
+/** Backwards compatible version.
+    This function calls This provides a @a buffer_index of 8 and a @a buffer_water_mark of 0.
+
     @param addr Target address of the origin server.
     @param tag A logging tag that can be accessed via the pitag field. May be @c NULL.
     @param id A logging id that can be access via the piid field.
@@ -1785,6 +1792,21 @@ tsapi TSVConn TSHttpConnectWithPluginId(struct sockaddr const *addr, const char 
     This provides a @a tag of "plugin" and an @a id of 0.
  */
 tsapi TSVConn TSHttpConnect(struct sockaddr const *addr);
+
+/**
+   Get an instance of TSHttpConnectOptions with default values.
+ */
+tsapi TSHttpConnectOptions TSHttpConnectOptionsGet(TSConnectType connect_type);
+
+/**
+   Get the value of proxy.config.plugin.vc.default_buffer_index from the TSHttpTxn
+ */
+tsapi TSIOBufferSizeIndex TSPluginVCIOBufferIndexGet(TSHttpTxn txnp);
+
+/**
+   Get the value of proxy.config.plugin.vc.default_buffer_water_mark from the TSHttpTxn
+ */
+tsapi TSIOBufferWaterMark TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp);
 
 /* --------------------------------------------------------------------------
  Initiate Transparent Http Connection */

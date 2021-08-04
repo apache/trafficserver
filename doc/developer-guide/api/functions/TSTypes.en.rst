@@ -78,6 +78,42 @@ more widely. Those are described on this page.
 
    A 64 bit time value, measured in nanoseconds.
 
+.. type:: TSHttpConnectOptions
+
+   A type that encapsulates options passed into the :func:`TSHttpConnectPlugin` function.
+
+   .. member:: TSConnectType connect_type
+
+      The type of data represented in the struct.
+
+   .. member:: sockaddr const *addr
+
+      Network address of the target of the connection.
+
+   .. member:: const char *tag
+
+      Tag that is passed through to the HTTP state machine.
+
+   .. member:: int64_t id
+
+      Numeric identifier passed through to the HTTP state machine.
+
+   .. member:: TSIOBufferSizeIndex buffer_index
+
+      A numeric buffer size index used to derive actual sizes used when constructing
+      IOBuffers; see :type:`TSIOBufferSizeIndex`.
+
+   .. member:: TSIOBufferWaterMark buffer_water_mark
+
+      A numeric value specifying the minimum number of bytes that must be written to
+      an IOBuffer before any continuation is called back to read from the buffer.
+      See the :c:func:`TSIOBufferWaterMarkGet` and :c:func:`TSIOBufferWaterMarkSet`
+      functions for further detail.
+
+.. type:: TSConnectType
+
+   Enumeration that specifies the type of data within a :c:type:`TSHttpConnectOptions` structure.
+
 .. type:: TSHttpParser
 
 .. type:: TSHttpSsn
@@ -95,6 +131,10 @@ more widely. Those are described on this page.
 .. type:: TSIOBufferReader
 
 .. type:: TSIOBufferSizeIndex
+
+.. type:: TSIOBufferWaterMark
+
+   An enumeration that contains valid watermark values, currently only defaults.
 
 .. type:: TSLifecycleHookID
 

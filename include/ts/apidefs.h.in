@@ -667,6 +667,12 @@ typedef enum {
 } TSIOBufferSizeIndex;
 
 typedef enum {
+  TS_IOBUFFER_WATER_MARK_UNDEFINED         = -1,
+  TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT = 0,     // mirror of DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK
+  TS_IOBUFFER_WATER_MARK_HTTP_DEFAULT      = 32768, // mirror of default_buffer_water_mark
+} TSIOBufferWaterMark;
+
+typedef enum {
   TS_ERROR   = -1,
   TS_SUCCESS = 0,
 } TSReturnCode;
@@ -876,6 +882,8 @@ typedef enum {
   TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME,
   TS_CONFIG_HTTP_HOST_RESOLUTION_PREFERENCE,
   TS_CONFIG_HTTP_CONNECT_DEAD_POLICY,
+  TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_INDEX,
+  TS_CONFIG_PLUGIN_VC_DEFAULT_BUFFER_WATER_MARK,
   TS_CONFIG_LAST_ENTRY
 } TSOverridableConfigKey;
 
@@ -1060,6 +1068,17 @@ typedef struct TSSecretID_s {
   const char *key_name;
   size_t key_name_len;
 } TSSecretID;
+
+typedef enum { TS_CONNECT_UNDEFINED, TS_CONNECT_PLUGIN, TS_CONNECT_LAST_ENTRY } TSConnectType;
+
+typedef struct TSHttpConnectOptions_s {
+  TSConnectType connect_type;
+  struct sockaddr const *addr;
+  const char *tag;
+  int64_t id;
+  TSIOBufferSizeIndex buffer_index;
+  TSIOBufferWaterMark buffer_water_mark;
+} TSHttpConnectOptions;
 
 /* --------------------------------------------------------------------------
    Init */

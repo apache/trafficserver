@@ -752,6 +752,11 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConn
 source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnect.en.pot
 source_lang = en
 
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpConnectPlugin_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConnectPlugin.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnectPlugin.en.pot
+source_lang = en
+
 [apache-traffic-server-6x.developer-guide--api--functions--TSHttpConnectWithPluginId_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConnectWithPluginId.en.po
 source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnectWithPluginId.en.pot
@@ -1341,6 +1346,21 @@ source_lang = en
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginInit.en.po
 source_file = _build/locale/pot/developer-guide/api/functions/TSPluginInit.en.pot
 source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSPluginVCIOBufferIndexGet]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginVCIOBufferIndexGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSPluginVCIOBufferIndexGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSPluginVCIOBufferWaterMarkGet]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginVCIOBufferWaterMarkGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSPluginVCIOBufferWaterMarkGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpConnectOptionsGet]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConnectOptionsGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnectOptionsGet.en.pot
+source_lang = e
 
 [apache-traffic-server-6x.developer-guide--api--functions--TSRemap_en]
 file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSRemap.en.po

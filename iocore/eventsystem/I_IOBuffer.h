@@ -63,6 +63,7 @@ enum AllocType {
 #define MAX_MIOBUFFER_READERS 5
 #define DEFAULT_BUFFER_ALIGNMENT 8192 // should be disk/page size
 #define DEFAULT_BUFFER_BASE_SIZE 128
+#define DEFAULT_PLUGIN_VC_BUFFER_WATER_MARK 0 // ensure we retain existing behavior
 
 ////////////////////////////////////////////////
 // These are defines so that code that used 2 //

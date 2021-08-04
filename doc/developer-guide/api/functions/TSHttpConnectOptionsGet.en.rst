@@ -6,7 +6,7 @@
    except in compliance with the License.  You may obtain a copy of
    the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,30 +14,24 @@
    implied.  See the License for the specific language governing
    permissions and limitations under the License.
 
+.. include:: ../../../common.defs
+
 .. default-domain:: c
 
-=====================
-TSHttpTxnPluginTagGet
-=====================
-
-Fetch the tag of the plugin that created this transaction.
+TSHttpConnectOptionsGet
+***********************
 
 Synopsis
 ========
+
 .. code-block:: cpp
 
     #include <ts/ts.h>
 
-.. function:: const char * TSHttpTxnPluginTagGet(TSHttpTxn txnp)
+.. function:: TSHttpConnectOptions TSHttpConnectOptionsGet(TSConnectType connect_type)
 
 Description
 ===========
 
-This call retrieves the tag associated with the transaction.  This
-tag is set by the plugin that created the transaction.
-
-See also
-========
-:manpage:`TSHttpConnectPlugin(3ts)`,
-:manpage:`TSHttpConnectWithPluginId(3ts)`,
-:manpage:`TSAPI(3ts)`
+Convenience function to obtain a :type:`TSHttpConnectOptions` struct of the given
+:type:`TSConnectType` provided in :arg:`connect_type` with default values.
