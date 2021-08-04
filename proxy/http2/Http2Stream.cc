@@ -363,16 +363,13 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
       // No state changing
       break;
     default:
-      retval = true;
+      retval = false;
       break;
     }
   }
 
   // Did we just transition to closed or remote closed? Decrement stream count
-  if ((_state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE &&
-       original_state != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) ||
-      (_state == Http2StreamState::HTTP2_STREAM_STATE_CLOSED && original_state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED &&
-       original_state != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE)) {
+  if (_state == Http2StreamState::HTTP2_STREAM_STATE_CLOSED && original_state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
     Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
     SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
     h2_proxy_ssn->connection_state.decrement_stream_count(this->_id);
@@ -446,19 +443,19 @@ Http2Stream::do_io_close(int /* flags */)
     if (_proxy_ssn) {
       Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
 
-      // If the stream closed in a non-standard state, update the session stream stats
-      if (_state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED &&
-          _state != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) {
-        SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
-        h2_proxy_ssn->connection_state.decrement_stream_count(this->_id);
-      }
-
       if (this->is_client_state_writeable()) {
         // Make sure any trailing end of stream frames are sent
         // We will be removed at send_data_frames or closing connection phase
         SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->mutex, this_ethread());
         h2_proxy_ssn->connection_state.send_data_frames(this);
       }
+
+      // If the stream closed in a non-standard state, update the session stream stats
+      if (_state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+        SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
+        h2_proxy_ssn->connection_state.decrement_stream_count(this->_id);
+      }
+      _state = Http2StreamState::HTTP2_STREAM_STATE_CLOSED;
     }
 
     _clear_timers();
@@ -518,8 +515,7 @@ Http2Stream::initiating_close()
     closed = true;
 
     // If the stream closed in a non-standard state, update the session stream stats
-    if (_state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED &&
-        _state != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) {
+    if (_state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
       Http2ClientSession *h2_proxy_ssn = static_cast<Http2ClientSession *>(this->_proxy_ssn);
       SCOPED_MUTEX_LOCK(lock, h2_proxy_ssn->connection_state.mutex, this_ethread());
       h2_proxy_ssn->connection_state.decrement_stream_count(this->_id);
