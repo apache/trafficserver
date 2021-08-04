@@ -1213,7 +1213,6 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     res = con.connect(nullptr, options);
     if (res != 0) {
       // fast stopIO
-      nh = nullptr;
       goto fail;
     }
   }
