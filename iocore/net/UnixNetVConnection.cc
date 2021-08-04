@@ -993,6 +993,8 @@ UnixNetVConnection::netActivity(EThread *lthread)
   net_activity(this, lthread);
 }
 
+// Avoid false positive of clang-analyzer (llvm-11 and 12). Details in #8198
+#ifndef __clang_analyzer__
 int
 UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
 {
@@ -1008,6 +1010,13 @@ UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
   }
   return EVENT_DONE;
 }
+#else
+int
+UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event * /* e */)
+{
+  return EVENT_DONE;
+}
+#endif
 
 int
 UnixNetVConnection::acceptEvent(int event, Event *e)
