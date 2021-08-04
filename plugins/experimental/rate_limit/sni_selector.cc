@@ -72,10 +72,8 @@ bool
 SniSelector::insert(std::string_view sni, SniRateLimiter *limiter)
 {
   if (_limiters.find(sni) == _limiters.end()) {
-    std::string_view key(strndup(sni.data(), sni.size()), sni.size()); // Has to be duped, to keep ownership of the string
-
-    _limiters[key] = limiter;
-    TSDebug(PLUGIN_NAME, "Added global limiter for SNI=%s (limit=%u, queue=%u, max_age=%ldms)", key.data(), limiter->limit,
+    _limiters[sni] = limiter;
+    TSDebug(PLUGIN_NAME, "Added global limiter for SNI=%s (limit=%u, queue=%u, max_age=%ldms)", sni.data(), limiter->limit,
             limiter->max_queue, static_cast<long>(limiter->max_age.count()));
 
     return true;
@@ -117,7 +115,7 @@ SniSelector::factory(const char *sni_list, int argc, const char *argv[])
 
     limiter->description = token;
 
-    insert(std::string_view(token, strlen(token)), limiter);
+    insert(std::string_view(limiter->description), limiter);
     token = strtok_r(nullptr, ",", &saveptr);
   }
   free(sni);

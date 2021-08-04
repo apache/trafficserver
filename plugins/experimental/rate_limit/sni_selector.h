@@ -34,13 +34,6 @@ class SniSelector
 public:
   using Limiters = std::unordered_map<std::string_view, SniRateLimiter *>;
 
-  ~SniSelector()
-  {
-    for (auto const &limiter : _limiters) {
-      free(const_cast<char *>(limiter.first.data()));
-    }
-  }
-
   Limiters &
   limiters()
   {
