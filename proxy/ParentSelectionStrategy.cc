@@ -74,7 +74,6 @@ ParentSelectionStrategy::markParentDown(ParentResult *result, unsigned int fail_
 
     Note("Parent %s marked as down %s:%d for request %s", (result->retry) ? "retry" : "initially", pRec->hostname, pRec->port,
          result->url);
-
   } else {
     int old_count = 0;
     now           = time(nullptr);
