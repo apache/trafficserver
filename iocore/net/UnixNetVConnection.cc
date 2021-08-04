@@ -1239,7 +1239,7 @@ fail:
   if (fd != NO_FD) {
     con.fd = NO_FD;
   }
-  free(t);
+  nh->free_netevent(this);
   return CONNECT_FAILURE;
 }
 
