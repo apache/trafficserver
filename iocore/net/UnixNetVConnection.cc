@@ -1004,7 +1004,7 @@ UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
   if (!action_.cancelled) {
     connectUp(e->ethread, NO_FD);
   } else {
-    this->free(e->ethread);
+    get_NetHandler(e->ethread)->free_netevent(this);
   }
   return EVENT_DONE;
 }
@@ -1213,7 +1213,6 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     res = con.connect(nullptr, options);
     if (res != 0) {
       // fast stopIO
-      nh = nullptr;
       goto fail;
     }
   }
@@ -1239,7 +1238,7 @@ fail:
   if (fd != NO_FD) {
     con.fd = NO_FD;
   }
-  free(t);
+  nh->free_netevent(this);
   return CONNECT_FAILURE;
 }
 
