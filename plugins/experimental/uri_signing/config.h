@@ -29,7 +29,8 @@ struct signer {
   char *alg;
 };
 
-struct config *read_config(const char *path);
+struct config *read_config_from_path(const char *const path);
+struct config *read_config_from_string(const char *const buffer);
 void config_delete(struct config *g);
 struct signer *config_signer(struct config *);
 struct _cjose_jwk_int **find_keys(struct config *cfg, const char *issuer);
