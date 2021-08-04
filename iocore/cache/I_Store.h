@@ -170,7 +170,7 @@ public:
   Span(Span const &that)
   {
     /* I looked at simplifying this by changing the @c ats_scoped_str instances to @c std::string
-     * but that actually makes it worse. The copy constructor @b must be overriden to get the
+     * but that actually makes it worse. The copy constructor @b must be overridden to get the
      * internal link (@a link.next) correct. Given that, changing to @c std::string means doing
      * explicit assignment for every member, which has its own problems.
      */

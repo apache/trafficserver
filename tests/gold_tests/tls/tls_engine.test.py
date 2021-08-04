@@ -33,7 +33,7 @@ Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server = Test.MakeOriginServer("server")
 
-# Compile with tsxs.  That should bring in the consisten versions of openssl
+# Compile with tsxs.  That should bring in the consistent versions of openssl
 ts.Setup.Copy(os.path.join(Test.Variables.AtsTestPluginsDir, 'async_engine.so'), Test.RunDirectory)
 
 # Add info the origin server responses

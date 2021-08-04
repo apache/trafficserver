@@ -77,7 +77,7 @@ public:
     /// Socket transmit buffer size.
     /// 0 => OS default.
     int send_bufsize;
-    /// defer accpet for @c sockopt.
+    /// defer accept for @c sockopt.
     /// 0 => OS default.
     int defer_accept;
     /// Socket options for @c sockopt.

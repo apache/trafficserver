@@ -989,7 +989,7 @@ done:
 /**************************************************************************
  * handle_lifecycle_message
  *
- * purpose: handle lifecyle message to plugins
+ * purpose: handle lifecycle message to plugins
  * output: TS_ERR_xx
  * note: None
  *************************************************************************/

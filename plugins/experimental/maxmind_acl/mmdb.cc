@@ -392,7 +392,7 @@ Acl::loaddb(const YAML::Node &dbNode)
 
   int status = MMDB_open(dbloc.c_str(), MMDB_MODE_MMAP, &_mmdb);
   if (MMDB_SUCCESS != status) {
-    TSDebug(PLUGIN_NAME, "Cant open DB %s - %s", dbloc.c_str(), MMDB_strerror(status));
+    TSDebug(PLUGIN_NAME, "Can't open DB %s - %s", dbloc.c_str(), MMDB_strerror(status));
     return false;
   }
 

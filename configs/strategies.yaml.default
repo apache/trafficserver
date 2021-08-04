@@ -14,7 +14,7 @@
 #   'hosts' is a YAML list of host's definitions and is used when defining 'groups' YAML
 #     references are supported.
 #   'groups' is a YAML list that aggregates a group of hosts together and serves as the
-#     equivalent to the rings used in parent.config.  You may define upto five groups in a
+#     equivalent to the rings used in parent.config.  You may define up to five groups in a
 #     config, see MAX_GROUPS.
 #   'strategies' is a YAML list of strategy definitions.
 #

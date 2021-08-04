@@ -38,7 +38,7 @@ rexl.append((re.compile(r"\:" + sys.argv[2]), "__TS_PORT__"))  # 1st and only ar
 rexl.append((re.compile(r'\{"359670651[^"]*"\}'), '{"{359670651__WEIRD__}"}'))
 rexl.append((re.compile(r'\{\{Accept-Ranges\}:\{bytes\}\}'), ''))
 
-# Loop until the file specified in argv[1] becomes availble
+# Loop until the file specified in argv[1] becomes available
 filename = sys.argv[1]
 processed = False
 # Give up looking for file after 2 minutes

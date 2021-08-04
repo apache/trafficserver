@@ -75,7 +75,7 @@ int memcmp(const std::string_view &lhs, const std::string_view &rhs);
  * @code
  *   memcpy(dst, src.data(), size.size());
  * @endcode
- * Therefore @a dst must point at a buffer large enought to hold @a src. If this is not already
+ * Therefore @a dst must point at a buffer large enough to hold @a src. If this is not already
  * determined, then presuming @c DST_SIZE is the size of the buffer at @a dst
  * @code
  *   memcpy(dst, src.prefix(DST_SIZE));

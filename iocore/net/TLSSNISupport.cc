@@ -1,6 +1,6 @@
 /** @file
 
-  SNISupport.cc provides implmentations for SNISupport methods
+  SNISupport.cc provides implementations for SNISupport methods
 
   @section license License
 

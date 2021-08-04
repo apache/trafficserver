@@ -618,7 +618,7 @@ static const RecordElement RecordsConfig[] =
   //
   //       #  required headers: three options
   //       #
-  //       #  0 - No required headers to make document cachable
+  //       #  0 - No required headers to make document cacheable
   //       #  1 - at least, "Last-Modified:" header required
   //       #  2 - explicit lifetime required, "Expires:" or "Cache-Control:"
   //       #

@@ -124,7 +124,7 @@ protected:
 
 using TxnAuxMgrData = TxnAuxDataMgrBase::MgrData;
 
-// Class to manage auxilliary data for a transaction.  If an instance is created for the transaction, the instance
+// Class to manage auxiliary data for a transaction.  If an instance is created for the transaction, the instance
 // will be deleted on the TXN_CLOSE transaction hook (which is always triggered for all transactions).
 // The TxnAuxData class must have a public default constructor.
 //

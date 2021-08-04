@@ -122,31 +122,31 @@
       "required": ["name"],
       "properties": {
         "name": {
-          "desciption": "The name of the protocol.",
+          "description": "The name of the protocol.",
           "type": "string"
         },
         "version": {
-          "desciption": "The version of the protocol.",
+          "description": "The version of the protocol.",
           "type": "string"
         },
         "sni": {
-          "desciption": "The SNI in the client hello.",
+          "description": "The SNI in the client hello.",
           "type": "string"
         },
         "request-certificate": {
-          "desciption": "Whether a certificate should be requested from the proxy.",
+          "description": "Whether a certificate should be requested from the proxy.",
           "type": "boolean"
         },
         "verify-mode": {
-          "desciption": "The server or client's OpenSSL verify mode against the proxy.",
+          "description": "The server or client's OpenSSL verify mode against the proxy.",
           "type": "boolean"
         },
         "proxy-verify-mode": {
-          "desciption": "The proxy's OpenSSL verify mode against the peer.",
+          "description": "The proxy's OpenSSL verify mode against the peer.",
           "type": "integer"
         },
         "proxy-provided-certificate": {
-          "desciption": "Whether the proxy provided a cert in the handshake.",
+          "description": "Whether the proxy provided a cert in the handshake.",
           "type": "boolean"
         }
       }

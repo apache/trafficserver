@@ -138,7 +138,7 @@ end
 
 -- function run when response is received from origin
 function read_response()
-  -- retriving modsecurity object
+  -- retrieving modsecurity object
   local txn = ts.ctx["mst"]
 
   if(txn == nil) then

@@ -89,7 +89,7 @@ ts.Disk.records_config.update({
 })
 
 # Should succeed
-tr = Test.AddTestRun("Use corrcect ca bundle for server 1")
+tr = Test.AddTestRun("Use correct ca bundle for server 1")
 tr.Processes.Default.Command = 'curl -k -H \"host: foo.com\"  http://127.0.0.1:{0}/case1'.format(ts.Variables.port)
 tr.ReturnCode = 0
 tr.Setup.Copy("ssl/signed-foo.key")
@@ -100,7 +100,7 @@ tr.Processes.Default.StartBefore(server2)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = server1
 tr.StillRunningAfter = ts
-# Should succed.  No message
+# Should succeed.  No message
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("Use incorrect ca  bundle for server 1")

@@ -152,7 +152,7 @@ Http3App::create_uni_stream(QUICStreamId &new_stream_id, Http3StreamType type)
 
     Debug("http3", "[%" PRIu64 "] %s stream is created", new_stream_id, Http3DebugNames::stream_type(type));
   } else {
-    Debug("http3", "Could not creat %s stream", Http3DebugNames::stream_type(type));
+    Debug("http3", "Could not create %s stream", Http3DebugNames::stream_type(type));
   }
 
   return error;
@@ -277,7 +277,7 @@ Http3App::_set_qpack_stream(Http3StreamType type, QUICStreamIO *stream_io)
       this->_ssn->remote_qpack()->set_decoder_stream(stream_io);
     }
   } else {
-    ink_abort("unkown stream type");
+    ink_abort("unknown stream type");
   }
 }
 

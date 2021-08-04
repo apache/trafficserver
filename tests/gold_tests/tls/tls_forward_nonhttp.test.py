@@ -33,7 +33,7 @@ ts.addSSLfile("ssl/server.key")
 # reserve a port of the s_client that will be released with 'ts'
 ports.get_port(ts, 's_client_port')
 
-# Need no remap rules.  Everything should be proccessed by sni
+# Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
 ts.Disk.ssl_multicert_config.AddLine(

@@ -76,7 +76,7 @@ tr.StillRunningAfter = delay_post_connect
 tr.StillRunningAfter = Test.Processes.ts
 
 #  Should not catch the connect timeout.  Even though the first bytes are not sent until after the 2 second connect timeout
-#  Shoudl not retry the connection
+#  Should not retry the connection
 tr = Test.AddTestRun("tr-delayed-post")
 tr.Processes.Default.StartBefore(delay_post_ttfb, ready=When.PortOpen(Test.Variables.block_ttfb_port))
 tr.Processes.Default.Command = 'curl -H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/ttfb_blocked --tlsv1.2'.format(

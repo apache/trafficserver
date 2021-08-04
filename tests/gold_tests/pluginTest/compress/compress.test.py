@@ -192,9 +192,9 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = curl_post(ts, 3, "gzip")
 
 # compress_long.log contains all the output from the curl commands.  The tr removes the carriage returns for easier
-# readability.  Curl seems to have a bug, where it will neglect to output an end of line before outputing an HTTP
+# readability.  Curl seems to have a bug, where it will neglect to output an end of line before outputting an HTTP
 # message header line.  The sed command is a work-around for this problem.  greplog.sh uses the grep command to
-# select HTTP request/response line that should be consitent every time the test runs.
+# select HTTP request/response line that should be consistent every time the test runs.
 #
 tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0

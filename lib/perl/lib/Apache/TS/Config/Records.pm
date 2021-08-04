@@ -19,7 +19,7 @@
 # This is a simple module to let you read, modify and add to an Apache
 # Traffic Server records.config file. The idea is that you would write a
 # simple script (like example below) to update a "stock" records.config with
-# the changes applicable to your application. This allows you to uprade to
+# the changes applicable to your application. This allows you to upgrade to
 # a newer default config file from a new release. See the embedded
 # perldoc for more details.
 ############################################################################

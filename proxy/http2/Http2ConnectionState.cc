@@ -363,7 +363,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       }
       // If the flag has already been set before decoding header blocks, this is the trailing header.
       // Set a flag to avoid initializing fetcher for now.
-      // Decoding header blocks is stil needed to maintain a HPACK dynamic table.
+      // Decoding header blocks is still needed to maintain a HPACK dynamic table.
       // TODO: TS-3812
       empty_request = true;
     }
@@ -393,7 +393,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
       // Send request header to SM
       stream->send_request(cstate);
     } else {
-      // Signal VC_EVENT_READ_COMPLETE becasue received trailing header fields with END_STREAM flag
+      // Signal VC_EVENT_READ_COMPLETE because received trailing header fields with END_STREAM flag
       stream->signal_read_event(VC_EVENT_READ_COMPLETE);
     }
   } else {
@@ -649,7 +649,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     ++n_settings;
   }
 
-  // Update settigs count per minute
+  // Update settings count per minute
   cstate.increment_received_settings_count(n_settings);
   // Close this connection if its settings count received exceeds a limit
   if (cstate.get_received_settings_count() > Http2::max_settings_per_minute) {
@@ -1096,7 +1096,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   } break;
 
-  // Initiate a gracefull shutdown
+  // Initiate a graceful shutdown
   case HTTP2_SESSION_EVENT_SHUTDOWN_INIT: {
     REMEMBER(event, this->recursion);
     ink_assert(shutdown_state == HTTP2_SHUTDOWN_NOT_INITIATED);
@@ -1110,7 +1110,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     shutdown_cont_event = this_ethread()->schedule_in((Continuation *)this, HRTIME_SECONDS(2), HTTP2_SESSION_EVENT_SHUTDOWN_CONT);
   } break;
 
-  // Continue a gracefull shutdown
+  // Continue a graceful shutdown
   case HTTP2_SESSION_EVENT_SHUTDOWN_CONT: {
     REMEMBER(event, this->recursion);
     ink_assert(shutdown_state == HTTP2_SHUTDOWN_INITIATED);
@@ -1140,7 +1140,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
       if (lock.is_locked()) {
         this->ua_session->free();
         // After the free, the Http2ConnectionState object is also freed.
-        // The Http2ConnectionState object is allocted within the Http2ClientSession object
+        // The Http2ConnectionState object is allocated within the Http2ClientSession object
       }
     }
   }
@@ -1873,7 +1873,7 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
   this->ua_session->xmit(ping);
 }
 
-// As for gracefull shutdown, TS should process outstanding stream as long as possible.
+// As for graceful shutdown, TS should process outstanding stream as long as possible.
 // As for signal connection error, TS should close connection immediately.
 void
 Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)

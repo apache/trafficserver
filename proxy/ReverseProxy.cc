@@ -123,7 +123,7 @@ urlRewriteVerify()
 
 /**
   Called when the remap.config file changes. Since it called infrequently,
-  we do the load of new file as blocking I/O and lock aquire is also
+  we do the load of new file as blocking I/O and lock acquire is also
   blocking.
 
 */
