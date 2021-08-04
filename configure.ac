@@ -1768,9 +1768,10 @@ AC_SUBST(use_hrw_maxminddb)
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
 
 #
-# Check for tcmalloc and jemalloc
-TS_CHECK_JEMALLOC
+# Check for tcmalloc, jemalloc and mimalloc
 TS_CHECK_TCMALLOC
+TS_CHECK_JEMALLOC
+TS_CHECK_MIMALLOC
 
 #
 # Check for libreadline/libedit

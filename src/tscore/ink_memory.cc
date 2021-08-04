@@ -27,6 +27,11 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_atomic.h"
 
+#if TS_HAS_MIMALLOC
+#include <mimalloc-new-delete.h>
+#include <mimalloc-override.h>
+#endif
+
 #if !defined(kfreebsd) && defined(freebsd)
 #include <malloc_np.h> // for malloc_usable_size
 #endif

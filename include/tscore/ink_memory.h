@@ -50,10 +50,10 @@
 
 #if TS_HAS_JEMALLOC
 #include <jemalloc/jemalloc.h>
-#else
-#if HAVE_MALLOC_H
+#elif TS_HAS_MIMALLOC
+#include <mimalloc.h>
+#elif HAVE_MALLOC_H
 #include <malloc.h>
-#endif // ! HAVE_MALLOC_H
 #endif // ! TS_HAS_JEMALLOC
 
 #ifndef MADV_NORMAL
