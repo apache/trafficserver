@@ -178,16 +178,9 @@ load_jwk(json_t *obj, cjose_err *err)
   return jwk;
 }
 
-struct config *
-read_config(const char *path)
+static struct config *
+read_config_from_json(json_t *const issuer_json)
 {
-  json_error_t err    = {0};
-  json_t *issuer_json = json_load_file(path, 0, &err);
-  if (!issuer_json) {
-    JSONError(err);
-    goto fail;
-  }
-
   if (!json_is_object(issuer_json)) {
     PluginError("Config file is not a valid JSON object");
     goto issuer_fail;
@@ -346,8 +339,31 @@ cfg_fail:
   config_delete(cfg);
 issuer_fail:
   json_decref(issuer_json);
-fail:
   return NULL;
+}
+
+struct config *
+read_config_from_path(char const *const path)
+{
+  json_error_t err    = {0};
+  json_t *issuer_json = json_load_file(path, 0, &err);
+  if (!issuer_json) {
+    JSONError(err);
+    return NULL;
+  }
+  return read_config_from_json(issuer_json);
+}
+
+struct config *
+read_config_from_string(char const *const buffer)
+{
+  json_error_t err    = {0};
+  json_t *issuer_json = json_loads(buffer, 0, &err);
+  if (!issuer_json) {
+    JSONError(err);
+    return NULL;
+  }
+  return read_config_from_json(issuer_json);
 }
 
 struct signer *
