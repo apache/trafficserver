@@ -43,7 +43,7 @@ msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSVConnReenable.en.rst:38
 msgid ""
-"If the server is running OpenSSL 1.0.1 with the appropraite patch installed "
+"If the server is running OpenSSL 1.0.1 with the appropriate patch installed "
 "or it is running OpenSSL 1.0.2, the plugin writer can pause SSL handshake "
 "processing by not reenabling the connection. Without the OpenSSL patch or "
 "running an OpenSSL versions older than 1.0.2, the handshake processing in "

@@ -87,7 +87,7 @@ msgstr ""
 #: ../../admin-guide/plugins/geoip_acl.en.rst:71
 msgid ""
 "Note that the default in the case of no matches on the regular expressions "
-"is to \"allow\" the request. This can be overriden, see next use case."
+"is to \"allow\" the request. This can be overridden, see next use case."
 msgstr ""
 
 #: ../../admin-guide/plugins/geoip_acl.en.rst:85

@@ -73,7 +73,7 @@ msgid "ESI Plugin"
 msgstr ""
 
 #: ../../admin-guide/plugins/esi.en.rst:29
-msgid "Supportted ESI tags:"
+msgid "Supported ESI tags:"
 msgstr ""
 
 #: ../../admin-guide/plugins/esi.en.rst:73

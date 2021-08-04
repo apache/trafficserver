@@ -54,7 +54,7 @@ msgstr ""
 
 #: ../../../developer-guide/documentation/building.en.rst:41
 msgid ""
-"This will ensure that make doesn't inadvertantly skip the regeneration of "
+"This will ensure that make doesn't inadvertently skip the regeneration of "
 "any targets."
 msgstr ""
 

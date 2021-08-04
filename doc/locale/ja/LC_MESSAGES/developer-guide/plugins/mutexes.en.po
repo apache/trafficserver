@@ -162,7 +162,7 @@ msgstr ""
 msgid ""
 "If any other functions want to access ``contp``'s data, then it is up to "
 "them to get ``contp``'s mutex (using, for example, ``TSContMutexGet``) to "
-"lock it. For usage, ssee the sample Protocol plugin."
+"lock it. For usage, see the sample Protocol plugin."
 msgstr ""
 
 #: ../../developer-guide/plugins/mutexes.en.rst:126
@@ -218,7 +218,7 @@ msgstr ""
 
 #: ../../developer-guide/plugins/mutexes.en.rst:200
 msgid ""
-"Remember that the ``txn_contp`` handler must destory itself when the HTTP "
+"Remember that the ``txn_contp`` handler must destroy itself when the HTTP "
 "transaction is closed. If you forget to do this, then your plugin will have "
 "a memory leak."
 msgstr ""

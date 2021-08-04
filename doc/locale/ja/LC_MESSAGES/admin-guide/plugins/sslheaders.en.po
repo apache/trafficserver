@@ -197,7 +197,7 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/sslheaders.en.rst:69
 msgid ""
-"If the ``sslheaders`` plugin activtes on non-SSL connections, it will "
+"If the ``sslheaders`` plugin activates on non-SSL connections, it will "
 "delete all the configured HTTP header names so that malicious clients "
 "cannot inject misleading information. If any of the SSL fields expand to an "
 "empty string, those headers are also deleted."
@@ -210,7 +210,7 @@ msgstr ""
 #: ../../../admin-guide/plugins/sslheaders.en.rst:77
 msgid ""
 "In this example, the origin server is interested in the subject of the "
-"server certificate that was used to accept a client connetion. We can apply "
+"server certificate that was used to accept a client connection. We can apply "
 "the ``sslheaders`` plugin to a generic remap rule to provide this "
 "information. The :file:`remap.config` configuration would be::"
 msgstr ""

@@ -646,7 +646,7 @@ msgstr ""
 msgid ""
 "Acl filters can be created to control access of specific remap lines. The "
 "markup is very similar to that of :file:`ip_allow.config`, with slight "
-"changes to accomodate remap markup"
+"changes to accommodate remap markup"
 msgstr ""
 
 #: ../../../admin-guide/files/remap.config.en.rst:402
