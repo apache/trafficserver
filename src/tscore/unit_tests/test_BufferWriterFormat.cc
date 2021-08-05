@@ -174,7 +174,7 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   bw.reduce(0);
   bw.print("{}", int_ptr);
   REQUIRE(bw.view() == "0xbadd0956");
-  auto char_ptr = "good";
+  char char_ptr[] = "good";
   bw.reduce(0);
   bw.print("{:x}", static_cast<char *>(ptr));
   REQUIRE(bw.view() == "0xbadd0956");
@@ -188,16 +188,16 @@ TEST_CASE("BWFormat numerics", "[bwprint][bwformat]")
   REQUIRE(bw.view() == "0x200@0xbadd0956");
 
   bw.reduce(0);
-  bw.print("{:x}", ts::MemSpan(const_cast<char *>(char_ptr), 4));
+  bw.print("{:x}", ts::MemSpan(char_ptr, 4));
   REQUIRE(bw.view() == "676f6f64");
   bw.reduce(0);
-  bw.print("{:#x}", ts::MemSpan(const_cast<char *>(char_ptr), 4));
+  bw.print("{:#x}", ts::MemSpan(char_ptr, 4));
   REQUIRE(bw.view() == "0x676f6f64");
   bw.reduce(0);
-  bw.print("{:x}", ts::MemSpan<void>(const_cast<char *>(char_ptr), 4));
+  bw.print("{:x}", ts::MemSpan<void>(char_ptr, 4));
   REQUIRE(bw.view() == "676f6f64");
   bw.reduce(0);
-  bw.print("{:#x}", ts::MemSpan<void>(const_cast<char *>(char_ptr), 4));
+  bw.print("{:#x}", ts::MemSpan<void>(char_ptr, 4));
   REQUIRE(bw.view() == "0x676f6f64");
 
   std::string_view sv{"abc123"};

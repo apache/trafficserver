@@ -49,13 +49,12 @@ progname(const char *path)
   return slash ? slash + 1 : path;
 }
 
-char *
+const char *
 regression_status_string(int status)
 {
-  return const_cast<char *>(
-    status == REGRESSION_TEST_NOT_RUN ?
-      "NOT_RUN" :
-      (status == REGRESSION_TEST_PASSED ? "PASSED" : (status == REGRESSION_TEST_INPROGRESS ? "INPROGRESS" : "FAILED")));
+  return (status == REGRESSION_TEST_NOT_RUN ?
+            "NOT_RUN" :
+            (status == REGRESSION_TEST_PASSED ? "PASSED" : (status == REGRESSION_TEST_INPROGRESS ? "INPROGRESS" : "FAILED")));
 }
 
 RegressionTest::RegressionTest(const char *_n, const SourceLocation &_l, TestFunction *_f, int _o)

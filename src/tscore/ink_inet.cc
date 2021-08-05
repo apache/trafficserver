@@ -376,7 +376,7 @@ ats_ip_hash(sockaddr const *addr)
     return ats_ip4_addr_cast(addr);
   } else if (ats_is_ip6(addr)) {
     CryptoHash hash;
-    CryptoContext().hash_immediate(hash, const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE);
+    CryptoContext().hash_immediate(hash, ats_ip_addr8_cast(addr), TS_IP6_SIZE);
     return hash.u32[0];
   } else {
     // Bad address type.
@@ -392,7 +392,7 @@ ats_ip_port_hash(sockaddr const *addr)
   } else if (ats_is_ip6(addr)) {
     CryptoHash hash;
     CryptoContext hash_context;
-    hash_context.update(const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE);
+    hash_context.update(ats_ip_addr8_cast(addr), TS_IP6_SIZE);
     in_port_t port = ats_ip_port_cast(addr);
     hash_context.update(reinterpret_cast<uint8_t *>(&port), sizeof(port));
     hash_context.finalize(hash);
