@@ -251,6 +251,24 @@ We should write this TAG in records.config(If TAG is missing, default TAG will b
 
 :ref:`TOP <admin-plugins-ts-lua>`
 
+ts.is_debug_tag_set
+-------------------
+**syntax:** *ts.is_debug_tag_set(TAG?)*
+
+**context:** global
+
+**description**: Returns '1' if debug TAG is enabled(the default TAG is **ts_lua**).
+
+Here is an example:
+
+::
+
+       if ts.is_debug_tag_set() then
+           ts.debug("hello world")
+       end
+
+:ref:`TOP <admin-plugins-ts-lua>`
+
 ts.error
 --------
 **syntax:** *ts.error(MESSAGE)*
