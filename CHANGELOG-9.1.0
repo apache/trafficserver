@@ -267,7 +267,7 @@ Changes with Apache Traffic Server 9.1.0
   #7445 - Add PROXY Protocol Builder
   #7446 - Add Outbound PROXY Protocol (v1/v2) Support
   #7450 - Move reopen_moved_log_files to log flushing thread
-  #7451 - Unit Test -  Increase openssl's key size. Place test certs into a common test folder
+  #7451 - Unit Test -  Increase openssl's key size. Place test certs into a comon test folder
   #7453 - Cleanup: Add SNIRoutingType
   #7455 - Fix Makefile target for creating changelogs
   #7457 - Fix comment in include/tscore/Filenames.h.
@@ -340,8 +340,8 @@ Changes with Apache Traffic Server 9.1.0
   #7747 - Remove unused variable is_revalidation_necessary
   #7748 - Remove proxy.config.http.down_server.abort_threshold
   #7753 - Make when_to_revalidate setting available on HTTPS
+  #7758 - Traffic Dump: Add an HTTP/3 AuTest
   #7766 - Clean up HTTP version processing
-  #7772 - Apply log throttling to HTTP/2 session error rate messages
   #7783 - Adds new TS API TSHttpTxnCacheDiskPathGet
   #7784 - Adds new X-Cache-Info header to the xdebug plugin
   #7790 - Fix MLoc assert caused by s3auth
@@ -352,10 +352,13 @@ Changes with Apache Traffic Server 9.1.0
   #7809 - Save and propagate epoll network error
   #7828 - Fix so EOS are delivered to sessions in the pool
   #7830 - Fix a format specifier for size_t
-  #7834 - AuTest: use extended help output to determine curl feature support
+  #7834 - AuTest: use exteneded help output to determine curl feature support
   #7835 - Remove unused member from HttpSM
   #7842 - Extra braces for clang 5 / ubuntu 16.04 on array initialization
   #7858 - Adds a new --enable-all-asserts configure option
+  #7866 - Autest - Proxy Verifier Extension, add context template $-base string…
+  #7867 - Redirect - Make TS to honour the number_of_redirections configuration.
+  #7875 - Restrict HTTP versions allowed on the HTTP request line
   #7885 - Close connection after every bad request for HTTP/1.1
   #7886 - Enforce case for well known methods
   #7892 - Reset Http1Transaction before adding vc to keep_alive_queue
@@ -373,14 +376,25 @@ Changes with Apache Traffic Server 9.1.0
   #7958 - Fixed compile error with Linux AIO unit test
   #7963 - Note YAML parser library bug, and work-around, in documentation.
   #7970 - ESI plugin documentation updates.
+  #7986 - Docs: Fix pre-formatting for ratelimit plugin
   #7989 - Cleans up the code bit, including milliseconds consistency
   #8004 - Fix HPACK eviction iterator manipulation
   #8005 - Updates to webp_transform to convert webp to jpeg
+  #8021 - rate_limit: Add a global hook to rate limit concurrent connections based on SNI
   #8058 - Replace assert with warning in error event processing
   #8070 - Finishes #/7748 with some additional cleanup
   #8074 - Make the InkAPI mHandleAllocator be a Proxy Allocator
+  #8082 - Changes HttpSM to be Proxy Allocated
   #8099 - .gitignore rules for gcov generated files
   #8106 - Make the rest of InkAPI allocators Proxy Allocated
   #8162 - HostDBProcessor: ensure hostname_offset is initialized to '0' to indicate null hostname
   #8168 - Added missing milestones and updated slow log report script
+  #8172 - Fix clearing all stats function
   #8173 - Update INSTALL for URLs and version number
+  #8184 - Revert "Remove UnixNetVConnection::startEvent - not actually called. (#7596)" + clang-analyzer fix
+  #8186 - Ran clang-tidy over the 9.1.x branch
+  #8189 - Minor updates to HTTP version validation
+  #8205 - Fixed spelling mistakes in code and other files
+  #8206 - Fixed spelling mistakes in docs
+  #8209 - Fix mutex use after free
+  #8211 - Avoid the strdup, albeit safe, annoys CA
