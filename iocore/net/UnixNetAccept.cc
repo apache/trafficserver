@@ -87,6 +87,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
     vc->con.move(con);
+    vc->set_remote_addr(con.addr);
     vc->submit_time = Thread::get_hrtime();
     vc->action_     = *na->action_;
     vc->set_is_transparent(na->opt.f_inbound_transparent);
@@ -331,6 +332,7 @@ NetAccept::do_blocking_accept(EThread *t)
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
     vc->con.move(con);
+    vc->set_remote_addr(con.addr);
     vc->submit_time = Thread::get_hrtime();
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
@@ -481,6 +483,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
     vc->con.move(con);
+    vc->set_remote_addr(con.addr);
     vc->submit_time = Thread::get_hrtime();
     vc->action_     = *action_;
     vc->set_is_transparent(opt.f_inbound_transparent);
