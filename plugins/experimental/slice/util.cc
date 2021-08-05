@@ -86,7 +86,14 @@ request_block(TSCont contp, Data *const data)
   }
 
   // create virtual connection back into ATS
-  TSVConn const upvc = TSHttpConnectWithPluginId(reinterpret_cast<sockaddr *>(&data->m_client_ip), PLUGIN_NAME, 0);
+  TSHttpConnectOptions options = TSHttpConnectOptionsGet(TS_CONNECT_PLUGIN);
+  options.addr                 = reinterpret_cast<sockaddr *>(&data->m_client_ip);
+  options.tag                  = PLUGIN_NAME;
+  options.id                   = 0;
+  options.buffer_index         = data->m_buffer_index;
+  options.buffer_water_mark    = data->m_buffer_water_mark;
+
+  TSVConn const upvc = TSHttpConnectPlugin(&options);
 
   int const hlen = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
 

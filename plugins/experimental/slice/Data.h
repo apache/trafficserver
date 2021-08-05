@@ -82,6 +82,10 @@ struct Data {
   int64_t m_bytestosend{0}; // header + content bytes to send
   int64_t m_bytessent{0};   // number of bytes written to the client
 
+  // default buffer size and water mark
+  TSIOBufferSizeIndex m_buffer_index{TS_IOBUFFER_SIZE_INDEX_32K};
+  TSIOBufferWaterMark m_buffer_water_mark{TS_IOBUFFER_WATER_MARK_PLUGIN_VC_DEFAULT};
+
   bool m_server_block_header_parsed{false};
   bool m_server_first_header_parsed{false};
 
