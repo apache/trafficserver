@@ -109,14 +109,14 @@ Regex::get_capture_count()
 }
 
 bool
-Regex::exec(std::string_view const &str)
+Regex::exec(std::string_view const &str) const
 {
   std::array<int, DEFAULT_GROUP_COUNT * 3> ovector = {{0}};
   return this->exec(str, ovector.data(), ovector.size());
 }
 
 bool
-Regex::exec(std::string_view const &str, int *ovector, int ovecsize)
+Regex::exec(std::string_view const &str, int *ovector, int ovecsize) const
 {
   int rv;
 
@@ -188,10 +188,7 @@ DFA::compile(const char **patterns, int npatterns, unsigned flags)
 int
 DFA::match(std::string_view const &str) const
 {
-  // This is ugly, but the external interface needs to be @c const even though it's not really.
-  // This handles making the iterator non-const.
-  auto &pv{const_cast<decltype(_patterns) &>(_patterns)};
-  for (auto spot = pv.begin(), limit = pv.end(); spot != limit; ++spot) {
+  for (auto spot = _patterns.begin(), limit = _patterns.end(); spot != limit; ++spot) {
     if (spot->_re.exec(str)) {
       return spot - _patterns.begin();
     }

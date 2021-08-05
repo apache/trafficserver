@@ -530,8 +530,8 @@ int
 ink_fileperm_parse(const char *perms)
 {
   if (perms && strlen(perms) == 9) {
-    int re  = 0;
-    char *c = const_cast<char *>(perms);
+    int re        = 0;
+    const char *c = perms;
     if (*c == 'r') {
       re |= S_IRUSR;
     }
