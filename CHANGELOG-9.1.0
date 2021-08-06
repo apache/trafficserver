@@ -397,4 +397,7 @@ Changes with Apache Traffic Server 9.1.0
   #8205 - Fixed spelling mistakes in code and other files
   #8206 - Fixed spelling mistakes in docs
   #8209 - Fix mutex use after free
+  #8210 - uri_signing: embed config into the unit test
   #8211 - Avoid the strdup, albeit safe, annoys CA
+  #8213 - Add dead server policy control and metric. Improve messages.
+  #8217 - uri_signing: fix for copying too many bytes and compiler warnings
